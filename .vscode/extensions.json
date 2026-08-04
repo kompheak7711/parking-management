@@ -1,0 +1,14 @@
+{
+  "recommendations": [
+    "openai.chatgpt",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "eamodio.gitlens",
+    "usernamehw.errorlens",
+    "ms-azuretools.vscode-docker",
+    "rangav.vscode-thunder-client",
+    "yzhang.markdown-all-in-one"
+  ]
+}
