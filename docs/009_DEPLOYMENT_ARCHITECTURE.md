@@ -1,0 +1,607 @@
+# 009 — Deployment Architecture
+
+**Document Status:** Owner Review
+**Authority:** Downstream of `001_DOMAIN_MODEL.md` through `008_SECURITY_MODEL.md`
+**Scope:** Production-oriented deployment, operation, backup, recovery, and update architecture
+**Requirement identifiers:** `DEPLOY-*`
+
+---
+
+# 1. Purpose
+
+This document defines how the Property Rental Management System is built,
+deployed, operated, backed up, monitored, and recovered. It preserves the
+established technology direction:
+
+- React, TypeScript, and Vite frontend;
+- FastAPI and Python backend;
+- PostgreSQL database;
+- Docker Compose development and single-site deployment packaging;
+- REST API; and
+- automated frontend and backend tests.
+
+The default deployment is a production-oriented local-network installation. Core
+operation must not depend on a newly introduced cloud service.
+
+# 2. Architectural Principles
+
+## DEPLOY-001 — Single Authoritative Database
+
+One PostgreSQL database is the authoritative transactional store for business,
+financial, audit, authorization, and scheduling state. Application containers
+must not maintain competing writable business stores.
+
+## DEPLOY-002 — Stateless Application Services
+
+Frontend delivery and backend API instances are replaceable. Durable state belongs
+in PostgreSQL or an explicitly specified durable file store if a later approved
+feature requires one.
+
+## DEPLOY-003 — Server-side Business Enforcement
+
+Business rules, calculations, authorization, idempotency, and transaction
+boundaries are enforced by the backend and database. The frontend is not a trusted
+business-rule boundary.
+
+## DEPLOY-004 — Local-first Operation
+
+Routine property-management workflows remain available on the configured LAN
+without requiring public Internet access, except optional external functions such
+as automatic ABA reference-rate retrieval.
+
+## DEPLOY-005 — Recoverability Before Optimization
+
+Deployment changes must preserve database history, migration safety, backup
+recoverability, and auditability before considering performance optimization.
+
+# 3. Logical Runtime Topology
+
+## DEPLOY-006 — Components
+
+```text
+LAN Browser
+    │ HTTPS
+    ▼
+Reverse Proxy / TLS Entry Point
+    ├────────► Static React/Vite Build
+    │
+    └────────► FastAPI API
+                   │
+                   ├────────► PostgreSQL
+                   │
+                   └────────► Scheduled Worker
+                                  │
+                                  └────────► PostgreSQL
+
+Operations Host
+    ├── Backup job ───────────────► Encrypted backup storage
+    ├── Monitoring / log collection
+    └── Controlled migration and restore tooling
+```
+
+## DEPLOY-007 — Reverse Proxy
+
+A reverse proxy terminates TLS, serves or routes the frontend, routes `/api`
+requests to FastAPI, applies request-size and timeout limits, and emits access
+logs without credentials or sensitive bodies.
+
+## DEPLOY-008 — Frontend
+
+The frontend is a versioned production Vite build served as static assets. Runtime
+configuration contains only non-secret public values such as the API base path and
+build identifier.
+
+## DEPLOY-009 — Backend
+
+FastAPI runs as a non-root process with explicit worker configuration, health
+endpoints, structured logs, database connection pooling, and graceful shutdown.
+Backend images contain no development credentials.
+
+## DEPLOY-010 — Scheduled Worker
+
+Scheduled billing, Reservation expiration, Utility generation, and other approved
+system actions execute in a separately identifiable worker process using the same
+backend business services and database constraints. The worker must not implement
+a second version of business logic.
+
+## DEPLOY-011 — PostgreSQL
+
+PostgreSQL runs on durable storage with a fixed supported major version, restricted
+network exposure, health checks, configured timezone behavior, and regular
+backups. The application connects through a least-privilege runtime identity.
+
+# 4. Network Architecture
+
+## DEPLOY-012 — LAN Entry Point
+
+Ordinary users access one stable HTTPS hostname or address on the Property's LAN.
+Only the reverse-proxy port is exposed to user devices.
+
+## DEPLOY-013 — Internal Ports
+
+Backend, PostgreSQL, worker-control, metrics, and administration ports are bound
+to a private container or host network and are not exposed broadly to the LAN.
+
+## DEPLOY-014 — TLS
+
+Credentials and sessions must use TLS even on the LAN. A locally trusted
+certificate authority, managed device trust, or another reviewed certificate
+strategy may be used. Certificate renewal must be documented and monitored.
+
+## DEPLOY-015 — Optional Remote Access
+
+Remote access is disabled by default. If enabled, it uses a controlled encrypted
+gateway such as a managed VPN or equivalent access layer with authenticated users,
+MFA capability, and audit logging. PostgreSQL and internal service ports are never
+published directly to the Internet.
+
+## DEPLOY-016 — External Egress
+
+Outbound access is restricted to explicitly configured dependencies. Failure of
+automatic ABA reference-rate retrieval must activate the authorized manual
+reference-rate fallback without bypassing markup, rounding, or audit rules.
+
+# 5. Environment Model
+
+## DEPLOY-017 — Environments
+
+Development, test, staging where used, and production have separate databases,
+credentials, secrets, and configuration. Production data must not be copied to a
+less protected environment without explicit authorization and appropriate
+sanitization.
+
+## DEPLOY-018 — Configuration
+
+Environment-specific configuration includes:
+
+- deployment environment name;
+- public base URL and API origin;
+- Property timezone;
+- database connection details;
+- session/authentication settings;
+- trusted proxy and origin settings;
+- worker schedule and lock settings;
+- automatic exchange-rate source settings;
+- log level and destination;
+- backup destination and encryption configuration;
+- monitoring thresholds; and
+- optional remote-access integration.
+
+Business configuration such as accepted Payment Methods, rates, capability
+bundles, and Property data remains controlled application data rather than image
+configuration.
+
+## DEPLOY-019 — Secret Injection
+
+Secrets are injected at deployment from protected host configuration or an
+approved secret store. `.env` files containing production secrets, database dumps,
+and backup keys must not be committed.
+
+## DEPLOY-020 — Immutable Build Identity
+
+Every deployed frontend and backend artifact records a version or Git commit. The
+UI and operational health output make the deployed build identity available to
+authorized support staff without exposing secrets.
+
+# 6. Container and Process Layout
+
+## DEPLOY-021 — Compose Services
+
+The production-oriented Compose topology contains separately managed services for:
+
+- reverse proxy/frontend;
+- backend API;
+- scheduled worker;
+- PostgreSQL; and
+- optional monitoring/logging components.
+
+Development tooling may add hot reload or exposed ports but must not define the
+production security posture.
+
+## DEPLOY-022 — Non-root Runtime
+
+Application and proxy containers run as non-root users wherever supported.
+Writable mounts are limited to explicitly required runtime paths.
+
+## DEPLOY-023 — Health Checks
+
+At minimum:
+
+- **liveness** confirms a process is running;
+- **readiness** confirms the API can safely serve requests and reach the database;
+- **worker health** reports last heartbeat and last successful scheduled-job run;
+- **database health** confirms PostgreSQL accepts authenticated checks; and
+- **proxy health** confirms routing is available.
+
+Readiness must not expose sensitive diagnostics to unauthenticated clients.
+
+## DEPLOY-024 — Graceful Lifecycle
+
+API and worker processes stop accepting new work, complete or roll back active
+transactions, and close connections during shutdown. Container restart must not
+leave a financial operation partially committed.
+
+## DEPLOY-025 — Restart Policy
+
+Long-running services restart after unexpected failure with bounded backoff.
+Repeated failure must trigger an alert rather than an uncontrolled tight loop.
+
+# 7. Scheduled Operations
+
+## DEPLOY-026 — Database-backed Scheduling State
+
+Every scheduled business operation preserves its logical business date, start and
+completion time, outcome, correlation identifier, and idempotency key in durable
+state.
+
+## DEPLOY-027 — Singleton Execution
+
+A database advisory lock, unique job-run constraint, or equivalent transactionally
+safe mechanism ensures only one active execution of each singleton scheduled task
+for the same Property and logical period.
+
+## DEPLOY-028 — Idempotent Jobs
+
+Retries must not duplicate Reservation cancellation, Rent Invoice, Utility
+Invoice, Service line, or another financial event. Duplicate-prevention keys and
+business constraints are rechecked inside the transaction.
+
+## DEPLOY-029 — Property-local Scheduling
+
+Schedules use the configured Property timezone for business-day behavior and
+preserve UTC execution timestamps. Host or container timezone must not silently
+change the business date.
+
+## DEPLOY-030 — Job Failure
+
+A failed job records the error safely, rolls back incomplete transactions, remains
+retryable, and generates an operational alert. Operators may retry through an
+explicit authorized action; they must not manually insert missing financial rows.
+
+## DEPLOY-031 — Expected Scheduled Tasks
+
+The worker supports only tasks derived from approved rules, including:
+
+- Property-local Reservation expiration cancellation;
+- recurring Rent Invoice and fixed Service line generation on the 25th;
+- Utility Invoice generation after validated monthly Reading inputs or a completed
+  approved broken-Meter estimate;
+- backup execution and verification as an operational task; and
+- health/alert evaluation.
+
+This list does not authorize a new charge, penalty, status, automatic Allocation,
+or automatic Customer Credit recognition.
+
+# 8. Database Migrations
+
+## DEPLOY-032 — Migration Tooling
+
+Every schema change uses a versioned migration committed with the application.
+Production schema changes must never be performed by ad hoc manual DDL as the
+normal deployment path.
+
+## DEPLOY-033 — Forward-safe Design
+
+Migrations use expand-and-contract sequencing where a direct change could break a
+running version. New nullable structures, backfills, constraint validation, and
+code cutover are separated when necessary.
+
+## DEPLOY-034 — Financial Preservation
+
+A migration must not overwrite, collapse, or discard historical financial events,
+rates, source links, audit actors, original amounts, or statuses. Data conversion
+must be deterministic, reviewable, and tested on a representative restored copy.
+
+## DEPLOY-035 — Pre-migration Gate
+
+Before production migration:
+
+1. verify a recent successful backup;
+2. verify available disk capacity;
+3. confirm application and database versions;
+4. review migration locks and expected duration;
+5. run migration tests and integrity checks;
+6. announce the maintenance impact where applicable; and
+7. confirm the recovery procedure.
+
+## DEPLOY-036 — Migration Execution
+
+Only the migration identity may alter the schema. The application is placed in a
+compatible mode or maintenance window when required. Migration output is retained
+without secrets.
+
+## DEPLOY-037 — Post-migration Verification
+
+Verify schema version, constraints, row-count/integrity checks, API readiness,
+worker readiness, representative read paths, and absence of unexpected errors
+before declaring the deployment successful.
+
+## DEPLOY-038 — No Destructive Automatic Rollback
+
+A failed migration does not trigger an unreviewed destructive database rollback.
+Recovery uses the migration's reviewed forward fix or an explicitly authorized
+restore procedure.
+
+# 9. Backup Architecture
+
+## DEPLOY-039 — Backup Scope
+
+Backups include PostgreSQL business and audit data, schema/migration metadata, and
+required deployment configuration. Secrets and encryption keys are backed up
+through a separately protected process.
+
+## DEPLOY-040 — Backup Types
+
+The deployment supports:
+
+- frequent automated database backups suitable for point-in-time or bounded-loss
+  recovery where configured;
+- periodic full logical or physical backups;
+- a pre-migration backup; and
+- protected copies separated from the primary host or storage failure domain.
+
+## DEPLOY-041 — Encryption and Access
+
+Backup data is encrypted in transit and at rest. Backup credentials and encryption
+keys are not available to ordinary application users or embedded in client code.
+
+## DEPLOY-042 — Backup Verification
+
+Each run records start/end time, source database identity, schema version, size,
+checksum or integrity result, destination, retention class, and outcome. Empty,
+truncated, or stale backups fail the job.
+
+## DEPLOY-043 — Retention
+
+Backup retention and off-host-copy frequency are deployment configuration pending
+Owner confirmation of recovery objectives. Retention automation must never delete
+the final known good backup.
+
+# 10. Restore and Disaster Recovery
+
+## DEPLOY-044 — Restore Procedure
+
+A documented restore procedure must:
+
+1. identify the incident and target recovery point;
+2. authorize the restore and record the operator;
+3. preserve the failed system for investigation when practical;
+4. verify target host, database, and environment;
+5. restore into an isolated validation target first where practical;
+6. apply required migrations only after restore compatibility is known;
+7. run structural and financial integrity checks;
+8. switch clients only after acceptance; and
+9. record the final recovery outcome.
+
+## DEPLOY-045 — Restore Tests
+
+Periodic restore tests must demonstrate recovery of Customers, Leases, Invoices,
+Payments, Allocations, Credits, Refunds, Deposits, Settlements, rates, and audit
+history. A successful backup command without a restore test is insufficient.
+
+## DEPLOY-046 — Recovery Validation
+
+Validation includes:
+
+- database constraints and migration version;
+- financial source-chain reconstruction;
+- Invoice and Payment derived-balance recomputation;
+- latest scheduled-job and idempotency state;
+- user authentication and authorization configuration;
+- audit-event continuity; and
+- application/worker health.
+
+## DEPLOY-047 — Recovery Objectives
+
+Exact Recovery Point Objective and Recovery Time Objective values are an
+`OPEN OWNER DECISION`. The architecture keeps backup frequency, retention, and
+recovery procedures configurable so those values can be adopted without changing
+business records.
+
+# 11. Logging and Monitoring
+
+## DEPLOY-048 — Structured Logs
+
+Proxy, API, worker, migration, backup, and database operational logs use structured
+timestamps, environment/service identity, severity, and correlation identifiers.
+They exclude credentials, tokens, secrets, and unnecessary Customer/financial
+payloads.
+
+## DEPLOY-049 — Audit Separation
+
+Business audit events are durable application records and must not rely on
+short-retention container stdout logs. Operational log loss must not erase business
+history.
+
+## DEPLOY-050 — Metrics
+
+Monitor at minimum:
+
+- service and endpoint availability;
+- request rate, latency, and error rate;
+- database connections, locks, transaction failures, storage, and backup age;
+- worker heartbeat, job duration, failure, and retry count;
+- scheduled billing duplicate conflicts;
+- audit-write failures;
+- CPU, memory, disk, and container restart count; and
+- certificate and secret-expiration warnings where observable.
+
+## DEPLOY-051 — Alerts
+
+Alerts must be actionable and routed to configured operators. Critical alerts
+include database unavailable, backup/restore failure, audit persistence failure,
+repeated scheduled-job failure, low disk space, migration failure, and TLS
+certificate expiry.
+
+## DEPLOY-052 — Log Retention
+
+Operational log retention is configurable and bounded. Audit and financial
+retention follows authoritative history requirements and is not reduced to match
+operational log retention.
+
+# 12. Deployment and Update Procedure
+
+## DEPLOY-053 — Pre-deployment Checks
+
+Before release:
+
+- authoritative specification and migration changes are reviewed;
+- frontend/backend formatting, linting, type checking, tests, and production build
+  pass;
+- container images build reproducibly;
+- dependency/security scans meet the release policy;
+- migration forward and recovery paths are tested;
+- backup freshness is confirmed; and
+- release notes identify schema, configuration, and operational changes.
+
+## DEPLOY-054 — Controlled Release
+
+A release uses versioned images/artifacts and an explicit sequence:
+
+1. capture current versions and health;
+2. create/verify the pre-release backup;
+3. stop or quiesce incompatible workers;
+4. apply migrations through the migration identity;
+5. deploy backend and worker versions;
+6. deploy frontend/proxy artifacts;
+7. run health and smoke checks;
+8. resume scheduling; and
+9. monitor for regression.
+
+## DEPLOY-055 — Application Rollback
+
+When schema compatibility permits, application artifacts may be rolled back to the
+last known good version. Database rollback is never assumed; migration compatibility
+and forward correction are preferred to destructive history reversal.
+
+## DEPLOY-056 — Failed Release
+
+A failed release stops further rollout, preserves logs and current data, and uses
+the reviewed recovery decision. Operators must not reset or recreate the database
+to obtain a clean deployment.
+
+# 13. Failure Modes
+
+## DEPLOY-057 — Database Unavailable
+
+The API becomes not ready and rejects writes safely. Workers stop acquiring new
+jobs. The system must not queue unverified financial writes in browser storage for
+later blind replay.
+
+## DEPLOY-058 — Worker Unavailable
+
+Interactive workflows may continue when safe, but scheduled work is visibly late
+and alerts fire. On restart, durable job state and idempotency allow safe catch-up.
+
+## DEPLOY-059 — External Rate Source Unavailable
+
+The automatic reference-rate step fails visibly. Authorized staff may use the
+approved manual ABA-equivalent reference Sell-rate fallback; the application still
+applies mandatory markup and upward rounding.
+
+## DEPLOY-060 — Storage Exhaustion
+
+Low-space alerts occur before writes fail. If durability cannot be guaranteed,
+services reject new writes rather than reporting false success.
+
+## DEPLOY-061 — Host Failure
+
+Services are restored on a prepared replacement host from versioned configuration,
+versioned application artifacts, and verified backups. Business continuity does
+not depend on undocumented state inside a failed container.
+
+# 14. Development and Test Deployment
+
+## DEPLOY-062 — Developer Compose
+
+Docker Compose provides reproducible local frontend, backend, PostgreSQL, and
+worker services. Development defaults use non-production secrets and isolated
+data volumes.
+
+## DEPLOY-063 — Test Isolation
+
+Automated tests use disposable databases or isolated schemas and must never point
+to production. Migration tests start from supported prior schema versions and
+verify upgrade integrity.
+
+## DEPLOY-064 — Seed Data
+
+Development/test seed data is synthetic and contains no real Customer credentials
+or business records. Seed operations are unavailable or strongly guarded in
+production.
+
+# 15. Security Alignment
+
+## DEPLOY-065 — Security Model Conformance
+
+Deployment must conform to `008_SECURITY_MODEL.md`, including least privilege,
+secret handling, TLS, restricted database exposure, capability enforcement, audit
+protection, and controlled remote access.
+
+## DEPLOY-066 — Runtime Identities
+
+Reverse proxy, API, worker, migration, backup, and database processes use separate
+identities where their privileges differ.
+
+## DEPLOY-067 — Host Security
+
+Production hosts require supported OS patches, restricted administrator access,
+firewall rules, time synchronization, protected storage, and documented ownership.
+
+# 16. Traceability
+
+| Deployment concern | Authoritative source |
+|---|---|
+| Technology direction | `AGENTS.md` |
+| Property-local business time | `BR-PROP-001`–`BR-PROP-003` |
+| Scheduled Reservation/Rent/Utility actions | `BR-RES-*`, `BR-RENT-*`, `BR-UTIL-*`, `BR-INV-050` |
+| Duplicate prevention/idempotency | `BR-RENT-004`, `BR-RENT-011`, `BR-INV-026`, `BR-INV-044` |
+| Financial transactions/history | `BR-INV-*`, `BR-PAY-*`, `BR-CREDIT-*`, `BR-REFUND-*`, `BR-SETTLE-*` |
+| Exchange-rate source/fallback | `BR-MONEY-004`–`BR-MONEY-010` |
+| Audit | `BR-AUDIT-001`–`BR-AUDIT-010` |
+| Authorization/security | `BR-AUTH-001`–`BR-AUTH-009`, `008_SECURITY_MODEL.md` |
+
+# 17. OPEN OWNER DECISION
+
+## OOD-DEPLOY-001 — Recovery Objectives
+
+**Question:** What maximum data-loss interval and restoration time are acceptable
+for the production installation?
+
+**Current treatment:** Backup frequency, retention, and restore automation remain
+configurable; no data-loss guarantee is invented.
+
+**Blocking:** No.
+
+## OOD-DEPLOY-002 — Production Host and LAN Address
+
+**Question:** Which physical/virtual host, stable hostname, certificate trust
+method, and LAN address will be used?
+
+**Current treatment:** The architecture defines required properties without
+selecting hardware or network identifiers.
+
+**Blocking:** No.
+
+## OOD-DEPLOY-003 — Remote Access Enablement
+
+**Question:** Will production enable remote user or administrator access, and
+through which approved controlled gateway?
+
+**Current treatment:** Disabled by default; optional architecture is specified.
+
+**Blocking:** No.
+
+# 18. Completion Criteria
+
+This Deployment Architecture is complete for Owner Review when:
+
+- runtime topology and network boundaries are explicit;
+- environment, secrets, health, restart, and scheduling behavior are defined;
+- migrations cannot silently destroy financial history;
+- backups are encrypted, verifiable, and restorable;
+- update and failure-recovery procedures are controlled;
+- Property-local scheduling and external-rate-source failure are handled safely;
+- no mandatory cloud dependency has been introduced; and
+- deployment-specific recovery, host, and remote-access choices remain explicit
+  OPEN OWNER DECISION items.
