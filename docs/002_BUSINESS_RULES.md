@@ -932,11 +932,13 @@ Pet Deposit must be recorded as a liability and not as:
 ## BR-DEP-010 — Pet Deposit Timing
 
 When a Customer will keep an approved pet from the beginning of occupancy, the
-applicable Pet Deposit must be fully paid before or at move-in.
+Pet Deposit required by the applicable signed Lease terms must be fully paid
+before or at move-in.
 
 When a Customer introduces or acquires a pet later, the Customer must notify
-Property Management and pay the applicable Pet Deposit before or when the pet
-begins staying in the Unit.
+Property Management. If the pet is approved and the applicable signed Lease terms
+require a Pet Deposit, that Deposit must be paid before or when the pet begins
+staying in the Unit.
 
 ---
 
@@ -1707,8 +1709,9 @@ was missed.
 
 ### BR-UTIL-025 — Three-complete-period Historical Basis
 
-When three complete historical actual periods exist for the same Unit and
-Utility Type, use those three complete periods as the historical basis.
+When three or more complete historical actual periods exist for the same Unit and
+Utility Type, use the three most recent complete historical actual periods before
+the affected broken-Meter period as the historical basis.
 
 ```text
 Weighted Historical Daily Average
@@ -3399,15 +3402,17 @@ accounting balance work. This rule authorizes no new forfeiture circumstance.
 ## BR-DEP-020 — Pet Introduced After Move-in
 
 A Customer who later wants to introduce or acquire a pet must notify Property
-Management and pay the applicable Pet Deposit before or when the pet begins
-staying in the Unit.
+Management. If the pet is approved and the applicable signed Lease terms require
+a Pet Deposit, that Deposit must be paid before or when the pet begins staying in
+the Unit.
 
 ---
 
 ## BR-DEP-021 — Undisclosed or Unauthorized Pet
 
-When an undisclosed pet is found, Property Management informs the Customer of the
-violation and requires the applicable Pet Deposit. The Lease must not be
+When an undisclosed or unauthorized pet is found, Property Management informs the
+Customer of the violation. A Pet Deposit is required only if the pet is approved
+and the applicable signed Lease terms require that Deposit. The Lease must not be
 terminated immediately and automatically merely because the pet was discovered.
 
 No additional pet penalty is created by this rule.

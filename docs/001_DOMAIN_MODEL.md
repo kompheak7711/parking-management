@@ -200,7 +200,9 @@ Customer roles are determined by their relationships with business entities rath
 
 ## Reservation
 
-A Reservation temporarily holds a Unit for one Customer before a Lease is signed.
+A Reservation temporarily holds a Unit for one Customer before move-in. It may
+coexist with a DRAFTED or SIGNED Lease for the same planned tenancy while the
+Reservation remains ACTIVE.
 
 A Reservation:
 
@@ -395,7 +397,8 @@ Property
     │      │
     │      └── Utility Readings
     │
-    ├── Invoices
+    ├── Customers
+    │      └── Invoices
     ├── Payments
     ├── Credits
     └── Final Settlement
@@ -424,7 +427,7 @@ The domain consists of the following Aggregate Roots.
 | Property         | Represents the apartment building managed by the application. |
 | Unit             | Represents a rentable residential unit.                       |
 | Customer         | Represents a person recorded by the business.                 |
-| Reservation      | Holds a Unit before a Lease is created.                       |
+| Reservation      | Holds a Unit for one Customer before move-in.                 |
 | Lease            | Represents the legal rental agreement.                        |
 | Utility Meter    | Represents a physical utility meter installed on a Unit.      |
 | Utility Reading  | Represents recorded meter readings used for billing.          |
@@ -895,27 +898,36 @@ Value Objects have no independent identity and exist only as part of an owning A
 # 12. Aggregate Ownership Summary
 
 ```text
-Property
-└── Unit
-      ├── Reservation
-      │      └── Reservation Extension Notice
-      │
-      ├── Lease
-      │      ├── Lease Signers
-      │      └── Occupancy
-      │
-      ├── Utility Meter
-      │      └── Utility Reading
-      │
-      ├── Invoice
-      │
-      ├── Deposit
-      │
-      └── Final Settlement
+PROPERTY
 
-Payment
+UNIT
+
+CUSTOMER
+
+RESERVATION
+└── Reservation Extension Notice
+
+LEASE
+├── Lease Signers
+└── Occupancy
+
+UTILITY METER
+└── Utility Reading
+
+INVOICE
+
+DEPOSIT
+
+FINAL SETTLEMENT
+
+PAYMENT
 └── Payment Allocation
 ```
+
+Each item shown at the left margin is an Aggregate Root. Nested items are owned
+supporting entities. Relationships among Aggregate Roots, including mandatory
+Invoice Customer ownership and optional Lease association, are defined in
+sections 14 and 15 rather than by nesting one Aggregate Root inside another.
 
 ---
 
@@ -946,8 +958,8 @@ Property
       │      ├── Lease Signers (Customer)
       │      ├── Occupants (Customer)
       │      ├── Deposit
-      │      ├── Invoice
-      │      └── Final Settlement
+      │      ├── Associated Invoice (optional per Invoice)
+      │      └── Final Settlement (exactly one when TERMINATED)
       │
       ├── Utility Meter
       │      └── Utility Reading
@@ -959,6 +971,12 @@ Payment
 └── Payment Allocation
       │
       └── Invoice
+
+Customer
+│
+└── Invoice (exactly one Customer per Invoice)
+
+Invoice ─────── optional zero-or-one association ───────► Lease
 ```
 
 The domain follows the natural business lifecycle of a rental unit.
@@ -1424,39 +1442,42 @@ Rules
 ## 16.7 Invoice Lifecycle
 
 ```text
-Generated
-     │
-     ▼
-Unpaid
-     │
- ┌───┴─────────────┐
- ▼                 ▼
-Partial Paid    Fully Paid
- │
- ▼
-Fully Paid
+DRAFT
+  │
+  ├──────────────► VOID
+  │
+  ▼
+UNPAID
+  │
+  ├──────────────► VOID
+  ├──────────────► PAID
+  │
+  ▼
+PARTIALLY_PAID
+  │
+  ├──────────────► PAID
+  └──────────────► VOID only after required financial reversals
 ```
 
-Invoices may also be voided under authorized business procedures while preserving history.
+Invoice status is determined by the approved issuance, allocation, Credit,
+Deposit-application, reversal, and voiding rules in `002_BUSINESS_RULES.md`.
+Voiding always preserves history.
 
 ---
 
 ## 16.8 Payment Lifecycle
 
 ```text
-Payment Received
-        │
-        ▼
-Recorded
-        │
-        ▼
-Allocated
-        │
-        ▼
-Completed
+RECEIVED ─────────────────────────────► REVERSED
+    │
+    ├── unallocated          (derived allocation condition)
+    ├── partially allocated  (derived allocation condition)
+    └── fully allocated      (derived allocation condition)
 ```
 
-Overpayments may create Customer Credit rather than remaining unallocated indefinitely.
+Allocation progress is not a Payment receipt status. Unallocated excess remains
+part of the RECEIVED Payment until the payer authorizes an approved Credit or
+Refund disposition.
 
 ---
 
@@ -1848,7 +1869,8 @@ Payment allocation determines how received money is applied.
 
 The domain supports multiple payment methods.
 
-Specific accepted payment methods are configurable business concerns and will be defined in later specifications.
+`002_BUSINESS_RULES.md` establishes that accepted Payment Methods are configured
+business data rather than a hard-coded list.
 
 The selected payment method must remain part of the historical Payment record.
 
@@ -1878,7 +1900,7 @@ Payment $500
    │
    ├── $300 → Rent Invoice
    ├── $100 → Utility Invoice
-   └── $100 → Customer Credit
+   └── $100 → remains unallocated until an authorized disposition
 ```
 
 Payment and allocation are intentionally separate business concepts.
@@ -1909,7 +1931,10 @@ An Overpayment occurs when money received exceeds the amount currently allocated
 
 Overpayment must not cause an Invoice balance to become negative.
 
-The excess amount becomes available Customer Credit unless it is refunded or otherwise resolved according to authorized business rules.
+The excess remains part of the original RECEIVED Payment until the payer chooses
+and authorizes an approved disposition. It becomes Customer Credit only after the
+required authorization; it may instead be refunded or otherwise resolved under
+an approved rule.
 
 Example:
 
@@ -1918,7 +1943,7 @@ Outstanding Invoice: $400
 Payment received:     $500
 
 Allocated:            $400
-Customer Credit:      $100
+Unallocated excess:   $100
 ```
 
 ---
@@ -2400,7 +2425,8 @@ The following financial invariants must always hold.
 ### Credit Integrity
 
 - Overpayment does not produce a negative Invoice balance.
-- Excess money becomes Customer Credit unless otherwise resolved.
+- Excess money remains part of the RECEIVED Payment until an authorized Credit,
+  Refund, or other approved disposition is recorded.
 - Customer Credit and Deposit balances are different concepts.
 
 ### Deposit Integrity
@@ -2411,7 +2437,10 @@ The following financial invariants must always hold.
 - Deposits are liabilities.
 - Deposits cannot be used for ordinary monthly payment allocation while the Lease remains active.
 - Deposit application occurs only during Final Settlement.
-- Deposit refunds occur only after the applicable Lease has ended and settlement rules permit the refund.
+- A Property-caused Reservation cancellation may require a Security Deposit Refund
+  before a Lease exists.
+- For a Deposit associated with a Lease, Refund occurs only after the Lease has
+  ended and settlement rules permit it.
 
 ### Rate Integrity
 
@@ -3895,7 +3924,9 @@ Move-in coordinates:
 
 ## Move-out
 
-The business process through which a tenancy ends physically and financially.
+The business process through which occupancy ends physically and the inputs for
+later financial closure are collected. Financial closure occurs through Final
+Settlement, which may remain pending after move-out.
 
 Move-out may include:
 
@@ -4054,12 +4085,12 @@ selected rate applies to the entire represented consumption period.
 
 ## Service Charge
 
-A recurring or one-time service-related charge.
+A fixed recurring service-related charge.
 
 Current recurring services include:
 
 - Internet
-- Trash
+- Trash Collection
 
 ---
 
@@ -4110,7 +4141,8 @@ A Payment or Payment Allocation that satisfies only part of an outstanding Invoi
 
 A Payment amount greater than the obligations to which it is allocated.
 
-Unused value becomes available Customer Credit unless otherwise resolved.
+Unused value remains part of the RECEIVED Payment until the payer authorizes an
+approved Customer Credit, Refund, or other disposition.
 
 ---
 
@@ -4468,7 +4500,7 @@ PROPERTY
     │   │
     │   ├── Reservation Extension Notice
     │   │
-    │   └── SECURITY DEPOSIT
+    │   ├── SECURITY DEPOSIT
     │   │
     │   └──────────────► resulting LEASE
     │
@@ -4486,7 +4518,7 @@ PROPERTY
     │   │
     │   ├── optionally associated INVOICES
     │   │
-    │   └── FINAL SETTLEMENT
+    │   └── FINAL SETTLEMENT (exactly one when TERMINATED)
     │
     └── UTILITY METERS
         │
@@ -4563,15 +4595,10 @@ ACTIVE TENANCY
     └── Customer Credit
     │
     ▼
-TERMINATION NOTICE
+AUTHORIZED TERMINATION AND MOVE-OUT PROCESS
     │
-    ▼
-LEASE TERMINATED
-    │
-    ▼
-MOVE-OUT
-    │
-    ├── Occupancy ends
+    ├── Lease becomes TERMINATED through the approved business action
+    ├── Occupancy ends on the actual Move-out Date
     ├── Final readings
     ├── Inspection
     └── Final charges
@@ -4876,11 +4903,11 @@ its financial lifecycle.
 
 ---
 
-# 102. Matters Deferred to Later Documents
+# 102. Specification Responsibilities
 
-This Domain Model deliberately does not define every operational rule.
-
-The following details are deferred.
+This Domain Model defines the core concepts and invariants. The completed
+`002_BUSINESS_RULES.md` defines approved operational policy. Implementation and
+product details remain assigned to the later numbered specifications.
 
 ## `002_BUSINESS_RULES.md`
 
@@ -5084,7 +5111,9 @@ This Domain Model is considered complete for the initial architecture phase when
 - Which areas of the business own which concepts?
 - Which implementation concerns are intentionally deferred?
 
-Detailed operational formulas and authorization conditions remain intentionally deferred to the Business Rules and later specifications.
+Detailed operational formulas and authorization conditions are defined in
+`002_BUSINESS_RULES.md`. Product and implementation concerns remain assigned to
+the applicable later numbered specifications.
 
 ---
 
