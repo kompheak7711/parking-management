@@ -1,0 +1,564 @@
+# 008 — Security Model
+
+**Document Status:** Owner Review
+**Authority:** Downstream of `001_DOMAIN_MODEL.md`, `002_BUSINESS_RULES.md`, and the applicable requirements and technical specifications in `003`–`007`
+**Scope:** Security architecture and controls for the Property Rental Management System
+**Rule identifiers:** `SEC-*`
+
+---
+
+# 1. Purpose
+
+This document defines the security properties required to protect customer data,
+financial records, credentials, operational availability, and audit history. It
+does not assign business authority that has not been approved by the Owner.
+
+Security controls must preserve the domain and financial invariants in
+`001_DOMAIN_MODEL.md` and `002_BUSINESS_RULES.md`. A security mechanism must not
+provide a bypass around a business action, status transition, calculation,
+authorization, or audit requirement.
+
+# 2. Security Principles
+
+## SEC-001 — Least Privilege
+
+Every authenticated actor, service, scheduled job, and database connection must
+receive only the capabilities required for its approved function.
+
+## SEC-002 — Deny by Default
+
+Access is denied unless an authenticated actor has an explicitly configured
+capability for the requested action and its Property scope.
+
+## SEC-003 — Capability-based Authorization
+
+Authorization is defined by granular capabilities. Role names are configurable
+bundles of capabilities rather than sources of hard-coded business authority.
+Exact staff-to-role assignments remain configurable because the Owner has not
+approved a fixed organizational role map.
+
+## SEC-004 — Defense in Depth
+
+UI visibility, API authorization, service-layer validation, database constraints,
+and audit controls must reinforce one another. Hiding a UI control is not an
+authorization control.
+
+## SEC-005 — Historical Integrity
+
+Security controls must prevent silent deletion or mutation of audit-sensitive and
+financial history, consistent with `BR-AUDIT-001` through `BR-AUDIT-010`.
+
+## SEC-006 — Minimize Sensitive Data
+
+The system must collect, display, export, log, and retain only data necessary for
+the approved property-management workflows.
+
+# 3. Protected Assets
+
+## SEC-007 — Asset Classes
+
+Protected assets include:
+
+- Customer identity and contact information;
+- Reservation, Lease, signer, Occupant, and warning-letter records;
+- Deposit, Invoice, Adjustment, Payment, Allocation, Credit, Refund, Reversal,
+  and Final Settlement records;
+- Utility Meter, Reading, Rate, and calculated billing information;
+- exchange-rate source and calculation evidence;
+- authorization and audit records;
+- user identities, credentials, sessions, and capability assignments;
+- application configuration, secrets, backups, and migration history; and
+- service availability and recovery materials.
+
+## SEC-008 — Security Classification
+
+At minimum, data is classified as:
+
+- **Restricted:** credentials, secret keys, session material, backup encryption
+  keys;
+- **Confidential:** Customer data, Lease documents, financial details, audit actor
+  data;
+- **Internal:** operational configuration, monitoring, non-public reports; or
+- **Public:** content deliberately designated for public disclosure.
+
+Restricted and Confidential data must not appear in unauthenticated responses or
+ordinary application logs.
+
+# 4. Authentication
+
+## SEC-009 — Unique User Identity
+
+Every human user must authenticate with a unique account. Shared staff accounts
+are prohibited because they prevent reliable attribution.
+
+## SEC-010 — Authentication Provider Properties
+
+The configured authentication mechanism must provide:
+
+- secure credential verification;
+- account disablement;
+- credential reset or recovery under an auditable administrative process;
+- protection against automated guessing;
+- session revocation; and
+- stable actor identity for audit events.
+
+The exact authentication provider is a technical deployment choice and must not
+change business authorization semantics.
+
+## SEC-011 — Password Storage
+
+When local passwords are used, only salted, adaptive password hashes using a
+currently accepted password-hashing algorithm may be stored. Plaintext,
+reversible encryption, unsalted hashing, and security-question recovery are
+prohibited.
+
+## SEC-012 — Authentication Rate Limiting
+
+Login and recovery endpoints must be rate-limited by account and source while
+avoiding account-enumeration disclosures.
+
+## SEC-013 — Multi-factor Authentication
+
+The authentication architecture must support multi-factor authentication for
+high-privilege and remote-access users. Whether MFA is mandatory for each
+deployment is a configurable security policy, not a new business authority.
+
+## SEC-014 — Account Lifecycle
+
+Account creation, disablement, capability changes, credential resets, and session
+revocation require an authorized actor and an immutable audit event.
+
+# 5. Session Security
+
+## SEC-015 — Session Tokens
+
+Session identifiers or access tokens must be unpredictable, time-bounded, scoped,
+and transmitted only over protected channels. Tokens must not be stored in
+application logs or URLs.
+
+## SEC-016 — Browser Session Protection
+
+Cookie-based browser sessions must use `Secure`, `HttpOnly`, and an appropriate
+`SameSite` policy. State-changing browser requests require CSRF protection when
+the authentication design is susceptible to CSRF.
+
+## SEC-017 — Session Expiration and Revocation
+
+Sessions must have configurable idle and absolute lifetimes. Password reset,
+account disablement, or a material privilege reduction must support prompt session
+revocation.
+
+## SEC-018 — Reauthentication
+
+Deployments must be able to require recent authentication or an additional factor
+for high-risk administration. Reauthentication does not replace the business
+authorization and confirmation requirements for financial actions.
+
+# 6. Authorization Model
+
+## SEC-019 — Property Scope
+
+Every business authorization check must include the applicable Property scope.
+The initial domain contains one Property, but the security boundary must not rely
+solely on client-supplied identifiers.
+
+## SEC-020 — Capability Families
+
+The configurable capability catalog must distinguish at least:
+
+- read and manage Property configuration;
+- read and manage Units and Customers;
+- create, extend, cancel, and complete Reservations;
+- draft, sign, renew, terminate, and inspect Leases;
+- manage Lease Signers and Occupants;
+- record move-in, warnings, and move-out evidence;
+- manage Meters, Readings, Utility Rates, and Service Rates;
+- generate, issue, adjust, and exceptionally void Invoices;
+- confirm and reverse Payments;
+- post and reverse Payment Allocations;
+- recognize and apply Customer Credit;
+- create and correct Refunds;
+- record Deposit receipts, applications, dispositions, and Refunds;
+- prepare and close Final Settlements;
+- manage exchange-rate fallback entries;
+- view and export reports;
+- view audit history;
+- manage user accounts, role bundles, and capabilities; and
+- operate migrations, backups, restore, and deployment administration.
+
+## SEC-021 — Configurable Role Bundles
+
+A deployment may group capabilities into named roles, but role names and their
+capability mappings are configured data. Specifications and code must authorize
+capabilities, not assume that a role title inherently grants a financial right.
+
+## SEC-022 — Separation of Capabilities
+
+Capabilities for entering source data, authorizing a financial action, reversing
+that action, viewing audit history, and administering permissions must remain
+separable. A deployment may assign multiple capabilities to one person, but the
+system must not require that combination.
+
+## SEC-023 — Server-side Enforcement
+
+Every API action and scheduled operation must enforce authorization on the
+server. Client-provided status, owner, Property, Customer, Lease, amount, rate,
+balance, or authorization assertions are untrusted.
+
+# 7. Financial-operation Security
+
+## SEC-024 — Explicit Financial Actions
+
+Financial changes must use explicit business operations rather than unrestricted
+record mutation. This includes issuance, Adjustment, voiding, Payment
+confirmation, Allocation, Credit application, Refund, Reversal, Deposit
+application/disposition, and Settlement closure.
+
+## SEC-025 — Required Financial Authorization
+
+The API/service layer must enforce the authorization requirements in
+`BR-AUTH-001` through `BR-AUTH-009`. Possession of database or generic edit access
+must not imply authority for a financial action.
+
+## SEC-026 — Trusted Calculations
+
+Invoice balances, allocation availability, Credit balances, Deposit balances,
+Settlement results, Utility consumption, proration, and KHR conversion must be
+calculated or verified by trusted server-side logic. Callers must not set derived
+balances or statuses directly.
+
+## SEC-027 — Exchange-rate Fallback
+
+Manual entry of an ABA-equivalent reference Sell rate is permitted only when the
+automatic source is unavailable and the actor has the configured capability. The
+server must still apply the mandatory `1.005` multiplier and both upward-rounding
+rules from `BR-MONEY-004` through `BR-MONEY-010`.
+
+## SEC-028 — Idempotency and Replay Protection
+
+Financial and scheduled commands that may be retried must use idempotency and
+uniqueness controls. Replayed requests must return the prior result or a conflict
+without duplicating a receipt, Invoice, Allocation, Credit, Refund, or Reversal.
+
+## SEC-029 — Concurrency Protection
+
+Concurrent financial actions must lock or version the affected aggregate and
+revalidate limits inside one database transaction. Authorization checked before
+a stale read must be checked again when required at execution time.
+
+# 8. Audit and Tamper Resistance
+
+## SEC-030 — Audit Event Minimum
+
+Every security-sensitive or business-significant action must preserve:
+
+- actor identity or system job identity;
+- Property scope;
+- action and target type/identifier;
+- timestamp in UTC and relevant Property-local business date;
+- previous and resulting state or linked source event;
+- reason and authorization evidence where required;
+- correlation/request identifier; and
+- outcome, including rejected high-risk attempts where safe to record.
+
+## SEC-031 — Append-only Audit Storage
+
+Ordinary application roles must not update or delete audit events. Audit storage
+must use append-only application permissions and database controls. Corrections
+create new linked events.
+
+## SEC-032 — Audit Access
+
+Audit viewing and export require separate capabilities. Audit data must be
+filtered to authorized Property scope and must not expose secrets.
+
+## SEC-033 — Clock Integrity
+
+Application, worker, and database hosts must use reliable time synchronization.
+Audit timestamps are recorded in UTC; Property-local dates retain the configured
+timezone context.
+
+## SEC-034 — Audit Monitoring
+
+Monitoring should alert on repeated authentication failures, permission changes,
+financial reversals, exceptional Invoice voids, manual exchange-rate fallback,
+backup failures, restore attempts, and audit-write failures.
+
+# 9. API and Input Security
+
+## SEC-035 — Transport Security
+
+All browser and API traffic must use TLS, including LAN deployments unless an
+explicitly isolated terminating reverse proxy provides the protected channel.
+Plain HTTP must not carry credentials or session tokens.
+
+## SEC-036 — Input Validation
+
+The API must validate type, length, format, allowed values, date ranges, money
+units, identifiers, file metadata, and cross-resource relationships before use.
+Validation must occur before business processing and again at database boundaries
+through constraints where appropriate.
+
+## SEC-037 — Injection Prevention
+
+Database access must use parameterized queries. Templates and UI rendering must
+escape untrusted data by context. Shell commands must not interpolate untrusted
+values. Unsafe deserialization and dynamic code execution are prohibited.
+
+## SEC-038 — Object-level Authorization
+
+Every request referencing a Customer, Unit, Reservation, Lease, Invoice, Payment,
+or other record must verify the actor may access that exact object and its
+Property. Sequential or guessed identifiers must not bypass authorization.
+
+## SEC-039 — Error Responses
+
+External errors must be consistent and must not disclose stack traces, SQL,
+credentials, configuration paths, or unauthorized record existence. Detailed
+diagnostics belong in protected logs correlated by an error identifier.
+
+## SEC-040 — Pagination and Resource Limits
+
+List, search, export, and upload operations require bounded pagination, size
+limits, timeouts, and rate controls to prevent accidental or malicious resource
+exhaustion.
+
+# 10. Customer Data Protection
+
+## SEC-041 — Field-level Minimization
+
+Customer lists and search results should expose only fields needed for the current
+workflow. More sensitive details require explicit navigation and authorization.
+
+## SEC-042 — Export Protection
+
+Customer and financial exports require an export capability, an audit event, and
+bounded scope. Export files must be protected in transit and removed from temporary
+storage according to a configured retention policy.
+
+## SEC-043 — Logging Redaction
+
+Logs must redact credentials, tokens, full request bodies containing Customer or
+financial data, and secrets. Identifiers may be logged only where needed for
+operability and audit correlation.
+
+## SEC-044 — Browser Data Handling
+
+Sensitive data must not be persisted in browser local storage unless a reviewed
+security design requires it. Logout and session expiration must remove accessible
+session material.
+
+# 11. Database Security
+
+## SEC-045 — Separate Database Identities
+
+Application runtime, migrations, backup, restore, and human administration must
+use separate database identities with least-privilege grants.
+
+## SEC-046 — Application Database Privilege
+
+The runtime identity must not own the schema, disable triggers, alter constraints,
+or delete append-only audit/financial records through ordinary operations.
+
+## SEC-047 — Administrative Access
+
+Direct production database access is exceptional, restricted, logged where
+practical, and performed through controlled administration paths. Direct edits to
+financial history are prohibited.
+
+## SEC-048 — Constraint Integrity
+
+Database constraints and transactions form part of the security boundary against
+malformed or concurrent writes. Application authorization does not justify
+removing integrity constraints.
+
+# 12. Secrets and Credentials
+
+## SEC-049 — Secret Sources
+
+Secrets must come from protected deployment configuration or a secret-management
+mechanism. They must never be committed to Git, embedded in images, printed in
+logs, or included in client bundles.
+
+## SEC-050 — Secret Separation
+
+Development, test, staging, and production use distinct secrets. Backup encryption
+keys and database credentials must be separate from ordinary application secrets.
+
+## SEC-051 — Rotation
+
+Deployments must support rotation of signing keys, database credentials, external
+service credentials, and backup keys without rewriting historical business data.
+
+# 13. Backups and Recovery Security
+
+## SEC-052 — Encrypted Backups
+
+Backups containing Confidential or Restricted data must be encrypted at rest and
+in transit. Access to backup data and keys must be separately controlled.
+
+## SEC-053 — Backup Integrity
+
+Backups must include integrity verification and enough metadata to identify
+application version, schema migration version, creation time, and scope.
+
+## SEC-054 — Restore Authorization
+
+Restore is a privileged operational action requiring explicit authorization,
+recorded operator identity, target environment verification, and a documented
+procedure that prevents accidental overwrite of the wrong database.
+
+## SEC-055 — Restore Testing
+
+Backups are not considered reliable until periodic restoration tests verify that
+schema, business data, financial history, and audit records can be recovered.
+Test restores must protect or sanitize Customer data.
+
+# 14. LAN and Remote Access
+
+## SEC-056 — LAN Deployment Boundary
+
+LAN hosting reduces public exposure but is not a trust substitute. Authentication,
+authorization, TLS, patching, audit, and backup controls remain mandatory.
+
+## SEC-057 — Network Exposure
+
+Only the reverse proxy or approved application entry point should be reachable by
+ordinary clients. PostgreSQL, internal backend ports, worker controls, and
+administration interfaces must not be broadly exposed.
+
+## SEC-058 — Controlled Remote Access
+
+Remote administration or user access is optional and disabled unless deliberately
+configured. When enabled, it must use an authenticated encrypted access layer such
+as a managed VPN or equivalent controlled gateway, with MFA support, source
+restrictions where practical, and audit logging.
+
+## SEC-059 — No Required Cloud Dependency
+
+Core local operation must not require a new cloud service. Optional external
+identity, exchange-rate retrieval, monitoring, or remote-access services must fail
+safely and must not weaken local business integrity.
+
+# 15. Application and Dependency Security
+
+## SEC-060 — Supported Components
+
+Frontend, backend, database, reverse proxy, base images, and dependencies must be
+maintained at supported security patch levels under a controlled update process.
+
+## SEC-061 — Dependency Review
+
+Dependency changes require review of provenance, licensing, maintenance, known
+vulnerabilities, and necessity. Lockfiles and reproducible builds must be used
+where supported.
+
+## SEC-062 — Secure Build and Delivery
+
+Build artifacts must be produced from reviewed source, exclude development
+secrets, and be identifiable by version or commit. Deployment must not execute
+unreviewed scripts from writable runtime data directories.
+
+## SEC-063 — File Handling
+
+If later requirements permit document or evidence uploads, allowed type, size,
+name, storage path, and malware controls must be specified before enabling them.
+This document does not itself authorize a new upload feature.
+
+# 16. Logging, Monitoring, and Incident Response
+
+## SEC-064 — Operational Logging
+
+Services must emit structured logs with timestamp, severity, service, environment,
+correlation identifier, and safe diagnostic context. Audit events remain distinct
+from ordinary diagnostic logs.
+
+## SEC-065 — Log Protection
+
+Logs must be access-controlled, protected from casual alteration, rotated, and
+retained according to configured operational policy without retaining secrets.
+
+## SEC-066 — Security Alerts
+
+Deployments must support alerts for authentication abuse, privilege changes,
+critical service failure, database unavailability, migration failure, scheduled
+billing failure, audit-write failure, low backup freshness, and low disk capacity.
+
+## SEC-067 — Incident Procedure
+
+A documented incident procedure must cover containment, credential/session
+revocation, evidence preservation, recovery, validation of financial history, and
+post-incident review.
+
+# 17. Security Verification
+
+## SEC-068 — Required Security Tests
+
+The testing strategy must cover:
+
+- authentication success, failure, lockout/rate limiting, and revocation;
+- capability and object-level authorization for every protected action;
+- financial action bypass attempts;
+- CSRF, injection, XSS, unsafe file/path, and sensitive-error controls;
+- concurrency and idempotency for financial operations;
+- append-only audit behavior;
+- secret and log redaction;
+- backup integrity and restore authorization; and
+- remote-access-disabled defaults.
+
+## SEC-069 — Security Review Gate
+
+Changes to authentication, authorization, financial endpoints, audit storage,
+secret handling, backup/restore, or network exposure require focused security
+review before deployment.
+
+# 18. OPEN OWNER DECISION
+
+## OOD-SEC-001 — Staff Role Mapping
+
+**Question:** Which named staff roles receive each capability bundle in the live
+business?
+
+**Current treatment:** Capability definitions and role bundles are configurable.
+No role name is granted an irreversible financial authority by this specification.
+
+**Blocking:** No. Database, API, UI, and testing designs can enforce capabilities
+without fixing the Owner's organizational mapping.
+
+## OOD-SEC-002 — Mandatory MFA Scope
+
+**Question:** Which users or access paths must use MFA in the production
+deployment?
+
+**Current treatment:** The architecture supports MFA; it is strongly required for
+high-privilege and remote access but the exact mandatory mapping is configurable
+pending Owner confirmation.
+
+**Blocking:** No.
+
+# 19. Traceability Summary
+
+| Security area | Upstream authority |
+|---|---|
+| Financial authorization | `BR-AUTH-001`–`BR-AUTH-009` |
+| Audit reconstruction | `BR-AUDIT-001`–`BR-AUDIT-010` |
+| Payment and Allocation integrity | `BR-PAY-001`–`BR-PAY-035` |
+| Credit and Refund integrity | `BR-CREDIT-001`–`BR-CREDIT-012`, `BR-REFUND-001`–`BR-REFUND-012` |
+| Invoice lifecycle and correction | `BR-INV-001`–`BR-INV-050` |
+| Deposit and Settlement controls | `BR-DEP-001`–`BR-DEP-025`, `BR-SETTLE-001`–`BR-SETTLE-015` |
+| Currency and exchange integrity | `BR-MONEY-001`–`BR-MONEY-013` |
+| Property-local time and history | `BR-PROP-001`–`BR-PROP-003`, `BR-AUDIT-001`–`BR-AUDIT-010` |
+
+# 20. Completion Criteria
+
+This Security Model is complete for Owner Review when:
+
+- every protected business action is capability-gated server-side;
+- authentication and session properties are specified without inventing staff
+  authority;
+- financial records and audit history cannot be silently mutated;
+- Customer data, secrets, backups, database access, and logs have explicit
+  protections;
+- LAN and optional remote-access assumptions are explicit;
+- security verification requirements are traceable; and
+- unresolved role/MFA mappings remain configurable OPEN OWNER DECISION items.
