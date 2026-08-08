@@ -4905,9 +4905,10 @@ its financial lifecycle.
 
 # 102. Specification Responsibilities
 
-This Domain Model defines the core concepts and invariants. The completed
-`002_BUSINESS_RULES.md` defines approved operational policy. Implementation and
-product details remain assigned to the later numbered specifications.
+This Domain Model defines the core concepts and invariants.
+`002_BUSINESS_RULES.md` defines approved operational policy and explicitly records
+any unresolved Owner-policy item. Implementation and product details remain
+assigned to the later numbered specifications.
 
 ## `002_BUSINESS_RULES.md`
 
@@ -5112,8 +5113,9 @@ This Domain Model is considered complete for the initial architecture phase when
 - Which implementation concerns are intentionally deferred?
 
 Detailed operational formulas and authorization conditions are defined in
-`002_BUSINESS_RULES.md`. Product and implementation concerns remain assigned to
-the applicable later numbered specifications.
+`002_BUSINESS_RULES.md`, except for any item explicitly labeled there as an
+`OPEN OWNER DECISION`. Product and implementation concerns remain assigned to the
+applicable later numbered specifications.
 
 ---
 

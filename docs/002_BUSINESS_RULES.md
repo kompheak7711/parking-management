@@ -3869,17 +3869,39 @@ require authorization and complete audit history.
 
 ---
 
-# 30. Completion and Cross-rule Consistency
+# 30. OPEN OWNER DECISION
 
-## 30.1 Authoritative Scope
+## OOD-BR-001 — First Partial-month Rent Due Date
 
-This document completes the business-policy matters delegated to Business Rules
-by `001_DOMAIN_MODEL.md` using the approved Owner decisions. Implementations must
-not reinterpret these rules to create new statuses, charges, fees, penalties,
-currencies, exchange providers, estimation methods, termination rights, Refund
-rights, or authorization policies.
+**Question:** When a first partial-month Rent Invoice is issued after the 5th day
+of that billed month, what exact Due Date applies if the signed Lease does not
+explicitly provide one?
 
-## 30.2 Consistent Invoice Ownership and Association
+`BR-RENT-005` requires the first partial-month Invoice after a mid-month move-in.
+`BR-RENT-009` defines the normal recurring Due Date as the 5th of the billed month
+unless the Lease specifies another date. Neither rule determines a non-past Due
+Date for this exact first-partial-period case.
+
+**Current treatment:** No fallback Due Date is selected. Downstream specifications
+must keep the Due Date explicit/configurable for this case and must not infer a
+new fee, penalty, default, or collection right.
+
+**Blocking:** No for the general specification architecture. This decision blocks
+only final behavior and expected-value tests for this exact scenario.
+
+---
+
+# 31. Completion and Cross-rule Consistency
+
+## 31.1 Authoritative Scope
+
+This document defines the approved business-policy matters delegated to Business
+Rules by `001_DOMAIN_MODEL.md` and explicitly identifies the remaining open item
+in section 30. Implementations must not reinterpret these rules to create new
+statuses, charges, fees, penalties, currencies, exchange providers, estimation
+methods, termination rights, Refund rights, or authorization policies.
+
+## 31.2 Consistent Invoice Ownership and Association
 
 `001_DOMAIN_MODEL.md` and this document use the same approved Invoice model:
 
@@ -3891,7 +3913,7 @@ rights, or authorization policies.
 - optional Lease association does not authorize arbitrary non-Lease charges or
   new Invoice categories.
 
-## 30.3 Consistent Utility Rate and Pet Deposit Policies
+## 31.3 Consistent Utility Rate and Pet Deposit Policies
 
 `001_DOMAIN_MODEL.md` and this document also use the same approved policies for:
 
@@ -3904,19 +3926,19 @@ rights, or authorization policies.
 
 The two authoritative documents are mutually consistent on these policies.
 
-## 30.4 Stable Rule Identifiers
+## 31.4 Stable Rule Identifiers
 
 Every `BR-*` identifier in this document is unique and is the stable reference
 for downstream specifications. A rule must not be reinterpreted through an older
 placeholder document.
 
-## 30.5 Financial Integrity
+## 31.5 Financial Integrity
 
 Original financial records remain permanent. Corrections use explicit linked
 Adjustment, Reversal, application, disposition, Credit, Refund, or other approved
 events so that every balance and historical fact can be reconstructed.
 
-## 30.6 Downstream Conformance
+## 31.6 Downstream Conformance
 
 Database, API, UI, testing, security, and deployment specifications must conform
 to this document and `001_DOMAIN_MODEL.md`. Any new material policy requires
