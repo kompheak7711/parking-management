@@ -3,7 +3,7 @@
 **Project:** Property Rental Management System
 **Document:** Domain Model
 **Version:** 1.0
-**Status:** Draft
+**Status:** Owner Review
 **Audience:** Product Owner, Business Analysts, Software Architects, Developers, QA Engineers
 
 ---
@@ -1510,21 +1510,21 @@ Once closed, the Settlement becomes a permanent historical record.
 
 The following business invariants span multiple Aggregates and must always remain true.
 
-### Unit Availability
+## Unit Availability
 
 - A Unit cannot have more than one active Reservation.
 - A Unit cannot have more than one signed Lease.
 
 ---
 
-### Reservation Integrity
+## Reservation Integrity
 
 - Every Reservation belongs to exactly one Unit.
 - Every Reservation belongs to exactly one Customer.
 
 ---
 
-### Lease Integrity
+## Lease Integrity
 
 - Every Lease has exactly one Primary Tenant.
 - The Primary Tenant must also be a Lease Signer.
@@ -1532,7 +1532,7 @@ The following business invariants span multiple Aggregates and must always remai
 
 ---
 
-### Occupancy Integrity
+## Occupancy Integrity
 
 - Occupancy records determine who lives in the Unit.
 - Lease Signers determine contractual responsibility.
@@ -1540,14 +1540,14 @@ The following business invariants span multiple Aggregates and must always remai
 
 ---
 
-### Utility Integrity
+## Utility Integrity
 
 - Historical Utility Readings always remain linked to the Utility Meter that produced them.
 - Replacing a Utility Meter never alters historical billing records.
 
 ---
 
-### Financial Integrity
+## Financial Integrity
 
 - Deposits are liabilities.
 - Payments never disappear.
@@ -2409,27 +2409,27 @@ Technical audit storage and authorization rules are defined in later architectur
 
 The following financial invariants must always hold.
 
-### Invoice Integrity
+## Invoice Integrity
 
 - An Invoice represents a real financial obligation.
 - Historical Invoice amounts remain reconstructable.
 - An Invoice cannot have a negative outstanding balance.
 
-### Payment Integrity
+## Payment Integrity
 
 - Payments cannot silently disappear.
 - Payment Allocation is separate from Payment receipt.
 - One Payment may be allocated across multiple Invoices.
 - Partial allocation is supported.
 
-### Credit Integrity
+## Credit Integrity
 
 - Overpayment does not produce a negative Invoice balance.
 - Excess money remains part of the RECEIVED Payment until an authorized Credit,
   Refund, or other approved disposition is recorded.
 - Customer Credit and Deposit balances are different concepts.
 
-### Deposit Integrity
+## Deposit Integrity
 
 - Security Deposit is mandatory.
 - Security Deposit may be partially paid.
@@ -2442,12 +2442,12 @@ The following financial invariants must always hold.
 - For a Deposit associated with a Lease, Refund occurs only after the Lease has
   ended and settlement rules permit it.
 
-### Rate Integrity
+## Rate Integrity
 
 - Historical rates must remain preserved.
 - Current rate changes never rewrite historical charges.
 
-### Audit Integrity
+## Audit Integrity
 
 - Financial corrections use explicit reversal, adjustment, void, allocation, application, or refund actions.
 - Financial history must never be silently rewritten or deleted.
@@ -3407,7 +3407,7 @@ Some operations require multiple Aggregates to participate in one business workf
 
 Examples include:
 
-### Reservation Creation
+## Reservation Creation
 
 Coordinates:
 
@@ -3421,7 +3421,7 @@ Reservation
 Security Deposit
 ```
 
-### Move-in
+## Move-in
 
 Coordinates:
 
@@ -3437,7 +3437,7 @@ Occupancy
 Unit
 ```
 
-### Utility Billing
+## Utility Billing
 
 Coordinates:
 
@@ -3457,7 +3457,7 @@ Generation-date Utility Rate
 Invoice
 ```
 
-### Payment Processing
+## Payment Processing
 
 Coordinates:
 
@@ -3473,7 +3473,7 @@ Invoice
 Customer Credit
 ```
 
-### Move-out
+## Move-out
 
 Coordinates:
 
@@ -4935,7 +4935,7 @@ Defines rules such as:
 
 ## `003_PRODUCT_REQUIREMENTS.md`
 
-Will define:
+Defines:
 
 - system capabilities
 - user workflows
@@ -4947,7 +4947,7 @@ Will define:
 
 ## `004_DATABASE_MODEL.md`
 
-Will define:
+Defines:
 
 - tables
 - columns
@@ -4963,7 +4963,7 @@ Will define:
 
 ## `005_API_SPECIFICATION.md`
 
-Will define:
+Defines:
 
 - application operations
 - API resources
@@ -4976,7 +4976,7 @@ Will define:
 
 ## `006_UI_SPECIFICATION.md`
 
-Will define:
+Defines:
 
 - screens
 - forms
@@ -4990,7 +4990,7 @@ Will define:
 
 ## `007_TESTING_STRATEGY.md`
 
-Will define:
+Defines:
 
 - domain tests
 - business-rule tests
@@ -5003,7 +5003,7 @@ Will define:
 
 ## `008_SECURITY_MODEL.md`
 
-Will define:
+Defines:
 
 - roles
 - permissions
@@ -5016,7 +5016,7 @@ Will define:
 
 ## `009_DEPLOYMENT_ARCHITECTURE.md`
 
-Will define:
+Defines:
 
 - application topology
 - infrastructure
@@ -5031,7 +5031,8 @@ Will define:
 
 ## `010_DECISION_LOG.md`
 
-Will record significant architectural decisions and future changes to the model.
+Records significant business and technical decisions, open Owner decisions, and
+future changes to the model.
 
 ---
 

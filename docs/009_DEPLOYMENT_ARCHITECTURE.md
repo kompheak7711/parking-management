@@ -266,11 +266,14 @@ The worker supports only tasks derived from approved rules, including:
 - recurring Rent Invoice and fixed Service line generation on the 25th;
 - Utility Invoice generation after validated monthly Reading inputs or a completed
   approved broken-Meter estimate;
-- backup execution and verification as an operational task; and
 - health/alert evaluation.
 
 This list does not authorize a new charge, penalty, status, automatic Allocation,
 or automatic Customer Credit recognition.
+
+Backup execution and verification run as a separately privileged Operations Host
+job under the backup identity, not through the application scheduled worker or its
+database role.
 
 # 8. Database Migrations
 

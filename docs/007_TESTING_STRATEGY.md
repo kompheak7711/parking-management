@@ -192,7 +192,9 @@ rejected transactionally.
 
 At the end of the full Expiration Date in Property-local time, verify
 `ACTIVE → CANCELLED` with reason `RESERVATION_EXPIRED`, preserved history, and no
-invented `EXPIRED` status.
+invented `EXPIRED` status. When Security Deposit was received, verify customer-caused
+expiration posts the required explicit non-refundable disposition with governing
+Reservation/cause, amount, authorization, and audit history.
 
 ## TEST-027 — Reservation Extension Notice
 
@@ -205,10 +207,13 @@ second or excessive extension.
 Verify successful move-in changes `ACTIVE → MOVED_IN`, preserves Reservation
 history, and coordinates the approved Lease/Occupancy/Deposit continuity.
 
-## TEST-029 — Property-caused Cancellation Refund
+## TEST-029 — Reservation Cancellation Deposit Outcomes
 
 Verify approved Property-caused cancellation creates the required Security Deposit
-Refund path before a Lease exists and does not require Final Settlement.
+Refund path before a Lease exists and does not require Final Settlement. Verify
+customer-caused cancellation instead posts the required non-refundable Security
+Deposit disposition, never a Refund, and preserves the original receipt. Reject any
+free-form disposition without the approved governing cause.
 
 # 7. Lease, Signer, Occupancy, and Move-in Coverage
 
@@ -216,7 +221,8 @@ Refund path before a Lease exists and does not require Final Settlement.
 
 Test every permitted Lease status transition and reject unsupported transitions.
 A future non-overlapping successor may be DRAFTED/SIGNED before the current Lease
-ends; overlapping signed contractual periods are rejected.
+ends; overlapping signed contractual periods are rejected. Renewal preserves the
+same-Unit predecessor link without inferring Deposit or financial transfer policy.
 
 ## TEST-031 — No Automatic Month-to-month
 
@@ -296,12 +302,15 @@ rounding behavior, and preserved calculation inputs.
 Verify recurring due-date behavior and any authoritative partial-period behavior
 without inventing a due-date fallback. If a scenario remains an OPEN OWNER
 DECISION, it must be excluded from assumed pass criteria and tracked explicitly.
+Verify exact alternative signed-Lease Due Date terms are preserved without an
+unsupported 1-28 day restriction.
 
 ## TEST-044 — Fixed Services
 
 Verify only approved fixed recurring Internet and Trash Collection Service lines,
-using the effective Service Rate, are included in the approved Rent Invoice
-workflow. No one-time Service category is inferred.
+whose Lease Service applicability relation is effective for the period, using the
+effective Service Rate, are included in the approved Rent Invoice workflow. No
+one-time Service category or free-form applicability is inferred.
 
 ## TEST-045 — Service Rate History
 
@@ -330,7 +339,9 @@ invalid Meter replacement boundary without the specified handling.
 
 Verify the rate effective on Utility Invoice generation date applies to the entire
 represented consumption period, even when a rate changes during that period.
-Issued Utility Invoices do not recalculate after a later rate change.
+Issued Utility Invoices do not recalculate after a later rate change. Utility Rate
+creation is rejected unless evidenced notice occurred before the Effective Date in
+Property-local time.
 
 ## TEST-050 — Broken-meter History Hierarchy
 
@@ -346,10 +357,11 @@ Verify:
 - another Unit and arbitrary estimates are prohibited; and
 - zero history uses the same pending one-complete-future-period fallback.
 
-## TEST-051 — Broken-meter Pending Charge
+## TEST-051 — Broken-meter Future-basis Pending Charge
 
-Verify zero-history charges cannot be finalized, issued, allocated, or included as
-an arbitrary receivable before the future basis becomes calculable.
+Verify charges with fewer than three complete historical actual periods cannot be
+finalized, issued, allocated, or included as an arbitrary receivable before the
+future basis becomes calculable.
 
 ## TEST-052 — Utility Invoice Generation
 
@@ -372,7 +384,9 @@ consistent whenever Invoice Lease is present.
 ## TEST-055 — Invoice Categories
 
 Verify only approved categories/sources are accepted. Optional Lease association
-must not authorize arbitrary charges or categories.
+must not authorize arbitrary charges or categories. Damage and Miscellaneous lines
+require a relational authorized-obligation source; pet-damage eligibility resolves
+through the linked inspection finding rather than JSON or free text.
 
 ## TEST-056 — Invoice Lifecycle
 
@@ -395,8 +409,10 @@ requires reversal of affected active financial applications where specified.
 ## TEST-059 — Payment Receipt
 
 Verify confirmed Payment stores Customer, received amount/currency, method,
-timestamp, payer/reference evidence, exchange-rate facts where applicable, and
-`RECEIVED` status without automatic Allocation.
+immutable method code/name snapshots, timestamp, payer/reference evidence,
+exchange-rate facts where applicable, and `RECEIVED` status without automatic
+Allocation. API reads still return those snapshots after a configurable method is
+renamed or retired.
 
 ## TEST-060 — Payment Allocation
 
@@ -440,13 +456,19 @@ Credit cannot exceed available balance or silently become a Deposit/Payment.
 
 Verify Refund requires an approved source and authorization, does not create an
 unsupported right, preserves payout method/reference and history, and updates only
-the source balance/event chain permitted by rules.
+the source balance/event chain permitted by rules. An approved correction links an
+append-only verified-return event with exact returned amount/currency and evidence,
+cannot exceed the Refund, creates no collection right, and never mutates the original
+Refund. Payment reversal remains blocked until required value is verified returned.
 
 ## TEST-067 — Payment Reversal
 
 Verify complete reversal handling across active Allocations/Credit dispositions,
-linked event history, Payment `REVERSED` state, and recomputed Invoice balances and
-statuses.
+Deposit Receipts, linked event history, Payment `REVERSED` state, and recomputed
+Invoice/Deposit/Credit balances and statuses. Reversal is rejected while a dependent
+Deposit disposition, application, or unreturned Refund remains active. Verify a
+Deposit Receipt reversal restores Payment availability and reduces Deposit received
+and held balances without deleting either event.
 
 ## TEST-068 — Idempotent Financial Requests
 
@@ -543,19 +565,25 @@ Assert the approved order: finalize valid charges; apply authorized Customer
 Credit; apply Pet Deposit only to authorized pet-related damage; apply Security
 Deposit to remaining authorized obligations in oldest-Due order where applicable;
 record remaining Customer balance; and explicitly Refund remaining refundable
-Deposit balances. Every event remains separately traceable.
+Deposit balances. The immutable closing balance is the nonnegative post-Refund
+Customer receivable, never a negative proxy for an omitted Refund. Every event
+remains separately traceable. The close response and later reads expose that snapshot
+separately from any corrected current position.
 
 ## TEST-081 — Settlement Corrections
 
 Verify corrections preserve the original Settlement/event chain and do not
-retroactively rewrite issued financial history.
+retroactively rewrite issued financial history. A closed Settlement stays closed;
+its correction row links an existing approved typed event carrying the effect.
+Exercise Deposit Application reversal through API and UI and verify restored Invoice
+and Deposit balances.
 
 # 15. Audit and Authorization Coverage
 
 ## TEST-082 — Audit Minimum Fields
 
 For every material action, assert actor/system identity, timestamp, Property scope,
-action, target, prior/resulting state or source link, reason where required, and
+action, target, prior/resulting state or source link, mandatory reason, and
 correlation identifier.
 
 ## TEST-083 — Append-only Audit
@@ -802,7 +830,7 @@ move-in, renewal, warnings/termination, move-out, and exactly-one Final Settleme
 ## TEST-122 — Critical Utility Suite
 
 A mandatory suite covers Meter replacement, Reading validation, generation-date
-rate selection, weighted broken-Meter history hierarchy, pending zero-history
+rate selection, weighted broken-Meter history hierarchy, pending future-basis
 charge, and duplicate Utility billing.
 
 # 25. OPEN OWNER DECISION

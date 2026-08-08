@@ -290,7 +290,7 @@ Older unnumbered placeholder documents are not decision authority.
 - **Status:** `APPROVED`
 - **Decision:** Every Invoice belongs to exactly one Customer. An Invoice may additionally be associated with zero or one Lease. A Lease-associated Invoice must be consistent with its Customer, Unit, obligation, period, and Lease context. Rent Invoices require the applicable signed Lease. Optional Lease association does not authorize arbitrary charges or new Invoice categories.
 - **Provenance:** Literal Owner approval recovered in the focused Invoice Ownership amendment; subsequently embodied in 001/002.
-- **Affected documents/rules:** `001_DOMAIN_MODEL.md` sections 9.8, 15.12, 20, 53, 91, and 101; `BR-INV-001`, `BR-INV-002`, `BR-INV-036` through `BR-INV-042`; `002_BUSINESS_RULES.md` section 30.2.
+- **Affected documents/rules:** `001_DOMAIN_MODEL.md` sections 9.8, 15.12, 20, 53, 91, and 101; `BR-INV-001`, `BR-INV-002`, `BR-INV-036` through `BR-INV-042`; `002_BUSINESS_RULES.md` section 31.2.
 - **Rationale:** Not recorded as part of the approved amendment.
 - **Decision date:** Not recorded in this log.
 - **Alternatives:** A mandatory-Lease model existed in earlier material and was superseded; complete chronology is intentionally not asserted here.
@@ -455,7 +455,7 @@ new business policy.
 - **Type:** `DERIVED REQUIREMENT`
 - **Status:** `REQUIRED`
 - **Decision:** Entities and Aggregate Roots require stable identities independent of mutable human-readable values. Downstream specifications must use the unique `BR-*` identifiers as stable policy references.
-- **Derived from:** `001_DOMAIN_MODEL.md` section 97; `002_BUSINESS_RULES.md` section 30.4.
+- **Derived from:** `001_DOMAIN_MODEL.md` section 97; `002_BUSINESS_RULES.md` section 31.4.
 - **Affected documents/rules:** 004-008; all `BR-*` references.
 - **Rationale:** Not separately recorded; this is the cited authoritative requirement.
 - **Decision date:** Not recorded.
@@ -576,11 +576,11 @@ the Owner or authorized deployment decision-maker resolves them.
 
 | Source identifier | Open choice | Current conservative treatment |
 |---|---|---|
-| `OD-004-001` | Customer legal-name/contact validation and duplicate matching | Preserve approved value objects; impose no unapproved identity rule. |
-| `OD-004-002` | Refund delivery method and pre-completion lifecycle | Persist only the completed Refund event; invent no pending/failed Refund status. |
-| `OD-004-003` | Invoice, Payment, and Refund number format/sequence | Require unique immutable values without prescribing format. |
-| `OD-004-004` | Meter serial-number uniqueness scope | Preserve serial text without claiming global or per-type uniqueness. |
-| `OD-004-005` | Electricity/Water measurement-unit metadata | Preserve exact numeric quantities/rates without naming an unsupported unit. |
+| `OOD-DB-001` | Customer legal-name/contact validation and duplicate matching | Preserve approved value objects; impose no unapproved identity rule. |
+| `OOD-DB-002` | Refund delivery method and pre-completion lifecycle | Persist only the completed Refund event; invent no pending/failed Refund status. |
+| `OOD-DB-003` | Invoice, Payment, and Refund number format/sequence | Require unique immutable values without prescribing format. |
+| `OOD-DB-004` | Meter serial-number uniqueness scope | Preserve serial text without claiming global or per-type uniqueness. |
+| `OOD-DB-005` | Electricity/Water measurement-unit metadata | Preserve exact numeric quantities/rates without naming an unsupported unit; block production Utility configuration and definitive fixtures until resolved. |
 | `OOD-API-001` | Production authentication provider | Keep API authentication-provider-neutral. |
 | `OOD-UI-001` | Brand and visual design tokens | Use accessible neutral tokens pending brand direction. |
 | `OOD-UI-002`, `OOD-TEST-001` | Certified browser/device matrix | Use standards-compliant responsive behavior and generic cross-browser coverage. |

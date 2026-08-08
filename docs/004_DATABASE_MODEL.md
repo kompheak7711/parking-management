@@ -168,7 +168,7 @@ Constraints and indexes:
 
 No Customer type/category column exists. Customer deletion is prohibited while historical records exist and is not a normal workflow.
 
-**OPEN OWNER DECISION OD-004-001 (nonblocking):** Upstream rules do not define legal-name structure, contact-field validation, duplicate-person matching, or which contact field is mandatory. The columns above preserve the approved value objects without inventing those policies.
+**OPEN OWNER DECISION OOD-DB-001 (nonblocking):** Upstream rules do not define legal-name structure, contact-field validation, duplicate-person matching, or which contact field is mandatory. The columns above preserve the approved value objects without inventing those policies.
 
 ---
 
@@ -232,7 +232,8 @@ The transaction inserting the Notice also updates `reservations.effective_expira
 | `start_date` | `date` | yes | required before SIGNED |
 | `end_date` | `date` | yes | required before SIGNED; greater than start |
 | `monthly_rent_usd_cents` | `bigint` | yes | positive; required before SIGNED |
-| `rent_due_day` | `smallint` | yes | 1..28; null means approved standard day 5 |
+| `alternative_rent_due_terms` | `text` | yes | exact signed-Lease terms; null means approved standard day 5 |
+| `predecessor_lease_id` | `uuid` | yes | FK to prior non-overlapping Lease; unique when present |
 | `signed_at` | `timestamptz` | yes | required when SIGNED/TERMINATED |
 | `terminated_at` | `timestamptz` | yes | required when TERMINATED |
 | `actual_termination_date` | `date` | yes | required when TERMINATED |
@@ -243,6 +244,9 @@ Constraints and indexes:
 
 - DRAFTED may transition only to SIGNED or CANCELLED; SIGNED only to TERMINATED; terminal states cannot transition.
 - A deferred trigger requires the Primary Tenant to exist in `lease_signers` before SIGNED.
+- A predecessor link requires the same Unit and a successor period beginning after
+  the predecessor period. It records renewal lineage but infers no Deposit or
+  financial transfer policy.
 - Exclusion constraint using `daterange(start_date, end_date, '[]')`: `EXCLUDE USING gist (unit_id WITH =, daterange(...) WITH &&) WHERE (status = 'SIGNED')`. The same transaction changing to TERMINATED retains historical contractual dates but releases future exclusivity according to the approved actual termination process; application validation must still prevent invalid advance-billed periods.
 - Index `(unit_id, status)` and `(primary_tenant_id, start_date DESC)`.
 
@@ -284,7 +288,17 @@ Append-only: `id uuid PK`, `lease_id uuid NOT NULL FK`, `warning_sequence smalli
 
 ## DB-LEASE-006 — `lease_pet_approvals`
 
-Append-preserved terms record: `id uuid PK`, `lease_id uuid NOT NULL FK`, `approved_date date NOT NULL`, `deposit_required_by_signed_terms boolean NOT NULL`, `pet_description text NULL`, `approved_at timestamptz NOT NULL`, `approved_by uuid NOT NULL`, `UNIQUE (lease_id, id)`. It records approval and the applicable signed-term fact; it does not create a general Pet entity or a penalty policy.
+Append-preserved terms record: `id uuid PK`, `lease_id uuid NOT NULL FK`, `approved_date date NOT NULL`, `deposit_required_by_signed_terms boolean NOT NULL`, `pet_description text NULL`, `approved_at timestamptz NOT NULL`, `approved_by uuid NOT NULL`. It records approved pet terms and the applicable signed-term fact; multiple approval records still cannot create more than the Lease's one optional Pet Deposit. It does not create a general Pet entity or a penalty policy.
+
+## DB-LEASE-007 — `lease_service_terms`
+
+Signed-term applicability relation: `id uuid PK`, `lease_id uuid NOT NULL FK`,
+`property_service_id uuid NOT NULL FK`, `applicable_from date NOT NULL`,
+`applicable_through date NULL`, `terms_reference text NOT NULL`, `recorded_at
+timestamptz NOT NULL`, `recorded_by uuid NOT NULL`, and `UNIQUE (lease_id,
+property_service_id, applicable_from)`. Dates remain within the Lease period. Rows
+identify which configured Services apply; rates still come only from effective-dated
+`service_rates`.
 
 ---
 
@@ -299,23 +313,26 @@ Append-preserved terms record: `id uuid PK`, `lease_id uuid NOT NULL FK`, `appro
 | `serial_number` | `text` | no | nonblank |
 | `utility_type` | `text` | no | `ELECTRICITY`, `WATER` |
 | `description` | `text` | yes | |
-| `status` | `text` | no | `ACTIVE`, `BROKEN`, `REPLACED`, `REMOVED` |
 | `installed_date` | `date` | no | |
-| `failure_date` | `date` | yes | required when BROKEN/REPLACED due to failure |
-| `replaced_date` | `date` | yes | required when REPLACED |
+| `failure_date` | `date` | yes | confirmed failure date when broken |
+| `deactivated_date` | `date` | yes | null while this Meter is active |
 | `memo` | `text` | yes | |
 | provenance columns | as DB-TYPE-007 | no | |
 
 Constraints:
 
-- Partial unique index `UNIQUE (unit_id, utility_type) WHERE status = 'ACTIVE'`.
-- `replaced_date >= installed_date`; `failure_date >= installed_date` when present.
+- Partial unique index `UNIQUE (unit_id, utility_type) WHERE deactivated_date IS NULL`.
+- `deactivated_date >= installed_date`; `failure_date >= installed_date` when present;
+  and `failure_date <= deactivated_date` when both are present.
+- A replacement transaction sets the failed Meter's `deactivated_date` to the
+  replacement date. This model introduces no non-replacement deactivation command
+  and stores no unapproved Meter status.
 - Serial uniqueness is not asserted because upstream policy does not define whether serials are globally reusable.
 - Index `(unit_id, utility_type, installed_date DESC)`.
 
 ## DB-UTIL-002 — `utility_meter_replacements`
 
-Append-only: `id uuid PK`, `failed_meter_id uuid NOT NULL UNIQUE FK utility_meters`, `replacement_meter_id uuid NOT NULL UNIQUE FK utility_meters`, `replacement_date date NOT NULL`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `CHECK (failed_meter_id <> replacement_meter_id)`. A deferred trigger requires the same Unit and Utility Type and consistent meter dates/statuses.
+Append-only: `id uuid PK`, `failed_meter_id uuid NOT NULL UNIQUE FK utility_meters`, `replacement_meter_id uuid NOT NULL UNIQUE FK utility_meters`, `replacement_date date NOT NULL`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `CHECK (failed_meter_id <> replacement_meter_id)`. A deferred trigger requires the same Unit and Utility Type, a confirmed failure date on the failed Meter, deactivation on the replacement date, and installation of the replacement Meter on that date.
 
 ## DB-UTIL-003 — `utility_readings`
 
@@ -342,7 +359,7 @@ Append-only: `id uuid PK`, `reading_id uuid NOT NULL FK`, `previous_value numeri
 
 ## DB-UTIL-005 — `utility_rates`
 
-Append-only version table: `id uuid PK`, `property_id uuid NOT NULL FK`, `utility_type text NOT NULL CHECK IN ('ELECTRICITY','WATER')`, `rate_usd_per_unit numeric(20,8) NOT NULL CHECK (> 0)`, `effective_date date NOT NULL`, `notice_at timestamptz NOT NULL`, `source_memo text NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `UNIQUE (property_id, utility_type, effective_date)`. The selected row is the one with greatest `effective_date <= invoice_date`; selection is snapshotted on the Invoice line.
+Append-only version table: `id uuid PK`, `property_id uuid NOT NULL FK`, `utility_type text NOT NULL CHECK IN ('ELECTRICITY','WATER')`, `rate_usd_per_unit numeric(20,8) NOT NULL CHECK (> 0)`, `effective_date date NOT NULL`, `notice_at timestamptz NOT NULL`, `notice_evidence text NOT NULL`, `source_memo text NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `UNIQUE (property_id, utility_type, effective_date)`. The Property-local date of `notice_at` must precede `effective_date`. The selected row is the one with greatest `effective_date <= invoice_date`; selection is snapshotted on the Invoice line.
 
 ## DB-UTIL-006 — `utility_consumption_periods`
 
@@ -370,7 +387,7 @@ Authoritative billing-source record.
 
 ## DB-UTIL-007 — `broken_meter_estimates`
 
-One-to-one detail for estimated periods: `consumption_period_id uuid PK/FK`, `failed_meter_id uuid NOT NULL FK`, `replacement_meter_id uuid NOT NULL FK`, `unmeasured_start_date date NOT NULL`, `unmeasured_end_date date NOT NULL`, `basis_kind text NOT NULL CHECK IN ('THREE_MOST_RECENT','ALL_AVAILABLE','FIRST_COMPLETE_FUTURE')`, `total_basis_consumption numeric(20,6) NOT NULL CHECK (>=0)`, `total_basis_days integer NOT NULL CHECK (>0)`, `weighted_daily_average numeric(20,10) NOT NULL CHECK (>=0)`, `authorized_at timestamptz NOT NULL`, `authorized_by uuid NOT NULL`, `reason text NOT NULL`.
+One-to-one detail for estimated periods: `consumption_period_id uuid PK/FK`, `failed_meter_id uuid NOT NULL FK`, `replacement_meter_id uuid NOT NULL FK`, `unmeasured_start_date date NOT NULL`, `unmeasured_end_date date NOT NULL`, `basis_kind text NOT NULL CHECK IN ('THREE_MOST_RECENT','FIRST_COMPLETE_FUTURE')`, `total_basis_consumption numeric(20,6) NOT NULL CHECK (>=0)`, `total_basis_days integer NOT NULL CHECK (>0)`, `weighted_daily_average numeric(20,10) NOT NULL CHECK (>=0)`, `estimated_consumption numeric(20,6) NOT NULL CHECK (>=0)`, `authorization_reason text NOT NULL`, `authorized_at timestamptz NOT NULL`, `authorized_by uuid NOT NULL`, `calculation_trace jsonb NOT NULL`.
 
 ## DB-UTIL-008 — `broken_meter_estimate_basis_periods`
 
@@ -438,6 +455,8 @@ Constraints and indexes:
 | `utility_rate_id` | `uuid` | yes | FK |
 | `property_service_id` | `uuid` | yes | FK |
 | `service_rate_id` | `uuid` | yes | FK |
+| `lease_service_term_id` | `uuid` | yes | FK proving configured Service applicability |
+| `authorized_obligation_id` | `uuid` | yes | FK for Damage/Miscellaneous source |
 | `contractual_monthly_usd_cents` | `bigint` | yes | rent/service trace input |
 | `billable_days` | `smallint` | yes | proration input |
 | `calendar_days` | `smallint` | yes | 28..31 when present |
@@ -450,8 +469,10 @@ Constraints and indexes:
 - `UNIQUE (invoice_id, line_sequence)`.
 - Rent lines require source Lease, contractual monthly Rent, and period; the source Lease equals `invoices.lease_id`.
 - Utility lines require consumption period, Utility Rate, quantity, unit-rate snapshot, and period.
-- Service lines require configured Service, Service Rate, monthly rate snapshot, and period.
-- Damage/Miscellaneous lines require an auditable description and governing source captured in `calculation_trace`; no arbitrary category is allowed.
+- Service lines require configured Service, applicable Lease Service term, Service
+  Rate, monthly rate snapshot, and period.
+- Damage/Miscellaneous lines require one `authorized_nonrecurring_obligations` row;
+  `calculation_trace` supplements and never replaces that relational source.
 - Service line category remains SERVICE_CHARGES even on a primary RENT Invoice.
 - Lines become immutable when their Invoice is issued.
 - A GiST exclusion constraint on `source_lease_id` equality and inclusive `daterange(period_start, period_end, '[]')` overlap where `category='RENT'` prevents duplicate or overlapping Rent billing.
@@ -481,6 +502,21 @@ An Adjustment changes current obligation by signed effect (`DEBIT` positive, `CR
 
 Append-only: `id uuid PK`, `invoice_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. The posting transaction verifies all active financial dependencies have been explicitly resolved and sets Invoice status VOID without deleting source records.
 
+## DB-INV-005 — `authorized_nonrecurring_obligations`
+
+Relational source for approved Damage or Miscellaneous charges: `id uuid PK`,
+`customer_id uuid NOT NULL FK`, `lease_id uuid NULL FK`, `category text NOT NULL
+CHECK IN ('DAMAGE_CHARGES','MISCELLANEOUS_CHARGES')`,
+`inspection_damage_finding_id uuid NULL FK`, `description text NOT NULL`,
+`authorized_amount_usd_cents bigint NOT NULL CHECK (>0)`, `source_reference text NOT
+NULL`, `authorized_at timestamptz NOT NULL`, `authorized_by uuid NOT NULL`, and
+`authorization_reference text NOT NULL`. Damage requires one inspection finding;
+Miscellaneous prohibits it and requires another approved governing source in
+`source_reference`. Invoice Customer/Lease/category/amount must equal the obligation,
+and an obligation may be billed once. Pet-related use is derived only through the
+linked finding's `pet_related` flag. This relation creates no new fee, penalty,
+category, or charging right.
+
 ---
 
 # 10. Payment, Exchange, Allocation, and Credit Tables
@@ -507,6 +543,7 @@ Append-only original receipt plus controlled receipt status.
 | `payment_date` | `date` | no | actual receipt date |
 | `payment_method_id` | `uuid` | no | FK configured method |
 | `payment_method_code_snapshot` | `text` | no | immutable |
+| `payment_method_name_snapshot` | `text` | no | immutable display name at receipt |
 | `received_currency` | `text` | no | `USD`, `KHR` |
 | `received_amount_minor` | `bigint` | no | cents for USD, whole riel for KHR; positive |
 | `usd_accounting_value_cents` | `bigint` | no | positive |
@@ -530,7 +567,7 @@ Append-only: `id uuid PK`, `payment_allocation_id uuid NOT NULL UNIQUE FK`, `rea
 
 ## DB-PAY-006 — `payment_reversals`
 
-Append-only: `id uuid PK`, `payment_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. Posting requires all Allocations and payment-sourced Credit recognitions to be explicitly reversed and no unresolved completed Refund; it then sets Payment status REVERSED. Original Payment is unchanged.
+Append-only: `id uuid PK`, `payment_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`. Posting requires all Allocations, payment-sourced Credit recognitions, and Deposit Receipts to be explicitly reversed and no unresolved completed Refund; it then sets Payment status REVERSED. Original Payment is unchanged.
 
 ## DB-CREDIT-001 — `customer_credits`
 
@@ -569,13 +606,15 @@ Append-only: `id uuid PK`, `customer_credit_id uuid NOT NULL UNIQUE FK`, `reason
 Constraints:
 
 - SECURITY requires one Reservation, prohibits pet approval, and `UNIQUE (reservation_id) WHERE deposit_type='SECURITY'`.
-- PET requires one Lease and one approval whose terms require a Deposit; reservation is null; `UNIQUE (pet_approval_id) WHERE deposit_type='PET'`.
+- PET requires one Lease and one approval whose terms require a Deposit; reservation
+  is null; `UNIQUE (lease_id) WHERE deposit_type='PET'` and `UNIQUE
+  (pet_approval_id) WHERE deposit_type='PET'` enforce the one optional Pet Deposit.
 - A deferred transaction constraint requires exactly one Security Deposit for every Reservation and verifies that any later Lease is the Reservation's resulting Lease. No conversion or second Deposit is created.
 - Required amount is a historical obligation; a change requires an explicit audited correction event rather than silent overwrite after receipt.
 
 ## DB-DEP-002 — `deposit_receipts`
 
-Append-only: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `payment_id uuid NOT NULL FK`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `UNIQUE (deposit_id, payment_id, id)`. The transaction prevents total allocations, Deposit receipts, Credit recognition, and Refund commitments from exceeding Payment USD accounting value. This is not an Invoice Payment Allocation.
+Append-only: `id uuid PK`, `deposit_id uuid NOT NULL FK`, `payment_id uuid NOT NULL FK`, `amount_usd_cents bigint NOT NULL CHECK (>0)`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `UNIQUE (deposit_id, payment_id)`. The transaction prevents total allocations, active Deposit receipts, Credit recognition, and Refund commitments from exceeding Payment USD accounting value. This is not an Invoice Payment Allocation.
 
 ## DB-DEP-003 — `deposit_required_amount_adjustments`
 
@@ -598,6 +637,21 @@ Append-only Final Settlement financial event: `id uuid PK`, `deposit_id uuid NOT
 
 Append-only: `id uuid PK`, `deposit_application_id uuid NOT NULL UNIQUE FK`, `reason text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `authorization_reference text NOT NULL`.
 
+## DB-DEP-007 — `deposit_receipt_reversals`
+
+Append-only: `id uuid PK`, `deposit_receipt_id uuid NOT NULL UNIQUE FK`, `reason text
+NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`,
+`authorization_reference text NOT NULL`. Posting is prohibited while any dependent
+Deposit disposition, application, or Refund remains active. It removes the receipt's
+derived liability effect without altering the original receipt.
+
+## DB-DEP-008 — `deposit_disposition_reversals`
+
+Append-only: `id uuid PK`, `deposit_disposition_id uuid NOT NULL UNIQUE FK`, `reason
+text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`,
+`authorization_reference text NOT NULL`. It restores the disposition's derived held
+balance effect and never rewrites the original event.
+
 ---
 
 # 12. Move-out, Final Settlement, and Refund Tables
@@ -608,7 +662,7 @@ Append-preserved operational source: `id uuid PK`, `lease_id uuid NOT NULL FK`, 
 
 ## DB-MOVEOUT-002 — `inspection_damage_findings`
 
-`id uuid PK`, `inspection_id uuid NOT NULL FK`, `description text NOT NULL`, `pet_related boolean NOT NULL`, `created_at timestamptz NOT NULL`, `created_by uuid NOT NULL`. If billed, an Invoice line's immutable calculation/source trace identifies this finding. No standard fee or damage amount is implied.
+`id uuid PK`, `inspection_id uuid NOT NULL FK`, `description text NOT NULL`, `pet_related boolean NOT NULL`, `created_at timestamptz NOT NULL`, `created_by uuid NOT NULL`. If billed, an `authorized_nonrecurring_obligations` row and its Invoice line identify this finding relationally. No standard fee or damage amount is implied.
 
 ## DB-SETTLE-001 — `final_settlements`
 
@@ -623,7 +677,7 @@ Append-preserved operational source: `id uuid PK`, `lease_id uuid NOT NULL FK`, 
 | `actual_termination_date_snapshot` | `date` | no | |
 | `move_out_date_snapshot` | `date` | yes | actual physical date if occupancy ended |
 | `source_snapshot` | `jsonb` | yes | required and immutable at closure |
-| `final_balance_usd_cents` | `bigint` | yes | required and immutable at closure; positive due, negative refundable, zero settled |
+| `closing_balance_due_usd_cents` | `bigint` | yes | required and immutable at closure; `CHECK (>=0)` |
 
 The Lease must be TERMINATED before creation. A null `closed_at` means financial
 closure has not occurred; this is a technical condition, not a new business status.
@@ -632,9 +686,22 @@ Utility handling—is final, all required applications/dispositions/Refunds are
 represented, and final balance is reconciled. A closed Settlement is never
 reopened; correction uses linked events.
 
+`closing_balance_due_usd_cents` is the post-application, post-disposition, and
+post-Refund Customer receivable remaining at closure. A refundable amount is not
+stored as a negative balance; it must be represented by its explicit Refund event.
+
 ## DB-SETTLE-002 — `settlement_invoice_items`
 
 Append-preserved membership snapshot: `final_settlement_id uuid NOT NULL FK`, `invoice_id uuid NOT NULL FK`, `outstanding_at_inclusion_usd_cents bigint NOT NULL CHECK (>=0)`, `included_at timestamptz NOT NULL`, `included_by uuid NOT NULL`, PK `(final_settlement_id, invoice_id)`. It identifies source obligations without replacing them.
+
+## DB-SETTLE-003 — `settlement_corrections`
+
+Append-only linkage for an authorized post-closure correction: `id uuid PK`,
+`final_settlement_id uuid NOT NULL FK`, `corrective_event_type text NOT NULL`,
+`corrective_event_id uuid NOT NULL`, `reason text NOT NULL`, `occurred_at timestamptz
+NOT NULL`, `actor_id uuid NOT NULL`, and `authorization_reference text NOT NULL`.
+The referenced approved typed event carries the financial effect; this row preserves
+its relationship to the closed Settlement without reopening or rewriting it.
 
 ## DB-REFUND-001 — `refunds`
 
@@ -661,7 +728,21 @@ Append-only outbound financial event.
 
 Exactly one of the three source FKs is non-null. Source Customer must match recipient and available source value must not be exceeded. A direct Refund of KHR Payment excess preserves the corresponding original KHR amount and original receipt exchange record; a later Refund of USD Credit in KHR uses a new applicable Refund exchange record. Settlement Deposit Refunds remain separate by Deposit.
 
-**OPEN OWNER DECISION OD-004-002 (nonblocking):** Upstream rules do not define Refund delivery methods or lifecycle states after the outbound event is processed. This model records only the completed Refund event and does not invent pending/failed statuses.
+**OPEN OWNER DECISION OOD-DB-002 (nonblocking):** Upstream rules do not define Refund delivery methods or lifecycle states after the outbound event is processed. This model records only the completed Refund event and does not invent pending/failed statuses.
+
+## DB-REFUND-002 — `refund_verified_returns`
+
+Append-only verified-return event: `id uuid PK`, `refund_id uuid NOT NULL FK`,
+`returned_usd_cents bigint NOT NULL CHECK (>0)`, `returned_original_currency text NOT
+NULL`, `returned_original_amount_minor bigint NOT NULL CHECK (>0)`, `returned_at
+timestamptz NOT NULL`, `return_method_reference text NOT NULL`, `reason text NOT
+NULL`, `authorized_by uuid NOT NULL`, `created_at timestamptz NOT NULL`, and
+`created_by uuid NOT NULL`. Currency/amount follow DB-TYPE-003 and must reconcile to
+the Refund's preserved exchange facts. Active returned value may not exceed the
+completed Refund. This records value actually returned after an erroneous completed
+Refund; it neither erases the outbound event nor creates a collection right. A
+Payment reversal that depended on the Refund is blocked until the full relevant
+value is verified returned.
 
 ---
 
@@ -680,7 +761,7 @@ Append-only table.
 | `action` | `text` | no | stable action name |
 | `entity_type` | `text` | no | affected relational entity |
 | `entity_id` | `uuid` | no | affected stable ID |
-| `reason` | `text` | yes | mandatory when governing rule requires |
+| `reason` | `text` | no | mandatory for every audited event |
 | `authorization_reference` | `text` | yes | mandatory for authorized actions |
 | `previous_state` | `jsonb` | yes | null for creation |
 | `resulting_state` | `jsonb` | yes | null only when action has no resulting snapshot |
@@ -724,9 +805,9 @@ VOID and DRAFT Invoices are excluded from receivable balances. Outstanding balan
 payment available value
 = original USD accounting value
 - active Payment Allocations
-- Deposit Receipts
+- active Deposit Receipts not reversed by DB-DEP-007
 - Customer Credit recognitions not reversed
-- Refund commitments directly sourced from Payment
+- net Refund value directly sourced from Payment after DB-REFUND-002 verified returns
 ```
 
 Unallocated/partially allocated/fully allocated are derived conditions, not Payment statuses. Payment status stores only RECEIVED or REVERSED.
@@ -739,12 +820,12 @@ Legal availability is derived from ACTIVE Reservations, applicable SIGNED Lease 
 
 ```text
 required amount = original required amount + active required-amount adjustments
-received amount = sum Deposit Receipts
+received amount = sum active Deposit Receipts not reversed by DB-DEP-007
 held refundable balance
 = received
-- active Dispositions
-- active Deposit Applications
-- Refunds sourced from Deposit
+- active Dispositions not reversed by DB-DEP-008
+- active Deposit Applications not reversed by DB-DEP-006
+- net Refund value sourced from Deposit after DB-REFUND-002 verified returns
 outstanding required amount = max(required amount - received amount, 0)
 ```
 
@@ -752,7 +833,9 @@ No authoritative current-balance column is stored on `deposits`.
 
 ## DB-DER-005 — Customer Credit balance
 
-Credit balance is recognition amount minus active applications and Refunds, considering explicit reversals. It is always USD, cannot be negative, and is not pooled with Deposit balances.
+Credit balance is recognition amount minus active applications and net Refund value
+after DB-REFUND-002 verified returns, considering explicit reversals. It is always
+USD, cannot be negative, and is not pooled with Deposit balances.
 
 ## DB-DER-006 — Utility consumption
 
@@ -760,7 +843,7 @@ Raw Utility Readings are authoritative measurements. Actual consumption is deriv
 
 ## DB-DER-007 — Settlement balance
 
-Before closure, Settlement net balance is derived from included outstanding obligations, authorized Credit Applications, Deposit Applications/Dispositions, Refunds, and Payments. `final_balance_usd_cents` is stored only as the immutable closure snapshot and must reconcile to source events.
+Before closure, Settlement net balance is derived from included outstanding obligations, authorized Credit Applications, Deposit Applications/Dispositions, Refunds, and Payments. `closing_balance_due_usd_cents` is stored only as the immutable post-Refund closure snapshot and must reconcile to source events.
 
 ## DB-DER-008 — Reporting projections
 
@@ -811,9 +894,10 @@ The 25th-day billing run, 5th-day due-date calculation, Reservation end-of-date 
 | issued Invoice/line | immutable | Adjustment, dependency reversal, or exceptional VOID |
 | Payment | original receipt immutable | Payment Reversal |
 | Allocation/Application | immutable | linked Reversal |
-| Deposit receipt | immutable | explicit disposition/application/refund/correction event |
+| Deposit receipt | immutable | DB-DEP-007 linked Deposit Receipt Reversal |
+| Deposit disposition/application | immutable | DB-DEP-008/DB-DEP-006 linked Reversal |
 | Credit recognition | immutable | linked application/reversal/refund |
-| Refund | immutable completed event | authorized linked correction without rewrite |
+| Refund | immutable completed event | DB-REFUND-002 verified-return event without rewrite |
 | closed Settlement | immutable | linked post-closure financial corrections |
 | Audit Event | immutable | later audit event, never overwrite |
 
@@ -901,11 +985,11 @@ Tests cover Property-local boundaries, leap years, inclusive proration, half-up 
 
 The following matters are not resolved by `001_DOMAIN_MODEL.md` or `002_BUSINESS_RULES.md`. They do not block this logical model and must not be guessed during implementation.
 
-- **OD-004-001 — Customer identity/contact policy:** exact legal-name structure, contact validation, mandatory contact channel, and duplicate-person matching.
-- **OD-004-002 — Refund delivery lifecycle:** delivery methods and whether operational pending/failed states are needed before the completed Refund event.
-- **OD-004-003 — Business-number format:** format and sequencing scope for Invoice, Payment, and Refund Numbers. Uniqueness and immutability are already mandatory.
-- **OD-004-004 — Meter serial uniqueness scope:** whether a physical serial number is globally unique, unique per Utility Type, or only informational.
-- **OD-004-005 — Measurement unit metadata:** the approved physical unit/scale for Electricity and Water readings and Utility Rates. `numeric(20,6)` preserves exact values but does not name an unapproved unit.
+- **OOD-DB-001 — Customer identity/contact policy:** exact legal-name structure, contact validation, mandatory contact channel, and duplicate-person matching.
+- **OOD-DB-002 — Refund delivery lifecycle:** delivery methods and whether operational pending/failed states are needed before the completed Refund event.
+- **OOD-DB-003 — Business-number format:** format and sequencing scope for Invoice, Payment, and Refund Numbers. Uniqueness and immutability are already mandatory.
+- **OOD-DB-004 — Meter serial uniqueness scope:** whether a physical serial number is globally unique, unique per Utility Type, or only informational.
+- **OOD-DB-005 — Measurement unit metadata:** the approved physical unit/scale for Electricity and Water readings and Utility Rates. `numeric(20,6)` preserves exact values but does not name an unapproved unit. This does not block logical-schema review, but it blocks production Utility configuration and definitive fixture values.
 - **OOD-BR-001 — First partial-month Rent Due Date:** the Due Date source for a first partial-month Rent Invoice issued after the billed month's 5th remains open. `invoices.due_date` and its governing-source trace remain explicit; the database defines no default for this case.
 
 These are `OPEN OWNER DECISION`, not permission to introduce policy. None is resolved by `003_PRODUCT_REQUIREMENTS.md`; a later Owner decision must update the controlling numbered specifications before implementation assumes an answer.

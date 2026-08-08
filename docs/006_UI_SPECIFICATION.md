@@ -276,8 +276,11 @@ limit, and Notice to be recorded.
 
 Cancellation requires an approved reason and confirmation. Property-caused
 cancellation clearly shows the required Security Deposit Refund consequence when
-applicable; expiration displays reason `RESERVATION_EXPIRED` rather than a new
-status.
+applicable. Customer-caused cancellation or expiration shows the received Security
+Deposit as non-refundable and previews the required explicit linked disposition
+event, amount, governing Reservation/cause, authorization, and audit facts before
+confirmation. Expiration displays reason `RESERVATION_EXPIRED` rather than a new
+status; no path offers a free-form forfeiture.
 
 # 10. Lease Workflow
 
@@ -296,8 +299,8 @@ rental behavior as policy defaults.
 ## UI-038 — Signers
 
 Allow multiple Lease Signers with Primary Tenant identification and joint-
-responsibility disclosure. Signer history is immutable after signing except
-through an approved auditable correction/action.
+responsibility disclosure. Signer rows are editable only while the Lease is DRAFTED
+and become immutable after signing.
 
 ## UI-039 — Occupants
 
@@ -437,7 +440,9 @@ Utility Invoice.
 ## UI-060 — Utility Rate History
 
 Show effective-dated Rate history. New Rate entry is an auditable source-data action;
-issued Invoices retain their selected generation-date Rate.
+it captures and displays advance-notice timestamp/evidence and rejects an Effective
+Date not later than the Property-local notice date. Issued Invoices retain their
+selected generation-date Rate.
 
 ## UI-061 — Utility Calculation Detail
 
@@ -539,20 +544,25 @@ show the Refund-date exchange rate and preserved USD/KHR values before confirmat
 ## UI-072 — Refund History
 
 Display requested/recorded/completed facts and corrections as defined by approved
-statuses/events. The UI must not imply a Refund right absent from upstream rules.
+statuses/events. For an erroneous completed Refund, the correction action records
+only verified returned value with exact amount/currency, return timestamp/method
+reference, reason, and authorization; it does not imply a collection right or erase
+the payout. The UI must not imply a Refund right absent from upstream rules.
 
 # 17. Reversal UI
 
 ## UI-073 — Payment Reversal
 
 Present original Payment and complete active downstream impact. Require resolution
-or coordinated reversal of affected Allocations/Credit dispositions as specified,
-reason, authorization, and explicit irreversible-action confirmation.
+or coordinated reversal of affected Allocations/Credit events, Deposit Receipts,
+Deposit Applications/Dispositions, and required verified Refund returns as specified.
+Provide the authorized Deposit Receipt reversal action and require reason,
+authorization, and explicit irreversible-action confirmation.
 
 ## UI-074 — Reversal Result
 
 After success, display linked reversal event, Payment `REVERSED`, recomputed Invoice
-balances/statuses, and preserved original history.
+balances/statuses, Deposit/Credit balances, and preserved original history.
 
 # 18. Warning, Termination, and Move-out UI
 
@@ -604,7 +614,9 @@ Display:
 - active Allocations and Customer Credit applications;
 - Security Deposit and Pet Deposit separately;
 - each proposed Deposit disposition/application/Refund;
-- resulting Customer amount due or Refund result; and
+- resulting Customer amount due or Refund result;
+- immutable closing-balance-due snapshot separately from later corrected position;
+  and
 - complete source/audit links.
 
 ## UI-081 — Settlement Preparation
@@ -626,7 +638,9 @@ Invoices or treats Deposits as pre-settlement Credit.
 ## UI-083 — Settlement Correction
 
 Any approved correction is an explicit linked event/action and preserves the
-original closed Settlement. Generic editing is prohibited.
+original closed Settlement. Provide the explicit Deposit Application reversal action
+when applicable and render every source/application/reversal chain. Generic editing
+is prohibited.
 
 # 20. Audit and History Views
 
@@ -775,17 +789,20 @@ idempotency key.
 
 # 26. Traceability
 
+Every `BR-X-NNN` reference below also cites the exact same-suffix `PR-X-NNN` under
+the 003 bijection; wildcards and inclusive ranges expand identically.
+
 | UI area | Upstream authority |
 |---|---|
 | Reservation | `BR-RES-*`, applicable `PR-*` |
-| Lease/Occupancy | `BR-LEASE-*`, `BR-OCC-*`, `BR-MOVEIN-*` |
+| Lease/Occupancy | `BR-LEASE-*`, `BR-OCC-*`, `BR-DEP-*` |
 | Deposits/Pets | `BR-DEP-*` |
 | Rent/Services | `BR-RENT-*`, `BR-SVC-*` |
 | Utilities | `BR-UTIL-*` |
 | Invoices/Adjustments | `BR-INV-*` |
 | Payments/Allocations | `BR-PAY-*` |
 | Credit/Refund/Reversal | `BR-CREDIT-*`, `BR-REFUND-*` |
-| Termination/Move-out | `BR-TERM-*`, `BR-MOVEOUT-*` |
+| Termination/Move-out | `BR-LEASE-017` through `BR-LEASE-025`, `BR-MOVEOUT-*`, `BR-SETTLE-*` |
 | Final Settlement | `BR-SETTLE-*` |
 | Currency/FX | `BR-MONEY-*` |
 | Audit/Authorization | `BR-AUDIT-*`, `BR-AUTH-*`, `008_SECURITY_MODEL.md` |

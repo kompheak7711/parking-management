@@ -354,10 +354,10 @@ responsibility.
 
 - `POST /leases/{id}/sign`
 - `POST /leases/{id}/renew`
-- `POST /leases/{id}/record-warning`
-- `POST /leases/{id}/issue-termination-notice`
 - `POST /leases/{id}/terminate`
-- `POST /leases/{id}/record-move-out`
+
+Warning, Termination Notice, and Move-out creation use only the canonical API-067,
+API-068, and API-069 routes; API-038 defines no aliases for those actions.
 
 Each action has an explicit schema, authorization, reason/evidence, idempotency,
 and applicable rule references. Signing/renewal rechecks non-overlapping
@@ -407,13 +407,18 @@ rules without inventing a penalty.
 
 ## API-042 — Deposit Disposition
 
-- `POST /final-settlements/{id}/deposit-applications`
-- `POST /final-settlements/{id}/deposit-refunds`
+- `POST /reservations/{id}/security-deposit-dispositions` for customer-caused
+  cancellation or expiration before a Lease exists
 - `POST /final-settlements/{id}/deposit-dispositions`
 
-These idempotent actions are available only in the Final Settlement workflow,
-except the explicit Property-caused pre-Lease Reservation Refund path. Ordinary
-Invoice APIs never accept a Deposit balance field.
+Each idempotent command records Deposit, amount, governing event,
+cause/responsibility, reason, authorization, timestamp, and actor. Property-caused
+pre-Lease cancellation uses the explicit Refund path instead. Unsupported free-form
+forfeiture is rejected, and ordinary Invoice APIs never accept a Deposit balance.
+
+`POST /deposit-receipts/{id}/reverse` and
+`POST /deposit-dispositions/{id}/reverse` create DB-DEP-007/DB-DEP-008 linked
+correction events and never rewrite originals.
 
 # 14. Service Rate Endpoints
 
@@ -453,8 +458,9 @@ Meter version. Correction creates history and does not mutate issued Invoice lin
 
 `POST /properties/{property_id}/utility-readings:batch` may accept a bounded list.
 Each item has an idempotency key and item-level result. Atomic-all or partial
-behavior must be explicit in the request; partial mode still uses independent
-transactions and cannot bypass validation.
+behavior must be explicit in the request. Each item is an independent command under
+API-017; partial mode is an envelope over those commands, while atomic-all mode is
+one command covering the complete list. Neither mode leaves a half-written item.
 
 ## API-047 — Utility Rates
 
@@ -463,7 +469,9 @@ transactions and cannot bypass validation.
 - `GET /utility-rates/{rate_id}`
 
 Rates are effective-dated by Utility Type. Existing Rate history is immutable;
-correction uses an approved version/event mechanism defined by the data model.
+creation requires advance-notice timestamp/evidence whose Property-local date is
+before the Effective Date. Correction uses an approved version/event mechanism
+defined by the data model.
 
 ## API-048 — Utility Calculation Preview
 
@@ -544,10 +552,12 @@ per approved source/period, and returns generated/skipped/conflict/error items.
 ## API-055 — Utility Generation Run
 
 - `POST /properties/{property_id}/billing-runs/utilities`
-- `GET /billing-runs/{run_id}`
+
+Run status uses the canonical `GET /billing-runs/{run_id}` resource declared by
+API-054.
 
 The server uses validated Readings, the Utility Rate effective on generation date,
-and broken-Meter hierarchy. Pending zero-history charges remain unissued and
+and broken-Meter hierarchy. Pending future-basis charges remain unissued and
 identified as pending.
 
 ## API-056 — System Job Invocation
@@ -567,7 +577,8 @@ authorization. There is no unauthenticated scheduler bypass endpoint.
 Creation confirms receipt and requires Customer, amount/currency, accepted method,
 received timestamp, payer/reference evidence, and FX inputs where applicable. It
 does not accept Allocations, Credit status, derived availability, or arbitrary
-status.
+status. Payment resources expose immutable accepted-method code/name snapshots in
+addition to any link to the current configurable Payment Method.
 
 A third-party payer may be recorded without becoming the financially responsible
 Customer. A third-party Payment must carry designated Invoice/Lease intent and may
@@ -603,8 +614,10 @@ Invoice outstanding balance, and concurrency. Reversal creates a linked event.
 
 `POST /payments/{payment_id}/reverse` requires reason, expected current state,
 authorization, and idempotency. It coordinates required downstream reversals,
-sets `REVERSED`, and recomputes affected Invoice balances/statuses without deleting
-history.
+including Allocations, Credit recognitions/applications, Deposit Receipts,
+Deposit Applications/Dispositions, and any required DB-REFUND-002 verified return,
+before it sets `REVERSED`; it then recomputes affected balances/statuses without
+deleting history.
 
 # 19. Customer Credit Endpoints
 
@@ -661,8 +674,12 @@ and timestamp.
 
 ## API-066 — Refund Correction
 
-An approved correction uses `POST /refunds/{id}/corrections` or a source-specific
-reversal action. Generic PATCH/DELETE is prohibited.
+`POST /refunds/{id}/verified-returns` records only value demonstrably returned after
+an erroneous completed Refund under DB-REFUND-002. It requires exact returned
+amount/currency, return timestamp/method reference, reason, authorization, actor,
+and idempotency; cumulative value cannot exceed the Refund. It creates no collection
+right and never erases the original outbound event. Generic PATCH/DELETE is
+prohibited.
 
 # 21. Warning and Termination Records
 
@@ -700,7 +717,9 @@ not assert financial closure.
 - `GET /final-settlements/{settlement_id}`
 
 Exactly one Final Settlement may exist per terminated Lease. Creation is idempotent
-and transactionally unique.
+and transactionally unique. A closed resource exposes immutable
+`closing_balance_due_usd_cents` separately from any later linked corrections and
+current corrected financial position.
 
 ## API-071 — Settlement Preview
 
@@ -719,13 +738,16 @@ separate event.
 ## API-072 — Settlement Actions
 
 - `POST /final-settlements/{id}/deposit-applications`
+- `POST /deposit-applications/{id}/reverse`
 - `POST /final-settlements/{id}/deposit-refunds`
 - `POST /final-settlements/{id}/close`
-- `POST /final-settlements/{id}/corrections` when approved
+- `POST /final-settlements/{id}/corrections` to link an approved typed corrective
+  event under DB-SETTLE-003
 
 Each action is explicit, authorized, idempotent, and append-only. Close revalidates
-all sources in one transaction and does not convert Deposits into ordinary Invoice
-Credit before Settlement.
+all sources in one transaction, returns the immutable
+`closing_balance_due_usd_cents` snapshot, and does not convert Deposits into ordinary
+Invoice Credit before Settlement.
 
 # 23. Audit Endpoints
 
@@ -858,17 +880,22 @@ not by altering job state directly.
 
 # 29. Traceability
 
+Because 003 defines an exact same-suffix bijection, every `BR-X-NNN` reference in
+this section also cites and implements `PR-X-NNN`; a family wildcard or inclusive
+range expands identically in both namespaces. Concrete `DB-*` references in endpoint
+requirements identify the persistence requirement used by that operation.
+
 | API area | Rules |
 |---|---|
 | Reservation | `BR-RES-*` |
-| Lease/Occupancy/Move-in | `BR-LEASE-*`, `BR-OCC-*`, `BR-MOVEIN-*` |
+| Lease/Occupancy/Move-in | `BR-LEASE-*`, `BR-OCC-*`, `BR-DEP-*` |
 | Deposit/Pet | `BR-DEP-*` |
 | Rent/Services | `BR-RENT-*`, `BR-SVC-*` |
 | Utilities | `BR-UTIL-*` |
 | Invoice | `BR-INV-*` |
 | Payment/Allocation | `BR-PAY-*` |
 | Credit/Refund | `BR-CREDIT-*`, `BR-REFUND-*` |
-| Termination/Move-out | `BR-TERM-*`, `BR-MOVEOUT-*` |
+| Termination/Move-out | `BR-LEASE-017` through `BR-LEASE-025`, `BR-MOVEOUT-*` |
 | Settlement | `BR-SETTLE-*` |
 | Money/FX | `BR-MONEY-*` |
 | Audit/Authorization | `BR-AUDIT-*`, `BR-AUTH-*` |

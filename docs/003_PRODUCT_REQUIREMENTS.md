@@ -3905,8 +3905,9 @@ because the Lease was terminated.
 Final actual Utility Readings must be obtained and validated where possible. If
 a Meter is confirmed broken, only the approved estimation process may be used.
 
-An ordinary missing reading delays the charge. A zero-history broken-Meter
-estimate remains pending until the approved complete future-period basis exists.
+An ordinary missing reading delays the charge. A fewer-than-three-history
+broken-Meter estimate remains pending until the approved complete future-period
+basis exists.
 
 ### PR-MOVEOUT-006 — Inspection and Final Charges
 
@@ -4091,8 +4092,8 @@ application and does not create a new forfeiture circumstance.
 Final Settlement begins as a pending process and must not close until the Lease is
 TERMINATED and every required
 valid final charge is determined. An ordinary missing Utility Reading or a
-pending zero-history broken-Meter estimate keeps the affected charge and
-Settlement unfinalized as necessary.
+pending fewer-than-three-history broken-Meter estimate keeps the affected charge
+and Settlement unfinalized as necessary.
 
 ### PR-SETTLE-012 — Permanent Closure
 
