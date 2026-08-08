@@ -239,7 +239,10 @@ The Security Deposit:
 
 ## Pet Deposit
 
-An additional mandatory deposit required only when approved pets are allowed under the Lease.
+An additional Deposit liability that applies only when both:
+
+- the pet is approved; and
+- the applicable signed Lease terms require a Pet Deposit.
 
 Pet Deposits follow the same financial principles as Security Deposits.
 
@@ -518,7 +521,7 @@ A Unit exists independently of Reservations, Leases, or Customers.
 - A Unit belongs to exactly one Property.
 - A Unit may have many Reservations over time.
 - A Unit may have many historical Leases.
-- A Unit may have only one active signed Lease.
+- Signed Leases for the Unit must not have overlapping contractual periods.
 - A Unit may have multiple historical Utility Meters.
 - A Unit may have only one active Utility Meter for each Utility Type.
 
@@ -629,7 +632,7 @@ It controls occupancy, billing, deposits, and the tenancy lifecycle.
 - A Lease may have multiple Lease Signers.
 - Every Lease Signer is jointly responsible for the full Lease balance.
 - A Lease may have many Occupants.
-- A Unit may have only one active signed Lease.
+- Signed Leases for the Unit must not have overlapping contractual periods.
 - A terminated Lease never becomes signed again.
 - A cancelled Lease was never activated.
 
@@ -707,7 +710,11 @@ Represents money owed to the Property.
 
 ### Business Invariants
 
-- An Invoice belongs to one Lease.
+- Every Invoice belongs to exactly one Customer.
+- An Invoice may additionally be associated with zero or one Lease.
+- When a Lease association exists, the Invoice Customer, Unit, obligation,
+  period, and Lease context must be consistent.
+- Every Rent Invoice requires the applicable signed Lease.
 - An Invoice balance cannot become negative.
 - Invoice history is permanent.
 - Voiding an Invoice preserves its historical record.
@@ -764,7 +771,8 @@ The Deposit Aggregate manages both Security Deposits and Pet Deposits.
 - Security Deposit is mandatory.
 - Security Deposit may be paid in installments.
 - Security Deposit collected during Reservation remains the same Security Deposit after move-in.
-- Pet Deposit exists only when approved pets are present.
+- Pet Deposit exists only when a pet is approved and the applicable signed Lease
+  terms require that Deposit.
 - Deposits are applied only during Final Settlement.
 
 ---
@@ -784,7 +792,8 @@ Represents the financial closing process of a terminated Lease.
 
 ### Business Invariants
 
-- Final Settlement belongs to one Lease.
+- Every terminated Lease must complete exactly one Final Settlement.
+- Final Settlement belongs to exactly one terminated Lease.
 - Final Settlement occurs only after Lease termination.
 - Final Settlement permanently closes the Lease financially.
 - Final Settlement is fully auditable.
@@ -1064,7 +1073,7 @@ One Unit
 
 Rules
 
-- Only one signed Lease may exist at any time.
+- Signed Leases for the Unit must not have overlapping contractual periods.
 - Historical Leases remain permanently recorded.
 - A terminated Lease never becomes active again.
 
@@ -1164,21 +1173,35 @@ Rules
 
 ---
 
-## 15.12 Lease → Invoice
+## 15.12 Customer → Invoice and Optional Lease Association
 
 Relationship
 
 ```
+One Customer
+      │
+      └──────── Zero or Many Invoices
+
 One Lease
       │
-      └──────── Many Invoices
+      └──────── Zero or Many Associated Invoices
+
+Each Invoice ──────── Exactly One Customer
+Each Invoice ──────── Zero or One Lease
 ```
 
 Rules
 
+- Every Invoice has one explicit Customer owner.
+- Lease association is optional at the general Invoice level.
+- When a Lease association exists, Customer, Unit, obligation, period, and Lease
+  context must be consistent.
+- Rent Invoices require the applicable signed Lease.
 - Rent invoices are generated automatically.
 - Utility invoices are generated from Utility Readings.
 - Damage and miscellaneous invoices are manually created.
+- Optional Lease association does not authorize arbitrary non-Lease charges or
+  additional Invoice categories.
 - Invoice history is permanent.
 
 ---
@@ -1220,7 +1243,8 @@ Lease
 Rules
 
 - Security Deposit is mandatory.
-- Pet Deposit exists only when approved pets exist.
+- Pet Deposit exists only when a pet is approved and the applicable signed Lease
+  terms require that Deposit.
 - Deposits remain liabilities throughout the Lease.
 - Deposits are resolved during Final Settlement.
 
@@ -1231,7 +1255,7 @@ Rules
 Relationship
 
 ```
-One Lease
+One Terminated Lease
       │
       └──────── One Final Settlement
 ```
@@ -1239,7 +1263,7 @@ One Lease
 Rules
 
 - Final Settlement occurs only after Lease termination.
-- A Lease may have only one Final Settlement.
+- Every terminated Lease must complete exactly one Final Settlement.
 - Final Settlement permanently closes the financial lifecycle of the Lease.
 
 ---
@@ -1513,7 +1537,10 @@ The following business invariants span multiple Aggregates and must always remai
 
 # 18. Financial Domain
 
-The financial domain represents all monetary obligations, receipts, liabilities, credits, adjustments, and settlement activities associated with a Lease.
+The financial domain represents monetary obligations, receipts, liabilities,
+credits, adjustments, and settlement activities belonging to Customers. A
+financial record may additionally be associated with a Lease when its approved
+business context requires that association.
 
 The financial model is designed around the following principles:
 
@@ -1561,7 +1588,8 @@ A Customer may therefore:
 
 ## 20.1 Purpose
 
-An Invoice represents an amount owed under a Lease.
+An Invoice represents an amount owed by exactly one Customer. It may additionally
+be associated with zero or one Lease when applicable.
 
 An Invoice establishes a receivable but does not itself represent money received.
 
@@ -1585,11 +1613,22 @@ Deposits are not Invoice categories because deposits are liabilities rather than
 
 ## 20.3 Invoice Responsibility
 
-Every Invoice belongs to exactly one Lease.
+Every Invoice belongs to exactly one Customer.
 
-The Lease establishes which Customers are financially responsible for the Invoice.
+An Invoice may additionally be associated with zero or one Lease. Customer
+ownership remains explicit and is not derived exclusively from a Lease.
 
-Invoices are therefore not assigned independently to individual Lease Signers.
+When an Invoice is associated with a Lease, its Customer must be financially
+responsible under that Lease, and its Unit, obligation, billing period, and other
+contractual context must agree with the Lease.
+
+Selecting one Invoice Customer does not remove the approved joint responsibility
+of other Lease Signers. Rent remains Lease-specific and every Rent Invoice
+requires the applicable signed Lease.
+
+An Invoice without a Lease must still have an approved billing source and
+identifiable purpose within a supported Invoice category. Optional Lease
+association does not authorize arbitrary charges or new Invoice categories.
 
 ---
 
@@ -1724,14 +1763,24 @@ Electricity and water rates may change over time.
 
 Historical utility rates must therefore be preserved.
 
-A later rate change must not modify the amount that should have been charged for an earlier billing period.
+The applicable Utility Rate is the rate effective on the Utility Invoice
+generation date. That selected rate applies to the entire consumption period
+represented by the Invoice.
+
+Consumption must not be split between old and new rates merely because a rate
+changed during the represented consumption period.
 
 Each utility bill must be explainable using:
 
 - the relevant Utility Meter
 - the relevant readings
 - the consumption quantity
-- the historical rate applicable to that billing period
+- the Invoice generation date
+- the exact Utility Rate selected on that date
+- the selected rate's effective-date information
+
+Previously issued Utility Invoices must never be recalculated because of a later
+rate change.
 
 ---
 
@@ -2080,7 +2129,8 @@ The exact refund and forfeiture conditions belong to `002_BUSINESS_RULES.md`.
 
 # 34. Pet Deposit
 
-A Pet Deposit is required only when approved pets exist under the tenancy.
+A Pet Deposit applies only when a pet is approved and the applicable signed Lease
+terms require that Deposit.
 
 A Pet Deposit:
 
@@ -2090,7 +2140,12 @@ A Pet Deposit:
 - may be used only under authorized settlement rules
 - is resolved through Final Settlement
 
-A Lease without approved pets does not require a Pet Deposit.
+If no pet is being kept, a Pet Deposit must not be required merely because the
+Customer may keep a pet later.
+
+If an approved pet is introduced later and the applicable signed Lease terms
+require a Pet Deposit, that Deposit must be paid before or when the pet begins
+staying in the Unit.
 
 ---
 
@@ -2268,7 +2323,8 @@ These balances must not be treated as interchangeable.
 
 Historical billing must be reproducible.
 
-The system must preserve the rates applicable at the time a charge was incurred.
+The system must preserve the exact rate selected under the applicable source and
+effective-date rule when a charge was generated.
 
 This includes:
 
@@ -2279,7 +2335,9 @@ This includes:
 - Trash charges
 - Other recurring service rates
 
-A rate change affects future applicable periods only.
+A Utility Rate change affects Utility Invoices generated on or after its effective
+date. Rent and fixed Service rates follow their applicable contractual period
+rules.
 
 Historical invoices must not change because a current rate changes.
 
@@ -2401,7 +2459,7 @@ The following rules must always remain true:
 - A Unit may have many historical Reservations.
 - A Unit may have many historical Leases.
 - A Unit may have no more than one active Reservation at a time.
-- A Unit may have no more than one Signed Lease at a time.
+- A Unit may have no more than one Signed Lease covering any point in time.
 - A Unit may not be simultaneously available for conflicting tenancy commitments.
 
 Unit status must reflect the actual operational condition of the Unit.
@@ -2479,7 +2537,7 @@ The following rules must always hold:
 - Responsibility is never divided into individual percentages or partial legal balances.
 - A Lease may contain multiple Occupants.
 - Occupancy and contractual responsibility remain separate concepts.
-- A Unit may have only one Signed Lease at any given time.
+- Signed Leases for the same Unit must not have overlapping contractual periods.
 
 Lease statuses are:
 
@@ -2555,7 +2613,12 @@ The following rules apply:
 - The remaining Security Deposit balance may be outstanding before move-in.
 - Required move-in deposit conditions must be satisfied before possession is granted.
 - Security Deposit is not refundable during an active Lease.
-- Pet Deposit is required only when approved pets exist.
+- Pet Deposit applies only when a pet is approved and the applicable signed Lease
+  terms require that Deposit.
+- If no pet is being kept, Pet Deposit is not required merely because a Customer
+  may keep a pet later.
+- If an approved pet is introduced later and the signed Lease terms require Pet
+  Deposit, it must be paid before or when the pet begins staying in the Unit.
 - Security Deposit and Pet Deposit remain separate liabilities.
 - Deposits may only be applied as part of Final Settlement.
 - Deposit application must never occur silently.
@@ -2620,7 +2683,13 @@ Invoices represent financial receivables.
 
 The following rules apply:
 
-- Every Invoice belongs to one Lease.
+- Every Invoice belongs to exactly one Customer.
+- An Invoice may additionally be associated with zero or one Lease.
+- When a Lease association exists, the Invoice Customer, Unit, obligation,
+  period, and Lease context must be consistent.
+- Rent Invoices require the applicable signed Lease.
+- Optional Lease association does not authorize arbitrary non-Lease charges or
+  new Invoice categories.
 - Every Invoice has an identifiable billing purpose.
 - Every Invoice belongs to one supported Invoice category.
 - The original billed amount must remain historically identifiable.
@@ -2689,7 +2758,7 @@ The following rates may vary over time:
 
 The following invariants apply:
 
-- A rate change must never rewrite a previous billing period.
+- A rate change must never rewrite a previously issued historical charge.
 - Historical billing must remain reproducible.
 - The applicable rate must be determinable for any historical charge.
 - Current rates and historical rates must be distinguishable.
@@ -2703,7 +2772,8 @@ Final Settlement closes the financial lifecycle of a Lease.
 
 The following rules apply:
 
-- Final Settlement belongs to one Lease.
+- Every terminated Lease must complete exactly one Final Settlement.
+- Final Settlement belongs to exactly one terminated Lease.
 - Final Settlement occurs only after the Lease is TERMINATED.
 - Outstanding obligations must be identified before settlement is finalized.
 - Available Customer Credit must be recognized.
@@ -3343,13 +3413,17 @@ Unit
 Coordinates:
 
 ```text
-Lease
+Customer
++
+Unit
++
+Applicable Lease (when the Invoice is Lease-associated)
 +
 Utility Meter
 +
 Utility Reading
 +
-Historical Utility Rate
+Generation-date Utility Rate
 +
 Invoice
 ```
@@ -3409,7 +3483,7 @@ The system distinguishes between business operations requiring immediate consist
 Immediate domain consistency is required for rules such as:
 
 - preventing a second active Reservation for the same Unit
-- preventing a second Signed Lease for the same Unit
+- preventing overlapping Signed Lease coverage for the same Unit
 - preventing invalid Lease status transitions
 - preventing negative Invoice balances
 - preventing allocation beyond available Payment value
@@ -3696,7 +3770,8 @@ Security Deposit Received
 
 ## Pet Deposit
 
-A Deposit liability required only when approved pets exist.
+A Deposit liability that applies only when a pet is approved and the applicable
+signed Lease terms require that Deposit.
 
 Pet Deposit is separate from Security Deposit.
 
@@ -3922,9 +3997,13 @@ Utility Consumption is derived from Utility Reading history and is not itself th
 
 ## Historical Rate
 
-A rate that was valid for a specific historical period.
+A rate selected for a historical charge under its applicable source and
+effective-date rule.
 
 Historical Rates must remain preserved so previous billing can always be reconstructed.
+
+For a Utility Invoice, this is the Utility Rate effective on the Invoice
+generation date and applied to the entire represented consumption period.
 
 Examples include:
 
@@ -3938,7 +4017,13 @@ Examples include:
 
 ## Invoice
 
-A financial receivable associated with one Lease.
+A financial receivable belonging to exactly one Customer and optionally
+associated with zero or one Lease.
+
+When a Lease association exists, Customer, Unit, obligation, period, and Lease
+context must be consistent. Rent Invoices require the applicable signed Lease.
+Optional Lease association does not authorize arbitrary non-Lease charges or new
+Invoice categories.
 
 Supported Invoice Categories:
 
@@ -3954,13 +4039,16 @@ Supported Invoice Categories:
 
 An Invoice representing rental charges for a defined rental period.
 
-Rent is normally billed monthly in advance.
+Rent is normally billed monthly in advance. Every Rent Invoice requires the
+applicable signed Lease.
 
 ---
 
 ## Utility Invoice
 
-An Invoice representing Electricity and/or Water usage derived from Utility Readings and applicable historical rates.
+An Invoice representing Electricity and/or Water usage derived from Utility
+Readings and the Utility Rate effective on the Invoice generation date. The
+selected rate applies to the entire represented consumption period.
 
 ---
 
@@ -4394,9 +4482,9 @@ PROPERTY
     │   │
     │   ├── SECURITY DEPOSIT
     │   │
-    │   ├── PET DEPOSIT
+    │   ├── PET DEPOSIT (conditional)
     │   │
-    │   ├── INVOICES
+    │   ├── optionally associated INVOICES
     │   │
     │   └── FINAL SETTLEMENT
     │
@@ -4407,11 +4495,13 @@ PROPERTY
 
 CUSTOMER
 │
+├── INVOICES
+│
 └── PAYMENT
     │
-    └── PAYMENT ALLOCATION
-        │
-        └───────────────────────────────────► INVOICE
+    └── PAYMENT ALLOCATION ─────────────────► INVOICE
+
+INVOICE ──────── optional zero-or-one association ────────► LEASE
 
 
 CUSTOMER CREDIT
@@ -4716,7 +4806,7 @@ An operation that violates a Domain Invariant must be rejected rather than silen
 Examples include attempts to:
 
 - create a second active Reservation for the same Unit
-- create a second Signed Lease for the same Unit
+- create overlapping Signed Lease coverage for the same Unit
 - terminate a Drafted Lease
 - cancel a Signed Lease
 - move in without satisfying required move-in conditions
@@ -4750,13 +4840,14 @@ The following architectural domain decisions are considered established by this 
 13. Remaining required Security Deposit must be satisfied according to move-in rules.
 14. Security Deposit is not refundable while the Lease remains active.
 15. Security Deposit and Pet Deposit are liabilities.
-16. Pet Deposit exists only when approved pets exist.
+16. Pet Deposit applies only when a pet is approved and the applicable signed
+Lease terms require it.
 17. Every Lease has exactly one Primary Tenant.
 18. Primary Tenant must be a Lease Signer.
 19. A Lease may have multiple Lease Signers.
 20. Every Lease Signer is jointly responsible for the full balance.
 21. Occupancy is separate from contractual responsibility.
-22. One Unit may have only one Signed Lease at a time.
+22. Signed Leases for one Unit must not have overlapping contractual periods.
 23. Rent is billed monthly in advance.
 24. First and final partial months use actual calendar days when applicable.
 25. Recurring monthly Rent Invoices are generated on the 25th and due on the 5th.
@@ -4764,7 +4855,9 @@ The following architectural domain decisions are considered established by this 
 27. One Unit may have only one active meter per Utility Type.
 28. Historical Utility Meters and Utility Readings are preserved.
 29. Internet and Trash are fixed recurring service charges.
-30. Historical rates must remain preserved.
+30. Historical rates must remain preserved; a Utility Invoice selects the Utility
+Rate effective on its generation date and applies it to the entire represented
+consumption period.
 31. Payments and Payment Allocations are separate concepts.
 32. Payment allocation is manual.
 33. Partial payments are supported.
@@ -4772,9 +4865,14 @@ The following architectural domain decisions are considered established by this 
 35. Customer Credit is separate from Deposit.
 36. Reversals and Refunds preserve financial history.
 37. Deposits may only be applied during Final Settlement.
-38. Final Settlement closes the financial lifecycle of a terminated Lease.
-39. Every significant financial change must be audited.
-40. Historical records must not be silently deleted or rewritten.
+38. Every Invoice belongs to exactly one Customer and may additionally be
+associated with zero or one Lease.
+39. Rent Invoices require the applicable signed Lease, and any Lease-associated
+Invoice must remain consistent with its Lease context.
+40. Every terminated Lease completes exactly one Final Settlement, which closes
+its financial lifecycle.
+41. Every significant financial change must be audited.
+42. Historical records must not be silently deleted or rewritten.
 
 ---
 
@@ -4786,7 +4884,7 @@ The following details are deferred.
 
 ## `002_BUSINESS_RULES.md`
 
-Will define rules such as:
+Defines rules such as:
 
 - maximum Reservation duration
 - exact Reservation extension eligibility

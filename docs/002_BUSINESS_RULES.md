@@ -1705,29 +1705,42 @@ was missed.
 
 ---
 
-### BR-UTIL-025 — Three-month Historical Daily Average
+### BR-UTIL-025 — Three-complete-period Historical Basis
 
-When three complete historical calendar months of usable actual consumption
-exist for the same Unit and Utility Type:
+When three complete historical actual periods exist for the same Unit and
+Utility Type, use those three complete periods as the historical basis.
 
 ```text
-Historical Daily Average
+Weighted Historical Daily Average
 =
-Total Actual Consumption Across the Three Complete Months
-----------------------------------------------------------
-Total Calendar Days Represented by Those Months
+Total Actual Consumption Across the Three Complete Periods
+-----------------------------------------------------------
+Total Calendar Days Represented by Those Periods
 ```
 
-The system must not average three separately rounded monthly averages.
+The system must not average three separately rounded period averages.
 
 ---
 
-### BR-UTIL-026 — Estimated Consumption and Boundaries
+### BR-UTIL-026 — Weighted Daily Average and Estimate Boundaries
+
+Every historical basis under BR-UTIL-025 or BR-UTIL-027 uses one weighted daily
+average:
+
+```text
+Weighted Historical Daily Average
+=
+Total Actual Consumption Across All Periods in the Basis
+--------------------------------------------------------
+Total Calendar Days Represented by All Periods in the Basis
+```
+
+The system must not average separately rounded period averages.
 
 ```text
 Estimated Consumption
 =
-Historical Daily Average × Inclusive Unmeasured Calendar Days
+Weighted Historical Daily Average × Inclusive Unmeasured Calendar Days
 ```
 
 The period begins when consumption became unmeasurable and ends on the last day
@@ -1736,23 +1749,29 @@ counted in both the estimate and the replacement-Meter actual period.
 
 ---
 
-### BR-UTIL-027 — Insufficient Historical Data Fallback
+### BR-UTIL-027 — Fewer-than-three Historical Basis
 
-If the Unit lacks three complete historical calendar months of usable actual
-consumption, the system must not substitute one or two historical months,
-another Unit, a comparable Unit, or an arbitrary estimate.
+If fewer than three, but at least one, complete historical actual period exists
+for the same Unit and Utility Type, use all available complete historical actual
+periods as the basis under BR-UTIL-026.
 
-It must wait until one complete future month of actual consumption is available
-for that same Unit and Utility Type, then use that complete future month as the
-daily-average basis for the affected broken-Meter period.
+The system must not discard a usable complete historical period, substitute
+another or comparable Unit, average separately rounded period averages, or invent
+an arbitrary estimate.
 
 ---
 
-### BR-UTIL-028 — Pending Estimate
+### BR-UTIL-028 — Zero-history Future-period Fallback
 
-Until the complete future actual month required by BR-UTIL-027 exists, the
-affected charge remains pending and unfinalized. The reason for delay and the
-actual future data eventually used must be preserved.
+If zero complete historical actual periods exist for the same Unit and Utility
+Type, there is no usable historical basis. The system must wait until one complete
+future month or period of actual consumption becomes available for that same Unit
+and Utility Type and use that complete future actual period as the daily-average
+basis under BR-UTIL-026.
+
+Until that future complete actual period exists, the broken-Meter estimate and
+affected charge remain pending and unfinalized. The reason for delay and the
+future actual data eventually used must be preserved.
 
 ---
 
@@ -3262,8 +3281,8 @@ because the Lease was terminated.
 Final actual Utility Readings must be obtained and validated where possible. If
 a Meter is confirmed broken, only the approved estimation process may be used.
 
-An ordinary missing reading delays the charge. An insufficient-history broken-
-Meter estimate remains pending until the approved future-month basis exists.
+An ordinary missing reading delays the charge. A zero-history broken-Meter
+estimate remains pending until the approved complete future-period basis exists.
 
 ---
 
@@ -3519,7 +3538,7 @@ application and does not create a new forfeiture circumstance.
 Final Settlement begins as a pending process and must not close until the Lease is
 TERMINATED and every required
 valid final charge is determined. An ordinary missing Utility Reading or a
-pending insufficient-history broken-Meter estimate keeps the affected charge and
+pending zero-history broken-Meter estimate keeps the affected charge and
 Settlement unfinalized as necessary.
 
 ---
@@ -3855,50 +3874,30 @@ not reinterpret these rules to create new statuses, charges, fees, penalties,
 currencies, exchange providers, estimation methods, termination rights, Refund
 rights, or authorization policies.
 
-## 30.2 Known Upstream Invoice-cardinality Conflict
+## 30.2 Consistent Invoice Ownership and Association
 
-The following statements in `001_DOMAIN_MODEL.md` conflict with the later
-explicit Owner decision implemented in BR-INV-002 and BR-INV-036 through
-BR-INV-038:
+`001_DOMAIN_MODEL.md` and this document use the same approved Invoice model:
 
-- line 710: "An Invoice belongs to one Lease."
-- lines 1167–1183: the Lease-to-Invoice relationship presents Invoices only through
-  a Lease and requires future optional-cardinality clarification;
-- line 1564: "An Invoice represents an amount owed under a Lease.";
-- lines 1588–1592: every Invoice belongs to exactly one Lease and responsibility
-  derives through that Lease;
-- line 2623: "Every Invoice belongs to one Lease."; and
-- line 3941: Invoice is defined as associated with one Lease.
+- every Invoice belongs to exactly one Customer;
+- an Invoice may additionally be associated with zero or one Lease;
+- a Lease-associated Invoice must remain consistent with its Customer, Unit,
+  obligation, period, and Lease context;
+- every Rent Invoice requires the applicable signed Lease; and
+- optional Lease association does not authorize arbitrary non-Lease charges or
+  new Invoice categories.
 
-The intended approved policy in this document is:
+## 30.3 Consistent Utility Rate and Pet Deposit Policies
 
-- every Invoice belongs to exactly one Customer; and
-- an Invoice may additionally be associated with zero or one Lease when
-  applicable.
+`001_DOMAIN_MODEL.md` and this document also use the same approved policies for:
 
-The associated Lease and Invoice Customer must be consistent. Rent remains a
-Lease-specific obligation. This known conflict requires a future controlled
-correction to `001_DOMAIN_MODEL.md`; it must not be resolved by changing 002 back
-to universal mandatory Lease ownership.
+- Utility Rate selection on the Utility Invoice generation date, whole-period
+  application of that selected rate, and permanent preservation of issued
+  Utility Invoice history; and
+- Pet Deposit application only when a pet is approved and the applicable signed
+  Lease terms require that Deposit, including the approved timing for a pet
+  introduced after move-in.
 
-## 30.3 Other Known Upstream Owner-policy Conflicts
-
-`001_DOMAIN_MODEL.md` also contains two policies superseded by later explicit
-Owner decisions implemented in this document:
-
-- lines 1723–1734 and 2269–2282 select the Utility Rate by billing period and
-  prohibit a later rate from affecting an earlier period. Owner Decision 9 instead
-  selects the Utility Rate effective on the Invoice generation date and applies
-  that rate to the whole represented consumption period, as implemented by
-  BR-UTIL-015, BR-UTIL-017, and BR-UTIL-029 through BR-UTIL-032; and
-- lines 240–244, 2081–2093, and 2542–2560 state a mandatory Pet Deposit whenever
-  an approved pet is allowed or present. Owner Decision 5 makes the Pet Deposit
-  conditional on both an approved pet and applicable signed-Lease terms requiring
-  that Deposit, as implemented by BR-DEP-007 and BR-DEP-010.
-
-These conflicts require a future controlled correction to
-`001_DOMAIN_MODEL.md`. They must not be resolved by reverting the later approved
-Owner policies in this document.
+The two authoritative documents are mutually consistent on these policies.
 
 ## 30.4 Stable Rule Identifiers
 
@@ -3915,6 +3914,5 @@ events so that every balance and historical fact can be reconstructed.
 ## 30.6 Downstream Conformance
 
 Database, API, UI, testing, security, and deployment specifications must conform
-to this document and the approved Owner-policy exceptions reported in sections
-30.2 and 30.3. Any new material policy requires controlled Owner approval rather
-than an implementation assumption.
+to this document and `001_DOMAIN_MODEL.md`. Any new material policy requires
+controlled Owner approval rather than an implementation assumption.
