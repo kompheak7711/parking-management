@@ -1725,13 +1725,13 @@ The system must not average three separately rounded period averages.
 
 ---
 
-### BR-UTIL-026 — Weighted Daily Average and Estimate Boundaries
+### BR-UTIL-026 — Basis Daily Average and Estimate Boundaries
 
-Every historical basis under BR-UTIL-025 or BR-UTIL-027 uses one weighted daily
-average:
+Every historical basis under BR-UTIL-025 and every complete future-period basis
+under BR-UTIL-027 or BR-UTIL-028 uses one daily average:
 
 ```text
-Weighted Historical Daily Average
+Basis Daily Average
 =
 Total Actual Consumption Across All Periods in the Basis
 --------------------------------------------------------
@@ -1743,7 +1743,7 @@ The system must not average separately rounded period averages.
 ```text
 Estimated Consumption
 =
-Weighted Historical Daily Average × Inclusive Unmeasured Calendar Days
+Basis Daily Average × Inclusive Unmeasured Calendar Days
 ```
 
 The period begins when consumption became unmeasurable and ends on the last day
@@ -1752,15 +1752,20 @@ counted in both the estimate and the replacement-Meter actual period.
 
 ---
 
-### BR-UTIL-027 — Fewer-than-three Historical Basis
+### BR-UTIL-027 — Fewer-than-three Future-period Fallback
 
 If fewer than three, but at least one, complete historical actual period exists
-for the same Unit and Utility Type, use all available complete historical actual
-periods as the basis under BR-UTIL-026.
+for the same Unit and Utility Type, those one or two historical periods must not
+be substituted for the approved three-period historical basis.
 
-The system must not discard a usable complete historical period, substitute
-another or comparable Unit, average separately rounded period averages, or invent
-an arbitrary estimate.
+The system must wait until one complete future month or period of actual
+consumption becomes available for that same Unit and Utility Type and use that
+complete future actual period as the daily-average basis under BR-UTIL-026. It
+must not substitute another or comparable Unit or invent an arbitrary estimate.
+
+Until that future complete actual period exists, the broken-Meter estimate and
+affected charge remain pending and unfinalized. The reason for delay and the
+future actual data eventually used must be preserved.
 
 ---
 
