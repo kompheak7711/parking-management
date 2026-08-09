@@ -151,6 +151,9 @@ The following terminology shall be used consistently throughout the project.
 
 The apartment building managed by this application.
 
+Its authoritative business timezone is `Asia/Phnom_Penh` for Due Dates, overdue
+boundaries, schedules, and other calendar-day business rules.
+
 Each application contains exactly one Property.
 
 ---
@@ -344,6 +347,37 @@ Invoices represent receivables owed to the Property.
 
 ---
 
+## Late-payment Charge Decision
+
+The one final management decision for an applicable overdue Invoice. It records the
+remaining unpaid overdue Invoice balance at assessment, the 10% default calculation,
+and management's confirmed, reduced, or waived result.
+
+The decision is not an Invoice status and does not rewrite the original Invoice
+principal. A positive approved amount is an explicit linked financial charge; a
+waiver remains a permanent audited decision without creating a charge.
+
+---
+
+## Nonpayment Warning Notice
+
+A formal auditable Notice issued when an applicable Rent obligation remains unpaid
+at 20 calendar days after its Due Date. The Notice warns that continued nonpayment
+through 30 days overdue may lead authorized management to initiate the approved
+Lease termination or surrender process.
+
+---
+
+## Serious Nonpayment Default
+
+A permanent historical condition recorded when an applicable Rent obligation remains
+unpaid at 30 calendar days after its Due Date. It may permit authorized management to
+initiate the approved termination or surrender process, but it does not itself
+terminate the Lease, end Occupancy, change Unit status, create Move-out, or create
+Final Settlement.
+
+---
+
 ## Payment
 
 Money received from a Customer.
@@ -460,6 +494,7 @@ The Property Aggregate owns the overall business environment but does not direct
 
 - Store property information
 - Define the property's identity
+- Own the authoritative `Asia/Phnom_Penh` business timezone
 - Own all Units
 - Provide the root of the business hierarchy
 
@@ -727,6 +762,11 @@ Represents money owed to the Property.
 - An Invoice balance cannot become negative.
 - Invoice history is permanent.
 - Voiding an Invoice preserves its historical record.
+- The Due Date is the last calendar day on which payment is timely; any remaining
+  unpaid balance becomes overdue on the next calendar day in Asia/Phnom_Penh.
+- An applicable Invoice has at most one final Late-payment Charge Decision.
+- A late-payment charge never compounds, repeats, or generates another late-payment
+  charge.
 
 ---
 
@@ -1778,12 +1818,31 @@ The rent rate applicable to a billing period must be determinable from the histo
 
 ## 21.5 Contractual Late-payment Context
 
-The Lease provides substantially that failure to pay Rent or another payment
-obligation within ten days of its Due Date carries late payment of 10% of the total
-applicable amount, and that Rent unpaid for 30 days carries a contractual surrender
-commitment. The unresolved operational details are recorded as OPEN OWNER DECISION
-items in `002_BUSINESS_RULES.md`; this domain model does not invent a calculation,
-generation, repetition, warning, surrender, or termination algorithm.
+The Due Date on an applicable Invoice or Bill is the last calendar day on which
+payment is timely. In Asia/Phnom_Penh, any remaining unpaid balance becomes overdue
+on the next calendar day; there is no additional ten-day grace period.
+
+The normal/default late-payment charge is 10% of the total remaining unpaid overdue
+balance of that Invoice at assessment. It is calculated once for the Invoice as a
+whole rather than independently by line. Authorized management makes one final
+decision for that Invoice: confirm the default charge, apply a percentage below 10%
+or otherwise approve a lower amount, or waive it. The decision never repeats or
+compounds, and the late-payment charge itself never generates another late-payment
+charge.
+
+The source Invoice principal remains unchanged. The decision, balance snapshot,
+default and actual percentages and amounts, actor, date/time, and reason remain
+auditable. A positive approved charge is represented as a separate explicit
+Miscellaneous Charge linked to the source Invoice and decision under
+`002_BUSINESS_RULES.md`; a waiver creates no charge but remains final and auditable.
+
+For Rent nonpayment, a formal warning Notice is required at 20 calendar days overdue
+when the applicable obligation remains unpaid. At 30 calendar days overdue, continued
+nonpayment creates a Serious Nonpayment Default condition. Neither elapsed time nor
+that condition automatically terminates the Lease, ends Occupancy, changes Unit
+status, creates Move-out, or creates Final Settlement. Actual termination remains a
+separate explicit authorized process subject to the signed Lease and any applicable
+warning requirements.
 
 ---
 
@@ -1897,6 +1956,26 @@ not generate charges.
 They are billed according to the service rate applicable to the relevant billing period.
 Service approval, configuration, activation/inactivation, effective periods, and
 historical rates remain preserved.
+
+Each approved, configured, active, and applicable recurring Service follows the same
+Initial Invoice period structure as Rent. For move-in on day 1 through day 20, the
+initial Service period is the Move-in Date through month-end. For move-in on day 21
+or later, it combines the prorated remainder of that month and the full following
+calendar month. The line uses its approved Service rate and proration rule, shares the
+Initial Rent Invoice Due Date of seven calendar days after actual move-in, and must
+not overlap later recurring Service periods. Normal generation then resumes on the
+25th for the following uncovered calendar month.
+
+```text
+10 July move-in:
+Initial recurring-Service period: 10–31 July
+Initial Invoice Due Date:         17 July
+
+27 July move-in:
+Initial recurring-Service period: 27–31 July plus 1–31 August
+Initial Invoice Due Date:         3 August
+Next normal generation:           25 August for 1–30 September, due 5 September
+```
 
 Historical service rates must be preserved.
 
@@ -2502,6 +2581,8 @@ This includes:
 - Final Settlement
 - Rate changes
 - Utility Reading modifications that affect billing
+- Late-payment Charge proposals, reductions, waivers, and confirmed charges
+- Nonpayment Warning Notices and Serious Nonpayment Default conditions
 
 The audit model must make it possible to determine:
 
@@ -3046,12 +3127,16 @@ LeaseSignerRemovedBeforeSigning
 LeaseSigned
 LeaseCancelled
 LeaseTerminationNoticeRecorded
+NonpaymentWarningNoticeIssued
+SeriousNonpaymentDefaultRecorded
 LeaseTerminated
 ```
 
 A termination notice does not itself terminate the Lease.
 
 The Lease remains SIGNED until the business process reaches actual termination.
+Likewise, a Nonpayment Warning Notice or Serious Nonpayment Default does not itself
+change Lease, Occupancy, Unit, Move-out, or Final Settlement state.
 
 ---
 
@@ -3121,6 +3206,7 @@ UtilityInvoiceGenerated
 ServiceChargeInvoiceGenerated
 DamageChargeInvoiceCreated
 MiscellaneousChargeInvoiceCreated
+LatePaymentChargeDecisionRecorded
 InvoiceAdjusted
 InvoiceVoided
 ```
@@ -3719,6 +3805,8 @@ All later documentation, code, APIs, database objects, user-interface labels, an
 
 The single apartment property managed by one deployed application.
 
+The Property's authoritative business timezone is `Asia/Phnom_Penh`.
+
 The current system does not support multiple properties in one application.
 
 ---
@@ -4027,6 +4115,23 @@ A Lease remains SIGNED until the actual termination business action occurs.
 
 ---
 
+## Nonpayment Warning Notice
+
+The formal auditable warning required when an applicable Rent obligation remains
+unpaid at 20 calendar days overdue. It is distinct from an ephemeral alert and does
+not itself terminate the Lease.
+
+---
+
+## Serious Nonpayment Default
+
+The permanent condition recorded when an applicable Rent obligation remains unpaid
+at 30 calendar days overdue. It permits authorized management to initiate the approved
+termination or surrender process but performs none of the termination, Occupancy,
+Unit, Move-out, or Final Settlement transitions itself.
+
+---
+
 ## Move-in
 
 The business process through which an active Reservation becomes an occupied tenancy.
@@ -4228,6 +4333,15 @@ Damage Charges commonly arise during move-out inspection or settlement.
 An authorized Lease-related charge that does not belong to another defined Invoice category.
 
 Miscellaneous Charges must remain sufficiently described for audit purposes.
+
+---
+
+## Late-payment Charge Decision
+
+The single final management decision for one applicable overdue source Invoice. It
+preserves the Invoice-wide assessment base, 10% default, confirmed/reduced/waived
+result, authorization, and audit history. A positive approved charge uses the existing
+Miscellaneous Charge category on a separate linked Invoice; no new category is created.
 
 ---
 
@@ -5021,15 +5135,27 @@ Invoice must remain consistent with its Lease context.
 its financial lifecycle.
 41. Every significant financial change must be audited.
 42. Historical records must not be silently deleted or rewritten.
+43. An Invoice Due Date is the last timely calendar day; a remaining balance becomes
+    overdue the next calendar day in Asia/Phnom_Penh.
+44. Each applicable overdue Invoice receives at most one final late-payment decision
+    based on its remaining unpaid overdue balance; the default is 10%, and authorized
+    management may reduce or waive but never increase it above 10%.
+45. Late-payment charges do not repeat, compound, or rewrite source Invoice principal.
+46. Rent nonpayment requires a formal warning Notice at 20 days overdue and records a
+    Serious Nonpayment Default at 30 days overdue when still unpaid; neither event
+    automatically terminates the Lease or ends Occupancy.
+47. Applicable configured recurring Services follow the same Initial Invoice period
+    structure and seven-calendar-day Due Date as Initial Rent without overlap.
 
 ---
 
 # 102. Specification Responsibilities
 
 This Domain Model defines the core concepts and invariants.
-`002_BUSINESS_RULES.md` defines approved operational policy and explicitly records
-any unresolved Owner-policy item. Implementation and product details remain
-assigned to the later numbered specifications.
+`002_BUSINESS_RULES.md` defines approved operational policy and preserves resolved
+Owner-decision identifiers. No unresolved Owner-policy item is currently identified
+in these two documents. Implementation and product details remain assigned to the
+later numbered specifications.
 
 ## `002_BUSINESS_RULES.md`
 
@@ -5045,6 +5171,9 @@ Defines rules such as:
 - Rent proration formulas
 - invoice generation rules
 - due-date rules
+- overdue detection, one-time late-payment calculation, management decision, and audit
+- 20-day Rent nonpayment Notice and 30-day Serious Nonpayment Default rules
+- Initial recurring-Service periods and duplicate-period prevention
 - utility calculation rules
 - rate-effective-date rules
 - final settlement rules
@@ -5235,9 +5364,9 @@ This Domain Model is considered complete for the initial architecture phase when
 - Which implementation concerns are intentionally deferred?
 
 Detailed operational formulas and authorization conditions are defined in
-`002_BUSINESS_RULES.md`, except for any item explicitly labeled there as an
-`OPEN OWNER DECISION`. Product and implementation concerns remain assigned to the
-applicable later numbered specifications.
+`002_BUSINESS_RULES.md`. No unresolved Owner decision remains identified in these two
+documents. Product and implementation concerns remain assigned to the applicable
+later numbered specifications.
 
 ---
 

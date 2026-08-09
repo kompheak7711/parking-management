@@ -118,9 +118,10 @@ Users must not alter historical dates merely to change:
 
 Any permitted correction to a historical date must be audited.
 
-Scheduled business actions and end-of-date processing must use the Property's
-configured local timezone. A business date remains in effect through the end of
-that local calendar date unless a rule explicitly states otherwise.
+The Property's authoritative business timezone is `Asia/Phnom_Penh`. Scheduled
+business actions and end-of-date processing must use that timezone. A business date
+remains in effect through the end of that local calendar date unless a rule explicitly
+states otherwise.
 
 ---
 
@@ -1488,17 +1489,18 @@ calculation, rounding rule, and final USD amount.
 
 ---
 
-### BR-RENT-029 — Contractual Late-payment Context
+### BR-RENT-029 — Contractual Late-payment Policy
 
-The signed Lease provides substantially that if Party B fails to pay Rent or another
-payment obligation within ten days of the Due Date, Party B agrees to pay 10% of the
-total applicable amount as late payment. It also provides that if Party B has not paid
-the rental fee for 30 days, Party B agrees to surrender the Lease without demands.
+The signed Lease policy is substantially that Rent or any other amount payable under
+the Lease must be paid by the Due Date on the applicable Invoice or Bill. When a
+balance remains unpaid after that Due Date, the normal/default late-payment charge is
+10% of the remaining unpaid overdue amount of that Invoice. Authorized management may
+reduce or waive the charge but must not increase it above 10%.
 
-This rule records the Owner-confirmed contractual policy but does not yet authorize
-an automated late-charge calculation, generation schedule, repeat charge, surrender
-transition, or termination workflow. Those operational matters remain the OPEN OWNER
-DECISION items in section 30.
+BR-INV-051 through BR-INV-055 govern the Invoice-wide calculation and one final
+management decision. BR-LEASE-026 through BR-LEASE-030 govern the separate 20-day
+Rent nonpayment warning, 30-day Serious Nonpayment Default, cure history, and explicit
+termination boundary.
 
 ---
 
@@ -1991,10 +1993,10 @@ Their billing amount is not affected by:
 - number of occupants,
 - number of days within a normal full month.
 
-The first partial month is prorated using actual calendar days. Final and
-early-termination-month treatment follows the signed Lease and approved
-termination rules and is not automatically prorated merely because the Customer
-physically leaves during the month.
+The prorated move-in-month component of the Initial Service period uses actual
+calendar days. Final and early-termination-month treatment follows the signed Lease
+and approved termination rules and is not automatically prorated merely because the
+Customer physically leaves during the month.
 
 ---
 
@@ -2066,12 +2068,43 @@ Fixed recurring Services use the same billing cycle as Rent: generation on the
 25th in the Property's configured local timezone for the upcoming month and the
 same applicable Due Date as the Rent Invoice.
 
+Normal recurring generation resumes with the first complete calendar month after the
+Initial Service period under BR-SVC-012. A scheduled run must not generate a Service
+period already covered by that Initial Service period.
+
 ---
 
-### BR-SVC-012 — Initial Partial Service Period
+### BR-SVC-012 — Initial Recurring-Service Period
 
-The first partial-month Service amount is calculated using the same inclusive
-actual-calendar-day formula and final half-up USD-cent rounding as Rent.
+Each explicitly approved, configured, active, and applicable recurring Service
+follows the same Initial Invoice period structure as Rent.
+
+For an actual Move-in Date on day 1 through day 20 inclusive, its Initial Service
+period covers the Move-in Date through the last calendar day of the move-in month.
+
+For an actual Move-in Date on day 21 or later, its Initial Service period combines:
+
+1. the prorated remainder of the move-in month; and
+2. the entire following calendar month.
+
+Each component uses the applicable approved configured Service rate for its period.
+The prorated component uses the inclusive actual-calendar-day formula and final
+half-up USD-cent rounding under BR-MONEY-012. The Service appears as a separate line
+on the Initial Rent Invoice and therefore shares its Due Date of seven calendar days
+after the actual Move-in Date.
+
+Example:
+
+```text
+Move-in:                    27 July
+Initial Service coverage:  27–31 July, prorated
+                           plus 1–31 August, full month
+Initial Invoice Due Date:  3 August
+Normal generation resumes: 25 August for 1–30 September
+Normal Due Date:            5 September
+```
+
+Initial and recurring Service periods must not overlap or duplicate one another.
 
 ---
 
@@ -2713,6 +2746,122 @@ that result.
 Approved scheduled billing may generate and issue Invoices automatically from
 deterministic source rules. Rent and its fixed recurring Service lines require an
 applicable signed Lease. Other Invoices follow their approved source rules.
+
+---
+
+### BR-INV-051 — Due Date and Overdue Boundary
+
+An applicable source Invoice is an issued Invoice for Rent or another amount payable
+under the signed Lease under BR-RENT-029. Its stated Due Date is the last calendar day
+on which payment is timely. Payment received on that Due Date is not late.
+
+In the Property's authoritative business timezone, `Asia/Phnom_Penh`, any positive
+remaining unpaid balance becomes overdue on the next calendar day after the Due Date.
+There is no additional ten-day grace period.
+
+Example:
+
+```text
+Due Date:                     5 August
+Payment received 5 August:   On time
+Remaining balance 6 August:  Overdue and eligible for proposal
+```
+
+Eligibility does not automatically post a charge.
+
+---
+
+### BR-INV-052 — Invoice-wide Late-payment Calculation
+
+At assessment, the default late-payment charge is calculated once against the total
+remaining unpaid overdue balance of the applicable source Invoice as a whole:
+
+```text
+Default Late-payment Charge
+=
+Remaining Unpaid Overdue Source-Invoice Balance at Assessment
+×
+10%
+```
+
+The balance reflects valid financial applications and allocations in effect at
+assessment. Amounts already validly paid or otherwise validly applied must not be
+charged again. The system must not calculate separate late-payment percentages for
+individual lines of the same applicable overdue Invoice. The final USD result uses
+the general half-up cent rounding rule in BR-MONEY-012.
+
+Example:
+
+```text
+Rent:                                      $500
+Trash Collection:                          $10
+Electricity:                               $80
+Water:                                     $20
+Original source-Invoice total:             $610
+
+If remaining unpaid overdue balance:       $610
+Default late-payment charge at 10%:         $61
+
+If valid Payments already applied:         $300
+Remaining unpaid overdue balance:          $310
+Default late-payment charge at 10%:         $31
+```
+
+---
+
+### BR-INV-053 — Authorized Late-payment Decision
+
+The system detects the overdue source Invoice, calculates and presents the proposed
+default charge, and flags it for authorized management. It must not post the charge
+automatically merely because the Due Date has passed.
+
+Authorized management makes one final decision for the source Invoice:
+
+- confirm the default 10% charge;
+- approve a reduced charge below the 10% default; or
+- waive the charge, equivalent to 0% and $0.
+
+Management must not increase the contractual percentage or approved amount above the
+10% default calculation. Ordinary staff must not arbitrarily change the percentage
+or amount.
+
+The decision preserves at minimum the source Invoice, Due Date, assessment balance,
+default percentage, actual approved percentage, calculated default amount, actual
+approved amount, authorized actor, authorization date/time, and reason.
+
+---
+
+### BR-INV-054 — One Final Non-compounding Decision per Invoice
+
+Each applicable source Invoice may have only one final late-payment decision. A
+confirmed default charge, reduced charge, or waiver is final for that source Invoice.
+
+The late-payment charge must not repeat daily, weekly, monthly, or on any other
+cadence. It must not compound, generate another late-payment charge, or create a
+recursive penalty. Continued nonpayment of the source principal does not reopen the
+decision. A reduced charge must not later be supplemented with the difference, and a
+waiver must not later be replaced by a charge. Payment received after the final
+decision does not recalculate or replace that decision.
+
+Example: if the default is $31 and management approves $15, the remaining $16 must
+never be imposed as a second late-payment charge for that source Invoice.
+
+---
+
+### BR-INV-055 — Explicit Linked Late-payment Financial Record
+
+A final late-payment decision is a permanent auditable business event linked to its
+source Invoice. A positive approved amount is represented through the existing
+Miscellaneous Charge category on a separate Invoice linked to the source Invoice and
+decision. Its line must remain explicitly identified and described as a late-payment
+charge rather than an undifferentiated miscellaneous entry. This rule creates no new
+Invoice category. The separate Invoice follows the approved non-recurring Due Date
+source rules in BR-INV-018 and BR-INV-049.
+
+The source Invoice's original principal, lines, and issued amount must not be silently
+altered to incorporate the charge. A waiver records the final decision and audit
+history but creates no charge Invoice. A late-payment-charge Invoice is never an
+eligible source for another late-payment charge.
 
 # 19. Payment Rules
 
@@ -3360,7 +3509,7 @@ historically identifiable.
 
 ---
 
-## BR-LEASE-024 — Violation Warning Minimum
+## BR-LEASE-024 — General Violation Warning Minimum
 
 Property Management must issue at least three documented warning letters before
 terminating a Lease for a Customer violation.
@@ -3369,6 +3518,13 @@ Each warning must identify the violation, date, Lease provision, communication,
 and history. The undisclosed-pet process follows this rule if noncompliance
 proceeds toward termination.
 
+The specific 20-day Rent Nonpayment Warning Notice under BR-LEASE-027 does not
+automatically replace or satisfy this broader three-warning-letter requirement.
+Nothing in the 30-day Serious Nonpayment Default rule bypasses any warning requirement
+that applies to the eventual termination process. Counting one record toward another
+procedure requires an expressly approved basis rather than an implementation
+assumption.
+
 ---
 
 ## BR-LEASE-025 — Signed-Lease Termination Authority
@@ -3376,6 +3532,98 @@ proceeds toward termination.
 A violation and the authority to terminate for it must come from the signed
 Lease. The system must not invent a violation, penalty, fee, forfeiture, or
 termination right.
+
+---
+
+## BR-LEASE-026 — Rent Nonpayment Day Count
+
+For an applicable Rent obligation, calendar days overdue are counted after its Due
+Date in `Asia/Phnom_Penh`. The Due Date itself is day zero and remains timely under
+BR-INV-051; the following calendar day is day one overdue.
+
+Example:
+
+```text
+Rent Due Date:    5 August
+Day 1 overdue:    6 August
+Day 20 overdue:   25 August
+Day 30 overdue:   4 September
+```
+
+---
+
+## BR-LEASE-027 — Twenty-day Rent Nonpayment Warning Notice
+
+If a positive balance of the applicable Rent obligation remains unpaid at 20 calendar
+days after its Due Date, the system must alert authorized staff or management and
+require or support issuance and recording of a formal Nonpayment Warning Notice to the
+Customer. The Notice states that continued nonpayment through 30 days overdue may
+result in authorized management initiating the approved Lease termination or
+surrender process.
+
+The Notice is a permanent auditable business record, not an ephemeral UI warning. It
+preserves at minimum, where applicable:
+
+- Customer;
+- Lease;
+- applicable overdue Rent Invoice or obligation;
+- Due Date;
+- outstanding amount at Notice time;
+- Notice issue date/time;
+- issuer;
+- Notice type;
+- delivery or communication information when recorded;
+- document or reference to the actual Notice; and
+- subsequent status and history.
+
+---
+
+## BR-LEASE-028 — Thirty-day Serious Nonpayment Default
+
+If a positive balance of the applicable Rent obligation remains unpaid at 30 calendar
+days after its Due Date, the system records a Serious Nonpayment Default condition.
+Authorized management may then initiate the approved Lease termination or surrender
+process.
+
+The condition must not automatically:
+
+- change the Lease to TERMINATED;
+- mark the Unit VACANT;
+- end Occupancy;
+- create Move-out;
+- create Final Settlement;
+- surrender the Unit; or
+- delete or end the Customer's legal or operational tenancy record.
+
+Actual Lease termination remains a separate explicit authorized business action under
+BR-LEASE-005, BR-LEASE-023, BR-LEASE-024, and BR-LEASE-025. Until termination and
+physical Move-out actually occur, the Lease remains in its appropriate existing
+status, normally SIGNED, and the Unit remains OCCUPIED while the Customer still
+physically occupies it.
+
+---
+
+## BR-LEASE-029 — Cure After Warning and Before Thirty Days
+
+If the Customer fully cures the applicable Rent nonpayment after its 20-day Warning
+Notice but before the 30-day threshold, the current 30-day trigger for that cured
+obligation stops. The system must not initiate termination at day 30 merely because
+the obligation was previously late.
+
+The Invoice's overdue history, Warning Notice, cure Payment and Allocation history,
+and all related dates remain permanent and auditable.
+
+---
+
+## BR-LEASE-030 — Payment After Serious Nonpayment Default
+
+Payment after a Serious Nonpayment Default does not erase that historical condition,
+its Warning Notice, or any already initiated authorized termination process.
+
+The system must not automatically decide whether an initiated termination process
+continues or stops solely because later Payment occurs. Authorized management retains
+control under the existing approved termination rules, and the Payment, Allocations,
+default history, management actions, and resulting outcome remain auditable.
 
 ---
 
@@ -3878,8 +4126,8 @@ rule requires different rounding.
 ## BR-MONEY-013 — Business Dates and Timezone
 
 Start and end dates are inclusive where the applicable rule defines an inclusive
-date range. Scheduled business actions and end-of-date processing use the
-Property's configured local timezone.
+date range. Scheduled business actions and end-of-date processing use the Property's
+authoritative `Asia/Phnom_Penh` timezone under BR-PROP-003.
 
 ---
 
@@ -3906,6 +4154,11 @@ Signing, renewal records, Notices, warning letters, termination, Move-in,
 Move-out, Occupancy corrections, and Unit transitions must remain historically
 traceable.
 
+Nonpayment Warning Notices and Serious Nonpayment Default conditions must preserve
+their source Rent obligation, elapsed-day boundary, amount snapshot, issue or event
+time, actor, communication or document linkage where recorded, cure history, and
+subsequent management action.
+
 ---
 
 ## BR-AUDIT-004 — Meter and Estimation Audit
@@ -3929,6 +4182,11 @@ applicable.
 Invoice creation, DRAFT correction, issuance, line sources, status changes,
 Adjustments, Due Date source, and VOID events must preserve original and resulting
 financial facts and all linkages.
+
+Late-payment proposals and final decisions must preserve the source Invoice and its
+Due Date, assessment balance, default and actual percentages, default and actual
+amounts, management actor, authorization date/time, reason, positive-charge Invoice
+when created, and final confirmed, reduced, or waived outcome.
 
 ---
 
@@ -4001,6 +4259,10 @@ Lease signing, renewal records, Termination Notices, violation warning letters,
 termination, and correction of actual Move-in or Move-out facts require their
 applicable authorization.
 
+Issuance of a formal Rent Nonpayment Warning Notice, recording and acting on a
+Serious Nonpayment Default, and every resulting termination decision require their
+applicable authorization. Elapsed time alone grants no termination authority.
+
 ---
 
 ## BR-AUTH-006 — Invoice Authorization
@@ -4008,6 +4270,10 @@ applicable authorization.
 Manual or exceptional Invoice issuance, issued-Invoice Adjustment, Due Date
 recording for a non-recurring obligation, dependency correction, and VOID require
 authorization and reason as applicable.
+
+Confirming, reducing, or waiving a proposed late-payment charge is restricted to
+authorized management. A positive approved charge requires the linked explicit
+financial record in BR-INV-055; ordinary staff cannot post or vary it arbitrarily.
 
 ---
 
@@ -4038,7 +4304,7 @@ require authorization and complete audit history.
 
 ---
 
-# 30. Owner Decision Status and OPEN OWNER DECISION Items
+# 30. Resolved Owner Decisions
 
 ## Resolved: OOD-BR-001 — Initial Rent Invoice Due Date
 
@@ -4046,46 +4312,40 @@ The Owner resolved this item: the Initial Rent Invoice is due seven calendar day
 after the actual Move-in Date under BR-RENT-009. The recurring Due Date remains the
 5th of the billed month and is not overridden by the Lease.
 
-## OOD-BR-002 — Late-payment 10% Calculation Base
+## Resolved: OOD-BR-002 — Late-payment Calculation Base
 
-**Question:** What exact amount or obligations constitute the “total applicable
-amount” to which the contractual 10% applies?
+The Owner resolved this item under BR-INV-052: calculate the default 10% once against
+the total remaining unpaid overdue balance of the applicable source Invoice at
+assessment, excluding amounts already validly paid or applied and without separate
+line-by-line percentages.
 
-**Current treatment:** BR-RENT-029 records the contractual policy. No calculation
-base is inferred.
+## Resolved: OOD-BR-003 — Overdue Trigger and Management Posting
 
-## OOD-BR-003 — Late-payment Generation Timing
+The Owner resolved this item under BR-INV-051 and BR-INV-053: the Due Date is the last
+timely calendar day in Asia/Phnom_Penh, overdue begins the next calendar day, the old
+ten-day grace concept is removed, and management must confirm, reduce, or waive the
+proposed charge rather than the system posting it automatically.
 
-**Question:** How are the ten days counted, and at what exact date/time and through
-what authorized event is the contractual late payment generated?
+## Resolved: OOD-BR-004 — One Final Decision per Invoice
 
-**Current treatment:** No late charge is generated automatically.
+The Owner resolved this item under BR-INV-054: one final late-payment decision is
+permitted for each applicable source Invoice. It never repeats, compounds, recurses,
+or reopens after a confirmed, reduced, or waived decision.
 
-## OOD-BR-004 — Late-payment Frequency
+## Resolved: OOD-BR-005 — Rent Nonpayment Warning and Serious Default
 
-**Question:** Does the contractual 10% apply once or repeatedly, and if repeatedly,
-on what approved cadence and balance?
+The Owner resolved this item under BR-LEASE-026 through BR-LEASE-030: calendar days
+are counted after the Rent Due Date; a formal Notice applies at 20 days when still
+unpaid; a Serious Nonpayment Default is recorded at 30 days when still unpaid; and
+actual termination remains a separate authorized process subject to applicable
+warning and signed-Lease rules.
 
-**Current treatment:** No one-time or repeating algorithm is inferred.
+## Resolved: OOD-BR-006 — Initial Recurring-Service Period
 
-## OOD-BR-005 — Thirty-day Surrender and Termination Process
-
-**Question:** How are the 30 days counted, and how does the contractual nonpayment
-surrender provision interact with warnings, notice, surrender recording, management
-authority, and the approved Lease-termination process?
-
-**Current treatment:** The system must not automatically surrender or terminate a
-Lease from elapsed time alone.
-
-## OOD-BR-006 — Late Move-in Service Period
-
-**Question:** For a move-in on day 21 or later, does each applicable configured
-recurring Service combine the prorated remainder of the move-in month and the entire
-following month in the same way as the Initial Rent Invoice, or does another approved
-initial Service period apply?
-
-**Current treatment:** No additional Service period is inferred. BR-SVC-012 governs
-the prorated move-in-month portion, and duplicate billing remains prohibited.
+The Owner resolved this item under BR-SVC-012: applicable configured recurring
+Services follow the same day-1-through-20/day-21-or-later Initial Invoice period as
+Rent, share the Initial Rent Invoice Due Date, and resume normal billing without
+duplicate or overlapping periods.
 
 ---
 
@@ -4094,8 +4354,9 @@ the prorated move-in-month portion, and duplicate billing remains prohibited.
 ## 31.1 Authoritative Scope
 
 This document defines the approved business-policy matters delegated to Business
-Rules by `001_DOMAIN_MODEL.md` and explicitly identifies the remaining open items
-in section 30. Implementations must not reinterpret these rules to create new
+Rules by `001_DOMAIN_MODEL.md`. Section 30 preserves the resolved decision identifiers;
+no unresolved Owner decision item is identified in these two documents.
+Implementations must not reinterpret these rules to create new
 statuses, charges, fees, penalties, currencies, exchange providers, estimation
 methods, termination rights, Refund rights, or authorization policies.
 
