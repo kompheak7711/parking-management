@@ -165,7 +165,7 @@ A new Reservation may be created only when the Unit is legally available to be r
 A Unit must not receive a second active Reservation while another Reservation is ACTIVE.
 
 An ACTIVE Reservation always holds its Unit. A Reservation releases its Unit only
-when it becomes CANCELLED or MOVED_IN through an approved business transition.
+when it becomes CANCELLED or COMPLETED through an approved business transition.
 
 ---
 
@@ -343,17 +343,23 @@ Reservation status may be only:
 ```text
 ACTIVE
 CANCELLED
-MOVED_IN
+COMPLETED
 ```
 
 The system must not introduce an EXPIRED Reservation status.
+
+ACTIVE means the Reservation currently holds the Unit. CANCELLED means it ended
+without successfully proceeding to tenancy. COMPLETED means it successfully
+proceeded through move-in into its resulting Lease and Occupancy. CANCELLED and
+COMPLETED are terminal.
 
 ---
 
 ## BR-RES-004 — Initial Reservation Status
 
 A newly accepted Reservation begins in ACTIVE status only after all Reservation
-activation conditions, including the minimum initial Security Deposit, are met.
+activation conditions, including receipt of the explicitly accepted initial Security
+Deposit amount, are met.
 
 ---
 
@@ -422,7 +428,7 @@ The effective Expiration Date must not be changed without this Notice history.
 ## BR-RES-011 — Reservation Expiration
 
 At the end of the effective Expiration Date in the Property's configured local
-timezone, an ACTIVE Reservation that has not become MOVED_IN and has no valid
+timezone, an ACTIVE Reservation that has not become COMPLETED and has no valid
 approved extension automatically becomes CANCELLED.
 
 The cancellation reason must be `RESERVATION_EXPIRED`. The Reservation history
@@ -437,13 +443,13 @@ reason and whether it is customer-caused, caused by expiration while the Propert
 could provide the Unit, or caused by the Property's inability to provide the
 Unit as agreed.
 
-A CANCELLED Reservation cannot later become ACTIVE or MOVED_IN.
+A CANCELLED Reservation cannot later become ACTIVE or COMPLETED.
 
 ---
 
 ## BR-RES-013 — Reservation Move-in Completion
 
-A Reservation may become MOVED_IN only when:
+A Reservation may become COMPLETED only when:
 
 - the Reservation is ACTIVE and has not expired;
 - the Lease is SIGNED;
@@ -454,13 +460,18 @@ A Reservation may become MOVED_IN only when:
   beginning of occupancy; and
 - move-in has actually occurred.
 
+The COMPLETED Reservation must reference exactly one resulting Lease. COMPLETED is
+terminal.
+
 ---
 
 ## BR-RES-014 — Reservation to Lease Relationship
 
-A Reservation may result in at most one Lease.
+A Reservation may result in zero or one Lease.
 
 The system must not create multiple resulting Leases from one Reservation.
+A COMPLETED Reservation references exactly one resulting Lease. A CANCELLED
+Reservation produces no resulting Lease.
 
 ---
 
@@ -538,8 +549,9 @@ Reservation must be refunded through an explicit Refund event.
 
 ## BR-DEP-001 — Security Deposit Required for Reservation
 
-A Reservation may become ACTIVE only after at least the minimum initial partial
-Security Deposit has been received.
+A Reservation may become ACTIVE only after the explicitly accepted initial partial
+Security Deposit amount has been received. Authorized management may accept an
+amount below or above the normal 20% suggestion.
 
 The business does not use a separate Reservation Deposit.
 
@@ -548,19 +560,20 @@ The business does not use a separate Reservation Deposit.
 ## BR-DEP-002 — Initial Security Deposit May Be Partial
 
 The initial payment may be less than the total required Security Deposit, but it
-must meet the approved minimum. More than the minimum may be paid.
+must equal the initial amount explicitly accepted for that Reservation. The accepted
+amount and authorization must be audited.
 
 Every receipt remains part of the same Security Deposit obligation.
 
 ---
 
-## BR-DEP-003 — Minimum Initial Security Deposit
+## BR-DEP-003 — Suggested Initial Security Deposit
 
-The minimum amount required to activate a Reservation is 20% of the agreed
-monthly Rent.
+The normal/default suggested amount when reserving a Unit is 20% of the agreed
+monthly Rent. It is not a hard minimum.
 
 ```text
-Minimum Initial Security Deposit
+Suggested Initial Security Deposit
 =
 Agreed Monthly Rent × 20%
 ```
@@ -571,9 +584,15 @@ Example:
 
 ```text
 Agreed Monthly Rent:                  $500
-Minimum Initial Security Deposit:     $100
+Suggested Initial Security Deposit:   $100
 ```
 
+Authorized management may accept another explicit amount, including an amount below
+or above 20%, based on the actual Reservation arrangement. The system must preserve
+the suggested amount, accepted required amount, override authorization, actor,
+timestamp, and reason. It must not reject a Reservation merely because the collected
+Security Deposit is below 20%. A lower accepted amount may legitimately hold the Unit
+for a short Reservation period when authorized management accepts that arrangement.
 This amount is Security Deposit, not a fee or separate Deposit type.
 
 ---
@@ -776,7 +795,7 @@ and not an automatic TERMINATED transition while occupancy continues.
 
 ---
 
-## BR-LEASE-014 — One Signed Lease per Unit
+## BR-LEASE-014 — Non-overlapping Signed Lease Coverage
 
 Before a Lease becomes SIGNED, the system must confirm that no other SIGNED Lease
 has overlapping contractual coverage for the same Unit.
@@ -892,7 +911,7 @@ At minimum:
 
 When move-in is completed:
 
-- Reservation becomes MOVED_IN
+- Reservation becomes COMPLETED
 - Unit becomes OCCUPIED
 - Occupancy begins
 - Security Deposit remains associated with the Lease
@@ -927,6 +946,31 @@ Pet Deposit must be recorded as a liability and not as:
 - service income
 - damage income
 
+Pet Deposit primarily secures demonstrable pet-caused property damage or
+extraordinary/deep cleaning beyond normal turnover cleaning. It does not cap the
+Customer's liability for the full valid repair or deep-cleaning cost.
+
+Examples include pet damage to furniture, doors, walls, or flooring; cleaning beyond
+normal turnover cleaning; and other demonstrable pet-caused property damage or
+deep-cleaning cost.
+
+```text
+Pet Deposit:                    $200
+Valid Pet-caused Cost:          $500
+Remaining Customer Liability:  $300
+```
+
+If a valid pet-caused damage or deep-cleaning obligation becomes payable while the
+Lease remains active, the Customer must pay that valid charge directly. The Pet
+Deposit must not be consumed automatically and remains held unless BR-DEP-012 later
+permits its Refund.
+
+```text
+Active-Lease Pet-caused Charge: $500
+Customer Owes Directly:         $500
+Pet Deposit Remains Held:       unchanged
+```
+
 ---
 
 ## BR-DEP-010 — Pet Deposit Timing
@@ -946,7 +990,9 @@ staying in the Unit.
 
 ## BR-DEP-011 — Deposit Held During Active Lease
 
-Security Deposit and Pet Deposit are held during the active Lease.
+Security Deposit and Pet Deposit are held during the active Lease, except that the
+remaining refundable Pet Deposit may be returned under BR-DEP-012 after the pet
+permanently leaves and applicable pet-related obligations are resolved.
 
 They remain distinct liabilities with separately traceable balances.
 
@@ -956,7 +1002,13 @@ They remain distinct liabilities with separately traceable balances.
 
 Security Deposit must not be refunded while the Lease remains SIGNED.
 
-Pet Deposit must likewise remain held while its associated tenancy obligation remains active.
+Pet Deposit remains held while an approved pet is kept at the Unit. If the tenant
+permanently stops keeping the pet during an active Lease, the system must record that
+fact and determine any valid pet-caused property damage or extraordinary/deep-cleaning
+obligation. The Customer remains responsible for the full valid cost. Once applicable
+pet-related obligations are resolved, any remaining refundable Pet Deposit may be
+returned through an explicit Refund event with complete history. Lease termination is
+not required for this Refund.
 
 This rule does not prevent an explicit disposition required by an approved
 non-refundable policy or an explicit Property-caused Reservation Refund before a
@@ -970,9 +1022,8 @@ A Customer must not use Security Deposit or Pet Deposit to pay ordinary monthly:
 
 - Rent
 - Utilities
-- Internet
-- Trash
-- other current charges
+- recurring Service Charges
+- other ordinary current Invoice obligations
 
 while the Lease remains active.
 
@@ -983,7 +1034,9 @@ staff cannot allocate it to an ordinary Invoice before Final Settlement.
 
 ## BR-DEP-014 — Deposit Application During Final Settlement Only
 
-Deposits may be applied only as part of the Final Settlement process after Lease termination.
+Deposits may be applied to Invoice obligations only as part of the Final Settlement
+process after Lease termination. An active-Lease Pet Deposit Refund under BR-DEP-012
+is a separate Refund process, not Deposit application to an Invoice.
 
 An explicit forfeiture/disposition event under an approved non-refundable policy
 is not an Invoice allocation and must remain separate from Final Settlement
@@ -1108,14 +1161,18 @@ Example:
 
 ---
 
-## 15.3 First Partial Month
+## 15.3 Initial Rent Invoice
 
-### BR-RENT-005 — First Partial Month
+### BR-RENT-005 — Initial Rent Invoice Period
 
-When the Primary Tenant moves into a Unit after the first day of a calendar month,
-the first Rent Invoice shall be prorated.
+For an actual Move-in Date on day 1 through day 20 inclusive, the Initial Rent
+Invoice covers the Move-in Date through the last calendar day of the move-in month.
+Only the portion after a move-in later than day 1 is prorated.
 
-The first rental period begins on the official Move-in Date and ends on the last calendar day of that month.
+For an actual Move-in Date on day 21 or later, the Initial Rent Invoice combines:
+
+1. the prorated remainder of the move-in month; and
+2. the entire following calendar month.
 
 Example:
 
@@ -1123,7 +1180,7 @@ Move-in Date:
 
 - 10 July
 
-First Rental Period:
+Initial Rent Period:
 
 - 10 July
 - through
@@ -1132,6 +1189,10 @@ First Rental Period:
 The next recurring Rent Invoice begins on:
 
 - 1 August
+
+For a 27 July move-in, the Initial Rent period is 27 July through 31 August. Normal
+billing resumes on 25 August for the 1–30 September period. Initial and recurring
+Rent periods must not duplicate or overlap.
 
 ---
 
@@ -1180,6 +1241,9 @@ Recurring Rent Invoices shall be generated automatically on the 25th day of the
 current calendar month in the Property's configured local timezone.
 
 The generated invoice represents the upcoming month's rental period.
+The recurring process must not generate a period that BR-RENT-005 reserves for the
+Initial Rent Invoice, even if the Lease was signed before that 25th. Recurring billing
+resumes with the first complete calendar month after the Initial Rent period.
 
 Example:
 
@@ -1191,9 +1255,14 @@ Example:
 
 ---
 
-### BR-RENT-009 — Invoice Due Date
+### BR-RENT-009 — Rent Invoice Due Dates
 
-Recurring Rent Invoices shall have a standard payment due date of the **5th day of the billed month**, unless an alternative due date is explicitly specified in the Lease Agreement.
+Recurring Rent Invoices have a Due Date of the **5th day of the billed month**. This
+Due Date is established by the application/business rule; the Lease Agreement does
+not define an alternative recurring Invoice Due Date.
+
+The Initial Rent Invoice is due seven calendar days after the actual Move-in Date,
+including when that Due Date falls in the following month.
 
 Example:
 
@@ -1201,6 +1270,9 @@ Example:
 | ------------ | ----------------- | ----------- |
 | August       | 25 July           | 5 August    |
 | September    | 25 August         | 5 September |
+
+Examples: a 10 July move-in is due 17 July; a 20 July move-in is due 27 July; a
+21 July move-in is due 28 July; and a 27 July move-in is due 3 August.
 
 ---
 
@@ -1211,6 +1283,9 @@ Recurring Rent Invoices shall only be generated for Leases that are:
 - Signed,
 - contractually applicable to the billed rental period, and
 - Not terminated before the beginning of that rental period.
+
+The period must also fall wholly after the Initial Rent period defined by
+BR-RENT-005. No recurring generation may duplicate or overlap Initial Rent coverage.
 
 The business shall not generate Rent Invoices for:
 
@@ -1257,7 +1332,7 @@ final month is charged in full.
 
 When final-month proration is required by an approved rule or the signed Lease,
 it uses the same inclusive actual-calendar-day calculation and final rounding as
-the first partial month.
+the prorated portion of the Initial Rent Invoice.
 
 This rule must not override the full-month voluntary early-termination rule.
 
@@ -1413,6 +1488,20 @@ calculation, rounding rule, and final USD amount.
 
 ---
 
+### BR-RENT-029 — Contractual Late-payment Context
+
+The signed Lease provides substantially that if Party B fails to pay Rent or another
+payment obligation within ten days of the Due Date, Party B agrees to pay 10% of the
+total applicable amount as late payment. It also provides that if Party B has not paid
+the rental fee for 30 days, Party B agrees to surrender the Lease without demands.
+
+This rule records the Owner-confirmed contractual policy but does not yet authorize
+an automated late-charge calculation, generation schedule, repeat charge, surrender
+transition, or termination workflow. Those operational matters remain the OPEN OWNER
+DECISION items in section 30.
+
+---
+
 # 16. Utility Billing Rules
 
 ## 16.1 Purpose
@@ -1553,15 +1642,22 @@ Utility Readings that fail validation shall not be used for billing.
 
 ### BR-UTIL-011 — Reading Corrections
 
-Incorrect Utility Readings may be corrected through an authorized business process before billing.
+Incorrect Utility Readings may be corrected through an authorized business process
+both before and after Utility Invoice issuance. The system must not use Invoice
+payment status as the correction boundary.
 
-The correction shall preserve a complete audit history.
+Every correction preserves original Reading value, corrected Reading value, actor,
+date/time, reason, and complete audit history. Historical Utility Readings shall
+never be silently overwritten, deleted, or reassigned.
 
-Historical Utility Readings shall never be silently overwritten.
-
-If the reading has already been billed, its financial effect must be corrected
-through the approved linked Invoice Adjustment process rather than by rewriting
-the issued Invoice.
+Before issuance, the corrected Reading becomes the valid billing input. After
+issuance, correction remains permitted whether the Invoice is UNPAID,
+PARTIALLY_PAID, or PAID, but the issued Invoice must not be silently rewritten. If
+the correction changes the amount that should have been billed, the system preserves
+the original Invoice, calculates the difference, and posts that financial difference
+through the approved linked Invoice Adjustment process. The original Reading,
+corrected Reading, original Invoice, and complete Adjustment chain remain
+reconstructable.
 
 ---
 
@@ -1580,7 +1676,9 @@ must not overlap another billed period for the same Unit and Utility Type.
 
 Every Utility Reading shall remain permanently associated with the exact Utility Meter that produced it.
 
-Replacing a Utility Meter shall never alter historical Utility Readings.
+Replacing a Utility Meter shall never reassign, delete, or silently overwrite a
+historical Utility Reading. An authorized correction under BR-UTIL-011 preserves the
+original and corrected values and does not change Meter ownership.
 
 ---
 
@@ -1727,8 +1825,8 @@ The system must not average three separately rounded period averages.
 
 ### BR-UTIL-026 — Basis Daily Average and Estimate Boundaries
 
-Every historical basis under BR-UTIL-025 and every complete future-period basis
-under BR-UTIL-027 or BR-UTIL-028 uses one daily average:
+Every historical basis under BR-UTIL-025 or BR-UTIL-027 and every complete
+future-period basis under BR-UTIL-028 uses one weighted daily average:
 
 ```text
 Basis Daily Average
@@ -1752,20 +1850,24 @@ counted in both the estimate and the replacement-Meter actual period.
 
 ---
 
-### BR-UTIL-027 — Fewer-than-three Future-period Fallback
+### BR-UTIL-027 — One-or-two-period Historical Basis
 
 If fewer than three, but at least one, complete historical actual period exists
-for the same Unit and Utility Type, those one or two historical periods must not
-be substituted for the approved three-period historical basis.
+before the affected broken-Meter period for the same Unit and Utility Type, use all
+one or two available complete historical actual periods for that same Unit and
+Utility Type as the basis.
 
-The system must wait until one complete future month or period of actual
-consumption becomes available for that same Unit and Utility Type and use that
-complete future actual period as the daily-average basis under BR-UTIL-026. It
-must not substitute another or comparable Unit or invent an arbitrary estimate.
+```text
+Weighted Historical Daily Average
+=
+Total Actual Consumption Across All Available Complete Historical Periods
+--------------------------------------------------------------------------
+Total Calendar Days Represented by Those Periods
+```
 
-Until that future complete actual period exists, the broken-Meter estimate and
-affected charge remain pending and unfinalized. The reason for delay and the
-future actual data eventually used must be preserved.
+Estimated Consumption is that weighted daily average multiplied by the applicable
+unmeasured calendar days under BR-UTIL-026. The system must not discard the one or
+two available periods and must not average separately rounded period averages.
 
 ---
 
@@ -1780,6 +1882,9 @@ basis under BR-UTIL-026.
 Until that future complete actual period exists, the broken-Meter estimate and
 affected charge remain pending and unfinalized. The reason for delay and the
 future actual data eventually used must be preserved.
+
+The system must never substitute another or comparable Unit, invent arbitrary
+consumption, or average separately rounded period averages.
 
 ---
 
@@ -1834,15 +1939,18 @@ Unlike utilities, service charges are fixed amounts determined by management.
 
 ### BR-SVC-001 — Fixed Monthly Services
 
-The Property currently supports the following recurring fixed monthly service charges:
+The Property currently approves and provides this recurring fixed monthly Service:
 
-- Internet
 - Trash Collection
 
-These services are billed as fixed monthly charges rather than consumption-based charges.
+Trash Collection is billed as a fixed monthly charge rather than a
+consumption-based charge.
 
-This document approves no other Service type. A different Service requires a
-separate Owner-approved rule before it may be configured or billed.
+Internet and Monthly Unit Cleaning are not currently provided and must not generate
+charges. They are examples of Services the Property could approve and configure in
+the future. This document approves no other Service type. Any different Service
+requires a separate Owner-approved rule and explicit configuration before billing;
+staff must not create an arbitrary Service through a generic or miscellaneous field.
 
 ---
 
@@ -1864,8 +1972,9 @@ Changes to one category shall not automatically affect another.
 
 ### BR-SVC-003 — Monthly Billing
 
-Internet and Trash Collection are billed monthly in advance as separate line
-items on the applicable Rent Invoice.
+Each active, approved, and applicable configured recurring Service is billed monthly
+in advance as a separate line item on the applicable Rent Invoice. Trash Collection
+is the current such Service.
 
 Separate Service Charge Invoices are not normally generated for these fixed
 recurring monthly Services.
@@ -1874,7 +1983,7 @@ recurring monthly Services.
 
 ### BR-SVC-004 — Fixed Charges
 
-Internet and Trash Collection are fixed monthly charges.
+An approved configured recurring Service uses its configured fixed monthly charge.
 
 Their billing amount is not affected by:
 
@@ -1905,7 +2014,9 @@ The applicable configured Service terms remain the source of truth.
 
 Historical service rates shall remain permanently preserved.
 
-Changes to Internet or Trash charges shall never modify historical invoices.
+Changes to configured Service charges shall never modify historical Invoices.
+The Service identity, Owner approval, configuration, active/inactive effective
+periods, and rate history must remain reconstructable.
 
 ---
 
@@ -1921,7 +2032,7 @@ Completed billing periods shall always retain the original service charge used d
 
 ### BR-SVC-008 — Historical Financial Integrity
 
-Historical Internet and Trash charges are permanent financial records.
+Historical configured Service charges are permanent financial records.
 
 They shall never be silently:
 
@@ -1957,7 +2068,7 @@ same applicable Due Date as the Rent Invoice.
 
 ---
 
-### BR-SVC-012 — First Partial Month
+### BR-SVC-012 — Initial Partial Service Period
 
 The first partial-month Service amount is calculated using the same inclusive
 actual-calendar-day formula and final half-up USD-cent rounding as Rent.
@@ -1975,8 +2086,8 @@ termination rules control the valid final charge.
 ### BR-SVC-014 — Configured Services Only
 
 Only a configured Property Service that applies under the governing terms may be
-billed. The system must not create a Service or charge from free-form Invoice
-entry.
+billed. The Service must also be active and actually provided for the billed period.
+The system must not create a Service or charge from free-form Invoice entry.
 
 ---
 
@@ -2055,8 +2166,7 @@ Examples include:
 - Monthly Rent
 - Electricity
 - Water
-- Internet
-- Trash Collection
+- each applicable approved and configured recurring Service
 
 Invoices that do not represent a recurring billing period (such as Damage Charges) may omit a billing period where appropriate.
 
@@ -2220,6 +2330,13 @@ PAID are determined by the current adjusted obligation and active financial
 applications; they must be recomputed after an authorized reversal or
 Adjustment.
 
+The regressions `PARTIALLY_PAID → UNPAID`, `PAID → PARTIALLY_PAID`, and
+`PAID → UNPAID` are permitted only as derived consequences of authorized financial
+reversals or corrections that change valid remaining applications/allocations. They
+must never represent manual status editing, partial Invoice voiding, partial Refund
+semantics, arbitrary reopening, or a Refund represented merely by changing status.
+VOID remains a separate action under BR-INV-014.
+
 An Invoice that has received one or more Payments shall not be VOID until all associated Payment allocations have been properly reversed in accordance with the Payment business rules.
 
 Financial corrections shall be performed through approved adjustment, reversal, or correction procedures while preserving the complete audit history.
@@ -2358,7 +2475,8 @@ consistent and must not be varied to bypass this rule.
 
 ### BR-INV-028 — Duplicate Service Charge Billing
 
-The business shall prevent recurring Internet and Trash Charges from being billed multiple times for the same Lease and billing period.
+The business shall prevent any approved and configured recurring Service Charge from
+being billed multiple times for the same Lease, Service, and billing period.
 
 ---
 
@@ -2371,8 +2489,7 @@ Examples include:
 - duplicate Rent for the same billing period,
 - duplicate Electricity billing for the same consumption period,
 - duplicate Water billing for the same consumption period,
-- duplicate Internet charges for the same month,
-- duplicate Trash charges for the same month.
+- duplicate configured Service charges for the same Service and month.
 
 The governing source facts define duplicate identity. An obligation must not be
 billed once with a Lease association and again without one.
@@ -3166,6 +3283,16 @@ relying on rewritten historical values.
 
 ---
 
+## BR-REFUND-013 — Active-Lease Pet Deposit Refund
+
+When the approved pet permanently leaves during an active Lease, BR-DEP-012 may make
+the remaining Pet Deposit refundable after all applicable pet-related obligations are
+resolved. Its return uses an explicit Refund event linked to that Pet Deposit, the
+recorded permanent pet departure, the obligation review, authorization, reason,
+actor, and date/time. The Lease need not terminate, and full history is preserved.
+
+---
+
 # 23. Lease Termination Rules
 
 ## BR-LEASE-017 — No Automatic Month-to-month Tenancy
@@ -3289,9 +3416,9 @@ because the Lease was terminated.
 Final actual Utility Readings must be obtained and validated where possible. If
 a Meter is confirmed broken, only the approved estimation process may be used.
 
-An ordinary missing reading delays the charge. A fewer-than-three-history
-broken-Meter estimate remains pending until the approved complete future-period
-basis exists.
+An ordinary missing reading delays the charge. A zero-history broken-Meter estimate
+remains pending until the approved complete future-period basis exists. One or two
+complete historical actual periods are usable immediately under BR-UTIL-027.
 
 ---
 
@@ -3447,9 +3574,8 @@ Deposit is non-refundable and is resolved through an explicit disposition event.
 
 Voluntary early termination does not automatically make the Pet Deposit
 non-refundable. It remains separately tracked through Final Settlement, may be
-applied only to authorized pet-related damage, and is refundable to the extent
-not validly applied or otherwise validly forfeited under an explicitly approved
-rule.
+applied under BR-SETTLE-005 and BR-SETTLE-006, and is refundable to the extent not
+validly applied or otherwise validly forfeited under an explicitly approved rule.
 
 ---
 
@@ -3462,6 +3588,22 @@ and Refund remains separately traceable.
 ---
 
 # 26. Final Settlement Rules
+
+The general sequence is:
+
+```text
+Finalize all valid Settlement charges
+        ↓
+Apply authorized Customer Credit
+        ↓
+Authorized management explicitly selects/confirms Deposit applications
+        ↓
+Determine remaining Customer balance or refundable Deposit balance
+        ↓
+Refund remaining refundable Deposit
+```
+
+Deposit applications are always explicit and auditable.
 
 ## BR-SETTLE-001 — One Settlement per Terminated Lease
 
@@ -3495,20 +3637,31 @@ Settlement obligations through separate auditable Credit-application events.
 
 ---
 
-## BR-SETTLE-005 — Pet Deposit Application
+## BR-SETTLE-005 — Pet Deposit Identification and Application
 
-Pet Deposit may be applied only to authorized pet-related damage. It must not be
-applied to ordinary Rent, Utility, fixed Service, Miscellaneous, unrelated damage,
-or another general obligation.
+Pet Deposit remains separately identifiable first for valid pet-caused property
+damage or extraordinary/deep-cleaning obligations where applicable. Pet Deposit does
+not cap the Customer's full liability for those valid costs.
+
+After Customer Credit and explicitly selected Security Deposit applications, if a
+valid Settlement balance remains unpaid and the Customer has not paid or will not
+pay it, authorized management may explicitly select remaining Pet Deposit for that
+valid Settlement balance. This later application is not limited to pet-related
+obligations.
 
 ---
 
-## BR-SETTLE-006 — Security Deposit Application
+## BR-SETTLE-006 — Explicit Deposit Selection
 
-After authorized Customer Credit and permitted Pet Deposit application, Security
-Deposit may be applied to remaining authorized Final Settlement obligations using
-oldest Due Date first where Due Dates apply. Deterministic Invoice tie ordering
-follows BR-PAY-023.
+After authorized Customer Credit, authorized management must explicitly select and
+confirm every Security Deposit or Pet Deposit application to a valid Final Settlement
+obligation. Security Deposit may be applied to valid remaining Settlement
+obligations. Each application records its Deposit source, target obligation, amount,
+actor, timestamp, reason, and authorization.
+
+The system must not infer an additional FIFO ordering between Deposit types beyond
+BR-SETTLE-005 and must not apply either Deposit automatically merely because a
+Settlement balance exists.
 
 ---
 
@@ -3523,6 +3676,11 @@ Settlement must record it without changing the original obligations.
 
 Every remaining refundable Security Deposit and Pet Deposit balance must be
 refunded explicitly and separately under the Refund rules.
+
+The Customer must not receive refundable Deposit money while leaving a valid
+Settlement balance unpaid when that available Deposit has been authorized for
+application. Every such application must be recorded before the remaining refundable
+balance is determined.
 
 ---
 
@@ -3549,8 +3707,9 @@ application and does not create a new forfeiture circumstance.
 Final Settlement begins as a pending process and must not close until the Lease is
 TERMINATED and every required
 valid final charge is determined. An ordinary missing Utility Reading or a
-pending fewer-than-three-history broken-Meter estimate keeps the affected charge
-and Settlement unfinalized as necessary.
+pending zero-history broken-Meter estimate keeps the affected charge and Settlement
+unfinalized as necessary. One or two complete historical actual periods use
+BR-UTIL-027 and do not wait for future data.
 
 ---
 
@@ -3875,25 +4034,54 @@ require authorization and complete audit history.
 
 ---
 
-# 30. OPEN OWNER DECISION
+# 30. Owner Decision Status and OPEN OWNER DECISION Items
 
-## OOD-BR-001 — First Partial-month Rent Due Date
+## Resolved: OOD-BR-001 — Initial Rent Invoice Due Date
 
-**Question:** When a first partial-month Rent Invoice is issued after the 5th day
-of that billed month, what exact Due Date applies if the signed Lease does not
-explicitly provide one?
+The Owner resolved this item: the Initial Rent Invoice is due seven calendar days
+after the actual Move-in Date under BR-RENT-009. The recurring Due Date remains the
+5th of the billed month and is not overridden by the Lease.
 
-`BR-RENT-005` requires the first partial-month Invoice after a mid-month move-in.
-`BR-RENT-009` defines the normal recurring Due Date as the 5th of the billed month
-unless the Lease specifies another date. Neither rule determines a non-past Due
-Date for this exact first-partial-period case.
+## OOD-BR-002 — Late-payment 10% Calculation Base
 
-**Current treatment:** No fallback Due Date is selected. Downstream specifications
-must keep the Due Date explicit/configurable for this case and must not infer a
-new fee, penalty, default, or collection right.
+**Question:** What exact amount or obligations constitute the “total applicable
+amount” to which the contractual 10% applies?
 
-**Blocking:** No for the general specification architecture. This decision blocks
-only final behavior and expected-value tests for this exact scenario.
+**Current treatment:** BR-RENT-029 records the contractual policy. No calculation
+base is inferred.
+
+## OOD-BR-003 — Late-payment Generation Timing
+
+**Question:** How are the ten days counted, and at what exact date/time and through
+what authorized event is the contractual late payment generated?
+
+**Current treatment:** No late charge is generated automatically.
+
+## OOD-BR-004 — Late-payment Frequency
+
+**Question:** Does the contractual 10% apply once or repeatedly, and if repeatedly,
+on what approved cadence and balance?
+
+**Current treatment:** No one-time or repeating algorithm is inferred.
+
+## OOD-BR-005 — Thirty-day Surrender and Termination Process
+
+**Question:** How are the 30 days counted, and how does the contractual nonpayment
+surrender provision interact with warnings, notice, surrender recording, management
+authority, and the approved Lease-termination process?
+
+**Current treatment:** The system must not automatically surrender or terminate a
+Lease from elapsed time alone.
+
+## OOD-BR-006 — Late Move-in Service Period
+
+**Question:** For a move-in on day 21 or later, does each applicable configured
+recurring Service combine the prorated remainder of the move-in month and the entire
+following month in the same way as the Initial Rent Invoice, or does another approved
+initial Service period apply?
+
+**Current treatment:** No additional Service period is inferred. BR-SVC-012 governs
+the prorated move-in-month portion, and duplicate billing remains prohibited.
 
 ---
 
@@ -3902,7 +4090,7 @@ only final behavior and expected-value tests for this exact scenario.
 ## 31.1 Authoritative Scope
 
 This document defines the approved business-policy matters delegated to Business
-Rules by `001_DOMAIN_MODEL.md` and explicitly identifies the remaining open item
+Rules by `001_DOMAIN_MODEL.md` and explicitly identifies the remaining open items
 in section 30. Implementations must not reinterpret these rules to create new
 statuses, charges, fees, penalties, currencies, exchange providers, estimation
 methods, termination rights, Refund rights, or authorization policies.
@@ -3926,9 +4114,10 @@ methods, termination rights, Refund rights, or authorization policies.
 - Utility Rate selection on the Utility Invoice generation date, whole-period
   application of that selected rate, and permanent preservation of issued
   Utility Invoice history; and
-- Pet Deposit application only when a pet is approved and the applicable signed
+- Pet Deposit requirement only when a pet is approved and the applicable signed
   Lease terms require that Deposit, including the approved timing for a pet
-  introduced after move-in.
+  introduced after move-in, and the separate application/refund rules in sections
+  25 and 26.
 
 The two authoritative documents are mutually consistent on these policies.
 

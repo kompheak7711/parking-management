@@ -217,7 +217,7 @@ Reservation statuses:
 
 - ACTIVE
 - CANCELLED
-- MOVED_IN
+- COMPLETED
 
 ---
 
@@ -320,7 +320,8 @@ A recorded reading taken from a Utility Meter.
 
 Utility Readings determine customer utility usage and utility billing.
 
-Historical readings are never modified or reassigned to different meters.
+Historical Utility Readings must never be silently overwritten, deleted, or
+reassigned. Authorized corrections are permitted with complete audit history.
 
 ---
 
@@ -589,15 +590,15 @@ A Reservation temporarily holds a Unit for one Customer before move-in.
 
 - ACTIVE
 - CANCELLED
-- MOVED_IN
+- COMPLETED
 
 ### Business Invariants
 
 - One Reservation belongs to one Unit.
 - One Reservation belongs to one Customer.
-- One Reservation results in at most one Lease.
+- One Reservation results in zero or one Lease.
 - A cancelled Reservation never creates a Lease.
-- A moved-in Reservation cannot return to ACTIVE.
+- A COMPLETED Reservation cannot return to ACTIVE.
 
 Reservation extension history is recorded separately and does not change the Reservation status.
 
@@ -685,7 +686,9 @@ Represents an actual meter reading used for billing.
 
 - Every Utility Reading belongs to one Utility Meter.
 - Utility Readings are permanent historical records.
-- Historical readings cannot be reassigned to another meter.
+- Historical readings cannot be reassigned to another meter, silently overwritten,
+  or deleted. Authorized corrections preserve original and corrected values, actor,
+  timestamp, reason, and complete audit history.
 - Utility bills are calculated from Utility Readings.
 
 ---
@@ -776,7 +779,8 @@ The Deposit Aggregate manages both Security Deposits and Pet Deposits.
 - Security Deposit collected during Reservation remains the same Security Deposit after move-in.
 - Pet Deposit exists only when a pet is approved and the applicable signed Lease
   terms require that Deposit.
-- Deposits are applied only during Final Settlement.
+- Deposits are applied to Invoice obligations only during Final Settlement; an
+  approved active-Lease Pet Deposit Refund is separate from such application.
 
 ---
 
@@ -1020,7 +1024,7 @@ Rules
 - A Unit may have many Reservations over time.
 - Only one active Reservation may exist for a Unit.
 - A cancelled Reservation releases the Unit.
-- A moved-in Reservation is linked to the resulting Lease.
+- A COMPLETED Reservation is linked to exactly one resulting Lease.
 
 ---
 
@@ -1073,8 +1077,9 @@ Reservation
 
 Rules
 
-- A Reservation may never produce a Lease.
-- A moved-in Reservation always references exactly one Lease.
+- A Reservation may produce zero or one resulting Lease.
+- A COMPLETED Reservation always references exactly one resulting Lease.
+- A CANCELLED Reservation produces no resulting Lease.
 - A Reservation cannot create multiple Leases.
 
 ---
@@ -1187,7 +1192,8 @@ Rules
 
 - Utility Readings belong to exactly one Utility Meter.
 - Readings cannot be transferred to another meter.
-- Historical readings remain unchanged.
+- Historical readings remain reconstructable; authorized corrections preserve both
+  original and corrected values and never reassign the Reading.
 
 ---
 
@@ -1264,7 +1270,8 @@ Rules
 - Pet Deposit exists only when a pet is approved and the applicable signed Lease
   terms require that Deposit.
 - Deposits remain liabilities throughout the Lease.
-- Deposits are resolved during Final Settlement.
+- Deposits are resolved during Final Settlement, except for the approved Pet Deposit
+  Refund after the pet permanently leaves during an active Lease.
 
 ---
 
@@ -1337,15 +1344,19 @@ Reservation Created
        ACTIVE
       /      \
      /        \
-Cancelled   Moved In
+CANCELLED   COMPLETED
 ```
 
 Rules
 
 - Reservation begins in ACTIVE state.
+- ACTIVE means the Reservation currently holds the Unit.
 - Expiration extensions do not create a new status.
-- A moved-in Reservation is permanently completed.
-- Cancelled Reservations never become active again.
+- COMPLETED means the Reservation successfully proceeded through move-in into its
+  exactly one resulting Lease and Occupancy.
+- CANCELLED means the Reservation ended without successfully proceeding to tenancy
+  and produces no resulting Lease.
+- COMPLETED and CANCELLED are terminal and never become ACTIVE again.
 
 ---
 
@@ -1435,7 +1446,12 @@ Historical Record
 Rules
 
 - Readings remain permanent.
-- Corrections are handled through authorized modifications while preserving audit history.
+- Before Invoice issuance, an authorized corrected Reading becomes the valid billing
+  input while original value, corrected value, actor, timestamp, and reason remain
+  auditable.
+- After Invoice issuance, a Reading may still be corrected operationally regardless
+  of whether the Invoice is UNPAID, PARTIALLY_PAID, or PAID. The issued Invoice is
+  never silently rewritten; any amount difference uses a linked Invoice Adjustment.
 
 ---
 
@@ -1455,12 +1471,19 @@ UNPAID
   ▼
 PARTIALLY_PAID
   │
+  ├──────────────► UNPAID after authorized financial reversal/correction
   ├──────────────► PAID
   └──────────────► VOID only after required financial reversals
+
+PAID
+  ├──────────────► PARTIALLY_PAID after authorized financial reversal/correction
+  └──────────────► UNPAID after authorized financial reversal/correction
 ```
 
 Invoice status is determined by the approved issuance, allocation, Credit,
 Deposit-application, reversal, and voiding rules in `002_BUSINESS_RULES.md`.
+Payment-status regressions are derived from valid remaining financial effects; they
+are not manual status edits, partial voids, Refund semantics, or arbitrary reopening.
 Voiding always preserves history.
 
 ---
@@ -1513,7 +1536,8 @@ The following business invariants span multiple Aggregates and must always remai
 ## Unit Availability
 
 - A Unit cannot have more than one active Reservation.
-- A Unit cannot have more than one signed Lease.
+- A Unit cannot have more than one SIGNED Lease whose contractual period covers the
+  same point in time. Non-overlapping future signed coverage may coexist.
 
 ---
 
@@ -1543,6 +1567,8 @@ The following business invariants span multiple Aggregates and must always remai
 ## Utility Integrity
 
 - Historical Utility Readings always remain linked to the Utility Meter that produced them.
+- Historical Utility Readings may be corrected only through an authorized,
+  fully-audited correction that preserves original and corrected values.
 - Replacing a Utility Meter never alters historical billing records.
 
 ---
@@ -1679,6 +1705,9 @@ Recurring monthly rent invoices are generated automatically on the **25th of the
 
 The normal due date is the **5th**.
 
+This recurring Due Date is established by the application/business rule and is not
+replaced by an alternative recurring Due Date in the Lease.
+
 Example:
 
 ```text
@@ -1691,23 +1720,32 @@ The exact generation and due-date rules are defined in `002_BUSINESS_RULES.md`.
 
 ---
 
-## 21.2 First Partial Month
+## 21.2 Initial Rent Invoice
 
-When a Lease begins partway through a calendar month, rent is calculated using the actual number of calendar days.
+The Initial Rent Invoice is due seven calendar days after the actual Move-in Date.
+
+For move-in on day 1 through day 20 inclusive, it covers the Move-in Date through
+the last calendar day of that month. For move-in on day 21 or later, it combines the
+prorated remainder of the move-in month plus the entire following calendar month.
+The prorated portion uses actual calendar days.
 
 Example:
 
 ```text
 Move-in date: 10 July
 
-First rental period:
+Initial Rent period:
 10 July through 31 July
+
+Due date: 17 July
 
 Next regular rental period:
 1 August through 31 August
 ```
 
-The first partial month does not redefine the recurring monthly billing cycle.
+For a 27 July move-in, the Initial Rent period is 27 July through 31 August and is
+due 3 August. Normal billing then resumes on 25 August for 1–30 September, due
+5 September. Initial and recurring Rent periods must never duplicate or overlap.
 
 ---
 
@@ -1732,6 +1770,17 @@ A later rent change must not alter:
 - historical reporting
 
 The rent rate applicable to a billing period must be determinable from the historical Lease terms applicable during that period.
+
+---
+
+## 21.5 Contractual Late-payment Context
+
+The Lease provides substantially that failure to pay Rent or another payment
+obligation within ten days of its Due Date carries late payment of 10% of the total
+applicable amount, and that Rent unpaid for 30 days carries a contractual surrender
+commitment. The unresolved operational details are recorded as OPEN OWNER DECISION
+items in `002_BUSINESS_RULES.md`; this domain model does not invent a calculation,
+generation, repetition, warning, surrender, or termination algorithm.
 
 ---
 
@@ -1805,18 +1854,46 @@ rate change.
 
 ---
 
-# 23. Fixed Monthly Service Charges
+## 22.4 Confirmed Broken-Meter Estimation Basis
 
-The system supports fixed recurring service charges.
+For the same Unit and Utility Type, use the three most recent complete historical
+actual periods when three or more exist. When only one or two exist, use all of
+those available complete historical actual periods; do not discard them. In either
+case the weighted daily average is total actual consumption across the basis divided
+by total calendar days represented, not an average of separately rounded period
+averages. Estimated Consumption is that result multiplied by the applicable
+unmeasured calendar days.
 
-Current fixed monthly services include:
+Only when zero complete historical actual periods exist does the estimate wait for
+one complete future actual month or period for that same Unit and Utility Type.
+Until then the estimate and affected charge remain pending and unfinalized with the
+reason recorded. Another or comparable Unit and arbitrary consumption are never
+substituted.
 
-- Internet
-- Trash
+Move-out and Final Settlement use this same hierarchy. Only the zero-history case
+waits for a future-period basis.
 
-These charges are not meter-based.
+---
+
+# 23. Configured Fixed Monthly Service Charges
+
+The system supports fixed recurring Service types that the Property explicitly
+approves and configures.
+
+The currently approved and provided recurring Service is:
+
+- Trash Collection
+
+Internet and Monthly Cleaning are not currently provided and must not generate
+charges. They may be configured in the future only after explicit Owner approval.
+Staff must not invent an arbitrary Service through a generic or miscellaneous field.
+
+Configured Service charges are not meter-based. Inactive or not-provided Services do
+not generate charges.
 
 They are billed according to the service rate applicable to the relevant billing period.
+Service approval, configuration, activation/inactivation, effective periods, and
+historical rates remain preserved.
 
 Historical service rates must be preserved.
 
@@ -1966,13 +2043,9 @@ Advance Payments must not create artificial historical Invoices solely to absorb
 
 Customer Credit represents money belonging to or available for a Customer that has not yet been consumed by a valid charge.
 
-Customer Credit may arise from:
-
-- overpayment
-- advance payment
-- reversed allocation
-- authorized financial adjustment
-- other valid credit-producing events
+Customer Credit may arise only through a financial event explicitly authorized by
+`002_BUSINESS_RULES.md`. This model does not independently authorize reversed
+Allocations, Adjustments, or any open-ended event to create Customer Credit.
 
 Customer Credit is distinct from a Deposit.
 
@@ -2076,6 +2149,11 @@ The initial $100 is already a Security Deposit.
 
 It is not renamed, converted, or reclassified when the Customer later moves in.
 
+Twenty percent of monthly Rent is the normal suggested Reservation Security Deposit,
+not a hard minimum. Authorized management may explicitly accept another amount; the
+accepted required amount and override are audited, and a Reservation is not rejected
+merely because collection is below 20%.
+
 The Customer must complete the required Security Deposit before move-in according to the applicable business rules.
 
 ---
@@ -2118,7 +2196,8 @@ An active Reservation requires a Security Deposit according to the Reservation b
 
 The Reservation may therefore exist while the Security Deposit is only partially paid.
 
-The required minimum initial amount and Reservation-expiration consequences are defined in `002_BUSINESS_RULES.md`.
+The suggested initial amount, authorized override, accepted required amount, and
+Reservation-expiration consequences are defined in `002_BUSINESS_RULES.md`.
 
 ---
 
@@ -2162,8 +2241,13 @@ A Pet Deposit:
 - is a liability
 - is separate from the Security Deposit
 - remains traceable independently
-- may be used only under authorized settlement rules
-- is resolved through Final Settlement
+- primarily secures demonstrable pet-caused property damage or extraordinary/deep
+  cleaning beyond normal turnover cleaning
+- does not cap Customer liability for the full valid pet-caused repair or
+  deep-cleaning cost
+- may be refunded during an active Lease after the pet permanently leaves and all
+  applicable pet-related obligations are resolved
+- otherwise is resolved under authorized Final Settlement rules
 
 If no pet is being kept, a Pet Deposit must not be required merely because the
 Customer may keep a pet later.
@@ -2171,6 +2255,11 @@ Customer may keep a pet later.
 If an approved pet is introduced later and the applicable signed Lease terms
 require a Pet Deposit, that Deposit must be paid before or when the pet begins
 staying in the Unit.
+
+While the Lease remains active, a valid pet-caused damage or deep-cleaning charge is
+paid directly by the Customer and does not automatically consume the Pet Deposit.
+The Pet Deposit remains held unless the approved permanent-pet-departure Refund
+process applies.
 
 ---
 
@@ -2200,7 +2289,10 @@ A Deposit receipt must never be treated as rent income merely because money was 
 
 Deposits are not applied against ordinary monthly balances during an active Lease.
 
-Deposit application occurs only during Final Settlement.
+Deposit application to Invoice obligations occurs only during Final Settlement.
+This does not prevent an explicit Refund of remaining Pet Deposit after the pet
+permanently leaves during an active Lease and applicable pet obligations are
+resolved.
 
 Possible settlement uses include authorized:
 
@@ -2254,9 +2346,11 @@ Outstanding Charges
         ↓
 Less Available Customer Credit
         ↓
-Less Authorized Deposit Application
+Authorized Management Explicitly Selects/Confirms Deposit Applications
         ↓
-Final Financial Position
+Determine Remaining Customer Balance or Refundable Deposit Balance
+        ↓
+Refund Remaining Refundable Deposit
 ```
 
 The final result may be:
@@ -2283,6 +2377,13 @@ Amount Refundable to Customer
 
 Deposit application is explicit and traceable.
 
+Pet Deposit remains identifiable first for valid pet-caused damage or deep-cleaning
+obligations where applicable. Security Deposit may be selected for valid remaining
+Settlement obligations. If valid obligations remain unpaid and the Customer has not
+paid or will not pay them, authorized management may also select remaining Pet
+Deposit for that valid Settlement balance. No additional FIFO ordering between
+Deposit types is implied.
+
 Example:
 
 ```text
@@ -2295,6 +2396,17 @@ Damage Charges:              $70
 Total Settlement Charges:    $300
 Deposit Applied:              $300
 Deposit Refundable:           $200
+```
+
+```text
+Valid Damage Obligation:      $600
+Security Deposit Held:        $500
+Pet Deposit Held:             $200
+
+Security Deposit Applied:     $500
+Remaining Obligation:         $100
+Pet Deposit Applied:          $100
+Pet Deposit Refundable:       $100
 ```
 
 The system must preserve:
@@ -2356,9 +2468,7 @@ This includes:
 - Rent rates
 - Electricity rates
 - Water rates
-- Internet charges
-- Trash charges
-- Other recurring service rates
+- explicitly configured recurring Service rates
 
 A Utility Rate change affects Utility Invoices generated on or after its effective
 date. Rent and fixed Service rates follow their applicable contractual period
@@ -2514,11 +2624,12 @@ The following rules apply:
 
 - Every Reservation belongs to exactly one Unit.
 - Every Reservation belongs to exactly one Customer.
-- A Reservation may result in at most one Lease.
+- A Reservation may result in zero or one Lease.
 - An ACTIVE Reservation holds the Unit.
 - A CANCELLED Reservation no longer holds the Unit.
-- A MOVED_IN Reservation has completed its reservation lifecycle.
-- A MOVED_IN Reservation cannot return to ACTIVE.
+- A COMPLETED Reservation successfully proceeded through move-in into the resulting
+  Lease and Occupancy.
+- A COMPLETED Reservation cannot return to ACTIVE.
 - A CANCELLED Reservation cannot return to ACTIVE.
 - Reservation expiration changes must preserve historical extension records.
 - Extending the expiration date does not create a new Reservation status.
@@ -2529,7 +2640,7 @@ Reservation statuses are limited to:
 ```text
 ACTIVE
 CANCELLED
-MOVED_IN
+COMPLETED
 ```
 
 ---
@@ -2764,9 +2875,11 @@ Customer Credit represents money available to the Customer that is not currently
 The following rules apply:
 
 - Customer Credit is not a Deposit.
-- Customer Credit may arise from overpayment or advance payment.
+- Customer Credit may arise only through a source explicitly authorized by
+  `002_BUSINESS_RULES.md`.
 - An Invoice may not become negative in order to represent credit.
-- Unused Payment value may remain available as Customer Credit.
+- Unallocated Payment value remains part of the Payment until an explicit
+  `002_BUSINESS_RULES.md` disposition recognizes Credit or a Refund.
 - Applying Customer Credit must be auditable.
 - Refunding Customer Credit must be auditable.
 
@@ -2781,9 +2894,7 @@ The following rates may vary over time:
 - Rent
 - Electricity
 - Water
-- Internet
-- Trash
-- Other recurring service charges
+- explicitly configured recurring Services
 
 The following invariants apply:
 
@@ -2804,10 +2915,12 @@ The following rules apply:
 - Every terminated Lease must complete exactly one Final Settlement.
 - Final Settlement belongs to exactly one terminated Lease.
 - Final Settlement occurs only after the Lease is TERMINATED.
-- Outstanding obligations must be identified before settlement is finalized.
-- Available Customer Credit must be recognized.
+- All valid Settlement charges must be finalized before applications.
+- Authorized Customer Credit must be applied before authorized management selects
+  and confirms Deposit applications.
 - Security Deposit and Pet Deposit remain identifiable separately.
-- Deposit applications must identify the amount and purpose.
+- Deposit applications must identify the source Deposit, target obligation, amount,
+  purpose, actor, time, reason, and authorization.
 - Refunds must identify their financial source.
 - Any remaining amount due from the Customer must remain identifiable.
 - Final Settlement history must remain permanent.
@@ -2893,12 +3006,13 @@ Representative Reservation events include:
 ReservationCreated
 ReservationExpirationExtended
 ReservationCancelled
-ReservationMovedIn
+ReservationCompleted
 ```
 
 `ReservationExpirationExtended` records an extension while the Reservation remains ACTIVE.
 
-`ReservationMovedIn` represents completion of the Reservation lifecycle and links the Reservation to the resulting Lease.
+`ReservationCompleted` represents successful move-in completion of the Reservation
+lifecycle and links the Reservation to its exactly one resulting Lease.
 
 ---
 
@@ -3718,7 +3832,7 @@ Reservation Statuses:
 ```text id="k31j8f"
 ACTIVE
 CANCELLED
-MOVED_IN
+COMPLETED
 ```
 
 ---
@@ -4041,8 +4155,7 @@ Examples include:
 - Rent Rate
 - Electricity Rate
 - Water Rate
-- Internet Charge
-- Trash Charge
+- explicitly configured Service Rate
 
 ---
 
@@ -4087,10 +4200,13 @@ selected rate applies to the entire represented consumption period.
 
 A fixed recurring service-related charge.
 
-Current recurring services include:
+The currently approved and provided recurring Service is:
 
-- Internet
 - Trash Collection
+
+Internet and Monthly Cleaning are examples of potential future Services, not current
+charges. Any future Service requires explicit Owner approval and configuration before
+billing. Free-form or generic “other recurring service” creation is not permitted.
 
 ---
 
@@ -4158,12 +4274,8 @@ Advance Payment remains available until later allocated, refunded, or otherwise 
 
 Money available for use by a Customer that is not currently allocated to an Invoice and is not classified as a Deposit.
 
-Customer Credit may arise from:
-
-- Overpayment
-- Advance Payment
-- Reversed allocation
-- Authorized financial adjustment
+Customer Credit may arise only from financial events explicitly authorized by
+`002_BUSINESS_RULES.md`; this definition creates no additional Credit source.
 
 ---
 
@@ -4311,7 +4423,7 @@ Reservation Deposit
 The approved Reservation completion status is:
 
 ```text id="1v67f2"
-MOVED_IN
+COMPLETED
 ```
 
 Do not describe the Reservation as financially converted into a Lease or the Deposit as converted into another Deposit.
@@ -4329,7 +4441,7 @@ Approved Reservation statuses remain:
 ```text id="kwdy1p"
 ACTIVE
 CANCELLED
-MOVED_IN
+COMPLETED
 ```
 
 ---
@@ -4580,7 +4692,7 @@ LEASE SIGNED
     ▼
 MOVE-IN
     │
-    ├── Reservation becomes MOVED_IN
+    ├── Reservation becomes COMPLETED
     ├── Unit becomes OCCUPIED
     └── Occupancy begins
     │
@@ -4859,7 +4971,7 @@ The following architectural domain decisions are considered established by this 
 5. Customer has no permanent Customer Type.
 6. Reservation contains exactly one Customer.
 7. Reservation is mandatory before move-in.
-8. Reservation statuses are ACTIVE, CANCELLED, and MOVED_IN.
+8. Reservation statuses are ACTIVE, CANCELLED, and COMPLETED.
 9. Reservation extension is historical activity, not a Reservation status.
 10. Security Deposit exists from the Reservation stage onward.
 11. There is no separate Reservation Deposit.
@@ -4876,12 +4988,16 @@ Lease terms require it.
 21. Occupancy is separate from contractual responsibility.
 22. Signed Leases for one Unit must not have overlapping contractual periods.
 23. Rent is billed monthly in advance.
-24. First and final partial months use actual calendar days when applicable.
+24. The Initial Rent Invoice follows the day-1-through-20/day-21-or-later coverage
+    rules and seven-calendar-day Due Date; prorated initial and final portions use
+    actual calendar days when applicable.
 25. Recurring monthly Rent Invoices are generated on the 25th and due on the 5th.
 26. Electricity and Water use individual Utility Meters.
 27. One Unit may have only one active meter per Utility Type.
 28. Historical Utility Meters and Utility Readings are preserved.
-29. Internet and Trash are fixed recurring service charges.
+29. Trash Collection is the currently approved recurring Service; Internet and
+    Monthly Cleaning are not currently provided, and any future Service requires
+    explicit Owner approval and configuration.
 30. Historical rates must remain preserved; a Utility Invoice selects the Utility
 Rate effective on its generation date and applies it to the entire represented
 consumption period.
@@ -4918,7 +5034,7 @@ Defines rules such as:
 - exact Reservation extension eligibility
 - maximum extension duration
 - Reservation expiration behavior
-- minimum Security Deposit amount at Reservation
+- suggested Reservation Security Deposit and authorized accepted amount
 - move-in deposit requirements
 - cancellation and refund authorization
 - Rent proration formulas
