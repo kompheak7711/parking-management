@@ -29,11 +29,28 @@ This document defines the product capabilities, user workflows, functional requi
 
 ## 3.1 In Scope
 
-The product shall support one Property's complete residential tenancy lifecycle: Property and Unit management; canonical Customers; Reservations; Security and conditional Pet Deposits; Leases, Occupancy, move-in, termination, and move-out; Utility Meters and Readings; Rent, Utility, service, damage, and miscellaneous Invoices; Payments and manual allocations; Customer Credit, Reversals, and Refunds; Final Settlement; and permanent operational, financial, and audit history.
+The product shall support one Property's complete residential tenancy lifecycle:
+Property and Unit management; canonical Customers; Reservations; Security and
+conditional Pet Deposits; Leases, Occupancy, move-in, termination, and move-out;
+Utility Meters and Readings; Rent, Utility, configured recurring-Service, damage, and
+miscellaneous Invoices; Late-payment Charge decisions and obligations; Payments;
+Receipts; authorized Payment Allocations and Customer Credit applications; Customer
+Credit, Reversals, and Refunds; one unified Customer Account Ledger view per Customer;
+Final Settlement; and permanent operational, financial, and audit history.
+
+The product may calculate deterministic Payment Allocation proposals. Posting remains
+manual and requires authorized staff confirmation; no proposal may be silently posted.
 
 ## 3.2 Out of Scope
 
-The product shall not provide multi-property portfolio management, commercial leasing, General Ledger or general accounting, Owner accounting, government tax reporting, banking integration, payroll, Human Resources, construction management, maintenance work-order management, procurement, inventory, automated Payment allocation, or smart-meter integration.
+The product shall not provide multi-property portfolio management, commercial leasing,
+a General Ledger, Chart of Accounts, full accounting, general supplier or vendor
+Accounts Payable, Owner accounting, government tax reporting, payroll, Human Resources,
+construction management, maintenance work-order management, procurement, inventory,
+automatic posting of Payment Allocation proposals, or smart-meter integration.
+
+The operational preservation of approved Payment-channel transaction and conversion
+facts does not create a broader banking, bank-reconciliation, or accounting system.
 
 ## 3.3 Specification Boundary
 
@@ -52,20 +69,38 @@ The product shall manage exactly one Property, its Units and availability, and c
 **Traceability:** `BR-PROP-001`–`BR-PROP-003`; `BR-UNIT-001`–`BR-UNIT-013`; `BR-CUST-001`–`BR-CUST-003`.
 
 ## PR-CAP-002 — Reservation and Deposit Management
-The product shall support Reservation activation, holding, one authorized extension, end-of-date expiration, cancellation and responsibility classification, Deposit receipt and disposition, and coordinated move-in completion.
+The product shall support Reservation activation using the explicitly accepted partial
+Security Deposit amount, Unit holding, one authorized extension, end-of-date expiration,
+cancellation and responsibility classification, Deposit receipt and disposition, and
+coordinated completion through move-in.
 **Traceability:** `BR-RES-001`–`BR-RES-022`; `BR-DEP-001`–`BR-DEP-025`.
 
 ## PR-CAP-003 — Lease, Occupancy, Termination, and Move-out
-The product shall support Lease drafting and signing, Primary Tenant and signer relationships, actual Occupancy, coordinated move-in, authorized termination, actual move-out, and operational Unit transition without fabricating tenancy terms.
-**Traceability:** `BR-LEASE-001`–`BR-LEASE-025`; `BR-OCC-001`–`BR-OCC-009`; `BR-MOVEOUT-001`–`BR-MOVEOUT-012`.
+The product shall support Lease drafting and signing, Primary Tenant and signer
+relationships, actual Occupancy, coordinated move-in, Rent-specific nonpayment warning
+and default history, separately authorized termination, actual move-out, and operational
+Unit transition without fabricating tenancy terms.
+**Traceability:** `BR-LEASE-001`–`BR-LEASE-030`; `BR-OCC-001`–`BR-OCC-009`;
+`BR-MOVEOUT-001`–`BR-MOVEOUT-012`.
 
 ## PR-CAP-004 — Billing and Invoices
-The product shall generate deterministic Rent, configured fixed-service, Utility, damage, and miscellaneous charges and manage the complete Invoice lifecycle using only approved sources, categories, dates, rates, calculations, statuses, and corrections.
-**Traceability:** `BR-RENT-001`–`BR-RENT-028`; `BR-UTIL-001`–`BR-UTIL-032`; `BR-SVC-001`–`BR-SVC-015`; `BR-INV-001`–`BR-INV-050`.
+The product shall generate deterministic Rent, configured recurring-Service, Utility,
+damage, and miscellaneous charges; manage the complete Invoice lifecycle; and support
+one final late-payment decision and any resulting separate Late-payment Charge using
+only approved sources, categories, dates, rates, calculations, statuses, and correction
+events.
+**Traceability:** `BR-RENT-001`–`BR-RENT-029`; `BR-UTIL-001`–`BR-UTIL-032`;
+`BR-SVC-001`–`BR-SVC-015`; `BR-INV-001`–`BR-INV-055`;
+`BR-LATE-001`–`BR-LATE-006`.
 
-## PR-CAP-005 — Payments, Credit, and Refunds
-The product shall record Payments, preserve currency and exchange facts, support authorized manual allocation, derive allocation condition, and process approved Credit, Refund, and Reversal events without rewriting sources.
-**Traceability:** `BR-PAY-001`–`BR-PAY-035`; `BR-CREDIT-001`–`BR-CREDIT-012`; `BR-REFUND-001`–`BR-REFUND-012`; `BR-MONEY-001`–`BR-MONEY-013`.
+## PR-CAP-005 — Payments, Receipts, Allocation, Credit, and Refunds
+The product shall record Payments as money-received facts; issue and reprint distinct
+Receipts; preserve currency and exchange facts; support authorized detailed Payment
+Allocation; derive allocation condition; and process approved Credit, Refund, and
+Reversal events without rewriting sources.
+**Traceability:** `BR-PAY-001`–`BR-PAY-040`; `BR-RECEIPT-001`–`BR-RECEIPT-006`;
+`BR-CREDIT-001`–`BR-CREDIT-013`; `BR-REFUND-001`–`BR-REFUND-013`;
+`BR-MONEY-001`–`BR-MONEY-013`.
 
 ## PR-CAP-006 — Final Settlement
 The product shall coordinate final charges, Credit and Deposit application, Refund or balance due, permanent closure, and auditable correction for exactly one Settlement per terminated Lease.
@@ -73,12 +108,26 @@ The product shall coordinate final charges, Credit and Deposit application, Refu
 
 ## PR-CAP-007 — Authorization, Audit, and History
 The product shall require explicit authorization for controlled actions and preserve permanent, reconstructable audit history.
-**Traceability:** `BR-AUTH-001`–`BR-AUTH-009`; `BR-AUDIT-001`–`BR-AUDIT-010`; `BR-PROP-002`.
+**Traceability:** `BR-AUTH-001`–`BR-AUTH-009`; `BR-AUDIT-001`–`BR-AUDIT-011`;
+`BR-PROP-002`.
+
+## PR-CAP-008 — Customer Account Ledger
+The product shall provide one chronological, reconstructable Customer Account Ledger
+view per Customer showing complete financial history, obligation composition, current
+amount owed, separately identifiable Deposit liabilities, and available Customer
+Credit without replacing the authoritative underlying records or becoming a General
+Ledger.
+**Traceability:** `BR-LEDGER-001`–`BR-LEDGER-007`.
 
 # 6. End-to-End User Workflows
 
 ## PR-WF-001 — Prepare and Reserve a Unit
-An authorized user shall be able to identify a legally available Unit from authoritative facts, reuse or record one Customer, receive the minimum initial Security Deposit, and activate one Reservation. Conflicting availability or unmet activation conditions shall be rejected.
+An authorized user shall be able to identify a legally available Unit from authoritative
+facts, reuse or record one Customer, review the normal 20% suggested Reservation
+Security Deposit, explicitly accept an authorized partial amount below, at, or above
+that suggestion, receive that accepted amount, and activate one Reservation. Conflicting
+availability or unmet activation conditions shall be rejected. The suggestion, accepted
+amount, override actor, timestamp, and reason shall remain auditable.
 **Traceability:** `BR-UNIT-001`–`BR-UNIT-013`; `BR-CUST-001`–`BR-CUST-003`; `BR-RES-001`–`BR-RES-006`; `BR-DEP-001`–`BR-DEP-005`.
 
 ## PR-WF-002 — Extend, Cancel, or Expire a Reservation
@@ -86,24 +135,75 @@ The product shall grant only the eligible single extension with Notice history; 
 **Traceability:** `BR-RES-007`–`BR-RES-012`; `BR-RES-015`–`BR-RES-022`; `BR-UNIT-010`; `BR-DEP-015`–`BR-DEP-019`; `BR-REFUND-004`.
 
 ## PR-WF-003 — Draft, Sign, and Move In
-An authorized user shall be able to create the at-most-one resulting DRAFTED Lease, identify the Primary Tenant and signers, record contractual terms, sign only when valid, and complete move-in only after the Reservation, Unit, Lease, date, and Deposit conditions are met. Completion shall coordinate Reservation MOVED_IN, Unit OCCUPIED, opened Occupancy, and continuation of the same Security Deposit.
+An authorized user shall be able to create the zero-or-one resulting DRAFTED Lease,
+identify the Primary Tenant and signers, record contractual terms, sign only when valid,
+and complete move-in only after the Reservation, Unit, Lease, date, and Deposit
+conditions are met. Completion shall coordinate terminal Reservation COMPLETED with
+exactly one resulting Lease, Unit OCCUPIED, opened Occupancy, and continuation of the
+same Security Deposit. A CANCELLED Reservation shall have no resulting Lease.
 **Traceability:** `BR-RES-013`, `BR-RES-014`; `BR-LEASE-001`–`BR-LEASE-016`; `BR-OCC-001`–`BR-OCC-004`; `BR-DEP-005`–`BR-DEP-010`; `BR-UNIT-005`, `BR-UNIT-007`.
 
 ## PR-WF-004 — Operate and Bill an Active Tenancy
-Authorized users shall be able to maintain actual Occupancy, approved pets and Deposits, recurring Rent and fixed services, Utility meters/readings/rates/approved estimates, Invoices, Payments, and manual allocations with full source and audit history.
-**Traceability:** detailed `BR-OCC-*`, `BR-DEP-*`, `BR-RENT-*`, `BR-SVC-*`, `BR-UTIL-*`, `BR-INV-*`, `BR-PAY-*`, `BR-CREDIT-*`, and `BR-REFUND-*` requirements in Section 8.
+Authorized users shall be able to maintain actual Occupancy, approved pets and separate
+Deposits; refund a remaining Pet Deposit through the approved active-Lease pet-departure
+exception; generate Initial and recurring Rent and configured recurring-Service billing
+without overlap; maintain Utility meters, audited Reading corrections, rates, and
+approved estimates; issue Invoices; record Payments; provide Receipts; confirm detailed
+Allocations; apply Customer Credit; make authorized late-payment decisions; and review
+the Customer Account Ledger with full source and audit history.
+**Traceability:** detailed `BR-OCC-*`, `BR-DEP-*`, `BR-RENT-*`, `BR-SVC-*`,
+`BR-UTIL-*`, `BR-INV-*`, `BR-LATE-*`, `BR-PAY-*`, `BR-RECEIPT-*`,
+`BR-CREDIT-*`, `BR-LEDGER-*`, and `BR-REFUND-*` requirements in Section 8.
 
 ## PR-WF-005 — Terminate and Move Out
-An authorized user shall be able to act under the signed Lease, record actual termination and Move-out Dates, close Occupancy only after departure, set the Unit to its actual condition, capture final Utility handling and valid charges, and initiate Settlement. End Date alone shall not fabricate termination, move-out, renewal, holdover terms, Rent, fees, or penalties.
-**Traceability:** `BR-LEASE-017`–`BR-LEASE-025`; `BR-MOVEOUT-001`–`BR-MOVEOUT-012`; `BR-OCC-005`, `BR-OCC-007`–`BR-OCC-009`; `BR-UNIT-008`, `BR-UNIT-011`.
+An authorized user shall be able to act under the signed Lease, separately review
+historical 20-day Rent Nonpayment Warning Notices and 30-day Serious Nonpayment Default
+conditions, authorize any actual termination process, record actual termination and
+Move-out Dates, close Occupancy only after departure, set the Unit to its actual
+condition, capture final Utility handling and valid charges, and initiate Settlement.
+Lease End Date, a Rent warning/default milestone, or elapsed time alone shall not
+fabricate termination, move-out, renewal, holdover terms, Rent, fees, or penalties.
+**Traceability:** `BR-LEASE-017`–`BR-LEASE-030`; `BR-MOVEOUT-001`–`BR-MOVEOUT-012`;
+`BR-OCC-005`, `BR-OCC-007`–`BR-OCC-009`; `BR-UNIT-008`, `BR-UNIT-011`.
 
 ## PR-WF-006 — Finalize Settlement
-An authorized user shall be able to create the one required Settlement, finalize valid charges, apply Credit and Deposits in order, record each application separately, produce a balance or authorized Refund, and permanently close only after all prerequisites.
-**Traceability:** `BR-SETTLE-001`–`BR-SETTLE-015`; `BR-DEP-014`, `BR-DEP-023`–`BR-DEP-025`; `BR-REFUND-007`.
+An authorized user shall be able to create the one required Settlement, finalize valid
+Invoice and applicable Late-payment Charge obligations, apply Credit and Deposits under
+their approved rules, record each application separately, produce a balance or
+authorized Refund, reflect the effects in the Customer Account Ledger, and permanently
+close only after all prerequisites.
+**Traceability:** `BR-SETTLE-001`–`BR-SETTLE-015`; `BR-DEP-014`,
+`BR-DEP-023`–`BR-DEP-025`; `BR-REFUND-007`; applicable `BR-LATE-*` and
+`BR-LEDGER-*` requirements in Section 8.
 
 ## PR-WF-007 — Correct Without Rewriting History
-Corrections shall use only the explicit modification, Adjustment, Reversal, Refund, replacement, disposition, or post-closure mechanism allowed by the governing rule and shall preserve the original fact and source chain.
+Corrections shall use only the explicit modification, Adjustment, Reversal, Refund,
+replacement, disposition, or post-closure mechanism allowed by the governing rule and
+shall preserve the original fact and source chain. A Utility Reading correction before
+Invoice issuance changes the billing input; after issuance, any financial difference
+uses a linked Invoice Adjustment without silently rewriting the original Invoice,
+regardless of Invoice payment status.
 **Traceability:** `BR-PROP-002`, `BR-PROP-003`; applicable `BR-UTIL-*`, `BR-INV-*`, `BR-PAY-*`, `BR-CREDIT-*`, `BR-REFUND-*`, `BR-SETTLE-013`, and `BR-AUDIT-*` detailed requirements.
+
+## PR-WF-008 — Receive, Acknowledge, and Apply Money
+An authorized user shall be able to confirm one Payment, issue its numbered Receipt,
+record a valid Customer designation, review the deterministic between-Invoice FIFO and
+within-mixed-Invoice Rent-first proposal where applicable, confirm sufficient
+line/obligation allocation detail, and reprint the same Receipt without creating
+another Payment. The resulting Invoice, Late-payment Charge, Customer Credit, and
+Customer Account Ledger balances shall remain reconstructable.
+**Traceability:** `BR-PAY-001`–`BR-PAY-040`; `BR-RECEIPT-001`–`BR-RECEIPT-006`;
+`BR-CREDIT-001`–`BR-CREDIT-013`; `BR-LEDGER-001`–`BR-LEDGER-007`.
+
+## PR-WF-009 — Review Late Payment and Rent Nonpayment
+Authorized management shall be able to review one applicable overdue source Invoice,
+confirm, reduce, or waive its single final late-payment decision, and create a separate
+immediately payable Late-payment Charge only for a positive amount. The product shall
+evaluate 20-day and 30-day Rent-specific milestones from remaining Rent after confirmed
+applications, preserve cure history, and require a separate authorized termination
+process.
+**Traceability:** `BR-INV-051`–`BR-INV-055`; `BR-LATE-001`–`BR-LATE-006`;
+`BR-LEASE-026`–`BR-LEASE-030`; `BR-PAY-036`–`BR-PAY-040`.
 
 # 7. Product-Wide Quality Requirements
 
@@ -116,24 +216,46 @@ A violating action shall be rejected without silent input mutation.
 **Traceability:** all `BR-*`; `002_BUSINESS_RULES.md` Section 14.
 
 ## PR-QUAL-003 — Financial Reconstructability
-Every balance and result shall be reproducible from permanent source records, rates, allocations, applications, Adjustments, Reversals, Credits, Refunds, dispositions, and Settlement events.
+Every Invoice line, Invoice, Late-payment Charge, Payment allocation condition, Customer
+Credit, Deposit, Customer outstanding position, and Settlement result shall be
+reproducible from permanent source records, rates, Allocations, applications,
+Adjustments, Reversals, Credits, Refunds, dispositions, and Settlement events. A
+Customer Account Ledger projection shall reconcile to those authoritative records and
+shall never become a second source of truth.
 **Traceability:** `BR-PROP-002`; all financial and audit rules in Section 8.
 
 ## PR-QUAL-004 — Historical Availability
-Required operational, financial, rate, correction, and audit histories shall remain retrievable for reporting and audit.
+Required operational, financial, rate, Receipt issuance/reprint, warning/default,
+correction, Ledger reconstruction, and audit histories shall remain retrievable for
+reporting and audit.
 **Traceability:** `BR-PROP-002`; `BR-CUST-003`; applicable history requirements in Section 8; all `BR-AUDIT-*`.
 
 ## PR-QUAL-005 — Authoritative Facts
-Availability, occupancy, consumption, balances, allocation condition, and calculated summaries shall derive from authoritative records; a summary shall not authorize a conflicting action.
-**Traceability:** `BR-UNIT-013`; `BR-UTIL-003`, `BR-UTIL-012`; `BR-INV-017`; `BR-PAY-008`–`BR-PAY-014`; `BR-SETTLE-002`–`BR-SETTLE-009`.
+Availability, occupancy, consumption, line and obligation balances, Invoice status,
+allocation condition, Customer Account Ledger, and calculated summaries shall derive
+from authoritative records; a summary or projection shall not authorize a conflicting
+action.
+**Traceability:** `BR-UNIT-013`; `BR-UTIL-003`, `BR-UTIL-012`; `BR-INV-017`;
+`BR-PAY-008`–`BR-PAY-014`; `BR-LEDGER-001`–`BR-LEDGER-007`;
+`BR-SETTLE-002`–`BR-SETTLE-009`.
 
 ## PR-QUAL-006 — Date, Time, and Monetary Exactness
 The product shall use actual business dates, configured local timezone boundaries, safe monetary arithmetic, and the exact specified precision, rounding stage, currency, exchange rate, proration, and payment-channel settlement rules.
 **Traceability:** `BR-PROP-003`; `BR-MONEY-001`–`BR-MONEY-013`; every referenced calculation rule.
 
 ## PR-QUAL-007 — Coordinated Transitions
-Move-in, automatic expiration cancellation, Reversal effects, move-out, and Settlement finalization shall not leave authoritative records in a partially contradictory state.
+Move-in, Reservation completion, automatic expiration cancellation, Allocation and
+Payment Reversal effects, Receipt history, move-out, and Settlement finalization shall
+not leave authoritative records in a partially contradictory state.
 **Traceability:** `BR-RES-016`; `BR-LEASE-016`; `BR-PAY-012`, `BR-PAY-014`, `BR-PAY-029`; `BR-OCC-009`; `BR-MOVEOUT-002`–`BR-MOVEOUT-012`; `BR-SETTLE-011`, `BR-SETTLE-012`.
+
+## PR-QUAL-008 — Business-facing Financial View
+The Customer Account Ledger and related staff/Customer presentation shall use
+business-facing terms such as Amount charged, Payment received, Credit, Refund,
+Outstanding balance, and Customer Credit. The product shall not require formal
+debit/credit bookkeeping terminology or introduce General Ledger or vendor Accounts
+Payable behavior.
+**Traceability:** `BR-LEDGER-001`–`BR-LEDGER-007`; `BR-CREDIT-013`.
 
 # 8. Detailed Functional Requirements
 
@@ -208,9 +330,10 @@ Users must not alter historical dates merely to change:
 
 Any permitted correction to a historical date must be audited.
 
-Scheduled business actions and end-of-date processing must use the Property's
-configured local timezone. A business date remains in effect through the end of
-that local calendar date unless a rule explicitly states otherwise.
+The Property's authoritative business timezone is `Asia/Phnom_Penh`. Scheduled
+business actions and end-of-date processing must use that timezone. A business date
+remains in effect through the end of that local calendar date unless a rule explicitly
+states otherwise.
 
 ## 8.3 Unit Requirements
 
@@ -263,7 +386,7 @@ A new Reservation may be created only when the Unit is legally available to be r
 A Unit must not receive a second active Reservation while another Reservation is ACTIVE.
 
 An ACTIVE Reservation always holds its Unit. A Reservation releases its Unit only
-when it becomes CANCELLED or MOVED_IN through an approved business transition.
+when it becomes CANCELLED or COMPLETED through an approved business transition.
 
 ### PR-UNIT-005 — Lease Exclusivity
 
@@ -471,10 +594,15 @@ Reservation status may be only:
 ```text
 ACTIVE
 CANCELLED
-MOVED_IN
+COMPLETED
 ```
 
 The system must not introduce an EXPIRED Reservation status.
+
+ACTIVE means the Reservation currently holds the Unit. CANCELLED means it ended
+without successfully proceeding to tenancy. COMPLETED means it successfully
+proceeded through move-in into its resulting Lease and Occupancy. CANCELLED and
+COMPLETED are terminal.
 
 ### PR-RES-004 — Initial Reservation Status
 
@@ -483,7 +611,8 @@ The system must not introduce an EXPIRED Reservation status.
 **Normative product behavior**
 
 A newly accepted Reservation begins in ACTIVE status only after all Reservation
-activation conditions, including the minimum initial Security Deposit, are met.
+activation conditions, including receipt of the explicitly accepted initial Security
+Deposit amount, are met.
 
 ### PR-RES-005 — Reservation Expiration Required
 
@@ -566,7 +695,7 @@ The effective Expiration Date must not be changed without this Notice history.
 **Normative product behavior**
 
 At the end of the effective Expiration Date in the Property's configured local
-timezone, an ACTIVE Reservation that has not become MOVED_IN and has no valid
+timezone, an ACTIVE Reservation that has not become COMPLETED and has no valid
 approved extension automatically becomes CANCELLED.
 
 The cancellation reason must be `RESERVATION_EXPIRED`. The Reservation history
@@ -583,7 +712,7 @@ reason and whether it is customer-caused, caused by expiration while the Propert
 could provide the Unit, or caused by the Property's inability to provide the
 Unit as agreed.
 
-A CANCELLED Reservation cannot later become ACTIVE or MOVED_IN.
+A CANCELLED Reservation cannot later become ACTIVE or COMPLETED.
 
 ### PR-RES-013 — Reservation Move-in Completion
 
@@ -591,7 +720,7 @@ A CANCELLED Reservation cannot later become ACTIVE or MOVED_IN.
 
 **Normative product behavior**
 
-A Reservation may become MOVED_IN only when:
+A Reservation may become COMPLETED only when:
 
 - the Reservation is ACTIVE and has not expired;
 - the Lease is SIGNED;
@@ -602,15 +731,20 @@ A Reservation may become MOVED_IN only when:
   beginning of occupancy; and
 - move-in has actually occurred.
 
+The COMPLETED Reservation must reference exactly one resulting Lease. COMPLETED is
+terminal.
+
 ### PR-RES-014 — Reservation to Lease Relationship
 
 **Business-rule traceability:** `BR-RES-014`
 
 **Normative product behavior**
 
-A Reservation may result in at most one Lease.
+A Reservation may result in zero or one Lease.
 
 The system must not create multiple resulting Leases from one Reservation.
+A COMPLETED Reservation references exactly one resulting Lease. A CANCELLED
+Reservation produces no resulting Lease.
 
 ### PR-RES-015 — Expiration Date Boundary
 
@@ -706,8 +840,9 @@ Reservation must be refunded through an explicit Refund event.
 
 **Normative product behavior**
 
-A Reservation may become ACTIVE only after at least the minimum initial partial
-Security Deposit has been received.
+A Reservation may become ACTIVE only after the explicitly accepted initial partial
+Security Deposit amount has been received. Authorized management may accept an
+amount below or above the normal 20% suggestion.
 
 The business does not use a separate Reservation Deposit.
 
@@ -718,21 +853,22 @@ The business does not use a separate Reservation Deposit.
 **Normative product behavior**
 
 The initial payment may be less than the total required Security Deposit, but it
-must meet the approved minimum. More than the minimum may be paid.
+must equal the initial amount explicitly accepted for that Reservation. The accepted
+amount and authorization must be audited.
 
 Every receipt remains part of the same Security Deposit obligation.
 
-### PR-DEP-003 — Minimum Initial Security Deposit
+### PR-DEP-003 — Suggested Initial Security Deposit
 
 **Business-rule traceability:** `BR-DEP-003`
 
 **Normative product behavior**
 
-The minimum amount required to activate a Reservation is 20% of the agreed
-monthly Rent.
+The normal/default suggested amount when reserving a Unit is 20% of the agreed
+monthly Rent. It is not a hard minimum.
 
 ```text
-Minimum Initial Security Deposit
+Suggested Initial Security Deposit
 =
 Agreed Monthly Rent × 20%
 ```
@@ -743,9 +879,15 @@ Example:
 
 ```text
 Agreed Monthly Rent:                  $500
-Minimum Initial Security Deposit:     $100
+Suggested Initial Security Deposit:   $100
 ```
 
+Authorized management may accept another explicit amount, including an amount below
+or above 20%, based on the actual Reservation arrangement. The system must preserve
+the suggested amount, accepted required amount, override authorization, actor,
+timestamp, and reason. It must not reject a Reservation merely because the collected
+Security Deposit is below 20%. A lower accepted amount may legitimately hold the Unit
+for a short Reservation period when authorized management accepts that arrangement.
 This amount is Security Deposit, not a fee or separate Deposit type.
 
 ### PR-DEP-004 — Required Security Deposit Amount
@@ -784,8 +926,8 @@ Received
 
 Any Security Deposit received during Reservation remains the same Security Deposit when the resulting Lease is signed and move-in occurs.
 
-The receipt of money for a Deposit must be linked explicitly from the Payment to
-the applicable Deposit liability and Deposit balance. This Deposit-receipt link is
+Money received for a Deposit must be linked explicitly from the Payment to the
+applicable Deposit liability and Deposit balance. This Payment-to-Deposit link is
 not an Invoice Payment Allocation and does not require a Deposit Invoice.
 
 The system must not:
@@ -837,6 +979,31 @@ Pet Deposit must be recorded as a liability and not as:
 - service income
 - damage income
 
+Pet Deposit primarily secures demonstrable pet-caused property damage or
+extraordinary/deep cleaning beyond normal turnover cleaning. It does not cap the
+Customer's liability for the full valid repair or deep-cleaning cost.
+
+Examples include pet damage to furniture, doors, walls, or flooring; cleaning beyond
+normal turnover cleaning; and other demonstrable pet-caused property damage or
+deep-cleaning cost.
+
+```text
+Pet Deposit:                    $200
+Valid Pet-caused Cost:          $500
+Remaining Customer Liability:  $300
+```
+
+If a valid pet-caused damage or deep-cleaning obligation becomes payable while the
+Lease remains active, the Customer must pay that valid charge directly. The Pet
+Deposit must not be consumed automatically and remains held unless BR-DEP-012 later
+permits its Refund.
+
+```text
+Active-Lease Pet-caused Charge: $500
+Customer Owes Directly:         $500
+Pet Deposit Remains Held:       unchanged
+```
+
 ### PR-DEP-010 — Pet Deposit Timing
 
 **Business-rule traceability:** `BR-DEP-010`
@@ -858,7 +1025,9 @@ staying in the Unit.
 
 **Normative product behavior**
 
-Security Deposit and Pet Deposit are held during the active Lease.
+Security Deposit and Pet Deposit are held during the active Lease, except that the
+remaining refundable Pet Deposit may be returned under BR-DEP-012 after the pet
+permanently leaves and applicable pet-related obligations are resolved.
 
 They remain distinct liabilities with separately traceable balances.
 
@@ -870,7 +1039,13 @@ They remain distinct liabilities with separately traceable balances.
 
 Security Deposit must not be refunded while the Lease remains SIGNED.
 
-Pet Deposit must likewise remain held while its associated tenancy obligation remains active.
+Pet Deposit remains held while an approved pet is kept at the Unit. If the tenant
+permanently stops keeping the pet during an active Lease, the system must record that
+fact and determine any valid pet-caused property damage or extraordinary/deep-cleaning
+obligation. The Customer remains responsible for the full valid cost. Once applicable
+pet-related obligations are resolved, any remaining refundable Pet Deposit may be
+returned through an explicit Refund event with complete history. Lease termination is
+not required for this Refund.
 
 This rule does not prevent an explicit disposition required by an approved
 non-refundable policy or an explicit Property-caused Reservation Refund before a
@@ -886,9 +1061,8 @@ A Customer must not use Security Deposit or Pet Deposit to pay ordinary monthly:
 
 - Rent
 - Utilities
-- Internet
-- Trash
-- other current charges
+- recurring Service Charges
+- other ordinary current Invoice obligations
 
 while the Lease remains active.
 
@@ -901,7 +1075,9 @@ staff cannot allocate it to an ordinary Invoice before Final Settlement.
 
 **Normative product behavior**
 
-Deposits may be applied only as part of the Final Settlement process after Lease termination.
+Deposits may be applied to Invoice obligations only as part of the Final Settlement
+process after Lease termination. An active-Lease Pet Deposit Refund under BR-DEP-012
+is a separate Refund process, not Deposit application to an Invoice.
 
 An explicit forfeiture/disposition event under an approved non-refundable policy
 is not an Invoice allocation and must remain separate from Final Settlement
@@ -1022,9 +1198,8 @@ Deposit is non-refundable and is resolved through an explicit disposition event.
 
 Voluntary early termination does not automatically make the Pet Deposit
 non-refundable. It remains separately tracked through Final Settlement, may be
-applied only to authorized pet-related damage, and is refundable to the extent
-not validly applied or otherwise validly forfeited under an explicitly approved
-rule.
+applied under BR-SETTLE-005 and BR-SETTLE-006, and is refundable to the extent not
+validly applied or otherwise validly forfeited under an explicitly approved rule.
 
 ### PR-DEP-025 — Remaining Refundable Deposit
 
@@ -1207,7 +1382,7 @@ The Lease End Date must be later than the Lease Start Date.
 The End Date is a contractual boundary, not an automatic month-to-month renewal
 and not an automatic TERMINATED transition while occupancy continues.
 
-### PR-LEASE-014 — One Signed Lease per Unit
+### PR-LEASE-014 — Non-overlapping Signed Lease Coverage
 
 **Business-rule traceability:** `BR-LEASE-014`
 
@@ -1246,7 +1421,7 @@ At minimum:
 
 When move-in is completed:
 
-- Reservation becomes MOVED_IN
+- Reservation becomes COMPLETED
 - Unit becomes OCCUPIED
 - Occupancy begins
 - Security Deposit remains associated with the Lease
@@ -1334,7 +1509,7 @@ A SIGNED Lease becomes TERMINATED only through the authorized process on the
 approved actual termination date. That date and the governing event must remain
 historically identifiable.
 
-### PR-LEASE-024 — Violation Warning Minimum
+### PR-LEASE-024 — General Violation Warning Minimum
 
 **Business-rule traceability:** `BR-LEASE-024`
 
@@ -1347,6 +1522,13 @@ Each warning must identify the violation, date, Lease provision, communication,
 and history. The undisclosed-pet process follows this rule if noncompliance
 proceeds toward termination.
 
+The specific 20-day Rent Nonpayment Warning Notice under BR-LEASE-027 does not
+automatically replace or satisfy this broader three-warning-letter requirement.
+Nothing in the 30-day Serious Nonpayment Default rule bypasses any warning requirement
+that applies to the eventual termination process. Counting one record toward another
+procedure requires an expressly approved basis rather than an implementation
+assumption.
+
 ### PR-LEASE-025 — Signed-Lease Termination Authority
 
 **Business-rule traceability:** `BR-LEASE-025`
@@ -1356,6 +1538,117 @@ proceeds toward termination.
 A violation and the authority to terminate for it must come from the signed
 Lease. The system must not invent a violation, penalty, fee, forfeiture, or
 termination right.
+
+### PR-LEASE-026 — Rent Nonpayment Day Count
+
+**Business-rule traceability:** `BR-LEASE-026`
+
+**Normative product behavior**
+
+For an applicable Rent obligation, calendar days overdue are counted after its Due
+Date in `Asia/Phnom_Penh`. The Due Date itself is day zero and remains timely under
+BR-INV-051; the following calendar day is day one overdue.
+
+When one Invoice contains both Rent and recurring-Service lines, the day count and
+nonpayment process use the remaining Rent line or obligation balance after valid
+confirmed Payment Allocations and Customer Credit applications under BR-PAY-036 through
+BR-PAY-039. The whole mixed-Invoice balance is not a substitute for the remaining Rent
+balance.
+
+Example:
+
+```text
+Rent Due Date:    5 August
+Day 1 overdue:    6 August
+Day 20 overdue:   25 August
+Day 30 overdue:   4 September
+```
+
+### PR-LEASE-027 — Twenty-day Rent Nonpayment Warning Notice
+
+**Business-rule traceability:** `BR-LEASE-027`
+
+**Normative product behavior**
+
+If a positive balance of the applicable Rent obligation remains unpaid at 20 calendar
+days after its Due Date, the system must alert authorized staff or management and
+require or support issuance and recording of a formal Nonpayment Warning Notice to the
+Customer. The Notice states that continued nonpayment through 30 days overdue may
+result in authorized management initiating the approved Lease termination or
+surrender process.
+
+The Notice is a permanent auditable business record, not an ephemeral UI warning. It
+preserves at minimum, where applicable:
+
+- Customer;
+- Lease;
+- applicable overdue Rent Invoice or obligation;
+- Due Date;
+- remaining Rent amount at Notice time;
+- Notice issue date/time;
+- issuer;
+- Notice type;
+- delivery or communication information when recorded;
+- document or reference to the actual Notice; and
+- subsequent status and history.
+
+### PR-LEASE-028 — Thirty-day Serious Nonpayment Default
+
+**Business-rule traceability:** `BR-LEASE-028`
+
+**Normative product behavior**
+
+If a positive balance of the applicable Rent obligation remains unpaid at 30 calendar
+days after its Due Date, the system records a Serious Nonpayment Default condition.
+Authorized management may then initiate the approved Lease termination or surrender
+process.
+
+The condition must not automatically:
+
+- change the Lease to TERMINATED;
+- mark the Unit VACANT;
+- end Occupancy;
+- create Move-out;
+- create Final Settlement;
+- surrender the Unit; or
+- delete or end the Customer's legal or operational tenancy record.
+
+Actual Lease termination remains a separate explicit authorized business action under
+BR-LEASE-005, BR-LEASE-023, BR-LEASE-024, and BR-LEASE-025. Until termination and
+physical Move-out actually occur, the Lease remains in its appropriate existing
+status, normally SIGNED, and the Unit remains OCCUPIED while the Customer still
+physically occupies it.
+
+A remaining recurring-Service balance alone does not satisfy the Rent-balance condition
+for this rule.
+
+### PR-LEASE-029 — Cure After Warning and Before Thirty Days
+
+**Business-rule traceability:** `BR-LEASE-029`
+
+**Normative product behavior**
+
+If the Customer fully cures the applicable Rent nonpayment after its 20-day Warning
+Notice but before the 30-day threshold, the current 30-day trigger for that cured
+obligation stops. The system must not initiate termination at day 30 merely because
+the obligation was previously late.
+
+The Invoice's overdue history, Warning Notice, cure Payment and Allocation history,
+and all related dates remain permanent and auditable.
+
+### PR-LEASE-030 — Payment After Serious Nonpayment Default
+
+**Business-rule traceability:** `BR-LEASE-030`
+
+**Normative product behavior**
+
+Payment after a Serious Nonpayment Default does not erase that historical condition,
+its Warning Notice, or any already initiated authorized termination process.
+
+The system must not automatically decide whether an initiated termination process
+continues or stops solely because later Payment occurs. Authorized management retains
+control under the existing approved termination rules, and the Payment, Allocations,
+default history, management actions, and resulting outcome remain auditable.
 
 ## 8.8 Occupancy Requirements
 
@@ -1526,16 +1819,20 @@ Example:
 - Second Rent Invoice
 - 1 August – 31 August
 
-### PR-RENT-005 — First Partial Month
+### PR-RENT-005 — Initial Rent Invoice Period
 
 **Business-rule traceability:** `BR-RENT-005`
 
 **Normative product behavior**
 
-When the Primary Tenant moves into a Unit after the first day of a calendar month,
-the first Rent Invoice shall be prorated.
+For an actual Move-in Date on day 1 through day 20 inclusive, the Initial Rent
+Invoice covers the Move-in Date through the last calendar day of the move-in month.
+Only the portion after a move-in later than day 1 is prorated.
 
-The first rental period begins on the official Move-in Date and ends on the last calendar day of that month.
+For an actual Move-in Date on day 21 or later, the Initial Rent Invoice combines:
+
+1. the prorated remainder of the move-in month; and
+2. the entire following calendar month.
 
 Example:
 
@@ -1543,7 +1840,7 @@ Move-in Date:
 
 - 10 July
 
-First Rental Period:
+Initial Rent Period:
 
 - 10 July
 - through
@@ -1552,6 +1849,10 @@ First Rental Period:
 The next recurring Rent Invoice begins on:
 
 - 1 August
+
+For a 27 July move-in, the Initial Rent period is 27 July through 31 August. Normal
+billing resumes on 25 August for the 1–30 September period. Initial and recurring
+Rent periods must not duplicate or overlap.
 
 ### PR-RENT-006 — Actual Calendar Day Proration
 
@@ -1604,6 +1905,9 @@ Recurring Rent Invoices shall be generated automatically on the 25th day of the
 current calendar month in the Property's configured local timezone.
 
 The generated invoice represents the upcoming month's rental period.
+The recurring process must not generate a period that BR-RENT-005 reserves for the
+Initial Rent Invoice, even if the Lease was signed before that 25th. Recurring billing
+resumes with the first complete calendar month after the Initial Rent period.
 
 Example:
 
@@ -1613,13 +1917,18 @@ Example:
 | 25 August       | September     |
 | 25 September    | October       |
 
-### PR-RENT-009 — Invoice Due Date
+### PR-RENT-009 — Rent Invoice Due Dates
 
 **Business-rule traceability:** `BR-RENT-009`
 
 **Normative product behavior**
 
-Recurring Rent Invoices shall have a standard payment due date of the **5th day of the billed month**, unless an alternative due date is explicitly specified in the Lease Agreement.
+Recurring Rent Invoices have a Due Date of the **5th day of the billed month**. This
+Due Date is established by the application/business rule; the Lease Agreement does
+not define an alternative recurring Invoice Due Date.
+
+The Initial Rent Invoice is due seven calendar days after the actual Move-in Date,
+including when that Due Date falls in the following month.
 
 Example:
 
@@ -1627,6 +1936,9 @@ Example:
 | ------------ | ----------------- | ----------- |
 | August       | 25 July           | 5 August    |
 | September    | 25 August         | 5 September |
+
+Examples: a 10 July move-in is due 17 July; a 20 July move-in is due 27 July; a
+21 July move-in is due 28 July; and a 27 July move-in is due 3 August.
 
 ### PR-RENT-010 — Invoice Generation Eligibility
 
@@ -1639,6 +1951,9 @@ Recurring Rent Invoices shall only be generated for Leases that are:
 - Signed,
 - contractually applicable to the billed rental period, and
 - Not terminated before the beginning of that rental period.
+
+The period must also fall wholly after the Initial Rent period defined by
+BR-RENT-005. No recurring generation may duplicate or overlap Initial Rent coverage.
 
 The business shall not generate Rent Invoices for:
 
@@ -1689,7 +2004,7 @@ final month is charged in full.
 
 When final-month proration is required by an approved rule or the signed Lease,
 it uses the same inclusive actual-calendar-day calculation and final rounding as
-the first partial month.
+the prorated portion of the Initial Rent Invoice.
 
 This rule must not override the full-month voluntary early-termination rule.
 
@@ -1869,6 +2184,23 @@ Every Rent line must preserve the applicable Lease, contractual monthly Rent,
 rental period, billable days when prorated, calendar days in the month,
 calculation, rounding rule, and final USD amount.
 
+### PR-RENT-029 — Contractual Late-payment Policy
+
+**Business-rule traceability:** `BR-RENT-029`
+
+**Normative product behavior**
+
+The signed Lease policy is substantially that Rent or any other amount payable under
+the Lease must be paid by the Due Date on the applicable Invoice or Bill. When a
+balance remains unpaid after that Due Date, the normal/default late-payment charge is
+10% of the remaining unpaid overdue amount of that Invoice. Authorized management may
+reduce or waive the charge but must not increase it above 10%.
+
+BR-INV-051 through BR-INV-055 govern the Invoice-wide calculation and one final
+management decision. BR-LEASE-026 through BR-LEASE-030 govern the separate 20-day
+Rent nonpayment warning, 30-day Serious Nonpayment Default, cure history, and explicit
+termination boundary.
+
 ## 8.10 Utility Management and Billing Requirements
 
 ### PR-UTIL-001 — Supported Utility Types
@@ -2019,15 +2351,22 @@ Utility Readings that fail validation shall not be used for billing.
 
 **Normative product behavior**
 
-Incorrect Utility Readings may be corrected through an authorized business process before billing.
+Incorrect Utility Readings may be corrected through an authorized business process
+both before and after Utility Invoice issuance. The system must not use Invoice
+payment status as the correction boundary.
 
-The correction shall preserve a complete audit history.
+Every correction preserves original Reading value, corrected Reading value, actor,
+date/time, reason, and complete audit history. Historical Utility Readings shall
+never be silently overwritten, deleted, or reassigned.
 
-Historical Utility Readings shall never be silently overwritten.
-
-If the reading has already been billed, its financial effect must be corrected
-through the approved linked Invoice Adjustment process rather than by rewriting
-the issued Invoice.
+Before issuance, the corrected Reading becomes the valid billing input. After
+issuance, correction remains permitted whether the Invoice is UNPAID,
+PARTIALLY_PAID, or PAID, but the issued Invoice must not be silently rewritten. If
+the correction changes the amount that should have been billed, the system preserves
+the original Invoice, calculates the difference, and posts that financial difference
+through the approved linked Invoice Adjustment process. The original Reading,
+corrected Reading, original Invoice, and complete Adjustment chain remain
+reconstructable.
 
 ### PR-UTIL-012 — Consumption Calculation
 
@@ -2050,7 +2389,9 @@ must not overlap another billed period for the same Unit and Utility Type.
 
 Every Utility Reading shall remain permanently associated with the exact Utility Meter that produced it.
 
-Replacing a Utility Meter shall never alter historical Utility Readings.
+Replacing a Utility Meter shall never reassign, delete, or silently overwrite a
+historical Utility Reading. An authorized correction under BR-UTIL-011 preserves the
+original and corrected values and does not change Meter ownership.
 
 ### PR-UTIL-014 — Utility Rates
 
@@ -2219,8 +2560,8 @@ The system must not average three separately rounded period averages.
 
 **Normative product behavior**
 
-Every historical basis under BR-UTIL-025 and every complete future-period basis
-under BR-UTIL-027 or BR-UTIL-028 uses one daily average:
+Every historical basis under BR-UTIL-025 or BR-UTIL-027 and every complete
+future-period basis under BR-UTIL-028 uses one weighted daily average:
 
 ```text
 Basis Daily Average
@@ -2242,24 +2583,28 @@ The period begins when consumption became unmeasurable and ends on the last day
 before the replacement Meter begins providing valid readings. A day must not be
 counted in both the estimate and the replacement-Meter actual period.
 
-### PR-UTIL-027 — Fewer-than-three Future-period Fallback
+### PR-UTIL-027 — One-or-two-period Historical Basis
 
 **Business-rule traceability:** `BR-UTIL-027`
 
 **Normative product behavior**
 
 If fewer than three, but at least one, complete historical actual period exists
-for the same Unit and Utility Type, those one or two historical periods must not
-be substituted for the approved three-period historical basis.
+before the affected broken-Meter period for the same Unit and Utility Type, use all
+one or two available complete historical actual periods for that same Unit and
+Utility Type as the basis.
 
-The system must wait until one complete future month or period of actual
-consumption becomes available for that same Unit and Utility Type and use that
-complete future actual period as the daily-average basis under BR-UTIL-026. It
-must not substitute another or comparable Unit or invent an arbitrary estimate.
+```text
+Weighted Historical Daily Average
+=
+Total Actual Consumption Across All Available Complete Historical Periods
+--------------------------------------------------------------------------
+Total Calendar Days Represented by Those Periods
+```
 
-Until that future complete actual period exists, the broken-Meter estimate and
-affected charge remain pending and unfinalized. The reason for delay and the
-future actual data eventually used must be preserved.
+Estimated Consumption is that weighted daily average multiplied by the applicable
+unmeasured calendar days under BR-UTIL-026. The system must not discard the one or
+two available periods and must not average separately rounded period averages.
 
 ### PR-UTIL-028 — Zero-history Future-period Fallback
 
@@ -2276,6 +2621,9 @@ basis under BR-UTIL-026.
 Until that future complete actual period exists, the broken-Meter estimate and
 affected charge remain pending and unfinalized. The reason for delay and the
 future actual data eventually used must be preserved.
+
+The system must never substitute another or comparable Unit, invent arbitrary
+consumption, or average separately rounded period averages.
 
 ### PR-UTIL-029 — Generation-date Rate Selection
 
@@ -2330,15 +2678,18 @@ replace the calculated charge with an arbitrary amount.
 
 **Normative product behavior**
 
-The Property currently supports the following recurring fixed monthly service charges:
+The Property currently approves and provides this recurring fixed monthly Service:
 
-- Internet
 - Trash Collection
 
-These services are billed as fixed monthly charges rather than consumption-based charges.
+Trash Collection is billed as a fixed monthly charge rather than a
+consumption-based charge.
 
-This document approves no other Service type. A different Service requires a
-separate Owner-approved rule before it may be configured or billed.
+Internet and Monthly Cleaning are not currently provided and must not generate
+charges. They are examples of Services the Property could approve and configure in
+the future. This document approves no other Service type. Any different Service
+requires a separate Owner-approved rule and explicit configuration before billing;
+staff must not create an arbitrary Service through a generic or miscellaneous field.
 
 ### PR-SVC-002 — Service Charge Independence
 
@@ -2362,8 +2713,13 @@ Changes to one category shall not automatically affect another.
 
 **Normative product behavior**
 
-Internet and Trash Collection are billed monthly in advance as separate line
-items on the applicable Rent Invoice.
+Each active, approved, and applicable configured recurring Service is billed monthly
+in advance as a separate line item on the applicable Rent Invoice. Trash Collection
+is the current such Service.
+
+For the Initial Service period under BR-SVC-012, that separate line appears on the
+Initial Rent Invoice. Later normal recurring Service lines appear on the applicable
+recurring Rent Invoice.
 
 Separate Service Charge Invoices are not normally generated for these fixed
 recurring monthly Services.
@@ -2374,7 +2730,7 @@ recurring monthly Services.
 
 **Normative product behavior**
 
-Internet and Trash Collection are fixed monthly charges.
+An approved configured recurring Service uses its configured fixed monthly charge.
 
 Their billing amount is not affected by:
 
@@ -2382,10 +2738,10 @@ Their billing amount is not affected by:
 - number of occupants,
 - number of days within a normal full month.
 
-The first partial month is prorated using actual calendar days. Final and
-early-termination-month treatment follows the signed Lease and approved
-termination rules and is not automatically prorated merely because the Customer
-physically leaves during the month.
+The prorated move-in-month component of the Initial Service period uses actual
+calendar days. Final and early-termination-month treatment follows the signed Lease
+and approved termination rules and is not automatically prorated merely because the
+Customer physically leaves during the month.
 
 ### PR-SVC-005 — Service Rate Effective Date
 
@@ -2407,7 +2763,9 @@ The applicable configured Service terms remain the source of truth.
 
 Historical service rates shall remain permanently preserved.
 
-Changes to Internet or Trash charges shall never modify historical invoices.
+Changes to configured Service charges shall never modify historical Invoices.
+The Service identity, Owner approval, configuration, active/inactive effective
+periods, and rate history must remain reconstructable.
 
 ### PR-SVC-007 — Future Service Rate Changes
 
@@ -2425,7 +2783,7 @@ Completed billing periods shall always retain the original service charge used d
 
 **Normative product behavior**
 
-Historical Internet and Trash charges are permanent financial records.
+Historical configured Service charges are permanent financial records.
 
 They shall never be silently:
 
@@ -2446,6 +2804,10 @@ Each fixed recurring Service is a separate categorized line item on the
 applicable Rent Invoice. Its amount contributes to the Invoice total without
 being reclassified as Rent.
 
+The initial line is placed on the Initial Rent Invoice and covers the complete Initial
+Service period under BR-SVC-012, including both components for a day-21-or-later
+move-in.
+
 ### PR-SVC-010 — Line-level History
 
 **Business-rule traceability:** `BR-SVC-010`
@@ -2453,7 +2815,9 @@ being reclassified as Rent.
 **Normative product behavior**
 
 Each Service line preserves its Service identity, category, configured rate,
-billing period, calculation when prorated, and final amount.
+billing period, calculation when prorated, and final amount. A day-21-or-later Initial
+Service line preserves both the prorated move-in-month component and the full following
+month component without collapsing or obscuring either period.
 
 ### PR-SVC-011 — Advance Billing Schedule
 
@@ -2461,18 +2825,51 @@ billing period, calculation when prorated, and final amount.
 
 **Normative product behavior**
 
-Fixed recurring Services use the same billing cycle as Rent: generation on the
-25th in the Property's configured local timezone for the upcoming month and the
-same applicable Due Date as the Rent Invoice.
+Initial recurring-Service lines follow BR-SVC-012 and are issued on the Initial Rent
+Invoice with its seven-calendar-day Due Date. After that initial coverage, fixed
+recurring Services use the normal Rent billing cycle: generation on the 25th in the
+Property's authoritative `Asia/Phnom_Penh` timezone for the upcoming uncovered month
+and the same applicable Due Date as the recurring Rent Invoice.
 
-### PR-SVC-012 — First Partial Month
+Normal recurring generation resumes with the first complete calendar month after the
+Initial Service period under BR-SVC-012. A scheduled run must not generate a Service
+period already covered by that Initial Service period.
+
+### PR-SVC-012 — Initial Recurring-Service Period
 
 **Business-rule traceability:** `BR-SVC-012`
 
 **Normative product behavior**
 
-The first partial-month Service amount is calculated using the same inclusive
-actual-calendar-day formula and final half-up USD-cent rounding as Rent.
+Each explicitly approved, configured, active, and applicable recurring Service
+follows the same Initial Invoice period structure as Rent.
+
+For an actual Move-in Date on day 1 through day 20 inclusive, its Initial Service
+period covers the Move-in Date through the last calendar day of the move-in month.
+
+For an actual Move-in Date on day 21 or later, its Initial Service period combines:
+
+1. the prorated remainder of the move-in month; and
+2. the entire following calendar month.
+
+Each component uses the applicable approved configured Service rate for its period.
+The prorated component uses the inclusive actual-calendar-day formula and final
+half-up USD-cent rounding under BR-MONEY-012. The Service appears as a separate line
+on the Initial Rent Invoice and therefore shares its Due Date of seven calendar days
+after the actual Move-in Date.
+
+Example:
+
+```text
+Move-in:                    27 July
+Initial Service coverage:  27–31 July, prorated
+                           plus 1–31 August, full month
+Initial Invoice Due Date:  3 August
+Normal generation resumes: 25 August for 1–30 September
+Normal Due Date:            5 September
+```
+
+Initial and recurring Service periods must not overlap or duplicate one another.
 
 ### PR-SVC-013 — Final and Early-termination Month
 
@@ -2491,8 +2888,8 @@ termination rules control the valid final charge.
 **Normative product behavior**
 
 Only a configured Property Service that applies under the governing terms may be
-billed. The system must not create a Service or charge from free-form Invoice
-entry.
+billed. The Service must also be active and actually provided for the billed period.
+The system must not create a Service or charge from free-form Invoice entry.
 
 ### PR-SVC-015 — Configured Rate Source of Truth
 
@@ -2573,8 +2970,7 @@ Examples include:
 - Monthly Rent
 - Electricity
 - Water
-- Internet
-- Trash Collection
+- each applicable approved and configured recurring Service
 
 Invoices that do not represent a recurring billing period (such as Damage Charges) may omit a billing period where appropriate.
 
@@ -2688,6 +3084,12 @@ positive outstanding balance, its status shall become:
 
 - PARTIALLY_PAID
 
+For an Invoice with multiple lines or obligation categories, confirmed applications
+reduce the identified underlying balances and roll up to the Invoice outstanding
+balance. For example, applying $300 to the Rent line of a $500 Rent plus $10 recurring
+Service Invoice leaves $200 Rent and $10 Service, so the Invoice outstanding balance is
+$210 and the status is PARTIALLY_PAID.
+
 ### PR-INV-013 — Fully Paid
 
 **Business-rule traceability:** `BR-INV-013`
@@ -2699,6 +3101,10 @@ Final Settlement Deposit applications reduce the outstanding balance to exactly
 zero, the Invoice status shall become:
 
 - PAID
+
+The Invoice may become PAID only when all of its underlying line or obligation balances
+roll up to zero. A separate Late-payment Charge balance does not affect the source
+Invoice's status.
 
 ### PR-INV-014 — Void
 
@@ -2738,8 +3144,8 @@ UNPAID
 PARTIALLY_PAID
  ├──► UNPAID (after authorized allocation/application reversal)
  ├──► PAID
- └──► VOID (only after all active Allocations and Credit applications have been
-           explicitly reversed)
+ └──► VOID (only after all active financial applications and dependencies have been
+           resolved through their explicit approved processes under BR-INV-024)
 
 PAID
  ├──► PARTIALLY_PAID (after authorized allocation/application reversal)
@@ -2753,6 +3159,13 @@ Any transition not shown above shall be rejected. UNPAID, PARTIALLY_PAID, and
 PAID are determined by the current adjusted obligation and active financial
 applications; they must be recomputed after an authorized reversal or
 Adjustment.
+
+The regressions `PARTIALLY_PAID → UNPAID`, `PAID → PARTIALLY_PAID`, and
+`PAID → UNPAID` are permitted only as derived consequences of authorized financial
+reversals or corrections that change valid remaining applications/allocations. They
+must never represent manual status editing, partial Invoice voiding, partial Refund
+semantics, arbitrary reopening, or a Refund represented merely by changing status.
+VOID remains a separate action under BR-INV-014.
 
 An Invoice that has received one or more Payments shall not be VOID until all associated Payment allocations have been properly reversed in accordance with the Payment business rules.
 
@@ -2910,7 +3323,10 @@ consistent and must not be varied to bypass this rule.
 
 **Normative product behavior**
 
-The business shall prevent recurring Internet and Trash Charges from being billed multiple times for the same Lease and billing period.
+The business shall prevent any approved and configured recurring Service Charge from
+being billed multiple times or for overlapping coverage for the same Lease and
+Service. Normal generation must skip every period already included in the Initial
+Service period under BR-SVC-012.
 
 ### PR-INV-029 — Duplicate Invoice Prevention Principle
 
@@ -2925,8 +3341,7 @@ Examples include:
 - duplicate Rent for the same billing period,
 - duplicate Electricity billing for the same consumption period,
 - duplicate Water billing for the same consumption period,
-- duplicate Internet charges for the same month,
-- duplicate Trash charges for the same month.
+- duplicate or overlapping configured Service coverage for the same Lease and Service.
 
 The governing source facts define duplicate identity. An obligation must not be
 billed once with a Lease association and again without one.
@@ -3189,7 +3604,208 @@ Approved scheduled billing may generate and issue Invoices automatically from
 deterministic source rules. Rent and its fixed recurring Service lines require an
 applicable signed Lease. Other Invoices follow their approved source rules.
 
-## 8.13 Payment and Allocation Requirements
+### PR-INV-051 — Due Date and Overdue Boundary
+
+**Business-rule traceability:** `BR-INV-051`
+
+**Normative product behavior**
+
+An applicable source Invoice is an issued Invoice for Rent or another amount payable
+under the signed Lease under BR-RENT-029. Its stated Due Date is the last calendar day
+on which payment is timely. Payment received on that Due Date is not late.
+
+In the Property's authoritative business timezone, `Asia/Phnom_Penh`, any positive
+remaining unpaid balance becomes overdue on the next calendar day after the Due Date.
+There is no additional ten-day grace period.
+
+Example:
+
+```text
+Due Date:                     5 August
+Payment received 5 August:   On time
+Remaining balance 6 August:  Overdue and eligible for proposal
+```
+
+Eligibility does not automatically post a charge.
+
+### PR-INV-052 — Invoice-wide Late-payment Calculation
+
+**Business-rule traceability:** `BR-INV-052`
+
+**Normative product behavior**
+
+At assessment, the default late-payment charge is calculated once against the total
+remaining unpaid overdue balance of the applicable source Invoice as a whole:
+
+```text
+Default Late-payment Charge
+=
+Remaining Unpaid Overdue Source-Invoice Balance at Assessment
+×
+10%
+```
+
+The balance reflects valid financial applications and allocations in effect at
+assessment. Amounts already validly paid or otherwise validly applied must not be
+charged again. The system must not calculate separate late-payment percentages for
+individual lines of the same applicable overdue Invoice. The final USD result uses
+the general half-up cent rounding rule in BR-MONEY-012.
+
+Example:
+
+```text
+Rent:                                      $500
+Trash Collection:                          $10
+Electricity:                               $80
+Water:                                     $20
+Original source-Invoice total:             $610
+
+If remaining unpaid overdue balance:       $610
+Default late-payment charge at 10%:         $61
+
+If valid Payments already applied:         $300
+Remaining unpaid overdue balance:          $310
+Default late-payment charge at 10%:         $31
+```
+
+### PR-INV-053 — Authorized Late-payment Decision
+
+**Business-rule traceability:** `BR-INV-053`
+
+**Normative product behavior**
+
+The system detects the overdue source Invoice, calculates and presents the proposed
+default charge, and flags it for authorized management. It must not post the charge
+automatically merely because the Due Date has passed.
+
+Authorized management makes one final decision for the source Invoice:
+
+- confirm the default 10% charge;
+- approve a reduced charge below the 10% default; or
+- waive the charge, equivalent to 0% and $0.
+
+Management must not increase the contractual percentage or approved amount above the
+10% default calculation. Ordinary staff must not arbitrarily change the percentage
+or amount.
+
+The decision preserves at minimum the source Customer, source Invoice, source Invoice
+Due Date, remaining overdue balance at assessment, default percentage, actual approved
+percentage, calculated default amount, actual approved amount, decision outcome,
+authorized management actor, reason, assessment timestamp, and confirmation or waiver
+timestamp.
+
+### PR-INV-054 — One Final Non-compounding Decision per Invoice
+
+**Business-rule traceability:** `BR-INV-054`
+
+**Normative product behavior**
+
+Each applicable source Invoice may have only one final late-payment decision. A
+confirmed default charge, reduced charge, or waiver is final for that source Invoice.
+
+The late-payment charge must not repeat daily, weekly, monthly, or on any other
+cadence. It must not compound, generate another late-payment charge, or create a
+recursive penalty. Continued nonpayment of the source principal does not reopen the
+decision. A reduced charge must not later be supplemented with the difference, and a
+waiver must not later be replaced by a charge. Payment received after the final
+decision does not recalculate or replace that decision.
+
+Example: if the default is $31 and management approves $15, the remaining $16 must
+never be imposed as a second late-payment charge for that source Invoice.
+
+### PR-INV-055 — Explicit Linked Late-payment Financial Record
+
+**Business-rule traceability:** `BR-INV-055`
+
+**Normative product behavior**
+
+A final late-payment decision is a permanent auditable business event linked to its
+source Invoice. A positive approved amount must remain an explicit linked auditable
+financial charge and must not be hidden in an undifferentiated entry.
+
+The source Invoice's original principal, lines, and issued amount must not be silently
+altered to incorporate the charge. A confirmed positive amount creates the separate
+Late-payment Charge obligation defined by BR-LATE-001. It does not create another
+Invoice, Invoice Category, Miscellaneous Charge, or historical source-Invoice line. A
+waiver records the final decision and audit history without creating a receivable.
+
+## 8.13 Late-payment Charge Requirements
+
+### PR-LATE-001 — Positive Late-payment Charge Obligation
+
+**Business-rule traceability:** `BR-LATE-001`
+
+**Normative product behavior**
+
+Authorized management confirmation of a positive default or reduced amount creates
+exactly one separate Late-payment Charge obligation. It belongs to exactly one Customer
+and links to exactly one source overdue Invoice and its final late-payment decision.
+The obligation Customer must be the source Invoice Customer.
+
+The obligation is part of the Customer's overall outstanding balance but is not an
+Invoice and does not affect the source Invoice's principal, lines, outstanding balance,
+or derived status.
+
+### PR-LATE-002 — Immediate Payability
+
+**Business-rule traceability:** `BR-LATE-002`
+
+**Normative product behavior**
+
+A positive Late-payment Charge becomes payable immediately at its management
+confirmation timestamp. It requires no new Invoice and no Invoice Due Date. Its
+confirmation timestamp is the date and time the obligation becomes payable.
+
+### PR-LATE-003 — Waived and Reduced Decisions
+
+**Business-rule traceability:** `BR-LATE-003`
+
+**Normative product behavior**
+
+A WAIVED or equivalent final outcome preserves the proposal and waiver decision and
+creates no positive receivable. A REDUCED or equivalent final outcome creates only the
+approved reduced Late-payment Charge amount. The waived or reduced difference must
+never be added later for that source Invoice.
+
+### PR-LATE-004 — Remaining Balance and Satisfaction
+
+**Business-rule traceability:** `BR-LATE-004`
+
+**Normative product behavior**
+
+The original confirmed Late-payment Charge amount remains historically unchanged. Its
+remaining outstanding balance equals that original amount less valid Payment
+Allocations and Customer Credit applications, adjusted only by explicit authorized
+reversals or corrections. The remaining balance cannot become negative.
+
+A zero remaining balance means the obligation is fully satisfied. No additional manual
+status lifecycle is required, and no Late-payment Charge balance affects the source
+Invoice's balance or status.
+
+### PR-LATE-005 — Explicit Correction and Reversal
+
+**Business-rule traceability:** `BR-LATE-005`
+
+**Normative product behavior**
+
+If a confirmed Late-payment Charge later requires correction or reversal, the original
+decision and obligation remain permanent. An authorized linked correction or reversal
+records the reason, actor, date/time, previous amount or balance, resulting amount or
+balance, and all affected applications. Silent deletion or rewriting is prohibited.
+Correction must obey the approved maximum and final-decision rules and must not be used
+to supplement a reduced charge or replace a waived decision.
+
+### PR-LATE-006 — No Recursive Charge
+
+**Business-rule traceability:** `BR-LATE-006`
+
+**Normative product behavior**
+
+A proposed, confirmed, reduced, waived, partially satisfied, fully satisfied, corrected,
+or reversed Late-payment Charge must never itself be assessed for another late-payment
+charge.
+
+## 8.14 Payment and Allocation Requirements
 
 ### PR-PAY-001 — Payment Ownership
 
@@ -3229,9 +3845,12 @@ A Payment records the receipt of funds from a Customer.
 
 A Payment itself does not determine which Invoice has been paid.
 
-Invoices are settled only through Payment Allocation.
+An Invoice balance may be settled through authorized Payment Allocations, Customer
+Credit applications, or Final Settlement Deposit applications under the applicable
+rules. Recording a Payment settles no Invoice until value from that Payment is
+explicitly allocated.
 
-Payment receipt, Payment Allocation, Payment Reversal, Customer Credit, and
+Payment, Receipt, Payment Allocation, Payment Reversal, Customer Credit, and
 Refund are separate financial concepts and events.
 
 ### PR-PAY-004 — Unique Payment Identification
@@ -3281,13 +3900,13 @@ Historical Payments shall never be modified solely because a Payment Method is r
 The Payment currency and, for KHR, all exchange and source values must likewise
 remain permanent.
 
-### PR-PAY-008 — Payment Receipt Statuses
+### PR-PAY-008 — Payment Record Statuses
 
 **Business-rule traceability:** `BR-PAY-008`
 
 **Normative product behavior**
 
-Payment receipt status may be only:
+Payment record status may be only:
 
 - RECEIVED
 - REVERSED
@@ -3313,7 +3932,7 @@ A newly received Payment shall initially have the status:
 
 When active Allocations use part, but not all, of a RECEIVED Payment's available
 USD accounting value, the Payment is partially allocated as a derived condition.
-Its receipt status remains RECEIVED.
+Its Payment record status remains RECEIVED.
 
 ### PR-PAY-011 — Fully Allocated
 
@@ -3322,7 +3941,7 @@ Its receipt status remains RECEIVED.
 **Normative product behavior**
 
 When active Allocations use the Payment's entire available USD accounting value,
-the Payment is fully allocated as a derived condition. Its receipt status remains
+the Payment is fully allocated as a derived condition. Its Payment record status remains
 RECEIVED.
 
 No remaining unallocated balance shall exist.
@@ -3361,7 +3980,7 @@ status.
 
 **Normative product behavior**
 
-The permitted receipt lifecycle is:
+The permitted Payment lifecycle is:
 
 ```text
 RECEIVED -> REVERSED
@@ -3370,7 +3989,7 @@ REVERSED -> terminal
 
 Posting or reversing Allocations changes the derived allocated and unallocated
 amounts without changing RECEIVED status. A Refund follows its source-specific
-rules and does not require falsifying the original receipt lifecycle.
+rules and does not require falsifying the original Payment lifecycle.
 
 ### PR-PAY-015 — Payment Amount
 
@@ -3423,7 +4042,8 @@ These values constitute the official financial record.
 Every significant Payment event shall be fully auditable, including:
 
 - Payment creation
-- receipt-status changes
+- Payment record-status changes
+- Receipt issuance and reprint
 - Allocation changes
 - Reversal
 - Refund
@@ -3436,8 +4056,14 @@ Historical audit information shall never be silently removed.
 
 **Normative product behavior**
 
-A Payment Allocation links part of one RECEIVED Payment's USD accounting value
-to one issued Customer Invoice. It does not rewrite either source record.
+A Payment Allocation links part of one RECEIVED Payment's USD accounting value to one
+or more identified obligations belonging to the applicable Customer. A target may be
+an issued Customer Invoice with sufficient Invoice-line or obligation-category detail,
+or a separate confirmed Late-payment Charge. It does not rewrite any source record.
+
+A Deposit receipt remains the separate Payment-to-Deposit link in BR-DEP-005 and is not
+silently converted into an ordinary Payment Allocation. Customer Credit, unallocated
+Payment, Refund, and Deposit balances likewise remain distinct.
 
 ### PR-PAY-020 — Manual Authorized Posting
 
@@ -3467,9 +4093,10 @@ rules.
 
 The default proposal applies value to the oldest Due Date first and continues
 through applicable outstanding Invoices until the Payment is exhausted or all
-applicable obligations are satisfied.
+applicable outstanding Invoices are satisfied.
 
-No category preference, such as Rent before Electricity, is permitted.
+No line-category preference may reorder the selected Invoices. After an Invoice is
+selected, the within-Invoice rules in BR-PAY-036 apply.
 
 ### PR-PAY-023 — Deterministic Ties
 
@@ -3486,9 +4113,10 @@ and then by a stable Invoice sequence or identifier.
 
 **Normative product behavior**
 
-When the Customer explicitly identifies an Invoice, authorized staff may post the
-Payment to that valid designated Invoice instead of the default FIFO proposal.
-The designation and posted Allocation must be preserved.
+When the Customer explicitly identifies a valid Invoice, Invoice line or obligation
+category, or separate Late-payment Charge, authorized staff may post the Payment to
+that valid designated target instead of the applicable default proposal. The Customer
+designation and posted Allocation must be preserved.
 
 ### PR-PAY-025 — Normal Customer Scope
 
@@ -3530,17 +4158,17 @@ remove or change the Signer's approved joint Lease responsibility.
 An Allocation must be positive and must not exceed either:
 
 - the Payment's remaining unallocated USD accounting value; or
-- the target Invoice's current outstanding balance.
+- the identified target obligation's current outstanding balance.
 
-### PR-PAY-028 — No Negative Invoice Balance
+### PR-PAY-028 — No Negative Obligation Balance
 
 **Business-rule traceability:** `BR-PAY-028`
 
 **Normative product behavior**
 
-Posting an Allocation must never cause an Invoice outstanding balance to become
-negative. Payment value beyond applicable outstanding balances remains
-unallocated excess.
+Posting an Allocation must never cause an Invoice-line, Invoice, Late-payment Charge,
+or other target obligation balance to become negative. Payment value beyond applicable
+outstanding balances remains unallocated excess.
 
 ### PR-PAY-029 — Allocation History and Reversal
 
@@ -3548,10 +4176,12 @@ unallocated excess.
 
 **Normative product behavior**
 
-Every posted Allocation permanently preserves its Payment, Invoice, amount,
-posting time, and authorized user. A correction uses an explicit linked
-Allocation Reversal and recomputes affected balances and statuses; it never
-deletes or overwrites the original Allocation.
+Every posted Allocation permanently preserves its Payment, target Invoice or other
+obligation, Invoice-line or obligation category where applicable, allocated amount,
+Customer designation if any, proposed default if any, posting time, and authorized
+user confirmation. A correction uses an explicit linked Allocation Reversal and
+recomputes affected line, obligation, Invoice, and Customer balances and derived
+statuses; it never deletes or overwrites the original Allocation.
 
 ### PR-PAY-030 — True Overpayment
 
@@ -3623,7 +4253,154 @@ An unallocated Payment or Customer Credit must not cause a future Rent Invoice t
 be generated before its approved billing schedule merely to absorb advance
 money.
 
-## 8.14 Customer Credit Requirements
+### PR-PAY-036 — Within-Invoice Default Proposal
+
+**Business-rule traceability:** `BR-PAY-036`
+
+**Normative product behavior**
+
+After the applicable Invoice is selected under BR-PAY-021 through BR-PAY-025, if that
+Invoice contains Rent and recurring-Service lines and the Customer did not designate
+the within-Invoice target, the system proposes value in this order:
+
+1. Rent line or obligation;
+2. then recurring-Service lines on that same Invoice.
+
+This is a proposal only. Authorized staff must confirm it before posting under
+BR-PAY-020. The system must not silently post the proposal.
+
+Example: for $500 Rent plus $10 Trash Collection, an unspecified $300 Payment produces
+a proposal of $300 to Rent, leaving $200 Rent and $10 Trash Collection. An unspecified
+$505 Payment proposes $500 to Rent and $5 to Trash Collection, leaving Rent fully paid
+and $5 Service outstanding. A $510 Payment proposes full satisfaction of both lines.
+
+### PR-PAY-037 — Customer-designated Within-Invoice Allocation
+
+**Business-rule traceability:** `BR-PAY-037`
+
+**Normative product behavior**
+
+When the Customer clearly identifies a valid line or obligation category within a
+mixed Invoice, authorized staff may confirm that designation instead of the default
+within-Invoice proposal. The designation, confirmed target, amount, actor, and date/time
+must be preserved.
+
+### PR-PAY-038 — Between-Invoice FIFO Remains First
+
+**Business-rule traceability:** `BR-PAY-038`
+
+**Normative product behavior**
+
+When the Customer has not designated an Invoice, the system first proposes applicable
+Invoices by oldest Due Date and the existing deterministic tie-breakers in BR-PAY-022
+and BR-PAY-023. BR-PAY-036 then orders lines only within each selected mixed Invoice.
+Rent-first within one Invoice must not reorder multiple Invoices.
+
+### PR-PAY-039 — Invoice Rollup and Rent Determination
+
+**Business-rule traceability:** `BR-PAY-039`
+
+**Normative product behavior**
+
+Confirmed Payment Allocations reduce their identified Invoice-line or obligation
+balances. Those remaining balances roll up exactly to the Invoice outstanding balance
+and its derived status under BR-INV-012 and BR-INV-013.
+
+The remaining Rent obligation after valid confirmed Payment Allocations and Customer
+Credit applications—not the total mixed-Invoice balance—determines Rent nonpayment
+under BR-LEASE-027 through BR-LEASE-030. An unpaid Service-only balance must not be
+misclassified as unpaid Rent.
+
+### PR-PAY-040 — Late-payment Charge Allocation
+
+**Business-rule traceability:** `BR-PAY-040`
+
+**Normative product behavior**
+
+Authorized staff may allocate Payment value directly to a positive confirmed
+Late-payment Charge. The Allocation reduces only that separate obligation's remaining
+balance and does not rewrite or increase its original amount or the source Invoice.
+
+If a Customer designates an amount for the Late-payment Charge, apply no more than its
+remaining balance. Any remaining Payment value follows the Customer's other valid
+designation or the normal confirmed Allocation rules and remains unallocated until
+posted or otherwise disposed under an approved rule.
+
+Example: if the source Invoice remains $310 outstanding and its separate Late-payment
+Charge is $31, a Customer-designated $100 Payment to the Late-payment Charge applies $31
+there and leaves $69 for another valid confirmed Allocation or disposition. The source
+Invoice remains $310 outstanding until value is separately allocated to it. A Receipt
+may show both the $100 Payment and the confirmed $31 application.
+
+## 8.15 Receipt Requirements
+
+### PR-RECEIPT-001 — Receipt Acknowledges Payment
+
+**Business-rule traceability:** `BR-RECEIPT-001`
+
+**Normative product behavior**
+
+A Receipt is the numbered customer-facing acknowledgment that money was received under
+one existing Payment. Receipt does not replace Payment, create Payment, settle an
+obligation independently, or serve as the authoritative receipt-of-money event.
+
+### PR-RECEIPT-002 — Receipt Identity and Source
+
+**Business-rule traceability:** `BR-RECEIPT-002`
+
+**Normative product behavior**
+
+Every Receipt has a unique Receipt Number and identifies exactly one source Payment and
+that Payment's payer Customer. One Payment normally produces one business Receipt.
+Persistence of safely derived display fields is decided by `004_DATABASE_MODEL.md`.
+
+### PR-RECEIPT-003 — Customer-facing Content
+
+**Business-rule traceability:** `BR-RECEIPT-003`
+
+**Normative product behavior**
+
+A Receipt may present, as applicable, its Receipt Number, Payment, Customer, Payment
+Date, Payment Method, received currency and amount, USD accounting value, KHR conversion
+details, confirmed Invoice-line or other obligation applications, Late-payment Charge
+amount paid, Deposit purpose, allocation/application breakdown, issuer, and issue time.
+
+Every presented amount and application must be traceable to the immutable Payment and
+linked authoritative Allocation, Credit-application, Deposit, or obligation records.
+
+### PR-RECEIPT-004 — Reprint Is Not New Money
+
+**Business-rule traceability:** `BR-RECEIPT-004`
+
+**Normative product behavior**
+
+Reprinting a Receipt preserves the same original Receipt Number, source Payment,
+Customer, and business identity. A reprint must not create a second Payment, duplicate
+the received amount, or represent another receipt of money. The reprint event, actor,
+and date/time remain auditable.
+
+### PR-RECEIPT-005 — Receipt History
+
+**Business-rule traceability:** `BR-RECEIPT-005`
+
+**Normative product behavior**
+
+Receipt issuance and reprint history must remain reconstructable. Correction of a
+Payment or Allocation uses the applicable explicit correction or reversal process and
+must not silently rewrite or delete the original Receipt history.
+
+### PR-RECEIPT-006 — Refund Remains Separate
+
+**Business-rule traceability:** `BR-RECEIPT-006`
+
+**Normative product behavior**
+
+A Receipt acknowledges inbound money. A Refund remains a distinct outbound financial
+event under BR-REFUND-001 and must not be represented as a negative Payment or as
+deletion or rewriting of the original Payment or Receipt. This rule creates no separate
+Refund-receipt document.
+
+## 8.16 Customer Credit Requirements
 
 ### PR-CREDIT-001 — USD Accounting Balance
 
@@ -3662,14 +4439,16 @@ the retained excess amount, the payer Customer, and the authorization event.
 Customer Credit is distinct from Security Deposit and Pet Deposit. It must not be
 represented as, pooled with, or converted silently into either Deposit type.
 
-### PR-CREDIT-005 — Future Valid Invoice Application
+### PR-CREDIT-005 — Valid Obligation Application
 
 **Business-rule traceability:** `BR-CREDIT-005`
 
 **Normative product behavior**
 
-Authorized Customer Credit may be applied only to a valid issued Invoice. It
-must not create or accelerate an Invoice solely to consume the Credit.
+Authorized Customer Credit may be applied only to a valid outstanding obligation,
+including an issued Invoice or a positive confirmed Late-payment Charge belonging to
+the same Customer. It must not create or accelerate an Invoice solely to consume the
+Credit.
 
 ### PR-CREDIT-006 — Authorized Application
 
@@ -3678,7 +4457,13 @@ must not create or accelerate an Invoice solely to consume the Credit.
 **Normative product behavior**
 
 A Customer Credit application is a separate authorized financial event.
-It identifies the Credit source, target Invoice, amount, actor, and time.
+It identifies the Credit source, target Invoice or other obligation, sufficient
+Invoice-line or obligation-category detail where applicable, amount, Customer
+designation if any, proposed default if any, actor confirmation, and time.
+
+For a selected mixed Rent Invoice without Customer designation, the application follows
+the Rent-first then recurring-Service proposal and authorized confirmation requirements
+in BR-PAY-036 through BR-PAY-039.
 
 ### PR-CREDIT-007 — Application Limits
 
@@ -3687,8 +4472,8 @@ It identifies the Credit source, target Invoice, amount, actor, and time.
 **Normative product behavior**
 
 A Credit application must be positive and cannot exceed either the available
-Customer Credit balance or the target Invoice's outstanding balance. It must not
-produce a negative balance.
+Customer Credit balance or the target obligation's outstanding balance. It must not
+produce a negative Invoice-line, Invoice, Late-payment Charge, or Credit balance.
 
 ### PR-CREDIT-008 — Same-Customer Scope
 
@@ -3716,8 +4501,8 @@ explicit linked reversal and recomputes affected balances and statuses.
 **Normative product behavior**
 
 When Credit originates from a KHR Payment, preserve the original KHR amount,
-exact receipt exchange rate, USD accounting value, and source relationship. The
-Credit balance itself remains USD.
+exact Payment-confirmation exchange rate, USD accounting value, and source
+relationship. The Credit balance itself remains USD.
 
 ### PR-CREDIT-011 — Later KHR Refund
 
@@ -3738,7 +4523,116 @@ value, Refund KHR value, Refund exchange rate, and source linkage.
 Creation, application, reversal, Refund, remaining balance, and source values of
 Customer Credit must remain permanently reconstructable and auditable.
 
-## 8.15 Refund Requirements
+### PR-CREDIT-013 — Not Vendor Accounts Payable
+
+**Business-rule traceability:** `BR-CREDIT-013`
+
+**Normative product behavior**
+
+Customer Credit retained for a Customer remains a distinct customer-related liability
+concept. It must not be called or modeled as ordinary vendor Accounts Payable. General
+supplier and vendor Accounts Payable is outside this application's scope.
+
+## 8.17 Customer Account Ledger Requirements
+
+### PR-LEDGER-001 — One Unified Customer View
+
+**Business-rule traceability:** `BR-LEDGER-001`
+
+**Normative product behavior**
+
+Each Customer must have a unified Customer Account Ledger view that presents the
+Customer's complete chronological financial history and current financial position.
+It must be reconstructable from the Customer's authoritative underlying records.
+
+### PR-LEDGER-002 — Underlying Records Remain Authoritative
+
+**Business-rule traceability:** `BR-LEDGER-002`
+
+**Normative product behavior**
+
+The Customer Account Ledger does not replace, merge, or rewrite Invoice lines,
+Invoices, Payments, Payment Allocations, Customer Credit, Credit applications,
+Adjustments, Refunds, Security Deposits, Pet Deposits, Deposit applications or
+dispositions, Late-payment Charges, Payment or Allocation Reversals, or Final
+Settlement records.
+
+Whether `004_DATABASE_MODEL.md` derives the view directly or uses a reconciled
+materialized structure is an implementation choice. A Ledger representation must never
+become a second conflicting source of financial truth.
+
+### PR-LEDGER-003 — Complete Financial Position
+
+**Business-rule traceability:** `BR-LEDGER-003`
+
+**Normative product behavior**
+
+The Ledger must make it possible to determine, for one Customer:
+
+- amounts charged and their source obligations;
+- Payments received and confirmed applications;
+- Customer Credit created, available, applied, reversed, or refunded;
+- Refunds and Adjustments;
+- Security Deposit and Pet Deposit amounts received, held, applied, disposed, or refunded;
+- Late-payment Charges and their remaining balances;
+- obligations that remain unpaid and their composition;
+- total current amount the Customer owes; and
+- available Customer Credit.
+
+Deposits remain separately identifiable liabilities and must not be pooled into ordinary
+Customer Credit or netted away by the Ledger view.
+
+### PR-LEDGER-004 — Business-facing Language
+
+**Business-rule traceability:** `BR-LEDGER-004`
+
+**Normative product behavior**
+
+Customer-facing and staff-facing Ledger presentation uses operational terms such as
+Amount charged, Payment received, Credit, Refund, Outstanding balance, and Customer
+Credit. It must not require formal debit/credit bookkeeping terminology and must not
+introduce a Chart of Accounts, journal-entry posting, General Ledger, or vendor Accounts
+Payable workflow.
+
+### PR-LEDGER-005 — Chronology and Reconstruction
+
+**Business-rule traceability:** `BR-LEDGER-005`
+
+**Normative product behavior**
+
+Every displayed event must retain or derive its event date/time, source record,
+Customer, amount, direction or business effect, and resulting position. Corrections and
+reversals remain separate events so the historical and current positions can be
+reconstructed without silent deletion or rewriting.
+
+### PR-LEDGER-006 — Balance Composition
+
+**Business-rule traceability:** `BR-LEDGER-006`
+
+**Normative product behavior**
+
+The Customer's total outstanding amount includes valid Invoice outstanding balances and
+separate positive Late-payment Charge outstanding balances. Customer Credit,
+unallocated Payment, Security Deposit, and Pet Deposit remain distinct balances and
+must not be silently treated as reductions of an obligation without an authorized
+application.
+
+### PR-LEDGER-007 — Illustrative Ledger
+
+**Business-rule traceability:** `BR-LEDGER-007`
+
+**Normative product behavior**
+
+For an Invoice with $500 Rent and $10 Trash Collection, an authorized $300 Rent
+Allocation leaves $200 Rent and $10 Service outstanding. If authorized management then
+confirms a $21 Late-payment Charge, the Customer's total outstanding amount is $231
+while the Invoice remains $210 outstanding. A later $231 Payment may be allocated as
+$200 Rent, $10 Trash Collection, and $21 Late-payment Charge, resulting in zero total
+outstanding without changing the original Invoice or Late-payment Charge amounts.
+
+This example does not require physical duplication of every amount in a Ledger table.
+
+## 8.18 Refund Requirements
 
 ### PR-REFUND-001 — Refund Is a Separate Event
 
@@ -3787,7 +4681,7 @@ an explicit Refund.
 
 If unallocated excess from a KHR Payment is refunded before becoming Customer
 Credit, refund the corresponding original KHR excess. Preserve its original USD
-accounting value and receipt exchange rate.
+accounting value and Payment-confirmation exchange rate.
 
 ### PR-REFUND-006 — USD Credit Refunded in KHR
 
@@ -3856,7 +4750,19 @@ The full chain from original receipt through Allocation, Credit recognition,
 Deposit disposition or application, and Refund must be reconstructable without
 relying on rewritten historical values.
 
-## 8.16 Move-out Requirements
+### PR-REFUND-013 — Active-Lease Pet Deposit Refund
+
+**Business-rule traceability:** `BR-REFUND-013`
+
+**Normative product behavior**
+
+When the approved pet permanently leaves during an active Lease, BR-DEP-012 may make
+the remaining Pet Deposit refundable after all applicable pet-related obligations are
+resolved. Its return uses an explicit Refund event linked to that Pet Deposit, the
+recorded permanent pet departure, the obligation review, authorization, reason,
+actor, and date/time. The Lease need not terminate, and full history is preserved.
+
+## 8.19 Move-out Requirements
 
 ### PR-MOVEOUT-001 — Actual Move-out Date
 
@@ -3905,9 +4811,9 @@ because the Lease was terminated.
 Final actual Utility Readings must be obtained and validated where possible. If
 a Meter is confirmed broken, only the approved estimation process may be used.
 
-An ordinary missing reading delays the charge. A fewer-than-three-history
-broken-Meter estimate remains pending until the approved complete future-period
-basis exists.
+An ordinary missing reading delays the charge. A zero-history broken-Meter estimate
+remains pending until the approved complete future-period basis exists. One or two
+complete historical actual periods are usable immediately under BR-UTIL-027.
 
 ### PR-MOVEOUT-006 — Inspection and Final Charges
 
@@ -3980,7 +4886,7 @@ Move-out and Lease termination provide inputs to Final Settlement. Final
 Settlement must not close until all required valid charges are final, including
 any approved pending broken-Meter estimate.
 
-## 8.17 Final Settlement Requirements
+## 8.20 Final Settlement Requirements
 
 ### PR-SETTLE-001 — One Settlement per Terminated Lease
 
@@ -3999,9 +4905,9 @@ finalization prerequisites are satisfied.
 **Normative product behavior**
 
 Final Settlement must identify the Lease, responsible Customers, actual
-termination and Move-out dates, outstanding Invoices, Customer Credit, Security
-Deposit, Pet Deposit, final Utility handling, Adjustments, and other valid linked
-financial events applicable to that Lease.
+termination and Move-out dates, outstanding Invoices, applicable outstanding
+Late-payment Charges, Customer Credit, Security Deposit, Pet Deposit, final Utility
+handling, Adjustments, and other valid linked financial events applicable to that Lease.
 
 ### PR-SETTLE-003 — Finalize Valid Outstanding Charges
 
@@ -4022,26 +4928,37 @@ penalty, category, or obligation may be invented for Settlement.
 After valid charges are finalized, apply authorized Customer Credit to applicable
 Settlement obligations through separate auditable Credit-application events.
 
-### PR-SETTLE-005 — Pet Deposit Application
+### PR-SETTLE-005 — Pet Deposit Identification and Application
 
 **Business-rule traceability:** `BR-SETTLE-005`
 
 **Normative product behavior**
 
-Pet Deposit may be applied only to authorized pet-related damage. It must not be
-applied to ordinary Rent, Utility, fixed Service, Miscellaneous, unrelated damage,
-or another general obligation.
+Pet Deposit remains separately identifiable first for valid pet-caused property
+damage or extraordinary/deep-cleaning obligations where applicable. Pet Deposit does
+not cap the Customer's full liability for those valid costs.
 
-### PR-SETTLE-006 — Security Deposit Application
+After Customer Credit and explicitly selected Security Deposit applications, if a
+valid Settlement balance remains unpaid and the Customer has not paid or will not
+pay it, authorized management may explicitly select remaining Pet Deposit for that
+valid Settlement balance. This later application is not limited to pet-related
+obligations.
+
+### PR-SETTLE-006 — Explicit Deposit Selection
 
 **Business-rule traceability:** `BR-SETTLE-006`
 
 **Normative product behavior**
 
-After authorized Customer Credit and permitted Pet Deposit application, Security
-Deposit may be applied to remaining authorized Final Settlement obligations using
-oldest Due Date first where Due Dates apply. Deterministic Invoice tie ordering
-follows BR-PAY-023.
+After authorized Customer Credit, authorized management must explicitly select and
+confirm every Security Deposit or Pet Deposit application to a valid Final Settlement
+obligation. Security Deposit may be applied to valid remaining Settlement
+obligations. Each application records its Deposit source, target obligation, amount,
+actor, timestamp, reason, and authorization.
+
+The system must not infer an additional FIFO ordering between Deposit types beyond
+BR-SETTLE-005 and must not apply either Deposit automatically merely because a
+Settlement balance exists.
 
 ### PR-SETTLE-007 — Remaining Customer Balance
 
@@ -4060,6 +4977,11 @@ Settlement must record it without changing the original obligations.
 
 Every remaining refundable Security Deposit and Pet Deposit balance must be
 refunded explicitly and separately under the Refund rules.
+
+The Customer must not receive refundable Deposit money while leaving a valid
+Settlement balance unpaid when that available Deposit has been authorized for
+application. Every such application must be recorded before the remaining refundable
+balance is determined.
 
 ### PR-SETTLE-009 — Separate Traceability
 
@@ -4092,8 +5014,9 @@ application and does not create a new forfeiture circumstance.
 Final Settlement begins as a pending process and must not close until the Lease is
 TERMINATED and every required
 valid final charge is determined. An ordinary missing Utility Reading or a
-pending fewer-than-three-history broken-Meter estimate keeps the affected charge
-and Settlement unfinalized as necessary.
+pending zero-history broken-Meter estimate keeps the affected charge and Settlement
+unfinalized as necessary. One or two complete historical actual periods use
+BR-UTIL-027 and do not wait for future data.
 
 ### PR-SETTLE-012 — Permanent Closure
 
@@ -4136,7 +5059,7 @@ Settlement must preserve every input, ordering decision, calculation, applicatio
 disposition, Refund, authorization, actor, date and time, source link, and final
 result necessary to reconstruct it.
 
-## 8.18 Money, Currency, Dates, and Timezone Requirements
+## 8.21 Money, Currency, Dates, and Timezone Requirements
 
 ### PR-MONEY-001 — Base and Accounting Currency
 
@@ -4296,10 +5219,10 @@ rule requires different rounding.
 **Normative product behavior**
 
 Start and end dates are inclusive where the applicable rule defines an inclusive
-date range. Scheduled business actions and end-of-date processing use the
-Property's configured local timezone.
+date range. Scheduled business actions and end-of-date processing use the Property's
+authoritative `Asia/Phnom_Penh` timezone under BR-PROP-003.
 
-## 8.19 Audit and History Requirements
+## 8.22 Audit and History Requirements
 
 ### PR-AUDIT-001 — Minimum Audit Content
 
@@ -4330,6 +5253,11 @@ Signing, renewal records, Notices, warning letters, termination, Move-in,
 Move-out, Occupancy corrections, and Unit transitions must remain historically
 traceable.
 
+Nonpayment Warning Notices and Serious Nonpayment Default conditions must preserve
+their source Rent obligation, elapsed-day boundary, amount snapshot, issue or event
+time, actor, communication or document linkage where recorded, cure history, and
+subsequent management action.
+
 ### PR-AUDIT-004 — Meter and Estimation Audit
 
 **Business-rule traceability:** `BR-AUDIT-004`
@@ -4350,7 +5278,7 @@ Rent, Utility, Service, and exchange-rate history must preserve source, effectiv
 date and time, selected historical value, calculation, and authorization where
 applicable.
 
-### PR-AUDIT-006 — Invoice and Adjustment Audit
+### PR-AUDIT-006 — Invoice, Adjustment, and Late-payment Audit
 
 **Business-rule traceability:** `BR-AUDIT-006`
 
@@ -4360,6 +5288,16 @@ Invoice creation, DRAFT correction, issuance, line sources, status changes,
 Adjustments, Due Date source, and VOID events must preserve original and resulting
 financial facts and all linkages.
 
+Late-payment proposals and final decisions must preserve the source Invoice and its
+Due Date, assessment balance, default and actual percentages, default and actual
+amounts, management actor, reason, assessment timestamp, confirmation or waiver
+timestamp, final confirmed, reduced, or waived outcome, and any resulting positive
+Late-payment Charge obligation.
+
+The obligation's original amount, remaining balance, Payment and Customer Credit
+application history, satisfaction, correction, and reversal history must remain linked
+to the decision, Customer, and source Invoice.
+
 ### PR-AUDIT-007 — Payment and Allocation Audit
 
 **Business-rule traceability:** `BR-AUDIT-007`
@@ -4367,8 +5305,10 @@ financial facts and all linkages.
 **Normative product behavior**
 
 Payment confirmation, payer intent, currency conversion, Allocation proposal and
-posting, Allocation Reversal, Payment Reversal, Customer Credit recognition and
-application, and Refund must remain separately traceable.
+posting, target obligation and line/category breakdown, Customer designation,
+authorized confirmation, Allocation Reversal, Payment Reversal, Customer Credit
+recognition and application, Receipt issuance and reprint, and Refund must remain
+separately traceable.
 
 ### PR-AUDIT-008 — Deposit Audit
 
@@ -4376,8 +5316,9 @@ application, and Refund must remain separately traceable.
 
 **Normative product behavior**
 
-Every Deposit receipt, required amount, balance, application,
-forfeiture/disposition, reason, governing event, and Refund must remain linked and
+Every Deposit receipt, suggested amount, accepted required amount, authorized
+Reservation-stage override, actor, timestamp, reason, balance, application,
+forfeiture/disposition, governing event, and Refund must remain linked and
 reconstructable by Deposit type.
 
 ### PR-AUDIT-009 — Final Settlement Audit
@@ -4399,7 +5340,19 @@ post-closure correction.
 Audit history is permanent. It must not be physically deleted, silently
 rewritten, or replaced by only the latest value.
 
-## 8.20 Authorization Requirements
+### PR-AUDIT-011 — Customer Account Ledger Reconciliation
+
+**Business-rule traceability:** `BR-AUDIT-011`
+
+**Normative product behavior**
+
+The Customer Account Ledger must be reconstructable and reconcilable to its underlying
+authoritative financial events. Every displayed charge, Payment, Credit, Refund,
+Adjustment, Deposit event, Late-payment Charge, application, reversal, and balance must
+retain or derive its source linkage. A derived or materialized Ledger representation
+must not conceal disagreement with the authoritative records.
+
+## 8.23 Authorization Requirements
 
 ### PR-AUTH-001 — Explicit Authorization
 
@@ -4448,7 +5401,11 @@ Lease signing, renewal records, Termination Notices, violation warning letters,
 termination, and correction of actual Move-in or Move-out facts require their
 applicable authorization.
 
-### PR-AUTH-006 — Invoice Authorization
+Issuance of a formal Rent Nonpayment Warning Notice, recording and acting on a
+Serious Nonpayment Default, and every resulting termination decision require their
+applicable authorization. Elapsed time alone grants no termination authority.
+
+### PR-AUTH-006 — Invoice and Late-payment Authorization
 
 **Business-rule traceability:** `BR-AUTH-006`
 
@@ -4458,6 +5415,11 @@ Manual or exceptional Invoice issuance, issued-Invoice Adjustment, Due Date
 recording for a non-recurring obligation, dependency correction, and VOID require
 authorization and reason as applicable.
 
+Confirming, reducing, or waiving a proposed late-payment charge is restricted to
+authorized management. A positive approved charge requires the linked explicit
+Late-payment Charge obligation in BR-INV-055 and BR-LATE-001; ordinary staff cannot
+post, vary, correct, or reverse it arbitrarily.
+
 ### PR-AUTH-007 — Payment and Allocation Authorization
 
 **Business-rule traceability:** `BR-AUTH-007`
@@ -4466,7 +5428,9 @@ authorization and reason as applicable.
 
 Payment confirmation or correction, manual Allocation posting, Allocation
 Reversal, and Payment Reversal require authorization and audit. A deterministic
-proposal is not authorization to post.
+proposal is not authorization to post. This includes confirmation of Customer-
+designated targets, between-Invoice FIFO proposals, within-Invoice Rent-first proposals,
+Invoice-line or obligation detail, and Late-payment Charge applications.
 
 ### PR-AUTH-008 — Credit, Refund, and Deposit Authorization
 
@@ -4479,6 +5443,9 @@ forfeiture/disposition require authorization, source linkage, reason, and audit.
 Customer authorization required by the Credit-versus-Refund decision must also be
 preserved.
 
+An override of the suggested Reservation Security Deposit amount requires authorized
+management and preservation of the accepted amount, actor, timestamp, and reason.
+
 ### PR-AUTH-009 — Final Settlement Authorization
 
 **Business-rule traceability:** `BR-AUTH-009`
@@ -4490,25 +5457,112 @@ require authorization and complete audit history.
 
 # 9. Traceability and Acceptance Coverage
 
-Every Section 8 `PR-*` maps to exactly one same-suffix `BR-*`; capability, workflow, and quality mappings are supplemental. Acceptance evidence shall cite both identifiers. No source `BR-*` may be omitted, duplicated under another detailed requirement, or reinterpreted. Later numbered specifications shall cite implemented or verified `PR-*` identifiers.
+Every current `BR-*` in `docs/002_BUSINESS_RULES.md` has exactly one same-suffix
+Section 8 `PR-*`. Each detailed requirement reproduces the complete business meaning of
+its governing rule. Capability, workflow, and quality mappings are supplemental and do
+not replace the one-to-one mapping. Acceptance evidence shall cite both identifiers. No
+source `BR-*` may be omitted, duplicated under another detailed requirement, or
+reinterpreted. Later numbered specifications shall cite implemented or verified `PR-*`
+identifiers.
 
-End-to-end acceptance shall cover: Unit availability and Reservation; extension and expiration boundaries; customer- and Property-caused cancellation; Deposit continuity; Lease signing and move-in; active Occupancy and all recurring billing; Payment, allocation, partial Payment, overpayment/Advance Payment, Credit, Refund, and Reversal; meter replacement and approved broken-meter estimation; normal end, continued Occupancy, violation process, and processed voluntary early termination only as authorized; move-out, final Utilities, charges, Deposit disposition, and Settlement; historical correction and reconstruction; and rejection of conflicts, invalid transitions, duplicate billing, unauthorized actions, and policy assumptions.
+End-to-end acceptance shall cover at least:
+
+- Property timezone, historical integrity, Unit status, authoritative availability,
+  Customer identity, and conflict rejection;
+- Reservation statuses `ACTIVE`, `CANCELLED`, and `COMPLETED`; expiration and
+  cancellation boundaries; zero-or-one resulting Lease; exactly one resulting Lease for
+  `COMPLETED`; no resulting Lease for `CANCELLED`; and coordinated Unit release;
+- the normal 20% suggested Reservation Security Deposit, authorized acceptance below or
+  above the suggestion, activation only after receipt of the accepted amount, complete
+  override audit, and the full required Security Deposit by move-in;
+- Pet Deposit separation, pet departure during an active Lease, resolution of applicable
+  pet-related obligations, explicit Refund of any remaining refundable Pet Deposit,
+  uncapped Customer liability, no ordinary active-Lease Deposit payment use, and
+  Final-Settlement-only Deposit application to Invoice obligations;
+- Lease signing and non-overlapping contractual periods; coordinated move-in and
+  Reservation completion; Occupancy; warning-letter rules for general violations; and
+  the separate Rent-specific nonpayment workflow;
+- Initial Rent and recurring-Service coverage for move-in days 1–20 and 21 or later,
+  the seven-day Initial Rent Invoice Due Date, the recurring fifth-day Due Date, the
+  27 July boundary example, generation resumption, and rejection of overlapping or
+  duplicate billing periods;
+- Trash Collection as the only currently approved recurring Service, separate categorized
+  Service lines, and rejection of Internet or Monthly Cleaning charges unless a later
+  Owner-approved configuration exists;
+- actual Utility billing; broken-Meter estimation using the latest three complete
+  historical periods, all available one or two complete historical periods, or one
+  future complete actual period only when history is zero; move-out pending behavior;
+  and no substitute Unit or arbitrary estimate;
+- Utility Reading corrections before and after Invoice issuance, irrespective of payment
+  status, with the original Reading, corrected Reading, original Invoice, and linked
+  Adjustment chain reconstructable;
+- the complete Invoice lifecycle, derived status regression after authorized reversals,
+  immutability after issuance, duplicate prevention, and separation of a source Invoice
+  from any Late-payment Charge;
+- the Due Date as the final timely day, overdue beginning the next Property-local
+  calendar day, the 10% default late-payment calculation, authorized reduction or
+  waiver, the single final decision, and rejection of increase, replacement, recurrence,
+  supplementation, or compounding;
+- creation of one positive Late-payment Charge as a separate immediately payable
+  non-Invoice obligation, separate balance contribution, authorized satisfaction,
+  correction/reversal history, and rejection of a Due Date, Invoice category/line,
+  Miscellaneous Charge treatment, source-Invoice modification, negative balance, or
+  recursive late charge;
+- remaining Rent derived from confirmed line/obligation attribution; the formal warning
+  at 20 calendar days and Serious Nonpayment Default at 30 calendar days; preservation
+  of later cure; and rejection of automatic Lease termination, Occupancy closure, Unit
+  status change, Move-out, or Final Settlement;
+- Payment as the authoritative money-received record; Payment record statuses; Receipt
+  issuance and reprint for one existing Payment; unique and stable Receipt identity;
+  traceable displayed amounts; and separation from Allocation, Refund, Credit, and
+  Deposit receipt/application;
+- authorized Payment Allocation proposal and confirmation; valid Customer designation;
+  FIFO ordering between Invoices; Rent-first then recurring-Service proposal within a
+  selected mixed Invoice; line/obligation detail; reversal history; and rejection of
+  silent automatic posting, over-allocation, negative balances, or cross-Customer use;
+- direct Allocation to a positive confirmed Late-payment Charge without changing the
+  source Invoice and valid disposition of any remaining Payment value;
+- Customer Credit creation, same-Customer Invoice or Late-payment Charge application,
+  mixed-Invoice attribution, limits, reversals, Refunds, permanent source history, and
+  separation from unallocated Payment, Deposits, and vendor Accounts Payable;
+- one Customer Account Ledger view per Customer, chronological reconstruction of all
+  applicable underlying financial events, obligation composition, current amount owed,
+  available Customer Credit, separately identifiable Deposit liabilities, reconciliation,
+  separate corrections/reversals, and rejection of independent editing or use as a
+  General Ledger, Chart of Accounts, vendor Accounts Payable, or second source of truth;
+- USD/KHR Payment confirmation and Receipt presentation, ABA Sell reference, the 1.005
+  multiplier, upward whole-KHR System Exchange Rate and final payable rounding,
+  confirmation-time rate preservation, permitted manual fallback, and authoritative
+  Payment-channel conversion facts; and
+- normal Lease end, continued Occupancy, authorized termination, move-out, final Utility
+  handling, Final Settlement, Deposit disposition, Refund, historical correction,
+  financial reconstruction, and rejection of invalid transitions, unauthorized actions,
+  invented policies, or silent historical rewrites.
 
 # 10. Open Owner Decisions
 
-## OOD-PR-001 — First Partial-month Rent Due Date
+There are currently no unresolved Owner decisions blocking this Product Requirements
+Specification. `OOD-BR-001` through `OOD-BR-008` are resolved in the approved
+authoritative foundation and are incorporated into the detailed requirements above.
 
-`OOD-BR-001` remains open: the Due Date for a first partial-month Rent Invoice
-issued after the billed month's 5th has not been approved. The product must preserve
-an explicit Due Date and its governing source, must not invent a retroactive,
-immediate, or next-month policy, and must keep this case configurable pending Owner
-decision. Affected requirements include `PR-RENT-005`, `PR-RENT-009`, and
-`PR-INV-018`.
+Later technical specifications may choose conforming implementation designs, but those
+choices do not create an unresolved product-policy decision in this document.
 
 # 11. Completion Criteria
 
-This specification is ready for Owner review when status remains Owner Review; every `BR-*` has exactly one matching, unique, stable detailed `PR-*`; capabilities and lifecycle workflows trace upstream; acceptance covers applicable valid, invalid, boundary, calculation, authorization, and history behavior; terminology and policy match upstream; no placeholder influenced the result; and no feature, policy, status, fee, penalty, right, role, permission, or exception was invented.
+This specification is ready for Owner review when status remains Owner Review; every
+current `BR-*` has exactly one matching, unique, stable detailed `PR-*`; capabilities and
+lifecycle workflows trace upstream; acceptance covers applicable valid, invalid,
+boundary, calculation, authorization, and history behavior; terminology and policy
+match upstream; no placeholder influenced the result; no unresolved Owner decision
+remains; and no feature, policy, status, fee, penalty, right, role, permission, or
+exception was invented.
 
 # 12. Summary
 
-The product shall provide a complete, auditable, single-Property residential tenancy workflow from Unit readiness and Reservation through Lease, Occupancy, billing, Payment, move-out, and Final Settlement. Every significant event shall remain historically accurate and reconstructable, and every action, calculation, transition, rejection, and correction shall conform to its stable product requirement and traced business rule.
+The product shall provide a complete, auditable, single-Property residential tenancy
+workflow from Unit readiness and Reservation through Lease, Occupancy, billing,
+late-payment review, Payment, Receipt and confirmed Allocation, Customer Account Ledger,
+move-out, and Final Settlement. Every significant event shall remain historically
+accurate and reconstructable, and every action, calculation, transition, rejection, and
+correction shall conform to its stable product requirement and traced business rule.
