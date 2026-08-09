@@ -136,10 +136,12 @@ Examples:
 
 - Unit availability is determined by Reservations and Leases.
 - Occupancy is determined by Occupancy records.
-- Financial balances are determined from invoices, payments, credits, deposits, and settlements.
+- Financial balances are determined from Invoices, Late-payment Charges, Payments,
+  applications, Credits, Deposits, Refunds, Adjustments, reversals, and Final Settlements.
 - Utility consumption is determined from Utility Readings.
 
-Information should never be duplicated when it can be derived from existing business records.
+Derived or materialized views must remain reconcilable to authoritative records and
+must never become independently editable competing sources of truth.
 
 ---
 
@@ -198,6 +200,24 @@ Examples include:
 The system does not classify Customers into permanent customer types.
 
 Customer roles are determined by their relationships with business entities rather than by a fixed customer category.
+
+Each Customer has a unified Customer Account Ledger view of that Customer's
+chronological financial history and current financial position. The Ledger is a
+reconstructable projection of authoritative financial events, not a replacement
+financial record or a full accounting General Ledger.
+
+---
+
+## Customer Account Ledger
+
+The unified business-facing financial view for one Customer. It shows charges,
+Payments, Customer Credit, Refunds, Adjustments, Deposits, Late-payment Charges,
+applications, reversals, outstanding obligations, and current balances while
+preserving each underlying record's identity.
+
+The Ledger may be derived from authoritative immutable financial events. Whether
+later technical specifications persist materialized ledger entries is an
+implementation choice; no Ledger entry may become a conflicting source of truth.
 
 ---
 
@@ -359,6 +379,24 @@ waiver remains a permanent audited decision without creating a charge.
 
 ---
 
+## Late-payment Charge
+
+A separate explicit financial obligation created only when authorized management
+confirms a positive amount through the final Late-payment Charge Decision for one
+source overdue Invoice.
+
+A Late-payment Charge belongs to exactly one Customer and exactly one source Invoice.
+It becomes payable immediately at its confirmation timestamp, contributes to the
+Customer's overall outstanding balance, and may be satisfied by authorized Payment
+Allocation or Customer Credit application without issuing another Invoice.
+
+It is not an Invoice, Invoice Category, Miscellaneous Charge, source-Invoice line, or
+modification of source-Invoice principal. Its original amount and decision remain
+historical facts while its remaining balance is derived from valid applications and
+reversals. It never generates another late-payment charge.
+
+---
+
 ## Nonpayment Warning Notice
 
 A formal auditable Notice issued when an applicable Rent obligation remains unpaid
@@ -382,7 +420,9 @@ Final Settlement.
 
 Money received from a Customer.
 
-Payments may be allocated to one or more invoices by authorized staff.
+Payments may be allocated to one or more valid Customer obligations by authorized
+staff. Allocation to a mixed Invoice preserves sufficient Invoice-line or obligation
+category detail to determine what remains unpaid.
 
 The system supports:
 
@@ -393,6 +433,17 @@ The system supports:
 - Customer credit
 - Refund
 - Reversal
+
+---
+
+## Receipt
+
+A numbered customer-facing acknowledgment that the Property received the money
+recorded by one Payment and, where applicable, how its value was allocated or applied.
+
+Receipt does not replace Payment and does not create money. Reprinting a Receipt does
+not create another Payment or another receipt-of-money event; the same Receipt identity
+and reprint history remain auditable.
 
 ---
 
@@ -586,6 +637,7 @@ Instead, those roles are determined through relationships with other business en
 - Store personal information
 - Maintain customer identity
 - Preserve customer history
+- Provide the identity boundary for a unified reconstructable Customer Account Ledger
 
 ### Customer Roles
 
@@ -607,6 +659,8 @@ These are business relationships rather than customer types.
 - A Customer may sign many Leases.
 - A Customer may occupy many Units over time.
 - Customer records are never deleted because historical financial records depend on them.
+- The Customer Account Ledger is derived from underlying authoritative financial
+  events and balances and never replaces them.
 
 ---
 
@@ -741,7 +795,8 @@ Represents money owed to the Property.
 
 - Record charges
 - Maintain invoice balance
-- Track payment allocation
+- Track obligation and Invoice-line balances
+- Track Payment and Customer Credit application at sufficient obligation detail
 - Preserve financial history
 
 ### Invoice Categories
@@ -760,6 +815,8 @@ Represents money owed to the Property.
   period, and Lease context must be consistent.
 - Every Rent Invoice requires the applicable signed Lease.
 - An Invoice balance cannot become negative.
+- Invoice-line or obligation-level remaining balances roll up exactly to the Invoice
+  outstanding balance and derived status.
 - Invoice history is permanent.
 - Voiding an Invoice preserves its historical record.
 - The Due Date is the last calendar day on which payment is timely; any remaining
@@ -779,16 +836,20 @@ Represents money received by the Property.
 ### Responsibilities
 
 - Record payment received
-- Allocate payments
+- Allocate Payment value to specific Customer obligations and Invoice lines where
+  needed
+- Support issuance of the Payment's customer-facing Receipt
 - Maintain customer credits
 - Record refunds
 - Record reversals
 
 ### Business Invariants
 
-- One Payment may pay multiple Invoices.
+- One Payment may satisfy multiple valid Customer obligations.
 - One Invoice may receive multiple Payments.
+- One Payment may also satisfy a separate Late-payment Charge obligation.
 - Payment allocation is performed manually by authorized staff.
+- Payment and Receipt remain distinct records; reprinting a Receipt creates no Payment.
 - Payments are never physically deleted.
 
 ---
@@ -850,6 +911,34 @@ Represents the financial closing process of a terminated Lease.
 
 ---
 
+## 9.12 Late-payment Charge Aggregate
+
+### Purpose
+
+Represents a positive standalone Customer obligation confirmed by authorized
+management for exactly one overdue source Invoice.
+
+### Responsibilities
+
+- Preserve the final management decision and source-Invoice assessment snapshot
+- Maintain the original confirmed amount and remaining outstanding balance
+- Accept authorized Payment Allocations and Customer Credit applications
+- Preserve application, reversal, correction, and satisfaction history
+
+### Business Invariants
+
+- One Late-payment Charge belongs to exactly one Customer.
+- One Late-payment Charge links to exactly one source Invoice.
+- Its Customer must be the same Customer as the source Invoice.
+- It is created only for a positive confirmed or reduced final decision.
+- It becomes payable at the management confirmation timestamp without another Invoice.
+- Its original amount never alters the source Invoice principal, lines, balance, or status.
+- Its remaining balance cannot become negative.
+- It never produces another late-payment charge.
+- A waived decision creates no Late-payment Charge Aggregate.
+
+---
+
 # 10. Supporting Entities
 
 Supporting Entities exist inside Aggregates and cannot exist independently.
@@ -895,13 +984,40 @@ Business Rules:
 
 ## Payment Allocation
 
-Represents the allocation of a Payment to one or more Invoices.
+Represents the authorized application of Payment value to one or more Customer
+obligations. For an Invoice, it preserves sufficient Invoice-line or obligation
+category detail to determine remaining Rent and Service balances. It may also target a
+separate Late-payment Charge. Payment-to-Deposit receipt linkage remains a distinct
+Deposit event rather than an ordinary Payment Allocation.
 
 Business Rules:
 
-- One Payment may allocate to many Invoices.
+- One Payment may allocate to many valid obligations.
 - One Invoice may receive many Payment Allocations.
+- One Allocation may contain sufficient linked detail for multiple underlying lines
+  of one selected Invoice.
 - Allocation history is permanent.
+
+---
+
+## Receipt
+
+Represents the numbered acknowledgment provided to a Customer for one Payment.
+
+Responsibilities:
+
+- Identify the source Payment and Customer
+- Present money-received facts from the Payment
+- Present the confirmed allocation/application breakdown when applicable
+- Preserve issuer, issue time, and Receipt identity
+- Preserve reprint history without creating another Payment or Receipt identity
+
+Business Rules:
+
+- Receipt is evidence of Payment; it is not the Payment itself.
+- One Payment normally produces one business Receipt.
+- A reprint preserves the original Receipt identity and source facts.
+- Receipt history is permanent and auditable.
 
 ---
 
@@ -963,12 +1079,15 @@ UTILITY METER
 
 INVOICE
 
+LATE-PAYMENT CHARGE
+
 DEPOSIT
 
 FINAL SETTLEMENT
 
 PAYMENT
-└── Payment Allocation
+├── Payment Allocation
+└── Receipt
 ```
 
 Each item shown at the left margin is an Aggregate Root. Nested items are owned
@@ -1015,13 +1134,17 @@ Property
 
 Payment
 │
+├── Receipt
 └── Payment Allocation
       │
-      └── Invoice
+      ├── Invoice line or obligation
+      └── Late-payment Charge
 
 Customer
 │
-└── Invoice (exactly one Customer per Invoice)
+├── Invoice (exactly one Customer per Invoice)
+├── Late-payment Charge (exactly one Customer per charge)
+└── Customer Account Ledger projection
 
 Invoice ─────── optional zero-or-one association ───────► Lease
 ```
@@ -1273,7 +1396,7 @@ Rules
 
 ---
 
-## 15.13 Payment → Invoice
+## 15.13 Payment → Obligation
 
 Relationship
 
@@ -1282,15 +1405,19 @@ Payment
      │
      └────── Payment Allocation
                   │
-                  └────── Invoice
+                  ├────── Invoice line or obligation
+                  └────── Late-payment Charge
 ```
 
-This is a many-to-many relationship.
+Payments and obligations have a many-to-many relationship through permanent detailed
+Allocations.
 
 Rules
 
-- One Payment may pay many Invoices.
+- One Payment may pay many valid Customer obligations.
 - One Invoice may receive many Payments.
+- One Late-payment Charge may receive allocations from many Payments.
+- Mixed-Invoice Allocations preserve sufficient line or obligation detail.
 - Allocation is performed manually.
 - Allocation history cannot be deleted.
 
@@ -1333,6 +1460,45 @@ Rules
 - Final Settlement occurs only after Lease termination.
 - Every terminated Lease must complete exactly one Final Settlement.
 - Final Settlement permanently closes the financial lifecycle of the Lease.
+
+---
+
+## 15.16 Payment → Receipt
+
+Relationship
+
+```text
+One Payment
+      │
+      └──────── Normally One Receipt
+```
+
+Rules
+
+- Receipt acknowledges the source Payment and does not replace it.
+- Receipt reprint preserves the original Receipt identity and Payment.
+- Reprint creates no new money-received event.
+
+---
+
+## 15.17 Customer → Late-payment Charge and Ledger
+
+Relationship
+
+```text
+One Customer
+      │
+      ├──────── Zero or Many Late-payment Charges
+      └──────── One Unified Customer Account Ledger View
+
+Each Late-payment Charge ─────── Exactly One Source Invoice
+```
+
+Rules
+
+- A positive Late-payment Charge belongs to the same Customer as its source Invoice.
+- The Customer Account Ledger reconstructs all applicable underlying financial events.
+- The Ledger is a projection and is not an independently mutable financial source.
 
 ---
 
@@ -1525,7 +1691,7 @@ PAID
 
 Invoice status is determined by the approved issuance, allocation, Credit,
 Deposit-application, reversal, and voiding rules in `002_BUSINESS_RULES.md`.
-Payment-status regressions are derived from valid remaining financial effects; they
+Invoice-status regressions are derived from valid remaining financial effects; they
 are not manual status edits, partial voids, Refund semantics, or arbitrary reopening.
 Voiding always preserves history.
 
@@ -1541,13 +1707,34 @@ RECEIVED ───────────────────────�
     └── fully allocated      (derived allocation condition)
 ```
 
-Allocation progress is not a Payment receipt status. Unallocated excess remains
+Allocation progress is not a Payment record status. Unallocated excess remains
 part of the RECEIVED Payment until the payer authorizes an approved Credit or
 Refund disposition.
 
 ---
 
-## 16.9 Final Settlement Lifecycle
+## 16.9 Late-payment Decision and Obligation Treatment
+
+```text
+PROPOSED CALCULATION
+        │
+        └── AUTHORIZED FINAL DECISION
+                ├── WAIVED ──► no receivable
+                ├── CONFIRMED ──► positive Late-payment Charge
+                └── REDUCED ────► reduced positive Late-payment Charge
+
+Positive Late-payment Charge
+        ├── positive remaining balance
+        └── zero remaining balance = fully satisfied
+```
+
+The positive obligation's state is balance-derived where possible. Authorized
+correction or reversal is a linked auditable event, not silent status editing or
+deletion. No Late-payment Charge generates another charge.
+
+---
+
+## 16.10 Final Settlement Lifecycle
 
 ```text
 Lease Terminated
@@ -1627,7 +1814,7 @@ The following business invariants span multiple Aggregates and must always remai
 
 # 18. Financial Domain
 
-The financial domain represents monetary obligations, receipts, liabilities,
+The financial domain represents monetary obligations, money received, liabilities,
 credits, adjustments, and settlement activities belonging to Customers. A
 financial record may additionally be associated with a Lease when its approved
 business context requires that association.
@@ -1832,10 +2019,12 @@ charge.
 
 The source Invoice principal remains unchanged. The decision, balance snapshot,
 default and actual percentages and amounts, actor, date/time, and reason remain
-auditable. A positive approved amount must become an explicit linked financial charge,
-but its exact representation within the existing Invoice/category model and its Due
-Date source remain OOD-BR-007 in `002_BUSINESS_RULES.md`. A waiver creates no positive
-charge but remains final and auditable.
+auditable. A positive approved amount creates a separate Late-payment Charge obligation
+linked to exactly one Customer and exactly one source Invoice. It is payable immediately
+at management confirmation without another Invoice or Invoice Due Date. It contributes
+to the Customer's outstanding balance but is not an Invoice, Invoice Category,
+Miscellaneous Charge, source-Invoice line, or source-principal modification. A waiver
+creates no positive receivable but remains final and auditable.
 
 For Rent nonpayment, a formal warning Notice is required at 20 calendar days overdue
 when the applicable obligation remains unpaid. At 30 calendar days overdue, continued
@@ -1850,10 +2039,13 @@ Full cure after the 20-day warning but before the 30-day threshold stops the cur
 Payment after Serious Nonpayment Default does not erase that condition or automatically
 decide an already initiated termination process.
 
-When an Invoice contains both Rent and recurring-Service lines and is partially
-satisfied, the allocation of that value to the Rent obligation remains OOD-BR-008.
-The domain does not infer a line-attribution method or Rent-specific warning/default
-outcome from an ambiguous mixed-Invoice balance.
+When an Invoice contains both Rent and recurring-Service lines, valid Payment
+Allocations and Customer Credit applications preserve which Invoice-line obligations
+they satisfy. A valid Customer designation may control the target. Without a Customer
+designation, the system proposes Rent first and then recurring-Service lines within
+that selected Invoice; authorized staff must confirm the proposal before posting.
+Remaining Rent after confirmed applications—not the mixed Invoice's total balance—
+controls the Rent-specific warning and Serious Nonpayment Default tests.
 
 ---
 
@@ -2022,11 +2214,13 @@ Every Miscellaneous Charge must remain sufficiently described for future review 
 
 A Payment represents actual money received.
 
-A Payment is distinct from an Invoice.
+A Payment is distinct from an Invoice, Late-payment Charge, and Receipt.
 
 ```text
 Invoice = money owed
+Late-payment Charge = separate confirmed money owed
 Payment = money received
+Receipt = acknowledgment of that money received
 ```
 
 A Payment does not automatically imply that a specific Invoice has been settled.
@@ -2055,7 +2249,7 @@ A Payment may be:
 - fully allocated
 - partially allocated
 - temporarily unallocated
-- applied across multiple Invoices
+- applied across multiple valid Customer obligations
 
 An Invoice may receive:
 
@@ -2063,17 +2257,37 @@ An Invoice may receive:
 - multiple Payments
 - partial allocations from several Payments
 
+Payment Allocation must preserve the target obligation. Within a mixed Rent and
+recurring-Service Invoice, it preserves the amount applied to each relevant Invoice
+line or obligation category. A separate Late-payment Charge can also receive an
+Allocation without becoming an Invoice.
+
 Conceptually:
 
 ```text
 Payment $500
    │
-   ├── $300 → Rent Invoice
-   ├── $100 → Utility Invoice
-   └── $100 → remains unallocated until an authorized disposition
+   ├── $300 → Rent line on selected Invoice
+   ├── $100 → Utility Invoice obligation
+   ├──  $31 → separate Late-payment Charge
+   └──  $69 → remains unallocated until an authorized disposition
 ```
 
 Payment and allocation are intentionally separate business concepts.
+
+---
+
+## 26.4 Receipt
+
+A Receipt is the numbered customer-facing acknowledgment for money recorded by a
+Payment. It may show the Payment Date, Payment Method, received currency and amount,
+USD accounting value, applicable KHR conversion facts, Deposit purpose, confirmed
+Invoice-line or other obligation applications, and any Late-payment Charge amount paid.
+
+Receipt content may be safely derived from immutable linked Payment, Allocation,
+Deposit, and obligation records. Persistence details belong to
+`004_DATABASE_MODEL.md`. Reprinting preserves the original Receipt identity and is an
+auditable reprint event, not a second Payment or a second receipt of money.
 
 ---
 
@@ -2153,6 +2367,23 @@ Money held under a deposit obligation
 ```
 
 These concepts must not be merged.
+
+Customer Credit is a customer-related liability concept. It is not ordinary vendor
+Accounts Payable, and this domain introduces no supplier or vendor AP process.
+
+## 30.1 Customer Account Ledger
+
+Each Customer has one unified Customer Account Ledger view that chronologically and
+reconstructably combines the Customer's authoritative financial events and current
+position. It can answer what was charged, paid, credited, refunded, adjusted, or held
+as a Deposit; which Late-payment Charges exist; which obligations remain unpaid; the
+Customer's total current amount due; and available Customer Credit.
+
+The Ledger uses business-facing terms such as Amount charged, Payment received,
+Credit, Refund, Outstanding balance, and Customer Credit. It does not require staff to
+use formal debit/credit bookkeeping terminology and does not introduce General Ledger
+accounting. Invoice, Payment, Allocation, Credit, Deposit, Refund, Adjustment,
+Late-payment Charge, Final Settlement, and reversal records remain authoritative.
 
 ---
 
@@ -2358,7 +2589,7 @@ process applies.
 
 # 35. Deposits Versus Payments
 
-Receiving money for a Deposit is still a financial receipt, but the purpose of that money is different from normal revenue.
+Receiving money for a Deposit is still a receipt-of-money event, but the purpose of that money is different from normal revenue.
 
 Conceptually:
 
@@ -2423,6 +2654,7 @@ Final Settlement may include:
 - Outstanding Service Charges
 - Damage Charges
 - Miscellaneous Charges
+- Outstanding Late-payment Charges
 - Customer Credit
 - Security Deposit
 - Pet Deposit
@@ -2523,6 +2755,27 @@ Amount still owed on a specific Invoice.
 
 ---
 
+## Invoice-line or Obligation Balance
+
+Amount still owed for a specific underlying line or obligation category within an
+Invoice. These balances roll up exactly to the Invoice Balance.
+
+---
+
+## Late-payment Charge Balance
+
+Amount still owed on a separate confirmed Late-payment Charge after valid Payment
+Allocations, Customer Credit applications, reversals, or authorized corrections.
+
+---
+
+## Customer Outstanding Balance
+
+Total current amount the Customer owes across Invoice balances and separate positive
+Late-payment Charge balances. It does not merge or relabel the underlying obligations.
+
+---
+
 ## Lease Outstanding Balance
 
 Total remaining receivables associated with the Lease.
@@ -2546,6 +2799,9 @@ Amount currently held as a Deposit liability.
 The net financial position calculated during Final Settlement.
 
 These balances must not be treated as interchangeable.
+
+The Customer Account Ledger presents these balances together while preserving their
+composition and authoritative source records.
 
 ---
 
@@ -2580,7 +2836,8 @@ This includes:
 - Invoice creation
 - Invoice modification
 - Invoice voiding
-- Payment receipt
+- receipt of money as a Payment
+- Receipt issuance and reprint
 - Payment allocation
 - Allocation change
 - Payment reversal
@@ -2593,6 +2850,8 @@ This includes:
 - Rate changes
 - Utility Reading modifications that affect billing
 - Late-payment Charge proposals, reductions, waivers, and confirmed charges
+- Late-payment Charge applications, remaining balances, satisfaction, and corrections
+- Customer Account Ledger reconstruction and reconciliation
 - Nonpayment Warning Notices and Serious Nonpayment Default conditions
 
 The audit model must make it possible to determine:
@@ -2623,8 +2882,8 @@ The following financial invariants must always hold.
 ## Payment Integrity
 
 - Payments cannot silently disappear.
-- Payment Allocation is separate from Payment receipt.
-- One Payment may be allocated across multiple Invoices.
+- Payment Allocation is separate from recording the Payment.
+- One Payment may be allocated across multiple valid Customer obligations.
 - Partial allocation is supported.
 
 ## Credit Integrity
@@ -2842,7 +3101,7 @@ The following rules apply:
 
 - Every tenancy requires a Security Deposit.
 - Security Deposit may be paid partially.
-- Security Deposit may be received in multiple financial receipts.
+- Security Deposit may be received through multiple Payments.
 - Money received during Reservation is already Security Deposit.
 - The system must not create a separate Reservation Deposit concept.
 - The same Security Deposit continues into the resulting Lease.
@@ -2932,7 +3191,8 @@ The following rules apply:
 - The original billed amount must remain historically identifiable.
 - Invoice outstanding balance cannot become negative.
 - Payments do not directly rewrite Invoice amounts.
-- Payment Allocations reduce outstanding balances.
+- Payment Allocations and Customer Credit applications reduce the identified
+  Invoice-line or obligation balances and roll up to the Invoice outstanding balance.
 - Voiding an Invoice preserves the original Invoice history.
 - Historical Invoices remain reproducible using the applicable historical rates and billing data.
 
@@ -2954,12 +3214,17 @@ A Payment represents money actually received.
 
 The following rules apply:
 
-- Every Payment represents a real financial receipt.
-- Payment receipt and Payment Allocation are separate events.
-- One Payment may be allocated to multiple Invoices.
+- Every Payment represents a real receipt-of-money event.
+- Recording Payment and posting Payment Allocation are separate events.
+- One Payment may be allocated to multiple valid Customer obligations.
 - One Invoice may receive allocations from multiple Payments.
+- Allocation to a mixed Invoice identifies sufficient line or obligation detail to
+  determine remaining Rent and recurring-Service balances.
+- Allocation to a Late-payment Charge reduces only that separate obligation.
 - A Payment may remain partially or fully unallocated.
 - Allocation is performed manually by authorized staff.
+- Receipt is a separate customer-facing acknowledgment of Payment.
+- Receipt reprint preserves the original Receipt identity and creates no new Payment.
 - Payment history cannot be erased.
 - Reversing a Payment must preserve both the original Payment and the reversal event.
 
@@ -2978,6 +3243,8 @@ The following rules apply:
 - Unallocated Payment value remains part of the Payment until an explicit
   `002_BUSINESS_RULES.md` disposition recognizes Credit or a Refund.
 - Applying Customer Credit must be auditable.
+- Applying Customer Credit must identify the target obligation and sufficient
+  Invoice-line detail where needed to determine remaining Rent.
 - Refunding Customer Credit must be auditable.
 
 ---
@@ -3219,6 +3486,10 @@ RecurringServiceLineAddedToInvoice
 DamageChargeInvoiceCreated
 MiscellaneousChargeInvoiceCreated
 LatePaymentChargeDecisionRecorded
+LatePaymentChargeConfirmed
+LatePaymentChargeWaived
+LatePaymentChargeSatisfied
+LatePaymentChargeCorrected
 InvoiceAdjusted
 InvoiceVoided
 ```
@@ -3233,6 +3504,8 @@ Representative Payment events include:
 
 ```text
 PaymentReceived
+ReceiptIssued
+ReceiptReprinted
 PaymentAllocated
 PaymentAllocationReversed
 PaymentReversed
@@ -3448,6 +3721,7 @@ It manages:
 - Damage Charges
 - Miscellaneous Charges
 - Invoice lifecycle
+- Late-payment Charge decisions and separate obligations
 - Historical billing rates
 
 It consumes information from:
@@ -3464,11 +3738,12 @@ It does not own money received.
 
 ## Responsibility
 
-This context owns financial receipts and allocation.
+This context owns Payments, Receipts, and allocation.
 
 It manages:
 
 - Payment
+- Receipt
 - Payment method
 - Payment Allocation
 - Advance Payment
@@ -3476,6 +3751,7 @@ It manages:
 - Customer Credit
 - Payment reversal
 - Credit refund
+- Customer Account Ledger projection
 
 It collaborates closely with Billing Management but remains conceptually separate.
 
@@ -3483,8 +3759,11 @@ This distinction preserves the rule:
 
 ```text
 Invoice = Amount owed
+Late-payment Charge = Separate confirmed amount owed
 Payment = Money received
 Allocation = How received money is applied
+Receipt = Customer acknowledgment of Payment
+Customer Account Ledger = Reconstructable unified Customer view
 ```
 
 ---
@@ -3610,7 +3889,7 @@ The following principles govern communication between Bounded Contexts:
 - Each business fact has one authoritative owner.
 - One context may reference information owned by another context but must not silently redefine it.
 - Financial responsibilities must remain separate from physical occupancy.
-- Billing must remain separate from Payment receipt.
+- Billing must remain separate from recording receipt of money as Payment.
 - Deposits must remain separate from Customer Credit.
 - Utility measurement must remain separate from Utility billing.
 - Historical audit records must not replace authoritative domain state.
@@ -3683,11 +3962,17 @@ Customer
 +
 Payment
 +
+Receipt
++
 Payment Allocation
 +
 Invoice
 +
+Late-payment Charge
++
 Customer Credit
++
+Customer Account Ledger projection
 ```
 
 ## Move-out
@@ -4359,9 +4644,16 @@ Miscellaneous Charges must remain sufficiently described for audit purposes.
 
 The single final management decision for one applicable overdue source Invoice. It
 preserves the Invoice-wide assessment base, 10% default, confirmed/reduced/waived
-result, authorization, and audit history. A positive approved amount must remain an
-explicit linked financial charge, but its exact Invoice/category representation and
-Due Date source remain OOD-BR-007.
+result, authorization, and audit history. A confirmed positive amount creates one
+separate Late-payment Charge obligation; a waiver creates no receivable.
+
+---
+
+## Late-payment Charge
+
+A separate immediately payable Customer obligation created when authorized management
+confirms a positive late-payment amount for exactly one source overdue Invoice. It is
+not an Invoice, Invoice Category, Miscellaneous Charge, or source-Invoice modification.
 
 ---
 
@@ -4369,18 +4661,28 @@ Due Date source remain OOD-BR-007.
 
 Money actually received.
 
-Payment is distinct from Invoice.
+Payment is distinct from Invoice, Late-payment Charge, and Receipt.
 
 ```text id="q8lv5y"
 Invoice = Money owed
+Late-payment Charge = Separate confirmed money owed
 Payment = Money received
 ```
 
 ---
 
+## Receipt
+
+A numbered customer-facing acknowledgment of one Payment and its confirmed
+applications. Reprint preserves the same Receipt identity and creates no new Payment.
+
+---
+
 ## Payment Allocation
 
-The explicit application of Payment value to one or more Invoices.
+The explicit application of Payment value to one or more valid Customer obligations,
+including sufficient Invoice-line or obligation detail for mixed Invoices and direct
+application to a separate Late-payment Charge where applicable.
 
 Allocation is performed manually by authorized staff.
 
@@ -4411,10 +4713,23 @@ Advance Payment remains available until later allocated, refunded, or otherwise 
 
 ## Customer Credit
 
-Money available for use by a Customer that is not currently allocated to an Invoice and is not classified as a Deposit.
+Money available for use by a Customer that is not currently consumed by a valid
+obligation and is not classified as a Deposit.
 
 Customer Credit may arise only from financial events explicitly authorized by
 `002_BUSINESS_RULES.md`; this definition creates no additional Credit source.
+
+Customer Credit is not a Deposit, unallocated Payment, Invoice balance, Late-payment
+Charge, or ordinary vendor Accounts Payable.
+
+---
+
+## Customer Account Ledger
+
+The unified chronological and reconstructable financial view for one Customer. It
+presents authoritative charges, Payments, Credits, Refunds, Adjustments, Deposits,
+Late-payment Charges, applications, reversals, outstanding obligations, and current
+balances without replacing or duplicating those source records.
 
 ---
 
@@ -4664,10 +4979,16 @@ Excluded concepts include:
 
 - Chart of Accounts
 - Journal Entries
+- General vendor Accounts Payable
 - Trial Balance
 - Profit and Loss
 - Balance Sheet
 - Formal accrual accounting
+- Revenue recognition accounting
+- Bank reconciliation accounting
+
+Customer Credit remains a customer-related liability concept and must not be renamed
+or treated as ordinary vendor Accounts Payable.
 
 Financial data may later integrate with a separate accounting system.
 
@@ -4876,16 +5197,22 @@ UNIT VACANT
 
 # 93. Core Financial Model Summary
 
-The financial model intentionally separates five concepts.
+The financial model intentionally separates its authoritative obligations, money,
+applications, acknowledgments, liabilities, and unified Customer view.
 
 ```text id="lf713m"
 RECEIVABLES
     │
-    └── Invoice
+    ├── Invoice
+    └── Separate Late-payment Charge
 
 CASH RECEIVED
     │
     └── Payment
+
+CUSTOMER ACKNOWLEDGMENT
+    │
+    └── Receipt
 
 APPLICATION OF CASH
     │
@@ -4898,11 +5225,16 @@ CUSTOMER MONEY AVAILABLE
 MONEY HELD AS LIABILITY
     │
     └── Deposit
+
+UNIFIED CUSTOMER VIEW
+    │
+    └── Customer Account Ledger projection
 ```
 
-These concepts must remain distinct throughout the system.
+These concepts must remain distinct throughout the system. The Customer Account Ledger
+reconstructs and presents them but never replaces their authoritative source records.
 
-A single monetary receipt must always have a clearly identifiable business purpose and history.
+Every Payment must always have a clearly identifiable business purpose and history.
 
 ---
 
@@ -4925,7 +5257,9 @@ The following information must remain historically reconstructable:
 - Utility Readings
 - Invoices
 - Payments
+- Receipts and reprint history
 - Payment Allocations
+- Late-payment Charge decisions, obligations, applications, and balances
 - Credits
 - Deposits
 - Reversals
@@ -4963,6 +5297,10 @@ Examples include:
 
 - Current Customer Credit balance
 - Invoice Outstanding Balance
+- Invoice-line or obligation Outstanding Balance
+- Late-payment Charge Outstanding Balance
+- Customer Outstanding Balance
+- Customer Account Ledger view
 - Total Lease Outstanding Balance
 - Current Security Deposit Outstanding
 - Utility Consumption
@@ -4999,6 +5337,12 @@ Voided Invoice
 Reversed Payment
         ≠ deleted Payment
 
+Corrected Late-payment Charge
+        ≠ deleted original Late-payment Charge
+
+Reprinted Receipt
+        ≠ new Payment or new Receipt identity
+
 Moved-out Occupancy
         ≠ deleted Occupancy
 ```
@@ -5024,6 +5368,8 @@ Examples include:
 - Reading ID
 - Invoice ID
 - Payment ID
+- Late-payment Charge ID
+- Receipt Number or stable Receipt ID
 - Settlement ID
 
 Human-readable identifiers such as Unit Number or Meter Serial Number must not be assumed to replace stable system identity.
@@ -5166,6 +5512,22 @@ its financial lifecycle.
     automatically terminates the Lease or ends Occupancy.
 47. Applicable configured recurring Services follow the same Initial Invoice period
     structure and seven-calendar-day Due Date as Initial Rent without overlap.
+48. A positive confirmed Late-payment Charge is a separate immediately payable
+    obligation linked to exactly one Customer and one source Invoice; it is not an
+    Invoice, Invoice Category, Miscellaneous Charge, source-Invoice line, or principal
+    modification.
+49. Payment Allocation preserves target-obligation and sufficient Invoice-line detail;
+    within an undesignated selected mixed Rent Invoice, the confirmed proposal applies
+    Rent first and then recurring-Service lines.
+50. Existing FIFO proposal rules continue to order multiple applicable Invoices before
+    the within-Invoice allocation proposal is applied.
+51. Receipt is the numbered Customer acknowledgment of Payment and does not replace or
+    duplicate the Payment.
+52. Each Customer has a unified reconstructable Customer Account Ledger view whose
+    underlying financial events remain authoritative.
+53. Customer Credit is distinct from unallocated Payment, Deposit, Invoice balance,
+    Late-payment Charge, and ordinary vendor Accounts Payable.
+54. General Ledger accounting and general vendor Accounts Payable remain outside scope.
 
 ---
 
@@ -5173,9 +5535,9 @@ its financial lifecycle.
 
 This Domain Model defines the core concepts and invariants.
 `002_BUSINESS_RULES.md` defines approved operational policy, preserves resolved
-Owner-decision identifiers, and records OOD-BR-007 and OOD-BR-008 as unresolved.
-Implementation and product details remain assigned to the later numbered
-specifications.
+Owner-decision identifiers, and confirms that no Owner decision remains unresolved in
+these two documents. Implementation and product details remain assigned to the later
+numbered specifications.
 
 ## `002_BUSINESS_RULES.md`
 
@@ -5192,6 +5554,10 @@ Defines rules such as:
 - invoice generation rules
 - due-date rules
 - overdue detection, one-time late-payment calculation, management decision, and audit
+- separate Late-payment Charge creation, immediate payability, application, and balance
+- Payment Allocation proposal, line/obligation attribution, and confirmation
+- Receipt identity, issuance, and reprint rules
+- Customer Account Ledger reconstruction and reconciliation rules
 - 20-day Rent nonpayment Notice and 30-day Serious Nonpayment Default rules
 - Initial recurring-Service periods and duplicate-period prevention
 - utility calculation rules
@@ -5225,6 +5591,9 @@ Defines:
 - constraints
 - indexes
 - historical data representation
+- sufficient obligation/line allocation persistence
+- Receipt source-link and reprint-history persistence or safe derivation
+- Customer Account Ledger derivation or optional materialization
 - monetary storage
 - date/time storage
 - audit persistence
@@ -5377,6 +5746,10 @@ This Domain Model is considered complete for the initial architecture phase when
 - How are Utility Meters and Utility Readings historically preserved?
 - What constitutes an Invoice?
 - What constitutes a Payment?
+- What distinguishes a Receipt from Payment?
+- What constitutes a separate Late-payment Charge obligation?
+- How is mixed-Invoice value attributed to determine remaining Rent?
+- How does the Customer Account Ledger provide a unified view without replacing source records?
 - How is Customer Credit different from Deposit?
 - How is a Lease financially closed?
 - Which historical information must remain auditable?
@@ -5384,10 +5757,9 @@ This Domain Model is considered complete for the initial architecture phase when
 - Which implementation concerns are intentionally deferred?
 
 Detailed operational formulas and authorization conditions are defined in
-`002_BUSINESS_RULES.md`. OOD-BR-007 and OOD-BR-008 remain unresolved and prohibit
-inventing late-charge representation or mixed-Invoice line attribution. Product and
-implementation concerns remain assigned to the applicable later numbered
-specifications.
+`002_BUSINESS_RULES.md`. There are currently no unresolved Owner decisions in these two
+authoritative documents. Product and implementation concerns remain assigned to the
+applicable later numbered specifications.
 
 ---
 
@@ -5414,13 +5786,23 @@ Utility consumption is based on historically preserved Electricity and Water met
 
 Billing creates receivables.
 
+A positive confirmed Late-payment Charge creates a separate immediately payable
+obligation without changing or reissuing its source Invoice.
+
 Payments represent money received.
 
-Payment Allocations determine how that money is applied.
+Receipts acknowledge those Payments without creating another receipt of money.
+
+Payment Allocations determine how that money is applied, including sufficient
+line/obligation detail to preserve remaining Rent and Service balances.
 
 Overpayments and Advance Payments may create Customer Credit.
 
 Deposits and Customer Credit are distinct financial concepts.
+
+The Customer Account Ledger provides one reconstructable Customer financial view while
+Invoices, Late-payment Charges, Payments, Allocations, Credits, Refunds, Adjustments,
+Deposits, reversals, and Final Settlement remain authoritative.
 
 Move-out ends physical occupancy, while Lease termination ends the contractual lifecycle.
 

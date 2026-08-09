@@ -628,8 +628,8 @@ Received
 
 Any Security Deposit received during Reservation remains the same Security Deposit when the resulting Lease is signed and move-in occurs.
 
-The receipt of money for a Deposit must be linked explicitly from the Payment to
-the applicable Deposit liability and Deposit balance. This Deposit-receipt link is
+Money received for a Deposit must be linked explicitly from the Payment to the
+applicable Deposit liability and Deposit balance. This Payment-to-Deposit link is
 not an Invoice Payment Allocation and does not require a Deposit Invoice.
 
 The system must not:
@@ -2315,6 +2315,12 @@ positive outstanding balance, its status shall become:
 
 - PARTIALLY_PAID
 
+For an Invoice with multiple lines or obligation categories, confirmed applications
+reduce the identified underlying balances and roll up to the Invoice outstanding
+balance. For example, applying $300 to the Rent line of a $500 Rent plus $10 recurring
+Service Invoice leaves $200 Rent and $10 Service, so the Invoice outstanding balance is
+$210 and the status is PARTIALLY_PAID.
+
 ---
 
 ### BR-INV-013 — Fully Paid
@@ -2324,6 +2330,10 @@ Final Settlement Deposit applications reduce the outstanding balance to exactly
 zero, the Invoice status shall become:
 
 - PAID
+
+The Invoice may become PAID only when all of its underlying line or obligation balances
+roll up to zero. A separate Late-payment Charge balance does not affect the source
+Invoice's status.
 
 ---
 
@@ -2839,9 +2849,11 @@ Management must not increase the contractual percentage or approved amount above
 10% default calculation. Ordinary staff must not arbitrarily change the percentage
 or amount.
 
-The decision preserves at minimum the source Invoice, Due Date, assessment balance,
-default percentage, actual approved percentage, calculated default amount, actual
-approved amount, authorized actor, authorization date/time, and reason.
+The decision preserves at minimum the source Customer, source Invoice, source Invoice
+Due Date, remaining overdue balance at assessment, default percentage, actual approved
+percentage, calculated default amount, actual approved amount, decision outcome,
+authorized management actor, reason, assessment timestamp, and confirmation or waiver
+timestamp.
 
 ---
 
@@ -2869,12 +2881,72 @@ source Invoice. A positive approved amount must remain an explicit linked audita
 financial charge and must not be hidden in an undifferentiated entry.
 
 The source Invoice's original principal, lines, and issued amount must not be silently
-altered to incorporate the charge. A waiver records the final decision and audit
-history without creating a positive charge. The exact representation of a positive
-approved charge within the existing Invoice/category model and its Due Date source are
-not approved by the current Owner decisions and remain governed by OOD-BR-007. The
-system must not invent a category, standalone Invoice, line treatment, or linked-balance
-effect to post that receivable before OOD-BR-007 is resolved.
+altered to incorporate the charge. A confirmed positive amount creates the separate
+Late-payment Charge obligation defined by BR-LATE-001. It does not create another
+Invoice, Invoice Category, Miscellaneous Charge, or historical source-Invoice line. A
+waiver records the final decision and audit history without creating a receivable.
+
+---
+
+### BR-LATE-001 — Positive Late-payment Charge Obligation
+
+Authorized management confirmation of a positive default or reduced amount creates
+exactly one separate Late-payment Charge obligation. It belongs to exactly one Customer
+and links to exactly one source overdue Invoice and its final late-payment decision.
+The obligation Customer must be the source Invoice Customer.
+
+The obligation is part of the Customer's overall outstanding balance but is not an
+Invoice and does not affect the source Invoice's principal, lines, outstanding balance,
+or derived status.
+
+---
+
+### BR-LATE-002 — Immediate Payability
+
+A positive Late-payment Charge becomes payable immediately at its management
+confirmation timestamp. It requires no new Invoice and no Invoice Due Date. Its
+confirmation timestamp is the date and time the obligation becomes payable.
+
+---
+
+### BR-LATE-003 — Waived and Reduced Decisions
+
+A WAIVED or equivalent final outcome preserves the proposal and waiver decision and
+creates no positive receivable. A REDUCED or equivalent final outcome creates only the
+approved reduced Late-payment Charge amount. The waived or reduced difference must
+never be added later for that source Invoice.
+
+---
+
+### BR-LATE-004 — Remaining Balance and Satisfaction
+
+The original confirmed Late-payment Charge amount remains historically unchanged. Its
+remaining outstanding balance equals that original amount less valid Payment
+Allocations and Customer Credit applications, adjusted only by explicit authorized
+reversals or corrections. The remaining balance cannot become negative.
+
+A zero remaining balance means the obligation is fully satisfied. No additional manual
+status lifecycle is required, and no Late-payment Charge balance affects the source
+Invoice's balance or status.
+
+---
+
+### BR-LATE-005 — Explicit Correction and Reversal
+
+If a confirmed Late-payment Charge later requires correction or reversal, the original
+decision and obligation remain permanent. An authorized linked correction or reversal
+records the reason, actor, date/time, previous amount or balance, resulting amount or
+balance, and all affected applications. Silent deletion or rewriting is prohibited.
+Correction must obey the approved maximum and final-decision rules and must not be used
+to supplement a reduced charge or replace a waived decision.
+
+---
+
+### BR-LATE-006 — No Recursive Charge
+
+A proposed, confirmed, reduced, waived, partially satisfied, fully satisfied, corrected,
+or reversed Late-payment Charge must never itself be assessed for another late-payment
+charge.
 
 # 19. Payment Rules
 
@@ -2920,10 +2992,10 @@ A Payment itself does not determine which Invoice has been paid.
 
 An Invoice balance may be settled through authorized Payment Allocations, Customer
 Credit applications, or Final Settlement Deposit applications under the applicable
-rules. Receipt of a Payment settles no Invoice until value from that Payment is
+rules. Recording a Payment settles no Invoice until value from that Payment is
 explicitly allocated.
 
-Payment receipt, Payment Allocation, Payment Reversal, Customer Credit, and
+Payment, Receipt, Payment Allocation, Payment Reversal, Customer Credit, and
 Refund are separate financial concepts and events.
 
 ---
@@ -2971,9 +3043,9 @@ remain permanent.
 
 ## 19.4 Payment Status
 
-### BR-PAY-008 — Payment Receipt Statuses
+### BR-PAY-008 — Payment Record Statuses
 
-Payment receipt status may be only:
+Payment record status may be only:
 
 - RECEIVED
 - REVERSED
@@ -2995,14 +3067,14 @@ A newly received Payment shall initially have the status:
 
 When active Allocations use part, but not all, of a RECEIVED Payment's available
 USD accounting value, the Payment is partially allocated as a derived condition.
-Its receipt status remains RECEIVED.
+Its Payment record status remains RECEIVED.
 
 ---
 
 ### BR-PAY-011 — Fully Allocated
 
 When active Allocations use the Payment's entire available USD accounting value,
-the Payment is fully allocated as a derived condition. Its receipt status remains
+the Payment is fully allocated as a derived condition. Its Payment record status remains
 RECEIVED.
 
 No remaining unallocated balance shall exist.
@@ -3037,7 +3109,7 @@ status.
 
 ### BR-PAY-014 — Payment Lifecycle and Allocation Condition
 
-The permitted receipt lifecycle is:
+The permitted Payment lifecycle is:
 
 ```text
 RECEIVED -> REVERSED
@@ -3046,7 +3118,7 @@ REVERSED -> terminal
 
 Posting or reversing Allocations changes the derived allocated and unallocated
 amounts without changing RECEIVED status. A Refund follows its source-specific
-rules and does not require falsifying the original receipt lifecycle.
+rules and does not require falsifying the original Payment lifecycle.
 
 ---
 
@@ -3093,7 +3165,8 @@ These values constitute the official financial record.
 Every significant Payment event shall be fully auditable, including:
 
 - Payment creation
-- receipt-status changes
+- Payment record-status changes
+- Receipt issuance and reprint
 - Allocation changes
 - Reversal
 - Refund
@@ -3102,12 +3175,74 @@ Historical audit information shall never be silently removed.
 
 ---
 
+## 19.7 Receipt Rules
+
+### BR-RECEIPT-001 — Receipt Acknowledges Payment
+
+A Receipt is the numbered customer-facing acknowledgment that money was received under
+one existing Payment. Receipt does not replace Payment, create Payment, settle an
+obligation independently, or serve as the authoritative receipt-of-money event.
+
+---
+
+### BR-RECEIPT-002 — Receipt Identity and Source
+
+Every Receipt has a unique Receipt Number and identifies exactly one source Payment and
+that Payment's payer Customer. One Payment normally produces one business Receipt.
+Persistence of safely derived display fields is decided by `004_DATABASE_MODEL.md`.
+
+---
+
+### BR-RECEIPT-003 — Customer-facing Content
+
+A Receipt may present, as applicable, its Receipt Number, Payment, Customer, Payment
+Date, Payment Method, received currency and amount, USD accounting value, KHR conversion
+details, confirmed Invoice-line or other obligation applications, Late-payment Charge
+amount paid, Deposit purpose, allocation/application breakdown, issuer, and issue time.
+
+Every presented amount and application must be traceable to the immutable Payment and
+linked authoritative Allocation, Credit-application, Deposit, or obligation records.
+
+---
+
+### BR-RECEIPT-004 — Reprint Is Not New Money
+
+Reprinting a Receipt preserves the same original Receipt Number, source Payment,
+Customer, and business identity. A reprint must not create a second Payment, duplicate
+the received amount, or represent another receipt of money. The reprint event, actor,
+and date/time remain auditable.
+
+---
+
+### BR-RECEIPT-005 — Receipt History
+
+Receipt issuance and reprint history must remain reconstructable. Correction of a
+Payment or Allocation uses the applicable explicit correction or reversal process and
+must not silently rewrite or delete the original Receipt history.
+
+---
+
+### BR-RECEIPT-006 — Refund Remains Separate
+
+A Receipt acknowledges inbound money. A Refund remains a distinct outbound financial
+event under BR-REFUND-001 and must not be represented as a negative Payment or as
+deletion or rewriting of the original Payment or Receipt. This rule creates no separate
+Refund-receipt document.
+
+---
+
 # 20. Payment Allocation Rules
 
 ## BR-PAY-019 — Allocation Is a Separate Financial Event
 
-A Payment Allocation links part of one RECEIVED Payment's USD accounting value
-to one issued Customer Invoice. It does not rewrite either source record.
+A Payment Allocation links part of one RECEIVED Payment's USD accounting value to one
+or more identified obligations belonging to the applicable Customer. A target may be
+an issued Customer Invoice with sufficient Invoice-line or obligation-category detail,
+or a separate confirmed Late-payment Charge. It does not rewrite any source record.
+
+A Deposit receipt remains the separate Payment-to-Deposit link in BR-DEP-005 and is not
+silently converted into an ordinary Payment Allocation. Customer Credit, unallocated
+Payment, Refund, and Deposit balances likewise remain distinct.
 
 ---
 
@@ -3131,9 +3266,10 @@ rules.
 
 The default proposal applies value to the oldest Due Date first and continues
 through applicable outstanding Invoices until the Payment is exhausted or all
-applicable obligations are satisfied.
+applicable outstanding Invoices are satisfied.
 
-No category preference, such as Rent before Electricity, is permitted.
+No line-category preference may reorder the selected Invoices. After an Invoice is
+selected, the within-Invoice rules in BR-PAY-036 apply.
 
 ---
 
@@ -3146,9 +3282,10 @@ and then by a stable Invoice sequence or identifier.
 
 ## BR-PAY-024 — Customer-designated Allocation
 
-When the Customer explicitly identifies an Invoice, authorized staff may post the
-Payment to that valid designated Invoice instead of the default FIFO proposal.
-The designation and posted Allocation must be preserved.
+When the Customer explicitly identifies a valid Invoice, Invoice line or obligation
+category, or separate Late-payment Charge, authorized staff may post the Payment to
+that valid designated target instead of the applicable default proposal. The Customer
+designation and posted Allocation must be preserved.
 
 ---
 
@@ -3184,24 +3321,26 @@ remove or change the Signer's approved joint Lease responsibility.
 An Allocation must be positive and must not exceed either:
 
 - the Payment's remaining unallocated USD accounting value; or
-- the target Invoice's current outstanding balance.
+- the identified target obligation's current outstanding balance.
 
 ---
 
-## BR-PAY-028 — No Negative Invoice Balance
+## BR-PAY-028 — No Negative Obligation Balance
 
-Posting an Allocation must never cause an Invoice outstanding balance to become
-negative. Payment value beyond applicable outstanding balances remains
-unallocated excess.
+Posting an Allocation must never cause an Invoice-line, Invoice, Late-payment Charge,
+or other target obligation balance to become negative. Payment value beyond applicable
+outstanding balances remains unallocated excess.
 
 ---
 
 ## BR-PAY-029 — Allocation History and Reversal
 
-Every posted Allocation permanently preserves its Payment, Invoice, amount,
-posting time, and authorized user. A correction uses an explicit linked
-Allocation Reversal and recomputes affected balances and statuses; it never
-deletes or overwrites the original Allocation.
+Every posted Allocation permanently preserves its Payment, target Invoice or other
+obligation, Invoice-line or obligation category where applicable, allocated amount,
+Customer designation if any, proposed default if any, posting time, and authorized
+user confirmation. A correction uses an explicit linked Allocation Reversal and
+recomputes affected line, obligation, Invoice, and Customer balances and derived
+statuses; it never deletes or overwrites the original Allocation.
 
 ---
 
@@ -3263,6 +3402,75 @@ money.
 
 ---
 
+## BR-PAY-036 — Within-Invoice Default Proposal
+
+After the applicable Invoice is selected under BR-PAY-021 through BR-PAY-025, if that
+Invoice contains Rent and recurring-Service lines and the Customer did not designate
+the within-Invoice target, the system proposes value in this order:
+
+1. Rent line or obligation;
+2. then recurring-Service lines on that same Invoice.
+
+This is a proposal only. Authorized staff must confirm it before posting under
+BR-PAY-020. The system must not silently post the proposal.
+
+Example: for $500 Rent plus $10 Trash Collection, an unspecified $300 Payment produces
+a proposal of $300 to Rent, leaving $200 Rent and $10 Trash Collection. An unspecified
+$505 Payment proposes $500 to Rent and $5 to Trash Collection, leaving Rent fully paid
+and $5 Service outstanding. A $510 Payment proposes full satisfaction of both lines.
+
+---
+
+## BR-PAY-037 — Customer-designated Within-Invoice Allocation
+
+When the Customer clearly identifies a valid line or obligation category within a
+mixed Invoice, authorized staff may confirm that designation instead of the default
+within-Invoice proposal. The designation, confirmed target, amount, actor, and date/time
+must be preserved.
+
+---
+
+## BR-PAY-038 — Between-Invoice FIFO Remains First
+
+When the Customer has not designated an Invoice, the system first proposes applicable
+Invoices by oldest Due Date and the existing deterministic tie-breakers in BR-PAY-022
+and BR-PAY-023. BR-PAY-036 then orders lines only within each selected mixed Invoice.
+Rent-first within one Invoice must not reorder multiple Invoices.
+
+---
+
+## BR-PAY-039 — Invoice Rollup and Rent Determination
+
+Confirmed Payment Allocations reduce their identified Invoice-line or obligation
+balances. Those remaining balances roll up exactly to the Invoice outstanding balance
+and its derived status under BR-INV-012 and BR-INV-013.
+
+The remaining Rent obligation after valid confirmed Payment Allocations and Customer
+Credit applications—not the total mixed-Invoice balance—determines Rent nonpayment
+under BR-LEASE-027 through BR-LEASE-030. An unpaid Service-only balance must not be
+misclassified as unpaid Rent.
+
+---
+
+## BR-PAY-040 — Late-payment Charge Allocation
+
+Authorized staff may allocate Payment value directly to a positive confirmed
+Late-payment Charge. The Allocation reduces only that separate obligation's remaining
+balance and does not rewrite or increase its original amount or the source Invoice.
+
+If a Customer designates an amount for the Late-payment Charge, apply no more than its
+remaining balance. Any remaining Payment value follows the Customer's other valid
+designation or the normal confirmed Allocation rules and remains unallocated until
+posted or otherwise disposed under an approved rule.
+
+Example: if the source Invoice remains $310 outstanding and its separate Late-payment
+Charge is $31, a Customer-designated $100 Payment to the Late-payment Charge applies $31
+there and leaves $69 for another valid confirmed Allocation or disposition. The source
+Invoice remains $310 outstanding until value is separately allocated to it. A Receipt
+may show both the $100 Payment and the confirmed $31 application.
+
+---
+
 # 21. Customer Credit Rules
 
 ## BR-CREDIT-001 — USD Accounting Balance
@@ -3294,25 +3502,33 @@ represented as, pooled with, or converted silently into either Deposit type.
 
 ---
 
-## BR-CREDIT-005 — Future Valid Invoice Application
+## BR-CREDIT-005 — Valid Obligation Application
 
-Authorized Customer Credit may be applied only to a valid issued Invoice. It
-must not create or accelerate an Invoice solely to consume the Credit.
+Authorized Customer Credit may be applied only to a valid outstanding obligation,
+including an issued Invoice or a positive confirmed Late-payment Charge belonging to
+the same Customer. It must not create or accelerate an Invoice solely to consume the
+Credit.
 
 ---
 
 ## BR-CREDIT-006 — Authorized Application
 
 A Customer Credit application is a separate authorized financial event.
-It identifies the Credit source, target Invoice, amount, actor, and time.
+It identifies the Credit source, target Invoice or other obligation, sufficient
+Invoice-line or obligation-category detail where applicable, amount, Customer
+designation if any, proposed default if any, actor confirmation, and time.
+
+For a selected mixed Rent Invoice without Customer designation, the application follows
+the Rent-first then recurring-Service proposal and authorized confirmation requirements
+in BR-PAY-036 through BR-PAY-039.
 
 ---
 
 ## BR-CREDIT-007 — Application Limits
 
 A Credit application must be positive and cannot exceed either the available
-Customer Credit balance or the target Invoice's outstanding balance. It must not
-produce a negative balance.
+Customer Credit balance or the target obligation's outstanding balance. It must not
+produce a negative Invoice-line, Invoice, Late-payment Charge, or Credit balance.
 
 ---
 
@@ -3334,8 +3550,8 @@ explicit linked reversal and recomputes affected balances and statuses.
 ## BR-CREDIT-010 — KHR-origin Source Preservation
 
 When Credit originates from a KHR Payment, preserve the original KHR amount,
-exact receipt exchange rate, USD accounting value, and source relationship. The
-Credit balance itself remains USD.
+exact Payment-confirmation exchange rate, USD accounting value, and source
+relationship. The Credit balance itself remains USD.
 
 ---
 
@@ -3351,6 +3567,97 @@ value, Refund KHR value, Refund exchange rate, and source linkage.
 
 Creation, application, reversal, Refund, remaining balance, and source values of
 Customer Credit must remain permanently reconstructable and auditable.
+
+---
+
+## BR-CREDIT-013 — Not Vendor Accounts Payable
+
+Customer Credit retained for a Customer remains a distinct customer-related liability
+concept. It must not be called or modeled as ordinary vendor Accounts Payable. General
+supplier and vendor Accounts Payable is outside this application's scope.
+
+---
+
+## BR-LEDGER-001 — One Unified Customer View
+
+Each Customer must have a unified Customer Account Ledger view that presents the
+Customer's complete chronological financial history and current financial position.
+It must be reconstructable from the Customer's authoritative underlying records.
+
+---
+
+## BR-LEDGER-002 — Underlying Records Remain Authoritative
+
+The Customer Account Ledger does not replace, merge, or rewrite Invoice lines,
+Invoices, Payments, Payment Allocations, Customer Credit, Credit applications,
+Adjustments, Refunds, Security Deposits, Pet Deposits, Deposit applications or
+dispositions, Late-payment Charges, Payment or Allocation Reversals, or Final
+Settlement records.
+
+Whether `004_DATABASE_MODEL.md` derives the view directly or uses a reconciled
+materialized structure is an implementation choice. A Ledger representation must never
+become a second conflicting source of financial truth.
+
+---
+
+## BR-LEDGER-003 — Complete Financial Position
+
+The Ledger must make it possible to determine, for one Customer:
+
+- amounts charged and their source obligations;
+- Payments received and confirmed applications;
+- Customer Credit created, available, applied, reversed, or refunded;
+- Refunds and Adjustments;
+- Security Deposit and Pet Deposit amounts received, held, applied, disposed, or refunded;
+- Late-payment Charges and their remaining balances;
+- obligations that remain unpaid and their composition;
+- total current amount the Customer owes; and
+- available Customer Credit.
+
+Deposits remain separately identifiable liabilities and must not be pooled into ordinary
+Customer Credit or netted away by the Ledger view.
+
+---
+
+## BR-LEDGER-004 — Business-facing Language
+
+Customer-facing and staff-facing Ledger presentation uses operational terms such as
+Amount charged, Payment received, Credit, Refund, Outstanding balance, and Customer
+Credit. It must not require formal debit/credit bookkeeping terminology and must not
+introduce a Chart of Accounts, journal-entry posting, General Ledger, or vendor Accounts
+Payable workflow.
+
+---
+
+## BR-LEDGER-005 — Chronology and Reconstruction
+
+Every displayed event must retain or derive its event date/time, source record,
+Customer, amount, direction or business effect, and resulting position. Corrections and
+reversals remain separate events so the historical and current positions can be
+reconstructed without silent deletion or rewriting.
+
+---
+
+## BR-LEDGER-006 — Balance Composition
+
+The Customer's total outstanding amount includes valid Invoice outstanding balances and
+separate positive Late-payment Charge outstanding balances. Customer Credit,
+unallocated Payment, Security Deposit, and Pet Deposit remain distinct balances and
+must not be silently treated as reductions of an obligation without an authorized
+application.
+
+---
+
+## BR-LEDGER-007 — Illustrative Ledger
+
+For an Invoice with $500 Rent and $10 Trash Collection, an authorized $300 Rent
+Allocation leaves $200 Rent and $10 Service outstanding. If authorized management then
+confirms a $21 Late-payment Charge, the Customer's total outstanding amount is $231
+while the Invoice remains $210 outstanding. A later $231 Payment may be allocated as
+$200 Rent, $10 Trash Collection, and $21 Late-payment Charge, resulting in zero total
+outstanding without changing the original Invoice or Late-payment Charge amounts.
+
+This example does not require physical duplication of every amount in a Ledger table.
 
 ---
 
@@ -3391,7 +3698,7 @@ an explicit Refund.
 
 If unallocated excess from a KHR Payment is refunded before becoming Customer
 Credit, refund the corresponding original KHR excess. Preserve its original USD
-accounting value and receipt exchange rate.
+accounting value and Payment-confirmation exchange rate.
 
 ---
 
@@ -3557,10 +3864,11 @@ For an applicable Rent obligation, calendar days overdue are counted after its D
 Date in `Asia/Phnom_Penh`. The Due Date itself is day zero and remains timely under
 BR-INV-051; the following calendar day is day one overdue.
 
-When one Invoice contains both Rent and recurring-Service lines and is only partially
-satisfied, OOD-BR-008 governs the unresolved attribution of that value. The system must
-not infer Rent-first, Service-first, proportional, or other line attribution for the
-20-day and 30-day process without Owner approval.
+When one Invoice contains both Rent and recurring-Service lines, the day count and
+nonpayment process use the remaining Rent line or obligation balance after valid
+confirmed Payment Allocations and Customer Credit applications under BR-PAY-036 through
+BR-PAY-039. The whole mixed-Invoice balance is not a substitute for the remaining Rent
+balance.
 
 Example:
 
@@ -3589,7 +3897,7 @@ preserves at minimum, where applicable:
 - Lease;
 - applicable overdue Rent Invoice or obligation;
 - Due Date;
-- outstanding amount at Notice time;
+- remaining Rent amount at Notice time;
 - Notice issue date/time;
 - issuer;
 - Notice type;
@@ -3621,6 +3929,9 @@ BR-LEASE-005, BR-LEASE-023, BR-LEASE-024, and BR-LEASE-025. Until termination an
 physical Move-out actually occur, the Lease remains in its appropriate existing
 status, normally SIGNED, and the Unit remains OCCUPIED while the Customer still
 physically occupies it.
+
+A remaining recurring-Service balance alone does not satisfy the Rent-balance condition
+for this rule.
 
 ---
 
@@ -3885,9 +4196,9 @@ finalization prerequisites are satisfied.
 ## BR-SETTLE-002 — Settlement Inputs
 
 Final Settlement must identify the Lease, responsible Customers, actual
-termination and Move-out dates, outstanding Invoices, Customer Credit, Security
-Deposit, Pet Deposit, final Utility handling, Adjustments, and other valid linked
-financial events applicable to that Lease.
+termination and Move-out dates, outstanding Invoices, applicable outstanding
+Late-payment Charges, Customer Credit, Security Deposit, Pet Deposit, final Utility
+handling, Adjustments, and other valid linked financial events applicable to that Lease.
 
 ---
 
@@ -4198,7 +4509,7 @@ applicable.
 
 ---
 
-## BR-AUDIT-006 — Invoice and Adjustment Audit
+## BR-AUDIT-006 — Invoice, Adjustment, and Late-payment Audit
 
 Invoice creation, DRAFT correction, issuance, line sources, status changes,
 Adjustments, Due Date source, and VOID events must preserve original and resulting
@@ -4206,17 +4517,23 @@ financial facts and all linkages.
 
 Late-payment proposals and final decisions must preserve the source Invoice and its
 Due Date, assessment balance, default and actual percentages, default and actual
-amounts, management actor, authorization date/time, reason, any positive-charge
-financial record after OOD-BR-007 is resolved, and the final confirmed, reduced, or
-waived outcome.
+amounts, management actor, reason, assessment timestamp, confirmation or waiver
+timestamp, final confirmed, reduced, or waived outcome, and any resulting positive
+Late-payment Charge obligation.
+
+The obligation's original amount, remaining balance, Payment and Customer Credit
+application history, satisfaction, correction, and reversal history must remain linked
+to the decision, Customer, and source Invoice.
 
 ---
 
 ## BR-AUDIT-007 — Payment and Allocation Audit
 
 Payment confirmation, payer intent, currency conversion, Allocation proposal and
-posting, Allocation Reversal, Payment Reversal, Customer Credit recognition and
-application, and Refund must remain separately traceable.
+posting, target obligation and line/category breakdown, Customer designation,
+authorized confirmation, Allocation Reversal, Payment Reversal, Customer Credit
+recognition and application, Receipt issuance and reprint, and Refund must remain
+separately traceable.
 
 ---
 
@@ -4241,6 +4558,16 @@ post-closure correction.
 
 Audit history is permanent. It must not be physically deleted, silently
 rewritten, or replaced by only the latest value.
+
+---
+
+## BR-AUDIT-011 — Customer Account Ledger Reconciliation
+
+The Customer Account Ledger must be reconstructable and reconcilable to its underlying
+authoritative financial events. Every displayed charge, Payment, Credit, Refund,
+Adjustment, Deposit event, Late-payment Charge, application, reversal, and balance must
+retain or derive its source linkage. A derived or materialized Ledger representation
+must not conceal disagreement with the authoritative records.
 
 ---
 
@@ -4287,7 +4614,7 @@ applicable authorization. Elapsed time alone grants no termination authority.
 
 ---
 
-## BR-AUTH-006 — Invoice Authorization
+## BR-AUTH-006 — Invoice and Late-payment Authorization
 
 Manual or exceptional Invoice issuance, issued-Invoice Adjustment, Due Date
 recording for a non-recurring obligation, dependency correction, and VOID require
@@ -4295,7 +4622,8 @@ authorization and reason as applicable.
 
 Confirming, reducing, or waiving a proposed late-payment charge is restricted to
 authorized management. A positive approved charge requires the linked explicit
-financial record in BR-INV-055; ordinary staff cannot post or vary it arbitrarily.
+Late-payment Charge obligation in BR-INV-055 and BR-LATE-001; ordinary staff cannot
+post, vary, correct, or reverse it arbitrarily.
 
 ---
 
@@ -4303,7 +4631,9 @@ financial record in BR-INV-055; ordinary staff cannot post or vary it arbitraril
 
 Payment confirmation or correction, manual Allocation posting, Allocation
 Reversal, and Payment Reversal require authorization and audit. A deterministic
-proposal is not authorization to post.
+proposal is not authorization to post. This includes confirmation of Customer-
+designated targets, between-Invoice FIFO proposals, within-Invoice Rent-first proposals,
+Invoice-line or obligation detail, and Late-payment Charge applications.
 
 ---
 
@@ -4369,39 +4699,29 @@ Services follow the same day-1-through-20/day-21-or-later Initial Invoice period
 Rent, share the Initial Rent Invoice Due Date, and resume normal billing without
 duplicate or overlapping periods.
 
-## OPEN OWNER DECISION: OOD-BR-007 — Positive Late-payment Charge Representation
+## Resolved: OOD-BR-007 — Positive Late-payment Charge Representation
 
-**Question:** After authorized management confirms a positive late-payment amount,
-how is that charge represented within the existing Invoice model, and what approved
-source establishes its Due Date?
+The Owner resolved this item under BR-INV-055 and BR-LATE-001 through BR-LATE-006. A
+confirmed positive amount creates a separate immediately payable Late-payment Charge
+obligation linked to exactly one Customer and one source overdue Invoice. It is payable
+at management confirmation without another Invoice or Due Date and is not an Invoice,
+Invoice Category, Miscellaneous Charge, source-Invoice line, or source-principal
+modification. A waiver creates no receivable, and a reduction creates only the approved
+reduced obligation.
 
-**Why needed:** The Owner approved an explicit auditable financial charge linked to
-the source Invoice and prohibited silent rewriting of source principal, but did not
-approve a new Invoice category, use of Miscellaneous Charge, a standalone Invoice,
-an added line, or another linked financial effect. Those options have different
-financial and Due Date consequences.
+## Resolved: OOD-BR-008 — Mixed Rent-Invoice Partial-value Attribution
 
-**Current treatment:** Preserve the final decision and complete audit history under
-BR-INV-053 through BR-INV-055, but do not post a positive receivable through an
-invented representation. A waiver remains a final audited decision and creates no
-positive charge.
+The Owner resolved this item under BR-PAY-019 through BR-PAY-040 and BR-CREDIT-005
+through BR-CREDIT-007. Payment Allocations and Customer Credit applications preserve
+sufficient line or obligation detail. A valid Customer designation may control the
+application. Without designation, the system first retains the existing FIFO proposal
+between applicable Invoices and then proposes Rent first followed by recurring-Service
+lines within each selected mixed Invoice. Authorized staff must confirm before posting.
+Remaining Rent after confirmed applications controls the 20-day and 30-day Rent
+nonpayment procedures.
 
-## OPEN OWNER DECISION: OOD-BR-008 — Mixed Rent-Invoice Partial-value Attribution
-
-**Question:** When an Invoice contains both Rent and recurring-Service lines and is
-partially satisfied, how is applied Payment or Customer Credit value attributed among
-those lines for purposes of determining whether the Rent obligation remains unpaid at
-the 20-day and 30-day thresholds?
-
-**Why needed:** Applications currently target the Invoice, while BR-LEASE-027 and
-BR-LEASE-028 depend specifically on a remaining Rent obligation. Rent-first,
-Service-first, proportional, explicit line allocation, and whole-Invoice treatment
-produce different warning/default outcomes, and no current Owner decision selects one.
-
-**Current treatment:** Do not infer line attribution. Preserve the Invoice-level
-financial history and do not create a Rent-specific Warning Notice or Serious
-Nonpayment Default from an ambiguous partially satisfied mixed Invoice until the Rent
-balance is determinable under an approved rule.
+There are currently no unresolved Owner decisions in `001_DOMAIN_MODEL.md` or this
+document.
 
 ---
 
@@ -4411,8 +4731,8 @@ balance is determinable under an approved rule.
 
 This document defines the approved business-policy matters delegated to Business
 Rules by `001_DOMAIN_MODEL.md`. Section 30 preserves the resolved decision identifiers
-and records OOD-BR-007 and OOD-BR-008 as the remaining unresolved Owner decisions.
-Implementations must not reinterpret these rules to create new
+and confirms that there are currently no unresolved Owner decisions in these two
+authoritative documents. Implementations must not reinterpret these rules to create new
 statuses, charges, fees, penalties, currencies, exchange providers, estimation
 methods, termination rights, Refund rights, or authorization policies.
 
@@ -4459,3 +4779,23 @@ events so that every balance and historical fact can be reconstructed.
 Database, API, UI, testing, security, and deployment specifications must conform
 to this document and `001_DOMAIN_MODEL.md`. Any new material policy requires
 controlled Owner approval rather than an implementation assumption.
+
+## 31.7 Consistent Customer Financial Model
+
+`001_DOMAIN_MODEL.md` and this document use the same financial distinctions:
+
+- Invoice and Invoice lines are issued receivables whose balances and status remain
+  derived from valid detailed applications;
+- a Late-payment Charge is a separate non-Invoice obligation linked to one source
+  Invoice and one Customer;
+- Payment is the authoritative fact that money was received;
+- Receipt is the customer-facing acknowledgment of that Payment;
+- Payment Allocation and Customer Credit application preserve target obligation and
+  sufficient Invoice-line detail;
+- Customer Credit, unallocated Payment, Deposits, Invoice balances, and Late-payment
+  Charge balances remain distinct;
+- Refund is an outbound event rather than a negative Payment; and
+- Customer Account Ledger is a reconstructable unified view, not a General Ledger or a
+  second financial source of truth.
+
+General vendor Accounts Payable and full General Ledger accounting remain outside scope.
