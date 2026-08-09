@@ -1832,9 +1832,10 @@ charge.
 
 The source Invoice principal remains unchanged. The decision, balance snapshot,
 default and actual percentages and amounts, actor, date/time, and reason remain
-auditable. A positive approved charge is represented as a separate explicit
-Miscellaneous Charge linked to the source Invoice and decision under
-`002_BUSINESS_RULES.md`; a waiver creates no charge but remains final and auditable.
+auditable. A positive approved amount must become an explicit linked financial charge,
+but its exact representation within the existing Invoice/category model and its Due
+Date source remain OOD-BR-007 in `002_BUSINESS_RULES.md`. A waiver creates no positive
+charge but remains final and auditable.
 
 For Rent nonpayment, a formal warning Notice is required at 20 calendar days overdue
 when the applicable obligation remains unpaid. At 30 calendar days overdue, continued
@@ -1843,6 +1844,16 @@ that condition automatically terminates the Lease, ends Occupancy, changes Unit
 status, creates Move-out, or creates Final Settlement. Actual termination remains a
 separate explicit authorized process subject to the signed Lease and any applicable
 warning requirements.
+
+Full cure after the 20-day warning but before the 30-day threshold stops the current
+30-day trigger while preserving overdue, Notice, Payment, and Allocation history. A
+Payment after Serious Nonpayment Default does not erase that condition or automatically
+decide an already initiated termination process.
+
+When an Invoice contains both Rent and recurring-Service lines and is partially
+satisfied, the allocation of that value to the Rent obligation remains OOD-BR-008.
+The domain does not infer a line-attribution method or Rent-specific warning/default
+outcome from an ambiguous mixed-Invoice balance.
 
 ---
 
@@ -3129,6 +3140,7 @@ LeaseCancelled
 LeaseTerminationNoticeRecorded
 NonpaymentWarningNoticeIssued
 SeriousNonpaymentDefaultRecorded
+RentNonpaymentCured
 LeaseTerminated
 ```
 
@@ -3203,7 +3215,7 @@ Representative Invoice events include:
 ```text
 RentInvoiceGenerated
 UtilityInvoiceGenerated
-ServiceChargeInvoiceGenerated
+RecurringServiceLineAddedToInvoice
 DamageChargeInvoiceCreated
 MiscellaneousChargeInvoiceCreated
 LatePaymentChargeDecisionRecorded
@@ -4130,6 +4142,8 @@ at 30 calendar days overdue. It permits authorized management to initiate the ap
 termination or surrender process but performs none of the termination, Occupancy,
 Unit, Move-out, or Final Settlement transitions itself.
 
+A later cure does not erase this condition or its history.
+
 ---
 
 ## Move-in
@@ -4318,6 +4332,11 @@ Internet and Monthly Cleaning are examples of potential future Services, not cur
 charges. Any future Service requires explicit Owner approval and configuration before
 billing. Free-form or generic “other recurring service” creation is not permitted.
 
+An applicable configured recurring Service is a separate categorized line on the
+Initial Rent Invoice for its Initial Service period and on later recurring Rent
+Invoices for normal periods. Its initial coverage follows the Rent day-1-through-20/
+day-21-or-later structure and must not overlap later recurring coverage.
+
 ---
 
 ## Damage Charge
@@ -4340,8 +4359,9 @@ Miscellaneous Charges must remain sufficiently described for audit purposes.
 
 The single final management decision for one applicable overdue source Invoice. It
 preserves the Invoice-wide assessment base, 10% default, confirmed/reduced/waived
-result, authorization, and audit history. A positive approved charge uses the existing
-Miscellaneous Charge category on a separate linked Invoice; no new category is created.
+result, authorization, and audit history. A positive approved amount must remain an
+explicit linked financial charge, but its exact Invoice/category representation and
+Due Date source remain OOD-BR-007.
 
 ---
 
@@ -5152,10 +5172,10 @@ its financial lifecycle.
 # 102. Specification Responsibilities
 
 This Domain Model defines the core concepts and invariants.
-`002_BUSINESS_RULES.md` defines approved operational policy and preserves resolved
-Owner-decision identifiers. No unresolved Owner-policy item is currently identified
-in these two documents. Implementation and product details remain assigned to the
-later numbered specifications.
+`002_BUSINESS_RULES.md` defines approved operational policy, preserves resolved
+Owner-decision identifiers, and records OOD-BR-007 and OOD-BR-008 as unresolved.
+Implementation and product details remain assigned to the later numbered
+specifications.
 
 ## `002_BUSINESS_RULES.md`
 
@@ -5364,9 +5384,10 @@ This Domain Model is considered complete for the initial architecture phase when
 - Which implementation concerns are intentionally deferred?
 
 Detailed operational formulas and authorization conditions are defined in
-`002_BUSINESS_RULES.md`. No unresolved Owner decision remains identified in these two
-documents. Product and implementation concerns remain assigned to the applicable
-later numbered specifications.
+`002_BUSINESS_RULES.md`. OOD-BR-007 and OOD-BR-008 remain unresolved and prohibit
+inventing late-charge representation or mixed-Invoice line attribution. Product and
+implementation concerns remain assigned to the applicable later numbered
+specifications.
 
 ---
 

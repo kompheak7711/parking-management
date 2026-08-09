@@ -1070,7 +1070,7 @@ Examples:
 
 ```text
 Invalid:
-Signing a Lease for a Unit that already has a Signed Lease
+Signing a Lease whose contractual period overlaps another SIGNED Lease for the Unit
 
 Invalid:
 Moving in while Security Deposit remains outstanding
@@ -1948,7 +1948,7 @@ The Property currently approves and provides this recurring fixed monthly Servic
 Trash Collection is billed as a fixed monthly charge rather than a
 consumption-based charge.
 
-Internet and Monthly Unit Cleaning are not currently provided and must not generate
+Internet and Monthly Cleaning are not currently provided and must not generate
 charges. They are examples of Services the Property could approve and configure in
 the future. This document approves no other Service type. Any different Service
 requires a separate Owner-approved rule and explicit configuration before billing;
@@ -1977,6 +1977,10 @@ Changes to one category shall not automatically affect another.
 Each active, approved, and applicable configured recurring Service is billed monthly
 in advance as a separate line item on the applicable Rent Invoice. Trash Collection
 is the current such Service.
+
+For the Initial Service period under BR-SVC-012, that separate line appears on the
+Initial Rent Invoice. Later normal recurring Service lines appear on the applicable
+recurring Rent Invoice.
 
 Separate Service Charge Invoices are not normally generated for these fixed
 recurring monthly Services.
@@ -2053,20 +2057,28 @@ Each fixed recurring Service is a separate categorized line item on the
 applicable Rent Invoice. Its amount contributes to the Invoice total without
 being reclassified as Rent.
 
+The initial line is placed on the Initial Rent Invoice and covers the complete Initial
+Service period under BR-SVC-012, including both components for a day-21-or-later
+move-in.
+
 ---
 
 ### BR-SVC-010 — Line-level History
 
 Each Service line preserves its Service identity, category, configured rate,
-billing period, calculation when prorated, and final amount.
+billing period, calculation when prorated, and final amount. A day-21-or-later Initial
+Service line preserves both the prorated move-in-month component and the full following
+month component without collapsing or obscuring either period.
 
 ---
 
 ### BR-SVC-011 — Advance Billing Schedule
 
-Fixed recurring Services use the same billing cycle as Rent: generation on the
-25th in the Property's configured local timezone for the upcoming month and the
-same applicable Due Date as the Rent Invoice.
+Initial recurring-Service lines follow BR-SVC-012 and are issued on the Initial Rent
+Invoice with its seven-calendar-day Due Date. After that initial coverage, fixed
+recurring Services use the normal Rent billing cycle: generation on the 25th in the
+Property's authoritative `Asia/Phnom_Penh` timezone for the upcoming uncovered month
+and the same applicable Due Date as the recurring Rent Invoice.
 
 Normal recurring generation resumes with the first complete calendar month after the
 Initial Service period under BR-SVC-012. A scheduled run must not generate a Service
@@ -2347,8 +2359,8 @@ UNPAID
 PARTIALLY_PAID
  ├──► UNPAID (after authorized allocation/application reversal)
  ├──► PAID
- └──► VOID (only after all active Allocations and Credit applications have been
-           explicitly reversed)
+ └──► VOID (only after all active financial applications and dependencies have been
+           resolved through their explicit approved processes under BR-INV-024)
 
 PAID
  ├──► PARTIALLY_PAID (after authorized allocation/application reversal)
@@ -2509,7 +2521,9 @@ consistent and must not be varied to bypass this rule.
 ### BR-INV-028 — Duplicate Service Charge Billing
 
 The business shall prevent any approved and configured recurring Service Charge from
-being billed multiple times for the same Lease, Service, and billing period.
+being billed multiple times or for overlapping coverage for the same Lease and
+Service. Normal generation must skip every period already included in the Initial
+Service period under BR-SVC-012.
 
 ---
 
@@ -2522,7 +2536,7 @@ Examples include:
 - duplicate Rent for the same billing period,
 - duplicate Electricity billing for the same consumption period,
 - duplicate Water billing for the same consumption period,
-- duplicate configured Service charges for the same Service and month.
+- duplicate or overlapping configured Service coverage for the same Lease and Service.
 
 The governing source facts define duplicate identity. An obligation must not be
 billed once with a Lease association and again without one.
@@ -2851,17 +2865,16 @@ never be imposed as a second late-payment charge for that source Invoice.
 ### BR-INV-055 — Explicit Linked Late-payment Financial Record
 
 A final late-payment decision is a permanent auditable business event linked to its
-source Invoice. A positive approved amount is represented through the existing
-Miscellaneous Charge category on a separate Invoice linked to the source Invoice and
-decision. Its line must remain explicitly identified and described as a late-payment
-charge rather than an undifferentiated miscellaneous entry. This rule creates no new
-Invoice category. The separate Invoice follows the approved non-recurring Due Date
-source rules in BR-INV-018 and BR-INV-049.
+source Invoice. A positive approved amount must remain an explicit linked auditable
+financial charge and must not be hidden in an undifferentiated entry.
 
 The source Invoice's original principal, lines, and issued amount must not be silently
 altered to incorporate the charge. A waiver records the final decision and audit
-history but creates no charge Invoice. A late-payment-charge Invoice is never an
-eligible source for another late-payment charge.
+history without creating a positive charge. The exact representation of a positive
+approved charge within the existing Invoice/category model and its Due Date source are
+not approved by the current Owner decisions and remain governed by OOD-BR-007. The
+system must not invent a category, standalone Invoice, line treatment, or linked-balance
+effect to post that receivable before OOD-BR-007 is resolved.
 
 # 19. Payment Rules
 
@@ -2905,7 +2918,10 @@ A Payment records the receipt of funds from a Customer.
 
 A Payment itself does not determine which Invoice has been paid.
 
-Invoices are settled only through Payment Allocation.
+An Invoice balance may be settled through authorized Payment Allocations, Customer
+Credit applications, or Final Settlement Deposit applications under the applicable
+rules. Receipt of a Payment settles no Invoice until value from that Payment is
+explicitly allocated.
 
 Payment receipt, Payment Allocation, Payment Reversal, Customer Credit, and
 Refund are separate financial concepts and events.
@@ -3540,6 +3556,11 @@ termination right.
 For an applicable Rent obligation, calendar days overdue are counted after its Due
 Date in `Asia/Phnom_Penh`. The Due Date itself is day zero and remains timely under
 BR-INV-051; the following calendar day is day one overdue.
+
+When one Invoice contains both Rent and recurring-Service lines and is only partially
+satisfied, OOD-BR-008 governs the unresolved attribution of that value. The system must
+not infer Rent-first, Service-first, proportional, or other line attribution for the
+20-day and 30-day process without Owner approval.
 
 Example:
 
@@ -4185,8 +4206,9 @@ financial facts and all linkages.
 
 Late-payment proposals and final decisions must preserve the source Invoice and its
 Due Date, assessment balance, default and actual percentages, default and actual
-amounts, management actor, authorization date/time, reason, positive-charge Invoice
-when created, and final confirmed, reduced, or waived outcome.
+amounts, management actor, authorization date/time, reason, any positive-charge
+financial record after OOD-BR-007 is resolved, and the final confirmed, reduced, or
+waived outcome.
 
 ---
 
@@ -4304,7 +4326,7 @@ require authorization and complete audit history.
 
 ---
 
-# 30. Resolved Owner Decisions
+# 30. Owner Decision Status
 
 ## Resolved: OOD-BR-001 — Initial Rent Invoice Due Date
 
@@ -4347,6 +4369,40 @@ Services follow the same day-1-through-20/day-21-or-later Initial Invoice period
 Rent, share the Initial Rent Invoice Due Date, and resume normal billing without
 duplicate or overlapping periods.
 
+## OPEN OWNER DECISION: OOD-BR-007 — Positive Late-payment Charge Representation
+
+**Question:** After authorized management confirms a positive late-payment amount,
+how is that charge represented within the existing Invoice model, and what approved
+source establishes its Due Date?
+
+**Why needed:** The Owner approved an explicit auditable financial charge linked to
+the source Invoice and prohibited silent rewriting of source principal, but did not
+approve a new Invoice category, use of Miscellaneous Charge, a standalone Invoice,
+an added line, or another linked financial effect. Those options have different
+financial and Due Date consequences.
+
+**Current treatment:** Preserve the final decision and complete audit history under
+BR-INV-053 through BR-INV-055, but do not post a positive receivable through an
+invented representation. A waiver remains a final audited decision and creates no
+positive charge.
+
+## OPEN OWNER DECISION: OOD-BR-008 — Mixed Rent-Invoice Partial-value Attribution
+
+**Question:** When an Invoice contains both Rent and recurring-Service lines and is
+partially satisfied, how is applied Payment or Customer Credit value attributed among
+those lines for purposes of determining whether the Rent obligation remains unpaid at
+the 20-day and 30-day thresholds?
+
+**Why needed:** Applications currently target the Invoice, while BR-LEASE-027 and
+BR-LEASE-028 depend specifically on a remaining Rent obligation. Rent-first,
+Service-first, proportional, explicit line allocation, and whole-Invoice treatment
+produce different warning/default outcomes, and no current Owner decision selects one.
+
+**Current treatment:** Do not infer line attribution. Preserve the Invoice-level
+financial history and do not create a Rent-specific Warning Notice or Serious
+Nonpayment Default from an ambiguous partially satisfied mixed Invoice until the Rent
+balance is determinable under an approved rule.
+
 ---
 
 # 31. Completion and Cross-rule Consistency
@@ -4354,8 +4410,8 @@ duplicate or overlapping periods.
 ## 31.1 Authoritative Scope
 
 This document defines the approved business-policy matters delegated to Business
-Rules by `001_DOMAIN_MODEL.md`. Section 30 preserves the resolved decision identifiers;
-no unresolved Owner decision item is identified in these two documents.
+Rules by `001_DOMAIN_MODEL.md`. Section 30 preserves the resolved decision identifiers
+and records OOD-BR-007 and OOD-BR-008 as the remaining unresolved Owner decisions.
 Implementations must not reinterpret these rules to create new
 statuses, charges, fees, penalties, currencies, exchange providers, estimation
 methods, termination rights, Refund rights, or authorization policies.
