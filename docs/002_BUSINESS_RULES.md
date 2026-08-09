@@ -3942,8 +3942,9 @@ application, and Refund must remain separately traceable.
 
 ## BR-AUDIT-008 — Deposit Audit
 
-Every Deposit receipt, required amount, balance, application,
-forfeiture/disposition, reason, governing event, and Refund must remain linked and
+Every Deposit receipt, suggested amount, accepted required amount, authorized
+Reservation-stage override, actor, timestamp, reason, balance, application,
+forfeiture/disposition, governing event, and Refund must remain linked and
 reconstructable by Deposit type.
 
 ---
@@ -4024,6 +4025,9 @@ Customer Credit recognition and application, Refund, and Deposit
 forfeiture/disposition require authorization, source linkage, reason, and audit.
 Customer authorization required by the Credit-versus-Refund decision must also be
 preserved.
+
+An override of the suggested Reservation Security Deposit amount requires authorized
+management and preservation of the accepted amount, actor, timestamp, and reason.
 
 ---
 

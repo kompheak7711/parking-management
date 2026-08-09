@@ -246,7 +246,10 @@ An additional Deposit liability that applies only when both:
 - the pet is approved; and
 - the applicable signed Lease terms require a Pet Deposit.
 
-Pet Deposits follow the same financial principles as Security Deposits.
+Pet Deposit remains a separately traceable liability. Unlike Security Deposit, it
+may be refunded during an active Lease after the pet permanently leaves and all
+applicable pet-related obligations are resolved. Any later application to Invoice
+obligations occurs only under the approved Final Settlement rules.
 
 ---
 
@@ -2549,8 +2552,10 @@ The following financial invariants must always hold.
 - Deposit application occurs only during Final Settlement.
 - A Property-caused Reservation cancellation may require a Security Deposit Refund
   before a Lease exists.
-- For a Deposit associated with a Lease, Refund occurs only after the Lease has
-  ended and settlement rules permit it.
+- For a Deposit associated with a Lease, Refund normally occurs only after the Lease
+  has ended and settlement rules permit it. The approved exception is an explicit
+  Refund of remaining Pet Deposit after the pet permanently leaves during an active
+  Lease and applicable pet-related obligations are resolved.
 
 ## Rate Integrity
 
@@ -5242,7 +5247,8 @@ The Property Rental Management System manages the full residential tenancy lifec
 
 At its center is the Unit.
 
-A Unit may be reserved by one Customer and later leased under one active Lease.
+A Unit may be reserved by one Customer and later leased under signed contractual
+coverage; signed Leases for that Unit must not have overlapping contractual periods.
 
 The Lease has exactly one Primary Tenant and may have multiple Lease Signers and Occupants.
 
