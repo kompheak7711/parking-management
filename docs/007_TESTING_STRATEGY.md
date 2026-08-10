@@ -179,9 +179,14 @@ mutation and that Customers cannot be silently merged or deleted when referenced
 
 ## TEST-024 — Reservation Creation
 
-Verify Reservation activation requires valid Customer/Unit/dates and at least the
-approved 20% partial Security Deposit. Verify no separate Reservation Deposit type
-is created.
+Verify Reservation activation requires valid Customer/Unit/dates and receipt of the
+explicitly accepted initial Security Deposit amount. Verify the normal suggested
+amount is calculated as 20% of agreed monthly Rent, while an authorized accepted
+variance may be below or above that suggestion with preserved authorization,
+reason, and calculation trace.
+
+Verify no separate Reservation Deposit type is created and the accepted initial
+amount does not alter the full required Security Deposit liability.
 
 ## TEST-025 — Reservation Exclusivity
 
@@ -204,8 +209,10 @@ second or excessive extension.
 
 ## TEST-028 — Reservation Move-in
 
-Verify successful move-in changes `ACTIVE → MOVED_IN`, preserves Reservation
-history, and coordinates the approved Lease/Occupancy/Deposit continuity.
+Verify successful move-in changes `ACTIVE → COMPLETED`, preserves Reservation
+history, and atomically coordinates the resulting Lease, Occupancy, Unit
+`OCCUPIED`, and Security Deposit continuity. Verify `MOVED_IN` and `EXPIRED` are
+rejected as Reservation statuses.
 
 ## TEST-029 — Reservation Cancellation Deposit Outcomes
 
@@ -277,8 +284,13 @@ Lease-required Deposit rules remain applicable.
 
 ## TEST-039 — No Ordinary Deposit Allocation
 
-Verify Deposit cannot pay ordinary Invoices during an active Lease and can be
-applied only through Final Settlement disposition.
+Verify Security Deposit and Pet Deposit cannot pay ordinary Invoices during an active
+Lease. Deposit application to Invoice obligations is permitted only through Final
+Settlement after Lease termination.
+
+Verify the active-Lease Pet Deposit Refund exception is a Refund workflow rather than
+an Invoice application and does not permit Security Deposit Refund while the Lease
+remains SIGNED.
 
 # 9. Rent and Service Billing Coverage
 
@@ -299,18 +311,28 @@ rounding behavior, and preserved calculation inputs.
 
 ## TEST-043 — Rent Due Date
 
-Verify recurring due-date behavior and any authoritative partial-period behavior
-without inventing a due-date fallback. If a scenario remains an OPEN OWNER
-DECISION, it must be excluded from assumed pass criteria and tracked explicitly.
-Verify exact alternative signed-Lease Due Date terms are preserved without an
-unsupported 1-28 day restriction.
+Verify the Initial Rent Invoice Due Date is exactly seven calendar days after the
+actual Move-in Date, including cross-month results. Required examples include:
+
+- 10 July move-in → 17 July;
+- 20 July move-in → 27 July;
+- 21 July move-in → 28 July; and
+- 27 July move-in → 3 August.
+
+Verify recurring Rent Invoices are due on the fifth day of the billed calendar month.
+The Lease must not override the application's recurring Rent Due Date. No fallback,
+alternative signed-Lease recurring Due Date, or arbitrary 1–28-day rule is permitted.
 
 ## TEST-044 — Fixed Services
 
-Verify only approved fixed recurring Internet and Trash Collection Service lines,
-whose Lease Service applicability relation is effective for the period, using the
-effective Service Rate, are included in the approved Rent Invoice workflow. No
-one-time Service category or free-form applicability is inferred.
+Verify Trash Collection can be billed only when its configured Service identity,
+Owner-approved Service approval period, applicable Lease Service term, and effective
+Service Rate all authorize the represented period.
+
+Verify Internet and Monthly Cleaning are not currently billable because they have no
+approved active period. A future Service must not become billable merely because a
+configured identity or rate exists. No one-time Service category or free-form
+applicability is inferred.
 
 ## TEST-045 — Service Rate History
 
@@ -349,19 +371,24 @@ Verify:
 
 - three or more complete prior actual periods use the three most recent complete
   periods before the affected period;
-- one or two historical periods are not substituted and keep the charge pending
-  until one complete future actual period for the same Unit and Utility Type exists;
+- exactly one or two complete historical actual periods use all available one or two
+  periods for the same Unit and Utility Type as the weighted historical basis;
+- zero complete historical actual periods keep the estimate/charge pending until one
+  complete future actual period for the same Unit and Utility Type exists;
 - the basis daily average equals total actual consumption divided by total represented
   calendar days;
 - separately rounded period averages are not averaged;
-- another Unit and arbitrary estimates are prohibited; and
-- zero history uses the same pending one-complete-future-period fallback.
+- another/comparable Unit and arbitrary estimates are prohibited; and
+- available one/two-period history must not be discarded.
 
 ## TEST-051 — Broken-meter Future-basis Pending Charge
 
-Verify charges with fewer than three complete historical actual periods cannot be
-finalized, issued, allocated, or included as an arbitrary receivable before the
-future basis becomes calculable.
+Verify only the zero-history case remains pending for a future complete actual basis.
+Until that future basis exists, the affected estimate/charge cannot be finalized,
+issued, allocated, or included as an arbitrary receivable.
+
+Verify one-history and two-history cases do not enter this pending state when their
+available complete historical periods provide the approved basis.
 
 ## TEST-052 — Utility Invoice Generation
 
@@ -404,9 +431,45 @@ preserved original.
 Verify voiding follows authorized preconditions, preserves the issued record, and
 requires reversal of affected active financial applications where specified.
 
+## TEST-123 — Late-payment Decision and Charge
+
+Verify the complete BR/PR-INV-051..055 and API-091 lifecycle:
+
+- review is available only for an applicable Invoice with remaining overdue balance
+  after its Due Date;
+- default rate is exactly 10%;
+- default amount is calculated from the remaining overdue balance at assessment;
+- exactly one final decision may be recorded;
+- permitted outcomes are only `CONFIRMED_DEFAULT`, `REDUCED`, and `WAIVED`;
+- `CONFIRMED_DEFAULT` requires the calculated default amount;
+- `WAIVED` requires zero;
+- `REDUCED` requires a positive exact approved USD amount below default;
+- management cannot increase the Charge above the default;
+- a reduced approval such as $15 on a $310 overdue balance is accepted without
+  forcing whole-basis-point percentage precision;
+- a positive decision creates exactly one separate Late-payment Charge;
+- a waiver creates no positive Charge;
+- the Charge does not alter source Invoice principal, lines, balance, or status;
+- the Charge cannot itself generate another Late-payment Charge; and
+- final-decision history is immutable.
+
+Verify concurrent/replayed final-decision commands cannot create duplicate decisions
+or Charges.
+
+## TEST-124 — Late-payment Charge Corrections and Applications
+
+Verify DB-INV-009/API-091 authorized Charge reduction/reversal behavior preserves the
+original Charge and final decision, enforces remaining-obligation bounds, and creates
+append-only correction history.
+
+Verify Payment Allocation and Customer Credit may target an eligible separate
+Late-payment Charge. Such application reduces only that Charge and never its source
+Invoice. Test direct designation, availability limits, over-application rejection,
+reversal, concurrency, and historical reconstruction.
+
 # 12. Payment, Allocation, Credit, Refund, and Reversal Coverage
 
-## TEST-059 — Payment Receipt
+## TEST-059 — Payment Confirmation
 
 Verify confirmed Payment stores Customer, received amount/currency, method,
 immutable method code/name snapshots, timestamp, payer/reference evidence,
@@ -416,26 +479,30 @@ renamed or retired.
 
 ## TEST-060 — Payment Allocation
 
-Verify authorized staff manually post allocations, total active allocations never
-exceed Payment availability or Invoice outstanding balance, and allocation is
-transactional.
+Verify authorized staff manually post allocations to an eligible Invoice or separate
+Late-payment Charge, total active allocations never exceed Payment availability or
+the selected target's outstanding balance, and allocation is transactional.
 
-Verify the default proposal orders a normal Customer's applicable Invoices by
-oldest Due Date, then issue/generation order and stable identifier for ties, but
-does not post automatically. Verify Customer designation may select its eligible
-Invoice and third-party Payment is restricted to recorded intent without changing
-the financially responsible Customer.
+Verify the default proposal orders a normal Customer's applicable Invoices by oldest
+Due Date, then issue/generation order and stable identifier for ties, but does not
+post automatically. Verify Customer designation may select its eligible Invoice or
+Late-payment Charge and third-party Payment is restricted to recorded intent without
+changing the financially responsible Customer.
+
+A Late-payment Charge allocation reduces only the Charge and never the source Invoice.
 
 ## TEST-061 — Partial and Full Allocation
 
 Verify derived Payment allocation condition and Invoice status after partial,
-multiple, and full allocations. These derived conditions do not create unsupported
-Payment statuses.
+multiple, and full Invoice allocations. Verify partial/full Late-payment Charge
+applications independently derive Charge remaining balance without changing the source
+Invoice status. These derived conditions do not create unsupported Payment statuses.
 
 ## TEST-062 — Concurrent Allocation
 
-Two concurrent allocations against the same Payment/Invoice are serialized or one
-conflicts; committed active amounts never exceed either limit.
+Two concurrent allocations against the same Payment and target obligation are
+serialized or one conflicts; committed active amounts never exceed Payment
+availability or the Invoice/Late-payment Charge target balance.
 
 ## TEST-063 — Allocation Reversal
 
@@ -452,14 +519,24 @@ does not automatically become Customer Credit or make an Invoice negative.
 Verify Credit recognition/application/reversal are distinct authorized events;
 Credit cannot exceed available balance or silently become a Deposit/Payment.
 
+Verify an application may target an eligible Invoice or separate Late-payment Charge.
+A Charge application reduces only that Charge and never the source Invoice. Test
+designation, target-balance bounds, reversal, and concurrent application safety.
+
 ## TEST-066 — Refund
 
-Verify Refund requires an approved source and authorization, does not create an
-unsupported right, preserves payout method/reference and history, and updates only
-the source balance/event chain permitted by rules. An approved correction links an
-append-only verified-return event with exact returned amount/currency and evidence,
-cannot exceed the Refund, creates no collection right, and never mutates the original
-Refund. Payment reversal remains blocked until required value is verified returned.
+Verify Refund requires an approved authoritative source and authorization, does not
+create an unsupported right, preserves source identity, exact amount/currency,
+applicable exchange facts, processing facts, authorization, and correction history,
+and updates only the source balance/event chain permitted by rules.
+
+Do not require or invent a generic Refund delivery method, pending/failed status, or
+other business state absent from the authoritative model.
+
+An approved correction links an append-only verified-return event with exact returned
+amount/currency and evidence, cannot exceed the Refund, creates no collection right,
+and never mutates the original Refund. Payment reversal remains blocked until required
+value is verified returned.
 
 ## TEST-067 — Payment Reversal
 
@@ -474,6 +551,40 @@ and held balances without deleting either event.
 
 Replay each supported financial command with the same idempotency key and verify no
 duplicate event. Reusing a key with different input returns a conflict.
+
+## TEST-125 — Receipt and Reprint
+
+Verify a confirmed Payment normally creates exactly one immutable business Receipt in
+the same transaction. Assert stable unique Receipt Number, correct Payment/Customer
+linkage, issuance facts, and preserved identity snapshot where applicable.
+
+Verify a Receipt reprint:
+
+- uses the same Receipt UUID and Receipt Number;
+- creates one append-only reprint event with actor, timestamp, reason, and optional
+  delivery reference;
+- does not create another Payment;
+- does not create another Receipt identity;
+- does not create another money-received event; and
+- remains available as historical evidence after Payment reversal.
+
+## TEST-126 — Active-Lease Pet Deposit Refund
+
+For a SIGNED Lease, verify Security Deposit cannot be refunded before Final Settlement.
+
+For the approved Pet Deposit exception, verify:
+
+- the approved pet is recorded as permanently departed;
+- departure alone does not terminate the Lease or authorize Refund;
+- the qualifying review matches Pet approval, Lease, Customer, and Pet Deposit;
+- applicable pet-related obligations must be resolved;
+- remaining refundable Pet Deposit is server-recomputed;
+- a qualifying DB-LEASE-011/API-094 review is required;
+- the resulting Refund uses the Pet Deposit and review as authoritative sources;
+- Final Settlement is neither required nor created;
+- the Deposit is not applied to an Invoice;
+- the Lease remains SIGNED; and
+- Customer liability is not capped by the refunded Pet Deposit.
 
 # 13. Currency and Exchange-rate Coverage
 
@@ -522,10 +633,38 @@ Refund-date exchange rate and both values.
 
 # 14. Warning, Termination, Move-out, and Settlement Coverage
 
-## TEST-075 — Warning Letters
+## TEST-075 — Lease Violation Warning Letters
 
-Verify warning sequence, reason, delivery/effective dates, actor, Lease linkage,
-and history. A warning cannot silently create a fee or automatic termination.
+Verify DB-LEASE-005/API-067 Lease-violation warning sequence, violation/warning dates,
+description, governing Lease provision, communication evidence, actor, Lease linkage,
+and history. A Lease-violation warning cannot silently create a Rent-nonpayment
+milestone, fee, or automatic termination.
+
+## TEST-127 — Rent Nonpayment Cases and Events
+
+Verify API-095 opens a case only from an applicable issued, non-VOID Rent Invoice line
+for the same Lease and financially responsible Customer. Preserve Invoice, Rent-line,
+Lease, Customer, and Due Date snapshots. A mixed Invoice's total outstanding balance
+must not substitute for remaining Rent.
+
+Verify only:
+
+- `TWENTY_DAY_WARNING`;
+- `THIRTY_DAY_SERIOUS_DEFAULT`;
+- `CURE`; and
+- `AUTHORIZED_FOLLOW_UP`
+
+are accepted event kinds.
+
+Verify the 20-day warning requires positive remaining Rent at the approved milestone
+and required Notice/document reference. Verify the 30-day Serious Nonpayment Default
+requires positive remaining Rent at its approved milestone. Posting recomputes
+remaining Rent from authoritative applications and corrections.
+
+Verify `CURE` preserves prior warning/default history and records zero remaining Rent
+when applicable. Verify no Rent-nonpayment event automatically terminates the Lease,
+closes Occupancy, moves out the Customer, changes Unit status, creates Final Settlement,
+or creates a new fee/penalty.
 
 ## TEST-076 — Termination Notice
 
@@ -561,14 +700,22 @@ Verify approved obligations, Adjustments, active applications, separate Deposit
 dispositions, Credits, Refunds, and resulting receivable/refundable values reconcile
 exactly and remain auditable.
 
-Assert the approved order: finalize valid charges; apply authorized Customer
-Credit; apply Pet Deposit only to authorized pet-related damage; apply Security
-Deposit to remaining authorized obligations in oldest-Due order where applicable;
-record remaining Customer balance; and explicitly Refund remaining refundable
-Deposit balances. The immutable closing balance is the nonnegative post-Refund
-Customer receivable, never a negative proxy for an omitted Refund. Every event
-remains separately traceable. The close response and later reads expose that snapshot
-separately from any corrected current position.
+Assert the approved order: finalize valid charges; apply authorized Customer Credit
+first; apply Pet Deposit to authorized pet-related Invoice lines under
+`PET_RELATED_FIRST`; permit explicitly authorized Security Deposit applications under
+`SECURITY_EXPLICIT`; then permit any remaining Pet Deposit to be explicitly applied to
+any valid remaining Settlement Invoice line under `PET_REMAINDER_EXPLICIT`; record the
+remaining Customer balance; and explicitly Refund remaining refundable Deposit
+balances.
+
+Verify every Deposit target and amount is explicitly authorized and that Payment FIFO,
+an inferred Deposit-type FIFO, and oldest-Due ordering are not reused for Deposit
+applications.
+
+The immutable closing balance is the nonnegative post-Refund Customer receivable,
+never a negative proxy for an omitted Refund. Every event remains separately
+traceable. The close response and later reads expose that snapshot separately from any
+corrected current position.
 
 ## TEST-081 — Settlement Corrections
 
@@ -603,8 +750,12 @@ Direct API calls remain forbidden when a control is hidden or disabled in the UI
 
 ## TEST-086 — Financial Capability Separation
 
-Verify receipt, allocation, Credit, Refund, Reversal, Adjustment, void, Settlement,
-and permission-administration capabilities can be granted and denied independently.
+Verify Payment receipt/confirmation, Receipt reprint, Allocation, Credit, Refund,
+Reversal, Adjustment, void, Late-payment final decision, Late-payment Charge
+correction, active-Lease Pet Deposit refund review, Rent-nonpayment milestone/follow-up,
+Settlement, and permission-administration capabilities can be granted and denied
+independently where exposed as distinct capabilities by the approved API/security
+design.
 
 # 16. API Contract Coverage
 
@@ -643,9 +794,12 @@ not rendered as ordinary editable forms.
 
 ## TEST-093 — Confirmation
 
-Financially significant actions display action-specific consequences and require
-the specified reason/confirmation. Generic confirmation text is insufficient for
-void, Refund, Reversal, Deposit disposition, or Settlement closure.
+Financially significant actions display action-specific consequences and require the
+specified reason/confirmation. Generic confirmation text is insufficient for void,
+Refund, Reversal, Deposit disposition/application, Settlement closure, final
+Late-payment Decision, Late-payment Charge correction/reversal, active-Lease Pet
+Deposit qualifying review/Refund, Receipt reprint where audited confirmation is
+required, or Rent-nonpayment milestone/follow-up posting.
 
 ## TEST-094 — Accessibility
 
@@ -818,14 +972,18 @@ that assert undocumented policy are not.
 ## TEST-120 — Critical Financial Suite
 
 A fast mandatory suite covers Invoice ownership, duplicate billing, money
-representation, Payment/Allocation limits, Credit/Refund/Reversal chains, Deposit
-separation/application, Final Settlement, exchange-rate markup/rounding, and audit
-preservation.
+representation, Payment/Allocation limits, separate Late-payment Decision/Charge
+calculation and reduced-amount precision, Charge applications/corrections,
+Receipt/reprint history, Credit/Refund/Reversal chains, Deposit separation/application,
+active-Lease Pet Deposit Refund, Final Settlement, exchange-rate markup/rounding, and
+audit preservation.
 
 ## TEST-121 — Critical Lifecycle Suite
 
-A mandatory suite covers Reservation expiration/extension, Lease non-overlap,
-move-in, renewal, warnings/termination, move-out, and exactly-one Final Settlement.
+A mandatory suite covers Reservation expiration/extension/completion, Lease
+non-overlap, move-in, renewal, Lease-violation warnings, Rent-nonpayment 20-day and
+30-day milestones/cure history, explicit termination boundaries, move-out, and
+exactly-one Final Settlement.
 
 ## TEST-122 — Critical Utility Suite
 
@@ -855,16 +1013,6 @@ configurable and align with `009_DEPLOYMENT_ARCHITECTURE.md`.
 
 **Blocking:** No.
 
-## OOD-TEST-003 — First Partial-month Rent Due Date
-
-**Question:** Which expected Due Date should tests assert when the first
-partial-month Rent Invoice is issued after the billed month's 5th and the signed
-Lease specifies no alternative?
-
-**Current treatment:** Tests verify that no fallback is silently inferred and mark
-the exact expected-value case blocked by `OOD-BR-001`.
-
-**Blocking:** No for the broader suite; blocks only this expected-value scenario.
 
 # 26. Completion Criteria
 
@@ -877,5 +1025,5 @@ This Testing Strategy is complete for Owner Review when:
   boundaries have dedicated tests;
 - traceability is bidirectional and enforceable;
 - placeholder commands are not reported as substantive tests; and
-- unresolved browser, recovery, and Due Date choices are recorded without
-  inventing policy.
+- the remaining nonblocking browser/device certification and production recovery
+  objective questions are recorded without inventing business policy.
