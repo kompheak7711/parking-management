@@ -759,16 +759,22 @@ One immutable final decision per applicable overdue Invoice: `id uuid PK`,
 NULL CHECK (>0)`, `default_rate_basis_points smallint NOT NULL CHECK (= 1000)`,
 `calculated_default_amount_usd_cents bigint NOT NULL CHECK (>= 0)`, `decision_outcome
 text NOT NULL CHECK IN ('CONFIRMED_DEFAULT','REDUCED','WAIVED')`,
-`approved_rate_basis_points smallint NOT NULL CHECK (approved_rate_basis_points BETWEEN 0 AND 1000)`,
 `approved_amount_usd_cents bigint NOT NULL CHECK (>= 0)`, `assessed_at timestamptz NOT
 NULL`, `finalized_at timestamptz NOT NULL`, `finalized_by uuid NOT NULL`, `reason text
 NOT NULL`, `authorization_reference text NOT NULL`, and `calculation_trace jsonb NOT
 NULL`.
 
+The approved monetary amount is authoritative. For a REDUCED decision, any effective
+approved percentage is derived losslessly from `approved_amount_usd_cents` divided by
+`overdue_balance_at_assessment_usd_cents` when needed; the database must not impose an
+additional percentage precision or rounding restriction. The normal/default 10% remains
+represented exactly by `default_rate_basis_points = 1000`.
+
 A deferred trigger locks the source Invoice, verifies Customer and Due Date snapshots,
 recomputes its remaining overdue balance and 10% default proposal at assessment, and
 enforces outcome/amount consistency. WAIVED requires zero; CONFIRMED_DEFAULT requires
-the default amount/rate; REDUCED requires a positive amount below default. Once final,
+the calculated default amount; REDUCED requires a positive amount below the calculated
+default amount. Once final,
 the row cannot be repeated, replaced, supplemented, updated, or deleted.
 
 ## DB-INV-008 — `late_payment_charges`
@@ -1709,19 +1715,19 @@ replace detailed traceability.
 | Property and Units | DB-PROP-001, DB-UNIT-001, DB-DER-003, DB-VIEW-006 | BR-PROP-001..003, BR-UNIT-001..013 | PR-PROP-001..003, PR-UNIT-001..013, PR-CAP-001 |
 | Customers | DB-CUST-001, DB-DER-010, DB-VIEW-009 | BR-CUST-001..003 | PR-CUST-001..003, PR-CAP-001 |
 | Reservations | DB-RES-001..003, DB-TXN-001..002, DB-TEST-006 | BR-RES-001..022 | PR-RES-001..022, PR-CAP-002, PR-WF-001..003 |
-| Leases | DB-LEASE-001..010, DB-TXN-002, DB-TXN-007, DB-TEST-009 | BR-LEASE-001..030 | PR-LEASE-001..030, PR-CAP-003, PR-WF-003..005 |
+| Leases | DB-LEASE-001..011, DB-TXN-002, DB-TXN-007, DB-TEST-009 | BR-LEASE-001..030 | PR-LEASE-001..030, PR-CAP-003, PR-WF-003..005 |
 | Occupancy and Move-out | DB-LEASE-003, DB-MOVEOUT-001..002 | BR-OCC-001..009, BR-MOVEOUT-001..012 | PR-OCC-001..009, PR-MOVEOUT-001..012, PR-WF-003, PR-WF-005 |
-| Deposits | DB-DEP-001..008, DB-RES-003, DB-LEASE-010, DB-DER-004 | BR-DEP-001..025 | PR-DEP-001..025, PR-CAP-002, PR-WF-001..006 |
+| Deposits | DB-DEP-001..008, DB-RES-003, DB-LEASE-010..011, DB-REFUND-001..002, DB-DER-004 | BR-DEP-001..025 | PR-DEP-001..025, PR-CAP-002, PR-WF-001..006 |
 | Rent and initial billing | DB-LEASE-001, DB-INV-001..002, DB-INV-006, DB-DER-011, DB-TXN-005..006 | BR-RENT-001..029 | PR-RENT-001..029, PR-CAP-004, PR-WF-004 |
-| Utilities and Reading corrections | DB-UTIL-001..009, DB-INV-002..003, DB-VIEW-010 | BR-UTIL-001..032 | PR-UTIL-001..032, PR-CAP-004, PR-WF-004..005 |
+| Utilities and Reading corrections | DB-UTIL-001..010, DB-INV-002..003, DB-VIEW-010 | BR-UTIL-001..032 | PR-UTIL-001..032, PR-CAP-004, PR-WF-004..005 |
 | Configured recurring Services | DB-SVC-001..003, DB-LEASE-007, DB-INV-002, DB-INV-006 | BR-SVC-001..015 | PR-SVC-001..015, PR-CAP-004, PR-WF-004 |
-| Invoices, lines, Adjustments, and VOID | DB-INV-001..006, DB-INV-010, DB-DER-001, DB-VIEW-001 | BR-INV-001..055 | PR-INV-001..055, PR-CAP-004, PR-WF-004, PR-WF-007 |
-| Late-payment decisions and Charges | DB-INV-007..009, DB-DER-009, DB-VIEW-007, DB-TXN-007 | BR-LATE-001..006 | PR-LATE-001..006, PR-CAP-008, PR-WF-008 |
+| Invoices, lines, Adjustments, VOID, and late-payment decision persistence | DB-INV-001..010, DB-DER-001, DB-VIEW-001 | BR-INV-001..055 | PR-INV-001..055, PR-CAP-004, PR-WF-004, PR-WF-007, PR-WF-009 |
+| Late-payment decisions and Charges | DB-INV-007..009, DB-DER-009, DB-VIEW-007, DB-TXN-007 | BR-LATE-001..006 | PR-LATE-001..006, PR-CAP-004, PR-WF-009 |
 | Payments and line-aware Allocations | DB-PAY-001..007, DB-DER-002, DB-VIEW-002 | BR-PAY-001..040 | PR-PAY-001..040, PR-CAP-005, PR-WF-004, PR-WF-007..008 |
-| Receipts and reprints | DB-RECEIPT-001..002 | BR-RECEIPT-001..006 | PR-RECEIPT-001..006, PR-CAP-005, PR-WF-004, PR-WF-009 |
+| Receipts and reprints | DB-RECEIPT-001..002 | BR-RECEIPT-001..006 | PR-RECEIPT-001..006, PR-CAP-005, PR-WF-008 |
 | Customer Credit | DB-CREDIT-001..005, DB-DER-005, DB-VIEW-004 | BR-CREDIT-001..013 | PR-CREDIT-001..013, PR-CAP-005, PR-WF-004, PR-WF-006..008 |
 | Customer Account Ledger | DB-DER-010, DB-VIEW-009, DB-TEST-002 | BR-LEDGER-001..007 | PR-LEDGER-001..007, PR-CAP-008, PR-WF-008..009, PR-QUAL-008 |
-| Refunds | DB-REFUND-001..002, DB-LEASE-010 | BR-REFUND-001..013 | PR-REFUND-001..013, PR-CAP-005, PR-WF-002, PR-WF-004, PR-WF-006..007, PR-WF-009 |
+| Refunds | DB-REFUND-001..002, DB-LEASE-010..011 | BR-REFUND-001..013 | PR-REFUND-001..013, PR-CAP-005, PR-WF-002, PR-WF-004, PR-WF-006..007, PR-WF-009 |
 | Final Settlement | DB-SETTLE-001..006, DB-DEP-005..006, DB-DER-007 | BR-SETTLE-001..015 | PR-SETTLE-001..015, PR-CAP-006, PR-WF-005..007 |
 | Money, exchange, and rounding | DB-TYPE-004..005, DB-PAY-002..003, DB-REFUND-001, DB-TEST-005, DB-TEST-010 | BR-MONEY-001..013 | PR-MONEY-001..013, PR-CAP-005, PR-QUAL-006 |
 | Audit and authorization | DB-AUDIT-001..003, DB-IMM-001, DB-TXN-001..007 | BR-AUDIT-001..011, BR-AUTH-001..009 | PR-AUDIT-001..011, PR-AUTH-001..009, PR-CAP-007, PR-QUAL-001..008 |
