@@ -243,8 +243,16 @@ for the same Property and logical period.
 ## DEPLOY-028 — Idempotent Jobs
 
 Retries must not duplicate Reservation cancellation, Rent Invoice, Utility
-Invoice, Service line, or another financial event. Duplicate-prevention keys and
-business constraints are rechecked inside the transaction.
+Invoice, Service line, Rent Nonpayment milestone/event, or another scheduled
+business or financial event. Duplicate-prevention keys and business constraints
+are rechecked inside the transaction.
+
+Interactive high-value commands that may be retried—including Late-payment final
+Decision/Charge creation, Receipt reprint, active-Lease Pet Deposit refund review,
+Payment/Allocation/Customer Credit/Refund actions, and their corrections or
+reversals—use the idempotency and uniqueness protections defined by
+`005_API_SPECIFICATION.md` and `008_SECURITY_MODEL.md`. Deployment retries must
+never bypass those controls.
 
 ## DEPLOY-029 — Property-local Scheduling
 
@@ -266,10 +274,17 @@ The worker supports only tasks derived from approved rules, including:
 - recurring Rent Invoice and fixed Service line generation on the 25th;
 - Utility Invoice generation after validated monthly Reading inputs or a completed
   approved broken-Meter estimate;
+- overdue-Invoice evaluation needed to detect and present an eligible Late-payment
+  proposal, without automatically finalizing a Decision or creating a Charge;
+- Rent Nonpayment day-count and milestone evaluation needed for the 20-day alert
+  and 30-day Serious Nonpayment Default record, while Notice issuance, authorized
+  follow-up, and Lease termination remain separate actions under their approved
+  authorization boundaries; and
 - health/alert evaluation.
 
 This list does not authorize a new charge, penalty, status, automatic Allocation,
-or automatic Customer Credit recognition.
+automatic Customer Credit recognition, automatic Late-payment final Decision, or
+automatic Lease termination.
 
 Backup execution and verification run as a separately privileged Operations Host
 job under the backup identity, not through the application scheduled worker or its
@@ -378,9 +393,17 @@ A documented restore procedure must:
 
 ## DEPLOY-045 — Restore Tests
 
-Periodic restore tests must demonstrate recovery of Customers, Leases, Invoices,
-Payments, Allocations, Credits, Refunds, Deposits, Settlements, rates, and audit
-history. A successful backup command without a restore test is insufficient.
+Periodic restore tests must demonstrate recovery of Customers, Leases, Rent
+Nonpayment cases/events, Invoices, Late-payment Decisions/Charges and linked
+corrections, Payments, Receipts and Receipt reprint history, Allocations, Customer
+Credit and its events, Refunds, Deposits, pet-departure and Pet Deposit refund-review
+records, Settlements, rates, and audit history.
+
+Restore validation must also demonstrate that the read-only Customer Account Ledger
+can be reconstructed from the restored authoritative financial sources; the Ledger
+must not become a competing source of financial truth.
+
+A successful backup command without a restore test is insufficient.
 
 ## DEPLOY-046 — Recovery Validation
 
@@ -388,7 +411,13 @@ Validation includes:
 
 - database constraints and migration version;
 - financial source-chain reconstruction;
-- Invoice and Payment derived-balance recomputation;
+- Invoice, separate Late-payment Charge, Payment, Customer Credit, Deposit, Refund,
+  and Settlement balance/effect recomputation;
+- Receipt identity and Receipt reprint-history continuity without duplicate
+  Payment or Receipt identities;
+- reconstructability of the read-only Customer Account Ledger from authoritative
+  source records;
+- Rent Nonpayment case/event and active-Lease Pet Deposit refund-review continuity;
 - latest scheduled-job and idempotency state;
 - user authentication and authorization configuration;
 - audit-event continuity; and
@@ -424,8 +453,14 @@ Monitor at minimum:
 - request rate, latency, and error rate;
 - database connections, locks, transaction failures, storage, and backup age;
 - worker heartbeat, job duration, failure, and retry count;
-- scheduled billing duplicate conflicts;
+- scheduled billing and other scheduled-business-event duplicate conflicts;
 - audit-write failures;
+- authentication-failure and permission-change signals;
+- high-value audited-event signals sufficient for configured review of exceptional
+  Invoice voids, financial reversals, Late-payment final Decisions and Charge
+  corrections/reversals, active-Lease Pet Deposit qualifying Refund activity, Rent
+  Nonpayment Serious Default events, manual exchange-rate fallback, unusual Receipt
+  reprint activity, and restore attempts;
 - CPU, memory, disk, and container restart count; and
 - certificate and secret-expiration warnings where observable.
 
@@ -435,6 +470,16 @@ Alerts must be actionable and routed to configured operators. Critical alerts
 include database unavailable, backup/restore failure, audit persistence failure,
 repeated scheduled-job failure, low disk space, migration failure, and TLS
 certificate expiry.
+
+Consistent with `SEC-034`, monitoring must also support configurable high-value
+security review or alerting for repeated authentication failures, permission
+changes, financial reversals, exceptional Invoice voids, Late-payment final
+Decisions and Charge corrections/reversals, active-Lease Pet Deposit qualifying
+Refund activity, Rent Nonpayment Serious Default events, manual exchange-rate
+fallback, unusual Receipt reprint activity where operationally useful, and restore
+attempts. Deployment policy determines which audited high-value events require
+real-time alerts; this architecture does not require every business event to alert
+in real time.
 
 ## DEPLOY-052 — Log Retention
 
@@ -539,7 +584,14 @@ production.
 
 Deployment must conform to `008_SECURITY_MODEL.md`, including least privilege,
 secret handling, TLS, restricted database exposure, capability enforcement, audit
-protection, and controlled remote access.
+protection, controlled remote access, and the high-value workflow authorization
+boundaries in `SEC-070`.
+
+Deployment identities, retries, workers, monitoring tools, and administrative
+paths must not collapse the separate authority for Late-payment final Decisions,
+Late-payment Charge corrections/reversals, Receipt reprints, active-Lease Pet
+Deposit qualifying refund review, Rent Nonpayment cases/events, or read-only
+Customer Account Ledger access.
 
 ## DEPLOY-066 — Runtime Identities
 
@@ -556,13 +608,20 @@ firewall rules, time synchronization, protected storage, and documented ownershi
 | Deployment concern | Authoritative source |
 |---|---|
 | Technology direction | `AGENTS.md` |
-| Property-local business time | `BR-PROP-001`–`BR-PROP-003` |
+| Property-local business time | `BR-PROP-*` |
 | Scheduled Reservation/Rent/Utility actions | `BR-RES-*`, `BR-RENT-*`, `BR-UTIL-*`, `BR-INV-050` |
-| Duplicate prevention/idempotency | `BR-RENT-004`, `BR-RENT-011`, `BR-INV-026`, `BR-INV-044` |
-| Financial transactions/history | `BR-INV-*`, `BR-PAY-*`, `BR-CREDIT-*`, `BR-REFUND-*`, `BR-SETTLE-*` |
-| Exchange-rate source/fallback | `BR-MONEY-004`–`BR-MONEY-010` |
-| Audit | `BR-AUDIT-001`–`BR-AUDIT-010` |
-| Authorization/security | `BR-AUTH-001`–`BR-AUTH-009`, `008_SECURITY_MODEL.md` |
+| Late-payment eligibility and Decision/Charge boundary | `BR-INV-051` through `BR-INV-055`, `BR-LATE-*` |
+| Rent Nonpayment milestone evaluation | `BR-LEASE-026` through `BR-LEASE-030`, applicable `BR-PAY-*` |
+| Duplicate prevention/idempotency | applicable `BR-RES-*`, `BR-RENT-*`, `BR-UTIL-*`, `BR-INV-*`, `BR-PAY-*` |
+| Invoice and Late-payment financial history | `BR-INV-*`, `BR-LATE-*` |
+| Payment, Allocation, Receipt, and reprint history | `BR-PAY-*`, `BR-RECEIPT-*` |
+| Customer Credit and Refund history | `BR-CREDIT-*`, `BR-REFUND-*` |
+| Customer Account Ledger reconstruction | `BR-LEDGER-*` |
+| Deposit and active-Lease Pet Deposit Refund history | `BR-DEP-*`, applicable `BR-REFUND-*` |
+| Final Settlement history | `BR-SETTLE-*` |
+| Exchange-rate source/fallback | `BR-MONEY-*` |
+| Audit | `BR-AUDIT-*` |
+| Authorization/security | `BR-AUTH-*`, `008_SECURITY_MODEL.md` |
 
 # 17. OPEN OWNER DECISION
 
@@ -605,6 +664,9 @@ This Deployment Architecture is complete for Owner Review when:
 - backups are encrypted, verifiable, and restorable;
 - update and failure-recovery procedures are controlled;
 - Property-local scheduling and external-rate-source failure are handled safely;
+- recovery, monitoring, and deployment controls preserve Late-payment,
+  Receipt/reprint, Customer Account Ledger, active-Lease Pet Deposit Refund, and
+  Rent Nonpayment authorization/history boundaries;
 - no mandatory cloud dependency has been introduced; and
 - deployment-specific recovery, host, and remote-access choices remain explicit
   OPEN OWNER DECISION items.
