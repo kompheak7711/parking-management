@@ -60,9 +60,11 @@ the approved property-management workflows.
 Protected assets include:
 
 - Customer identity and contact information;
-- Reservation, Lease, signer, Occupant, and warning-letter records;
-- Deposit, Invoice, Adjustment, Payment, Allocation, Credit, Refund, Reversal,
-  and Final Settlement records;
+- Reservation, Lease, signer, Occupant, Lease-violation warning, Rent Nonpayment
+  case/event, pet-departure, and Pet Deposit refund-review records;
+- Deposit, Invoice, Adjustment, Late-payment Decision, Late-payment Charge and
+  correction, Payment, Allocation, Customer Credit, Refund, Reversal, Receipt,
+  Receipt reprint, Customer Account Ledger, and Final Settlement records;
 - Utility Meter, Reading, Rate, and calculated billing information;
 - exchange-rate source and calculation evidence;
 - authorization and audit records;
@@ -171,16 +173,24 @@ The configurable capability catalog must distinguish at least:
 - create, extend, cancel, and complete Reservations;
 - draft, sign, renew, terminate, and inspect Leases;
 - manage Lease Signers and Occupants;
-- record move-in, warnings, and move-out evidence;
+- record move-in, Lease-violation warnings, and move-out evidence;
+- open/view Rent Nonpayment cases and post authorized Rent Nonpayment events;
+- record approved pet departure and perform the active-Lease Pet Deposit qualifying
+  refund review;
 - manage Meters, Readings, Utility Rates, and Service Rates;
 - generate, issue, adjust, and exceptionally void Invoices;
+- review Late-payment eligibility/proposals;
+- finalize Late-payment Decisions independently of generic Invoice editing;
+- correct or reverse Late-payment Charges through their approved process;
 - confirm and reverse Payments;
+- view Receipts and perform authorized Receipt reprints;
 - post and reverse Payment Allocations;
-- recognize and apply Customer Credit;
+- recognize, apply, and reverse Customer Credit;
 - create and correct Refunds;
 - record Deposit receipts, applications, dispositions, and Refunds;
 - prepare and close Final Settlements;
 - manage exchange-rate fallback entries;
+- view the Customer Account Ledger;
 - view and export reports;
 - view audit history;
 - manage user accounts, role bundles, and capabilities; and
@@ -195,9 +205,14 @@ capabilities, not assume that a role title inherently grants a financial right.
 ## SEC-022 — Separation of Capabilities
 
 Capabilities for entering source data, authorizing a financial action, reversing
-that action, viewing audit history, and administering permissions must remain
-separable. A deployment may assign multiple capabilities to one person, but the
-system must not require that combination.
+or correcting that action, viewing audit history, and administering permissions must
+remain separable. A deployment may assign multiple capabilities to one person, but
+the system must not require that combination.
+
+Generic Invoice management must not imply authority to finalize, reduce, or waive a
+Late-payment Decision. Generic Deposit or Refund management must not imply authority
+to perform the active-Lease Pet Deposit qualifying review. Generic Lease-warning
+authority must not imply authority to post a Rent Nonpayment Serious Default.
 
 ## SEC-023 — Server-side Enforcement
 
@@ -209,10 +224,13 @@ balance, or authorization assertions are untrusted.
 
 ## SEC-024 — Explicit Financial Actions
 
-Financial changes must use explicit business operations rather than unrestricted
-record mutation. This includes issuance, Adjustment, voiding, Payment
-confirmation, Allocation, Credit application, Refund, Reversal, Deposit
-application/disposition, and Settlement closure.
+Financial and business-significant changes must use explicit operations rather than
+unrestricted record mutation. This includes issuance, Adjustment, voiding,
+Late-payment final Decision, Late-payment Charge correction/reversal, Payment
+confirmation, Receipt reprint, Allocation, Customer Credit recognition/application/
+reversal, Refund, Reversal, Deposit receipt/application/disposition, active-Lease Pet
+Deposit qualifying refund review, Rent Nonpayment milestone/follow-up posting, and
+Settlement closure.
 
 ## SEC-025 — Required Financial Authorization
 
@@ -222,10 +240,11 @@ must not imply authority for a financial action.
 
 ## SEC-026 — Trusted Calculations
 
-Invoice balances, allocation availability, Credit balances, Deposit balances,
-Settlement results, Utility consumption, proration, and KHR conversion must be
-calculated or verified by trusted server-side logic. Callers must not set derived
-balances or statuses directly.
+Invoice balances, separate Late-payment Charge balances and default calculations,
+allocation availability, Customer Credit balances, Deposit balances, Settlement
+results, Utility consumption, proration, and KHR conversion must be calculated or
+verified by trusted server-side logic. Callers must not set derived balances,
+statuses, default percentages, or financial availability directly.
 
 ## SEC-027 — Exchange-rate Fallback
 
@@ -238,7 +257,9 @@ rules from `BR-MONEY-004` through `BR-MONEY-010`.
 
 Financial and scheduled commands that may be retried must use idempotency and
 uniqueness controls. Replayed requests must return the prior result or a conflict
-without duplicating a receipt, Invoice, Allocation, Credit, Refund, or Reversal.
+without duplicating an Invoice, Late-payment Decision/Charge, Payment, Receipt,
+Receipt reprint event, Allocation, Customer Credit event, Refund, Deposit event,
+Rent Nonpayment event, or Reversal.
 
 ## SEC-029 — Concurrency Protection
 
@@ -280,9 +301,15 @@ timezone context.
 
 ## SEC-034 — Audit Monitoring
 
-Monitoring should alert on repeated authentication failures, permission changes,
-financial reversals, exceptional Invoice voids, manual exchange-rate fallback,
+Monitoring should support alerting or high-value review for repeated authentication
+failures, permission changes, financial reversals, exceptional Invoice voids,
+Late-payment final Decisions and Charge corrections/reversals, active-Lease Pet Deposit
+qualifying Refund activity, Rent Nonpayment Serious Default events, manual
+exchange-rate fallback, unusual Receipt reprint activity where operationally useful,
 backup failures, restore attempts, and audit-write failures.
+
+Not every business event must generate a real-time alert; deployment policy may choose
+which audited high-value events become operational alerts.
 
 # 9. API and Input Security
 
@@ -498,9 +525,11 @@ The testing strategy must cover:
 
 - authentication success, failure, lockout/rate limiting, and revocation;
 - capability and object-level authorization for every protected action;
-- financial action bypass attempts;
+- financial/business-action bypass attempts, including Late-payment Decision/Charge,
+  Receipt reprint, active-Lease Pet Deposit refund review, and Rent Nonpayment events;
 - CSRF, injection, XSS, unsafe file/path, and sensitive-error controls;
-- concurrency and idempotency for financial operations;
+- concurrency and idempotency for financial operations and business-significant
+  append-only commands;
 - append-only audit behavior;
 - secret and log redaction;
 - backup integrity and restore authorization; and
@@ -511,6 +540,24 @@ The testing strategy must cover:
 Changes to authentication, authorization, financial endpoints, audit storage,
 secret handling, backup/restore, or network exposure require focused security
 review before deployment.
+
+## SEC-070 — High-value Workflow Authorization Boundaries
+
+The security model must preserve the separate authorization boundaries already
+defined by the authoritative API/UI:
+
+- a Late-payment final Decision is distinct from generic Invoice edit/issue authority;
+- a Late-payment Charge correction/reversal is distinct from the original Decision;
+- Receipt reprint is an audited financial-document action and must not create or
+  imply another Payment or Receipt identity;
+- active-Lease Pet Deposit Refund qualification is distinct from ordinary Deposit
+  management and from Refund execution;
+- Lease-violation warnings are distinct from Rent Nonpayment case/event authority; and
+- Customer Account Ledger access is read-only and must not imply authority to mutate
+  its source financial records.
+
+Server-side authorization must enforce these boundaries even when one deployment
+assigns several capabilities to the same person.
 
 # 18. OPEN OWNER DECISION
 
@@ -540,14 +587,19 @@ pending Owner confirmation.
 
 | Security area | Upstream authority |
 |---|---|
-| Financial authorization | `BR-AUTH-001`–`BR-AUTH-009` |
-| Audit reconstruction | `BR-AUDIT-001`–`BR-AUDIT-010` |
-| Payment and Allocation integrity | `BR-PAY-001`–`BR-PAY-035` |
-| Credit and Refund integrity | `BR-CREDIT-001`–`BR-CREDIT-012`, `BR-REFUND-001`–`BR-REFUND-012` |
-| Invoice lifecycle and correction | `BR-INV-001`–`BR-INV-050` |
-| Deposit and Settlement controls | `BR-DEP-001`–`BR-DEP-025`, `BR-SETTLE-001`–`BR-SETTLE-015` |
-| Currency and exchange integrity | `BR-MONEY-001`–`BR-MONEY-013` |
-| Property-local time and history | `BR-PROP-001`–`BR-PROP-003`, `BR-AUDIT-001`–`BR-AUDIT-010` |
+| Financial authorization | `BR-AUTH-*` |
+| Audit reconstruction | `BR-AUDIT-*` |
+| Invoice lifecycle and correction | `BR-INV-001` through `BR-INV-050` |
+| Late-payment Decision/Charge | `BR-INV-051` through `BR-INV-055`, `BR-LATE-*` |
+| Payment and Allocation integrity | `BR-PAY-*` |
+| Receipt and reprint integrity | `BR-RECEIPT-*` |
+| Customer Credit and Refund integrity | `BR-CREDIT-*`, `BR-REFUND-*` |
+| Customer Account Ledger access/integrity | `BR-LEDGER-*` |
+| Deposit and active-Lease Pet Refund controls | `BR-DEP-*`, applicable `BR-REFUND-*` |
+| Rent Nonpayment authorization boundary | `BR-LEASE-026` through `BR-LEASE-030`, applicable `BR-PAY-*` |
+| Settlement controls | `BR-SETTLE-*` |
+| Currency and exchange integrity | `BR-MONEY-*` |
+| Property-local time and history | `BR-PROP-*`, `BR-AUDIT-*` |
 
 # 20. Completion Criteria
 
@@ -560,5 +612,6 @@ This Security Model is complete for Owner Review when:
 - Customer data, secrets, backups, database access, and logs have explicit
   protections;
 - LAN and optional remote-access assumptions are explicit;
-- security verification requirements are traceable; and
+- security verification requirements and the high-value workflow authorization
+  boundaries are traceable; and
 - unresolved role/MFA mappings remain configurable OPEN OWNER DECISION items.
