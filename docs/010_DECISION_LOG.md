@@ -68,6 +68,7 @@ Older unnumbered placeholder documents are not decision authority.
 | `REQUIRED` | The requirement follows from cited authoritative rules. |
 | `DIRECTION RECORDED` | The repository records the technical direction, but later design documents must refine it. |
 | `OPEN` | Owner approval is still required. |
+| `SUPERSEDED` | The entry records a formerly open or formerly stated position that later authoritative reconciliation resolved; the historical ID remains preserved. |
 | `RECONCILIATION REQUIRED` | An approved decision and a current cited rule do not express the same policy. |
 
 ---
@@ -100,8 +101,8 @@ Older unnumbered placeholder documents are not decision authority.
 
 - **Type:** `OWNER BUSINESS DECISION`
 - **Status:** `ESTABLISHED`
-- **Decision:** A valid Reservation is required before move-in. Reservation statuses are only `ACTIVE`, `CANCELLED`, and `MOVED_IN`; an extension is historical activity rather than a status.
-- **Provenance:** Embodied in 001/002. The prohibition on an `EXPIRED` status was also explicitly approved by the Owner.
+- **Decision:** A valid Reservation is required before move-in. Reservation statuses are only `ACTIVE`, `CANCELLED`, and `COMPLETED`; an extension is historical activity rather than a status. `COMPLETED` means the Reservation successfully proceeded through move-in into its resulting Lease and Occupancy.
+- **Provenance:** Embodied in 001/002. The prohibition on an `EXPIRED` status and the reconciled successful-completion lifecycle are authoritative upstream.
 - **Affected documents/rules:** `001_DOMAIN_MODEL.md` sections 9.4, 45, 46, 89.6, 89.7, and 101; `BR-RES-001`, `BR-RES-003`, `BR-RES-009`, `BR-RES-013`, `BR-RES-014`.
 - **Rationale:** Not recorded.
 - **Decision date:** Not recorded.
@@ -159,8 +160,8 @@ Older unnumbered placeholder documents are not decision authority.
 
 - **Type:** `OWNER BUSINESS DECISION`
 - **Status:** `APPROVED`
-- **Decision:** There is no separate Reservation Deposit. The money collected during Reservation is the same Security Deposit that continues into the resulting Lease. Activating a Reservation requires at least 20% of agreed monthly Rent; more may be paid. The remaining required Security Deposit may be paid before or at move-in and must be complete no later than move-in completion.
-- **Provenance:** Literal Owner Decisions 3 and 5, consistent with the deposit model embodied in 001.
+- **Decision:** There is no separate Reservation Deposit. The money collected during Reservation is the same Security Deposit that continues into the resulting Lease. The normal/default suggested initial amount is 20% of agreed monthly Rent, but it is not a hard minimum. A Reservation becomes ACTIVE after the explicitly accepted initial partial Security Deposit amount is received; authorized management may accept an amount below or above the 20% suggestion with preserved authorization, reason, actor, and calculation evidence. The remaining required Security Deposit may be paid before or at move-in and must be complete no later than move-in completion.
+- **Provenance:** Owner-approved Reservation/Security Deposit policy as reconciled and embodied in 001/002.
 - **Affected documents/rules:** `001_DOMAIN_MODEL.md` sections 33, 35, 50, 65, 89.5, and 101; `BR-DEP-001` through `BR-DEP-006`; `BR-LEASE-015`; `BR-RES-013`.
 - **Rationale:** Not recorded as part of the approved decisions.
 - **Decision date:** Not recorded in this log.
@@ -214,7 +215,7 @@ Older unnumbered placeholder documents are not decision authority.
 
 - **Type:** `OWNER BUSINESS DECISION`
 - **Status:** `APPROVED`
-- **Decision:** Voluntary early termination makes the Security Deposit non-refundable but does not automatically make the Pet Deposit non-refundable. Pet Deposit remains separately tracked through Final Settlement, may be applied only to authorized pet-related damage, and is refundable to the extent not validly applied or otherwise validly forfeited under an approved rule.
+- **Decision:** Voluntary early termination makes the Security Deposit non-refundable but does not automatically make the Pet Deposit non-refundable. Pet Deposit remains separately tracked through Final Settlement. It is identified first for valid pet-caused property damage or extraordinary/deep-cleaning obligations; after Customer Credit and explicitly selected Security Deposit applications, authorized management may explicitly apply remaining Pet Deposit to another valid remaining Settlement obligation when permitted by the approved Settlement rules. Any remaining refundable balance is returned explicitly.
 - **Provenance:** Literal supplementary Owner Decision S8.
 - **Affected documents/rules:** `BR-DEP-023`, `BR-DEP-024`; `BR-SETTLE-005`, `BR-SETTLE-008`; `BR-REFUND-007`.
 - **Rationale:** Not recorded as part of the approved decision.
@@ -277,7 +278,7 @@ Older unnumbered placeholder documents are not decision authority.
 
 - **Type:** `OWNER BUSINESS DECISION`
 - **Status:** `ESTABLISHED`
-- **Decision:** Rent is billed monthly in advance. Recurring Rent Invoices are generated on the 25th for the upcoming calendar month and are normally due on the 5th. First partial months, and final partial months when an approved rule permits proration, use inclusive actual calendar days with final half-up USD-cent rounding. Every Rent Invoice requires the applicable signed Lease, and contractual Rent comes from that Lease.
+- **Decision:** Rent is billed monthly in advance. Recurring Rent Invoices are generated on the 25th for the upcoming calendar month and are due on the 5th day of that billed month. The Initial Rent Invoice is due seven calendar days after the actual Move-in Date, including when that date falls in the following month. Initial Rent coverage depends on Move-in Date: day 1–20 covers the Move-in Date through month-end; day 21 or later combines the prorated remainder of that month with the entire following month. First partial months, and final partial months when an approved rule permits proration, use inclusive actual calendar days with final half-up USD-cent rounding. Every Rent Invoice requires the applicable signed Lease, and contractual Rent comes from that Lease.
 - **Provenance:** Embodied in 001/002; monetary details were explicitly approved in Owner Decision 7.
 - **Affected documents/rules:** `001_DOMAIN_MODEL.md` sections 21 and 101; `BR-RENT-001` through `BR-RENT-028`; `BR-MONEY-012`, `BR-MONEY-013`.
 - **Rationale:** Not recorded.
@@ -299,8 +300,8 @@ Older unnumbered placeholder documents are not decision authority.
 
 - **Type:** `OWNER BUSINESS DECISION`
 - **Status:** `APPROVED`
-- **Decision:** Supported Invoice/line categories are Rent, Utilities, Service Charges, Damage Charges, and Miscellaneous Charges. Deposits are not Invoice categories. Internet and Trash are fixed recurring Service lines on the Rent Invoice, billed in advance on the Rent cycle; first partial months are prorated, while final or early-termination months are not automatically prorated merely because physical occupancy ends.
-- **Provenance:** Literal Owner Decision 10 plus the category model embodied in 001/002.
+- **Decision:** Supported Invoice/line categories are Rent, Utilities, Service Charges, Damage Charges, and Miscellaneous Charges. Deposits are not Invoice categories. Trash Collection is the currently approved recurring fixed Service and appears as a separately categorized line on the applicable Rent Invoice, billed in advance using the approved Initial/recurring Rent-period structure. Internet and Monthly Cleaning are not currently approved as active billable Services and must not generate charges merely because a Service identity or rate can be configured. Final or early-termination Service treatment follows the signed Lease and approved termination rules and is not automatically prorated merely because physical occupancy ends.
+- **Provenance:** Owner-approved fixed-Service policy as reconciled and embodied in 001/002.
 - **Affected documents/rules:** `001_DOMAIN_MODEL.md` sections 20.2, 23, and 53; `BR-SVC-001` through `BR-SVC-015`; `BR-INV-006` through `BR-INV-008`; `BR-INV-039`, `BR-INV-042`.
 - **Rationale:** Not recorded as part of the approved decision.
 - **Decision date:** Not recorded in this log.
@@ -353,14 +354,14 @@ Older unnumbered placeholder documents are not decision authority.
 ## DL-025 — Broken-Meter estimation with fewer than three historical periods
 
 - **Type:** `OWNER BUSINESS DECISION`
-- **Status:** `APPROVED`
-- **Decision:** The recovered literal supplementary Owner Decision S2 says that when fewer than three complete historical periods exist, the system must not substitute one or two historical periods or another Unit. It must wait for one complete future month of actual consumption for the same Unit and Utility Type, use that future month as the estimate basis, and keep the affected charge pending until then.
-- **Provenance:** Literal supplementary Owner Decision S2.
-- **Affected documents/rules:** `BR-UTIL-027`, `BR-UTIL-028`; `BR-MOVEOUT-005`, `BR-MOVEOUT-012`; `BR-SETTLE-011`; `BR-AUDIT-004`.
-- **Reconciliation note:** `BR-UTIL-027` and `BR-UTIL-028` were reconciled to the recovered literal Owner decision before downstream publication. Both insufficient-history cases preserve the pending charge until one complete future actual period exists.
-- **Rationale:** Not recorded as part of the approved decision.
+- **Status:** `ESTABLISHED`
+- **Decision:** For a confirmed broken Meter, three or more complete historical actual periods use the three most recent complete periods. If exactly one or two complete historical actual periods exist for the same Unit and Utility Type, all available one or two periods are used as the weighted historical basis; they must not be discarded. Only when zero complete historical actual periods exist does the affected estimate/charge remain pending until one complete future actual period for that same Unit and Utility Type becomes available. Another or comparable Unit and arbitrary estimates are prohibited.
+- **Provenance:** The final reconciled broken-Meter hierarchy is embodied authoritatively in 001/002 and propagated through 003–009.
+- **Affected documents/rules:** `BR-UTIL-025` through `BR-UTIL-028`; `BR-MOVEOUT-005`, `BR-MOVEOUT-012`; `BR-SETTLE-011`; `BR-AUDIT-004`.
+- **Reconciliation note:** Earlier recovered wording treated all fewer-than-three-history cases as pending. The approved authoritative rules supersede that interpretation: one/two-period history is usable immediately; only zero-history waits for a future complete actual period.
+- **Rationale:** Preserve same-Unit actual evidence whenever available without inventing a comparable-Unit estimate.
 - **Decision date:** Not recorded in this log.
-- **Alternatives:** Presented before approval; not adopted in the recovered literal decision.
+- **Alternatives:** Earlier wording is preserved by this reconciliation note but is not the current governing policy.
 
 ## DL-026 — Due Date source for non-recurring obligations
 
@@ -403,9 +404,9 @@ Older unnumbered placeholder documents are not decision authority.
 
 - **Type:** `OWNER BUSINESS DECISION`
 - **Status:** `APPROVED`
-- **Decision:** Payment Allocation remains manual and is posted only after authorized staff confirmation. The system may calculate a deterministic proposal. Without a Customer designation, the proposal uses oldest Due Date first across applicable obligations, with Invoice issue/generation order and then stable sequence/ID for ties, and no category preference. A valid Customer-designated Invoice may override the default proposal. Third-party Payment follows identified intent and is not spread automatically across unrelated obligations.
-- **Provenance:** Literal Owner Decision 13 and supplementary Decision S5, preserving the manual model established in 001.
-- **Affected documents/rules:** `BR-PAY-019` through `BR-PAY-029`; `BR-AUTH-007`; `001_DOMAIN_MODEL.md` sections 9.9, 54, 78, 90.9, and 104.
+- **Decision:** Payment Allocation remains manual and is posted only after authorized staff confirmation. The system may calculate a deterministic proposal. Without a Customer designation, the default between-Invoice proposal uses oldest Due Date first across applicable outstanding Invoices, with Invoice issue/generation order and then stable sequence/ID for ties. Within a selected mixed Rent Invoice, the default proposal applies value to Rent first and then recurring-Service lines; authorized staff still confirm the proposal. A valid Customer designation may select an eligible Invoice, line/obligation category, or separate positive Late-payment Charge. Late-payment Charges are separate obligations and are not silently inserted into the default Invoice FIFO. Third-party Payment follows identified intent and is not spread automatically across unrelated obligations.
+- **Provenance:** Owner-approved manual Allocation/FIFO policy as subsequently reconciled in 001/002.
+- **Affected documents/rules:** `BR-PAY-019` through `BR-PAY-040`; `BR-AUTH-*`; applicable Invoice and Late-payment rules.
 - **Rationale:** Not recorded as part of the approved decisions.
 - **Decision date:** Not recorded in this log.
 - **Alternatives:** Presented before approval; automatic posting was not adopted.
@@ -436,8 +437,8 @@ Older unnumbered placeholder documents are not decision authority.
 
 - **Type:** `OWNER BUSINESS DECISION`
 - **Status:** `APPROVED`
-- **Decision:** For each terminated Lease, finalize valid charges; apply authorized Customer Credit; apply Pet Deposit only to authorized pet-related damage; apply Security Deposit to remaining authorized obligations using oldest-due ordering where applicable; record any remaining Customer balance; and explicitly refund remaining refundable Deposit balances. Every input, application, disposition, Refund, and result remains separately traceable.
-- **Provenance:** Literal supplementary Owner Decision S6, refining Owner Decision 14.
+- **Decision:** For each terminated Lease, finalize every valid Settlement obligation; apply authorized Customer Credit first; identify Pet Deposit first for valid pet-caused property damage or extraordinary/deep-cleaning obligations; explicitly select and confirm any Security Deposit applications to valid remaining Settlement obligations; if a valid Settlement balance still remains and the Customer has not paid or will not pay it, authorized management may explicitly select remaining Pet Deposit for another valid remaining Settlement obligation; record any remaining Customer balance; and explicitly refund remaining refundable Deposit balances. No general Payment FIFO or inferred Deposit-type FIFO/oldest-due order controls Deposit application. Every input, application, disposition, Refund, correction, and result remains separately traceable.
+- **Provenance:** Final Settlement policy as reconciled and embodied in the authoritative 001/002 baseline.
 - **Affected documents/rules:** `BR-SETTLE-001` through `BR-SETTLE-015`; `BR-REFUND-007`; `BR-AUDIT-009`; `BR-AUTH-009`; `001_DOMAIN_MODEL.md` sections 37 and 57.
 - **Rationale:** Not recorded as part of the approved decision.
 - **Decision date:** Not recorded in this log.
@@ -487,9 +488,9 @@ new business policy.
 
 - **Type:** `DERIVED REQUIREMENT`
 - **Status:** `REQUIRED`
-- **Decision:** Unit availability, Invoice outstanding balance, Payment allocation progress, Customer Credit balance, Deposit outstanding/refundable balance, Utility consumption, Lease balance, and Settlement net balance must be derived from or fully reconcilable to authoritative records and must not become competing sources of truth.
-- **Derived from:** `001_DOMAIN_MODEL.md` sections 4.5, 38, 95; `BR-UNIT-013`; Payment, Credit, Deposit, and Settlement rules.
-- **Affected documents/rules:** 003-007; `BR-UNIT-013`; `BR-PAY-008` through `BR-PAY-014`; `BR-CREDIT-012`; `BR-SETTLE-009`, `BR-SETTLE-012`.
+- **Decision:** Unit availability, Invoice outstanding balance, separate Late-payment Charge remaining balance, Payment allocation progress, Customer Credit balance, Deposit outstanding/refundable balance, Utility consumption, Lease/Customer financial position, and Settlement results must be derived from or fully reconcilable to authoritative records and must not become competing sources of truth. The Customer Account Ledger is a read-only reconstructable view over those sources, not a second financial ledger or mutable accounting source.
+- **Derived from:** `001_DOMAIN_MODEL.md`; `BR-UNIT-013`; `BR-LATE-*`; `BR-PAY-*`; `BR-CREDIT-*`; `BR-LEDGER-*`; Deposit and Settlement rules.
+- **Affected documents/rules:** 003-009; applicable balance, Ledger, authorization, recovery, and audit requirements.
 - **Rationale:** Not separately recorded.
 - **Decision date:** Not recorded.
 - **Alternatives:** Not recorded.
@@ -498,9 +499,9 @@ new business policy.
 
 - **Type:** `DERIVED REQUIREMENT`
 - **Status:** `REQUIRED`
-- **Decision:** Scheduled Reservation expiration and recurring billing must be safely retryable. Stable business keys and deterministic ordering must prevent duplicate effects and support recovery of missed runs.
-- **Derived from:** Reservation end-of-date policy, duplicate-billing policy, and deterministic FIFO policy.
-- **Affected documents/rules:** 004, 005, 007, 009; `BR-RES-011`, `BR-RES-016`; `BR-RENT-011`, `BR-RENT-027`; `BR-INV-026` through `BR-INV-029`; `BR-PAY-021` through `BR-PAY-023`.
+- **Decision:** Scheduled Reservation expiration, recurring billing, overdue/Late-payment eligibility evaluation, and Rent Nonpayment milestone evaluation must be safely retryable. Stable business keys, uniqueness controls, Property-local business dates, and deterministic ordering must prevent duplicate effects and support recovery of missed runs. Scheduled evaluation must not cross the approved human-authorization boundaries: it may present Late-payment eligibility but cannot finalize a Late-payment Decision/Charge automatically, and Rent Nonpayment evaluation cannot automatically terminate a Lease.
+- **Derived from:** Reservation end-of-date policy, duplicate-billing policy, Late-payment rules, Rent Nonpayment rules, deterministic Allocation proposal policy, and approved deployment/security boundaries.
+- **Affected documents/rules:** 004, 005, 007, 008, 009; `BR-RES-*`; `BR-RENT-*`; `BR-INV-050` through `BR-INV-055`; `BR-LATE-*`; `BR-LEASE-026` through `BR-LEASE-030`; applicable `BR-PAY-*`.
 - **Rationale:** Not separately recorded.
 - **Decision date:** Not recorded.
 - **Alternatives:** Execution mechanism is deferred to later specifications.
@@ -520,12 +521,12 @@ new business policy.
 
 - **Type:** `DERIVED REQUIREMENT`
 - **Status:** `REQUIRED`
-- **Decision:** Every action described as authorized requires an authenticated actor with permission for that action. Audit data must preserve actor, action, date/time, reason, previous and resulting state/value, affected record, and required source links. The later Security Model may refine roles but must not weaken these requirements.
-- **Derived from:** `001_DOMAIN_MODEL.md` sections 40, 58, and 81; `BR-AUDIT-001` through `BR-AUDIT-010`; `BR-AUTH-001` through `BR-AUTH-009`.
-- **Affected documents/rules:** 004, 005, 006, 007, 008, 009.
-- **Rationale:** Not separately recorded.
+- **Decision:** Every action described as authorized requires an authenticated actor with permission for that exact action and object scope. Audit data must preserve actor, action, date/time, reason, previous and resulting state/value, affected record, and required source links. High-value capabilities remain separable: generic Invoice authority does not imply Late-payment final-Decision authority; Late-payment Charge correction/reversal is separate from the original Decision; Receipt reprint does not create another Payment/Receipt identity; active-Lease Pet Deposit Refund qualification is separate from ordinary Deposit/Refund execution; Lease-warning authority does not imply Rent Nonpayment Serious Default authority; and read-only Customer Account Ledger access does not imply mutation authority over source financial records.
+- **Derived from:** `001_DOMAIN_MODEL.md`; `BR-AUDIT-*`; `BR-AUTH-*`; `008_SECURITY_MODEL.md`, especially `SEC-020`, `SEC-022`, and `SEC-070`.
+- **Affected documents/rules:** 004-009 and every protected high-value workflow.
+- **Rationale:** Preserve approved business authorization boundaries independently of configurable staff role bundles.
 - **Decision date:** Not recorded.
-- **Alternatives:** Complete role and permission matrix is deferred to 008.
+- **Alternatives:** Named staff role-to-capability mapping remains an operational/security configuration choice.
 
 ---
 
@@ -557,16 +558,21 @@ new business policy.
 
 # 11. Open Owner Decisions
 
-## DL-042 — Due Date for a first partial-month Rent Invoice issued after the 5th
+No unresolved Owner **business-policy** decision remains in the approved 001–009
+baseline. The entry below is retained under its stable ID because it was formerly
+open and was later resolved during authoritative reconciliation.
 
-- **Type:** `OPEN OWNER DECISION`
-- **Status:** `OPEN`
-- **Question:** What Due Date applies when the first partial-month Rent Invoice is issued after the 5th day of the billed month?
-- **Current authoritative context:** `BR-RENT-005` permits a first partial-month Invoice after mid-month move-in. `BR-RENT-009` defines the normal recurring Due Date as the 5th day of the billed month unless the Lease specifies another date. Recovered session history explicitly identified the after-the-5th case as unresolved, and no later literal Owner answer was recovered.
-- **Affected documents/rules:** `BR-RENT-005`, `BR-RENT-009`, `BR-INV-018`; 003, 005, 006, and 007 workflows/tests.
-- **Rationale:** The approved rationale is not recorded.
-- **Decision date:** Not applicable; open.
-- **Alternatives:** Alternatives were presented in session history, but none was approved; this log does not select one.
+## DL-042 — Initial Rent Invoice Due Date after move-in — superseded open question
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `SUPERSEDED`
+- **Historical question:** What Due Date applies when the Initial Rent Invoice is issued after the 5th day of the billed month?
+- **Resolution:** `BR-RENT-009` now establishes the Initial Rent Invoice Due Date as exactly seven calendar days after the actual Move-in Date, including when the result falls in the following month. Examples include 10 July → 17 July, 20 July → 27 July, 21 July → 28 July, and 27 July → 3 August. Recurring Rent Invoices remain due on the 5th day of the billed month, and the Lease does not define an alternative recurring Due Date.
+- **Affected documents/rules:** `BR-RENT-005`, `BR-RENT-009`; corresponding PR, API, UI, testing, and billing requirements in 003–009.
+- **Reconciliation note:** Earlier `OOD-BR-001`/downstream propagation represented this as unresolved. Those references were superseded when the seven-calendar-day Initial Rent Due Date became authoritative.
+- **Rationale:** Current authoritative rule controls; no new decision is needed.
+- **Decision date:** Not recorded.
+- **Alternatives:** Earlier alternatives are historical and no longer open.
 
 ## 11.1 Open Implementation and Operational Decisions
 
@@ -590,9 +596,8 @@ the Owner or authorized deployment decision-maker resolves them.
 | `OOD-DEPLOY-002` | Production host, address, and certificate trust | Specify required properties without selecting infrastructure identifiers. |
 | `OOD-DEPLOY-003` | Remote-access enablement/gateway | Keep remote access disabled by default. |
 
-The repeated partial-month Due Date references `OOD-PR-001`, `OOD-API-002`,
-`OOD-UI-003`, and `OOD-TEST-003` all propagate the single business-policy question
-in `OOD-BR-001` and `DL-042`; they are not separate decisions.
+These implementation/operational choices do not reopen the superseded Initial
+Rent Due Date question in `DL-042` and do not authorize new business policy.
 
 ---
 
@@ -602,9 +607,9 @@ in `OOD-BR-001` and `DL-042`; they are not separate decisions.
 
 - **Type:** `DERIVED REQUIREMENT`
 - **Status:** `REQUIRED`
-- **Decision:** Each of the 343 `BR-*` rules has one same-suffix detailed `PR-*` requirement preserving its normative body. Capabilities, workflows, and quality requirements supplement rather than replace that bijection.
-- **Provenance:** `003_PRODUCT_REQUIREMENTS.md` sections 2 and 5-9.
-- **Affected documents/rules:** 003-007; every `BR-*` and detailed `PR-*`.
+- **Decision:** Every authoritative `BR-*` rule has one same-suffix detailed `PR-*` requirement preserving its normative body. Capabilities, workflows, and quality requirements supplement rather than replace that bijection. The Decision Log must not hard-code a stale rule count when authoritative rule families are extended through controlled reconciliation.
+- **Provenance:** `003_PRODUCT_REQUIREMENTS.md` authority/traceability model and the approved 001/002 rule set.
+- **Affected documents/rules:** 003-009; every `BR-*` and detailed same-suffix `PR-*`.
 - **Rationale:** Prevent loss of conditions, exceptions, calculations, and prohibitions during downstream translation.
 - **Decision date:** Not recorded.
 - **Alternatives:** Not recorded.
@@ -657,8 +662,8 @@ in `OOD-BR-001` and `DL-042`; they are not separate decisions.
 
 - **Type:** `TECHNICAL DESIGN DECISION`
 - **Status:** `DIRECTION RECORDED`
-- **Decision:** Authentication uses unique actor identities; server-side authorization is deny-by-default and capability-based; configurable role bundles do not themselves create business authority. Financial actions, audit access, secrets, Customer data, database privileges, and backups receive defense-in-depth controls.
-- **Provenance:** `008_SECURITY_MODEL.md` sections 2-17.
+- **Decision:** Authentication uses unique actor identities; server-side authorization is deny-by-default and capability-based; configurable role bundles do not themselves create business authority. Financial actions, audit access, secrets, Customer data, database privileges, and backups receive defense-in-depth controls. High-value workflow boundaries remain independently enforceable for Late-payment Decisions/Charge corrections, Receipt reprints, active-Lease Pet Deposit Refund qualification, Rent Nonpayment case/events, and read-only Customer Account Ledger access.
+- **Provenance:** `008_SECURITY_MODEL.md` sections 2-17, including `SEC-070`.
 - **Affected documents/rules:** 005-009; `BR-AUTH-001` through `BR-AUTH-009`; `BR-AUDIT-001` through `BR-AUDIT-010`.
 - **Rationale:** Enforce least privilege without inventing the Owner's organizational role map.
 - **Decision date:** Not recorded.
@@ -668,12 +673,67 @@ in `OOD-BR-001` and `DL-042`; they are not separate decisions.
 
 - **Type:** `TECHNICAL DESIGN DECISION`
 - **Status:** `DIRECTION RECORDED`
-- **Decision:** The production-oriented topology uses a TLS reverse proxy and static React build, FastAPI API, separate scheduled worker, and one PostgreSQL database, packaged for local-network operation. Durable job state, safe migrations, encrypted verified backups, monitored recovery, and no mandatory new cloud dependency are required.
-- **Provenance:** `009_DEPLOYMENT_ARCHITECTURE.md` sections 2-15.
-- **Affected documents/rules:** 004-009; scheduled, financial-history, security, and recovery requirements.
-- **Rationale:** Support maintainable single-site operation and reliable recovery without premature distributed services.
+- **Decision:** The production-oriented topology uses a TLS reverse proxy and static React build, FastAPI API, separate scheduled worker, and one PostgreSQL database, packaged for local-network operation. Durable job state, safe migrations, encrypted verified backups, monitored recovery, and no mandatory new cloud dependency are required. Deployment recovery and monitoring preserve the later Late-payment, Receipt/reprint, Customer Account Ledger, active-Lease Pet Deposit Refund, and Rent Nonpayment authorization/history boundaries.
+- **Provenance:** `009_DEPLOYMENT_ARCHITECTURE.md` sections 2-18.
+- **Affected documents/rules:** 004-009; scheduled, financial-history, security, monitoring, authorization, and recovery requirements.
+- **Rationale:** Support maintainable single-site operation and reliable recovery without premature distributed services or weakening high-value workflow boundaries.
 - **Decision date:** Not recorded.
 - **Alternatives:** Not recorded.
+
+## DL-050 — Late-payment Decision and separate Charge
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `ESTABLISHED`
+- **Decision:** After an applicable issued Invoice passes its Due Date with a positive remaining overdue balance, the system may calculate and present a default Late-payment proposal equal to 10% of that remaining overdue source-Invoice balance. Eligibility does not automatically post a Charge. Authorized management makes exactly one final Decision for that source Invoice: confirm the default, approve a positive reduced amount below the default, or waive it to zero. A positive final Decision creates exactly one separate Late-payment Charge obligation; it does not change the source Invoice principal, lines, balance, or status and cannot itself generate another Late-payment Charge. Later correction/reversal is explicit, authorized, linked, and append-only.
+- **Provenance:** Embodied authoritatively in 001/002 and propagated through approved 003–009.
+- **Affected documents/rules:** `BR-INV-051` through `BR-INV-055`; `BR-LATE-*`; applicable Payment, Credit, audit, authorization, API, UI, testing, security, and deployment requirements.
+- **Rationale:** Preserve the late-payment policy as a separately authorized non-compounding obligation rather than rewriting the source Invoice.
+- **Decision date:** Not recorded.
+- **Alternatives:** No automatic or recurring/compounding Charge is approved.
+
+## DL-051 — Receipt identity and reprint
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `ESTABLISHED`
+- **Decision:** A confirmed Payment normally produces one numbered immutable Receipt acknowledging money received. Receipt does not itself allocate value or create another financial obligation. A Receipt reprint preserves the same Receipt identity and Receipt Number and records a separate auditable reprint event; it must never create a second Payment, Receipt identity, or money-received event. Refund remains a separate outbound financial event.
+- **Provenance:** Embodied authoritatively in 001/002 and propagated through approved 003–009.
+- **Affected documents/rules:** `BR-PAY-018`; `BR-RECEIPT-*`; applicable API, UI, testing, security, recovery, and audit requirements.
+- **Rationale:** Customer-facing proof of receipt must remain reconstructable without duplicating financial value.
+- **Decision date:** Not recorded.
+- **Alternatives:** No separate Refund-receipt document is created by this decision.
+
+## DL-052 — Unified Customer Account Ledger
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `ESTABLISHED`
+- **Decision:** Each Customer has one unified chronological Customer Account Ledger view showing amounts charged, Payments and applications, Customer Credit, Refunds, Deposits as separately identifiable liabilities, Late-payment Charges, outstanding composition, total current amount owed, and available Customer Credit. The Ledger is reconstructed from authoritative underlying financial records and is read-only; it is not a General Ledger, Chart of Accounts, journal-entry system, vendor Accounts Payable system, or competing financial source of truth.
+- **Provenance:** Embodied authoritatively in 001/002 and propagated through approved 003–009.
+- **Affected documents/rules:** `BR-LEDGER-*`; applicable `BR-PAY-*`, `BR-CREDIT-*`, `BR-REFUND-*`, `BR-DEP-*`, `BR-LATE-*`; API-093 and downstream UI/testing/security/deployment requirements.
+- **Rationale:** Provide one understandable Customer financial view while retaining authoritative specialized records underneath.
+- **Decision date:** Not recorded.
+- **Alternatives:** Formal debit/credit bookkeeping and general accounting are outside current scope.
+
+## DL-053 — Active-Lease Pet Deposit Refund exception
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `ESTABLISHED`
+- **Decision:** Security Deposit is not refunded while a Lease remains SIGNED. If an approved pet permanently leaves during an active Lease, that departure is recorded and applicable pet-caused damage or extraordinary/deep-cleaning obligations are determined and resolved. Any remaining refundable Pet Deposit may then be returned through an explicit Refund without terminating the Lease or creating Final Settlement. Qualification/review for this exception is separate from Refund execution and preserves complete source and authorization history.
+- **Provenance:** Embodied authoritatively in 001/002 and propagated through approved 003–009.
+- **Affected documents/rules:** `BR-DEP-011` through `BR-DEP-014`; `BR-REFUND-013`; applicable API-094/API-065, UI, testing, security, audit, and recovery requirements.
+- **Rationale:** Pet Deposit remains tied to the pet-related exposure it secures and need not remain held after that exposure permanently ends and valid obligations are resolved.
+- **Decision date:** Not recorded.
+- **Alternatives:** This exception does not create an active-Lease Security Deposit Refund right.
+
+## DL-054 — Rent Nonpayment milestones remain separate from termination
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `ESTABLISHED`
+- **Decision:** Rent Nonpayment uses the remaining Rent obligation—not an unpaid recurring-Service-only balance. Calendar days overdue begin after the Rent Due Date. At 20 days overdue with positive Rent remaining, the system alerts authorized staff and supports/records the formal Nonpayment Warning Notice. At 30 days overdue with positive Rent remaining, it records the Serious Nonpayment Default condition. Cure before the 30-day threshold stops that current trigger while preserving history. Payment after Serious Default does not erase history or automatically decide an already initiated termination process. Neither the 20-day Warning nor 30-day Serious Default automatically terminates the Lease, ends Occupancy, changes Unit status, creates Move-out, or creates Final Settlement; termination remains a separately authorized signed-Lease action and the general warning requirements are not silently bypassed.
+- **Provenance:** Embodied authoritatively in 001/002 and propagated through approved 003–009.
+- **Affected documents/rules:** `BR-LEASE-024` through `BR-LEASE-030`; `BR-PAY-036` through `BR-PAY-039`; applicable API-095, UI, testing, security, scheduling, monitoring, and audit requirements.
+- **Rationale:** Preserve exact Rent-default evidence while preventing an automated financial milestone from becoming an unauthorized tenancy termination.
+- **Decision date:** Not recorded.
+- **Alternatives:** No automatic termination is approved.
 
 ---
 
