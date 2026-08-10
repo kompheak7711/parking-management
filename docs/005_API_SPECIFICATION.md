@@ -289,8 +289,21 @@ limited by capability and scope.
 ## API-031 — Customer Financial Summary
 
 `GET /customers/{customer_id}/financial-summary` returns currency-separated
-outstanding Invoice, unallocated Payment, Customer Credit, and Deposit-liability
-summaries. Deposit and Credit are separate values.
+outstanding Invoice and separate Late-payment Charge obligations, unallocated Payment,
+Customer Credit, and Deposit-liability summaries. Deposit and Credit are separate
+values.
+
+## API-093 — Customer Account Ledger
+
+`GET /customers/{customer_id}/account-ledger` returns the authorized chronological,
+reconstructable Customer Account Ledger derived from the authoritative financial
+sources. It exposes obligation composition, Payments and applications, Late-payment
+Charges, Customer Credit events, Refunds, Deposits as separately identifiable
+liabilities, current amount owed, and available Customer Credit with stable source
+links and timestamps.
+
+The endpoint is read-only. It does not create a General Ledger, Accounts Payable,
+journal-entry system, or competing financial source of truth.
 
 # 11. Reservation Endpoints
 
@@ -313,12 +326,13 @@ must satisfy `BR-RES-*` and create no Reservation Deposit type.
 Commands require idempotency. `extend` records the Notice and new date under the
 one-extension/14-day rules. `cancel` requires reason; expiration uses
 `RESERVATION_EXPIRED` while status becomes `CANCELLED`. `complete-move-in`
-coordinates `MOVED_IN` and related Lease/Occupancy/Deposit effects.
+coordinates Reservation `COMPLETED` with the resulting Lease, Occupancy, Unit, and
+continuing Security Deposit effects.
 
 ## API-034 — No Generic Reservation Status Patch
 
-Clients cannot set `ACTIVE`, `CANCELLED`, or `MOVED_IN` through PATCH. Unsupported
-`EXPIRED` is rejected.
+Clients cannot set `ACTIVE`, `CANCELLED`, or `COMPLETED` through PATCH. Unsupported
+`EXPIRED` and `MOVED_IN` Reservation statuses are rejected.
 
 # 12. Lease, Signer, and Occupancy Endpoints
 
@@ -356,8 +370,10 @@ responsibility.
 - `POST /leases/{id}/renew`
 - `POST /leases/{id}/terminate`
 
-Warning, Termination Notice, and Move-out creation use only the canonical API-067,
-API-068, and API-069 routes; API-038 defines no aliases for those actions.
+Lease-violation Warning, Termination Notice, and Move-out creation use only the
+canonical API-067, API-068, and API-069 routes; API-038 defines no aliases for those
+actions. Rent-specific nonpayment cases, 20-day warnings, 30-day Serious Nonpayment
+Defaults, cures, and authorized follow-up use API-095 instead.
 
 Each action has an explicit schema, authorization, reason/evidence, idempotency,
 and applicable rule references. Signing/renewal rechecks non-overlapping
@@ -420,6 +436,27 @@ forfeiture is rejected, and ordinary Invoice APIs never accept a Deposit balance
 `POST /deposit-dispositions/{id}/reverse` create DB-DEP-007/DB-DEP-008 linked
 correction events and never rewrite originals.
 
+## API-094 — Active-Lease Pet Deposit Refund Qualification
+
+- `POST /leases/{lease_id}/pet-departures`
+- `GET /leases/{lease_id}/pet-departures`
+- `POST /pet-departures/{pet_departure_id}/refund-review`
+- `GET /pet-deposit-refund-reviews/{review_id}`
+
+A pet-departure command records only the approved pet's permanent departure fact and
+does not terminate the Lease or itself authorize a Refund.
+
+A qualifying refund review is append-only and verifies the matching Pet approval,
+SIGNED Lease, Pet Deposit, Customer, permanent departure, resolved pet obligations,
+remaining refundable Pet Deposit, reason, authorization, actor, and supporting
+resolution reference. Only a qualifying review may support the active-Lease Pet
+Deposit Refund exception.
+
+The resulting Refund is created through API-065 using the Pet Deposit as its source and
+the qualifying review as `pet_refund_review_id`. This path does not require or create a
+Final Settlement, does not apply the Deposit to an Invoice, and does not limit other
+Customer liability.
+
 # 14. Service Rate Endpoints
 
 ## API-043 — Service Rates
@@ -428,9 +465,14 @@ correction events and never rewrite originals.
 - `POST /properties/{property_id}/service-rates`
 - `GET /service-rates/{rate_id}`
 
-Only approved fixed recurring Internet and Trash Collection Service types are
-accepted. Rates are effective-dated and historical records are not overwritten.
-No generic one-time Service endpoint is authorized.
+Only configured Services may receive effective-dated rate records. A Service becomes
+billable only when it also has an applicable Owner-approved Service approval period and
+applicable Lease Service term. The initial production configuration approves Trash
+Collection for billing. Internet and Monthly Cleaning have no approved active period and
+must not be treated as currently provided or billable. A future Service requires its
+separate authoritative Owner-approved rule and explicit approval period before billing.
+Historical rate records are not overwritten. No generic one-time Service endpoint is
+authorized.
 
 # 15. Utility Meter and Reading Endpoints
 
@@ -482,12 +524,19 @@ Preview does not authorize issuance.
 
 ## API-049 — Broken-meter Pending Basis
 
-When fewer than three complete historical actual periods exist, preview/generation
-returns a structured `PENDING_FUTURE_ACTUAL_BASIS` result until one complete future
-actual period for the same Unit and Utility Type exists. The API accepts no
-arbitrary estimate, substitute Unit, or one/two-period historical substitution.
-With three or more histories it uses the three most recent complete periods
-preceding the affected period.
+Broken-Meter preview/generation follows the authoritative basis hierarchy exactly:
+
+- with three or more complete historical actual periods for the same Unit and
+  Utility Type, use the three most recent complete historical periods preceding the
+  affected period;
+- with exactly one or two complete historical actual periods, use all available
+  one or two periods as the weighted historical basis; and
+- with zero complete historical actual periods, return
+  `PENDING_FUTURE_ACTUAL_BASIS` and wait until one complete future actual period
+  for the same Unit and Utility Type exists.
+
+The API accepts no arbitrary estimate, substitute/comparable Unit, omitted available
+one/two-period history, or averaging of separately rounded period averages.
 
 # 16. Invoice Endpoints
 
@@ -537,6 +586,33 @@ reversal first.
 Lines are created only through approved draft/generation services and include type,
 description, exact amount/currency, source type/id, calculation evidence, and
 sequence. A generic API cannot attach an unsupported fee, penalty, or category.
+
+## API-091 — Late-payment Decision and Charge
+
+- `GET /invoices/{invoice_id}/late-payment-review`
+- `POST /invoices/{invoice_id}/late-payment-decision`
+- `GET /invoices/{invoice_id}/late-payment-decision`
+- `GET /late-payment-charges/{charge_id}`
+- `POST /late-payment-charges/{charge_id}/corrections`
+
+The review endpoint returns the authoritative overdue balance at assessment, exact
+default 10% proposal, calculated default amount, prior-decision state, and blocking
+conditions without posting a Charge.
+
+The final-decision command is authorized and idempotent and accepts only
+`CONFIRMED_DEFAULT`, `REDUCED`, or `WAIVED`. A REDUCED decision records the exact
+approved USD amount below the calculated default amount. The approved monetary amount
+is authoritative; the API must not force the effective reduced percentage into whole
+basis-point precision. WAIVED requires zero, while CONFIRMED_DEFAULT requires the
+calculated default amount.
+
+Exactly one final decision may exist per applicable source Invoice. A positive final
+amount creates the separate immediately payable Late-payment Charge represented by
+DB-INV-008; a waiver creates no positive receivable. The Charge is not an Invoice,
+Invoice line, Invoice category, Miscellaneous Charge, or source-Invoice balance.
+
+Charge corrections use only DB-INV-009's authorized reduction/reversal mechanisms and
+must not reopen, supplement, replace, or recalculate the final decision.
 
 # 17. Scheduled Billing Endpoints
 
@@ -605,10 +681,12 @@ order and stable identifier for ties. The proposal is not posted automatically.
 Customer-designated intent may select its specified eligible Invoice; third-party
 intent remains restricted to its designation.
 
-Allocation is an explicit manual authorized command with Invoice and amount.
-Authorized staff confirm/post the proposal or permitted designation. Server
-transaction checks Customer/currency/context eligibility, Payment availability,
-Invoice outstanding balance, and concurrency. Reversal creates a linked event.
+Allocation is an explicit manual authorized command with an eligible Invoice or
+separate Late-payment Charge target and exact amount. Authorized staff confirm/post the
+proposal or permitted designation. The server transaction checks Customer/currency/
+context eligibility, Payment availability, target outstanding balance, and concurrency.
+A Late-payment Charge allocation reduces only that separate Charge and never the source
+Invoice. Reversal creates a linked event.
 
 ## API-060 — Payment Reversal
 
@@ -618,6 +696,22 @@ including Allocations, Credit recognitions/applications, Deposit Receipts,
 Deposit Applications/Dispositions, and any required DB-REFUND-002 verified return,
 before it sets `REVERSED`; it then recomputes affected balances/statuses without
 deleting history.
+
+## API-092 — Receipt and Reprint
+
+- `GET /payments/{payment_id}/receipt`
+- `GET /receipts/{receipt_id}`
+- `POST /receipts/{receipt_id}/reprints`
+
+A confirmed Payment normally produces exactly one numbered immutable Receipt in the
+same transaction. The Receipt acknowledges money received but does not allocate,
+settle, recognize Credit, create a Deposit, or otherwise move value.
+
+A reprint uses the same Receipt UUID and Receipt Number and records a separate
+append-only reprint event with actor, timestamp, reason, and optional delivery
+reference. Reprinting must never create another Payment, Receipt identity, or
+money-received event. Payment reversal preserves the original Receipt as historical
+evidence.
 
 # 19. Customer Credit Endpoints
 
@@ -645,9 +739,10 @@ use Payment Allocation.
 - `POST /customer-credits/{id}/applications`
 - `POST /credit-applications/{id}/reverse`
 
-Commands require eligible Invoice, exact amount/currency, authorization, and
-idempotency; they revalidate Credit availability and Invoice outstanding balance
-transactionally.
+Commands require an eligible Invoice or separate Late-payment Charge target, exact
+amount/currency, authorization, and idempotency; they revalidate Credit availability
+and target outstanding balance transactionally. A Late-payment Charge application
+reduces only that separate Charge and never the source Invoice.
 
 # 20. Refund Endpoints
 
@@ -656,21 +751,29 @@ transactionally.
 - `GET /properties/{property_id}/refunds`
 - `GET /refunds/{refund_id}`
 
-A Refund response includes Customer, source type/id, exact amount/currency,
-method/reference, business/recorded timestamps, actor, status/event state defined
-by data model, and correction/reversal links.
+A Refund response includes Customer, authoritative source type/id, exact
+amount/currency, applicable exchange facts, processed timestamp, actor, authorization,
+and correction links. The API does not invent a business Refund status, pending/failed
+state, or delivery method that is not defined by the authoritative model.
 
 ## API-065 — Create Refund
 
 `POST /refunds` accepts only an API-supported eligible source and amount within
 server-calculated availability. Supported source families are limited to those
-approved upstream, including Property-caused Reservation Deposit Refund, eligible
-Payment/Credit disposition, or Final Settlement result.
+approved upstream, including:
+
+- Security Deposit received for a Property-caused Reservation cancellation;
+- eligible unallocated Payment value;
+- eligible Customer Credit;
+- a Deposit Refund required by Final Settlement; and
+- the active-Lease Pet Deposit Refund exception supported by a qualifying
+  DB-LEASE-011 review under API-094.
 
 An unallocated KHR excess refunded before Credit recognition uses the corresponding
 original KHR excess. A later KHR Refund of USD Customer Credit uses the exchange
 rate applicable to that Refund and preserves USD value, KHR value, rate, source,
-and timestamp.
+and timestamp. An active-Lease Pet Deposit Refund requires the matching Pet Deposit
+source and `pet_refund_review_id` and prohibits a Final Settlement link.
 
 ## API-066 — Refund Correction
 
@@ -683,13 +786,15 @@ prohibited.
 
 # 21. Warning and Termination Records
 
-## API-067 — Warning Records
+## API-067 — Lease Violation Warning Records
 
-- `GET /leases/{lease_id}/warnings`
-- `POST /leases/{lease_id}/warnings`
+- `GET /leases/{lease_id}/violation-warnings`
+- `POST /leases/{lease_id}/violation-warnings`
 
-Creation records approved reason/category, sequence/evidence, dates, actor, and
-idempotency. It creates no fee or automatic termination.
+Creation records the DB-LEASE-005 Lease-violation warning sequence, violation and
+warning dates, description, governing Lease provision, communication evidence, actor,
+and idempotency. It creates no fee, Rent-nonpayment milestone, or automatic
+termination.
 
 ## API-068 — Termination Notices
 
@@ -697,7 +802,34 @@ idempotency. It creates no fee or automatic termination.
 - `POST /leases/{lease_id}/termination-notices`
 
 Notice schema captures approved grounds, dates, source/Lease terms, evidence, actor,
-and current effect. It does not itself grant unsupported forfeiture or Refund.
+and current effect. It does not itself grant unsupported forfeiture or Refund and does
+not itself change Lease status.
+
+## API-095 — Rent Nonpayment Cases and Events
+
+- `GET /leases/{lease_id}/rent-nonpayment-cases`
+- `POST /leases/{lease_id}/rent-nonpayment-cases`
+- `GET /rent-nonpayment-cases/{case_id}`
+- `GET /rent-nonpayment-cases/{case_id}/events`
+- `POST /rent-nonpayment-cases/{case_id}/events`
+
+Rent nonpayment is tracked separately from Lease-violation warnings. Opening a case is
+an authorized/idempotent action tied to one applicable issued, non-VOID Rent Invoice
+line for the same Lease and financially responsible Customer. The server preserves the
+source Invoice, Rent line, Customer, Lease, and Due Date snapshot and must not open a
+case from the total balance of a mixed-category Invoice.
+
+The event command permits only the authoritative event kinds and prerequisites:
+`TWENTY_DAY_WARNING`, `THIRTY_DAY_SERIOUS_DEFAULT`, `CURE`, and
+`AUTHORIZED_FOLLOW_UP`. Posting rechecks remaining Rent from authoritative financial
+applications. A 20-day warning requires positive remaining Rent and its required
+Notice/document reference; a 30-day Serious Nonpayment Default requires positive
+remaining Rent at the approved milestone. Cure and authorized follow-up preserve
+history.
+
+No Rent-nonpayment event automatically terminates the Lease, ends Occupancy, moves out
+the Customer, changes Unit status, or creates Final Settlement. Any termination remains
+a separate authorized Lease action.
 
 # 22. Move-out and Final Settlement Endpoints
 
@@ -728,12 +860,17 @@ Adjustments, applications, separate Security/Pet Deposit availability and propos
 dispositions, Customer Credit, resulting receivable/refundable amounts, and
 blocking issues. Preview does not close or mutate the Settlement.
 
-The calculation order is: finalize valid charges; apply authorized Customer
-Credit; apply Pet Deposit only to authorized pet-related damage; apply Security
-Deposit to remaining authorized obligations using oldest-Due ordering where
-applicable; record remaining Customer balance; and explicitly Refund remaining
-refundable Deposit balances. Every application, disposition, and Refund remains a
-separate event.
+The calculation order follows the explicit DB-DEP-005 stages: finalize valid
+charges; apply authorized Customer Credit first; apply Pet Deposit to authorized
+pet-related Invoice lines under `PET_RELATED_FIRST`; permit explicitly authorized
+Security Deposit applications under `SECURITY_EXPLICIT`; then permit any remaining
+Pet Deposit to be explicitly applied to any valid remaining Settlement Invoice line
+under `PET_REMAINDER_EXPLICIT`; record the remaining Customer balance; and explicitly
+Refund remaining refundable Deposit balances.
+
+Every Deposit target and amount is explicitly authorized. Payment FIFO and any
+inferred Deposit-type FIFO or oldest-Due ordering are not reused for Deposit
+applications. Every application, disposition, and Refund remains a separate event.
 
 ## API-072 — Settlement Actions
 
@@ -890,12 +1027,17 @@ requirements identify the persistence requirement used by that operation.
 | Reservation | `BR-RES-*` |
 | Lease/Occupancy/Move-in | `BR-LEASE-*`, `BR-OCC-*`, `BR-DEP-*` |
 | Deposit/Pet | `BR-DEP-*` |
+| Active-Lease Pet Deposit Refund | `BR-DEP-*`, `BR-REFUND-*` |
 | Rent/Services | `BR-RENT-*`, `BR-SVC-*` |
 | Utilities | `BR-UTIL-*` |
 | Invoice | `BR-INV-*` |
+| Late-payment Decision/Charge | `BR-INV-051` through `BR-INV-055`, `BR-LATE-*` |
 | Payment/Allocation | `BR-PAY-*` |
+| Receipt/Reprint | `BR-RECEIPT-*` |
+| Customer Account Ledger | `BR-LEDGER-*` |
 | Credit/Refund | `BR-CREDIT-*`, `BR-REFUND-*` |
-| Termination/Move-out | `BR-LEASE-017` through `BR-LEASE-025`, `BR-MOVEOUT-*` |
+| Rent Nonpayment | `BR-LEASE-026` through `BR-LEASE-030`, applicable `BR-PAY-*` |
+| Termination/Move-out | `BR-LEASE-017` through `BR-LEASE-030`, `BR-MOVEOUT-*` |
 | Settlement | `BR-SETTLE-*` |
 | Money/FX | `BR-MONEY-*` |
 | Audit/Authorization | `BR-AUDIT-*`, `BR-AUTH-*` |
@@ -911,18 +1053,6 @@ capability enforcement independent of provider.
 
 **Blocking:** No.
 
-## OOD-API-002 — Exact Partial-period Rent Due Date
-
-**Question:** If a first partial-month Rent Invoice is issued after that billed
-month's recurring 5th-day due date, what exact Due Date applies?
-
-**Current treatment:** The API returns and validates only the Due Date selected by
-an authoritative rule or signed-Lease term. It does not invent a fallback. This
-item remains open only if not resolved in `002_BUSINESS_RULES.md`.
-
-**Blocking:** No for API structure; blocks final expected-value tests for that exact
-scenario.
-
 # 31. Completion Criteria
 
 This API Specification is complete for Owner Review when:
@@ -935,4 +1065,5 @@ This API Specification is complete for Owner Review when:
 - scheduled jobs use the same business services without bypass;
 - no unsupported fees, penalties, statuses, Refund rights, Deposit uses, or
   termination behavior are exposed; and
-- genuine nonblocking provider/due-date questions remain explicit.
+- the remaining nonblocking authentication-provider integration question remains
+  explicit without inventing provider-specific business policy.
