@@ -242,17 +242,28 @@ Show identity/contact source data and role-based relationships:
 
 ## UI-030 — Customer Financial Summary
 
-Display currency-separated outstanding Invoice, unallocated Payment, and available
-Customer Credit values with links to underlying events. Deposit liability is shown
-separately and never merged into Credit.
+Display currency-separated outstanding Invoice and separate Late-payment Charge
+obligations, unallocated Payment, and available Customer Credit values with links to
+underlying events. Deposit liability is shown separately and never merged into Credit.
+
+## UI-104 — Customer Account Ledger
+
+Provide a dedicated read-only chronological Customer Account Ledger view sourced from
+API-093. It shows authoritative obligation composition, Invoices, separate Late-payment
+Charges, Payments and applications, Customer Credit events, Refunds, separately
+identifiable Deposit liabilities, current amount owed, available Customer Credit,
+timestamps, and stable source links.
+
+The UI must not present this view as a General Ledger, journal-entry workspace,
+Accounts Payable system, or editable financial source of truth.
 
 # 9. Reservation Workflow
 
 ## UI-031 — Reservation List
 
-List `ACTIVE`, `CANCELLED`, and `MOVED_IN` Reservations only; do not display or
-create an `EXPIRED` status. Show Unit, Customer, date range, Expiration Date,
-Security Deposit progress, and next permitted action.
+List `ACTIVE`, `CANCELLED`, and `COMPLETED` Reservations only; do not display or
+create `EXPIRED` or `MOVED_IN` Reservation statuses. Show Unit, Customer, date range,
+Expiration Date, Security Deposit progress, and next permitted action.
 
 ## UI-032 — Create Reservation
 
@@ -321,9 +332,10 @@ automatic month-to-month renewal.
 
 ## UI-042 — Lease Timeline
 
-Show drafting, signing, move-in, warnings, notices, occupancy changes, renewal,
-termination, move-out, and Settlement events in chronological order with links to
-source records.
+Show drafting, signing, move-in, Lease-violation warnings, Rent-nonpayment case/events,
+Termination Notices, occupancy changes, renewal, termination, move-out, and Settlement
+events in chronological order with links to their distinct source records. The UI must
+not merge Lease-violation warnings with Rent-nonpayment milestones.
 
 # 11. Move-in Workflow
 
@@ -342,7 +354,8 @@ requirement.
 ## UI-045 — Complete Move-in
 
 One explicit confirmation coordinates actual move-in/Occupancy, Reservation
-`MOVED_IN`, and Deposit continuity. Partial failure must not be shown as success.
+`COMPLETED`, Unit `OCCUPIED`, and Security Deposit continuity. Partial failure must
+not be shown as success.
 
 # 12. Billing Workspace
 
@@ -394,6 +407,33 @@ Exceptional voiding requires capability, reason, consequence preview, and explic
 confirmation. If active applications block voiding, link to required reversal
 workflows. The original remains visible as `VOID`.
 
+## UI-105 — Late-payment Review, Decision, and Charge
+
+Provide an authorized workspace corresponding to API-091. For an eligible overdue
+Invoice, show:
+
+- source Invoice and Customer;
+- Due Date;
+- remaining overdue balance at assessment;
+- normal/default rate of exactly 10%;
+- calculated default Charge amount;
+- prior-decision/blocking state; and
+- final management action.
+
+The final action offers only `CONFIRMED_DEFAULT`, `REDUCED`, or `WAIVED`. REDUCED
+captures the exact approved USD amount below the calculated default amount. The UI must
+not force an approved reduced amount into whole-basis-point percentage precision or
+invent an additional rounding rule.
+
+After confirmation, display the immutable final decision and, when positive, the
+resulting separate immediately payable Late-payment Charge. The UI must clearly state
+that the Charge is not an Invoice, Invoice line, Invoice category, Miscellaneous
+Charge, or increase to the source Invoice balance/status.
+
+Authorized Charge corrections/reversals use explicit DB-INV-009/API-091 actions,
+reason, consequence preview, confirmation, and append-only history. They never reopen
+or replace the final decision.
+
 # 13. Rent and Fixed Service UI
 
 ## UI-053 — Scheduled Rent Runs
@@ -409,8 +449,13 @@ applicable, exact rounding result, fixed Service lines, and applicable Lease.
 
 ## UI-055 — Service Configuration
 
-Authorized users may maintain effective-dated fixed recurring Internet and Trash
-Collection rates/terms permitted by upstream rules. Historical selections are
+Authorized users may maintain configured Service identities and effective-dated rates
+permitted by the API. A Service becomes billable only when an applicable
+Owner-approved Service approval period and applicable Lease Service term exist.
+
+The initial production UI treats Trash Collection as the currently approved billable
+Service. Internet and Monthly Cleaning must not be presented as currently provided or
+billable because they have no approved active period. Historical selections are
 read-only. No generic one-time Service option is added.
 
 # 14. Utilities UI
@@ -451,16 +496,20 @@ selected Rate/effective-date evidence, and line amount.
 
 ## UI-062 — Broken-meter Handling
 
-Display the exact basis:
+Display the authoritative basis used by the server:
 
-- three most recent complete prior actual periods when three or more exist;
-- pending/unfinalized state when only one or two complete prior periods exist,
-  until one complete future actual period for the same Unit and Utility Type; or
-- the same pending future-period treatment when no complete prior period exists.
+- when three or more complete historical actual periods exist for the same Unit and
+  Utility Type, use and show the three most recent complete prior periods;
+- when exactly one or two complete historical actual periods exist, use and show all
+  available one or two periods as the weighted historical basis; or
+- when zero complete historical actual periods exist, show
+  `PENDING_FUTURE_ACTUAL_BASIS` until one complete future actual period for the same
+  Unit and Utility Type exists.
 
-Show total consumption, represented days, basis daily average, affected days, and
-result. Do not offer a one/two-period historical substitution, another Unit, or
-arbitrary-estimate input.
+Show total basis consumption, represented basis days, weighted daily average, affected
+unmeasured days, calculation result, and whether the charge remains pending. Do not
+offer another/comparable Unit, arbitrary-estimate input, omission of available
+one/two-period history, or averaging of separately rounded period averages.
 
 # 15. Payments and Allocations UI
 
@@ -492,21 +541,38 @@ amount, and audit timeline.
 
 ## UI-066 — Manual Allocation Workspace
 
-Authorized staff choose a RECEIVED Payment and one or more eligible Customer
-Invoices. The UI shows Payment availability and each Invoice outstanding balance,
-prevents obvious over-allocation, and submits explicit Allocation commands. Server
-transaction rules remain authoritative.
+Authorized staff choose a RECEIVED Payment and eligible obligation targets: an
+Invoice or separate Late-payment Charge. The UI shows Payment availability and each
+target's outstanding balance, prevents obvious over-allocation, and submits explicit
+Allocation commands. Server transaction rules remain authoritative.
 
-For a normal undesignated Customer Payment, show the server's FIFO proposal by
-oldest Due Date with stable tie ordering; staff must still confirm/post it. Show
-Customer-designated eligible Invoice intent instead when present. A third-party
-payer remains distinct from the Customer and its Payment is limited to the
-recorded designation rather than spread across unrelated obligations.
+For a normal undesignated Customer Payment, show the server's FIFO proposal across
+applicable Invoices by oldest Due Date with stable tie ordering; staff must still
+confirm/post it. Show Customer-designated eligible Invoice or Late-payment Charge
+intent when present. A third-party payer remains distinct from the financially
+responsible Customer and its Payment remains limited to the recorded designation
+rather than spread across unrelated obligations.
+
+A Late-payment Charge target is displayed as a separate obligation and Allocation to
+it must never appear to reduce the source Invoice.
 
 ## UI-067 — Allocation Reversal
 
-Show original Allocation, resulting Payment/Invoice effects, reason, and explicit
-confirmation. Record a reversal event; do not delete the Allocation.
+Show original Allocation, resulting Payment/target-obligation effects, reason, and
+explicit confirmation. Record a reversal event; do not delete the Allocation.
+
+## UI-106 — Receipt and Reprint
+
+Payment detail links to the one immutable numbered Receipt created for the confirmed
+Payment. The Receipt screen displays its stable Receipt identity/number, Payment,
+Customer, issuance facts, and current joined Payment/application context without
+turning displayed derived amounts into Receipt-owned financial values.
+
+Authorized reprint uses the same Receipt UUID and Receipt Number and requires the
+API-092 reprint action. Show actor, timestamp, required reason, and optional delivery
+reference in reprint history. Reprinting must never appear to create another Payment,
+another Receipt identity, or another money-received event. A reversed Payment retains
+its original Receipt as historical evidence.
 
 ## UI-068 — Overpayment Choices
 
@@ -526,28 +592,58 @@ balance.
 
 ## UI-070 — Apply Credit
 
-Authorized action selects eligible Invoice and amount, validates currency and
-availability, shows resulting balance/status, and records a Credit application.
-It is not implemented as Payment Allocation.
+Authorized action selects an eligible Invoice or separate Late-payment Charge target
+and exact amount, validates availability and context, shows the resulting target
+balance/status or Charge balance, and records a Customer Credit application. It is not
+implemented as Payment Allocation.
+
+A Late-payment Charge application reduces only that separate Charge and must never be
+displayed as reducing the source Invoice.
 
 ## UI-071 — Refund Workspace
 
-Create Refund only from an API-reported eligible source such as approved
-Property-caused Reservation cancellation, Payment excess/Credit, or Final
-Settlement result. Show source, maximum refundable amount, currency, method/reference,
-reason, authorization, and consequence.
+Create a Refund only from an API-reported eligible source: Property-caused
+Reservation Security Deposit Refund, eligible unallocated Payment value, eligible
+Customer Credit, a Deposit Refund required by Final Settlement, or the qualifying
+active-Lease Pet Deposit Refund path under UI-107.
 
-For unallocated KHR excess refunded before Credit recognition, show the
-corresponding original KHR excess. For USD Customer Credit later refunded in KHR,
-show the Refund-date exchange rate and preserved USD/KHR values before confirmation.
+Show authoritative source, maximum refundable amount, currency and applicable
+exchange facts, reason, authorization, and consequence. Do not invent a delivery
+method or pending/failed business status absent from the authoritative API/model.
+
+For unallocated KHR excess refunded before Credit recognition, show the corresponding
+original KHR excess. For USD Customer Credit later refunded in KHR, show the Refund-date
+exchange rate and preserved USD/KHR values before confirmation.
 
 ## UI-072 — Refund History
 
-Display requested/recorded/completed facts and corrections as defined by approved
-statuses/events. For an erroneous completed Refund, the correction action records
-only verified returned value with exact amount/currency, return timestamp/method
-reference, reason, and authorization; it does not imply a collection right or erase
-the payout. The UI must not imply a Refund right absent from upstream rules.
+Display the authoritative completed Refund event, its source, amount/currency,
+exchange facts where applicable, processing facts, authorization, and linked
+corrections. Do not invent requested/pending/failed Refund business statuses.
+
+For an erroneous completed Refund, the correction action records only verified
+returned value with exact amount/currency, return timestamp/method reference, reason,
+and authorization; it does not imply a collection right or erase the payout. The UI
+must not imply a Refund right absent from upstream rules.
+
+## UI-107 — Active-Lease Pet Deposit Refund
+
+For a SIGNED Lease with an approved pet, provide the authorized API-094 workflow:
+
+1. record that the approved pet permanently left;
+2. display the Pet Deposit and relevant pet-related obligations;
+3. perform the qualifying refund review after those obligations are resolved; and
+4. when the server reports a refundable balance, continue to the explicit Refund
+   action using that Pet Deposit and review.
+
+The pet-departure event does not terminate the Lease or itself authorize a Refund.
+The qualifying review shows permanent-departure evidence, reviewed obligations,
+resolved finding/reference, remaining refundable Pet Deposit, reason, actor, and
+authorization.
+
+This workflow must not create or require Final Settlement, apply the Pet Deposit to an
+Invoice, refund Security Deposit during the SIGNED Lease, or imply that the Refund
+limits any remaining Customer liability.
 
 # 17. Reversal UI
 
@@ -566,11 +662,36 @@ balances/statuses, Deposit/Credit balances, and preserved original history.
 
 # 18. Warning, Termination, and Move-out UI
 
-## UI-075 — Warning Letters
+## UI-075 — Lease Violation Warning Letters
 
-Show warnings by Lease with sequence/order, reason, issue/delivery evidence, actor,
-and status/effect defined upstream. Creating a warning does not display a fee or
-automatic termination consequence unless explicitly authorized.
+Show DB-LEASE-005/API-067 Lease-violation warnings by Lease with warning sequence,
+violation date, warning date, violation description, governing Lease provision,
+communication evidence, and actor. Creating a Lease-violation warning does not create
+a Rent-nonpayment milestone, fee, or automatic termination.
+
+## UI-108 — Rent Nonpayment Cases and Events
+
+Provide a separate workspace for API-095 Rent-nonpayment cases and events. Opening a
+case requires selection of the applicable issued, non-VOID Rent Invoice line for the
+same Lease and financially responsible Customer. Show the Rent line, source Invoice,
+Due Date snapshot, current remaining Rent balance, and case history. Do not derive the
+case from a mixed Invoice's total balance.
+
+Only the authoritative event actions are available:
+
+- `TWENTY_DAY_WARNING`;
+- `THIRTY_DAY_SERIOUS_DEFAULT`;
+- `CURE`; and
+- `AUTHORIZED_FOLLOW_UP`.
+
+The UI shows server-evaluated milestone eligibility and remaining Rent. The 20-day
+warning requires its Notice/document reference; the 30-day Serious Nonpayment Default
+requires the approved milestone and positive remaining Rent. Cure and authorized
+follow-up preserve prior history.
+
+No event control may imply automatic Lease termination, Occupancy closure, Move-out,
+Unit status change, Final Settlement, fee, or separate penalty. Any termination
+continues through the explicit Lease termination workflow.
 
 ## UI-076 — Termination Workflow
 
@@ -621,13 +742,25 @@ Display:
 
 ## UI-081 — Settlement Preparation
 
-Inputs are limited to approved source evidence and dispositions. Calculated totals,
-Deposit availability, and resulting balances are server-owned and read-only.
+Inputs are limited to approved source evidence and explicitly authorized actions.
+Calculated totals, Deposit availability, and resulting balances are server-owned and
+read-only.
 
-Present the approved order explicitly: valid charges, authorized Customer Credit,
-Pet Deposit only for authorized pet-related damage, Security Deposit against
-remaining authorized obligations in oldest-Due order where applicable, remaining
-Customer balance, then explicit Refund of remaining refundable Deposits.
+Present the approved order explicitly:
+
+1. finalize valid charges;
+2. apply authorized Customer Credit first;
+3. apply Pet Deposit to authorized pet-related Invoice lines under
+   `PET_RELATED_FIRST`;
+4. permit explicitly authorized Security Deposit applications under
+   `SECURITY_EXPLICIT`;
+5. permit any remaining Pet Deposit to be explicitly applied to any valid remaining
+   Settlement Invoice line under `PET_REMAINDER_EXPLICIT`;
+6. record the remaining Customer balance; and
+7. explicitly Refund remaining refundable Deposit balances.
+
+Every Deposit target and amount requires explicit authorization. Do not reuse Payment
+FIFO, an inferred Deposit-type FIFO, or oldest-Due ordering for Deposit applications.
 
 ## UI-082 — Close Settlement
 
@@ -748,11 +881,15 @@ Confirmations are required for at least:
 - Reservation cancellation;
 - Lease signing and termination;
 - Invoice issuance, Adjustment, and exceptional void;
+- final Late-payment Decision and authorized Late-payment Charge correction/reversal;
 - Payment confirmation and Reversal;
 - Allocation and Allocation Reversal;
 - Customer Credit recognition/application/reversal;
+- Receipt reprint when submitted as an auditable reprint action;
 - Refund;
-- Deposit disposition;
+- active-Lease Pet Deposit qualifying review and resulting Refund;
+- Deposit disposition/application/reversal where applicable;
+- Rent-nonpayment milestone/follow-up posting;
 - Final Settlement closure/correction;
 - Meter replacement/Reading correction affecting billing; and
 - authorization/role changes.
@@ -797,12 +934,17 @@ the 003 bijection; wildcards and inclusive ranges expand identically.
 | Reservation | `BR-RES-*`, applicable `PR-*` |
 | Lease/Occupancy | `BR-LEASE-*`, `BR-OCC-*`, `BR-DEP-*` |
 | Deposits/Pets | `BR-DEP-*` |
+| Active-Lease Pet Deposit Refund | `BR-DEP-*`, `BR-REFUND-*` |
 | Rent/Services | `BR-RENT-*`, `BR-SVC-*` |
 | Utilities | `BR-UTIL-*` |
 | Invoices/Adjustments | `BR-INV-*` |
+| Late-payment Decision/Charge | `BR-INV-051` through `BR-INV-055`, `BR-LATE-*` |
 | Payments/Allocations | `BR-PAY-*` |
+| Receipt/Reprint | `BR-RECEIPT-*` |
+| Customer Account Ledger | `BR-LEDGER-*` |
 | Credit/Refund/Reversal | `BR-CREDIT-*`, `BR-REFUND-*` |
-| Termination/Move-out | `BR-LEASE-017` through `BR-LEASE-025`, `BR-MOVEOUT-*`, `BR-SETTLE-*` |
+| Rent Nonpayment | `BR-LEASE-026` through `BR-LEASE-030`, applicable `BR-PAY-*` |
+| Termination/Move-out | `BR-LEASE-017` through `BR-LEASE-030`, `BR-MOVEOUT-*`, `BR-SETTLE-*` |
 | Final Settlement | `BR-SETTLE-*` |
 | Currency/FX | `BR-MONEY-*` |
 | Audit/Authorization | `BR-AUDIT-*`, `BR-AUTH-*`, `008_SECURITY_MODEL.md` |
@@ -828,16 +970,6 @@ record the certification matrix in testing/deployment configuration.
 
 **Blocking:** No.
 
-## OOD-UI-003 — First Partial-month Rent Due Date
-
-**Question:** What Due Date must the UI display when a first partial-month Rent
-Invoice is issued after the normal 5th-day Due Date and the signed Lease is silent?
-
-**Current treatment:** The UI displays only the Due Date returned by an
-authoritative server rule or explicit signed-Lease term. It must not select a
-fallback or imply a fee, penalty, default, or collection right.
-
-**Blocking:** No for UI architecture; blocks final behavior for this exact case.
 
 # 28. Completion Criteria
 
@@ -850,4 +982,5 @@ This UI Specification is complete for Owner Review when:
   Settlement rules are represented without reinterpretation;
 - all major views include loading, empty, error, conflict, and authorization states;
 - accessibility, tables, search, filters, sorting, and reports are specified; and
-- every remaining open item is explicit and no fallback business policy is implied.
+- the remaining nonblocking brand/design-token and browser/device certification
+  questions are explicit and no fallback business policy is implied.
