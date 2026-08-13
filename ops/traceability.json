@@ -2,6 +2,46 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_upgrade_from_empty_database_reaches_reviewed_head",
+      "upstream_ids": ["DEPLOY-001", "DEPLOY-032", "TEST-010", "TEST-100"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A real isolated PostgreSQL database upgrades from empty to the single reviewed head."
+    },
+    {
+      "test_id": "test_runtime_identity_is_distinct_and_cannot_change_schema",
+      "upstream_ids": ["SEC-045", "SEC-046", "SEC-048"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The runtime role can read the baseline but cannot issue schema DDL."
+    },
+    {
+      "test_id": "test_failed_forward_migration_preserves_baseline_and_history",
+      "upstream_ids": ["DEPLOY-033", "DEPLOY-034", "TEST-101", "TEST-102"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Injected transactional DDL failure preserves the prior revision and baseline without reset or recreation."
+    },
+    {
+      "test_id": "test_baseline_constraint_rejects_invalid_additive_row_without_data_loss",
+      "upstream_ids": ["SEC-048"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The additive baseline check rejects malformed input while preserving valid history."
+    },
+    {
+      "test_id": "test_noop_upgrade_does_not_wait_on_baseline_reader",
+      "upstream_ids": ["DEPLOY-033"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A current-head no-op migration completes within the bounded baseline expectation while a reader is open."
+    },
+    {
       "test_id": "test_liveness_returns_minimal_stable_contract_and_request_id",
       "upstream_ids": ["API-001", "API-007", "API-081"],
       "test_level": "API",
@@ -56,6 +96,14 @@
       "test_path": "backend/tests/test_settings.py",
       "status": "implemented",
       "notes": "A non-secret immutable build identity is loaded from deployment configuration."
+    },
+    {
+      "test_id": "test_settings_keep_runtime_database_url_separate_from_migration_url",
+      "upstream_ids": ["SEC-045", "SEC-046", "SEC-049", "SEC-050"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_settings.py",
+      "status": "implemented",
+      "notes": "Application settings read only the runtime database URL and retain it as a secret value."
     },
     {
       "test_id": "test_traceability_manifest_covers_executable_tests",

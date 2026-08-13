@@ -8,8 +8,10 @@ version = "0.1.0"
 description = "FastAPI backend for Property Rental Management"
 requires-python = ">=3.11"
 dependencies = [
+  "alembic>=1.16,<2",
   "fastapi>=0.116,<1",
   "pydantic-settings>=2.10,<3",
+  "psycopg[binary]>=3.2,<4",
   "uvicorn[standard]>=0.35,<1",
 ]
 

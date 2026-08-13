@@ -9,7 +9,7 @@ UV ?= uv
 BACKEND_DIR := backend
 BACKEND_RUN := cd $(BACKEND_DIR) && $(UV) run --extra dev
 
-.PHONY: help install dev backend test lint format format-check typecheck build \
+.PHONY: help install dev backend test database-test migrate lint format format-check typecheck build \
 	backend-install backend-dev backend-test backend-lint backend-format \
 	backend-format-check backend-typecheck backend-build backend-import-check
 
@@ -21,6 +21,8 @@ help:
 		"  make install               Install locked backend development dependencies" \
 		"  make dev                   Run the backend development server" \
 		"  make test                  Run backend tests and traceability validation" \
+		"  make database-test         Run real PostgreSQL migration tests (URLs required)" \
+		"  make migrate               Apply reviewed migrations with MIGRATION_DATABASE_URL" \
 		"  make lint                  Run Ruff lint checks" \
 		"  make format-check          Check Ruff formatting without edits" \
 		"  make format                Apply Ruff formatting" \
@@ -36,6 +38,12 @@ dev: backend-dev
 backend: backend-dev
 
 test: backend-test
+
+database-test:
+	./scripts/database-test.sh
+
+migrate:
+	cd $(BACKEND_DIR) && $(UV) run alembic upgrade head
 
 lint: backend-lint
 

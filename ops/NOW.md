@@ -1,33 +1,31 @@
-# Phase 1B publication checkpoint
+# Phase 1C PostgreSQL runtime and migrations foundation
 
-- Objective: verify the corrected Phase 1A publication and complete only the
-  standing-authorized Phase 1B checkpoint.
-- Current task: complete. No implementation cycle is active.
-- Branch: `implementation/foundation` at
-  `35fc5f61435d322f51924af6b34edd5bf4c721c7`, equal to
-  `origin/implementation/foundation` at checkpoint start.
-- Published Phase 1A areas: FastAPI/settings foundation, versioned liveness,
-  request-ID middleware/tests, traceability manifest/validator, backend quality
-  gates and lockfile, non-root container, and non-authoritative guidance/state.
-- API contract: `GET /api/v1/health/live` returns only `{status, version}` and
-  `X-Request-ID`; safe caller IDs are trimmed/reused and unsafe IDs are replaced.
-- TEST-117: `ops/traceability.json` is validated by
-  `backend/tests/test_traceability.py` as part of `make test`.
-- Coverage: only API-001, API-002, API-007, TEST-114, and TEST-117 are currently
-  claimed satisfied. API-081 and broader testing/security/deployment requirements
-  are explicitly partial in `ops/STATE.json`.
-- Last verified result: fresh independent verification passed lock, 12 pytest
-  tests on pytest 9.1.1, Ruff lint/format, strict mypy, package build/import,
-  OpenAPI/traceability, Compose, Docker build/non-root/runtime/API assertions,
-  canonical-doc integrity, exact scope/diff, secret-pattern, and locked
-  runtime/full-development vulnerability checks (no known vulnerabilities).
-- Blocker: none for this checkpoint.
-- Timestamp: `2026-08-13T04:46:07Z`.
-- Exact next action: execute under standing owner authorization only the bounded
-  Phase 1C PostgreSQL runtime/migration boundaries and additive initial migration
-  tranche (DEPLOY-001, DEPLOY-032–034; TEST-010/100–104).
-
-Requirements: [API-001](../docs/005_API_SPECIFICATION.md#api-001--base-path-and-version),
-[API-007](../docs/005_API_SPECIFICATION.md#api-007--correlation),
-[API-081](../docs/005_API_SPECIFICATION.md#api-081--operational-health), and
-[TEST-117](../docs/007_TESTING_STRATEGY.md#test-117--traceability-manifest).
+- Objective: deliver only the authorized bounded PostgreSQL development/runtime and
+  additive migration foundation.
+- Current task: verified complete; uncommitted on `implementation/foundation` at
+  `3cd2d7cce688a6edb562fe38c14320ad6060d385`.
+- Runtime: PostgreSQL 17.6 is bound to loopback. The real-database gate creates one
+  disposable Compose project, generates distinct credentials internally, discovers
+  its assigned host port, and removes its container and volume on exit.
+- Privileges: `prm_migrator` owns schema changes; `prm_runtime` does not own or alter
+  the schema and currently receives only `USAGE` plus baseline `SELECT`.
+- Migration contract: Alembic has one reviewed head, `20260813_01`; upgrades are
+  transactional and forward-only. The baseline adds only `app.schema_baseline` and
+  invents no business schema or policy.
+- Tests: 18 passed, including 5 real PostgreSQL tests for empty upgrade, identity/DDL
+  separation, injected transactional failure/history preservation, additive check
+  behavior, and bounded nonblocking current-head upgrade.
+- Quality: Ruff format/lint, strict mypy, package build/import, Compose config/health,
+  container build/import, lock check, runtime/dev dependency audits, secret-literal
+  scan, canonical-doc integrity, and diff checks passed.
+- Coverage: DEPLOY-001/032/033 and TEST-010/100/102 are satisfied for this baseline.
+  DEPLOY-034, TEST-101/103/104, and SEC-045–050 are accurately partial until
+  business schema, financial data, backup/restore identities, and production secret
+  posture exist; details are in `ops/STATE.json`.
+- Security recovery: four stale disposable database environments were deleted, all
+  local development database credentials were rotated, no credential entered Git,
+  and the repaired gate completed without printing or persisting credentials.
+- Blocker: none.
+- Exact next action: review and publish only this Phase 1C tranche when explicitly
+  authorized; then separately approve the minimal readiness tranche using the real
+  runtime database dependency.

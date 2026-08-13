@@ -25,7 +25,16 @@ ALLOWED_STATUSES: Final = {
     "blocked by approved open decision",
     "planned",
 }
-UPSTREAM_PREFIXES: Final = ("BR-", "PR-", "DB-", "API-", "UI-", "SEC-")
+UPSTREAM_PREFIXES: Final = (
+    "BR-",
+    "PR-",
+    "DB-",
+    "API-",
+    "UI-",
+    "SEC-",
+    "DEPLOY-",
+    "TEST-",
+)
 
 
 class TraceabilityEntry(TypedDict):

@@ -1,86 +1,81 @@
 {
   "schema_version": 1,
-  "phase": "Phase 1B publication checkpoint",
-  "tranche": "published corrected backend foundation 1A checkpoint",
-  "task": "Verify Phase 1A publication and complete the Phase 1B checkpoint",
-  "status": "checkpoint_complete",
+  "phase": "Phase 1C PostgreSQL runtime and migrations foundation",
+  "tranche": "bounded PostgreSQL runtime and additive baseline migration",
+  "task": "Implement DEPLOY-001/032-034, TEST-010/100-104, and necessary SEC-045-050 boundaries",
+  "status": "verified_complete",
   "branch": "implementation/foundation",
-  "commit": "35fc5f61435d322f51924af6b34edd5bf4c721c7",
-  "timestamp": "2026-08-13T04:46:07Z",
+  "commit": "3cd2d7cce688a6edb562fe38c14320ad6060d385",
+  "timestamp": "2026-08-13T05:26:34Z",
   "implemented": [
-    "fastapi_app_factory",
-    "environment_settings_boundary",
-    "versioned_liveness_endpoint",
-    "safe_request_correlation",
-    "test_traceability_manifest",
-    "backend_quality_gates",
-    "non_root_backend_dockerfile"
+    "single_loopback_postgresql_development_service",
+    "separate_bootstrap_migration_and_runtime_database_identities",
+    "runtime_and_migration_connection_configuration_boundaries",
+    "alembic_forward_only_migration_tooling",
+    "additive_phase_1c_schema_baseline",
+    "real_postgresql_migration_integration_tests",
+    "ephemeral_database_test_orchestration_with_dynamic_port_discovery",
+    "database_make_targets_and_guidance"
   ],
-  "health_contract": {
-    "method": "GET",
-    "path": "/api/v1/health/live",
-    "body_keys": ["status", "version"],
-    "header": "X-Request-ID"
-  },
   "requirements_satisfied": [
-    "API-001",
-    "API-002",
-    "API-007",
-    "TEST-114",
-    "TEST-117"
+    "DEPLOY-001",
+    "DEPLOY-032",
+    "DEPLOY-033",
+    "TEST-010",
+    "TEST-100",
+    "TEST-102"
   ],
   "requirements_partial": {
-    "API-081": "Versioned minimal liveness exists; readiness and authorized operations status are deferred.",
-    "TEST-011": "Current liveness and correlation HTTP contracts are tested; future API behavior remains unimplemented.",
-    "TEST-015": "The backend container can be built and its liveness exercised; recovery and multi-service scenarios are deferred.",
-    "TEST-113": "Available backend formatting, lint, type, test, build, and container gates exist; frontend, database, migration, UI/E2E, and release security gates await those scopes.",
-    "SEC-039": "Current unauthenticated liveness is minimal and request IDs are sanitized; standard application error handling is deferred.",
-    "SEC-049": "Current settings and image paths do not ingest or embed secrets; deployment secret integration is deferred.",
-    "SEC-062": "Backend artifacts are version-identifiable and exclude local secret files; reviewed release delivery is deferred.",
-    "DEPLOY-009": "Backend runs non-root with explicit workers and liveness; structured logs, pooling, and graceful shutdown are deferred.",
-    "DEPLOY-018": "Only foundation service/build environment configuration exists.",
-    "DEPLOY-019": "Foundation uses environment injection and excludes local env files; production secret-store integration is deferred.",
-    "DEPLOY-020": "Backend build identity is exposed by liveness; frontend and authorized operational UI are deferred.",
-    "DEPLOY-022": "The backend container runs non-root; proxy and other application containers are deferred.",
-    "DEPLOY-023": "Backend liveness exists; readiness, worker, database, and proxy health await their components."
+    "DEPLOY-034": "The empty additive baseline preserves history by construction and injected failure preserves migration metadata; representative financial data awaits the business schema.",
+    "TEST-101": "Migration metadata and the baseline row are preserved across injected failure; financial counts, sums, links, rates, actors, and balances do not yet exist.",
+    "TEST-103": "The baseline constraint rejects invalid new data without losing the valid marker; constraint backfill and validation over historical business data await the business schema.",
+    "TEST-104": "A current-head no-op is bounded while a baseline reader is open; representative-volume lock duration and query-impact testing await substantive business migrations.",
+    "SEC-045": "Development bootstrap, migration, and runtime identities are separate; backup, restore, and human production administration identities are later deployment scope.",
+    "SEC-046": "The runtime identity does not own or alter the schema and receives only baseline SELECT; append-only business tables are not yet implemented.",
+    "SEC-047": "No production remote or direct-edit posture was added; controlled production administration remains later deployment scope.",
+    "SEC-048": "The additive baseline constraint and transactional failure behavior are proven; full business constraints await schema implementation.",
+    "SEC-049": "Compose requires protected process-injected passwords, URLs are not logged, and no credential values are committed; production secret-store integration is deferred.",
+    "SEC-050": "Distinct development bootstrap/migration/runtime values are required and documented; staging, production, backup, and application secret provisioning remains later deployment scope."
   },
   "touched_areas": [
-    "backend request-correlation middleware",
-    "backend health API tests",
-    "TEST-117 manifest and validator",
-    "backend pytest development constraint and lockfile",
-    "Makefile and README verification guidance",
-    "compact ops state and queue"
+    "PostgreSQL Compose service and identity initialization",
+    "Alembic configuration and one additive baseline revision",
+    "runtime database secret settings boundary",
+    "real PostgreSQL migration and privilege tests",
+    "backend Alembic/psycopg dependencies and uv lock",
+    "Makefile, README, environment template, and traceability",
+    "compact ops continuity state"
   ],
   "verification": {
     "status": "passed",
     "commands": [
       "uv lock --check --project backend",
+      "make format-check",
+      "make lint",
+      "make typecheck",
       "make test",
-      "Ruff lint and format check",
-      "strict mypy",
-      "package build and import",
-      "OpenAPI canonical /api/v1 route and traceability JSON assertions",
-      "docker compose config",
-      "Docker build, non-root image/runtime, versioned liveness/request-ID, and unversioned 404 assertions",
+      "make database-test using an isolated PostgreSQL 17.6 Compose project, generated credentials, dynamic loopback port discovery, and automatic cleanup",
+      "make build",
+      "docker compose config --quiet",
+      "docker build and packaged Alembic/psycopg/application import",
+      "alembic heads and current",
+      "runtime and full-development pip-audit",
       "canonical docs 001-010 unchanged assertion",
-      "exact scope and diff checks",
-      "secret-pattern review",
-      "locked runtime and full-development pip-audit"
+      "git diff --check and changed-path review",
+      "repository scan for verification credential literals"
     ],
-    "result": "Fresh independent supervisor verification passed: lock; all 12 tests on pytest 9.1.1; Ruff lint and format; strict mypy; package build/import; OpenAPI canonical /api/v1 routes and traceability JSON; Compose; Docker build, non-root image/runtime, versioned liveness/request-ID and unversioned 404 behavior; canonical docs 001-010 integrity; exact ops/NOW.md and ops/STATE.json scope/diff; secret-pattern review; and locked runtime/full-development dependency audits with no known vulnerabilities."
+    "result": "All 18 tests passed, including 5 real PostgreSQL tests on a dynamically discovered loopback port; Ruff format/lint and strict mypy passed; wheel/sdist and container import passed; the isolated Compose database became healthy and was removed with its volume after the gate; one Alembic head (20260813_01) was confirmed; both dependency audits reported no known vulnerabilities; canonical docs were unchanged and no verification credentials were found in repository files or test output."
   },
   "deferred": [
-    "database_and_migrations",
+    "business_schema_and_financial_migration_evidence",
     "readiness_endpoint",
+    "production_database_posture_and_secret_store",
+    "backup_restore_and_human_administration_identities",
     "authentication_and_authorization",
-    "standard_error_handlers",
-    "structured_logging",
-    "scheduled_worker",
-    "frontend",
-    "compose_application_topology"
+    "worker_frontend_and_ci"
   ],
-  "next_action": "Execute under standing owner authorization only the bounded Phase 1C PostgreSQL runtime/migration boundaries and additive initial migration tranche (DEPLOY-001, DEPLOY-032-034; TEST-010/100-104).",
+  "next_action": "Review and publish only this verified Phase 1C tranche when explicitly authorized; after publication, take a separately approved bounded readiness tranche against the real runtime database dependency.",
   "blockers": [],
-  "secrets_present": false
+  "secrets_present": false,
+  "security_recovery": "Four stale disposable PostgreSQL containers and volumes were deleted. Local development database credentials were regenerated inside the repaired test wrapper. The prior credential is invalidated, was not committed, and the replacement values are not printed or persisted."
 }

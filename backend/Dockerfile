@@ -24,10 +24,12 @@ ENV APP_BUILD_VERSION=${APP_BUILD_VERSION} \
 RUN groupadd --system --gid 10001 app \
     && useradd --system --uid 10001 --gid app --create-home --home-dir /home/app app
 
+WORKDIR /home/app
 COPY --from=builder /install /usr/local
+COPY alembic.ini ./
+COPY migrations ./migrations
 
 USER 10001:10001
-WORKDIR /home/app
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \

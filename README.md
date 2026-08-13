@@ -6,9 +6,9 @@ Business management application built with React, TypeScript, FastAPI, and Postg
 
 Phase 1 foundation is in progress. The first bounded backend tranche provides a
 packaged FastAPI service, environment-backed settings, a minimal liveness endpoint,
-backend quality gates, and a production-oriented non-root container definition.
-Database, authentication, readiness, business APIs, worker, frontend, and Compose
-integration remain future work.
+backend quality gates, a non-root container, and a bounded PostgreSQL development and
+migration foundation. The business schema, authentication, readiness, business APIs,
+worker, frontend, and production deployment posture remain future work.
 
 ## Main components
 
@@ -17,7 +17,7 @@ integration remain future work.
 - `docs/` — authoritative requirements, architecture, and business documentation
 - `ops/` — compact implementation state and next-work queue
 - `scripts/` — development and maintenance utilities
-- `compose.yaml` — local development services (not initialized)
+- `compose.yaml` — authoritative loopback-only PostgreSQL development service
 
 ## Prerequisites
 
@@ -65,8 +65,34 @@ make build
 
 `make format` intentionally rewrites backend Python files; `make format-check` does
 not. `make test` also validates the machine-readable TEST-117 manifest at
-`ops/traceability.json`. No current backend target starts, resets, migrates, or
-deletes a database.
+`ops/traceability.json`. Unit/API tests skip the real PostgreSQL suite unless its
+three connection URLs are supplied.
+
+## PostgreSQL and migrations
+
+Alembic is the reviewed, versioned schema tool; psycopg is the PostgreSQL driver used
+by migrations and integration tests. These are the only Phase 1C dependencies. Copy
+the variable names from `.env.example` into protected process configuration and set
+three distinct local passwords; do not source or commit `.env` files. Then start the
+single development service with `docker compose up -d --wait postgres`. Identity
+initialization runs only for a fresh PostgreSQL data directory; this foundation does
+not alter an existing volume automatically. If an existing development volume lacks
+these identities, stop and handle that data explicitly rather than deleting or
+reinitializing it through project automation.
+
+`MIGRATION_DATABASE_URL` uses `prm_migrator`, which owns schema changes.
+`APP_DATABASE_URL` uses the non-owning `prm_runtime` identity. The application never
+falls back to migration credentials. `TEST_ADMIN_DATABASE_URL` is test-only and must
+name the local `prm_admin` bootstrap identity when tests are run directly.
+
+Run `make migrate` to apply forward migrations. It never resets or recreates a
+database and downgrade functions deliberately refuse destructive rollback. Run
+`make database-test` to create one isolated PostgreSQL Compose project with freshly
+generated credentials and an automatically assigned loopback port. The wrapper
+discovers that actual port, runs the real migration gate, and removes its container
+and volume on exit. Credentials are generated inside the wrapper and are neither
+printed nor persisted. Direct test invocation still refuses non-loopback hosts,
+unexpected database/role names, missing passwords, or reused identity passwords.
 
 ## Development workflow
 
