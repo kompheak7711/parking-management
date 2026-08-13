@@ -1,9 +1,9 @@
-# Phase 1C PostgreSQL runtime and migrations foundation
+# Phase 1C publication checkpoint
 
 - Objective: deliver only the authorized bounded PostgreSQL development/runtime and
   additive migration foundation.
-- Current task: verified complete; uncommitted on `implementation/foundation` at
-  `3cd2d7cce688a6edb562fe38c14320ad6060d385`.
+- Current task: complete and published on `implementation/foundation` as
+  `2c71a29a0900436837f3c535a430f3a092a619b8`; no implementation cycle is active.
 - Runtime: PostgreSQL 17.6 is bound to loopback. The real-database gate creates one
   disposable Compose project, generates distinct credentials internally, discovers
   its assigned host port, and removes its container and volume on exit.
@@ -26,6 +26,6 @@
   local development database credentials were rotated, no credential entered Git,
   and the repaired gate completed without printing or persisting credentials.
 - Blocker: none.
-- Exact next action: review and publish only this Phase 1C tranche when explicitly
-  authorized; then separately approve the minimal readiness tranche using the real
-  runtime database dependency.
+- Exact next action: prepare the bounded Phase 1D API infrastructure/readiness
+  tranche against the real runtime database dependency; expose no diagnostics on
+  the unauthenticated readiness response.
