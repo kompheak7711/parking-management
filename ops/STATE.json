@@ -3,10 +3,11 @@
   "phase": "Phase 1D",
   "tranche": "application-level safe error-envelope infrastructure",
   "task": "Implement API-013, API-014, TEST-088, and SEC-039 safe error-envelope infrastructure",
-  "status": "completed_unpublished",
+  "status": "published",
+  "active_cycle": null,
   "branch": "implementation/foundation",
-  "commit": "ab8bed349564f7bbf288dd4b922dfe96f9c16ca9",
-  "timestamp": "2026-08-13T08:42:31Z",
+  "commit": "a222867c859b49908238a7bb0f23e708348dc9f6",
+  "timestamp": "2026-08-13T08:49:48Z",
   "implemented": [
     "canonical_error_and_meta_request_id_envelope",
     "safe_request_schema_validation_handler",
@@ -32,19 +33,14 @@
   ],
   "verification": {
     "status": "passed",
-    "commands": [
-      "uv run --extra dev pytest tests/test_errors.py::test_malformed_json_returns_safe_bad_request_envelope -q: failed as expected because malformed JSON returned 422 before the fix",
-      "uv run --extra dev pytest tests/test_errors.py::test_malformed_json_returns_safe_bad_request_envelope tests/test_errors.py::test_schema_validation_returns_only_safe_field_locations -q: 2 passed",
-      "uv run --extra dev pytest tests/test_errors.py tests/test_traceability.py -q: 19 passed",
-      "uv run --extra dev pytest tests/test_errors.py tests/test_health.py tests/test_traceability.py -q: 39 passed",
-      "make format: passed, 9 files unchanged",
-      "make lint: passed",
-      "make typecheck: passed, no issues in 9 source files",
-      "make test: 41 passed, 6 real-PostgreSQL migration tests skipped",
-      "git diff --check: passed",
-      "canonical docs 001-010 unchanged assertion: passed"
-    ],
-    "result": "API-014 now distinguishes malformed JSON as HTTP 400 using only FastAPI's structured error type and location, while schema validation remains HTTP 422. Focused and normal suites passed; the normal suite passed 41 tests with its 6 dedicated real-PostgreSQL tests skipped because their required URL was not configured."
+    "results": [
+      "41 normal tests passed with 6 dedicated database tests skipped there",
+      "repository-owned make database-test passed all 6 separately",
+      "lock, format, lint, strict mypy, package build/import, runtime and development dependency audits passed",
+      "container build/import/non-root gates passed",
+      "traceability, secret, scope, diff, and canonical-doc integrity gates passed",
+      "implementation commit local/upstream/remote/file-list verification passed"
+    ]
   },
   "deferred": [
     "business_endpoints",
@@ -55,7 +51,16 @@
     "database_compose_makefile_and_environment_changes",
     "product_policy"
   ],
-  "next_action": "Owner reviews the bounded uncommitted tranche; do not stage, commit, push, deploy, or start the next queue item without fresh approval.",
+  "next_candidate": {
+    "phase": "Phase 1D",
+    "task": "bounded Phase 1D structured redacted logging and graceful lifecycle-hooks queue item",
+    "requirements": [
+      "DEPLOY-009",
+      "DEPLOY-024",
+      "SEC-043"
+    ],
+    "status": "not_started"
+  },
   "blockers": [],
   "secrets_present": false
 }
