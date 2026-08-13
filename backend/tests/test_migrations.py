@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 import shutil
 import subprocess
@@ -12,11 +13,15 @@ from pathlib import Path
 from textwrap import dedent
 from urllib.parse import urlsplit, urlunsplit
 
+import httpx
 import psycopg
 import pytest
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 from psycopg import sql
+
+from property_rental.app import create_app
+from property_rental.settings import Settings
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 MIGRATION_URL_ENV = "MIGRATION_DATABASE_URL"
@@ -124,6 +129,21 @@ def test_runtime_identity_is_distinct_and_cannot_change_schema() -> None:
             assert cursor.fetchone() == ("phase-1c",)
             with pytest.raises(psycopg.errors.InsufficientPrivilege):
                 cursor.execute("CREATE TABLE app.forbidden_runtime_ddl (id integer)")
+
+
+def test_readiness_succeeds_with_managed_runtime_database() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    async def request() -> httpx.Response:
+        transport = httpx.ASGITransport(app=create_app(Settings()))
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            return await client.get("/api/v1/health/ready")
+
+    response = asyncio.run(request())
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+    assert response.headers["x-request-id"]
 
 
 def test_failed_forward_migration_preserves_baseline_and_history(tmp_path: Path) -> None:

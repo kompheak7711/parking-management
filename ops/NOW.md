@@ -1,31 +1,25 @@
-# Phase 1C publication checkpoint
+# Phase 1D minimal database-backed readiness
 
-- Objective: deliver only the authorized bounded PostgreSQL development/runtime and
-  additive migration foundation.
-- Current task: complete and published on `implementation/foundation` as
-  `2c71a29a0900436837f3c535a430f3a092a619b8`; no implementation cycle is active.
-- Runtime: PostgreSQL 17.6 is bound to loopback. The real-database gate creates one
-  disposable Compose project, generates distinct credentials internally, discovers
-  its assigned host port, and removes its container and volume on exit.
-- Privileges: `prm_migrator` owns schema changes; `prm_runtime` does not own or alter
-  the schema and currently receives only `USAGE` plus baseline `SELECT`.
-- Migration contract: Alembic has one reviewed head, `20260813_01`; upgrades are
-  transactional and forward-only. The baseline adds only `app.schema_baseline` and
-  invents no business schema or policy.
-- Tests: 18 passed, including 5 real PostgreSQL tests for empty upgrade, identity/DDL
-  separation, injected transactional failure/history preservation, additive check
-  behavior, and bounded nonblocking current-head upgrade.
-- Quality: Ruff format/lint, strict mypy, package build/import, Compose config/health,
-  container build/import, lock check, runtime/dev dependency audits, secret-literal
-  scan, canonical-doc integrity, and diff checks passed.
-- Coverage: DEPLOY-001/032/033 and TEST-010/100/102 are satisfied for this baseline.
-  DEPLOY-034, TEST-101/103/104, and SEC-045–050 are accurately partial until
-  business schema, financial data, backup/restore identities, and production secret
-  posture exist; details are in `ops/STATE.json`.
-- Security recovery: four stale disposable database environments were deleted, all
-  local development database credentials were rotated, no credential entered Git,
-  and the repaired gate completed without printing or persisting credentials.
+- Objective: implement only API-081, DEPLOY-023, DEPLOY-057, and SEC-039 readiness
+  behavior through the existing runtime database boundary.
+- Current task: complete and verified on `implementation/foundation`; changes remain
+  uncommitted and unpushed as requested.
+- Endpoint: `GET /api/v1/health/ready` performs an authenticated `SELECT 1` through
+  `APP_DATABASE_URL`, with two-second connection and statement timeouts.
+- Contract: success returns HTTP 200 with only `{"status":"ok"}`; missing runtime
+  configuration or any database-check failure returns HTTP 503 with only
+  `{"status":"unavailable"}`.
+- Security: both outcomes retain `X-Request-ID`; unauthenticated responses expose no
+  SQL, URL, credential, exception, configuration path, host, identity, or diagnostic.
+- Testability: application construction accepts an injected readiness check for focused
+  unit/API failure tests; production defaults to the real psycopg check. No pooling,
+  dependency, migration, lifecycle, logging, or broad error-envelope work was added.
+- Verification: focused health/traceability tests passed (21); `make format-check`,
+  `make lint`, `make typecheck`, and `make test` passed (23 passed, 6 real-database
+  tests skipped by the normal gate); `make database-test` passed all 6 real PostgreSQL
+  tests including runtime readiness; `make build` passed package build and import.
+- Scope review: canonical docs 001-010, dependency manifests, migrations, Compose,
+  Makefile, `.env.example`, and `scripts/database-test.sh` are unchanged.
 - Blocker: none.
-- Exact next action: prepare the bounded Phase 1D API infrastructure/readiness
-  tranche against the real runtime database dependency; expose no diagnostics on
-  the unauthenticated readiness response.
+- Exact next action: review the Phase 1D diff and publish only if separately requested;
+  otherwise select the next bounded queue item under a fresh approval.

@@ -50,6 +50,54 @@
       "notes": "Versioned minimal liveness response includes a generated correlation identifier."
     },
     {
+      "test_id": "test_readiness_returns_minimal_success_when_database_accepts_check",
+      "upstream_ids": ["API-081", "DEPLOY-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_health.py",
+      "status": "implemented",
+      "notes": "Readiness returns only a stable success status after the runtime database accepts the check."
+    },
+    {
+      "test_id": "test_readiness_returns_minimal_503_when_configuration_is_missing",
+      "upstream_ids": ["API-081", "DEPLOY-023", "DEPLOY-057", "SEC-039"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_health.py",
+      "status": "implemented",
+      "notes": "Missing runtime database configuration produces the same minimal unavailable response as a failed check."
+    },
+    {
+      "test_id": "test_readiness_returns_minimal_503_when_database_check_fails",
+      "upstream_ids": ["API-081", "DEPLOY-023", "DEPLOY-057", "SEC-039"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_health.py",
+      "status": "implemented",
+      "notes": "Runtime database check failures make the API not ready without exposing failure details."
+    },
+    {
+      "test_id": "test_readiness_always_returns_request_id",
+      "upstream_ids": ["API-007", "API-081", "SEC-039"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_health.py",
+      "status": "implemented",
+      "notes": "Both readiness outcomes preserve the safe caller correlation identifier."
+    },
+    {
+      "test_id": "test_readiness_failure_redacts_diagnostics",
+      "upstream_ids": ["API-081", "DEPLOY-023", "SEC-039"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_health.py",
+      "status": "implemented",
+      "notes": "Readiness failures never return SQL, URLs, credentials, paths, hosts, identities, or exception text."
+    },
+    {
+      "test_id": "test_readiness_succeeds_with_managed_runtime_database",
+      "upstream_ids": ["API-081", "DEPLOY-023"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The repository-managed PostgreSQL gate proves readiness through the runtime identity and managed runtime URL."
+    },
+    {
       "test_id": "test_liveness_normalizes_and_returns_safe_caller_request_id",
       "upstream_ids": ["API-007"],
       "test_level": "API",

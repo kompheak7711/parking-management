@@ -13,12 +13,113 @@ from property_rental.settings import Settings
 
 
 def get_liveness(app: FastAPI, headers: Mapping[str, str] | None = None) -> httpx.Response:
+    return get_health(app, "/api/v1/health/live", headers)
+
+
+def get_health(
+    app: FastAPI,
+    path: str,
+    headers: Mapping[str, str] | None = None,
+) -> httpx.Response:
     async def request() -> httpx.Response:
         transport = httpx.ASGITransport(app=app)
         async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
-            return await client.get("/api/v1/health/live", headers=headers)
+            return await client.get(path, headers=headers)
 
     return asyncio.run(request())
+
+
+def test_readiness_returns_minimal_success_when_database_accepts_check() -> None:
+    checked_urls: list[str] = []
+
+    def database_check(database_url: str) -> None:
+        checked_urls.append(database_url)
+
+    response = get_health(
+        create_app(
+            Settings(database_url="postgresql://runtime:***@database/prm"),
+            readiness_check=database_check,
+        ),
+        "/api/v1/health/ready",
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+    assert checked_urls == ["postgresql://runtime:***@database/prm"]
+
+
+def test_readiness_returns_minimal_503_when_configuration_is_missing() -> None:
+    def unexpected_check(database_url: str) -> None:
+        raise AssertionError(f"readiness check called without configuration: {database_url}")
+
+    response = get_health(
+        create_app(Settings(database_url=None), readiness_check=unexpected_check),
+        "/api/v1/health/ready",
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"status": "unavailable"}
+
+
+def test_readiness_returns_minimal_503_when_database_check_fails() -> None:
+    def failed_check(database_url: str) -> None:
+        raise RuntimeError("database unavailable")
+
+    response = get_health(
+        create_app(
+            Settings(database_url="postgresql://runtime:***@database/prm"),
+            readiness_check=failed_check,
+        ),
+        "/api/v1/health/ready",
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {"status": "unavailable"}
+
+
+@pytest.mark.parametrize("outcome", ["success", "failure"])
+def test_readiness_always_returns_request_id(outcome: str) -> None:
+    def database_check(database_url: str) -> None:
+        if outcome == "failure":
+            raise RuntimeError("database unavailable")
+
+    response = get_health(
+        create_app(
+            Settings(database_url="postgresql://runtime:***@database/prm"),
+            readiness_check=database_check,
+        ),
+        "/api/v1/health/ready",
+        {"X-Request-ID": "readiness-request"},
+    )
+
+    assert response.headers["x-request-id"] == "readiness-request"
+
+
+@pytest.mark.parametrize(
+    "diagnostic",
+    [
+        "SELECT secret FROM internal_table",
+        "postgresql://runtime:***@database.internal/prm",
+        "/protected/config/runtime.env",
+        "database.internal",
+        "connection refused for prm_runtime",
+    ],
+)
+def test_readiness_failure_redacts_diagnostics(diagnostic: str) -> None:
+    def failed_check(database_url: str) -> None:
+        raise RuntimeError(diagnostic)
+
+    response = get_health(
+        create_app(
+            Settings(database_url="postgresql://runtime:***@database.internal/prm"),
+            readiness_check=failed_check,
+        ),
+        "/api/v1/health/ready",
+    )
+
+    assert response.status_code == 503
+    assert response.text == '{"status":"unavailable"}'
+    assert diagnostic not in response.text
 
 
 def test_liveness_returns_minimal_stable_contract_and_request_id() -> None:

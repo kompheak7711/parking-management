@@ -12,6 +12,7 @@ class Settings(BaseSettings):
         env_file=None,
         case_sensitive=False,
         extra="ignore",
+        populate_by_name=True,
     )
 
     service_name: str = "property-rental-backend"

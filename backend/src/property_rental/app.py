@@ -5,6 +5,7 @@ from collections.abc import Awaitable, Callable
 from typing import Final
 from uuid import uuid4
 
+import psycopg
 from fastapi import FastAPI, Request, Response
 
 from property_rental.api import create_api_router
@@ -12,6 +13,19 @@ from property_rental.settings import Settings
 
 REQUEST_ID_HEADER: Final = "X-Request-ID"
 REQUEST_ID_PATTERN: Final = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+DATABASE_TIMEOUT_SECONDS: Final = 2
+
+
+def check_database_readiness(database_url: str) -> None:
+    """Confirm PostgreSQL accepts one bounded authenticated query."""
+    with psycopg.connect(
+        database_url,
+        connect_timeout=DATABASE_TIMEOUT_SECONDS,
+        options=f"-c statement_timeout={DATABASE_TIMEOUT_SECONDS * 1000}",
+    ) as connection:
+        result = connection.execute("SELECT 1").fetchone()
+        if result != (1,):
+            raise RuntimeError("database readiness check returned an unexpected result")
 
 
 def normalize_request_id(value: str | None) -> str:
@@ -23,7 +37,10 @@ def normalize_request_id(value: str | None) -> str:
     return str(uuid4())
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    readiness_check: Callable[[str], None] = check_database_readiness,
+) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
     app = FastAPI(title=resolved_settings.service_name, version=resolved_settings.build_version)
@@ -39,7 +56,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response.headers[REQUEST_ID_HEADER] = request_id
         return response
 
-    app.include_router(create_api_router(resolved_settings))
+    app.include_router(create_api_router(resolved_settings, readiness_check))
     return app
 
 

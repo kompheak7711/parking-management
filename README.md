@@ -5,10 +5,11 @@ Business management application built with React, TypeScript, FastAPI, and Postg
 ## Status
 
 Phase 1 foundation is in progress. The first bounded backend tranche provides a
-packaged FastAPI service, environment-backed settings, a minimal liveness endpoint,
-backend quality gates, a non-root container, and a bounded PostgreSQL development and
-migration foundation. The business schema, authentication, readiness, business APIs,
-worker, frontend, and production deployment posture remain future work.
+packaged FastAPI service, environment-backed settings, minimal liveness and
+database-backed readiness endpoints, backend quality gates, a non-root container, and
+a bounded PostgreSQL development and migration foundation. The business schema,
+authentication, business APIs, worker, frontend, and production deployment posture
+remain future work.
 
 ## Main components
 
@@ -43,6 +44,17 @@ The development API listens on `http://127.0.0.1:8000`. Its liveness endpoint is
 GET /api/v1/health/live
 {"status":"ok","version":"development"}
 ```
+
+Readiness uses only the protected runtime `APP_DATABASE_URL` identity and returns no
+diagnostics. PostgreSQL checks have bounded connection and execution timeouts:
+
+```text
+GET /api/v1/health/ready
+{"status":"ok"}
+```
+
+Missing configuration or a failed check returns HTTP 503 with only
+`{"status":"unavailable"}`. Both outcomes include `X-Request-ID`.
 
 Set `APP_BUILD_VERSION` to a non-secret release version or commit identifier when
 building/deploying. The Docker image accepts the same value as a build argument:

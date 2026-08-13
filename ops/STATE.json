@@ -1,81 +1,59 @@
 {
   "schema_version": 1,
-  "phase": "Phase 1C publication checkpoint",
-  "tranche": "published PostgreSQL runtime and additive baseline migration",
-  "task": "Record verified Phase 1C publication and hand off to Phase 1D",
-  "status": "checkpoint_complete",
+  "phase": "Phase 1D",
+  "tranche": "minimal database-backed readiness",
+  "task": "Implement API-081, DEPLOY-023, DEPLOY-057, and SEC-039 readiness behavior",
+  "status": "complete_unpublished",
   "branch": "implementation/foundation",
-  "commit": "2c71a29a0900436837f3c535a430f3a092a619b8",
-  "timestamp": "2026-08-13T06:54:24Z",
+  "commit": "ef8cbcb9063c30c39474bd77ebc74e9b0d3660e1",
+  "timestamp": "2026-08-13T07:12:58Z",
   "implemented": [
-    "single_loopback_postgresql_development_service",
-    "separate_bootstrap_migration_and_runtime_database_identities",
-    "runtime_and_migration_connection_configuration_boundaries",
-    "alembic_forward_only_migration_tooling",
-    "additive_phase_1c_schema_baseline",
-    "real_postgresql_migration_integration_tests",
-    "ephemeral_database_test_orchestration_with_dynamic_port_discovery",
-    "database_make_targets_and_guidance"
+    "versioned_database_backed_readiness_endpoint",
+    "runtime_app_database_url_dependency",
+    "bounded_postgresql_connection_and_statement_timeouts",
+    "minimal_stable_success_and_unavailable_contracts",
+    "request_id_preservation_on_all_readiness_outcomes",
+    "unauthenticated_readiness_diagnostic_redaction",
+    "managed_real_postgresql_readiness_test"
   ],
   "requirements_satisfied": [
-    "DEPLOY-001",
-    "DEPLOY-032",
-    "DEPLOY-033",
-    "TEST-010",
-    "TEST-100",
-    "TEST-102"
+    "API-081",
+    "DEPLOY-023",
+    "DEPLOY-057",
+    "SEC-039"
   ],
-  "requirements_partial": {
-    "DEPLOY-034": "The empty additive baseline preserves history by construction and injected failure preserves migration metadata; representative financial data awaits the business schema.",
-    "TEST-101": "Migration metadata and the baseline row are preserved across injected failure; financial counts, sums, links, rates, actors, and balances do not yet exist.",
-    "TEST-103": "The baseline constraint rejects invalid new data without losing the valid marker; constraint backfill and validation over historical business data await the business schema.",
-    "TEST-104": "A current-head no-op is bounded while a baseline reader is open; representative-volume lock duration and query-impact testing await substantive business migrations.",
-    "SEC-045": "Development bootstrap, migration, and runtime identities are separate; backup, restore, and human production administration identities are later deployment scope.",
-    "SEC-046": "The runtime identity does not own or alter the schema and receives only baseline SELECT; append-only business tables are not yet implemented.",
-    "SEC-047": "No production remote or direct-edit posture was added; controlled production administration remains later deployment scope.",
-    "SEC-048": "The additive baseline constraint and transactional failure behavior are proven; full business constraints await schema implementation.",
-    "SEC-049": "Compose requires protected process-injected passwords, URLs are not logged, and no credential values are committed; production secret-store integration is deferred.",
-    "SEC-050": "Distinct development bootstrap/migration/runtime values are required and documented; staging, production, backup, and application secret provisioning remains later deployment scope."
-  },
   "touched_areas": [
-    "PostgreSQL Compose service and identity initialization",
-    "Alembic configuration and one additive baseline revision",
-    "runtime database secret settings boundary",
-    "real PostgreSQL migration and privilege tests",
-    "backend Alembic/psycopg dependencies and uv lock",
-    "Makefile, README, environment template, and traceability",
-    "compact ops continuity state"
+    "FastAPI health route and application wiring",
+    "runtime settings construction for injected tests",
+    "focused API, security, and real PostgreSQL readiness tests",
+    "README readiness contract",
+    "test traceability and compact continuity state"
   ],
   "verification": {
     "status": "passed",
     "commands": [
-      "uv lock --check --project backend",
+      "focused backend health and traceability tests: 21 passed",
       "make format-check",
       "make lint",
       "make typecheck",
-      "make test",
-      "make database-test using an isolated PostgreSQL 17.6 Compose project, generated credentials, dynamic loopback port discovery, and automatic cleanup",
+      "make test: 23 passed and 6 dedicated real-database tests skipped",
+      "make database-test: 6 passed through the repository-managed PostgreSQL runtime URL",
       "make build",
-      "docker compose config --quiet",
-      "docker build and packaged Alembic/psycopg/application import",
-      "alembic heads and current",
-      "runtime and full-development pip-audit",
-      "canonical docs 001-010 unchanged assertion",
-      "git diff --check and changed-path review",
-      "repository scan for verification credential literals"
+      "git diff --check",
+      "protected-path changed-file assertion"
     ],
-    "result": "All 18 tests passed, including 5 real PostgreSQL tests on a dynamically discovered loopback port; Ruff format/lint and strict mypy passed; wheel/sdist and container import passed; the isolated Compose database became healthy and was removed with its volume after the gate; one Alembic head (20260813_01) was confirmed; both dependency audits reported no known vulnerabilities; canonical docs were unchanged and no verification credentials were found in repository files or test output."
+    "result": "All requested gates passed. The dedicated database gate proved the readiness success path through the managed runtime identity without printing or persisting its URL. Canonical docs, dependency manifests, migrations, Compose, Makefile, environment template, and database-test script are unchanged."
   },
   "deferred": [
-    "business_schema_and_financial_migration_evidence",
-    "readiness_endpoint",
-    "production_database_posture_and_secret_store",
-    "backup_restore_and_human_administration_identities",
+    "safe_error_envelopes_for_business_endpoints",
+    "structured_redacted_logging",
+    "graceful_lifecycle_hooks",
+    "connection_pooling",
     "authentication_and_authorization",
+    "business_schema_and_apis",
     "worker_frontend_and_ci"
   ],
-  "next_action": "Prepare the bounded Phase 1D API infrastructure/readiness tranche against the real runtime database dependency with a minimal unauthenticated response (API-081, DEPLOY-023, SEC-039).",
+  "next_action": "Review and publish the verified Phase 1D diff only if separately requested; otherwise obtain fresh approval for the next bounded queue item.",
   "blockers": [],
-  "secrets_present": false,
-  "security_recovery": "Four stale disposable PostgreSQL containers and volumes were deleted. Local development database credentials were regenerated inside the repaired test wrapper. The prior credential is invalidated, was not committed, and the replacement values are not printed or persisted."
+  "secrets_present": false
 }
