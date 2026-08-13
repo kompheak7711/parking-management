@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "phase": "Phase 1A foundation checkpoint",
-  "tranche": "corrected backend foundation 1A",
-  "task": "Remediate pytest audit blocker with pytest >=9.0.3",
-  "status": "verified_ready_for_authorized_publication",
+  "phase": "Phase 1B publication checkpoint",
+  "tranche": "published corrected backend foundation 1A checkpoint",
+  "task": "Verify Phase 1A publication and complete the Phase 1B checkpoint",
+  "status": "checkpoint_complete",
   "branch": "implementation/foundation",
-  "commit": "0a0cbca141439b0602cdd2c2c59d9983ba0fde81",
-  "timestamp": "2026-08-13T04:29:02Z",
+  "commit": "35fc5f61435d322f51924af6b34edd5bf4c721c7",
+  "timestamp": "2026-08-13T04:46:07Z",
   "implemented": [
     "fastapi_app_factory",
     "environment_settings_boundary",
@@ -55,25 +55,20 @@
   "verification": {
     "status": "passed",
     "commands": [
-      "uv lock --upgrade-package pytest",
-      "uv lock --check",
+      "uv lock --check --project backend",
       "make test",
-      "make lint",
-      "make format-check",
-      "make typecheck",
-      "make build",
-      "OpenAPI application-route assertion",
-      "JSON parse and TEST-117 manifest validation",
-      "docker build and image non-root/healthcheck inspection",
-      "container liveness, caller request-ID, and unversioned-route runtime assertions",
-      "docker compose config --quiet",
-      "git diff --check and canonical docs 001-010 unchanged assertion",
-      "credential-pattern review of changed/untracked source",
-      "pip-audit against locked runtime dependencies",
-      "uv export --locked --no-dev --no-emit-project --no-hashes; uvx pip-audit -r <runtime export>",
-      "uv export --locked --extra dev --no-emit-project --no-hashes; uvx pip-audit -r <full export>"
+      "Ruff lint and format check",
+      "strict mypy",
+      "package build and import",
+      "OpenAPI canonical /api/v1 route and traceability JSON assertions",
+      "docker compose config",
+      "Docker build, non-root image/runtime, versioned liveness/request-ID, and unversioned 404 assertions",
+      "canonical docs 001-010 unchanged assertion",
+      "exact scope and diff checks",
+      "secret-pattern review",
+      "locked runtime and full-development pip-audit"
     ],
-    "result": "pytest constraint is >=9.0.3,<10 and uv.lock resolves pytest 9.1.1. All 12 tests passed on pytest 9.1.1 with no compatibility changes. Fresh independent Ruff lint/format, strict mypy, package build/import, uv lock, OpenAPI, traceability, Compose, Docker build/runtime/healthy/non-root, canonical-doc integrity, diff, scope, secret-pattern, and locked runtime/full-development dependency checks passed; both dependency audits reported no known vulnerabilities."
+    "result": "Fresh independent supervisor verification passed: lock; all 12 tests on pytest 9.1.1; Ruff lint and format; strict mypy; package build/import; OpenAPI canonical /api/v1 routes and traceability JSON; Compose; Docker build, non-root image/runtime, versioned liveness/request-ID and unversioned 404 behavior; canonical docs 001-010 integrity; exact ops/NOW.md and ops/STATE.json scope/diff; secret-pattern review; and locked runtime/full-development dependency audits with no known vulnerabilities."
   },
   "deferred": [
     "database_and_migrations",
@@ -85,6 +80,7 @@
     "frontend",
     "compose_application_topology"
   ],
+  "next_action": "Execute under standing owner authorization only the bounded Phase 1C PostgreSQL runtime/migration boundaries and additive initial migration tranche (DEPLOY-001, DEPLOY-032-034; TEST-010/100-104).",
   "blockers": [],
   "secrets_present": false
 }
