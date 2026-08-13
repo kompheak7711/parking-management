@@ -1,70 +1,73 @@
 {
   "schema_version": 1,
-  "phase": "Phase 1D",
-  "tranche": "structured redacted application logging and graceful FastAPI lifecycle hooks",
-  "task": "Implement DEPLOY-009, DEPLOY-024, and SEC-043 application-level infrastructure",
-  "status": "published",
+  "phase": "Phase 1E",
+  "tranche": "Phase 1E Node.js engine baseline correction",
+  "task": "Align the frontend Node.js engine baseline with locked Vite 7.3.6",
+  "status": "verified_for_publication",
   "active_cycle": null,
   "branch": "implementation/foundation",
-  "commit": "70be532aa7e14dd4b9b2b306d1e6cc599fede518",
-  "timestamp": "2026-08-13T09:42:46Z",
+  "commit": "91605d707693509bc0d47939328fdf6b4a1f27d5",
+  "timestamp": "2026-08-13T10:28:53Z",
   "implemented": [
-    "standard_library_structured_json_application_logs",
-    "fixed_safe_operational_log_field_allowlist",
-    "safe_request_id_log_correlation",
-    "redacted_exception_type_diagnostics",
-    "request_completion_status_and_duration_logs",
-    "structured_application_start_and_stop_logs",
-    "fastapi_lifespan_owned_async_resource_cleanup",
-    "environment_and_log_level_settings"
+    "node_engine_baseline_aligned_to_vite_7_3_6",
+    "strict_typescript_react_vite_foundation",
+    "exact_npm_lockfile_and_reproducible_install",
+    "frontend_format_lint_typecheck_test_and_build_commands",
+    "minimal_accessible_non_business_bootstrap_surface",
+    "public_environment_and_build_metadata",
+    "frontend_test_traceability_discovery"
   ],
   "requirements_satisfied": [
-    "DEPLOY-009",
-    "DEPLOY-024",
-    "SEC-043"
+    "UI-007",
+    "UI-009",
+    "TEST-013",
+    "DEPLOY-008",
+    "DEPLOY-020",
+    "SEC-049",
+    "SEC-061",
+    "SEC-062"
   ],
   "touched_areas": [
-    "FastAPI application logging and lifecycle",
-    "application environment and log-level settings",
-    "focused operational and security tests",
-    "test traceability manifest",
+    "frontend foundation and locked dependencies",
+    "root development commands and README",
+    "cross-stack test traceability validation",
     "compact continuity state"
   ],
   "verification": {
     "status": "passed",
     "results": [
-      "uv lock --check and uv sync --extra dev --locked passed",
-      "Ruff format check and lint passed for 11 files",
-      "strict mypy passed for 11 source files",
-      "make test passed 45 tests with 6 dedicated real-PostgreSQL tests skipped there",
-      "repository-owned make database-test passed all 6 tests",
-      "wheel and sdist build plus application import passed",
-      "runtime and full-development dependency audits found no known vulnerabilities; the local project itself was not a PyPI-auditable distribution",
-      "container build, packaged application import, configured non-root user, and runtime non-root checks passed",
-      "traceability manifest, added-line secret/dangerous-code scan, JSON, diff, changed-path scope, and canonical docs 001-010 integrity passed",
-      "implementation commit local/upstream/remote SHA and committed file-list verification passed"
+      "Node 26.5.0 satisfied the manifest and lockfile baseline of >=22.12.0; locked Vite remained exactly 7.3.6",
+      "npm ci --ignore-scripts installed 291 packages from the lockfile and found 0 vulnerabilities",
+      "frontend Prettier check and ESLint passed",
+      "frontend strict TypeScript check passed",
+      "Vitest passed 3 component tests",
+      "Vite 7.3.6 production build and public staging/build metadata assertions passed",
+      "backend uv lock check and locked development sync passed",
+      "backend Ruff format/lint and strict mypy passed for 11 files",
+      "backend regression suite passed 45 tests with 6 dedicated database tests skipped as expected",
+      "backend wheel/sdist build and application import passed",
+      "runtime and full-development Python dependency audits found no known vulnerabilities",
+      "backend container build, packaged import, configured non-root user, and runtime UID checks passed",
+      "traceability, JSON, exact 22-path scope, diff, changed-content secret scan, and canonical docs 001-010 integrity checks passed"
     ]
   },
   "preserved": [
-    "safe_error_response_contracts",
-    "request_id_response_correlation",
-    "minimal_liveness_and_readiness_contracts",
-    "short_lived_context_managed_readiness_connection"
+    "canonical_docs_001_through_010",
+    "backend_runtime_and_contracts",
+    "database_schema_data_and_tooling",
+    "existing_queue_priorities"
   ],
   "deferred": [
-    "business_endpoints",
     "authentication_and_authorization",
-    "worker",
-    "business_and_financial_policy",
-    "production_configuration_and_remote_access",
-    "database_pool_creation",
-    "schema_and_migration_changes",
-    "database_compose_makefile_and_environment_changes"
+    "business_screens_and_financial_logic",
+    "API_policy_and_integration",
+    "reverse_proxy_CI_and_production_deployment",
+    "production_credentials_and_remote_access",
+    "broad_design_system"
   ],
   "next_candidate": {
-    "phase": "Phase 1E",
-    "task": "bounded React, TypeScript, and Vite frontend bootstrap",
-    "status": "not_started"
+    "task": "owner-authorized Phase 1E publication and compact-state reconciliation",
+    "status": "ready"
   },
   "blockers": [],
   "secrets_present": false

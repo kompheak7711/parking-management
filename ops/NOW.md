@@ -1,22 +1,19 @@
-# Phase 1D continuity
+# Phase 1E continuity
 
-- Completed tranche: DEPLOY-009/024 and SEC-043 structured redacted application
-  logging plus graceful FastAPI lifecycle hooks.
-- Status: published on `implementation/foundation` at
-  `70be532aa7e14dd4b9b2b306d1e6cc599fede518`; no active cycle.
-- Logging: standard-library JSON stdout records include UTC timestamp, severity,
-  service, environment, safe request ID, method, status, duration, and safe exception
-  type. A fixed formatter allowlist omits message text, paths, query strings, headers,
-  credentials, tokens, secrets, bodies, Customer data, and financial payloads.
-- Lifecycle: explicit FastAPI lifespan enters injected application-owned async resources
-  and closes them on shutdown; no resource, worker, endpoint, or transaction policy was
-  invented. Existing short-lived readiness connections and safe response contracts remain.
-- Verification: lock/install, format, lint, strict mypy, 45 normal tests with 6 dedicated
-  database tests skipped there, repository-owned database gate with all 6 passing,
-  package build/import, runtime/development dependency audits, container build/import/
-  non-root, traceability, secret scan, scope/diff, and canonical-doc integrity passed.
-- Publication verification: implementation commit local/upstream/remote SHA and committed
-  file-list checks passed.
+- Objective: correct the frontend Node.js engine baseline to match locked Vite 7.3.6
+  without changing dependencies or broadening the approved frontend foundation.
+- Current task: owner-authorized Phase 1E correction aligned `engines.node` to
+  `>=22.12.0` in the package manifest and npm-required lockfile metadata.
+- Status: fresh independent verification passed on `implementation/foundation`; ready
+  for the owner-authorized publication workflow.
+- Checks passed: clean npm lock install, frontend audit/format/lint/strict typecheck/
+  3 tests/Vite 7.3.6 build and public metadata assertions; backend locked install,
+  format/lint/strict mypy/45 tests with 6 expected database skips/build/import;
+  runtime and development dependency audits; backend container build/import/non-root;
+  traceability, JSON, exact changed-path scope, diff, secret scan, and canonical docs
+  001-010 integrity.
+- Preserved scope: no canonical docs 001-010, dependency versions, database tooling,
+  Phase 1F work, staging, commits, or pushes.
 - Blocker: none.
-- Exact next candidate: bounded Phase 1E React/TypeScript/Vite frontend bootstrap; not
-  started.
+- Exact next action: stage the exact reviewed Phase 1E allowlist, commit, push normally,
+  verify publication, and reconcile compact state.

@@ -4,16 +4,17 @@ Business management application built with React, TypeScript, FastAPI, and Postg
 
 ## Status
 
-Phase 1 foundation is in progress. The first bounded backend tranche provides a
+Phase 1 foundation is in progress. The backend foundation provides a
 packaged FastAPI service, environment-backed settings, minimal liveness and
 database-backed readiness endpoints, backend quality gates, a non-root container, and
-a bounded PostgreSQL development and migration foundation. The business schema,
-authentication, business APIs, worker, frontend, and production deployment posture
-remain future work.
+a bounded PostgreSQL development and migration foundation. A bounded frontend
+foundation provides a strict React/TypeScript/Vite build and a non-business bootstrap
+surface. The business schema, authentication, business APIs, worker, business screens,
+and production deployment posture remain future work.
 
 ## Main components
 
-- `frontend/` — React and TypeScript user interface (not initialized)
+- `frontend/` — React, TypeScript, and Vite frontend foundation
 - `backend/` — FastAPI application, tests, package configuration, and Dockerfile
 - `docs/` — authoritative requirements, architecture, and business documentation
 - `ops/` — compact implementation state and next-work queue
@@ -26,6 +27,19 @@ remain future work.
 - Python 3.11 or newer
 - [uv](https://docs.astral.sh/uv/)
 - Docker Desktop or another Docker-compatible builder (for container verification)
+- Node.js 22 or newer and npm
+
+## Frontend setup
+
+```text
+make frontend-install
+make frontend
+```
+
+The development UI listens on `http://127.0.0.1:5173`. Only public values prefixed
+with `VITE_` are exposed by Vite. `VITE_APP_BUILD_ID` accepts a non-secret version or
+commit identifier; `VITE_APP_ENVIRONMENT` accepts a public environment label. Neither
+variable is required for local development.
 
 ## Backend setup
 
@@ -63,7 +77,7 @@ building/deploying. The Docker image accepts the same value as a build argument:
 docker build --build-arg APP_BUILD_VERSION=<version-or-commit> -t property-rental-backend backend
 ```
 
-## Backend verification
+## Verification
 
 Run the non-mutating quality gates:
 
@@ -75,8 +89,8 @@ make typecheck
 make build
 ```
 
-`make format` intentionally rewrites backend Python files; `make format-check` does
-not. `make test` also validates the machine-readable TEST-117 manifest at
+`make format` intentionally rewrites backend and frontend source files;
+`make format-check` does not. `make test` also validates the machine-readable TEST-117 manifest at
 `ops/traceability.json`. Unit/API tests skip the real PostgreSQL suite unless its
 three connection URLs are supplied.
 

@@ -2,12 +2,14 @@
 
 import ast
 import json
+import re
 from pathlib import Path
 from typing import Final, TypedDict, cast
 
 REPOSITORY_ROOT: Final = Path(__file__).resolve().parents[2]
 MANIFEST_PATH: Final = REPOSITORY_ROOT / "ops" / "traceability.json"
-TEST_DIRECTORIES: Final = (REPOSITORY_ROOT / "backend" / "tests",)
+PYTHON_TEST_DIRECTORY: Final = REPOSITORY_ROOT / "backend" / "tests"
+FRONTEND_TEST_DIRECTORY: Final = REPOSITORY_ROOT / "frontend" / "src"
 ALLOWED_LEVELS: Final = {
     "unit",
     "domain",
@@ -19,6 +21,7 @@ ALLOWED_LEVELS: Final = {
     "migration",
     "security",
     "operational",
+    "UI component",
 }
 ALLOWED_STATUSES: Final = {
     "implemented",
@@ -59,6 +62,11 @@ def collect_test_ids(path: Path) -> set[str]:
     }
 
 
+def collect_frontend_test_ids(path: Path) -> set[str]:
+    """Collect stable TEST-* identifiers from Vitest test names."""
+    return set(re.findall(r'\b(?:it|test)\(\s*["\'](TEST-[A-Z0-9-]+)\b', path.read_text()))
+
+
 def test_traceability_manifest_covers_executable_tests() -> None:
     raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
     assert raw_manifest["schema_version"] == 1
@@ -89,8 +97,9 @@ def test_traceability_manifest_covers_executable_tests() -> None:
             assert entry["test_id"] in collect_test_ids(test_path)
 
     executable_ids: set[str] = set()
-    for test_directory in TEST_DIRECTORIES:
-        for test_path in test_directory.glob("test_*.py"):
-            executable_ids.update(collect_test_ids(test_path))
+    for test_path in PYTHON_TEST_DIRECTORY.glob("test_*.py"):
+        executable_ids.update(collect_test_ids(test_path))
+    for test_path in FRONTEND_TEST_DIRECTORY.glob("**/*.test.tsx"):
+        executable_ids.update(collect_frontend_test_ids(test_path))
 
     assert executable_ids == manifest_ids

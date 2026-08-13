@@ -6,38 +6,45 @@
 .DEFAULT_GOAL := help
 
 UV ?= uv
+NPM ?= npm
 BACKEND_DIR := backend
 BACKEND_RUN := cd $(BACKEND_DIR) && $(UV) run --extra dev
+FRONTEND_DIR := frontend
+FRONTEND_RUN := cd $(FRONTEND_DIR) && $(NPM) run
 
-.PHONY: help install dev backend test database-test migrate lint format format-check typecheck build \
+.PHONY: help install dev backend frontend test database-test migrate lint format format-check typecheck build \
 	backend-install backend-dev backend-test backend-lint backend-format \
-	backend-format-check backend-typecheck backend-build backend-import-check
+	backend-format-check backend-typecheck backend-build backend-import-check \
+	frontend-install frontend-dev frontend-test frontend-lint frontend-format \
+	frontend-format-check frontend-typecheck frontend-build frontend-audit
 
 help:
 	@printf '%s\n' \
 		"Property Rental Management" \
 		"" \
-		"Backend foundation commands:" \
-		"  make install               Install locked backend development dependencies" \
+		"Foundation commands:" \
+		"  make install               Install locked backend and frontend dependencies" \
 		"  make dev                   Run the backend development server" \
-		"  make test                  Run backend tests and traceability validation" \
+		"  make frontend              Run the frontend development server" \
+		"  make test                  Run backend and frontend tests" \
 		"  make database-test         Run real PostgreSQL migration tests (URLs required)" \
 		"  make migrate               Apply reviewed migrations with MIGRATION_DATABASE_URL" \
-		"  make lint                  Run Ruff lint checks" \
-		"  make format-check          Check Ruff formatting without edits" \
-		"  make format                Apply Ruff formatting" \
-		"  make typecheck             Run strict mypy checks" \
-		"  make build                 Build wheel/sdist and verify import" \
-		"" \
-		"Each command also has a backend-* target. Frontend/database targets are deferred."
+		"  make lint                  Run backend and frontend lint checks" \
+		"  make format-check          Check backend and frontend formatting" \
+		"  make format                Apply backend and frontend formatting" \
+		"  make typecheck             Run backend and frontend strict typing" \
+		"  make build                 Build backend and frontend artifacts" \
+		"  make frontend-audit        Audit locked frontend dependencies"
 
-install: backend-install
+install: backend-install frontend-install
 
 dev: backend-dev
 
 backend: backend-dev
 
-test: backend-test
+frontend: frontend-dev
+
+test: backend-test frontend-test
 
 database-test:
 	./scripts/database-test.sh
@@ -45,15 +52,15 @@ database-test:
 migrate:
 	cd $(BACKEND_DIR) && $(UV) run alembic upgrade head
 
-lint: backend-lint
+lint: backend-lint frontend-lint
 
-format: backend-format
+format: backend-format frontend-format
 
-format-check: backend-format-check
+format-check: backend-format-check frontend-format-check
 
-typecheck: backend-typecheck
+typecheck: backend-typecheck frontend-typecheck
 
-build: backend-build backend-import-check
+build: backend-build backend-import-check frontend-build
 
 backend-install:
 	cd $(BACKEND_DIR) && $(UV) sync --extra dev
@@ -81,3 +88,30 @@ backend-build:
 
 backend-import-check:
 	$(BACKEND_RUN) python -c "from property_rental.app import app; assert app.title"
+
+frontend-install:
+	cd $(FRONTEND_DIR) && $(NPM) ci --ignore-scripts
+
+frontend-dev:
+	$(FRONTEND_RUN) dev
+
+frontend-test:
+	$(FRONTEND_RUN) test
+
+frontend-lint:
+	$(FRONTEND_RUN) lint
+
+frontend-format:
+	$(FRONTEND_RUN) format
+
+frontend-format-check:
+	$(FRONTEND_RUN) format:check
+
+frontend-typecheck:
+	$(FRONTEND_RUN) typecheck
+
+frontend-build:
+	$(FRONTEND_RUN) build
+
+frontend-audit:
+	cd $(FRONTEND_DIR) && $(NPM) audit --audit-level=moderate

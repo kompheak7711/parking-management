@@ -2,6 +2,30 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "TEST-FE-001",
+      "upstream_ids": ["UI-007", "TEST-013"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "The bootstrap exposes semantic heading and main landmarks without unapproved business actions."
+    },
+    {
+      "test_id": "TEST-FE-002",
+      "upstream_ids": ["UI-009", "DEPLOY-020", "TEST-013"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Non-production context and a public immutable build identifier are visible in the support area."
+    },
+    {
+      "test_id": "TEST-FE-003",
+      "upstream_ids": ["UI-009", "DEPLOY-020", "TEST-013"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Production omits the environment indicator while retaining the public build identifier."
+    },
+    {
       "test_id": "test_upgrade_from_empty_database_reaches_reviewed_head",
       "upstream_ids": ["DEPLOY-001", "DEPLOY-032", "TEST-010", "TEST-100"],
       "test_level": "migration",
