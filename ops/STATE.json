@@ -1,64 +1,69 @@
 {
   "schema_version": 1,
   "phase": "Phase 1D",
-  "tranche": "application-level safe error-envelope infrastructure",
-  "task": "Implement API-013, API-014, TEST-088, and SEC-039 safe error-envelope infrastructure",
+  "tranche": "structured redacted application logging and graceful FastAPI lifecycle hooks",
+  "task": "Implement DEPLOY-009, DEPLOY-024, and SEC-043 application-level infrastructure",
   "status": "published",
   "active_cycle": null,
   "branch": "implementation/foundation",
-  "commit": "a222867c859b49908238a7bb0f23e708348dc9f6",
-  "timestamp": "2026-08-13T08:49:48Z",
+  "commit": "70be532aa7e14dd4b9b2b306d1e6cc599fede518",
+  "timestamp": "2026-08-13T09:42:46Z",
   "implemented": [
-    "canonical_error_and_meta_request_id_envelope",
-    "safe_request_schema_validation_handler",
-    "safe_http_exception_handler_including_route_not_found",
-    "safe_unexpected_internal_error_boundary",
-    "canonical_error_status_code_and_message_mapping",
-    "bounded_safe_validation_field_locations",
-    "malformed_json_400_classification_by_framework_type_and_location",
-    "request_id_header_and_body_correlation",
-    "internal_exception_detail_redaction"
+    "standard_library_structured_json_application_logs",
+    "fixed_safe_operational_log_field_allowlist",
+    "safe_request_id_log_correlation",
+    "redacted_exception_type_diagnostics",
+    "request_completion_status_and_duration_logs",
+    "structured_application_start_and_stop_logs",
+    "fastapi_lifespan_owned_async_resource_cleanup",
+    "environment_and_log_level_settings"
   ],
   "requirements_satisfied": [
-    "API-013",
-    "API-014",
-    "TEST-088",
-    "SEC-039"
+    "DEPLOY-009",
+    "DEPLOY-024",
+    "SEC-043"
   ],
   "touched_areas": [
-    "FastAPI application-level exception handling",
-    "focused API contract and security tests",
+    "FastAPI application logging and lifecycle",
+    "application environment and log-level settings",
+    "focused operational and security tests",
     "test traceability manifest",
     "compact continuity state"
   ],
   "verification": {
     "status": "passed",
     "results": [
-      "41 normal tests passed with 6 dedicated database tests skipped there",
-      "repository-owned make database-test passed all 6 separately",
-      "lock, format, lint, strict mypy, package build/import, runtime and development dependency audits passed",
-      "container build/import/non-root gates passed",
-      "traceability, secret, scope, diff, and canonical-doc integrity gates passed",
-      "implementation commit local/upstream/remote/file-list verification passed"
+      "uv lock --check and uv sync --extra dev --locked passed",
+      "Ruff format check and lint passed for 11 files",
+      "strict mypy passed for 11 source files",
+      "make test passed 45 tests with 6 dedicated real-PostgreSQL tests skipped there",
+      "repository-owned make database-test passed all 6 tests",
+      "wheel and sdist build plus application import passed",
+      "runtime and full-development dependency audits found no known vulnerabilities; the local project itself was not a PyPI-auditable distribution",
+      "container build, packaged application import, configured non-root user, and runtime non-root checks passed",
+      "traceability manifest, added-line secret/dangerous-code scan, JSON, diff, changed-path scope, and canonical docs 001-010 integrity passed",
+      "implementation commit local/upstream/remote SHA and committed file-list verification passed"
     ]
   },
+  "preserved": [
+    "safe_error_response_contracts",
+    "request_id_response_correlation",
+    "minimal_liveness_and_readiness_contracts",
+    "short_lived_context_managed_readiness_connection"
+  ],
   "deferred": [
     "business_endpoints",
     "authentication_and_authorization",
-    "structured_redacted_logging",
-    "graceful_lifecycle_hooks",
-    "dependencies_and_migrations",
-    "database_compose_makefile_and_environment_changes",
-    "product_policy"
+    "worker",
+    "business_and_financial_policy",
+    "production_configuration_and_remote_access",
+    "database_pool_creation",
+    "schema_and_migration_changes",
+    "database_compose_makefile_and_environment_changes"
   ],
   "next_candidate": {
-    "phase": "Phase 1D",
-    "task": "bounded Phase 1D structured redacted logging and graceful lifecycle-hooks queue item",
-    "requirements": [
-      "DEPLOY-009",
-      "DEPLOY-024",
-      "SEC-043"
-    ],
+    "phase": "Phase 1E",
+    "task": "bounded React, TypeScript, and Vite frontend bootstrap",
     "status": "not_started"
   },
   "blockers": [],
