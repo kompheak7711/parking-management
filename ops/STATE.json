@@ -3,11 +3,11 @@
   "phase": "Phase 1E",
   "tranche": "Phase 1E Node.js engine baseline correction",
   "task": "Align the frontend Node.js engine baseline with locked Vite 7.3.6",
-  "status": "verified_for_publication",
+  "status": "published",
   "active_cycle": null,
   "branch": "implementation/foundation",
-  "commit": "91605d707693509bc0d47939328fdf6b4a1f27d5",
-  "timestamp": "2026-08-13T10:28:53Z",
+  "commit": "a40982370661e33be8188c98cc93ad807e933b0f",
+  "timestamp": "2026-08-13T10:30:54Z",
   "implemented": [
     "node_engine_baseline_aligned_to_vite_7_3_6",
     "strict_typescript_react_vite_foundation",
@@ -48,7 +48,8 @@
       "backend wheel/sdist build and application import passed",
       "runtime and full-development Python dependency audits found no known vulnerabilities",
       "backend container build, packaged import, configured non-root user, and runtime UID checks passed",
-      "traceability, JSON, exact 22-path scope, diff, changed-content secret scan, and canonical docs 001-010 integrity checks passed"
+      "traceability, JSON, exact 22-path scope, diff, changed-content secret scan, and canonical docs 001-010 integrity checks passed",
+      "implementation commit local/upstream/remote SHA and exact 22-file committed allowlist verification passed"
     ]
   },
   "preserved": [
@@ -66,8 +67,9 @@
     "broad_design_system"
   ],
   "next_candidate": {
-    "task": "owner-authorized Phase 1E publication and compact-state reconciliation",
-    "status": "ready"
+    "phase": "Phase 1F",
+    "task": "bounded CI foundation",
+    "status": "not_started"
   },
   "blockers": [],
   "secrets_present": false
