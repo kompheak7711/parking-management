@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "phase": "Phase 1A foundation checkpoint",
+  "tranche": "corrected backend foundation 1A",
+  "task": "Remediate pytest audit blocker with pytest >=9.0.3",
+  "status": "verified_ready_for_authorized_publication",
+  "branch": "implementation/foundation",
+  "commit": "0a0cbca141439b0602cdd2c2c59d9983ba0fde81",
+  "timestamp": "2026-08-13T04:29:02Z",
+  "implemented": [
+    "fastapi_app_factory",
+    "environment_settings_boundary",
+    "versioned_liveness_endpoint",
+    "safe_request_correlation",
+    "test_traceability_manifest",
+    "backend_quality_gates",
+    "non_root_backend_dockerfile"
+  ],
+  "health_contract": {
+    "method": "GET",
+    "path": "/api/v1/health/live",
+    "body_keys": ["status", "version"],
+    "header": "X-Request-ID"
+  },
+  "requirements_satisfied": [
+    "API-001",
+    "API-002",
+    "API-007",
+    "TEST-114",
+    "TEST-117"
+  ],
+  "requirements_partial": {
+    "API-081": "Versioned minimal liveness exists; readiness and authorized operations status are deferred.",
+    "TEST-011": "Current liveness and correlation HTTP contracts are tested; future API behavior remains unimplemented.",
+    "TEST-015": "The backend container can be built and its liveness exercised; recovery and multi-service scenarios are deferred.",
+    "TEST-113": "Available backend formatting, lint, type, test, build, and container gates exist; frontend, database, migration, UI/E2E, and release security gates await those scopes.",
+    "SEC-039": "Current unauthenticated liveness is minimal and request IDs are sanitized; standard application error handling is deferred.",
+    "SEC-049": "Current settings and image paths do not ingest or embed secrets; deployment secret integration is deferred.",
+    "SEC-062": "Backend artifacts are version-identifiable and exclude local secret files; reviewed release delivery is deferred.",
+    "DEPLOY-009": "Backend runs non-root with explicit workers and liveness; structured logs, pooling, and graceful shutdown are deferred.",
+    "DEPLOY-018": "Only foundation service/build environment configuration exists.",
+    "DEPLOY-019": "Foundation uses environment injection and excludes local env files; production secret-store integration is deferred.",
+    "DEPLOY-020": "Backend build identity is exposed by liveness; frontend and authorized operational UI are deferred.",
+    "DEPLOY-022": "The backend container runs non-root; proxy and other application containers are deferred.",
+    "DEPLOY-023": "Backend liveness exists; readiness, worker, database, and proxy health await their components."
+  },
+  "touched_areas": [
+    "backend request-correlation middleware",
+    "backend health API tests",
+    "TEST-117 manifest and validator",
+    "backend pytest development constraint and lockfile",
+    "Makefile and README verification guidance",
+    "compact ops state and queue"
+  ],
+  "verification": {
+    "status": "passed",
+    "commands": [
+      "uv lock --upgrade-package pytest",
+      "uv lock --check",
+      "make test",
+      "make lint",
+      "make format-check",
+      "make typecheck",
+      "make build",
+      "OpenAPI application-route assertion",
+      "JSON parse and TEST-117 manifest validation",
+      "docker build and image non-root/healthcheck inspection",
+      "container liveness, caller request-ID, and unversioned-route runtime assertions",
+      "docker compose config --quiet",
+      "git diff --check and canonical docs 001-010 unchanged assertion",
+      "credential-pattern review of changed/untracked source",
+      "pip-audit against locked runtime dependencies",
+      "uv export --locked --no-dev --no-emit-project --no-hashes; uvx pip-audit -r <runtime export>",
+      "uv export --locked --extra dev --no-emit-project --no-hashes; uvx pip-audit -r <full export>"
+    ],
+    "result": "pytest constraint is >=9.0.3,<10 and uv.lock resolves pytest 9.1.1. All 12 tests passed on pytest 9.1.1 with no compatibility changes. Fresh independent Ruff lint/format, strict mypy, package build/import, uv lock, OpenAPI, traceability, Compose, Docker build/runtime/healthy/non-root, canonical-doc integrity, diff, scope, secret-pattern, and locked runtime/full-development dependency checks passed; both dependency audits reported no known vulnerabilities."
+  },
+  "deferred": [
+    "database_and_migrations",
+    "readiness_endpoint",
+    "authentication_and_authorization",
+    "standard_error_handlers",
+    "structured_logging",
+    "scheduled_worker",
+    "frontend",
+    "compose_application_topology"
+  ],
+  "blockers": [],
+  "secrets_present": false
+}

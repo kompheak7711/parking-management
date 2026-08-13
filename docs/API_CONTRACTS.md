@@ -2,7 +2,7 @@
 
 ## General conventions
 
-- Base path: `/api`
+- Base path: `/api/v1`
 - Request and response bodies use JSON.
 - Errors use a consistent structure.
 - Input validation occurs at the API boundary.

@@ -37,6 +37,7 @@ env/
 htmlcov/
 *.egg-info/
 .eggs/
+backend/dist/
 
 # Databases and backups
 *.db

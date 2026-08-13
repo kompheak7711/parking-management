@@ -5,72 +5,71 @@
 
 .DEFAULT_GOAL := help
 
-.PHONY: \
-    help \
-    install \
-    dev \
-    backend \
-    frontend \
-    test \
-    lint \
-    format \
-    typecheck \
-    build \
-    clean \
-    docker-up \
-    docker-down
+UV ?= uv
+BACKEND_DIR := backend
+BACKEND_RUN := cd $(BACKEND_DIR) && $(UV) run --extra dev
+
+.PHONY: help install dev backend test lint format format-check typecheck build \
+	backend-install backend-dev backend-test backend-lint backend-format \
+	backend-format-check backend-typecheck backend-build backend-import-check
 
 help:
-	@echo ""
-	@echo "Property Rental Management"
-	@echo ""
-	@echo "Available commands:"
-	@echo ""
-	@echo "  make install      Install dependencies"
-	@echo "  make dev          Start development environment"
-	@echo "  make backend      Start backend"
-	@echo "  make frontend     Start frontend"
-	@echo "  make test         Run tests"
-	@echo "  make lint         Run linting"
-	@echo "  make format       Format code"
-	@echo "  make typecheck    Run type checking"
-	@echo "  make build        Production build"
-	@echo "  make docker-up    Start Docker services"
-	@echo "  make docker-down  Stop Docker services"
-	@echo "  make clean        Remove temporary files"
+	@printf '%s\n' \
+		"Property Rental Management" \
+		"" \
+		"Backend foundation commands:" \
+		"  make install               Install locked backend development dependencies" \
+		"  make dev                   Run the backend development server" \
+		"  make test                  Run backend tests and traceability validation" \
+		"  make lint                  Run Ruff lint checks" \
+		"  make format-check          Check Ruff formatting without edits" \
+		"  make format                Apply Ruff formatting" \
+		"  make typecheck             Run strict mypy checks" \
+		"  make build                 Build wheel/sdist and verify import" \
+		"" \
+		"Each command also has a backend-* target. Frontend/database targets are deferred."
 
-install:
-	@echo "Not implemented yet."
+install: backend-install
 
-dev:
-	@echo "Not implemented yet."
+dev: backend-dev
 
-backend:
-	@echo "Not implemented yet."
+backend: backend-dev
 
-frontend:
-	@echo "Not implemented yet."
+test: backend-test
 
-test:
-	@echo "Not implemented yet."
+lint: backend-lint
 
-lint:
-	@echo "Not implemented yet."
+format: backend-format
 
-format:
-	@echo "Not implemented yet."
+format-check: backend-format-check
 
-typecheck:
-	@echo "Not implemented yet."
+typecheck: backend-typecheck
 
-build:
-	@echo "Not implemented yet."
+build: backend-build backend-import-check
 
-docker-up:
-	@echo "Not implemented yet."
+backend-install:
+	cd $(BACKEND_DIR) && $(UV) sync --extra dev
 
-docker-down:
-	@echo "Not implemented yet."
+backend-dev:
+	cd $(BACKEND_DIR) && $(UV) run uvicorn property_rental.app:app --reload --host 127.0.0.1 --port 8000
 
-clean:
-	@echo "Nothing to clean."
+backend-test:
+	$(BACKEND_RUN) pytest
+
+backend-lint:
+	$(BACKEND_RUN) ruff check src tests
+
+backend-format:
+	$(BACKEND_RUN) ruff format src tests
+
+backend-format-check:
+	$(BACKEND_RUN) ruff format --check src tests
+
+backend-typecheck:
+	$(BACKEND_RUN) mypy
+
+backend-build:
+	$(BACKEND_RUN) python -m build
+
+backend-import-check:
+	$(BACKEND_RUN) python -c "from property_rental.app import app; assert app.title"

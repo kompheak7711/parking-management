@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "test_id": "test_liveness_returns_minimal_stable_contract_and_request_id",
+      "upstream_ids": ["API-001", "API-007", "API-081"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_health.py",
+      "status": "implemented",
+      "notes": "Versioned minimal liveness response includes a generated correlation identifier."
+    },
+    {
+      "test_id": "test_liveness_normalizes_and_returns_safe_caller_request_id",
+      "upstream_ids": ["API-007"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_health.py",
+      "status": "implemented",
+      "notes": "Safe caller identifiers are trimmed and returned on the response."
+    },
+    {
+      "test_id": "test_liveness_replaces_unsafe_caller_request_id",
+      "upstream_ids": ["API-007", "SEC-039"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_health.py",
+      "status": "implemented",
+      "notes": "Unsafe, empty, or over-length caller header values are replaced with generated identifiers."
+    },
+    {
+      "test_id": "test_request_id_normalization_replaces_non_ascii_value",
+      "upstream_ids": ["API-007", "SEC-039"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_health.py",
+      "status": "implemented",
+      "notes": "Non-ASCII caller identifiers are rejected at the normalization boundary."
+    },
+    {
+      "test_id": "test_unversioned_liveness_path_is_not_exposed",
+      "upstream_ids": ["API-001", "API-081"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_health.py",
+      "status": "implemented",
+      "notes": "Operational liveness is exposed only below the canonical API base path, and correlation is preserved on a 404 response."
+    },
+    {
+      "test_id": "test_liveness_does_not_expose_other_configuration",
+      "upstream_ids": ["API-081", "SEC-039", "SEC-049"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_health.py",
+      "status": "implemented",
+      "notes": "The unauthenticated liveness body remains minimal and excludes process secrets."
+    },
+    {
+      "test_id": "test_settings_load_non_secret_build_identity_from_environment",
+      "upstream_ids": ["SEC-049", "SEC-062"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_settings.py",
+      "status": "implemented",
+      "notes": "A non-secret immutable build identity is loaded from deployment configuration."
+    },
+    {
+      "test_id": "test_traceability_manifest_covers_executable_tests",
+      "upstream_ids": ["API-001"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "The TEST-117 manifest structure and executable test coverage are validated automatically."
+    }
+  ]
+}
