@@ -138,6 +138,54 @@
       "notes": "The unauthenticated liveness body remains minimal and excludes process secrets."
     },
     {
+      "test_id": "test_route_not_found_uses_safe_canonical_error_envelope",
+      "upstream_ids": ["API-013", "API-014", "TEST-088", "SEC-039"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_errors.py",
+      "status": "implemented",
+      "notes": "Unknown routes return the canonical 404 envelope with correlated request ID and no requested object disclosure."
+    },
+    {
+      "test_id": "test_http_exception_uses_status_mapping_without_exception_detail",
+      "upstream_ids": ["API-013", "API-014", "TEST-088", "SEC-039"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_errors.py",
+      "status": "implemented",
+      "notes": "HTTP exception details are replaced by stable safe status-specific content."
+    },
+    {
+      "test_id": "test_canonical_http_statuses_have_exact_safe_contracts",
+      "upstream_ids": ["API-013", "API-014", "TEST-088", "SEC-039"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_errors.py",
+      "status": "implemented",
+      "notes": "Every canonical HTTP error status has an exact stable envelope and request-ID correlation."
+    },
+    {
+      "test_id": "test_schema_validation_returns_only_safe_field_locations",
+      "upstream_ids": ["API-013", "API-014", "TEST-087", "TEST-088", "SEC-039"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_errors.py",
+      "status": "implemented",
+      "notes": "Request validation exposes only bounded field locations, never rejected values or framework diagnostics."
+    },
+    {
+      "test_id": "test_malformed_json_returns_safe_bad_request_envelope",
+      "upstream_ids": ["API-013", "API-014", "TEST-088", "SEC-039"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_errors.py",
+      "status": "implemented",
+      "notes": "Malformed JSON returns the exact correlated safe 400 envelope without parser diagnostics or rejected request content."
+    },
+    {
+      "test_id": "test_unexpected_exception_returns_redacted_internal_error",
+      "upstream_ids": ["API-013", "API-014", "TEST-088", "SEC-039"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_errors.py",
+      "status": "implemented",
+      "notes": "Unexpected failures return a correlated canonical 500 without exception, SQL, credential, path, or object details."
+    },
+    {
       "test_id": "test_settings_load_non_secret_build_identity_from_environment",
       "upstream_ids": ["SEC-049", "SEC-062"],
       "test_level": "operational",

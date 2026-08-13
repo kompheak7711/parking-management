@@ -1,64 +1,61 @@
 {
   "schema_version": 1,
   "phase": "Phase 1D",
-  "tranche": "minimal database-backed readiness",
-  "task": "Implement API-081, DEPLOY-023, DEPLOY-057, and SEC-039 readiness behavior",
-  "status": "published",
+  "tranche": "application-level safe error-envelope infrastructure",
+  "task": "Implement API-013, API-014, TEST-088, and SEC-039 safe error-envelope infrastructure",
+  "status": "completed_unpublished",
   "branch": "implementation/foundation",
-  "commit": "a32b2e615a377d362fa4bea3ac5132634560b1ca",
-  "timestamp": "2026-08-13T08:04:36Z",
+  "commit": "ab8bed349564f7bbf288dd4b922dfe96f9c16ca9",
+  "timestamp": "2026-08-13T08:42:31Z",
   "implemented": [
-    "versioned_database_backed_readiness_endpoint",
-    "runtime_app_database_url_dependency",
-    "bounded_postgresql_connection_and_statement_timeouts",
-    "minimal_stable_success_and_unavailable_contracts",
-    "request_id_preservation_on_all_readiness_outcomes",
-    "unauthenticated_readiness_diagnostic_redaction",
-    "managed_real_postgresql_readiness_test"
+    "canonical_error_and_meta_request_id_envelope",
+    "safe_request_schema_validation_handler",
+    "safe_http_exception_handler_including_route_not_found",
+    "safe_unexpected_internal_error_boundary",
+    "canonical_error_status_code_and_message_mapping",
+    "bounded_safe_validation_field_locations",
+    "malformed_json_400_classification_by_framework_type_and_location",
+    "request_id_header_and_body_correlation",
+    "internal_exception_detail_redaction"
   ],
   "requirements_satisfied": [
-    "API-081",
-    "DEPLOY-023",
-    "DEPLOY-057",
+    "API-013",
+    "API-014",
+    "TEST-088",
     "SEC-039"
   ],
   "touched_areas": [
-    "FastAPI health route and application wiring",
-    "runtime settings construction for injected tests",
-    "focused API, security, and real PostgreSQL readiness tests",
-    "README readiness contract",
-    "test traceability and compact continuity state"
+    "FastAPI application-level exception handling",
+    "focused API contract and security tests",
+    "test traceability manifest",
+    "compact continuity state"
   ],
   "verification": {
     "status": "passed",
     "commands": [
-      "uv lock --check --project backend",
-      "make format-check",
-      "make lint",
-      "make typecheck",
-      "make test: 23 passed and 6 dedicated real-database tests skipped",
-      "make database-test: 6 passed through the repository-managed PostgreSQL runtime URL",
-      "make build",
-      "runtime and full-development pip-audit",
-      "container build, application import, and non-root identity checks",
-      "secret-pattern scan",
-      "changed-path allowlist and protected-path assertions",
-      "canonical docs 001-010 unchanged assertion",
-      "git diff --check",
-      "local/upstream/remote SHA and committed-file-list verification"
+      "uv run --extra dev pytest tests/test_errors.py::test_malformed_json_returns_safe_bad_request_envelope -q: failed as expected because malformed JSON returned 422 before the fix",
+      "uv run --extra dev pytest tests/test_errors.py::test_malformed_json_returns_safe_bad_request_envelope tests/test_errors.py::test_schema_validation_returns_only_safe_field_locations -q: 2 passed",
+      "uv run --extra dev pytest tests/test_errors.py tests/test_traceability.py -q: 19 passed",
+      "uv run --extra dev pytest tests/test_errors.py tests/test_health.py tests/test_traceability.py -q: 39 passed",
+      "make format: passed, 9 files unchanged",
+      "make lint: passed",
+      "make typecheck: passed, no issues in 9 source files",
+      "make test: 41 passed, 6 real-PostgreSQL migration tests skipped",
+      "git diff --check: passed",
+      "canonical docs 001-010 unchanged assertion: passed"
     ],
-    "result": "All requested gates passed independently. The dedicated database gate proved readiness through the managed runtime identity without printing or persisting its URL. Both dependency audits found no known vulnerabilities; the container imported successfully as the configured non-root identity; canonical docs, dependency manifests, migrations, Compose, Makefile, environment template, and database-test script are unchanged."
+    "result": "API-014 now distinguishes malformed JSON as HTTP 400 using only FastAPI's structured error type and location, while schema validation remains HTTP 422. Focused and normal suites passed; the normal suite passed 41 tests with its 6 dedicated real-PostgreSQL tests skipped because their required URL was not configured."
   },
   "deferred": [
-    "safe_error_envelopes_for_business_endpoints",
+    "business_endpoints",
+    "authentication_and_authorization",
     "structured_redacted_logging",
     "graceful_lifecycle_hooks",
-    "connection_pooling",
-    "authentication_and_authorization",
-    "business_schema_and_apis",
-    "worker_frontend_and_ci"
+    "dependencies_and_migrations",
+    "database_compose_makefile_and_environment_changes",
+    "product_policy"
   ],
-  "next_action": "In a future cycle, select one bounded Phase 1D API-infrastructure queue item; the next candidate is consistent safe error envelopes before business endpoints (API-013/014, TEST-088, SEC-039).",
+  "next_action": "Owner reviews the bounded uncommitted tranche; do not stage, commit, push, deploy, or start the next queue item without fresh approval.",
   "blockers": [],
   "secrets_present": false
 }
