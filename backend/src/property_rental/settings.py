@@ -1,5 +1,7 @@
 """Environment-backed application settings."""
 
+from typing import Literal
+
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -17,4 +19,6 @@ class Settings(BaseSettings):
 
     service_name: str = "property-rental-backend"
     build_version: str = Field(default="development", min_length=1, max_length=128)
+    environment: str = Field(default="development", min_length=1, max_length=64)
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     database_url: SecretStr | None = Field(default=None, validation_alias="APP_DATABASE_URL")

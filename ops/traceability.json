@@ -186,6 +186,38 @@
       "notes": "Unexpected failures return a correlated canonical 500 without exception, SQL, credential, path, or object details."
     },
     {
+      "test_id": "test_request_log_is_structured_correlated_and_omits_sensitive_input",
+      "upstream_ids": ["DEPLOY-009", "DEPLOY-048", "SEC-043", "SEC-064", "TEST-110"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_operations.py",
+      "status": "implemented",
+      "notes": "Application request logs are structured and request-ID correlated while omitting paths, query values, headers, credentials, tokens, and bodies."
+    },
+    {
+      "test_id": "test_unexpected_exception_log_uses_safe_type_without_exception_diagnostic",
+      "upstream_ids": ["DEPLOY-009", "DEPLOY-048", "SEC-039", "SEC-043", "SEC-064", "TEST-110"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_operations.py",
+      "status": "implemented",
+      "notes": "Unexpected failures emit correlated operational diagnostics limited to the exception type and never exception text, stack traces, paths, Customer data, or financial data."
+    },
+    {
+      "test_id": "test_log_formatter_ignores_non_allowlisted_extra_fields",
+      "upstream_ids": ["DEPLOY-048", "SEC-043", "SEC-064", "TEST-110"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_operations.py",
+      "status": "implemented",
+      "notes": "The JSON formatter enforces a fixed operational-field allowlist and ignores message text and arbitrary extras that could contain sensitive payloads."
+    },
+    {
+      "test_id": "test_lifespan_closes_owned_resources_and_logs_shutdown",
+      "upstream_ids": ["DEPLOY-009", "DEPLOY-024"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_operations.py",
+      "status": "implemented",
+      "notes": "FastAPI lifespan enters application-owned asynchronous resources and closes them during graceful shutdown with structured lifecycle events."
+    },
+    {
       "test_id": "test_settings_load_non_secret_build_identity_from_environment",
       "upstream_ids": ["SEC-049", "SEC-062"],
       "test_level": "operational",

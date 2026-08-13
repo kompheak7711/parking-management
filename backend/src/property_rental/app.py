@@ -1,7 +1,10 @@
 """FastAPI application factory."""
 
 import re
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
+from contextlib import AbstractAsyncContextManager, AsyncExitStack, asynccontextmanager
+from logging import Logger
+from time import perf_counter
 from typing import Final
 from uuid import uuid4
 
@@ -12,6 +15,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from property_rental.api import create_api_router
+from property_rental.logging import create_application_logger
 from property_rental.settings import Settings
 
 REQUEST_ID_HEADER: Final = "X-Request-ID"
@@ -120,10 +124,33 @@ def validation_status_code(exc: RequestValidationError) -> int:
 def create_app(
     settings: Settings | None = None,
     readiness_check: Callable[[str], None] = check_database_readiness,
+    lifecycle_resources: Iterable[AbstractAsyncContextManager[object]] = (),
+    application_logger: Logger | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
-    app = FastAPI(title=resolved_settings.service_name, version=resolved_settings.build_version)
+    logger = application_logger or create_application_logger(
+        service=resolved_settings.service_name,
+        environment=resolved_settings.environment,
+        level=resolved_settings.log_level,
+    )
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        async with AsyncExitStack() as stack:
+            for resource in lifecycle_resources:
+                await stack.enter_async_context(resource)
+            logger.info("application started", extra={"event": "application.started"})
+            try:
+                yield
+            finally:
+                logger.info("application stopping", extra={"event": "application.stopping"})
+
+    app = FastAPI(
+        title=resolved_settings.service_name,
+        version=resolved_settings.build_version,
+        lifespan=lifespan,
+    )
 
     @app.exception_handler(RequestValidationError)
     async def request_validation_error(
@@ -152,11 +179,32 @@ def create_app(
     ) -> Response:
         request_id = normalize_request_id(request.headers.get(REQUEST_ID_HEADER))
         request.state.request_id = request_id
+        started_at = perf_counter()
         try:
             response = await call_next(request)
-        except Exception:
-            return error_response(status.HTTP_500_INTERNAL_SERVER_ERROR, request_id)
+        except Exception as exc:
+            logger.error(
+                "request failed",
+                extra={
+                    "event": "request.exception",
+                    "request_id": request_id,
+                    "method": request.method,
+                    "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    "exception_type": type(exc).__name__,
+                },
+            )
+            response = error_response(status.HTTP_500_INTERNAL_SERVER_ERROR, request_id)
         response.headers[REQUEST_ID_HEADER] = request_id
+        logger.info(
+            "request completed",
+            extra={
+                "event": "request.completed",
+                "request_id": request_id,
+                "method": request.method,
+                "status_code": response.status_code,
+                "duration_ms": round((perf_counter() - started_at) * 1000, 3),
+            },
+        )
         return response
 
     app.include_router(create_api_router(resolved_settings, readiness_check))
