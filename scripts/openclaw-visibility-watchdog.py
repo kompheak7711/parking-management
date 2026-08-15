@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+"""Emit only new Property Rental automation events for Telegram delivery."""
+
+from __future__ import annotations
+
+import json
+import os
+import sqlite3
+import subprocess
+import time
+from datetime import datetime
+from pathlib import Path
+
+REPO = Path(os.environ.get("PROPERTY_RENTAL_REPO", Path(__file__).resolve().parents[1]))
+STATE_DB = Path(
+    os.environ.get(
+        "PROPERTY_RENTAL_OPENCLAW_DB", Path.home() / ".openclaw/state/openclaw.sqlite"
+    )
+)
+LEDGER_DIR = Path(
+    os.environ.get(
+        "PROPERTY_RENTAL_WATCHDOG_STATE_DIR",
+        Path.home() / ".openclaw/state/property-rental-visibility",
+    )
+)
+SUPERVISOR_ID = os.environ.get(
+    "PROPERTY_RENTAL_SUPERVISOR_ID", "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb"
+)
+NOW_MS = int(os.environ.get("PROPERTY_RENTAL_NOW_MS", str(int(time.time() * 1000))))
+STALE_MS = int(os.environ.get("PROPERTY_RENTAL_STALE_MS", str(2 * 60 * 60 * 1000)))
+HEARTBEAT_MS = int(os.environ.get("PROPERTY_RENTAL_HEARTBEAT_MS", str(75 * 60 * 1000)))
+
+
+def git(*args: str) -> str:
+    return subprocess.check_output(["git", *args], cwd=REPO, text=True).strip()
+
+
+def load_ledger() -> dict[str, str]:
+    path = LEDGER_DIR / "events.json"
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def save_ledger(ledger: dict[str, str]) -> None:
+    LEDGER_DIR.mkdir(parents=True, exist_ok=True)
+    path = LEDGER_DIR / "events.json"
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(ledger, sort_keys=True) + "\n")
+    temporary.replace(path)
+
+
+def supervisor() -> dict[str, object]:
+    with sqlite3.connect(STATE_DB) as connection:
+        row = connection.execute(
+            """SELECT enabled, last_run_at_ms, last_run_status, consecutive_errors,
+                      running_at_ms
+                 FROM cron_jobs WHERE job_id = ?""",
+            (SUPERVISOR_ID,),
+        ).fetchone()
+    if row is None:
+        return {
+            "enabled": False,
+            "last_run": None,
+            "status": "missing",
+            "errors": 0,
+            "running": None,
+        }
+    return {
+        "enabled": bool(row[0]),
+        "last_run": row[1],
+        "status": row[2] or "unknown",
+        "errors": row[3] or 0,
+        "running": row[4],
+    }
+
+
+def emit_once(
+    ledger: dict[str, str], category: str, signature: str, message: str
+) -> None:
+    if ledger.get(category) == signature:
+        return
+    print(message)
+    ledger[category] = signature
+
+
+def main() -> None:
+    state = json.loads((REPO / "ops/STATE.json").read_text())
+    service = supervisor()
+    ledger = load_ledger()
+    head = git("rev-parse", "--short", "HEAD")
+    phase = state.get("phase", "unrecorded phase")
+    status = state.get("status", "unknown")
+    next_action = state.get("next_action") or "No next action is recorded."
+    candidate = state.get("next_candidate") or {}
+
+    last_run = service["last_run"]
+    healthy = bool(
+        service["enabled"]
+        and last_run
+        and NOW_MS - int(last_run) <= HEARTBEAT_MS
+        and service["status"] == "ok"
+        and int(service["errors"]) == 0
+    )
+    health_signature = "healthy" if healthy else json.dumps(service, sort_keys=True)
+    prior_health = ledger.get("health")
+    if not healthy:
+        emit_once(
+            ledger,
+            "health",
+            health_signature,
+            "AUTOMATION_HEALTH — Property Rental supervisor is not healthy. "
+            f"Enabled: {service['enabled']}; last status: {service['status']}; "
+            f"consecutive errors: {service['errors']}. Investigation is required.",
+        )
+    elif prior_health and prior_health != "healthy":
+        print(
+            "RECOVERED — Property Rental supervisor is healthy again and scheduled checks are running."
+        )
+        ledger["health"] = "healthy"
+    else:
+        ledger["health"] = "healthy"
+
+    if status == "published":
+        signature = f"{phase}:{state.get('commit')}:{head}"
+        approval_waiting = (
+            candidate.get("status") == "not_approved"
+            or "approval" in next_action.lower()
+        )
+        suffix = (
+            f" Waiting for owner approval. Exact next action: {next_action}"
+            if approval_waiting
+            else f" Next: {next_action}"
+        )
+        emit_once(
+            ledger,
+            "publication",
+            signature,
+            f"PUBLISHED — Property Rental {phase} is verified and published at {head}.{suffix}",
+        )
+
+    if status in {"approved_ready", "active", "in_progress"}:
+        timestamp = state.get("timestamp")
+        try:
+            updated_ms = int(
+                datetime.fromisoformat(timestamp.replace("Z", "+00:00")).timestamp()
+                * 1000
+            )
+        except (AttributeError, TypeError, ValueError):
+            updated_ms = 0
+        if updated_ms and NOW_MS - updated_ms > STALE_MS and not service["running"]:
+            signature = f"{phase}:{status}:{timestamp}:{head}"
+            emit_once(
+                ledger,
+                "stall",
+                signature,
+                f"STALLED — Property Rental {phase} is approved/active but has recorded no progress for more than two hours. "
+                f"Current commit: {head}. Next action: {next_action}",
+            )
+        else:
+            ledger.pop("stall", None)
+
+    save_ledger(ledger)
+
+
+if __name__ == "__main__":
+    main()

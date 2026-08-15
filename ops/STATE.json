@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "phase": "Phase 1F",
-  "tranche": "bounded GitHub Actions CI foundation",
-  "task": "Implement CI for existing backend and frontend quality, test, and build gates",
+  "phase": "Operations",
+  "tranche": "bounded automation visibility and watchdog guardrails",
+  "task": "Implement token-free health, progress, approval, stall, recovery, and daily reporting controls",
   "status": "published",
   "active_cycle": null,
   "branch": "implementation/foundation",
   "commit": "d1eb61b6e897842a13782c227170f30f323fe248",
-  "timestamp": "2026-08-15T04:05:47Z",
+  "timestamp": "2026-08-15T05:05:30Z",
   "implemented": [
     "node_engine_baseline_aligned_to_vite_7_3_6",
     "strict_typescript_react_vite_foundation",
@@ -19,7 +19,14 @@
     "github_actions_backend_and_frontend_ci_gates",
     "locked_dependency_security_audits",
     "test_118_new_requirement_coverage_audit",
-    "isolated_postgresql_migration_ci_gate"
+    "isolated_postgresql_migration_ci_gate",
+    "model_free_visibility_watchdog",
+    "deduplicated_state_transition_notifications",
+    "two_hour_stall_detection",
+    "supervisor_health_and_recovery_detection",
+    "explicit_daily_idle_reason_and_owner_action",
+    "per_fingerprint_single_attempt_guard",
+    "one_hundred_thousand_token_cycle_ceiling"
   ],
   "requirements_satisfied": [
     "UI-007",
@@ -35,9 +42,10 @@
     "TEST-118"
   ],
   "touched_areas": [
-    "GitHub Actions CI workflow",
-    "TEST-118 traceability audit support script",
-    "CI verification guidance in README",
+    "OpenClaw supervisor dispatcher",
+    "model-free Telegram visibility watchdog",
+    "model-free daily owner report",
+    "autonomous supervision guidance in README",
     "compact continuity state"
   ],
   "verification": {
@@ -52,7 +60,14 @@
       "locked runtime and development Python audits found no known vulnerabilities; npm audit found 0 vulnerabilities",
       "TEST-118 audit passed against the current base, and synthetic extraction checks covered new BR/PR headings",
       "workflow YAML, immutable action pins, exact make database-test invocation, Ruff, Prettier, JSON, diff, scope, canonical-doc integrity, and no-staged-file assertions passed",
-      "GitHub Actions CI run 31863438115 completed successfully on the first attempt for implementation commit d1eb61b6e897842a13782c227170f30f323fe248"
+      "GitHub Actions CI run 31863438115 completed successfully on the first attempt for implementation commit d1eb61b6e897842a13782c227170f30f323fe248",
+      "watchdog publication, deduplication, unhealthy, recovery, and two-hour stall fixtures passed",
+      "daily report rendered automation health, state timing, Git synchronization, 24-hour model usage, idle reason, blockers, commits, and exact next action",
+      "live OpenClaw supervisor, visibility watchdog, and daily report jobs are installed and enabled",
+      "live watchdog completed silently in 66 ms with no model invocation or delivery for unchanged active state",
+      "live daily report completed in 1.046 seconds and delivered to Telegram",
+      "repository verification passed: format, lint, strict types, 45 backend tests, 3 frontend tests, backend/frontend builds, traceability, JSON, Python compilation, and shell syntax",
+      "isolated PostgreSQL migration verification passed all 6 tests and cleaned its disposable resources"
     ]
   },
   "preserved": [

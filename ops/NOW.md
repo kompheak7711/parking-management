@@ -1,27 +1,23 @@
-# Phase 1F CI foundation
+# Automation visibility and watchdog guardrails
 
-- Objective: add only the bounded GitHub Actions foundation required by
-  TEST-113/117/118, without deployment, credentials, or application features.
-- Current task: complete and published on `implementation/foundation` as
-  `d1eb61b6e897842a13782c227170f30f323fe248`; no implementation cycle is active.
-- Workflow: immutable action/tool pins and locked project installs gate backend and
-  frontend formatting, linting, strict types, tests, builds, traceability, dependency
-  security, and isolated PostgreSQL migrations.
-- PostgreSQL boundary: the workflow invokes only `make database-test`; it contains no
-  database credential or connection configuration.
-- Traceability: existing tests enforce TEST-117 manifest/executable coverage; the new
-  deterministic TEST-118 audit rejects newly introduced material BR/PR headings that
-  lack manifest mappings.
-- Last verified result: locked installs passed; backend/frontend quality, strict types,
-  45 backend tests plus 3 frontend tests, builds/import, two Python audits, npm audit,
-  and 6 isolated PostgreSQL migration tests passed. Workflow YAML/pins/format/scope,
-  canonical-doc integrity, compact JSON, diff, and empty staged-set checks passed.
-- Changed paths: `.github/workflows/ci.yml`, `README.md`, `scripts/traceability-audit.py`,
-  `ops/NOW.md`, and `ops/STATE.json`.
-- Hosted verification: GitHub Actions CI run `31863438115` completed successfully
-  on the first attempt for the Phase 1F implementation commit.
-- Preserved scope: canonical docs 001-010, application code, dependencies/lockfiles,
-  database tooling/data, and production configuration remain unchanged.
+- Objective: prevent silent stops and ambiguous idle periods while keeping routine
+  OpenClaw checks model-free and Telegram notifications non-repetitive.
+- Current task: complete and published on `implementation/foundation`; no implementation
+  cycle is active.
+- Supervisor: token-free preflight remains every 30 minutes. An unchanged actionable
+  fingerprint now receives one model attempt only, uses an isolated session with low
+  reasoning, records usage, and stops above the 100,000-token cycle ceiling.
+- Visibility watchdog: model-free every 30 minutes; reports new publication/approval,
+  stalls over two hours, unhealthy supervisor state, and recovery. Event signatures
+  are persisted outside Git and identical messages are suppressed.
+- Daily report: model-free at 08:00 Asia/Phnom_Penh; records health, last check/state
+  update, Git status, 24-hour model usage, idle reason, blockers, commits, and exact
+  next action.
+- Verification: Python compilation, Ruff, shell syntax, healthy publication,
+  deduplication, failure, recovery, and stalled-work fixtures passed. The live watchdog
+  completed silently in 66 ms with no model usage; the live daily report completed in
+  1.046 seconds and delivered to Telegram. All repository and database gates passed.
+- Canonical docs and application code remain unchanged.
 - Blocker: none.
-- Exact next action: obtain owner approval for the first bounded Phase 2 identity
-  and security tranche.
+- Exact next action: obtain owner approval for the first bounded Phase 2 identity and
+  security tranche.

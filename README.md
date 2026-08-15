@@ -139,6 +139,19 @@ unexpected database/role names, missing passwords, or reused identity passwords.
 6. Review the diff.
 7. Commit only verified work.
 
+## Autonomous supervision
+
+OpenClaw checks compact state every 30 minutes without invoking a model when no
+approved work is actionable. Each unchanged actionable fingerprint receives at most
+one supervisor attempt, and a cycle above 100,000 tokens stops with an alert instead
+of being retried automatically.
+
+A separate model-free watchdog sends Telegram only for a new publication or approval
+request, a stalled approved tranche, an unhealthy supervisor, or recovery. Identical
+events are deduplicated. The daily 08:00 Asia/Phnom_Penh report includes automation
+health, last check and state update, repository synchronization, 24-hour model usage,
+the reason for being idle, blockers, commits, and the exact next owner action.
+
 ## Security
 
 `.env` is local-only. Do not commit passwords, API keys, database credentials,
