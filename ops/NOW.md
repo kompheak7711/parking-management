@@ -2,8 +2,8 @@
 
 - Objective: retain only the smallest authentication-provider-neutral server-side actor
   boundary while leaving the concrete production authentication mechanism unresolved.
-- Current task: independently verified and `complete_unpublished` on
-  `implementation/foundation` at parent `ea7ed3f`; exact reviewed paths are staged.
+- Current task: independently verified and published on `implementation/foundation`
+  as `89f30ba`; no implementation cycle is active.
 - Implemented: opaque `AuthenticatedActor` identity; injected request-to-actor resolver;
   default denial when no provider establishes an actor; protected
   `/api/v1/identity/me` returning only `data.actor_id` plus correlated API-011 `meta`.
@@ -23,7 +23,8 @@
 - Verification: format, lint, strict types, 49 backend tests plus 3 frontend tests,
   backend/frontend builds, TEST-118 traceability, locked runtime/development Python
   audits, npm audit, locked dependency checks, and all 6 isolated PostgreSQL migration
-  tests via `make database-test` passed independently.
+  tests via `make database-test` passed independently. Local, upstream, and remote
+  publication SHAs matched `89f30ba23818d7d8ffb6edb30d8f311aeffa259a`.
 - Blocker: none.
-- Exact next action: create the authorized Phase 2A commit from the reviewed index,
-  push normally, and verify publication.
+- Exact next action: obtain owner approval before beginning a bounded Phase 2B
+  provider-neutral capability authorization boundary.
