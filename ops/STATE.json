@@ -69,8 +69,9 @@
   "next_candidate": {
     "phase": "Phase 1F",
     "task": "bounded CI foundation",
-    "status": "not_started"
+    "status": "awaiting_owner_approval"
   },
+  "next_action": "Owner approval is required before implementing the bounded Phase 1F GitHub Actions CI foundation.",
   "blockers": [],
   "secrets_present": false
 }
