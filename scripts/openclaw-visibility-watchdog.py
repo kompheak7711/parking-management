@@ -125,7 +125,8 @@ def main() -> None:
         ledger["health"] = "healthy"
 
     if status == "published":
-        signature = f"{phase}:{state.get('commit')}:{head}"
+        published_commit = str(state.get("commit") or head)[:7]
+        signature = f"{phase}:{published_commit}"
         approval_waiting = (
             candidate.get("status") == "not_approved"
             or "approval" in next_action.lower()
@@ -139,7 +140,7 @@ def main() -> None:
             ledger,
             "publication",
             signature,
-            f"PUBLISHED — Property Rental {phase} is verified and published at {head}.{suffix}",
+            f"PUBLISHED — Property Rental {phase} is verified and published at {published_commit}.{suffix}",
         )
 
     if status in {"approved_ready", "active", "in_progress"}:
