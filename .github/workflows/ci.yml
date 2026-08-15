@@ -1,0 +1,164 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend quality, tests, build, and traceability
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11.15"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: "0.12.3"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install locked backend dependencies
+        working-directory: backend
+        run: uv sync --locked --extra dev
+
+      - name: Check backend formatting
+        run: make backend-format-check
+
+      - name: Lint backend
+        run: make backend-lint
+
+      - name: Type-check backend
+        run: make backend-typecheck
+
+      - name: Run backend, API, integration, and TEST-117 traceability tests
+        run: make backend-test
+
+      - name: Audit TEST-118 coverage for new material requirements
+        env:
+          TRACEABILITY_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 scripts/traceability-audit.py --base "$TRACEABILITY_BASE"
+
+      - name: Build and import backend package
+        run: make backend-build backend-import-check
+
+  frontend:
+    name: Frontend quality, tests, and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.12.0"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install locked frontend dependencies
+        run: make frontend-install
+
+      - name: Check frontend formatting
+        run: make frontend-format-check
+
+      - name: Lint frontend
+        run: make frontend-lint
+
+      - name: Type-check frontend
+        run: make frontend-typecheck
+
+      - name: Run frontend tests
+        run: make frontend-test
+
+      - name: Build frontend
+        run: make frontend-build
+
+  dependency-security:
+    name: Dependency security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11.15"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: "0.12.3"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Audit locked backend runtime dependencies
+        working-directory: backend
+        run: >-
+          uv export --locked --no-dev --no-emit-project --format requirements-txt --no-hashes |
+          uvx --from pip-audit==2.10.1 pip-audit -r /dev/stdin
+
+      - name: Audit locked backend development dependencies
+        working-directory: backend
+        run: >-
+          uv export --locked --extra dev --no-emit-project --format requirements-txt --no-hashes |
+          uvx --from pip-audit==2.10.1 pip-audit -r /dev/stdin
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22.12.0"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install locked frontend dependencies
+        run: make frontend-install
+
+      - name: Audit locked frontend dependencies
+        run: make frontend-audit
+
+  postgresql-migrations:
+    name: PostgreSQL migration gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11.15"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: "0.12.3"
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install locked backend dependencies
+        working-directory: backend
+        run: uv sync --locked --extra dev
+
+      - name: Run isolated PostgreSQL migration verification
+        run: make database-test

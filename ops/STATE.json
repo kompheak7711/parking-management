@@ -3,11 +3,11 @@
   "phase": "Phase 1F",
   "tranche": "bounded GitHub Actions CI foundation",
   "task": "Implement CI for existing backend and frontend quality, test, and build gates",
-  "status": "approved_ready",
+  "status": "verified_ready_for_authorized_publication",
   "active_cycle": null,
   "branch": "implementation/foundation",
-  "commit": "d54be6b4d0294ae9e3343517914cf3fe2d7aec85",
-  "timestamp": "2026-08-15T03:46:34Z",
+  "commit": "f2611057169c0d05570b898625d47dee26076d81",
+  "timestamp": "2026-08-15T04:02:44Z",
   "implemented": [
     "node_engine_baseline_aligned_to_vite_7_3_6",
     "strict_typescript_react_vite_foundation",
@@ -15,7 +15,11 @@
     "frontend_format_lint_typecheck_test_and_build_commands",
     "minimal_accessible_non_business_bootstrap_surface",
     "public_environment_and_build_metadata",
-    "frontend_test_traceability_discovery"
+    "frontend_test_traceability_discovery",
+    "github_actions_backend_and_frontend_ci_gates",
+    "locked_dependency_security_audits",
+    "test_118_new_requirement_coverage_audit",
+    "isolated_postgresql_migration_ci_gate"
   ],
   "requirements_satisfied": [
     "UI-007",
@@ -25,31 +29,30 @@
     "DEPLOY-020",
     "SEC-049",
     "SEC-061",
-    "SEC-062"
+    "SEC-062",
+    "TEST-113",
+    "TEST-117",
+    "TEST-118"
   ],
   "touched_areas": [
-    "frontend foundation and locked dependencies",
-    "root development commands and README",
-    "cross-stack test traceability validation",
+    "GitHub Actions CI workflow",
+    "TEST-118 traceability audit support script",
+    "CI verification guidance in README",
     "compact continuity state"
   ],
   "verification": {
     "status": "passed",
     "results": [
-      "Node 26.5.0 satisfied the manifest and lockfile baseline of >=22.12.0; locked Vite remained exactly 7.3.6",
-      "npm ci --ignore-scripts installed 291 packages from the lockfile and found 0 vulnerabilities",
-      "frontend Prettier check and ESLint passed",
-      "frontend strict TypeScript check passed",
-      "Vitest passed 3 component tests",
-      "Vite 7.3.6 production build and public staging/build metadata assertions passed",
-      "backend uv lock check and locked development sync passed",
-      "backend Ruff format/lint and strict mypy passed for 11 files",
-      "backend regression suite passed 45 tests with 6 dedicated database tests skipped as expected",
-      "backend wheel/sdist build and application import passed",
-      "runtime and full-development Python dependency audits found no known vulnerabilities",
-      "backend container build, packaged import, configured non-root user, and runtime UID checks passed",
-      "traceability, JSON, exact 22-path scope, diff, changed-content secret scan, and canonical docs 001-010 integrity checks passed",
-      "implementation commit local/upstream/remote SHA and exact 22-file committed allowlist verification passed"
+      "backend uv 0.12.3 locked development sync passed",
+      "frontend npm ci installed 291 packages from package-lock.json and found 0 vulnerabilities",
+      "backend and frontend format, lint, and strict type checks passed",
+      "backend suite passed 45 tests with 6 PostgreSQL tests skipped in the non-database job; frontend Vitest passed 3 tests",
+      "backend wheel/sdist build and import passed; Vite 7.3.6 production build passed",
+      "make database-test invoked the isolated PostgreSQL gate and all 6 migration/database tests passed",
+      "locked runtime and development Python audits found no known vulnerabilities; npm audit found 0 vulnerabilities",
+      "TEST-118 audit passed against the current base, and synthetic extraction checks covered new BR/PR headings",
+      "workflow YAML, immutable action pins, exact make database-test invocation, Ruff, Prettier, JSON, diff, scope, canonical-doc integrity, and no-staged-file assertions passed",
+      "GitHub-hosted execution will be observed immediately after the authorized commit and push"
     ]
   },
   "preserved": [
@@ -62,16 +65,16 @@
     "authentication_and_authorization",
     "business_screens_and_financial_logic",
     "API_policy_and_integration",
-    "reverse_proxy_CI_and_production_deployment",
+    "reverse_proxy_and_production_deployment",
     "production_credentials_and_remote_access",
     "broad_design_system"
   ],
   "next_candidate": {
-    "phase": "Phase 1F",
-    "task": "bounded CI foundation",
-    "status": "approved_ready"
+    "phase": "Phase 2",
+    "task": "identity and security tranche",
+    "status": "not_approved"
   },
-  "next_action": "Implement and independently verify the bounded Phase 1F GitHub Actions CI foundation; publish only after all existing backend and frontend quality, test, build, traceability, dependency, scope, and secret gates pass.",
+  "next_action": "Stage only the five reviewed Phase 1F paths, commit and push under the existing owner authorization, verify the remote SHA and GitHub-hosted CI result, then reconcile compact state.",
   "blockers": [],
   "secrets_present": false
 }

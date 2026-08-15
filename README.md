@@ -94,6 +94,15 @@ make build
 `ops/traceability.json`. Unit/API tests skip the real PostgreSQL suite unless its
 three connection URLs are supplied.
 
+GitHub Actions runs the same backend and frontend formatting, linting, strict type
+checking, test, production-build, and traceability gates on pushes and pull requests.
+It also audits the locked runtime/development dependency sets and runs the isolated
+PostgreSQL migration gate exclusively through `make database-test`. The TEST-118
+audit fails when a newly introduced material `BR-*` or `PR-*` heading has no mapping
+in `ops/traceability.json`. Workflow actions and CI tool versions are immutable pins;
+project dependencies continue to install only from `backend/uv.lock` and
+`frontend/package-lock.json`.
+
 ## PostgreSQL and migrations
 
 Alembic is the reviewed, versioned schema tool; psycopg is the PostgreSQL driver used
