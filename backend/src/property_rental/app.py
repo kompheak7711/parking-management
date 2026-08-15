@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from property_rental.api import create_api_router
+from property_rental.identity import ActorResolver, deny_unauthenticated_actor
 from property_rental.logging import create_application_logger
 from property_rental.settings import Settings
 
@@ -126,6 +127,7 @@ def create_app(
     readiness_check: Callable[[str], None] = check_database_readiness,
     lifecycle_resources: Iterable[AbstractAsyncContextManager[object]] = (),
     application_logger: Logger | None = None,
+    actor_resolver: ActorResolver = deny_unauthenticated_actor,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -207,7 +209,13 @@ def create_app(
         )
         return response
 
-    app.include_router(create_api_router(resolved_settings, readiness_check))
+    app.include_router(
+        create_api_router(
+            resolved_settings,
+            readiness_check,
+            actor_resolver,
+        )
+    )
     return app
 
 

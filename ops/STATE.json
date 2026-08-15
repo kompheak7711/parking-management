@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "phase": "Operations",
-  "tranche": "bounded automation visibility and watchdog guardrails",
-  "task": "Implement token-free health, progress, approval, stall, recovery, and daily reporting controls",
-  "status": "published",
+  "phase": "Phase 2A",
+  "tranche": "provider-neutral authenticated actor boundary correction",
+  "task": "Correct the unpublished Phase 2A tranche to a provider-neutral authenticated actor boundary",
+  "status": "complete_unpublished",
   "active_cycle": null,
   "branch": "implementation/foundation",
-  "commit": "c8b17c2e60344a7d34346db2ecf756dfea2807b7",
-  "timestamp": "2026-08-15T05:06:45Z",
+  "commit": "ea7ed3f100ea44c7d33d587bdc238f4b43ff1b58",
+  "timestamp": "2026-08-15T06:37:12Z",
   "implemented": [
     "node_engine_baseline_aligned_to_vite_7_3_6",
     "strict_typescript_react_vite_foundation",
@@ -26,7 +26,12 @@
     "supervisor_health_and_recovery_detection",
     "explicit_daily_idle_reason_and_owner_action",
     "per_fingerprint_single_attempt_guard",
-    "one_hundred_thousand_token_cycle_ceiling"
+    "one_hundred_thousand_token_cycle_ceiling",
+    "provider_neutral_opaque_authenticated_actor_identity",
+    "injected_request_to_actor_resolver_boundary",
+    "default_denial_without_provider_established_actor",
+    "canonical_correlated_authenticated_identity_resource",
+    "client_identity_assertions_remain_untrusted"
   ],
   "requirements_satisfied": [
     "UI-007",
@@ -39,58 +44,80 @@
     "SEC-062",
     "TEST-113",
     "TEST-117",
-    "TEST-118"
+    "TEST-118",
+    "API-001",
+    "API-003",
+    "API-007",
+    "API-008",
+    "API-011",
+    "PR-AUTH-001",
+    "SEC-002",
+    "SEC-023",
+    "SEC-039",
+    "OOD-API-001",
+    "DL-048"
+  ],
+  "requirements_partially_evidenced": [
+    "SEC-009: provider-established opaque actor identity supports unique attribution without implementing accounts",
+    "SEC-010: stable actor identity property only; all concrete provider properties remain outside the API core",
+    "SEC-068: focused default-denial, provider-success, correlation, public-health, and header-bypass tests only"
+  ],
+  "requirements_preserved_not_implemented": [
+    "API-009 capability checks",
+    "API-010 configurable role-to-capability mapping",
+    "remaining SEC-010 provider controls"
   ],
   "touched_areas": [
-    "OpenClaw supervisor dispatcher",
-    "model-free Telegram visibility watchdog",
-    "model-free daily owner report",
-    "autonomous supervision guidance in README",
+    "backend provider-neutral actor primitive and resolver seam",
+    "versioned protected identity API seam",
+    "focused provider-neutral API security tests",
+    "test traceability manifest",
     "compact continuity state"
   ],
   "verification": {
     "status": "passed",
     "results": [
-      "backend uv 0.12.3 locked development sync passed",
-      "frontend npm ci installed 291 packages from package-lock.json and found 0 vulnerabilities",
-      "backend and frontend format, lint, and strict type checks passed",
-      "backend suite passed 45 tests with 6 PostgreSQL tests skipped in the non-database job; frontend Vitest passed 3 tests",
-      "backend wheel/sdist build and import passed; Vite 7.3.6 production build passed",
-      "make database-test invoked the isolated PostgreSQL gate and all 6 migration/database tests passed",
-      "locked runtime and development Python audits found no known vulnerabilities; npm audit found 0 vulnerabilities",
-      "TEST-118 audit passed against the current base, and synthetic extraction checks covered new BR/PR headings",
-      "workflow YAML, immutable action pins, exact make database-test invocation, Ruff, Prettier, JSON, diff, scope, canonical-doc integrity, and no-staged-file assertions passed",
-      "GitHub Actions CI run 31863438115 completed successfully on the first attempt for implementation commit d1eb61b6e897842a13782c227170f30f323fe248",
-      "watchdog publication, deduplication, unhealthy, recovery, and two-hour stall fixtures passed",
-      "daily report rendered automation health, state timing, Git synchronization, 24-hour model usage, idle reason, blockers, commits, and exact next action",
-      "live OpenClaw supervisor, visibility watchdog, and daily report jobs are installed and enabled",
-      "live watchdog completed silently in 66 ms with no model invocation or delivery for unchanged active state",
-      "live daily report completed in 1.046 seconds and delivered to Telegram",
-      "repository verification passed: format, lint, strict types, 45 backend tests, 3 frontend tests, backend/frontend builds, traceability, JSON, Python compilation, and shell syntax",
-      "isolated PostgreSQL migration verification passed all 6 tests and cleaned its disposable resources",
-      "GitHub Actions run 31866097759 passed on the first attempt for visibility/watchdog implementation commit c8b17c2e60344a7d34346db2ecf756dfea2807b7"
+      "repository gate reconfirmed on implementation/foundation with empty index, the authorized dirty tranche, and HEAD/upstream ea7ed3f100ea44c7d33d587bdc238f4b43ff1b58",
+      "routed canonical requirements and relevant backend seams inspected before correction edits",
+      "focused provider-neutral actor API tests first failed on the rejected actor shape, then passed all 4 tests after the correction",
+      "make format-check passed backend Ruff formatting and frontend Prettier checks",
+      "make lint passed backend Ruff and frontend ESLint with zero warnings",
+      "make typecheck passed strict backend mypy across 13 source files and frontend TypeScript",
+      "make test passed 49 backend tests with 6 unchanged PostgreSQL tests skipped in the ordinary non-database job and passed 3 frontend Vitest tests",
+      "make build produced backend sdist/wheel, passed backend import, and completed the Vite 7.3.6 production build",
+      "locked runtime and development Python dependency audits each found no known vulnerabilities; npm audit found 0 vulnerabilities",
+      "uv lock --check passed and the manifest/lock diff is empty after removing argon2-cffi and its transitive lock changes",
+      "TEST-118 traceability audit passed with no new material canonical identifiers",
+      "final mechanical checks passed: exact eight-path reviewed scope, git diff --check, bounded secret scan, canonical docs 001-010 unchanged, and branch/HEAD/upstream gate unchanged",
+      "fresh supervisor review found the corrected seam provider-neutral, default-deny, canonical-envelope compliant, and within the approved scope",
+      "make database-test independently passed all 6 isolated PostgreSQL migration/database tests and cleaned its disposable resources"
     ]
   },
   "preserved": [
     "canonical_docs_001_through_010",
-    "backend_runtime_and_contracts",
     "database_schema_data_and_tooling",
+    "public_minimal_health_contracts",
+    "frontend_and_financial_behavior",
+    "role_and_capability_mappings",
+    "mfa_and_production_authentication_provider_policy",
+    "credentials_and_remote_access",
     "existing_queue_priorities"
   ],
   "deferred": [
-    "authentication_and_authorization",
+    "concrete_authentication_provider_and_provider_security_controls",
+    "configurable_role_bundles_and_business_capabilities",
+    "mfa_mandate_and_recovery_reset",
     "business_screens_and_financial_logic",
-    "API_policy_and_integration",
     "reverse_proxy_and_production_deployment",
     "production_credentials_and_remote_access",
     "broad_design_system"
   ],
   "next_candidate": {
-    "phase": "Phase 2",
-    "task": "identity and security tranche",
-    "status": "not_approved"
+    "phase": "Phase 2A",
+    "task": "publish the independently verified provider-neutral actor boundary",
+    "status": "approved_complete_unpublished"
   },
-  "next_action": "Owner approval is required before beginning the first bounded Phase 2 identity and security tranche.",
+  "next_action": "Create the authorized Phase 2A commit from the reviewed index, push normally, and verify publication.",
   "blockers": [],
   "secrets_present": false
 }

@@ -1,24 +1,29 @@
-# Automation visibility and watchdog guardrails
+# Phase 2A provider-neutral authenticated actor boundary
 
-- Objective: prevent silent stops and ambiguous idle periods while keeping routine
-  OpenClaw checks model-free and Telegram notifications non-repetitive.
-- Current task: complete and published on `implementation/foundation` as `c8b17c2`;
-  no implementation cycle is active.
-- Supervisor: token-free preflight remains every 30 minutes. An unchanged actionable
-  fingerprint now receives one model attempt only, uses an isolated session with low
-  reasoning, records usage, and stops above the 100,000-token cycle ceiling.
-- Visibility watchdog: model-free every 30 minutes; reports new publication/approval,
-  stalls over two hours, unhealthy supervisor state, and recovery. Event signatures
-  are persisted outside Git and identical messages are suppressed.
-- Daily report: model-free at 08:00 Asia/Phnom_Penh; records health, last check/state
-  update, Git status, 24-hour model usage, idle reason, blockers, commits, and exact
-  next action.
-- Verification: Python compilation, Ruff, shell syntax, healthy publication,
-  deduplication, failure, recovery, and stalled-work fixtures passed. The live watchdog
-  completed silently in 66 ms with no model usage; the live daily report completed in
-  1.046 seconds and delivered to Telegram. All repository and database gates passed.
-- Hosted verification: GitHub Actions run `31866097759` passed on its first attempt.
-- Canonical docs and application code remain unchanged.
+- Objective: retain only the smallest authentication-provider-neutral server-side actor
+  boundary while leaving the concrete production authentication mechanism unresolved.
+- Current task: independently verified and `complete_unpublished` on
+  `implementation/foundation` at parent `ea7ed3f`; exact reviewed paths are staged.
+- Implemented: opaque `AuthenticatedActor` identity; injected request-to-actor resolver;
+  default denial when no provider establishes an actor; protected
+  `/api/v1/identity/me` returning only `data.actor_id` plus correlated API-011 `meta`.
+- Rejected work removed: Argon2 dependency/lock changes, local username/password account
+  behavior, password hashing, login/rate-limit logic, and in-process bearer-session
+  issue/resolve/revoke behavior and tests/traceability.
+- Security boundary: the API core does not parse or mint credentials, passwords,
+  cookies, sessions, or bearer tokens. Client actor and authorization headers cannot
+  establish identity without an injected trusted provider.
+- Preserved boundaries: health remains public/minimal; canonical docs, database,
+  frontend, financial logic, role/capability mappings, MFA policy, production provider
+  choice, credentials, remote access, and deployment behavior are unchanged.
+- Authority: API-001, API-003, API-007 through API-011, PR-AUTH-001, SEC-002,
+  SEC-009, SEC-010, SEC-023, SEC-039, SEC-068, OOD-API-001, and DL-048. This tranche
+  implements only the neutral actor-boundary portions; provider properties and
+  business capability enforcement remain outside this bounded correction.
+- Verification: format, lint, strict types, 49 backend tests plus 3 frontend tests,
+  backend/frontend builds, TEST-118 traceability, locked runtime/development Python
+  audits, npm audit, locked dependency checks, and all 6 isolated PostgreSQL migration
+  tests via `make database-test` passed independently.
 - Blocker: none.
-- Exact next action: obtain owner approval for the first bounded Phase 2 identity and
-  security tranche.
+- Exact next action: create the authorized Phase 2A commit from the reviewed index,
+  push normally, and verify publication.

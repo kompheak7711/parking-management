@@ -258,6 +258,62 @@
       "notes": "Application settings read only the runtime database URL and retain it as a secret value."
     },
     {
+      "test_id": "test_identity_endpoint_denies_by_default_with_canonical_correlation",
+      "upstream_ids": [
+        "API-007",
+        "API-008",
+        "PR-AUTH-001",
+        "SEC-002",
+        "SEC-023",
+        "SEC-039",
+        "SEC-068"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_auth_api.py",
+      "status": "implemented",
+      "notes": "Without an injected provider-established actor, the protected identity seam denies server-side with the canonical correlated 401 envelope."
+    },
+    {
+      "test_id": "test_health_remains_public_and_minimal_without_an_actor_provider",
+      "upstream_ids": ["API-001", "API-081", "SEC-039"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_auth_api.py",
+      "status": "implemented",
+      "notes": "The provider-neutral default does not alter the public minimal liveness contract."
+    },
+    {
+      "test_id": "test_injected_provider_establishes_stable_opaque_actor_identity",
+      "upstream_ids": [
+        "API-003",
+        "API-007",
+        "API-008",
+        "API-011",
+        "SEC-009",
+        "SEC-010",
+        "SEC-023",
+        "SEC-068"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_auth_api.py",
+      "status": "implemented",
+      "notes": "An injected request-to-actor provider can establish one stable opaque actor identifier; the API core returns only that identifier in the canonical correlated resource envelope."
+    },
+    {
+      "test_id": "test_client_supplied_identity_assertions_cannot_bypass_default_denial",
+      "upstream_ids": [
+        "API-008",
+        "PR-AUTH-001",
+        "SEC-002",
+        "SEC-023",
+        "SEC-039",
+        "SEC-068"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_auth_api.py",
+      "status": "implemented",
+      "notes": "Authorization and actor-identity headers are inert when no trusted external provider is injected, so client assertions cannot establish an actor."
+    },
+    {
       "test_id": "test_traceability_manifest_covers_executable_tests",
       "upstream_ids": ["API-001"],
       "test_level": "operational",
