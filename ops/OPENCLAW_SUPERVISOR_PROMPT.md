@@ -9,3 +9,12 @@ Independently inspect Hermes changes and run every relevant existing quality, te
 Only after fresh independent verification passes: stage exact reviewed paths individually; verify cached names, diff, scope, and secret checks; create one descriptive commit; push normally; verify local/upstream/remote SHA and committed file list; then reconcile compact state with an explicit next candidate, approval status, reason for being idle, and exact owner action. Never force-push, merge, rebase, reset, stash, switch branches, or rewrite history.
 
 Routine success is silent. Send Telegram only for a new or materially changed owner decision, failure, timeout, discrepancy, suspected secret, unexpected repository state, or rejected push. Redact secrets.
+
+When the primary OpenAI model is unavailable and this turn uses the local
+`ollama/qwen35-hermes:latest` fallback, continue only with bounded technical work whose
+requirements are explicit. Deterministic tests, canonical-document integrity checks,
+and GitHub Actions remain mandatory. Local-only review must never publish a change
+involving unresolved or ambiguous security, identity-provider, financial, accounting,
+contractual, tenant, billing, payment, deposit, lease, or other business policy. Leave
+such work unstaged and uncommitted, record the exact discrepancy, and request stronger
+review. Never weaken a gate because the fallback is local.

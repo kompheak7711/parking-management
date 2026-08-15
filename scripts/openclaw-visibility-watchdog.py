@@ -118,7 +118,8 @@ def main() -> None:
         )
     elif prior_health and prior_health != "healthy":
         print(
-            "RECOVERED — Property Rental supervisor is healthy again and scheduled checks are running."
+            "SCHEDULER_RECOVERED — Property Rental supervisor scheduling is healthy again. "
+            "This confirms scheduled checks resumed; it does not resolve any separate project discrepancy or blocker."
         )
         ledger["health"] = "healthy"
     else:
