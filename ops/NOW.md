@@ -2,7 +2,8 @@
 
 - Objective: add the bounded Phase 1F continuous-integration foundation without
   deployment, production credentials, or application feature work.
-- Current task: awaiting explicit owner approval; no implementation cycle is active.
+- Current task: explicitly approved and ready for one OpenClaw/Hermes implementation
+  and independent-verification cycle.
 - Base: Phase 1E is published on `implementation/foundation` through metadata
   commit `d1aee643fdff2ed27f254e7fdb0e583798de5083`.
 - Checks passed: clean npm lock install, frontend audit/format/lint/strict typecheck/
@@ -18,5 +19,6 @@
 - Token policy: the 30-minute schedule uses a deterministic preflight and invokes
   no model when state is unchanged, blocked, or has no approved next action.
 - Blocker: none.
-- Exact next action: obtain explicit owner approval for a bounded GitHub Actions CI
-  foundation covering existing backend and frontend quality, test, and build gates.
+- Exact next action: implement and independently verify the bounded GitHub Actions
+  CI foundation covering existing backend and frontend quality, test, and build
+  gates; commit and push only after every required check passes.
