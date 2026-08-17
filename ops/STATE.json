@@ -3,18 +3,34 @@
   "phase": "Phase 2M",
   "tranche": "Recovery-Code Set Issuance and One-Time Presentation Foundation",
   "task": "Implement the bounded Recovery-Code Set Issuance and One-Time Presentation Foundation",
-  "status": "complete_uncommitted",
+  "status": "published",
   "active_cycle": "phase-2m-recovery-code-set-issuance-one-time-presentation-foundation",
   "branch": "implementation/foundation",
-  "commit": "5c96d58df6309e4d79c2d0638e5939778e25e636",
-  "timestamp": "2026-08-17T21:40:00Z",
+  "commit": "3928749df99873b9622620db8a1bc5ed6cf42656",
+  "timestamp": "2026-08-17T21:45:00Z",
   "risk_class": "high",
   "approval": {
-    "status": "approved_ready",
+    "status": "complete",
     "basis": "owner-authorized exact bounded Phase 2M tranche, durable remaining-v1 authorization, and standing publication authority",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
+  },
+  "publication": {
+    "commit": "3928749df99873b9622620db8a1bc5ed6cf42656",
+    "subject": "feat: add recovery code issuance foundation",
+    "upstream": "origin/implementation/foundation",
+    "local_upstream_remote_match": true,
+    "github_actions_run": "32071746278",
+    "github_actions_status": "passed",
+    "committed_paths": [
+      "backend/src/property_rental/recovery_code_issuance.py",
+      "backend/tests/test_recovery_code_issuance.py",
+      "backend/tests/test_traceability.py",
+      "ops/NOW.md",
+      "ops/STATE.json",
+      "ops/traceability.json"
+    ]
   },
   "authorities": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
   "touched_areas": ["recovery-code issuance service", "focused backend tests", "bounded traceability", "compact state"],
@@ -64,7 +80,7 @@
     "authorities": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
     "next_action": "After Phase 2M publication reconciliation, dispatch the approved-ready Phase 2N Recovery-Code Consumption Persistence Orchestration Foundation through model-free preflight."
   },
-  "next_action": "Stage the exact independently reviewed Phase 2M paths, verify cached scope and secrets, commit and push normally, verify GitHub Actions and SHA/file-list agreement, then reconcile compact state to published HEAD.",
+  "next_action": "Dispatch the approved-ready Phase 2N Recovery-Code Consumption Persistence Orchestration Foundation through model-free preflight.",
   "idle_reason": null,
   "owner_action": "none",
   "blockers": [],

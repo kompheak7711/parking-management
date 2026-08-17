@@ -1,4 +1,4 @@
-# Phase 2M Recovery-Code Set Issuance and One-Time Presentation Foundation — complete_uncommitted
+# Phase 2M Recovery-Code Set Issuance and One-Time Presentation Foundation — published
 
 - Outcome: the bounded provider-neutral issuance service composes authorization, secure generation,
   irreversible verification, atomic persistence, immutable secret-free audit evidence, and a
@@ -15,6 +15,8 @@
   deployment validation, traceability, dependency audits, frontend audit, PostgreSQL migration
   tests, and automation tests passed. Backend passed 171 with 51 expected dedicated-gate skips;
   frontend passed 3; PostgreSQL passed 51. Canonical documents remain unchanged.
+- Publication: the six-path tranche is published at `3928749`; local, upstream, and remote SHAs
+  matched, and GitHub Actions run `32071746278` passed all four jobs.
 - Blockers: none. Owner action: none.
 - Exact next candidate: Phase 2N Recovery-Code Consumption Persistence Orchestration Foundation,
   approved-ready under durable remaining-v1 authorization and the existing recovery authorities.
@@ -22,6 +24,5 @@
   single-use consumption and secret-free audit evidence. Exclude public API/UI, account/MFA
   mutation, session revocation, rate limiting, enumeration handling, regeneration, administrative
   recovery, production operations, canonical changes, and policy invention.
-- Exact next action: publish the independently verified Phase 2M tranche, reconcile compact state
-  to the published HEAD and passing GitHub Actions, then dispatch only the approved-ready Phase 2N
-  candidate through model-free preflight.
+- Exact next action: dispatch only the approved-ready Phase 2N candidate through model-free
+  preflight.
