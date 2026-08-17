@@ -9,18 +9,14 @@
 6. Phase 2C single-Property identity scope primitive — completed and published.
 7. Authentication/account/session plan reconciliation to authoritative docs 003-010 and
    `DL-055` through `DL-059` — completed as a bounded read-only tranche.
-8. Phase 2D local human-account persistence foundation — completed and independently
-   verified locally; intentionally uncommitted and unpublished.
-9. Phase 2D password-credential persistence foundation — exact next candidate: add one
-   forward-only PostgreSQL migration for bounded `DB-AUTH-002` salted adaptive verifier
-   encoding and metadata storage with focused real-PostgreSQL and traceability tests.
-   Exclude hashing-library selection or use, login/API/UI, rate limiting, sessions,
-   MFA/recovery/bootstrap, credentials, remote access, and canonical-doc changes. High
-   risk; approved and ready under the durable authorization below after the current
-   publication-ready uncommitted tranche is published.
-10. Design backup/restore/human administration database identities and production
-   secret provisioning only in a separately authorized deployment tranche
-   (SEC-045/047/049/050).
+8. Phase 2D local human-account persistence foundation — completed and published.
+9. Phase 2D password-credential persistence foundation — completed and independently
+   verified locally; intentionally uncommitted and unpublished. The bounded `DB-AUTH-002`
+   migration and focused real-PostgreSQL/traceability tests select no hashing library and
+   add no credential mechanics, login/API/UI, or other excluded authentication scope.
+10. Exact next candidate: design backup/restore/human-administration database identities
+   and production secret provisioning only in a separate `SEC-045/047/049/050` deployment
+   tranche. High risk and `not_approved` pending the separately required authorization.
 
 Remaining v1 application tranches are authorized when bounded by canonical documents
 001-010 and all publication gates; unresolved policy and protected production work still

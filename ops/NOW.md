@@ -1,22 +1,28 @@
-# Local-account persistence foundation — publication ready
+# Password-credential persistence — verified for publication
 
-- Outcome: the bounded `DB-AUTH-001` tranche is complete in the working tree and remains
+- Outcome: the bounded `DB-AUTH-002` tranche is complete in the working tree and remains
   intentionally uncommitted and unpublished.
-- Implemented: one forward-only PostgreSQL migration for UUID actor identity, transactional
-  normalized-username uniqueness, display/audit identity, explicit active/disabled
-  lifecycle, required/optional MFA-policy class separate from authority, managed
-  timestamps, creation provenance, immutable actor identity, and read-only runtime access.
-- Scope held: no password verifier, login/API/UI, MFA verifier/recovery state, session,
-  recovery/bootstrap, dependency, credential, remote/production, or docs/001-010 change.
-- Last verified result: independent review found no in-scope implementation defect;
-  `make database-test` passed 19 real-PostgreSQL tests and `make automation-test` passed.
-  Full test, lint, format-check, typecheck, and build gates also passed.
-- Blockers: none. Commit and push were expressly excluded from this Hermes attempt.
-- Exact next candidate: one forward-only PostgreSQL migration for bounded `DB-AUTH-002`
-  salted adaptive password-verifier encoding and metadata storage, with focused
-  real-PostgreSQL constraints, least privilege, forward-migration, and traceability tests.
-- Next risk/approval: high; publication and the bounded next candidate remain covered by
-  `ops/QUEUE.md` durable authorization, with no unresolved policy or production operation.
-- Exact next action: commit and push only the publication-ready DB-AUTH-001 changed paths,
-  verify the published commit and remote branch, then dispatch bounded DB-AUTH-002 in a
-  separate attempt.
+- Implemented: one forward-only PostgreSQL migration after `20260817_02` for an
+  account-linked, algorithm-neutral modular password-verifier encoding, matching algorithm
+  metadata, positive integral work-factor metadata, credential lifecycle timestamps,
+  responsible-actor/audit provenance, immutable identity/creation time, and narrow runtime
+  column reads.
+- Constraints: plaintext-shaped/mismatched encodings, invalid work-factor metadata, orphaned
+  credentials, unattributed/stale-provenance changes, and audit-only mutation are rejected.
+- Scope held: no hashing library or generation/checking, login/API/UI, rate limiting,
+  sessions, MFA/recovery/bootstrap, dependency, credential, remote/production operation,
+  product-policy, or canonical-document change.
+- Last verified result: `make database-test` passed 37 real-PostgreSQL tests;
+  `make automation-test`, full test, lint, format-check, typecheck, and build gates passed.
+  JSON validation, `git diff --check`, and canonical-doc integrity also passed.
+- Security review: two independent focused reviews were performed; all concrete migration,
+  privilege, audit-attribution, downgrade-regression, and traceability findings were
+  addressed. `SEC-043` remains mapped to the existing allowlisted logging-redaction test;
+  `SEC-069` is recorded as the completed review process, not overclaimed as a DB test.
+- Current blockers: none for DB-AUTH-002 completion or standing-authorized publication.
+- Exact next candidate: design backup, restore, human-administration database identities and
+  production secret provisioning as a separate `SEC-045/047/049/050` deployment tranche.
+- Next risk/approval: high and not approved because it includes
+  protected deployment identities and production-secret provisioning.
+- Exact next action after publication: owner separately authorizes the high-risk
+  `SEC-045/047/049/050` deployment tranche before any implementation begins.

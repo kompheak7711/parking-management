@@ -37,6 +37,7 @@ UPSTREAM_PREFIXES: Final = (
     "SEC-",
     "DEPLOY-",
     "TEST-",
+    "DL-",
 )
 
 
@@ -103,3 +104,40 @@ def test_traceability_manifest_covers_executable_tests() -> None:
         executable_ids.update(collect_frontend_test_ids(test_path))
 
     assert executable_ids == manifest_ids
+
+
+def test_password_credential_requirements_have_implemented_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    credential_entries = {
+        entry["test_id"]: entry
+        for entry in entries
+        if entry["status"] == "implemented" and "DB-AUTH-002" in entry["upstream_ids"]
+    }
+    expected_references = {
+        "test_password_credentials_store_only_bounded_verifier_material": {
+            "TEST-108",
+            "SEC-011",
+            "SEC-014",
+            "DL-055",
+        },
+        "test_password_credentials_reject_incomplete_verifier_records": {
+            "TEST-010",
+            "TEST-108",
+            "SEC-011",
+        },
+        "test_runtime_has_only_bounded_password_credential_privileges": {
+            "TEST-111",
+        },
+        "test_password_credential_requirements_have_implemented_traceability": {"TEST-002"},
+    }
+
+    for test_id, references in expected_references.items():
+        assert references <= set(credential_entries[test_id]["upstream_ids"])
+
+    logging_entry = next(
+        entry
+        for entry in entries
+        if entry["test_id"] == "test_log_formatter_ignores_non_allowlisted_extra_fields"
+    )
+    assert "SEC-043" in logging_entry["upstream_ids"]

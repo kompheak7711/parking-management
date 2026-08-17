@@ -505,16 +505,94 @@
       "notes": "A real PostgreSQL database advances from the prior reviewed revision to the account-storage head while retaining baseline data."
     },
     {
+      "test_id": "test_password_credentials_store_only_bounded_verifier_material",
+      "upstream_ids": [
+        "DB-AUTH-002",
+        "TEST-108",
+        "SEC-011",
+        "SEC-014",
+        "DL-055"
+      ],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The real PostgreSQL schema contains only the linked adaptive verifier encoding, algorithm/work-factor metadata, lifecycle timestamps, and audit provenance required by the bounded credential tranche."
+    },
+    {
+      "test_id": "test_password_credentials_reject_incomplete_verifier_records",
+      "upstream_ids": ["DB-AUTH-002", "TEST-010", "TEST-108", "SEC-011"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "PostgreSQL rejects plaintext-shaped or mismatched verifier encodings, invalid algorithms, non-positive/non-integral work-factor metadata, and blank audit provenance."
+    },
+    {
+      "test_id": "test_runtime_has_only_bounded_password_credential_privileges",
+      "upstream_ids": ["DB-AUTH-002", "TEST-111"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The runtime identity can read only verifier-checking columns and has no table-level read or write privilege and no access to audit provenance."
+    },
+    {
+      "test_id": "test_password_credentials_require_an_existing_account",
+      "upstream_ids": ["DB-AUTH-002", "TEST-010", "SEC-014"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A credential row cannot exist without its immutable local-account actor identity."
+    },
+    {
+      "test_id": "test_password_credential_change_advances_timestamp_with_new_provenance",
+      "upstream_ids": ["DB-AUTH-002", "TEST-010", "SEC-014"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A credential-material change preserves creation time, advances managed change time, and records the responsible actor and new audit provenance."
+    },
+    {
+      "test_id": "test_password_credential_changes_require_material_actor_and_new_provenance",
+      "upstream_ids": ["DB-AUTH-002", "TEST-010", "TEST-108", "SEC-014"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Credential updates reject missing responsible actors, stale provenance, and audit-only mutation without changed verifier material."
+    },
+    {
       "test_id": "test_user_accounts_migration_refuses_destructive_downgrade",
       "upstream_ids": ["DB-AUTH-001"],
       "test_level": "migration",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
-      "notes": "The migration refuses destructive downgrade and leaves both the account table and Alembic history at the reviewed head."
+      "notes": "The prior account migration continues to refuse destructive downgrade in an isolated real PostgreSQL database."
+    },
+    {
+      "test_id": "test_password_credentials_migration_refuses_destructive_downgrade",
+      "upstream_ids": ["DB-AUTH-002", "TEST-010"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The credential migration refuses destructive downgrade and leaves the credential table and Alembic history at the reviewed head."
+    },
+    {
+      "test_id": "test_password_credentials_migration_advances_user_accounts_without_data_loss",
+      "upstream_ids": ["DB-AUTH-002", "TEST-010"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A real PostgreSQL database advances from the account-storage revision to credential storage while preserving an existing account row."
+    },
+    {
+      "test_id": "test_password_credential_requirements_have_implemented_traceability",
+      "upstream_ids": ["DB-AUTH-002", "TEST-002"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "The routed credential-storage, testing, security, and approved-decision identifiers remain mapped to implemented focused tests."
     },
     {
       "test_id": "test_traceability_manifest_covers_executable_tests",
-      "upstream_ids": ["API-001"],
+      "upstream_ids": ["TEST-002"],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",

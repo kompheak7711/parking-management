@@ -388,6 +388,353 @@ def test_user_account_updates_advance_the_managed_timestamp() -> None:
     assert updated_at > initial_updated_at
 
 
+def test_password_credentials_store_only_bounded_verifier_material() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT column_name, data_type, is_nullable
+                FROM information_schema.columns
+                WHERE table_schema = 'app' AND table_name = 'password_credentials'
+                ORDER BY ordinal_position
+                """
+            )
+
+            assert cursor.fetchall() == [
+                ("actor_id", "uuid", "NO"),
+                ("verifier_encoding", "text", "NO"),
+                ("algorithm", "text", "NO"),
+                ("work_factor_metadata", "jsonb", "NO"),
+                ("created_at", "timestamp with time zone", "NO"),
+                ("changed_at", "timestamp with time zone", "NO"),
+                ("changed_by_actor_id", "uuid", "YES"),
+                ("provenance", "text", "NO"),
+            ]
+
+
+@pytest.mark.parametrize(
+    ("verifier_encoding", "algorithm", "work_factor_metadata", "provenance"),
+    [
+        ("plaintext-password", "adaptive", '{"cost": 1}', "credential-change-1"),
+        ("$adaptive$params$saltandhash", "   ", '{"cost": 1}', "credential-change-1"),
+        ("$different$params$saltandhash", "adaptive", '{"cost": 1}', "credential-change-1"),
+        ("$adaptive$params$saltandhash", "adaptive", "{}", "credential-change-1"),
+        ("$adaptive$params$saltandhash", "adaptive", "[]", "credential-change-1"),
+        ("$adaptive$params$saltandhash", "adaptive", '{"cost": 0}', "credential-change-1"),
+        ("$adaptive$params$saltandhash", "adaptive", '{"cost": 1.5}', "credential-change-1"),
+        ("$adaptive$params$saltandhash", "adaptive", '{"note": null}', "credential-change-1"),
+        ("$adaptive$params$saltandhash", "adaptive", '{"cost": 1}', "   "),
+    ],
+)
+def test_password_credentials_reject_incomplete_verifier_records(
+    verifier_encoding: str,
+    algorithm: str,
+    work_factor_metadata: str,
+    provenance: str,
+) -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    actor_id = uuid.uuid4()
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Credential Constraint', 'credential-constraint',
+                          'active', 'optional', 'authorized-account-creation')
+                """,
+                (actor_id, f"credential-{uuid.uuid4().hex}"),
+            )
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.CheckViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.password_credentials (
+                        actor_id, verifier_encoding, algorithm,
+                        work_factor_metadata, provenance
+                    ) VALUES (%s, %s, %s, %s::jsonb, %s)
+                    """,
+                    (
+                        actor_id,
+                        verifier_encoding,
+                        algorithm,
+                        work_factor_metadata,
+                        provenance,
+                    ),
+                )
+
+
+def test_password_credentials_require_an_existing_account() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with pytest.raises(psycopg.errors.ForeignKeyViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.password_credentials (
+                        actor_id, verifier_encoding, algorithm,
+                        work_factor_metadata, provenance
+                    ) VALUES (%s, '$adaptive$params$saltandhash', 'adaptive',
+                              '{"cost": 1}'::jsonb,
+                              'authorized-credential-change')
+                    """,
+                    (uuid.uuid4(),),
+                )
+
+
+def test_runtime_has_only_bounded_password_credential_privileges() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(RUNTIME_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT actor_id, verifier_encoding, algorithm, work_factor_metadata
+                FROM app.password_credentials
+                """
+            )
+            assert cursor.fetchall() == []
+
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT provenance FROM app.password_credentials")
+
+    with psycopg.connect(_required_url(RUNTIME_URL_ENV)) as connection:
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE app.password_credentials
+                    SET verifier_encoding = '$adaptive$params$forbiddenchange'
+                    """
+                )
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    has_table_privilege(
+                        'prm_runtime', 'app.password_credentials', 'SELECT'
+                    ),
+                    has_table_privilege(
+                        'prm_runtime', 'app.password_credentials', 'INSERT'
+                    ),
+                    has_table_privilege(
+                        'prm_runtime', 'app.password_credentials', 'UPDATE'
+                    ),
+                    has_table_privilege(
+                        'prm_runtime', 'app.password_credentials', 'DELETE'
+                    ),
+                    has_table_privilege(
+                        'prm_runtime', 'app.password_credentials', 'TRUNCATE'
+                    ),
+                    has_table_privilege(
+                        'prm_runtime', 'app.password_credentials', 'REFERENCES'
+                    ),
+                    has_table_privilege(
+                        'prm_runtime', 'app.password_credentials', 'TRIGGER'
+                    ),
+                    has_column_privilege(
+                        'prm_runtime', 'app.password_credentials',
+                        'verifier_encoding', 'SELECT'
+                    ),
+                    has_column_privilege(
+                        'prm_runtime', 'app.password_credentials',
+                        'actor_id', 'SELECT'
+                    ),
+                    has_column_privilege(
+                        'prm_runtime', 'app.password_credentials',
+                        'algorithm', 'SELECT'
+                    ),
+                    has_column_privilege(
+                        'prm_runtime', 'app.password_credentials',
+                        'work_factor_metadata', 'SELECT'
+                    ),
+                    bool_or(has_column_privilege(
+                        'prm_runtime', 'app.password_credentials',
+                        column_name, 'INSERT'
+                    )),
+                    bool_or(has_column_privilege(
+                        'prm_runtime', 'app.password_credentials',
+                        column_name, 'UPDATE'
+                    )),
+                    bool_or(has_column_privilege(
+                        'prm_runtime', 'app.password_credentials',
+                        column_name, 'SELECT'
+                    )) FILTER (WHERE column_name IN (
+                        'created_at', 'changed_at', 'changed_by_actor_id', 'provenance'
+                    )),
+                    has_column_privilege(
+                        'prm_runtime', 'app.password_credentials',
+                        'provenance', 'SELECT'
+                    ),
+                    has_function_privilege(
+                        'prm_runtime',
+                        'app.valid_password_work_factor_metadata(jsonb)',
+                        'EXECUTE'
+                    ),
+                    has_function_privilege(
+                        'prm_runtime',
+                        'app.protect_password_credential_lifecycle()',
+                        'EXECUTE'
+                    )
+                FROM information_schema.columns
+                WHERE table_schema = 'app' AND table_name = 'password_credentials'
+                """
+            )
+            assert cursor.fetchone() == (
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+                True,
+                True,
+                True,
+                True,
+                False,
+                False,
+                False,
+                False,
+                False,
+                False,
+            )
+
+
+def test_password_credential_change_advances_timestamp_with_new_provenance() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    actor_id = uuid.uuid4()
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Credential Lifecycle', 'credential-lifecycle',
+                          'active', 'optional', 'authorized-account-creation')
+                """,
+                (actor_id, f"credential-lifecycle-{uuid.uuid4().hex}"),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.password_credentials (
+                    actor_id, verifier_encoding, algorithm,
+                    work_factor_metadata, provenance
+                ) VALUES (%s, '$adaptive$params$oldsaltandhash', 'adaptive',
+                          '{"cost": 1}'::jsonb, 'credential-change-1')
+                RETURNING created_at, changed_at
+                """,
+                (actor_id,),
+            )
+            inserted = cursor.fetchone()
+            assert inserted is not None
+            created_at, initial_changed_at = inserted
+            cursor.execute("SELECT pg_sleep(0.01)")
+            cursor.execute(
+                """
+                UPDATE app.password_credentials
+                SET verifier_encoding = '$adaptive$params$newsaltandhash',
+                    changed_by_actor_id = %s,
+                    provenance = 'credential-change-2'
+                WHERE actor_id = %s
+                RETURNING created_at, changed_at, changed_by_actor_id, provenance
+                """,
+                (actor_id, actor_id),
+            )
+            changed = cursor.fetchone()
+
+    assert initial_changed_at == created_at
+    assert changed is not None
+    unchanged_created_at, changed_at, changed_by_actor_id, provenance = changed
+    assert unchanged_created_at == created_at
+    assert changed_at > initial_changed_at
+    assert changed_by_actor_id == actor_id
+    assert provenance == "credential-change-2"
+
+
+@pytest.mark.parametrize(
+    "mutation_case",
+    [
+        "missing-actor",
+        "stale-provenance",
+        "audit-only",
+    ],
+)
+def test_password_credential_changes_require_material_actor_and_new_provenance(
+    mutation_case: str,
+) -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    actor_id = uuid.uuid4()
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Credential Audit', 'credential-audit',
+                          'active', 'optional', 'authorized-account-creation')
+                """,
+                (actor_id, f"credential-audit-{uuid.uuid4().hex}"),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.password_credentials (
+                    actor_id, verifier_encoding, algorithm,
+                    work_factor_metadata, provenance
+                ) VALUES (%s, '$adaptive$params$oldsaltandhash', 'adaptive',
+                          '{"cost": 1}'::jsonb, 'credential-change-1')
+                """,
+                (actor_id,),
+            )
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
+            with connection.cursor() as cursor:
+                if mutation_case == "missing-actor":
+                    cursor.execute(
+                        """
+                        UPDATE app.password_credentials
+                        SET verifier_encoding = '$adaptive$params$newsaltandhash'
+                        WHERE actor_id = %s
+                        """,
+                        (actor_id,),
+                    )
+                elif mutation_case == "stale-provenance":
+                    cursor.execute(
+                        """
+                        UPDATE app.password_credentials
+                        SET verifier_encoding = '$adaptive$params$newsaltandhash',
+                            changed_by_actor_id = %s
+                        WHERE actor_id = %s
+                        """,
+                        (actor_id, actor_id),
+                    )
+                else:
+                    cursor.execute(
+                        """
+                        UPDATE app.password_credentials
+                        SET changed_by_actor_id = %s,
+                            provenance = 'credential-change-2'
+                        WHERE actor_id = %s
+                        """,
+                        (actor_id, actor_id),
+                    )
+
+
 def test_readiness_succeeds_with_managed_runtime_database() -> None:
     assert _run_alembic("upgrade", "head").returncode == 0
 
@@ -484,18 +831,107 @@ def test_user_accounts_migration_advances_the_previous_revision_without_data_los
 
 
 def test_user_accounts_migration_refuses_destructive_downgrade() -> None:
+    database = f"prm_account_downgrade_{uuid.uuid4().hex}"
+    admin_url = _required_url(ADMIN_URL_ENV)
+    original_migration_url = _required_url(MIGRATION_URL_ENV)
+    with psycopg.connect(admin_url, autocommit=True) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                sql.SQL("CREATE DATABASE {} OWNER prm_migrator").format(sql.Identifier(database))
+            )
+
+    os.environ[MIGRATION_URL_ENV] = _url_with_database(original_migration_url, database)
+    try:
+        account_result = _run_alembic("upgrade", "20260817_02")
+        assert account_result.returncode == 0, account_result.stderr
+
+        result = _run_alembic("downgrade", "20260813_01")
+
+        assert result.returncode != 0
+        assert "DB-AUTH-001 migration is forward-only" in result.stderr
+        with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT to_regclass('app.user_accounts')")
+                assert cursor.fetchone() == ("app.user_accounts",)
+                cursor.execute("SELECT version_num FROM alembic_version")
+                assert cursor.fetchone() == ("20260817_02",)
+    finally:
+        os.environ[MIGRATION_URL_ENV] = original_migration_url
+        with psycopg.connect(admin_url, autocommit=True) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s",
+                    (database,),
+                )
+                cursor.execute(sql.SQL("DROP DATABASE {}").format(sql.Identifier(database)))
+
+
+def test_password_credentials_migration_refuses_destructive_downgrade() -> None:
     assert _run_alembic("upgrade", "head").returncode == 0
 
-    result = _run_alembic("downgrade", "20260813_01")
+    result = _run_alembic("downgrade", "20260817_02")
 
     assert result.returncode != 0
-    assert "DB-AUTH-001 migration is forward-only" in result.stderr
+    assert "DB-AUTH-002 migration is forward-only" in result.stderr
     with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
         with connection.cursor() as cursor:
-            cursor.execute("SELECT to_regclass('app.user_accounts')")
-            assert cursor.fetchone() == ("app.user_accounts",)
+            cursor.execute("SELECT to_regclass('app.password_credentials')")
+            assert cursor.fetchone() == ("app.password_credentials",)
             cursor.execute("SELECT version_num FROM alembic_version")
-            assert cursor.fetchone() == ("20260817_02",)
+            assert cursor.fetchone() == ("20260817_03",)
+
+
+def test_password_credentials_migration_advances_user_accounts_without_data_loss() -> None:
+    database = f"prm_credential_forward_{uuid.uuid4().hex}"
+    admin_url = _required_url(ADMIN_URL_ENV)
+    original_migration_url = _required_url(MIGRATION_URL_ENV)
+    with psycopg.connect(admin_url, autocommit=True) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                sql.SQL("CREATE DATABASE {} OWNER prm_migrator").format(sql.Identifier(database))
+            )
+
+    os.environ[MIGRATION_URL_ENV] = _url_with_database(original_migration_url, database)
+    actor_id = uuid.uuid4()
+    try:
+        account_result = _run_alembic("upgrade", "20260817_02")
+        assert account_result.returncode == 0, account_result.stderr
+        with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, 'preserved-account', 'Preserved Account',
+                              'preserved-account', 'active', 'optional',
+                              'authorized-account-creation')
+                    """,
+                    (actor_id,),
+                )
+
+        head_result = _run_alembic("upgrade", "head")
+        assert head_result.returncode == 0, head_result.stderr
+        with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT actor_id FROM app.user_accounts WHERE actor_id = %s",
+                    (actor_id,),
+                )
+                assert cursor.fetchone() == (actor_id,)
+                cursor.execute("SELECT to_regclass('app.password_credentials')")
+                assert cursor.fetchone() == ("app.password_credentials",)
+                cursor.execute("SELECT version_num FROM alembic_version")
+                assert cursor.fetchone() == ("20260817_03",)
+    finally:
+        os.environ[MIGRATION_URL_ENV] = original_migration_url
+        with psycopg.connect(admin_url, autocommit=True) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s",
+                    (database,),
+                )
+                cursor.execute(sql.SQL("DROP DATABASE {}").format(sql.Identifier(database)))
 
 
 def test_baseline_constraint_rejects_invalid_additive_row_without_data_loss() -> None:
