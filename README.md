@@ -169,6 +169,21 @@ authorization is routed to independent publication verification and cannot deman
 redundant owner commit/push instruction. These cases are regression-tested by
 `make automation-test` and any future repair must add or extend a deterministic test.
 
+Automation repairs follow a permanent prevention protocol:
+
+1. Identify and record the root cause; do not stop at retrying the failed cycle.
+2. Repair the executable enforcement path that permitted the failure.
+3. Add or extend a deterministic regression test that fails without the repair.
+4. Update the supervisor prompt when agent behavior or authorization semantics change.
+5. Update the watchdog and daily report when compact-state interpretation or
+   owner-visible reporting changes.
+6. Run `make automation-test`, then commit the focused repair so its rationale remains
+   recoverable from Git history.
+
+Only legitimately affected files are changed. A repair does not mechanically rewrite
+all automation files; the regression test is the mandatory proof that the same defect
+cannot silently recur.
+
 A separate model-free watchdog sends Telegram only for a new publication or approval
 request, a stalled approved tranche, an unhealthy supervisor, or recovery. Identical
 events are deduplicated. The daily 08:00 Asia/Phnom_Penh report includes automation
