@@ -95,7 +95,9 @@ are prohibited because they prevent reliable attribution.
 
 ## SEC-010 — Authentication Provider Properties
 
-The configured authentication mechanism must provide:
+Production uses application-managed local username and password authentication and must
+not depend on Google, Microsoft, Auth0, or another external identity provider for normal
+operation. The mechanism must provide:
 
 - secure credential verification;
 - account disablement;
@@ -104,12 +106,12 @@ The configured authentication mechanism must provide:
 - session revocation; and
 - stable actor identity for audit events.
 
-The exact authentication provider is a technical deployment choice and must not
-change business authorization semantics.
+Library and protocol implementation details remain technical choices and must not change
+business authorization semantics.
 
 ## SEC-011 — Password Storage
 
-When local passwords are used, only salted, adaptive password hashes using a
+Only salted, adaptive password hashes using a
 currently accepted password-hashing algorithm may be stored. Plaintext,
 reversible encryption, unsalted hashing, and security-question recovery are
 prohibited.
@@ -121,9 +123,12 @@ avoiding account-enumeration disclosures.
 
 ## SEC-013 — Multi-factor Authentication
 
-The authentication architecture must support multi-factor authentication for
-high-privilege and remote-access users. Whether MFA is mandatory for each
-deployment is a configurable security policy, not a new business authority.
+The authentication architecture must use an appropriate standards-based MFA mechanism.
+MFA is mandatory for Owner and Manager and optional for Staff. A newly created Owner or
+Manager must not receive normal privileged application access until enrollment is
+complete. Staff without MFA may operate only within granted capabilities; Staff with MFA
+enabled must complete it. SMS-based MFA or recovery is prohibited without separate Owner
+approval. Existing stricter remote-access controls remain authoritative.
 
 ## SEC-014 — Account Lifecycle
 
@@ -146,9 +151,9 @@ the authentication design is susceptible to CSRF.
 
 ## SEC-017 — Session Expiration and Revocation
 
-Sessions must have configurable idle and absolute lifetimes. Password reset,
-account disablement, or a material privilege reduction must support prompt session
-revocation.
+Production browser sessions expire after 30 minutes of inactivity and after an absolute
+24 hours regardless of activity. Password or MFA reset/recovery, account disablement, or
+a material privilege reduction must support prompt applicable-session revocation.
 
 ## SEC-018 — Reauthentication
 
@@ -559,7 +564,50 @@ defined by the authoritative API/UI:
 Server-side authorization must enforce these boundaries even when one deployment
 assigns several capabilities to the same person.
 
-# 18. OPEN OWNER DECISION
+## SEC-071 — Recovery Codes
+
+Recovery codes must be securely generated, presented only through a protected one-time
+flow, independently consumable, and non-reusable. If verification material is retained
+server-side, usable codes must not be stored in plaintext. Generation, regeneration,
+use, rejection, and related session revocation are auditable. Recovery endpoints retain
+rate limiting and account-enumeration protection.
+
+## SEC-072 — Controlled Administrative Recovery
+
+Recovery never bypasses authorization. Owner may administratively reset/recover Manager
+and Staff accounts. Staff ordinary authority cannot reset/recover Owner or Manager, and
+Manager recovery of Staff is not granted unless separately and explicitly approved.
+Owner recovery uses Owner recovery codes or a deliberate controlled server-side
+emergency procedure; there is no ordinary unauthenticated web “reset Owner” function.
+All security-sensitive recovery actions create immutable audit evidence without secrets.
+
+## SEC-073 — Initial Owner Bootstrap
+
+The initial Owner is created through a protected command-line procedure on the
+production server. It is permitted only while no initial Owner exists or under an
+equivalently strong one-time guard. Password input must be interactive or use another
+protected secret-input mechanism and must not appear in command arguments, shell
+history, process listings, logs, or source control. Password policy applies. Required
+Owner MFA is enrolled securely during bootstrap or at first login before normal
+privileged use.
+
+## SEC-074 — Bootstrap Closure
+
+After the initial Owner is established, bootstrap cannot create another Owner or remain
+as a credential/recovery backdoor. Subsequent account creation follows normal authorized
+account-management controls. Bootstrap, password, MFA, and recovery-code secrets are
+never committed to Git. The bootstrap event and rejected unsafe/repeated attempts are
+auditable without recording secrets.
+
+## SEC-075 — Recovery and Authentication Audit
+
+Account creation/disablement, password changes/recovery, MFA enrollment/challenge reset
+or disablement, recovery-code lifecycle, administrative/emergency recovery, session
+creation/revocation, material privilege changes, and initial Owner bootstrap preserve
+actor or controlled-procedure identity, target, timestamp, reason, outcome, correlation,
+and applicable previous/resulting non-secret state in immutable audit evidence.
+
+# 18. RESOLVED AND OPEN OWNER DECISIONS
 
 ## OOD-SEC-001 — Staff Role Mapping
 
@@ -574,14 +622,12 @@ without fixing the Owner's organizational mapping.
 
 ## OOD-SEC-002 — Mandatory MFA Scope
 
-**Question:** Which users or access paths must use MFA in the production
-deployment?
+**Resolved question:** Which users or access paths must use MFA in production?
 
-**Current treatment:** The architecture supports MFA; it is strongly required for
-high-privilege and remote access but the exact mandatory mapping is configurable
-pending Owner confirmation.
+**Resolution:** Owner and Manager require MFA; Staff MFA is optional. Stricter
+remote-access controls remain authoritative. See `DL-056`.
 
-**Blocking:** No.
+**Status:** Resolved by final Owner approval.
 
 # 19. Traceability Summary
 
@@ -614,4 +660,5 @@ This Security Model is complete for Owner Review when:
 - LAN and optional remote-access assumptions are explicit;
 - security verification requirements and the high-value workflow authorization
   boundaries are traceable; and
-- unresolved role/MFA mappings remain configurable OPEN OWNER DECISION items.
+- only the named role-to-capability bundle mapping remains an open operational choice;
+  the production MFA mapping is resolved.

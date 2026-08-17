@@ -119,6 +119,23 @@ Credit without replacing the authoritative underlying records or becoming a Gene
 Ledger.
 **Traceability:** `BR-LEDGER-001`–`BR-LEDGER-007`.
 
+## Production Authentication and Account Recovery (`PR-CAP-009`)
+
+The product shall authenticate human users through unique local usernames and passwords
+without depending on an external identity provider for normal operation. Owner and
+Manager accounts require standards-based MFA before normal privileged use; MFA is
+optional for Staff. Browser sessions expire after 30 minutes of inactivity and after an
+absolute 24 hours regardless of activity. Recovery uses single-use recovery codes or a
+controlled, auditable server-side procedure: Owner may recover Manager and Staff
+accounts, while Staff cannot recover Owner or Manager accounts and Manager recovery of
+Staff is not granted by this requirement. The first Owner is created only through a
+protected one-time command-line bootstrap that does not expose secrets in arguments,
+logs, source control, or an unauthenticated web workflow.
+
+This authentication policy does not replace capability-based, deny-by-default,
+server-side authorization or any business/financial approval boundary.
+**Traceability:** `SEC-009`–`SEC-018`, `SEC-071`–`SEC-075`; `DL-055`–`DL-059`.
+
 # 6. End-to-End User Workflows
 
 ## PR-WF-001 — Prepare and Reserve a Unit

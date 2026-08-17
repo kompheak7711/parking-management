@@ -587,11 +587,11 @@ the Owner or authorized deployment decision-maker resolves them.
 | `OOD-DB-003` | Invoice, Payment, and Refund number format/sequence | Require unique immutable values without prescribing format. |
 | `OOD-DB-004` | Meter serial-number uniqueness scope | Preserve serial text without claiming global or per-type uniqueness. |
 | `OOD-DB-005` | Electricity/Water measurement-unit metadata | Preserve exact numeric quantities/rates without naming an unsupported unit; block production Utility configuration and definitive fixtures until resolved. |
-| `OOD-API-001` | Production authentication provider | Keep API authentication-provider-neutral. |
+| `OOD-API-001` | Production authentication provider | **RESOLVED by DL-055:** application-managed local username/password; API business authorization remains credential-library-neutral. |
 | `OOD-UI-001` | Brand and visual design tokens | Use accessible neutral tokens pending brand direction. |
 | `OOD-UI-002`, `OOD-TEST-001` | Certified browser/device matrix | Use standards-compliant responsive behavior and generic cross-browser coverage. |
 | `OOD-SEC-001` | Named staff role-to-capability mapping | Keep capabilities and role bundles configurable; grant no role-name authority. |
-| `OOD-SEC-002` | Mandatory MFA scope | Support MFA without inventing the final mandatory mapping. |
+| `OOD-SEC-002` | Mandatory MFA scope | **RESOLVED by DL-056:** Owner and Manager required; Staff optional; stricter remote-access controls preserved. |
 | `OOD-DEPLOY-001`, `OOD-TEST-002` | Production RPO/RTO | Keep backup/recovery parameters configurable; promise no unapproved objective. |
 | `OOD-DEPLOY-002` | Production host, address, and certificate trust | Specify required properties without selecting infrastructure identifiers. |
 | `OOD-DEPLOY-003` | Remote-access enablement/gateway | Keep remote access disabled by default. |
@@ -734,6 +734,61 @@ Rent Due Date question in `DL-042` and do not authorize new business policy.
 - **Rationale:** Preserve exact Rent-default evidence while preventing an automated financial milestone from becoming an unauthorized tenancy termination.
 - **Decision date:** Not recorded.
 - **Alternatives:** No automatic termination is approved.
+
+## DL-055 — Local username/password production authentication
+
+- **Type:** `OWNER SECURITY DECISION`
+- **Status:** `APPROVED`
+- **Decision:** Production authenticates every human through a unique application-managed local username and password. Shared accounts, security questions, plaintext/reversibly encrypted passwords, and dependence on Google, Microsoft, Auth0, or another external identity provider for normal operation are prohibited. Passwords use secure salted adaptive hashing; login/recovery retain guessing, rate-limit, enumeration, disablement, revocation, and audit controls. Credential mechanics do not replace capability-based deny-by-default server authorization.
+- **Provenance:** Final Owner Authentication Decision `AUTH-01`, approved 2026-08-17.
+- **Affected documents/rules:** 003-009; `PR-CAP-009`, `DB-AUTH-001`–`DB-AUTH-005`, `API-008`, `API-096`–`API-100`, `SEC-009`–`SEC-012`, `DEPLOY-068`; resolves `OOD-API-001`.
+- **Rationale:** Preserve local-first operation, unique audit attribution, and independence from external identity availability.
+- **Decision date:** 2026-08-17.
+- **Alternatives:** External-provider normal authentication is not approved.
+
+## DL-056 — Production MFA policy by account class
+
+- **Type:** `OWNER SECURITY DECISION`
+- **Status:** `APPROVED`
+- **Decision:** Standards-based MFA is required for Owner and Manager and optional for Staff. A new Owner or Manager receives no normal privileged access until enrollment is complete. Staff without MFA remains limited by its capabilities; Staff with MFA enabled must complete it. SMS MFA/recovery is not approved. Stricter remote-access controls remain authoritative, and role labels never replace capability checks.
+- **Provenance:** Final Owner Authentication Decision `AUTH-02`, approved 2026-08-17.
+- **Affected documents/rules:** 003-009; `PR-CAP-009`, `API-096`, `UI-110`, `TEST-128`, `SEC-013`, `DEPLOY-068`; resolves `OOD-SEC-002`.
+- **Rationale:** Require stronger authentication for privileged administration without inventing business authority or weakening remote access.
+- **Decision date:** 2026-08-17.
+- **Alternatives:** Mandatory Staff MFA and SMS MFA/recovery are not approved.
+
+## DL-057 — Production browser-session lifetime
+
+- **Type:** `OWNER SECURITY DECISION`
+- **Status:** `APPROVED`
+- **Decision:** Production browser sessions expire after 30 minutes of inactivity and after an absolute 24 hours regardless of activity. Existing unpredictable/time-bounded token, TLS, cookie, CSRF, revocation, and high-risk reauthentication controls remain required. Password/MFA recovery, account disablement, and material privilege reduction revoke applicable sessions promptly.
+- **Provenance:** Final Owner Authentication Decision `AUTH-03`, approved 2026-08-17.
+- **Affected documents/rules:** 003-009; `DB-AUTH-004`, `API-097`, `UI-111`, `TEST-131`–`TEST-132`, `SEC-015`–`SEC-018`, `DEPLOY-069`.
+- **Rationale:** Replace deployment TBDs with bounded, testable production session policy.
+- **Decision date:** 2026-08-17.
+- **Alternatives:** Configurable weaker production values are not approved.
+
+## DL-058 — Recovery codes and controlled server-side recovery
+
+- **Type:** `OWNER SECURITY DECISION`
+- **Status:** `APPROVED`
+- **Decision:** Account/MFA recovery supports securely generated single-use recovery codes and controlled auditable server-side administrative recovery. Owner may recover Manager and Staff accounts; Staff cannot recover Owner or Manager; Manager recovery of Staff is not granted. Owner recovery uses Owner recovery codes or a deliberate emergency server procedure, never an ordinary unauthenticated web reset. Recovery preserves rate limiting, enumeration resistance, authorization, session revocation where appropriate, protected verifier storage, and immutable secret-free audit evidence.
+- **Provenance:** Final Owner Authentication Decision `AUTH-04`, approved 2026-08-17.
+- **Affected documents/rules:** 003-009; `DB-AUTH-003`–`DB-AUTH-005`, `API-098`–`API-099`, `UI-112`, `TEST-129`–`TEST-130`, `SEC-071`–`SEC-072`, `SEC-075`, `DEPLOY-071`–`DEPLOY-072`.
+- **Rationale:** Provide recoverability without security questions, reusable codes, authorization bypass, or a persistent Owner-reset backdoor.
+- **Decision date:** 2026-08-17.
+- **Alternatives:** Security questions, SMS recovery, Staff recovery of privileged accounts, and invented Manager recovery authority are not approved.
+
+## DL-059 — Protected initial Owner command-line bootstrap
+
+- **Type:** `OWNER SECURITY DECISION`
+- **Status:** `APPROVED`
+- **Decision:** The first Owner is created only through a protected production-server command-line bootstrap while no initial Owner exists or under an equivalently strong one-time guard. Password input is interactive or otherwise protected and never passed as a command argument. Passwords, MFA secrets, and recovery codes are not logged or committed. Required Owner MFA is completed during bootstrap or at first login before normal privileged use. Bootstrap is audited and closes permanently against additional Owner creation; later accounts use normal authorized management.
+- **Provenance:** Final Owner Authentication Decision `AUTH-05`, approved 2026-08-17.
+- **Affected documents/rules:** 003-009; `DB-AUTH-005`, `API-100`, `UI-113`, `TEST-133`–`TEST-134`, `SEC-073`–`SEC-075`, `DEPLOY-070`–`DEPLOY-072`.
+- **Rationale:** Establish the trust root without exposing a public first-owner route, leaking secrets, or retaining a bootstrap backdoor.
+- **Decision date:** 2026-08-17.
+- **Alternatives:** Public web bootstrap and reusable bootstrap credentials are prohibited.
 
 ---
 

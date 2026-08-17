@@ -70,9 +70,11 @@ send a valid identifier which the server sanitizes/normalizes.
 
 ## API-008 — Authentication
 
-Protected endpoints require the configured authenticated session or bearer
-mechanism. Authentication failures return `401` without revealing account or
-resource existence.
+Protected human endpoints require a local username/password-authenticated browser
+session and, where policy requires, completed MFA. Authentication failures return `401`
+without revealing account or resource existence. The API boundary remains independent
+of password-hashing and MFA library details, but production normal operation does not
+depend on an external identity provider.
 
 ## API-009 — Capability Checks
 
@@ -941,6 +943,43 @@ or data outside authorization.
 Account and session actions require administration capabilities and audit events.
 Credentials are never returned.
 
+## API-096 — Login, MFA, and Logout
+
+The authentication surface supports local username/password login, standards-based MFA
+enrollment and challenge, recovery-code challenge, logout, and authenticated session
+inspection. Owner and Manager cannot obtain normal privileged access before required MFA
+enrollment/challenge; Staff may authenticate without MFA unless enabled for that
+account. Responses, timing, and rate limits resist guessing and account enumeration.
+SMS authentication or recovery is not exposed.
+
+## API-097 — Session Lifetime
+
+Browser sessions enforce a 30-minute inactivity timeout and a 24-hour absolute lifetime.
+Activity cannot extend the absolute expiry. Logout, password/MFA recovery, account
+disablement, and material privilege reduction revoke applicable sessions. High-risk
+administration may require recent password authentication or an additional factor.
+
+## API-098 — Recovery Codes
+
+Recovery-code generation/presentation is available only in a protected authenticated
+enrollment or regeneration flow. Codes are shown securely once, individually consumed,
+not returned again, and reuse is rejected. Recovery actions are rate-limited,
+enumeration-resistant, session-revoking where appropriate, and immutably audited.
+
+## API-099 — Administrative Recovery
+
+Authorized Owner administration may initiate controlled reset/recovery for Manager and
+Staff accounts. Staff cannot reset/recover Owner or Manager credentials. This API does
+not grant Manager recovery of Staff. Owner emergency recovery is server-side only and
+is never an ordinary unauthenticated web endpoint.
+
+## API-100 — Initial Owner Bootstrap Exclusion
+
+No public API or web route creates the first Owner. The protected server command-line
+bootstrap is a deployment operation and becomes unavailable after initial Owner
+establishment except through an equivalently strong separately controlled one-time
+mechanism.
+
 ## API-080 — Roles and Capabilities
 
 - `GET /capabilities`
@@ -1042,16 +1081,17 @@ requirements identify the persistence requirement used by that operation.
 | Money/FX | `BR-MONEY-*` |
 | Audit/Authorization | `BR-AUDIT-*`, `BR-AUTH-*` |
 
-# 30. OPEN OWNER DECISION
+# 30. RESOLVED OWNER DECISION
 
 ## OOD-API-001 — Authentication Integration
 
-**Question:** Which local or external authentication provider will production use?
+**Resolved question:** Which local or external authentication provider will production use?
 
-**Current treatment:** The API specifies secure authentication properties and
-capability enforcement independent of provider.
+**Resolution:** Production uses application-managed local username/password
+authentication. The API keeps provider/library mechanics outside business endpoints and
+retains capability enforcement independent of role names. See `DL-055`.
 
-**Blocking:** No.
+**Status:** Resolved by final Owner approval.
 
 # 31. Completion Criteria
 
@@ -1065,5 +1105,5 @@ This API Specification is complete for Owner Review when:
 - scheduled jobs use the same business services without bypass;
 - no unsupported fees, penalties, statuses, Refund rights, Deposit uses, or
   termination behavior are exposed; and
-- the remaining nonblocking authentication-provider integration question remains
-  explicit without inventing provider-specific business policy.
+- the resolved local-authentication policy is implemented without coupling business
+  authorization to credential-library details.

@@ -603,6 +603,46 @@ identities where their privileges differ.
 Production hosts require supported OS patches, restricted administrator access,
 firewall rules, time synchronization, protected storage, and documented ownership.
 
+## DEPLOY-068 — Local Authentication Runtime
+
+Production packages the application-managed local username/password authentication,
+MFA, session, recovery, and audit components required by `008_SECURITY_MODEL.md`.
+Routine login and recovery-code verification remain functional in the local-first
+installation without Google, Microsoft, Auth0, or another external identity provider.
+
+## DEPLOY-069 — Production Session Policy
+
+Production configuration fixes browser-session inactivity expiry at 30 minutes and
+absolute expiry at 24 hours. Operators may not weaken these values through an
+undocumented environment override. TLS, Secure/HttpOnly/SameSite cookies where
+applicable, CSRF controls, revocation, and high-risk reauthentication remain enabled.
+
+## DEPLOY-070 — Initial Owner Bootstrap Operation
+
+Deployment documentation provides a protected server-side command-line bootstrap that
+is available only before the initial Owner is established or through an equivalently
+strong one-time guard. It accepts passwords by protected interactive/secret input, never
+command arguments; does not log password, MFA secret, or recovery codes; requires
+production password policy and secure Owner MFA enrollment before privileged use; emits
+non-secret audit evidence; and refuses subsequent/additional Owner creation. No public
+first-Owner web route is deployed.
+
+## DEPLOY-071 — Controlled Recovery Operation
+
+Runbooks document recovery-code handling, Owner administrative recovery of Manager and
+Staff, and deliberate emergency Owner recovery. Emergency recovery requires controlled
+server access, operator authentication/authorization, reason and correlation evidence,
+session revocation, post-recovery validation, and immutable secret-free audit. It is not
+an ordinary unauthenticated web reset and does not grant Manager-to-Staff recovery.
+
+## DEPLOY-072 — Authentication Secrets and Disaster Recovery
+
+Password verifiers, MFA verifier/secret material, protected recovery-code verification
+material, session revocation state, bootstrap-closure state, and security audit evidence
+are included in encrypted backup/restore validation with least-privilege access.
+Bootstrap credentials, MFA secrets, usable recovery codes, and actual recovery secrets
+must never be committed to Git or included in ordinary logs/runbooks.
+
 # 16. Traceability
 
 | Deployment concern | Authoritative source |
@@ -622,6 +662,7 @@ firewall rules, time synchronization, protected storage, and documented ownershi
 | Exchange-rate source/fallback | `BR-MONEY-*` |
 | Audit | `BR-AUDIT-*` |
 | Authorization/security | `BR-AUTH-*`, `008_SECURITY_MODEL.md` |
+| Authentication, MFA, sessions, recovery, and bootstrap | `PR-CAP-009`, `SEC-009` through `SEC-018`, `SEC-071` through `SEC-075`, `DL-055` through `DL-059` |
 
 # 17. OPEN OWNER DECISION
 

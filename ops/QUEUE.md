@@ -10,7 +10,11 @@
 6. Phase 2C single-Property identity scope primitive rejecting objects assigned to a
    different Property ID — exact next candidate, approved under durable authorization;
    high risk and ready for supervisor dispatch.
-7. Design backup/restore/human administration database identities and production
+7. Before any authentication/account/session/MFA/recovery/bootstrap implementation,
+   re-read updated authoritative specifications 003-010 at the authentication decision
+   commit and reconcile the implementation plan to `DL-055` through `DL-059`. Do not
+   reinterpret these application decisions as OpenClaw/Hermes configuration changes.
+8. Design backup/restore/human administration database identities and production
    secret provisioning only in a separately authorized deployment tranche
    (SEC-045/047/049/050).
 

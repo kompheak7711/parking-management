@@ -81,7 +81,7 @@ Names, numbers, descriptions, reasons, and memos use `text`. `jsonb` is permitte
 
 ## DB-TYPE-007 — Standard provenance columns
 
-Mutable aggregate tables contain `created_at timestamptz NOT NULL`, `created_by uuid NOT NULL`, `updated_at timestamptz NOT NULL`, and `updated_by uuid NOT NULL`. Append-only event tables contain `occurred_at timestamptz NOT NULL` and `actor_id uuid NOT NULL` instead. Actor UUIDs refer to the authenticated principal identity defined by the later Security Model; no user table is invented here.
+Mutable aggregate tables contain `created_at timestamptz NOT NULL`, `created_by uuid NOT NULL`, `updated_at timestamptz NOT NULL`, and `updated_by uuid NOT NULL`. Append-only event tables contain `occurred_at timestamptz NOT NULL` and `actor_id uuid NOT NULL` instead. Actor UUIDs refer to the unique local human account or service principal defined by the Security Model and the authentication-storage requirements below.
 
 ## DB-TYPE-008 — No normal hard deletion
 
@@ -1676,7 +1676,53 @@ conversion; and append-only/restrict-delete protection for every new event table
 
 ---
 
-# 20. Deferred Technical and Configuration Decisions
+# 20. Authentication and Account Security Storage
+
+## DB-AUTH-001 — Local human accounts
+
+`user_accounts` stores an immutable UUID actor identity, unique normalized username,
+display/audit identity, account lifecycle state, MFA-policy class, timestamps, and
+provenance. Username uniqueness is enforced transactionally. Shared accounts and
+external-provider identity as the normal login source are prohibited. Role/capability
+assignments remain separate relations and do not become hard-coded username or role
+checks.
+
+## DB-AUTH-002 — Password credentials
+
+Password credential rows store only a salted adaptive password-verifier encoding,
+algorithm/work-factor metadata, change time, and lifecycle/audit provenance. Plaintext,
+reversibly encrypted passwords, security questions, password values in audit snapshots,
+and reusable bootstrap secrets are prohibited.
+
+## DB-AUTH-003 — MFA and recovery-code state
+
+MFA enrollment state and protected verifier material are stored separately from role
+authority. Owner and Manager accounts cannot enter normal privileged operation until
+required MFA enrollment is complete; Staff enrollment may be absent. Recovery codes
+have independently verifiable one-time identities and consumed timestamps. If server
+verification material is retained, it is non-reversible; usable recovery codes are
+never stored in plaintext.
+
+## DB-AUTH-004 — Sessions and revocation
+
+Durable session records contain only protected token identifiers/verifiers, user,
+creation, last-activity, absolute-expiry, idle-expiry/recalculation data, revocation
+time/reason, and audit provenance. They enforce a 30-minute inactivity timeout and
+24-hour absolute lifetime. Password/MFA recovery, account disablement, and material
+privilege reduction can revoke all applicable sessions promptly.
+
+## DB-AUTH-005 — Recovery and bootstrap audit
+
+Administrative recovery, emergency Owner recovery, MFA enrollment/reset/disablement,
+credential reset, recovery-code use, session revocation, and initial Owner bootstrap
+produce immutable security audit events without secrets. A database invariant or
+equivalently strong transactional guard prevents initial-Owner bootstrap after the
+initial Owner is established and prevents bootstrap from becoming an additional-Owner
+backdoor.
+
+---
+
+# 21. Deferred Technical and Configuration Decisions
 
 No genuine Owner business-policy decision remains open in this Database Model. The
 previous first-partial-month Due Date question is resolved upstream: Initial Rent is due
@@ -1703,7 +1749,7 @@ the normative model but do not reopen business policy:
 
 ---
 
-# 21. Upstream Traceability Summary
+# 22. Upstream Traceability Summary
 
 The complete authoritative foundation contains 381 unique detailed Business Rules and
 381 same-suffix detailed Product Requirements. Every family is represented below; the
@@ -1731,10 +1777,11 @@ replace detailed traceability.
 | Final Settlement | DB-SETTLE-001..006, DB-DEP-005..006, DB-DER-007 | BR-SETTLE-001..015 | PR-SETTLE-001..015, PR-CAP-006, PR-WF-005..007 |
 | Money, exchange, and rounding | DB-TYPE-004..005, DB-PAY-002..003, DB-REFUND-001, DB-TEST-005, DB-TEST-010 | BR-MONEY-001..013 | PR-MONEY-001..013, PR-CAP-005, PR-QUAL-006 |
 | Audit and authorization | DB-AUDIT-001..003, DB-IMM-001, DB-TXN-001..007 | BR-AUDIT-001..011, BR-AUTH-001..009 | PR-AUDIT-001..011, PR-AUTH-001..009, PR-CAP-007, PR-QUAL-001..008 |
+| Authentication and account security | DB-AUTH-001..005 | SEC-009..018, SEC-071..075 | PR-CAP-009 |
 
 ---
 
-# 22. Completion Criteria
+# 23. Completion Criteria
 
 This Database Model is ready for Owner review when:
 

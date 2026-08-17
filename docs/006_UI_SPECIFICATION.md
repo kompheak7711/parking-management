@@ -847,6 +847,41 @@ not imply hard-coded business authority.
 Authorized operators can view deployed version, API/worker health, last scheduled
 runs, migration version, and backup freshness without seeing secrets.
 
+## UI-109 — Local Sign-in and Enumeration Safety
+
+The sign-in experience accepts local username and password and does not require an
+external identity provider. It uses generic failure and recovery responses that do not
+reveal account existence, lifecycle state, MFA enrollment, or privilege class. The UI
+does not offer security questions or SMS authentication/recovery.
+
+## UI-110 — MFA Enrollment and Challenge
+
+Owner and Manager are directed through protected standards-based MFA enrollment before
+normal privileged use. Staff can operate without MFA unless enabled and can securely
+enroll when authorized. Enrollment, verification, reset, disablement, and recovery
+surfaces protect secret material and never imply authorization from a role label alone.
+
+## UI-111 — Session Expiration and Reauthentication
+
+The UI handles 30-minute inactivity expiry and 24-hour absolute expiry without claiming
+unsaved commands succeeded, clears accessible session material, and returns the user to
+sign-in. High-risk administration presents recent-reauthentication/additional-factor
+requirements while preserving server-side capability checks.
+
+## UI-112 — Recovery Codes and Administrative Recovery
+
+Recovery codes are presented once in a protected flow with secure-storage and single-use
+guidance. Used codes cannot be displayed or reused. Authorized Owner administration may
+initiate Manager/Staff recovery with explicit consequence and audit confirmation; Staff
+is never shown recovery authority for Owner/Manager, and no Manager recovery of Staff is
+implied.
+
+## UI-113 — No First-Owner Web Bootstrap
+
+The web application exposes no “Create First Owner” route. Before bootstrap it may show
+only a non-secret deployment-readiness message; initial Owner creation occurs through
+the protected production-server command-line procedure.
+
 # 23. Forms and Validation
 
 ## UI-094 — Field Requirements
@@ -948,6 +983,7 @@ the 003 bijection; wildcards and inclusive ranges expand identically.
 | Final Settlement | `BR-SETTLE-*` |
 | Currency/FX | `BR-MONEY-*` |
 | Audit/Authorization | `BR-AUDIT-*`, `BR-AUTH-*`, `008_SECURITY_MODEL.md` |
+| Authentication, MFA, sessions, and recovery | `PR-CAP-009`, `SEC-009` through `SEC-018`, `SEC-071` through `SEC-075`, `DL-055` through `DL-059` |
 
 # 27. OPEN OWNER DECISION
 

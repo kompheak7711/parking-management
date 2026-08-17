@@ -886,9 +886,10 @@ external-rate-source failure, and safe recovery without false write success.
 
 ## TEST-108 — Authentication Security
 
-Test guessing controls, account enumeration resistance, password hashing
-configuration, session expiration/revocation, secure cookies/tokens, and credential
-reset audit.
+Test successful local username/password authentication, incorrect credentials, unique
+username enforcement, shared-account prohibition, guessing/rate-limit controls, account
+enumeration resistance, disabled accounts, secure salted adaptive password hashing,
+secure cookies/tokens, and credential-reset audit.
 
 ## TEST-109 — Input and Browser Security
 
@@ -990,6 +991,60 @@ exactly-one Final Settlement.
 A mandatory suite covers Meter replacement, Reading validation, generation-date
 rate selection, weighted broken-Meter history hierarchy, pending future-basis
 charge, and duplicate Utility billing.
+
+## TEST-128 — MFA Policy Matrix
+
+Verify Owner and Manager require standards-based MFA before normal privileged access;
+Staff without MFA can authenticate within granted capabilities; Staff with MFA enabled
+must complete its challenge. Cover enrollment, correct and incorrect challenges,
+reset/disablement authorization, and immutable audit evidence. Reject SMS-based MFA.
+
+## TEST-129 — Recovery Codes
+
+Verify secure generation and one-time presentation, protected/non-plaintext server
+verification material, successful use, reuse rejection, regeneration invalidation,
+rate limiting, enumeration resistance, appropriate session revocation, and audit.
+
+## TEST-130 — Administrative and Emergency Recovery
+
+Verify Owner can recover/reset Manager and Staff; ordinary Staff cannot recover Owner or
+Manager; Manager-to-Staff recovery is denied unless a later explicit authority grants
+it. Verify Owner recovery by recovery code and the controlled server-side emergency
+procedure, including authorization, deliberate operator controls, session revocation,
+secret-free logs, and immutable audit evidence.
+
+## TEST-131 — Session Time Boundaries
+
+With controlled clocks, verify expiration immediately after 30 minutes of inactivity and
+after 24 hours absolute lifetime regardless of activity. Verify secure cookie/token
+properties, logout, CSRF controls where applicable, and revocation following password or
+MFA recovery, account disablement, and material privilege reduction.
+
+## TEST-132 — High-risk Reauthentication
+
+Verify high-risk administration requires recent authentication or an additional factor
+where specified and still requires the independent server-side capability and business
+authorization checks.
+
+## TEST-133 — Initial Owner CLI Bootstrap
+
+Verify bootstrap creates the initial unique Owner only when none exists, accepts the
+password through protected interactive/secret input rather than command-line arguments,
+does not log or commit password/MFA/recovery secrets, creates immutable audit evidence,
+and requires Owner MFA enrollment before normal privileged use.
+
+## TEST-134 — Bootstrap Backdoor Prevention
+
+Verify repeated bootstrap and attempts to create an additional Owner are rejected,
+there is no public “Create First Owner” web/API path, and recovery tooling cannot be used
+as an ordinary unauthenticated Owner reset.
+
+## TEST-135 — Authentication Integration Regression
+
+Verify production normal login remains local-first without Google, Microsoft, Auth0, or
+another external identity provider, while capability-based authorization, Property and
+object scope, existing financial authority boundaries, TLS, remote-access controls, and
+audit-history integrity remain unchanged.
 
 # 25. OPEN OWNER DECISION
 
