@@ -3,33 +3,47 @@
   "phase": "Phase 2K",
   "tranche": "Recovery-Code Verifier Persistence Foundation",
   "task": "Implement the bounded Recovery-Code Verifier Persistence Foundation",
-  "status": "complete_uncommitted",
+  "status": "published",
   "active_cycle": "phase-2k-recovery-code-verifier-persistence-foundation",
   "branch": "implementation/foundation",
-  "commit": null,
-  "timestamp": "2026-08-17T20:36:07Z",
+  "commit": "b57310ae063e2e75987761337577a0a3168937c5",
+  "timestamp": "2026-08-17T20:42:41Z",
   "risk_class": "high",
   "approval": {
-    "status": "approved_ready",
-    "basis": "owner-authorized actionable Phase 2K bounded candidate through model-free preflight",
+    "status": "complete",
+    "basis": "owner-authorized actionable Phase 2K bounded candidate and standing publication authority",
     "implementation_started": true,
     "implementation_completed": true,
-    "standing_publication_authorized": true,
-    "publication_authorization_basis": "current owner instruction authorizes the next bounded publication attempt without another commit/push permission request",
-    "publication_permitted_in_this_attempt": false
+    "publication_completed": true
+  },
+  "publication": {
+    "commit": "b57310ae063e2e75987761337577a0a3168937c5",
+    "subject": "feat: add recovery code verifier persistence",
+    "upstream": "origin/implementation/foundation",
+    "local_upstream_remote_match": true,
+    "github_actions_run": "32067108466",
+    "github_actions_status": "passed",
+    "committed_paths": [
+      "backend/migrations/versions/20260817_04_recovery_code_verifiers.py",
+      "backend/tests/test_migrations.py",
+      "backend/tests/test_traceability.py",
+      "ops/NOW.md",
+      "ops/STATE.json",
+      "ops/traceability.json"
+    ]
   },
   "next_candidate": {
-    "phase": "Phase 2K",
-    "task": "Publish the independently reviewed six-path Recovery-Code Verifier Persistence Foundation",
+    "phase": "Phase 2L",
+    "task": "Implement the bounded Recovery-Code Cryptographic Provider Foundation",
     "include": [
-      "stage exactly the six reviewed Phase 2K paths and verify the staged file set and diff",
-      "confirm canonical documents remain unchanged and all Phase 2K exclusions remain preserved",
-      "create one bounded commit on implementation/foundation, push only that branch, and verify the remote result"
+      "implement a provider-neutral secure generator for independent high-entropy single-use recovery-code material",
+      "implement irreversible verifier encoding and verification behind a bounded provider contract compatible with the published opaque persistence boundary",
+      "add deterministic provider-contract, malformed-input, non-plaintext/non-reversible-output, secret-leakage, and bounded traceability tests"
     ],
     "exclude": [
-      "any file or implementation change, scope expansion, merge, or history rewrite",
-      "deploy, production operation, credentials, or production remote access",
-      "generation or cryptographic selection, service/API/UI/MFA/session integration, canonical changes, or policy invention"
+      "persistence or migration changes, presentation or regeneration orchestration, and lifecycle consumption integration",
+      "rate limiting, enumeration handling, session revocation, MFA, API, UI, administrative or emergency recovery, and bootstrap",
+      "production deployment, credentials, remote access, canonical changes, business or security policy invention, and scope expansion"
     ],
     "risk_class": "high",
     "status": "approved_ready",
@@ -42,7 +56,7 @@
       "SEC-075",
       "DL-058"
     ],
-    "next_action": "In a publication-only attempt, stage exactly the six reviewed paths, verify the staged set and canonical exclusions, commit once on implementation/foundation, push only that branch, and verify the remote result without requesting redundant permission."
+    "next_action": "Dispatch the approved-ready Phase 2L Recovery-Code Cryptographic Provider Foundation through model-free preflight."
   },
   "reconciliation": {
     "status": "passed",
@@ -54,30 +68,17 @@
       "docs/008_SECURITY_MODEL.md: SEC-071 and SEC-075",
       "docs/010_DECISION_LOG.md: DL-058"
     ],
-    "touched_areas": [
-      "additive recovery-code set and individual verifier persistence",
-      "independent UUID identity and immutable creation/completed-lifecycle provenance",
-      "consumption and invalidation timestamps with deterministic tuple and time constraints",
-      "exact runtime column privileges and bounded validator execution",
-      "forward-only migration behavior and real PostgreSQL tests",
-      "traceability and compact ops state"
-    ],
     "evidence": [
-      "additive recovery_code_sets and recovery_codes tables preserve actor/set/code identities, opaque verifier fields, lifecycle timestamps, and non-secret provenance",
-      "database triggers prevent identity, verifier material, creation provenance, and completed lifecycle evidence from being rewritten",
-      "exact ACL comparison and a real runtime insertion prove bounded create/read/lifecycle authority and the validator grant while denying delete, truncate, verifier update, and trigger-function execution",
-      "review repaired a missing runtime validator execute grant that otherwise prevented constrained recovery-code inserts",
-      "independent publication review found no remaining concrete security concern, logic error, boundary violation, or blocking test gap",
-      "constraint and traceability wording does not claim that database syntax alone proves cryptographic non-reversibility and selects no algorithm or library",
-      "make format, make format-check, make lint, make typecheck, make test, make build, make database-test, and make automation-test passed",
-      "backend tests passed 142 with 51 expected dedicated-gate skips; frontend tests passed 3; the dedicated PostgreSQL gate passed 51",
-      "deployment configuration validation, frontend and backend dependency audits, traceability audit, JSON validation, and diff checks passed",
-      "exactly six Phase 2K paths are changed; canonical documents are unchanged",
-      "no generation or cryptographic selection, plaintext/reversible-code handling, service/API/UI/MFA/session integration, administrative recovery, bootstrap, deployment, credentials, remote access, canonical, business, financial, role, capability, or policy change was made"
+      "Hermes independently reviewed the exact six-path Phase 2K tranche and found no remaining blocker",
+      "supervisor format, lint, typecheck, test, build, database, deployment, traceability, dependency, scope, secret, and automation gates passed",
+      "backend tests passed 142 with 51 expected dedicated-gate skips; frontend tests passed 3; PostgreSQL passed 51",
+      "canonical documents remained unchanged and the reviewed Phase 2K exclusions were preserved",
+      "local, upstream, and remote SHA matched the published Phase 2K commit",
+      "GitHub Actions run 32067108466 passed backend, frontend, dependency-security, and PostgreSQL jobs"
     ]
   },
-  "next_action": "Run the authorized publication-only candidate: stage exactly the six reviewed paths, verify the staged set and canonical exclusions, create one bounded commit on implementation/foundation, push only that branch, and verify the remote result.",
-  "idle_reason": "Phase 2K is complete_uncommitted, independently reviewed, and approved_ready for the separately bounded publication-only attempt.",
+  "next_action": "Dispatch the approved-ready Phase 2L Recovery-Code Cryptographic Provider Foundation through model-free preflight.",
+  "idle_reason": null,
   "owner_action": "none",
   "blockers": [],
   "repair": {
