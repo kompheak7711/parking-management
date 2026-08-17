@@ -3,32 +3,32 @@
   "phase": "Phase 2D",
   "tranche": "local human-account persistence",
   "task": "Add the bounded DB-AUTH-001 local human-account persistence foundation",
-  "status": "approved_ready",
+  "status": "complete_uncommitted",
   "active_cycle": "phase-2d-local-human-account-persistence",
   "branch": "implementation/foundation",
-  "commit": "7c6f728860dc4c3f15bc0576e56777b989630de2",
-  "timestamp": "2026-08-17T13:22:00Z",
+  "commit": "c8be1db18425cefbd6530eab2181f2c46ff04391",
+  "timestamp": "2026-08-17T13:39:10Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
     "basis": "ops/QUEUE.md durable authorization for bounded remaining v1 application tranches; no protected production operation or unresolved policy is included",
-    "planning_only_cycle_completed": true
+    "planning_only_cycle_completed": true,
+    "implementation_started": true,
+    "implementation_completed": true
   },
   "next_candidate": {
-    "task": "Create one forward-only PostgreSQL migration for DB-AUTH-001 user_accounts storage with focused real-PostgreSQL constraint, least-privilege, forward-migration, and traceability tests",
+    "task": "Create one forward-only PostgreSQL migration for bounded DB-AUTH-002 password-verifier encoding and metadata storage with focused real-PostgreSQL constraint, least-privilege, forward-migration, and traceability tests",
     "include": [
-      "immutable UUID actor identity",
-      "transactionally unique normalized username",
-      "display and audit identity",
-      "account lifecycle state",
-      "MFA-policy class separate from role/capability authority",
-      "timestamps and provenance",
-      "least-privilege runtime access"
+      "salted adaptive verifier encoding only",
+      "algorithm and work-factor metadata",
+      "credential lifecycle timestamps and audit provenance",
+      "least-privilege runtime access",
+      "real-PostgreSQL forward-only migration and constraint tests"
     ],
     "exclude": [
-      "password verifier storage or hashing dependency",
+      "hashing-library selection, verifier generation, or verifier checking",
       "login, account, session, MFA, recovery, or bootstrap API/UI",
-      "MFA verifier or recovery-code state",
+      "rate limiting, MFA verifier, or recovery-code state",
       "session persistence or cookies",
       "credentials, remote access, and production operations",
       "canonical document changes"
@@ -36,48 +36,36 @@
     "risk_class": "high",
     "status": "approved_ready",
     "authorities": [
-      "PR-CAP-009",
-      "DB-AUTH-001",
-      "TEST-108",
-      "SEC-009",
-      "SEC-010",
-      "SEC-014",
-      "SEC-069",
+      "DB-AUTH-002",
       "DL-055"
     ]
   },
   "reconciliation": {
     "status": "passed",
     "routed_sections": [
-      "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-009",
-      "docs/004_DATABASE_MODEL.md: DB-AUTH-001 through DB-AUTH-005",
-      "docs/005_API_SPECIFICATION.md: API-079 and API-096 through API-100",
-      "docs/006_UI_SPECIFICATION.md: UI-092 and UI-109 through UI-113",
-      "docs/007_TESTING_STRATEGY.md: TEST-108 and TEST-128 through TEST-135",
-      "docs/008_SECURITY_MODEL.md: SEC-009 through SEC-018 and SEC-071 through SEC-075",
-      "docs/009_DEPLOYMENT_ARCHITECTURE.md: DEPLOY-068 through DEPLOY-072",
-      "docs/010_DECISION_LOG.md: DL-055 through DL-059"
+      "docs/004_DATABASE_MODEL.md: DB-AUTH-001",
+      "docs/007_TESTING_STRATEGY.md: TEST-108 unique-account enforcement",
+      "docs/008_SECURITY_MODEL.md: SEC-009, SEC-010, SEC-014, and SEC-069",
+      "docs/010_DECISION_LOG.md: DL-055 and DL-056"
     ],
-    "sequence": [
-      "local account persistence",
-      "password credential verification and login rate/enumeration controls",
-      "durable browser sessions and revocation",
-      "MFA enrollment and challenge",
-      "recovery codes and authorized recovery",
-      "protected initial Owner CLI bootstrap",
-      "account administration and authentication UI"
+    "touched_areas": [
+      "one Alembic migration",
+      "real-PostgreSQL migration tests",
+      "traceability manifest",
+      "compact ops state"
     ],
     "evidence": [
-      "initial gate was clean on implementation/foundation with HEAD and upstream at 3e91fc7fc50814861cae2a905771fec124721016",
-      "only routed authentication sections and the existing actor, authorization, migration, migration-test, dependency, and traceability seams were inspected",
-      "the first candidate adds no credential handling, public authentication surface, production access, or new package",
-      "existing provider-neutral actor/capability and Property/object-scope boundaries remain required and unchanged",
-      "docs 001-010, application code, tests, credentials, and remote configuration were not edited"
+      "independent publication-readiness gate was on implementation/foundation with HEAD and upstream at c8be1db18425cefbd6530eab2181f2c46ff04391",
+      "independent DB-AUTH-001 and SEC-069 review found no in-scope implementation defect",
+      "make database-test passed 19 real-PostgreSQL tests and make automation-test passed",
+      "make test passed 58 backend tests with 19 database-gate skips and 3 frontend tests",
+      "make lint, make format-check, make typecheck, make build, JSON validation, git diff --check, and canonical-doc integrity passed",
+      "no docs/001-010, application API, dependency, credential, remote-access, or production-operation change"
     ]
   },
-  "next_action": "Implement the bounded DB-AUTH-001 local human-account persistence migration and focused real-PostgreSQL/traceability tests, independently verify every applicable gate, and commit/push only if all gates pass.",
-  "idle_reason": "none; the approved implementation candidate is ready for dispatch",
-  "owner_action": "none before the already-authorized bounded candidate; approve separately before any expansion or protected production operation",
+  "next_action": "Stage only backend/migrations/versions/20260817_02_user_accounts.py, backend/tests/test_migrations.py, ops/NOW.md, ops/QUEUE.md, ops/STATE.json, and ops/traceability.json; commit and push that publication-ready DB-AUTH-001 tranche; verify the published commit and remote branch; then dispatch the approved bounded DB-AUTH-002 persistence candidate in a separate attempt.",
+  "idle_reason": "this single approved Hermes attempt ended at publication readiness and expressly excluded commit, push, and DB-AUTH-002",
+  "owner_action": "none; standing authorization covers publication and the bounded next candidate, while this attempt's explicit boundary prohibited performing either",
   "blockers": [],
   "secrets_present": false
 }

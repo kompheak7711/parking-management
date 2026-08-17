@@ -425,6 +425,94 @@
       "notes": "The identity scope rejects an object whose authoritative Property ID differs from the application's single Property ID."
     },
     {
+      "test_id": "test_user_accounts_storage_has_bounded_identity_and_policy_columns",
+      "upstream_ids": ["DB-AUTH-001"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The real PostgreSQL schema stores UUID actor identity, normalized username, display and audit identity, lifecycle and MFA-policy classes, timestamps, and provenance without credential, role, capability, MFA-verifier, recovery, or session columns."
+    },
+    {
+      "test_id": "test_user_accounts_reject_duplicate_normalized_username_transactionally",
+      "upstream_ids": ["DB-AUTH-001", "TEST-108", "SEC-009"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "PostgreSQL rejects a committed duplicate normalized username through a transactional unique constraint."
+    },
+    {
+      "test_id": "test_user_accounts_reject_username_that_is_not_normalized",
+      "upstream_ids": ["DB-AUTH-001", "TEST-108", "SEC-009"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The account table rejects usernames that are not trimmed, lowercase normalized values."
+    },
+    {
+      "test_id": "test_user_accounts_reject_actor_identity_changes",
+      "upstream_ids": ["DB-AUTH-001", "SEC-009", "SEC-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A PostgreSQL trigger prevents mutation of an established UUID actor identity."
+    },
+    {
+      "test_id": "test_user_accounts_reject_unknown_lifecycle_state",
+      "upstream_ids": ["DB-AUTH-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The account lifecycle is explicit and rejects values outside active or disabled."
+    },
+    {
+      "test_id": "test_user_accounts_reject_unknown_mfa_policy_class",
+      "upstream_ids": ["DB-AUTH-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "MFA policy is stored as required or optional rather than as a role or capability grant."
+    },
+    {
+      "test_id": "test_user_accounts_reject_blank_identity_or_provenance",
+      "upstream_ids": ["DB-AUTH-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Display identity, audit identity, and creation provenance cannot be blank."
+    },
+    {
+      "test_id": "test_runtime_has_only_bounded_user_account_data_privileges",
+      "upstream_ids": ["DB-AUTH-001"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The runtime identity can read account identity data but has no insert, update, delete, truncate, or column-write privilege before audited account operations exist."
+    },
+    {
+      "test_id": "test_user_account_updates_advance_the_managed_timestamp",
+      "upstream_ids": ["DB-AUTH-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "PostgreSQL initializes account timestamps together and advances the managed update timestamp on change."
+    },
+    {
+      "test_id": "test_user_accounts_migration_advances_the_previous_revision_without_data_loss",
+      "upstream_ids": ["DB-AUTH-001"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A real PostgreSQL database advances from the prior reviewed revision to the account-storage head while retaining baseline data."
+    },
+    {
+      "test_id": "test_user_accounts_migration_refuses_destructive_downgrade",
+      "upstream_ids": ["DB-AUTH-001"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The migration refuses destructive downgrade and leaves both the account table and Alembic history at the reviewed head."
+    },
+    {
       "test_id": "test_traceability_manifest_covers_executable_tests",
       "upstream_ids": ["API-001"],
       "test_level": "operational",

@@ -9,13 +9,16 @@
 6. Phase 2C single-Property identity scope primitive — completed and published.
 7. Authentication/account/session plan reconciliation to authoritative docs 003-010 and
    `DL-055` through `DL-059` — completed as a bounded read-only tranche.
-8. Phase 2D local human-account persistence foundation — exact next candidate: add one
-   forward-only PostgreSQL migration for `DB-AUTH-001` and focused real-PostgreSQL and
-   traceability tests. Preserve the provider-neutral actor/capability seam and exclude
-   password verifiers, login/API/UI, sessions, MFA/recovery/bootstrap, credentials,
-   remote access, and canonical-doc changes. High risk; approved and ready under the
-   durable authorization below.
-9. Design backup/restore/human administration database identities and production
+8. Phase 2D local human-account persistence foundation — completed and independently
+   verified locally; intentionally uncommitted and unpublished.
+9. Phase 2D password-credential persistence foundation — exact next candidate: add one
+   forward-only PostgreSQL migration for bounded `DB-AUTH-002` salted adaptive verifier
+   encoding and metadata storage with focused real-PostgreSQL and traceability tests.
+   Exclude hashing-library selection or use, login/API/UI, rate limiting, sessions,
+   MFA/recovery/bootstrap, credentials, remote access, and canonical-doc changes. High
+   risk; approved and ready under the durable authorization below after the current
+   publication-ready uncommitted tranche is published.
+10. Design backup/restore/human administration database identities and production
    secret provisioning only in a separately authorized deployment tranche
    (SEC-045/047/049/050).
 

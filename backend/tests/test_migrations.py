@@ -120,6 +120,179 @@ def test_upgrade_from_empty_database_reaches_reviewed_head() -> None:
             assert cursor.fetchone() == ("phase-1c",)
 
 
+def test_user_accounts_storage_has_bounded_identity_and_policy_columns() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT column_name, data_type, is_nullable
+                FROM information_schema.columns
+                WHERE table_schema = 'app' AND table_name = 'user_accounts'
+                ORDER BY ordinal_position
+                """
+            )
+
+            assert cursor.fetchall() == [
+                ("actor_id", "uuid", "NO"),
+                ("normalized_username", "text", "NO"),
+                ("display_name", "text", "NO"),
+                ("audit_name", "text", "NO"),
+                ("lifecycle_state", "text", "NO"),
+                ("mfa_policy_class", "text", "NO"),
+                ("created_at", "timestamp with time zone", "NO"),
+                ("updated_at", "timestamp with time zone", "NO"),
+                ("created_by_actor_id", "uuid", "YES"),
+                ("provenance", "text", "NO"),
+            ]
+
+
+def test_user_accounts_reject_duplicate_normalized_username_transactionally() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    first_actor_id = uuid.uuid4()
+    second_actor_id = uuid.uuid4()
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, 'operator', 'Operator One', 'operator-one',
+                          'active', 'optional', 'authorized-account-creation')
+                """,
+                (first_actor_id,),
+            )
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.UniqueViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, 'operator', 'Operator Two', 'operator-two',
+                              'active', 'optional', 'authorized-account-creation')
+                    """,
+                    (second_actor_id,),
+                )
+
+
+def test_user_accounts_reject_username_that_is_not_normalized() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with pytest.raises(psycopg.errors.CheckViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, ' Operator ', 'Operator', 'operator',
+                              'active', 'optional', 'authorized-account-creation')
+                    """,
+                    (uuid.uuid4(),),
+                )
+
+
+def test_user_accounts_reject_actor_identity_changes() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    actor_id = uuid.uuid4()
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, 'immutable-actor', 'Immutable Actor', 'immutable-actor',
+                          'active', 'required', 'authorized-account-creation')
+                """,
+                (actor_id,),
+            )
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE app.user_accounts SET actor_id = %s WHERE actor_id = %s",
+                    (uuid.uuid4(), actor_id),
+                )
+
+
+def test_user_accounts_reject_unknown_lifecycle_state() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with pytest.raises(psycopg.errors.CheckViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, 'unknown-lifecycle', 'Unknown Lifecycle',
+                              'unknown-lifecycle', 'deleted', 'optional',
+                              'authorized-account-creation')
+                    """,
+                    (uuid.uuid4(),),
+                )
+
+
+def test_user_accounts_reject_unknown_mfa_policy_class() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with pytest.raises(psycopg.errors.CheckViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, 'unknown-mfa-policy', 'Unknown MFA Policy',
+                              'unknown-mfa-policy', 'active', 'owner',
+                              'authorized-account-creation')
+                    """,
+                    (uuid.uuid4(),),
+                )
+
+
+@pytest.mark.parametrize("blank_column", ["display_name", "audit_name", "provenance"])
+def test_user_accounts_reject_blank_identity_or_provenance(blank_column: str) -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    values = {
+        "display_name": "Display Name",
+        "audit_name": "audit-name",
+        "provenance": "authorized-account-creation",
+    }
+    values[blank_column] = "   "
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with pytest.raises(psycopg.errors.CheckViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, %s, %s, %s, 'active', 'optional', %s)
+                    """,
+                    (
+                        uuid.uuid4(),
+                        f"blank-{blank_column.replace('_', '-')}",
+                        values["display_name"],
+                        values["audit_name"],
+                        values["provenance"],
+                    ),
+                )
+
+
 def test_runtime_identity_is_distinct_and_cannot_change_schema() -> None:
     assert _run_alembic("upgrade", "head").returncode == 0
 
@@ -129,6 +302,90 @@ def test_runtime_identity_is_distinct_and_cannot_change_schema() -> None:
             assert cursor.fetchone() == ("phase-1c",)
             with pytest.raises(psycopg.errors.InsufficientPrivilege):
                 cursor.execute("CREATE TABLE app.forbidden_runtime_ddl (id integer)")
+
+
+def test_runtime_has_only_bounded_user_account_data_privileges() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(RUNTIME_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT actor_id FROM app.user_accounts")
+            assert all(isinstance(row[0], uuid.UUID) for row in cursor.fetchall())
+
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, 'runtime-operator', 'Runtime Operator',
+                              'runtime-operator', 'active', 'optional',
+                              'authorized-account-creation')
+                    """,
+                    (uuid.uuid4(),),
+                )
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    has_table_privilege('prm_runtime', 'app.user_accounts', 'SELECT'),
+                    has_table_privilege('prm_runtime', 'app.user_accounts', 'INSERT'),
+                    has_table_privilege('prm_runtime', 'app.user_accounts', 'UPDATE'),
+                    has_table_privilege('prm_runtime', 'app.user_accounts', 'DELETE'),
+                    has_table_privilege('prm_runtime', 'app.user_accounts', 'TRUNCATE'),
+                    bool_or(has_column_privilege(
+                        'prm_runtime', 'app.user_accounts', column_name, 'INSERT'
+                    )),
+                    bool_or(has_column_privilege(
+                        'prm_runtime', 'app.user_accounts', column_name, 'UPDATE'
+                    ))
+                FROM information_schema.columns
+                WHERE table_schema = 'app' AND table_name = 'user_accounts'
+                """
+            )
+            assert cursor.fetchone() == (True, False, False, False, False, False, False)
+
+
+def test_user_account_updates_advance_the_managed_timestamp() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    actor_id = uuid.uuid4()
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, 'timestamped-actor', 'Timestamped Actor',
+                          'timestamped-actor', 'active', 'optional',
+                          'authorized-account-creation')
+                RETURNING created_at, updated_at
+                """,
+                (actor_id,),
+            )
+            inserted_timestamps = cursor.fetchone()
+            assert inserted_timestamps is not None
+            created_at, initial_updated_at = inserted_timestamps
+            cursor.execute("SELECT pg_sleep(0.01)")
+            cursor.execute(
+                """
+                UPDATE app.user_accounts
+                SET display_name = 'Updated Timestamped Actor'
+                WHERE actor_id = %s
+                RETURNING updated_at
+                """,
+                (actor_id,),
+            )
+            updated_timestamp = cursor.fetchone()
+            assert updated_timestamp is not None
+            updated_at = updated_timestamp[0]
+
+    assert initial_updated_at == created_at
+    assert updated_at > initial_updated_at
 
 
 def test_readiness_succeeds_with_managed_runtime_database() -> None:
@@ -184,6 +441,61 @@ def test_failed_forward_migration_preserves_baseline_and_history(tmp_path: Path)
             assert cursor.fetchone() == ("app.schema_baseline",)
             cursor.execute("SELECT to_regclass('app.must_rollback')")
             assert cursor.fetchone() == (None,)
+
+
+def test_user_accounts_migration_advances_the_previous_revision_without_data_loss() -> None:
+    database = f"prm_forward_{uuid.uuid4().hex}"
+    admin_url = _required_url(ADMIN_URL_ENV)
+    original_migration_url = _required_url(MIGRATION_URL_ENV)
+    with psycopg.connect(admin_url, autocommit=True) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                sql.SQL("CREATE DATABASE {} OWNER prm_migrator").format(sql.Identifier(database))
+            )
+
+    os.environ[MIGRATION_URL_ENV] = _url_with_database(original_migration_url, database)
+    try:
+        baseline_result = _run_alembic("upgrade", "20260813_01")
+        assert baseline_result.returncode == 0, baseline_result.stderr
+        with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT baseline_key FROM app.schema_baseline")
+                assert cursor.fetchone() == ("phase-1c",)
+                cursor.execute("SELECT to_regclass('app.user_accounts')")
+                assert cursor.fetchone() == (None,)
+
+        head_result = _run_alembic("upgrade", "head")
+        assert head_result.returncode == 0, head_result.stderr
+        with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT baseline_key FROM app.schema_baseline")
+                assert cursor.fetchone() == ("phase-1c",)
+                cursor.execute("SELECT to_regclass('app.user_accounts')")
+                assert cursor.fetchone() == ("app.user_accounts",)
+    finally:
+        os.environ[MIGRATION_URL_ENV] = original_migration_url
+        with psycopg.connect(admin_url, autocommit=True) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s",
+                    (database,),
+                )
+                cursor.execute(sql.SQL("DROP DATABASE {}").format(sql.Identifier(database)))
+
+
+def test_user_accounts_migration_refuses_destructive_downgrade() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    result = _run_alembic("downgrade", "20260813_01")
+
+    assert result.returncode != 0
+    assert "DB-AUTH-001 migration is forward-only" in result.stderr
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT to_regclass('app.user_accounts')")
+            assert cursor.fetchone() == ("app.user_accounts",)
+            cursor.execute("SELECT version_num FROM alembic_version")
+            assert cursor.fetchone() == ("20260817_02",)
 
 
 def test_baseline_constraint_rejects_invalid_additive_row_without_data_loss() -> None:
