@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "phase": "Authentication foundation",
+  "phase": "Phase 2D",
   "tranche": "local human-account persistence",
   "task": "Add the bounded DB-AUTH-001 local human-account persistence foundation",
   "status": "approved_ready",
-  "active_cycle": null,
+  "active_cycle": "phase-2d-local-human-account-persistence",
   "branch": "implementation/foundation",
-  "commit": "3e91fc7fc50814861cae2a905771fec124721016",
-  "timestamp": "2026-08-17T10:11:28Z",
+  "commit": "7c6f728860dc4c3f15bc0576e56777b989630de2",
+  "timestamp": "2026-08-17T13:22:00Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
@@ -75,7 +75,8 @@
       "docs 001-010, application code, tests, credentials, and remote configuration were not edited"
     ]
   },
-  "idle_reason": "The bounded read-only planning tranche is complete; the exact implementation candidate has not started.",
+  "next_action": "Implement the bounded DB-AUTH-001 local human-account persistence migration and focused real-PostgreSQL/traceability tests, independently verify every applicable gate, and commit/push only if all gates pass.",
+  "idle_reason": "none; the approved implementation candidate is ready for dispatch",
   "owner_action": "none before the already-authorized bounded candidate; approve separately before any expansion or protected production operation",
   "blockers": [],
   "secrets_present": false
