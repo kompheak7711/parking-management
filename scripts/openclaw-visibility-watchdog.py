@@ -93,7 +93,12 @@ def effective_next_action(state: dict[str, object]) -> str:
     approval = state.get("approval") or {}
     candidate = state.get("next_candidate") or {}
     if (
-        status in {"complete_uncommitted", "complete_unpublished"}
+        status
+        in {
+            "complete_uncommitted",
+            "complete_unpublished",
+            "implemented_awaiting_supervisor_review",
+        }
         and isinstance(approval, dict)
         and approval.get("status") == "approved_ready"
         and not state.get("blockers")

@@ -101,6 +101,19 @@ completed_preflight="$(PROPERTY_RENTAL_REPO="$completed_repo" "$completed_repo/s
 [ "$(printf '%s' "$completed_preflight" | jq -r '.state_issue')" = completed_tranche_publication_action_enforced ]
 printf '%s' "$completed_preflight" | jq -e '.next_action | contains("standing authorization")' >/dev/null
 
+make_repo completed_status_alias high 'no later candidate selected'
+alias_repo="$test_root/completed_status_alias/repo"
+jq '.status="implemented_awaiting_supervisor_review"
+  | .approval={status:"approved_ready"}
+  | .next_action="Wait for supervisor review."' \
+  "$alias_repo/ops/STATE.json" >"$alias_repo/ops/STATE.json.new"
+mv "$alias_repo/ops/STATE.json.new" "$alias_repo/ops/STATE.json"
+alias_preflight="$(PROPERTY_RENTAL_REPO="$alias_repo" "$alias_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$alias_preflight" | jq -r '.actionable')" = true ]
+[ "$(printf '%s' "$alias_preflight" | jq -r '.normalized')" = true ]
+[ "$(printf '%s' "$alias_preflight" | jq -r '.state_issue')" = completed_status_alias_publication_enforced ]
+printf '%s' "$alias_preflight" | jq -e '.next_action | contains("complete_uncommitted")' >/dev/null
+
 make_repo automatic_repair high 'original approved task'
 repair_repo="$test_root/automatic_repair/repo"
 jq '.status="not_verified"

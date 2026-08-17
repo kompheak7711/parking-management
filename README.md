@@ -179,6 +179,9 @@ from its already-approved task instead of silently idling. A verified
 authorization is routed to independent publication verification and cannot demand a
 redundant owner commit/push instruction. These cases are regression-tested by
 `make automation-test` and any future repair must add or extend a deterministic test.
+Implementers must record an uncommitted completed tranche as `complete_uncommitted`.
+For recovery from the previously emitted `implemented_awaiting_supervisor_review` alias,
+preflight routes the same mandatory publication action instead of silently idling.
 Published state with an explicitly approved next candidate is also actionable: preflight
 routes that candidate immediately and the task packet takes its phase and risk metadata,
 so publication does not create an unnecessary approval or scheduler wait.

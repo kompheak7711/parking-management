@@ -18,6 +18,10 @@
    `SEC-045/047/049/050` — owner-authorized implementation is independently verified for
    publication. It includes no production value, provisioning operation, deployment, or
    remote-access operation; those remain outside this tranche.
+11. Phase 2E password-hashing and verification service against `DB-AUTH-002` — implemented and
+    locally verified without publication; awaiting independent supervisor review and publication.
+    A compact-state completion-status enforcement repair is included with deterministic coverage.
+    No subsequent implementation candidate is selected or authorized in compact state.
 
 Remaining v1 application tranches are authorized when bounded by canonical documents
 001-010 and all publication gates; unresolved policy and protected production work still

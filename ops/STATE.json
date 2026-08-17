@@ -1,86 +1,69 @@
 {
   "schema_version": 1,
-  "phase": "Phase 2D",
-  "tranche": "deployment identity and protected-source scaffolding",
-  "task": "Verify and publish the bounded SEC-045/047/049/050 scaffolding and native-Linux PostgreSQL repair",
-  "status": "published",
-  "active_cycle": "sec-045-047-049-050-postgresql-ci-repair",
+  "phase": "Phase 2E",
+  "tranche": "password hashing and verification service",
+  "task": "Implement the bounded DB-AUTH-002 password-hashing and verification service",
+  "status": "complete_uncommitted",
+  "active_cycle": "db-auth-002-password-service",
   "branch": "implementation/foundation",
-  "commit": "3306e94af555845873565a864fb71657fbaf8390",
-  "timestamp": "2026-08-17T16:15:56Z",
+  "commit": "2c1bb28e8c5e50d3301a40ae6cd2ba69319a1b84",
+  "timestamp": "2026-08-17T16:31:19Z",
   "risk_class": "high",
   "approval": {
-    "status": "approved_complete",
-    "basis": "owner-authorized bounded repair of the PostgreSQL failure in GitHub Actions run 32040242139",
+    "status": "approved_ready",
+    "basis": "owner-authorized model-free preflight actionable Phase 2E bounded candidate",
     "implementation_started": true,
     "implementation_completed": true,
     "publication_authorized_in_this_attempt": true
   },
   "next_candidate": {
-    "phase": "Phase 2E",
-    "task": "Implement a bounded password-hashing and verification service against DB-AUTH-002, including current secure adaptive-hashing dependency selection, hash, verify, rehash-needed behavior, secret-free failure handling, focused tests, dependency audit, and traceability",
-    "include": [
-      "current secure salted adaptive password hashing",
-      "verification against the existing algorithm-neutral DB-AUTH-002 encoding",
-      "rehash-needed detection for approved parameter upgrades",
-      "secret-free deterministic tests",
-      "locked dependency and vulnerability audit",
-      "traceability to DB-AUTH-002, SEC-011, TEST-108, and DL-055"
-    ],
-    "exclude": [
-      "login, account-management, session, MFA, recovery, or bootstrap API/UI",
-      "login rate limiting or account-enumeration response design",
-      "production credentials, secret provisioning, deployment, or remote access",
-      "database schema or canonical document changes",
-      "business, financial, authorization, or role-policy changes"
-    ],
+    "phase": "unselected",
+    "task": "No subsequent implementation candidate has been selected or authorized.",
     "risk_class": "high",
-    "status": "approved_ready",
-    "authorities": [
-      "DB-AUTH-002",
-      "TEST-108",
-      "SEC-011",
-      "DL-055"
-    ]
+    "status": "not_approved",
+    "authorities": []
   },
   "reconciliation": {
     "status": "passed",
     "routed_sections": [
-      "docs/007_TESTING_STRATEGY.md: TEST-110, TEST-111, TEST-117, TEST-118",
-      "docs/008_SECURITY_MODEL.md: SEC-045, SEC-047, SEC-049, SEC-050",
-      "docs/009_DEPLOYMENT_ARCHITECTURE.md: DEPLOY-017, DEPLOY-018, DEPLOY-019, DEPLOY-062, DEPLOY-065, DEPLOY-066"
+      "docs/004_DATABASE_MODEL.md: DB-AUTH-002",
+      "docs/007_TESTING_STRATEGY.md: TEST-108",
+      "docs/008_SECURITY_MODEL.md: SEC-011",
+      "docs/010_DECISION_LOG.md: DL-055"
     ],
     "touched_areas": [
-      "portable permissions for six isolated Compose secret source files",
-      "redacted PostgreSQL startup diagnostics before isolated project cleanup",
-      "deterministic native-Linux permission and failure-diagnostic regressions",
+      "Argon2id password hashing, verification, and rehash-needed service",
+      "focused deterministic password-security tests",
+      "locked backend dependency and vulnerability audit",
       "traceability and compact ops state"
     ],
     "evidence": [
-      "GitHub job 95420712142 ran Ubuntu 24.04 with Docker Compose 2.38.2 and exited one second after PostgreSQL started",
-      "the wrapper created all source files as 0600 under umask 077; Compose file-backed secrets use bind mounts without uid/gid/mode remapping on native Linux, while the official image runs custom init scripts as uid 999 after gosu",
-      "the five custom identity sources were therefore unreadable on the native-Linux runner; local Docker Desktop ownership mapping masked the defect",
-      "the regression permission harness failed with exit 17 before chmod 0444 and passed after the correction while retaining a 0700 temporary directory",
-      "the diagnostic regression failed because calls were up/down only, then passed with ordered up/logs/down calls and all generated 64-hex passwords redacted",
+      "argon2-cffi 25.1.0 selected and locked with the Argon2id RFC 9106 low-memory profile",
+      "7 focused password-security and traceability tests passed",
+      "make test passed 74 backend tests with 38 expected dedicated-gate skips and 3 frontend tests",
       "make database-test passed 38 real-PostgreSQL tests",
-      "make test passed 69 backend tests with 38 dedicated database-gate skips and 3 frontend tests",
-      "make format, make format-check, make lint, make typecheck, and make build passed",
-      "make automation-test and TEST-118 rule coverage audit passed",
-      "locked backend runtime/development pip-audit and frontend npm audit reported no known vulnerabilities",
-      "deployment-config, Compose-render, client-bundle protected-source, changed-file secret/argument, JSON, git diff --check, migration-head, and canonical-doc integrity checks passed",
-      "focused review confirmed six protected-file mounts, five distinct non-superuser operational roles, no privilege changes, no secret-bearing command arguments, and redaction before diagnostic output",
-      "independent supervisor verification passed all local, PostgreSQL, security, traceability, dependency, canonical, Compose, shell, JSON, secret-signature, quality, and build gates on base a29e8d6",
-      "shellcheck unavailable; POSIX sh -n passed for changed shell scripts",
-      "no docs/001-010, dependency, schema migration, production credential/key/value, secret-store/remote access, destructive operation, commit, or push",
-      "a separate concurrent process published this bounded repair as 3306e94af555845873565a864fb71657fbaf8390 during the required Hermes review",
-      "independent local verification on published HEAD 3306e94 passed format-check, lint, typecheck, test, build, deployment-config-check, database-test, automation-test, frontend audit, JSON, shell syntax, and diff checks",
-      "local HEAD, upstream tracking ref, and git ls-remote all equal 3306e94af555845873565a864fb71657fbaf8390",
-      "GitHub Actions CI run 32042322805 completed successfully for exact head SHA 3306e94af555845873565a864fb71657fbaf8390 via the workflow-specific runs endpoint"
+      "make format, make format-check, make lint, make typecheck, make build, and make automation-test passed",
+      "uv lock --check passed and locked backend runtime/development pip-audit scans reported no known vulnerabilities",
+      "frontend npm audit reported no vulnerabilities; JSON and git diff checks passed",
+      "automation root cause: Hermes emitted implemented_awaiting_supervisor_review, which was outside the actionable status vocabulary and made model-free preflight return false despite mandatory publication",
+      "preflight now normalizes the legacy completion alias; the prompt, README, watchdog, daily report, and deterministic routing test enforce complete_uncommitted publication semantics",
+      "docs/001-010, migrations/schema, login/API/UI, sessions, MFA, recovery, bootstrap, production secrets/deployment/remote access, role policy, and business/financial behavior are unchanged",
+      "no commit or push occurred"
     ]
   },
-  "next_action": "Implement the approved bounded Phase 2E password-hashing and verification service candidate.",
-  "idle_reason": "Phase 2D is published; the approved Phase 2E candidate is actionable and should dispatch immediately.",
+  "next_action": "Publish the independently verified bounded Phase 2E tranche and focused completion-status automation repair, verify GitHub Actions and local/upstream/remote synchronization, then reconcile compact state to published HEAD without dispatching an unapproved candidate.",
+  "idle_reason": "Implementation and local verification are complete; independent supervisor review and publication are required before any later candidate is selected.",
   "owner_action": "none",
   "blockers": [],
+  "repair": {
+    "failure": "Hermes recorded a non-actionable invented completion status that stranded mandatory publication.",
+    "scope_preserved": true,
+    "attempts": 1,
+    "max_attempts": 2,
+    "requires_owner_decision": false,
+    "suspected_secret": false,
+    "scope_expansion": false,
+    "protected_operation": false
+  },
   "secrets_present": false
 }

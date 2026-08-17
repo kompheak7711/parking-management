@@ -120,6 +120,7 @@ def main() -> None:
         "in_progress",
         "complete_uncommitted",
         "complete_unpublished",
+        "implemented_awaiting_supervisor_review",
         "failed",
         "not_verified",
         "discrepancy",

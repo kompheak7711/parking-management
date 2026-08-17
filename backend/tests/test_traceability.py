@@ -130,6 +130,26 @@ def test_password_credential_requirements_have_implemented_traceability() -> Non
             "TEST-111",
         },
         "test_password_credential_requirements_have_implemented_traceability": {"TEST-002"},
+        "test_hash_password_returns_salted_argon2id_credential_material": {
+            "TEST-108",
+            "SEC-011",
+            "DL-055",
+        },
+        "test_verify_password_accepts_current_encoding_without_rehash": {
+            "TEST-108",
+            "SEC-011",
+            "DL-055",
+        },
+        "test_verify_password_fails_closed_without_exposing_secret": {
+            "TEST-108",
+            "SEC-011",
+            "DL-055",
+        },
+        "test_verify_password_marks_valid_older_work_factor_for_rehash": {
+            "TEST-108",
+            "SEC-011",
+            "DL-055",
+        },
     }
 
     for test_id, references in expected_references.items():

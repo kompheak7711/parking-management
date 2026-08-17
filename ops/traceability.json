@@ -591,6 +591,38 @@
       "notes": "The routed credential-storage, testing, security, and approved-decision identifiers remain mapped to implemented focused tests."
     },
     {
+      "test_id": "test_hash_password_returns_salted_argon2id_credential_material",
+      "upstream_ids": ["DB-AUTH-002", "TEST-108", "SEC-011", "DL-055"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_password_security.py",
+      "status": "implemented",
+      "notes": "The service produces distinct Argon2id encodings for the same password with explicit current adaptive work-factor metadata and no plaintext persistence."
+    },
+    {
+      "test_id": "test_verify_password_accepts_current_encoding_without_rehash",
+      "upstream_ids": ["DB-AUTH-002", "TEST-108", "SEC-011", "DL-055"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_password_security.py",
+      "status": "implemented",
+      "notes": "A correct password verifies against current Argon2id credential material and reports that no policy upgrade is needed."
+    },
+    {
+      "test_id": "test_verify_password_fails_closed_without_exposing_secret",
+      "upstream_ids": ["DB-AUTH-002", "TEST-108", "SEC-011", "DL-055"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_password_security.py",
+      "status": "implemented",
+      "notes": "Incorrect passwords and malformed verifier material return the same secret-free invalid result without propagating credential-bearing exceptions."
+    },
+    {
+      "test_id": "test_verify_password_marks_valid_older_work_factor_for_rehash",
+      "upstream_ids": ["DB-AUTH-002", "TEST-108", "SEC-011", "DL-055"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_password_security.py",
+      "status": "implemented",
+      "notes": "A valid Argon2id encoding below the current approved policy verifies successfully while being marked for replacement with current parameters."
+    },
+    {
       "test_id": "test_traceability_manifest_covers_executable_tests",
       "upstream_ids": ["TEST-002"],
       "test_level": "operational",

@@ -1,36 +1,29 @@
-# Phase 2D deployment scaffolding — verified and published
+# Phase 2E password hashing and verification — awaiting supervisor review
 
-- Outcome: the bounded `SEC-045/047/049/050` deployment-identity and protected-source
-  scaffolding plus its native-Linux PostgreSQL repair are verified and published.
-- Root cause: `scripts/database-test.sh` generated all six Compose secret sources as `0600`.
-  File-backed Compose secrets are bind mounts without uid/gid/mode remapping on native Linux.
-  The official PostgreSQL image reads the standard admin source before privilege drop, but runs
-  custom init scripts as PostgreSQL uid 999; the other five sources were therefore unreadable.
-  Docker Desktop ownership mapping made the same files readable locally and masked the defect.
-- Repair: each source is now `0444` inside a private `0700` temporary directory. Compose still
-  mounts the sources read-only, cleanup removes the directory, and no role or grant changed.
-- Diagnostics: failed startup now emits container logs before cleanup through an in-memory
-  redactor that replaces all six generated passwords; no secret value enters command arguments.
-- Regression evidence: the native-Linux permission harness failed with exit 17 before the mode
-  correction and passed afterward. The failure-path harness initially observed only `up/down`;
-  it now verifies `up/logs/down`, a preserved exit status, and no emitted 64-hex password.
-- Verification: `make database-test` passed 38 real-PostgreSQL tests. `make test` passed 69
-  backend tests with 38 expected dedicated-gate skips and 3 frontend tests. Format, format-check,
-  lint, typecheck, build, automation, TEST-118, deployment-config, Compose render, client-bundle,
-  secret/argument scan, JSON, diff-check, migration-head, and canonical-integrity gates passed.
-- Dependency review: locked backend runtime/development `pip-audit` and frontend `npm audit`
-  found no known vulnerabilities. `shellcheck` was unavailable; POSIX `sh -n` passed.
-- Scope: five distinct non-superuser roles and six protected-file mounts remain intact.
-  `docs/001-010`, dependencies, migrations, production values, and remote configuration are
-  unchanged. No production credential, deployment, remote-access, or destructive operation occurred.
-- Publication: a concurrent process committed and pushed the five reviewed paths as `3306e94`
-  during the required Hermes review. Local HEAD, upstream, and remote branch all equal that SHA.
-- Independent review: all local, PostgreSQL, security, traceability, dependency, canonical,
-  Compose, shell, JSON, secret-signature, quality, build, and automation gates passed on `3306e94`.
-- Remote verification: GitHub Actions workflow `CI`, run `32042322805`, completed with
-  conclusion `success` for exact commit `3306e94af555845873565a864fb71657fbaf8390`.
+- Outcome: implemented the bounded `DB-AUTH-002` password service with `argon2-cffi` 25.1.0,
+  the Argon2id RFC 9106 low-memory profile, fresh salts, explicit work-factor metadata,
+  correct-password verification, fail-closed secret-free invalid results, and rehash-needed
+  detection for valid encodings below the current policy.
+- Focused evidence: 7 focused password-security and traceability tests passed. The hash test
+  proves distinct encodings for identical input; verification covers current, mismatched,
+  malformed, and older-work-factor encodings.
+- Verification: `make format`, `make format-check`, `make lint`, `make typecheck`, `make test`,
+  `make build`, `make database-test`, and `make automation-test` passed. Backend tests passed
+  74 with 38 expected dedicated-gate skips; frontend tests passed 3; the dedicated PostgreSQL
+  gate passed 38.
+- Dependency evidence: `uv lock --check` passed; locked runtime and development `pip-audit`
+  scans reported no known vulnerabilities; `npm audit` reported none.
+- Automation repair: Hermes emitted the non-actionable invented status
+  `implemented_awaiting_supervisor_review`, which stranded mandatory publication. Preflight now
+  normalizes that legacy alias, the prompt and owner-visible reporting use the same meaning,
+  README records the contract, and a deterministic routing regression passes. Compact state now
+  uses the required `complete_uncommitted` status; repair attempt 1 of 2 preserved scope.
+- Scope: only the password service, focused tests, backend dependency/lock, traceability, and
+  compact ops state changed. `docs/001-010`, migrations/schema, login/API/UI, sessions, MFA,
+  recovery, bootstrap, deployment/remote access, role policy, and business/financial behavior
+  are unchanged. No commit or push occurred.
 - Blockers: none.
-- Exact next candidate: bounded Phase 2E password-hashing and verification service against
-  existing `DB-AUTH-002`, excluding login/API/UI, sessions, MFA, recovery, bootstrap,
-  production secrets, deployment, remote access, and canonical-document changes.
-- Exact next action: dispatch the approved Phase 2E candidate immediately.
+- Exact next candidate: none selected or authorized after Phase 2E publication.
+- Exact next action: independently publish the verified Phase 2E tranche and focused automation
+  prevention repair, verify GitHub Actions and repository synchronization, then reconcile compact
+  state to published HEAD with no unapproved candidate dispatched.
