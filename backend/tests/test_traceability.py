@@ -288,3 +288,22 @@ def test_browser_session_lifetime_requirements_have_implemented_traceability() -
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert references <= set(entry["upstream_ids"])
+
+
+def test_administrative_recovery_requirements_have_implemented_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    routed_authorities = {"PR-CAP-009", "API-099", "TEST-130", "SEC-072", "SEC-075", "DL-058"}
+    expected_test_ids = {
+        "test_administrative_recovery_authorization_matrix_grants_only_owner_to_manager_or_staff",
+        "test_self_recovery_is_not_granted_for_any_account_class",
+        "test_unknown_actor_or_target_class_fails_closed",
+        "test_recovery_authorization_audit_evidence_is_bounded_and_secret_free",
+        "test_administrative_recovery_requirements_have_implemented_traceability",
+    }
+
+    for test_id in expected_test_ids:
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert routed_authorities <= set(entry["upstream_ids"])

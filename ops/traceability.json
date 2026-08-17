@@ -775,6 +775,46 @@
       "notes": "The bounded Phase 2H browser-session lifetime requirements remain mechanically linked to focused executable tests without claiming excluded high-risk reauthentication behavior."
     },
     {
+      "test_id": "test_administrative_recovery_authorization_matrix_grants_only_owner_to_manager_or_staff",
+      "upstream_ids": ["PR-CAP-009", "API-099", "TEST-130", "SEC-072", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_administrative_recovery.py",
+      "status": "implemented",
+      "notes": "The complete provider-neutral account-class matrix grants only Owner recovery of distinct Manager and Staff accounts and denies every other class pairing."
+    },
+    {
+      "test_id": "test_self_recovery_is_not_granted_for_any_account_class",
+      "upstream_ids": ["PR-CAP-009", "API-099", "TEST-130", "SEC-072", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_administrative_recovery.py",
+      "status": "implemented",
+      "notes": "Administrative recovery fails closed when actor and target are the same account because no self-recovery class pairing is granted."
+    },
+    {
+      "test_id": "test_unknown_actor_or_target_class_fails_closed",
+      "upstream_ids": ["PR-CAP-009", "API-099", "TEST-130", "SEC-072", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_administrative_recovery.py",
+      "status": "implemented",
+      "notes": "Unknown provider-established actor or target classes deny authorization and are replaced by a bounded invalid audit marker."
+    },
+    {
+      "test_id": "test_recovery_authorization_audit_evidence_is_bounded_and_secret_free",
+      "upstream_ids": ["PR-CAP-009", "API-099", "TEST-130", "SEC-072", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_administrative_recovery.py",
+      "status": "implemented",
+      "notes": "Each decision records actor and target references, injected timestamp, correlation reference, sanitized account classes, bounded outcome, and bounded reason without accepting recovery or credential material."
+    },
+    {
+      "test_id": "test_administrative_recovery_requirements_have_implemented_traceability",
+      "upstream_ids": ["PR-CAP-009", "API-099", "TEST-130", "SEC-072", "SEC-075", "DL-058"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "The bounded Phase 2I administrative recovery authorization requirements remain mechanically linked to focused executable tests."
+    },
+    {
       "test_id": "test_traceability_manifest_covers_executable_tests",
       "upstream_ids": ["TEST-002"],
       "test_level": "operational",
