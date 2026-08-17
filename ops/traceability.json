@@ -991,6 +991,62 @@
       "notes": "The implemented Phase 2J tests are bounded partial lifecycle-foundation evidence only; generation, durable verifier storage, endpoint rate limiting/enumeration controls, session revocation, persistence, API, and UI obligations remain explicitly deferred."
     },
     {
+      "test_id": "test_secure_generator_requests_independent_high_entropy_material",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_security.py",
+      "status": "implemented",
+      "notes": "Phase 2L provider-foundation evidence: the provider-neutral generator contract requests a fresh fixed 256-bit cryptographic entropy input for every independently usable recovery code."
+    },
+    {
+      "test_id": "test_verifier_provider_contract_encodes_and_verifies_independently_salted_codes",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_security.py",
+      "status": "implemented",
+      "notes": "Phase 2L provider-foundation evidence: the bounded verifier contract returns independently salted Argon2id opaque encodings and metadata compatible with the published provider-neutral persistence columns."
+    },
+    {
+      "test_id": "test_verifier_provider_rejects_malformed_code_input",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_security.py",
+      "status": "implemented",
+      "notes": "Phase 2L provider-foundation evidence: empty, whitespace-only, and control-bearing code material cannot be encoded as a usable verifier."
+    },
+    {
+      "test_id": "test_verifier_provider_fails_closed_for_malformed_verification_input",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_security.py",
+      "status": "implemented",
+      "notes": "Phase 2L provider-foundation evidence: malformed candidates, empty or malformed encodings, and encodings for another provider fail closed without exceptions or secret-bearing output."
+    },
+    {
+      "test_id": "test_verifier_output_is_non_plaintext_and_has_no_reversible_material",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_security.py",
+      "status": "implemented",
+      "notes": "Phase 2L provider-foundation evidence: verifier output excludes plaintext and contains only opaque encoding, algorithm, and positive work-factor metadata with no reversible field or operation."
+    },
+    {
+      "test_id": "test_code_and_verifier_operations_do_not_emit_or_represent_secret_material",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_security.py",
+      "status": "implemented",
+      "notes": "Phase 2L provider-foundation evidence: generated secret material is redacted from representations and generation, encoding, and verification emit no stdout, stderr, or log content."
+    },
+    {
+      "test_id": "test_recovery_code_cryptographic_provider_foundation_has_bounded_traceability",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "Phase 2L generation and irreversible-verifier tests remain mechanically linked to the routed authorities without claiming persistence, lifecycle integration, orchestration, API, UI, deployment, or other excluded behavior."
+    },
+    {
       "test_id": "test_traceability_manifest_covers_executable_tests",
       "upstream_ids": ["TEST-002"],
       "test_level": "operational",

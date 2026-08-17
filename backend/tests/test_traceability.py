@@ -365,3 +365,32 @@ def test_recovery_code_persistence_foundation_has_bounded_traceability() -> None
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert routed_authorities <= set(entry["upstream_ids"])
+
+
+def test_recovery_code_cryptographic_provider_foundation_has_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    routed_authorities = {
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058",
+    }
+    expected_test_ids = {
+        "test_secure_generator_requests_independent_high_entropy_material",
+        "test_verifier_provider_contract_encodes_and_verifies_independently_salted_codes",
+        "test_verifier_provider_rejects_malformed_code_input",
+        "test_verifier_provider_fails_closed_for_malformed_verification_input",
+        "test_verifier_output_is_non_plaintext_and_has_no_reversible_material",
+        "test_code_and_verifier_operations_do_not_emit_or_represent_secret_material",
+        "test_recovery_code_cryptographic_provider_foundation_has_bounded_traceability",
+    }
+
+    for test_id in expected_test_ids:
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert routed_authorities <= set(entry["upstream_ids"])

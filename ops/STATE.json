@@ -1,96 +1,76 @@
 {
   "schema_version": 1,
-  "phase": "Phase 2K",
-  "tranche": "Recovery-Code Verifier Persistence Foundation",
-  "task": "Implement the bounded Recovery-Code Verifier Persistence Foundation",
-  "status": "published",
-  "active_cycle": "phase-2k-recovery-code-verifier-persistence-foundation",
+  "phase": "Phase 2L",
+  "tranche": "Recovery-Code Cryptographic Provider Foundation",
+  "task": "Implement the bounded Recovery-Code Cryptographic Provider Foundation",
+  "status": "complete_uncommitted",
+  "active_cycle": "phase-2l-recovery-code-cryptographic-provider-foundation",
   "branch": "implementation/foundation",
-  "commit": "b57310ae063e2e75987761337577a0a3168937c5",
-  "timestamp": "2026-08-17T20:42:41Z",
+  "commit": "827c2c5463f3508a7e5c8a4289f68d530ecb41c4",
+  "timestamp": "2026-08-17T20:54:40Z",
   "risk_class": "high",
   "approval": {
-    "status": "complete",
-    "basis": "owner-authorized actionable Phase 2K bounded candidate and standing publication authority",
+    "status": "approved_ready",
+    "basis": "owner-authorized actionable Phase 2L bounded candidate and durable remaining-v1 authorization",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
-  "publication": {
-    "commit": "b57310ae063e2e75987761337577a0a3168937c5",
-    "subject": "feat: add recovery code verifier persistence",
-    "upstream": "origin/implementation/foundation",
-    "local_upstream_remote_match": true,
-    "github_actions_run": "32067108466",
-    "github_actions_status": "passed",
-    "committed_paths": [
-      "backend/migrations/versions/20260817_04_recovery_code_verifiers.py",
-      "backend/tests/test_migrations.py",
-      "backend/tests/test_traceability.py",
-      "ops/NOW.md",
-      "ops/STATE.json",
-      "ops/traceability.json"
-    ]
-  },
-  "next_candidate": {
-    "phase": "Phase 2L",
-    "task": "Implement the bounded Recovery-Code Cryptographic Provider Foundation",
+  "scope": {
     "include": [
-      "implement a provider-neutral secure generator for independent high-entropy single-use recovery-code material",
-      "implement irreversible verifier encoding and verification behind a bounded provider contract compatible with the published opaque persistence boundary",
-      "add deterministic provider-contract, malformed-input, non-plaintext/non-reversible-output, secret-leakage, and bounded traceability tests"
+      "provider-neutral secure generator for independent high-entropy single-use recovery-code material",
+      "irreversible verifier encoding and verification behind a bounded provider contract compatible with the published opaque persistence boundary",
+      "deterministic provider-contract, malformed-input, non-plaintext and non-reversible-output, secret-leakage, and bounded traceability tests"
     ],
     "exclude": [
-      "persistence or migration changes, presentation or regeneration orchestration, and lifecycle consumption integration",
-      "rate limiting, enumeration handling, session revocation, MFA, API, UI, administrative or emergency recovery, and bootstrap",
-      "production deployment, credentials, remote access, canonical changes, business or security policy invention, and scope expansion"
-    ],
-    "risk_class": "high",
-    "status": "approved_ready",
-    "authorities": [
-      "DB-AUTH-003",
-      "PR-CAP-009",
-      "API-098",
-      "TEST-129",
-      "SEC-071",
-      "SEC-075",
-      "DL-058"
-    ],
-    "next_action": "Dispatch the approved-ready Phase 2L Recovery-Code Cryptographic Provider Foundation through model-free preflight."
-  },
-  "reconciliation": {
-    "status": "passed",
-    "routed_sections": [
-      "docs/004_DATABASE_MODEL.md: DB-AUTH-003",
-      "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-009",
-      "docs/005_API_SPECIFICATION.md: API-098",
-      "docs/007_TESTING_STRATEGY.md: TEST-129",
-      "docs/008_SECURITY_MODEL.md: SEC-071 and SEC-075",
-      "docs/010_DECISION_LOG.md: DL-058"
-    ],
-    "evidence": [
-      "Hermes independently reviewed the exact six-path Phase 2K tranche and found no remaining blocker",
-      "supervisor format, lint, typecheck, test, build, database, deployment, traceability, dependency, scope, secret, and automation gates passed",
-      "backend tests passed 142 with 51 expected dedicated-gate skips; frontend tests passed 3; PostgreSQL passed 51",
-      "canonical documents remained unchanged and the reviewed Phase 2K exclusions were preserved",
-      "local, upstream, and remote SHA matched the published Phase 2K commit",
-      "GitHub Actions run 32067108466 passed backend, frontend, dependency-security, and PostgreSQL jobs"
+      "persistence or migrations",
+      "presentation or regeneration orchestration",
+      "lifecycle consumption integration",
+      "rate limiting, enumeration handling, session revocation, MFA, API, or UI",
+      "administrative or emergency recovery, bootstrap, production deployment, credentials, or remote access",
+      "canonical changes, policy invention, or scope expansion"
     ]
   },
-  "next_action": "Dispatch the approved-ready Phase 2L Recovery-Code Cryptographic Provider Foundation through model-free preflight.",
+  "authorities": [
+    "DB-AUTH-003",
+    "PR-CAP-009",
+    "API-098",
+    "TEST-129",
+    "SEC-071",
+    "SEC-075",
+    "DL-058"
+  ],
+  "baseline": {
+    "prior_phase": "Phase 2K",
+    "prior_commit": "b57310ae063e2e75987761337577a0a3168937c5",
+    "repository_head": "827c2c5463f3508a7e5c8a4289f68d530ecb41c4",
+    "upstream_match": true,
+    "working_tree_clean_before_activation": true
+  },
+  "changed_paths": [
+    "backend/src/property_rental/recovery_code_security.py",
+    "backend/tests/test_recovery_code_security.py",
+    "backend/tests/test_traceability.py",
+    "ops/NOW.md",
+    "ops/STATE.json",
+    "ops/traceability.json"
+  ],
+  "verification": {
+    "status": "passed",
+    "results": [
+      "focused provider tests: 12 passed",
+      "focused traceability tests: 2 passed",
+      "make test: backend 155 passed with 51 expected dedicated-gate skips; frontend 3 passed",
+      "make database-test: 51 passed",
+      "make format-check, make lint, make typecheck, and make build passed",
+      "deployment configuration validation and frontend dependency audit passed",
+      "git diff check and added-line secret/security scans passed",
+      "independent review passed with no security concern or logic error"
+    ]
+  },
+  "next_action": "Mandatory independent verification of the exact six-path uncommitted Phase 2L tranche, then commit only those paths and push implementation/foundation; verify local/upstream/remote SHA equality and GitHub Actions before marking published.",
   "idle_reason": null,
   "owner_action": "none",
   "blockers": [],
-  "repair": {
-    "failure": "review found that prm_runtime lacked validator-function execution needed to satisfy the recovery-code metadata check during insertion",
-    "resolved": true,
-    "scope_preserved": true,
-    "attempts": 1,
-    "max_attempts": 2,
-    "requires_owner_decision": false,
-    "suspected_secret": false,
-    "scope_expansion": false,
-    "protected_operation": false
-  },
   "secrets_present": false
 }
