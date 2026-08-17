@@ -3,11 +3,11 @@
   "phase": "Phase 2B",
   "tranche": "provider-neutral capability authorization boundary",
   "task": "Implement a deny-by-default capability and scope seam for the protected identity endpoint",
-  "status": "verified_for_review",
-  "active_cycle": "phase-2b-capability-authorization",
+  "status": "published",
+  "active_cycle": null,
   "branch": "implementation/foundation",
-  "commit": "56f927408f4b05aa2f83e0a1c7120cbd82b27af7",
-  "timestamp": "2026-08-17T06:40:16Z",
+  "commit": "a931f0aae1e6b1a1be333410644e93d75b549342",
+  "timestamp": "2026-08-17T07:36:00Z",
   "implemented": [
     "node_engine_baseline_aligned_to_vite_7_3_6",
     "strict_typescript_react_vite_foundation",
@@ -68,20 +68,19 @@
     "SEC-039",
     "OOD-API-001",
     "DL-048",
-    "API-009",
-    "API-010",
     "SEC-019",
     "SEC-020",
     "SEC-021",
     "SEC-022",
     "TEST-011",
-    "TEST-084",
     "DL-039"
   ],
   "requirements_partially_evidenced": [
     "SEC-009: provider-established opaque actor identity supports unique attribution without implementing accounts",
     "SEC-010: stable actor identity property only; all concrete provider properties remain outside the API core",
     "SEC-068: focused identity-boundary capability, Property/object scope, role-independence, default-denial, and header-bypass tests only",
+    "API-009: capability enforcement is implemented for the bounded identity seam; remaining protected endpoints are deferred",
+    "API-010: provider-established grants remain role-independent; configurable role-to-capability mapping is deferred to provider/deployment configuration",
     "TEST-084: capability and Property/object matrix covered for the bounded seam; disabled-account and stale/revoked-session cases remain deferred with accounts and sessions"
   ],
   "requirements_preserved_not_implemented": [
@@ -114,6 +113,10 @@
       "TEST-117 executable traceability validation passed with the expanded authorization matrix",
       "fresh supervisor security review returned PASS with no security, logic, or bounded-scope findings",
       "fresh supervisor gates passed format, lint, strict types, 53 backend tests, 3 frontend tests, backend/frontend builds, routing tests, locked Python and npm audits, uv lock consistency, TEST-117/118 traceability, and all 6 isolated PostgreSQL migration tests",
+      "implementation commit a931f0aae1e6b1a1be333410644e93d75b549342 contains exactly the seven reviewed paths and local HEAD/upstream match that commit",
+      "fresh reconciliation review passed all 8 focused authorization tests, format checks, lint, strict backend/frontend types, 53 backend tests, 3 frontend tests, and backend/frontend builds",
+      "canonical docs 001-010 are absent from the a931f0a commit and remain unchanged",
+      "GitHub Actions CI run 32002986112 passed on attempt 1 for exact implementation commit a931f0aae1e6b1a1be333410644e93d75b549342",
       "repository gate reconfirmed on implementation/foundation with empty index, the authorized dirty tranche, and HEAD/upstream ea7ed3f100ea44c7d33d587bdc238f4b43ff1b58",
       "routed canonical requirements and relevant backend seams inspected before correction edits",
       "focused provider-neutral actor API tests first failed on the rejected actor shape, then passed all 4 tests after the correction",
@@ -160,12 +163,12 @@
     "broad_design_system"
   ],
   "next_candidate": {
-    "phase": "Phase 2B",
-    "task": "provider-neutral capability authorization boundary",
-    "status": "verified_for_review",
+    "phase": "Phase 2C",
+    "task": "single-Property application foundation",
+    "status": "approved_ready",
     "risk_class": "high"
   },
-  "next_action": "Publish the verified bounded Phase 2B diff under the owner's standing commit/push authorization, verify GitHub Actions, and reconcile compact state with the next bounded v1 tranche.",
+  "next_action": "Activate the approved high-risk Phase 2C single-Property application foundation under durable v1 authorization.",
   "blockers": [],
   "secrets_present": false
 }
