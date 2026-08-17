@@ -2,12 +2,12 @@
   "schema_version": 1,
   "phase": "Phase 2C",
   "tranche": "single-Property application foundation",
-  "task": "Implement one bounded canonically defined single-Property application foundation tranche",
-  "status": "approved_ready",
+  "task": "Implement the Property-local business-date foundation for Asia/Phnom_Penh",
+  "status": "complete_unpublished",
   "active_cycle": "phase-2c-single-property-foundation",
   "branch": "implementation/foundation",
-  "commit": "d3dd0a3fd0c51c00b73d07405ecfb383bd3948c5",
-  "timestamp": "2026-08-17T07:41:00Z",
+  "commit": "0187f265e60e92677cda500b289a1ab73f334fb6",
+  "timestamp": "2026-08-17T07:31:52Z",
   "implemented": [
     "node_engine_baseline_aligned_to_vite_7_3_6",
     "strict_typescript_react_vite_foundation",
@@ -43,7 +43,9 @@
     "provider_supplied_capability_grants_with_property_and_exact_object_scope",
     "endpoint_declared_identity_read_self_capability",
     "server_side_401_authentication_and_403_authorization_boundary",
-    "role_independent_and_client_header_inert_authorization"
+    "role_independent_and_client_header_inert_authorization",
+    "property_local_business_date_boundary",
+    "timezone_aware_instant_requirement"
   ],
   "requirements_satisfied": [
     "UI-007",
@@ -81,7 +83,8 @@
     "SEC-068: focused identity-boundary capability, Property/object scope, role-independence, default-denial, and header-bypass tests only",
     "API-009: capability enforcement is implemented for the bounded identity seam; remaining protected endpoints are deferred",
     "API-010: provider-established grants remain role-independent; configurable role-to-capability mapping is deferred to provider/deployment configuration",
-    "TEST-084: capability and Property/object matrix covered for the bounded seam; disabled-account and stale/revoked-session cases remain deferred with accounts and sessions"
+    "TEST-084: capability and Property/object matrix covered for the bounded seam; disabled-account and stale/revoked-session cases remain deferred with accounts and sessions",
+    "PR-PROP-003: authoritative Asia/Phnom_Penh business-date conversion and ambiguous naive-instant rejection are implemented; historical-date correction and audit workflows remain deferred"
   ],
   "requirements_preserved_not_implemented": [
     "API-009 capability checks for all endpoints beyond the bounded identity seam",
@@ -99,7 +102,17 @@
     "OpenClaw compaction safeguards",
     "model-free automation routing tests and CI",
     "backend provider-neutral capability and scope primitives",
-    "identity endpoint capability enforcement"
+    "identity endpoint capability enforcement",
+    "backend single-Property business-time primitive",
+    "focused business-date domain tests and traceability"
+  ],
+  "relevant_docs": [
+    "docs/003_PRODUCT_REQUIREMENTS.md: PR-PROP-003",
+    "docs/010_DECISION_LOG.md: DL-038"
+  ],
+  "decisions": [
+    "Use the standard-library Asia/Phnom_Penh ZoneInfo as the sole Property timezone for this bounded slice",
+    "Reject timezone-naive datetime inputs instead of silently assuming a timezone"
   ],
   "verification": {
     "status": "passed",
@@ -140,7 +153,15 @@
       "make format-check, lint, typecheck, test, build, automation-test, and frontend-audit passed",
       "locked runtime and development Python dependency audits found no known vulnerabilities; uv lock and TEST-118 traceability checks passed",
       "make database-test passed all 6 isolated PostgreSQL migration tests and cleaned its disposable resources",
-      "automation commit ea721af8335c5724823db52b18a8b5f18141cd90 was pushed normally and GitHub Actions run 32000171078 passed on attempt 1"
+      "automation commit ea721af8335c5724823db52b18a8b5f18141cd90 was pushed normally and GitHub Actions run 32000171078 passed on attempt 1",
+      "Phase 2C Property-local business-date tests first failed because property_rental.business_time did not exist, then all 3 focused tests passed",
+      "make format-check and make lint passed after a test-only formatting correction",
+      "make typecheck passed strict backend mypy across 15 source files and frontend TypeScript",
+      "make test passed 56 backend tests with 6 PostgreSQL-only tests skipped in the ordinary job and passed all 3 frontend tests",
+      "make build produced backend distributions, passed the backend import check, and completed the frontend production build",
+      "make database-test passed all 6 isolated PostgreSQL migration tests and cleaned its disposable resources",
+      "focused business-time plus traceability validation passed all 4 tests",
+      "independent bounded review returned PASS with no policy, logic, security, or scope findings"
     ]
   },
   "preserved": [
@@ -164,11 +185,11 @@
   ],
   "next_candidate": {
     "phase": "Phase 2C",
-    "task": "single-Property application foundation",
+    "task": "Implement a single-Property identity scope primitive that rejects any object assigned to a different Property ID",
     "status": "approved_ready",
     "risk_class": "high"
   },
-  "next_action": "Implement and independently verify one bounded Phase 2C single-Property application foundation tranche, then commit and push only if every applicable publication gate passes.",
+  "next_action": "Publish this independently verified tranche, confirm GitHub Actions and SHA/file-list integrity, then dispatch the approved high-risk single-Property identity scope primitive.",
   "blockers": [],
   "secrets_present": false
 }

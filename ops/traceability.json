@@ -385,6 +385,30 @@
       "notes": "Authorization, actor, capability, role, Property, and object headers are inert when no trusted external provider is injected, so client assertions cannot establish identity or authority."
     },
     {
+      "test_id": "test_property_business_date_changes_at_phnom_penh_midnight",
+      "upstream_ids": ["PR-PROP-003"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_business_time.py",
+      "status": "implemented",
+      "notes": "The single Property's business date changes exactly at the Asia/Phnom_Penh local calendar boundary."
+    },
+    {
+      "test_id": "test_property_business_date_normalizes_aware_non_utc_instants",
+      "upstream_ids": ["PR-PROP-003"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_business_time.py",
+      "status": "implemented",
+      "notes": "A timezone-aware instant is normalized to the authoritative Property timezone before its business date is derived."
+    },
+    {
+      "test_id": "test_property_business_date_rejects_an_instant_without_timezone",
+      "upstream_ids": ["PR-PROP-003"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_business_time.py",
+      "status": "implemented",
+      "notes": "An instant without explicit timezone semantics is rejected rather than silently interpreted as a business date."
+    },
+    {
       "test_id": "test_traceability_manifest_covers_executable_tests",
       "upstream_ids": ["API-001"],
       "test_level": "operational",

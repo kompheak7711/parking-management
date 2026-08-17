@@ -1,22 +1,20 @@
 # Phase 2C — single-Property application foundation
 
-- Objective: begin the canonically bounded single-Property application foundation after
-  successful Phase 2B publication.
-- Current task: approved and ready for high-risk Codex supervisor dispatch on
-  `implementation/foundation` from synchronized checkpoint `d3dd0a3`.
-- Scope: `AuthenticatedActor` carries provider-established capability grants with
-  Property and exact-object scopes. `/api/v1/identity/me` requires
-  `identity.read_self` for the actor's exact self-object scope, returning 401 without an
-  actor and 403 without the required trusted grant.
-- Fresh verification: all 8 focused authorization tests passed; format, lint, strict
-  types, 53 backend tests, 3 frontend tests, and backend/frontend builds passed. The
-  seven-path commit contains no canonical document change.
-- Preserved boundaries: docs 001-010, provider implementation, role mapping, accounts,
-  sessions, credentials, production config/access, business endpoints, UI, and database
-  schema are unchanged.
-- Remote verification: GitHub Actions run `32002986112` completed successfully on its
-  first attempt for exact commit `a931f0a`.
+- Objective: implement canonically bounded single-Property application primitives.
+- Complete unpublished task: Property-local business-date conversion uses the standard
+  library `Asia/Phnom_Penh` timezone and rejects timezone-naive instants.
+- Canonical basis: `PR-PROP-003` and `DL-038` only; docs 001-010 remain read-only and
+  unchanged.
+- Fresh verification: RED confirmed the missing module; 3 focused business-time tests
+  then passed. Format, lint, strict types, 56 backend tests plus 3 frontend tests,
+  backend/frontend builds, 6 isolated PostgreSQL migration tests, and traceability passed.
+- Independent review: PASS with no policy, logic, security, or bounded-scope findings.
+- Preserved boundaries: database schema/data, API behavior, UI, authentication provider,
+  role mapping, credentials, production configuration/access, and financial behavior are
+  unchanged.
+- Repository state: branch `implementation/foundation`, base HEAD/upstream `0187f265`,
+  expected uncommitted tranche only; no commit, push, deploy, or remote access performed.
 - Blocker: none.
-- Exact next action: implement and independently verify one bounded Phase 2C
-  single-Property application foundation tranche, then commit and push only if every
-  applicable publication gate passes.
+- Exact next action: publish this independently verified tranche, confirm GitHub Actions
+  and SHA/file-list integrity, then dispatch the approved high-risk single-Property
+  identity scope primitive that rejects objects assigned to a different Property ID.
