@@ -1,7 +1,7 @@
-# PostgreSQL native-Linux secret mount repair — verified for publication
+# Phase 2D deployment scaffolding — verified and published
 
-- Objective: repair only the repeated PostgreSQL startup failure in GitHub Actions run
-  `32040242139` for the existing `SEC-045/047/049/050` scaffolding; do not commit or push.
+- Outcome: the bounded `SEC-045/047/049/050` deployment-identity and protected-source
+  scaffolding plus its native-Linux PostgreSQL repair are verified and published.
 - Root cause: `scripts/database-test.sh` generated all six Compose secret sources as `0600`.
   File-backed Compose secrets are bind mounts without uid/gid/mode remapping on native Linux.
   The official PostgreSQL image reads the standard admin source before privilege drop, but runs
@@ -22,10 +22,15 @@
   found no known vulnerabilities. `shellcheck` was unavailable; POSIX `sh -n` passed.
 - Scope: five distinct non-superuser roles and six protected-file mounts remain intact.
   `docs/001-010`, dependencies, migrations, production values, and remote configuration are
-  unchanged. No credential, deployment, destructive operation, commit, or push occurred.
-- Concurrent work: a separate process published unrelated automatic-repair changes as `a29e8d6`
-  after the clean pre-write gate. This repair remained unstaged and uncommitted throughout.
+  unchanged. No production credential, deployment, remote-access, or destructive operation occurred.
+- Publication: a concurrent process committed and pushed the five reviewed paths as `3306e94`
+  during the required Hermes review. Local HEAD, upstream, and remote branch all equal that SHA.
 - Independent review: all local, PostgreSQL, security, traceability, dependency, canonical,
-  Compose, shell, JSON, secret-signature, quality, and build gates passed on base `a29e8d6`.
-- Exact next action: stage only the five reviewed repair paths, check the cached scope and secret
-  signatures, commit, push normally, and require every GitHub Actions job to pass.
+  Compose, shell, JSON, secret-signature, quality, build, and automation gates passed on `3306e94`.
+- Remote verification: GitHub Actions workflow `CI`, run `32042322805`, completed with
+  conclusion `success` for exact commit `3306e94af555845873565a864fb71657fbaf8390`.
+- Blockers: none.
+- Exact next candidate: bounded Phase 2E password-hashing and verification service against
+  existing `DB-AUTH-002`, excluding login/API/UI, sessions, MFA, recovery, bootstrap,
+  production secrets, deployment, remote access, and canonical-document changes.
+- Exact next action: dispatch the approved Phase 2E candidate immediately.

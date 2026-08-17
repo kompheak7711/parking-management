@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "phase": "Phase 2D",
-  "tranche": "deployment identity PostgreSQL CI repair",
-  "task": "Investigate and repair the demonstrated PostgreSQL GitHub Actions startup failure for the SEC-045/047/049/050 scaffolding tranche",
-  "status": "verified_for_publication",
+  "tranche": "deployment identity and protected-source scaffolding",
+  "task": "Verify and publish the bounded SEC-045/047/049/050 scaffolding and native-Linux PostgreSQL repair",
+  "status": "published",
   "active_cycle": "sec-045-047-049-050-postgresql-ci-repair",
   "branch": "implementation/foundation",
-  "commit": "a29e8d620287def82060338cc6dc22d393f11743",
-  "timestamp": "2026-08-17T15:25:12Z",
+  "commit": "3306e94af555845873565a864fb71657fbaf8390",
+  "timestamp": "2026-08-17T16:15:56Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_complete",
@@ -17,14 +17,30 @@
     "publication_authorized_in_this_attempt": true
   },
   "next_candidate": {
-    "task": "Repair only the demonstrated PostgreSQL CI startup defect and preserve secret-free failure diagnostics",
+    "phase": "Phase 2E",
+    "task": "Implement a bounded password-hashing and verification service against DB-AUTH-002, including current secure adaptive-hashing dependency selection, hash, verify, rehash-needed behavior, secret-free failure handling, focused tests, dependency audit, and traceability",
+    "include": [
+      "current secure salted adaptive password hashing",
+      "verification against the existing algorithm-neutral DB-AUTH-002 encoding",
+      "rehash-needed detection for approved parameter upgrades",
+      "secret-free deterministic tests",
+      "locked dependency and vulnerability audit",
+      "traceability to DB-AUTH-002, SEC-011, TEST-108, and DL-055"
+    ],
+    "exclude": [
+      "login, account-management, session, MFA, recovery, or bootstrap API/UI",
+      "login rate limiting or account-enumeration response design",
+      "production credentials, secret provisioning, deployment, or remote access",
+      "database schema or canonical document changes",
+      "business, financial, authorization, or role-policy changes"
+    ],
     "risk_class": "high",
-    "status": "verified_for_publication",
+    "status": "approved_ready",
     "authorities": [
-      "SEC-045",
-      "SEC-047",
-      "SEC-049",
-      "SEC-050"
+      "DB-AUTH-002",
+      "TEST-108",
+      "SEC-011",
+      "DL-055"
     ]
   },
   "reconciliation": {
@@ -56,12 +72,15 @@
       "independent supervisor verification passed all local, PostgreSQL, security, traceability, dependency, canonical, Compose, shell, JSON, secret-signature, quality, and build gates on base a29e8d6",
       "shellcheck unavailable; POSIX sh -n passed for changed shell scripts",
       "no docs/001-010, dependency, schema migration, production credential/key/value, secret-store/remote access, destructive operation, commit, or push",
-      "a separate concurrent process published unrelated bounded-automatic-repair changes as a29e8d620287def82060338cc6dc22d393f11743; this repair remained unstaged and uncommitted"
+      "a separate concurrent process published this bounded repair as 3306e94af555845873565a864fb71657fbaf8390 during the required Hermes review",
+      "independent local verification on published HEAD 3306e94 passed format-check, lint, typecheck, test, build, deployment-config-check, database-test, automation-test, frontend audit, JSON, shell syntax, and diff checks",
+      "local HEAD, upstream tracking ref, and git ls-remote all equal 3306e94af555845873565a864fb71657fbaf8390",
+      "GitHub Actions CI run 32042322805 completed successfully for exact head SHA 3306e94af555845873565a864fb71657fbaf8390 via the workflow-specific runs endpoint"
     ]
   },
-  "next_action": "Stage only the five reviewed repair paths, verify cached scope and secret checks, commit, push normally, then require every GitHub Actions job to pass.",
-  "idle_reason": null,
-  "owner_action": null,
+  "next_action": "Implement the approved bounded Phase 2E password-hashing and verification service candidate.",
+  "idle_reason": "Phase 2D is published; the approved Phase 2E candidate is actionable and should dispatch immediately.",
+  "owner_action": "none",
   "blockers": [],
   "secrets_present": false
 }

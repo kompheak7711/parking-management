@@ -110,7 +110,9 @@ def main() -> None:
     state_issue = preflight.get("state_issue")
     status = state.get("status", "unknown")
     candidate = state.get("next_candidate") or {}
-    if state_issue == "published_compact_state_reconciliation_required":
+    if preflight.get("actionable") is True:
+        idle_reason = "Approved work is active or queued"
+    elif state_issue == "published_compact_state_reconciliation_required":
         idle_reason = "Published compact state requires reconciliation"
     elif status in {
         "approved_ready",

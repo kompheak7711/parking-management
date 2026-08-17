@@ -47,6 +47,12 @@ if [ "$blocker_count" -eq 0 ]; then
     normalized=true
     state_issue="missing_next_action_derived_from_approved_candidate"
   fi
+  if [ "$normalized" = false ] && [ "$status" = published ] \
+    && [ "$candidate_status" = approved_ready ] && [ -n "$candidate_task" ]; then
+    next_action="Implement the approved bounded candidate: $candidate_task"
+    normalized=true
+    state_issue="published_next_candidate_dispatch_required"
+  fi
   if [ "$normalized" = false ]; then
     case "$status:$approval_status" in
       complete_uncommitted:approved_ready|complete_unpublished:approved_ready)
@@ -81,6 +87,11 @@ if [ "$blocker_count" -eq 0 ] && [ -n "$next_action" ]; then
       ;;
     failed|not_verified|discrepancy|repair_required)
       if [ "$state_issue" = bounded_automatic_repair_authorized ]; then
+        actionable=true
+      fi
+      ;;
+    published)
+      if [ "$state_issue" = published_next_candidate_dispatch_required ]; then
         actionable=true
       fi
       ;;

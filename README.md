@@ -179,6 +179,9 @@ from its already-approved task instead of silently idling. A verified
 authorization is routed to independent publication verification and cannot demand a
 redundant owner commit/push instruction. These cases are regression-tested by
 `make automation-test` and any future repair must add or extend a deterministic test.
+Published state with an explicitly approved next candidate is also actionable: preflight
+routes that candidate immediately and the task packet takes its phase and risk metadata,
+so publication does not create an unnecessary approval or scheduler wait.
 If a clean upstream-synchronized HEAD has advanced beyond the commit recorded by a
 pre-publication state, preflight routes only compact-state reconciliation. Task packets
 use that enforced action instead of selecting a `next_candidate` unconditionally, so a

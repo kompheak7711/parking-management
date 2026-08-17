@@ -129,6 +129,23 @@ mv "$repair_repo/ops/STATE.json.new" "$repair_repo/ops/STATE.json"
 protected_preflight="$(PROPERTY_RENTAL_REPO="$repair_repo" "$repair_repo/scripts/openclaw-supervisor-preflight.sh")"
 [ "$(printf '%s' "$protected_preflight" | jq -r '.actionable')" = false ]
 
+make_repo published_next high 'completed tranche action'
+published_next_repo="$test_root/published_next/repo"
+jq '.status="published"
+  | .phase="Phase 2D"
+  | .risk_class="low"
+  | .next_action="Completed tranche is published."
+  | .next_candidate={phase:"Phase 2E",task:"approved password verifier service",status:"approved_ready",risk_class:"high"}' \
+  "$published_next_repo/ops/STATE.json" >"$published_next_repo/ops/STATE.json.new"
+mv "$published_next_repo/ops/STATE.json.new" "$published_next_repo/ops/STATE.json"
+published_next_preflight="$(PROPERTY_RENTAL_REPO="$published_next_repo" "$published_next_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$published_next_preflight" | jq -r '.actionable')" = true ]
+[ "$(printf '%s' "$published_next_preflight" | jq -r '.state_issue')" = published_next_candidate_dispatch_required ]
+published_next_packet="$(PROPERTY_RENTAL_REPO="$published_next_repo" "$published_next_repo/scripts/openclaw-task-packet.sh")"
+[ "$(printf '%s' "$published_next_packet" | jq -r '.phase')" = 'Phase 2E' ]
+[ "$(printf '%s' "$published_next_packet" | jq -r '.risk_class')" = high ]
+printf '%s' "$published_next_packet" | jq -e '.task | contains("approved password verifier service")' >/dev/null
+
 make_repo stale_published high 'prohibited unapproved deployment tranche'
 stale_repo="$test_root/stale_published/repo"
 published_base="$(git -C "$stale_repo" rev-parse HEAD)"
