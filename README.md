@@ -185,6 +185,11 @@ preflight routes the same mandatory publication action instead of silently idlin
 Published state with an explicitly approved next candidate is also actionable: preflight
 routes that candidate immediately and the task packet takes its phase and risk metadata,
 so publication does not create an unnecessary approval or scheduler wait.
+If Hermes instead emits the exact unselected/not-approved placeholder while the queue
+still grants durable bounded-v1 authorization, preflight routes a bounded selection repair:
+choose the smallest unambiguous canonical next tranche, mark it approved-ready, and dispatch
+it. Concrete protected or policy-dependent candidates remain non-actionable and still require
+the Owner.
 If a clean upstream-synchronized HEAD has advanced beyond the commit recorded by a
 pre-publication state, preflight routes only compact-state reconciliation. Task packets
 use that enforced action instead of selecting a `next_candidate` unconditionally, so a

@@ -8,6 +8,7 @@ status="$(jq -r '.status // "unknown"' ops/STATE.json)"
 recorded_next_action="$(jq -r '.next_action // ""' ops/STATE.json)"
 next_action="$recorded_next_action"
 candidate_task="$(jq -r '.next_candidate.task // ""' ops/STATE.json)"
+candidate_phase="$(jq -r '.next_candidate.phase // ""' ops/STATE.json)"
 candidate_status="$(jq -r '.next_candidate.status // "unknown"' ops/STATE.json)"
 approval_status="$(jq -r '.approval.status // "unknown"' ops/STATE.json)"
 blocker_count="$(jq -r '(.blockers // []) | length' ops/STATE.json)"
@@ -22,6 +23,15 @@ head_sha="$(git rev-parse HEAD)"
 worktree_status="$(git status --porcelain=v1)"
 worktree_fingerprint="$(printf '%s' "$worktree_status" | shasum -a 256 | awk '{print $1}')"
 upstream_sha="$(git rev-parse '@{upstream}' 2>/dev/null || true)"
+durable_v1_authorization=false
+if grep -Fq 'Remaining v1 application tranches are authorized when bounded by canonical documents' ops/QUEUE.md; then
+  durable_v1_authorization=true
+fi
+unselected_placeholder=false
+if [ "$candidate_status" = not_approved ] && [ "$candidate_phase" = unselected ] \
+  && [ "$candidate_task" = 'No subsequent implementation candidate has been selected or authorized.' ]; then
+  unselected_placeholder=true
+fi
 
 actionable=false
 normalized=false
@@ -58,6 +68,12 @@ if [ "$blocker_count" -eq 0 ]; then
     next_action="Implement the approved bounded candidate: $candidate_task"
     normalized=true
     state_issue="published_next_candidate_dispatch_required"
+  fi
+  if [ "$normalized" = false ] && [ "$status" = published ] \
+    && [ "$durable_v1_authorization" = true ] && [ "$unselected_placeholder" = true ]; then
+    next_action="Repair the missing authorized handoff: select the smallest unambiguous next bounded v1 candidate from the recorded canonical sequence, mark it approved_ready under durable authorization, and dispatch it immediately. If selection would require unresolved policy or a protected operation, record that exact Owner decision and stop."
+    normalized=true
+    state_issue="authorized_candidate_selection_required"
   fi
   if [ "$normalized" = false ]; then
     case "$status:$approval_status" in
@@ -97,7 +113,8 @@ if [ "$blocker_count" -eq 0 ] && [ -n "$next_action" ]; then
       fi
       ;;
     published)
-      if [ "$state_issue" = published_next_candidate_dispatch_required ]; then
+      if [ "$state_issue" = published_next_candidate_dispatch_required ] \
+        || [ "$state_issue" = authorized_candidate_selection_required ]; then
         actionable=true
       fi
       ;;
@@ -116,6 +133,8 @@ jq -cn \
   --argjson blockers "$blocker_count" \
   --argjson repair_attempts "$repair_attempts" \
   --argjson repair_max_attempts "$repair_max_attempts" \
+  --argjson durable_v1_authorization "$durable_v1_authorization" \
+  --argjson unselected_placeholder "$unselected_placeholder" \
   --argjson normalized "$normalized" \
   --argjson actionable "$actionable" \
-  '{head: $head, status: $status, active_cycle: $active_cycle, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, repair_failure: $repair_failure, normalized: $normalized, blockers: $blockers, repair_attempts: $repair_attempts, repair_max_attempts: $repair_max_attempts, worktree: $worktree, actionable: $actionable}'
+  '{head: $head, status: $status, active_cycle: $active_cycle, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, repair_failure: $repair_failure, normalized: $normalized, blockers: $blockers, repair_attempts: $repair_attempts, repair_max_attempts: $repair_max_attempts, durable_v1_authorization: $durable_v1_authorization, unselected_placeholder: $unselected_placeholder, worktree: $worktree, actionable: $actionable}'

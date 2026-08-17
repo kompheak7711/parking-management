@@ -21,7 +21,12 @@
 11. Phase 2E password-hashing and verification service against `DB-AUTH-002` — independently
     verified and published as `bc567ea`; GitHub Actions run `32046660052` passed.
     A compact-state completion-status enforcement repair is included with deterministic coverage.
-    No subsequent implementation candidate is selected or authorized in compact state.
+12. Phase 2F Local Login Security Foundation — approved and ready under the durable
+    authorization below. Bound the tranche to normalized username lookup, Phase 2E password
+    verification, disabled-account rejection, enumeration-resistant outcomes, account/source
+    rate-limiting enforcement, secret-free audit evidence, focused tests, and traceability.
+    Exclude public login/API/UI, sessions/cookies, MFA, recovery, bootstrap, production
+    credentials/deployment/remote access, canonical changes, and policy invention.
 
 Remaining v1 application tranches are authorized when bounded by canonical documents
 001-010 and all publication gates; unresolved policy and protected production work still

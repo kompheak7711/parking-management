@@ -7,7 +7,7 @@
   "active_cycle": "db-auth-002-password-service",
   "branch": "implementation/foundation",
   "commit": "bc567eabdae99ee74ba3d02da97b184e1b2e761a",
-  "timestamp": "2026-08-17T16:41:34Z",
+  "timestamp": "2026-08-17T17:50:08Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_complete",
@@ -17,11 +17,36 @@
     "publication_authorized_in_this_attempt": true
   },
   "next_candidate": {
-    "phase": "unselected",
-    "task": "No subsequent implementation candidate has been selected or authorized.",
+    "phase": "Phase 2F",
+    "task": "Implement the bounded Local Login Security Foundation using normalized username lookup, the Phase 2E Argon2id verifier, disabled-account rejection, generic enumeration-resistant outcomes, account/source rate-limiting enforcement, and secret-free authentication audit evidence",
+    "include": [
+      "normalized username lookup through the existing local-account persistence boundary",
+      "password verification through the published Phase 2E Argon2id service",
+      "disabled-account rejection without account-state disclosure",
+      "generic enumeration-resistant authentication outcomes",
+      "bounded account and request-source rate-limiting enforcement",
+      "secret-free authentication audit evidence",
+      "focused deterministic tests and traceability"
+    ],
+    "exclude": [
+      "public login endpoint or authentication UI",
+      "browser sessions, cookies, CSRF, or bearer tokens",
+      "MFA, recovery codes, administrative recovery, or Owner bootstrap",
+      "production credentials, deployment, or remote access",
+      "canonical document, business, financial, role, or authorization-policy changes"
+    ],
     "risk_class": "high",
-    "status": "not_approved",
-    "authorities": []
+    "status": "approved_ready",
+    "authorities": [
+      "PR-CAP-009",
+      "API-096",
+      "TEST-108",
+      "SEC-009",
+      "SEC-010",
+      "SEC-012",
+      "SEC-014",
+      "DL-055"
+    ]
   },
   "reconciliation": {
     "status": "passed",
@@ -54,19 +79,9 @@
       "no commit or push occurred"
     ]
   },
-  "next_action": "Owner selects or approves the next bounded implementation candidate; do not dispatch the recorded not_approved placeholder.",
-  "idle_reason": "Phase 2E is published and verified; no subsequent implementation candidate is selected or approved_ready.",
-  "owner_action": "Select or approve the next bounded implementation candidate when continuation is desired.",
+  "next_action": "Implement the approved bounded Phase 2F Local Login Security Foundation candidate immediately.",
+  "idle_reason": "Phase 2E is published; Phase 2F is approved_ready and should dispatch immediately.",
+  "owner_action": "none",
   "blockers": [],
-  "repair": {
-    "failure": "Hermes recorded a non-actionable invented completion status that stranded mandatory publication.",
-    "scope_preserved": true,
-    "attempts": 1,
-    "max_attempts": 2,
-    "requires_owner_decision": false,
-    "suspected_secret": false,
-    "scope_expansion": false,
-    "protected_operation": false
-  },
   "secrets_present": false
 }

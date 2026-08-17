@@ -159,6 +159,33 @@ published_next_packet="$(PROPERTY_RENTAL_REPO="$published_next_repo" "$published
 [ "$(printf '%s' "$published_next_packet" | jq -r '.risk_class')" = high ]
 printf '%s' "$published_next_packet" | jq -e '.task | contains("approved password verifier service")' >/dev/null
 
+make_repo authorized_placeholder high 'completed tranche action'
+placeholder_repo="$test_root/authorized_placeholder/repo"
+printf '%s\n' 'Remaining v1 application tranches are authorized when bounded by canonical documents 001-010.' >"$placeholder_repo/ops/QUEUE.md"
+jq '.status="published"
+  | .approval={status:"approved_complete"}
+  | .next_action="Owner selects the next candidate."
+  | .next_candidate={phase:"unselected",task:"No subsequent implementation candidate has been selected or authorized.",status:"not_approved",risk_class:"high",authorities:[]}' \
+  "$placeholder_repo/ops/STATE.json" >"$placeholder_repo/ops/STATE.json.new"
+mv "$placeholder_repo/ops/STATE.json.new" "$placeholder_repo/ops/STATE.json"
+placeholder_preflight="$(PROPERTY_RENTAL_REPO="$placeholder_repo" "$placeholder_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$placeholder_preflight" | jq -r '.actionable')" = true ]
+[ "$(printf '%s' "$placeholder_preflight" | jq -r '.state_issue')" = authorized_candidate_selection_required ]
+printf '%s' "$placeholder_preflight" | jq -e '.next_action | contains("smallest unambiguous next bounded v1 candidate")' >/dev/null
+
+jq '.next_candidate={phase:"Production",task:"Provision actual production secrets",status:"not_approved",risk_class:"high"}' \
+  "$placeholder_repo/ops/STATE.json" >"$placeholder_repo/ops/STATE.json.new"
+mv "$placeholder_repo/ops/STATE.json.new" "$placeholder_repo/ops/STATE.json"
+protected_candidate_preflight="$(PROPERTY_RENTAL_REPO="$placeholder_repo" "$placeholder_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$protected_candidate_preflight" | jq -r '.actionable')" = false ]
+
+jq '.next_candidate={phase:"unselected",task:"No subsequent implementation candidate has been selected or authorized.",status:"not_approved",risk_class:"high",authorities:[]}' \
+  "$placeholder_repo/ops/STATE.json" >"$placeholder_repo/ops/STATE.json.new"
+mv "$placeholder_repo/ops/STATE.json.new" "$placeholder_repo/ops/STATE.json"
+printf '%s\n' '# No durable authorization' >"$placeholder_repo/ops/QUEUE.md"
+unauthorized_placeholder_preflight="$(PROPERTY_RENTAL_REPO="$placeholder_repo" "$placeholder_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$unauthorized_placeholder_preflight" | jq -r '.actionable')" = false ]
+
 make_repo stale_published high 'prohibited unapproved deployment tranche'
 stale_repo="$test_root/stale_published/repo"
 published_base="$(git -C "$stale_repo" rev-parse HEAD)"

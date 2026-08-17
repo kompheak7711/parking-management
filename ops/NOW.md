@@ -27,6 +27,8 @@
   recovery, bootstrap, deployment/remote access, role policy, and business/financial behavior
   are unchanged. No commit or push occurred.
 - Blockers: none.
-- Exact next candidate: none selected; compact state records it as `not_approved`.
-- Exact next action: Owner selects or approves the next bounded implementation candidate; no
-  unapproved candidate will be dispatched.
+- Exact next candidate: Phase 2F Local Login Security Foundation: normalized username lookup,
+  Argon2id verification, disabled-account rejection, generic enumeration-resistant outcomes,
+  bounded account/source rate-limiting enforcement, and secret-free authentication audit evidence.
+- Approval: `approved_ready` under the durable authorization for remaining bounded v1 work.
+- Exact next action: dispatch Phase 2F immediately; no Owner response is required.
