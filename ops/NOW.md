@@ -1,22 +1,25 @@
-# Authentication plan reconciliation
+# Local-account persistence foundation
 
-- Objective: reconcile the next authentication/account/session implementation plan to
-  the committed production-authentication decisions before any such implementation.
-- Last published task: the single-Property identity scope accepts objects assigned to the
-  configured Property ID and rejects a different Property ID.
-- Publication: implementation commit `2a34a84` contains exactly the five reviewed paths;
-  local, upstream, and remote SHAs matched after the normal push.
-- Fresh verification: Hermes passed; independent format, lint, strict types, 58 backend
-  tests plus 3 frontend tests, builds, routing, traceability, dependency/secret/scope
-  checks, and 6 isolated PostgreSQL migration tests passed.
-- GitHub Actions: run `32018414211` passed backend, frontend, dependency-security, and
-  PostgreSQL migration jobs for exact commit `2a34a84`.
-- Canonical integrity: docs 001-010 were unchanged by the published tranche.
-- Current task: read-only reconciliation of the authentication implementation plan to
-  updated authoritative docs 003-010 and `DL-055` through `DL-059`.
-- Risk class: high. No authentication code, provider configuration, credentials,
-  production access, or canonical-document edits are authorized in this planning tranche.
-- Blocker: none.
-- Exact next action: dispatch the approved read-only authentication-plan reconciliation
-  as one bounded fresh cycle and record its exact implementation candidate.
-- Idle reason: waiting only for immediate dispatcher handoff; owner action: none.
+- Objective: begin production-authentication implementation only through the smallest
+  persistence tranche required by the approved local-account policy.
+- Planning result: authoritative authentication requirements in docs 003-010 and
+  `DL-055` through `DL-059` were reconciled against the existing provider-neutral actor,
+  capability, Property/object-scope, migration, and traceability seams.
+- Exact next candidate: add one forward-only PostgreSQL migration for `DB-AUTH-001`
+  local human-account storage and focused real-PostgreSQL/traceability tests. Enforce an
+  immutable UUID actor identity, transactionally unique normalized username,
+  display/audit identity, lifecycle state, MFA-policy class, timestamps, provenance, and
+  least-privilege runtime access.
+- Excluded from that candidate: password verifiers, login/API/UI, MFA verifier or recovery
+  state, sessions, recovery/bootstrap operations, credentials, remote access, and any
+  canonical-document change.
+- Risk class: high (authentication, identity, audit provenance, and database migration).
+- Approval status: approved_ready under the durable authorization for bounded remaining
+  v1 application tranches in `ops/QUEUE.md`; this read-only cycle did not implement it.
+- Blockers: none for the bounded candidate. Hashing/MFA/session/recovery/bootstrap library
+  and operational choices remain deferred to separately bounded later tranches.
+- Last verified result: planning-only diff is limited to compact ops state; docs 001-010,
+  code, tests, credentials, and remote configuration remain unchanged.
+- Idle reason: bounded planning tranche complete; implementation has not started.
+- Owner action: none before dispatch of the already-authorized candidate; fresh approval
+  is required for any scope expansion or protected production operation.
