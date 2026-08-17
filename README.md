@@ -168,6 +168,10 @@ from its already-approved task instead of silently idling. A verified
 authorization is routed to independent publication verification and cannot demand a
 redundant owner commit/push instruction. These cases are regression-tested by
 `make automation-test` and any future repair must add or extend a deterministic test.
+If a clean upstream-synchronized HEAD has advanced beyond the commit recorded by a
+pre-publication state, preflight routes only compact-state reconciliation. Task packets
+use that enforced action instead of selecting a `next_candidate` unconditionally, so a
+`not_approved` candidate cannot be dispatched through stale publication state.
 
 Automation repairs follow a permanent prevention protocol:
 

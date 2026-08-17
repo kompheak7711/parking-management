@@ -116,14 +116,29 @@ def effective_next_action(state: dict[str, object]) -> str:
     return "No next action is recorded."
 
 
+def automation_preflight() -> dict[str, object]:
+    """Read executable state normalization so owner alerts match dispatch behavior."""
+    try:
+        output = subprocess.check_output(
+            [str(REPO / "scripts/openclaw-supervisor-preflight.sh")],
+            cwd=REPO,
+            text=True,
+        )
+        return json.loads(output)
+    except (OSError, subprocess.CalledProcessError, json.JSONDecodeError):
+        return {}
+
+
 def main() -> None:
     state = json.loads((REPO / "ops/STATE.json").read_text())
+    preflight = automation_preflight()
     service = supervisor()
     ledger = load_ledger()
     head = git("rev-parse", "--short", "HEAD")
     phase = state.get("phase", "unrecorded phase")
     status = state.get("status", "unknown")
-    next_action = effective_next_action(state)
+    next_action = str(preflight.get("next_action") or effective_next_action(state))
+    state_issue = preflight.get("state_issue")
     candidate = state.get("next_candidate") or {}
 
     last_run = service["last_run"]
@@ -153,6 +168,17 @@ def main() -> None:
         ledger["health"] = "healthy"
     else:
         ledger["health"] = "healthy"
+
+    if state_issue == "published_compact_state_reconciliation_required":
+        emit_once(
+            ledger,
+            "state_reconciliation",
+            f"{head}:{state.get('commit', '')}",
+            "STATE_RECONCILIATION_REQUIRED — The published repository is ahead of its "
+            f"pre-publication compact state. Exact next action: {next_action}",
+        )
+    else:
+        ledger.pop("state_reconciliation", None)
 
     if status == "published":
         published_commit = str(state.get("commit") or head)[:7]

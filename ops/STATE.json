@@ -3,11 +3,11 @@
   "phase": "Phase 2D",
   "tranche": "password-credential persistence",
   "task": "Add the bounded DB-AUTH-002 password-credential persistence foundation",
-  "status": "verified_for_review",
+  "status": "published",
   "active_cycle": "phase-2d-password-credential-persistence",
   "branch": "implementation/foundation",
-  "commit": "09f46eada3623fcc3581635c49fe9ff9813faeb9",
-  "timestamp": "2026-08-17T14:04:19Z",
+  "commit": "d10c306d83365b729fd41b573468e4989c903d46",
+  "timestamp": "2026-08-17T14:10:37Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_complete",
@@ -47,12 +47,13 @@
       "make test passed 59 backend tests with 37 database-gate skips and 3 frontend tests",
       "make lint, make format-check, make typecheck, and make build passed",
       "JSON validation, git diff --check, and canonical-doc integrity passed",
+      "published commit d10c306d83365b729fd41b573468e4989c903d46 equals origin/implementation/foundation",
       "focused independent security review findings were addressed with algorithm-neutral verifier structure, positive integral work-factor validation, enforced update attribution, complete privilege checks, and precise traceability",
       "no hashing library or mechanics, login/API/UI, rate limiting, sessions, MFA/recovery/bootstrap, dependencies, credentials, remote/production operations, or docs/001-010 changes"
     ]
   },
-  "next_action": "After standing-authorized DB-AUTH-002 publication, the owner separately authorizes the high-risk SEC-045/047/049/050 deployment-identity and production-secret-provisioning candidate before implementation.",
-  "idle_reason": "DB-AUTH-002 has passed fresh independent verification and is proceeding through standing-authorized publication; the exact next candidate is not approved.",
+  "next_action": "Owner separately authorizes the high-risk SEC-045/047/049/050 deployment-identity and production-secret-provisioning candidate before any implementation begins, or selects a different bounded candidate.",
+  "idle_reason": "DB-AUTH-002 is published at d10c306d83365b729fd41b573468e4989c903d46; no implementation is authorized because the exact next candidate is high risk and not approved.",
   "owner_action": "Separately authorize the high-risk SEC-045/047/049/050 deployment tranche before implementation, or choose a different bounded candidate.",
   "blockers": [],
   "secrets_present": false

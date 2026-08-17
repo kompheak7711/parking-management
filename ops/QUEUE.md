@@ -10,8 +10,8 @@
 7. Authentication/account/session plan reconciliation to authoritative docs 003-010 and
    `DL-055` through `DL-059` — completed as a bounded read-only tranche.
 8. Phase 2D local human-account persistence foundation — completed and published.
-9. Phase 2D password-credential persistence foundation — completed and independently
-   verified locally; intentionally uncommitted and unpublished. The bounded `DB-AUTH-002`
+9. Phase 2D password-credential persistence foundation — completed and published at
+   `d10c306`. The bounded `DB-AUTH-002`
    migration and focused real-PostgreSQL/traceability tests select no hashing library and
    add no credential mechanics, login/API/UI, or other excluded authentication scope.
 10. Exact next candidate: design backup/restore/human-administration database identities

@@ -3,11 +3,12 @@ set -eu
 
 repo="${PROPERTY_RENTAL_REPO:-/Users/sokompheak/Development/property-rental-management}"
 state_file="$repo/ops/STATE.json"
+preflight="$($repo/scripts/openclaw-supervisor-preflight.sh)"
 
-status="$(jq -r '.status // "unknown"' "$state_file")"
-phase="$(jq -r '.next_candidate.phase // .phase // "unknown"' "$state_file")"
-task="$(jq -r '.next_candidate.task // .task // .next_action // "unknown"' "$state_file")"
-risk="$(jq -r '.next_candidate.risk_class // .execution.risk_class // "high"' "$state_file")"
+status="$(printf '%s' "$preflight" | jq -r '.status // "unknown"')"
+phase="$(jq -r '.phase // .next_candidate.phase // "unknown"' "$state_file")"
+task="$(printf '%s' "$preflight" | jq -r '.next_action // "unknown"')"
+risk="$(jq -r '.risk_class // .next_candidate.risk_class // .execution.risk_class // "high"' "$state_file")"
 
 case "$risk" in
   low|high) ;;

@@ -82,4 +82,29 @@ completed_preflight="$(PROPERTY_RENTAL_REPO="$completed_repo" "$completed_repo/s
 [ "$(printf '%s' "$completed_preflight" | jq -r '.state_issue')" = completed_tranche_publication_action_enforced ]
 printf '%s' "$completed_preflight" | jq -e '.next_action | contains("standing authorization")' >/dev/null
 
+make_repo stale_published high 'prohibited unapproved deployment tranche'
+stale_repo="$test_root/stale_published/repo"
+published_base="$(git -C "$stale_repo" rev-parse HEAD)"
+jq --arg commit "$published_base" '
+  .status="verified_for_review"
+  | .commit=$commit
+  | .approval={status:"approved_complete"}
+  | .next_action="Owner authorizes the unapproved candidate."
+  | .next_candidate.status="not_approved"
+' "$stale_repo/ops/STATE.json" >"$stale_repo/ops/STATE.json.new"
+mv "$stale_repo/ops/STATE.json.new" "$stale_repo/ops/STATE.json"
+git -C "$stale_repo" add ops/STATE.json
+git -C "$stale_repo" -c user.name=test -c user.email=test@example.invalid commit -qm 'publish completed tranche'
+git -C "$stale_repo" init -q --bare "$test_root/stale_published/origin.git"
+git -C "$stale_repo" remote add origin "$test_root/stale_published/origin.git"
+git -C "$stale_repo" push -qu origin HEAD
+stale_preflight="$(PROPERTY_RENTAL_REPO="$stale_repo" "$stale_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$stale_preflight" | jq -r '.actionable')" = true ]
+[ "$(printf '%s' "$stale_preflight" | jq -r '.normalized')" = true ]
+[ "$(printf '%s' "$stale_preflight" | jq -r '.state_issue')" = published_compact_state_reconciliation_required ]
+printf '%s' "$stale_preflight" | jq -e '.next_action | startswith("Reconcile compact state with published HEAD ")' >/dev/null
+stale_packet="$(PROPERTY_RENTAL_REPO="$stale_repo" "$stale_repo/scripts/openclaw-task-packet.sh")"
+[ "$(printf '%s' "$stale_packet" | jq -r '.task')" = "$(printf '%s' "$stale_preflight" | jq -r '.next_action')" ]
+printf '%s' "$stale_packet" | jq -e '.task | contains("prohibited unapproved deployment tranche") | not' >/dev/null
+
 echo "OpenClaw routing tests passed"

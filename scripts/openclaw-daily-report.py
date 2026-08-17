@@ -56,8 +56,22 @@ def git(*args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=REPO, text=True).strip()
 
 
+def automation_preflight() -> dict[str, object]:
+    """Read executable state normalization so reporting matches dispatch behavior."""
+    try:
+        output = subprocess.check_output(
+            [str(REPO / "scripts/openclaw-supervisor-preflight.sh")],
+            cwd=REPO,
+            text=True,
+        )
+        return json.loads(output)
+    except (OSError, subprocess.CalledProcessError, json.JSONDecodeError):
+        return {}
+
+
 def main() -> None:
     state = json.loads((REPO / "ops/STATE.json").read_text())
+    preflight = automation_preflight()
     with sqlite3.connect(STATE_DB) as connection:
         supervisor = connection.execute(
             """SELECT enabled, last_run_at_ms, last_run_status, consecutive_errors,
@@ -92,10 +106,13 @@ def main() -> None:
     except subprocess.CalledProcessError:
         synchronized = False
     commits = git("log", "--since=24 hours ago", "--format=- %h %s", "-5")
-    next_action = effective_next_action(state)
+    next_action = str(preflight.get("next_action") or effective_next_action(state))
+    state_issue = preflight.get("state_issue")
     status = state.get("status", "unknown")
     candidate = state.get("next_candidate") or {}
-    if status in {
+    if state_issue == "published_compact_state_reconciliation_required":
+        idle_reason = "Published compact state requires reconciliation"
+    elif status in {
         "approved_ready",
         "active",
         "in_progress",
