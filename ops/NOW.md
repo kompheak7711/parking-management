@@ -1,4 +1,4 @@
-# Phase 2G MFA Policy Enforcement Foundation — complete and uncommitted
+# Phase 2G MFA Policy Enforcement Foundation — verified and published
 
 - Outcome: implemented a provider-neutral gate that carries the existing account
   `required`/`optional` MFA policy class from local credential authentication and controls normal
@@ -11,7 +11,7 @@
   recording. Audit evidence contains only actor ID, outcome, reason, bounded policy class,
   enrollment state, and challenge state; no provider, mechanism, credential, verifier, or secret
   is accepted.
-- Focused evidence: 24 local-authentication, MFA-policy, and traceability tests passed, including
+- Independent evidence: 24 local-authentication, MFA-policy, and traceability tests passed, including
   the deterministic six-row required/optional matrix, capability preservation, invalid evidence,
   persisted policy-class flow, and mechanical authority links.
 - Verification: `make format-check`, `make lint`, `make typecheck`, `make test`, `make build`,
@@ -22,14 +22,14 @@
   changed. No provider/library/algorithm/protocol, persistence/migration, API/UI,
   session/token/cookie/CSRF, recovery/bootstrap, production/deployment/remote access, canonical,
   role/capability-policy, business, or financial change was made.
-- Publication: no commit or push occurred. Base HEAD remains `efed368`.
+- Publication: commit `f16a41a` is pushed; local HEAD, upstream, and remote matched. GitHub Actions
+  run `32055134127` passed backend, frontend, dependency-security, and PostgreSQL migration jobs.
 - Blockers: none.
-- Exact next candidate: independently review and publish only
-  `backend/src/property_rental/local_authentication.py`,
-  `backend/src/property_rental/mfa_policy.py`, `backend/tests/test_local_authentication.py`,
-  `backend/tests/test_mfa_policy.py`, `backend/tests/test_traceability.py`,
-  `ops/traceability.json`, `ops/NOW.md`, and `ops/STATE.json`.
-- Approval: `approved_ready`; no Owner response is required for the bounded publication candidate.
-- Exact next action: verify that exact staged set, publish one bounded Phase 2G commit, verify
-  GitHub Actions and local/upstream/remote synchronization, then reconcile compact state to
-  published HEAD before selecting another implementation tranche.
+- Exact next candidate: Phase 2H provider-neutral Browser Session Lifetime Foundation. Enforce the
+  approved 30-minute inactivity and absolute 24-hour lifetime with injected time, deterministic
+  expiry/revocation tests, secret-free audit evidence, and traceability.
+- Boundaries: exclude persistence/migrations, token generation or storage, cookies/CSRF, API/UI,
+  recovery/bootstrap, production/deployment/remote access, canonical changes, and policy invention.
+- Approval: `approved_ready` under durable authorization for remaining bounded v1 work.
+- Exact next action: dispatch the bounded Phase 2H candidate immediately; no Owner response is
+  required.

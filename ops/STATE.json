@@ -3,46 +3,47 @@
   "phase": "Phase 2G",
   "tranche": "MFA Policy Enforcement Foundation",
   "task": "Implement the bounded MFA Policy Enforcement Foundation through provider-neutral enrollment and challenge-state boundaries",
-  "status": "complete_uncommitted",
+  "status": "published",
   "active_cycle": "phase-2g-mfa-policy-enforcement-foundation",
   "branch": "implementation/foundation",
-  "commit": "efed3686d375a32884efff37cae51c9af6c098cf",
-  "timestamp": "2026-08-17T18:28:19Z",
+  "commit": "f16a41a624b26d8462b34ef22d0a3b3d525677b6",
+  "timestamp": "2026-08-17T18:31:00Z",
   "risk_class": "high",
   "approval": {
-    "status": "approved_ready",
+    "status": "approved_complete",
     "basis": "owner-authorized actionable Phase 2G bounded candidate",
     "implementation_started": true,
     "implementation_completed": true,
     "publication_authorized_in_this_attempt": true
   },
   "next_candidate": {
-    "phase": "Phase 2G publication",
-    "task": "Independently review and publish the exact verified MFA Policy Enforcement Foundation tranche, then verify GitHub Actions and reconcile compact state before selecting another implementation tranche",
+    "phase": "Phase 2H",
+    "task": "Implement the bounded provider-neutral Browser Session Lifetime Foundation",
     "include": [
-      "review and stage only backend/src/property_rental/local_authentication.py",
-      "review and stage only backend/src/property_rental/mfa_policy.py",
-      "review and stage only backend/tests/test_local_authentication.py",
-      "review and stage only backend/tests/test_mfa_policy.py",
-      "review and stage only backend/tests/test_traceability.py",
-      "review and stage only ops/traceability.json",
-      "review and stage only ops/NOW.md",
-      "review and stage only ops/STATE.json",
-      "verify the staged set, publish one bounded commit, verify GitHub Actions, and reconcile compact state"
+      "enforce the approved 30-minute inactivity timeout and absolute 24-hour lifetime through provider-neutral session timestamps",
+      "ensure activity cannot extend absolute expiry and explicit revocation fails closed",
+      "use injected time and secret-free audit evidence",
+      "add focused deterministic lifetime, activity, expiry, and revocation tests plus traceability"
     ],
     "exclude": [
-      "any implementation expansion or unrelated path",
-      "MFA provider, library, algorithm, protocol, credential, or verifier selection",
-      "persistence, migration, API, UI, session, token, cookie, CSRF, recovery, bootstrap, production, remote-access, canonical, role, capability-policy, business, or financial changes"
+      "database persistence or migration",
+      "session token generation, encoding, hashing, storage, or transport",
+      "cookies, CSRF, API, or UI",
+      "recovery, bootstrap, production deployment, credentials, or remote access",
+      "canonical document, business, financial, role, capability-policy, or authentication-policy changes"
     ],
     "risk_class": "high",
     "status": "approved_ready",
     "authorities": [
       "PR-CAP-009",
-      "API-096",
-      "TEST-128",
-      "SEC-013",
-      "DL-056"
+      "API-097",
+      "TEST-131",
+      "TEST-132",
+      "SEC-015",
+      "SEC-016",
+      "SEC-017",
+      "SEC-018",
+      "DL-057"
     ]
   },
   "reconciliation": {
@@ -69,11 +70,12 @@
       "make test passed 96 backend tests with 38 expected dedicated-gate skips and 3 frontend tests; make database-test passed 38 real-PostgreSQL tests",
       "TEST-118 traceability audit, JSON validation, excluded-scope signature scan, and git diff checks passed",
       "docs/001-010, backend migrations, frontend, API/UI, sessions/tokens/cookies/CSRF, recovery/bootstrap, production/deployment/remote access, role/capability policy, and business/financial behavior are unchanged",
-      "no commit or push occurred"
+      "commit f16a41a624b26d8462b34ef22d0a3b3d525677b6 contains the exact eight reviewed paths and is present at local HEAD, upstream, and the remote implementation/foundation branch",
+      "GitHub Actions CI run 32055134127 passed backend, frontend, dependency-security, and PostgreSQL migration jobs for exact commit f16a41a624b26d8462b34ef22d0a3b3d525677b6"
     ]
   },
-  "next_action": "Independently review and publish only the eight exact Phase 2G paths listed in next_candidate.include, verify GitHub Actions and local/upstream/remote synchronization, then reconcile compact state to published HEAD before selecting another implementation tranche.",
-  "idle_reason": "Phase 2G implementation and local verification are complete and uncommitted; the exact bounded publication candidate is approved_ready for the next action.",
+  "next_action": "Implement the approved bounded Phase 2H provider-neutral Browser Session Lifetime Foundation candidate immediately.",
+  "idle_reason": "Phase 2G is published; Phase 2H is approved_ready and should dispatch immediately.",
   "owner_action": "none",
   "blockers": [],
   "repair": {
