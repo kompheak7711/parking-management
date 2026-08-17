@@ -55,6 +55,9 @@ jobs:
           TRACEABILITY_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: python3 scripts/traceability-audit.py --base "$TRACEABILITY_BASE"
 
+      - name: Test deterministic supervisor routing
+        run: make automation-test
+
       - name: Build and import backend package
         run: make backend-build backend-import-check
 

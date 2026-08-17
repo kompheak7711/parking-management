@@ -16,7 +16,7 @@ FRONTEND_RUN := cd $(FRONTEND_DIR) && $(NPM) run
 	backend-install backend-dev backend-test backend-lint backend-format \
 	backend-format-check backend-typecheck backend-build backend-import-check \
 	frontend-install frontend-dev frontend-test frontend-lint frontend-format \
-	frontend-format-check frontend-typecheck frontend-build frontend-audit
+	frontend-format-check frontend-typecheck frontend-build frontend-audit automation-test
 
 help:
 	@printf '%s\n' \
@@ -34,7 +34,8 @@ help:
 		"  make format                Apply backend and frontend formatting" \
 		"  make typecheck             Run backend and frontend strict typing" \
 		"  make build                 Build backend and frontend artifacts" \
-		"  make frontend-audit        Audit locked frontend dependencies"
+		"  make frontend-audit        Audit locked frontend dependencies" \
+		"  make automation-test       Test model routing without real model calls"
 
 install: backend-install frontend-install
 
@@ -115,3 +116,6 @@ frontend-build:
 
 frontend-audit:
 	cd $(FRONTEND_DIR) && $(NPM) audit --audit-level=moderate
+
+automation-test:
+	./scripts/test-openclaw-routing.sh

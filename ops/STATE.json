@@ -117,7 +117,8 @@
   "next_candidate": {
     "phase": "Phase 2B",
     "task": "provider-neutral capability authorization boundary",
-    "status": "not_approved"
+    "status": "not_approved",
+    "risk_class": "high"
   },
   "next_action": "Owner approval is required before beginning a bounded Phase 2B provider-neutral capability authorization boundary.",
   "blockers": [],

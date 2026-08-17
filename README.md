@@ -153,6 +153,14 @@ cycle without waiting for another scheduled tick. Immediate chaining is capped a
 distinct tranches per wake-up to prevent an erroneous state transition from creating an
 unbounded model loop.
 
+Each actionable state produces a compact deterministic task packet and a fresh model
+session. Explicitly low-risk mechanical tranches use the local Ollama route first;
+unknown or sensitive tranches fail closed to Codex. A model-written low-risk label is
+only a hint; deterministic sensitive-term checks can override it to high risk. Local
+failure or unchanged compact state receives at most one fresh Codex escalation. Local
+runs are limited to one tranche, two repair attempts, three no-progress tool calls,
+and a 30,000-token budget.
+
 A separate model-free watchdog sends Telegram only for a new publication or approval
 request, a stalled approved tranche, an unhealthy supervisor, or recovery. Identical
 events are deduplicated. The daily 08:00 Asia/Phnom_Penh report includes automation
