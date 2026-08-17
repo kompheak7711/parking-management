@@ -1,4 +1,4 @@
-# Phase 2H Browser Session Lifetime Foundation — complete uncommitted
+# Phase 2H Browser Session Lifetime Foundation — verified and published
 
 - Outcome: implemented a provider-neutral browser-session state and lifetime service with fixed
   30-minute inactivity and 24-hour absolute limits, timezone-aware injected time, activity updates,
@@ -10,11 +10,19 @@
   No persistence/migration, token mechanics, cookie/CSRF, API/UI, recovery/bootstrap,
   production/deployment/remote access, canonical, role/capability/authentication-policy,
   architecture, business, or financial change was made.
-- Verification: 14 focused lifetime and traceability tests passed; focused Ruff format/lint and
-  backend strict mypy passed; TEST-118 traceability audit passed; `make automation-test` passed.
-- Approval: implementation is `complete_uncommitted`; `approval.status` is `approved_ready` for the
-  mandatory independent publication step.
+- Verification: `make format-check`, `make lint`, `make typecheck`, `make test`, `make build`,
+  `make database-test`, `make frontend-audit`, `make deployment-config-check`, and
+  `make automation-test` passed. Backend tests passed 106 with 38 expected dedicated-gate skips;
+  frontend tests passed 3; the dedicated PostgreSQL gate passed 38.
+- Publication: commit `5bf88d1` is pushed; local HEAD, upstream, and remote matched. GitHub Actions
+  run `32056430957` passed backend, frontend, dependency-security, and PostgreSQL migration jobs.
 - Blockers: none.
-- Exact next action: independently verify the Phase 2H diff and gates, then commit and push exactly
-  the seven changed Phase 2H paths on `implementation/foundation`; do not begin another tranche
-  before publication state is reconciled.
+- Exact next candidate: Phase 2I provider-neutral Administrative Recovery Authorization
+  Foundation. Enforce only the approved Owner-to-Manager/Staff allow and Staff-to-Owner/Manager and
+  Manager-to-Staff deny boundaries with bounded secret-free audit evidence and focused tests.
+- Boundaries: exclude recovery-code generation or storage, credential/MFA mutation, session
+  revocation mechanics, persistence/migrations, API/UI, emergency/bootstrap procedures,
+  production/deployment/remote access, canonical changes, and policy invention.
+- Approval: `approved_ready` under durable authorization for remaining bounded v1 work.
+- Exact next action: dispatch the bounded Phase 2I candidate immediately; no Owner response is
+  required.

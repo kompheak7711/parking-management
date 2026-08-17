@@ -3,47 +3,44 @@
   "phase": "Phase 2H",
   "tranche": "Browser Session Lifetime Foundation",
   "task": "Implement the bounded provider-neutral Browser Session Lifetime Foundation",
-  "status": "complete_uncommitted",
+  "status": "published",
   "active_cycle": "phase-2h-browser-session-lifetime-foundation",
   "branch": "implementation/foundation",
-  "commit": "5af20b7e7a52f67d6075a310979075d334245a68",
-  "timestamp": "2026-08-17T18:39:39Z",
+  "commit": "5bf88d186dfe83021a3ad30870374e64b6622ec2",
+  "timestamp": "2026-08-17T18:46:15Z",
   "risk_class": "high",
   "approval": {
-    "status": "approved_ready",
+    "status": "approved_complete",
     "basis": "owner-authorized actionable Phase 2H bounded candidate",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_authorized_in_this_attempt": false
+    "publication_authorized_in_this_attempt": true
   },
   "next_candidate": {
-    "phase": "Phase 2H",
-    "task": "Implement the bounded provider-neutral Browser Session Lifetime Foundation",
+    "phase": "Phase 2I",
+    "task": "Implement the bounded provider-neutral Administrative Recovery Authorization Foundation",
     "include": [
-      "enforce the approved 30-minute inactivity timeout and absolute 24-hour lifetime through provider-neutral session timestamps",
-      "ensure activity cannot extend absolute expiry and explicit revocation fails closed",
-      "use injected time and secret-free audit evidence",
-      "add focused deterministic lifetime, activity, expiry, and revocation tests plus traceability"
+      "enforce the approved Owner-to-Manager and Owner-to-Staff administrative recovery allow boundaries",
+      "deny Staff-to-Owner, Staff-to-Manager, and Manager-to-Staff administrative recovery without invented authority",
+      "use provider-neutral decisions and bounded secret-free audit evidence",
+      "add focused deterministic authorization-matrix, fail-closed, audit, and traceability tests"
     ],
     "exclude": [
-      "database persistence or migration",
-      "session token generation, encoding, hashing, storage, or transport",
-      "cookies, CSRF, API, or UI",
-      "recovery, bootstrap, production deployment, credentials, or remote access",
-      "canonical document, business, financial, role, capability-policy, or authentication-policy changes"
+      "recovery-code generation, presentation, verification, or storage",
+      "credential or MFA mutation and session revocation mechanics",
+      "database persistence or migration, API, or UI",
+      "emergency Owner recovery, bootstrap, production deployment, credentials, or remote access",
+      "canonical document, business, financial, role, capability-policy, or recovery-policy changes"
     ],
     "risk_class": "high",
-    "status": "complete_uncommitted",
+    "status": "approved_ready",
     "authorities": [
       "PR-CAP-009",
-      "API-097",
-      "TEST-131",
-      "TEST-132",
-      "SEC-015",
-      "SEC-016",
-      "SEC-017",
-      "SEC-018",
-      "DL-057"
+      "API-099",
+      "TEST-130",
+      "SEC-072",
+      "SEC-075",
+      "DL-058"
     ]
   },
   "reconciliation": {
@@ -73,16 +70,18 @@
       "14 focused browser-session and traceability tests passed",
       "focused Ruff formatting and lint passed; backend strict mypy passed",
       "TEST-118 traceability audit and make automation-test passed",
-      "no persistence/migration, token, cookie/CSRF, API/UI, recovery/bootstrap, production/deployment/remote access, canonical, role/capability/authentication-policy, architecture, business, or financial change was made"
+      "no persistence/migration, token, cookie/CSRF, API/UI, recovery/bootstrap, production/deployment/remote access, canonical, role/capability/authentication-policy, architecture, business, or financial change was made",
+      "commit 5bf88d186dfe83021a3ad30870374e64b6622ec2 contains exactly the seven reviewed Phase 2H paths and is present at local HEAD, upstream, and the remote implementation/foundation branch",
+      "GitHub Actions CI run 32056430957 passed backend, frontend, dependency-security, and PostgreSQL migration jobs for exact commit 5bf88d186dfe83021a3ad30870374e64b6622ec2"
     ]
   },
-  "next_action": "Mandatory publication: independently verify the Phase 2H diff and gates, then commit and push exactly the seven changed Phase 2H paths on implementation/foundation and reconcile compact state before starting another tranche.",
-  "idle_reason": "Phase 2H implementation is complete_uncommitted and must be independently published before further implementation.",
-  "owner_action": "independent verification and publication",
+  "next_action": "Implement the approved bounded Phase 2I provider-neutral Administrative Recovery Authorization Foundation candidate immediately.",
+  "idle_reason": "Phase 2H is published; Phase 2I is approved_ready and should dispatch immediately.",
+  "owner_action": "none",
   "blockers": [],
   "repair": {
     "failure": "none",
-    "resolved": false,
+    "resolved": true,
     "scope_preserved": true,
     "attempts": 0,
     "max_attempts": 2,

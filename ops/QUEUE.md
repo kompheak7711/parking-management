@@ -34,9 +34,16 @@
     persistence/migrations, API/UI, sessions, recovery/bootstrap, production operations,
     canonical changes, and role/capability-policy invention.
 14. Phase 2H provider-neutral Browser Session Lifetime Foundation — implementation is complete
-    uncommitted and approved_ready for mandatory independent verification and publication. The
+    and published as `5bf88d1`. The
     bounded tranche contains fixed inactivity/absolute lifetime enforcement, injected time,
     activity and revocation handling, secret-free evidence, focused tests, and traceability only.
+15. Phase 2I provider-neutral Administrative Recovery Authorization Foundation — approved and
+    ready under the durable authorization below. Bound the tranche to the explicit recovery
+    authorization matrix, provider-neutral allow/deny decisions, bounded secret-free audit
+    evidence, focused deterministic tests, and traceability. Exclude recovery-code generation or
+    storage, credential/MFA mutation, session revocation mechanics, persistence/migrations,
+    API/UI, emergency/bootstrap procedures, production operations, canonical changes, and policy
+    invention.
 
 Remaining v1 application tranches are authorized when bounded by canonical documents
 001-010 and all publication gates; unresolved policy and protected production work still
