@@ -1,79 +1,70 @@
 {
   "schema_version": 1,
-  "phase": "Phase 2L",
-  "tranche": "Recovery-Code Cryptographic Provider Foundation",
-  "task": "Implement the bounded Recovery-Code Cryptographic Provider Foundation",
-  "status": "published",
-  "active_cycle": "phase-2l-recovery-code-cryptographic-provider-foundation",
+  "phase": "Phase 2M",
+  "tranche": "Recovery-Code Set Issuance and One-Time Presentation Foundation",
+  "task": "Implement the bounded Recovery-Code Set Issuance and One-Time Presentation Foundation",
+  "status": "complete_uncommitted",
+  "active_cycle": "phase-2m-recovery-code-set-issuance-one-time-presentation-foundation",
   "branch": "implementation/foundation",
-  "commit": "e074d4230c40312f996e4eaf6f4260394a170d19",
-  "timestamp": "2026-08-17T21:05:36Z",
+  "commit": "5c96d58df6309e4d79c2d0638e5939778e25e636",
+  "timestamp": "2026-08-17T21:40:00Z",
   "risk_class": "high",
   "approval": {
-    "status": "complete",
-    "basis": "owner-authorized actionable Phase 2L bounded candidate and standing publication authority",
+    "status": "approved_ready",
+    "basis": "owner-authorized exact bounded Phase 2M tranche, durable remaining-v1 authorization, and standing publication authority",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
-  "publication": {
-    "commit": "e074d4230c40312f996e4eaf6f4260394a170d19",
-    "subject": "feat: add recovery code cryptographic provider",
-    "upstream": "origin/implementation/foundation",
-    "local_upstream_remote_match": true,
-    "github_actions_run": "32069151162",
-    "github_actions_status": "passed",
-    "committed_paths": [
-      "backend/src/property_rental/recovery_code_security.py",
-      "backend/tests/test_recovery_code_security.py",
-      "backend/tests/test_traceability.py",
-      "ops/NOW.md",
-      "ops/STATE.json",
-      "ops/traceability.json"
-    ]
+  "authorities": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+  "touched_areas": ["recovery-code issuance service", "focused backend tests", "bounded traceability", "compact state"],
+  "tests": [
+    "format/lint/typecheck passed",
+    "backend 171 passed with 51 expected dedicated-gate skips",
+    "frontend 3 passed",
+    "backend/frontend builds and backend import passed",
+    "deployment and TEST-118 traceability validation passed",
+    "backend and frontend dependency audits passed",
+    "make database-test passed 51",
+    "make automation-test passed"
+  ],
+  "relevant_docs": [
+    "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-009",
+    "docs/004_DATABASE_MODEL.md: DB-AUTH-003",
+    "docs/005_API_SPECIFICATION.md: API-098",
+    "docs/007_TESTING_STRATEGY.md: TEST-129",
+    "docs/008_SECURITY_MODEL.md: SEC-071 and SEC-075",
+    "docs/010_DECISION_LOG.md: DL-058"
+  ],
+  "repair": {
+    "standing_authorization": true,
+    "failure": "Hermes left immutable issuance audit evidence incomplete and overclassified mocked adapter tests as real database evidence",
+    "scope_preserved": true,
+    "attempts": 1,
+    "max_attempts": 2,
+    "requires_owner_decision": false,
+    "suspected_secret": false,
+    "scope_expansion": false,
+    "protected_operation": false
   },
   "next_candidate": {
-    "phase": "Phase 2M",
-    "task": "Implement the bounded Recovery-Code Set Issuance and One-Time Presentation Foundation",
+    "phase": "Phase 2N",
+    "task": "Implement the bounded Recovery-Code Consumption Persistence Orchestration Foundation",
     "include": [
-      "compose the published secure generator, irreversible verifier provider, and recovery-code persistence boundary to issue an independently usable recovery-code set",
-      "return plaintext recovery-code material exactly once through a bounded provider-neutral authorized-caller contract without retaining it in service state",
-      "add deterministic transaction and failure handling, non-representation and non-logging, provider-contract, and bounded traceability tests"
+      "compose the published recovery-code lifecycle, verifier, and persistence boundaries for atomic single-use consumption",
+      "preserve fail-closed generic outcomes and immutable secret-free audit evidence with focused deterministic and real-PostgreSQL verification",
+      "add bounded traceability without extending recovery policy"
     ],
     "exclude": [
-      "public API or UI and regeneration or replacement orchestration",
-      "recovery-code consumption, rate limiting, enumeration handling, session revocation, MFA, and administrative or emergency recovery",
-      "bootstrap, production deployment, credentials, remote access, canonical changes, policy invention, and scope expansion"
+      "public API or UI, account or MFA mutation, session revocation, rate limiting, and enumeration handling",
+      "regeneration, administrative or emergency recovery, bootstrap, production operations, credentials, remote access, canonical changes, and policy invention"
     ],
     "risk_class": "high",
     "status": "approved_ready",
-    "authorities": [
-      "DB-AUTH-003",
-      "PR-CAP-009",
-      "API-098",
-      "TEST-129",
-      "SEC-071",
-      "SEC-075",
-      "DL-058"
-    ],
-    "next_action": "Dispatch the approved-ready Phase 2M Recovery-Code Set Issuance and One-Time Presentation Foundation through model-free preflight."
+    "authorities": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+    "next_action": "After Phase 2M publication reconciliation, dispatch the approved-ready Phase 2N Recovery-Code Consumption Persistence Orchestration Foundation through model-free preflight."
   },
-  "reconciliation": {
-    "status": "passed",
-    "routed_sections": [
-      "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-009",
-      "docs/010_DECISION_LOG.md: DL-058"
-    ],
-    "evidence": [
-      "Hermes independently reviewed the exact six-path Phase 2L tranche and found no blocker or required correction",
-      "supervisor format, lint, typecheck, test, build, PostgreSQL, deployment, dependency, scope, canonical-integrity, secret, and automation gates passed",
-      "backend tests passed 155 with 51 expected dedicated-gate skips; frontend tests passed 3; PostgreSQL passed 51",
-      "canonical documents remained unchanged and the reviewed Phase 2L exclusions were preserved",
-      "local, upstream, and remote SHA matched the published Phase 2L commit",
-      "GitHub Actions run 32069151162 passed backend, frontend, dependency-security, and PostgreSQL jobs"
-    ]
-  },
-  "next_action": "Dispatch the approved-ready Phase 2M Recovery-Code Set Issuance and One-Time Presentation Foundation through model-free preflight.",
+  "next_action": "Stage the exact independently reviewed Phase 2M paths, verify cached scope and secrets, commit and push normally, verify GitHub Actions and SHA/file-list agreement, then reconcile compact state to published HEAD.",
   "idle_reason": null,
   "owner_action": "none",
   "blockers": [],

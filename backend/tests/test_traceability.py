@@ -394,3 +394,39 @@ def test_recovery_code_cryptographic_provider_foundation_has_bounded_traceabilit
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert routed_authorities <= set(entry["upstream_ids"])
+
+
+def test_recovery_code_set_issuance_foundation_has_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    routed_authorities = {
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058",
+    }
+    expected_test_ids = {
+        "test_authorized_issuance_persists_independent_verifiers_before_one_time_return",
+        "test_unauthorized_caller_is_rejected_before_secret_generation_or_persistence",
+        "test_authorization_provider_failure_is_a_generic_pre_generation_rejection",
+        "test_provider_failure_is_generic_and_never_persists_partial_set",
+        "test_persistence_failure_records_secret_free_generic_failure_evidence",
+        "test_duplicate_generated_material_fails_before_persisting_a_non_independent_set",
+        "test_issuance_contract_rejects_empty_set_configuration",
+        "test_issuance_request_rejects_invalid_nonsecret_context",
+        "test_postgres_repository_commits_complete_set_and_verifiers_as_one_transaction",
+        "test_postgres_repository_rolls_back_deterministically_on_partial_insert_failure",
+        "test_issuance_does_not_represent_log_or_retain_plaintext_in_service_state",
+        "test_caller_owned_presentation_releases_plaintext_only_once",
+        "test_published_generator_and_verifier_satisfy_issuance_provider_contracts",
+        "test_recovery_code_set_issuance_foundation_has_bounded_traceability",
+    }
+
+    for test_id in expected_test_ids:
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert routed_authorities <= set(entry["upstream_ids"])

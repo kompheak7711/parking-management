@@ -52,7 +52,7 @@
     {
       "test_id": "test_baseline_constraint_rejects_invalid_additive_row_without_data_loss",
       "upstream_ids": ["SEC-048"],
-      "test_level": "DB",
+      "test_level": "unit",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
       "notes": "The additive baseline check rejects malformed input while preserving valid history."
@@ -1141,6 +1141,118 @@
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
       "notes": "Real PostgreSQL proves five non-superuser/non-role-creating identities, read-only backup access, and no standing data path for restore or human administration."
+    },
+    {
+      "test_id": "test_authorized_issuance_persists_independent_verifiers_before_one_time_return",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "Phase 2M composes authorized generation and irreversible encoding into one complete independently identified verifier set before plaintext can cross the one-time caller boundary."
+    },
+    {
+      "test_id": "test_unauthorized_caller_is_rejected_before_secret_generation_or_persistence",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "The provider-neutral authorization contract fails closed before generating or persisting any recovery-code material."
+    },
+    {
+      "test_id": "test_authorization_provider_failure_is_a_generic_pre_generation_rejection",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "An authorization-provider failure is reduced to the same generic pre-generation rejection without exposing provider detail or producing recovery-code material."
+    },
+    {
+      "test_id": "test_provider_failure_is_generic_and_never_persists_partial_set",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "Generator or irreversible-verifier failure produces one generic closed outcome and no partial persistence call or secret-bearing exception representation."
+    },
+    {
+      "test_id": "test_persistence_failure_records_secret_free_generic_failure_evidence",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "Persistence failure closes generically while recording immutable secret-free failure evidence without plaintext or provider detail."
+    },
+    {
+      "test_id": "test_duplicate_generated_material_fails_before_persisting_a_non_independent_set",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "A duplicate generator result cannot produce a set that falsely claims independently usable recovery codes."
+    },
+    {
+      "test_id": "test_issuance_contract_rejects_empty_set_configuration",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "The issuance contract rejects a zero-sized set without selecting a product-level recovery-code count."
+    },
+    {
+      "test_id": "test_issuance_request_rejects_invalid_nonsecret_context",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "Blank, whitespace-only, or control-bearing correlation and provenance values are rejected before authorization or secret generation."
+    },
+    {
+      "test_id": "test_postgres_repository_commits_complete_set_and_verifiers_as_one_transaction",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "A deterministic adapter contract test proves the PostgreSQL boundary prepares the set and opaque verifier writes before exactly one commit; real schema behavior remains covered by make database-test."
+    },
+    {
+      "test_id": "test_postgres_repository_rolls_back_deterministically_on_partial_insert_failure",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "A deterministic adapter contract test proves a partial insertion exception rolls back once and never commits; real schema behavior remains covered by make database-test."
+    },
+    {
+      "test_id": "test_issuance_does_not_represent_log_or_retain_plaintext_in_service_state",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "Plaintext and opaque verifier values are redacted from representations, plaintext is absent from service state, and issuance emits no log, stdout, or stderr content."
+    },
+    {
+      "test_id": "test_caller_owned_presentation_releases_plaintext_only_once",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "The caller-owned presentation contract removes plaintext on first release and deterministically rejects a second presentation attempt."
+    },
+    {
+      "test_id": "test_published_generator_and_verifier_satisfy_issuance_provider_contracts",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_recovery_code_issuance.py",
+      "status": "implemented",
+      "notes": "The published secure generator and Argon2id provider compose through the provider-neutral issuance contracts and produce independently matching persisted verifiers."
+    },
+    {
+      "test_id": "test_recovery_code_set_issuance_foundation_has_bounded_traceability",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "Phase 2M issuance evidence remains mechanically bounded to authorized set creation, one-time plaintext presentation, transaction failure handling, and provider composition without claiming excluded recovery behavior."
     }
   ]
 }

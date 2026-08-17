@@ -1,30 +1,27 @@
-# Phase 2L Recovery-Code Cryptographic Provider Foundation — published
+# Phase 2M Recovery-Code Set Issuance and One-Time Presentation Foundation — complete_uncommitted
 
-- Outcome: the bounded provider-neutral recovery-code generator and Argon2id verifier foundation
-  is published at `e074d42` with fixed 256-bit OS-backed entropy, independent salts, opaque
-  verifier output, malformed-input rejection, fail-closed matching, and secret-free behavior.
-- Scope: exactly six Phase 2L paths were committed. Persistence/migrations, presentation and
-  regeneration orchestration, lifecycle consumption integration, rate limiting, enumeration
-  handling, session revocation, MFA, API/UI, administrative/emergency recovery, bootstrap,
-  production/deployment/credentials, remote access, canonical changes, and policy invention were
-  excluded.
-- Independent verification: Hermes passed the bounded review without changes. Supervisor format,
-  lint, strict typecheck, backend/frontend tests, builds/import, PostgreSQL migration tests,
-  deployment validation, dependency audit, scope, canonical-integrity, diff, secret, and
-  automation gates passed. Backend passed 155 with 51 expected dedicated-gate skips; frontend
-  passed 3; PostgreSQL passed 51.
-- Publication: local, upstream, and remote SHA matched
-  `e074d4230c40312f996e4eaf6f4260394a170d19`; GitHub Actions run `32069151162` passed all four
-  jobs. Canonical documents remain unchanged.
+- Outcome: the bounded provider-neutral issuance service composes authorization, secure generation,
+  irreversible verification, atomic persistence, immutable secret-free audit evidence, and a
+  caller-owned one-time plaintext presentation boundary.
+- Scope: exactly the approved Phase 2M issuance foundation. Public API/UI, regeneration,
+  consumption, rate limiting, enumeration handling, session revocation, MFA, administrative or
+  emergency recovery, bootstrap, production operations, credentials, remote access, canonical
+  changes, and policy invention remain excluded.
+- Repair: Hermes's incomplete audit-evidence patch was completed under standing bounded repair
+  authority. Success, authorization denial/unavailability, provider failure, and persistence
+  failure now produce deterministic secret-free evidence. Mocked PostgreSQL adapter tests are
+  classified as unit tests; real schema behavior is verified only by `make database-test`.
+- Independent verification: format, lint, strict typecheck, backend/frontend tests, builds/import,
+  deployment validation, traceability, dependency audits, frontend audit, PostgreSQL migration
+  tests, and automation tests passed. Backend passed 171 with 51 expected dedicated-gate skips;
+  frontend passed 3; PostgreSQL passed 51. Canonical documents remain unchanged.
 - Blockers: none. Owner action: none.
-- Exact next candidate: Phase 2M Recovery-Code Set Issuance and One-Time Presentation Foundation,
-  approved-ready under durable remaining-v1 authorization and `DB-AUTH-003`, `PR-CAP-009`,
-  `API-098`, `TEST-129`, `SEC-071`, `SEC-075`, and `DL-058`.
-- Candidate boundary: compose the published generator, irreversible verifier provider, and
-  persistence boundary to issue an independently usable recovery-code set and return plaintext
-  code material exactly once to an authorized caller, with deterministic transaction/failure,
-  non-representation/non-logging, and bounded traceability tests. Exclude public API/UI,
-  regeneration/replacement, code consumption, rate limiting, enumeration handling, session
-  revocation, MFA, administrative/emergency recovery, bootstrap, production operations,
-  canonical changes, and policy invention.
-- Exact next action: dispatch the approved-ready Phase 2M candidate through model-free preflight.
+- Exact next candidate: Phase 2N Recovery-Code Consumption Persistence Orchestration Foundation,
+  approved-ready under durable remaining-v1 authorization and the existing recovery authorities.
+  Bound it to composing the published lifecycle/verifier/persistence boundaries for atomic
+  single-use consumption and secret-free audit evidence. Exclude public API/UI, account/MFA
+  mutation, session revocation, rate limiting, enumeration handling, regeneration, administrative
+  recovery, production operations, canonical changes, and policy invention.
+- Exact next action: publish the independently verified Phase 2M tranche, reconcile compact state
+  to the published HEAD and passing GitHub Actions, then dispatch only the approved-ready Phase 2N
+  candidate through model-free preflight.
