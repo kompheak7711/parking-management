@@ -623,6 +623,54 @@
       "notes": "A valid Argon2id encoding below the current approved policy verifies successfully while being marked for replacement with current parameters."
     },
     {
+      "test_id": "test_repository_normalizes_username_through_local_account_persistence",
+      "upstream_ids": ["DB-AUTH-001", "TEST-108", "SEC-009", "DL-055"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "The private login repository normalizes the submitted username and joins the existing local-account and password-credential persistence boundary without adding schema."
+    },
+    {
+      "test_id": "test_authenticates_active_local_account_with_phase_2e_verifier",
+      "upstream_ids": ["PR-CAP-009", "DB-AUTH-002", "API-096", "TEST-108", "SEC-010", "DL-055"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "An active local account authenticates through the published Phase 2E Argon2id verifier and emits only stable actor identity plus secret-free audit evidence."
+    },
+    {
+      "test_id": "test_rejections_are_generic_and_perform_one_argon2id_verification",
+      "upstream_ids": ["PR-CAP-009", "DB-AUTH-001", "DB-AUTH-002", "API-096", "TEST-108", "SEC-010", "DL-055"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "Missing accounts, incorrect passwords, and disabled accounts produce the same generic result and secret-free audit shape while each performs one Argon2id verification."
+    },
+    {
+      "test_id": "test_attempt_limiter_enforces_account_and_source_bounds",
+      "upstream_ids": ["API-096", "TEST-108", "SEC-012", "DL-055"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "Injected positive account, source, and rolling-window limits are enforced independently with a deterministic clock and no invented production threshold."
+    },
+    {
+      "test_id": "test_rate_limited_authentication_is_generic_and_skips_account_lookup",
+      "upstream_ids": ["API-096", "TEST-108", "SEC-012", "DL-055"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "A limited request receives the same generic external rejection without account lookup while secret-free internal evidence records that the rate-limit control acted."
+    },
+    {
+      "test_id": "test_local_login_security_requirements_have_implemented_traceability",
+      "upstream_ids": ["TEST-002", "TEST-108", "SEC-009", "SEC-010", "SEC-012", "DL-055"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "The bounded Phase 2F login-security requirements remain mechanically linked to the focused executable tests."
+    },
+    {
       "test_id": "test_traceability_manifest_covers_executable_tests",
       "upstream_ids": ["TEST-002"],
       "test_level": "operational",

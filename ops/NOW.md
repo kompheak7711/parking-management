@@ -1,34 +1,29 @@
-# Phase 2E password hashing and verification — verified and published
+# Phase 2F Local Login Security Foundation — complete, uncommitted
 
-- Outcome: implemented the bounded `DB-AUTH-002` password service with `argon2-cffi` 25.1.0,
-  the Argon2id RFC 9106 low-memory profile, fresh salts, explicit work-factor metadata,
-  correct-password verification, fail-closed secret-free invalid results, and rehash-needed
-  detection for valid encodings below the current policy.
-- Focused evidence: 7 focused password-security and traceability tests passed. The hash test
-  proves distinct encodings for identical input; verification covers current, mismatched,
-  malformed, and older-work-factor encodings.
-- Verification: `make format`, `make format-check`, `make lint`, `make typecheck`, `make test`,
+- Outcome: implemented the bounded private local-login foundation with normalized username
+  lookup through `app.user_accounts`/`app.password_credentials`, the published Phase 2E
+  Argon2id verifier, disabled-account rejection, generic external results, account/source
+  rolling-window request limits, and secret-free authentication audit evidence.
+- Enumeration resistance: missing, incorrect-password, and disabled-account attempts return
+  the same result and audit shape and each performs one Argon2id verification; rate-limited
+  attempts skip account lookup and return the same generic external rejection.
+- Rate-limit policy: positive account/source attempt bounds and the window are required inputs;
+  no production threshold or deployment policy was invented.
+- Focused evidence: 8 local-authentication test cases and the Phase 2F traceability assertion
+  passed deterministically.
+- Independent verification: `make format-check`, `make lint`, `make typecheck`, `make test`,
   `make build`, `make database-test`, and `make automation-test` passed. Backend tests passed
-  74 with 38 expected dedicated-gate skips; frontend tests passed 3; the dedicated PostgreSQL
+  83 with 38 expected dedicated-gate skips; frontend tests passed 3; the dedicated PostgreSQL
   gate passed 38.
-- Dependency evidence: `uv lock --check` passed; locked runtime and development `pip-audit`
-  scans reported no known vulnerabilities; `npm audit` reported none.
-- Automation repair: Hermes emitted the non-actionable invented status
-  `implemented_awaiting_supervisor_review`, which stranded mandatory publication. Preflight now
-  normalizes that legacy alias, the prompt and owner-visible reporting use the same meaning,
-  README records the contract, and a deterministic routing regression passes. Compact state now
-  uses the required `complete_uncommitted` status; repair attempt 1 of 2 preserved scope.
-- Publication: commit `bc567ea` is pushed; local HEAD, upstream, and remote branch matched.
-  GitHub Actions CI run `32046660052` passed backend, frontend, dependency-security, and
-  PostgreSQL migration jobs for the exact commit.
-- Scope: only the password service, focused tests, backend dependency/lock, traceability,
-  compact state, and the required durable automation prevention rule changed.
-  compact ops state changed. `docs/001-010`, migrations/schema, login/API/UI, sessions, MFA,
-  recovery, bootstrap, deployment/remote access, role policy, and business/financial behavior
-  are unchanged. No commit or push occurred.
+- Publication gates: locked runtime/development dependency audits, frontend audit,
+  traceability, JSON, diff, canonical/migration scope, and secret-signature checks passed.
+- Scope: no public login endpoint/UI, sessions/cookies/CSRF/tokens, MFA/recovery/bootstrap,
+  production credentials/deployment/remote access, migrations/schema, canonical documents,
+  or business/financial/authorization policy changed.
+- Status: `complete_uncommitted`.
+- Approval: `approved_ready` for independent verification/publication under standing
+  authorization.
 - Blockers: none.
-- Exact next candidate: Phase 2F Local Login Security Foundation: normalized username lookup,
-  Argon2id verification, disabled-account rejection, generic enumeration-resistant outcomes,
-  bounded account/source rate-limiting enforcement, and secret-free authentication audit evidence.
-- Approval: `approved_ready` under the durable authorization for remaining bounded v1 work.
-- Exact next action: dispatch Phase 2F immediately; no Owner response is required.
+- Exact next candidate: independently verify the exact Phase 2F uncommitted diff and, if all
+  standing publication gates pass, commit and push only the reviewed paths under standing
+  authorization.

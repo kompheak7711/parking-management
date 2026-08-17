@@ -161,3 +161,49 @@ def test_password_credential_requirements_have_implemented_traceability() -> Non
         if entry["test_id"] == "test_log_formatter_ignores_non_allowlisted_extra_fields"
     )
     assert "SEC-043" in logging_entry["upstream_ids"]
+
+
+def test_local_login_security_requirements_have_implemented_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    expected_references = {
+        "test_repository_normalizes_username_through_local_account_persistence": {
+            "DB-AUTH-001",
+            "TEST-108",
+            "SEC-009",
+            "DL-055",
+        },
+        "test_authenticates_active_local_account_with_phase_2e_verifier": {
+            "PR-CAP-009",
+            "DB-AUTH-002",
+            "API-096",
+            "TEST-108",
+            "SEC-010",
+            "DL-055",
+        },
+        "test_rejections_are_generic_and_perform_one_argon2id_verification": {
+            "API-096",
+            "TEST-108",
+            "SEC-010",
+            "DL-055",
+        },
+        "test_attempt_limiter_enforces_account_and_source_bounds": {
+            "API-096",
+            "TEST-108",
+            "SEC-012",
+            "DL-055",
+        },
+        "test_rate_limited_authentication_is_generic_and_skips_account_lookup": {
+            "API-096",
+            "TEST-108",
+            "SEC-012",
+            "DL-055",
+        },
+        "test_local_login_security_requirements_have_implemented_traceability": {"TEST-002"},
+    }
+
+    for test_id, references in expected_references.items():
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert references <= set(entry["upstream_ids"])
