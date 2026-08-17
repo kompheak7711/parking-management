@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "phase": "Phase 2A",
-  "tranche": "provider-neutral authenticated actor boundary correction",
-  "task": "Correct the unpublished Phase 2A tranche to a provider-neutral authenticated actor boundary",
+  "phase": "Operations",
+  "tranche": "risk-based model routing and compaction safeguards",
+  "task": "Configure bounded local-first routing for low-risk work with fail-closed Codex escalation",
   "status": "published",
   "active_cycle": null,
   "branch": "implementation/foundation",
-  "commit": "89f30ba23818d7d8ffb6edb30d8f311aeffa259a",
-  "timestamp": "2026-08-15T06:39:55Z",
+  "commit": "ea721af8335c5724823db52b18a8b5f18141cd90",
+  "timestamp": "2026-08-17T06:09:01Z",
   "implemented": [
     "node_engine_baseline_aligned_to_vite_7_3_6",
     "strict_typescript_react_vite_foundation",
@@ -31,7 +31,15 @@
     "injected_request_to_actor_resolver_boundary",
     "default_denial_without_provider_established_actor",
     "canonical_correlated_authenticated_identity_resource",
-    "client_identity_assertions_remain_untrusted"
+    "client_identity_assertions_remain_untrusted",
+    "compact_deterministic_supervisor_task_packets",
+    "fail_closed_risk_routing_to_codex",
+    "local_ollama_first_for_explicit_low_risk_work",
+    "fresh_per_fingerprint_model_sessions",
+    "bounded_codex_escalation_after_local_failure_or_no_progress",
+    "local_tool_loop_hard_stops",
+    "compaction_pressure_reserve_and_mid_turn_precheck",
+    "model_free_routing_regression_tests_in_ci"
   ],
   "requirements_satisfied": [
     "UI-007",
@@ -72,7 +80,11 @@
     "versioned protected identity API seam",
     "focused provider-neutral API security tests",
     "test traceability manifest",
-    "compact continuity state"
+    "compact continuity state",
+    "OpenClaw risk router and task packet",
+    "Hermes explicit provider wrapper and loop limits",
+    "OpenClaw compaction safeguards",
+    "model-free automation routing tests and CI"
   ],
   "verification": {
     "status": "passed",
@@ -92,7 +104,15 @@
       "fresh supervisor review found the corrected seam provider-neutral, default-deny, canonical-envelope compliant, and within the approved scope",
       "make database-test independently passed all 6 isolated PostgreSQL migration/database tests and cleaned its disposable resources",
       "implementation commit 89f30ba23818d7d8ffb6edb30d8f311aeffa259a contained exactly the eight reviewed paths and was pushed normally",
-      "local HEAD, upstream tracking SHA, and remote implementation/foundation SHA all matched 89f30ba23818d7d8ffb6edb30d8f311aeffa259a after publication"
+      "local HEAD, upstream tracking SHA, and remote implementation/foundation SHA all matched 89f30ba23818d7d8ffb6edb30d8f311aeffa259a after publication",
+      "OpenClaw compaction config validated with a 16000-token reserve/floor, 8000 recent-token tail, safeguard mode, mid-turn precheck, transcript rotation, and no extra memory-flush model call",
+      "Hermes named local provider resolved as custom:ollama---hermes3-64k and returned exactly OLLAMA_PROVIDER_READY in a real local-only smoke test",
+      "Hermes provider wrapper tests selected 40 local iterations and 150 Codex iterations without invoking a real model",
+      "six model-free routing cases passed: high, unknown, low, local failure escalation, local no-progress escalation, and mislabeled-sensitive fail-closed routing",
+      "make format-check, lint, typecheck, test, build, automation-test, and frontend-audit passed",
+      "locked runtime and development Python dependency audits found no known vulnerabilities; uv lock and TEST-118 traceability checks passed",
+      "make database-test passed all 6 isolated PostgreSQL migration tests and cleaned its disposable resources",
+      "automation commit ea721af8335c5724823db52b18a8b5f18141cd90 was pushed normally and GitHub Actions run 32000171078 passed on attempt 1"
     ]
   },
   "preserved": [
