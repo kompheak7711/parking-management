@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "phase": "Phase 2B",
-  "tranche": "provider-neutral capability authorization boundary",
-  "task": "Implement a deny-by-default capability and scope seam for the protected identity endpoint",
-  "status": "published",
-  "active_cycle": null,
+  "phase": "Phase 2C",
+  "tranche": "single-Property application foundation",
+  "task": "Implement one bounded canonically defined single-Property application foundation tranche",
+  "status": "approved_ready",
+  "active_cycle": "phase-2c-single-property-foundation",
   "branch": "implementation/foundation",
-  "commit": "a931f0aae1e6b1a1be333410644e93d75b549342",
-  "timestamp": "2026-08-17T07:36:00Z",
+  "commit": "d3dd0a3fd0c51c00b73d07405ecfb383bd3948c5",
+  "timestamp": "2026-08-17T07:41:00Z",
   "implemented": [
     "node_engine_baseline_aligned_to_vite_7_3_6",
     "strict_typescript_react_vite_foundation",
@@ -168,7 +168,7 @@
     "status": "approved_ready",
     "risk_class": "high"
   },
-  "next_action": "Activate the approved high-risk Phase 2C single-Property application foundation under durable v1 authorization.",
+  "next_action": "Implement and independently verify one bounded Phase 2C single-Property application foundation tranche, then commit and push only if every applicable publication gate passes.",
   "blockers": [],
   "secrets_present": false
 }

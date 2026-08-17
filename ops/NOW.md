@@ -1,10 +1,9 @@
-# Phase 2B — capability authorization boundary published
+# Phase 2C — single-Property application foundation
 
-- Objective: close the published provider-neutral, deny-by-default authorization seam
-  and reconcile compact state to repository truth.
-- Current task: implementation is committed and published on `implementation/foundation`
-  at `a931f0a`; local HEAD and upstream match with a clean index/worktree before this
-  state-only reconciliation.
+- Objective: begin the canonically bounded single-Property application foundation after
+  successful Phase 2B publication.
+- Current task: approved and ready for high-risk Codex supervisor dispatch on
+  `implementation/foundation` from synchronized checkpoint `d3dd0a3`.
 - Scope: `AuthenticatedActor` carries provider-established capability grants with
   Property and exact-object scopes. `/api/v1/identity/me` requires
   `identity.read_self` for the actor's exact self-object scope, returning 401 without an
@@ -18,5 +17,6 @@
 - Remote verification: GitHub Actions run `32002986112` completed successfully on its
   first attempt for exact commit `a931f0a`.
 - Blocker: none.
-- Exact next action: activate the approved high-risk Phase 2C single-Property
-  application foundation under the owner's durable v1 authorization.
+- Exact next action: implement and independently verify one bounded Phase 2C
+  single-Property application foundation tranche, then commit and push only if every
+  applicable publication gate passes.
