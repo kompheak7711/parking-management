@@ -244,3 +244,47 @@ def test_mfa_policy_requirements_have_implemented_traceability() -> None:
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert references <= set(entry["upstream_ids"])
+
+
+def test_browser_session_lifetime_requirements_have_implemented_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    expected_references = {
+        "test_session_expires_at_fixed_thirty_minute_inactivity_boundary": {
+            "PR-CAP-009",
+            "API-097",
+            "TEST-131",
+            "SEC-017",
+            "DL-057",
+        },
+        "test_recent_activity_never_extends_fixed_twenty_four_hour_absolute_expiry": {
+            "PR-CAP-009",
+            "API-097",
+            "TEST-131",
+            "SEC-017",
+            "DL-057",
+        },
+        "test_explicit_revocation_fails_closed_for_evaluation_and_activity": {
+            "API-097",
+            "TEST-131",
+            "SEC-017",
+            "DL-057",
+        },
+        "test_session_audit_evidence_is_fixed_bounded_and_secret_free": {
+            "SEC-015",
+            "SEC-017",
+            "DL-057",
+        },
+        "test_browser_session_lifetime_requirements_have_implemented_traceability": {
+            "TEST-002",
+            "TEST-131",
+            "SEC-017",
+            "DL-057",
+        },
+    }
+
+    for test_id, references in expected_references.items():
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert references <= set(entry["upstream_ids"])

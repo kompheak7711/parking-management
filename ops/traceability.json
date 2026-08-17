@@ -711,6 +711,70 @@
       "notes": "The bounded Phase 2G MFA policy-enforcement requirements remain mechanically linked to focused executable tests."
     },
     {
+      "test_id": "test_session_expires_at_fixed_thirty_minute_inactivity_boundary",
+      "upstream_ids": ["PR-CAP-009", "API-097", "TEST-131", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_browser_session.py",
+      "status": "implemented",
+      "notes": "An injected clock proves browser-session access is allowed before and denied exactly at the fixed 30-minute inactivity boundary."
+    },
+    {
+      "test_id": "test_recent_activity_never_extends_fixed_twenty_four_hour_absolute_expiry",
+      "upstream_ids": ["PR-CAP-009", "API-097", "TEST-131", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_browser_session.py",
+      "status": "implemented",
+      "notes": "Recent recorded activity advances only inactivity state and cannot move the fixed authentication timestamp or 24-hour absolute expiry."
+    },
+    {
+      "test_id": "test_activity_updates_only_last_activity_for_an_active_session",
+      "upstream_ids": ["API-097", "TEST-131", "SEC-017", "DL-057"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_browser_session.py",
+      "status": "implemented",
+      "notes": "Provider-neutral activity updates only the last-activity timestamp while retaining the original authentication timestamp."
+    },
+    {
+      "test_id": "test_expired_session_activity_is_rejected_without_timestamp_change",
+      "upstream_ids": ["API-097", "TEST-131", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_browser_session.py",
+      "status": "implemented",
+      "notes": "Activity on an expired session is denied instead of refreshing or returning modified lifetime state."
+    },
+    {
+      "test_id": "test_explicit_revocation_fails_closed_for_evaluation_and_activity",
+      "upstream_ids": ["API-097", "TEST-131", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_browser_session.py",
+      "status": "implemented",
+      "notes": "Explicit revocation records a provider-neutral timestamp and subsequently denies both evaluation and activity."
+    },
+    {
+      "test_id": "test_invalid_or_future_session_timestamps_fail_closed",
+      "upstream_ids": ["TEST-131", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_browser_session.py",
+      "status": "implemented",
+      "notes": "Naive, inconsistent, or future session timestamps deny access rather than weakening either fixed lifetime boundary."
+    },
+    {
+      "test_id": "test_session_audit_evidence_is_fixed_bounded_and_secret_free",
+      "upstream_ids": ["SEC-015", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_browser_session.py",
+      "status": "implemented",
+      "notes": "Lifetime audit evidence has only fixed operation, outcome, and reason fields and accepts no identifier, token, credential, or caller-controlled text."
+    },
+    {
+      "test_id": "test_browser_session_lifetime_requirements_have_implemented_traceability",
+      "upstream_ids": ["TEST-002", "TEST-131", "SEC-017", "DL-057"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "The bounded Phase 2H browser-session lifetime requirements remain mechanically linked to focused executable tests without claiming excluded high-risk reauthentication behavior."
+    },
+    {
       "test_id": "test_traceability_manifest_covers_executable_tests",
       "upstream_ids": ["TEST-002"],
       "test_level": "operational",

@@ -1,35 +1,20 @@
-# Phase 2G MFA Policy Enforcement Foundation — verified and published
+# Phase 2H Browser Session Lifetime Foundation — complete uncommitted
 
-- Outcome: implemented a provider-neutral gate that carries the existing account
-  `required`/`optional` MFA policy class from local credential authentication and controls normal
-  `AuthenticatedActor` establishment at explicit enrollment and challenge-state boundaries.
-- Required policy: actor establishment is denied until enrollment exists and the challenge is
-  complete. Optional policy: unenrolled actors may be established only with separately supplied
-  capability grants; once enrolled, they must complete the challenge.
-- Fail-closed evidence: unknown or inconsistent policy/enrollment/challenge values establish no
-  actor, and arbitrary invalid values are replaced by a bounded `invalid` marker before audit
-  recording. Audit evidence contains only actor ID, outcome, reason, bounded policy class,
-  enrollment state, and challenge state; no provider, mechanism, credential, verifier, or secret
-  is accepted.
-- Independent evidence: 24 local-authentication, MFA-policy, and traceability tests passed, including
-  the deterministic six-row required/optional matrix, capability preservation, invalid evidence,
-  persisted policy-class flow, and mechanical authority links.
-- Verification: `make format-check`, `make lint`, `make typecheck`, `make test`, `make build`,
-  `make database-test`, and `make automation-test` passed. Backend tests passed 96 with 38 expected
-  dedicated-gate skips; frontend tests passed 3; the dedicated PostgreSQL gate passed 38.
-  TEST-118, JSON, excluded-scope signature, and Git diff checks also passed.
-- Scope: exactly two backend source files, three backend test files, traceability, and compact state
-  changed. No provider/library/algorithm/protocol, persistence/migration, API/UI,
-  session/token/cookie/CSRF, recovery/bootstrap, production/deployment/remote access, canonical,
-  role/capability-policy, business, or financial change was made.
-- Publication: commit `f16a41a` is pushed; local HEAD, upstream, and remote matched. GitHub Actions
-  run `32055134127` passed backend, frontend, dependency-security, and PostgreSQL migration jobs.
+- Outcome: implemented a provider-neutral browser-session state and lifetime service with fixed
+  30-minute inactivity and 24-hour absolute limits, timezone-aware injected time, activity updates,
+  explicit revocation, fail-closed timestamp validation, and bounded secret-free audit evidence.
+- Absolute safety: activity changes only `last_activity_at`; it never changes `authenticated_at` or
+  extends the absolute expiry. Expired, revoked, naive, inconsistent, and future timestamp states
+  establish no active session and cannot record activity.
+- Scope: one backend source file, two backend test files, traceability, and compact ops state changed.
+  No persistence/migration, token mechanics, cookie/CSRF, API/UI, recovery/bootstrap,
+  production/deployment/remote access, canonical, role/capability/authentication-policy,
+  architecture, business, or financial change was made.
+- Verification: 14 focused lifetime and traceability tests passed; focused Ruff format/lint and
+  backend strict mypy passed; TEST-118 traceability audit passed; `make automation-test` passed.
+- Approval: implementation is `complete_uncommitted`; `approval.status` is `approved_ready` for the
+  mandatory independent publication step.
 - Blockers: none.
-- Exact next candidate: Phase 2H provider-neutral Browser Session Lifetime Foundation. Enforce the
-  approved 30-minute inactivity and absolute 24-hour lifetime with injected time, deterministic
-  expiry/revocation tests, secret-free audit evidence, and traceability.
-- Boundaries: exclude persistence/migrations, token generation or storage, cookies/CSRF, API/UI,
-  recovery/bootstrap, production/deployment/remote access, canonical changes, and policy invention.
-- Approval: `approved_ready` under durable authorization for remaining bounded v1 work.
-- Exact next action: dispatch the bounded Phase 2H candidate immediately; no Owner response is
-  required.
+- Exact next action: independently verify the Phase 2H diff and gates, then commit and push exactly
+  the seven changed Phase 2H paths on `implementation/foundation`; do not begin another tranche
+  before publication state is reconciled.

@@ -33,6 +33,10 @@
     focused policy-matrix tests, and traceability. Exclude MFA mechanism/library selection,
     persistence/migrations, API/UI, sessions, recovery/bootstrap, production operations,
     canonical changes, and role/capability-policy invention.
+14. Phase 2H provider-neutral Browser Session Lifetime Foundation — implementation is complete
+    uncommitted and approved_ready for mandatory independent verification and publication. The
+    bounded tranche contains fixed inactivity/absolute lifetime enforcement, injected time,
+    activity and revocation handling, secret-free evidence, focused tests, and traceability only.
 
 Remaining v1 application tranches are authorized when bounded by canonical documents
 001-010 and all publication gates; unresolved policy and protected production work still

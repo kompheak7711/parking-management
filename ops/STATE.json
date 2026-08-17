@@ -1,20 +1,20 @@
 {
   "schema_version": 1,
-  "phase": "Phase 2G",
-  "tranche": "MFA Policy Enforcement Foundation",
-  "task": "Implement the bounded MFA Policy Enforcement Foundation through provider-neutral enrollment and challenge-state boundaries",
-  "status": "published",
-  "active_cycle": "phase-2g-mfa-policy-enforcement-foundation",
+  "phase": "Phase 2H",
+  "tranche": "Browser Session Lifetime Foundation",
+  "task": "Implement the bounded provider-neutral Browser Session Lifetime Foundation",
+  "status": "complete_uncommitted",
+  "active_cycle": "phase-2h-browser-session-lifetime-foundation",
   "branch": "implementation/foundation",
-  "commit": "f16a41a624b26d8462b34ef22d0a3b3d525677b6",
-  "timestamp": "2026-08-17T18:31:00Z",
+  "commit": "5af20b7e7a52f67d6075a310979075d334245a68",
+  "timestamp": "2026-08-17T18:39:39Z",
   "risk_class": "high",
   "approval": {
-    "status": "approved_complete",
-    "basis": "owner-authorized actionable Phase 2G bounded candidate",
+    "status": "approved_ready",
+    "basis": "owner-authorized actionable Phase 2H bounded candidate",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_authorized_in_this_attempt": true
+    "publication_authorized_in_this_attempt": false
   },
   "next_candidate": {
     "phase": "Phase 2H",
@@ -33,7 +33,7 @@
       "canonical document, business, financial, role, capability-policy, or authentication-policy changes"
     ],
     "risk_class": "high",
-    "status": "approved_ready",
+    "status": "complete_uncommitted",
     "authorities": [
       "PR-CAP-009",
       "API-097",
@@ -49,40 +49,42 @@
   "reconciliation": {
     "status": "passed",
     "routed_sections": [
-      "docs/008_SECURITY_MODEL.md: SEC-013"
+      "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-009",
+      "docs/005_API_SPECIFICATION.md: API-097",
+      "docs/007_TESTING_STRATEGY.md: TEST-131 and TEST-132",
+      "docs/008_SECURITY_MODEL.md: SEC-015 through SEC-018",
+      "docs/010_DECISION_LOG.md: DL-057"
     ],
     "touched_areas": [
-      "existing local-account MFA-policy-class authentication output",
-      "provider-neutral enrollment and challenge-state actor-establishment gate",
-      "secret-free MFA policy audit evidence",
-      "focused deterministic policy-matrix and fail-closed tests",
+      "provider-neutral browser-session timestamps and injected clock",
+      "fixed inactivity and absolute-lifetime enforcement",
+      "activity and explicit revocation handling",
+      "bounded secret-free lifetime audit evidence",
+      "focused deterministic lifetime and fail-closed tests",
       "traceability and compact ops state"
     ],
     "evidence": [
-      "the existing required or optional MFA policy class now crosses the local credential-authentication boundary without schema changes",
-      "required policy denies actor establishment without enrollment or a completed challenge",
-      "optional policy permits an unenrolled actor only with separately supplied capability grants and requires challenge completion once enrolled",
-      "unknown or inconsistent policy evidence fails closed without actor establishment",
-      "arbitrary invalid policy, enrollment, and challenge values are replaced with a bounded invalid marker before audit recording",
-      "audit evidence is provider-neutral and limited to actor ID, decision, reason, policy class, enrollment state, and challenge state",
-      "focused Phase 2G tests passed 24 tests across local authentication, MFA policy, and traceability",
-      "make format-check, make lint, make typecheck, make test, make build, make database-test, and make automation-test passed",
-      "make test passed 96 backend tests with 38 expected dedicated-gate skips and 3 frontend tests; make database-test passed 38 real-PostgreSQL tests",
-      "TEST-118 traceability audit, JSON validation, excluded-scope signature scan, and git diff checks passed",
-      "docs/001-010, backend migrations, frontend, API/UI, sessions/tokens/cookies/CSRF, recovery/bootstrap, production/deployment/remote access, role/capability policy, and business/financial behavior are unchanged",
-      "commit f16a41a624b26d8462b34ef22d0a3b3d525677b6 contains the exact eight reviewed paths and is present at local HEAD, upstream, and the remote implementation/foundation branch",
-      "GitHub Actions CI run 32055134127 passed backend, frontend, dependency-security, and PostgreSQL migration jobs for exact commit f16a41a624b26d8462b34ef22d0a3b3d525677b6"
+      "the fixed 30-minute inactivity boundary denies access and activity exactly at expiry",
+      "the fixed 24-hour absolute boundary denies access regardless of recent activity",
+      "activity advances only last_activity_at and never authenticated_at",
+      "explicit revocation denies evaluation and subsequent activity",
+      "naive, inconsistent, and future timestamps fail closed",
+      "audit evidence contains only bounded operation, outcome, and reason fields and accepts no token, credential, identifier, or caller-controlled text",
+      "14 focused browser-session and traceability tests passed",
+      "focused Ruff formatting and lint passed; backend strict mypy passed",
+      "TEST-118 traceability audit and make automation-test passed",
+      "no persistence/migration, token, cookie/CSRF, API/UI, recovery/bootstrap, production/deployment/remote access, canonical, role/capability/authentication-policy, architecture, business, or financial change was made"
     ]
   },
-  "next_action": "Implement the approved bounded Phase 2H provider-neutral Browser Session Lifetime Foundation candidate immediately.",
-  "idle_reason": "Phase 2G is published; Phase 2H is approved_ready and should dispatch immediately.",
-  "owner_action": "none",
+  "next_action": "Mandatory publication: independently verify the Phase 2H diff and gates, then commit and push exactly the seven changed Phase 2H paths on implementation/foundation and reconcile compact state before starting another tranche.",
+  "idle_reason": "Phase 2H implementation is complete_uncommitted and must be independently published before further implementation.",
+  "owner_action": "independent verification and publication",
   "blockers": [],
   "repair": {
-    "failure": "Hermes found that arbitrary invalid MFA state values were copied verbatim into audit evidence",
-    "resolved": true,
+    "failure": "none",
+    "resolved": false,
     "scope_preserved": true,
-    "attempts": 2,
+    "attempts": 0,
     "max_attempts": 2,
     "requires_owner_decision": false,
     "suspected_secret": false,
