@@ -161,6 +161,14 @@ failure or unchanged compact state receives at most one fresh Codex escalation. 
 runs are limited to one tranche, two repair attempts, three no-progress tool calls,
 and a 30,000-token budget.
 
+The model-free preflight also enforces durable handoff invariants learned from prior
+recovery incidents. An approved candidate with a missing `next_action` is dispatched
+from its already-approved task instead of silently idling. A verified
+`complete_uncommitted` or `complete_unpublished` tranche covered by standing
+authorization is routed to independent publication verification and cannot demand a
+redundant owner commit/push instruction. These cases are regression-tested by
+`make automation-test` and any future repair must add or extend a deterministic test.
+
 A separate model-free watchdog sends Telegram only for a new publication or approval
 request, a stalled approved tranche, an unhealthy supervisor, or recovery. Identical
 events are deduplicated. The daily 08:00 Asia/Phnom_Penh report includes automation

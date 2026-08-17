@@ -12,6 +12,35 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+
+def effective_next_action(state: dict[str, object]) -> str:
+    """Apply approved-state handoff invariants without a model call."""
+    status = state.get("status")
+    approval = state.get("approval") or {}
+    candidate = state.get("next_candidate") or {}
+    if (
+        status in {"complete_uncommitted", "complete_unpublished"}
+        and isinstance(approval, dict)
+        and approval.get("status") == "approved_ready"
+        and not state.get("blockers")
+    ):
+        return (
+            "Independently verify and publish the completed bounded tranche under "
+            "standing authorization, then dispatch the next approved candidate."
+        )
+    recorded = state.get("next_action")
+    if recorded:
+        return str(recorded)
+    if (
+        status == "approved_ready"
+        and isinstance(candidate, dict)
+        and candidate.get("status") == "approved_ready"
+        and candidate.get("task")
+        and not state.get("blockers")
+    ):
+        return f"Implement the approved bounded candidate: {candidate['task']}"
+    return "Missing — automation state requires repair."
+
 REPO = Path(os.environ.get("PROPERTY_RENTAL_REPO", Path(__file__).resolve().parents[1]))
 STATE_DB = Path(
     os.environ.get(
@@ -63,12 +92,16 @@ def main() -> None:
     except subprocess.CalledProcessError:
         synchronized = False
     commits = git("log", "--since=24 hours ago", "--format=- %h %s", "-5")
-    next_action = (
-        state.get("next_action") or "Missing — automation state requires repair."
-    )
+    next_action = effective_next_action(state)
     status = state.get("status", "unknown")
     candidate = state.get("next_candidate") or {}
-    if status in {"approved_ready", "active", "in_progress"}:
+    if status in {
+        "approved_ready",
+        "active",
+        "in_progress",
+        "complete_uncommitted",
+        "complete_unpublished",
+    }:
         idle_reason = "Approved work is active or queued"
     elif candidate.get("status") == "not_approved" or "approval" in next_action.lower():
         idle_reason = "Intentionally waiting for owner approval"

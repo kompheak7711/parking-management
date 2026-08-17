@@ -87,6 +87,35 @@ def emit_once(
     ledger[category] = signature
 
 
+def effective_next_action(state: dict[str, object]) -> str:
+    """Apply the same approved-state handoff invariants as model-free preflight."""
+    status = state.get("status")
+    approval = state.get("approval") or {}
+    candidate = state.get("next_candidate") or {}
+    if (
+        status in {"complete_uncommitted", "complete_unpublished"}
+        and isinstance(approval, dict)
+        and approval.get("status") == "approved_ready"
+        and not state.get("blockers")
+    ):
+        return (
+            "Independently verify and publish the completed bounded tranche under "
+            "standing authorization, then dispatch the next approved candidate."
+        )
+    recorded = state.get("next_action")
+    if recorded:
+        return str(recorded)
+    if (
+        status == "approved_ready"
+        and isinstance(candidate, dict)
+        and candidate.get("status") == "approved_ready"
+        and candidate.get("task")
+        and not state.get("blockers")
+    ):
+        return f"Implement the approved bounded candidate: {candidate['task']}"
+    return "No next action is recorded."
+
+
 def main() -> None:
     state = json.loads((REPO / "ops/STATE.json").read_text())
     service = supervisor()
@@ -94,7 +123,7 @@ def main() -> None:
     head = git("rev-parse", "--short", "HEAD")
     phase = state.get("phase", "unrecorded phase")
     status = state.get("status", "unknown")
-    next_action = state.get("next_action") or "No next action is recorded."
+    next_action = effective_next_action(state)
     candidate = state.get("next_candidate") or {}
 
     last_run = service["last_run"]
@@ -144,7 +173,13 @@ def main() -> None:
             f"PUBLISHED — Property Rental {phase} is verified and published at {published_commit}.{suffix}",
         )
 
-    if status in {"approved_ready", "active", "in_progress"}:
+    if status in {
+        "approved_ready",
+        "active",
+        "in_progress",
+        "complete_uncommitted",
+        "complete_unpublished",
+    }:
         timestamp = state.get("timestamp")
         try:
             updated_ms = int(

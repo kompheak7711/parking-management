@@ -62,4 +62,24 @@ run_case local_fail low ollama/qwen35-hermes:latest,openai/gpt-5.6-sol
 run_case local_stall low ollama/qwen35-hermes:latest,openai/gpt-5.6-sol
 run_case mislabeled_sensitive low openai/gpt-5.6-sol 'payment formatting'
 
+make_repo missing_next_action high 'bounded account migration'
+missing_repo="$test_root/missing_next_action/repo"
+jq 'del(.next_action)' "$missing_repo/ops/STATE.json" >"$missing_repo/ops/STATE.json.new"
+mv "$missing_repo/ops/STATE.json.new" "$missing_repo/ops/STATE.json"
+missing_preflight="$(PROPERTY_RENTAL_REPO="$missing_repo" "$missing_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$missing_preflight" | jq -r '.actionable')" = true ]
+[ "$(printf '%s' "$missing_preflight" | jq -r '.normalized')" = true ]
+[ "$(printf '%s' "$missing_preflight" | jq -r '.state_issue')" = missing_next_action_derived_from_approved_candidate ]
+
+make_repo completed_publication high 'next bounded candidate'
+completed_repo="$test_root/completed_publication/repo"
+jq '.status="complete_uncommitted" | .next_action="Do not commit or push without a new instruction." | .approval={status:"approved_ready"}' \
+  "$completed_repo/ops/STATE.json" >"$completed_repo/ops/STATE.json.new"
+mv "$completed_repo/ops/STATE.json.new" "$completed_repo/ops/STATE.json"
+completed_preflight="$(PROPERTY_RENTAL_REPO="$completed_repo" "$completed_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$completed_preflight" | jq -r '.actionable')" = true ]
+[ "$(printf '%s' "$completed_preflight" | jq -r '.normalized')" = true ]
+[ "$(printf '%s' "$completed_preflight" | jq -r '.state_issue')" = completed_tranche_publication_action_enforced ]
+printf '%s' "$completed_preflight" | jq -e '.next_action | contains("standing authorization")' >/dev/null
+
 echo "OpenClaw routing tests passed"
