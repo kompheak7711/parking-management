@@ -803,6 +803,462 @@ def test_password_credential_changes_require_material_actor_and_new_provenance(
                     )
 
 
+def test_recovery_code_storage_has_bounded_set_and_code_columns() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT table_name, column_name, data_type, is_nullable
+                FROM information_schema.columns
+                WHERE table_schema = 'app'
+                  AND table_name IN ('recovery_code_sets', 'recovery_codes')
+                ORDER BY table_name, ordinal_position
+                """
+            )
+
+            assert cursor.fetchall() == [
+                ("recovery_code_sets", "set_id", "uuid", "NO"),
+                ("recovery_code_sets", "actor_id", "uuid", "NO"),
+                ("recovery_code_sets", "created_at", "timestamp with time zone", "NO"),
+                ("recovery_code_sets", "created_by_actor_id", "uuid", "YES"),
+                ("recovery_code_sets", "provenance", "text", "NO"),
+                ("recovery_code_sets", "invalidated_at", "timestamp with time zone", "YES"),
+                ("recovery_code_sets", "invalidated_by_actor_id", "uuid", "YES"),
+                ("recovery_code_sets", "invalidation_provenance", "text", "YES"),
+                ("recovery_codes", "code_id", "uuid", "NO"),
+                ("recovery_codes", "set_id", "uuid", "NO"),
+                ("recovery_codes", "verifier_encoding", "text", "NO"),
+                ("recovery_codes", "algorithm", "text", "NO"),
+                ("recovery_codes", "work_factor_metadata", "jsonb", "NO"),
+                ("recovery_codes", "created_at", "timestamp with time zone", "NO"),
+                ("recovery_codes", "provenance", "text", "NO"),
+                ("recovery_codes", "consumed_at", "timestamp with time zone", "YES"),
+                ("recovery_codes", "consumed_by_actor_id", "uuid", "YES"),
+                ("recovery_codes", "consumption_provenance", "text", "YES"),
+                ("recovery_codes", "invalidated_at", "timestamp with time zone", "YES"),
+                ("recovery_codes", "invalidated_by_actor_id", "uuid", "YES"),
+                ("recovery_codes", "invalidation_provenance", "text", "YES"),
+            ]
+
+
+def test_recovery_codes_have_independent_immutable_identities_and_consumption() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    actor_id = uuid.uuid4()
+    set_id = uuid.uuid4()
+    first_code_id = uuid.uuid4()
+    second_code_id = uuid.uuid4()
+    first_verifier = f"$opaque$v=1${uuid.uuid4().hex}"
+    second_verifier = f"$opaque$v=1${uuid.uuid4().hex}"
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Recovery Target', 'recovery-target',
+                          'active', 'optional', 'authorized-account-creation')
+                """,
+                (actor_id, f"recovery-target-{uuid.uuid4().hex}"),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.recovery_code_sets (
+                    set_id, actor_id, created_by_actor_id, provenance
+                ) VALUES (%s, %s, %s, 'protected-enrollment')
+                """,
+                (set_id, actor_id, actor_id),
+            )
+            cursor.executemany(
+                """
+                INSERT INTO app.recovery_codes (
+                    code_id, set_id, verifier_encoding, algorithm,
+                    work_factor_metadata, provenance
+                ) VALUES (%s, %s, %s, 'opaque', '{"cost": 1}'::jsonb,
+                          'protected-enrollment')
+                """,
+                [
+                    (first_code_id, set_id, first_verifier),
+                    (second_code_id, set_id, second_verifier),
+                ],
+            )
+            cursor.execute(
+                """
+                UPDATE app.recovery_codes
+                SET consumed_at = statement_timestamp(),
+                    consumed_by_actor_id = %s,
+                    consumption_provenance = 'successful-recovery'
+                WHERE code_id = %s
+                """,
+                (actor_id, first_code_id),
+            )
+            cursor.execute(
+                """
+                SELECT code_id, consumed_at IS NOT NULL
+                FROM app.recovery_codes
+                WHERE set_id = %s
+                ORDER BY code_id
+                """,
+                (set_id,),
+            )
+            assert set(cursor.fetchall()) == {
+                (first_code_id, True),
+                (second_code_id, False),
+            }
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE app.recovery_codes SET code_id = %s WHERE code_id = %s",
+                    (uuid.uuid4(), second_code_id),
+                )
+        connection.rollback()
+
+        with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE app.recovery_codes
+                    SET consumption_provenance = 'rewritten-recovery'
+                    WHERE code_id = %s
+                    """,
+                    (first_code_id,),
+                )
+
+
+def test_recovery_code_set_identity_and_completed_invalidation_are_immutable() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    actor_id = uuid.uuid4()
+    other_actor_id = uuid.uuid4()
+    set_id = uuid.uuid4()
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.executemany(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Set Identity', %s, 'active', 'optional',
+                          'authorized-account-creation')
+                """,
+                [
+                    (actor_id, f"set-owner-{uuid.uuid4().hex}", f"set-owner-{actor_id}"),
+                    (
+                        other_actor_id,
+                        f"other-set-owner-{uuid.uuid4().hex}",
+                        f"other-set-owner-{other_actor_id}",
+                    ),
+                ],
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.recovery_code_sets (
+                    set_id, actor_id, created_by_actor_id, provenance
+                ) VALUES (%s, %s, %s, 'protected-enrollment')
+                """,
+                (set_id, actor_id, actor_id),
+            )
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE app.recovery_code_sets SET actor_id = %s WHERE set_id = %s",
+                    (other_actor_id, set_id),
+                )
+        connection.rollback()
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE app.recovery_code_sets
+                SET invalidated_at = statement_timestamp(),
+                    invalidated_by_actor_id = %s,
+                    invalidation_provenance = 'protected-regeneration'
+                WHERE set_id = %s
+                """,
+                (actor_id, set_id),
+            )
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE app.recovery_code_sets
+                    SET invalidation_provenance = 'rewritten-regeneration'
+                    WHERE set_id = %s
+                    """,
+                    (set_id,),
+                )
+
+
+@pytest.mark.parametrize(
+    ("verifier_encoding", "algorithm", "work_factor_metadata"),
+    [
+        ("plaintext-recovery-code", "opaque", '{"cost": 1}'),
+        ("$opaque$v=1$verifier", "   ", '{"cost": 1}'),
+        ("$other$v=1$verifier", "opaque", '{"cost": 1}'),
+        ("$opaque$v=1$verifier", "opaque", "{}"),
+        ("$opaque$v=1$verifier", "opaque", '{"cost": 0}'),
+    ],
+)
+def test_recovery_codes_reject_unprotected_or_incomplete_verifier_material(
+    verifier_encoding: str,
+    algorithm: str,
+    work_factor_metadata: str,
+) -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    actor_id = uuid.uuid4()
+    set_id = uuid.uuid4()
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Verifier Constraint', 'verifier-constraint',
+                          'active', 'optional', 'authorized-account-creation')
+                """,
+                (actor_id, f"verifier-constraint-{uuid.uuid4().hex}"),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.recovery_code_sets (set_id, actor_id, provenance)
+                VALUES (%s, %s, 'protected-enrollment')
+                """,
+                (set_id, actor_id),
+            )
+
+        with pytest.raises(psycopg.errors.CheckViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.recovery_codes (
+                        code_id, set_id, verifier_encoding, algorithm,
+                        work_factor_metadata, provenance
+                    ) VALUES (%s, %s, %s, %s, %s::jsonb, 'protected-enrollment')
+                    """,
+                    (
+                        uuid.uuid4(),
+                        set_id,
+                        verifier_encoding,
+                        algorithm,
+                        work_factor_metadata,
+                    ),
+                )
+
+
+@pytest.mark.parametrize("lifecycle", ["consumed", "invalidated"])
+def test_recovery_code_lifecycle_timestamps_require_complete_provenance(lifecycle: str) -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    actor_id = uuid.uuid4()
+    set_id = uuid.uuid4()
+    code_id = uuid.uuid4()
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Lifecycle Constraint', 'lifecycle-constraint',
+                          'active', 'optional', 'authorized-account-creation')
+                """,
+                (actor_id, f"lifecycle-constraint-{uuid.uuid4().hex}"),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.recovery_code_sets (set_id, actor_id, provenance)
+                VALUES (%s, %s, 'protected-enrollment')
+                """,
+                (set_id, actor_id),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.recovery_codes (
+                    code_id, set_id, verifier_encoding, algorithm,
+                    work_factor_metadata, provenance
+                ) VALUES (%s, %s, '$opaque$v=1$lifecycle-verifier', 'opaque',
+                          '{"cost": 1}'::jsonb, 'protected-enrollment')
+                """,
+                (code_id, set_id),
+            )
+
+        with pytest.raises(psycopg.errors.CheckViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    sql.SQL(
+                        "UPDATE app.recovery_codes SET {} = statement_timestamp() "
+                        "WHERE code_id = %s"
+                    ).format(sql.Identifier(f"{lifecycle}_at")),
+                    (code_id,),
+                )
+
+
+def test_runtime_has_only_bounded_recovery_code_lifecycle_privileges() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT table_name, column_name, privilege_type
+                FROM information_schema.column_privileges
+                WHERE table_schema = 'app'
+                  AND table_name IN ('recovery_code_sets', 'recovery_codes')
+                  AND grantee = 'prm_runtime'
+                """
+            )
+            actual_privileges = set(cursor.fetchall())
+
+            set_columns = {
+                "set_id",
+                "actor_id",
+                "created_at",
+                "created_by_actor_id",
+                "provenance",
+                "invalidated_at",
+                "invalidated_by_actor_id",
+                "invalidation_provenance",
+            }
+            code_columns = {
+                "code_id",
+                "set_id",
+                "verifier_encoding",
+                "algorithm",
+                "work_factor_metadata",
+                "created_at",
+                "provenance",
+                "consumed_at",
+                "consumed_by_actor_id",
+                "consumption_provenance",
+                "invalidated_at",
+                "invalidated_by_actor_id",
+                "invalidation_provenance",
+            }
+            expected_privileges = {
+                *(("recovery_code_sets", column, "SELECT") for column in set_columns),
+                *(("recovery_codes", column, "SELECT") for column in code_columns),
+                *(
+                    ("recovery_code_sets", column, "INSERT")
+                    for column in {
+                        "set_id",
+                        "actor_id",
+                        "created_by_actor_id",
+                        "provenance",
+                    }
+                ),
+                *(
+                    ("recovery_codes", column, "INSERT")
+                    for column in {
+                        "code_id",
+                        "set_id",
+                        "verifier_encoding",
+                        "algorithm",
+                        "work_factor_metadata",
+                        "provenance",
+                    }
+                ),
+                *(
+                    ("recovery_code_sets", column, "UPDATE")
+                    for column in {
+                        "invalidated_at",
+                        "invalidated_by_actor_id",
+                        "invalidation_provenance",
+                    }
+                ),
+                *(
+                    ("recovery_codes", column, "UPDATE")
+                    for column in {
+                        "consumed_at",
+                        "consumed_by_actor_id",
+                        "consumption_provenance",
+                        "invalidated_at",
+                        "invalidated_by_actor_id",
+                        "invalidation_provenance",
+                    }
+                ),
+            }
+            assert actual_privileges == expected_privileges
+
+            cursor.execute(
+                """
+                SELECT
+                    has_table_privilege('prm_runtime', 'app.recovery_code_sets', 'DELETE'),
+                    has_table_privilege('prm_runtime', 'app.recovery_code_sets', 'TRUNCATE'),
+                    has_table_privilege('prm_runtime', 'app.recovery_codes', 'DELETE'),
+                    has_table_privilege('prm_runtime', 'app.recovery_codes', 'TRUNCATE'),
+                    has_function_privilege(
+                        'prm_runtime',
+                        'app.valid_recovery_code_work_factor_metadata(jsonb)',
+                        'EXECUTE'
+                    ),
+                    has_function_privilege(
+                        'prm_runtime', 'app.protect_recovery_code_set_lifecycle()', 'EXECUTE'
+                    ),
+                    has_function_privilege(
+                        'prm_runtime', 'app.protect_recovery_code_lifecycle()', 'EXECUTE'
+                    )
+                """
+            )
+            assert cursor.fetchone() == (False, False, False, False, True, False, False)
+
+
+def test_runtime_can_insert_bounded_recovery_code_verifier_rows() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    actor_id = uuid.uuid4()
+    set_id = uuid.uuid4()
+    code_id = uuid.uuid4()
+    verifier_encoding = f"$opaque$v=1${uuid.uuid4().hex}"
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Runtime Recovery', 'runtime-recovery',
+                          'active', 'optional', 'authorized-account-creation')
+                """,
+                (actor_id, f"runtime-recovery-{uuid.uuid4().hex}"),
+            )
+
+    with psycopg.connect(_required_url(RUNTIME_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.recovery_code_sets (set_id, actor_id, provenance)
+                VALUES (%s, %s, 'protected-enrollment')
+                """,
+                (set_id, actor_id),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.recovery_codes (
+                    code_id, set_id, verifier_encoding, algorithm,
+                    work_factor_metadata, provenance
+                ) VALUES (%s, %s, %s, 'opaque', '{"cost": 1}'::jsonb,
+                          'protected-enrollment')
+                """,
+                (code_id, set_id, verifier_encoding),
+            )
+            cursor.execute(
+                "SELECT code_id FROM app.recovery_codes WHERE code_id = %s",
+                (code_id,),
+            )
+            assert cursor.fetchone() == (code_id,)
+
+
 def test_readiness_succeeds_with_managed_runtime_database() -> None:
     assert _run_alembic("upgrade", "head").returncode == 0
 
@@ -935,18 +1391,55 @@ def test_user_accounts_migration_refuses_destructive_downgrade() -> None:
 
 
 def test_password_credentials_migration_refuses_destructive_downgrade() -> None:
+    database = f"prm_credential_downgrade_{uuid.uuid4().hex}"
+    admin_url = _required_url(ADMIN_URL_ENV)
+    original_migration_url = _required_url(MIGRATION_URL_ENV)
+    with psycopg.connect(admin_url, autocommit=True) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                sql.SQL("CREATE DATABASE {} OWNER prm_migrator").format(sql.Identifier(database))
+            )
+
+    os.environ[MIGRATION_URL_ENV] = _url_with_database(original_migration_url, database)
+    try:
+        assert _run_alembic("upgrade", "20260817_03").returncode == 0
+
+        result = _run_alembic("downgrade", "20260817_02")
+
+        assert result.returncode != 0
+        assert "DB-AUTH-002 migration is forward-only" in result.stderr
+        with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT to_regclass('app.password_credentials')")
+                assert cursor.fetchone() == ("app.password_credentials",)
+                cursor.execute("SELECT version_num FROM alembic_version")
+                assert cursor.fetchone() == ("20260817_03",)
+    finally:
+        os.environ[MIGRATION_URL_ENV] = original_migration_url
+        with psycopg.connect(admin_url, autocommit=True) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s",
+                    (database,),
+                )
+                cursor.execute(sql.SQL("DROP DATABASE {}").format(sql.Identifier(database)))
+
+
+def test_recovery_code_migration_refuses_destructive_downgrade() -> None:
     assert _run_alembic("upgrade", "head").returncode == 0
 
-    result = _run_alembic("downgrade", "20260817_02")
+    result = _run_alembic("downgrade", "20260817_03")
 
     assert result.returncode != 0
-    assert "DB-AUTH-002 migration is forward-only" in result.stderr
+    assert "DB-AUTH-003 recovery-code migration is forward-only" in result.stderr
     with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
         with connection.cursor() as cursor:
-            cursor.execute("SELECT to_regclass('app.password_credentials')")
-            assert cursor.fetchone() == ("app.password_credentials",)
+            cursor.execute("SELECT to_regclass('app.recovery_code_sets')")
+            assert cursor.fetchone() == ("app.recovery_code_sets",)
+            cursor.execute("SELECT to_regclass('app.recovery_codes')")
+            assert cursor.fetchone() == ("app.recovery_codes",)
             cursor.execute("SELECT version_num FROM alembic_version")
-            assert cursor.fetchone() == ("20260817_03",)
+            assert cursor.fetchone() == ("20260817_04",)
 
 
 def test_password_credentials_migration_advances_user_accounts_without_data_loss() -> None:
@@ -978,8 +1471,8 @@ def test_password_credentials_migration_advances_user_accounts_without_data_loss
                     (actor_id,),
                 )
 
-        head_result = _run_alembic("upgrade", "head")
-        assert head_result.returncode == 0, head_result.stderr
+        credential_result = _run_alembic("upgrade", "20260817_03")
+        assert credential_result.returncode == 0, credential_result.stderr
         with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
             with connection.cursor() as cursor:
                 cursor.execute(

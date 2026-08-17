@@ -815,6 +815,78 @@
       "notes": "The bounded Phase 2I administrative recovery authorization requirements remain mechanically linked to focused executable tests."
     },
     {
+      "test_id": "test_recovery_code_storage_has_bounded_set_and_code_columns",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2K persistence-foundation evidence only: additive set and individual-code rows retain UUID identities, opaque verifier encodings, timestamps, invalidation state, and non-secret provenance."
+    },
+    {
+      "test_id": "test_recovery_codes_have_independent_immutable_identities_and_consumption",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2K persistence-foundation evidence only: independently identified verifier rows cannot change identity and one row records consumption without consuming its sibling."
+    },
+    {
+      "test_id": "test_recovery_code_set_identity_and_completed_invalidation_are_immutable",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2K persistence-foundation evidence only: set ownership and identity cannot change, and completed invalidation evidence cannot be rewritten."
+    },
+    {
+      "test_id": "test_recovery_codes_reject_unprotected_or_incomplete_verifier_material",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2K persistence-foundation evidence only: deterministic database constraints reject unprotected-shaped, mismatched, blank, or incomplete opaque verifier records without claiming semantic proof of cryptographic non-reversibility or selecting an algorithm."
+    },
+    {
+      "test_id": "test_recovery_code_lifecycle_timestamps_require_complete_provenance",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2K persistence-foundation evidence only: consumed and invalidated timestamps cannot be recorded without the corresponding actor and non-secret provenance."
+    },
+    {
+      "test_id": "test_runtime_has_only_bounded_recovery_code_lifecycle_privileges",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2K persistence-foundation evidence only: runtime may read opaque verifier state and advance bounded lifecycle columns but cannot update verifier material, delete/truncate rows, or execute trigger functions."
+    },
+    {
+      "test_id": "test_runtime_can_insert_bounded_recovery_code_verifier_rows",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2K persistence-foundation evidence only: the runtime identity can create bounded set and verifier rows, including evaluation of the provider-neutral metadata constraint, without broader table authority."
+    },
+    {
+      "test_id": "test_recovery_code_migration_refuses_destructive_downgrade",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The additive Phase 2K persistence migration refuses destructive rollback and preserves both recovery-code tables at the reviewed head."
+    },
+    {
+      "test_id": "test_recovery_code_persistence_foundation_has_bounded_traceability",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "Phase 2K entries claim bounded persistence evidence only; generation, cryptographic selection, plaintext handling, lifecycle-service integration, MFA, rate limiting, session revocation, API, UI, and administrative recovery remain deferred."
+    },
+    {
       "test_id": "test_protected_presentation_is_recorded_only_once_without_returning_code_material",
       "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
       "test_level": "security",

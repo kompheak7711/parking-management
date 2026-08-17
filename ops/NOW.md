@@ -1,44 +1,35 @@
-# Phase 2J Recovery Code Lifecycle Foundation — independently verified, uncommitted
+# Phase 2K Recovery-Code Verifier Persistence Foundation — complete, uncommitted
 
-- Outcome: implemented provider-neutral, non-persistent lifecycle decisions for protected one-time
-  presentation, individual consumption, reuse rejection, and regeneration invalidation.
-- Verifier boundary: the service accepts only opaque verifier references and a provider protocol;
-  it selects no generation algorithm or cryptographic library and stores no plaintext or durable
-  verifier material.
-- Fail-closed behavior: malformed/duplicate state rejects before verification; pre-presentation,
-  unmatched, ambiguous, consumed, invalidated, and provider-failure paths reject without unsafe
-  state advancement or secret disclosure. Secret-dependent consumption failures have one generic
-  outward reason while bounded internal audit evidence retains the applicable lifecycle reason.
-- Regeneration requires explicit protected-flow evidence, rejects unprotected attempts unchanged,
-  and records each old code's applicable previous and invalidated non-secret state.
-- Audit: fixed evidence preserves actor, target, injected timestamp, correlation, operation,
-  outcome, reason, and previous/resulting non-secret state while excluding candidate code and
-  verifier material.
-- Scope: exactly six paths changed: one new backend source file, one new focused test file,
-  traceability test/manifest, and compact `NOW.md`/`STATE.json`. Canonical docs are unchanged.
-- Exclusions preserved: no generation/library selection, plaintext/durable verifier storage,
-  credential/MFA mutation, session revocation mechanics, persistence/migration, API/UI,
-  administrative/emergency recovery, bootstrap, production/deployment/remote access, canonical,
-  architecture, business, financial, role, capability-policy, or recovery-policy change.
-- Traceability: entries explicitly represent partial lifecycle-foundation evidence; excluded
-  generation, persistence, endpoint, rate-limit, session-revocation, API, and UI obligations are
-  not claimed complete.
-- Verification: 24 focused lifecycle/traceability tests passed. `make format`,
-  `make format-check`, `make lint`, `make typecheck`, `make test`, `make build`,
-  `make database-test`, `make automation-test`, dependency audits, traceability audit, deployment
-  config validation, and independent security/logic/scope review passed. Backend passed 141 with 38 expected
-  dedicated-gate skips; frontend passed 3; PostgreSQL passed 38.
-- Status: `complete_uncommitted`; publication is authorized in this attempt; no commit or push has
-  yet been made.
+- Outcome: added additive recovery-code set and individual-code persistence for opaque verifier
+  encodings with independent UUID identities, consumed/invalidation timestamps, immutable creation
+  and completed-lifecycle provenance, restrictive references, and forward-only migration behavior.
+- Least privilege: runtime has exact column-level read/create/lifecycle-update grants, no
+  delete/truncate or verifier update authority, no trigger-function execution, and only the
+  validator execution needed to insert constrained verifier rows.
+- Repair: review found the validator-function execute grant was missing, so runtime inserts would
+  fail. The grant, exact ACL assertions, an actual runtime insertion test, and additional set/code
+  immutability evidence were added. Constraint claims now distinguish syntactically protected
+  opaque encodings from semantic cryptographic non-reversibility.
+- Independent review: the owner-routed publication review found no remaining concrete security,
+  logic, boundary, or test blocker in the exact six-path tranche. No further implementation repair
+  was required.
+- Scope: exactly six paths changed: one additive migration, migration and traceability tests,
+  traceability manifest, and compact `NOW.md`/`STATE.json`. Canonical documents are unchanged.
+- Exclusions preserved: no recovery-code generation or cryptographic selection; no plaintext or
+  reversible-code handling; no presentation, verification, consumption-service, rate-limit,
+  session-revocation, MFA, API, UI, administrative/emergency recovery, bootstrap, deployment,
+  credential, remote-access, canonical, business, financial, role, capability, or policy change.
+- Verification: `make format`, `make format-check`, `make lint`, `make typecheck`, `make test`,
+  `make build`, `make database-test`, `make automation-test`, deployment-config validation,
+  frontend/backend dependency audits, traceability audit, JSON validation, and diff checks passed.
+  Backend passed 142 with 51 expected dedicated-gate skips; frontend passed 3; PostgreSQL passed 51.
+- Status: `complete_uncommitted`; approval remains `approved_ready`; standing publication
+  authorization is recorded for the next publication-only attempt. This review attempt performed
+  no commit, push, deploy, production, or remote operation.
 - Blockers: none.
-- Exact next candidate: Phase 2K Recovery-Code Verifier Persistence Foundation, approved-ready
-  under the durable remaining-v1 authorization and canonical `DB-AUTH-003`, `PR-CAP-009`,
-  `API-098`, `TEST-129`, `SEC-071`, `SEC-075`, and `DL-058` sequence.
-- Candidate boundary: additive recovery-code set/code persistence with non-plaintext verifier
-  material, independent identities, consumed timestamps, constraints, least privilege, real
-  PostgreSQL tests, and traceability only. Exclude generation/cryptographic selection,
-  presentation/verification service integration, MFA state, rate limiting, session revocation,
-  API/UI, administrative/emergency recovery, bootstrap, production operations, canonical changes,
-  and policy invention.
-- Exact next action: publish the verified Phase 2J commit, reconcile publication evidence, then
-  dispatch the approved-ready Phase 2K persistence foundation through model-free preflight.
+- Exact next candidate: publish only this reviewed six-path Phase 2K tranche on
+  `implementation/foundation`: stage exactly the six paths, verify the staged set/diff and unchanged
+  canonical documents, create one bounded commit, push only this branch, and verify the remote
+  result. Exclude every file or implementation change, merge, deploy, production/credential access,
+  and canonical modification. Risk class is `high`; status is `approved_ready`; authorities are
+  `DB-AUTH-003`, `PR-CAP-009`, `API-098`, `TEST-129`, `SEC-071`, `SEC-075`, and `DL-058`.
