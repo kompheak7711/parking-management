@@ -1,13 +1,20 @@
 """Versioned HTTP API routes."""
 
 from collections.abc import Callable
-from typing import Literal
+from typing import Final, Literal
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, ConfigDict
 
-from property_rental.identity import ActorResolver
+from property_rental.identity import (
+    ActorResolver,
+    AuthorizationRequirement,
+    ObjectScope,
+    is_authorized,
+)
 from property_rental.settings import Settings
+
+IDENTITY_READ_SELF_CAPABILITY: Final = "identity.read_self"
 
 
 class HealthResponse(BaseModel):
@@ -100,6 +107,12 @@ def create_api_router(
         actor = actor_resolver(request)
         if actor is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        requirement = AuthorizationRequirement(
+            capability=IDENTITY_READ_SELF_CAPABILITY,
+            object_scope=ObjectScope(object_type="actor", object_id=actor.actor_id),
+        )
+        if not is_authorized(actor, requirement):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
         return IdentityResponse(
             data=ActorIdentity(actor_id=actor.actor_id),
             meta=ResponseMeta(request_id=request.state.request_id),

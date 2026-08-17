@@ -287,31 +287,102 @@
         "API-003",
         "API-007",
         "API-008",
+        "API-009",
         "API-011",
         "SEC-009",
         "SEC-010",
+        "SEC-020",
         "SEC-023",
-        "SEC-068"
+        "SEC-068",
+        "TEST-011",
+        "TEST-084"
       ],
       "test_level": "API",
       "test_path": "backend/tests/test_auth_api.py",
       "status": "implemented",
-      "notes": "An injected request-to-actor provider can establish one stable opaque actor identifier; the API core returns only that identifier in the canonical correlated resource envelope."
+      "notes": "An injected request-to-actor provider can establish one stable opaque actor identifier and the endpoint-required identity.read_self capability with exact self-object scope; the API core returns only the identifier in the canonical correlated resource envelope."
+    },
+    {
+      "test_id": "test_authenticated_actor_without_required_capability_is_forbidden",
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "SEC-020",
+        "SEC-023",
+        "SEC-068",
+        "TEST-011",
+        "TEST-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_auth_api.py",
+      "status": "implemented",
+      "notes": "An authenticated actor with no provider-established capability grant receives the canonical 403 response rather than inheriting authority."
+    },
+    {
+      "test_id": "test_authorization_denies_a_capability_grant_for_the_wrong_property_scope",
+      "upstream_ids": [
+        "API-009",
+        "SEC-019",
+        "SEC-023",
+        "SEC-068",
+        "TEST-011",
+        "TEST-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_auth_api.py",
+      "status": "implemented",
+      "notes": "The reusable server authorization primitive rejects a matching capability whose trusted Property scope does not exactly contain the operation's Property."
+    },
+    {
+      "test_id": "test_identity_endpoint_denies_the_wrong_exact_actor_object_scope",
+      "upstream_ids": [
+        "API-009",
+        "SEC-023",
+        "SEC-068",
+        "TEST-011",
+        "TEST-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_auth_api.py",
+      "status": "implemented",
+      "notes": "The identity endpoint returns 403 when its required capability is scoped to a different exact actor object."
+    },
+    {
+      "test_id": "test_role_and_capability_headers_do_not_grant_an_authenticated_actor_access",
+      "upstream_ids": [
+        "API-009",
+        "API-010",
+        "SEC-021",
+        "SEC-023",
+        "SEC-068",
+        "TEST-011",
+        "TEST-084"
+      ],
+      "test_level": "security",
+      "test_path": "backend/tests/test_auth_api.py",
+      "status": "implemented",
+      "notes": "Role, capability, Property, and object headers remain untrusted; an authenticated actor without provider grants receives 403 and no role name is interpreted by the API core."
     },
     {
       "test_id": "test_client_supplied_identity_assertions_cannot_bypass_default_denial",
       "upstream_ids": [
         "API-008",
+        "API-009",
+        "API-010",
         "PR-AUTH-001",
         "SEC-002",
+        "SEC-019",
+        "SEC-021",
         "SEC-023",
         "SEC-039",
-        "SEC-068"
+        "SEC-068",
+        "TEST-011",
+        "TEST-084"
       ],
       "test_level": "security",
       "test_path": "backend/tests/test_auth_api.py",
       "status": "implemented",
-      "notes": "Authorization and actor-identity headers are inert when no trusted external provider is injected, so client assertions cannot establish an actor."
+      "notes": "Authorization, actor, capability, role, Property, and object headers are inert when no trusted external provider is injected, so client assertions cannot establish identity or authority."
     },
     {
       "test_id": "test_traceability_manifest_covers_executable_tests",

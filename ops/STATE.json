@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
-  "phase": "Operations",
-  "tranche": "risk-based model routing and compaction safeguards",
-  "task": "Configure bounded local-first routing for low-risk work with fail-closed Codex escalation",
-  "status": "published",
-  "active_cycle": null,
+  "phase": "Phase 2B",
+  "tranche": "provider-neutral capability authorization boundary",
+  "task": "Implement a deny-by-default capability and scope seam for the protected identity endpoint",
+  "status": "verified_for_review",
+  "active_cycle": "phase-2b-capability-authorization",
   "branch": "implementation/foundation",
-  "commit": "ea721af8335c5724823db52b18a8b5f18141cd90",
-  "timestamp": "2026-08-17T06:09:01Z",
+  "commit": "56f927408f4b05aa2f83e0a1c7120cbd82b27af7",
+  "timestamp": "2026-08-17T06:40:16Z",
   "implemented": [
     "node_engine_baseline_aligned_to_vite_7_3_6",
     "strict_typescript_react_vite_foundation",
@@ -39,7 +39,11 @@
     "bounded_codex_escalation_after_local_failure_or_no_progress",
     "local_tool_loop_hard_stops",
     "compaction_pressure_reserve_and_mid_turn_precheck",
-    "model_free_routing_regression_tests_in_ci"
+    "model_free_routing_regression_tests_in_ci",
+    "provider_supplied_capability_grants_with_property_and_exact_object_scope",
+    "endpoint_declared_identity_read_self_capability",
+    "server_side_401_authentication_and_403_authorization_boundary",
+    "role_independent_and_client_header_inert_authorization"
   ],
   "requirements_satisfied": [
     "UI-007",
@@ -63,16 +67,26 @@
     "SEC-023",
     "SEC-039",
     "OOD-API-001",
-    "DL-048"
+    "DL-048",
+    "API-009",
+    "API-010",
+    "SEC-019",
+    "SEC-020",
+    "SEC-021",
+    "SEC-022",
+    "TEST-011",
+    "TEST-084",
+    "DL-039"
   ],
   "requirements_partially_evidenced": [
     "SEC-009: provider-established opaque actor identity supports unique attribution without implementing accounts",
     "SEC-010: stable actor identity property only; all concrete provider properties remain outside the API core",
-    "SEC-068: focused default-denial, provider-success, correlation, public-health, and header-bypass tests only"
+    "SEC-068: focused identity-boundary capability, Property/object scope, role-independence, default-denial, and header-bypass tests only",
+    "TEST-084: capability and Property/object matrix covered for the bounded seam; disabled-account and stale/revoked-session cases remain deferred with accounts and sessions"
   ],
   "requirements_preserved_not_implemented": [
-    "API-009 capability checks",
-    "API-010 configurable role-to-capability mapping",
+    "API-009 capability checks for all endpoints beyond the bounded identity seam",
+    "API-010 configurable role-to-capability mapping remains provider/deployment configuration",
     "remaining SEC-010 provider controls"
   ],
   "touched_areas": [
@@ -84,11 +98,22 @@
     "OpenClaw risk router and task packet",
     "Hermes explicit provider wrapper and loop limits",
     "OpenClaw compaction safeguards",
-    "model-free automation routing tests and CI"
+    "model-free automation routing tests and CI",
+    "backend provider-neutral capability and scope primitives",
+    "identity endpoint capability enforcement"
   ],
   "verification": {
     "status": "passed",
     "results": [
+      "Phase 2B repository gate passed at /Users/sokompheak/Development/property-rental-management on implementation/foundation with clean index/worktree and matching HEAD/upstream 56f927408f4b05aa2f83e0a1c7120cbd82b27af7 before edits; no overlapping implementation worker was present",
+      "focused authorization tests first failed because the endpoint capability and authorization primitives did not exist, then all 8 tests passed after the bounded implementation",
+      "make format-check, make lint, and make typecheck passed across backend and frontend",
+      "make test passed 53 backend tests with 6 PostgreSQL-only tests skipped in the ordinary job and passed all 3 frontend tests",
+      "make build completed backend package/import checks and the frontend production build",
+      "make database-test passed all 6 isolated PostgreSQL migration tests and cleaned its disposable resources",
+      "TEST-117 executable traceability validation passed with the expanded authorization matrix",
+      "fresh supervisor security review returned PASS with no security, logic, or bounded-scope findings",
+      "fresh supervisor gates passed format, lint, strict types, 53 backend tests, 3 frontend tests, backend/frontend builds, routing tests, locked Python and npm audits, uv lock consistency, TEST-117/118 traceability, and all 6 isolated PostgreSQL migration tests",
       "repository gate reconfirmed on implementation/foundation with empty index, the authorized dirty tranche, and HEAD/upstream ea7ed3f100ea44c7d33d587bdc238f4b43ff1b58",
       "routed canonical requirements and relevant backend seams inspected before correction edits",
       "focused provider-neutral actor API tests first failed on the rejected actor shape, then passed all 4 tests after the correction",
@@ -137,10 +162,10 @@
   "next_candidate": {
     "phase": "Phase 2B",
     "task": "provider-neutral capability authorization boundary",
-    "status": "not_approved",
+    "status": "verified_for_review",
     "risk_class": "high"
   },
-  "next_action": "Owner approval is required before beginning a bounded Phase 2B provider-neutral capability authorization boundary.",
+  "next_action": "Publish the verified bounded Phase 2B diff under the owner's standing commit/push authorization, verify GitHub Actions, and reconcile compact state with the next bounded v1 tranche.",
   "blockers": [],
   "secrets_present": false
 }
