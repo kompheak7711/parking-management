@@ -307,3 +307,30 @@ def test_administrative_recovery_requirements_have_implemented_traceability() ->
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert routed_authorities <= set(entry["upstream_ids"])
+
+
+def test_recovery_code_lifecycle_foundation_has_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    routed_authorities = {"PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"}
+    expected_test_ids = {
+        "test_protected_presentation_is_recorded_only_once_without_returning_code_material",
+        "test_unprotected_presentation_fails_closed_without_changing_state",
+        "test_successful_use_consumes_only_the_matching_code",
+        "test_consumed_code_reuse_is_rejected_without_state_change",
+        "test_regeneration_invalidates_every_old_verifier_and_rejects_old_code",
+        "test_unprotected_regeneration_is_rejected_without_invalidating_codes",
+        "test_invalid_lifecycle_state_fails_closed_before_verification",
+        "test_unmatched_or_ambiguous_verification_is_generically_rejected",
+        "test_code_cannot_be_consumed_before_protected_presentation_is_recorded",
+        "test_presentation_and_regeneration_fail_closed_on_invalid_state",
+        "test_verification_provider_failure_is_a_secret_free_closed_rejection",
+        "test_lifecycle_audit_evidence_is_fixed_bounded_and_excludes_secret_material",
+        "test_recovery_code_lifecycle_foundation_has_bounded_traceability",
+    }
+
+    for test_id in expected_test_ids:
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert routed_authorities <= set(entry["upstream_ids"])

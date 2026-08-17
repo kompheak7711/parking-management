@@ -815,6 +815,110 @@
       "notes": "The bounded Phase 2I administrative recovery authorization requirements remain mechanically linked to focused executable tests."
     },
     {
+      "test_id": "test_protected_presentation_is_recorded_only_once_without_returning_code_material",
+      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_lifecycle.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2J lifecycle-foundation evidence only: protected presentation transitions from pending to presented exactly once without returning recovery-code material."
+    },
+    {
+      "test_id": "test_unprotected_presentation_fails_closed_without_changing_state",
+      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_lifecycle.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2J lifecycle-foundation evidence only: an unprotected presentation attempt is rejected and leaves the one-time presentation state unchanged."
+    },
+    {
+      "test_id": "test_successful_use_consumes_only_the_matching_code",
+      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_lifecycle.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2J lifecycle-foundation evidence only: provider-neutral verification consumes only the independently matching active code and preserves every other verifier lifecycle state."
+    },
+    {
+      "test_id": "test_consumed_code_reuse_is_rejected_without_state_change",
+      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_lifecycle.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2J lifecycle-foundation evidence only: a matching consumed verifier produces a generic outward rejection, preserves a secret-free audit reason, and cannot change lifecycle state."
+    },
+    {
+      "test_id": "test_regeneration_invalidates_every_old_verifier_and_rejects_old_code",
+      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_lifecycle.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2J lifecycle-foundation evidence only: protected regeneration invalidates all old verifier references with per-code state evidence, and subsequent use of an old code is generically rejected."
+    },
+    {
+      "test_id": "test_unprotected_regeneration_is_rejected_without_invalidating_codes",
+      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_lifecycle.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2J lifecycle-foundation evidence only: regeneration invalidation requires a protected flow and rejects an unprotected attempt without changing verifier lifecycle state."
+    },
+    {
+      "test_id": "test_invalid_lifecycle_state_fails_closed_before_verification",
+      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_lifecycle.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2J lifecycle-foundation evidence only: unknown, empty, or duplicate lifecycle state is rejected before any verifier-provider call."
+    },
+    {
+      "test_id": "test_unmatched_or_ambiguous_verification_is_generically_rejected",
+      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_lifecycle.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2J lifecycle-foundation evidence only: zero or multiple provider matches produce the same generic closed rejection and unchanged state."
+    },
+    {
+      "test_id": "test_code_cannot_be_consumed_before_protected_presentation_is_recorded",
+      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_lifecycle.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2J lifecycle-foundation evidence only: consumption is unavailable until the protected one-time presentation transition has been recorded."
+    },
+    {
+      "test_id": "test_presentation_and_regeneration_fail_closed_on_invalid_state",
+      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_lifecycle.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2J lifecycle-foundation evidence only: presentation and regeneration reject malformed verifier lifecycle snapshots without repairing or advancing them."
+    },
+    {
+      "test_id": "test_verification_provider_failure_is_a_secret_free_closed_rejection",
+      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_lifecycle.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2J lifecycle-foundation evidence only: verifier-provider failure becomes a generic closed rejection with no candidate material in the result or audit evidence."
+    },
+    {
+      "test_id": "test_lifecycle_audit_evidence_is_fixed_bounded_and_excludes_secret_material",
+      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_lifecycle.py",
+      "status": "implemented",
+      "notes": "Partial Phase 2J lifecycle-foundation evidence only: lifecycle audit evidence has a fixed non-secret shape and excludes candidate code and opaque verifier material."
+    },
+    {
+      "test_id": "test_recovery_code_lifecycle_foundation_has_bounded_traceability",
+      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "The implemented Phase 2J tests are bounded partial lifecycle-foundation evidence only; generation, durable verifier storage, endpoint rate limiting/enumeration controls, session revocation, persistence, API, and UI obligations remain explicitly deferred."
+    },
+    {
       "test_id": "test_traceability_manifest_covers_executable_tests",
       "upstream_ids": ["TEST-002"],
       "test_level": "operational",
