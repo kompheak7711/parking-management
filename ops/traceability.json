@@ -624,19 +624,19 @@
     },
     {
       "test_id": "test_repository_normalizes_username_through_local_account_persistence",
-      "upstream_ids": ["DB-AUTH-001", "TEST-108", "SEC-009", "DL-055"],
+      "upstream_ids": ["DB-AUTH-001", "TEST-108", "SEC-009", "SEC-013", "DL-055", "DL-056"],
       "test_level": "DB",
       "test_path": "backend/tests/test_local_authentication.py",
       "status": "implemented",
-      "notes": "The private login repository normalizes the submitted username and joins the existing local-account and password-credential persistence boundary without adding schema."
+      "notes": "The private login repository normalizes the submitted username and carries the existing account MFA-policy class across the local-account and password-credential persistence boundary without adding schema."
     },
     {
       "test_id": "test_authenticates_active_local_account_with_phase_2e_verifier",
-      "upstream_ids": ["PR-CAP-009", "DB-AUTH-002", "API-096", "TEST-108", "SEC-010", "DL-055"],
+      "upstream_ids": ["PR-CAP-009", "DB-AUTH-002", "API-096", "TEST-108", "SEC-010", "SEC-013", "DL-055", "DL-056"],
       "test_level": "security",
       "test_path": "backend/tests/test_local_authentication.py",
       "status": "implemented",
-      "notes": "An active local account authenticates through the published Phase 2E Argon2id verifier and emits only stable actor identity plus secret-free audit evidence."
+      "notes": "An active local account authenticates through the published Phase 2E Argon2id verifier and emits only stable actor identity, its existing MFA-policy class, and secret-free audit evidence."
     },
     {
       "test_id": "test_rejections_are_generic_and_perform_one_argon2id_verification",
@@ -669,6 +669,46 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "The bounded Phase 2F login-security requirements remain mechanically linked to the focused executable tests."
+    },
+    {
+      "test_id": "test_mfa_policy_matrix_controls_normal_actor_establishment",
+      "upstream_ids": ["PR-CAP-009", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_mfa_policy.py",
+      "status": "implemented",
+      "notes": "The required/optional policy matrix denies normal actor establishment until required enrollment and every enrolled account's challenge are complete, while allowing optional unenrolled accounts."
+    },
+    {
+      "test_id": "test_optional_unenrolled_actor_keeps_only_separately_granted_capabilities",
+      "upstream_ids": ["PR-CAP-009", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_mfa_policy.py",
+      "status": "implemented",
+      "notes": "An optional unenrolled actor receives no authority from MFA policy and retains only separately provider-established capability grants."
+    },
+    {
+      "test_id": "test_invalid_mfa_policy_evidence_fails_closed_without_actor_establishment",
+      "upstream_ids": ["TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_mfa_policy.py",
+      "status": "implemented",
+      "notes": "Unknown or inconsistent provider-neutral policy evidence fails closed and records only bounded secret-free decision fields."
+    },
+    {
+      "test_id": "test_invalid_mfa_policy_values_are_sanitized_before_audit_recording",
+      "upstream_ids": ["TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_mfa_policy.py",
+      "status": "implemented",
+      "notes": "Arbitrary invalid MFA policy inputs are replaced by a bounded invalid marker before audit recording so caller-controlled values cannot leak into evidence."
+    },
+    {
+      "test_id": "test_mfa_policy_requirements_have_implemented_traceability",
+      "upstream_ids": ["TEST-002", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "The bounded Phase 2G MFA policy-enforcement requirements remain mechanically linked to focused executable tests."
     },
     {
       "test_id": "test_traceability_manifest_covers_executable_tests",

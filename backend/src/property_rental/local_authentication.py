@@ -20,7 +20,7 @@ class CursorBoundary(Protocol):
 
     def execute(self, query: str, parameters: tuple[str, ...]) -> None: ...
 
-    def fetchone(self) -> tuple[str, str, str] | None: ...
+    def fetchone(self) -> tuple[str, str, str, str] | None: ...
 
 
 class ConnectionBoundary(Protocol):
@@ -53,6 +53,7 @@ class LocalAccountCredential:
 
     actor_id: str
     lifecycle_state: str
+    mfa_policy_class: str
     verifier_encoding: str
 
 
@@ -62,6 +63,7 @@ class AuthenticationResult:
 
     is_authenticated: bool
     actor_id: str | None = None
+    mfa_policy_class: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -147,7 +149,8 @@ class PostgresLocalAccountRepository:
         with self._connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT account.actor_id::text, account.lifecycle_state, credential.verifier_encoding
+                SELECT account.actor_id::text, account.lifecycle_state,
+                       account.mfa_policy_class, credential.verifier_encoding
                 FROM app.user_accounts AS account
                 JOIN app.password_credentials AS credential USING (actor_id)
                 WHERE account.normalized_username = %s
@@ -160,7 +163,8 @@ class PostgresLocalAccountRepository:
         return LocalAccountCredential(
             actor_id=row[0],
             lifecycle_state=row[1],
-            verifier_encoding=row[2],
+            mfa_policy_class=row[2],
+            verifier_encoding=row[3],
         )
 
 
@@ -209,7 +213,11 @@ class LocalAuthenticationService:
             actor_id=account.actor_id,
         )
         self._audit_sink.record(evidence)
-        return AuthenticationResult(is_authenticated=True, actor_id=account.actor_id)
+        return AuthenticationResult(
+            is_authenticated=True,
+            actor_id=account.actor_id,
+            mfa_policy_class=account.mfa_policy_class,
+        )
 
     def _reject(
         self,

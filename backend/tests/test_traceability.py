@@ -207,3 +207,40 @@ def test_local_login_security_requirements_have_implemented_traceability() -> No
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert references <= set(entry["upstream_ids"])
+
+
+def test_mfa_policy_requirements_have_implemented_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    expected_references = {
+        "test_mfa_policy_matrix_controls_normal_actor_establishment": {
+            "PR-CAP-009",
+            "API-096",
+            "TEST-128",
+            "SEC-013",
+            "DL-056",
+        },
+        "test_optional_unenrolled_actor_keeps_only_separately_granted_capabilities": {
+            "PR-CAP-009",
+            "TEST-128",
+            "SEC-013",
+            "DL-056",
+        },
+        "test_invalid_mfa_policy_evidence_fails_closed_without_actor_establishment": {
+            "TEST-128",
+            "SEC-013",
+            "DL-056",
+        },
+        "test_invalid_mfa_policy_values_are_sanitized_before_audit_recording": {
+            "TEST-128",
+            "SEC-013",
+            "DL-056",
+        },
+        "test_mfa_policy_requirements_have_implemented_traceability": {"TEST-002"},
+    }
+
+    for test_id, references in expected_references.items():
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert references <= set(entry["upstream_ids"])

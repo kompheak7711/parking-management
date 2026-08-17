@@ -13,7 +13,7 @@ from property_rental.password_security import PasswordHashService, PasswordVerif
 
 
 class StubCursor:
-    def __init__(self, row: tuple[str, str, str] | None) -> None:
+    def __init__(self, row: tuple[str, str, str, str] | None) -> None:
         self.row = row
         self.query = ""
         self.parameters: tuple[str, ...] = ()
@@ -28,12 +28,12 @@ class StubCursor:
         self.query = query
         self.parameters = parameters
 
-    def fetchone(self) -> tuple[str, str, str] | None:
+    def fetchone(self) -> tuple[str, str, str, str] | None:
         return self.row
 
 
 class StubConnection:
-    def __init__(self, row: tuple[str, str, str] | None) -> None:
+    def __init__(self, row: tuple[str, str, str, str] | None) -> None:
         self.cursor_instance = StubCursor(row)
 
     def cursor(self) -> StubCursor:
@@ -41,7 +41,9 @@ class StubConnection:
 
 
 def test_repository_normalizes_username_through_local_account_persistence() -> None:
-    connection = StubConnection(("actor-7", "active", "$argon2id$v=19$parameters$salt-hash"))
+    connection = StubConnection(
+        ("actor-7", "active", "required", "$argon2id$v=19$parameters$salt-hash")
+    )
     repository = PostgresLocalAccountRepository(connection)
 
     account = repository.find_by_username("  Operator  ")
@@ -52,6 +54,7 @@ def test_repository_normalizes_username_through_local_account_persistence() -> N
     assert account is not None
     assert account.actor_id == "actor-7"
     assert account.lifecycle_state == "active"
+    assert account.mfa_policy_class == "required"
     assert account.verifier_encoding == "$argon2id$v=19$parameters$salt-hash"
 
 
@@ -83,6 +86,7 @@ def test_authenticates_active_local_account_with_phase_2e_verifier() -> None:
         LocalAccountCredential(
             actor_id="actor-9",
             lifecycle_state="active",
+            mfa_policy_class="optional",
             verifier_encoding=credential.verifier_encoding,
         )
     )
@@ -102,6 +106,7 @@ def test_authenticates_active_local_account_with_phase_2e_verifier() -> None:
 
     assert result.is_authenticated is True
     assert result.actor_id == "actor-9"
+    assert result.mfa_policy_class == "optional"
     assert audit_sink.evidence == [
         AuthenticationAuditEvidence(
             outcome="authenticated",
@@ -131,6 +136,7 @@ def test_rejections_are_generic_and_perform_one_argon2id_verification(account_ki
         else LocalAccountCredential(
             actor_id="actor-known",
             lifecycle_state="disabled" if account_kind == "disabled" else "active",
+            mfa_policy_class="required",
             verifier_encoding=credential.verifier_encoding,
         )
     )

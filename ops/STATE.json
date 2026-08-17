@@ -1,39 +1,39 @@
 {
   "schema_version": 1,
-  "phase": "Phase 2F",
-  "tranche": "Local Login Security Foundation",
-  "task": "Implement the bounded Local Login Security Foundation",
-  "status": "published",
-  "active_cycle": "phase-2f-local-login-security-foundation",
+  "phase": "Phase 2G",
+  "tranche": "MFA Policy Enforcement Foundation",
+  "task": "Implement the bounded MFA Policy Enforcement Foundation through provider-neutral enrollment and challenge-state boundaries",
+  "status": "complete_uncommitted",
+  "active_cycle": "phase-2g-mfa-policy-enforcement-foundation",
   "branch": "implementation/foundation",
-  "commit": "e94212312b72f5e7c5777bd0b1264cdd262a7fe7",
-  "timestamp": "2026-08-17T18:09:00Z",
+  "commit": "efed3686d375a32884efff37cae51c9af6c098cf",
+  "timestamp": "2026-08-17T18:28:19Z",
   "risk_class": "high",
   "approval": {
-    "status": "approved_complete",
-    "basis": "owner-authorized actionable Phase 2F bounded candidate",
+    "status": "approved_ready",
+    "basis": "owner-authorized actionable Phase 2G bounded candidate",
     "implementation_started": true,
     "implementation_completed": true,
     "publication_authorized_in_this_attempt": true
   },
   "next_candidate": {
-    "phase": "Phase 2G",
-    "task": "Implement the bounded MFA Policy Enforcement Foundation through provider-neutral enrollment and challenge-state boundaries",
+    "phase": "Phase 2G publication",
+    "task": "Independently review and publish the exact verified MFA Policy Enforcement Foundation tranche, then verify GitHub Actions and reconcile compact state before selecting another implementation tranche",
     "include": [
-      "enforce the approved Owner/Manager-required and Staff-optional MFA policy through the existing account MFA-policy class",
-      "deny normal privileged actor establishment when required enrollment or challenge completion is absent",
-      "permit Staff without enrollment only within separately granted capabilities",
-      "keep MFA enrollment and challenge evidence provider-neutral and secret-free",
-      "focused deterministic policy-matrix tests and traceability"
+      "review and stage only backend/src/property_rental/local_authentication.py",
+      "review and stage only backend/src/property_rental/mfa_policy.py",
+      "review and stage only backend/tests/test_local_authentication.py",
+      "review and stage only backend/tests/test_mfa_policy.py",
+      "review and stage only backend/tests/test_traceability.py",
+      "review and stage only ops/traceability.json",
+      "review and stage only ops/NOW.md",
+      "review and stage only ops/STATE.json",
+      "verify the staged set, publish one bounded commit, verify GitHub Actions, and reconcile compact state"
     ],
     "exclude": [
-      "MFA library, algorithm, protocol, credential, or protected verifier selection",
-      "database migration or persisted MFA/recovery-code state",
-      "public authentication endpoint or UI",
-      "browser sessions, cookies, CSRF, or tokens",
-      "recovery codes, administrative recovery, or Owner bootstrap",
-      "production credentials, deployment, or remote access",
-      "canonical document, business, financial, role, or capability-policy changes"
+      "any implementation expansion or unrelated path",
+      "MFA provider, library, algorithm, protocol, credential, or verifier selection",
+      "persistence, migration, API, UI, session, token, cookie, CSRF, recovery, bootstrap, production, remote-access, canonical, role, capability-policy, business, or financial changes"
     ],
     "risk_class": "high",
     "status": "approved_ready",
@@ -48,34 +48,44 @@
   "reconciliation": {
     "status": "passed",
     "routed_sections": [
-      "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-009",
-      "docs/004_DATABASE_MODEL.md: DB-AUTH-001 and DB-AUTH-002",
-      "docs/005_API_SPECIFICATION.md: API-096",
-      "docs/007_TESTING_STRATEGY.md: TEST-108",
-      "docs/008_SECURITY_MODEL.md: SEC-009, SEC-010, SEC-012, and SEC-014",
-      "docs/010_DECISION_LOG.md: DL-055"
+      "docs/008_SECURITY_MODEL.md: SEC-013"
     ],
     "touched_areas": [
-      "private local-account credential lookup and authentication orchestration",
-      "bounded account/source rolling-window request limiter",
-      "secret-free generic authentication result and audit evidence",
-      "focused deterministic authentication-security tests",
+      "existing local-account MFA-policy-class authentication output",
+      "provider-neutral enrollment and challenge-state actor-establishment gate",
+      "secret-free MFA policy audit evidence",
+      "focused deterministic policy-matrix and fail-closed tests",
       "traceability and compact ops state"
     ],
     "evidence": [
-      "normalized username lookup joins the existing app.user_accounts and app.password_credentials persistence boundary",
-      "active credentials verify through the published Phase 2E PasswordHashService",
-      "missing, incorrect-password, and disabled-account attempts share one generic external result and perform one Argon2id verification",
-      "account and request-source bounds are constructor-required positive policy inputs; no production threshold was invented",
-      "independent local verification passed format-check, lint, typecheck, 83 backend tests with 38 expected dedicated-gate skips, 3 frontend tests, build, 38 real-PostgreSQL tests, automation-test, locked runtime/development dependency audits, frontend audit, traceability, JSON, canonical/migration scope, secret-signature, and diff checks",
-      "commit e94212312b72f5e7c5777bd0b1264cdd262a7fe7 contains the six exact reviewed paths and is present at local HEAD, upstream, and the remote implementation/foundation branch",
-      "GitHub Actions CI run 32053473094 passed backend, frontend, dependency-security, and PostgreSQL migration jobs for exact commit e94212312b72f5e7c5777bd0b1264cdd262a7fe7",
-      "docs/001-010, migrations/schema, public login/API/UI, sessions, MFA, recovery, bootstrap, production credentials/deployment/remote access, and business/financial/authorization policy are unchanged"
+      "the existing required or optional MFA policy class now crosses the local credential-authentication boundary without schema changes",
+      "required policy denies actor establishment without enrollment or a completed challenge",
+      "optional policy permits an unenrolled actor only with separately supplied capability grants and requires challenge completion once enrolled",
+      "unknown or inconsistent policy evidence fails closed without actor establishment",
+      "arbitrary invalid policy, enrollment, and challenge values are replaced with a bounded invalid marker before audit recording",
+      "audit evidence is provider-neutral and limited to actor ID, decision, reason, policy class, enrollment state, and challenge state",
+      "focused Phase 2G tests passed 24 tests across local authentication, MFA policy, and traceability",
+      "make format-check, make lint, make typecheck, make test, make build, make database-test, and make automation-test passed",
+      "make test passed 96 backend tests with 38 expected dedicated-gate skips and 3 frontend tests; make database-test passed 38 real-PostgreSQL tests",
+      "TEST-118 traceability audit, JSON validation, excluded-scope signature scan, and git diff checks passed",
+      "docs/001-010, backend migrations, frontend, API/UI, sessions/tokens/cookies/CSRF, recovery/bootstrap, production/deployment/remote access, role/capability policy, and business/financial behavior are unchanged",
+      "no commit or push occurred"
     ]
   },
-  "next_action": "Implement the approved bounded Phase 2G MFA Policy Enforcement Foundation candidate immediately.",
-  "idle_reason": "Phase 2F is published; Phase 2G is approved_ready and should dispatch immediately.",
+  "next_action": "Independently review and publish only the eight exact Phase 2G paths listed in next_candidate.include, verify GitHub Actions and local/upstream/remote synchronization, then reconcile compact state to published HEAD before selecting another implementation tranche.",
+  "idle_reason": "Phase 2G implementation and local verification are complete and uncommitted; the exact bounded publication candidate is approved_ready for the next action.",
   "owner_action": "none",
   "blockers": [],
+  "repair": {
+    "failure": "Hermes found that arbitrary invalid MFA state values were copied verbatim into audit evidence",
+    "resolved": true,
+    "scope_preserved": true,
+    "attempts": 2,
+    "max_attempts": 2,
+    "requires_owner_decision": false,
+    "suspected_secret": false,
+    "scope_expansion": false,
+    "protected_operation": false
+  },
   "secrets_present": false
 }
