@@ -409,6 +409,22 @@
       "notes": "An instant without explicit timezone semantics is rejected rather than silently interpreted as a business date."
     },
     {
+      "test_id": "test_single_property_scope_accepts_object_assigned_to_its_property",
+      "upstream_ids": ["PR-PROP-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_property_scope.py",
+      "status": "implemented",
+      "notes": "The identity scope accepts an object assigned to the one Property managed by the application."
+    },
+    {
+      "test_id": "test_single_property_scope_rejects_object_assigned_to_different_property",
+      "upstream_ids": ["PR-PROP-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_property_scope.py",
+      "status": "implemented",
+      "notes": "The identity scope rejects an object whose authoritative Property ID differs from the application's single Property ID."
+    },
+    {
       "test_id": "test_traceability_manifest_covers_executable_tests",
       "upstream_ids": ["API-001"],
       "test_level": "operational",

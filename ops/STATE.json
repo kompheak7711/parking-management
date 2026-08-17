@@ -3,11 +3,11 @@
   "phase": "Phase 2C",
   "tranche": "single-Property application foundation",
   "task": "Implement a single-Property identity scope primitive that rejects any object assigned to a different Property ID",
-  "status": "approved_ready",
+  "status": "complete_unpublished",
   "active_cycle": "phase-2c-single-property-foundation",
   "branch": "implementation/foundation",
-  "commit": "ec04686eb9724f0ff10a0c64d6258d28fd3b77fd",
-  "timestamp": "2026-08-17T07:33:35Z",
+  "commit": "bf8bba06cf4fd65bcff076eb3dfff448bc639f74",
+  "timestamp": "2026-08-17T09:58:57Z",
   "implemented": [
     "node_engine_baseline_aligned_to_vite_7_3_6",
     "strict_typescript_react_vite_foundation",
@@ -45,7 +45,8 @@
     "server_side_401_authentication_and_403_authorization_boundary",
     "role_independent_and_client_header_inert_authorization",
     "property_local_business_date_boundary",
-    "timezone_aware_instant_requirement"
+    "timezone_aware_instant_requirement",
+    "single_property_object_identity_scope"
   ],
   "requirements_satisfied": [
     "UI-007",
@@ -84,7 +85,8 @@
     "API-009: capability enforcement is implemented for the bounded identity seam; remaining protected endpoints are deferred",
     "API-010: provider-established grants remain role-independent; configurable role-to-capability mapping is deferred to provider/deployment configuration",
     "TEST-084: capability and Property/object matrix covered for the bounded seam; disabled-account and stale/revoked-session cases remain deferred with accounts and sessions",
-    "PR-PROP-003: authoritative Asia/Phnom_Penh business-date conversion and ambiguous naive-instant rejection are implemented; historical-date correction and audit workflows remain deferred"
+    "PR-PROP-003: authoritative Asia/Phnom_Penh business-date conversion and ambiguous naive-instant rejection are implemented; historical-date correction and audit workflows remain deferred",
+    "PR-PROP-001: the object-assignment identity boundary is implemented; Property creation and user workflows remain outside this bounded primitive"
   ],
   "requirements_preserved_not_implemented": [
     "API-009 capability checks for all endpoints beyond the bounded identity seam",
@@ -104,15 +106,17 @@
     "backend provider-neutral capability and scope primitives",
     "identity endpoint capability enforcement",
     "backend single-Property business-time primitive",
-    "focused business-date domain tests and traceability"
+    "focused business-date domain tests and traceability",
+    "backend single-Property object identity scope primitive",
+    "focused Property identity scope tests and traceability"
   ],
   "relevant_docs": [
-    "docs/003_PRODUCT_REQUIREMENTS.md: PR-PROP-003",
-    "docs/010_DECISION_LOG.md: DL-038"
+    "docs/003_PRODUCT_REQUIREMENTS.md: PR-PROP-001",
+    "docs/010_DECISION_LOG.md: DL-001"
   ],
   "decisions": [
-    "Use the standard-library Asia/Phnom_Penh ZoneInfo as the sole Property timezone for this bounded slice",
-    "Reject timezone-naive datetime inputs instead of silently assuming a timezone"
+    "Represent any Property-assigned object through a read-only property_id protocol so the boundary remains independent of future domain object types",
+    "Reject a mismatched assigned Property ID with ValueError before schema, API, authentication, role, or policy concerns are introduced"
   ],
   "verification": {
     "status": "passed",
@@ -164,7 +168,16 @@
       "independent bounded review returned PASS with no policy, logic, security, or scope findings",
       "implementation commit ec04686eb9724f0ff10a0c64d6258d28fd3b77fd contains exactly the six reviewed paths and was pushed normally",
       "GitHub Actions CI run 32006273690 passed all four jobs on attempt 1 for exact implementation commit ec04686eb9724f0ff10a0c64d6258d28fd3b77fd",
-      "local HEAD, upstream tracking SHA, and remote implementation/foundation SHA all matched ec04686eb9724f0ff10a0c64d6258d28fd3b77fd after publication"
+      "local HEAD, upstream tracking SHA, and remote implementation/foundation SHA all matched ec04686eb9724f0ff10a0c64d6258d28fd3b77fd after publication",
+      "repository gate passed before implementation on implementation/foundation with clean index/worktree and matching HEAD/upstream a93eab5d622536b31bc6332633c2dc5f40e2a995",
+      "focused acceptance test first failed because property_rental.property_scope did not exist, then passed after the minimal identity scope primitive was added",
+      "focused rejection test first failed because a mismatched Property ID was accepted, then both Property scope tests passed after mismatch rejection was added",
+      "focused Property scope and TEST-117 traceability validation passed all 3 tests",
+      "make format-check, make lint, and make typecheck passed across backend and frontend; strict mypy checked 17 source files",
+      "make test passed 58 backend tests with 6 PostgreSQL-only tests skipped in the ordinary job and passed all 3 frontend tests",
+      "make build produced backend distributions, passed the backend import check, and completed the frontend production build",
+      "make database-test passed all 6 isolated PostgreSQL migration tests and cleaned its disposable resources",
+      "git diff --check passed and canonical docs 001-010 remain unchanged"
     ]
   },
   "preserved": [
@@ -188,12 +201,12 @@
   ],
   "next_candidate": {
     "phase": "Phase 2C",
-    "task": "Implement a single-Property identity scope primitive that rejects any object assigned to a different Property ID",
-    "status": "approved_ready",
+    "task": "Independently review and publish the verified single-Property identity scope tranche without broadening its scope",
+    "status": "ready_for_supervisor_review",
     "risk_class": "high"
   },
-  "next_action": "Dispatch and independently verify the approved high-risk single-Property identity scope primitive in a fresh supervisor cycle.",
-  "idle_reason": "Waiting only for the dispatcher to start the next authorized supervisor cycle; no owner decision or external change is required.",
+  "next_action": "Supervisor reviews the exact three implementation/traceability paths plus ops/NOW.md and ops/STATE.json, reruns required gates, and owns commit and push.",
+  "idle_reason": "Implementation and verification are complete; waiting only for supervisor review and publication.",
   "owner_action": "none",
   "blockers": [],
   "secrets_present": false

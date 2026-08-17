@@ -1,22 +1,24 @@
 # Phase 2C — single-Property application foundation
 
 - Objective: continue canonically bounded single-Property application primitives.
-- Published task: Property-local business-date conversion uses the standard library
-  `Asia/Phnom_Penh` timezone and rejects timezone-naive instants.
-- Canonical basis: `PR-PROP-003` and `DL-038` only; docs 001-010 remain read-only and
+- Complete unpublished task: a structural single-Property identity scope accepts any
+  object assigned to the configured Property ID and raises `ValueError` for a different
+  Property ID.
+- Canonical basis: `PR-PROP-001` and `DL-001` only; docs 001-010 remain read-only and
   unchanged.
-- Fresh verification: RED confirmed the missing module; 3 focused business-time tests
-  then passed. Format, lint, strict types, 56 backend tests plus 3 frontend tests,
-  backend/frontend builds, 6 isolated PostgreSQL migration tests, and traceability passed.
-- Independent review: PASS with no policy, logic, security, or bounded-scope findings.
-- Preserved boundaries: database schema/data, API behavior, UI, authentication provider,
-  role mapping, credentials, production configuration/access, and financial behavior are
-  unchanged.
-- Publication: commit `ec04686` contains exactly the six reviewed paths; local, upstream,
-  and remote SHAs match. GitHub Actions run `32006273690` passed all four jobs on attempt 1.
-- Repository state: branch `implementation/foundation`, clean at synchronized checkpoint
-  `ec04686`; no deploy or remote production access performed.
+- Test-first evidence: the acceptance test first failed because the module was absent;
+  the mismatch test then failed because the minimal scope accepted the wrong Property ID.
+  Both passed after their respective bounded implementation steps.
+- Fresh verification: 2 focused scope tests plus traceability passed. Format, lint, strict
+  types, 58 backend tests plus 3 frontend tests, backend/frontend builds, and 6 isolated
+  PostgreSQL migration tests passed.
+- Preserved boundaries: schema, API endpoints, authentication provider, roles, finance,
+  production configuration/access, migrations, and policy are unchanged.
+- Repository state: branch `implementation/foundation`, base HEAD/upstream `bf8bba0` with
+  only the expected unpublished tranche; no commit, push, deploy, branch switch, stash,
+  reset, merge, rebase, or remote production access performed.
 - Blocker: none.
-- Exact next action: dispatch the approved high-risk single-Property identity scope
-  primitive that rejects objects assigned to a different Property ID in a fresh cycle.
-- Idle reason: waiting only for immediate dispatcher handoff; owner action: none.
+- Exact next action: supervisor independently reviews the three implementation and
+  traceability paths plus `ops/NOW.md` and `ops/STATE.json`, reruns required gates, and
+  owns commit and push. Risk class remains high.
+- Idle reason: waiting only for supervisor review and publication; owner action: none.
