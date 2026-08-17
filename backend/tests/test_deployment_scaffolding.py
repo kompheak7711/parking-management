@@ -3,13 +3,49 @@
 from __future__ import annotations
 
 import json
+import os
+import re
 import subprocess
 from pathlib import Path
+from textwrap import dedent
 from typing import Final
 
 REPOSITORY_ROOT: Final = Path(__file__).resolve().parents[2]
 CONFIG_ROOT: Final = REPOSITORY_ROOT / "config" / "deployment"
 VALIDATOR: Final = REPOSITORY_ROOT / "scripts" / "validate-deployment-config.py"
+DATABASE_TEST_SCRIPT: Final = REPOSITORY_ROOT / "scripts" / "database-test.sh"
+
+
+def _write_executable(path: Path, content: str) -> None:
+    path.write_text(dedent(content).lstrip(), encoding="utf-8")
+    path.chmod(0o755)
+
+
+def _run_database_test_with_fake_tools(
+    tmp_path: Path, docker_script: str
+) -> subprocess.CompletedProcess[str]:
+    bin_directory = tmp_path / "bin"
+    bin_directory.mkdir()
+    _write_executable(bin_directory / "docker", docker_script)
+    _write_executable(
+        bin_directory / "uv",
+        """
+        #!/bin/sh
+        exit 0
+        """,
+    )
+    environment = os.environ.copy()
+    environment["PATH"] = f"{bin_directory}{os.pathsep}{environment['PATH']}"
+    environment["TMPDIR"] = str(tmp_path)
+    environment["FAKE_DOCKER_CALLS"] = str(tmp_path / "docker-calls")
+    return subprocess.run(
+        [str(DATABASE_TEST_SCRIPT)],
+        cwd=REPOSITORY_ROOT,
+        env=environment,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
 
 
 def _run_validator(*arguments: str) -> subprocess.CompletedProcess[str]:
@@ -121,3 +157,63 @@ def test_postgres_bootstrap_avoids_secret_command_arguments_and_limits_admin_rol
     assert "GRANT CONNECT ON DATABASE prm TO prm_human_admin" in init_script
     assert "GRANT pg_read_all_data TO prm_restore" not in init_script
     assert "GRANT pg_write_all_data TO prm_human_admin" not in init_script
+
+
+def test_database_test_secret_files_are_readable_by_native_linux_container_user(
+    tmp_path: Path,
+) -> None:
+    result = _run_database_test_with_fake_tools(
+        tmp_path,
+        """
+        #!/usr/bin/env python3
+        import os
+        import stat
+        import sys
+
+        if "up" in sys.argv:
+            source_names = (
+                "POSTGRES_ADMIN_PASSWORD_FILE",
+                "POSTGRES_MIGRATION_PASSWORD_FILE",
+                "POSTGRES_RUNTIME_PASSWORD_FILE",
+                "POSTGRES_BACKUP_PASSWORD_FILE",
+                "POSTGRES_RESTORE_PASSWORD_FILE",
+                "POSTGRES_HUMAN_ADMIN_PASSWORD_FILE",
+            )
+            source_paths = [os.environ[name] for name in source_names]
+            modes = [stat.S_IMODE(os.stat(path).st_mode) for path in source_paths]
+            directory_mode = stat.S_IMODE(os.stat(os.path.dirname(source_paths[0])).st_mode)
+            sys.exit(0 if all(mode == 0o444 for mode in modes) and directory_mode == 0o700 else 17)
+        if "port" in sys.argv:
+            print("127.0.0.1:54321")
+        """,
+    )
+
+    assert result.returncode == 0, result.stderr
+
+
+def test_database_test_reports_redacted_container_logs_before_cleanup(tmp_path: Path) -> None:
+    result = _run_database_test_with_fake_tools(
+        tmp_path,
+        """
+        #!/usr/bin/env python3
+        import os
+        import sys
+        from pathlib import Path
+
+        action = next((name for name in ("up", "logs", "down") if name in sys.argv), "other")
+        with Path(os.environ["FAKE_DOCKER_CALLS"]).open("a", encoding="utf-8") as calls:
+            calls.write(f"{action}\\n")
+        if action == "up":
+            sys.exit(19)
+        if action == "logs":
+            secret = Path(os.environ["POSTGRES_ADMIN_PASSWORD_FILE"]).read_text().strip()
+            print(f"container-init-failure leaked={secret}")
+        """,
+    )
+
+    calls = (tmp_path / "docker-calls").read_text(encoding="utf-8").splitlines()
+    assert result.returncode == 19
+    assert calls == ["up", "logs", "down"]
+    assert "container-init-failure" in result.stderr
+    assert "[REDACTED]" in result.stderr
+    assert re.search(r"\b[0-9a-f]{64}\b", result.stderr) is None

@@ -663,6 +663,22 @@
       "notes": "Local bootstrap reads secret values through environment-backed psql variables, grants backup read and human monitoring only, and leaves restore without standing data access."
     },
     {
+      "test_id": "test_database_test_secret_files_are_readable_by_native_linux_container_user",
+      "upstream_ids": ["SEC-049", "SEC-050", "DEPLOY-017", "DEPLOY-018", "TEST-110"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "The isolated database wrapper keeps its temporary secret directory private while making protected-file mounts readable by the unrelated PostgreSQL container identity on native Linux."
+    },
+    {
+      "test_id": "test_database_test_reports_redacted_container_logs_before_cleanup",
+      "upstream_ids": ["SEC-049", "DEPLOY-062", "TEST-110"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "A failed isolated PostgreSQL startup emits container diagnostics before cleanup while redacting every generated identity password."
+    },
+    {
       "test_id": "test_operational_database_identities_have_separate_least_privilege",
       "upstream_ids": ["SEC-045", "SEC-047", "DEPLOY-062", "DEPLOY-065", "DEPLOY-066", "TEST-111"],
       "test_level": "security",

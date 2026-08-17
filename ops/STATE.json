@@ -1,23 +1,23 @@
 {
   "schema_version": 1,
   "phase": "Phase 2D",
-  "tranche": "deployment identities and secret-provisioning scaffolding",
-  "task": "Implement the bounded SEC-045/047/049/050 deployment-identity and local secret-provisioning design/scaffolding tranche",
+  "tranche": "deployment identity PostgreSQL CI repair",
+  "task": "Investigate and repair the demonstrated PostgreSQL GitHub Actions startup failure for the SEC-045/047/049/050 scaffolding tranche",
   "status": "verified_for_publication",
-  "active_cycle": "sec-045-047-049-050-deployment-identity-secret-scaffolding",
+  "active_cycle": "sec-045-047-049-050-postgresql-ci-repair",
   "branch": "implementation/foundation",
-  "commit": "fcc47ee8a94fc8be70c321f3b62c19fc4fedc6ce",
-  "timestamp": "2026-08-17T14:46:32Z",
+  "commit": "a29e8d620287def82060338cc6dc22d393f11743",
+  "timestamp": "2026-08-17T15:25:12Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_complete",
-    "basis": "owner-authorized bounded SEC-045/047/049/050 design and local configuration-scaffolding request",
+    "basis": "owner-authorized bounded repair of the PostgreSQL failure in GitHub Actions run 32040242139",
     "implementation_started": true,
     "implementation_completed": true,
     "publication_authorized_in_this_attempt": true
   },
   "next_candidate": {
-    "task": "Implement bounded SEC-045/047/049/050 deployment-identity and local secret-source design/scaffolding without production provisioning",
+    "task": "Repair only the demonstrated PostgreSQL CI startup defect and preserve secret-free failure diagnostics",
     "risk_class": "high",
     "status": "verified_for_publication",
     "authorities": [
@@ -35,26 +35,31 @@
       "docs/009_DEPLOYMENT_ARCHITECTURE.md: DEPLOY-017, DEPLOY-018, DEPLOY-019, DEPLOY-062, DEPLOY-065, DEPLOY-066"
     ],
     "touched_areas": [
-      "five-identity and seven-source deployment contracts for four environments",
-      "fail-closed protected-source validator and local Compose secret-file mounts",
-      "fresh-database backup, restore, and human-administration role scaffolding",
-      "real-PostgreSQL least-privilege and deterministic security tests",
-      "noncanonical design, setup documentation, traceability, and compact ops state"
+      "portable permissions for six isolated Compose secret source files",
+      "redacted PostgreSQL startup diagnostics before isolated project cleanup",
+      "deterministic native-Linux permission and failure-diagnostic regressions",
+      "traceability and compact ops state"
     ],
     "evidence": [
+      "GitHub job 95420712142 ran Ubuntu 24.04 with Docker Compose 2.38.2 and exited one second after PostgreSQL started",
+      "the wrapper created all source files as 0600 under umask 077; Compose file-backed secrets use bind mounts without uid/gid/mode remapping on native Linux, while the official image runs custom init scripts as uid 999 after gosu",
+      "the five custom identity sources were therefore unreadable on the native-Linux runner; local Docker Desktop ownership mapping masked the defect",
+      "the regression permission harness failed with exit 17 before chmod 0444 and passed after the correction while retaining a 0700 temporary directory",
+      "the diagnostic regression failed because calls were up/down only, then passed with ordered up/logs/down calls and all generated 64-hex passwords redacted",
       "make database-test passed 38 real-PostgreSQL tests",
-      "make test passed 67 backend tests with 38 dedicated database-gate skips and 3 frontend tests",
-      "make lint, make format-check, make typecheck, and make build passed",
+      "make test passed 69 backend tests with 38 dedicated database-gate skips and 3 frontend tests",
+      "make format, make format-check, make lint, make typecheck, and make build passed",
       "make automation-test and TEST-118 rule coverage audit passed",
       "locked backend runtime/development pip-audit and frontend npm audit reported no known vulnerabilities",
       "deployment-config, Compose-render, client-bundle protected-source, changed-file secret/argument, JSON, git diff --check, migration-head, and canonical-doc integrity checks passed",
-      "focused security review confirmed five distinct non-superuser identities, read-only backup, no standing restore/human table access, separate backup encryption source, protected-file injection, generic validation errors, and no secret-bearing psql argument",
-      "independent supervisor review added fail-closed protected-source path-traversal rejection and traceability; all affected gates passed afterward",
+      "focused review confirmed six protected-file mounts, five distinct non-superuser operational roles, no privilege changes, no secret-bearing command arguments, and redaction before diagnostic output",
+      "independent supervisor verification passed all local, PostgreSQL, security, traceability, dependency, canonical, Compose, shell, JSON, secret-signature, quality, and build gates on base a29e8d6",
       "shellcheck unavailable; POSIX sh -n passed for changed shell scripts",
-      "no docs/001-010, dependency, schema migration, production credential/key/value, secret-store/remote access, destructive operation, commit, or push"
+      "no docs/001-010, dependency, schema migration, production credential/key/value, secret-store/remote access, destructive operation, commit, or push",
+      "a separate concurrent process published unrelated bounded-automatic-repair changes as a29e8d620287def82060338cc6dc22d393f11743; this repair remained unstaged and uncommitted"
     ]
   },
-  "next_action": "Stage only reviewed paths, verify the cached diff and secret checks, commit, push normally, then verify GitHub Actions and local/upstream/remote identity.",
+  "next_action": "Stage only the five reviewed repair paths, verify cached scope and secret checks, commit, push normally, then require every GitHub Actions job to pass.",
   "idle_reason": null,
   "owner_action": null,
   "blockers": [],
