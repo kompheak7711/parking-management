@@ -14,9 +14,10 @@
    `d10c306`. The bounded `DB-AUTH-002`
    migration and focused real-PostgreSQL/traceability tests select no hashing library and
    add no credential mechanics, login/API/UI, or other excluded authentication scope.
-10. Exact next candidate: design backup/restore/human-administration database identities
-   and production secret provisioning only in a separate `SEC-045/047/049/050` deployment
-   tranche. High risk and `not_approved` pending the separately required authorization.
+10. Deployment-identity and secret-source design/local scaffolding for
+   `SEC-045/047/049/050` — owner-authorized implementation is independently verified for
+   publication. It includes no production value, provisioning operation, deployment, or
+   remote-access operation; those remain outside this tranche.
 
 Remaining v1 application tranches are authorized when bounded by canonical documents
 001-010 and all publication gates; unresolved policy and protected production work still

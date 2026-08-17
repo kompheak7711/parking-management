@@ -12,7 +12,7 @@ BACKEND_RUN := cd $(BACKEND_DIR) && $(UV) run --extra dev
 FRONTEND_DIR := frontend
 FRONTEND_RUN := cd $(FRONTEND_DIR) && $(NPM) run
 
-.PHONY: help install dev backend frontend test database-test migrate lint format format-check typecheck build \
+.PHONY: help install dev backend frontend test database-test migrate deployment-config-check lint format format-check typecheck build \
 	backend-install backend-dev backend-test backend-lint backend-format \
 	backend-format-check backend-typecheck backend-build backend-import-check \
 	frontend-install frontend-dev frontend-test frontend-lint frontend-format \
@@ -29,6 +29,7 @@ help:
 		"  make test                  Run backend and frontend tests" \
 		"  make database-test         Run real PostgreSQL migration tests (URLs required)" \
 		"  make migrate               Apply reviewed migrations with MIGRATION_DATABASE_URL" \
+		"  make deployment-config-check Validate placeholder-only deployment source contracts" \
 		"  make lint                  Run backend and frontend lint checks" \
 		"  make format-check          Check backend and frontend formatting" \
 		"  make format                Apply backend and frontend formatting" \
@@ -52,6 +53,9 @@ database-test:
 
 migrate:
 	cd $(BACKEND_DIR) && $(UV) run alembic upgrade head
+
+deployment-config-check:
+	python3 scripts/validate-deployment-config.py check-examples
 
 lint: backend-lint frontend-lint
 

@@ -27,6 +27,9 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 MIGRATION_URL_ENV = "MIGRATION_DATABASE_URL"
 RUNTIME_URL_ENV = "APP_DATABASE_URL"
 ADMIN_URL_ENV = "TEST_ADMIN_DATABASE_URL"
+BACKUP_URL_ENV = "BACKUP_DATABASE_URL"
+RESTORE_URL_ENV = "RESTORE_DATABASE_URL"
+HUMAN_ADMIN_URL_ENV = "HUMAN_ADMIN_DATABASE_URL"
 REQUIRE_DATABASE_TESTS_ENV = "REQUIRE_DATABASE_TESTS"
 LOCAL_DATABASE_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 
@@ -64,11 +67,17 @@ def _validate_local_test_urls(admin_url: str, migration_url: str, runtime_url: s
         ADMIN_URL_ENV: "prm_admin",
         MIGRATION_URL_ENV: "prm_migrator",
         RUNTIME_URL_ENV: "prm_runtime",
+        BACKUP_URL_ENV: "prm_backup",
+        RESTORE_URL_ENV: "prm_restore",
+        HUMAN_ADMIN_URL_ENV: "prm_human_admin",
     }
     parsed_urls = {
         ADMIN_URL_ENV: urlsplit(admin_url),
         MIGRATION_URL_ENV: urlsplit(migration_url),
         RUNTIME_URL_ENV: urlsplit(runtime_url),
+        BACKUP_URL_ENV: urlsplit(_required_url(BACKUP_URL_ENV)),
+        RESTORE_URL_ENV: urlsplit(_required_url(RESTORE_URL_ENV)),
+        HUMAN_ADMIN_URL_ENV: urlsplit(_required_url(HUMAN_ADMIN_URL_ENV)),
     }
     for name, parsed in parsed_urls.items():
         if parsed.scheme not in {"postgresql", "postgresql+psycopg"}:
@@ -84,7 +93,7 @@ def _validate_local_test_urls(admin_url: str, migration_url: str, runtime_url: s
 
     passwords = {parsed.password for parsed in parsed_urls.values()}
     if len(passwords) != len(parsed_urls):
-        pytest.fail("PostgreSQL bootstrap, migration, and runtime test passwords must be distinct")
+        pytest.fail("PostgreSQL test identity passwords must be distinct")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -93,6 +102,9 @@ def empty_application_database() -> Iterator[None]:
     admin_url = _required_url(ADMIN_URL_ENV)
     original_migration_url = _required_url(MIGRATION_URL_ENV)
     original_runtime_url = _required_url(RUNTIME_URL_ENV)
+    original_backup_url = _required_url(BACKUP_URL_ENV)
+    original_restore_url = _required_url(RESTORE_URL_ENV)
+    original_human_admin_url = _required_url(HUMAN_ADMIN_URL_ENV)
     _validate_local_test_urls(admin_url, original_migration_url, original_runtime_url)
     with psycopg.connect(admin_url, autocommit=True) as connection:
         with connection.cursor() as cursor:
@@ -101,9 +113,15 @@ def empty_application_database() -> Iterator[None]:
             )
     os.environ[MIGRATION_URL_ENV] = _url_with_database(original_migration_url, database)
     os.environ[RUNTIME_URL_ENV] = _url_with_database(original_runtime_url, database)
+    os.environ[BACKUP_URL_ENV] = _url_with_database(original_backup_url, database)
+    os.environ[RESTORE_URL_ENV] = _url_with_database(original_restore_url, database)
+    os.environ[HUMAN_ADMIN_URL_ENV] = _url_with_database(original_human_admin_url, database)
     yield
     os.environ[MIGRATION_URL_ENV] = original_migration_url
     os.environ[RUNTIME_URL_ENV] = original_runtime_url
+    os.environ[BACKUP_URL_ENV] = original_backup_url
+    os.environ[RESTORE_URL_ENV] = original_restore_url
+    os.environ[HUMAN_ADMIN_URL_ENV] = original_human_admin_url
 
 
 def test_upgrade_from_empty_database_reaches_reviewed_head() -> None:
@@ -302,6 +320,56 @@ def test_runtime_identity_is_distinct_and_cannot_change_schema() -> None:
             assert cursor.fetchone() == ("phase-1c",)
             with pytest.raises(psycopg.errors.InsufficientPrivilege):
                 cursor.execute("CREATE TABLE app.forbidden_runtime_ddl (id integer)")
+
+
+def test_operational_database_identities_have_separate_least_privilege() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT rolname, rolsuper, rolcreatedb, rolcreaterole, rolreplication
+                FROM pg_roles
+                WHERE rolname IN (
+                    'prm_runtime', 'prm_migrator', 'prm_backup',
+                    'prm_restore', 'prm_human_admin'
+                )
+                ORDER BY rolname
+                """
+            )
+            rows = cursor.fetchall()
+            assert [row[0] for row in rows] == [
+                "prm_backup",
+                "prm_human_admin",
+                "prm_migrator",
+                "prm_restore",
+                "prm_runtime",
+            ]
+            assert all(row[1:] == (False, False, False, False) for row in rows)
+            cursor.execute(
+                """
+                SELECT
+                    pg_has_role('prm_backup', 'pg_read_all_data', 'member'),
+                    pg_has_role('prm_human_admin', 'pg_monitor', 'member'),
+                    pg_has_role('prm_restore', 'pg_read_all_data', 'member'),
+                    pg_has_role('prm_human_admin', 'pg_write_all_data', 'member')
+                """
+            )
+            assert cursor.fetchone() == (True, True, False, False)
+
+    with psycopg.connect(_required_url(BACKUP_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT baseline_key FROM app.schema_baseline")
+            assert cursor.fetchone() == ("phase-1c",)
+            with pytest.raises(psycopg.errors.InsufficientPrivilege):
+                cursor.execute("INSERT INTO app.schema_baseline VALUES ('forbidden-backup-write')")
+
+    for url_environment in (RESTORE_URL_ENV, HUMAN_ADMIN_URL_ENV):
+        with psycopg.connect(_required_url(url_environment)) as connection:
+            with pytest.raises(psycopg.errors.InsufficientPrivilege):
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT actor_id FROM app.user_accounts")
 
 
 def test_runtime_has_only_bounded_user_account_data_privileges() -> None:

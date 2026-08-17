@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "environment": "test",
+  "sources": {
+    "APP_DATABASE_URL_FILE": "/run/secrets/prm_test_runtime_database_url",
+    "MIGRATION_DATABASE_URL_FILE": "/run/secrets/prm_test_migration_database_url",
+    "BACKUP_DATABASE_URL_FILE": "/run/secrets/prm_test_backup_database_url",
+    "RESTORE_DATABASE_URL_FILE": "/run/secrets/prm_test_restore_database_url",
+    "HUMAN_ADMIN_DATABASE_URL_FILE": "/run/secrets/prm_test_human_admin_database_url",
+    "APP_SECRET_KEY_FILE": "/run/secrets/prm_test_application_secret",
+    "BACKUP_ENCRYPTION_KEY_FILE": "/run/secrets/prm_test_backup_encryption_key"
+  }
+}

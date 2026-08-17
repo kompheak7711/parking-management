@@ -597,6 +597,78 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "The TEST-117 manifest structure and executable test coverage are validated automatically."
+    },
+    {
+      "test_id": "test_deployment_examples_define_five_distinct_database_identities",
+      "upstream_ids": ["SEC-045", "SEC-047", "DEPLOY-065", "DEPLOY-066", "TEST-111"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "The machine-readable contract names distinct runtime, migration, backup, restore, and exceptional human-administration roles with bounded standing access."
+    },
+    {
+      "test_id": "test_deployment_examples_use_separate_environment_bound_protected_sources",
+      "upstream_ids": ["SEC-049", "SEC-050", "DEPLOY-017", "DEPLOY-018", "DEPLOY-019"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "Development, test, staging, and production examples contain only distinct environment-bound protected-file source references."
+    },
+    {
+      "test_id": "test_production_profile_fails_closed_without_resolved_secret_sources",
+      "upstream_ids": ["SEC-049", "SEC-050", "DEPLOY-017", "DEPLOY-019", "DEPLOY-065"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "Deployment-mode validation rejects the production profile until every independently protected source is mounted, without emitting source contents."
+    },
+    {
+      "test_id": "test_validator_rejects_direct_secret_values",
+      "upstream_ids": ["SEC-049", "DEPLOY-019", "TEST-110"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "Profiles containing direct secret inputs fail validation and rejected values are absent from diagnostics."
+    },
+    {
+      "test_id": "test_validator_rejects_protected_source_path_traversal",
+      "upstream_ids": ["SEC-049", "DEPLOY-019", "TEST-110"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "Protected-file references containing parent traversal are rejected before any source is resolved."
+    },
+    {
+      "test_id": "test_backup_encryption_source_is_separate_from_database_and_application_sources",
+      "upstream_ids": ["SEC-050", "DEPLOY-018", "DEPLOY-019"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "Backup encryption material has a source class and path distinct from every database credential and ordinary application secret."
+    },
+    {
+      "test_id": "test_server_secret_source_names_cannot_be_frontend_environment_inputs",
+      "upstream_ids": ["SEC-049", "TEST-110"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "Protected server source names are not Vite inputs and do not appear in frontend source."
+    },
+    {
+      "test_id": "test_postgres_bootstrap_avoids_secret_command_arguments_and_limits_admin_roles",
+      "upstream_ids": ["SEC-045", "SEC-047", "SEC-049", "DEPLOY-062", "DEPLOY-065", "DEPLOY-066", "TEST-111"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "Local bootstrap reads secret values through environment-backed psql variables, grants backup read and human monitoring only, and leaves restore without standing data access."
+    },
+    {
+      "test_id": "test_operational_database_identities_have_separate_least_privilege",
+      "upstream_ids": ["SEC-045", "SEC-047", "DEPLOY-062", "DEPLOY-065", "DEPLOY-066", "TEST-111"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL proves five non-superuser/non-role-creating identities, read-only backup access, and no standing data path for restore or human administration."
     }
   ]
 }

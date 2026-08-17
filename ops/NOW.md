@@ -1,32 +1,34 @@
-# Password-credential persistence — published; compact state repaired
+# Deployment identities and secret-source scaffolding — verified for publication
 
-- Outcome: the bounded `DB-AUTH-002` tranche is committed and published at
-  `d10c306d83365b729fd41b573468e4989c903d46` on `implementation/foundation`.
-- Implemented: one forward-only PostgreSQL migration after `20260817_02` for an
-  account-linked, algorithm-neutral modular password-verifier encoding, matching algorithm
-  metadata, positive integral work-factor metadata, credential lifecycle timestamps,
-  responsible-actor/audit provenance, immutable identity/creation time, and narrow runtime
-  column reads.
-- Constraints: plaintext-shaped/mismatched encodings, invalid work-factor metadata, orphaned
-  credentials, unattributed/stale-provenance changes, and audit-only mutation are rejected.
-- Scope held: no hashing library or generation/checking, login/API/UI, rate limiting,
-  sessions, MFA/recovery/bootstrap, dependency, credential, remote/production operation,
-  product-policy, or canonical-document change.
-- Last verified result: `make database-test` passed 37 real-PostgreSQL tests;
-  `make automation-test`, full test, lint, format-check, typecheck, and build gates passed.
-  JSON validation, `git diff --check`, and canonical-doc integrity also passed.
-- Security review: two independent focused reviews were performed; all concrete migration,
-  privilege, audit-attribution, downgrade-regression, and traceability findings were
-  addressed. `SEC-043` remains mapped to the existing allowlisted logging-redaction test;
-  `SEC-069` is recorded as the completed review process, not overclaimed as a DB test.
-- Compact-state repair: preflight now detects a clean synchronized published HEAD ahead
-  of pre-publication state, and task packets use the enforced current action instead of
-  an unapproved next candidate. The deterministic stale-publication regression passes.
-- Current blockers: none for DB-AUTH-002 publication or this bounded repair. The product
-  is intentionally idle because the exact next candidate is not approved.
-- Exact next candidate: design backup, restore, human-administration database identities and
-  production secret provisioning as a separate `SEC-045/047/049/050` deployment tranche.
-- Next risk/approval: high and not approved because it includes
-  protected deployment identities and production-secret provisioning.
-- Exact next action: owner separately authorizes the high-risk
-  `SEC-045/047/049/050` deployment tranche before any implementation begins.
+- Objective: implement only the owner-authorized `SEC-045/047/049/050` design and local
+  configuration-scaffolding tranche; create no production secret and do not commit or push.
+- Outcome: five distinct managed database identities now have machine-readable contracts and
+  fresh-local-Compose scaffolding: runtime, migration, read-only backup, connect-only restore,
+  and monitoring-only exceptional human administration.
+- Secret separation: development, test, staging, and production profiles contain protected-file
+  references only. Database identities, ordinary application secret input, and backup encryption
+  input use distinct environment-bound sources.
+- Fail-closed gate: `make deployment-config-check` validates committed profiles; deployment-mode
+  validation rejects missing, direct, empty, or recognized placeholder protected sources without
+  printing contents. Production remains intentionally unresolved and unconfigured.
+- Administration boundary: human administration has no standing table DML or financial-history
+  edit path. Restore has no standing data access and requires a later separately authorized
+  controlled runbook/elevation procedure.
+- Secret handling: Compose mounts password files; the PostgreSQL initializer uses `psql \getenv`
+  instead of secret-bearing command arguments. Test credentials are disposable, private, silent,
+  and removed with the isolated test volume.
+- Verification: `make database-test` passed 38 real-PostgreSQL tests. Full `make test` passed
+  67 backend tests with 38 dedicated-gate skips and 3 frontend tests. Lint, format-check,
+  typecheck, build, automation, TEST-118, deployment-config, Compose-render, client-bundle,
+  changed-file secret/argument, JSON, diff-check, migration-head, and canonical-integrity gates
+  passed.
+- Dependency review: locked backend runtime/development `pip-audit` and frontend `npm audit`
+  reported no known vulnerabilities. `shellcheck` was unavailable; POSIX `sh -n` passed.
+- Canonical scope: `docs/001-010` are unchanged. No package, schema migration, production value,
+  remote/secret-store operation, business policy, destructive operation, commit, or push occurred.
+- Supervisor review: added fail-closed rejection and traceability for protected-source path
+  traversal; all affected gates passed afterward.
+- Blockers: none for publication of this bounded working tree. Real production provisioning,
+  restore authority/runbook, backup execution/encryption, and deployment remain explicitly deferred.
+- Exact next action: stage only reviewed paths, recheck the cached diff and secret signatures,
+  commit, push normally, and verify GitHub Actions plus local/upstream/remote identity.

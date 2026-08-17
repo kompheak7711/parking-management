@@ -48,9 +48,9 @@ make install
 make dev
 ```
 
-Settings are read from the process environment. `.env.example` documents available
-values for local/deployment tooling; the backend does not implicitly read a local
-`.env` file or bake it into an image.
+Settings are read from protected process configuration. `.env.example` contains public
+settings and secret-file path names only; it contains no credential or key value. The
+backend does not implicitly read a local `.env` file or bake one into an image.
 
 The development API listens on `http://127.0.0.1:8000`. Its liveness endpoint is:
 
@@ -106,10 +106,12 @@ project dependencies continue to install only from `backend/uv.lock` and
 ## PostgreSQL and migrations
 
 Alembic is the reviewed, versioned schema tool; psycopg is the PostgreSQL driver used
-by migrations and integration tests. These are the only Phase 1C dependencies. Copy
-the variable names from `.env.example` into protected process configuration and set
-three distinct local passwords; do not source or commit `.env` files. Then start the
-single development service with `docker compose up -d --wait postgres`. Identity
+by migrations and integration tests. These are the only Phase 1C dependencies. Create
+six distinct local-only password files at the ignored `.local/secrets/` paths named by
+`.env.example`, using an external protected input method and restrictive permissions;
+never put their values in Git, logs, or command arguments. Export only the corresponding
+`*_FILE` path variables, then start the single development service with
+`docker compose up -d --wait postgres`. Identity
 initialization runs only for a fresh PostgreSQL data directory; this foundation does
 not alter an existing volume automatically. If an existing development volume lacks
 these identities, stop and handle that data explicitly rather than deleting or
@@ -119,6 +121,15 @@ reinitializing it through project automation.
 `APP_DATABASE_URL` uses the non-owning `prm_runtime` identity. The application never
 falls back to migration credentials. `TEST_ADMIN_DATABASE_URL` is test-only and must
 name the local `prm_admin` bootstrap identity when tests are run directly.
+
+The five managed identities and protected source names are defined in
+`config/deployment/identity-secret-contract.json`; environment-specific files in the same
+directory contain source references only. `prm_backup` is read-only, `prm_restore` has no
+standing data access, and exceptional `prm_human_admin` access has monitoring but no table
+mutation. See `docs/DEPLOYMENT_IDENTITY_SECRET_SCAFFOLDING.md`. Validate committed examples
+with `make deployment-config-check`. Deployment tooling must additionally run
+`python3 scripts/validate-deployment-config.py check-profile <profile>` after mounting every
+protected source; production fails closed while any source is absent or placeholder-only.
 
 Run `make migrate` to apply forward migrations. It never resets or recreates a
 database and downgrade functions deliberately refuse destructive rollback. Run
