@@ -3,35 +3,46 @@
   "phase": "Phase 2F",
   "tranche": "Local Login Security Foundation",
   "task": "Implement the bounded Local Login Security Foundation",
-  "status": "complete_uncommitted",
+  "status": "published",
   "active_cycle": "phase-2f-local-login-security-foundation",
   "branch": "implementation/foundation",
-  "commit": "b341ba399150b97b4c56db7c257743598ff55529",
-  "timestamp": "2026-08-17T18:04:11Z",
+  "commit": "e94212312b72f5e7c5777bd0b1264cdd262a7fe7",
+  "timestamp": "2026-08-17T18:09:00Z",
   "risk_class": "high",
   "approval": {
-    "status": "approved_ready",
-    "basis": "owner-authorized actionable Phase 2F bounded candidate; implementation is complete without publication",
+    "status": "approved_complete",
+    "basis": "owner-authorized actionable Phase 2F bounded candidate",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_authorized_in_this_attempt": false
+    "publication_authorized_in_this_attempt": true
   },
   "next_candidate": {
-    "phase": "Phase 2F publication",
-    "task": "Independently verify and publish the exact reviewed Phase 2F uncommitted diff",
-    "status": "approved_ready",
+    "phase": "Phase 2G",
+    "task": "Implement the bounded MFA Policy Enforcement Foundation through provider-neutral enrollment and challenge-state boundaries",
+    "include": [
+      "enforce the approved Owner/Manager-required and Staff-optional MFA policy through the existing account MFA-policy class",
+      "deny normal privileged actor establishment when required enrollment or challenge completion is absent",
+      "permit Staff without enrollment only within separately granted capabilities",
+      "keep MFA enrollment and challenge evidence provider-neutral and secret-free",
+      "focused deterministic policy-matrix tests and traceability"
+    ],
+    "exclude": [
+      "MFA library, algorithm, protocol, credential, or protected verifier selection",
+      "database migration or persisted MFA/recovery-code state",
+      "public authentication endpoint or UI",
+      "browser sessions, cookies, CSRF, or tokens",
+      "recovery codes, administrative recovery, or Owner bootstrap",
+      "production credentials, deployment, or remote access",
+      "canonical document, business, financial, role, or capability-policy changes"
+    ],
     "risk_class": "high",
+    "status": "approved_ready",
     "authorities": [
       "PR-CAP-009",
-      "DB-AUTH-001",
-      "DB-AUTH-002",
       "API-096",
-      "TEST-108",
-      "SEC-009",
-      "SEC-010",
-      "SEC-012",
-      "SEC-014",
-      "DL-055"
+      "TEST-128",
+      "SEC-013",
+      "DL-056"
     ]
   },
   "reconciliation": {
@@ -56,17 +67,14 @@
       "active credentials verify through the published Phase 2E PasswordHashService",
       "missing, incorrect-password, and disabled-account attempts share one generic external result and perform one Argon2id verification",
       "account and request-source bounds are constructor-required positive policy inputs; no production threshold was invented",
-      "8 focused local-authentication test cases and the Phase 2F traceability assertion passed",
-      "make format, make format-check, make lint, make typecheck, make test, make build, make database-test, and make automation-test passed",
-      "make test passed 83 backend tests with 38 expected dedicated-gate skips and 3 frontend tests",
-      "make database-test passed 38 real-PostgreSQL tests",
-      "independent supervisor verification passed format-check, lint, typecheck, 83 backend tests with 38 expected dedicated-gate skips, 3 frontend tests, build, 38 real-PostgreSQL tests, automation-test, locked runtime/development dependency audits, frontend audit, traceability, JSON, canonical/migration scope, secret-signature, and diff checks",
-      "docs/001-010, migrations/schema, public login/API/UI, sessions, MFA, recovery, bootstrap, production credentials/deployment/remote access, and business/financial/authorization policy are unchanged",
-      "no commit or push occurred"
+      "independent local verification passed format-check, lint, typecheck, 83 backend tests with 38 expected dedicated-gate skips, 3 frontend tests, build, 38 real-PostgreSQL tests, automation-test, locked runtime/development dependency audits, frontend audit, traceability, JSON, canonical/migration scope, secret-signature, and diff checks",
+      "commit e94212312b72f5e7c5777bd0b1264cdd262a7fe7 contains the six exact reviewed paths and is present at local HEAD, upstream, and the remote implementation/foundation branch",
+      "GitHub Actions CI run 32053473094 passed backend, frontend, dependency-security, and PostgreSQL migration jobs for exact commit e94212312b72f5e7c5777bd0b1264cdd262a7fe7",
+      "docs/001-010, migrations/schema, public login/API/UI, sessions, MFA, recovery, bootstrap, production credentials/deployment/remote access, and business/financial/authorization policy are unchanged"
     ]
   },
-  "next_action": "Independently verify the exact Phase 2F uncommitted diff and, if all standing publication gates pass, commit and push only the reviewed paths under standing authorization.",
-  "idle_reason": "Phase 2F implementation is complete_uncommitted and requires independent verification/publication under standing authorization.",
+  "next_action": "Implement the approved bounded Phase 2G MFA Policy Enforcement Foundation candidate immediately.",
+  "idle_reason": "Phase 2F is published; Phase 2G is approved_ready and should dispatch immediately.",
   "owner_action": "none",
   "blockers": [],
   "secrets_present": false

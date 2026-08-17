@@ -27,6 +27,12 @@
     rate-limiting enforcement, secret-free audit evidence, focused tests, and traceability.
     Exclude public login/API/UI, sessions/cookies, MFA, recovery, bootstrap, production
     credentials/deployment/remote access, canonical changes, and policy invention.
+13. Phase 2G MFA Policy Enforcement Foundation — approved and ready under the durable
+    authorization below. Bound the tranche to provider-neutral enforcement of the approved
+    Owner/Manager-required and Staff-optional MFA policy, enrollment/challenge state boundaries,
+    focused policy-matrix tests, and traceability. Exclude MFA mechanism/library selection,
+    persistence/migrations, API/UI, sessions, recovery/bootstrap, production operations,
+    canonical changes, and role/capability-policy invention.
 
 Remaining v1 application tranches are authorized when bounded by canonical documents
 001-010 and all publication gates; unresolved policy and protected production work still
