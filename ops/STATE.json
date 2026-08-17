@@ -2,12 +2,12 @@
   "schema_version": 1,
   "phase": "Phase 2C",
   "tranche": "single-Property application foundation",
-  "task": "Implement the Property-local business-date foundation for Asia/Phnom_Penh",
-  "status": "complete_unpublished",
+  "task": "Implement a single-Property identity scope primitive that rejects any object assigned to a different Property ID",
+  "status": "approved_ready",
   "active_cycle": "phase-2c-single-property-foundation",
   "branch": "implementation/foundation",
-  "commit": "0187f265e60e92677cda500b289a1ab73f334fb6",
-  "timestamp": "2026-08-17T07:31:52Z",
+  "commit": "ec04686eb9724f0ff10a0c64d6258d28fd3b77fd",
+  "timestamp": "2026-08-17T07:33:35Z",
   "implemented": [
     "node_engine_baseline_aligned_to_vite_7_3_6",
     "strict_typescript_react_vite_foundation",
@@ -161,7 +161,10 @@
       "make build produced backend distributions, passed the backend import check, and completed the frontend production build",
       "make database-test passed all 6 isolated PostgreSQL migration tests and cleaned its disposable resources",
       "focused business-time plus traceability validation passed all 4 tests",
-      "independent bounded review returned PASS with no policy, logic, security, or scope findings"
+      "independent bounded review returned PASS with no policy, logic, security, or scope findings",
+      "implementation commit ec04686eb9724f0ff10a0c64d6258d28fd3b77fd contains exactly the six reviewed paths and was pushed normally",
+      "GitHub Actions CI run 32006273690 passed all four jobs on attempt 1 for exact implementation commit ec04686eb9724f0ff10a0c64d6258d28fd3b77fd",
+      "local HEAD, upstream tracking SHA, and remote implementation/foundation SHA all matched ec04686eb9724f0ff10a0c64d6258d28fd3b77fd after publication"
     ]
   },
   "preserved": [
@@ -189,7 +192,9 @@
     "status": "approved_ready",
     "risk_class": "high"
   },
-  "next_action": "Publish this independently verified tranche, confirm GitHub Actions and SHA/file-list integrity, then dispatch the approved high-risk single-Property identity scope primitive.",
+  "next_action": "Dispatch and independently verify the approved high-risk single-Property identity scope primitive in a fresh supervisor cycle.",
+  "idle_reason": "Waiting only for the dispatcher to start the next authorized supervisor cycle; no owner decision or external change is required.",
+  "owner_action": "none",
   "blockers": [],
   "secrets_present": false
 }
