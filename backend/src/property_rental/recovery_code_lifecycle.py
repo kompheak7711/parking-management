@@ -76,7 +76,7 @@ class RecoveryCodeLifecycleAuditSink(Protocol):
 class RecoveryCodeVerificationProvider(Protocol):
     """Provider-selected verification behind an opaque verifier reference."""
 
-    def matches(self, candidate: str, verifier_reference: str) -> bool: ...
+    def matches(self, candidate: str, verifier_reference: str, /) -> bool: ...
 
 
 class RecoveryCodeLifecycleService:

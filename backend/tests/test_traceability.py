@@ -430,3 +430,33 @@ def test_recovery_code_set_issuance_foundation_has_bounded_traceability() -> Non
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert routed_authorities <= set(entry["upstream_ids"])
+
+
+def test_recovery_code_consumption_orchestration_has_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    routed_authorities = {
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058",
+    }
+    expected_test_ids = {
+        "test_consumption_composes_lifecycle_verifier_and_atomic_repository_once",
+        "test_non_active_matching_code_has_one_generic_outcome_without_persistence",
+        "test_persistence_failure_fails_closed_with_secret_free_immutable_evidence",
+        "test_postgres_repository_locks_exact_set_and_conditionally_consumes_one_row",
+        "test_postgres_repository_rolls_back_when_conditional_consumption_loses_race",
+        "test_committed_postgres_evidence_keeps_success_truthful_when_audit_sink_fails",
+        "test_recovery_code_consumption_adapter_is_atomic_and_single_use_on_postgresql",
+        "test_recovery_code_consumption_orchestration_has_bounded_traceability",
+    }
+
+    for test_id in expected_test_ids:
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert routed_authorities <= set(entry["upstream_ids"])

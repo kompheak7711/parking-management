@@ -1253,6 +1253,70 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "Phase 2M issuance evidence remains mechanically bounded to authorized set creation, one-time plaintext presentation, transaction failure handling, and provider composition without claiming excluded recovery behavior."
+    },
+    {
+      "test_id": "test_consumption_composes_lifecycle_verifier_and_atomic_repository_once",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_consumption.py",
+      "status": "implemented",
+      "notes": "Phase 2N composes the published lifecycle and verifier through one atomic persistence call, advances only the independently matching code, and emits no candidate or verifier material."
+    },
+    {
+      "test_id": "test_non_active_matching_code_has_one_generic_outcome_without_persistence",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_consumption.py",
+      "status": "implemented",
+      "notes": "Consumed and invalidated matching verifiers preserve their lifecycle state and return the same generic outward rejection while retaining bounded secret-free internal evidence."
+    },
+    {
+      "test_id": "test_persistence_failure_fails_closed_with_secret_free_immutable_evidence",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_consumption.py",
+      "status": "implemented",
+      "notes": "A persistence exception produces only a generic closed failure and immutable evidence whose fixed values exclude candidate, verifier, and provider detail."
+    },
+    {
+      "test_id": "test_postgres_repository_locks_exact_set_and_conditionally_consumes_one_row",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_recovery_code_consumption.py",
+      "status": "implemented",
+      "notes": "A deterministic adapter contract test verifies exact-set row locking, one guarded lifecycle update, and one commit; real PostgreSQL behavior is claimed only by the dedicated database test."
+    },
+    {
+      "test_id": "test_postgres_repository_rolls_back_when_conditional_consumption_loses_race",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_recovery_code_consumption.py",
+      "status": "implemented",
+      "notes": "A guarded update that affects no row fails closed and rolls back rather than reporting or persisting a successful single-use transition."
+    },
+    {
+      "test_id": "test_committed_postgres_evidence_keeps_success_truthful_when_audit_sink_fails",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_consumption.py",
+      "status": "implemented",
+      "notes": "The atomic PostgreSQL lifecycle update carries secret-free correlation, provenance, reason, and previous/resulting state; a secondary sink failure cannot turn its committed success into a false outward failure."
+    },
+    {
+      "test_id": "test_recovery_code_consumption_adapter_is_atomic_and_single_use_on_postgresql",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The dedicated make database-test gate proves against real PostgreSQL that one matching verifier is durably consumed once, reuse is generically rejected, and a sibling verifier remains active."
+    },
+    {
+      "test_id": "test_recovery_code_consumption_orchestration_has_bounded_traceability",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "Phase 2N evidence is mechanically bounded to atomic single-use consumption orchestration and excludes API, UI, account or MFA mutation, session revocation, rate limiting, enumeration handling, regeneration, administrative recovery, and production operations."
     }
   ]
 }

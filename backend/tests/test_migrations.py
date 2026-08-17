@@ -9,8 +9,10 @@ import subprocess
 import time
 import uuid
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 from textwrap import dedent
+from typing import cast
 from urllib.parse import urlsplit, urlunsplit
 
 import httpx
@@ -21,6 +23,13 @@ from alembic.script import ScriptDirectory
 from psycopg import sql
 
 from property_rental.app import create_app
+from property_rental.recovery_code_consumption import (
+    PostgresRecoveryCodeConsumptionRepository,
+    RecoveryCodeConsumptionConnection,
+    RecoveryCodeConsumptionRequest,
+    RecoveryCodeConsumptionService,
+)
+from property_rental.recovery_code_security import Argon2idRecoveryCodeVerifierProvider
 from property_rental.settings import Settings
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
@@ -928,6 +937,117 @@ def test_recovery_codes_have_independent_immutable_identities_and_consumption() 
                     """,
                     (first_code_id,),
                 )
+
+
+def test_recovery_code_consumption_adapter_is_atomic_and_single_use_on_postgresql() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    actor_id = uuid.uuid4()
+    set_id = uuid.uuid4()
+    matching_code_id = uuid.uuid4()
+    sibling_code_id = uuid.uuid4()
+    matching_secret = "postgresql-single-use-recovery-secret"
+    sibling_secret = "postgresql-unused-recovery-secret"
+    verifier_provider = Argon2idRecoveryCodeVerifierProvider()
+    matching_verifier = verifier_provider.encode(matching_secret)
+    sibling_verifier = verifier_provider.encode(sibling_secret)
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Recovery Consumer', 'recovery-consumer',
+                          'active', 'optional', 'authorized-account-creation')
+                """,
+                (actor_id, f"recovery-consumer-{uuid.uuid4().hex}"),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.recovery_code_sets (
+                    set_id, actor_id, created_by_actor_id, provenance
+                ) VALUES (%s, %s, %s, 'protected-enrollment')
+                """,
+                (set_id, actor_id, actor_id),
+            )
+            cursor.executemany(
+                """
+                INSERT INTO app.recovery_codes (
+                    code_id, set_id, verifier_encoding, algorithm,
+                    work_factor_metadata, provenance
+                ) VALUES (%s, %s, %s, %s, %s::jsonb, 'protected-enrollment')
+                """,
+                [
+                    (
+                        matching_code_id,
+                        set_id,
+                        matching_verifier.verifier_encoding,
+                        matching_verifier.algorithm,
+                        '{"memory_cost": 65536}',
+                    ),
+                    (
+                        sibling_code_id,
+                        set_id,
+                        sibling_verifier.verifier_encoding,
+                        sibling_verifier.algorithm,
+                        '{"memory_cost": 65536}',
+                    ),
+                ],
+            )
+        connection.commit()
+
+    consumed_at = datetime.now(UTC)
+    with psycopg.connect(_required_url(RUNTIME_URL_ENV)) as runtime_connection:
+        audit_evidence = []
+
+        class DatabaseTestAuditSink:
+            def record(self, evidence: object) -> None:
+                audit_evidence.append(evidence)
+
+        service = RecoveryCodeConsumptionService(
+            repository=PostgresRecoveryCodeConsumptionRepository(
+                cast(RecoveryCodeConsumptionConnection, runtime_connection)
+            ),
+            verifier_provider=verifier_provider,
+            audit_sink=DatabaseTestAuditSink(),
+            clock=lambda: consumed_at,
+        )
+        request = RecoveryCodeConsumptionRequest(
+            consuming_actor_id=actor_id,
+            target_actor_id=actor_id,
+            set_id=set_id,
+            candidate=matching_secret,
+            correlation_id="postgresql-consumption",
+            provenance="protected-recovery",
+        )
+
+        first = service.consume(request)
+        repeated = service.consume(request)
+
+        assert first.completed
+        assert first.reason == "code_consumed"
+        assert not repeated.completed
+        assert repeated.reason == "code_rejected"
+        with runtime_connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT code_id, consumed_at, consumed_by_actor_id, consumption_provenance
+                FROM app.recovery_codes
+                WHERE set_id = %s
+                ORDER BY code_id
+                """,
+                (set_id,),
+            )
+            persisted = {row[0]: row[1:] for row in cursor.fetchall()}
+
+    assert persisted[matching_code_id] == (
+        consumed_at,
+        actor_id,
+        '{"correlation_id":"postgresql-consumption","previous_state":"active","provenance":"protected-recovery","reason":"code_consumed","resulting_state":"consumed"}',
+    )
+    assert persisted[sibling_code_id] == (None, None, None)
+    assert len(audit_evidence) == 2
 
 
 def test_recovery_code_set_identity_and_completed_invalidation_are_immutable() -> None:

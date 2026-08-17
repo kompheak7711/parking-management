@@ -1,28 +1,26 @@
-# Phase 2M Recovery-Code Set Issuance and One-Time Presentation Foundation — published
+# Phase 2N Recovery-Code Consumption Persistence Orchestration Foundation — complete_uncommitted
 
-- Outcome: the bounded provider-neutral issuance service composes authorization, secure generation,
-  irreversible verification, atomic persistence, immutable secret-free audit evidence, and a
-  caller-owned one-time plaintext presentation boundary.
-- Scope: exactly the approved Phase 2M issuance foundation. Public API/UI, regeneration,
-  consumption, rate limiting, enumeration handling, session revocation, MFA, administrative or
-  emergency recovery, bootstrap, production operations, credentials, remote access, canonical
-  changes, and policy invention remain excluded.
-- Repair: Hermes's incomplete audit-evidence patch was completed under standing bounded repair
-  authority. Success, authorization denial/unavailability, provider failure, and persistence
-  failure now produce deterministic secret-free evidence. Mocked PostgreSQL adapter tests are
-  classified as unit tests; real schema behavior is verified only by `make database-test`.
-- Independent verification: format, lint, strict typecheck, backend/frontend tests, builds/import,
-  deployment validation, traceability, dependency audits, frontend audit, PostgreSQL migration
-  tests, and automation tests passed. Backend passed 171 with 51 expected dedicated-gate skips;
-  frontend passed 3; PostgreSQL passed 51. Canonical documents remain unchanged.
-- Publication: the six-path tranche is published at `3928749`; local, upstream, and remote SHAs
-  matched, and GitHub Actions run `32071746278` passed all four jobs.
+- Outcome: the bounded provider-neutral consumption service composes the published lifecycle and
+  Argon2id-compatible verifier boundary with exact-set PostgreSQL row locking and one guarded
+  single-row lifecycle update. Successful consumption atomically stores immutable secret-free
+  actor, time, correlation, provenance, reason, and previous/resulting-state evidence.
+- Fail-closed behavior: missing, unmatched, ambiguous, consumed, invalidated, malformed, and
+  verifier-failure paths remain generic rejections. Persistence failures return one generic failure;
+  candidate and verifier material are excluded from results, exceptions, audit evidence, and SQL
+  provenance.
+- Scope: public API/UI, account/MFA mutation, session revocation, rate limiting, enumeration
+  handling, regeneration, administrative/emergency recovery, bootstrap, production operations,
+  credentials, remote access, canonical edits, architecture changes, and policy invention remain
+  excluded.
+- Verification: focused recovery/traceability checks passed 62; full format, lint, strict typecheck,
+  tests, builds/import passed; backend passed 179 with 52 expected dedicated-gate skips; frontend
+  passed 3; `make database-test` passed 52 on real PostgreSQL; `make automation-test` passed.
+  Independent pre-commit review passed with no blockers.
 - Blockers: none. Owner action: none.
-- Exact next candidate: Phase 2N Recovery-Code Consumption Persistence Orchestration Foundation,
-  approved-ready under durable remaining-v1 authorization and the existing recovery authorities.
-  Bound it to composing the published lifecycle/verifier/persistence boundaries for atomic
-  single-use consumption and secret-free audit evidence. Exclude public API/UI, account/MFA
-  mutation, session revocation, rate limiting, enumeration handling, regeneration, administrative
-  recovery, production operations, canonical changes, and policy invention.
-- Exact next action: dispatch only the approved-ready Phase 2N candidate through model-free
-  preflight.
+- Exact next candidate: publish this verified eight-path Phase 2N tranche only.
+- Exact next action: stage exactly `backend/src/property_rental/recovery_code_consumption.py`,
+  `backend/src/property_rental/recovery_code_lifecycle.py`, `backend/tests/test_migrations.py`,
+  `backend/tests/test_recovery_code_consumption.py`, `backend/tests/test_traceability.py`,
+  `ops/NOW.md`, `ops/STATE.json`, and `ops/traceability.json`; verify the staged set; commit with
+  subject `feat: add recovery code consumption foundation`; push `implementation/foundation`;
+  verify local/upstream/remote SHA equality and GitHub Actions; then reconcile publication state.

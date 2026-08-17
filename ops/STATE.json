@@ -1,31 +1,33 @@
 {
   "schema_version": 1,
-  "phase": "Phase 2M",
-  "tranche": "Recovery-Code Set Issuance and One-Time Presentation Foundation",
-  "task": "Implement the bounded Recovery-Code Set Issuance and One-Time Presentation Foundation",
-  "status": "published",
-  "active_cycle": "phase-2m-recovery-code-set-issuance-one-time-presentation-foundation",
+  "phase": "Phase 2N",
+  "tranche": "Recovery-Code Consumption Persistence Orchestration Foundation",
+  "task": "Implement the bounded Recovery-Code Consumption Persistence Orchestration Foundation",
+  "status": "complete_uncommitted",
+  "active_cycle": "phase-2n-recovery-code-consumption-persistence-orchestration-foundation",
   "branch": "implementation/foundation",
   "commit": "3928749df99873b9622620db8a1bc5ed6cf42656",
-  "timestamp": "2026-08-17T21:45:00Z",
+  "timestamp": "2026-08-17T22:00:14Z",
   "risk_class": "high",
   "approval": {
-    "status": "complete",
-    "basis": "owner-authorized exact bounded Phase 2M tranche, durable remaining-v1 authorization, and standing publication authority",
+    "status": "approved_ready",
+    "basis": "model-free-preflight-authorized exact bounded Phase 2N tranche and durable remaining-v1 authorization",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
   "publication": {
-    "commit": "3928749df99873b9622620db8a1bc5ed6cf42656",
-    "subject": "feat: add recovery code issuance foundation",
+    "commit": null,
+    "subject": "feat: add recovery code consumption foundation",
     "upstream": "origin/implementation/foundation",
-    "local_upstream_remote_match": true,
-    "github_actions_run": "32071746278",
-    "github_actions_status": "passed",
-    "committed_paths": [
-      "backend/src/property_rental/recovery_code_issuance.py",
-      "backend/tests/test_recovery_code_issuance.py",
+    "local_upstream_remote_match": false,
+    "github_actions_run": null,
+    "github_actions_status": "not_run",
+    "uncommitted_paths": [
+      "backend/src/property_rental/recovery_code_consumption.py",
+      "backend/src/property_rental/recovery_code_lifecycle.py",
+      "backend/tests/test_migrations.py",
+      "backend/tests/test_recovery_code_consumption.py",
       "backend/tests/test_traceability.py",
       "ops/NOW.md",
       "ops/STATE.json",
@@ -33,16 +35,16 @@
     ]
   },
   "authorities": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
-  "touched_areas": ["recovery-code issuance service", "focused backend tests", "bounded traceability", "compact state"],
+  "touched_areas": ["recovery-code consumption orchestration", "PostgreSQL single-use persistence", "immutable secret-free audit evidence", "focused backend tests", "bounded traceability", "compact state"],
   "tests": [
-    "format/lint/typecheck passed",
-    "backend 171 passed with 51 expected dedicated-gate skips",
+    "focused recovery-code and traceability checks passed 62",
+    "format, lint, and strict typecheck passed",
+    "backend 179 passed with 52 expected dedicated-gate skips",
     "frontend 3 passed",
     "backend/frontend builds and backend import passed",
-    "deployment and TEST-118 traceability validation passed",
-    "backend and frontend dependency audits passed",
-    "make database-test passed 51",
-    "make automation-test passed"
+    "make database-test passed 52 on real PostgreSQL",
+    "make automation-test passed",
+    "independent pre-commit review passed with no blockers"
   ],
   "relevant_docs": [
     "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-009",
@@ -52,20 +54,9 @@
     "docs/008_SECURITY_MODEL.md: SEC-071 and SEC-075",
     "docs/010_DECISION_LOG.md: DL-058"
   ],
-  "repair": {
-    "standing_authorization": true,
-    "failure": "Hermes left immutable issuance audit evidence incomplete and overclassified mocked adapter tests as real database evidence",
-    "scope_preserved": true,
-    "attempts": 1,
-    "max_attempts": 2,
-    "requires_owner_decision": false,
-    "suspected_secret": false,
-    "scope_expansion": false,
-    "protected_operation": false
-  },
   "next_candidate": {
     "phase": "Phase 2N",
-    "task": "Implement the bounded Recovery-Code Consumption Persistence Orchestration Foundation",
+    "task": "Publish the bounded Recovery-Code Consumption Persistence Orchestration Foundation",
     "include": [
       "compose the published recovery-code lifecycle, verifier, and persistence boundaries for atomic single-use consumption",
       "preserve fail-closed generic outcomes and immutable secret-free audit evidence with focused deterministic and real-PostgreSQL verification",
@@ -78,9 +69,9 @@
     "risk_class": "high",
     "status": "approved_ready",
     "authorities": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
-    "next_action": "After Phase 2M publication reconciliation, dispatch the approved-ready Phase 2N Recovery-Code Consumption Persistence Orchestration Foundation through model-free preflight."
+    "next_action": "Stage exactly the eight verified Phase 2N changed paths, verify the staged set, commit with subject 'feat: add recovery code consumption foundation', push implementation/foundation, verify local/upstream/remote SHA equality and GitHub Actions, then reconcile publication state."
   },
-  "next_action": "Dispatch the approved-ready Phase 2N Recovery-Code Consumption Persistence Orchestration Foundation through model-free preflight.",
+  "next_action": "Stage exactly backend/src/property_rental/recovery_code_consumption.py, backend/src/property_rental/recovery_code_lifecycle.py, backend/tests/test_migrations.py, backend/tests/test_recovery_code_consumption.py, backend/tests/test_traceability.py, ops/NOW.md, ops/STATE.json, and ops/traceability.json; verify the staged set; commit with subject 'feat: add recovery code consumption foundation'; push implementation/foundation; verify local/upstream/remote SHA equality and GitHub Actions; then reconcile publication state.",
   "idle_reason": null,
   "owner_action": "none",
   "blockers": [],
