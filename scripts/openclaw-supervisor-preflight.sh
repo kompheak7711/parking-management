@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-repo=/Users/sokompheak/Development/property-rental-management
+repo="${PROPERTY_RENTAL_REPO:-/Users/sokompheak/Development/property-rental-management}"
 cd "$repo"
 
 status="$(jq -r '.status // "unknown"' ops/STATE.json)"

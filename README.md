@@ -146,6 +146,13 @@ approved work is actionable. Each unchanged actionable fingerprint receives at m
 one supervisor attempt, and a cycle above 100,000 tokens stops with an alert instead
 of being retried automatically.
 
+The 30-minute interval is only an idle wake-up cadence. After Hermes reports completion,
+OpenClaw immediately verifies and publishes the tranche; if compact state advances to
+a different explicitly authorized tranche, the dispatcher starts the next supervisor
+cycle without waiting for another scheduled tick. Immediate chaining is capped at six
+distinct tranches per wake-up to prevent an erroneous state transition from creating an
+unbounded model loop.
+
 A separate model-free watchdog sends Telegram only for a new publication or approval
 request, a stalled approved tranche, an unhealthy supervisor, or recovery. Identical
 events are deduplicated. The daily 08:00 Asia/Phnom_Penh report includes automation
