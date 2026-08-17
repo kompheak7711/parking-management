@@ -3,72 +3,77 @@
   "phase": "Phase 2L",
   "tranche": "Recovery-Code Cryptographic Provider Foundation",
   "task": "Implement the bounded Recovery-Code Cryptographic Provider Foundation",
-  "status": "complete_uncommitted",
+  "status": "published",
   "active_cycle": "phase-2l-recovery-code-cryptographic-provider-foundation",
   "branch": "implementation/foundation",
-  "commit": "827c2c5463f3508a7e5c8a4289f68d530ecb41c4",
-  "timestamp": "2026-08-17T20:54:40Z",
+  "commit": "e074d4230c40312f996e4eaf6f4260394a170d19",
+  "timestamp": "2026-08-17T21:05:36Z",
   "risk_class": "high",
   "approval": {
-    "status": "approved_ready",
-    "basis": "owner-authorized actionable Phase 2L bounded candidate and durable remaining-v1 authorization",
+    "status": "complete",
+    "basis": "owner-authorized actionable Phase 2L bounded candidate and standing publication authority",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
-  "scope": {
+  "publication": {
+    "commit": "e074d4230c40312f996e4eaf6f4260394a170d19",
+    "subject": "feat: add recovery code cryptographic provider",
+    "upstream": "origin/implementation/foundation",
+    "local_upstream_remote_match": true,
+    "github_actions_run": "32069151162",
+    "github_actions_status": "passed",
+    "committed_paths": [
+      "backend/src/property_rental/recovery_code_security.py",
+      "backend/tests/test_recovery_code_security.py",
+      "backend/tests/test_traceability.py",
+      "ops/NOW.md",
+      "ops/STATE.json",
+      "ops/traceability.json"
+    ]
+  },
+  "next_candidate": {
+    "phase": "Phase 2M",
+    "task": "Implement the bounded Recovery-Code Set Issuance and One-Time Presentation Foundation",
     "include": [
-      "provider-neutral secure generator for independent high-entropy single-use recovery-code material",
-      "irreversible verifier encoding and verification behind a bounded provider contract compatible with the published opaque persistence boundary",
-      "deterministic provider-contract, malformed-input, non-plaintext and non-reversible-output, secret-leakage, and bounded traceability tests"
+      "compose the published secure generator, irreversible verifier provider, and recovery-code persistence boundary to issue an independently usable recovery-code set",
+      "return plaintext recovery-code material exactly once through a bounded provider-neutral authorized-caller contract without retaining it in service state",
+      "add deterministic transaction and failure handling, non-representation and non-logging, provider-contract, and bounded traceability tests"
     ],
     "exclude": [
-      "persistence or migrations",
-      "presentation or regeneration orchestration",
-      "lifecycle consumption integration",
-      "rate limiting, enumeration handling, session revocation, MFA, API, or UI",
-      "administrative or emergency recovery, bootstrap, production deployment, credentials, or remote access",
-      "canonical changes, policy invention, or scope expansion"
-    ]
+      "public API or UI and regeneration or replacement orchestration",
+      "recovery-code consumption, rate limiting, enumeration handling, session revocation, MFA, and administrative or emergency recovery",
+      "bootstrap, production deployment, credentials, remote access, canonical changes, policy invention, and scope expansion"
+    ],
+    "risk_class": "high",
+    "status": "approved_ready",
+    "authorities": [
+      "DB-AUTH-003",
+      "PR-CAP-009",
+      "API-098",
+      "TEST-129",
+      "SEC-071",
+      "SEC-075",
+      "DL-058"
+    ],
+    "next_action": "Dispatch the approved-ready Phase 2M Recovery-Code Set Issuance and One-Time Presentation Foundation through model-free preflight."
   },
-  "authorities": [
-    "DB-AUTH-003",
-    "PR-CAP-009",
-    "API-098",
-    "TEST-129",
-    "SEC-071",
-    "SEC-075",
-    "DL-058"
-  ],
-  "baseline": {
-    "prior_phase": "Phase 2K",
-    "prior_commit": "b57310ae063e2e75987761337577a0a3168937c5",
-    "repository_head": "827c2c5463f3508a7e5c8a4289f68d530ecb41c4",
-    "upstream_match": true,
-    "working_tree_clean_before_activation": true
-  },
-  "changed_paths": [
-    "backend/src/property_rental/recovery_code_security.py",
-    "backend/tests/test_recovery_code_security.py",
-    "backend/tests/test_traceability.py",
-    "ops/NOW.md",
-    "ops/STATE.json",
-    "ops/traceability.json"
-  ],
-  "verification": {
+  "reconciliation": {
     "status": "passed",
-    "results": [
-      "focused provider tests: 12 passed",
-      "focused traceability tests: 2 passed",
-      "make test: backend 155 passed with 51 expected dedicated-gate skips; frontend 3 passed",
-      "make database-test: 51 passed",
-      "make format-check, make lint, make typecheck, and make build passed",
-      "deployment configuration validation and frontend dependency audit passed",
-      "git diff check and added-line secret/security scans passed",
-      "independent review passed with no security concern or logic error"
+    "routed_sections": [
+      "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-009",
+      "docs/010_DECISION_LOG.md: DL-058"
+    ],
+    "evidence": [
+      "Hermes independently reviewed the exact six-path Phase 2L tranche and found no blocker or required correction",
+      "supervisor format, lint, typecheck, test, build, PostgreSQL, deployment, dependency, scope, canonical-integrity, secret, and automation gates passed",
+      "backend tests passed 155 with 51 expected dedicated-gate skips; frontend tests passed 3; PostgreSQL passed 51",
+      "canonical documents remained unchanged and the reviewed Phase 2L exclusions were preserved",
+      "local, upstream, and remote SHA matched the published Phase 2L commit",
+      "GitHub Actions run 32069151162 passed backend, frontend, dependency-security, and PostgreSQL jobs"
     ]
   },
-  "next_action": "Mandatory independent verification of the exact six-path uncommitted Phase 2L tranche, then commit only those paths and push implementation/foundation; verify local/upstream/remote SHA equality and GitHub Actions before marking published.",
+  "next_action": "Dispatch the approved-ready Phase 2M Recovery-Code Set Issuance and One-Time Presentation Foundation through model-free preflight.",
   "idle_reason": null,
   "owner_action": "none",
   "blockers": [],
