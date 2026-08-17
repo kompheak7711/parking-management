@@ -205,6 +205,10 @@ def main() -> None:
         "in_progress",
         "complete_uncommitted",
         "complete_unpublished",
+        "failed",
+        "not_verified",
+        "discrepancy",
+        "repair_required",
     }:
         timestamp = state.get("timestamp")
         try:

@@ -7,15 +7,20 @@ openclaw_bin="${PROPERTY_RENTAL_OPENCLAW_BIN:-openclaw}"
 max_cycles="${PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES:-6}"
 local_model="${PROPERTY_RENTAL_LOCAL_SUPERVISOR_MODEL:-ollama/qwen35-hermes:latest}"
 codex_model="${PROPERTY_RENTAL_CODEX_SUPERVISOR_MODEL:-openai/gpt-5.6-sol}"
-last_file="$state_dir/last-attempted-fingerprint"
 usage_file="$state_dir/model-usage.jsonl"
 lock_dir="$state_dir/lock"
+attempt_dir="$state_dir/fingerprint-attempts"
+max_repair_attempts="${PROPERTY_RENTAL_MAX_REPAIR_ATTEMPTS:-2}"
+case "$max_repair_attempts" in
+  1|2) ;;
+  *) max_repair_attempts=2 ;;
+esac
 
 preflight="$($repo/scripts/openclaw-supervisor-preflight.sh)"
 actionable="$(printf '%s' "$preflight" | jq -r '.actionable')"
 [ "$actionable" = true ] || exit 0
 
-mkdir -p "$state_dir"
+mkdir -p "$state_dir" "$attempt_dir"
 if ! mkdir "$lock_dir" 2>/dev/null; then
   exit 0
 fi
@@ -49,11 +54,17 @@ while [ "$cycle" -lt "$max_cycles" ]; do
   [ "$actionable" = true ] || exit 0
 
   fingerprint="$(printf '%s' "$preflight" | shasum -a 256 | awk '{print $1}')"
-  if [ -f "$last_file" ] && [ "$(cat "$last_file")" = "$fingerprint" ]; then
+  attempt_key="$(printf '%s' "$preflight" | jq -c '{active_cycle,status,next_action,state_issue,repair_failure}' | shasum -a 256 | awk '{print $1}')"
+  attempt_file="$attempt_dir/$attempt_key"
+  attempts=0
+  if [ -f "$attempt_file" ]; then
+    attempts="$(cat "$attempt_file")"
+  fi
+  if [ "$attempts" -ge "$max_repair_attempts" ]; then
     exit 0
   fi
-
-  printf '%s\n' "$fingerprint" >"$last_file"
+  attempts=$((attempts + 1))
+  printf '%s\n' "$attempts" >"$attempt_file"
   : >"$result_file"
 
   task_packet="$($repo/scripts/openclaw-task-packet.sh)"
@@ -69,11 +80,14 @@ while [ "$cycle" -lt "$max_cycles" ]; do
     cat "$repo/ops/OPENCLAW_SUPERVISOR_PROMPT.md"
     printf '\n\nDeterministic task packet:\n```json\n%s\n```\n' "$task_packet"
     printf '\nExecution route: %s. Use model %s.\n' "$route" "$model"
+    if [ "$attempts" -gt 1 ]; then
+      printf '\nThis is bounded automatic repair attempt %s of %s for an unchanged approved technical failure. Diagnose the prior no-progress/tool failure, preserve scope, add regression evidence, and do not request redundant Owner permission.\n' "$attempts" "$max_repair_attempts"
+    fi
   } >"$message_file"
 
   if ! "$openclaw_bin" agent \
     --agent property-rental-supervisor \
-    --session-id "property-rental-$fingerprint-$route" \
+    --session-id "property-rental-$fingerprint-$route-$attempts" \
     --message-file "$message_file" \
     --model "$model" \
     --thinking low \
@@ -81,7 +95,11 @@ while [ "$cycle" -lt "$max_cycles" ]; do
     --json >"$result_file"; then
     record_usage "$route" "$model"
     if [ "$route" != local ]; then
-      echo "Supervisor Codex cycle failed; identical state will not be retried automatically." >&2
+      if [ "$attempts" -lt "$max_repair_attempts" ]; then
+        cycle=$((cycle + 1))
+        continue
+      fi
+      echo "Supervisor Codex cycle failed after $attempts bounded attempts; Owner attention is required." >&2
       exit 70
     fi
     route=codex-escalation
@@ -90,13 +108,17 @@ while [ "$cycle" -lt "$max_cycles" ]; do
     : >"$result_file"
     if ! "$openclaw_bin" agent \
       --agent property-rental-supervisor \
-      --session-id "property-rental-$fingerprint-$route" \
+      --session-id "property-rental-$fingerprint-$route-$attempts" \
       --message-file "$message_file" \
       --model "$model" \
       --thinking low \
       --timeout 1800 \
       --json >"$result_file"; then
       record_usage "$route" "$model"
+      if [ "$attempts" -lt "$max_repair_attempts" ]; then
+        cycle=$((cycle + 1))
+        continue
+      fi
       echo "Local cycle and bounded Codex escalation both failed; identical state will not be retried automatically." >&2
       exit 70
     fi
@@ -122,13 +144,17 @@ while [ "$cycle" -lt "$max_cycles" ]; do
     : >"$result_file"
     if ! "$openclaw_bin" agent \
       --agent property-rental-supervisor \
-      --session-id "property-rental-$fingerprint-$route" \
+      --session-id "property-rental-$fingerprint-$route-$attempts" \
       --message-file "$message_file" \
       --model "$model" \
       --thinking low \
       --timeout 1800 \
       --json >"$result_file"; then
       record_usage "$route" "$model"
+      if [ "$attempts" -lt "$max_repair_attempts" ]; then
+        cycle=$((cycle + 1))
+        continue
+      fi
       echo "Local no-progress cycle and Codex escalation both failed." >&2
       exit 70
     fi
@@ -137,7 +163,11 @@ while [ "$cycle" -lt "$max_cycles" ]; do
   fi
 
   if [ "$(printf '%s' "$postflight" | jq -r '.actionable')" = true ] && [ "$postflight" = "$preflight" ]; then
-    echo "Supervisor completed without advancing compact state; further identical runs are suppressed pending review." >&2
+    if [ "$attempts" -lt "$max_repair_attempts" ]; then
+      cycle=$((cycle + 1))
+      continue
+    fi
+    echo "Supervisor completed without advancing compact state after $attempts bounded attempts; Owner attention is required." >&2
     exit 79
   fi
 

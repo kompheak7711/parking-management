@@ -154,8 +154,8 @@ unexpected database/role names, missing passwords, or reused identity passwords.
 
 OpenClaw checks compact state every 30 minutes without invoking a model when no
 approved work is actionable. Each unchanged actionable fingerprint receives at most
-one supervisor attempt, and a cycle above 100,000 tokens stops with an alert instead
-of being retried automatically.
+two bounded attempts, and a cycle above 100,000 tokens stops with an alert instead of
+being retried automatically.
 
 The 30-minute interval is only an idle wake-up cadence. After Hermes reports completion,
 OpenClaw immediately verifies and publishes the tranche; if compact state advances to
@@ -198,6 +198,15 @@ Automation repairs follow a permanent prevention protocol:
 Only legitimately affected files are changed. A repair does not mechanically rewrite
 all automation files; the regression test is the mandatory proof that the same defect
 cannot silently recur.
+
+Ordinary technical failures within an already approved tranche carry durable standing
+repair authority. OpenClaw may automatically diagnose, repair, add regression coverage,
+reverify, commit, push, and recheck GitHub Actions for at most two attempts. Successful
+repair activity is silent. Owner attention is required only after the attempt limit or
+when a correction crosses canonical/architecture policy, business or financial policy,
+destructive data operations, actual production secrets or credentials, production
+deployment, remote access, history rewriting, suspected secret exposure, or the original
+approved scope.
 
 A separate model-free watchdog sends Telegram only for a new publication or approval
 request, a stalled approved tranche, an unhealthy supervisor, or recovery. Identical

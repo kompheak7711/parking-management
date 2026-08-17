@@ -9,6 +9,9 @@ status="$(printf '%s' "$preflight" | jq -r '.status // "unknown"')"
 phase="$(jq -r '.phase // .next_candidate.phase // "unknown"' "$state_file")"
 task="$(printf '%s' "$preflight" | jq -r '.next_action // "unknown"')"
 risk="$(jq -r '.risk_class // .next_candidate.risk_class // .execution.risk_class // "high"' "$state_file")"
+repair_attempts="$(printf '%s' "$preflight" | jq -r '.repair_attempts // 0')"
+repair_max_attempts="$(printf '%s' "$preflight" | jq -r '.repair_max_attempts // 2')"
+state_issue="$(printf '%s' "$preflight" | jq -r '.state_issue // ""')"
 
 case "$risk" in
   low|high) ;;
@@ -29,11 +32,19 @@ jq -cn \
   --arg phase "$phase" \
   --arg task "$task" \
   --arg risk_class "$risk" \
+  --arg state_issue "$state_issue" \
+  --argjson repair_attempts "$repair_attempts" \
+  --argjson repair_max_attempts "$repair_max_attempts" \
   '{
     status: $status,
     phase: $phase,
     task: $task,
     risk_class: $risk_class,
+    repair: {
+      standing_authorization: ($state_issue == "bounded_automatic_repair_authorized"),
+      attempts_completed: $repair_attempts,
+      max_attempts: $repair_max_attempts
+    },
     compact_inputs: ["ops/NOW.md", "ops/STATE.json", "ops/QUEUE.md"],
     prohibited: [
       "canonical_requirement_changes_without_separate_owner_authorization",

@@ -22,6 +22,10 @@ case "$FAKE_SCENARIO:$model" in
     printf '%s\n' '{"usage":{"total":1300}}'
     exit 0
     ;;
+  codex_stall:openai/*)
+    printf '%s\n' '{"usage":{"total":1500}}'
+    exit 0
+    ;;
 esac
 case "$FAKE_SCENARIO:$model" in
   local_fail:openai/*|local_stall:openai/*)

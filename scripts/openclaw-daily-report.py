@@ -118,8 +118,16 @@ def main() -> None:
         "in_progress",
         "complete_uncommitted",
         "complete_unpublished",
+        "failed",
+        "not_verified",
+        "discrepancy",
+        "repair_required",
     }:
-        idle_reason = "Approved work is active or queued"
+        idle_reason = (
+            "Bounded automatic repair is active or queued"
+            if state_issue == "bounded_automatic_repair_authorized"
+            else "Approved work is active or queued"
+        )
     elif candidate.get("status") == "not_approved" or "approval" in next_action.lower():
         idle_reason = "Intentionally waiting for owner approval"
     elif state.get("blockers"):

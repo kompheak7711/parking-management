@@ -11,6 +11,12 @@ candidate_task="$(jq -r '.next_candidate.task // ""' ops/STATE.json)"
 candidate_status="$(jq -r '.next_candidate.status // "unknown"' ops/STATE.json)"
 approval_status="$(jq -r '.approval.status // "unknown"' ops/STATE.json)"
 blocker_count="$(jq -r '(.blockers // []) | length' ops/STATE.json)"
+repair_attempts="$(jq -r '(.repair.attempts // 0) | if type == "number" and floor == . and . >= 0 then . else 0 end' ops/STATE.json)"
+repair_max_attempts="$(jq -r '(.repair.max_attempts // 2) | if type == "number" and floor == . and . >= 1 and . <= 2 then . else 2 end' ops/STATE.json)"
+repair_scope_preserved="$(jq -r '.repair.scope_preserved // false' ops/STATE.json)"
+repair_failure="$(jq -r '.repair.failure // ""' ops/STATE.json)"
+repair_protected="$(jq -r '[.repair.requires_owner_decision, .repair.suspected_secret, .repair.scope_expansion, .repair.protected_operation] | any(. == true)' ops/STATE.json)"
+active_cycle="$(jq -r '.active_cycle // .task // "unknown"' ops/STATE.json)"
 state_commit="$(jq -r '.commit // ""' ops/STATE.json)"
 head_sha="$(git rev-parse HEAD)"
 worktree_status="$(git status --porcelain=v1)"
@@ -50,12 +56,33 @@ if [ "$blocker_count" -eq 0 ]; then
         ;;
     esac
   fi
+  if [ "$normalized" = false ]; then
+    case "$status" in
+      failed|not_verified|discrepancy|repair_required)
+        case "$approval_status" in
+          approved_ready|approved_active|approved_complete)
+            if [ "$repair_scope_preserved" = true ] && [ "$repair_protected" = false ] \
+              && [ -n "$repair_failure" ] && [ "$repair_attempts" -lt "$repair_max_attempts" ]; then
+              next_action="Perform bounded automatic repair attempt $((repair_attempts + 1)) of $repair_max_attempts for the already-approved tranche: $repair_failure. Preserve the original scope, add deterministic regression coverage, and re-run every applicable publication gate."
+              normalized=true
+              state_issue="bounded_automatic_repair_authorized"
+            fi
+            ;;
+        esac
+        ;;
+    esac
+  fi
 fi
 
 if [ "$blocker_count" -eq 0 ] && [ -n "$next_action" ]; then
   case "$status" in
     approved_ready|active|in_progress|verified_for_review|complete_unpublished|complete_uncommitted)
       actionable=true
+      ;;
+    failed|not_verified|discrepancy|repair_required)
+      if [ "$state_issue" = bounded_automatic_repair_authorized ]; then
+        actionable=true
+      fi
       ;;
   esac
 fi
@@ -66,8 +93,12 @@ jq -cn \
   --arg next_action "$next_action" \
   --arg recorded_next_action "$recorded_next_action" \
   --arg state_issue "$state_issue" \
+  --arg active_cycle "$active_cycle" \
+  --arg repair_failure "$repair_failure" \
   --arg worktree "$worktree_fingerprint" \
   --argjson blockers "$blocker_count" \
+  --argjson repair_attempts "$repair_attempts" \
+  --argjson repair_max_attempts "$repair_max_attempts" \
   --argjson normalized "$normalized" \
   --argjson actionable "$actionable" \
-  '{head: $head, status: $status, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, normalized: $normalized, blockers: $blockers, worktree: $worktree, actionable: $actionable}'
+  '{head: $head, status: $status, active_cycle: $active_cycle, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, repair_failure: $repair_failure, normalized: $normalized, blockers: $blockers, repair_attempts: $repair_attempts, repair_max_attempts: $repair_max_attempts, worktree: $worktree, actionable: $actionable}'

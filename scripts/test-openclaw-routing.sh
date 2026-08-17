@@ -62,6 +62,25 @@ run_case local_fail low ollama/qwen35-hermes:latest,openai/gpt-5.6-sol
 run_case local_stall low ollama/qwen35-hermes:latest,openai/gpt-5.6-sol
 run_case mislabeled_sensitive low openai/gpt-5.6-sol 'payment formatting'
 
+make_repo codex_stall high 'repair approved CI failure'
+stall_repo="$test_root/codex_stall/repo"
+stall_state_dir="$test_root/codex_stall/state"
+stall_calls="$test_root/codex_stall/calls"
+set +e
+FAKE_CALLS="$stall_calls" \
+FAKE_SCENARIO=codex_stall \
+PROPERTY_RENTAL_REPO="$stall_repo" \
+PROPERTY_RENTAL_DISPATCH_STATE_DIR="$stall_state_dir" \
+PROPERTY_RENTAL_OPENCLAW_BIN="$fake_openclaw" \
+PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES=2 \
+  "$stall_repo/scripts/openclaw-supervisor-dispatch.sh"
+stall_exit=$?
+set -e
+[ "$stall_exit" -eq 79 ]
+[ "$(wc -l <"$stall_calls" | tr -d ' ')" -eq 2 ]
+[ "$(sed -n '1p' "$stall_calls" | cut -d '|' -f 2 | sed 's/.*-//')" -eq 1 ]
+[ "$(sed -n '2p' "$stall_calls" | cut -d '|' -f 2 | sed 's/.*-//')" -eq 2 ]
+
 make_repo missing_next_action high 'bounded account migration'
 missing_repo="$test_root/missing_next_action/repo"
 jq 'del(.next_action)' "$missing_repo/ops/STATE.json" >"$missing_repo/ops/STATE.json.new"
@@ -81,6 +100,34 @@ completed_preflight="$(PROPERTY_RENTAL_REPO="$completed_repo" "$completed_repo/s
 [ "$(printf '%s' "$completed_preflight" | jq -r '.normalized')" = true ]
 [ "$(printf '%s' "$completed_preflight" | jq -r '.state_issue')" = completed_tranche_publication_action_enforced ]
 printf '%s' "$completed_preflight" | jq -e '.next_action | contains("standing authorization")' >/dev/null
+
+make_repo automatic_repair high 'original approved task'
+repair_repo="$test_root/automatic_repair/repo"
+jq '.status="not_verified"
+  | .approval={status:"approved_active"}
+  | .next_action="Wait for Owner approval."
+  | .repair={attempts:0,max_attempts:2,scope_preserved:true,failure:"backend CI failed",requires_owner_decision:false,suspected_secret:false,scope_expansion:false,protected_operation:false}' \
+  "$repair_repo/ops/STATE.json" >"$repair_repo/ops/STATE.json.new"
+mv "$repair_repo/ops/STATE.json.new" "$repair_repo/ops/STATE.json"
+repair_preflight="$(PROPERTY_RENTAL_REPO="$repair_repo" "$repair_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$repair_preflight" | jq -r '.actionable')" = true ]
+[ "$(printf '%s' "$repair_preflight" | jq -r '.state_issue')" = bounded_automatic_repair_authorized ]
+printf '%s' "$repair_preflight" | jq -e '.next_action | contains("attempt 1 of 2")' >/dev/null
+
+jq '.repair.max_attempts=99' "$repair_repo/ops/STATE.json" >"$repair_repo/ops/STATE.json.new"
+mv "$repair_repo/ops/STATE.json.new" "$repair_repo/ops/STATE.json"
+capped_preflight="$(PROPERTY_RENTAL_REPO="$repair_repo" "$repair_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$capped_preflight" | jq -r '.repair_max_attempts')" -eq 2 ]
+
+jq '.repair.attempts=2 | .repair.max_attempts=2' "$repair_repo/ops/STATE.json" >"$repair_repo/ops/STATE.json.new"
+mv "$repair_repo/ops/STATE.json.new" "$repair_repo/ops/STATE.json"
+exhausted_preflight="$(PROPERTY_RENTAL_REPO="$repair_repo" "$repair_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$exhausted_preflight" | jq -r '.actionable')" = false ]
+
+jq '.repair.attempts=0 | .repair.requires_owner_decision=true' "$repair_repo/ops/STATE.json" >"$repair_repo/ops/STATE.json.new"
+mv "$repair_repo/ops/STATE.json.new" "$repair_repo/ops/STATE.json"
+protected_preflight="$(PROPERTY_RENTAL_REPO="$repair_repo" "$repair_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$protected_preflight" | jq -r '.actionable')" = false ]
 
 make_repo stale_published high 'prohibited unapproved deployment tranche'
 stale_repo="$test_root/stale_published/repo"
