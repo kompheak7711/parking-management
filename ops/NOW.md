@@ -1,4 +1,4 @@
-# Phase 2N Recovery-Code Consumption Persistence Orchestration Foundation — complete_uncommitted
+# Phase 2N Recovery-Code Consumption Persistence Orchestration Foundation — published
 
 - Outcome: the bounded provider-neutral consumption service composes the published lifecycle and
   Argon2id-compatible verifier boundary with exact-set PostgreSQL row locking and one guarded
@@ -13,14 +13,19 @@
   credentials, remote access, canonical edits, architecture changes, and policy invention remain
   excluded.
 - Verification: focused recovery/traceability checks passed 62; full format, lint, strict typecheck,
-  tests, builds/import passed; backend passed 179 with 52 expected dedicated-gate skips; frontend
-  passed 3; `make database-test` passed 52 on real PostgreSQL; `make automation-test` passed.
-  Independent pre-commit review passed with no blockers.
+  tests, builds/import, deployment validation, dependency audits, traceability, scope, secret, and
+  canonical-integrity gates passed. Backend passed 179 with 52 expected dedicated-gate skips;
+  frontend passed 3; `make database-test` passed 52 on real PostgreSQL. Independent pre-commit
+  review and GitHub Actions run `32074820742` passed all four jobs.
+- Publication: the exact eight-path tranche is published at `eee69be`; local, upstream, and remote
+  SHAs matched and the committed file list matched the reviewed scope.
 - Blockers: none. Owner action: none.
-- Exact next candidate: publish this verified eight-path Phase 2N tranche only.
-- Exact next action: stage exactly `backend/src/property_rental/recovery_code_consumption.py`,
-  `backend/src/property_rental/recovery_code_lifecycle.py`, `backend/tests/test_migrations.py`,
-  `backend/tests/test_recovery_code_consumption.py`, `backend/tests/test_traceability.py`,
-  `ops/NOW.md`, `ops/STATE.json`, and `ops/traceability.json`; verify the staged set; commit with
-  subject `feat: add recovery code consumption foundation`; push `implementation/foundation`;
-  verify local/upstream/remote SHA equality and GitHub Actions; then reconcile publication state.
+- Exact next candidate: Phase 2O Recovery-Code Regeneration Persistence Orchestration Foundation,
+  approved-ready under the durable remaining-v1 authorization and existing recovery authorities.
+  Bound it to protected invalidation of the prior set, atomic creation of one replacement set with
+  independently salted verifier material, one-time caller-owned presentation, immutable secret-free
+  evidence, and focused deterministic/real-PostgreSQL tests. Exclude public API/UI, account or MFA
+  mutation, session revocation, rate limiting, enumeration handling, administrative/emergency
+  recovery, bootstrap, production operations, canonical changes, and policy invention.
+- Exact next action: dispatch only this approved-ready Phase 2O candidate through model-free
+  preflight.

@@ -3,27 +3,27 @@
   "phase": "Phase 2N",
   "tranche": "Recovery-Code Consumption Persistence Orchestration Foundation",
   "task": "Implement the bounded Recovery-Code Consumption Persistence Orchestration Foundation",
-  "status": "complete_uncommitted",
+  "status": "published",
   "active_cycle": "phase-2n-recovery-code-consumption-persistence-orchestration-foundation",
   "branch": "implementation/foundation",
-  "commit": "3928749df99873b9622620db8a1bc5ed6cf42656",
-  "timestamp": "2026-08-17T22:00:14Z",
+  "commit": "eee69beec8148e84816bb7045488c89065be65d2",
+  "timestamp": "2026-08-17T22:12:40Z",
   "risk_class": "high",
   "approval": {
-    "status": "approved_ready",
+    "status": "complete",
     "basis": "model-free-preflight-authorized exact bounded Phase 2N tranche and durable remaining-v1 authorization",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "publication": {
-    "commit": null,
+    "commit": "eee69beec8148e84816bb7045488c89065be65d2",
     "subject": "feat: add recovery code consumption foundation",
     "upstream": "origin/implementation/foundation",
-    "local_upstream_remote_match": false,
-    "github_actions_run": null,
-    "github_actions_status": "not_run",
-    "uncommitted_paths": [
+    "local_upstream_remote_match": true,
+    "github_actions_run": "32074820742",
+    "github_actions_status": "passed",
+    "committed_paths": [
       "backend/src/property_rental/recovery_code_consumption.py",
       "backend/src/property_rental/recovery_code_lifecycle.py",
       "backend/tests/test_migrations.py",
@@ -44,7 +44,9 @@
     "backend/frontend builds and backend import passed",
     "make database-test passed 52 on real PostgreSQL",
     "make automation-test passed",
-    "independent pre-commit review passed with no blockers"
+    "deployment, dependency, traceability, scope, secret, and canonical-integrity gates passed",
+    "independent pre-commit review passed with no blockers",
+    "GitHub Actions run 32074820742 passed all four jobs"
   ],
   "relevant_docs": [
     "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-009",
@@ -55,23 +57,24 @@
     "docs/010_DECISION_LOG.md: DL-058"
   ],
   "next_candidate": {
-    "phase": "Phase 2N",
-    "task": "Publish the bounded Recovery-Code Consumption Persistence Orchestration Foundation",
+    "phase": "Phase 2O",
+    "task": "Implement the bounded Recovery-Code Regeneration Persistence Orchestration Foundation",
     "include": [
-      "compose the published recovery-code lifecycle, verifier, and persistence boundaries for atomic single-use consumption",
-      "preserve fail-closed generic outcomes and immutable secret-free audit evidence with focused deterministic and real-PostgreSQL verification",
+      "compose protected prior-set invalidation with atomic creation of one replacement recovery-code set",
+      "use the published generator and verifier boundaries for independently salted replacement verifier material and caller-owned one-time presentation",
+      "preserve fail-closed immutable secret-free audit evidence with focused deterministic and real-PostgreSQL verification",
       "add bounded traceability without extending recovery policy"
     ],
     "exclude": [
       "public API or UI, account or MFA mutation, session revocation, rate limiting, and enumeration handling",
-      "regeneration, administrative or emergency recovery, bootstrap, production operations, credentials, remote access, canonical changes, and policy invention"
+      "administrative or emergency recovery, bootstrap, production operations, credentials, remote access, canonical changes, and policy invention"
     ],
     "risk_class": "high",
     "status": "approved_ready",
     "authorities": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
-    "next_action": "Stage exactly the eight verified Phase 2N changed paths, verify the staged set, commit with subject 'feat: add recovery code consumption foundation', push implementation/foundation, verify local/upstream/remote SHA equality and GitHub Actions, then reconcile publication state."
+    "next_action": "Dispatch the approved-ready Phase 2O Recovery-Code Regeneration Persistence Orchestration Foundation through model-free preflight."
   },
-  "next_action": "Stage exactly backend/src/property_rental/recovery_code_consumption.py, backend/src/property_rental/recovery_code_lifecycle.py, backend/tests/test_migrations.py, backend/tests/test_recovery_code_consumption.py, backend/tests/test_traceability.py, ops/NOW.md, ops/STATE.json, and ops/traceability.json; verify the staged set; commit with subject 'feat: add recovery code consumption foundation'; push implementation/foundation; verify local/upstream/remote SHA equality and GitHub Actions; then reconcile publication state.",
+  "next_action": "Dispatch the approved-ready Phase 2O Recovery-Code Regeneration Persistence Orchestration Foundation through model-free preflight.",
   "idle_reason": null,
   "owner_action": "none",
   "blockers": [],
