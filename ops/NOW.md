@@ -1,4 +1,4 @@
-# Phase 2E password hashing and verification — awaiting supervisor review
+# Phase 2E password hashing and verification — verified and published
 
 - Outcome: implemented the bounded `DB-AUTH-002` password service with `argon2-cffi` 25.1.0,
   the Argon2id RFC 9106 low-memory profile, fresh salts, explicit work-factor metadata,
@@ -18,12 +18,15 @@
   normalizes that legacy alias, the prompt and owner-visible reporting use the same meaning,
   README records the contract, and a deterministic routing regression passes. Compact state now
   uses the required `complete_uncommitted` status; repair attempt 1 of 2 preserved scope.
-- Scope: only the password service, focused tests, backend dependency/lock, traceability, and
+- Publication: commit `bc567ea` is pushed; local HEAD, upstream, and remote branch matched.
+  GitHub Actions CI run `32046660052` passed backend, frontend, dependency-security, and
+  PostgreSQL migration jobs for the exact commit.
+- Scope: only the password service, focused tests, backend dependency/lock, traceability,
+  compact state, and the required durable automation prevention rule changed.
   compact ops state changed. `docs/001-010`, migrations/schema, login/API/UI, sessions, MFA,
   recovery, bootstrap, deployment/remote access, role policy, and business/financial behavior
   are unchanged. No commit or push occurred.
 - Blockers: none.
-- Exact next candidate: none selected or authorized after Phase 2E publication.
-- Exact next action: independently publish the verified Phase 2E tranche and focused automation
-  prevention repair, verify GitHub Actions and repository synchronization, then reconcile compact
-  state to published HEAD with no unapproved candidate dispatched.
+- Exact next candidate: none selected; compact state records it as `not_approved`.
+- Exact next action: Owner selects or approves the next bounded implementation candidate; no
+  unapproved candidate will be dispatched.

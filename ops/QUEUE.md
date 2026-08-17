@@ -18,8 +18,8 @@
    `SEC-045/047/049/050` — owner-authorized implementation is independently verified for
    publication. It includes no production value, provisioning operation, deployment, or
    remote-access operation; those remain outside this tranche.
-11. Phase 2E password-hashing and verification service against `DB-AUTH-002` — implemented and
-    locally verified without publication; awaiting independent supervisor review and publication.
+11. Phase 2E password-hashing and verification service against `DB-AUTH-002` — independently
+    verified and published as `bc567ea`; GitHub Actions run `32046660052` passed.
     A compact-state completion-status enforcement repair is included with deterministic coverage.
     No subsequent implementation candidate is selected or authorized in compact state.
 
