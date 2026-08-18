@@ -497,3 +497,35 @@ def test_recovery_code_regeneration_orchestration_has_bounded_traceability() -> 
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert routed_authorities <= set(entry["upstream_ids"])
+
+
+def test_session_revocation_orchestration_has_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    routed_authorities = {
+        "DB-AUTH-004",
+        "PR-CAP-009",
+        "API-097",
+        "TEST-131",
+        "TEST-132",
+        "SEC-015",
+        "SEC-017",
+        "DL-057",
+    }
+    expected_test_ids = {
+        "test_password_reset_revokes_every_applicable_session_through_browser_boundary",
+        "test_revocation_request_rejects_invalid_nonsecret_context",
+        "test_revocation_request_rejects_unapproved_trigger",
+        "test_audit_failure_fails_closed_without_exposing_internal_exception",
+        "test_clock_failure_fails_closed_without_exposing_provider_detail",
+        "test_browser_boundary_failure_is_generic_and_has_no_partial_result",
+        "test_each_approved_trigger_records_the_exact_revocation_reason",
+        "test_revocation_audit_evidence_is_fixed_bounded_and_secret_free",
+        "test_session_revocation_orchestration_has_bounded_traceability",
+    }
+
+    for test_id in expected_test_ids:
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert routed_authorities == set(entry["upstream_ids"])

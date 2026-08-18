@@ -1453,6 +1453,78 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "Phase 2O evidence is mechanically bounded to protected prior-set invalidation, atomic replacement persistence, independent verifier material, one-time presentation, and secret-free evidence without claiming excluded recovery behavior."
+    },
+    {
+      "test_id": "test_password_reset_revokes_every_applicable_session_through_browser_boundary",
+      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_session_revocation.py",
+      "status": "implemented",
+      "notes": "One password-reset trigger revokes every caller-selected applicable immutable session through the published browser-session boundary at one controlled instant."
+    },
+    {
+      "test_id": "test_revocation_request_rejects_invalid_nonsecret_context",
+      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_session_revocation.py",
+      "status": "implemented",
+      "notes": "The orchestration boundary accepts only UUID target and correlation identifiers and rejects free-form, overlong, password-like, API-key-like, or JWT-like values before any session state or audit evidence is produced."
+    },
+    {
+      "test_id": "test_revocation_request_rejects_unapproved_trigger",
+      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_session_revocation.py",
+      "status": "implemented",
+      "notes": "Only password reset, account disablement, and material privilege reduction are accepted; an invented credential-change trigger fails closed."
+    },
+    {
+      "test_id": "test_audit_failure_fails_closed_without_exposing_internal_exception",
+      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_session_revocation.py",
+      "status": "implemented",
+      "notes": "Audit-sink failure returns one generic closed failure with no internal exception chain and no caller-visible replacement session state."
+    },
+    {
+      "test_id": "test_clock_failure_fails_closed_without_exposing_provider_detail",
+      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_session_revocation.py",
+      "status": "implemented",
+      "notes": "Revocation cannot proceed without a trustworthy aware timestamp and clock-provider detail never crosses the orchestration boundary."
+    },
+    {
+      "test_id": "test_browser_boundary_failure_is_generic_and_has_no_partial_result",
+      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_session_revocation.py",
+      "status": "implemented",
+      "notes": "A second-session browser-boundary failure is translated outside the active provider exception into one generic failure, secret-free failed evidence, and no caller-visible partial revoked-state result."
+    },
+    {
+      "test_id": "test_each_approved_trigger_records_the_exact_revocation_reason",
+      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_session_revocation.py",
+      "status": "implemented",
+      "notes": "Each of the three approved account-level triggers produces the exact bounded reason in immutable evidence without broadening revocation policy."
+    },
+    {
+      "test_id": "test_revocation_audit_evidence_is_fixed_bounded_and_secret_free",
+      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_session_revocation.py",
+      "status": "implemented",
+      "notes": "Account-level evidence has a fixed secret-free shape containing target, time, correlation, approved trigger, bounded outcome/reason, and aggregate counts only."
+    },
+    {
+      "test_id": "test_session_revocation_orchestration_has_bounded_traceability",
+      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "Phase 2P evidence is mechanically bounded to provider-neutral account-trigger orchestration over the published browser-session boundary and excludes API, UI, cookie transport, account or credential mutation, persistence, and production operations."
     }
   ]
 }

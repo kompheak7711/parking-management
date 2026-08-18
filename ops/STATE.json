@@ -1,109 +1,87 @@
 {
   "schema_version": 1,
-  "phase": "Phase 2O",
-  "tranche": "Recovery-Code Regeneration Persistence Orchestration Foundation",
-  "task": "Independently verify and publish the bounded Recovery-Code Regeneration Persistence Orchestration Foundation",
-  "status": "published",
-  "active_cycle": "phase-2o-recovery-code-regeneration-persistence-orchestration-foundation",
+  "phase": "Phase 2P",
+  "tranche": "Authentication Session Revocation Orchestration Foundation",
+  "task": "Implement the bounded Authentication Session Revocation Orchestration Foundation",
+  "status": "complete_uncommitted",
+  "active_cycle": "phase-2p-authentication-session-revocation-orchestration-foundation",
   "branch": "implementation/foundation",
-  "commit": "fba196df3aa51ce5ca8816ff7af22574a2d21215",
-  "timestamp": "2026-08-18T07:08:14Z",
+  "commit": "022385831c5d7225f7155a24c1155d99f3d91aa3",
+  "timestamp": "2026-08-18T07:38:21Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
-    "basis": "owner-approved exact bounded Phase 2O candidate and durable remaining-v1 authorization",
+    "basis": "owner-approved exact bounded Phase 2P candidate and durable remaining-v1 authorization",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
-  },
-  "publication": {
-    "commit": "f4ebcc92a2f7dc9f39066f0b8fa5aed153849077",
-    "corrective_commit": "fba196df3aa51ce5ca8816ff7af22574a2d21215",
-    "subject": "feat: add recovery code regeneration foundation",
-    "upstream": "origin/implementation/foundation",
-    "local_upstream_remote_match": true,
-    "github_actions_run": 32098622618,
-    "github_actions_status": "success",
-    "committed_paths": [
-      "backend/src/property_rental/recovery_code_regeneration.py",
-      "backend/tests/test_migrations.py",
-      "backend/tests/test_recovery_code_regeneration.py",
-      "backend/tests/test_traceability.py",
-      "ops/NOW.md",
-      "ops/STATE.json",
-      "ops/traceability.json"
-    ],
-    "corrective_paths": [
-      "backend/src/property_rental/recovery_code_regeneration.py",
-      "backend/tests/test_recovery_code_regeneration.py",
-      "ops/traceability.json"
-    ]
+    "publication_completed": false
   },
   "authorities": [
-    "DB-AUTH-003",
     "PR-CAP-009",
-    "API-098",
-    "TEST-129",
-    "SEC-071",
-    "SEC-075",
-    "DL-058"
+    "DB-AUTH-004",
+    "API-097",
+    "TEST-131",
+    "TEST-132",
+    "SEC-015",
+    "SEC-017",
+    "DL-057"
   ],
   "touched_areas": [
-    "recovery-code regeneration orchestration",
-    "atomic PostgreSQL prior-set replacement",
-    "caller-owned one-time presentation",
+    "authentication session revocation orchestration",
+    "published browser-session revocation composition",
     "immutable secret-free audit evidence",
     "focused backend tests",
     "bounded traceability",
     "compact state"
   ],
   "tests": [
-    "focused regeneration and traceability checks passed 29",
+    "focused session-revocation and traceability coverage passed",
     "format, lint, and strict typecheck passed",
-    "backend 197 passed with 53 expected dedicated-gate skips",
+    "backend 214 passed with 53 expected dedicated-gate skips",
     "frontend 3 passed",
     "backend/frontend builds and backend import passed",
     "make database-test passed 53 on real PostgreSQL",
-    "make automation-test passed",
-    "deployment, dependency, traceability, scope, secret, and canonical-integrity gates passed",
-    "independent review findings corrected and final re-review passed with no blockers",
-    "GitHub Actions run 32098622618 passed all four jobs for the security correction"
+    "deployment configuration and TEST-118 traceability audit passed",
+    "backend runtime/development and frontend dependency audits passed",
+    "canonical integrity, secret, and scope checks passed",
+    "make automation-test passed"
   ],
   "relevant_docs": [
     "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-009",
-    "docs/004_DATABASE_MODEL.md: DB-AUTH-003",
-    "docs/005_API_SPECIFICATION.md: API-098",
-    "docs/007_TESTING_STRATEGY.md: TEST-129",
-    "docs/008_SECURITY_MODEL.md: SEC-071 and SEC-075",
-    "docs/010_DECISION_LOG.md: DL-058"
+    "docs/004_DATABASE_MODEL.md: DB-AUTH-004",
+    "docs/005_API_SPECIFICATION.md: API-097",
+    "docs/007_TESTING_STRATEGY.md: TEST-131 and TEST-132",
+    "docs/008_SECURITY_MODEL.md: SEC-015 and SEC-017",
+    "docs/010_DECISION_LOG.md: DL-057"
   ],
   "next_candidate": {
-    "after_phase": "Phase 2O",
-    "phase": "Phase 2P",
-    "task": "Implement the bounded Authentication Session Revocation Orchestration Foundation",
+    "after_phase": "Phase 2P",
+    "phase": "Phase 2Q",
+    "task": "Implement the bounded Initial Owner Bootstrap Closure Guard Foundation",
     "include": [
-      "compose provider-neutral revocation triggers for password reset, account disablement, and material privilege reduction with the published browser-session boundary",
-      "preserve fail-closed immutable secret-free audit evidence and add focused deterministic tests",
-      "add bounded traceability to the already approved session-revocation requirements without extending policy"
+      "implement a provider-neutral transactional guard that permits initial-Owner bootstrap only while no Owner exists and permanently rejects repeated or additional-Owner bootstrap",
+      "preserve immutable secret-free audit evidence for permitted and rejected guard decisions with focused deterministic tests",
+      "add bounded traceability to the approved bootstrap-closure requirements without implementing production secret input or deployment operations"
     ],
     "exclude": [
-      "public API or UI, cookie transport, MFA or credential mutation, recovery execution, bootstrap, production operations, canonical changes, and policy invention"
+      "production CLI wiring, passwords, MFA or recovery-code generation or enrollment, public API or UI, account persistence beyond the guard boundary, production deployment, credentials, remote access, canonical changes, and policy invention"
     ],
     "risk_class": "high",
     "status": "approved_ready",
     "authorities": [
       "PR-CAP-009",
-      "DB-AUTH-004",
-      "API-097",
-      "TEST-131",
-      "TEST-132",
-      "SEC-015",
-      "SEC-017",
-      "DL-057"
+      "DB-AUTH-005",
+      "API-100",
+      "TEST-133",
+      "TEST-134",
+      "SEC-073",
+      "SEC-074",
+      "SEC-075",
+      "DL-059"
     ],
     "protected_operation": false
   },
-  "next_action": "Implement the approved bounded candidate: Implement the bounded Authentication Session Revocation Orchestration Foundation",
+  "next_action": "Independently verify and publish the completed bounded tranche under standing authorization, then dispatch the next approved candidate.",
   "idle_reason": null,
   "owner_action": "none",
   "blockers": [],

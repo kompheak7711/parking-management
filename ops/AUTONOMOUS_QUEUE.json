@@ -26,6 +26,33 @@
         "DL-057"
       ],
       "protected_operation": false
+    },
+    {
+      "after_phase": "Phase 2P",
+      "phase": "Phase 2Q",
+      "task": "Implement the bounded Initial Owner Bootstrap Closure Guard Foundation",
+      "include": [
+        "implement a provider-neutral transactional guard that permits initial-Owner bootstrap only while no Owner exists and permanently rejects repeated or additional-Owner bootstrap",
+        "preserve immutable secret-free audit evidence for permitted and rejected guard decisions with focused deterministic tests",
+        "add bounded traceability to the approved bootstrap-closure requirements without implementing production secret input or deployment operations"
+      ],
+      "exclude": [
+        "production CLI wiring, passwords, MFA or recovery-code generation or enrollment, public API or UI, account persistence beyond the guard boundary, production deployment, credentials, remote access, canonical changes, and policy invention"
+      ],
+      "risk_class": "high",
+      "status": "approved_ready",
+      "authorities": [
+        "PR-CAP-009",
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
+      "protected_operation": false
     }
   ]
 }
