@@ -460,3 +460,40 @@ def test_recovery_code_consumption_orchestration_has_bounded_traceability() -> N
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert routed_authorities <= set(entry["upstream_ids"])
+
+
+def test_recovery_code_regeneration_orchestration_has_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    routed_authorities = {
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058",
+    }
+    expected_test_ids = {
+        "test_authorized_regeneration_atomically_replaces_prior_set_before_one_time_return",
+        "test_unauthorized_regeneration_is_rejected_before_secret_generation",
+        "test_authorization_failure_is_a_generic_pre_generation_rejection",
+        "test_rejection_audit_failure_remains_generic_and_pre_generation",
+        "test_replacement_persistence_failure_is_generic_and_preserves_prior_set",
+        "test_failure_audit_unavailability_preserves_one_generic_closed_failure",
+        "test_duplicate_replacement_material_fails_before_prior_set_invalidation",
+        "test_published_providers_create_independently_salted_replacement_verifiers",
+        "test_regeneration_request_rejects_invalid_nonsecret_context",
+        "test_persisted_regeneration_remains_truthful_when_secondary_audit_sink_fails",
+        "test_postgres_repository_locks_invalidates_and_inserts_replacement_in_one_transaction",
+        "test_postgres_repository_rolls_back_when_replacement_insert_fails",
+        "test_postgres_repository_rejects_missing_or_invalidated_prior_set_without_replacement",
+        "test_recovery_code_regeneration_is_atomic_and_invalidates_prior_set_on_postgresql",
+        "test_recovery_code_regeneration_orchestration_has_bounded_traceability",
+    }
+
+    for test_id in expected_test_ids:
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert routed_authorities <= set(entry["upstream_ids"])

@@ -29,6 +29,14 @@ from property_rental.recovery_code_consumption import (
     RecoveryCodeConsumptionRequest,
     RecoveryCodeConsumptionService,
 )
+from property_rental.recovery_code_issuance import (
+    RecoveryCodeSetRecord,
+    RecoveryCodeVerifierRecord,
+)
+from property_rental.recovery_code_regeneration import (
+    PostgresRecoveryCodeRegenerationRepository,
+    RecoveryCodeRegenerationConnection,
+)
 from property_rental.recovery_code_security import Argon2idRecoveryCodeVerifierProvider
 from property_rental.settings import Settings
 
@@ -1048,6 +1056,162 @@ def test_recovery_code_consumption_adapter_is_atomic_and_single_use_on_postgresq
     )
     assert persisted[sibling_code_id] == (None, None, None)
     assert len(audit_evidence) == 2
+
+
+def test_recovery_code_regeneration_is_atomic_and_invalidates_prior_set_on_postgresql() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    actor_id = uuid.uuid4()
+    prior_set_id = uuid.uuid4()
+    prior_code_id = uuid.uuid4()
+    replacement_set_id = uuid.uuid4()
+    replacement_code_ids = (uuid.uuid4(), uuid.uuid4())
+    prior_secret = "postgresql-prior-recovery-secret"
+    replacement_secrets = (
+        "postgresql-first-replacement-secret",
+        "postgresql-second-replacement-secret",
+    )
+    verifier_provider = Argon2idRecoveryCodeVerifierProvider()
+    prior_verifier = verifier_provider.encode(prior_secret)
+    replacement_verifiers = tuple(
+        verifier_provider.encode(secret) for secret in replacement_secrets
+    )
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Recovery Regeneration', 'recovery-regeneration',
+                          'active', 'optional', 'authorized-account-creation')
+                """,
+                (actor_id, f"recovery-regeneration-{uuid.uuid4().hex}"),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.recovery_code_sets (
+                    set_id, actor_id, created_by_actor_id, provenance
+                ) VALUES (%s, %s, %s, 'protected-enrollment')
+                """,
+                (prior_set_id, actor_id, actor_id),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.recovery_codes (
+                    code_id, set_id, verifier_encoding, algorithm,
+                    work_factor_metadata, provenance
+                ) VALUES (%s, %s, %s, %s, %s::jsonb, 'protected-enrollment')
+                """,
+                (
+                    prior_code_id,
+                    prior_set_id,
+                    prior_verifier.verifier_encoding,
+                    prior_verifier.algorithm,
+                    '{"memory_cost": 65536}',
+                ),
+            )
+        connection.commit()
+
+    occurred_at = datetime.now(UTC)
+    replacement = RecoveryCodeSetRecord(
+        set_id=replacement_set_id,
+        target_actor_id=actor_id,
+        issued_by_actor_id=actor_id,
+        correlation_id="postgresql-regeneration",
+        provenance="protected-regeneration",
+        codes=tuple(
+            RecoveryCodeVerifierRecord(
+                code_id=code_id,
+                verifier_encoding=verifier.verifier_encoding,
+                algorithm=verifier.algorithm,
+                work_factor_metadata=verifier.work_factor_metadata,
+            )
+            for code_id, verifier in zip(
+                replacement_code_ids,
+                replacement_verifiers,
+                strict=True,
+            )
+        ),
+    )
+    with psycopg.connect(_required_url(RUNTIME_URL_ENV)) as runtime_connection:
+        repository = PostgresRecoveryCodeRegenerationRepository(
+            cast(RecoveryCodeRegenerationConnection, runtime_connection)
+        )
+        repository.replace_atomically(prior_set_id, replacement, occurred_at)
+
+        class RegenerationConsumptionAuditSink:
+            def record(self, evidence: object) -> None:
+                del evidence
+
+        consumption = RecoveryCodeConsumptionService(
+            repository=PostgresRecoveryCodeConsumptionRepository(
+                cast(RecoveryCodeConsumptionConnection, runtime_connection)
+            ),
+            verifier_provider=verifier_provider,
+            audit_sink=RegenerationConsumptionAuditSink(),
+            clock=lambda: occurred_at,
+        )
+        prior_result = consumption.consume(
+            RecoveryCodeConsumptionRequest(
+                consuming_actor_id=actor_id,
+                target_actor_id=actor_id,
+                set_id=prior_set_id,
+                candidate=prior_secret,
+                correlation_id="postgresql-regeneration-prior-check",
+                provenance="protected-recovery",
+            )
+        )
+
+        conflicting_replacement = RecoveryCodeSetRecord(
+            set_id=uuid.uuid4(),
+            target_actor_id=actor_id,
+            issued_by_actor_id=actor_id,
+            correlation_id="postgresql-regeneration-repeat",
+            provenance="protected-regeneration",
+            codes=replacement.codes,
+        )
+        with pytest.raises(RuntimeError, match="active prior recovery-code set not found"):
+            repository.replace_atomically(prior_set_id, conflicting_replacement, occurred_at)
+
+        with runtime_connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT set_id, invalidated_at, invalidated_by_actor_id, invalidation_provenance
+                FROM app.recovery_code_sets
+                WHERE set_id IN (%s, %s, %s)
+                ORDER BY set_id
+                """,
+                (prior_set_id, replacement_set_id, conflicting_replacement.set_id),
+            )
+            persisted_sets = {row[0]: row[1:] for row in cursor.fetchall()}
+            cursor.execute(
+                """
+                SELECT code_id, verifier_encoding
+                FROM app.recovery_codes
+                WHERE set_id = %s
+                ORDER BY code_id
+                """,
+                (replacement_set_id,),
+            )
+            persisted_codes = {row[0]: row[1] for row in cursor.fetchall()}
+
+    assert not prior_result.completed
+    assert prior_result.reason == "code_rejected"
+    assert persisted_sets[prior_set_id] == (
+        occurred_at,
+        actor_id,
+        '{"correlation_id":"postgresql-regeneration","previous_state":"active","provenance":"protected-regeneration","reason":"set_regenerated","replacement_set_id":"'
+        + str(replacement_set_id)
+        + '","resulting_state":"invalidated"}',
+    )
+    assert persisted_sets[replacement_set_id] == (None, None, None)
+    assert conflicting_replacement.set_id not in persisted_sets
+    assert set(persisted_codes) == set(replacement_code_ids)
+    assert all(
+        verifier_provider.matches(secret, persisted_codes[code_id])
+        for secret, code_id in zip(replacement_secrets, replacement_code_ids, strict=True)
+    )
 
 
 def test_recovery_code_set_identity_and_completed_invalidation_are_immutable() -> None:

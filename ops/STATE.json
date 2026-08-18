@@ -1,33 +1,32 @@
 {
   "schema_version": 1,
-  "phase": "Phase 2N",
-  "tranche": "Recovery-Code Consumption Persistence Orchestration Foundation",
-  "task": "Implement the bounded Recovery-Code Consumption Persistence Orchestration Foundation",
-  "status": "published",
-  "active_cycle": "phase-2n-recovery-code-consumption-persistence-orchestration-foundation",
+  "phase": "Phase 2O",
+  "tranche": "Recovery-Code Regeneration Persistence Orchestration Foundation",
+  "task": "Implement the bounded Recovery-Code Regeneration Persistence Orchestration Foundation",
+  "status": "complete_uncommitted",
+  "active_cycle": "phase-2o-recovery-code-regeneration-persistence-orchestration-foundation",
   "branch": "implementation/foundation",
-  "commit": "eee69beec8148e84816bb7045488c89065be65d2",
-  "timestamp": "2026-08-17T22:12:40Z",
+  "commit": "127f1de2966ebcadd6e114f3f6a65ef2d2d95014",
+  "timestamp": "2026-08-18T03:37:21Z",
   "risk_class": "high",
   "approval": {
-    "status": "complete",
-    "basis": "model-free-preflight-authorized exact bounded Phase 2N tranche and durable remaining-v1 authorization",
+    "status": "approved_ready",
+    "basis": "owner-approved exact bounded Phase 2O candidate and durable remaining-v1 authorization",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
   "publication": {
-    "commit": "eee69beec8148e84816bb7045488c89065be65d2",
-    "subject": "feat: add recovery code consumption foundation",
+    "commit": null,
+    "subject": "feat: add recovery code regeneration foundation",
     "upstream": "origin/implementation/foundation",
-    "local_upstream_remote_match": true,
-    "github_actions_run": "32074820742",
-    "github_actions_status": "passed",
-    "committed_paths": [
-      "backend/src/property_rental/recovery_code_consumption.py",
-      "backend/src/property_rental/recovery_code_lifecycle.py",
+    "local_upstream_remote_match": false,
+    "github_actions_run": null,
+    "github_actions_status": "not_run",
+    "uncommitted_paths": [
+      "backend/src/property_rental/recovery_code_regeneration.py",
       "backend/tests/test_migrations.py",
-      "backend/tests/test_recovery_code_consumption.py",
+      "backend/tests/test_recovery_code_regeneration.py",
       "backend/tests/test_traceability.py",
       "ops/NOW.md",
       "ops/STATE.json",
@@ -35,18 +34,17 @@
     ]
   },
   "authorities": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
-  "touched_areas": ["recovery-code consumption orchestration", "PostgreSQL single-use persistence", "immutable secret-free audit evidence", "focused backend tests", "bounded traceability", "compact state"],
+  "touched_areas": ["recovery-code regeneration orchestration", "atomic PostgreSQL prior-set replacement", "caller-owned one-time presentation", "immutable secret-free audit evidence", "focused backend tests", "bounded traceability", "compact state"],
   "tests": [
-    "focused recovery-code and traceability checks passed 62",
+    "focused regeneration and traceability checks passed 27",
     "format, lint, and strict typecheck passed",
-    "backend 179 passed with 52 expected dedicated-gate skips",
+    "backend 195 passed with 53 expected dedicated-gate skips",
     "frontend 3 passed",
     "backend/frontend builds and backend import passed",
-    "make database-test passed 52 on real PostgreSQL",
+    "make database-test passed 53 on real PostgreSQL",
     "make automation-test passed",
     "deployment, dependency, traceability, scope, secret, and canonical-integrity gates passed",
-    "independent pre-commit review passed with no blockers",
-    "GitHub Actions run 32074820742 passed all four jobs"
+    "independent review findings corrected and final re-review passed with no blockers"
   ],
   "relevant_docs": [
     "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-009",
@@ -58,23 +56,22 @@
   ],
   "next_candidate": {
     "phase": "Phase 2O",
-    "task": "Implement the bounded Recovery-Code Regeneration Persistence Orchestration Foundation",
+    "task": "Independently verify and publish the bounded Recovery-Code Regeneration Persistence Orchestration Foundation",
     "include": [
-      "compose protected prior-set invalidation with atomic creation of one replacement recovery-code set",
-      "use the published generator and verifier boundaries for independently salted replacement verifier material and caller-owned one-time presentation",
-      "preserve fail-closed immutable secret-free audit evidence with focused deterministic and real-PostgreSQL verification",
-      "add bounded traceability without extending recovery policy"
+      "review exactly the seven recorded uncommitted paths against the routed authorities and preserved exclusions",
+      "rerun all publication gates and verify the exact staged path set before committing",
+      "publish only the verified Phase 2O tranche and reconcile compact state after remote CI passes"
     ],
     "exclude": [
-      "public API or UI, account or MFA mutation, session revocation, rate limiting, and enumeration handling",
-      "administrative or emergency recovery, bootstrap, production operations, credentials, remote access, canonical changes, and policy invention"
+      "additional implementation or scope expansion",
+      "public API or UI, account or MFA mutation, session revocation, rate limiting, enumeration handling, administrative or emergency recovery, canonical changes, and policy invention"
     ],
     "risk_class": "high",
     "status": "approved_ready",
     "authorities": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
-    "next_action": "Dispatch the approved-ready Phase 2O Recovery-Code Regeneration Persistence Orchestration Foundation through model-free preflight."
+    "next_action": "Independently verify the exact seven-path Phase 2O tranche for separately authorized publication; do not broaden implementation scope."
   },
-  "next_action": "Dispatch the approved-ready Phase 2O Recovery-Code Regeneration Persistence Orchestration Foundation through model-free preflight.",
+  "next_action": "Independently verify the exact seven-path Phase 2O tranche for separately authorized publication; do not broaden implementation scope.",
   "idle_reason": null,
   "owner_action": "none",
   "blockers": [],

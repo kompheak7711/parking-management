@@ -1317,6 +1317,126 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "Phase 2N evidence is mechanically bounded to atomic single-use consumption orchestration and excludes API, UI, account or MFA mutation, session revocation, rate limiting, enumeration handling, regeneration, administrative recovery, and production operations."
+    },
+    {
+      "test_id": "test_authorized_regeneration_atomically_replaces_prior_set_before_one_time_return",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "Protected authorization, independent replacement generation, atomic prior-set replacement, immutable secret-free evidence, and caller-owned one-time presentation compose through one bounded service call."
+    },
+    {
+      "test_id": "test_unauthorized_regeneration_is_rejected_before_secret_generation",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "Denied protected callers cannot generate replacement secrets or reach persistence and receive only a generic rejection with secret-free evidence."
+    },
+    {
+      "test_id": "test_authorization_failure_is_a_generic_pre_generation_rejection",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "Authorization-provider failure fails closed before secret generation without exposing provider detail."
+    },
+    {
+      "test_id": "test_rejection_audit_failure_remains_generic_and_pre_generation",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "Audit-sink unavailability on authorization denial remains a generic fail-closed rejection and cannot permit replacement-secret generation."
+    },
+    {
+      "test_id": "test_replacement_persistence_failure_is_generic_and_preserves_prior_set",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "Replacement persistence failure returns one generic secret-free failure and relies on the atomic repository boundary to preserve prior durable state."
+    },
+    {
+      "test_id": "test_failure_audit_unavailability_preserves_one_generic_closed_failure",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "Audit-sink unavailability after a persistence failure remains one generic closed failure without exposing replacement secrets or internal detail."
+    },
+    {
+      "test_id": "test_duplicate_replacement_material_fails_before_prior_set_invalidation",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "Duplicate generated material is rejected before persistence so a non-independent replacement cannot invalidate the usable prior set."
+    },
+    {
+      "test_id": "test_published_providers_create_independently_salted_replacement_verifiers",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "The published secure generator and Argon2id provider create distinct replacement codes with independently salted matching verifier encodings."
+    },
+    {
+      "test_id": "test_regeneration_request_rejects_invalid_nonsecret_context",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "Regeneration rejects empty, padded, or non-printable correlation and provenance context at its protected boundary."
+    },
+    {
+      "test_id": "test_persisted_regeneration_remains_truthful_when_secondary_audit_sink_fails",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "Committed database provenance remains authoritative and a secondary audit-sink failure cannot turn durable regeneration success into a false outward failure."
+    },
+    {
+      "test_id": "test_postgres_repository_locks_invalidates_and_inserts_replacement_in_one_transaction",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "The deterministic adapter contract locks the exact prior set and persists invalidation provenance, one replacement set, and its verifier rows before one commit."
+    },
+    {
+      "test_id": "test_postgres_repository_rolls_back_when_replacement_insert_fails",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "A verifier-batch failure rolls back the prior-set invalidation and partial replacement rather than committing an unusable recovery state."
+    },
+    {
+      "test_id": "test_postgres_repository_rejects_missing_or_invalidated_prior_set_without_replacement",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "Missing and already-invalidated exact prior sets fail closed before any replacement insert, preventing stale repeated regeneration."
+    },
+    {
+      "test_id": "test_recovery_code_regeneration_is_atomic_and_invalidates_prior_set_on_postgresql",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The dedicated database gate proves prior-code rejection, immutable invalidation evidence, matching replacement verifiers, and stale-repeat rejection against real PostgreSQL."
+    },
+    {
+      "test_id": "test_recovery_code_regeneration_orchestration_has_bounded_traceability",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "Phase 2O evidence is mechanically bounded to protected prior-set invalidation, atomic replacement persistence, independent verifier material, one-time presentation, and secret-free evidence without claiming excluded recovery behavior."
     }
   ]
 }
