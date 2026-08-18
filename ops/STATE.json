@@ -7,7 +7,7 @@
   "active_cycle": "phase-2o-recovery-code-regeneration-persistence-orchestration-foundation",
   "branch": "implementation/foundation",
   "commit": "fba196df3aa51ce5ca8816ff7af22574a2d21215",
-  "timestamp": "2026-08-18T04:19:50Z",
+  "timestamp": "2026-08-18T07:08:14Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
@@ -77,10 +77,35 @@
     "docs/008_SECURITY_MODEL.md: SEC-071 and SEC-075",
     "docs/010_DECISION_LOG.md: DL-058"
   ],
-  "next_candidate": null,
-  "next_action": "Await an explicitly bounded next candidate; do not infer or broaden scope.",
-  "idle_reason": "no explicitly bounded next candidate is recorded",
-  "owner_action": "select or approve the next bounded candidate",
+  "next_candidate": {
+    "after_phase": "Phase 2O",
+    "phase": "Phase 2P",
+    "task": "Implement the bounded Authentication Session Revocation Orchestration Foundation",
+    "include": [
+      "compose provider-neutral revocation triggers for password reset, account disablement, and material privilege reduction with the published browser-session boundary",
+      "preserve fail-closed immutable secret-free audit evidence and add focused deterministic tests",
+      "add bounded traceability to the already approved session-revocation requirements without extending policy"
+    ],
+    "exclude": [
+      "public API or UI, cookie transport, MFA or credential mutation, recovery execution, bootstrap, production operations, canonical changes, and policy invention"
+    ],
+    "risk_class": "high",
+    "status": "approved_ready",
+    "authorities": [
+      "PR-CAP-009",
+      "DB-AUTH-004",
+      "API-097",
+      "TEST-131",
+      "TEST-132",
+      "SEC-015",
+      "SEC-017",
+      "DL-057"
+    ],
+    "protected_operation": false
+  },
+  "next_action": "Implement the approved bounded candidate: Implement the bounded Authentication Session Revocation Orchestration Foundation",
+  "idle_reason": null,
+  "owner_action": "none",
   "blockers": [],
   "secrets_present": false
 }
