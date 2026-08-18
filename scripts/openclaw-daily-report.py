@@ -221,6 +221,15 @@ def main() -> None:
         f"Last supervisor check: {last_run} — {last_status}; consecutive errors: {errors}"
     )
     print(f"Current: {state.get('phase', 'Not recorded')} — {status}")
+    roadmap = preflight.get("roadmap") or {}
+    if isinstance(roadmap, dict) and roadmap.get("total"):
+        current_id = roadmap.get("current_id") or "unmapped"
+        complete_count = int(roadmap.get("completed") or 0)
+        if status == "published" and roadmap.get("current_status") != "complete":
+            complete_count = min(complete_count + 1, int(roadmap["total"]))
+        print(
+            f"V1 roadmap: {complete_count}/{roadmap['total']} complete; current {current_id}"
+        )
     print(
         f"Git: {branch} at {head}; {'synchronized' if synchronized else 'not synchronized'}; worktree {'clean' if clean else 'changed'}"
     )

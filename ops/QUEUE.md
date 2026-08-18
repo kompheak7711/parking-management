@@ -48,3 +48,8 @@
 Remaining v1 application tranches are authorized when bounded by canonical documents
 001-010 and all publication gates; unresolved policy and protected production work still
 require owner review.
+
+The executable finite queue is now `ops/V1_ROADMAP.json`. It contains 60 stable tranches,
+explicit dependencies, canonical authorities, scope boundaries, risk classes, acceptance
+profiles, authorization status, and deterministic order. This legacy narrative queue remains
+historical context only and must not be used to invent successors.

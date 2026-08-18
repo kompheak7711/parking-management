@@ -12,6 +12,7 @@ risk="$(jq -r 'if .status == "published" and .next_candidate.status == "approved
 repair_attempts="$(printf '%s' "$preflight" | jq -r '.repair_attempts // 0')"
 repair_max_attempts="$(printf '%s' "$preflight" | jq -r '.repair_max_attempts // 2')"
 state_issue="$(printf '%s' "$preflight" | jq -r '.state_issue // ""')"
+roadmap_id="$(jq -r '.next_candidate.roadmap_id // .roadmap.current_id // ""' "$state_file")"
 
 case "$risk" in
   low|high) ;;
@@ -33,19 +34,21 @@ jq -cn \
   --arg task "$task" \
   --arg risk_class "$risk" \
   --arg state_issue "$state_issue" \
+  --arg roadmap_id "$roadmap_id" \
   --argjson repair_attempts "$repair_attempts" \
   --argjson repair_max_attempts "$repair_max_attempts" \
   '{
     status: $status,
     phase: $phase,
     task: $task,
+    roadmap_id: $roadmap_id,
     risk_class: $risk_class,
     repair: {
       standing_authorization: ($state_issue == "bounded_automatic_repair_authorized"),
       attempts_completed: $repair_attempts,
       max_attempts: $repair_max_attempts
     },
-    compact_inputs: ["ops/NOW.md", "ops/STATE.json", "ops/QUEUE.md"],
+    compact_inputs: ["ops/NOW.md", "ops/STATE.json", "ops/V1_ROADMAP.json"],
     prohibited: [
       "canonical_requirement_changes_without_separate_owner_authorization",
       "invented_business_or_financial_policy",

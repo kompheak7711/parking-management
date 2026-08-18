@@ -122,4 +122,5 @@ frontend-audit:
 	cd $(FRONTEND_DIR) && $(NPM) audit --audit-level=moderate
 
 automation-test:
+	python3 scripts/validate-v1-roadmap.py
 	./scripts/test-openclaw-routing.sh

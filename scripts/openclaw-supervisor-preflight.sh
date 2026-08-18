@@ -33,12 +33,29 @@ if [ "$candidate_is_object" = true ] && [ -n "$candidate_phase" ] \
   && [ "$candidate_phase" != unselected ] && [ -n "$candidate_task" ]; then
   candidate_is_concrete=true
 fi
+roadmap_current_id="$(jq -r '.roadmap.current_id // ""' ops/STATE.json)"
+if [ -z "$roadmap_current_id" ] && [ "$(jq -r '.phase // ""' ops/STATE.json)" = "Phase 2P" ]; then
+  roadmap_current_id="V1-011"
+fi
 queue_candidate='null'
-if [ -f ops/AUTONOMOUS_QUEUE.json ]; then
-  queue_candidate="$(jq -c --arg phase "$(jq -r '.phase // ""' ops/STATE.json)" '
-    [.candidates[]? | select(.after_phase == $phase and .status == "approved_ready")]
+roadmap_total=0
+roadmap_completed=0
+roadmap_current_status="unknown"
+if [ -f ops/V1_ROADMAP.json ]; then
+  roadmap_total="$(jq -r '.total_tranches // 0' ops/V1_ROADMAP.json)"
+  roadmap_completed="$(jq -r '[.tranches[] | select(.status == "complete")] | length' ops/V1_ROADMAP.json)"
+  roadmap_current_status="$(jq -r --arg current "$roadmap_current_id" '.tranches[]? | select(.id == $current) | .status' ops/V1_ROADMAP.json)"
+  queue_candidate="$(jq -c --arg current "$roadmap_current_id" '
+    . as $root
+    | ((.tranches | map(select(.id == $current)) | .[0].order) // -1) as $order
+    | [.tranches[]?
+        | select(.order == ($order + 1) and .status == "approved_ready" and .authorization == "durable_v1")
+        | select([.dependencies[]? as $dependency
+            | $root.tranches[]
+            | select(.id == $dependency)
+            | (.status == "complete" or .id == $current)] | all)]
     | if length == 1 then .[0] else null end
-  ' ops/AUTONOMOUS_QUEUE.json)"
+  ' ops/V1_ROADMAP.json)"
 fi
 queue_candidate_available="$(printf '%s' "$queue_candidate" | jq -r 'type == "object" and (.protected_operation != true)')"
 
@@ -81,7 +98,7 @@ if [ "$blocker_count" -eq 0 ]; then
   if [ "$normalized" = false ] && [ "$status" = published ] \
     && [ "$durable_v1_authorization" = true ] && [ "$candidate_is_concrete" = false ]; then
     if [ "$queue_candidate_available" = true ]; then
-      next_action="Materialize the exact structured approved successor from ops/AUTONOMOUS_QUEUE.json without a model, then dispatch it immediately."
+      next_action="Materialize the exact structured approved successor from ops/V1_ROADMAP.json without a model, then dispatch it immediately."
       normalized=true
       state_issue="authorized_candidate_selection_required"
     else
@@ -151,6 +168,10 @@ jq -cn \
   --argjson durable_v1_authorization "$durable_v1_authorization" \
   --argjson candidate_is_concrete "$candidate_is_concrete" \
   --argjson queue_candidate "$queue_candidate" \
+  --arg roadmap_current_id "$roadmap_current_id" \
+  --argjson roadmap_total "$roadmap_total" \
+  --argjson roadmap_completed "$roadmap_completed" \
+  --arg roadmap_current_status "$roadmap_current_status" \
   --argjson normalized "$normalized" \
   --argjson actionable "$actionable" \
-  '{head: $head, status: $status, active_cycle: $active_cycle, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, repair_failure: $repair_failure, normalized: $normalized, blockers: $blockers, repair_attempts: $repair_attempts, repair_max_attempts: $repair_max_attempts, durable_v1_authorization: $durable_v1_authorization, candidate_is_concrete: $candidate_is_concrete, queue_candidate: $queue_candidate, worktree: $worktree, actionable: $actionable}'
+  '{head: $head, status: $status, active_cycle: $active_cycle, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, repair_failure: $repair_failure, normalized: $normalized, blockers: $blockers, repair_attempts: $repair_attempts, repair_max_attempts: $repair_max_attempts, durable_v1_authorization: $durable_v1_authorization, candidate_is_concrete: $candidate_is_concrete, queue_candidate: $queue_candidate, roadmap:{current_id:$roadmap_current_id,current_status:$roadmap_current_status,total:$roadmap_total,completed:$roadmap_completed}, worktree: $worktree, actionable: $actionable}'

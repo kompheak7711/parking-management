@@ -26,7 +26,7 @@ make_repo() {
     >"$repo/ops/STATE.json"
   printf '%s\n' '# Test' >"$repo/ops/NOW.md"
   printf '%s\n' '# Test' >"$repo/ops/QUEUE.md"
-  printf '%s\n' '{"schema_version":1,"candidates":[]}' >"$repo/ops/AUTONOMOUS_QUEUE.json"
+  printf '%s\n' '{"schema_version":1,"total_tranches":1,"tranches":[]}' >"$repo/ops/V1_ROADMAP.json"
   git -C "$repo" init -q
   git -C "$repo" add .
   git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm test
@@ -194,6 +194,7 @@ make_repo published_next high 'completed tranche action'
 published_next_repo="$test_root/published_next/repo"
 jq '.status="published"
   | .phase="Phase 2D"
+  | .roadmap={current_id:"V1-001",total:2}
   | .risk_class="low"
   | .next_action="Completed tranche is published."
   | .next_candidate={phase:"Phase 2E",task:"approved password verifier service",status:"approved_ready",risk_class:"high"}' \
@@ -212,12 +213,13 @@ placeholder_repo="$test_root/authorized_placeholder/repo"
 printf '%s\n' 'Remaining v1 application tranches are authorized when bounded by canonical documents 001-010.' >"$placeholder_repo/ops/QUEUE.md"
 jq '.status="published"
   | .phase="Phase 2D"
+  | .roadmap={current_id:"V1-001",total:2}
   | .approval={status:"approved_complete"}
   | .next_action="Owner selects the next candidate."
   | .next_candidate={phase:"unselected",task:"No subsequent implementation candidate has been selected or authorized.",status:"not_approved",risk_class:"high",authorities:[]}' \
   "$placeholder_repo/ops/STATE.json" >"$placeholder_repo/ops/STATE.json.new"
 mv "$placeholder_repo/ops/STATE.json.new" "$placeholder_repo/ops/STATE.json"
-printf '%s\n' '{"schema_version":1,"candidates":[{"after_phase":"Phase 2D","phase":"Phase 2E","task":"bounded successor","status":"approved_ready","risk_class":"high","protected_operation":false}]}' >"$placeholder_repo/ops/AUTONOMOUS_QUEUE.json"
+printf '%s\n' '{"schema_version":1,"total_tranches":2,"tranches":[{"id":"V1-001","order":1,"status":"complete"},{"id":"V1-002","order":2,"phase":"Phase 2E","task":"bounded successor","status":"approved_ready","authorization":"durable_v1","risk_class":"high","protected_operation":false}]}' >"$placeholder_repo/ops/V1_ROADMAP.json"
 placeholder_preflight="$(PROPERTY_RENTAL_REPO="$placeholder_repo" "$placeholder_repo/scripts/openclaw-supervisor-preflight.sh")"
 [ "$(printf '%s' "$placeholder_preflight" | jq -r '.actionable')" = true ]
 [ "$(printf '%s' "$placeholder_preflight" | jq -r '.state_issue')" = authorized_candidate_selection_required ]
@@ -244,7 +246,7 @@ protected_candidate_preflight="$(PROPERTY_RENTAL_REPO="$placeholder_repo" "$plac
 jq '.next_candidate=null' \
   "$placeholder_repo/ops/STATE.json" >"$placeholder_repo/ops/STATE.json.new"
 mv "$placeholder_repo/ops/STATE.json.new" "$placeholder_repo/ops/STATE.json"
-printf '%s\n' '{"schema_version":1,"candidates":[]}' >"$placeholder_repo/ops/AUTONOMOUS_QUEUE.json"
+printf '%s\n' '{"schema_version":1,"total_tranches":2,"tranches":[{"id":"V1-001","order":1,"status":"complete"}]}' >"$placeholder_repo/ops/V1_ROADMAP.json"
 missing_handoff_preflight="$(PROPERTY_RENTAL_REPO="$placeholder_repo" "$placeholder_repo/scripts/openclaw-supervisor-preflight.sh")"
 [ "$(printf '%s' "$missing_handoff_preflight" | jq -r '.actionable')" = false ]
 [ "$(printf '%s' "$missing_handoff_preflight" | jq -r '.state_issue')" = handoff_missing ]

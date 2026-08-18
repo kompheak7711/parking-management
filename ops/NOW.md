@@ -15,4 +15,7 @@
   mutation, recovery execution, bootstrap operation, production operation, canonical change, or
   policy invention.
 - Blockers: none. Owner action: none.
-- Exact next action: dispatch the structured approved Phase 2Q bootstrap-closure guard foundation.
+- Roadmap: the finite `property-rental-v1` plan contains 60 stable tranches; V1-001 through
+  V1-011 are complete and V1-012 is the next dependency-ready tranche.
+- Exact next action: materialize V1-012 from `ops/V1_ROADMAP.json` without a model, then
+  dispatch it after the roadmap-and-autonomy foundation passes every publication gate.

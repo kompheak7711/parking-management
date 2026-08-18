@@ -189,7 +189,7 @@ routes that candidate immediately and the task packet takes its phase and risk m
 so publication does not create an unnecessary approval or scheduler wait.
 If Hermes instead emits the exact unselected/not-approved placeholder while the queue
 still grants durable bounded-v1 authorization, or omits the candidate using any other wording,
-preflight ignores the prose and reads `ops/AUTONOMOUS_QUEUE.json`. One unique safe successor
+preflight ignores the prose and reads `ops/V1_ROADMAP.json`. One unique safe successor
 is materialized, committed, pushed, CI-checked, and dispatched without a model. No unique safe
 successor produces one deduplicated `HANDOFF_MISSING` alert. Concrete protected or
 policy-dependent candidates remain non-actionable and still require the Owner.
