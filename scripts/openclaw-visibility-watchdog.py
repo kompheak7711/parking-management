@@ -29,6 +29,13 @@ SUPERVISOR_ID = os.environ.get(
 NOW_MS = int(os.environ.get("PROPERTY_RENTAL_NOW_MS", str(int(time.time() * 1000))))
 STALE_MS = int(os.environ.get("PROPERTY_RENTAL_STALE_MS", str(2 * 60 * 60 * 1000)))
 HEARTBEAT_MS = int(os.environ.get("PROPERTY_RENTAL_HEARTBEAT_MS", str(75 * 60 * 1000)))
+EXHAUSTED_DIR = Path(
+    os.environ.get(
+        "PROPERTY_RENTAL_REPAIR_EXHAUSTED_DIR",
+        Path.home()
+        / ".openclaw/state/property-rental-supervisor-dispatch/repair-exhausted",
+    )
+)
 
 
 def git(*args: str) -> str:
@@ -145,6 +152,32 @@ def main() -> None:
     next_action = str(preflight.get("next_action") or effective_next_action(state))
     state_issue = preflight.get("state_issue")
     candidate = state.get("next_candidate") or {}
+
+    exhausted_records = sorted(EXHAUSTED_DIR.glob("*.json"))
+    for exhausted_path in exhausted_records:
+        try:
+            exhausted = json.loads(exhausted_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        if exhausted.get("status") != "repair_exhausted":
+            continue
+        signature = str(exhausted.get("attempt_key") or exhausted_path.stem)
+        emit_once(
+            ledger,
+            "repair_exhausted",
+            signature,
+            "REPAIR_EXHAUSTED — Property Rental automation stopped after its bounded "
+            f"attempt limit for {exhausted.get('phase', 'the active tranche')}. "
+            f"Exact next action: {exhausted.get('next_action', 'Investigate the saved attempts before retrying.')}",
+        )
+        if not exhausted.get("alerted"):
+            exhausted["alerted"] = True
+            temporary = exhausted_path.with_suffix(".tmp")
+            temporary.write_text(json.dumps(exhausted, sort_keys=True) + "\n")
+            temporary.replace(exhausted_path)
+        break
+    if not exhausted_records:
+        ledger.pop("repair_exhausted", None)
 
     last_run = service["last_run"]
     healthy = bool(

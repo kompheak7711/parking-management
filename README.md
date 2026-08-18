@@ -153,9 +153,10 @@ unexpected database/role names, missing passwords, or reused identity passwords.
 ## Autonomous supervision
 
 OpenClaw checks compact state every 30 minutes without invoking a model when no
-approved work is actionable. Each unchanged actionable fingerprint receives at most
-two bounded attempts, and a cycle above 100,000 tokens stops with an alert instead of
-being retried automatically.
+approved work is actionable. Each unchanged actionable fingerprint receives one
+implementation attempt and at most one repair attempt. Exhaustion is persisted and
+alerted once instead of silently appearing healthy. A cycle above 60,000 tokens stops
+instead of being retried automatically.
 
 The 30-minute interval is only an idle wake-up cadence. After Hermes reports completion,
 OpenClaw immediately verifies and publishes the tranche; if compact state advances to
@@ -164,8 +165,9 @@ cycle without waiting for another scheduled tick. Immediate chaining is capped a
 distinct tranches per wake-up to prevent an erroneous state transition from creating an
 unbounded model loop.
 
-Each actionable state produces a compact deterministic task packet and a fresh model
-session. Explicitly low-risk mechanical tranches use the local Ollama route first;
+Each actionable state produces a compact deterministic task packet, a task file delivered
+through the validated Hermes wrapper, and a fresh model session. Explicitly low-risk
+mechanical tranches use the local Ollama route first;
 unknown or sensitive tranches fail closed to Codex. A model-written low-risk label is
 only a hint; deterministic sensitive-term checks can override it to high risk. Local
 failure or unchanged compact state receives at most one fresh Codex escalation. Local
@@ -191,8 +193,8 @@ choose the smallest unambiguous canonical next tranche, mark it approved-ready, 
 it. Concrete protected or policy-dependent candidates remain non-actionable and still require
 the Owner.
 If a clean upstream-synchronized HEAD has advanced beyond the commit recorded by a
-pre-publication state, preflight routes only compact-state reconciliation. Task packets
-use that enforced action instead of selecting a `next_candidate` unconditionally, so a
+pre-publication state, the dispatcher performs compact-state reconciliation, commit,
+push, and GitHub Actions polling deterministically without invoking a model. A
 `not_approved` candidate cannot be dispatched through stale publication state.
 
 Automation repairs follow a permanent prevention protocol:

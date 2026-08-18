@@ -5,12 +5,12 @@ from __future__ import annotations
 
 import json
 import os
-import re
 import sqlite3
 import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 
 def effective_next_action(state: dict[str, object]) -> str:
@@ -50,6 +50,35 @@ STATE_DB = Path(
 SUPERVISOR_ID = os.environ.get(
     "PROPERTY_RENTAL_SUPERVISOR_ID", "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb"
 )
+USAGE_LEDGER = Path(
+    os.environ.get(
+        "PROPERTY_RENTAL_MODEL_USAGE_LEDGER",
+        Path.home()
+        / ".openclaw/state/property-rental-supervisor-dispatch/model-usage.jsonl",
+    )
+)
+
+
+def recent_model_usage(now: Optional[float] = None) -> list[int]:
+    """Read actual dispatcher usage records from the last 24 hours."""
+    cutoff = (time.time() if now is None else now) - 86400
+    totals: list[int] = []
+    try:
+        lines = USAGE_LEDGER.read_text().splitlines()
+    except OSError:
+        return totals
+    for line in lines:
+        try:
+            record = json.loads(line)
+            timestamp = datetime.fromisoformat(
+                str(record["timestamp"]).replace("Z", "+00:00")
+            ).timestamp()
+            tokens = int(record.get("total_tokens", 0))
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+            continue
+        if timestamp >= cutoff and tokens >= 0:
+            totals.append(tokens)
+    return totals
 
 
 def git(*args: str) -> str:
@@ -78,10 +107,6 @@ def main() -> None:
                       running_at_ms FROM cron_jobs WHERE job_id = ?""",
             (SUPERVISOR_ID,),
         ).fetchone()
-        entries = connection.execute(
-            "SELECT entry_json FROM cron_run_logs WHERE job_id = ? AND ts >= ?",
-            (SUPERVISOR_ID, int((time.time() - 86400) * 1000)),
-        ).fetchall()
 
     enabled, last_run_ms, last_status, errors, running_ms = supervisor or (
         0,
@@ -90,13 +115,7 @@ def main() -> None:
         0,
         None,
     )
-    recent_totals = []
-    for (entry,) in entries:
-        totals = [
-            int(value) for value in re.findall(r'\\?"total\\?"\s*:\s*(\d+)', entry)
-        ]
-        if totals:
-            recent_totals.append(max(totals))
+    recent_totals = recent_model_usage()
 
     head = git("rev-parse", "--short", "HEAD")
     branch = git("branch", "--show-current")

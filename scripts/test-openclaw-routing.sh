@@ -13,6 +13,7 @@ make_repo() {
   state_dir="$test_root/$scenario/state"
   mkdir -p "$repo/scripts" "$repo/ops" "$state_dir"
   cp "$source_repo/scripts/openclaw-supervisor-dispatch.sh" "$repo/scripts/"
+  cp "$source_repo/scripts/openclaw-hermes-task.sh" "$repo/scripts/"
   cp "$source_repo/scripts/openclaw-supervisor-preflight.sh" "$repo/scripts/"
   cp "$source_repo/scripts/openclaw-task-packet.sh" "$repo/scripts/"
   cp "$source_repo/ops/OPENCLAW_SUPERVISOR_PROMPT.md" "$repo/ops/"
@@ -31,6 +32,20 @@ make_repo() {
 fake_openclaw="$test_root/openclaw"
 cp "$source_repo/scripts/test-fixtures/fake-openclaw.sh" "$fake_openclaw"
 chmod +x "$fake_openclaw"
+
+helper_capture="$test_root/helper-capture"
+helper_wrapper="$test_root/helper-wrapper"
+cat >"$helper_wrapper" <<'EOF'
+#!/bin/sh
+printf '%s' "$1" >"$HELPER_CAPTURE"
+EOF
+chmod +x "$helper_wrapper"
+helper_task="$test_root/helper-task"
+printf 'line one\nline two with ${UNEXPANDED}\n' >"$helper_task"
+HELPER_CAPTURE="$helper_capture" \
+PROPERTY_RENTAL_HERMES_WRAPPER="$helper_wrapper" \
+  "$source_repo/scripts/openclaw-hermes-task.sh" "$helper_task"
+[ "$(cat "$helper_capture")" = "$(cat "$helper_task")" ]
 
 run_case() {
   scenario="$1"
@@ -80,6 +95,36 @@ set -e
 [ "$(wc -l <"$stall_calls" | tr -d ' ')" -eq 2 ]
 [ "$(sed -n '1p' "$stall_calls" | cut -d '|' -f 2 | sed 's/.*-//')" -eq 1 ]
 [ "$(sed -n '2p' "$stall_calls" | cut -d '|' -f 2 | sed 's/.*-//')" -eq 2 ]
+set +e
+FAKE_CALLS="$stall_calls" \
+FAKE_SCENARIO=codex_stall \
+PROPERTY_RENTAL_REPO="$stall_repo" \
+PROPERTY_RENTAL_DISPATCH_STATE_DIR="$stall_state_dir" \
+PROPERTY_RENTAL_OPENCLAW_BIN="$fake_openclaw" \
+PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES=2 \
+  "$stall_repo/scripts/openclaw-supervisor-dispatch.sh"
+exhausted_exit=$?
+set -e
+[ "$exhausted_exit" -eq 0 ]
+[ "$(wc -l <"$stall_calls" | tr -d ' ')" -eq 2 ]
+exhausted_file="$(find "$stall_state_dir/repair-exhausted" -type f -name '*.json' -print -quit)"
+[ -n "$exhausted_file" ]
+jq -e '.status == "repair_exhausted" and .attempts == 2 and .alerted == false' "$exhausted_file" >/dev/null
+
+usage_ledger="$test_root/model-usage.jsonl"
+now="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+old='2000-01-01T00:00:00Z'
+printf '{"timestamp":"%s","total_tokens":1234}\n{"timestamp":"%s","total_tokens":9999}\nnot-json\n' "$now" "$old" >"$usage_ledger"
+PROPERTY_RENTAL_MODEL_USAGE_LEDGER="$usage_ledger" python3 - "$source_repo/scripts/openclaw-daily-report.py" <<'PY'
+import importlib.util
+import sys
+
+spec = importlib.util.spec_from_file_location("daily_report", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+assert spec.loader is not None
+spec.loader.exec_module(module)
+assert module.recent_model_usage() == [1234]
+PY
 
 make_repo missing_next_action high 'bounded account migration'
 missing_repo="$test_root/missing_next_action/repo"

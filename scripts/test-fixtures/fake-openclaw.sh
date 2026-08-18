@@ -13,6 +13,10 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 printf '%s|%s\n' "$model" "$session" >>"$FAKE_CALLS"
+grep -q 'openclaw-hermes-task.sh' "$message_file"
+task_file="$(sed -n 's/.*openclaw-hermes-task.sh \([^`]*\)`.*/\1/p' "$message_file" | tail -1)"
+[ -f "$task_file" ]
+[ -n "$(tr -d '[:space:]' <"$task_file")" ]
 case "$FAKE_SCENARIO:$model" in
   local_fail:ollama/*)
     printf '%s\n' '{"usage":{"total":1200}}'
