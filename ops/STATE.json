@@ -7,7 +7,7 @@
   "active_cycle": "phase-2p-authentication-session-revocation-orchestration-foundation",
   "branch": "implementation/foundation",
   "commit": "5584c4bdba6b74143b6acbfa014638436022d756",
-  "timestamp": "2026-08-18T07:48:00Z",
+  "timestamp": "2026-08-18T07:57:49Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
@@ -56,11 +56,37 @@
   ],
   "roadmap": {
     "id": "property-rental-v1",
-    "current_id": "V1-011",
+    "current_id": "V1-012",
     "total": 60
   },
-  "next_candidate": null,
-  "next_action": "Materialize V1-012 from the verified structured v1 roadmap without a model, then dispatch it after all publication gates pass.",
+  "next_candidate": {
+    "id": "V1-012",
+    "order": 12,
+    "phase": "Identity",
+    "task": "Initial Owner bootstrap closure guard foundation",
+    "dependencies": [
+      "V1-011"
+    ],
+    "authorities": [
+      "DB-AUTH-005",
+      "API-100",
+      "TEST-133-134",
+      "SEC-073-075",
+      "DL-059"
+    ],
+    "include": [
+      "transactional first-Owner-only closure guard and audit"
+    ],
+    "exclude": [
+      "production secrets and deployment"
+    ],
+    "risk_class": "high",
+    "acceptance_profile": "database",
+    "authorization": "durable_v1",
+    "status": "approved_ready",
+    "roadmap_id": "V1-012"
+  },
+  "next_action": "Implement the approved bounded candidate: Initial Owner bootstrap closure guard foundation",
   "idle_reason": null,
   "owner_action": "none",
   "blockers": [],

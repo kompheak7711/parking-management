@@ -13,72 +13,1571 @@
     "scope expansion, force-push, history rewriting, or exhausted bounded repairs"
   ],
   "acceptance_profiles": {
-    "foundation": ["focused deterministic tests", "format, lint, strict typecheck, and builds", "traceability, scope, secret, dependency, and canonical-integrity gates", "independent review", "GitHub Actions success"],
-    "database": ["forward-only migration and constraint tests on disposable real PostgreSQL", "domain/service tests", "full foundation gates", "GitHub Actions success"],
-    "api_ui": ["API contract and authorization tests", "frontend component/accessibility tests", "backend and frontend builds", "full foundation gates", "GitHub Actions success"],
-    "financial": ["exact-money, idempotency, concurrency, correction, and immutable-history tests", "real PostgreSQL tests", "API/UI tests where applicable", "critical financial suite", "full foundation gates", "GitHub Actions success"],
-    "release": ["complete backend, frontend, database, integration, end-to-end, security, dependency, backup/restore, and traceability suites", "clean synchronized repository", "GitHub Actions success", "no unresolved non-protected v1 gap"]
+    "foundation": [
+      "focused deterministic tests",
+      "format, lint, strict typecheck, and builds",
+      "traceability, scope, secret, dependency, and canonical-integrity gates",
+      "independent review",
+      "GitHub Actions success"
+    ],
+    "database": [
+      "forward-only migration and constraint tests on disposable real PostgreSQL",
+      "domain/service tests",
+      "full foundation gates",
+      "GitHub Actions success"
+    ],
+    "api_ui": [
+      "API contract and authorization tests",
+      "frontend component/accessibility tests",
+      "backend and frontend builds",
+      "full foundation gates",
+      "GitHub Actions success"
+    ],
+    "financial": [
+      "exact-money, idempotency, concurrency, correction, and immutable-history tests",
+      "real PostgreSQL tests",
+      "API/UI tests where applicable",
+      "critical financial suite",
+      "full foundation gates",
+      "GitHub Actions success"
+    ],
+    "release": [
+      "complete backend, frontend, database, integration, end-to-end, security, dependency, backup/restore, and traceability suites",
+      "clean synchronized repository",
+      "GitHub Actions success",
+      "no unresolved non-protected v1 gap"
+    ]
   },
   "tranches": [
-    {"id":"V1-001","order":1,"phase":"Specifications","task":"Reconcile authoritative specifications 001-010 and Owner decisions","dependencies":[],"authorities":["DOC-001-010"],"include":["complete canonical requirements and decisions"],"exclude":["application implementation"],"risk_class":"high","acceptance_profile":"foundation","authorization":"complete","status":"complete"},
-    {"id":"V1-002","order":2,"phase":"Foundation","task":"Backend package and developer tooling foundation","dependencies":["V1-001"],"authorities":["PR-TECH-*","TEST-001-020"],"include":["Python package, lint, typing, tests, build"],"exclude":["business workflows"],"risk_class":"low","acceptance_profile":"foundation","authorization":"complete","status":"complete"},
-    {"id":"V1-003","order":3,"phase":"Foundation","task":"PostgreSQL migration and disposable database-test foundation","dependencies":["V1-002"],"authorities":["DB-*","TEST-100-104"],"include":["safe migrations and isolated PostgreSQL verification"],"exclude":["production data operations"],"risk_class":"high","acceptance_profile":"database","authorization":"complete","status":"complete"},
-    {"id":"V1-004","order":4,"phase":"Foundation","task":"FastAPI contract and application infrastructure foundation","dependencies":["V1-002"],"authorities":["API-001-025"],"include":["API envelopes, validation, health, correlation"],"exclude":["domain endpoints"],"risk_class":"low","acceptance_profile":"foundation","authorization":"complete","status":"complete"},
-    {"id":"V1-005","order":5,"phase":"Foundation","task":"React frontend and quality-tooling foundation","dependencies":["V1-002"],"authorities":["UI-001-014","TEST-013-014"],"include":["frontend shell, tests, typecheck, build"],"exclude":["domain screens"],"risk_class":"low","acceptance_profile":"foundation","authorization":"complete","status":"complete"},
-    {"id":"V1-006","order":6,"phase":"Foundation","task":"Cross-stack CI, dependency, traceability, and automation gates","dependencies":["V1-003","V1-004","V1-005"],"authorities":["TEST-112-119","SEC-060-069"],"include":["mandatory local and GitHub gates"],"exclude":["production deployment"],"risk_class":"high","acceptance_profile":"foundation","authorization":"complete","status":"complete"},
-    {"id":"V1-007","order":7,"phase":"Identity","task":"Authenticated actor, capability authorization, property scope, and business-time foundations","dependencies":["V1-006"],"authorities":["PR-AUTH-*","SEC-001-023","DL-048"],"include":["deny-default capabilities and property-local context"],"exclude":["role-policy invention"],"risk_class":"high","acceptance_profile":"foundation","authorization":"complete","status":"complete"},
-    {"id":"V1-008","order":8,"phase":"Identity","task":"Local account, credential persistence, and Argon2id password foundations","dependencies":["V1-007"],"authorities":["DB-AUTH-001","DB-AUTH-002","SEC-009-012","DL-055"],"include":["accounts, credentials, hashing and verification"],"exclude":["public login UI"],"risk_class":"high","acceptance_profile":"database","authorization":"complete","status":"complete"},
-    {"id":"V1-009","order":9,"phase":"Identity","task":"Local login, MFA policy, and browser-session lifetime foundations","dependencies":["V1-008"],"authorities":["API-096-097","TEST-108","TEST-128","TEST-131-132","DL-055-057"],"include":["enumeration-safe login boundary, MFA policy, session timing"],"exclude":["final transport and UI"],"risk_class":"high","acceptance_profile":"foundation","authorization":"complete","status":"complete"},
-    {"id":"V1-010","order":10,"phase":"Identity","task":"Administrative recovery and recovery-code lifecycle, issuance, consumption, and regeneration foundations","dependencies":["V1-009"],"authorities":["DB-AUTH-003","API-098-099","TEST-129-130","SEC-071-075","DL-058"],"include":["single-use recovery-code and recovery authorization services"],"exclude":["public recovery UI"],"risk_class":"high","acceptance_profile":"database","authorization":"complete","status":"complete"},
-    {"id":"V1-011","order":11,"phase":"Identity","task":"Authentication session-revocation orchestration foundation","dependencies":["V1-009"],"authorities":["DB-AUTH-004","API-097","TEST-131-132","SEC-015-018","DL-057"],"include":["password-reset, disablement, and privilege-reduction revocation"],"exclude":["cookie transport"],"risk_class":"high","acceptance_profile":"foundation","authorization":"complete","status":"complete"},
-    {"id":"V1-012","order":12,"phase":"Identity","task":"Initial Owner bootstrap closure guard foundation","dependencies":["V1-011"],"authorities":["DB-AUTH-005","API-100","TEST-133-134","SEC-073-075","DL-059"],"include":["transactional first-Owner-only closure guard and audit"],"exclude":["production secrets and deployment"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-013","order":13,"phase":"Identity","task":"Standards-based TOTP MFA cryptographic and persistence foundation","dependencies":["V1-012"],"authorities":["DB-AUTH-003","API-096","TEST-128","SEC-013","DL-056"],"include":["TOTP enrollment verifier material and protected storage"],"exclude":["SMS and production secrets"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-014","order":14,"phase":"Identity","task":"Persistent browser-session and revocation store","dependencies":["V1-011","V1-013"],"authorities":["DB-AUTH-004","API-097","SEC-015-018"],"include":["opaque sessions, activity, absolute expiry, revocation persistence"],"exclude":["remote access"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-015","order":15,"phase":"Identity","task":"Login, MFA, logout, reauthentication, and session API","dependencies":["V1-013","V1-014"],"authorities":["API-008-010","API-096-097","TEST-108","TEST-128","TEST-131-132"],"include":["local auth endpoints, secure browser transport, CSRF where applicable"],"exclude":["external identity providers"],"risk_class":"high","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-016","order":16,"phase":"Identity","task":"Recovery-code, administrative, and emergency recovery orchestration","dependencies":["V1-010","V1-014"],"authorities":["API-098-099","TEST-129-130","SEC-071-075","DL-058"],"include":["authorized recovery mutations, revocation, rate limiting, audit"],"exclude":["unauthenticated Owner reset"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-017","order":17,"phase":"Identity","task":"Protected initial Owner CLI bootstrap command","dependencies":["V1-012","V1-013"],"authorities":["API-100","TEST-133-134","DEPLOY-070-072","DL-059"],"include":["interactive secret input, first-Owner creation, MFA gating, one-time codes"],"exclude":["actual production credentials or web bootstrap"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-018","order":18,"phase":"Identity","task":"Account and capability administration API","dependencies":["V1-015","V1-016"],"authorities":["API-079-080","SEC-019-023","PR-AUTH-*"],"include":["account lifecycle and configurable capability bundles"],"exclude":["invented role authority"],"risk_class":"high","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-019","order":19,"phase":"Identity","task":"Authentication and account administration UI","dependencies":["V1-015","V1-016","V1-018"],"authorities":["UI-092","UI-109-113","TEST-094-095","TEST-135"],"include":["sign-in, MFA, recovery, session, account/capability screens"],"exclude":["first-Owner web bootstrap"],"risk_class":"high","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-020","order":20,"phase":"Identity","task":"Identity and security end-to-end hardening gate","dependencies":["V1-017","V1-019"],"authorities":["TEST-108-111","TEST-128-135","SEC-068-075"],"include":["complete authentication abuse, lifecycle, recovery, session, and bootstrap tests"],"exclude":["production deployment"],"risk_class":"high","acceptance_profile":"release","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-021","order":21,"phase":"Core","task":"Append-only audit-event persistence and query foundation","dependencies":["V1-007"],"authorities":["PR-AUDIT-*","DB-AUDIT-*","API-023","API-073-075","SEC-030-034"],"include":["immutable audit storage and authorized query"],"exclude":["audit mutation"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-022","order":22,"phase":"Core","task":"Property configuration persistence and API","dependencies":["V1-020","V1-021"],"authorities":["BR-PROP-*","PR-PROP-*","API-026-027","UI-091"],"include":["single-Property configuration and timezone"],"exclude":["multi-property architecture"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-023","order":23,"phase":"Core","task":"Unit identity, status, availability, and history persistence","dependencies":["V1-022"],"authorities":["BR-UNIT-*","PR-UNIT-*","DB-UNIT-*","TEST-022"],"include":["unit constraints and authoritative availability"],"exclude":["reservation and lease mutations"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-024","order":24,"phase":"Core","task":"Unit API and management UI","dependencies":["V1-023"],"authorities":["API-028-029","UI-UNIT-*","TEST-087-095"],"include":["unit list/detail/history and controlled operational status"],"exclude":["reservation workflows"],"risk_class":"medium","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-025","order":25,"phase":"Core","task":"Customer identity and history persistence","dependencies":["V1-022"],"authorities":["BR-CUST-*","PR-CUST-*","DB-CUST-*","TEST-023"],"include":["reusable customer identity and history"],"exclude":["financial ledger"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-026","order":26,"phase":"Core","task":"Customer API and management UI","dependencies":["V1-025"],"authorities":["API-030-031","UI-CUST-*","SEC-041-044"],"include":["customer create/read/update and history-safe deactivation"],"exclude":["financial ledger"],"risk_class":"high","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-027","order":27,"phase":"Configuration","task":"Service, utility, payment-method, and exchange-rate configuration persistence","dependencies":["V1-022"],"authorities":["BR-SVC-*","BR-UTIL-014-017","BR-PAY-006-007","BR-MONEY-*"],"include":["effective-dated configuration and historical preservation"],"exclude":["unresolved utility unit metadata"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-028","order":28,"phase":"Configuration","task":"Configuration API and administration UI","dependencies":["V1-027"],"authorities":["API-043","API-047","API-058","UI-091"],"include":["authorized effective-dated configuration workflows"],"exclude":["production secrets"],"risk_class":"high","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-029","order":29,"phase":"Reservations","task":"Reservation and reservation-deposit persistence","dependencies":["V1-023","V1-025"],"authorities":["BR-RES-*","BR-DEP-001-006","DB-RES-*","TEST-024-029"],"include":["reservation lifecycle, exclusivity, expiry, extension, deposit continuity"],"exclude":["lease creation"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-030","order":30,"phase":"Reservations","task":"Reservation lifecycle and availability services","dependencies":["V1-029"],"authorities":["BR-RES-003-022","PR-RES-*","TEST-024-029"],"include":["create, extend, expire, cancel and availability transitions"],"exclude":["move-in completion"],"risk_class":"high","acceptance_profile":"foundation","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-031","order":31,"phase":"Reservations","task":"Reservation cancellation and deposit-outcome orchestration","dependencies":["V1-030"],"authorities":["BR-RES-020-022","BR-REFUND-*","TEST-029"],"include":["customer/property-caused outcomes and reconstructable source links"],"exclude":["general refund UI"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-032","order":32,"phase":"Reservations","task":"Reservation API, UI, expiration worker, and end-to-end tests","dependencies":["V1-030","V1-031"],"authorities":["API-032-034","UI-RES-*","TEST-024-029","TEST-096-099"],"include":["complete staff reservation workflow and automatic expiry"],"exclude":["lease implementation"],"risk_class":"high","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-033","order":33,"phase":"Leases","task":"Lease, signer, occupant, and occupancy persistence","dependencies":["V1-029"],"authorities":["BR-LEASE-*","BR-OCC-*","DB-LEASE-*","TEST-030-035"],"include":["lease/signature/occupancy constraints and history"],"exclude":["billing"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-034","order":34,"phase":"Leases","task":"Lease lifecycle, signing, termination boundary, and exclusivity services","dependencies":["V1-033"],"authorities":["BR-LEASE-001-014","PR-LEASE-*","TEST-030-032"],"include":["draft/sign/cancel/terminate transitions and signer rules"],"exclude":["automatic termination"],"risk_class":"high","acceptance_profile":"foundation","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-035","order":35,"phase":"Leases","task":"Move-in, occupancy, and reservation-to-lease orchestration","dependencies":["V1-032","V1-034"],"authorities":["BR-LEASE-015-016","BR-OCC-*","TEST-028","TEST-033-035"],"include":["move-in prerequisites, deposit continuity, unit occupancy"],"exclude":["move-out"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-036","order":36,"phase":"Leases","task":"Lease, signer, occupancy, and move-in API/UI","dependencies":["V1-035"],"authorities":["API-035-038","UI-LEASE-*","TEST-030-035"],"include":["complete staff lease and move-in workflow"],"exclude":["billing and move-out"],"risk_class":"high","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-037","order":37,"phase":"Deposits","task":"Security and pet deposit persistence and domain services","dependencies":["V1-035"],"authorities":["BR-DEP-*","PR-DEP-*","DB-DEP-*","TEST-036-039","TEST-126"],"include":["separate liabilities, approved-pet conditions, active-lease exception qualification"],"exclude":["final settlement"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-038","order":38,"phase":"Deposits","task":"Deposit receipt, qualification, disposition API/UI","dependencies":["V1-037"],"authorities":["API-039-042","API-094","UI-DEP-*","TEST-036-039","TEST-126"],"include":["authorized deposit workflows with source history"],"exclude":["ordinary active-lease security-deposit refund"],"risk_class":"high","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-039","order":39,"phase":"Billing","task":"Invoice, line, adjustment, and billing-run persistence","dependencies":["V1-027","V1-035"],"authorities":["BR-INV-*","DB-INV-*","TEST-053-058"],"include":["immutable invoice model, line categories, adjustments and duplicate guards"],"exclude":["payments"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-040","order":40,"phase":"Billing","task":"Rent proration and fixed-service billing services","dependencies":["V1-039"],"authorities":["BR-RENT-*","BR-SVC-*","TEST-040-045"],"include":["initial, recurring, final rent and configured service calculations"],"exclude":["utility billing"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-041","order":41,"phase":"Utilities","task":"Utility meter, replacement, reading, and correction persistence","dependencies":["V1-023","V1-027"],"authorities":["BR-UTIL-001-017","API-044-047","TEST-046-049"],"include":["meter history and validated readings"],"exclude":["billing generation"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-042","order":42,"phase":"Utilities","task":"Utility consumption and broken-meter estimation services","dependencies":["V1-041"],"authorities":["BR-UTIL-018-032","API-048-049","TEST-048-052","TEST-122"],"include":["consumption, historical hierarchy, pending zero-history basis"],"exclude":["invented measurement units or fallback policy"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-043","order":43,"phase":"Utilities","task":"Utility meter, reading, preview, and billing UI/API","dependencies":["V1-039","V1-042"],"authorities":["API-044-049","UI-UTIL-*","TEST-046-052"],"include":["bulk readings, previews, explicit estimate review"],"exclude":["silent estimation"],"risk_class":"high","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-044","order":44,"phase":"Billing","task":"Idempotent scheduled rent, service, and utility billing worker","dependencies":["V1-040","V1-042"],"authorities":["API-054-056","TEST-096-099","DEPLOY-WORKER-*"],"include":["singleton runs, retry, catch-up, property-local scheduling"],"exclude":["production scheduler deployment"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-045","order":45,"phase":"Billing","task":"Invoice lifecycle, issuance, adjustments, and void services","dependencies":["V1-039","V1-044"],"authorities":["BR-INV-*","API-050-053","TEST-053-058"],"include":["draft/issue/paid/void transitions and linked corrections"],"exclude":["physical deletion"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-046","order":46,"phase":"Billing","task":"Late-payment decision, charge, correction, and allocation boundaries","dependencies":["V1-045"],"authorities":["BR-INV-051-055","BR-LATE-*","API-091","TEST-123-124","DL-050"],"include":["one final non-compounding decision and explicit linked charge"],"exclude":["automatic discretionary decision"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-047","order":47,"phase":"Billing","task":"Invoice, adjustment, late-payment, and billing-run API/UI","dependencies":["V1-043","V1-045","V1-046"],"authorities":["API-050-056","API-091","UI-INV-*","TEST-053-058","TEST-123-124"],"include":["invoice staff workflows and explicit confirmations"],"exclude":["payments"],"risk_class":"high","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-048","order":48,"phase":"Payments","task":"Payment, FX evidence, and reversal persistence","dependencies":["V1-045","V1-027"],"authorities":["BR-PAY-*","BR-MONEY-*","DB-PAY-*","TEST-059","TEST-067","TEST-069-074"],"include":["money received, confirmed FX, immutable reversal chains"],"exclude":["allocation and refund"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-049","order":49,"phase":"Payments","task":"Deterministic payment allocation and reversal services","dependencies":["V1-046","V1-048"],"authorities":["BR-PAY-019-040","API-059-060","TEST-060-063","TEST-068"],"include":["FIFO proposal, customer designation, concurrency, reversal"],"exclude":["negative balances"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-050","order":50,"phase":"Payments","task":"Immutable receipt and reprint services","dependencies":["V1-048"],"authorities":["BR-RECEIPT-*","API-092","TEST-125","DL-051"],"include":["one receipt identity per confirmed payment and auditable reprint"],"exclude":["new money event on reprint"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-051","order":51,"phase":"Payments","task":"Customer credit, application, refund, and correction services","dependencies":["V1-037","V1-049"],"authorities":["BR-CREDIT-*","BR-REFUND-*","API-061-066","TEST-064-066","TEST-126"],"include":["credit ledger, same-customer application, source-bounded refunds"],"exclude":["vendor accounts payable"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-052","order":52,"phase":"Payments","task":"Payment, allocation, receipt, credit, and refund API/UI","dependencies":["V1-049","V1-050","V1-051"],"authorities":["API-057-066","API-092","UI-PAY-*","TEST-059-074","TEST-125-126"],"include":["complete staff money workflow with explicit confirmations"],"exclude":["silent financial mutation"],"risk_class":"high","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-053","order":53,"phase":"Ledger","task":"Unified read-only Customer Account Ledger API/UI","dependencies":["V1-047","V1-052"],"authorities":["BR-LEDGER-*","API-093","UI-LEDGER-*","DL-052"],"include":["reconstructed chronological financial position and reconciliation"],"exclude":["general ledger or mutation source"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-054","order":54,"phase":"Enforcement","task":"Lease-warning and rent-nonpayment case/event workflows","dependencies":["V1-046","V1-053"],"authorities":["BR-LEASE-024-030","BR-PAY-036-039","API-067","API-095","TEST-075","TEST-127","DL-054"],"include":["20-day warning and 30-day serious-default history"],"exclude":["automatic termination"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-055","order":55,"phase":"Closure","task":"Termination, continued occupancy, and move-out workflows","dependencies":["V1-036","V1-043","V1-054"],"authorities":["BR-LEASE-*","BR-MOVEOUT-*","API-068-069","TEST-076-078"],"include":["authorized termination, occupancy closure, final readings and inspection"],"exclude":["automatic termination or invented holdover terms"],"risk_class":"high","acceptance_profile":"database","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-056","order":56,"phase":"Closure","task":"Final settlement calculation, closure, correction, API, and UI","dependencies":["V1-051","V1-055"],"authorities":["BR-SETTLE-*","API-070-072","UI-079-083","TEST-079-081"],"include":["one settlement, explicit deposit application, refunds, permanent correction history"],"exclude":["pre-settlement deposit use"],"risk_class":"high","acceptance_profile":"financial","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-057","order":57,"phase":"Insights","task":"Audit search, dashboard, reports, and protected export workflows","dependencies":["V1-021","V1-053","V1-056"],"authorities":["API-073-078","UI-084-090","SEC-032","SEC-042"],"include":["authorized audit timelines, operational dashboard, reports, exports"],"exclude":["audit mutation and customer-data overexposure"],"risk_class":"high","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-058","order":58,"phase":"Operations","task":"Administration, operational health, accessibility, and cross-domain navigation UI","dependencies":["V1-028","V1-057"],"authorities":["API-079-081","UI-001-014","UI-091-103","TEST-091-095"],"include":["configuration, account, health, responsive and failure-state UX"],"exclude":["brand decision and unsupported browser guarantees"],"risk_class":"medium","acceptance_profile":"api_ui","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-059","order":59,"phase":"Operations","task":"Backup, restore, logging, monitoring, security, and deployment-readiness verification","dependencies":["V1-044","V1-058"],"authorities":["TEST-105-111","SEC-045-069","DEPLOY-*"],"include":["placeholder-safe deployment validation, encrypted-backup/restore drills, least-privilege and observability tests"],"exclude":["actual production secrets, deployment, remote access, or unapproved RPO/RTO"],"risk_class":"high","acceptance_profile":"release","authorization":"durable_v1","status":"approved_ready"},
-    {"id":"V1-060","order":60,"phase":"Release","task":"Full-system v1 end-to-end, reconciliation, security, and release-candidate gate","dependencies":["V1-020","V1-024","V1-026","V1-032","V1-038","V1-047","V1-052","V1-053","V1-054","V1-056","V1-057","V1-058","V1-059"],"authorities":["DOC-001-010","TEST-001-135"],"include":["complete synthetic lifecycle, financial reconciliation, authorization, recovery, accessibility, performance sanity, traceability and release evidence"],"exclude":["production deployment, real customer data, actual production credentials, unresolved Owner decisions"],"risk_class":"high","acceptance_profile":"release","authorization":"durable_v1","status":"approved_ready"}
+    {
+      "id": "V1-001",
+      "order": 1,
+      "phase": "Specifications",
+      "task": "Reconcile authoritative specifications 001-010 and Owner decisions",
+      "dependencies": [],
+      "authorities": [
+        "DOC-001-010"
+      ],
+      "include": [
+        "complete canonical requirements and decisions"
+      ],
+      "exclude": [
+        "application implementation"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "foundation",
+      "authorization": "complete",
+      "status": "complete"
+    },
+    {
+      "id": "V1-002",
+      "order": 2,
+      "phase": "Foundation",
+      "task": "Backend package and developer tooling foundation",
+      "dependencies": [
+        "V1-001"
+      ],
+      "authorities": [
+        "PR-TECH-*",
+        "TEST-001-020"
+      ],
+      "include": [
+        "Python package, lint, typing, tests, build"
+      ],
+      "exclude": [
+        "business workflows"
+      ],
+      "risk_class": "low",
+      "acceptance_profile": "foundation",
+      "authorization": "complete",
+      "status": "complete"
+    },
+    {
+      "id": "V1-003",
+      "order": 3,
+      "phase": "Foundation",
+      "task": "PostgreSQL migration and disposable database-test foundation",
+      "dependencies": [
+        "V1-002"
+      ],
+      "authorities": [
+        "DB-*",
+        "TEST-100-104"
+      ],
+      "include": [
+        "safe migrations and isolated PostgreSQL verification"
+      ],
+      "exclude": [
+        "production data operations"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "complete",
+      "status": "complete"
+    },
+    {
+      "id": "V1-004",
+      "order": 4,
+      "phase": "Foundation",
+      "task": "FastAPI contract and application infrastructure foundation",
+      "dependencies": [
+        "V1-002"
+      ],
+      "authorities": [
+        "API-001-025"
+      ],
+      "include": [
+        "API envelopes, validation, health, correlation"
+      ],
+      "exclude": [
+        "domain endpoints"
+      ],
+      "risk_class": "low",
+      "acceptance_profile": "foundation",
+      "authorization": "complete",
+      "status": "complete"
+    },
+    {
+      "id": "V1-005",
+      "order": 5,
+      "phase": "Foundation",
+      "task": "React frontend and quality-tooling foundation",
+      "dependencies": [
+        "V1-002"
+      ],
+      "authorities": [
+        "UI-001-014",
+        "TEST-013-014"
+      ],
+      "include": [
+        "frontend shell, tests, typecheck, build"
+      ],
+      "exclude": [
+        "domain screens"
+      ],
+      "risk_class": "low",
+      "acceptance_profile": "foundation",
+      "authorization": "complete",
+      "status": "complete"
+    },
+    {
+      "id": "V1-006",
+      "order": 6,
+      "phase": "Foundation",
+      "task": "Cross-stack CI, dependency, traceability, and automation gates",
+      "dependencies": [
+        "V1-003",
+        "V1-004",
+        "V1-005"
+      ],
+      "authorities": [
+        "TEST-112-119",
+        "SEC-060-069"
+      ],
+      "include": [
+        "mandatory local and GitHub gates"
+      ],
+      "exclude": [
+        "production deployment"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "foundation",
+      "authorization": "complete",
+      "status": "complete"
+    },
+    {
+      "id": "V1-007",
+      "order": 7,
+      "phase": "Identity",
+      "task": "Authenticated actor, capability authorization, property scope, and business-time foundations",
+      "dependencies": [
+        "V1-006"
+      ],
+      "authorities": [
+        "PR-AUTH-*",
+        "SEC-001-023",
+        "DL-048"
+      ],
+      "include": [
+        "deny-default capabilities and property-local context"
+      ],
+      "exclude": [
+        "role-policy invention"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "foundation",
+      "authorization": "complete",
+      "status": "complete"
+    },
+    {
+      "id": "V1-008",
+      "order": 8,
+      "phase": "Identity",
+      "task": "Local account, credential persistence, and Argon2id password foundations",
+      "dependencies": [
+        "V1-007"
+      ],
+      "authorities": [
+        "DB-AUTH-001",
+        "DB-AUTH-002",
+        "SEC-009-012",
+        "DL-055"
+      ],
+      "include": [
+        "accounts, credentials, hashing and verification"
+      ],
+      "exclude": [
+        "public login UI"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "complete",
+      "status": "complete"
+    },
+    {
+      "id": "V1-009",
+      "order": 9,
+      "phase": "Identity",
+      "task": "Local login, MFA policy, and browser-session lifetime foundations",
+      "dependencies": [
+        "V1-008"
+      ],
+      "authorities": [
+        "API-096-097",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131-132",
+        "DL-055-057"
+      ],
+      "include": [
+        "enumeration-safe login boundary, MFA policy, session timing"
+      ],
+      "exclude": [
+        "final transport and UI"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "foundation",
+      "authorization": "complete",
+      "status": "complete"
+    },
+    {
+      "id": "V1-010",
+      "order": 10,
+      "phase": "Identity",
+      "task": "Administrative recovery and recovery-code lifecycle, issuance, consumption, and regeneration foundations",
+      "dependencies": [
+        "V1-009"
+      ],
+      "authorities": [
+        "DB-AUTH-003",
+        "API-098-099",
+        "TEST-129-130",
+        "SEC-071-075",
+        "DL-058"
+      ],
+      "include": [
+        "single-use recovery-code and recovery authorization services"
+      ],
+      "exclude": [
+        "public recovery UI"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "complete",
+      "status": "complete"
+    },
+    {
+      "id": "V1-011",
+      "order": 11,
+      "phase": "Identity",
+      "task": "Authentication session-revocation orchestration foundation",
+      "dependencies": [
+        "V1-009"
+      ],
+      "authorities": [
+        "DB-AUTH-004",
+        "API-097",
+        "TEST-131-132",
+        "SEC-015-018",
+        "DL-057"
+      ],
+      "include": [
+        "password-reset, disablement, and privilege-reduction revocation"
+      ],
+      "exclude": [
+        "cookie transport"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "foundation",
+      "authorization": "complete",
+      "status": "complete"
+    },
+    {
+      "id": "V1-012",
+      "order": 12,
+      "phase": "Identity",
+      "task": "Initial Owner bootstrap closure guard foundation",
+      "dependencies": [
+        "V1-011"
+      ],
+      "authorities": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133-134",
+        "SEC-073-075",
+        "DL-059"
+      ],
+      "include": [
+        "transactional first-Owner-only closure guard and audit"
+      ],
+      "exclude": [
+        "production secrets and deployment"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-013",
+      "order": 13,
+      "phase": "Identity",
+      "task": "Standards-based TOTP MFA cryptographic and persistence foundation",
+      "dependencies": [
+        "V1-012"
+      ],
+      "authorities": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
+      "include": [
+        "TOTP enrollment verifier material and protected storage"
+      ],
+      "exclude": [
+        "SMS and production secrets"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-014",
+      "order": 14,
+      "phase": "Identity",
+      "task": "Persistent browser-session and revocation store",
+      "dependencies": [
+        "V1-011",
+        "V1-013"
+      ],
+      "authorities": [
+        "DB-AUTH-004",
+        "API-097",
+        "SEC-015-018"
+      ],
+      "include": [
+        "opaque sessions, activity, absolute expiry, revocation persistence"
+      ],
+      "exclude": [
+        "remote access"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-015",
+      "order": 15,
+      "phase": "Identity",
+      "task": "Login, MFA, logout, reauthentication, and session API",
+      "dependencies": [
+        "V1-013",
+        "V1-014"
+      ],
+      "authorities": [
+        "API-008-010",
+        "API-096-097",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131-132"
+      ],
+      "include": [
+        "local auth endpoints, secure browser transport, CSRF where applicable"
+      ],
+      "exclude": [
+        "external identity providers"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-016",
+      "order": 16,
+      "phase": "Identity",
+      "task": "Recovery-code, administrative, and emergency recovery orchestration",
+      "dependencies": [
+        "V1-010",
+        "V1-014"
+      ],
+      "authorities": [
+        "API-098-099",
+        "TEST-129-130",
+        "SEC-071-075",
+        "DL-058"
+      ],
+      "include": [
+        "authorized recovery mutations, revocation, rate limiting, audit"
+      ],
+      "exclude": [
+        "unauthenticated Owner reset"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-017",
+      "order": 17,
+      "phase": "Identity",
+      "task": "Protected initial Owner CLI bootstrap command",
+      "dependencies": [
+        "V1-012",
+        "V1-013"
+      ],
+      "authorities": [
+        "API-100",
+        "TEST-133-134",
+        "DEPLOY-070-072",
+        "DL-059"
+      ],
+      "include": [
+        "interactive secret input, first-Owner creation, MFA gating, one-time codes"
+      ],
+      "exclude": [
+        "actual production credentials or web bootstrap"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-018",
+      "order": 18,
+      "phase": "Identity",
+      "task": "Account and capability administration API",
+      "dependencies": [
+        "V1-015",
+        "V1-016"
+      ],
+      "authorities": [
+        "API-079-080",
+        "SEC-019-023",
+        "PR-AUTH-*"
+      ],
+      "include": [
+        "account lifecycle and configurable capability bundles"
+      ],
+      "exclude": [
+        "invented role authority"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-019",
+      "order": 19,
+      "phase": "Identity",
+      "task": "Authentication and account administration UI",
+      "dependencies": [
+        "V1-015",
+        "V1-016",
+        "V1-018"
+      ],
+      "authorities": [
+        "UI-092",
+        "UI-109-113",
+        "TEST-094-095",
+        "TEST-135"
+      ],
+      "include": [
+        "sign-in, MFA, recovery, session, account/capability screens"
+      ],
+      "exclude": [
+        "first-Owner web bootstrap"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-020",
+      "order": 20,
+      "phase": "Identity",
+      "task": "Identity and security end-to-end hardening gate",
+      "dependencies": [
+        "V1-017",
+        "V1-019"
+      ],
+      "authorities": [
+        "TEST-108-111",
+        "TEST-128-135",
+        "SEC-068-075"
+      ],
+      "include": [
+        "complete authentication abuse, lifecycle, recovery, session, and bootstrap tests"
+      ],
+      "exclude": [
+        "production deployment"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "release",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-021",
+      "order": 21,
+      "phase": "Core",
+      "task": "Append-only audit-event persistence and query foundation",
+      "dependencies": [
+        "V1-007"
+      ],
+      "authorities": [
+        "PR-AUDIT-*",
+        "DB-AUDIT-*",
+        "API-023",
+        "API-073-075",
+        "SEC-030-034"
+      ],
+      "include": [
+        "immutable audit storage and authorized query"
+      ],
+      "exclude": [
+        "audit mutation"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-022",
+      "order": 22,
+      "phase": "Core",
+      "task": "Property configuration persistence and API",
+      "dependencies": [
+        "V1-020",
+        "V1-021"
+      ],
+      "authorities": [
+        "BR-PROP-*",
+        "PR-PROP-*",
+        "API-026-027",
+        "UI-091"
+      ],
+      "include": [
+        "single-Property configuration and timezone"
+      ],
+      "exclude": [
+        "multi-property architecture"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-023",
+      "order": 23,
+      "phase": "Core",
+      "task": "Unit identity, status, availability, and history persistence",
+      "dependencies": [
+        "V1-022"
+      ],
+      "authorities": [
+        "BR-UNIT-*",
+        "PR-UNIT-*",
+        "DB-UNIT-*",
+        "TEST-022"
+      ],
+      "include": [
+        "unit constraints and authoritative availability"
+      ],
+      "exclude": [
+        "reservation and lease mutations"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-024",
+      "order": 24,
+      "phase": "Core",
+      "task": "Unit API and management UI",
+      "dependencies": [
+        "V1-023"
+      ],
+      "authorities": [
+        "API-028-029",
+        "UI-UNIT-*",
+        "TEST-087-095"
+      ],
+      "include": [
+        "unit list/detail/history and controlled operational status"
+      ],
+      "exclude": [
+        "reservation workflows"
+      ],
+      "risk_class": "medium",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-025",
+      "order": 25,
+      "phase": "Core",
+      "task": "Customer identity and history persistence",
+      "dependencies": [
+        "V1-022"
+      ],
+      "authorities": [
+        "BR-CUST-*",
+        "PR-CUST-*",
+        "DB-CUST-*",
+        "TEST-023"
+      ],
+      "include": [
+        "reusable customer identity and history"
+      ],
+      "exclude": [
+        "financial ledger"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-026",
+      "order": 26,
+      "phase": "Core",
+      "task": "Customer API and management UI",
+      "dependencies": [
+        "V1-025"
+      ],
+      "authorities": [
+        "API-030-031",
+        "UI-CUST-*",
+        "SEC-041-044"
+      ],
+      "include": [
+        "customer create/read/update and history-safe deactivation"
+      ],
+      "exclude": [
+        "financial ledger"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-027",
+      "order": 27,
+      "phase": "Configuration",
+      "task": "Service, utility, payment-method, and exchange-rate configuration persistence",
+      "dependencies": [
+        "V1-022"
+      ],
+      "authorities": [
+        "BR-SVC-*",
+        "BR-UTIL-014-017",
+        "BR-PAY-006-007",
+        "BR-MONEY-*"
+      ],
+      "include": [
+        "effective-dated configuration and historical preservation"
+      ],
+      "exclude": [
+        "unresolved utility unit metadata"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-028",
+      "order": 28,
+      "phase": "Configuration",
+      "task": "Configuration API and administration UI",
+      "dependencies": [
+        "V1-027"
+      ],
+      "authorities": [
+        "API-043",
+        "API-047",
+        "API-058",
+        "UI-091"
+      ],
+      "include": [
+        "authorized effective-dated configuration workflows"
+      ],
+      "exclude": [
+        "production secrets"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-029",
+      "order": 29,
+      "phase": "Reservations",
+      "task": "Reservation and reservation-deposit persistence",
+      "dependencies": [
+        "V1-023",
+        "V1-025"
+      ],
+      "authorities": [
+        "BR-RES-*",
+        "BR-DEP-001-006",
+        "DB-RES-*",
+        "TEST-024-029"
+      ],
+      "include": [
+        "reservation lifecycle, exclusivity, expiry, extension, deposit continuity"
+      ],
+      "exclude": [
+        "lease creation"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-030",
+      "order": 30,
+      "phase": "Reservations",
+      "task": "Reservation lifecycle and availability services",
+      "dependencies": [
+        "V1-029"
+      ],
+      "authorities": [
+        "BR-RES-003-022",
+        "PR-RES-*",
+        "TEST-024-029"
+      ],
+      "include": [
+        "create, extend, expire, cancel and availability transitions"
+      ],
+      "exclude": [
+        "move-in completion"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "foundation",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-031",
+      "order": 31,
+      "phase": "Reservations",
+      "task": "Reservation cancellation and deposit-outcome orchestration",
+      "dependencies": [
+        "V1-030"
+      ],
+      "authorities": [
+        "BR-RES-020-022",
+        "BR-REFUND-*",
+        "TEST-029"
+      ],
+      "include": [
+        "customer/property-caused outcomes and reconstructable source links"
+      ],
+      "exclude": [
+        "general refund UI"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-032",
+      "order": 32,
+      "phase": "Reservations",
+      "task": "Reservation API, UI, expiration worker, and end-to-end tests",
+      "dependencies": [
+        "V1-030",
+        "V1-031"
+      ],
+      "authorities": [
+        "API-032-034",
+        "UI-RES-*",
+        "TEST-024-029",
+        "TEST-096-099"
+      ],
+      "include": [
+        "complete staff reservation workflow and automatic expiry"
+      ],
+      "exclude": [
+        "lease implementation"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-033",
+      "order": 33,
+      "phase": "Leases",
+      "task": "Lease, signer, occupant, and occupancy persistence",
+      "dependencies": [
+        "V1-029"
+      ],
+      "authorities": [
+        "BR-LEASE-*",
+        "BR-OCC-*",
+        "DB-LEASE-*",
+        "TEST-030-035"
+      ],
+      "include": [
+        "lease/signature/occupancy constraints and history"
+      ],
+      "exclude": [
+        "billing"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-034",
+      "order": 34,
+      "phase": "Leases",
+      "task": "Lease lifecycle, signing, termination boundary, and exclusivity services",
+      "dependencies": [
+        "V1-033"
+      ],
+      "authorities": [
+        "BR-LEASE-001-014",
+        "PR-LEASE-*",
+        "TEST-030-032"
+      ],
+      "include": [
+        "draft/sign/cancel/terminate transitions and signer rules"
+      ],
+      "exclude": [
+        "automatic termination"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "foundation",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-035",
+      "order": 35,
+      "phase": "Leases",
+      "task": "Move-in, occupancy, and reservation-to-lease orchestration",
+      "dependencies": [
+        "V1-032",
+        "V1-034"
+      ],
+      "authorities": [
+        "BR-LEASE-015-016",
+        "BR-OCC-*",
+        "TEST-028",
+        "TEST-033-035"
+      ],
+      "include": [
+        "move-in prerequisites, deposit continuity, unit occupancy"
+      ],
+      "exclude": [
+        "move-out"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-036",
+      "order": 36,
+      "phase": "Leases",
+      "task": "Lease, signer, occupancy, and move-in API/UI",
+      "dependencies": [
+        "V1-035"
+      ],
+      "authorities": [
+        "API-035-038",
+        "UI-LEASE-*",
+        "TEST-030-035"
+      ],
+      "include": [
+        "complete staff lease and move-in workflow"
+      ],
+      "exclude": [
+        "billing and move-out"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-037",
+      "order": 37,
+      "phase": "Deposits",
+      "task": "Security and pet deposit persistence and domain services",
+      "dependencies": [
+        "V1-035"
+      ],
+      "authorities": [
+        "BR-DEP-*",
+        "PR-DEP-*",
+        "DB-DEP-*",
+        "TEST-036-039",
+        "TEST-126"
+      ],
+      "include": [
+        "separate liabilities, approved-pet conditions, active-lease exception qualification"
+      ],
+      "exclude": [
+        "final settlement"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-038",
+      "order": 38,
+      "phase": "Deposits",
+      "task": "Deposit receipt, qualification, disposition API/UI",
+      "dependencies": [
+        "V1-037"
+      ],
+      "authorities": [
+        "API-039-042",
+        "API-094",
+        "UI-DEP-*",
+        "TEST-036-039",
+        "TEST-126"
+      ],
+      "include": [
+        "authorized deposit workflows with source history"
+      ],
+      "exclude": [
+        "ordinary active-lease security-deposit refund"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-039",
+      "order": 39,
+      "phase": "Billing",
+      "task": "Invoice, line, adjustment, and billing-run persistence",
+      "dependencies": [
+        "V1-027",
+        "V1-035"
+      ],
+      "authorities": [
+        "BR-INV-*",
+        "DB-INV-*",
+        "TEST-053-058"
+      ],
+      "include": [
+        "immutable invoice model, line categories, adjustments and duplicate guards"
+      ],
+      "exclude": [
+        "payments"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-040",
+      "order": 40,
+      "phase": "Billing",
+      "task": "Rent proration and fixed-service billing services",
+      "dependencies": [
+        "V1-039"
+      ],
+      "authorities": [
+        "BR-RENT-*",
+        "BR-SVC-*",
+        "TEST-040-045"
+      ],
+      "include": [
+        "initial, recurring, final rent and configured service calculations"
+      ],
+      "exclude": [
+        "utility billing"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-041",
+      "order": 41,
+      "phase": "Utilities",
+      "task": "Utility meter, replacement, reading, and correction persistence",
+      "dependencies": [
+        "V1-023",
+        "V1-027"
+      ],
+      "authorities": [
+        "BR-UTIL-001-017",
+        "API-044-047",
+        "TEST-046-049"
+      ],
+      "include": [
+        "meter history and validated readings"
+      ],
+      "exclude": [
+        "billing generation"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-042",
+      "order": 42,
+      "phase": "Utilities",
+      "task": "Utility consumption and broken-meter estimation services",
+      "dependencies": [
+        "V1-041"
+      ],
+      "authorities": [
+        "BR-UTIL-018-032",
+        "API-048-049",
+        "TEST-048-052",
+        "TEST-122"
+      ],
+      "include": [
+        "consumption, historical hierarchy, pending zero-history basis"
+      ],
+      "exclude": [
+        "invented measurement units or fallback policy"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-043",
+      "order": 43,
+      "phase": "Utilities",
+      "task": "Utility meter, reading, preview, and billing UI/API",
+      "dependencies": [
+        "V1-039",
+        "V1-042"
+      ],
+      "authorities": [
+        "API-044-049",
+        "UI-UTIL-*",
+        "TEST-046-052"
+      ],
+      "include": [
+        "bulk readings, previews, explicit estimate review"
+      ],
+      "exclude": [
+        "silent estimation"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-044",
+      "order": 44,
+      "phase": "Billing",
+      "task": "Idempotent scheduled rent, service, and utility billing worker",
+      "dependencies": [
+        "V1-040",
+        "V1-042"
+      ],
+      "authorities": [
+        "API-054-056",
+        "TEST-096-099",
+        "DEPLOY-WORKER-*"
+      ],
+      "include": [
+        "singleton runs, retry, catch-up, property-local scheduling"
+      ],
+      "exclude": [
+        "production scheduler deployment"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-045",
+      "order": 45,
+      "phase": "Billing",
+      "task": "Invoice lifecycle, issuance, adjustments, and void services",
+      "dependencies": [
+        "V1-039",
+        "V1-044"
+      ],
+      "authorities": [
+        "BR-INV-*",
+        "API-050-053",
+        "TEST-053-058"
+      ],
+      "include": [
+        "draft/issue/paid/void transitions and linked corrections"
+      ],
+      "exclude": [
+        "physical deletion"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-046",
+      "order": 46,
+      "phase": "Billing",
+      "task": "Late-payment decision, charge, correction, and allocation boundaries",
+      "dependencies": [
+        "V1-045"
+      ],
+      "authorities": [
+        "BR-INV-051-055",
+        "BR-LATE-*",
+        "API-091",
+        "TEST-123-124",
+        "DL-050"
+      ],
+      "include": [
+        "one final non-compounding decision and explicit linked charge"
+      ],
+      "exclude": [
+        "automatic discretionary decision"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-047",
+      "order": 47,
+      "phase": "Billing",
+      "task": "Invoice, adjustment, late-payment, and billing-run API/UI",
+      "dependencies": [
+        "V1-043",
+        "V1-045",
+        "V1-046"
+      ],
+      "authorities": [
+        "API-050-056",
+        "API-091",
+        "UI-INV-*",
+        "TEST-053-058",
+        "TEST-123-124"
+      ],
+      "include": [
+        "invoice staff workflows and explicit confirmations"
+      ],
+      "exclude": [
+        "payments"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-048",
+      "order": 48,
+      "phase": "Payments",
+      "task": "Payment, FX evidence, and reversal persistence",
+      "dependencies": [
+        "V1-045",
+        "V1-027"
+      ],
+      "authorities": [
+        "BR-PAY-*",
+        "BR-MONEY-*",
+        "DB-PAY-*",
+        "TEST-059",
+        "TEST-067",
+        "TEST-069-074"
+      ],
+      "include": [
+        "money received, confirmed FX, immutable reversal chains"
+      ],
+      "exclude": [
+        "allocation and refund"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-049",
+      "order": 49,
+      "phase": "Payments",
+      "task": "Deterministic payment allocation and reversal services",
+      "dependencies": [
+        "V1-046",
+        "V1-048"
+      ],
+      "authorities": [
+        "BR-PAY-019-040",
+        "API-059-060",
+        "TEST-060-063",
+        "TEST-068"
+      ],
+      "include": [
+        "FIFO proposal, customer designation, concurrency, reversal"
+      ],
+      "exclude": [
+        "negative balances"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-050",
+      "order": 50,
+      "phase": "Payments",
+      "task": "Immutable receipt and reprint services",
+      "dependencies": [
+        "V1-048"
+      ],
+      "authorities": [
+        "BR-RECEIPT-*",
+        "API-092",
+        "TEST-125",
+        "DL-051"
+      ],
+      "include": [
+        "one receipt identity per confirmed payment and auditable reprint"
+      ],
+      "exclude": [
+        "new money event on reprint"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-051",
+      "order": 51,
+      "phase": "Payments",
+      "task": "Customer credit, application, refund, and correction services",
+      "dependencies": [
+        "V1-037",
+        "V1-049"
+      ],
+      "authorities": [
+        "BR-CREDIT-*",
+        "BR-REFUND-*",
+        "API-061-066",
+        "TEST-064-066",
+        "TEST-126"
+      ],
+      "include": [
+        "credit ledger, same-customer application, source-bounded refunds"
+      ],
+      "exclude": [
+        "vendor accounts payable"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-052",
+      "order": 52,
+      "phase": "Payments",
+      "task": "Payment, allocation, receipt, credit, and refund API/UI",
+      "dependencies": [
+        "V1-049",
+        "V1-050",
+        "V1-051"
+      ],
+      "authorities": [
+        "API-057-066",
+        "API-092",
+        "UI-PAY-*",
+        "TEST-059-074",
+        "TEST-125-126"
+      ],
+      "include": [
+        "complete staff money workflow with explicit confirmations"
+      ],
+      "exclude": [
+        "silent financial mutation"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-053",
+      "order": 53,
+      "phase": "Ledger",
+      "task": "Unified read-only Customer Account Ledger API/UI",
+      "dependencies": [
+        "V1-047",
+        "V1-052"
+      ],
+      "authorities": [
+        "BR-LEDGER-*",
+        "API-093",
+        "UI-LEDGER-*",
+        "DL-052"
+      ],
+      "include": [
+        "reconstructed chronological financial position and reconciliation"
+      ],
+      "exclude": [
+        "general ledger or mutation source"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-054",
+      "order": 54,
+      "phase": "Enforcement",
+      "task": "Lease-warning and rent-nonpayment case/event workflows",
+      "dependencies": [
+        "V1-046",
+        "V1-053"
+      ],
+      "authorities": [
+        "BR-LEASE-024-030",
+        "BR-PAY-036-039",
+        "API-067",
+        "API-095",
+        "TEST-075",
+        "TEST-127",
+        "DL-054"
+      ],
+      "include": [
+        "20-day warning and 30-day serious-default history"
+      ],
+      "exclude": [
+        "automatic termination"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-055",
+      "order": 55,
+      "phase": "Closure",
+      "task": "Termination, continued occupancy, and move-out workflows",
+      "dependencies": [
+        "V1-036",
+        "V1-043",
+        "V1-054"
+      ],
+      "authorities": [
+        "BR-LEASE-*",
+        "BR-MOVEOUT-*",
+        "API-068-069",
+        "TEST-076-078"
+      ],
+      "include": [
+        "authorized termination, occupancy closure, final readings and inspection"
+      ],
+      "exclude": [
+        "automatic termination or invented holdover terms"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "database",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-056",
+      "order": 56,
+      "phase": "Closure",
+      "task": "Final settlement calculation, closure, correction, API, and UI",
+      "dependencies": [
+        "V1-051",
+        "V1-055"
+      ],
+      "authorities": [
+        "BR-SETTLE-*",
+        "API-070-072",
+        "UI-079-083",
+        "TEST-079-081"
+      ],
+      "include": [
+        "one settlement, explicit deposit application, refunds, permanent correction history"
+      ],
+      "exclude": [
+        "pre-settlement deposit use"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "financial",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-057",
+      "order": 57,
+      "phase": "Insights",
+      "task": "Audit search, dashboard, reports, and protected export workflows",
+      "dependencies": [
+        "V1-021",
+        "V1-053",
+        "V1-056"
+      ],
+      "authorities": [
+        "API-073-078",
+        "UI-084-090",
+        "SEC-032",
+        "SEC-042"
+      ],
+      "include": [
+        "authorized audit timelines, operational dashboard, reports, exports"
+      ],
+      "exclude": [
+        "audit mutation and customer-data overexposure"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-058",
+      "order": 58,
+      "phase": "Operations",
+      "task": "Administration, operational health, accessibility, and cross-domain navigation UI",
+      "dependencies": [
+        "V1-028",
+        "V1-057"
+      ],
+      "authorities": [
+        "API-079-081",
+        "UI-001-014",
+        "UI-091-103",
+        "TEST-091-095"
+      ],
+      "include": [
+        "configuration, account, health, responsive and failure-state UX"
+      ],
+      "exclude": [
+        "brand decision and unsupported browser guarantees"
+      ],
+      "risk_class": "medium",
+      "acceptance_profile": "api_ui",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-059",
+      "order": 59,
+      "phase": "Operations",
+      "task": "Backup, restore, logging, monitoring, security, and deployment-readiness verification",
+      "dependencies": [
+        "V1-044",
+        "V1-058"
+      ],
+      "authorities": [
+        "TEST-105-111",
+        "SEC-045-069",
+        "DEPLOY-*"
+      ],
+      "include": [
+        "placeholder-safe deployment validation, encrypted-backup/restore drills, least-privilege and observability tests"
+      ],
+      "exclude": [
+        "actual production secrets, deployment, remote access, or unapproved RPO/RTO"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "release",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    },
+    {
+      "id": "V1-060",
+      "order": 60,
+      "phase": "Release",
+      "task": "Full-system v1 end-to-end, reconciliation, security, and release-candidate gate",
+      "dependencies": [
+        "V1-020",
+        "V1-024",
+        "V1-026",
+        "V1-032",
+        "V1-038",
+        "V1-047",
+        "V1-052",
+        "V1-053",
+        "V1-054",
+        "V1-056",
+        "V1-057",
+        "V1-058",
+        "V1-059"
+      ],
+      "authorities": [
+        "DOC-001-010",
+        "TEST-001-135"
+      ],
+      "include": [
+        "complete synthetic lifecycle, financial reconciliation, authorization, recovery, accessibility, performance sanity, traceability and release evidence"
+      ],
+      "exclude": [
+        "production deployment, real customer data, actual production credentials, unresolved Owner decisions"
+      ],
+      "risk_class": "high",
+      "acceptance_profile": "release",
+      "authorization": "durable_v1",
+      "status": "approved_ready"
+    }
   ]
 }
