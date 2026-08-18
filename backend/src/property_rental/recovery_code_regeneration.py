@@ -251,9 +251,13 @@ class RecoveryCodeRegenerationService:
     def regenerate(self, request: RecoveryCodeRegenerationRequest) -> RecoveryCodePresentation:
         """Invalidate one prior set and persist its replacement before one-time return."""
         occurred_at = self._clock()
+        authorized: bool | None = None
         try:
             authorized = self._authorizer.authorize(request)
         except Exception:
+            pass
+
+        if authorized is None:
             try:
                 self._record(
                     request=request,
@@ -266,61 +270,45 @@ class RecoveryCodeRegenerationService:
                     resulting_state="unchanged",
                 )
             except Exception:
-                raise RecoveryCodeRegenerationRejected(
-                    "recovery-code regeneration rejected"
-                ) from None
+                pass
             raise RecoveryCodeRegenerationRejected("recovery-code regeneration rejected") from None
-        if not authorized:
-            try:
-                self._record(
-                    request=request,
-                    occurred_at=occurred_at,
-                    replacement_set_id=None,
-                    code_count=0,
-                    outcome="rejected",
-                    reason="authorization_denied",
-                    previous_state="unresolved",
-                    resulting_state="unchanged",
-                )
-            except Exception:
-                raise RecoveryCodeRegenerationRejected(
-                    "recovery-code regeneration rejected"
-                ) from None
-            raise RecoveryCodeRegenerationRejected("recovery-code regeneration rejected")
 
+        if authorized:
+            return self._regenerate_authorized(request, occurred_at)
+        try:
+            self._record(
+                request=request,
+                occurred_at=occurred_at,
+                replacement_set_id=None,
+                code_count=0,
+                outcome="rejected",
+                reason="authorization_denied",
+                previous_state="unresolved",
+                resulting_state="unchanged",
+            )
+        except Exception:
+            pass
+        raise RecoveryCodeRegenerationRejected("recovery-code regeneration rejected") from None
+
+    def _regenerate_authorized(
+        self,
+        request: RecoveryCodeRegenerationRequest,
+        occurred_at: datetime,
+    ) -> RecoveryCodePresentation:
+        set_id: UUID | None = None
+        plaintext_codes: tuple[str, ...] | None = None
         try:
             set_id = self._identifier_factory()
-            plaintext_codes: list[str] = []
-            verifier_records: list[RecoveryCodeVerifierRecord] = []
-            for _ in range(self._code_count):
-                plaintext = self._generator.generate().get_secret_value()
-                if plaintext in plaintext_codes:
-                    raise RuntimeError("recovery-code generator returned duplicate material")
-                verifier = self._verifier_provider.encode(plaintext)
-                plaintext_codes.append(plaintext)
-                verifier_records.append(
-                    RecoveryCodeVerifierRecord(
-                        code_id=self._identifier_factory(),
-                        verifier_encoding=verifier.verifier_encoding,
-                        algorithm=verifier.algorithm,
-                        work_factor_metadata=verifier.work_factor_metadata,
-                    )
-                )
-            replacement = RecoveryCodeSetRecord(
-                set_id=set_id,
-                target_actor_id=request.target_actor_id,
-                issued_by_actor_id=request.authorized_actor_id,
-                correlation_id=request.correlation_id,
-                provenance=request.provenance,
-                codes=tuple(verifier_records),
-            )
-            self._repository.replace_atomically(request.prior_set_id, replacement, occurred_at)
+            plaintext_codes = self._replace_atomically(request, occurred_at, set_id)
         except Exception:
+            pass
+
+        if set_id is None or plaintext_codes is None:
             try:
                 self._record(
                     request=request,
                     occurred_at=occurred_at,
-                    replacement_set_id=locals().get("set_id"),
+                    replacement_set_id=set_id,
                     code_count=0,
                     outcome="failed",
                     reason="regeneration_failed",
@@ -328,8 +316,9 @@ class RecoveryCodeRegenerationService:
                     resulting_state="unchanged",
                 )
             except Exception:
-                raise RecoveryCodeRegenerationFailed("recovery-code regeneration failed") from None
+                pass
             raise RecoveryCodeRegenerationFailed("recovery-code regeneration failed") from None
+
         try:
             self._record(
                 request=request,
@@ -343,7 +332,43 @@ class RecoveryCodeRegenerationService:
             )
         except Exception:
             pass
-        return RecoveryCodePresentation(set_id=set_id, _plaintext_codes=tuple(plaintext_codes))
+        return RecoveryCodePresentation(
+            set_id=set_id,
+            _plaintext_codes=plaintext_codes,
+        )
+
+    def _replace_atomically(
+        self,
+        request: RecoveryCodeRegenerationRequest,
+        occurred_at: datetime,
+        set_id: UUID,
+    ) -> tuple[str, ...]:
+        plaintext_codes: list[str] = []
+        verifier_records: list[RecoveryCodeVerifierRecord] = []
+        for _ in range(self._code_count):
+            plaintext = self._generator.generate().get_secret_value()
+            if plaintext in plaintext_codes:
+                raise RuntimeError("recovery-code generator returned duplicate material")
+            verifier = self._verifier_provider.encode(plaintext)
+            plaintext_codes.append(plaintext)
+            verifier_records.append(
+                RecoveryCodeVerifierRecord(
+                    code_id=self._identifier_factory(),
+                    verifier_encoding=verifier.verifier_encoding,
+                    algorithm=verifier.algorithm,
+                    work_factor_metadata=verifier.work_factor_metadata,
+                )
+            )
+        replacement = RecoveryCodeSetRecord(
+            set_id=set_id,
+            target_actor_id=request.target_actor_id,
+            issued_by_actor_id=request.authorized_actor_id,
+            correlation_id=request.correlation_id,
+            provenance=request.provenance,
+            codes=tuple(verifier_records),
+        )
+        self._repository.replace_atomically(request.prior_set_id, replacement, occurred_at)
+        return tuple(plaintext_codes)
 
     def _record(
         self,

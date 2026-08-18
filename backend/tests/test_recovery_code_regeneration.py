@@ -1,5 +1,6 @@
 """Focused tests for atomic recovery-code regeneration orchestration."""
 
+import sys
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from uuid import UUID
@@ -68,6 +69,11 @@ class StubVerifierProvider:
         raise AssertionError("regeneration must not consume recovery codes")
 
 
+class FailingVerifierProvider(StubVerifierProvider):
+    def encode(self, recovery_code: str) -> RecoveryCodeVerifierMaterial:
+        raise RuntimeError(f"verifier failed for {recovery_code}")
+
+
 class SequenceEntropySource:
     def __init__(self) -> None:
         self.next_byte = 0
@@ -108,6 +114,16 @@ class RecordingAuditSink:
 
     def record(self, evidence: RecoveryCodeRegenerationAuditEvidence) -> None:
         self.evidence.append(evidence)
+
+
+class ExceptionObservingAuditSink(RecordingAuditSink):
+    def __init__(self) -> None:
+        super().__init__()
+        self.active_exceptions: list[BaseException | None] = []
+
+    def record(self, evidence: RecoveryCodeRegenerationAuditEvidence) -> None:
+        self.active_exceptions.append(sys.exception())
+        super().record(evidence)
 
 
 class FailingAuditSink:
@@ -277,7 +293,7 @@ def test_unauthorized_regeneration_is_rejected_before_secret_generation() -> Non
 
 def test_authorization_failure_is_a_generic_pre_generation_rejection() -> None:
     generator = StubGenerator(["must-not-be-generated"])
-    audit_sink = RecordingAuditSink()
+    audit_sink = ExceptionObservingAuditSink()
     service = RecoveryCodeRegenerationService(
         authorizer=FailingAuthorizer(),
         generator=generator,
@@ -293,7 +309,9 @@ def test_authorization_failure_is_a_generic_pre_generation_rejection() -> None:
 
     assert str(raised.value) == "recovery-code regeneration rejected"
     assert raised.value.__cause__ is None
+    assert raised.value.__context__ is None
     assert raised.value.__suppress_context__ is True
+    assert audit_sink.active_exceptions == [None]
     assert generator.calls == 0
     assert audit_sink.evidence[0].reason == "authorization_unavailable"
     assert audit_sink.evidence[0].outcome == "rejected"
@@ -337,6 +355,7 @@ def test_replacement_persistence_failure_is_generic_and_preserves_prior_set() ->
 
     assert str(raised.value) == "recovery-code regeneration failed"
     assert raised.value.__cause__ is None
+    assert raised.value.__context__ is None
     assert raised.value.__suppress_context__ is True
     assert secret not in repr(raised.value)
     assert audit_sink.evidence == [
@@ -374,7 +393,65 @@ def test_failure_audit_unavailability_preserves_one_generic_closed_failure() -> 
 
     assert str(raised.value) == "recovery-code regeneration failed"
     assert raised.value.__cause__ is None
+    assert raised.value.__context__ is None
     assert secret not in repr(raised.value)
+
+
+def test_verifier_failure_does_not_chain_generated_plaintext() -> None:
+    secret = "verifier-provider-secret"
+    audit_sink = ExceptionObservingAuditSink()
+    service = RecoveryCodeRegenerationService(
+        authorizer=StubAuthorizer(),
+        generator=StubGenerator([secret]),
+        verifier_provider=FailingVerifierProvider(),
+        repository=RecordingRepository(),
+        audit_sink=audit_sink,
+        code_count=1,
+    )
+
+    with pytest.raises(RecoveryCodeRegenerationFailed) as raised:
+        service.regenerate(REQUEST)
+
+    assert str(raised.value) == "recovery-code regeneration failed"
+    assert raised.value.__cause__ is None
+    assert raised.value.__context__ is None
+    assert secret not in repr(raised.value)
+    assert audit_sink.active_exceptions == [None]
+    traceback = raised.value.__traceback__
+    while traceback is not None:
+        if (
+            traceback.tb_frame.f_globals.get("__name__")
+            == "property_rental.recovery_code_regeneration"
+        ):
+            assert secret not in repr(traceback.tb_frame.f_locals)
+        traceback = traceback.tb_next
+
+
+def test_identifier_failure_is_generic_and_audited_without_active_exception() -> None:
+    audit_sink = ExceptionObservingAuditSink()
+
+    def fail_identifier() -> UUID:
+        raise RuntimeError("identifier provider failed with internal detail")
+
+    service = RecoveryCodeRegenerationService(
+        authorizer=StubAuthorizer(),
+        generator=StubGenerator(["must-not-be-generated"]),
+        verifier_provider=StubVerifierProvider(),
+        repository=RecordingRepository(),
+        audit_sink=audit_sink,
+        identifier_factory=fail_identifier,
+        code_count=1,
+    )
+
+    with pytest.raises(RecoveryCodeRegenerationFailed) as raised:
+        service.regenerate(REQUEST)
+
+    assert str(raised.value) == "recovery-code regeneration failed"
+    assert raised.value.__cause__ is None
+    assert raised.value.__context__ is None
+    assert audit_sink.active_exceptions == [None]
+    assert audit_sink.evidence[0].reason == "regeneration_failed"
+    assert audit_sink.evidence[0].replacement_set_id is None
 
 
 def test_duplicate_replacement_material_fails_before_prior_set_invalidation() -> None:

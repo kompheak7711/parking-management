@@ -1367,6 +1367,22 @@
       "notes": "Audit-sink unavailability after a persistence failure remains one generic closed failure without exposing replacement secrets or internal detail."
     },
     {
+      "test_id": "test_verifier_failure_does_not_chain_generated_plaintext",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "Verifier failure returns a generic exception with no cause, context, traceback-local, plaintext, or verifier-material disclosure."
+    },
+    {
+      "test_id": "test_identifier_failure_is_generic_and_audited_without_active_exception",
+      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_recovery_code_regeneration.py",
+      "status": "implemented",
+      "notes": "Replacement-set identifier failure remains generic, is audited without an active provider exception, and cannot expose internal detail."
+    },
+    {
       "test_id": "test_duplicate_replacement_material_fails_before_prior_set_invalidation",
       "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
       "test_level": "security",
