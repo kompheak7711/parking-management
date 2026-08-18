@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "candidates": [
+    {
+      "after_phase": "Phase 2O",
+      "phase": "Phase 2P",
+      "task": "Implement the bounded Authentication Session Revocation Orchestration Foundation",
+      "include": [
+        "compose provider-neutral revocation triggers for password reset, account disablement, and material privilege reduction with the published browser-session boundary",
+        "preserve fail-closed immutable secret-free audit evidence and add focused deterministic tests",
+        "add bounded traceability to the already approved session-revocation requirements without extending policy"
+      ],
+      "exclude": [
+        "public API or UI, cookie transport, MFA or credential mutation, recovery execution, bootstrap, production operations, canonical changes, and policy invention"
+      ],
+      "risk_class": "high",
+      "status": "approved_ready",
+      "authorities": [
+        "PR-CAP-009",
+        "DB-AUTH-004",
+        "API-097",
+        "TEST-131",
+        "TEST-132",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
+      "protected_operation": false
+    }
+  ]
+}

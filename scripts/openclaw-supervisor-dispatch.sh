@@ -6,6 +6,7 @@ state_dir="${PROPERTY_RENTAL_DISPATCH_STATE_DIR:-/Users/sokompheak/.openclaw/sta
 openclaw_bin="${PROPERTY_RENTAL_OPENCLAW_BIN:-openclaw}"
 max_cycles="${PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES:-6}"
 reconciler="${PROPERTY_RENTAL_RECONCILER_BIN:-$repo/scripts/openclaw-reconcile-published-state.sh}"
+selector="${PROPERTY_RENTAL_SELECTOR_BIN:-$repo/scripts/openclaw-select-next-candidate.sh}"
 local_model="${PROPERTY_RENTAL_LOCAL_SUPERVISOR_MODEL:-ollama/qwen35-hermes:latest}"
 codex_model="${PROPERTY_RENTAL_CODEX_SUPERVISOR_MODEL:-openai/gpt-5.6-sol}"
 usage_file="$state_dir/model-usage.jsonl"
@@ -57,6 +58,11 @@ while [ "$cycle" -lt "$max_cycles" ]; do
 
   if [ "$(printf '%s' "$preflight" | jq -r '.state_issue')" = published_compact_state_reconciliation_required ]; then
     "$reconciler"
+    cycle=$((cycle + 1))
+    continue
+  fi
+  if [ "$(printf '%s' "$preflight" | jq -r '.state_issue')" = authorized_candidate_selection_required ]; then
+    "$selector"
     cycle=$((cycle + 1))
     continue
   fi

@@ -161,6 +161,8 @@ def main() -> None:
             continue
         if exhausted.get("status") != "repair_exhausted":
             continue
+        if exhausted.get("next_action") != next_action:
+            continue
         signature = str(exhausted.get("attempt_key") or exhausted_path.stem)
         emit_once(
             ledger,
@@ -217,6 +219,18 @@ def main() -> None:
         )
     else:
         ledger.pop("state_reconciliation", None)
+
+    if state_issue == "handoff_missing":
+        emit_once(
+            ledger,
+            "handoff_missing",
+            f"{phase}:{head}:{next_action}",
+            "HANDOFF_MISSING — Property Rental published work has durable authorization "
+            "but no unique safe structured successor. "
+            f"Exact next action: {next_action}",
+        )
+    else:
+        ledger.pop("handoff_missing", None)
 
     if status == "published":
         published_commit = str(state.get("commit") or head)[:7]

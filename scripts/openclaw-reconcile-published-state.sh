@@ -2,7 +2,6 @@
 set -eu
 
 repo="${PROPERTY_RENTAL_REPO:-/Users/sokompheak/Development/property-rental-management}"
-workflow_id="${PROPERTY_RENTAL_GITHUB_WORKFLOW_ID:-334806147}"
 skip_remote="${PROPERTY_RENTAL_RECONCILE_SKIP_REMOTE:-false}"
 cd "$repo"
 
@@ -48,19 +47,4 @@ git commit -m "ops: reconcile published automation state"
 git push
 
 [ "$skip_remote" = true ] && exit 0
-published_head="$(git rev-parse HEAD)"
-attempt=0
-while [ "$attempt" -lt 120 ]; do
-  conclusion="$(gh api -X GET "repos/kompheak7711/property-rental-management/actions/workflows/$workflow_id/runs" \
-    -f branch=implementation/foundation -f per_page=20 \
-    --jq ".workflow_runs[] | select(.head_sha == \"$published_head\") | [.status, (.conclusion // \"\")] | @tsv" \
-    | head -1)"
-  case "$conclusion" in
-    completed*success) exit 0 ;;
-    completed*) echo "GitHub Actions rejected deterministic state reconciliation: $conclusion" >&2; exit 74 ;;
-  esac
-  attempt=$((attempt + 1))
-  sleep 15
-done
-echo "Timed out waiting for GitHub Actions on deterministic state reconciliation" >&2
-exit 75
+"$repo/scripts/openclaw-wait-for-ci.sh" "$(git rev-parse HEAD)"

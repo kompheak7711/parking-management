@@ -10,6 +10,7 @@ next_action="$recorded_next_action"
 candidate_task="$(jq -r '.next_candidate.task // ""' ops/STATE.json)"
 candidate_phase="$(jq -r '.next_candidate.phase // ""' ops/STATE.json)"
 candidate_status="$(jq -r '.next_candidate.status // "unknown"' ops/STATE.json)"
+candidate_is_object="$(jq -r '.next_candidate | type == "object"' ops/STATE.json)"
 approval_status="$(jq -r '.approval.status // "unknown"' ops/STATE.json)"
 blocker_count="$(jq -r '(.blockers // []) | length' ops/STATE.json)"
 repair_attempts="$(jq -r '(.repair.attempts // 0) | if type == "number" and floor == . and . >= 0 then . else 0 end' ops/STATE.json)"
@@ -27,11 +28,19 @@ durable_v1_authorization=false
 if grep -Fq 'Remaining v1 application tranches are authorized when bounded by canonical documents' ops/QUEUE.md; then
   durable_v1_authorization=true
 fi
-unselected_placeholder=false
-if [ "$candidate_status" = not_approved ] && [ "$candidate_phase" = unselected ] \
-  && [ "$candidate_task" = 'No subsequent implementation candidate has been selected or authorized.' ]; then
-  unselected_placeholder=true
+candidate_is_concrete=false
+if [ "$candidate_is_object" = true ] && [ -n "$candidate_phase" ] \
+  && [ "$candidate_phase" != unselected ] && [ -n "$candidate_task" ]; then
+  candidate_is_concrete=true
 fi
+queue_candidate='null'
+if [ -f ops/AUTONOMOUS_QUEUE.json ]; then
+  queue_candidate="$(jq -c --arg phase "$(jq -r '.phase // ""' ops/STATE.json)" '
+    [.candidates[]? | select(.after_phase == $phase and .status == "approved_ready")]
+    | if length == 1 then .[0] else null end
+  ' ops/AUTONOMOUS_QUEUE.json)"
+fi
+queue_candidate_available="$(printf '%s' "$queue_candidate" | jq -r 'type == "object" and (.protected_operation != true)')"
 
 actionable=false
 normalized=false
@@ -70,10 +79,16 @@ if [ "$blocker_count" -eq 0 ]; then
     state_issue="published_next_candidate_dispatch_required"
   fi
   if [ "$normalized" = false ] && [ "$status" = published ] \
-    && [ "$durable_v1_authorization" = true ] && [ "$unselected_placeholder" = true ]; then
-    next_action="Repair the missing authorized handoff: select the smallest unambiguous next bounded v1 candidate from the recorded canonical sequence, mark it approved_ready under durable authorization, and dispatch it immediately. If selection would require unresolved policy or a protected operation, record that exact Owner decision and stop."
-    normalized=true
-    state_issue="authorized_candidate_selection_required"
+    && [ "$durable_v1_authorization" = true ] && [ "$candidate_is_concrete" = false ]; then
+    if [ "$queue_candidate_available" = true ]; then
+      next_action="Materialize the exact structured approved successor from ops/AUTONOMOUS_QUEUE.json without a model, then dispatch it immediately."
+      normalized=true
+      state_issue="authorized_candidate_selection_required"
+    else
+      next_action="No unique safe structured successor exists for the published phase. Record an explicit bounded candidate or protected Owner-decision reason."
+      normalized=true
+      state_issue="handoff_missing"
+    fi
   fi
   if [ "$normalized" = false ]; then
     case "$status:$approval_status" in
@@ -134,7 +149,8 @@ jq -cn \
   --argjson repair_attempts "$repair_attempts" \
   --argjson repair_max_attempts "$repair_max_attempts" \
   --argjson durable_v1_authorization "$durable_v1_authorization" \
-  --argjson unselected_placeholder "$unselected_placeholder" \
+  --argjson candidate_is_concrete "$candidate_is_concrete" \
+  --argjson queue_candidate "$queue_candidate" \
   --argjson normalized "$normalized" \
   --argjson actionable "$actionable" \
-  '{head: $head, status: $status, active_cycle: $active_cycle, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, repair_failure: $repair_failure, normalized: $normalized, blockers: $blockers, repair_attempts: $repair_attempts, repair_max_attempts: $repair_max_attempts, durable_v1_authorization: $durable_v1_authorization, unselected_placeholder: $unselected_placeholder, worktree: $worktree, actionable: $actionable}'
+  '{head: $head, status: $status, active_cycle: $active_cycle, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, repair_failure: $repair_failure, normalized: $normalized, blockers: $blockers, repair_attempts: $repair_attempts, repair_max_attempts: $repair_max_attempts, durable_v1_authorization: $durable_v1_authorization, candidate_is_concrete: $candidate_is_concrete, queue_candidate: $queue_candidate, worktree: $worktree, actionable: $actionable}'

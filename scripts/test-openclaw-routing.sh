@@ -14,6 +14,8 @@ make_repo() {
   mkdir -p "$repo/scripts" "$repo/ops" "$state_dir"
   cp "$source_repo/scripts/openclaw-supervisor-dispatch.sh" "$repo/scripts/"
   cp "$source_repo/scripts/openclaw-hermes-task.sh" "$repo/scripts/"
+  cp "$source_repo/scripts/openclaw-select-next-candidate.sh" "$repo/scripts/"
+  cp "$source_repo/scripts/openclaw-wait-for-ci.sh" "$repo/scripts/"
   cp "$source_repo/scripts/openclaw-supervisor-preflight.sh" "$repo/scripts/"
   cp "$source_repo/scripts/openclaw-task-packet.sh" "$repo/scripts/"
   cp "$source_repo/ops/OPENCLAW_SUPERVISOR_PROMPT.md" "$repo/ops/"
@@ -24,6 +26,7 @@ make_repo() {
     >"$repo/ops/STATE.json"
   printf '%s\n' '# Test' >"$repo/ops/NOW.md"
   printf '%s\n' '# Test' >"$repo/ops/QUEUE.md"
+  printf '%s\n' '{"schema_version":1,"candidates":[]}' >"$repo/ops/AUTONOMOUS_QUEUE.json"
   git -C "$repo" init -q
   git -C "$repo" add .
   git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm test
@@ -208,15 +211,29 @@ make_repo authorized_placeholder high 'completed tranche action'
 placeholder_repo="$test_root/authorized_placeholder/repo"
 printf '%s\n' 'Remaining v1 application tranches are authorized when bounded by canonical documents 001-010.' >"$placeholder_repo/ops/QUEUE.md"
 jq '.status="published"
+  | .phase="Phase 2D"
   | .approval={status:"approved_complete"}
   | .next_action="Owner selects the next candidate."
   | .next_candidate={phase:"unselected",task:"No subsequent implementation candidate has been selected or authorized.",status:"not_approved",risk_class:"high",authorities:[]}' \
   "$placeholder_repo/ops/STATE.json" >"$placeholder_repo/ops/STATE.json.new"
 mv "$placeholder_repo/ops/STATE.json.new" "$placeholder_repo/ops/STATE.json"
+printf '%s\n' '{"schema_version":1,"candidates":[{"after_phase":"Phase 2D","phase":"Phase 2E","task":"bounded successor","status":"approved_ready","risk_class":"high","protected_operation":false}]}' >"$placeholder_repo/ops/AUTONOMOUS_QUEUE.json"
 placeholder_preflight="$(PROPERTY_RENTAL_REPO="$placeholder_repo" "$placeholder_repo/scripts/openclaw-supervisor-preflight.sh")"
 [ "$(printf '%s' "$placeholder_preflight" | jq -r '.actionable')" = true ]
 [ "$(printf '%s' "$placeholder_preflight" | jq -r '.state_issue')" = authorized_candidate_selection_required ]
-printf '%s' "$placeholder_preflight" | jq -e '.next_action | contains("smallest unambiguous next bounded v1 candidate")' >/dev/null
+printf '%s' "$placeholder_preflight" | jq -e '.queue_candidate.phase == "Phase 2E"' >/dev/null
+
+for variant in null missing alternate; do
+  case "$variant" in
+    null) filter='.next_candidate=null | .next_action="Await an explicitly bounded next candidate; do not infer or broaden scope."' ;;
+    missing) filter='del(.next_candidate) | del(.next_action)' ;;
+    alternate) filter='.next_candidate={phase:"unselected",task:"Choose later",status:"not_approved"} | .next_action="Nothing else selected."' ;;
+  esac
+  jq "$filter" "$placeholder_repo/ops/STATE.json" >"$placeholder_repo/ops/STATE.json.new"
+  mv "$placeholder_repo/ops/STATE.json.new" "$placeholder_repo/ops/STATE.json"
+  variant_preflight="$(PROPERTY_RENTAL_REPO="$placeholder_repo" "$placeholder_repo/scripts/openclaw-supervisor-preflight.sh")"
+  [ "$(printf '%s' "$variant_preflight" | jq -r '.state_issue')" = authorized_candidate_selection_required ]
+done
 
 jq '.next_candidate={phase:"Production",task:"Provision actual production secrets",status:"not_approved",risk_class:"high"}' \
   "$placeholder_repo/ops/STATE.json" >"$placeholder_repo/ops/STATE.json.new"
@@ -224,12 +241,13 @@ mv "$placeholder_repo/ops/STATE.json.new" "$placeholder_repo/ops/STATE.json"
 protected_candidate_preflight="$(PROPERTY_RENTAL_REPO="$placeholder_repo" "$placeholder_repo/scripts/openclaw-supervisor-preflight.sh")"
 [ "$(printf '%s' "$protected_candidate_preflight" | jq -r '.actionable')" = false ]
 
-jq '.next_candidate={phase:"unselected",task:"No subsequent implementation candidate has been selected or authorized.",status:"not_approved",risk_class:"high",authorities:[]}' \
+jq '.next_candidate=null' \
   "$placeholder_repo/ops/STATE.json" >"$placeholder_repo/ops/STATE.json.new"
 mv "$placeholder_repo/ops/STATE.json.new" "$placeholder_repo/ops/STATE.json"
-printf '%s\n' '# No durable authorization' >"$placeholder_repo/ops/QUEUE.md"
-unauthorized_placeholder_preflight="$(PROPERTY_RENTAL_REPO="$placeholder_repo" "$placeholder_repo/scripts/openclaw-supervisor-preflight.sh")"
-[ "$(printf '%s' "$unauthorized_placeholder_preflight" | jq -r '.actionable')" = false ]
+printf '%s\n' '{"schema_version":1,"candidates":[]}' >"$placeholder_repo/ops/AUTONOMOUS_QUEUE.json"
+missing_handoff_preflight="$(PROPERTY_RENTAL_REPO="$placeholder_repo" "$placeholder_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$missing_handoff_preflight" | jq -r '.actionable')" = false ]
+[ "$(printf '%s' "$missing_handoff_preflight" | jq -r '.state_issue')" = handoff_missing ]
 
 make_repo stale_published high 'prohibited unapproved deployment tranche'
 stale_repo="$test_root/stale_published/repo"

@@ -57,6 +57,13 @@ USAGE_LEDGER = Path(
         / ".openclaw/state/property-rental-supervisor-dispatch/model-usage.jsonl",
     )
 )
+REPAIR_EXHAUSTED_DIR = Path(
+    os.environ.get(
+        "PROPERTY_RENTAL_REPAIR_EXHAUSTED_DIR",
+        Path.home()
+        / ".openclaw/state/property-rental-supervisor-dispatch/repair-exhausted",
+    )
+)
 
 
 def recent_model_usage(now: Optional[float] = None) -> list[int]:
@@ -129,9 +136,29 @@ def main() -> None:
     state_issue = preflight.get("state_issue")
     status = state.get("status", "unknown")
     candidate = state.get("next_candidate") or {}
-    if preflight.get("actionable") is True:
+    repair_exhausted = False
+    for exhausted_path in REPAIR_EXHAUSTED_DIR.glob("*.json"):
+        try:
+            exhausted = json.loads(exhausted_path.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        if (
+            exhausted.get("status") == "repair_exhausted"
+            and exhausted.get("next_action") == next_action
+        ):
+            repair_exhausted = True
+            break
+    if repair_exhausted:
+        automation_state = "REPAIR_EXHAUSTED"
+        idle_reason = "A bounded repair fingerprint exhausted its permitted attempts"
+    elif state_issue == "handoff_missing":
+        automation_state = "HANDOFF_MISSING"
+        idle_reason = "Durable authorization exists, but no unique safe structured successor is recorded"
+    elif preflight.get("actionable") is True:
+        automation_state = "AUTHORIZED_WORK_QUEUED"
         idle_reason = "Approved work is active or queued"
     elif state_issue == "published_compact_state_reconciliation_required":
+        automation_state = "AUTHORIZED_WORK_QUEUED"
         idle_reason = "Published compact state requires reconciliation"
     elif status in {
         "approved_ready",
@@ -145,17 +172,23 @@ def main() -> None:
         "discrepancy",
         "repair_required",
     }:
+        automation_state = "AUTHORIZED_WORK_QUEUED"
         idle_reason = (
             "Bounded automatic repair is active or queued"
             if state_issue == "bounded_automatic_repair_authorized"
             else "Approved work is active or queued"
         )
     elif candidate.get("status") == "not_approved" or "approval" in next_action.lower():
+        automation_state = "WAITING_FOR_OWNER"
         idle_reason = "Intentionally waiting for owner approval"
     elif state.get("blockers"):
+        automation_state = "WAITING_FOR_OWNER"
         idle_reason = "Blocked; owner attention may be required"
     else:
+        automation_state = "IDLE"
         idle_reason = "No actionable work is recorded"
+    if running_ms:
+        automation_state = "WORKING"
 
     last_run = (
         "never"
@@ -193,6 +226,7 @@ def main() -> None:
     )
     print(f"Last meaningful state update: {state.get('timestamp', 'Not recorded')}")
     print(f"Model usage in last 24 hours: {token_text}")
+    print(f"Workflow state: {automation_state}")
     print(f"Reason idle: {idle_reason}")
     print(f"Blockers: {'None' if not blockers else '; '.join(map(str, blockers))}")
     print(f"Exact next action: {next_action}")
