@@ -124,3 +124,4 @@ frontend-audit:
 automation-test:
 	python3 scripts/validate-v1-roadmap.py
 	./scripts/test-openclaw-routing.sh
+	./scripts/test-openclaw-visibility-watchdog.sh

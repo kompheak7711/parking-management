@@ -222,8 +222,9 @@ destructive data operations, actual production secrets or credentials, productio
 deployment, remote access, history rewriting, suspected secret exposure, or the original
 approved scope.
 
-A separate model-free watchdog sends Telegram only for a new publication or approval
-request, a stalled approved tranche, an unhealthy supervisor, or recovery. Identical
+A separate model-free watchdog sends Telegram after every newly published roadmap tranche,
+including the verified commit, roadmap progress, and exact next action. It also reports an
+approval request, a stalled approved tranche, an unhealthy supervisor, or recovery. Identical
 events are deduplicated. The daily 08:00 Asia/Phnom_Penh report includes automation
 health, last check and state update, repository synchronization, 24-hour model usage,
 the reason for being idle, blockers, commits, and the exact next owner action.

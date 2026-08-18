@@ -235,6 +235,19 @@ def main() -> None:
     if status == "published":
         published_commit = str(state.get("commit") or head)[:7]
         signature = f"{phase}:{published_commit}"
+        roadmap = state.get("roadmap") or {}
+        roadmap_id = str(roadmap.get("current_id") or "unrecorded")
+        roadmap_total = roadmap.get("total")
+        roadmap_progress = ""
+        try:
+            roadmap_data = json.loads((REPO / "ops/V1_ROADMAP.json").read_text())
+            tranches = roadmap_data.get("tranches") or []
+            complete = sum(item.get("status") == "complete" for item in tranches)
+            total = int(roadmap_total or roadmap_data.get("total_tranches") or len(tranches))
+            roadmap_progress = f" Roadmap progress: {complete}/{total} complete; current {roadmap_id}."
+        except (OSError, TypeError, ValueError, json.JSONDecodeError):
+            if roadmap_total:
+                roadmap_progress = f" Roadmap current: {roadmap_id} of {roadmap_total}."
         approval_waiting = (
             candidate.get("status") == "not_approved"
             or "approval" in next_action.lower()
@@ -248,7 +261,9 @@ def main() -> None:
             ledger,
             "publication",
             signature,
-            f"PUBLISHED — Property Rental {phase} is verified and published at {published_commit}.{suffix}",
+            f"PHASE_COMPLETED — Property Rental {phase} is independently verified, "
+            f"committed, pushed, and published at {published_commit}."
+            f"{roadmap_progress}{suffix}",
         )
 
     if status in {
