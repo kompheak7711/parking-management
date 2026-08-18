@@ -2,34 +2,40 @@
   "schema_version": 1,
   "phase": "Phase 2O",
   "tranche": "Recovery-Code Regeneration Persistence Orchestration Foundation",
-  "task": "Implement the bounded Recovery-Code Regeneration Persistence Orchestration Foundation",
+  "task": "Independently verify and publish the bounded Recovery-Code Regeneration Persistence Orchestration Foundation",
   "status": "published",
   "active_cycle": "phase-2o-recovery-code-regeneration-persistence-orchestration-foundation",
   "branch": "implementation/foundation",
-  "commit": "f4ebcc92a2f7dc9f39066f0b8fa5aed153849077",
-  "timestamp": "2026-08-18T03:47:54Z",
+  "commit": "fba196df3aa51ce5ca8816ff7af22574a2d21215",
+  "timestamp": "2026-08-18T04:19:50Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
     "basis": "owner-approved exact bounded Phase 2O candidate and durable remaining-v1 authorization",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "publication": {
-    "commit": null,
+    "commit": "f4ebcc92a2f7dc9f39066f0b8fa5aed153849077",
+    "corrective_commit": "fba196df3aa51ce5ca8816ff7af22574a2d21215",
     "subject": "feat: add recovery code regeneration foundation",
     "upstream": "origin/implementation/foundation",
-    "local_upstream_remote_match": false,
-    "github_actions_run": null,
-    "github_actions_status": "not_run",
-    "uncommitted_paths": [
+    "local_upstream_remote_match": true,
+    "github_actions_run": 32098622618,
+    "github_actions_status": "success",
+    "committed_paths": [
       "backend/src/property_rental/recovery_code_regeneration.py",
       "backend/tests/test_migrations.py",
       "backend/tests/test_recovery_code_regeneration.py",
       "backend/tests/test_traceability.py",
       "ops/NOW.md",
       "ops/STATE.json",
+      "ops/traceability.json"
+    ],
+    "corrective_paths": [
+      "backend/src/property_rental/recovery_code_regeneration.py",
+      "backend/tests/test_recovery_code_regeneration.py",
       "ops/traceability.json"
     ]
   },
@@ -52,15 +58,16 @@
     "compact state"
   ],
   "tests": [
-    "focused regeneration and traceability checks passed 27",
+    "focused regeneration and traceability checks passed 29",
     "format, lint, and strict typecheck passed",
-    "backend 195 passed with 53 expected dedicated-gate skips",
+    "backend 197 passed with 53 expected dedicated-gate skips",
     "frontend 3 passed",
     "backend/frontend builds and backend import passed",
     "make database-test passed 53 on real PostgreSQL",
     "make automation-test passed",
     "deployment, dependency, traceability, scope, secret, and canonical-integrity gates passed",
-    "independent review findings corrected and final re-review passed with no blockers"
+    "independent review findings corrected and final re-review passed with no blockers",
+    "GitHub Actions run 32098622618 passed all four jobs for the security correction"
   ],
   "relevant_docs": [
     "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-009",
@@ -70,34 +77,10 @@
     "docs/008_SECURITY_MODEL.md: SEC-071 and SEC-075",
     "docs/010_DECISION_LOG.md: DL-058"
   ],
-  "next_candidate": {
-    "phase": "Phase 2O",
-    "task": "Independently verify and publish the bounded Recovery-Code Regeneration Persistence Orchestration Foundation",
-    "include": [
-      "review exactly the seven recorded uncommitted paths against the routed authorities and preserved exclusions",
-      "rerun all publication gates and verify the exact staged path set before committing",
-      "publish only the verified Phase 2O tranche and reconcile compact state after remote CI passes"
-    ],
-    "exclude": [
-      "additional implementation or scope expansion",
-      "public API or UI, account or MFA mutation, session revocation, rate limiting, enumeration handling, administrative or emergency recovery, canonical changes, and policy invention"
-    ],
-    "risk_class": "high",
-    "status": "approved_ready",
-    "authorities": [
-      "DB-AUTH-003",
-      "PR-CAP-009",
-      "API-098",
-      "TEST-129",
-      "SEC-071",
-      "SEC-075",
-      "DL-058"
-    ],
-    "next_action": "Independently verify the exact seven-path Phase 2O tranche for separately authorized publication; do not broaden implementation scope."
-  },
-  "next_action": "Implement the approved bounded candidate: Independently verify and publish the bounded Recovery-Code Regeneration Persistence Orchestration Foundation",
-  "idle_reason": null,
-  "owner_action": "none",
+  "next_candidate": null,
+  "next_action": "Await an explicitly bounded next candidate; do not infer or broaden scope.",
+  "idle_reason": "no explicitly bounded next candidate is recorded",
+  "owner_action": "select or approve the next bounded candidate",
   "blockers": [],
   "secrets_present": false
 }
