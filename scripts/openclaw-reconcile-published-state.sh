@@ -18,6 +18,10 @@ upstream="$(git rev-parse '@{upstream}')"
   exit 73
 }
 
+# Publication state is downstream of candidate CI. Do not mutate compact state or
+# create a reconciliation commit until GitHub Actions has accepted the candidate HEAD.
+"$repo/scripts/openclaw-wait-for-ci.sh" "$head"
+
 next_action="$(jq -r '
   if .next_candidate.status == "approved_ready" and (.next_candidate.task // "") != ""
   then "Implement the approved bounded candidate: " + .next_candidate.task

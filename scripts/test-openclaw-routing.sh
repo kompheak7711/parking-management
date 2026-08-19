@@ -15,6 +15,7 @@ make_repo() {
   cp "$source_repo/scripts/openclaw-supervisor-dispatch.sh" "$repo/scripts/"
   cp "$source_repo/scripts/openclaw-hermes-task.sh" "$repo/scripts/"
   cp "$source_repo/scripts/openclaw-select-next-candidate.sh" "$repo/scripts/"
+  cp "$source_repo/scripts/openclaw-reconcile-published-state.sh" "$repo/scripts/"
   cp "$source_repo/scripts/openclaw-wait-for-ci.sh" "$repo/scripts/"
   cp "$source_repo/scripts/openclaw-supervisor-preflight.sh" "$repo/scripts/"
   cp "$source_repo/scripts/openclaw-task-packet.sh" "$repo/scripts/"
@@ -28,8 +29,10 @@ make_repo() {
   printf '%s\n' '# Test' >"$repo/ops/QUEUE.md"
   printf '%s\n' '{"schema_version":1,"total_tranches":1,"tranches":[]}' >"$repo/ops/V1_ROADMAP.json"
   git -C "$repo" init -q
+  git -C "$repo" config user.name test
+  git -C "$repo" config user.email test@example.invalid
   git -C "$repo" add .
-  git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm test
+  git -C "$repo" commit -qm test
 }
 
 fake_openclaw="$test_root/openclaw"
@@ -382,5 +385,81 @@ printf '%s' "$stale_preflight" | jq -e '.next_action | startswith("Reconcile com
 stale_packet="$(PROPERTY_RENTAL_REPO="$stale_repo" "$stale_repo/scripts/openclaw-task-packet.sh")"
 [ "$(printf '%s' "$stale_packet" | jq -r '.task')" = "$(printf '%s' "$stale_preflight" | jq -r '.next_action')" ]
 printf '%s' "$stale_packet" | jq -e '.task | contains("prohibited unapproved deployment tranche") | not' >/dev/null
+
+make_reconciliation_repo() {
+  reconciliation_scenario="$1"
+  make_repo "$reconciliation_scenario" high 'prohibited unapproved deployment tranche'
+  reconciliation_repo="$test_root/$reconciliation_scenario/repo"
+  reconciliation_base="$(git -C "$reconciliation_repo" rev-parse HEAD)"
+  jq --arg commit "$reconciliation_base" '
+    .status="verified_for_review"
+    | .commit=$commit
+    | .approval={status:"approved_complete",implementation_started:true,implementation_completed:true,publication_completed:false}
+    | .next_action="Owner authorizes the unapproved candidate."
+    | .next_candidate.status="not_approved"
+  ' "$reconciliation_repo/ops/STATE.json" >"$reconciliation_repo/ops/STATE.json.new"
+  mv "$reconciliation_repo/ops/STATE.json.new" "$reconciliation_repo/ops/STATE.json"
+  cat >"$reconciliation_repo/scripts/openclaw-wait-for-ci.sh" <<'EOF'
+#!/bin/sh
+set -eu
+printf '%s\n' "$1" >>"$FAKE_CI_CALLS"
+case "$FAKE_CI_MODE" in
+  success) exit 0 ;;
+  failed) exit 74 ;;
+  missing) exit 75 ;;
+  *) exit 2 ;;
+esac
+EOF
+  chmod +x "$reconciliation_repo/scripts/openclaw-wait-for-ci.sh"
+  git -C "$reconciliation_repo" add ops/STATE.json scripts/openclaw-wait-for-ci.sh
+  git -C "$reconciliation_repo" commit -qm 'publish completed tranche'
+  git -C "$reconciliation_repo" init -q --bare "$test_root/$reconciliation_scenario/origin.git"
+  git -C "$reconciliation_repo" remote add origin "$test_root/$reconciliation_scenario/origin.git"
+  git -C "$reconciliation_repo" push -qu -u origin HEAD
+}
+
+# Candidate CI is a precondition of publication-state mutation. A failed or missing
+# candidate run must leave compact state, local HEAD, and the remote unchanged.
+for ci_mode in failed missing; do
+  make_reconciliation_repo "reconcile_$ci_mode"
+  reconcile_repo="$reconciliation_repo"
+  reconcile_head="$(git -C "$reconcile_repo" rev-parse HEAD)"
+  reconcile_state="$(shasum -a 256 "$reconcile_repo/ops/STATE.json" | awk '{print $1}')"
+  reconcile_calls="$test_root/reconcile_$ci_mode/ci-calls"
+  set +e
+  FAKE_CI_CALLS="$reconcile_calls" \
+  FAKE_CI_MODE="$ci_mode" \
+  PROPERTY_RENTAL_REPO="$reconcile_repo" \
+    "$reconcile_repo/scripts/openclaw-reconcile-published-state.sh"
+  reconcile_exit=$?
+  set -e
+  case "$ci_mode" in
+    failed) [ "$reconcile_exit" -eq 74 ] ;;
+    missing) [ "$reconcile_exit" -eq 75 ] ;;
+  esac
+  [ "$(git -C "$reconcile_repo" rev-parse HEAD)" = "$reconcile_head" ]
+  [ "$(git -C "$reconcile_repo" rev-parse '@{upstream}')" = "$reconcile_head" ]
+  [ "$(shasum -a 256 "$reconcile_repo/ops/STATE.json" | awk '{print $1}')" = "$reconcile_state" ]
+  [ -z "$(git -C "$reconcile_repo" status --porcelain=v1)" ]
+  [ "$(cat "$reconcile_calls")" = "$reconcile_head" ]
+done
+
+# Successful candidate CI permits reconciliation, and the pushed reconciliation
+# commit remains subject to its own CI verification.
+make_reconciliation_repo reconcile_success
+reconcile_repo="$reconciliation_repo"
+candidate_head="$(git -C "$reconcile_repo" rev-parse HEAD)"
+reconcile_calls="$test_root/reconcile_success/ci-calls"
+FAKE_CI_CALLS="$reconcile_calls" \
+FAKE_CI_MODE=success \
+PROPERTY_RENTAL_REPO="$reconcile_repo" \
+  "$reconcile_repo/scripts/openclaw-reconcile-published-state.sh"
+reconciliation_head="$(git -C "$reconcile_repo" rev-parse HEAD)"
+[ "$reconciliation_head" != "$candidate_head" ]
+[ "$(git -C "$reconcile_repo" rev-parse '@{upstream}')" = "$reconciliation_head" ]
+[ "$(sed -n '1p' "$reconcile_calls")" = "$candidate_head" ]
+[ "$(sed -n '2p' "$reconcile_calls")" = "$reconciliation_head" ]
+[ "$(wc -l <"$reconcile_calls" | tr -d ' ')" -eq 2 ]
+jq -e --arg commit "$candidate_head" '.status == "published" and .commit == $commit' "$reconcile_repo/ops/STATE.json" >/dev/null
 
 echo "OpenClaw routing tests passed"
