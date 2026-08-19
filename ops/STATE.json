@@ -6,15 +6,15 @@
   "status": "published",
   "active_cycle": "v1-014-persistent-browser-session-revocation-store",
   "branch": "implementation/foundation",
-  "commit": "ed5e8020f21e5c45c3bed00e99f4042eec61a57e",
-  "timestamp": "2026-08-19T08:23:31Z",
+  "commit": "4fb248cd58aa6f9658b97ffb3ce90949cc7c61c7",
+  "timestamp": "2026-08-19T08:50:31Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
     "basis": "approved V1-014 candidate and durable remaining-v1 authorization",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": [
     "DB-AUTH-004",
