@@ -14,7 +14,7 @@ dependencies = [
   "pydantic-settings>=2.10,<3",
   "psycopg[binary]>=3.2,<4",
   "uvicorn[standard]>=0.35,<1",
-  "cryptography>=45,<47",
+  "cryptography>=50,<51",
 ]
 
 [project.optional-dependencies]

@@ -7,7 +7,7 @@
   "active_cycle": "v1-013-totp-mfa-cryptographic-persistence-foundation",
   "branch": "implementation/foundation",
   "commit": "fb0f05f8a3583f5b23a4451cb284db51147cd0bf",
-  "timestamp": "2026-08-19T05:59:41Z",
+  "timestamp": "2026-08-19T06:03:16Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
@@ -38,6 +38,8 @@
     "initial independent review found removable enrollment history and missing AES-GCM nonce uniqueness per key",
     "repair attempt 1 added DELETE/TRUNCATE rejection triggers, per-key nonce uniqueness, and real-PostgreSQL regressions",
     "independent repair re-review passed with no material PostgreSQL, security, logic, or scope findings",
+    "GitHub Actions run 32221669512 rejected cryptography 46.0.7 because four published advisories require 48.0.1 through 50.0.0",
+    "repair attempt 2 upgraded the locked cryptography dependency to 50.0.0 and the exact CI runtime audit passed locally with no known vulnerabilities",
     "focused cryptographic and traceability coverage passed 26",
     "format, lint, strict typecheck, backend/frontend builds, and backend import passed",
     "backend 232 passed with 69 expected dedicated-database skips",
@@ -89,15 +91,15 @@
   "owner_action": "none",
   "blockers": [],
   "repair": {
-    "failure": "Initial independent review found that owner-level DELETE/TRUNCATE could destroy enrollment history and that AES-GCM nonce uniqueness was not enforced per key.",
+    "failure": "Repair attempt 1 passed independent review, but publication CI run 32221669512 rejected cryptography 46.0.7 for four published advisories requiring fixed releases through 50.0.0.",
     "scope_preserved": true,
-    "attempts": 1,
+    "attempts": 2,
     "max_attempts": 2,
     "requires_owner_decision": false,
     "suspected_secret": false,
     "scope_expansion": false,
     "protected_operation": false,
-    "last_outcome": "repair_attempt_1_independently_verified"
+    "last_outcome": "repair_attempt_2_verified_pending_corrective_publication"
   },
   "secrets_present": false
 }

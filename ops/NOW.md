@@ -13,8 +13,10 @@
 - Database controls: immutable verifier material, forward-only pending/active/disabled transitions,
   actor/provenance requirements, existing-account foreign keys, constraints, and column-bounded
   runtime privileges were verified on isolated real PostgreSQL.
-- Dependency: locked `cryptography==46.0.7` supplies reviewed AES-GCM rather than custom encryption;
-  no production key or secret is configured or committed.
+- Dependency: locked `cryptography==50.0.0` supplies reviewed AES-GCM rather than custom encryption;
+  no production key or secret is configured or committed. GitHub Actions dependency audit rejected
+  the initially locked 46.0.7 release; repair attempt 2 upgraded to the first release fixing all
+  reported advisories, and the exact CI audit command then passed locally.
 - Test-first evidence: crypto tests first failed on the absent module; PostgreSQL tests first failed
   on the absent table; traceability first failed on absent entries; key-identifier hardening first
   failed when application validation was weaker than persistence.
@@ -24,9 +26,13 @@
 - Initial independent review found two persistence defects: enrollment history remained removable
   through owner-level DELETE/TRUNCATE, and AES-GCM nonce uniqueness was not enforced per key.
   Repair attempt 1 added destructive-operation rejection triggers, per-key nonce uniqueness, and
-  real-PostgreSQL regressions. Independent re-review passed with no material findings.
+  real-PostgreSQL regressions. Independent re-review passed with no material findings. Repair
+  attempt 2 corrected the vulnerable dependency bound identified by the publication CI gate.
 - Scope preserved: no API/UI, SMS, session/recovery orchestration, production key, role/capability
-  policy, deployment operation, canonical specification change, commit, or push.
+  policy, deployment operation, canonical specification change, or unrelated implementation.
+- Publication: feature commit `c4d14d5` is pushed; CI run `32221669512` passed backend,
+  frontend, and PostgreSQL gates but failed the runtime dependency audit. The verified
+  cryptography 50.0.0 corrective update remains uncommitted pending focused publication.
 - Blockers: none. Owner action: none.
 - Roadmap remains 12/60 published complete until V1-013 is independently published.
 - Exact next action: independently verify and publish the completed bounded V1-013 tranche under
