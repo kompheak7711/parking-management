@@ -1,95 +1,78 @@
 {
   "schema_version": 1,
   "phase": "Identity",
-  "tranche": "Persistent Browser-Session and Revocation Store",
-  "task": "Implement the approved bounded candidate: Persistent browser-session and revocation store",
-  "status": "published",
-  "active_cycle": "v1-014-persistent-browser-session-revocation-store",
+  "tranche": "Login, MFA, logout, reauthentication, and session API",
+  "task": "Implement the approved bounded candidate: Login, MFA, logout, reauthentication, and session API",
+  "status": "active",
+  "active_cycle": "v1-015-login-mfa-logout-reauthentication-and-session-api",
   "branch": "implementation/foundation",
   "commit": "4fb248cd58aa6f9658b97ffb3ce90949cc7c61c7",
-  "timestamp": "2026-08-19T08:50:31Z",
+  "timestamp": "2026-08-19T08:55:30Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
-    "basis": "approved V1-014 candidate and durable remaining-v1 authorization",
+    "basis": "structured durable-v1 successor selection",
     "implementation_started": true,
-    "implementation_completed": true,
-    "publication_completed": true
+    "implementation_completed": false,
+    "publication_completed": false
   },
   "authorities": [
-    "DB-AUTH-004",
-    "API-097",
-    "TEST-131",
-    "SEC-015",
-    "SEC-016",
-    "SEC-017",
-    "SEC-018",
-    "DL-057"
+    "API-008-010",
+    "API-096-097",
+    "TEST-108",
+    "TEST-128",
+    "TEST-131-132"
   ],
   "touched_areas": [
-    "opaque browser-session verifier persistence",
-    "fixed activity and absolute-expiry persistence",
-    "immutable revocation evidence",
-    "focused real PostgreSQL tests",
-    "bounded traceability and compact state"
+    "local auth endpoints, secure browser transport, CSRF where applicable"
   ],
-  "tests": [
-    "automation regression failed before repair because V1-014 inherited V1-013 lifecycle and exhausted-attempt identity",
-    "make automation-test passed roadmap validation, routing regressions, and visibility watchdog coverage",
-    "backend traceability suite passed 16",
-    "make database-test passed 83 on isolated real PostgreSQL, including rejection of sessions created at absolute expiry",
-    "focused Python compilation and Ruff checks passed; shell syntax, JSON parsing, and diff checks passed",
-    "backend and frontend format checks passed",
-    "backend passed 233 with 83 expected real-database skips; frontend passed 3",
-    "make lint, make format-check, make typecheck, and make build passed",
-    "traceability, roadmap, deployment configuration, frontend dependency audit, and automation routing checks passed",
-    "independent review found activity-at-absolute-expiry persistence; test-first repair failed before the strict boundary check and passed after it",
-    "independent re-review passed with no blocking security, PostgreSQL, logic, or scope findings"
-  ],
+  "tests": [],
   "relevant_docs": [
-    "docs/004_DATABASE_MODEL.md: DB-AUTH-004",
-    "docs/005_API_SPECIFICATION.md: API-097",
-    "docs/007_TESTING_STRATEGY.md: TEST-131",
-    "docs/008_SECURITY_MODEL.md: SEC-015 through SEC-018",
-    "docs/010_DECISION_LOG.md: DL-057"
+    "API-008-010",
+    "API-096-097",
+    "TEST-108",
+    "TEST-128",
+    "TEST-131-132"
   ],
   "roadmap": {
     "id": "property-rental-v1",
-    "current_id": "V1-014",
+    "current_id": "V1-015",
     "total": 60
   },
   "next_candidate": {
-    "id": "V1-014",
-    "order": 14,
+    "id": "V1-015",
+    "order": 15,
     "phase": "Identity",
-    "task": "Persistent browser-session and revocation store",
+    "task": "Login, MFA, logout, reauthentication, and session API",
     "dependencies": [
-      "V1-011",
-      "V1-013"
+      "V1-013",
+      "V1-014"
     ],
     "authorities": [
-      "DB-AUTH-004",
-      "API-097",
-      "SEC-015-018"
+      "API-008-010",
+      "API-096-097",
+      "TEST-108",
+      "TEST-128",
+      "TEST-131-132"
     ],
     "include": [
-      "opaque sessions, activity, absolute expiry, revocation persistence"
+      "local auth endpoints, secure browser transport, CSRF where applicable"
     ],
     "exclude": [
-      "remote access"
+      "external identity providers"
     ],
     "risk_class": "high",
-    "acceptance_profile": "database",
+    "acceptance_profile": "api_ui",
     "authorization": "durable_v1",
-    "status": "complete_uncommitted",
-    "roadmap_id": "V1-014"
+    "status": "approved_ready",
+    "roadmap_id": "V1-015"
   },
-  "next_action": "Publish the independently verified V1-014 tranche under standing authorization, then activate exact successor V1-015",
-  "idle_reason": "waiting for an explicitly approved candidate",
+  "next_action": "Implement the approved bounded candidate: Login, MFA, logout, reauthentication, and session API",
+  "idle_reason": null,
   "owner_action": "none",
   "blockers": [],
   "repair": {
-    "tranche_id": "V1-014",
+    "tranche_id": "V1-015",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -98,7 +81,7 @@
     "suspected_secret": false,
     "scope_expansion": false,
     "protected_operation": false,
-    "last_outcome": "independent_review_passed"
+    "last_outcome": null
   },
   "secrets_present": false
 }
