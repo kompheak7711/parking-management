@@ -3,33 +3,46 @@
   "phase": "Identity",
   "tranche": "Login, MFA, logout, reauthentication, and session API",
   "task": "Implement the approved bounded candidate: Login, MFA, logout, reauthentication, and session API",
-  "status": "active",
+  "status": "complete_uncommitted",
   "active_cycle": "v1-015-login-mfa-logout-reauthentication-and-session-api",
   "branch": "implementation/foundation",
-  "commit": "4fb248cd58aa6f9658b97ffb3ce90949cc7c61c7",
-  "timestamp": "2026-08-19T08:55:30Z",
+  "commit": "f20623439cab8f5c6745f4c3210b791eab0dcb47",
+  "timestamp": "2026-08-19T09:42:28Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
     "basis": "structured durable-v1 successor selection",
     "implementation_started": true,
-    "implementation_completed": false,
+    "implementation_completed": true,
     "publication_completed": false
   },
   "authorities": [
     "API-008-010",
     "API-096-097",
+    "SEC-012-018",
     "TEST-108",
     "TEST-128",
     "TEST-131-132"
   ],
   "touched_areas": [
-    "local auth endpoints, secure browser transport, CSRF where applicable"
+    "local authentication API transport and atomic flow boundary",
+    "secure browser cookies, exact-origin enforcement, and CSRF protection",
+    "authentication API tests and bounded traceability",
+    "runtime browser-origin settings and setup documentation"
   ],
-  "tests": [],
+  "tests": [
+    "focused authentication and traceability: 36 passed",
+    "full backend: 253 passed, 83 expected PostgreSQL-environment skips",
+    "frontend: 3 passed",
+    "isolated real PostgreSQL migrations: 83 passed",
+    "lint, format-check, strict type checks, backend/frontend builds: passed",
+    "deployment configuration, frontend dependency audit, roadmap, automation, JSON, and diff checks: passed",
+    "independent security re-review: no blockers"
+  ],
   "relevant_docs": [
     "API-008-010",
     "API-096-097",
+    "SEC-012-018",
     "TEST-108",
     "TEST-128",
     "TEST-131-132"
@@ -64,10 +77,10 @@
     "risk_class": "high",
     "acceptance_profile": "api_ui",
     "authorization": "durable_v1",
-    "status": "approved_ready",
+    "status": "complete_uncommitted",
     "roadmap_id": "V1-015"
   },
-  "next_action": "Implement the approved bounded candidate: Login, MFA, logout, reauthentication, and session API",
+  "next_action": "Independently publish the verified V1-015 tranche under standing authorization, then activate exact successor V1-016",
   "idle_reason": null,
   "owner_action": "none",
   "blockers": [],
@@ -81,7 +94,7 @@
     "suspected_secret": false,
     "scope_expansion": false,
     "protected_operation": false,
-    "last_outcome": null
+    "last_outcome": "independent_review_passed"
   },
   "secrets_present": false
 }

@@ -622,3 +622,53 @@ def test_browser_session_persistence_foundation_has_bounded_traceability() -> No
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert routed_authorities == set(entry["upstream_ids"])
+
+
+def test_authentication_api_has_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    routed_authorities = {
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132",
+    }
+    expected_test_ids = {
+        "test_successful_local_login_sets_protected_session_and_csrf_cookies",
+        "test_valid_password_requiring_mfa_sets_only_short_lived_preauthentication_cookie",
+        "test_mfa_required_login_expires_any_existing_authenticated_session",
+        "test_authenticated_login_expires_any_stale_preauthentication_capability",
+        "test_login_rejection_is_generic_and_sets_no_authentication_cookie",
+        "test_totp_challenge_requires_preauthentication_and_csrf_then_establishes_session",
+        "test_recovery_code_challenge_is_transported_exactly_and_establishes_session",
+        "test_rejected_mfa_challenge_returns_generic_unauthorized",
+        "test_required_mfa_enrollment_returns_one_time_totp_provisioning_material",
+        "test_confirmed_mfa_enrollment_activates_totp_and_establishes_session",
+        "test_authenticated_session_inspection_returns_only_bounded_non_secret_state",
+        "test_logout_requires_csrf_revokes_current_session_and_clears_browser_material",
+        "test_reauthentication_records_additional_evidence_without_granting_authority",
+        "test_authentication_routes_fail_closed_when_no_runtime_flow_is_configured",
+        "test_rate_limited_login_returns_generic_429_without_account_disclosure",
+        "test_authentication_mutations_reject_missing_origin_and_csrf_evidence",
+        "test_authentication_mutations_reject_wrong_origin_and_mismatched_csrf_evidence",
+        "test_sms_mfa_is_not_an_accepted_authentication_method",
+        "test_authentication_api_has_bounded_traceability",
+    }
+
+    for test_id in expected_test_ids:
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert routed_authorities == set(entry["upstream_ids"])

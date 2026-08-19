@@ -4,13 +4,15 @@ Business management application built with React, TypeScript, FastAPI, and Postg
 
 ## Status
 
-Phase 1 foundation is in progress. The backend foundation provides a
+The application foundation is in progress. The backend provides a
 packaged FastAPI service, environment-backed settings, minimal liveness and
 database-backed readiness endpoints, backend quality gates, a non-root container, and
-a bounded PostgreSQL development and migration foundation. A bounded frontend
-foundation provides a strict React/TypeScript/Vite build and a non-business bootstrap
-surface. The business schema, authentication, business APIs, worker, business screens,
-and production deployment posture remain future work.
+a bounded PostgreSQL development and migration foundation. It also exposes the bounded
+local login, TOTP MFA enrollment/challenge, recovery-code challenge, logout, session
+inspection, and reauthentication API over secure browser-cookie and CSRF transport. A
+bounded frontend foundation provides a strict React/TypeScript/Vite build and a non-business
+bootstrap surface. Business workflow APIs, the runtime authentication-flow adapter, worker,
+business screens, and production deployment posture remain future work.
 
 ## Main components
 
@@ -76,6 +78,11 @@ building/deploying. The Docker image accepts the same value as a build argument:
 ```text
 docker build --build-arg APP_BUILD_VERSION=<version-or-commit> -t property-rental-backend backend
 ```
+
+Set `APP_ALLOWED_BROWSER_ORIGIN` to the exact HTTPS browser origin permitted to submit
+authentication mutations. It defaults to `https://localhost`. Authentication routes fail
+closed with `503 Service Unavailable` until an atomic runtime authentication-flow adapter
+is configured; no in-memory or external-identity fallback is used.
 
 ## Verification
 

@@ -1805,6 +1805,158 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "V1-014 evidence is bounded to persistent opaque browser-session lifetime and revocation state; SEC-016 cookie/CSRF transport and SEC-018 high-risk reauthentication remain in later API/UI scope."
+    },
+    {
+      "test_id": "test_successful_local_login_sets_protected_session_and_csrf_cookies",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Successful local login returns bounded session state and transmits opaque session and CSRF material only in Secure browser cookies."
+    },
+    {
+      "test_id": "test_valid_password_requiring_mfa_sets_only_short_lived_preauthentication_cookie",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Password verification cannot create a normal session while MFA remains required; only short-lived preauthentication state is transported."
+    },
+    {
+      "test_id": "test_mfa_required_login_expires_any_existing_authenticated_session",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "A password-verified MFA transition expires any prior normal session cookie before issuing short-lived preauthentication material."
+    },
+    {
+      "test_id": "test_authenticated_login_expires_any_stale_preauthentication_capability",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Direct session establishment expires stale preauthentication material so incompatible browser authentication states cannot coexist."
+    },
+    {
+      "test_id": "test_login_rejection_is_generic_and_sets_no_authentication_cookie",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Credential and account rejection is a generic 401 with no identity disclosure or browser authentication material."
+    },
+    {
+      "test_id": "test_totp_challenge_requires_preauthentication_and_csrf_then_establishes_session",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "TOTP and recovery-code challenge transport requires password-verified preauthentication and exact CSRF evidence before session establishment."
+    },
+    {
+      "test_id": "test_recovery_code_challenge_is_transported_exactly_and_establishes_session",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "A recovery-code challenge preserves the method and one-time code across the protected transport boundary and establishes a session only after service acceptance."
+    },
+    {
+      "test_id": "test_rejected_mfa_challenge_returns_generic_unauthorized",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Incorrect TOTP and recovery-code challenges return the same generic unauthorized response without reflecting submitted secret material."
+    },
+    {
+      "test_id": "test_required_mfa_enrollment_returns_one_time_totp_provisioning_material",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Required MFA enrollment exposes standards-based TOTP provisioning material only through a protected no-store preauthentication response."
+    },
+    {
+      "test_id": "test_confirmed_mfa_enrollment_activates_totp_and_establishes_session",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Pending TOTP enrollment confirmation is a distinct CSRF-protected command that consumes preauthentication before session establishment."
+    },
+    {
+      "test_id": "test_authenticated_session_inspection_returns_only_bounded_non_secret_state",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Session inspection is no-store and returns only actor, lifetime, MFA assurance, and reauthentication timestamps without tokens or authority claims."
+    },
+    {
+      "test_id": "test_logout_requires_csrf_revokes_current_session_and_clears_browser_material",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Logout requires exact origin and CSRF evidence, delegates durable revocation, and expires browser-accessible authentication material."
+    },
+    {
+      "test_id": "test_reauthentication_records_additional_evidence_without_granting_authority",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Reauthentication is current-session password/additional-factor evidence with CSRF rotation and no role, capability, or business-authorization grant."
+    },
+    {
+      "test_id": "test_authentication_routes_fail_closed_when_no_runtime_flow_is_configured",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "The stable authentication surface remains present but returns canonical 503 instead of accepting credentials without an atomic runtime adapter."
+    },
+    {
+      "test_id": "test_rate_limited_login_returns_generic_429_without_account_disclosure",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Account-and-source rate limiting maps to a generic canonical 429 without account-existence disclosure."
+    },
+    {
+      "test_id": "test_authentication_mutations_reject_missing_origin_and_csrf_evidence",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Authentication mutations reject absent or mismatched configured browser origin and exact double-submit CSRF evidence where cookies authenticate the command."
+    },
+    {
+      "test_id": "test_authentication_mutations_reject_wrong_origin_and_mismatched_csrf_evidence",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Authentication mutations reject a non-configured origin and reject unequal CSRF cookie and header evidence."
+    },
+    {
+      "test_id": "test_sms_mfa_is_not_an_accepted_authentication_method",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Authentication schemas permit TOTP or one-time recovery-code proof and reject SMS MFA without reflecting submitted values."
+    },
+    {
+      "test_id": "test_authentication_api_has_bounded_traceability",
+      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "V1-015 evidence is mechanically bounded to local authentication endpoints, secure cookie/CSRF transport, session inspection/logout, MFA, and reauthentication without external identity providers or authority invention."
     }
   ]
 }

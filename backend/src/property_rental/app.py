@@ -15,6 +15,13 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from property_rental.api import create_api_router
+from property_rental.auth_api import (
+    AuthenticationFlow,
+    AuthenticationRateLimited,
+    AuthenticationUnavailable,
+    UnavailableAuthenticationFlow,
+    create_auth_router,
+)
 from property_rental.identity import ActorResolver, deny_unauthenticated_actor
 from property_rental.logging import create_application_logger
 from property_rental.settings import Settings
@@ -128,6 +135,7 @@ def create_app(
     lifecycle_resources: Iterable[AbstractAsyncContextManager[object]] = (),
     application_logger: Logger | None = None,
     actor_resolver: ActorResolver = deny_unauthenticated_actor,
+    authentication_flow: AuthenticationFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -174,6 +182,20 @@ def create_app(
     async def http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         return error_response(exc.status_code, request.state.request_id)
 
+    @app.exception_handler(AuthenticationUnavailable)
+    async def authentication_unavailable(
+        request: Request,
+        _: AuthenticationUnavailable,
+    ) -> JSONResponse:
+        return error_response(status.HTTP_503_SERVICE_UNAVAILABLE, request.state.request_id)
+
+    @app.exception_handler(AuthenticationRateLimited)
+    async def authentication_rate_limited(
+        request: Request,
+        _: AuthenticationRateLimited,
+    ) -> JSONResponse:
+        return error_response(status.HTTP_429_TOO_MANY_REQUESTS, request.state.request_id)
+
     @app.middleware("http")
     async def add_request_id(
         request: Request,
@@ -214,6 +236,12 @@ def create_app(
             resolved_settings,
             readiness_check,
             actor_resolver,
+        )
+    )
+    app.include_router(
+        create_auth_router(
+            resolved_settings,
+            authentication_flow or UnavailableAuthenticationFlow(),
         )
     )
     return app
