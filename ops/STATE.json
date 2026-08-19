@@ -1,91 +1,75 @@
 {
   "schema_version": 1,
   "phase": "Identity",
-  "tranche": "Login, MFA, logout, reauthentication, and session API",
-  "task": "Implement the approved bounded candidate: Login, MFA, logout, reauthentication, and session API",
-  "status": "published",
-  "active_cycle": "v1-015-login-mfa-logout-reauthentication-and-session-api",
+  "tranche": "Recovery-code, administrative, and emergency recovery orchestration",
+  "task": "Implement the approved bounded candidate: Recovery-code, administrative, and emergency recovery orchestration",
+  "status": "active",
+  "active_cycle": "v1-016-recovery-code-administrative-and-emergency-recovery-orchestration",
   "branch": "implementation/foundation",
   "commit": "a74871bc54d48be12ba87fd6600092655d8cae93",
-  "timestamp": "2026-08-19T09:49:38Z",
+  "timestamp": "2026-08-19T09:50:19Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
     "basis": "structured durable-v1 successor selection",
     "implementation_started": true,
-    "implementation_completed": true,
-    "publication_completed": true
+    "implementation_completed": false,
+    "publication_completed": false
   },
   "authorities": [
-    "API-008-010",
-    "API-096-097",
-    "SEC-012-018",
-    "TEST-108",
-    "TEST-128",
-    "TEST-131-132"
+    "API-098-099",
+    "TEST-129-130",
+    "SEC-071-075",
+    "DL-058"
   ],
   "touched_areas": [
-    "local authentication API transport and atomic flow boundary",
-    "secure browser cookies, exact-origin enforcement, and CSRF protection",
-    "authentication API tests and bounded traceability",
-    "runtime browser-origin settings and setup documentation"
+    "authorized recovery mutations, revocation, rate limiting, audit"
   ],
-  "tests": [
-    "focused authentication and traceability: 36 passed",
-    "full backend: 253 passed, 83 expected PostgreSQL-environment skips",
-    "frontend: 3 passed",
-    "isolated real PostgreSQL migrations: 83 passed",
-    "lint, format-check, strict type checks, backend/frontend builds: passed",
-    "deployment configuration, frontend dependency audit, roadmap, automation, JSON, and diff checks: passed",
-    "independent security re-review: no blockers"
-  ],
+  "tests": [],
   "relevant_docs": [
-    "API-008-010",
-    "API-096-097",
-    "SEC-012-018",
-    "TEST-108",
-    "TEST-128",
-    "TEST-131-132"
+    "API-098-099",
+    "TEST-129-130",
+    "SEC-071-075",
+    "DL-058"
   ],
   "roadmap": {
     "id": "property-rental-v1",
-    "current_id": "V1-015",
+    "current_id": "V1-016",
     "total": 60
   },
   "next_candidate": {
-    "id": "V1-015",
-    "order": 15,
+    "id": "V1-016",
+    "order": 16,
     "phase": "Identity",
-    "task": "Login, MFA, logout, reauthentication, and session API",
+    "task": "Recovery-code, administrative, and emergency recovery orchestration",
     "dependencies": [
-      "V1-013",
+      "V1-010",
       "V1-014"
     ],
     "authorities": [
-      "API-008-010",
-      "API-096-097",
-      "TEST-108",
-      "TEST-128",
-      "TEST-131-132"
+      "API-098-099",
+      "TEST-129-130",
+      "SEC-071-075",
+      "DL-058"
     ],
     "include": [
-      "local auth endpoints, secure browser transport, CSRF where applicable"
+      "authorized recovery mutations, revocation, rate limiting, audit"
     ],
     "exclude": [
-      "external identity providers"
+      "unauthenticated Owner reset"
     ],
     "risk_class": "high",
-    "acceptance_profile": "api_ui",
+    "acceptance_profile": "database",
     "authorization": "durable_v1",
-    "status": "complete_uncommitted",
-    "roadmap_id": "V1-015"
+    "status": "approved_ready",
+    "roadmap_id": "V1-016"
   },
-  "next_action": "Independently publish the verified V1-015 tranche under standing authorization, then activate exact successor V1-016",
-  "idle_reason": "waiting for an explicitly approved candidate",
+  "next_action": "Implement the approved bounded candidate: Recovery-code, administrative, and emergency recovery orchestration",
+  "idle_reason": null,
   "owner_action": "none",
   "blockers": [],
   "repair": {
-    "tranche_id": "V1-015",
+    "tranche_id": "V1-016",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -94,7 +78,7 @@
     "suspected_secret": false,
     "scope_expansion": false,
     "protected_operation": false,
-    "last_outcome": "independent_review_passed"
+    "last_outcome": null
   },
   "secrets_present": false
 }
