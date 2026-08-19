@@ -9,6 +9,8 @@ import subprocess
 import time
 import uuid
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from textwrap import dedent
@@ -111,6 +113,31 @@ def _validate_local_test_urls(admin_url: str, migration_url: str, runtime_url: s
     passwords = {parsed.password for parsed in parsed_urls.values()}
     if len(passwords) != len(parsed_urls):
         pytest.fail("PostgreSQL test identity passwords must be distinct")
+
+
+@contextmanager
+def _temporary_migration_database(prefix: str) -> Iterator[str]:
+    database = f"{prefix}_{uuid.uuid4().hex}"
+    admin_url = _required_url(ADMIN_URL_ENV)
+    original_migration_url = _required_url(MIGRATION_URL_ENV)
+    migration_url = _url_with_database(original_migration_url, database)
+    with psycopg.connect(admin_url, autocommit=True) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                sql.SQL("CREATE DATABASE {} OWNER prm_migrator").format(sql.Identifier(database))
+            )
+    os.environ[MIGRATION_URL_ENV] = migration_url
+    try:
+        yield migration_url
+    finally:
+        os.environ[MIGRATION_URL_ENV] = original_migration_url
+        with psycopg.connect(admin_url, autocommit=True) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = %s",
+                    (database,),
+                )
+                cursor.execute(sql.SQL("DROP DATABASE {}").format(sql.Identifier(database)))
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -1710,20 +1737,21 @@ def test_password_credentials_migration_refuses_destructive_downgrade() -> None:
 
 
 def test_recovery_code_migration_refuses_destructive_downgrade() -> None:
-    assert _run_alembic("upgrade", "head").returncode == 0
+    with _temporary_migration_database("prm_recovery_downgrade") as migration_url:
+        assert _run_alembic("upgrade", "20260817_04").returncode == 0
 
-    result = _run_alembic("downgrade", "20260817_03")
+        result = _run_alembic("downgrade", "20260817_03")
 
-    assert result.returncode != 0
-    assert "DB-AUTH-003 recovery-code migration is forward-only" in result.stderr
-    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT to_regclass('app.recovery_code_sets')")
-            assert cursor.fetchone() == ("app.recovery_code_sets",)
-            cursor.execute("SELECT to_regclass('app.recovery_codes')")
-            assert cursor.fetchone() == ("app.recovery_codes",)
-            cursor.execute("SELECT version_num FROM alembic_version")
-            assert cursor.fetchone() == ("20260817_04",)
+        assert result.returncode != 0
+        assert "DB-AUTH-003 recovery-code migration is forward-only" in result.stderr
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT to_regclass('app.recovery_code_sets')")
+                assert cursor.fetchone() == ("app.recovery_code_sets",)
+                cursor.execute("SELECT to_regclass('app.recovery_codes')")
+                assert cursor.fetchone() == ("app.recovery_codes",)
+                cursor.execute("SELECT version_num FROM alembic_version")
+                assert cursor.fetchone() == ("20260817_04",)
 
 
 def test_password_credentials_migration_advances_user_accounts_without_data_loss() -> None:
@@ -1807,3 +1835,342 @@ def test_noop_upgrade_does_not_wait_on_baseline_reader() -> None:
 
     assert result.returncode == 0, result.stderr
     assert elapsed < 2.0
+
+
+def test_initial_owner_bootstrap_closure_storage_is_bounded_and_secret_free() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT table_name, column_name, data_type, is_nullable
+                FROM information_schema.columns
+                WHERE table_schema = 'app'
+                  AND table_name IN (
+                      'initial_owner_bootstrap_closure',
+                      'initial_owner_bootstrap_audit_events'
+                  )
+                ORDER BY table_name, ordinal_position
+                """
+            )
+
+            assert cursor.fetchall() == [
+                ("initial_owner_bootstrap_audit_events", "event_id", "bigint", "NO"),
+                ("initial_owner_bootstrap_audit_events", "target_actor_id", "uuid", "NO"),
+                (
+                    "initial_owner_bootstrap_audit_events",
+                    "occurred_at",
+                    "timestamp with time zone",
+                    "NO",
+                ),
+                (
+                    "initial_owner_bootstrap_audit_events",
+                    "procedure_identity",
+                    "text",
+                    "NO",
+                ),
+                ("initial_owner_bootstrap_audit_events", "correlation_id", "uuid", "NO"),
+                ("initial_owner_bootstrap_audit_events", "outcome", "text", "NO"),
+                ("initial_owner_bootstrap_audit_events", "reason", "text", "NO"),
+                ("initial_owner_bootstrap_audit_events", "previous_state", "text", "NO"),
+                ("initial_owner_bootstrap_audit_events", "resulting_state", "text", "NO"),
+                (
+                    "initial_owner_bootstrap_audit_events",
+                    "established_actor_id",
+                    "uuid",
+                    "YES",
+                ),
+                ("initial_owner_bootstrap_closure", "singleton", "boolean", "NO"),
+                ("initial_owner_bootstrap_closure", "established_actor_id", "uuid", "NO"),
+                (
+                    "initial_owner_bootstrap_closure",
+                    "established_at",
+                    "timestamp with time zone",
+                    "NO",
+                ),
+                ("initial_owner_bootstrap_closure", "correlation_id", "uuid", "NO"),
+            ]
+
+
+def test_initial_owner_bootstrap_closes_once_and_audits_repeated_attempt() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+    first_actor_id = uuid.uuid4()
+    second_actor_id = uuid.uuid4()
+    first_correlation_id = uuid.uuid4()
+    second_correlation_id = uuid.uuid4()
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT * FROM app.attempt_initial_owner_bootstrap_closure(%s, %s)",
+                (first_actor_id, first_correlation_id),
+            )
+            assert cursor.fetchone() == (True,)
+        with pytest.raises(psycopg.errors.ForeignKeyViolation):
+            connection.commit()
+        connection.rollback()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT count(*) FROM app.initial_owner_bootstrap_closure")
+            assert cursor.fetchone() == (0,)
+            cursor.execute("SELECT count(*) FROM app.initial_owner_bootstrap_audit_events")
+            assert cursor.fetchone() == (0,)
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT * FROM app.attempt_initial_owner_bootstrap_closure(%s, %s)",
+                (first_actor_id, first_correlation_id),
+            )
+            assert cursor.fetchone() == (True,)
+            for actor_id, username in (
+                (first_actor_id, "bootstrap-first-owner"),
+                (second_actor_id, "bootstrap-second-owner"),
+            ):
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, %s, %s, %s, 'active', 'required',
+                              'protected-initial-owner-bootstrap')
+                    """,
+                    (actor_id, username, username, username),
+                )
+            cursor.execute(
+                "SELECT * FROM app.attempt_initial_owner_bootstrap_closure(%s, %s)",
+                (second_actor_id, second_correlation_id),
+            )
+            assert cursor.fetchone() == (False,)
+            cursor.execute(
+                """
+                SELECT established_actor_id, correlation_id
+                FROM app.initial_owner_bootstrap_closure
+                """
+            )
+            assert cursor.fetchall() == [(first_actor_id, first_correlation_id)]
+            cursor.execute(
+                """
+                SELECT target_actor_id, procedure_identity, correlation_id, outcome, reason,
+                       previous_state, resulting_state, established_actor_id
+                FROM app.initial_owner_bootstrap_audit_events
+                ORDER BY event_id
+                """
+            )
+            assert cursor.fetchall() == [
+                (
+                    first_actor_id,
+                    "protected_initial_owner_bootstrap",
+                    first_correlation_id,
+                    "completed",
+                    "initial_owner_established",
+                    "open",
+                    "closed",
+                    first_actor_id,
+                ),
+                (
+                    second_actor_id,
+                    "protected_initial_owner_bootstrap",
+                    second_correlation_id,
+                    "rejected",
+                    "bootstrap_closed",
+                    "closed",
+                    "closed",
+                    first_actor_id,
+                ),
+            ]
+        connection.rollback()
+
+
+def test_initial_owner_bootstrap_closure_does_not_infer_role_from_mfa_policy() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+    actor_id = uuid.uuid4()
+    correlation_id = uuid.uuid4()
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Optional MFA', 'optional-mfa', 'active', 'optional',
+                          'protected-initial-owner-bootstrap')
+                """,
+                (actor_id, f"optional-{actor_id.hex}"),
+            )
+            cursor.execute(
+                "SELECT * FROM app.attempt_initial_owner_bootstrap_closure(%s, %s)",
+                (actor_id, correlation_id),
+            )
+            assert cursor.fetchone() == (True,)
+            cursor.execute("SELECT established_actor_id FROM app.initial_owner_bootstrap_closure")
+            assert cursor.fetchone() == (actor_id,)
+            cursor.execute(
+                """
+                SELECT outcome, reason, previous_state, resulting_state, established_actor_id
+                FROM app.initial_owner_bootstrap_audit_events
+                """
+            )
+            assert cursor.fetchone() == (
+                "completed",
+                "initial_owner_established",
+                "open",
+                "closed",
+                actor_id,
+            )
+        connection.rollback()
+
+
+def test_initial_owner_bootstrap_history_rejects_update_delete_and_truncate() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+    actor_id = uuid.uuid4()
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Immutable Owner', 'immutable-owner', 'active', 'required',
+                          'protected-initial-owner-bootstrap')
+                """,
+                (actor_id, f"immutable-{actor_id.hex}"),
+            )
+            cursor.execute(
+                "SELECT * FROM app.attempt_initial_owner_bootstrap_closure(%s, %s)",
+                (actor_id, uuid.uuid4()),
+            )
+        connection.commit()
+        for statement in (
+            sql.SQL("UPDATE app.initial_owner_bootstrap_closure SET established_at = now()"),
+            sql.SQL("DELETE FROM app.initial_owner_bootstrap_closure"),
+            sql.SQL("TRUNCATE app.initial_owner_bootstrap_closure"),
+            sql.SQL(
+                "UPDATE app.initial_owner_bootstrap_audit_events SET reason = 'bootstrap_closed'"
+            ),
+            sql.SQL("DELETE FROM app.initial_owner_bootstrap_audit_events"),
+            sql.SQL("TRUNCATE app.initial_owner_bootstrap_audit_events"),
+        ):
+            with connection.cursor() as cursor:
+                cursor.execute("SAVEPOINT bootstrap_history_immutability")
+            with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
+                with connection.cursor() as cursor:
+                    cursor.execute(statement)
+            with connection.cursor() as cursor:
+                cursor.execute("ROLLBACK TO SAVEPOINT bootstrap_history_immutability")
+        connection.rollback()
+
+
+def test_runtime_cannot_observe_or_invoke_initial_owner_bootstrap_guard() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(RUNTIME_URL_ENV)) as connection:
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM app.initial_owner_bootstrap_closure")
+        connection.rollback()
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM app.initial_owner_bootstrap_audit_events")
+        connection.rollback()
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT * FROM app.attempt_initial_owner_bootstrap_closure(%s, %s)",
+                    (uuid.uuid4(), uuid.uuid4()),
+                )
+        connection.rollback()
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    routine.prosecdef,
+                    routine.proconfig @> ARRAY['search_path=pg_catalog'],
+                    has_function_privilege(
+                        'public',
+                        'app.attempt_initial_owner_bootstrap_closure(uuid, uuid)',
+                        'EXECUTE'
+                    ),
+                    has_function_privilege(
+                        'prm_runtime',
+                        'app.attempt_initial_owner_bootstrap_closure(uuid, uuid)',
+                        'EXECUTE'
+                    )
+                FROM pg_catalog.pg_proc AS routine
+                WHERE routine.oid =
+                    'app.attempt_initial_owner_bootstrap_closure(uuid, uuid)'::regprocedure
+                """
+            )
+            assert cursor.fetchone() == (True, True, False, False)
+
+
+def test_concurrent_initial_owner_bootstrap_attempts_establish_exactly_one_owner() -> None:
+    with _temporary_migration_database("prm_bootstrap_concurrency") as migration_url:
+        assert _run_alembic("upgrade", "head").returncode == 0
+        actor_ids = (uuid.uuid4(), uuid.uuid4())
+        correlation_ids = (uuid.uuid4(), uuid.uuid4())
+
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                for actor_id in actor_ids:
+                    cursor.execute(
+                        """
+                        INSERT INTO app.user_accounts (
+                            actor_id, normalized_username, display_name, audit_name,
+                            lifecycle_state, mfa_policy_class, provenance
+                        ) VALUES (%s, %s, 'Concurrent Owner', %s, 'active', 'required',
+                                  'protected-initial-owner-bootstrap')
+                        """,
+                        (actor_id, f"concurrent-{actor_id.hex}", f"concurrent-{actor_id.hex}"),
+                    )
+
+        def attempt(parameters: tuple[uuid.UUID, uuid.UUID]) -> bool:
+            with psycopg.connect(migration_url) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT * FROM app.attempt_initial_owner_bootstrap_closure(%s, %s)",
+                        parameters,
+                    )
+                    row = cursor.fetchone()
+                    assert row is not None
+                    return cast(bool, row[0])
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results = list(executor.map(attempt, zip(actor_ids, correlation_ids, strict=True)))
+
+        assert results.count(True) == 1
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT established_actor_id FROM app.initial_owner_bootstrap_closure"
+                )
+                closure_rows = cursor.fetchall()
+                assert len(closure_rows) == 1
+                assert closure_rows[0][0] in actor_ids
+                cursor.execute(
+                    "SELECT outcome, count(*) FROM app.initial_owner_bootstrap_audit_events "
+                    "GROUP BY outcome ORDER BY outcome"
+                )
+                assert cursor.fetchall() == [("completed", 1), ("rejected", 1)]
+
+
+def test_initial_owner_bootstrap_closure_migration_refuses_destructive_downgrade() -> None:
+    with _temporary_migration_database("prm_bootstrap_downgrade") as migration_url:
+        assert _run_alembic("upgrade", "head").returncode == 0
+
+        result = _run_alembic("downgrade", "20260817_04")
+
+        assert result.returncode != 0
+        assert "DB-AUTH-005 bootstrap-closure migration is forward-only" in result.stderr
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT to_regclass('app.initial_owner_bootstrap_closure')")
+                assert cursor.fetchone() == ("app.initial_owner_bootstrap_closure",)
+                cursor.execute("SELECT to_regclass('app.initial_owner_bootstrap_audit_events')")
+                assert cursor.fetchone() == ("app.initial_owner_bootstrap_audit_events",)
+                cursor.execute("SELECT version_num FROM alembic_version")
+                assert cursor.fetchone() == ("20260818_05",)

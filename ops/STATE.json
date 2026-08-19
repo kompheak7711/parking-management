@@ -1,58 +1,57 @@
 {
   "schema_version": 1,
-  "phase": "Phase 2P",
-  "tranche": "Authentication Session Revocation Orchestration Foundation",
-  "task": "Implement the bounded Authentication Session Revocation Orchestration Foundation",
-  "status": "published",
-  "active_cycle": "phase-2p-authentication-session-revocation-orchestration-foundation",
+  "phase": "Identity",
+  "tranche": "Initial Owner Bootstrap Closure Guard Foundation",
+  "task": "Implement the approved bounded candidate: Initial Owner bootstrap closure guard foundation",
+  "status": "verified_unpublished",
+  "active_cycle": "v1-012-initial-owner-bootstrap-closure-guard-foundation",
   "branch": "implementation/foundation",
-  "commit": "5584c4bdba6b74143b6acbfa014638436022d756",
-  "timestamp": "2026-08-18T07:57:49Z",
+  "commit": "b8a58a95bb206b8889fbf894afb25956d451f43e",
+  "timestamp": "2026-08-19T04:52:47Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
-    "basis": "owner-approved exact bounded Phase 2P candidate and durable remaining-v1 authorization",
+    "basis": "owner-approved V1-012 candidate and durable remaining-v1 authorization",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
   "authorities": [
-    "PR-CAP-009",
-    "DB-AUTH-004",
-    "API-097",
-    "TEST-131",
-    "TEST-132",
-    "SEC-015",
-    "SEC-017",
-    "DL-057"
+    "DB-AUTH-005",
+    "API-100",
+    "TEST-133",
+    "TEST-134",
+    "SEC-073",
+    "SEC-074",
+    "SEC-075",
+    "DL-059"
   ],
   "touched_areas": [
-    "authentication session revocation orchestration",
-    "published browser-session revocation composition",
+    "initial Owner bootstrap closure guard",
+    "transactional persistence",
     "immutable secret-free audit evidence",
-    "focused backend tests",
-    "bounded traceability",
-    "compact state"
+    "focused backend and real PostgreSQL tests",
+    "bounded traceability and compact state"
   ],
   "tests": [
-    "focused session-revocation and traceability coverage passed",
+    "test-first role/MFA separation regression failed as expected before the migration fix",
+    "independent review failed closed, repair attempt 1 corrected transaction ownership, definer privileges, truncation immutability, deferred composition, and result disclosure",
+    "independent repair review passed with no material security, logic, or scope findings",
+    "focused service and traceability coverage passed 19",
     "format, lint, and strict typecheck passed",
-    "backend 214 passed with 53 expected dedicated-gate skips",
+    "backend 220 passed with 60 expected dedicated-database skips",
     "frontend 3 passed",
     "backend/frontend builds and backend import passed",
-    "make database-test passed 53 on real PostgreSQL",
-    "deployment configuration and TEST-118 traceability audit passed",
-    "backend runtime/development and frontend dependency audits passed",
-    "canonical integrity, secret, and scope checks passed",
-    "make automation-test passed"
+    "make database-test passed 60 on real PostgreSQL",
+    "deployment configuration, roadmap, traceability, and automation validation passed",
+    "backend locked dependency resolution and frontend audit passed with 0 vulnerabilities"
   ],
   "relevant_docs": [
-    "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-009",
-    "docs/004_DATABASE_MODEL.md: DB-AUTH-004",
-    "docs/005_API_SPECIFICATION.md: API-097",
-    "docs/007_TESTING_STRATEGY.md: TEST-131 and TEST-132",
-    "docs/008_SECURITY_MODEL.md: SEC-015 and SEC-017",
-    "docs/010_DECISION_LOG.md: DL-057"
+    "docs/004_DATABASE_MODEL.md: DB-AUTH-005",
+    "docs/005_API_SPECIFICATION.md: API-100",
+    "docs/007_TESTING_STRATEGY.md: TEST-133 and TEST-134",
+    "docs/008_SECURITY_MODEL.md: SEC-073 through SEC-075",
+    "docs/010_DECISION_LOG.md: DL-059"
   ],
   "roadmap": {
     "id": "property-rental-v1",
@@ -86,9 +85,20 @@
     "status": "approved_ready",
     "roadmap_id": "V1-012"
   },
-  "next_action": "Implement the approved bounded candidate: Initial Owner bootstrap closure guard foundation",
+  "next_action": "Review and publish the verified V1-012 file set only after an explicit commit/push request",
   "idle_reason": null,
-  "owner_action": "none",
+  "owner_action": "request commit and push if publication is desired",
   "blockers": [],
+  "repair": {
+    "failure": "Initial independent review found unsafe internal transaction finalization, incomplete TRUNCATE immutability, no least-privilege definer seam, and disclosure of the established actor identifier.",
+    "scope_preserved": true,
+    "attempts": 1,
+    "max_attempts": 2,
+    "requires_owner_decision": false,
+    "suspected_secret": false,
+    "scope_expansion": false,
+    "protected_operation": false,
+    "last_outcome": "repair_attempt_1_independently_verified"
+  },
   "secrets_present": false
 }

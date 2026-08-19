@@ -1525,6 +1525,110 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "Phase 2P evidence is mechanically bounded to provider-neutral account-trigger orchestration over the published browser-session boundary and excludes API, UI, cookie transport, account or credential mutation, persistence, and production operations."
+    },
+    {
+      "test_id": "test_guard_returns_established_result_from_transactional_repository",
+      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_initial_owner_bootstrap.py",
+      "status": "implemented",
+      "notes": "The service seam returns only the bounded durable closure result supplied by the atomic repository boundary."
+    },
+    {
+      "test_id": "test_postgres_repository_uses_only_the_guard_in_the_caller_transaction",
+      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_initial_owner_bootstrap.py",
+      "status": "implemented",
+      "notes": "The PostgreSQL adapter invokes only the protected closure function with non-secret UUID context and leaves commit or rollback to the enclosing Owner-bootstrap transaction."
+    },
+    {
+      "test_id": "test_postgres_repository_returns_generic_failure_to_transaction_owner",
+      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap.py",
+      "status": "implemented",
+      "notes": "Persistence failure crosses the protected service boundary only as a generic unchained failure so the enclosing Owner-bootstrap transaction can roll back atomically."
+    },
+    {
+      "test_id": "test_postgres_repository_rejects_missing_or_malformed_database_result",
+      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_initial_owner_bootstrap.py",
+      "status": "implemented",
+      "notes": "Missing or malformed database outcomes fail closed without a commit or leaked database detail."
+    },
+    {
+      "test_id": "test_request_requires_uuid_target_and_correlation_identifiers",
+      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap.py",
+      "status": "implemented",
+      "notes": "The service boundary accepts only bounded non-secret UUID target and correlation identifiers."
+    },
+    {
+      "test_id": "test_initial_owner_bootstrap_closure_storage_is_bounded_and_secret_free",
+      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL schema inspection limits closure and audit storage to identifiers, timestamp, bounded outcome/reason, correlation, and non-secret state."
+    },
+    {
+      "test_id": "test_initial_owner_bootstrap_closes_once_and_audits_repeated_attempt",
+      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The first closure succeeds and a repeated attempt is rejected while both outcomes retain immutable secret-free audit evidence."
+    },
+    {
+      "test_id": "test_initial_owner_bootstrap_closure_does_not_infer_role_from_mfa_policy",
+      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The closure primitive does not conflate the separate MFA-policy field with Owner-role authority; the future protected bootstrap composition remains responsible for Owner establishment."
+    },
+    {
+      "test_id": "test_initial_owner_bootstrap_history_rejects_update_delete_and_truncate",
+      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Database triggers reject updates, deletes, and truncation of both the permanent closure marker and its audit history."
+    },
+    {
+      "test_id": "test_runtime_cannot_observe_or_invoke_initial_owner_bootstrap_guard",
+      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The function is a fixed-search-path definer boundary with no PUBLIC or normal-runtime execution grant; the runtime identity also cannot inspect closure or audit rows."
+    },
+    {
+      "test_id": "test_concurrent_initial_owner_bootstrap_attempts_establish_exactly_one_owner",
+      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Two concurrent real-PostgreSQL attempts serialize transactionally so exactly one closure succeeds and one rejected attempt is audited."
+    },
+    {
+      "test_id": "test_initial_owner_bootstrap_closure_migration_refuses_destructive_downgrade",
+      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The forward-only migration refuses destructive downgrade while retaining closure state, audit storage, and the current schema revision."
+    },
+    {
+      "test_id": "test_initial_owner_bootstrap_closure_has_bounded_traceability",
+      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "V1-012 evidence is mechanically bounded to the transactional closure guard, immutable audit persistence, protected service seam, and excluded public API/CLI and secret-handling scope."
     }
   ]
 }

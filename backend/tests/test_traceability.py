@@ -529,3 +529,39 @@ def test_session_revocation_orchestration_has_bounded_traceability() -> None:
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert routed_authorities == set(entry["upstream_ids"])
+
+
+def test_initial_owner_bootstrap_closure_has_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    routed_authorities = {
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059",
+    }
+    expected_test_ids = {
+        "test_guard_returns_established_result_from_transactional_repository",
+        "test_postgres_repository_uses_only_the_guard_in_the_caller_transaction",
+        "test_postgres_repository_returns_generic_failure_to_transaction_owner",
+        "test_postgres_repository_rejects_missing_or_malformed_database_result",
+        "test_request_requires_uuid_target_and_correlation_identifiers",
+        "test_initial_owner_bootstrap_closure_storage_is_bounded_and_secret_free",
+        "test_initial_owner_bootstrap_closes_once_and_audits_repeated_attempt",
+        "test_initial_owner_bootstrap_closure_does_not_infer_role_from_mfa_policy",
+        "test_initial_owner_bootstrap_history_rejects_update_delete_and_truncate",
+        "test_runtime_cannot_observe_or_invoke_initial_owner_bootstrap_guard",
+        "test_concurrent_initial_owner_bootstrap_attempts_establish_exactly_one_owner",
+        "test_initial_owner_bootstrap_closure_migration_refuses_destructive_downgrade",
+        "test_initial_owner_bootstrap_closure_has_bounded_traceability",
+    }
+
+    for test_id in expected_test_ids:
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert routed_authorities == set(entry["upstream_ids"])
