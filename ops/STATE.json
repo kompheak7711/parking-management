@@ -3,11 +3,11 @@
   "phase": "Identity",
   "tranche": "Persistent Browser-Session and Revocation Store",
   "task": "Implement the approved bounded candidate: Persistent browser-session and revocation store",
-  "status": "complete_uncommitted",
+  "status": "published",
   "active_cycle": "v1-014-persistent-browser-session-revocation-store",
   "branch": "implementation/foundation",
-  "commit": "3b7f57f5955b4dce139c14e7a4f7ab92ff6ef05b",
-  "timestamp": "2026-08-19T08:21:23Z",
+  "commit": "ed5e8020f21e5c45c3bed00e99f4042eec61a57e",
+  "timestamp": "2026-08-19T08:23:31Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
@@ -85,7 +85,7 @@
     "roadmap_id": "V1-014"
   },
   "next_action": "Publish the independently verified V1-014 tranche under standing authorization, then activate exact successor V1-015",
-  "idle_reason": null,
+  "idle_reason": "waiting for an explicitly approved candidate",
   "owner_action": "none",
   "blockers": [],
   "repair": {
