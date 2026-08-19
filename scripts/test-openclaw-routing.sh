@@ -335,6 +335,16 @@ placeholder_preflight="$(PROPERTY_RENTAL_REPO="$placeholder_repo" "$placeholder_
 [ "$(printf '%s' "$placeholder_preflight" | jq -r '.state_issue')" = authorized_candidate_selection_required ]
 printf '%s' "$placeholder_preflight" | jq -e '.queue_candidate.phase == "Phase 2E"' >/dev/null
 
+# A concrete record for the just-published current tranche is not a successor.
+# Route to the next roadmap entry instead of silently stalling publication.
+jq '.next_candidate={id:"V1-001",roadmap_id:"V1-001",phase:"Phase 2D",task:"completed current tranche",status:"complete_uncommitted",risk_class:"high"}' \
+  "$placeholder_repo/ops/STATE.json" >"$placeholder_repo/ops/STATE.json.new"
+mv "$placeholder_repo/ops/STATE.json.new" "$placeholder_repo/ops/STATE.json"
+stale_current_preflight="$(PROPERTY_RENTAL_REPO="$placeholder_repo" "$placeholder_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$stale_current_preflight" | jq -r '.actionable')" = true ]
+[ "$(printf '%s' "$stale_current_preflight" | jq -r '.state_issue')" = authorized_candidate_selection_required ]
+printf '%s' "$stale_current_preflight" | jq -e '.queue_candidate.phase == "Phase 2E"' >/dev/null
+
 for variant in null missing alternate; do
   case "$variant" in
     null) filter='.next_candidate=null | .next_action="Await an explicitly bounded next candidate; do not infer or broaden scope."' ;;

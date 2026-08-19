@@ -17,6 +17,7 @@ candidate_task="$(jq -r '.next_candidate.task // ""' ops/STATE.json)"
 candidate_phase="$(jq -r '.next_candidate.phase // ""' ops/STATE.json)"
 candidate_status="$(jq -r '.next_candidate.status // "unknown"' ops/STATE.json)"
 candidate_is_object="$(jq -r '.next_candidate | type == "object"' ops/STATE.json)"
+candidate_id="$(jq -r '.next_candidate.roadmap_id // .next_candidate.id // ""' ops/STATE.json)"
 approval_status="$(jq -r '.approval.status // "unknown"' ops/STATE.json)"
 implementation_started="$(jq -r '.approval.implementation_started == true' ops/STATE.json)"
 implementation_completed="$(jq -r '.approval.implementation_completed == true' ops/STATE.json)"
@@ -63,6 +64,10 @@ fi
 roadmap_current_id="$(jq -r '.roadmap.current_id // ""' ops/STATE.json)"
 if [ -z "$roadmap_current_id" ] && [ "$(jq -r '.phase // ""' ops/STATE.json)" = "Phase 2P" ]; then
   roadmap_current_id="V1-011"
+fi
+candidate_is_current=false
+if [ -n "$candidate_id" ] && [ "$candidate_id" = "$roadmap_current_id" ]; then
+  candidate_is_current=true
 fi
 queue_candidate='null'
 roadmap_total=0
@@ -133,13 +138,15 @@ if [ "$blocker_count" -eq 0 ]; then
     state_issue="missing_next_action_derived_from_approved_candidate"
   fi
   if [ "$normalized" = false ] && [ "$status" = published ] \
+    && [ "$candidate_is_current" = false ] \
     && [ "$candidate_status" = approved_ready ] && [ -n "$candidate_task" ]; then
     next_action="Implement the approved bounded candidate: $candidate_task"
     normalized=true
     state_issue="published_next_candidate_dispatch_required"
   fi
   if [ "$normalized" = false ] && [ "$status" = published ] \
-    && [ "$durable_v1_authorization" = true ] && [ "$candidate_is_concrete" = false ]; then
+    && [ "$durable_v1_authorization" = true ] \
+    && { [ "$candidate_is_concrete" = false ] || [ "$candidate_is_current" = true ]; }; then
     if [ "$queue_candidate_available" = true ]; then
       next_action="Materialize the exact structured approved successor from ops/V1_ROADMAP.json without a model, then dispatch it immediately."
       normalized=true
