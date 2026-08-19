@@ -177,12 +177,13 @@ and a 30,000-token budget.
 The model-free preflight also enforces durable handoff invariants learned from prior
 recovery incidents. An approved candidate with a missing `next_action` is dispatched
 from its already-approved task instead of silently idling. A verified
-`complete_uncommitted` or `complete_unpublished` tranche covered by standing
+`verified_unpublished`, `complete_uncommitted`, or `complete_unpublished` tranche covered by standing
 authorization is routed to independent publication verification and cannot demand a
 redundant owner commit/push instruction. These cases are regression-tested by
 `make automation-test` and any future repair must add or extend a deterministic test.
 Implementers must record an uncommitted completed tranche as `complete_uncommitted`.
-For recovery from the previously emitted `implemented_awaiting_supervisor_review` alias,
+For recovery from the previously emitted `verified_unpublished` and
+`implemented_awaiting_supervisor_review` aliases,
 preflight routes the same mandatory publication action instead of silently idling.
 Published state with an explicitly approved next candidate is also actionable: preflight
 routes that candidate immediately and the task packet takes its phase and risk metadata,

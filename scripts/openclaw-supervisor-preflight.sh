@@ -67,7 +67,7 @@ state_issue=""
 # Derive only actions already covered by explicit approved state; never infer approval.
 if [ "$blocker_count" -eq 0 ]; then
   case "$status" in
-    verified_for_review|complete_uncommitted|complete_unpublished|implemented_awaiting_supervisor_review)
+    verified_for_review|verified_unpublished|complete_uncommitted|complete_unpublished|implemented_awaiting_supervisor_review)
       if [ -n "$state_commit" ] && [ "$state_commit" != "$head_sha" ] \
         && [ "$head_sha" = "$upstream_sha" ] && [ -z "$worktree_status" ] \
         && git merge-base --is-ancestor "$state_commit" "$head_sha" 2>/dev/null; then
@@ -109,7 +109,7 @@ if [ "$blocker_count" -eq 0 ]; then
   fi
   if [ "$normalized" = false ]; then
     case "$status:$approval_status" in
-      complete_uncommitted:approved_ready|complete_unpublished:approved_ready)
+      verified_unpublished:approved_ready|complete_uncommitted:approved_ready|complete_unpublished:approved_ready)
         next_action="Independently verify and publish the completed bounded tranche under standing authorization, then dispatch the next approved candidate."
         normalized=true
         state_issue="completed_tranche_publication_action_enforced"
@@ -136,7 +136,7 @@ fi
 
 if [ "$blocker_count" -eq 0 ] && [ -n "$next_action" ]; then
   case "$status" in
-    approved_ready|active|in_progress|verified_for_review|complete_unpublished|complete_uncommitted|implemented_awaiting_supervisor_review)
+    approved_ready|active|in_progress|verified_for_review|verified_unpublished|complete_unpublished|complete_uncommitted|implemented_awaiting_supervisor_review)
       actionable=true
       ;;
     failed|not_verified|discrepancy|repair_required)

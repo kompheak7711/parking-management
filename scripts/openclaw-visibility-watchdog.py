@@ -102,6 +102,7 @@ def effective_next_action(state: dict[str, object]) -> str:
     if (
         status
         in {
+            "verified_unpublished",
             "complete_uncommitted",
             "complete_unpublished",
             "implemented_awaiting_supervisor_review",
@@ -270,6 +271,7 @@ def main() -> None:
         "approved_ready",
         "active",
         "in_progress",
+        "verified_unpublished",
         "complete_uncommitted",
         "complete_unpublished",
         "failed",
