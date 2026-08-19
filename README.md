@@ -181,6 +181,12 @@ from its already-approved task instead of silently idling. A verified
 authorization is routed to independent publication verification and cannot demand a
 redundant owner commit/push instruction. These cases are regression-tested by
 `make automation-test` and any future repair must add or extend a deterministic test.
+The executable rule primarily uses structured approval lifecycle fields—not an open-ended
+list of worker-written status labels—so any future label with implementation complete,
+publication incomplete, approved scope, and no blockers follows the same publication path.
+Any other unrecognized status under durable authorization enters a bounded state-contract
+repair instead of silent idle; a state that cannot be safely normalized produces one
+deduplicated Telegram alert.
 Implementers must record an uncommitted completed tranche as `complete_uncommitted`.
 For recovery from the previously emitted `verified_unpublished` and
 `implemented_awaiting_supervisor_review` aliases,

@@ -100,15 +100,10 @@ def effective_next_action(state: dict[str, object]) -> str:
     approval = state.get("approval") or {}
     candidate = state.get("next_candidate") or {}
     if (
-        status
-        in {
-            "verified_unpublished",
-            "complete_uncommitted",
-            "complete_unpublished",
-            "implemented_awaiting_supervisor_review",
-        }
-        and isinstance(approval, dict)
+        isinstance(approval, dict)
         and approval.get("status") == "approved_ready"
+        and approval.get("implementation_completed") is True
+        and approval.get("publication_completed") is not True
         and not state.get("blockers")
     ):
         return (
@@ -232,6 +227,18 @@ def main() -> None:
         )
     else:
         ledger.pop("handoff_missing", None)
+
+    if state_issue == "state_contract_violation":
+        emit_once(
+            ledger,
+            "state_contract_violation",
+            f"{phase}:{status}:{head}:{next_action}",
+            "STATE_CONTRACT_VIOLATION — Property Rental compact state cannot be "
+            "safely normalized automatically. "
+            f"Exact next action: {next_action}",
+        )
+    else:
+        ledger.pop("state_contract_violation", None)
 
     if status == "published":
         published_commit = str(state.get("commit") or head)[:7]

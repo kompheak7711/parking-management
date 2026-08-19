@@ -5,6 +5,12 @@ repo="${PROPERTY_RENTAL_REPO:-/Users/sokompheak/Development/property-rental-mana
 cd "$repo"
 
 status="$(jq -r '.status // "unknown"' ops/STATE.json)"
+status_known=false
+case "$status" in
+  approved_ready|active|in_progress|verified_for_review|complete_unpublished|complete_uncommitted|published|failed|not_verified|discrepancy|repair_required|verified_unpublished|implemented_awaiting_supervisor_review)
+    status_known=true
+    ;;
+esac
 recorded_next_action="$(jq -r '.next_action // ""' ops/STATE.json)"
 next_action="$recorded_next_action"
 candidate_task="$(jq -r '.next_candidate.task // ""' ops/STATE.json)"
@@ -12,6 +18,9 @@ candidate_phase="$(jq -r '.next_candidate.phase // ""' ops/STATE.json)"
 candidate_status="$(jq -r '.next_candidate.status // "unknown"' ops/STATE.json)"
 candidate_is_object="$(jq -r '.next_candidate | type == "object"' ops/STATE.json)"
 approval_status="$(jq -r '.approval.status // "unknown"' ops/STATE.json)"
+implementation_started="$(jq -r '.approval.implementation_started == true' ops/STATE.json)"
+implementation_completed="$(jq -r '.approval.implementation_completed == true' ops/STATE.json)"
+publication_completed="$(jq -r '.approval.publication_completed == true' ops/STATE.json)"
 blocker_count="$(jq -r '(.blockers // []) | length' ops/STATE.json)"
 repair_attempts="$(jq -r '(.repair.attempts // 0) | if type == "number" and floor == . and . >= 0 then . else 0 end' ops/STATE.json)"
 repair_max_attempts="$(jq -r '(.repair.max_attempts // 2) | if type == "number" and floor == . and . >= 1 and . <= 2 then . else 2 end' ops/STATE.json)"
@@ -66,8 +75,17 @@ state_issue=""
 # Durable state must not silently stall because a model omitted a redundant field.
 # Derive only actions already covered by explicit approved state; never infer approval.
 if [ "$blocker_count" -eq 0 ]; then
-  case "$status" in
-    verified_for_review|verified_unpublished|complete_uncommitted|complete_unpublished|implemented_awaiting_supervisor_review)
+  if [ "$implementation_completed" = true ] && [ "$publication_completed" = false ]; then
+    if [ -n "$state_commit" ] && [ "$state_commit" != "$head_sha" ] \
+      && [ "$head_sha" = "$upstream_sha" ] && [ -z "$worktree_status" ] \
+      && git merge-base --is-ancestor "$state_commit" "$head_sha" 2>/dev/null; then
+      next_action="Reconcile compact state with published HEAD $head_sha: record status published, branch, published commit, nonempty exact next_action, explicit next-candidate approval status, idle reason, and owner action; do not implement the next candidate."
+      normalized=true
+      state_issue="published_compact_state_reconciliation_required"
+    fi
+  else
+    case "$status" in
+      verified_for_review|verified_unpublished|complete_uncommitted|complete_unpublished|implemented_awaiting_supervisor_review)
       if [ -n "$state_commit" ] && [ "$state_commit" != "$head_sha" ] \
         && [ "$head_sha" = "$upstream_sha" ] && [ -z "$worktree_status" ] \
         && git merge-base --is-ancestor "$state_commit" "$head_sha" 2>/dev/null; then
@@ -76,7 +94,14 @@ if [ "$blocker_count" -eq 0 ]; then
         state_issue="published_compact_state_reconciliation_required"
       fi
       ;;
-  esac
+    esac
+  fi
+  if [ "$normalized" = false ] && [ "$approval_status" = approved_ready ] \
+    && [ "$implementation_completed" = true ] && [ "$publication_completed" = false ]; then
+    next_action="Independently verify and publish the completed bounded tranche under standing authorization, then dispatch the next approved candidate."
+    normalized=true
+    state_issue="completed_tranche_publication_action_enforced"
+  fi
   if [ "$normalized" = false ] && [ "$status" = implemented_awaiting_supervisor_review ] \
     && [ "$approval_status" = approved_ready ]; then
     next_action="Independently verify and publish the completed bounded tranche under standing authorization; record it as complete_uncommitted before publication and do not wait for redundant Owner permission."
@@ -132,9 +157,33 @@ if [ "$blocker_count" -eq 0 ]; then
         ;;
     esac
   fi
+  if [ "$normalized" = false ] && [ "$status_known" = false ]; then
+    case "$approval_status" in
+      approved_ready|approved_active|approved_complete)
+        if [ "$durable_v1_authorization" = true ] && [ "$repair_protected" = false ]; then
+          next_action="Perform a bounded compact-state contract repair for unrecognized status '$status': reconcile approval lifecycle, current roadmap item, Git/worktree evidence, and exact next action without changing application scope or publishing unverified work."
+          normalized=true
+          state_issue="state_contract_repair_authorized"
+        else
+          next_action="Unrecognized compact-state status '$status' cannot be safely normalized under current authorization."
+          normalized=true
+          state_issue="state_contract_violation"
+        fi
+        ;;
+      *)
+        next_action="Unrecognized compact-state status '$status' cannot be safely normalized under current authorization."
+        normalized=true
+        state_issue="state_contract_violation"
+        ;;
+    esac
+  fi
 fi
 
 if [ "$blocker_count" -eq 0 ] && [ -n "$next_action" ]; then
+  if [ "$state_issue" = completed_tranche_publication_action_enforced ] \
+    || [ "$state_issue" = state_contract_repair_authorized ]; then
+    actionable=true
+  fi
   case "$status" in
     approved_ready|active|in_progress|verified_for_review|verified_unpublished|complete_unpublished|complete_uncommitted|implemented_awaiting_supervisor_review)
       actionable=true
@@ -167,6 +216,10 @@ jq -cn \
   --argjson repair_max_attempts "$repair_max_attempts" \
   --argjson durable_v1_authorization "$durable_v1_authorization" \
   --argjson candidate_is_concrete "$candidate_is_concrete" \
+  --argjson status_known "$status_known" \
+  --argjson implementation_started "$implementation_started" \
+  --argjson implementation_completed "$implementation_completed" \
+  --argjson publication_completed "$publication_completed" \
   --argjson queue_candidate "$queue_candidate" \
   --arg roadmap_current_id "$roadmap_current_id" \
   --argjson roadmap_total "$roadmap_total" \
@@ -174,4 +227,4 @@ jq -cn \
   --arg roadmap_current_status "$roadmap_current_status" \
   --argjson normalized "$normalized" \
   --argjson actionable "$actionable" \
-  '{head: $head, status: $status, active_cycle: $active_cycle, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, repair_failure: $repair_failure, normalized: $normalized, blockers: $blockers, repair_attempts: $repair_attempts, repair_max_attempts: $repair_max_attempts, durable_v1_authorization: $durable_v1_authorization, candidate_is_concrete: $candidate_is_concrete, queue_candidate: $queue_candidate, roadmap:{current_id:$roadmap_current_id,current_status:$roadmap_current_status,total:$roadmap_total,completed:$roadmap_completed}, worktree: $worktree, actionable: $actionable}'
+  '{head: $head, status: $status, active_cycle: $active_cycle, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, repair_failure: $repair_failure, normalized: $normalized, blockers: $blockers, repair_attempts: $repair_attempts, repair_max_attempts: $repair_max_attempts, durable_v1_authorization: $durable_v1_authorization, candidate_is_concrete: $candidate_is_concrete, status_known: $status_known, implementation_started: $implementation_started, implementation_completed: $implementation_completed, publication_completed: $publication_completed, queue_candidate: $queue_candidate, roadmap:{current_id:$roadmap_current_id,current_status:$roadmap_current_status,total:$roadmap_total,completed:$roadmap_completed}, worktree: $worktree, actionable: $actionable}'

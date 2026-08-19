@@ -162,6 +162,38 @@ verified_unpublished_preflight="$(PROPERTY_RENTAL_REPO="$verified_unpublished_re
 [ "$(printf '%s' "$verified_unpublished_preflight" | jq -r '.state_issue')" = completed_tranche_publication_action_enforced ]
 printf '%s' "$verified_unpublished_preflight" | jq -e '.next_action | contains("standing authorization")' >/dev/null
 
+make_repo future_completion_status high 'next bounded candidate'
+future_completion_repo="$test_root/future_completion_status/repo"
+jq '.status="future_worker_completion_label"
+  | .next_action="Wait for an explicit instruction."
+  | .approval={status:"approved_ready",implementation_started:true,implementation_completed:true,publication_completed:false}' \
+  "$future_completion_repo/ops/STATE.json" >"$future_completion_repo/ops/STATE.json.new"
+mv "$future_completion_repo/ops/STATE.json.new" "$future_completion_repo/ops/STATE.json"
+future_completion_preflight="$(PROPERTY_RENTAL_REPO="$future_completion_repo" "$future_completion_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$future_completion_preflight" | jq -r '.actionable')" = true ]
+[ "$(printf '%s' "$future_completion_preflight" | jq -r '.normalized')" = true ]
+[ "$(printf '%s' "$future_completion_preflight" | jq -r '.state_issue')" = completed_tranche_publication_action_enforced ]
+printf '%s' "$future_completion_preflight" | jq -e '
+  .implementation_started == true
+  and .implementation_completed == true
+  and .publication_completed == false
+  and (.next_action | contains("standing authorization"))
+' >/dev/null
+
+make_repo unknown_state_contract high 'approved bounded work'
+unknown_state_repo="$test_root/unknown_state_contract/repo"
+printf '%s\n' 'Remaining v1 application tranches are authorized when bounded by canonical documents 001-010.' >"$unknown_state_repo/ops/QUEUE.md"
+jq '.status="unexpected_worker_state"
+  | .approval={status:"approved_ready",implementation_started:false,implementation_completed:false,publication_completed:false}' \
+  "$unknown_state_repo/ops/STATE.json" >"$unknown_state_repo/ops/STATE.json.new"
+mv "$unknown_state_repo/ops/STATE.json.new" "$unknown_state_repo/ops/STATE.json"
+unknown_state_preflight="$(PROPERTY_RENTAL_REPO="$unknown_state_repo" "$unknown_state_repo/scripts/openclaw-supervisor-preflight.sh")"
+[ "$(printf '%s' "$unknown_state_preflight" | jq -r '.actionable')" = true ]
+[ "$(printf '%s' "$unknown_state_preflight" | jq -r '.normalized')" = true ]
+[ "$(printf '%s' "$unknown_state_preflight" | jq -r '.status_known')" = false ]
+[ "$(printf '%s' "$unknown_state_preflight" | jq -r '.state_issue')" = state_contract_repair_authorized ]
+printf '%s' "$unknown_state_preflight" | jq -e '.next_action | contains("bounded compact-state contract repair")' >/dev/null
+
 make_repo completed_status_alias high 'no later candidate selected'
 alias_repo="$test_root/completed_status_alias/repo"
 jq '.status="implemented_awaiting_supervisor_review"

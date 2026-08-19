@@ -19,10 +19,10 @@ def effective_next_action(state: dict[str, object]) -> str:
     approval = state.get("approval") or {}
     candidate = state.get("next_candidate") or {}
     if (
-        status
-        in {"verified_unpublished", "complete_uncommitted", "complete_unpublished"}
-        and isinstance(approval, dict)
+        isinstance(approval, dict)
         and approval.get("status") == "approved_ready"
+        and approval.get("implementation_completed") is True
+        and approval.get("publication_completed") is not True
         and not state.get("blockers")
     ):
         return (

@@ -68,4 +68,14 @@ printf '%s' "$first" | grep -q 'Roadmap progress: 2/60 complete; current V1-012'
 printf '%s' "$first" | grep -q 'Next: Implement the approved bounded candidate: MFA enrollment persistence foundation'
 [ -z "$(run_watchdog)" ]
 
+jq '.status="unexpected_worker_state"
+  | .approval={status:"unknown",implementation_started:false,implementation_completed:false,publication_completed:false}
+  | .next_action=""
+  | .next_candidate=null' \
+  "$repo/ops/STATE.json" >"$repo/ops/STATE.json.new"
+mv "$repo/ops/STATE.json.new" "$repo/ops/STATE.json"
+contract_alert="$(run_watchdog)"
+printf '%s' "$contract_alert" | grep -q 'STATE_CONTRACT_VIOLATION — Property Rental compact state'
+[ -z "$(run_watchdog)" ]
+
 echo "OpenClaw visibility watchdog tests passed"
