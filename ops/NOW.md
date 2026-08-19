@@ -1,4 +1,4 @@
-# V1-012 Initial Owner Bootstrap Closure Guard Foundation — verified, unpublished
+# V1-012 Initial Owner Bootstrap Closure Guard Foundation — published
 
 - Objective: provide the approved transactional first-Owner bootstrap closure primitive and
   immutable secret-free audit persistence without implementing the protected CLI operation.
@@ -18,8 +18,10 @@
   deployment, roadmap, automation, and dependency audits passed.
 - Scope preserved: no public API/UI/CLI, password/MFA/recovery secret handling, role creation,
   production credential, deployment, production operation, canonical change, or policy invention.
-- Publication: not committed or pushed; HEAD remains the published V1-011 successor baseline.
-- Blockers: none. Owner action: request commit and push if publication is desired.
-- Roadmap: V1-001 through V1-011 remain published complete; V1-012 is verified but remains
-  `approved_ready` until its bounded file set is explicitly published.
-- Exact next action: review and publish only the verified V1-012 files after an explicit request.
+- Publication: feature commit `74eb444` is pushed and GitHub Actions run `32217440316` passed,
+  including backend, frontend, dependency-security, and isolated PostgreSQL migration jobs.
+- Blockers: none. Owner action: none.
+- Roadmap: V1-001 through V1-012 are published complete; V1-013 is the selected dependency-ready
+  approved successor under durable v1 authorization.
+- Exact next action: implement the approved bounded V1-013 standards-based TOTP MFA
+  cryptographic and persistence foundation.
