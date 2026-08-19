@@ -1,4 +1,4 @@
-# V1-013 Standards-based TOTP MFA Cryptographic and Persistence Foundation — verified
+# V1-013 Standards-based TOTP MFA Cryptographic and Persistence Foundation — published
 
 - Objective: implement the approved bounded RFC 6238 TOTP enrollment-verifier mechanics and
   protected persistence foundation without adding public API/UI, SMS, or production secrets.
@@ -30,10 +30,11 @@
   attempt 2 corrected the vulnerable dependency bound identified by the publication CI gate.
 - Scope preserved: no API/UI, SMS, session/recovery orchestration, production key, role/capability
   policy, deployment operation, canonical specification change, or unrelated implementation.
-- Publication: feature commit `c4d14d5` is pushed; CI run `32221669512` passed backend,
-  frontend, and PostgreSQL gates but failed the runtime dependency audit. The verified
-  cryptography 50.0.0 corrective update remains uncommitted pending focused publication.
+- Publication: feature commit `c4d14d5` and corrective commit `8d1083d` are pushed. GitHub
+  Actions run `32221920803` passed backend, frontend, isolated PostgreSQL, build, traceability,
+  and runtime/development dependency-security gates.
 - Blockers: none. Owner action: none.
-- Roadmap remains 12/60 published complete until V1-013 is independently published.
-- Exact next action: independently verify and publish the completed bounded V1-013 tranche under
-  standing authorization, then reconcile the roadmap and dispatch its approved successor.
+- Roadmap: V1-001 through V1-013 are published complete; V1-014 is the dependency-ready approved
+  successor under durable v1 authorization.
+- Exact next action: implement the approved bounded V1-014 persistent browser-session and
+  revocation store.
