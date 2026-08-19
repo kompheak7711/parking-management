@@ -460,6 +460,10 @@ reconciliation_head="$(git -C "$reconcile_repo" rev-parse HEAD)"
 [ "$(sed -n '1p' "$reconcile_calls")" = "$candidate_head" ]
 [ "$(sed -n '2p' "$reconcile_calls")" = "$reconciliation_head" ]
 [ "$(wc -l <"$reconcile_calls" | tr -d ' ')" -eq 2 ]
-jq -e --arg commit "$candidate_head" '.status == "published" and .commit == $commit' "$reconcile_repo/ops/STATE.json" >/dev/null
+jq -e --arg commit "$candidate_head" '
+  .status == "published"
+  and .approval.publication_completed == true
+  and .commit == $commit
+' "$reconcile_repo/ops/STATE.json" >/dev/null
 
 echo "OpenClaw routing tests passed"

@@ -36,6 +36,7 @@ jq \
   --arg timestamp "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
   --arg next_action "$next_action" '
     .status = "published"
+    | .approval.publication_completed = true
     | .branch = $branch
     | .commit = $head
     | .timestamp = $timestamp
