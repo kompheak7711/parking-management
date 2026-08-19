@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from textwrap import dedent
 from typing import cast
@@ -2455,7 +2455,7 @@ def test_runtime_has_only_bounded_totp_enrollment_privileges() -> None:
 
 def test_totp_enrollment_migration_refuses_destructive_downgrade() -> None:
     with _temporary_migration_database("prm_totp_downgrade") as migration_url:
-        assert _run_alembic("upgrade", "head").returncode == 0
+        assert _run_alembic("upgrade", "20260819_06").returncode == 0
 
         result = _run_alembic("downgrade", "20260818_05")
 
@@ -2467,3 +2467,493 @@ def test_totp_enrollment_migration_refuses_destructive_downgrade() -> None:
                 assert cursor.fetchone() == ("app.totp_mfa_enrollments",)
                 cursor.execute("SELECT version_num FROM alembic_version")
                 assert cursor.fetchone() == ("20260819_06",)
+
+
+def test_browser_sessions_store_only_bounded_protected_lifetime_and_revocation_state() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT column_name, data_type, is_nullable
+                FROM information_schema.columns
+                WHERE table_schema = 'app' AND table_name = 'browser_sessions'
+                ORDER BY ordinal_position
+                """
+            )
+            assert cursor.fetchall() == [
+                ("session_id", "uuid", "NO"),
+                ("actor_id", "uuid", "NO"),
+                ("token_verifier", "bytea", "NO"),
+                ("verifier_algorithm", "text", "NO"),
+                ("created_at", "timestamp with time zone", "NO"),
+                ("last_activity_at", "timestamp with time zone", "NO"),
+                ("idle_expires_at", "timestamp with time zone", "NO"),
+                ("absolute_expires_at", "timestamp with time zone", "NO"),
+                ("creation_provenance", "text", "NO"),
+                ("revoked_at", "timestamp with time zone", "YES"),
+                ("revoked_by_actor_id", "uuid", "YES"),
+                ("revocation_reason", "text", "YES"),
+                ("revocation_provenance", "text", "YES"),
+            ]
+            cursor.execute(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'app'
+                  AND table_name = 'browser_sessions'
+                  AND column_name ~ '(token$|plaintext|cookie|role|capability)'
+                """
+            )
+            assert cursor.fetchall() == []
+
+
+@pytest.mark.parametrize(
+    ("token_verifier", "verifier_algorithm", "creation_provenance"),
+    [
+        (b"short", "sha256", "local-login"),
+        (b"v" * 32, "plaintext", "local-login"),
+        (b"v" * 32, "sha256", "   "),
+    ],
+)
+def test_browser_sessions_reject_unprotected_or_incomplete_token_verifiers(
+    token_verifier: bytes,
+    verifier_algorithm: str,
+    creation_provenance: str,
+) -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+    actor_id = uuid.uuid4()
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Session Actor', %s, 'active', 'optional',
+                          'authorized-account-creation')
+                """,
+                (actor_id, f"session-{actor_id.hex}", f"session-{actor_id.hex}"),
+            )
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.CheckViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.browser_sessions (
+                        session_id, actor_id, token_verifier, verifier_algorithm,
+                        creation_provenance
+                    ) VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (
+                        uuid.uuid4(),
+                        actor_id,
+                        token_verifier,
+                        verifier_algorithm,
+                        creation_provenance,
+                    ),
+                )
+
+
+@pytest.mark.parametrize(
+    ("last_activity_delta", "idle_expiry_delta", "absolute_expiry_delta"),
+    [
+        (-1, 30, 24 * 60),
+        (0, 31, 24 * 60),
+        (0, 30, 25 * 60),
+        (24 * 60, 24 * 60, 24 * 60),
+    ],
+)
+def test_browser_session_creation_rejects_invalid_fixed_lifetime_state(
+    last_activity_delta: int,
+    idle_expiry_delta: int,
+    absolute_expiry_delta: int,
+) -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+    actor_id = uuid.uuid4()
+    created_at = datetime(2026, 8, 19, 1, 0, tzinfo=UTC)
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Lifetime Actor', %s, 'active', 'optional',
+                          'authorized-account-creation')
+                """,
+                (actor_id, f"lifetime-{actor_id.hex}", f"lifetime-{actor_id.hex}"),
+            )
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.CheckViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.browser_sessions (
+                        session_id, actor_id, token_verifier, verifier_algorithm,
+                        created_at, last_activity_at, idle_expires_at,
+                        absolute_expires_at, creation_provenance
+                    ) VALUES (%s, %s, %s, 'sha256', %s, %s, %s, %s, 'local-login')
+                    """,
+                    (
+                        uuid.uuid4(),
+                        actor_id,
+                        os.urandom(32),
+                        created_at,
+                        created_at + timedelta(minutes=last_activity_delta),
+                        created_at + timedelta(minutes=idle_expiry_delta),
+                        created_at + timedelta(minutes=absolute_expiry_delta),
+                    ),
+                )
+
+
+def test_browser_session_creation_rejects_revocation_before_creation() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+    actor_id = uuid.uuid4()
+    created_at = datetime(2026, 8, 19, 1, 0, tzinfo=UTC)
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Revoked Session', %s, 'active', 'optional',
+                          'authorized-account-creation')
+                """,
+                (actor_id, f"revoked-session-{actor_id.hex}", f"revoked-{actor_id.hex}"),
+            )
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.CheckViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.browser_sessions (
+                        session_id, actor_id, token_verifier, verifier_algorithm,
+                        created_at, last_activity_at, idle_expires_at,
+                        absolute_expires_at, creation_provenance, revoked_at,
+                        revoked_by_actor_id, revocation_reason, revocation_provenance
+                    ) VALUES (
+                        %s, %s, %s, 'sha256', %s, %s, %s, %s, 'local-login',
+                        %s, %s, 'logout', 'invalid-pre-creation-revocation'
+                    )
+                    """,
+                    (
+                        uuid.uuid4(),
+                        actor_id,
+                        os.urandom(32),
+                        created_at,
+                        created_at,
+                        created_at + timedelta(minutes=30),
+                        created_at + timedelta(hours=24),
+                        created_at - timedelta(seconds=1),
+                        actor_id,
+                    ),
+                )
+
+
+def test_browser_session_activity_and_revocation_are_forward_only_and_retain_history() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+    actor_id = uuid.uuid4()
+    operator_id = uuid.uuid4()
+    session_id = uuid.uuid4()
+    token_verifier = os.urandom(32)
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            for account_id, label in ((actor_id, "target"), (operator_id, "operator")):
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, %s, 'Browser Session', %s, 'active', 'optional',
+                              'authorized-account-creation')
+                    """,
+                    (
+                        account_id,
+                        f"browser-session-{label}-{account_id.hex}",
+                        f"browser-session-{label}",
+                    ),
+                )
+            cursor.execute(
+                """
+                INSERT INTO app.browser_sessions (
+                    session_id, actor_id, token_verifier, verifier_algorithm,
+                    creation_provenance
+                ) VALUES (%s, %s, %s, 'sha256', 'local-login')
+                RETURNING created_at, last_activity_at, idle_expires_at, absolute_expires_at
+                """,
+                (session_id, actor_id, token_verifier),
+            )
+            creation_row = cursor.fetchone()
+            assert creation_row is not None
+            created_at, first_activity_at, first_idle_expiry, absolute_expiry = creation_row
+            assert first_activity_at == created_at
+            assert first_idle_expiry == created_at + timedelta(minutes=30)
+            assert absolute_expiry == created_at + timedelta(hours=24)
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.UniqueViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.browser_sessions (
+                        session_id, actor_id, token_verifier, verifier_algorithm,
+                        creation_provenance
+                    ) VALUES (%s, %s, %s, 'sha256', 'duplicate-verifier')
+                    """,
+                    (uuid.uuid4(), actor_id, token_verifier),
+                )
+        connection.rollback()
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE app.browser_sessions
+                SET last_activity_at = statement_timestamp()
+                WHERE session_id = %s
+                RETURNING last_activity_at, idle_expires_at, absolute_expires_at
+                """,
+                (session_id,),
+            )
+            activity_row = cursor.fetchone()
+            assert activity_row is not None
+            last_activity_at, idle_expiry, unchanged_absolute_expiry = activity_row
+            assert last_activity_at > first_activity_at
+            assert idle_expiry == last_activity_at + timedelta(minutes=30)
+            assert unchanged_absolute_expiry == absolute_expiry
+        connection.commit()
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE app.browser_sessions
+                SET revoked_by_actor_id = %s,
+                    revocation_reason = 'account_disabled',
+                    revocation_provenance = 'authorized-account-disablement'
+                WHERE session_id = %s
+                RETURNING revoked_at, revoked_by_actor_id, revocation_reason,
+                          revocation_provenance
+                """,
+                (operator_id, session_id),
+            )
+            revocation_row = cursor.fetchone()
+            assert revocation_row is not None
+            revoked_at, revoked_by, reason, provenance = revocation_row
+            assert revoked_at is not None
+            assert revoked_by == operator_id
+            assert reason == "account_disabled"
+            assert provenance == "authorized-account-disablement"
+        connection.commit()
+
+        for statement in (
+            sql.SQL("UPDATE app.browser_sessions SET last_activity_at = statement_timestamp()"),
+            sql.SQL("UPDATE app.browser_sessions SET revocation_reason = 'logout'"),
+            sql.SQL(
+                "UPDATE app.browser_sessions SET token_verifier = decode(repeat('00', 32), 'hex')"
+            ),
+            sql.SQL("DELETE FROM app.browser_sessions"),
+            sql.SQL("TRUNCATE app.browser_sessions"),
+        ):
+            with connection.cursor() as cursor:
+                cursor.execute("SAVEPOINT browser_session_history_immutability")
+            with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
+                with connection.cursor() as cursor:
+                    cursor.execute(statement)
+            with connection.cursor() as cursor:
+                cursor.execute("ROLLBACK TO SAVEPOINT browser_session_history_immutability")
+
+
+def test_browser_session_activity_cannot_revive_an_expired_session() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+    actor_id = uuid.uuid4()
+    session_id = uuid.uuid4()
+    created_at = datetime.now(UTC) - timedelta(hours=1)
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Expired Session', %s, 'active', 'optional',
+                          'authorized-account-creation')
+                """,
+                (actor_id, f"expired-session-{actor_id.hex}", f"expired-{actor_id.hex}"),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.browser_sessions (
+                    session_id, actor_id, token_verifier, verifier_algorithm,
+                    created_at, last_activity_at, idle_expires_at,
+                    absolute_expires_at, creation_provenance
+                ) VALUES (%s, %s, %s, 'sha256', %s, %s, %s, %s, 'local-login')
+                """,
+                (
+                    session_id,
+                    actor_id,
+                    os.urandom(32),
+                    created_at,
+                    created_at,
+                    created_at + timedelta(minutes=30),
+                    created_at + timedelta(hours=24),
+                ),
+            )
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE app.browser_sessions SET last_activity_at = statement_timestamp() "
+                    "WHERE session_id = %s",
+                    (session_id,),
+                )
+
+
+def test_runtime_has_only_bounded_browser_session_lifecycle_privileges() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    has_table_privilege('prm_runtime', 'app.browser_sessions', 'SELECT'),
+                    has_table_privilege('prm_runtime', 'app.browser_sessions', 'INSERT'),
+                    has_table_privilege('prm_runtime', 'app.browser_sessions', 'UPDATE'),
+                    has_table_privilege('prm_runtime', 'app.browser_sessions', 'DELETE'),
+                    has_table_privilege('prm_runtime', 'app.browser_sessions', 'TRUNCATE'),
+                    has_column_privilege(
+                        'prm_runtime', 'app.browser_sessions', 'token_verifier', 'SELECT'
+                    ),
+                    has_column_privilege(
+                        'prm_runtime', 'app.browser_sessions', 'creation_provenance', 'SELECT'
+                    ),
+                    has_column_privilege(
+                        'prm_runtime', 'app.browser_sessions', 'token_verifier', 'UPDATE'
+                    ),
+                    has_column_privilege(
+                        'prm_runtime', 'app.browser_sessions', 'last_activity_at', 'UPDATE'
+                    ),
+                    has_column_privilege(
+                        'prm_runtime', 'app.browser_sessions', 'revocation_reason', 'UPDATE'
+                    ),
+                    has_function_privilege(
+                        'prm_runtime', 'app.protect_browser_session_lifecycle()', 'EXECUTE'
+                    ),
+                    has_function_privilege(
+                        'prm_runtime',
+                        'app.reject_browser_session_history_destruction()',
+                        'EXECUTE'
+                    )
+                """
+            )
+            assert cursor.fetchone() == (
+                False,
+                False,
+                False,
+                False,
+                False,
+                True,
+                False,
+                False,
+                True,
+                True,
+                False,
+                False,
+            )
+
+
+def test_runtime_can_persist_and_advance_bounded_browser_session_lifecycle() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+    actor_id = uuid.uuid4()
+    session_id = uuid.uuid4()
+    token_verifier = os.urandom(32)
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Runtime Session', %s, 'active', 'optional',
+                          'authorized-account-creation')
+                """,
+                (actor_id, f"runtime-session-{actor_id.hex}", f"runtime-{actor_id.hex}"),
+            )
+        connection.commit()
+
+    with psycopg.connect(_required_url(RUNTIME_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.browser_sessions (
+                    session_id, actor_id, token_verifier, verifier_algorithm,
+                    creation_provenance
+                ) VALUES (%s, %s, %s, 'sha256', 'runtime-local-login')
+                RETURNING created_at, last_activity_at, idle_expires_at, absolute_expires_at
+                """,
+                (session_id, actor_id, token_verifier),
+            )
+            created_at, last_activity_at, idle_expires_at, absolute_expires_at = cast(
+                tuple[datetime, datetime, datetime, datetime], cursor.fetchone()
+            )
+            assert last_activity_at == created_at
+            assert idle_expires_at == created_at + timedelta(minutes=30)
+            assert absolute_expires_at == created_at + timedelta(hours=24)
+        connection.commit()
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE app.browser_sessions
+                SET last_activity_at = statement_timestamp()
+                WHERE token_verifier = %s
+                RETURNING last_activity_at, idle_expires_at, absolute_expires_at
+                """,
+                (token_verifier,),
+            )
+            advanced_activity, advanced_idle_expiry, fixed_absolute_expiry = cast(
+                tuple[datetime, datetime, datetime], cursor.fetchone()
+            )
+            assert advanced_activity > last_activity_at
+            assert advanced_idle_expiry == advanced_activity + timedelta(minutes=30)
+            assert fixed_absolute_expiry == absolute_expires_at
+        connection.commit()
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE app.browser_sessions
+                SET revoked_by_actor_id = %s,
+                    revocation_reason = 'logout',
+                    revocation_provenance = 'authenticated-runtime-logout'
+                WHERE session_id = %s
+                RETURNING revoked_at, revocation_reason
+                """,
+                (actor_id, session_id),
+            )
+            revoked_at, revocation_reason = cast(tuple[datetime, str], cursor.fetchone())
+            assert revoked_at >= advanced_activity
+            assert revocation_reason == "logout"
+        connection.commit()
+
+
+def test_browser_session_migration_refuses_destructive_downgrade() -> None:
+    with _temporary_migration_database("prm_browser_session_downgrade") as migration_url:
+        assert _run_alembic("upgrade", "20260819_07").returncode == 0
+
+        result = _run_alembic("downgrade", "20260819_06")
+
+        assert result.returncode != 0
+        assert "DB-AUTH-004 browser-session migration is forward-only" in result.stderr
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT to_regclass('app.browser_sessions')")
+                assert cursor.fetchone() == ("app.browser_sessions",)
+                cursor.execute("SELECT version_num FROM alembic_version")
+                assert cursor.fetchone() == ("20260819_07",)

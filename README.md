@@ -158,6 +158,12 @@ implementation attempt and at most one repair attempt. Exhaustion is persisted a
 alerted once instead of silently appearing healthy. A cycle above 60,000 tokens stops
 instead of being retried automatically.
 
+Attempt identity is explicitly scoped by roadmap tranche ID. Structured successor
+selection activates the successor lifecycle and initializes a repair object bearing that
+same tranche ID; preflight ignores repair counters, failures, and protection flags whose
+recorded tranche ID does not match the dispatched tranche. Published predecessor repair
+exhaustion therefore cannot consume a successor's independent bounded attempts.
+
 The 30-minute interval is only an idle wake-up cadence. After Hermes reports completion,
 OpenClaw immediately verifies and publishes the tranche; if compact state advances to
 a different explicitly authorized tranche, the dispatcher starts the next supervisor

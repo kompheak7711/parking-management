@@ -22,12 +22,30 @@ implementation_started="$(jq -r '.approval.implementation_started == true' ops/S
 implementation_completed="$(jq -r '.approval.implementation_completed == true' ops/STATE.json)"
 publication_completed="$(jq -r '.approval.publication_completed == true' ops/STATE.json)"
 blocker_count="$(jq -r '(.blockers // []) | length' ops/STATE.json)"
-repair_attempts="$(jq -r '(.repair.attempts // 0) | if type == "number" and floor == . and . >= 0 then . else 0 end' ops/STATE.json)"
-repair_max_attempts="$(jq -r '(.repair.max_attempts // 2) | if type == "number" and floor == . and . >= 1 and . <= 2 then . else 2 end' ops/STATE.json)"
-repair_scope_preserved="$(jq -r '.repair.scope_preserved // false' ops/STATE.json)"
-repair_failure="$(jq -r '.repair.failure // ""' ops/STATE.json)"
-repair_protected="$(jq -r '[.repair.requires_owner_decision, .repair.suspected_secret, .repair.scope_expansion, .repair.protected_operation] | any(. == true)' ops/STATE.json)"
 active_cycle="$(jq -r '.active_cycle // .task // "unknown"' ops/STATE.json)"
+attempt_tranche_id="$(jq -r '
+  if .status == "published" and .next_candidate.status == "approved_ready"
+  then (.next_candidate.roadmap_id // .next_candidate.id // .roadmap.current_id // .active_cycle // .task // "unknown")
+  else (.roadmap.current_id // .next_candidate.roadmap_id // .next_candidate.id // .active_cycle // .task // "unknown")
+  end
+' ops/STATE.json)"
+repair_tranche_id="$(jq -r '.repair.tranche_id // ""' ops/STATE.json)"
+repair_matches_tranche=false
+if [ -n "$repair_tranche_id" ] && [ "$repair_tranche_id" = "$attempt_tranche_id" ]; then
+  repair_matches_tranche=true
+fi
+repair_attempts=0
+repair_max_attempts=2
+repair_scope_preserved=false
+repair_failure=""
+repair_protected=false
+if [ "$repair_matches_tranche" = true ]; then
+  repair_attempts="$(jq -r '(.repair.attempts // 0) | if type == "number" and floor == . and . >= 0 then . else 0 end' ops/STATE.json)"
+  repair_max_attempts="$(jq -r '(.repair.max_attempts // 2) | if type == "number" and floor == . and . >= 1 and . <= 2 then . else 2 end' ops/STATE.json)"
+  repair_scope_preserved="$(jq -r '.repair.scope_preserved // false' ops/STATE.json)"
+  repair_failure="$(jq -r '.repair.failure // ""' ops/STATE.json)"
+  repair_protected="$(jq -r '[.repair.requires_owner_decision, .repair.suspected_secret, .repair.scope_expansion, .repair.protected_operation] | any(. == true)' ops/STATE.json)"
+fi
 state_commit="$(jq -r '.commit // ""' ops/STATE.json)"
 head_sha="$(git rev-parse HEAD)"
 worktree_status="$(git status --porcelain=v1)"
@@ -209,11 +227,14 @@ jq -cn \
   --arg recorded_next_action "$recorded_next_action" \
   --arg state_issue "$state_issue" \
   --arg active_cycle "$active_cycle" \
+  --arg attempt_tranche_id "$attempt_tranche_id" \
+  --arg repair_tranche_id "$repair_tranche_id" \
   --arg repair_failure "$repair_failure" \
   --arg worktree "$worktree_fingerprint" \
   --argjson blockers "$blocker_count" \
   --argjson repair_attempts "$repair_attempts" \
   --argjson repair_max_attempts "$repair_max_attempts" \
+  --argjson repair_matches_tranche "$repair_matches_tranche" \
   --argjson durable_v1_authorization "$durable_v1_authorization" \
   --argjson candidate_is_concrete "$candidate_is_concrete" \
   --argjson status_known "$status_known" \
@@ -227,4 +248,4 @@ jq -cn \
   --arg roadmap_current_status "$roadmap_current_status" \
   --argjson normalized "$normalized" \
   --argjson actionable "$actionable" \
-  '{head: $head, status: $status, active_cycle: $active_cycle, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, repair_failure: $repair_failure, normalized: $normalized, blockers: $blockers, repair_attempts: $repair_attempts, repair_max_attempts: $repair_max_attempts, durable_v1_authorization: $durable_v1_authorization, candidate_is_concrete: $candidate_is_concrete, status_known: $status_known, implementation_started: $implementation_started, implementation_completed: $implementation_completed, publication_completed: $publication_completed, queue_candidate: $queue_candidate, roadmap:{current_id:$roadmap_current_id,current_status:$roadmap_current_status,total:$roadmap_total,completed:$roadmap_completed}, worktree: $worktree, actionable: $actionable}'
+  '{head: $head, status: $status, active_cycle: $active_cycle, attempt_tranche_id: $attempt_tranche_id, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, repair_tranche_id: $repair_tranche_id, repair_matches_tranche: $repair_matches_tranche, repair_failure: $repair_failure, normalized: $normalized, blockers: $blockers, repair_attempts: $repair_attempts, repair_max_attempts: $repair_max_attempts, durable_v1_authorization: $durable_v1_authorization, candidate_is_concrete: $candidate_is_concrete, status_known: $status_known, implementation_started: $implementation_started, implementation_completed: $implementation_completed, publication_completed: $publication_completed, queue_candidate: $queue_candidate, roadmap:{current_id:$roadmap_current_id,current_status:$roadmap_current_status,total:$roadmap_total,completed:$roadmap_completed}, worktree: $worktree, actionable: $actionable}'

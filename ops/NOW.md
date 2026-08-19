@@ -1,40 +1,31 @@
-# V1-013 Standards-based TOTP MFA Cryptographic and Persistence Foundation — published
+# V1-014 Persistent Browser-Session and Revocation Store — verified, unpublished
 
-- Objective: implement the approved bounded RFC 6238 TOTP enrollment-verifier mechanics and
-  protected persistence foundation without adding public API/UI, SMS, or production secrets.
-- Current result: RFC 6238 generation matches published SHA-1 vectors; exact-counter verification
-  fails closed for wrong, stale, or malformed codes; enrollment seeds use 160 bits of OS entropy.
-- Secret protection: AES-256-GCM authenticates and encrypts seeds with random 96-bit nonces,
-  explicit key identifiers, and actor/enrollment-bound associated data. Secret wrappers and
-  protected material do not expose plaintext through representations, logs, or output.
-- Persistence: forward-only migration `20260819_06` stores only ciphertext, nonce, key identifier,
-  bounded TOTP parameters, lifecycle state, and provenance separately from role/capability data.
-  One pending/active enrollment is allowed per actor; disabled history is retained.
-- Database controls: immutable verifier material, forward-only pending/active/disabled transitions,
-  actor/provenance requirements, existing-account foreign keys, constraints, and column-bounded
-  runtime privileges were verified on isolated real PostgreSQL.
-- Dependency: locked `cryptography==50.0.0` supplies reviewed AES-GCM rather than custom encryption;
-  no production key or secret is configured or committed. GitHub Actions dependency audit rejected
-  the initially locked 46.0.7 release; repair attempt 2 upgraded to the first release fixing all
-  reported advisories, and the exact CI audit command then passed locally.
-- Test-first evidence: crypto tests first failed on the absent module; PostgreSQL tests first failed
-  on the absent table; traceability first failed on absent entries; key-identifier hardening first
-  failed when application validation was weaker than persistence.
-- Verification: backend 232 passed with 69 expected dedicated-database skips; frontend 3 passed;
-  isolated PostgreSQL 69 passed; formatting, lint, strict typecheck, builds/import, deployment,
-  roadmap, automation, lock consistency, and frontend dependency audit passed.
-- Initial independent review found two persistence defects: enrollment history remained removable
-  through owner-level DELETE/TRUNCATE, and AES-GCM nonce uniqueness was not enforced per key.
-  Repair attempt 1 added destructive-operation rejection triggers, per-key nonce uniqueness, and
-  real-PostgreSQL regressions. Independent re-review passed with no material findings. Repair
-  attempt 2 corrected the vulnerable dependency bound identified by the publication CI gate.
-- Scope preserved: no API/UI, SMS, session/recovery orchestration, production key, role/capability
-  policy, deployment operation, canonical specification change, or unrelated implementation.
-- Publication: feature commit `c4d14d5` and corrective commit `8d1083d` are pushed. GitHub
-  Actions run `32221920803` passed backend, frontend, isolated PostgreSQL, build, traceability,
-  and runtime/development dependency-security gates.
+- Objective: recover the bounded automation lifecycle and complete the approved V1-014
+  persistence foundation without canonical changes, API/UI, cookie transport, remote access,
+  production operations, or secrets.
+- Automation root cause: structured successor selection retained the published predecessor's
+  top-level lifecycle and repair object; preflight trusted unmatched repair metadata and dispatcher
+  attempt identity omitted an explicit roadmap tranche ID.
+- Automation repair: successor selection now activates the complete successor lifecycle and
+  initializes repair metadata tagged with its tranche ID. Preflight ignores unmatched repair
+  metadata; dispatcher attempt/exhaustion identity includes the explicit dispatched tranche ID.
+- Regression: deterministically recreates exhausted V1-013 repair state, selects/activates V1-014,
+  seeds the legacy exhausted fingerprint, and proves V1-014 still receives attempts 1 and 2.
+- Persistence: forward-only migration `20260819_07` stores unique SHA-256 token verifiers, actor,
+  fixed 30-minute idle and 24-hour absolute boundaries, creation provenance, and bounded revocation
+  evidence. It stores no plaintext token, cookie, role, or capability authority.
+- Integrity: identity/verifier/creation state and revoked rows are immutable; activity cannot revive
+  an expired session or extend absolute expiry; delete/truncate are rejected; runtime privileges are
+  column-bounded to verifier lookup, creation, activity, and revocation transitions.
+- Traceability: DB-AUTH-004, API-097, TEST-131, SEC-015, SEC-017, and DL-057 are implemented here.
+  SEC-016 cookie/CSRF transport and SEC-018 reauthentication were reviewed and remain correctly
+  excluded for V1-015 API/UI scope.
+- Verification: backend passed 233 with 83 expected database skips; frontend passed 3; isolated real
+  PostgreSQL passed 83; lint, formatting, strict type checks, backend/frontend builds, traceability,
+  roadmap, deployment configuration, and automation routing passed.
+- Independent review found one invalid boundary: creation could persist activity at absolute expiry.
+  A test-first repair reproduced the failure, added a strict pre-expiry invariant, and passed focused
+  and full PostgreSQL verification. Independent re-review found no remaining blocking defects.
 - Blockers: none. Owner action: none.
-- Roadmap: V1-001 through V1-013 are published complete; V1-014 is the dependency-ready approved
-  successor under durable v1 authorization.
-- Exact next action: implement the approved bounded V1-014 persistent browser-session and
-  revocation store.
+- Exact next action: publish the verified V1-014 tranche under standing authorization, then activate
+  V1-015 Login, MFA, logout, reauthentication, and session API.

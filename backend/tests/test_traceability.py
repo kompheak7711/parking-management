@@ -591,3 +591,34 @@ def test_totp_mfa_foundation_has_bounded_traceability() -> None:
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert routed_authorities == set(entry["upstream_ids"])
+
+
+def test_browser_session_persistence_foundation_has_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    routed_authorities = {
+        "DB-AUTH-004",
+        "API-097",
+        "TEST-131",
+        "SEC-015",
+        "SEC-017",
+        "DL-057",
+    }
+    expected_test_ids = {
+        "test_browser_sessions_store_only_bounded_protected_lifetime_and_revocation_state",
+        "test_browser_sessions_reject_unprotected_or_incomplete_token_verifiers",
+        "test_browser_session_creation_rejects_invalid_fixed_lifetime_state",
+        "test_browser_session_creation_rejects_revocation_before_creation",
+        "test_browser_session_activity_and_revocation_are_forward_only_and_retain_history",
+        "test_browser_session_activity_cannot_revive_an_expired_session",
+        "test_runtime_has_only_bounded_browser_session_lifecycle_privileges",
+        "test_runtime_can_persist_and_advance_bounded_browser_session_lifecycle",
+        "test_browser_session_migration_refuses_destructive_downgrade",
+        "test_browser_session_persistence_foundation_has_bounded_traceability",
+    }
+
+    for test_id in expected_test_ids:
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert routed_authorities == set(entry["upstream_ids"])

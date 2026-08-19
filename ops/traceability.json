@@ -1725,6 +1725,86 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "V1-013 evidence is mechanically bounded to RFC 6238 cryptography, authenticated secret protection, persistence, and excludes public API/UI, SMS, production keys, and broader MFA orchestration."
+    },
+    {
+      "test_id": "test_browser_sessions_store_only_bounded_protected_lifetime_and_revocation_state",
+      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL schema inspection limits durable browser sessions to opaque verifier, fixed lifetime, actor, revocation, and provenance state without token, cookie, role, or capability columns."
+    },
+    {
+      "test_id": "test_browser_sessions_reject_unprotected_or_incomplete_token_verifiers",
+      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Database constraints require fixed-length SHA-256 token verifiers and nonblank creation provenance rather than plaintext session tokens."
+    },
+    {
+      "test_id": "test_browser_session_creation_rejects_invalid_fixed_lifetime_state",
+      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Creation constraints enforce non-regressing activity, an exact 30-minute idle boundary, and an immutable 24-hour absolute expiry."
+    },
+    {
+      "test_id": "test_browser_session_creation_rejects_revocation_before_creation",
+      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Revocation evidence cannot predate the persisted session lifecycle."
+    },
+    {
+      "test_id": "test_browser_session_activity_and_revocation_are_forward_only_and_retain_history",
+      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Activity advances only the idle boundary, revocation records bounded actor/reason/provenance evidence, and revoked or destructive history mutations are rejected."
+    },
+    {
+      "test_id": "test_browser_session_activity_cannot_revive_an_expired_session",
+      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "An idle-expired durable session cannot be revived by recording later activity."
+    },
+    {
+      "test_id": "test_runtime_has_only_bounded_browser_session_lifecycle_privileges",
+      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The runtime identity receives only verifier lookup, bounded insert, activity, and revocation columns; destructive operations and direct trigger execution remain unavailable."
+    },
+    {
+      "test_id": "test_runtime_can_persist_and_advance_bounded_browser_session_lifecycle",
+      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The real runtime role can create an opaque session, advance activity without extending absolute expiry, and persist immutable logout revocation evidence."
+    },
+    {
+      "test_id": "test_browser_session_migration_refuses_destructive_downgrade",
+      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The forward-only migration refuses destructive rollback and retains browser-session history at the reviewed revision."
+    },
+    {
+      "test_id": "test_browser_session_persistence_foundation_has_bounded_traceability",
+      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "V1-014 evidence is bounded to persistent opaque browser-session lifetime and revocation state; SEC-016 cookie/CSRF transport and SEC-018 high-risk reauthentication remain in later API/UI scope."
     }
   ]
 }

@@ -68,7 +68,7 @@ while [ "$cycle" -lt "$max_cycles" ]; do
   fi
 
   fingerprint="$(printf '%s' "$preflight" | shasum -a 256 | awk '{print $1}')"
-  attempt_key="$(printf '%s' "$preflight" | jq -c '{active_cycle,status,next_action,state_issue,repair_failure}' | shasum -a 256 | awk '{print $1}')"
+  attempt_key="$(printf '%s' "$preflight" | jq -c '{attempt_tranche_id,active_cycle,status,next_action,state_issue,repair_failure}' | shasum -a 256 | awk '{print $1}')"
   attempt_file="$attempt_dir/$attempt_key"
   exhausted_file="$exhausted_dir/$attempt_key.json"
   attempts=0
@@ -81,10 +81,11 @@ while [ "$cycle" -lt "$max_cycles" ]; do
         --arg timestamp "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
         --arg attempt_key "$attempt_key" \
         --arg fingerprint "$fingerprint" \
+        --arg tranche_id "$(printf '%s' "$preflight" | jq -r '.attempt_tranche_id')" \
         --arg phase "$(printf '%s' "$preflight" | jq -r '.active_cycle')" \
         --arg next_action "$(printf '%s' "$preflight" | jq -r '.next_action')" \
         --argjson attempts "$attempts" \
-        '{status:"repair_exhausted",timestamp:$timestamp,attempt_key:$attempt_key,fingerprint:$fingerprint,phase:$phase,next_action:$next_action,attempts:$attempts,alerted:false}' \
+        '{status:"repair_exhausted",timestamp:$timestamp,attempt_key:$attempt_key,fingerprint:$fingerprint,tranche_id:$tranche_id,phase:$phase,next_action:$next_action,attempts:$attempts,alerted:false}' \
         >"$exhausted_file"
     fi
     exit 0

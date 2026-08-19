@@ -27,9 +27,46 @@ jq \
     .roadmap.current_id = $candidate.id
     | .roadmap.total = 60
     | .next_candidate = ($candidate + {roadmap_id:$candidate.id})
+    | .phase = $candidate.phase
+    | .tranche = $candidate.task
+    | .task = ("Implement the approved bounded candidate: " + $candidate.task)
+    | .status = "active"
+    | .active_cycle = (
+        ($candidate.id | ascii_downcase)
+        + "-"
+        + ($candidate.task
+            | ascii_downcase
+            | gsub("[^a-z0-9]+"; "-")
+            | gsub("(^-|-$)"; ""))
+      )
+    | .risk_class = ($candidate.risk_class // "high")
+    | .approval = {
+        status: "approved_ready",
+        basis: "structured durable-v1 successor selection",
+        implementation_started: true,
+        implementation_completed: false,
+        publication_completed: false
+      }
+    | .authorities = ($candidate.authorities // [])
+    | .touched_areas = ($candidate.include // [])
+    | .tests = []
+    | .relevant_docs = ($candidate.authorities // [])
     | .next_action = ("Implement the approved bounded candidate: " + $candidate.task)
     | .owner_action = "none"
     | .idle_reason = null
+    | .blockers = []
+    | .repair = {
+        tranche_id: $candidate.id,
+        failure: null,
+        scope_preserved: true,
+        attempts: 0,
+        max_attempts: 2,
+        requires_owner_decision: false,
+        suspected_secret: false,
+        scope_expansion: false,
+        protected_operation: false,
+        last_outcome: null
+      }
     | .timestamp = $timestamp
   ' ops/STATE.json >"$temporary"
 mv "$temporary" ops/STATE.json

@@ -22,7 +22,7 @@ make_repo() {
   jq -cn \
     --arg risk "$risk" \
     --arg task "$task" \
-    '{status:"approved_ready",next_action:$task,blockers:[],next_candidate:{phase:"test",task:$task,status:"approved_ready",risk_class:$risk}}' \
+    '{status:"approved_ready",active_cycle:"test-cycle",next_action:$task,blockers:[],next_candidate:{phase:"test",task:$task,status:"approved_ready",risk_class:$risk}}' \
     >"$repo/ops/STATE.json"
   printf '%s\n' '# Test' >"$repo/ops/NOW.md"
   printf '%s\n' '# Test' >"$repo/ops/QUEUE.md"
@@ -113,6 +113,68 @@ set -e
 exhausted_file="$(find "$stall_state_dir/repair-exhausted" -type f -name '*.json' -print -quit)"
 [ -n "$exhausted_file" ]
 jq -e '.status == "repair_exhausted" and .attempts == 2 and .alerted == false' "$exhausted_file" >/dev/null
+
+# A published predecessor's exhausted repair metadata and legacy attempt fingerprint must
+# not consume any attempts belonging to the newly selected successor tranche.
+make_repo tranche_isolation high 'published predecessor'
+tranche_repo="$test_root/tranche_isolation/repo"
+tranche_state_dir="$test_root/tranche_isolation/state"
+tranche_calls="$test_root/tranche_isolation/calls"
+printf '%s\n' 'Remaining v1 application tranches are authorized when bounded by canonical documents 001-010.' >"$tranche_repo/ops/QUEUE.md"
+jq '
+  .status="published"
+  | .phase="Identity"
+  | .tranche="Published V1-013"
+  | .task="Published V1-013 repair"
+  | .active_cycle="v1-013-published-repair"
+  | .roadmap={current_id:"V1-013",total:2}
+  | .approval={status:"approved_complete",implementation_started:true,implementation_completed:true,publication_completed:true}
+  | .next_action="Select the approved successor."
+  | .next_candidate={phase:"unselected",task:"No successor selected.",status:"not_approved",risk_class:"high",authorities:[]}
+  | .repair={tranche_id:"V1-013",attempts:2,max_attempts:2,scope_preserved:true,failure:"V1-013 dependency audit failed",requires_owner_decision:false,suspected_secret:false,scope_expansion:false,protected_operation:false,last_outcome:"repair_attempt_2_published"}
+' "$tranche_repo/ops/STATE.json" >"$tranche_repo/ops/STATE.json.new"
+mv "$tranche_repo/ops/STATE.json.new" "$tranche_repo/ops/STATE.json"
+printf '%s\n' '{"schema_version":1,"total_tranches":2,"tranches":[{"id":"V1-013","order":13,"phase":"Identity","task":"Published V1-013 repair","status":"complete","authorization":"complete","risk_class":"high"},{"id":"V1-014","order":14,"phase":"Identity","task":"Persistent browser-session and revocation store","dependencies":["V1-013"],"authorities":["DB-AUTH-004","API-097","SEC-015-018"],"include":["opaque sessions"],"exclude":["remote access"],"status":"approved_ready","authorization":"durable_v1","risk_class":"high","protected_operation":false}]}' >"$tranche_repo/ops/V1_ROADMAP.json"
+git -C "$tranche_repo" add ops/STATE.json ops/QUEUE.md ops/V1_ROADMAP.json
+git -C "$tranche_repo" -c user.name=test -c user.email=test@example.invalid commit -qm 'publish V1-013 repair exhaustion'
+git -C "$tranche_repo" init -q --bare "$test_root/tranche_isolation/origin.git"
+git -C "$tranche_repo" remote add origin "$test_root/tranche_isolation/origin.git"
+git -C "$tranche_repo" push -qu -u origin HEAD
+PROPERTY_RENTAL_REPO="$tranche_repo" \
+PROPERTY_RENTAL_SELECTION_SKIP_REMOTE=true \
+  "$tranche_repo/scripts/openclaw-select-next-candidate.sh"
+tranche_preflight="$(PROPERTY_RENTAL_REPO="$tranche_repo" "$tranche_repo/scripts/openclaw-supervisor-preflight.sh")"
+jq -e '
+  .status == "active"
+  and .active_cycle == "v1-014-persistent-browser-session-and-revocation-store"
+  and .roadmap.current_id == "V1-014"
+  and .repair.tranche_id == "V1-014"
+  and .repair.attempts == 0
+  and .repair.failure == null
+' "$tranche_repo/ops/STATE.json" >/dev/null
+printf '%s' "$tranche_preflight" | jq -e '
+  .attempt_tranche_id == "V1-014"
+  and .repair_tranche_id == "V1-014"
+  and .repair_attempts == 0
+  and .repair_failure == ""
+' >/dev/null
+legacy_attempt_key="$(printf '%s' "$tranche_preflight" | jq -c '{active_cycle,status,next_action,state_issue,repair_failure}' | shasum -a 256 | awk '{print $1}')"
+mkdir -p "$tranche_state_dir/fingerprint-attempts"
+printf '2\n' >"$tranche_state_dir/fingerprint-attempts/$legacy_attempt_key"
+set +e
+FAKE_CALLS="$tranche_calls" \
+FAKE_SCENARIO=codex_stall \
+PROPERTY_RENTAL_REPO="$tranche_repo" \
+PROPERTY_RENTAL_DISPATCH_STATE_DIR="$tranche_state_dir" \
+PROPERTY_RENTAL_OPENCLAW_BIN="$fake_openclaw" \
+PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES=2 \
+  "$tranche_repo/scripts/openclaw-supervisor-dispatch.sh"
+tranche_exit=$?
+set -e
+[ "$tranche_exit" -eq 79 ]
+[ "$(wc -l <"$tranche_calls" | tr -d ' ')" -eq 2 ]
+[ "$(sed -n '1p' "$tranche_calls" | cut -d '|' -f 2 | sed 's/.*-//')" -eq 1 ]
+[ "$(sed -n '2p' "$tranche_calls" | cut -d '|' -f 2 | sed 's/.*-//')" -eq 2 ]
 
 usage_ledger="$test_root/model-usage.jsonl"
 now="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
@@ -212,7 +274,7 @@ repair_repo="$test_root/automatic_repair/repo"
 jq '.status="not_verified"
   | .approval={status:"approved_active"}
   | .next_action="Wait for Owner approval."
-  | .repair={attempts:0,max_attempts:2,scope_preserved:true,failure:"backend CI failed",requires_owner_decision:false,suspected_secret:false,scope_expansion:false,protected_operation:false}' \
+  | .repair={tranche_id:"test-cycle",attempts:0,max_attempts:2,scope_preserved:true,failure:"backend CI failed",requires_owner_decision:false,suspected_secret:false,scope_expansion:false,protected_operation:false}' \
   "$repair_repo/ops/STATE.json" >"$repair_repo/ops/STATE.json.new"
 mv "$repair_repo/ops/STATE.json.new" "$repair_repo/ops/STATE.json"
 repair_preflight="$(PROPERTY_RENTAL_REPO="$repair_repo" "$repair_repo/scripts/openclaw-supervisor-preflight.sh")"
