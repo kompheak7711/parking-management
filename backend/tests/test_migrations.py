@@ -2160,7 +2160,7 @@ def test_concurrent_initial_owner_bootstrap_attempts_establish_exactly_one_owner
 
 def test_initial_owner_bootstrap_closure_migration_refuses_destructive_downgrade() -> None:
     with _temporary_migration_database("prm_bootstrap_downgrade") as migration_url:
-        assert _run_alembic("upgrade", "head").returncode == 0
+        assert _run_alembic("upgrade", "20260818_05").returncode == 0
 
         result = _run_alembic("downgrade", "20260817_04")
 
@@ -2174,3 +2174,296 @@ def test_initial_owner_bootstrap_closure_migration_refuses_destructive_downgrade
                 assert cursor.fetchone() == ("app.initial_owner_bootstrap_audit_events",)
                 cursor.execute("SELECT version_num FROM alembic_version")
                 assert cursor.fetchone() == ("20260818_05",)
+
+
+def test_totp_enrollments_store_only_protected_material_separate_from_account_authority() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT column_name, data_type, is_nullable
+                FROM information_schema.columns
+                WHERE table_schema = 'app' AND table_name = 'totp_mfa_enrollments'
+                ORDER BY ordinal_position
+                """
+            )
+            assert cursor.fetchall() == [
+                ("enrollment_id", "uuid", "NO"),
+                ("actor_id", "uuid", "NO"),
+                ("secret_ciphertext", "bytea", "NO"),
+                ("secret_nonce", "bytea", "NO"),
+                ("key_identifier", "text", "NO"),
+                ("protection_algorithm", "text", "NO"),
+                ("totp_algorithm", "text", "NO"),
+                ("digits", "smallint", "NO"),
+                ("period_seconds", "integer", "NO"),
+                ("enrollment_state", "text", "NO"),
+                ("created_at", "timestamp with time zone", "NO"),
+                ("created_by_actor_id", "uuid", "YES"),
+                ("provenance", "text", "NO"),
+                ("activated_at", "timestamp with time zone", "YES"),
+                ("activated_by_actor_id", "uuid", "YES"),
+                ("activation_provenance", "text", "YES"),
+                ("disabled_at", "timestamp with time zone", "YES"),
+                ("disabled_by_actor_id", "uuid", "YES"),
+                ("disablement_provenance", "text", "YES"),
+            ]
+            cursor.execute(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'app'
+                  AND table_name = 'totp_mfa_enrollments'
+                  AND column_name ~ '(role|capability|plaintext|secret_value)'
+                """
+            )
+            assert cursor.fetchall() == []
+
+
+@pytest.mark.parametrize(
+    ("ciphertext", "nonce", "key_identifier", "protection_algorithm", "totp_algorithm"),
+    [
+        (b"too-short", b"n" * 12, "key-1", "aes-256-gcm", "sha1"),
+        (b"c" * 36, b"short", "key-1", "aes-256-gcm", "sha1"),
+        (b"c" * 36, b"n" * 12, " key-1 ", "aes-256-gcm", "sha1"),
+        (b"c" * 36, b"n" * 12, "key-1", "not-authenticated", "sha1"),
+        (b"c" * 36, b"n" * 12, "key-1", "aes-256-gcm", "md5"),
+    ],
+)
+def test_totp_enrollments_reject_unprotected_or_malformed_verifier_material(
+    ciphertext: bytes,
+    nonce: bytes,
+    key_identifier: str,
+    protection_algorithm: str,
+    totp_algorithm: str,
+) -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+    actor_id = uuid.uuid4()
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'TOTP Constraint', %s, 'active', 'optional',
+                          'authorized-account-creation')
+                """,
+                (actor_id, f"totp-constraint-{actor_id.hex}", f"totp-{actor_id.hex}"),
+            )
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.CheckViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.totp_mfa_enrollments (
+                        enrollment_id, actor_id, secret_ciphertext, secret_nonce,
+                        key_identifier, protection_algorithm, totp_algorithm, provenance
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, 'protected-enrollment')
+                    """,
+                    (
+                        uuid.uuid4(),
+                        actor_id,
+                        ciphertext,
+                        nonce,
+                        key_identifier,
+                        protection_algorithm,
+                        totp_algorithm,
+                    ),
+                )
+
+
+def test_totp_enrollment_lifecycle_preserves_secret_and_single_live_enrollment() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+    actor_id = uuid.uuid4()
+    enrollment_id = uuid.uuid4()
+    lifecycle_actor_id = uuid.uuid4()
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            for account_id, label in ((actor_id, "target"), (lifecycle_actor_id, "operator")):
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, %s, 'TOTP Lifecycle', %s, 'active', 'required',
+                              'authorized-account-creation')
+                    """,
+                    (account_id, f"totp-{label}-{account_id.hex}", f"totp-{label}"),
+                )
+            cursor.execute(
+                """
+                INSERT INTO app.totp_mfa_enrollments (
+                    enrollment_id, actor_id, secret_ciphertext, secret_nonce,
+                    key_identifier, protection_algorithm, totp_algorithm,
+                    created_by_actor_id, provenance
+                ) VALUES (%s, %s, %s, %s, 'key-1', 'aes-256-gcm', 'sha1', %s,
+                          'protected-enrollment')
+                """,
+                (enrollment_id, actor_id, b"c" * 36, b"n" * 12, lifecycle_actor_id),
+            )
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.UniqueViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.totp_mfa_enrollments (
+                        enrollment_id, actor_id, secret_ciphertext, secret_nonce,
+                        key_identifier, protection_algorithm, totp_algorithm, provenance
+                    ) VALUES (%s, %s, %s, %s, 'key-1', 'aes-256-gcm', 'sha1',
+                              'duplicate-live-enrollment')
+                    """,
+                    (uuid.uuid4(), actor_id, b"d" * 36, b"m" * 12),
+                )
+        connection.rollback()
+
+        with pytest.raises(psycopg.errors.UniqueViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.totp_mfa_enrollments (
+                        enrollment_id, actor_id, secret_ciphertext, secret_nonce,
+                        key_identifier, protection_algorithm, totp_algorithm, provenance
+                    ) VALUES (%s, %s, %s, %s, 'key-1', 'aes-256-gcm', 'sha1',
+                              'duplicate-key-nonce')
+                    """,
+                    (uuid.uuid4(), lifecycle_actor_id, b"e" * 36, b"n" * 12),
+                )
+        connection.rollback()
+
+        with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE app.totp_mfa_enrollments SET secret_ciphertext = %s "
+                    "WHERE enrollment_id = %s",
+                    (b"x" * 36, enrollment_id),
+                )
+        connection.rollback()
+
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE app.totp_mfa_enrollments
+                SET enrollment_state = 'active',
+                    activated_at = statement_timestamp(),
+                    activated_by_actor_id = %s,
+                    activation_provenance = 'correct-challenge'
+                WHERE enrollment_id = %s
+                """,
+                (lifecycle_actor_id, enrollment_id),
+            )
+        connection.commit()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE app.totp_mfa_enrollments
+                SET enrollment_state = 'disabled',
+                    disabled_at = statement_timestamp(),
+                    disabled_by_actor_id = %s,
+                    disablement_provenance = 'authorized-disablement'
+                WHERE enrollment_id = %s
+                """,
+                (lifecycle_actor_id, enrollment_id),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.totp_mfa_enrollments (
+                    enrollment_id, actor_id, secret_ciphertext, secret_nonce,
+                    key_identifier, protection_algorithm, totp_algorithm, provenance
+                ) VALUES (%s, %s, %s, %s, 'key-2', 'aes-256-gcm', 'sha1',
+                          'replacement-enrollment')
+                """,
+                (uuid.uuid4(), actor_id, b"r" * 36, b"q" * 12),
+            )
+        connection.commit()
+
+        with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE app.totp_mfa_enrollments SET enrollment_state = 'active' "
+                    "WHERE enrollment_id = %s",
+                    (enrollment_id,),
+                )
+        connection.rollback()
+
+        for statement in (
+            sql.SQL("DELETE FROM app.totp_mfa_enrollments"),
+            sql.SQL("TRUNCATE app.totp_mfa_enrollments"),
+        ):
+            with connection.cursor() as cursor:
+                cursor.execute("SAVEPOINT totp_enrollment_history_immutability")
+            with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
+                with connection.cursor() as cursor:
+                    cursor.execute(statement)
+            with connection.cursor() as cursor:
+                cursor.execute("ROLLBACK TO SAVEPOINT totp_enrollment_history_immutability")
+
+
+def test_runtime_has_only_bounded_totp_enrollment_privileges() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    has_table_privilege('prm_runtime', 'app.totp_mfa_enrollments', 'SELECT'),
+                    has_table_privilege('prm_runtime', 'app.totp_mfa_enrollments', 'INSERT'),
+                    has_table_privilege('prm_runtime', 'app.totp_mfa_enrollments', 'UPDATE'),
+                    has_table_privilege('prm_runtime', 'app.totp_mfa_enrollments', 'DELETE'),
+                    has_table_privilege('prm_runtime', 'app.totp_mfa_enrollments', 'TRUNCATE'),
+                    has_column_privilege(
+                        'prm_runtime', 'app.totp_mfa_enrollments', 'secret_ciphertext', 'SELECT'
+                    ),
+                    has_column_privilege(
+                        'prm_runtime', 'app.totp_mfa_enrollments', 'secret_ciphertext', 'UPDATE'
+                    ),
+                    has_column_privilege(
+                        'prm_runtime', 'app.totp_mfa_enrollments', 'enrollment_state', 'UPDATE'
+                    ),
+                    has_column_privilege(
+                        'prm_runtime', 'app.totp_mfa_enrollments', 'provenance', 'SELECT'
+                    ),
+                    has_function_privilege(
+                        'prm_runtime', 'app.protect_totp_mfa_enrollment_lifecycle()', 'EXECUTE'
+                    ),
+                    has_function_privilege(
+                        'prm_runtime',
+                        'app.reject_totp_mfa_enrollment_history_destruction()',
+                        'EXECUTE'
+                    )
+                """
+            )
+            assert cursor.fetchone() == (
+                False,
+                False,
+                False,
+                False,
+                False,
+                True,
+                False,
+                True,
+                False,
+                False,
+                False,
+            )
+
+
+def test_totp_enrollment_migration_refuses_destructive_downgrade() -> None:
+    with _temporary_migration_database("prm_totp_downgrade") as migration_url:
+        assert _run_alembic("upgrade", "head").returncode == 0
+
+        result = _run_alembic("downgrade", "20260818_05")
+
+        assert result.returncode != 0
+        assert "DB-AUTH-003 TOTP enrollment migration is forward-only" in result.stderr
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT to_regclass('app.totp_mfa_enrollments')")
+                assert cursor.fetchone() == ("app.totp_mfa_enrollments",)
+                cursor.execute("SELECT version_num FROM alembic_version")
+                assert cursor.fetchone() == ("20260819_06",)

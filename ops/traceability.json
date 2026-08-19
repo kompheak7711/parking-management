@@ -1629,6 +1629,102 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "V1-012 evidence is mechanically bounded to the transactional closure guard, immutable audit persistence, protected service seam, and excluded public API/CLI and secret-handling scope."
+    },
+    {
+      "test_id": "test_totp_matches_rfc_6238_sha1_vectors",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_totp_security.py",
+      "status": "implemented",
+      "notes": "Deterministic RFC 6238 Appendix B vectors verify the standards-based SHA-1 TOTP calculation."
+    },
+    {
+      "test_id": "test_totp_verification_accepts_exact_counter_and_rejects_wrong_or_malformed_codes",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_totp_security.py",
+      "status": "implemented",
+      "notes": "Exact-counter verification accepts a correct challenge and fails closed for wrong, stale, or malformed codes without inventing a challenge-window policy."
+    },
+    {
+      "test_id": "test_secret_generator_requests_fixed_os_entropy_and_returns_base32_material",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_totp_security.py",
+      "status": "implemented",
+      "notes": "Enrollment seeds use a fixed 160-bit cryptographic entropy floor and RFC 4648 Base32 provisioning material."
+    },
+    {
+      "test_id": "test_aes_gcm_protection_round_trips_only_with_bound_enrollment_context",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_totp_security.py",
+      "status": "implemented",
+      "notes": "AES-256-GCM encrypts TOTP seeds with actor- and enrollment-bound associated data and explicit key identification."
+    },
+    {
+      "test_id": "test_aes_gcm_protection_rejects_wrong_key_tampering_and_invalid_material",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_totp_security.py",
+      "status": "implemented",
+      "notes": "Authenticated secret protection rejects ciphertext tampering, wrong keys, and invalid AES-256 key material through one generic failure."
+    },
+    {
+      "test_id": "test_totp_operations_do_not_emit_or_represent_secret_material",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_totp_security.py",
+      "status": "implemented",
+      "notes": "Generation, protection, and verification keep plaintext enrollment seeds out of representations, logs, and output streams."
+    },
+    {
+      "test_id": "test_totp_enrollments_store_only_protected_material_separate_from_account_authority",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL schema inspection verifies encrypted enrollment material, TOTP parameters, lifecycle evidence, and separation from role or capability authority."
+    },
+    {
+      "test_id": "test_totp_enrollments_reject_unprotected_or_malformed_verifier_material",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Database constraints reject undersized ciphertext, invalid nonces, unbounded key identifiers, unauthenticated protection algorithms, and unsupported TOTP algorithms."
+    },
+    {
+      "test_id": "test_totp_enrollment_lifecycle_preserves_secret_and_single_live_enrollment",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Forward-only pending, active, and disabled transitions preserve verifier provenance and permit only one live enrollment per actor while retaining disabled history."
+    },
+    {
+      "test_id": "test_runtime_has_only_bounded_totp_enrollment_privileges",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The runtime identity can read protected verifier material and advance lifecycle columns but cannot update ciphertext, read provenance, delete, truncate, or execute trigger functions directly."
+    },
+    {
+      "test_id": "test_totp_enrollment_migration_refuses_destructive_downgrade",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The forward-only migration refuses destructive rollback and retains protected TOTP enrollment state at the reviewed head."
+    },
+    {
+      "test_id": "test_totp_mfa_foundation_has_bounded_traceability",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "V1-013 evidence is mechanically bounded to RFC 6238 cryptography, authenticated secret protection, persistence, and excludes public API/UI, SMS, production keys, and broader MFA orchestration."
     }
   ]
 }

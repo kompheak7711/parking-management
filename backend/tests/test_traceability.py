@@ -565,3 +565,29 @@ def test_initial_owner_bootstrap_closure_has_bounded_traceability() -> None:
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert routed_authorities == set(entry["upstream_ids"])
+
+
+def test_totp_mfa_foundation_has_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    routed_authorities = {"DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"}
+    expected_test_ids = {
+        "test_totp_matches_rfc_6238_sha1_vectors",
+        "test_totp_verification_accepts_exact_counter_and_rejects_wrong_or_malformed_codes",
+        "test_secret_generator_requests_fixed_os_entropy_and_returns_base32_material",
+        "test_aes_gcm_protection_round_trips_only_with_bound_enrollment_context",
+        "test_aes_gcm_protection_rejects_wrong_key_tampering_and_invalid_material",
+        "test_totp_operations_do_not_emit_or_represent_secret_material",
+        "test_totp_enrollments_store_only_protected_material_separate_from_account_authority",
+        "test_totp_enrollments_reject_unprotected_or_malformed_verifier_material",
+        "test_totp_enrollment_lifecycle_preserves_secret_and_single_live_enrollment",
+        "test_runtime_has_only_bounded_totp_enrollment_privileges",
+        "test_totp_enrollment_migration_refuses_destructive_downgrade",
+        "test_totp_mfa_foundation_has_bounded_traceability",
+    }
+
+    for test_id in expected_test_ids:
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert routed_authorities == set(entry["upstream_ids"])

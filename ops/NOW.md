@@ -1,27 +1,33 @@
-# V1-012 Initial Owner Bootstrap Closure Guard Foundation — published
+# V1-013 Standards-based TOTP MFA Cryptographic and Persistence Foundation — verified
 
-- Objective: provide the approved transactional first-Owner bootstrap closure primitive and
-  immutable secret-free audit persistence without implementing the protected CLI operation.
-- Current result: PostgreSQL serializes closure attempts, establishes exactly one permanent marker,
-  audits successful and repeated attempts, rejects history mutation, and denies normal runtime
-  access. The service adapter invokes the guard in one transaction and fails closed generically.
-- Test-first correction: a real-PostgreSQL regression first failed because the draft migration
-  inferred Owner role from `mfa_policy_class`; the migration now preserves DB-AUTH-001 role/MFA
-  separation and leaves Owner establishment to the future protected bootstrap composition.
-- Independent repair: the first review failed closed on transaction ownership, TRUNCATE
-  immutability, least-privilege invocation, and result disclosure. Repair attempt 1 moved commit
-  control to the future enclosing bootstrap transaction, added a fixed-search-path definer seam,
-  rejected truncation, deferred the account reference for closure-first composition, and reduced
-  the caller result to a boolean. Independent re-review passed with no material findings.
-- Verification: format, lint, strict typecheck, backend 220 passed with 60 expected dedicated-
-  database skips, frontend 3 passed, builds/import passed, real PostgreSQL 60 passed, traceability,
-  deployment, roadmap, automation, and dependency audits passed.
-- Scope preserved: no public API/UI/CLI, password/MFA/recovery secret handling, role creation,
-  production credential, deployment, production operation, canonical change, or policy invention.
-- Publication: feature commit `74eb444` is pushed and GitHub Actions run `32217440316` passed,
-  including backend, frontend, dependency-security, and isolated PostgreSQL migration jobs.
+- Objective: implement the approved bounded RFC 6238 TOTP enrollment-verifier mechanics and
+  protected persistence foundation without adding public API/UI, SMS, or production secrets.
+- Current result: RFC 6238 generation matches published SHA-1 vectors; exact-counter verification
+  fails closed for wrong, stale, or malformed codes; enrollment seeds use 160 bits of OS entropy.
+- Secret protection: AES-256-GCM authenticates and encrypts seeds with random 96-bit nonces,
+  explicit key identifiers, and actor/enrollment-bound associated data. Secret wrappers and
+  protected material do not expose plaintext through representations, logs, or output.
+- Persistence: forward-only migration `20260819_06` stores only ciphertext, nonce, key identifier,
+  bounded TOTP parameters, lifecycle state, and provenance separately from role/capability data.
+  One pending/active enrollment is allowed per actor; disabled history is retained.
+- Database controls: immutable verifier material, forward-only pending/active/disabled transitions,
+  actor/provenance requirements, existing-account foreign keys, constraints, and column-bounded
+  runtime privileges were verified on isolated real PostgreSQL.
+- Dependency: locked `cryptography==46.0.7` supplies reviewed AES-GCM rather than custom encryption;
+  no production key or secret is configured or committed.
+- Test-first evidence: crypto tests first failed on the absent module; PostgreSQL tests first failed
+  on the absent table; traceability first failed on absent entries; key-identifier hardening first
+  failed when application validation was weaker than persistence.
+- Verification: backend 232 passed with 69 expected dedicated-database skips; frontend 3 passed;
+  isolated PostgreSQL 69 passed; formatting, lint, strict typecheck, builds/import, deployment,
+  roadmap, automation, lock consistency, and frontend dependency audit passed.
+- Initial independent review found two persistence defects: enrollment history remained removable
+  through owner-level DELETE/TRUNCATE, and AES-GCM nonce uniqueness was not enforced per key.
+  Repair attempt 1 added destructive-operation rejection triggers, per-key nonce uniqueness, and
+  real-PostgreSQL regressions. Independent re-review passed with no material findings.
+- Scope preserved: no API/UI, SMS, session/recovery orchestration, production key, role/capability
+  policy, deployment operation, canonical specification change, commit, or push.
 - Blockers: none. Owner action: none.
-- Roadmap: V1-001 through V1-012 are published complete; V1-013 is the selected dependency-ready
-  approved successor under durable v1 authorization.
-- Exact next action: implement the approved bounded V1-013 standards-based TOTP MFA
-  cryptographic and persistence foundation.
+- Roadmap remains 12/60 published complete until V1-013 is independently published.
+- Exact next action: independently verify and publish the completed bounded V1-013 tranche under
+  standing authorization, then reconcile the roadmap and dispatch its approved successor.
