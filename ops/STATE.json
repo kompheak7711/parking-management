@@ -3,18 +3,18 @@
   "phase": "Identity",
   "tranche": "Login, MFA, logout, reauthentication, and session API",
   "task": "Implement the approved bounded candidate: Login, MFA, logout, reauthentication, and session API",
-  "status": "complete_uncommitted",
+  "status": "published",
   "active_cycle": "v1-015-login-mfa-logout-reauthentication-and-session-api",
   "branch": "implementation/foundation",
-  "commit": "f20623439cab8f5c6745f4c3210b791eab0dcb47",
-  "timestamp": "2026-08-19T09:42:28Z",
+  "commit": "a74871bc54d48be12ba87fd6600092655d8cae93",
+  "timestamp": "2026-08-19T09:49:38Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
     "basis": "structured durable-v1 successor selection",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": [
     "API-008-010",
@@ -81,7 +81,7 @@
     "roadmap_id": "V1-015"
   },
   "next_action": "Independently publish the verified V1-015 tranche under standing authorization, then activate exact successor V1-016",
-  "idle_reason": null,
+  "idle_reason": "waiting for an explicitly approved candidate",
   "owner_action": "none",
   "blockers": [],
   "repair": {
