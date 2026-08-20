@@ -1,7 +1,7 @@
 #!/bin/sh
 set -u
 
-repo="${PROPERTY_RENTAL_REPO:-/Users/sokompheak/Development/property-rental-management}"
+repo="${PROPERTY_RENTAL_REPO:-$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)}"
 profile="${PROPERTY_RENTAL_VERIFICATION_PROFILE:-complete}"
 evidence_file="${PROPERTY_RENTAL_VERIFICATION_EVIDENCE_FILE:-}"
 passed=0

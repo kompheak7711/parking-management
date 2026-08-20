@@ -45,7 +45,7 @@ from openclaw_automation import (
 REPO = Path(
     os.environ.get(
         "PROPERTY_RENTAL_REPO",
-        "/Users/sokompheak/Development/property-rental-management",
+        str(Path(__file__).resolve().parents[1]),
     )
 ).resolve()
 STATE_DIR = Path(

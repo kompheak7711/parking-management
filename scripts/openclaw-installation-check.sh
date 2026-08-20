@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-repo="${PROPERTY_RENTAL_REPO:-/Users/sokompheak/Development/property-rental-management}"
+repo="${PROPERTY_RENTAL_REPO:-$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)}"
 installed_workspace="${PROPERTY_RENTAL_OPENCLAW_WORKSPACE:-/Users/sokompheak/.openclaw/workspaces/property-rental-supervisor}"
 installed_wrapper="$installed_workspace/bin/hermes-property-rental"
 state_db="${PROPERTY_RENTAL_OPENCLAW_DB:-/Users/sokompheak/.openclaw/state/openclaw.sqlite}"

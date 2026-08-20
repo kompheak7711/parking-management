@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-repo="${PROPERTY_RENTAL_REPO:-/Users/sokompheak/Development/property-rental-management}"
+repo="${PROPERTY_RENTAL_REPO:-$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)}"
 cd "$repo"
 
 status="$(jq -r '.status // "unknown"' ops/STATE.json)"
