@@ -15,8 +15,10 @@
 - `ops/V1_ROADMAP.json` now records V1-017 `complete` with `complete` authorization, producing
   the derived count 17/60. The unique next ordered approved successor is V1-018 Account and
   capability administration API, with `approved_ready` status and `durable_v1` authorization.
-- The separate OpenClaw/Hermes automation repair is complete and locally verified on the
-  clean published baseline `8a27a4c75059f862a93856ffba51006115481d98`. Ten prior fresh
+- The separate OpenClaw/Hermes automation repair is published and remotely verified. The main
+  repair commit is `fdf2e23fdf9ebeb1d7f0a1687f0770a3c6d0715b`; the focused checkout-portability
+  correction is `f1582eee406b14aeadfad22e58143d95c14f6b92`. Both descend from the clean
+  reconciliation baseline `8a27a4c75059f862a93856ffba51006115481d98`. Ten prior fresh
   `gpt-5.6-sol`/`xhigh` automation reviews returned FAIL with concrete publication binding,
   secret scanning, SHA reconciliation, continuation, locking, attempt, terminal-marker,
   usage-accounting, scope, crash-resumption, model-ceiling, fingerprint, compact-packet,
@@ -40,11 +42,17 @@
   passed with 105 expected database skips, disposable PostgreSQL 105 passed without skips,
   frontend 3 passed, and all formatting, lint, typing, build, runtime/readiness, deployment,
   dependency-audit, traceability, JSON, scope, secret, canonical-integrity, and diff gates passed.
-  The latest complete artifact is `/private/tmp/property-rental-automation-thirteenth-verification.json`.
+  The latest complete artifact is `/private/tmp/property-rental-automation-fourteenth-verification.json`.
+- The first repair CI run `32412057853` failed only because repository-owned entry points used
+  a developer-machine checkout default. Nine automation-only paths now discover the repository
+  relative to their own location. A fresh independent reviewer returned PASS with no findings
+  for exact correction fingerprint `33cdb97377056cd6d1bb551eadb944b9a337583de446bfd334712140d5aefa14`;
+  GitHub Actions run `32413282286` then passed all four jobs for `f1582eee406b14aeadfad22e58143d95c14f6b92`.
+  Local HEAD, configured upstream, and remote branch HEAD were equal at that SHA before this
+  focused metadata reconciliation.
 - The supervisor schedule remains intentionally disabled. V1-018 has not been implemented or
   dispatched. Blockers: none. Idle reason: automation repair publication and restoration gates
   must complete before the approved successor can be dispatched. Owner action: none.
-- Exact next action: Publish and remotely verify the exact reviewed automation repair, reconcile
-  compact state, install/verify the repository-owned
-  wrapper, pass restoration probes, enable exactly one 30-minute schedule, then allow V1-018 to
-  dispatch automatically.
+- Exact next action: Install and verify the repository-owned Hermes wrapper, pass deterministic
+  restoration probes, enable exactly one 30-minute schedule, then allow V1-018 to dispatch
+  automatically.

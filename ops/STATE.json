@@ -72,8 +72,8 @@
     "status": "approved_ready",
     "roadmap_id": "V1-018"
   },
-  "next_action": "Publish and remotely verify the exact reviewed automation repair, then reconcile compact state and restore the scheduler.",
-  "idle_reason": "the approved V1-018 candidate is intentionally held while the separately authorized automation repair completes its publication and restoration gates",
+  "next_action": "Install and verify the repository-owned Hermes wrapper, pass deterministic restoration probes, enable exactly one 30-minute supervisor schedule, then allow V1-018 automatic dispatch.",
+  "idle_reason": "the approved V1-018 candidate is intentionally held while the published and remotely verified automation repair completes installation and scheduler-restoration gates",
   "owner_action": "none",
   "blockers": [],
   "repair": {
@@ -129,7 +129,7 @@
     "metadata_reconciliation": "current focused metadata-only reconciliation"
   },
   "automation_repair": {
-    "status": "verified_unpublished",
+    "status": "published_awaiting_restoration",
     "baseline": "8a27a4c75059f862a93856ffba51006115481d98",
     "branch": "implementation/foundation",
     "changed_path_count": 24,
@@ -146,7 +146,7 @@
       "format_lint_type_build": "PASS",
       "dependency_audits": "backend runtime/development and frontend PASS",
       "roadmap_traceability_json_scope_secret_canonical_diff": "PASS",
-      "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-automation-thirteenth-verification.json"
+      "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-automation-fourteenth-verification.json"
     },
     "independent_review": {
       "status": "PASS",
@@ -261,8 +261,38 @@
       "required_reasoning": "xhigh",
       "token_ceiling": 90000
     },
-    "next_action": "Publish and remotely verify the exact reviewed repair, reconcile compact state, install and verify repository-owned behavior, pass restoration probes, enable exactly one 30-minute schedule, then allow V1-018 automatic dispatch.",
-    "timestamp": "2026-08-20T19:58:33Z"
+    "ci_correction_review": {
+      "status": "PASS",
+      "reviewed_repository_fingerprint": "33cdb97377056cd6d1bb551eadb944b9a337583de446bfd334712140d5aefa14",
+      "reviewed_compact_state_fingerprint": "22f9be18d8fa3ffd84b02b929a56fa956f485639dca271af1c7280518b2ab7a3",
+      "reviewed_path_count": 9,
+      "effective_model": "unavailable from provider",
+      "reasoning_effort": "unavailable from provider",
+      "invocation_route": "direct Codex independent reviewer",
+      "session_id": "unavailable from provider",
+      "input_tokens": "unavailable from provider",
+      "cache_read_tokens": "unavailable from provider",
+      "output_tokens": "unavailable from provider",
+      "reasoning_tokens": "unavailable from provider",
+      "token_ceiling": 90000,
+      "findings": 0
+    },
+    "publication": {
+      "status": "published_and_remotely_verified",
+      "repair_commit": "fdf2e23fdf9ebeb1d7f0a1687f0770a3c6d0715b",
+      "ci_portability_correction_commit": "f1582eee406b14aeadfad22e58143d95c14f6b92",
+      "published_head": "f1582eee406b14aeadfad22e58143d95c14f6b92",
+      "initial_ci_run_id": 32412057853,
+      "initial_ci_conclusion": "failure",
+      "initial_ci_failure_category": "deterministic_test_failure",
+      "successful_ci_run_id": 32413282286,
+      "successful_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32413282286",
+      "successful_ci_conclusion": "success",
+      "successful_ci_jobs": 4,
+      "local_upstream_remote_sha_equal": true
+    },
+    "next_action": "Install and verify the repository-owned Hermes wrapper, pass deterministic restoration probes, enable exactly one 30-minute supervisor schedule, then allow V1-018 automatic dispatch.",
+    "timestamp": "2026-08-20T20:20:11Z"
   },
   "owner_decisions": {
     "password": "validate supplied value as 15-128 Unicode code points; NFC-normalize; revalidate normalized result as nonempty and 15-128 code points; blocklist, hash, and verify the complete normalized value without truncation; preserve spaces, paste, password managers, Unicode, no composition/rotation, and local compromised/common/expected/project-context rejection",
