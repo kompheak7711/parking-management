@@ -56,10 +56,14 @@
   dispatching V1-018 and no overlapping cycle existed.
 - Restoration-state CI run `32414313959` exposed one stale lifecycle-coupled routing test. The
   supervisor was immediately disabled before its next scheduled cycle; V1-018 was not dispatched.
-  The test now uses an isolated explicit repair-hold fixture and the executable shell inventory
-  derives its expectations from compact state and the roadmap. Focused and complete automation
-  routing tests are green locally.
-- V1-018 has not been implemented or dispatched. Blockers: none. Idle reason: bounded automatic
-  recovery is in progress with the scheduler intentionally disabled. Owner action: none.
-- Exact next action: Publish and remotely verify the lifecycle-independent routing-test
-  correction, then repeat the bounded scheduler restoration and allow V1-018 automatic dispatch.
+  The corrected isolated fixture and lifecycle-derived executable inventory passed fresh review,
+  the complete local profile, and all four jobs in recovery CI run `32415911733` for commit
+  `0081f31603751a175066d8ce7dbcca6f30053e81`.
+- The single 30-minute schedule is enabled again. A fresh model-free restoration run completed
+  `ok` in 208 ms without dispatching V1-018; its next run is `2026-08-20T20:57:23.630Z` and no
+  overlapping cycle exists.
+- V1-018 has not been implemented or dispatched. Blockers: none. Idle reason: the restored healthy
+  supervisor is waiting for its next scheduled cycle. Owner action: none.
+- Exact next action: Allow the enabled supervisor's next scheduled cycle at
+  `2026-08-20T20:57:23.630Z` to dispatch V1-018 automatically, then monitor its deterministic stage
+  evidence.
