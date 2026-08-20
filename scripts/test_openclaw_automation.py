@@ -899,17 +899,35 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
             self.assertEqual(before, repository_fingerprint(repo))
 
     def test_automation_repair_hold_prevents_candidate_dispatch(self) -> None:
-        preflight = json.loads(
-            subprocess.check_output(
-                [str(ROOT / "scripts/openclaw-supervisor-preflight.sh")],
-                cwd=ROOT,
-                text=True,
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(Path(directory))
+            state_path = repo / "ops/STATE.json"
+            state = json.loads(state_path.read_text())
+            state["automation_repair"] = {
+                "status": "published_awaiting_restoration",
+                "next_action": "Complete bounded restoration gates",
+            }
+            atomic_write_json(state_path, state)
+            subprocess.run(
+                ["git", "add", "--", "ops/STATE.json"], cwd=repo, check=True
             )
-        )
-        self.assertFalse(preflight["actionable"])
-        self.assertEqual(
-            preflight["state_issue"], "automation_repair_publication_required"
-        )
+            subprocess.run(
+                ["git", "commit", "-qm", "record repair hold"],
+                cwd=repo,
+                check=True,
+            )
+            preflight = json.loads(
+                subprocess.check_output(
+                    [str(ROOT / "scripts/openclaw-supervisor-preflight.sh")],
+                    cwd=repo,
+                    env={**os.environ, "PROPERTY_RENTAL_REPO": str(repo)},
+                    text=True,
+                )
+            )
+            self.assertFalse(preflight["actionable"])
+            self.assertEqual(
+                preflight["state_issue"], "automation_repair_publication_required"
+            )
 
     def test_exact_terminal_fingerprint_suppresses_only_unchanged_dispatch(
         self,

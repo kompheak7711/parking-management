@@ -42,7 +42,7 @@
   passed with 105 expected database skips, disposable PostgreSQL 105 passed without skips,
   frontend 3 passed, and all formatting, lint, typing, build, runtime/readiness, deployment,
   dependency-audit, traceability, JSON, scope, secret, canonical-integrity, and diff gates passed.
-  The latest complete artifact is `/private/tmp/property-rental-automation-fourteenth-verification.json`.
+  The latest complete artifact is `/private/tmp/property-rental-automation-fifteenth-verification.json`.
 - The first repair CI run `32412057853` failed only because repository-owned entry points used
   a developer-machine checkout default. Nine automation-only paths now discover the repository
   relative to their own location. A fresh independent reviewer returned PASS with no findings
@@ -51,13 +51,15 @@
   Local HEAD, configured upstream, and remote branch HEAD were equal at that SHA before this
   focused metadata reconciliation.
 - The repository-owned Hermes wrapper is installed and matches exactly. The single existing
-  Property Rental supervisor schedule `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is enabled at
-  1,800,000 ms. Its observed model-free restoration run completed `ok` in 214 ms without
-  dispatching V1-018, no overlapping cycle exists, and the next run is
-  `2026-08-20T20:31:43.487Z`.
-- V1-018 has not been implemented or dispatched. Blockers: none. Idle reason: the restored
-  healthy supervisor is waiting for its next scheduled cycle to dispatch the canonically
-  approved successor. Owner action: none.
-- Exact next action: Allow the enabled supervisor's next scheduled cycle at
-  `2026-08-20T20:31:43.487Z` to dispatch V1-018 automatically, then monitor its deterministic
-  stage evidence.
+  Property Rental supervisor schedule `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains configured
+  at 1,800,000 ms. Its observed model-free restoration run completed `ok` in 214 ms without
+  dispatching V1-018 and no overlapping cycle existed.
+- Restoration-state CI run `32414313959` exposed one stale lifecycle-coupled routing test. The
+  supervisor was immediately disabled before its next scheduled cycle; V1-018 was not dispatched.
+  The test now uses an isolated explicit repair-hold fixture and the executable shell inventory
+  derives its expectations from compact state and the roadmap. Focused and complete automation
+  routing tests are green locally.
+- V1-018 has not been implemented or dispatched. Blockers: none. Idle reason: bounded automatic
+  recovery is in progress with the scheduler intentionally disabled. Owner action: none.
+- Exact next action: Publish and remotely verify the lifecycle-independent routing-test
+  correction, then repeat the bounded scheduler restoration and allow V1-018 automatic dispatch.
