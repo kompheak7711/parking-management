@@ -83,6 +83,105 @@ run_case local_fail low ollama/qwen35-hermes:latest,openai/gpt-5.6-sol
 run_case local_stall low ollama/qwen35-hermes:latest,openai/gpt-5.6-sol
 run_case mislabeled_sensitive low openai/gpt-5.6-sol 'payment formatting'
 
+# A gateway timeout must use a dispatcher-owned, fresh local session whose
+# message contains compact state and the task instruction, never the canonical
+# full supervisor prompt. A later oversized immediate cycle is a separate event.
+make_repo gateway_timeout_oversized high 'repair gateway timeout safely'
+gateway_repo="$test_root/gateway_timeout_oversized/repo"
+gateway_state_dir="$test_root/gateway_timeout_oversized/state"
+gateway_calls="$test_root/gateway_timeout_oversized/calls"
+set +e
+FAKE_CALLS="$gateway_calls" \
+FAKE_SCENARIO=gateway_timeout_oversized \
+PROPERTY_RENTAL_REPO="$gateway_repo" \
+PROPERTY_RENTAL_DISPATCH_STATE_DIR="$gateway_state_dir" \
+PROPERTY_RENTAL_OPENCLAW_BIN="$fake_openclaw" \
+PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES=2 \
+  "$gateway_repo/scripts/openclaw-supervisor-dispatch.sh" 2>"$test_root/gateway_timeout_oversized/stderr"
+gateway_exit=$?
+set -e
+[ "$gateway_exit" -eq 78 ]
+[ "$(wc -l <"$gateway_calls" | tr -d ' ')" -eq 3 ]
+[ "$(sed -n '1p' "$gateway_calls" | cut -d '|' -f 3)" = gateway ]
+[ "$(sed -n '2p' "$gateway_calls" | cut -d '|' -f 3)" = local ]
+gateway_primary_session="$(sed -n '1p' "$gateway_calls" | cut -d '|' -f 2)"
+gateway_fallback_session="$(sed -n '2p' "$gateway_calls" | cut -d '|' -f 2)"
+[ "$gateway_primary_session" != "$gateway_fallback_session" ]
+fallback_message="$(sed -n '2p' "$gateway_calls" | cut -d '|' -f 4)"
+grep -q 'Deterministic compact state' "$fallback_message"
+grep -q 'Deterministic task packet' "$fallback_message"
+grep -q 'openclaw-hermes-task.sh' "$fallback_message"
+primary_message="$(sed -n '1p' "$gateway_calls" | cut -d '|' -f 4)"
+python3 - "$gateway_repo/ops/OPENCLAW_SUPERVISOR_PROMPT.md" "$primary_message" "$fallback_message" <<'PY'
+from pathlib import Path
+import sys
+
+full_prompt = Path(sys.argv[1]).read_text()
+primary_message = Path(sys.argv[2]).read_text()
+fallback_message = Path(sys.argv[3]).read_text()
+assert full_prompt in primary_message
+assert full_prompt not in fallback_message
+PY
+usage_file="$gateway_state_dir/model-usage.jsonl"
+jq -s -e '
+  (map(select(.event == "gateway_failure")) | length) == 1
+  and (map(select(.event == "gateway_fallback_model_cycle" and .total_tokens == 42904)) | length) == 1
+  and (map(select(.event == "model_cycle" and .total_tokens == 100901)) | length) == 1
+  and (map(select(.event == "token_ceiling_failure" and .observed_total_tokens == 100901 and .token_ceiling == 60000)) | length) == 1
+' "$usage_file" >/dev/null
+grep -q 'Gateway request failed; dispatcher started a fresh compact-only local fallback' "$test_root/gateway_timeout_oversized/stderr"
+grep -q 'Supervisor model cycle exceeded the 60000-token tranche ceiling (100901)' "$test_root/gateway_timeout_oversized/stderr"
+if grep -q 'fallback.*100901\|100901.*fallback' "$test_root/gateway_timeout_oversized/stderr"; then
+  echo 'diagnostics falsely attributed oversized cycle to fallback' >&2
+  exit 1
+fi
+
+# The oversized actionable fingerprint is tombstoned before returning code 78.
+# An identical rerun makes no model calls or attempt increments; changed compact
+# state produces a changed actionable fingerprint and remains eligible.
+attempt_file="$(find "$gateway_state_dir/fingerprint-attempts" -type f -print -quit)"
+[ "$(cat "$attempt_file")" -eq 2 ]
+set +e
+FAKE_CALLS="$gateway_calls" \
+FAKE_SCENARIO=gateway_timeout_oversized \
+PROPERTY_RENTAL_REPO="$gateway_repo" \
+PROPERTY_RENTAL_DISPATCH_STATE_DIR="$gateway_state_dir" \
+PROPERTY_RENTAL_OPENCLAW_BIN="$fake_openclaw" \
+PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES=2 \
+  "$gateway_repo/scripts/openclaw-supervisor-dispatch.sh" >/dev/null 2>&1
+identical_exit=$?
+set -e
+[ "$identical_exit" -eq 78 ]
+[ "$(wc -l <"$gateway_calls" | tr -d ' ')" -eq 3 ]
+[ "$(cat "$attempt_file")" -eq 2 ]
+tombstone_file="$(find "$gateway_state_dir/oversized-fingerprints" -type f -name '*.json' -print -quit)"
+tombstone_fingerprint="$(basename "$tombstone_file" .json)"
+jq -e --arg fingerprint "$tombstone_fingerprint" '
+  .status == "oversized_fingerprint_suppressed"
+  and .actionable_fingerprint == $fingerprint
+  and .observed_total_tokens == 100901
+  and .token_ceiling == 60000
+' "$tombstone_file" >/dev/null
+[ "$(find "$gateway_state_dir/oversized-fingerprints" -type f -name '.oversized-*' | wc -l | tr -d ' ')" -eq 0 ]
+jq '.next_action="repair changed actionable fingerprint"' "$gateway_repo/ops/STATE.json" >"$gateway_repo/ops/STATE.json.new"
+mv "$gateway_repo/ops/STATE.json.new" "$gateway_repo/ops/STATE.json"
+set +e
+FAKE_CALLS="$gateway_calls" \
+FAKE_SCENARIO=gateway_timeout_oversized \
+PROPERTY_RENTAL_REPO="$gateway_repo" \
+PROPERTY_RENTAL_DISPATCH_STATE_DIR="$gateway_state_dir" \
+PROPERTY_RENTAL_OPENCLAW_BIN="$fake_openclaw" \
+PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES=1 \
+  "$gateway_repo/scripts/openclaw-supervisor-dispatch.sh" >/dev/null 2>&1
+changed_exit=$?
+set -e
+[ "$changed_exit" -eq 78 ]
+[ "$(wc -l <"$gateway_calls" | tr -d ' ')" -eq 4 ]
+[ "$(find "$gateway_state_dir/oversized-fingerprints" -type f -name '*.json' | wc -l | tr -d ' ')" -eq 2 ]
+
+# The authorized ceiling remains exactly 60000: a 60000-token cycle succeeds.
+run_case ceiling_exact high openai/gpt-5.6-sol
+
 make_repo codex_stall high 'repair approved CI failure'
 stall_repo="$test_root/codex_stall/repo"
 stall_state_dir="$test_root/codex_stall/state"
