@@ -11,6 +11,12 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from openclaw_automation import (
+    digest,
+    health_classification,
+    stage_actionable_fingerprint,
+)
+
 REPO = Path(os.environ.get("PROPERTY_RENTAL_REPO", Path(__file__).resolve().parents[1]))
 STATE_DB = Path(
     os.environ.get(
@@ -26,6 +32,13 @@ LEDGER_DIR = Path(
 SUPERVISOR_ID = os.environ.get(
     "PROPERTY_RENTAL_SUPERVISOR_ID", "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb"
 )
+INSTALLED_WRAPPER = Path(
+    os.environ.get(
+        "PROPERTY_RENTAL_INSTALLED_HERMES_WRAPPER",
+        Path.home()
+        / ".openclaw/workspaces/property-rental-supervisor/bin/hermes-property-rental",
+    )
+)
 NOW_MS = int(os.environ.get("PROPERTY_RENTAL_NOW_MS", str(int(time.time() * 1000))))
 STALE_MS = int(os.environ.get("PROPERTY_RENTAL_STALE_MS", str(2 * 60 * 60 * 1000)))
 HEARTBEAT_MS = int(os.environ.get("PROPERTY_RENTAL_HEARTBEAT_MS", str(75 * 60 * 1000)))
@@ -33,7 +46,13 @@ EXHAUSTED_DIR = Path(
     os.environ.get(
         "PROPERTY_RENTAL_REPAIR_EXHAUSTED_DIR",
         Path.home()
-        / ".openclaw/state/property-rental-supervisor-dispatch/repair-exhausted",
+        / ".openclaw/state/property-rental-supervisor-dispatch-v2/terminal/repair_exhausted",
+    )
+)
+DISPATCH_STATE_DIR = Path(
+    os.environ.get(
+        "PROPERTY_RENTAL_DISPATCH_STATE_DIR",
+        Path.home() / ".openclaw/state/property-rental-supervisor-dispatch-v2",
     )
 )
 
@@ -47,7 +66,13 @@ def load_ledger() -> dict[str, str]:
     if not path.exists():
         return {}
     try:
-        return json.loads(path.read_text())
+        value = json.loads(path.read_text())
+        if isinstance(value, dict) and all(
+            isinstance(key, str) and isinstance(item, str)
+            for key, item in value.items()
+        ):
+            return value
+        return {}
     except (OSError, json.JSONDecodeError):
         return {}
 
@@ -61,27 +86,74 @@ def save_ledger(ledger: dict[str, str]) -> None:
 
 
 def supervisor() -> dict[str, object]:
-    with sqlite3.connect(STATE_DB) as connection:
-        row = connection.execute(
-            """SELECT enabled, last_run_at_ms, last_run_status, consecutive_errors,
-                      running_at_ms
-                 FROM cron_jobs WHERE job_id = ?""",
-            (SUPERVISOR_ID,),
-        ).fetchone()
+    try:
+        with sqlite3.connect(STATE_DB) as connection:
+            count = connection.execute(
+                "SELECT count(*) FROM cron_jobs WHERE name='property-rental-24x7-supervisor'"
+            ).fetchone()[0]
+            row = connection.execute(
+                """SELECT name, enabled, schedule_kind, every_ms, payload_kind,
+                          payload_message, last_run_at_ms, last_run_status,
+                          consecutive_errors, running_at_ms
+                     FROM cron_jobs WHERE job_id = ?""",
+                (SUPERVISOR_ID,),
+            ).fetchone()
+    except (sqlite3.Error, OSError):
+        return {
+            "present": False,
+            "enabled": False,
+            "last_run": None,
+            "status": "query_error",
+            "errors": 0,
+            "running": None,
+            "config_valid": False,
+        }
     if row is None:
         return {
+            "present": False,
             "enabled": False,
             "last_run": None,
             "status": "missing",
             "errors": 0,
             "running": None,
+            "config_valid": False,
         }
+    try:
+        payload = json.loads(row[5])
+    except (TypeError, json.JSONDecodeError):
+        payload = None
+    expected_payload = {
+        "kind": "command",
+        "argv": [str(REPO / "scripts/openclaw-supervisor-dispatch.sh")],
+        "cwd": str(REPO),
+        "noOutputTimeoutSeconds": 10860,
+        "outputMaxBytes": 20000,
+    }
+    try:
+        wrapper_matches = (
+            INSTALLED_WRAPPER.is_file()
+            and INSTALLED_WRAPPER.read_bytes()
+            == (REPO / "scripts/hermes-property-rental").read_bytes()
+        )
+    except OSError:
+        wrapper_matches = False
+    config_valid = bool(
+        count == 1
+        and row[0] == "property-rental-24x7-supervisor"
+        and row[2] == "every"
+        and row[3] == 1800000
+        and row[4] == "command"
+        and payload == expected_payload
+        and wrapper_matches
+    )
     return {
-        "enabled": bool(row[0]),
-        "last_run": row[1],
-        "status": row[2] or "unknown",
-        "errors": row[3] or 0,
-        "running": row[4],
+        "present": True,
+        "enabled": bool(row[1]),
+        "last_run": row[6],
+        "status": row[7] or "unknown",
+        "errors": row[8] or 0,
+        "running": row[9],
+        "config_valid": config_valid,
     }
 
 
@@ -132,7 +204,10 @@ def automation_preflight() -> dict[str, object]:
             cwd=REPO,
             text=True,
         )
-        return json.loads(output)
+        value = json.loads(output)
+        if isinstance(value, dict):
+            return {str(key): item for key, item in value.items()}
+        return {}
     except (OSError, subprocess.CalledProcessError, json.JSONDecodeError):
         return {}
 
@@ -148,8 +223,28 @@ def main() -> None:
     next_action = str(preflight.get("next_action") or effective_next_action(state))
     state_issue = preflight.get("state_issue")
     candidate = state.get("next_candidate") or {}
+    candidate_id = str(
+        candidate.get("roadmap_id")
+        or candidate.get("id")
+        or (state.get("roadmap") or {}).get("current_id")
+        or "unknown"
+    )
+    stage = "idle"
+    blocker_kind = None
+    stage_path = DISPATCH_STATE_DIR / "candidates" / f"{candidate_id}.json"
+    if stage_path.exists():
+        try:
+            stage_record = json.loads(stage_path.read_text())
+            stage = str(stage_record.get("stage") or "idle")
+            blocker_kind = stage_record.get("last_failure_category")
+        except (OSError, json.JSONDecodeError):
+            stage = "state_reconciliation_required"
 
     exhausted_records = sorted(EXHAUSTED_DIR.glob("*.json"))
+    exhausted_matched = False
+    current_actionable = stage_actionable_fingerprint(
+        REPO, preflight, candidate=candidate_id, stage=stage
+    )
     for exhausted_path in exhausted_records:
         try:
             exhausted = json.loads(exhausted_path.read_text())
@@ -157,8 +252,11 @@ def main() -> None:
             continue
         if exhausted.get("status") != "repair_exhausted":
             continue
-        if exhausted.get("next_action") != next_action:
+        if exhausted_path.stem != current_actionable:
             continue
+        exhausted_matched = True
+        stage = "repair_exhausted"
+        blocker_kind = "repair_exhausted"
         signature = str(exhausted.get("attempt_key") or exhausted_path.stem)
         emit_once(
             ledger,
@@ -174,36 +272,104 @@ def main() -> None:
             temporary.write_text(json.dumps(exhausted, sort_keys=True) + "\n")
             temporary.replace(exhausted_path)
         break
-    if not exhausted_records:
+    if not exhausted_matched:
         ledger.pop("repair_exhausted", None)
 
-    last_run = service["last_run"]
-    healthy = bool(
+    last_run_value = service["last_run"]
+    last_run = last_run_value if isinstance(last_run_value, int) else None
+    error_value = service["errors"]
+    error_count = error_value if isinstance(error_value, int) else 0
+    scheduler_ok = bool(
         service["enabled"]
         and last_run
-        and NOW_MS - int(last_run) <= HEARTBEAT_MS
+        and NOW_MS - last_run <= HEARTBEAT_MS
         and service["status"] == "ok"
-        and int(service["errors"]) == 0
+        and error_count == 0
     )
-    health_signature = "healthy" if healthy else json.dumps(service, sort_keys=True)
+    classification = health_classification(
+        enabled=bool(service["enabled"]),
+        scheduler_ok=scheduler_ok,
+        project_stage=stage,
+        blocker_kind=str(blocker_kind) if blocker_kind else None,
+        installed=bool(service["present"] and service["config_valid"]),
+    )
+    state_fingerprint = digest(
+        {
+            "head": head,
+            "candidate": candidate_id,
+            "stage": stage,
+            "status": status,
+            "state_issue": state_issue,
+            "next_action": next_action,
+            "blockers": state.get("blockers") or [],
+            "service": {
+                "enabled": service["enabled"],
+                "status": service["status"],
+                "errors": service["errors"],
+                "running": bool(service["running"]),
+            },
+        }
+    )
+    health_signature = f"{classification}:{state_fingerprint}"
     prior_health = ledger.get("health")
-    if not healthy:
+    if classification == "scheduler_intentionally_disabled":
         emit_once(
             ledger,
             "health",
             health_signature,
-            "AUTOMATION_HEALTH — Property Rental supervisor is not healthy. "
-            f"Enabled: {service['enabled']}; last status: {service['status']}; "
-            f"consecutive errors: {service['errors']}. Investigation is required.",
+            "SCHEDULER_DISABLED — Property Rental supervisor is intentionally disabled. "
+            f"Scheduler enabled: false; project stage: {stage}; automatic recovery: not running; "
+            f"exact next action: {next_action}; Owner action required: no.",
         )
-    elif prior_health and prior_health != "healthy":
+    elif classification == "scheduler_unhealthy":
+        emit_once(
+            ledger,
+            "health",
+            health_signature,
+            "SCHEDULER_UNHEALTHY — Property Rental scheduler is unhealthy. "
+            f"Scheduler enabled: {str(bool(service['enabled'])).lower()}; project stage: {stage}; "
+            f"last status: {service['status']}; "
+            f"consecutive errors: {service['errors']}; automatic recovery: pending; "
+            f"exact next action: {next_action}; Owner action required: no unless bounded recovery exhausts.",
+        )
+    elif prior_health and prior_health.startswith(
+        ("scheduler_unhealthy:", "scheduler_intentionally_disabled:")
+    ):
         print(
-            "SCHEDULER_RECOVERED — Property Rental supervisor scheduling is healthy again. "
-            "This confirms scheduled checks resumed; it does not resolve any separate project discrepancy or blocker."
+            "AUTOMATION_RECOVERED — Property Rental scheduler is healthy again. "
+            f"Scheduler enabled: true; project stage: {stage}; automatic recovery: complete; "
+            f"exact next action: {next_action}. This does not resolve a separate project blocker."
         )
-        ledger["health"] = "healthy"
+        ledger["health"] = health_signature
     else:
-        ledger["health"] = "healthy"
+        ledger["health"] = health_signature
+
+    if classification not in {
+        "scheduler_intentionally_disabled",
+        "scheduler_unhealthy",
+        "scheduler_healthy_idle",
+    }:
+        owner_required = classification in {
+            "project_blocked_owner_decision",
+            "project_blocked_protected_operation",
+            "bounded_repair_exhausted",
+        }
+        recovery = (
+            "exhausted"
+            if classification == "bounded_repair_exhausted"
+            else "in progress"
+        )
+        emit_once(
+            ledger,
+            "project_stage",
+            f"{classification}:{state_fingerprint}",
+            f"AUTOMATION_STAGE — Subsystem: Property Rental candidate workflow; "
+            f"scheduler enabled: {str(bool(service['enabled'])).lower()}; project stage: {classification}; "
+            f"cause: compact stage {stage}; automatic recovery: {recovery}; "
+            f"exact next action: {next_action}; Owner action required: {str(owner_required).lower()}.",
+        )
+    else:
+        ledger.pop("project_stage", None)
 
     if state_issue == "published_compact_state_reconciliation_required":
         emit_once(
@@ -242,7 +408,14 @@ def main() -> None:
 
     if status == "published":
         published_commit = str(state.get("commit") or head)[:7]
-        signature = f"{phase}:{published_commit}"
+        signature = digest(
+            {
+                "phase": phase,
+                "commit": published_commit,
+                "next_action": next_action,
+                "blockers": state.get("blockers") or [],
+            }
+        )
         roadmap = state.get("roadmap") or {}
         roadmap_id = str(roadmap.get("current_id") or "unrecorded")
         roadmap_total = roadmap.get("total")
@@ -251,8 +424,12 @@ def main() -> None:
             roadmap_data = json.loads((REPO / "ops/V1_ROADMAP.json").read_text())
             tranches = roadmap_data.get("tranches") or []
             complete = sum(item.get("status") == "complete" for item in tranches)
-            total = int(roadmap_total or roadmap_data.get("total_tranches") or len(tranches))
-            roadmap_progress = f" Roadmap progress: {complete}/{total} complete; current {roadmap_id}."
+            total = int(
+                roadmap_total or roadmap_data.get("total_tranches") or len(tranches)
+            )
+            roadmap_progress = (
+                f" Roadmap progress: {complete}/{total} complete; current {roadmap_id}."
+            )
         except (OSError, TypeError, ValueError, json.JSONDecodeError):
             if roadmap_total:
                 roadmap_progress = f" Roadmap current: {roadmap_id} of {roadmap_total}."

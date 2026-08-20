@@ -213,10 +213,10 @@ unexpected database/role names, missing passwords, or reused identity passwords.
 ## Autonomous supervision
 
 OpenClaw checks compact state every 30 minutes without invoking a model when no
-approved work is actionable. Each unchanged actionable fingerprint receives one
-implementation attempt and at most one repair attempt. Exhaustion is persisted and
-alerted once instead of silently appearing healthy. A cycle above 60,000 tokens stops
-instead of being retried automatically.
+approved work is actionable. The supervisor is a deterministic stage router: it reconciles
+state, selects the exact structured roadmap successor, monitors locks/processes, classifies
+failures, persists evidence, and schedules work. It never carries out model-heavy product
+implementation or injects its full prompt/history into a worker.
 
 Attempt identity is explicitly scoped by roadmap tranche ID. Structured successor
 selection activates the successor lifecycle and initializes a repair object bearing that
@@ -224,21 +224,30 @@ same tranche ID; preflight ignores repair counters, failures, and protection fla
 recorded tranche ID does not match the dispatched tranche. Published predecessor repair
 exhaustion therefore cannot consume a successor's independent bounded attempts.
 
-The 30-minute interval is only an idle wake-up cadence. After Hermes reports completion,
-OpenClaw immediately verifies and publishes the tranche; if compact state advances to
-a different explicitly authorized tranche, the dispatcher starts the next supervisor
-cycle without waiting for another scheduled tick. Immediate chaining is capped at six
-distinct tranches per wake-up to prevent an erroneous state transition from creating an
-unbounded model loop.
+The 30-minute interval is only an idle wake-up cadence. Candidate work is persisted as
+separate reconciliation/dispatch, implementation, deterministic verification, independent
+review, publication, post-publication reconciliation, and next-candidate activation stages.
+Immediate chaining is capped at six stage transitions per wake-up.
 
-Each actionable state produces a compact deterministic task packet, a task file delivered
-through the validated Hermes wrapper, and a fresh model session. Explicitly low-risk
-mechanical tranches use the local Ollama route first;
-unknown or sensitive tranches fail closed to Codex. A model-written low-risk label is
-only a hint; deterministic sensitive-term checks can override it to high risk. Local
-failure or unchanged compact state receives at most one fresh Codex escalation. Local
-runs are limited to one tranche, two repair attempts, three no-progress tool calls,
-and a 30,000-token budget.
+Each model stage receives a compact deterministic task packet and a fresh one-shot session.
+The repository-owned Hermes wrapper uses `openai-codex`/`gpt-5.6-sol` with requested
+reasoning `high` for implementation and `xhigh` for an independent review. The ordinary
+ceiling remains exactly 60,000 tokens. A review preclassified as complex uses 90,000;
+120,000 is allowed only with a reason, repository fingerprint, and scope recorded before
+invocation. Implementation cannot promote itself to a review ceiling, and an unsupported
+configuration stops without consuming an attempt.
+
+One verification-only continuation may be atomically consumed for an exact unchanged
+fingerprint when implementation is complete and the exclusive stop reason is a tool,
+session, or token ceiling. It is forbidden after a failed check, while a relevant worker
+remains, or for product edits, policy/scope changes, secrets, protected operations, or
+destructive work. It cannot recurse. Ordinary model, implementation, verification, review,
+repair, gateway/fallback, and ceiling usage remain separate durable records.
+
+The repeated-call guard keys normalized command identity/arguments with repository,
+compact-state, process-state, and prior-result fingerprints. It suppresses an unchanged
+failed call while preserving the safe underlying exit/category evidence and exact next
+eligible action. Lock recovery verifies PID/process identity rather than age alone.
 
 The model-free preflight also enforces durable handoff invariants learned from prior
 recovery incidents. An approved candidate with a missing `next_action` is dispatched
@@ -297,8 +306,9 @@ approved scope.
 
 A separate model-free watchdog sends Telegram after every newly published roadmap tranche,
 including the verified commit, roadmap progress, and exact next action. It also reports an
-approval request, a stalled approved tranche, an unhealthy supervisor, or recovery. Identical
-events are deduplicated. The daily 08:00 Asia/Phnom_Penh report includes automation
+approval request, a stalled approved tranche, an intentionally disabled or unhealthy
+scheduler, stage progress, or recovery. Identical notification types at an unchanged material
+state fingerprint are deduplicated. The daily 08:00 Asia/Phnom_Penh report includes automation
 health, last check and state update, repository synchronization, 24-hour model usage,
 the reason for being idle, blockers, commits, and the exact next owner action.
 

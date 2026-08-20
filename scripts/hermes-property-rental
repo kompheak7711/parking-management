@@ -1,0 +1,65 @@
+#!/bin/sh
+set -eu
+
+stage="${PROPERTY_RENTAL_HERMES_STAGE:-implementation}"
+usage_file="${PROPERTY_RENTAL_HERMES_USAGE_FILE:-}"
+hermes_bin="${PROPERTY_RENTAL_HERMES_BIN:-hermes}"
+token_ceiling="${PROPERTY_RENTAL_HERMES_TOKEN_CEILING:-}"
+
+[ -n "$usage_file" ] || {
+  echo "PROPERTY_RENTAL_HERMES_USAGE_FILE is required" >&2
+  exit 64
+}
+[ "$#" -eq 1 ] && [ -n "$1" ] || {
+  echo "A nonempty compact task is required" >&2
+  exit 64
+}
+
+case "$stage" in
+  implementation)
+    reasoning=high
+    [ "$token_ceiling" = 60000 ] || {
+      echo "Implementation requires the exact 60000-token ceiling" >&2
+      exit 64
+    }
+    ;;
+  independent_review)
+    reasoning=xhigh
+    case "$token_ceiling" in
+      90000) ;;
+      120000)
+        [ -n "${PROPERTY_RENTAL_EXCEPTIONAL_REVIEW_REASON:-}" ] \
+          && [ -n "${PROPERTY_RENTAL_EXCEPTIONAL_REVIEW_REPOSITORY_FINGERPRINT:-}" ] \
+          && [ -n "${PROPERTY_RENTAL_EXCEPTIONAL_REVIEW_SCOPE:-}" ] || {
+          echo "120000-token review requires pre-recorded reason, fingerprint, and scope" >&2
+          exit 64
+        }
+        ;;
+      *) echo "Independent review requires an approved 90000 or 120000-token ceiling" >&2; exit 64 ;;
+    esac
+    ;;
+  *)
+    echo "Unsupported Hermes stage: $stage" >&2
+    exit 64
+    ;;
+esac
+
+# HERMES_MAX_TOKENS is the installed CLI's supported per-invocation model
+# configuration boundary. Do not mutate persistent user configuration.
+export HERMES_MAX_TOKENS="$token_ceiling"
+
+# The installed quiet chat route is the supported boundary that both honors
+# HERMES_MAX_TOKENS and does not force YOLO.  Stage toolsets deliberately omit
+# terminal, web, browser, delegation, cron, memory, and session-history tools;
+# publication and verification are separate deterministic stages.
+exec "$hermes_bin" \
+  chat \
+  --provider openai-codex \
+  --model gpt-5.6-sol \
+  --reasoning "$reasoning" \
+  --toolsets file,skills,todo \
+  --max-turns 120 \
+  --source tool \
+  --in "${PROPERTY_RENTAL_REPO:-$(pwd)}" \
+  --quiet \
+  --query "$1"

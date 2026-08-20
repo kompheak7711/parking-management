@@ -22,6 +22,8 @@ approval_status="$(jq -r '.approval.status // "unknown"' ops/STATE.json)"
 implementation_started="$(jq -r '.approval.implementation_started == true' ops/STATE.json)"
 implementation_completed="$(jq -r '.approval.implementation_completed == true' ops/STATE.json)"
 publication_completed="$(jq -r '.approval.publication_completed == true' ops/STATE.json)"
+automation_repair_status="$(jq -r '.automation_repair.status // "restored"' ops/STATE.json)"
+automation_repair_next_action="$(jq -r '.automation_repair.next_action // ""' ops/STATE.json)"
 blocker_count="$(jq -r '(.blockers // []) | length' ops/STATE.json)"
 active_cycle="$(jq -r '.active_cycle // .task // "unknown"' ops/STATE.json)"
 attempt_tranche_id="$(jq -r '
@@ -227,6 +229,20 @@ if [ "$blocker_count" -eq 0 ] && [ -n "$next_action" ]; then
   esac
 fi
 
+# A separately authorized automation repair is a deterministic dispatch hold.
+# It never revokes candidate approval; it prevents product implementation until
+# publication, remote CI, reconciliation, and scheduler restoration are proven.
+if [ "$automation_repair_status" != restored ]; then
+  actionable=false
+  normalized=true
+  state_issue="automation_repair_publication_required"
+  if [ -n "$automation_repair_next_action" ]; then
+    next_action="$automation_repair_next_action"
+  else
+    next_action="Publish and restore the bounded automation repair before candidate dispatch."
+  fi
+fi
+
 jq -cn \
   --arg head "$head_sha" \
   --arg status "$status" \
@@ -253,6 +269,7 @@ jq -cn \
   --argjson roadmap_total "$roadmap_total" \
   --argjson roadmap_completed "$roadmap_completed" \
   --arg roadmap_current_status "$roadmap_current_status" \
+  --arg automation_repair_status "$automation_repair_status" \
   --argjson normalized "$normalized" \
   --argjson actionable "$actionable" \
-  '{head: $head, status: $status, active_cycle: $active_cycle, attempt_tranche_id: $attempt_tranche_id, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, repair_tranche_id: $repair_tranche_id, repair_matches_tranche: $repair_matches_tranche, repair_failure: $repair_failure, normalized: $normalized, blockers: $blockers, repair_attempts: $repair_attempts, repair_max_attempts: $repair_max_attempts, durable_v1_authorization: $durable_v1_authorization, candidate_is_concrete: $candidate_is_concrete, status_known: $status_known, implementation_started: $implementation_started, implementation_completed: $implementation_completed, publication_completed: $publication_completed, queue_candidate: $queue_candidate, roadmap:{current_id:$roadmap_current_id,current_status:$roadmap_current_status,total:$roadmap_total,completed:$roadmap_completed}, worktree: $worktree, actionable: $actionable}'
+  '{head: $head, status: $status, active_cycle: $active_cycle, attempt_tranche_id: $attempt_tranche_id, next_action: $next_action, recorded_next_action: $recorded_next_action, state_issue: $state_issue, automation_repair_status:$automation_repair_status, repair_tranche_id: $repair_tranche_id, repair_matches_tranche: $repair_matches_tranche, repair_failure: $repair_failure, normalized: $normalized, blockers: $blockers, repair_attempts: $repair_attempts, repair_max_attempts: $repair_max_attempts, durable_v1_authorization: $durable_v1_authorization, candidate_is_concrete: $candidate_is_concrete, status_known: $status_known, implementation_started: $implementation_started, implementation_completed: $implementation_completed, publication_completed: $publication_completed, queue_candidate: $queue_candidate, roadmap:{current_id:$roadmap_current_id,current_status:$roadmap_current_status,total:$roadmap_total,completed:$roadmap_completed}, worktree: $worktree, actionable: $actionable}'

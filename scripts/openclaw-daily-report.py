@@ -10,7 +10,8 @@ import subprocess
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+
+from openclaw_automation import stage_actionable_fingerprint
 
 
 def effective_next_action(state: dict[str, object]) -> str:
@@ -42,6 +43,7 @@ def effective_next_action(state: dict[str, object]) -> str:
         return f"Implement the approved bounded candidate: {candidate['task']}"
     return "Missing — automation state requires repair."
 
+
 REPO = Path(os.environ.get("PROPERTY_RENTAL_REPO", Path(__file__).resolve().parents[1]))
 STATE_DB = Path(
     os.environ.get(
@@ -51,46 +53,74 @@ STATE_DB = Path(
 SUPERVISOR_ID = os.environ.get(
     "PROPERTY_RENTAL_SUPERVISOR_ID", "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb"
 )
+INSTALLED_WRAPPER = Path(
+    os.environ.get(
+        "PROPERTY_RENTAL_INSTALLED_HERMES_WRAPPER",
+        Path.home()
+        / ".openclaw/workspaces/property-rental-supervisor/bin/hermes-property-rental",
+    )
+)
 USAGE_LEDGER = Path(
     os.environ.get(
         "PROPERTY_RENTAL_MODEL_USAGE_LEDGER",
         Path.home()
-        / ".openclaw/state/property-rental-supervisor-dispatch/model-usage.jsonl",
+        / ".openclaw/state/property-rental-supervisor-dispatch-v2/model-usage.jsonl",
     )
 )
 REPAIR_EXHAUSTED_DIR = Path(
     os.environ.get(
         "PROPERTY_RENTAL_REPAIR_EXHAUSTED_DIR",
         Path.home()
-        / ".openclaw/state/property-rental-supervisor-dispatch/repair-exhausted",
+        / ".openclaw/state/property-rental-supervisor-dispatch-v2/terminal/repair_exhausted",
     )
 )
+DISPATCH_STATE_DIR = Path(
+    os.environ.get(
+        "PROPERTY_RENTAL_DISPATCH_STATE_DIR",
+        Path.home() / ".openclaw/state/property-rental-supervisor-dispatch-v2",
+    )
+)
+NOW_MS = int(os.environ.get("PROPERTY_RENTAL_NOW_MS", str(int(time.time() * 1000))))
+HEARTBEAT_MS = int(os.environ.get("PROPERTY_RENTAL_HEARTBEAT_MS", str(75 * 60 * 1000)))
 
 
-def recent_model_usage(now: Optional[float] = None) -> list[int]:
+def recent_model_usage(now: float | None = None) -> tuple[list[int], int]:
     """Read actual dispatcher usage records from the last 24 hours."""
     cutoff = (time.time() if now is None else now) - 86400
     totals: list[int] = []
+    unavailable = 0
     try:
         lines = USAGE_LEDGER.read_text().splitlines()
     except OSError:
-        return totals
+        return totals, unavailable
     for line in lines:
         try:
             record = json.loads(line)
             timestamp = datetime.fromisoformat(
                 str(record["timestamp"]).replace("Z", "+00:00")
             ).timestamp()
-            tokens = int(record.get("total_tokens", 0))
+            raw_tokens = record.get("total_token_usage", record.get("total_tokens"))
         except (KeyError, TypeError, ValueError, json.JSONDecodeError):
             continue
-        if timestamp >= cutoff and tokens >= 0:
+        if timestamp < cutoff:
+            continue
+        if raw_tokens == "unavailable from provider" or raw_tokens is None:
+            unavailable += 1
+            continue
+        try:
+            tokens = int(raw_tokens)
+        except (TypeError, ValueError):
+            unavailable += 1
+            continue
+        if tokens >= 0:
             totals.append(tokens)
-    return totals
+    return totals, unavailable
 
 
 def git(*args: str) -> str:
-    return subprocess.check_output(["git", *args], cwd=REPO, text=True).strip()
+    return subprocess.check_output(
+        ["git", *args], cwd=REPO, text=True, stderr=subprocess.DEVNULL
+    ).strip()
 
 
 def automation_preflight() -> dict[str, object]:
@@ -101,29 +131,82 @@ def automation_preflight() -> dict[str, object]:
             cwd=REPO,
             text=True,
         )
-        return json.loads(output)
+        value = json.loads(output)
+        if isinstance(value, dict):
+            return {str(key): item for key, item in value.items()}
+        return {}
     except (OSError, subprocess.CalledProcessError, json.JSONDecodeError):
         return {}
+
+
+def supervisor_status() -> dict[str, object]:
+    """Apply the exact same schedule and installed-wrapper contract as readiness."""
+    try:
+        with sqlite3.connect(STATE_DB) as connection:
+            count = connection.execute(
+                "SELECT count(*) FROM cron_jobs WHERE name='property-rental-24x7-supervisor'"
+            ).fetchone()[0]
+            row = connection.execute(
+                """SELECT name, enabled, schedule_kind, every_ms, payload_kind,
+                          payload_message, last_run_at_ms, last_run_status,
+                          consecutive_errors, running_at_ms
+                     FROM cron_jobs WHERE job_id = ?""",
+                (SUPERVISOR_ID,),
+            ).fetchone()
+    except (sqlite3.Error, OSError):
+        return {"present": False, "enabled": False, "config_valid": False}
+    if row is None:
+        return {"present": False, "enabled": False, "config_valid": False}
+    try:
+        payload = json.loads(row[5])
+    except (TypeError, json.JSONDecodeError):
+        payload = None
+    expected_payload = {
+        "kind": "command",
+        "argv": [str(REPO / "scripts/openclaw-supervisor-dispatch.sh")],
+        "cwd": str(REPO),
+        "noOutputTimeoutSeconds": 10860,
+        "outputMaxBytes": 20000,
+    }
+    try:
+        wrapper_matches = (
+            INSTALLED_WRAPPER.is_file()
+            and INSTALLED_WRAPPER.read_bytes()
+            == (REPO / "scripts/hermes-property-rental").read_bytes()
+        )
+    except OSError:
+        wrapper_matches = False
+    return {
+        "present": True,
+        "enabled": bool(row[1]),
+        "config_valid": bool(
+            count == 1
+            and row[0] == "property-rental-24x7-supervisor"
+            and row[2] == "every"
+            and row[3] == 1800000
+            and row[4] == "command"
+            and payload == expected_payload
+            and wrapper_matches
+        ),
+        "last_run": row[6],
+        "status": row[7] or "unknown",
+        "errors": row[8] or 0,
+        "running": row[9],
+    }
 
 
 def main() -> None:
     state = json.loads((REPO / "ops/STATE.json").read_text())
     preflight = automation_preflight()
-    with sqlite3.connect(STATE_DB) as connection:
-        supervisor = connection.execute(
-            """SELECT enabled, last_run_at_ms, last_run_status, consecutive_errors,
-                      running_at_ms FROM cron_jobs WHERE job_id = ?""",
-            (SUPERVISOR_ID,),
-        ).fetchone()
-
-    enabled, last_run_ms, last_status, errors, running_ms = supervisor or (
-        0,
-        None,
-        "missing",
-        0,
-        None,
-    )
-    recent_totals = recent_model_usage()
+    service = supervisor_status()
+    installed = bool(service.get("present"))
+    enabled = bool(service.get("enabled"))
+    config_valid = bool(service.get("config_valid"))
+    last_run_ms = service.get("last_run")
+    last_status = service.get("status", "missing")
+    errors = service.get("errors", 0)
+    running_ms = service.get("running")
+    recent_totals, unavailable_totals = recent_model_usage()
 
     head = git("rev-parse", "--short", "HEAD")
     branch = git("branch", "--show-current")
@@ -137,18 +220,29 @@ def main() -> None:
     state_issue = preflight.get("state_issue")
     status = state.get("status", "unknown")
     candidate = state.get("next_candidate") or {}
-    repair_exhausted = False
-    for exhausted_path in REPAIR_EXHAUSTED_DIR.glob("*.json"):
+    candidate_id = str(
+        candidate.get("roadmap_id")
+        or candidate.get("id")
+        or (state.get("roadmap") or {}).get("current_id")
+        or "unknown"
+    )
+    stage = "idle"
+    stage_path = DISPATCH_STATE_DIR / "candidates" / f"{candidate_id}.json"
+    if stage_path.exists():
         try:
-            exhausted = json.loads(exhausted_path.read_text())
+            stage_record = json.loads(stage_path.read_text())
+            stage = str(stage_record.get("stage") or "idle")
         except (OSError, json.JSONDecodeError):
-            continue
-        if (
-            exhausted.get("status") == "repair_exhausted"
-            and exhausted.get("next_action") == next_action
-        ):
-            repair_exhausted = True
-            break
+            stage = "state_reconciliation_required"
+    actionable = stage_actionable_fingerprint(
+        REPO, preflight, candidate=candidate_id, stage=stage
+    )
+    exhausted_path = REPAIR_EXHAUSTED_DIR / f"{actionable}.json"
+    try:
+        exhausted = json.loads(exhausted_path.read_text())
+        repair_exhausted = exhausted.get("status") == "repair_exhausted"
+    except (OSError, json.JSONDecodeError):
+        repair_exhausted = False
     if repair_exhausted:
         automation_state = "REPAIR_EXHAUSTED"
         idle_reason = "A bounded repair fingerprint exhausted its permitted attempts"
@@ -192,24 +286,40 @@ def main() -> None:
     if running_ms:
         automation_state = "WORKING"
 
-    last_run = (
-        "never"
-        if not last_run_ms
-        else datetime.fromtimestamp(last_run_ms / 1000)
-        .astimezone()
-        .strftime("%Y-%m-%d %H:%M %Z")
-    )
-    health = (
-        "HEALTHY"
-        if enabled and last_status == "ok" and not errors
-        else "ATTENTION REQUIRED"
-    )
+    last_run = "never"
+    if isinstance(last_run_ms, int) and last_run_ms:
+        last_run = (
+            datetime.fromtimestamp(last_run_ms / 1000)
+            .astimezone()
+            .strftime("%Y-%m-%d %H:%M %Z")
+        )
+    if not installed:
+        health = "UNHEALTHY — SCHEDULE MISSING"
+    elif not config_valid:
+        health = "UNHEALTHY — SCHEDULE CONFIGURATION MISMATCH"
+    elif not enabled:
+        health = "INTENTIONALLY DISABLED"
+    elif (
+        last_status == "ok"
+        and not errors
+        and isinstance(last_run_ms, int)
+        and NOW_MS - last_run_ms <= HEARTBEAT_MS
+    ):
+        health = "HEALTHY"
+    else:
+        health = "UNHEALTHY"
     activity = "working now" if running_ms else "idle between checks"
-    token_text = (
-        f"{sum(recent_totals):,} tokens across {len(recent_totals)} model cycle(s)"
-        if recent_totals
-        else "0 model tokens; checks were token-free"
-    )
+    if unavailable_totals:
+        token_text = (
+            f"{sum(recent_totals):,} observed tokens across {len(recent_totals)} model cycle(s); "
+            f"{unavailable_totals} model cycle(s) unavailable from provider"
+        )
+    elif recent_totals:
+        token_text = (
+            f"{sum(recent_totals):,} tokens across {len(recent_totals)} model cycle(s)"
+        )
+    else:
+        token_text = "0 model tokens; no model cycle was recorded"
     if not commits:
         commits = f"- No commits; reason: {idle_reason}"
 

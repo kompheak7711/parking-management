@@ -123,5 +123,15 @@ frontend-audit:
 
 automation-test:
 	python3 scripts/validate-v1-roadmap.py
+	python3 -m json.tool ops/AUTOMATION_TRACEABILITY.json >/dev/null
 	./scripts/test-openclaw-routing.sh
+	./scripts/test-openclaw-state-routing.sh
 	./scripts/test-openclaw-visibility-watchdog.sh
+	sh -n scripts/hermes-property-rental scripts/openclaw-deterministic-verification.sh \
+		scripts/openclaw-hermes-task.sh scripts/openclaw-installation-check.sh \
+		scripts/openclaw-publication-guard.sh scripts/openclaw-reconcile-published-state.sh \
+		scripts/openclaw-select-next-candidate.sh scripts/openclaw-supervisor-dispatch.sh \
+		scripts/openclaw-supervisor-preflight.sh scripts/openclaw-task-packet.sh \
+		scripts/test-openclaw-routing.sh scripts/test-openclaw-state-routing.sh \
+		scripts/test-openclaw-visibility-watchdog.sh
+	python3 -c "from pathlib import Path; [compile(path.read_text(), str(path), 'exec') for path in Path('scripts').glob('openclaw*.py')]"

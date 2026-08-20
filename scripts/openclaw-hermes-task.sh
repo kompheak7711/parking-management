@@ -13,5 +13,6 @@ task="$(cat "$task_file")"
   exit 2
 }
 
-wrapper="${PROPERTY_RENTAL_HERMES_WRAPPER:-/Users/sokompheak/.openclaw/workspaces/property-rental-supervisor/bin/hermes-property-rental}"
+repo="${PROPERTY_RENTAL_REPO:-$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)}"
+wrapper="${PROPERTY_RENTAL_HERMES_WRAPPER:-$repo/scripts/hermes-property-rental}"
 exec "$wrapper" "$task"

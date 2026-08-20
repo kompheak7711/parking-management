@@ -2,8 +2,17 @@
 set -eu
 
 repo="${PROPERTY_RENTAL_REPO:-/Users/sokompheak/Development/property-rental-management}"
-skip_remote="${PROPERTY_RENTAL_SELECTION_SKIP_REMOTE:-false}"
 cd "$repo"
+
+if ! expected_branch="$(jq -er 'if (.branch | type) == "string" and (.branch | length) > 0 then .branch else error("invalid branch") end' ops/STATE.json)"; then
+  echo "Compact state has no valid authorized branch" >&2
+  exit 73
+fi
+current_branch="$(git branch --show-current)"
+[ -n "$current_branch" ] && [ -n "$expected_branch" ] && [ "$current_branch" = "$expected_branch" ] || {
+  echo "Structured candidate selection is not on the compact-state authorized branch" >&2
+  exit 73
+}
 
 preflight="$(scripts/openclaw-supervisor-preflight.sh)"
 [ "$(printf '%s' "$preflight" | jq -r '.state_issue')" = authorized_candidate_selection_required ] || exit 0
@@ -21,11 +30,13 @@ printf '%s' "$candidate" | jq -e '
 ' >/dev/null
 
 temporary="$(mktemp)"
+roadmap_total="$(jq -r '.total_tranches' ops/V1_ROADMAP.json)"
 jq \
   --argjson candidate "$candidate" \
+  --argjson roadmap_total "$roadmap_total" \
   --arg timestamp "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" '
     .roadmap.current_id = $candidate.id
-    | .roadmap.total = 60
+    | .roadmap.total = $roadmap_total
     | .next_candidate = ($candidate + {roadmap_id:$candidate.id})
     | .phase = $candidate.phase
     | .tranche = $candidate.task
@@ -43,7 +54,7 @@ jq \
     | .approval = {
         status: "approved_ready",
         basis: "structured durable-v1 successor selection",
-        implementation_started: true,
+        implementation_started: false,
         implementation_completed: false,
         publication_completed: false
       }
@@ -78,10 +89,25 @@ jq --arg current "$current_id" '
 ' ops/V1_ROADMAP.json >"$roadmap_temporary"
 mv "$roadmap_temporary" ops/V1_ROADMAP.json
 
-git add -- ops/STATE.json ops/V1_ROADMAP.json
+selected_id="$(printf '%s' "$candidate" | jq -r '.id')"
+selected_task="$(printf '%s' "$candidate" | jq -r '.task')"
+now_temporary="$(mktemp)"
+awk '
+  /<!-- AUTOMATION_STATUS_BEGIN -->/ {skip=1; next}
+  /<!-- AUTOMATION_STATUS_END -->/ {skip=0; next}
+  !skip {print}
+' ops/NOW.md >"$now_temporary"
+printf '%s\n' \
+  '<!-- AUTOMATION_STATUS_BEGIN -->' \
+  "- Automation candidate state: $selected_id approved and active; implementation has not started." \
+  "- Automation exact next action: Implement the approved bounded candidate: $selected_task" \
+  '<!-- AUTOMATION_STATUS_END -->' >>"$now_temporary"
+mv "$now_temporary" ops/NOW.md
+
+git add -- ops/NOW.md ops/STATE.json ops/V1_ROADMAP.json
+[ "${PROPERTY_RENTAL_SELECT_MUTATE_ONLY:-false}" = true ] && exit 0
 git diff --cached --quiet && exit 0
 git commit -m "ops: select structured authorized successor"
 git push
 
-[ "$skip_remote" = true ] && exit 0
 "$repo/scripts/openclaw-wait-for-ci.sh" "$(git rev-parse HEAD)"
