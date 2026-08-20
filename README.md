@@ -118,8 +118,11 @@ project dependencies continue to install only from `backend/uv.lock` and
 
 Alembic is the reviewed, versioned schema tool; psycopg is the PostgreSQL driver used
 by migrations and integration tests. These are the only Phase 1C dependencies. Create
-six distinct local-only password files at the ignored `.local/secrets/` paths named by
-`.env.example`, using an external protected input method and restrictive permissions;
+seven distinct local-only password files at the ignored `.local/secrets/` paths named by
+`.env.example`: `postgres_admin_password`, `postgres_migration_password`,
+`postgres_runtime_password`, `postgres_backup_password`, `postgres_restore_password`,
+`postgres_human_admin_password`, and `postgres_bootstrap_password`. Use an external protected
+input method and restrictive permissions;
 never put their values in Git, logs, or command arguments. Export only the corresponding
 `*_FILE` path variables, then start the single development service with
 `docker compose up -d --wait postgres`. Identity
@@ -133,18 +136,64 @@ reinitializing it through project automation.
 falls back to migration credentials. `TEST_ADMIN_DATABASE_URL` is test-only and must
 name the local `prm_admin` bootstrap identity when tests are run directly.
 
-The five managed identities and protected source names are defined in
-`config/deployment/identity-secret-contract.json`; environment-specific files in the same
+The seven PostgreSQL identity password sources are `postgres_admin_password`,
+`postgres_migration_password`, `postgres_runtime_password`, `postgres_backup_password`,
+`postgres_restore_password`, `postgres_human_admin_password`, and
+`postgres_bootstrap_password`. The managed identity and protected source contract is defined
+in `config/deployment/identity-secret-contract.json`; environment-specific files in the same
 directory contain source references only. `prm_backup` is read-only, `prm_restore` has no
 standing data access, and exceptional `prm_human_admin` access has monitoring but no table
-mutation. See `docs/DEPLOYMENT_IDENTITY_SECRET_SCAFFOLDING.md`. Validate committed examples
+mutation. `prm_bootstrap` has no table access and receives only the migration-published
+one-time initial-Owner functions. It must be dedicated to the target deployment database and
+unused in every other database in the PostgreSQL cluster. Before provisioning or migration,
+the cluster operator must inventory `pg_database`, connect separately to every connectable
+database, and inspect role memberships, ownership dependencies, database/schema/object/default
+ACLs, and direct grants for `prm_bootstrap`; any use outside the target database is a stop
+condition, not an exception to document after the fact. See
+`docs/DEPLOYMENT_IDENTITY_SECRET_SCAFFOLDING.md`.
+Validate committed examples
 with `make deployment-config-check`. Deployment tooling must additionally run
 `python3 scripts/validate-deployment-config.py check-profile <profile>` after mounting every
 protected source; production fails closed while any source is absent or placeholder-only.
 
 Run `make migrate` to apply forward migrations. It never resets or recreates a
-database and downgrade functions deliberately refuse destructive rollback. Run
-`make database-test` to create one isolated PostgreSQL Compose project with freshly
+database and downgrade functions deliberately refuse destructive rollback. For an existing
+PostgreSQL cluster created before V1-017, a cluster administrator must first provision the
+`prm_bootstrap` login with `NOINHERIT`, `NOSUPERUSER`, `NOCREATEDB`, `NOCREATEROLE`,
+`NOREPLICATION`, `NOBYPASSRLS`, a connection limit of one, no role memberships or owned
+objects, and only `CONNECT` to the target deployment database. The operator must attest that
+the role is unused in every other database after performing the per-database inventory above.
+Its distinct credential comes from the
+protected `BOOTSTRAP_DATABASE_URL_FILE` source. The migration fails before schema changes
+when the cluster-global attributes or target-database role membership, ACL, ownership, or
+authority checks fail; it intentionally performs no runtime cross-database introspection.
+Never reset an existing volume to obtain it.
+Fresh data directories create the same bounded identity through `scripts/postgres-init.sh`.
+That initialization also removes `PUBLIC` database authority from the stock `postgres` and
+`template1` databases while preserving explicit `prm_admin` maintenance access, so the new
+bootstrap identity has no effective cross-database `CONNECT` or `TEMP` authority.
+
+After the migration succeeds and before any account exists, run the packaged protected
+command from `backend/` with the database URL, root-owned TOTP key, and local password
+blocklist opened as inherited descriptors rather than values in arguments or environment:
+
+    uv run --extra dev python -m property_rental.bootstrap_cli \
+      --username initial-owner --display-name "Initial Owner" --audit-name initial-owner \
+      --totp-key-identifier bootstrap-v1 \
+      3</run/secrets/bootstrap_database_url \
+      4</run/secrets/bootstrap_totp_key \
+      5</run/secrets/bootstrap_password_blocklist
+
+Run it from a controlling terminal under the protected server procedure. The three example
+paths are source references only; deployments must substitute their mounted protected paths.
+The UTF-8 password blocklist contains one exact password per newline-delimited record. Leading
+and trailing spaces are significant, and there is no comment syntax that can make a permitted
+password value unrepresentable.
+The command refuses any database identity other than `prm_bootstrap`, never writes secrets to
+stdout or stderr, and permanently loses mutation capability after a successful acknowledged
+commit.
+
+Run `make database-test` to create one isolated PostgreSQL Compose project with freshly
 generated credentials and an automatically assigned loopback port. The wrapper
 discovers that actual port, runs the real migration gate, and removes its container
 and volume on exit. Credentials are generated inside the wrapper and are neither

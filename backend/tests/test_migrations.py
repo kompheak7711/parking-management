@@ -7,6 +7,7 @@ import json
 import os
 import shutil
 import subprocess
+import threading
 import time
 import uuid
 from collections.abc import Iterator
@@ -25,6 +26,7 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from psycopg import sql
 
+import property_rental.bootstrap_cli as bootstrap_cli
 from property_rental.account_recovery import (
     AccountRecoveryConnection,
     AccountRecoveryMutation,
@@ -32,6 +34,17 @@ from property_rental.account_recovery import (
     PostgresAccountRecoveryRepository,
 )
 from property_rental.app import create_app
+from property_rental.bootstrap_cli import RealBootstrapMaterialFactory
+from property_rental.initial_owner_bootstrap import (
+    BOOTSTRAP_ACKNOWLEDGEMENT,
+    BootstrapFailed,
+    BootstrapPasswordPolicy,
+    BootstrapRequest,
+    BootstrapSecretBundle,
+    InitialOwnerBootstrapClosureConnection,
+    InitialOwnerBootstrapService,
+    PostgresInitialOwnerBootstrapRepository,
+)
 from property_rental.password_security import PasswordHashService
 from property_rental.recovery_code_consumption import (
     PostgresRecoveryCodeConsumptionRepository,
@@ -49,6 +62,7 @@ from property_rental.recovery_code_regeneration import (
 )
 from property_rental.recovery_code_security import Argon2idRecoveryCodeVerifierProvider
 from property_rental.settings import Settings
+from property_rental.totp_security import TotpSecret, TotpService
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 MIGRATION_URL_ENV = "MIGRATION_DATABASE_URL"
@@ -57,6 +71,7 @@ ADMIN_URL_ENV = "TEST_ADMIN_DATABASE_URL"
 BACKUP_URL_ENV = "BACKUP_DATABASE_URL"
 RESTORE_URL_ENV = "RESTORE_DATABASE_URL"
 HUMAN_ADMIN_URL_ENV = "HUMAN_ADMIN_DATABASE_URL"
+BOOTSTRAP_URL_ENV = "BOOTSTRAP_DATABASE_URL"
 REQUIRE_DATABASE_TESTS_ENV = "REQUIRE_DATABASE_TESTS"
 LOCAL_DATABASE_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 
@@ -97,6 +112,7 @@ def _validate_local_test_urls(admin_url: str, migration_url: str, runtime_url: s
         BACKUP_URL_ENV: "prm_backup",
         RESTORE_URL_ENV: "prm_restore",
         HUMAN_ADMIN_URL_ENV: "prm_human_admin",
+        BOOTSTRAP_URL_ENV: "prm_bootstrap",
     }
     parsed_urls = {
         ADMIN_URL_ENV: urlsplit(admin_url),
@@ -105,6 +121,7 @@ def _validate_local_test_urls(admin_url: str, migration_url: str, runtime_url: s
         BACKUP_URL_ENV: urlsplit(_required_url(BACKUP_URL_ENV)),
         RESTORE_URL_ENV: urlsplit(_required_url(RESTORE_URL_ENV)),
         HUMAN_ADMIN_URL_ENV: urlsplit(_required_url(HUMAN_ADMIN_URL_ENV)),
+        BOOTSTRAP_URL_ENV: urlsplit(_required_url(BOOTSTRAP_URL_ENV)),
     }
     for name, parsed in parsed_urls.items():
         if parsed.scheme not in {"postgresql", "postgresql+psycopg"}:
@@ -134,6 +151,15 @@ def _temporary_migration_database(prefix: str) -> Iterator[str]:
             cursor.execute(
                 sql.SQL("CREATE DATABASE {} OWNER prm_migrator").format(sql.Identifier(database))
             )
+            cursor.execute(
+                sql.SQL("REVOKE ALL ON DATABASE {} FROM PUBLIC").format(sql.Identifier(database))
+            )
+            cursor.execute(
+                sql.SQL(
+                    "GRANT CONNECT ON DATABASE {} TO prm_runtime, prm_backup, prm_restore, "
+                    "prm_human_admin, prm_bootstrap"
+                ).format(sql.Identifier(database))
+            )
     os.environ[MIGRATION_URL_ENV] = migration_url
     try:
         yield migration_url
@@ -157,23 +183,35 @@ def empty_application_database() -> Iterator[None]:
     original_backup_url = _required_url(BACKUP_URL_ENV)
     original_restore_url = _required_url(RESTORE_URL_ENV)
     original_human_admin_url = _required_url(HUMAN_ADMIN_URL_ENV)
+    original_bootstrap_url = _required_url(BOOTSTRAP_URL_ENV)
     _validate_local_test_urls(admin_url, original_migration_url, original_runtime_url)
     with psycopg.connect(admin_url, autocommit=True) as connection:
         with connection.cursor() as cursor:
             cursor.execute(
                 sql.SQL("CREATE DATABASE {} OWNER prm_migrator").format(sql.Identifier(database))
             )
+            cursor.execute(
+                sql.SQL("REVOKE ALL ON DATABASE {} FROM PUBLIC").format(sql.Identifier(database))
+            )
+            cursor.execute(
+                sql.SQL(
+                    "GRANT CONNECT ON DATABASE {} TO prm_runtime, prm_backup, prm_restore, "
+                    "prm_human_admin, prm_bootstrap"
+                ).format(sql.Identifier(database))
+            )
     os.environ[MIGRATION_URL_ENV] = _url_with_database(original_migration_url, database)
     os.environ[RUNTIME_URL_ENV] = _url_with_database(original_runtime_url, database)
     os.environ[BACKUP_URL_ENV] = _url_with_database(original_backup_url, database)
     os.environ[RESTORE_URL_ENV] = _url_with_database(original_restore_url, database)
     os.environ[HUMAN_ADMIN_URL_ENV] = _url_with_database(original_human_admin_url, database)
+    os.environ[BOOTSTRAP_URL_ENV] = _url_with_database(original_bootstrap_url, database)
     yield
     os.environ[MIGRATION_URL_ENV] = original_migration_url
     os.environ[RUNTIME_URL_ENV] = original_runtime_url
     os.environ[BACKUP_URL_ENV] = original_backup_url
     os.environ[RESTORE_URL_ENV] = original_restore_url
     os.environ[HUMAN_ADMIN_URL_ENV] = original_human_admin_url
+    os.environ[BOOTSTRAP_URL_ENV] = original_bootstrap_url
 
 
 def test_upgrade_from_empty_database_reaches_reviewed_head() -> None:
@@ -385,7 +423,7 @@ def test_operational_database_identities_have_separate_least_privilege() -> None
                 FROM pg_roles
                 WHERE rolname IN (
                     'prm_runtime', 'prm_migrator', 'prm_backup',
-                    'prm_restore', 'prm_human_admin'
+                    'prm_restore', 'prm_human_admin', 'prm_bootstrap'
                 )
                 ORDER BY rolname
                 """
@@ -393,6 +431,7 @@ def test_operational_database_identities_have_separate_least_privilege() -> None
             rows = cursor.fetchall()
             assert [row[0] for row in rows] == [
                 "prm_backup",
+                "prm_bootstrap",
                 "prm_human_admin",
                 "prm_migrator",
                 "prm_restore",
@@ -409,6 +448,14 @@ def test_operational_database_identities_have_separate_least_privilege() -> None
                 """
             )
             assert cursor.fetchone() == (True, True, False, False)
+            cursor.execute(
+                """
+                SELECT
+                    has_database_privilege('prm_bootstrap', 'postgres', 'CONNECT,TEMP'),
+                    has_database_privilege('prm_bootstrap', 'template1', 'CONNECT,TEMP')
+                """
+            )
+            assert cursor.fetchone() == (False, False)
 
     with psycopg.connect(_required_url(BACKUP_URL_ENV)) as connection:
         with connection.cursor() as cursor:
@@ -1641,6 +1688,14 @@ def test_user_accounts_migration_advances_the_previous_revision_without_data_los
         with connection.cursor() as cursor:
             cursor.execute(
                 sql.SQL("CREATE DATABASE {} OWNER prm_migrator").format(sql.Identifier(database))
+            )
+            cursor.execute(
+                sql.SQL("REVOKE ALL ON DATABASE {} FROM PUBLIC").format(sql.Identifier(database))
+            )
+            cursor.execute(
+                sql.SQL("GRANT CONNECT ON DATABASE {} TO prm_bootstrap").format(
+                    sql.Identifier(database)
+                )
             )
 
     os.environ[MIGRATION_URL_ENV] = _url_with_database(original_migration_url, database)
@@ -3303,3 +3358,788 @@ def test_account_recovery_migration_refuses_destructive_downgrade() -> None:
                 assert cursor.fetchone() == ("app.account_recovery_audit_events",)
                 cursor.execute("SELECT version_num FROM alembic_version")
                 assert cursor.fetchone() == ("20260819_08",)
+
+
+def test_protected_bootstrap_migration_rejects_overprivileged_existing_cluster_role() -> None:
+    admin_url = _required_url(ADMIN_URL_ENV)
+    with _temporary_migration_database("prm_bootstrap_role_precondition") as migration_url:
+        assert _run_alembic("upgrade", "20260819_08").returncode == 0
+        try:
+            with psycopg.connect(admin_url, autocommit=True) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute("ALTER ROLE prm_bootstrap SUPERUSER")
+
+            result = _run_alembic("upgrade", "head")
+
+            assert result.returncode != 0
+            assert "safe attributes and only bounded CONNECT authority" in result.stderr
+            with psycopg.connect(migration_url) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT version_num FROM alembic_version")
+                    assert cursor.fetchone() == ("20260819_08",)
+                    cursor.execute(
+                        "SELECT to_regprocedure(%s)",
+                        (
+                            "app.establish_initial_owner_bootstrap("
+                            "uuid,uuid,uuid,uuid,text,text,text,text,text,jsonb,bytea,bytea,text,"
+                            "uuid[],text[],text,jsonb)",
+                        ),
+                    )
+                    assert cursor.fetchone() == (None,)
+        finally:
+            with psycopg.connect(admin_url, autocommit=True) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute("ALTER ROLE prm_bootstrap NOSUPERUSER")
+
+
+def test_protected_bootstrap_migration_requires_existing_cluster_role_before_schema_change() -> (
+    None
+):
+    admin_url = _required_url(ADMIN_URL_ENV)
+    with _temporary_migration_database("prm_bootstrap_missing_role") as migration_url:
+        assert _run_alembic("upgrade", "20260819_08").returncode == 0
+        try:
+            with psycopg.connect(admin_url, autocommit=True) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "ALTER ROLE prm_bootstrap RENAME TO prm_bootstrap_temporarily_absent"
+                    )
+
+            result = _run_alembic("upgrade", "head")
+
+            assert result.returncode != 0
+            assert "prm_bootstrap role must exist before migration" in result.stderr
+            with psycopg.connect(migration_url) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT version_num FROM alembic_version")
+                    assert cursor.fetchone() == ("20260819_08",)
+                    cursor.execute(
+                        "SELECT to_regprocedure(%s)",
+                        ("app.begin_initial_owner_bootstrap_attempt(uuid,uuid)",),
+                    )
+                    assert cursor.fetchone() == (None,)
+        finally:
+            with psycopg.connect(admin_url, autocommit=True) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "ALTER ROLE prm_bootstrap_temporarily_absent RENAME TO prm_bootstrap"
+                    )
+
+
+def test_protected_bootstrap_migration_rejects_preexisting_object_privilege() -> None:
+    with _temporary_migration_database("prm_bootstrap_preexisting_acl") as migration_url:
+        assert _run_alembic("upgrade", "20260819_08").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        admin_target_url = _url_with_database(_required_url(ADMIN_URL_ENV), database)
+        with psycopg.connect(admin_target_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("GRANT SELECT ON app.user_accounts TO prm_bootstrap")
+            connection.commit()
+
+        result = _run_alembic("upgrade", "head")
+
+        assert result.returncode != 0
+        assert "only bounded CONNECT authority" in result.stderr
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT version_num FROM alembic_version")
+                assert cursor.fetchone() == ("20260819_08",)
+                cursor.execute(
+                    "SELECT to_regprocedure(%s)",
+                    ("app.begin_initial_owner_bootstrap_attempt(uuid,uuid)",),
+                )
+                assert cursor.fetchone() == (None,)
+
+
+def test_protected_bootstrap_migration_rejects_public_table_authority() -> None:
+    with _temporary_migration_database("prm_bootstrap_public_table_acl") as migration_url:
+        assert _run_alembic("upgrade", "20260819_08").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        admin_target_url = _url_with_database(_required_url(ADMIN_URL_ENV), database)
+        with psycopg.connect(admin_target_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("GRANT SELECT ON app.user_accounts TO PUBLIC")
+            connection.commit()
+
+        result = _run_alembic("upgrade", "head")
+
+        _assert_bootstrap_authority_rejection_before_mutation(
+            migration_url=migration_url,
+            result=result,
+            expected_error="safe attributes and only bounded CONNECT authority",
+        )
+
+
+def test_protected_bootstrap_migration_rejects_unsafe_role_membership() -> None:
+    admin_url = _required_url(ADMIN_URL_ENV)
+    marker_role = f"prm_bootstrap_marker_{uuid.uuid4().hex}"
+    with _temporary_migration_database("prm_bootstrap_membership") as migration_url:
+        assert _run_alembic("upgrade", "20260819_08").returncode == 0
+        try:
+            with psycopg.connect(admin_url, autocommit=True) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(sql.SQL("CREATE ROLE {}").format(sql.Identifier(marker_role)))
+                    cursor.execute(
+                        sql.SQL("GRANT {} TO prm_bootstrap").format(sql.Identifier(marker_role))
+                    )
+
+            result = _run_alembic("upgrade", "head")
+
+            assert result.returncode != 0
+            assert "safe attributes and only bounded CONNECT authority" in result.stderr
+            with psycopg.connect(migration_url) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT version_num FROM alembic_version")
+                    assert cursor.fetchone() == ("20260819_08",)
+        finally:
+            with psycopg.connect(admin_url, autocommit=True) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        sql.SQL("REVOKE {} FROM prm_bootstrap").format(sql.Identifier(marker_role))
+                    )
+                    cursor.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(marker_role)))
+
+
+def test_protected_bootstrap_migration_rejects_target_database_ownership() -> None:
+    with _temporary_migration_database("prm_bootstrap_ownership") as migration_url:
+        assert _run_alembic("upgrade", "20260819_08").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        admin_target_url = _url_with_database(_required_url(ADMIN_URL_ENV), database)
+        with psycopg.connect(admin_target_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("ALTER SCHEMA app OWNER TO prm_bootstrap")
+            connection.commit()
+
+        result = _run_alembic("upgrade", "head")
+
+        assert result.returncode != 0
+        assert "safe attributes and only bounded CONNECT authority" in result.stderr
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT version_num FROM alembic_version")
+                assert cursor.fetchone() == ("20260819_08",)
+
+
+def _assert_bootstrap_authority_rejection_before_mutation(
+    *,
+    migration_url: str,
+    result: subprocess.CompletedProcess[str],
+    expected_error: str,
+) -> None:
+    assert result.returncode != 0
+    assert expected_error in result.stderr
+    password = urlsplit(migration_url).password
+    assert password
+    assert password not in result.stdout
+    assert password not in result.stderr
+    with psycopg.connect(migration_url) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT version_num FROM alembic_version")
+            assert cursor.fetchone() == ("20260819_08",)
+            cursor.execute(
+                """
+                SELECT
+                    to_regprocedure('app.begin_initial_owner_bootstrap_attempt(uuid,uuid)'),
+                    to_regprocedure(
+                        'app.establish_initial_owner_bootstrap('
+                        'uuid,uuid,uuid,uuid,text,text,text,text,text,jsonb,bytea,bytea,text,'
+                        'uuid[],text[],text,jsonb)'
+                    )
+                """
+            )
+            assert cursor.fetchone() == (None, None)
+
+
+def _create_large_object(connection: psycopg.Connection[tuple[object, ...]]) -> int:
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT lo_create(0)")
+        row = cursor.fetchone()
+        assert row is not None
+        large_object_oid = row[0]
+        assert isinstance(large_object_oid, int)
+    connection.commit()
+    return large_object_oid
+
+
+def _bootstrap_has_large_object_acl_authority(
+    connection: psycopg.Connection[tuple[object, ...]], large_object_oid: int
+) -> bool:
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM pg_catalog.pg_largeobject_metadata AS large_object
+                CROSS JOIN LATERAL pg_catalog.aclexplode(
+                    COALESCE(
+                        large_object.lomacl,
+                        pg_catalog.acldefault('L', large_object.lomowner)
+                    )
+                ) AS privilege
+                WHERE large_object.oid = %s
+                  AND (
+                      privilege.grantee = 0
+                      OR pg_catalog.pg_has_role(
+                          'prm_bootstrap', privilege.grantee, 'USAGE'
+                      )
+                      OR pg_catalog.pg_has_role(
+                          'prm_bootstrap', privilege.grantee, 'MEMBER'
+                      )
+                  )
+            )
+            """,
+            (large_object_oid,),
+        )
+        row = cursor.fetchone()
+        assert row is not None
+        return row[0] is True
+
+
+def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_authority() -> None:
+    with _temporary_migration_database("prm_bootstrap_clean_large_object") as migration_url:
+        assert _run_alembic("upgrade", "20260819_08").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        admin_target_url = _url_with_database(_required_url(ADMIN_URL_ENV), database)
+        with psycopg.connect(admin_target_url) as connection:
+            large_object_oid = _create_large_object(connection)
+            assert not _bootstrap_has_large_object_acl_authority(connection, large_object_oid)
+
+        result = _run_alembic("upgrade", "head")
+
+        assert result.returncode == 0, result.stderr
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT version_num FROM alembic_version")
+                assert cursor.fetchone() == ("20260820_09",)
+
+
+def test_protected_bootstrap_migration_rejects_large_object_ownership() -> None:
+    with _temporary_migration_database("prm_bootstrap_large_object_owner") as migration_url:
+        assert _run_alembic("upgrade", "20260819_08").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        admin_target_url = _url_with_database(_required_url(ADMIN_URL_ENV), database)
+        with psycopg.connect(admin_target_url) as connection:
+            large_object_oid = _create_large_object(connection)
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    sql.SQL("ALTER LARGE OBJECT {} OWNER TO prm_bootstrap").format(
+                        sql.Literal(large_object_oid)
+                    )
+                )
+            connection.commit()
+
+        result = _run_alembic("upgrade", "head")
+
+        _assert_bootstrap_authority_rejection_before_mutation(
+            migration_url=migration_url,
+            result=result,
+            expected_error="safe attributes and only bounded CONNECT authority",
+        )
+
+
+def test_protected_bootstrap_migration_rejects_direct_large_object_acl_authority() -> None:
+    with _temporary_migration_database("prm_bootstrap_large_object_acl") as migration_url:
+        assert _run_alembic("upgrade", "20260819_08").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        admin_target_url = _url_with_database(_required_url(ADMIN_URL_ENV), database)
+        with psycopg.connect(admin_target_url) as connection:
+            large_object_oid = _create_large_object(connection)
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    sql.SQL("GRANT SELECT ON LARGE OBJECT {} TO prm_bootstrap").format(
+                        sql.Literal(large_object_oid)
+                    )
+                )
+            connection.commit()
+
+        result = _run_alembic("upgrade", "head")
+
+        _assert_bootstrap_authority_rejection_before_mutation(
+            migration_url=migration_url,
+            result=result,
+            expected_error="safe attributes and only bounded CONNECT authority",
+        )
+
+
+def test_protected_bootstrap_migration_rejects_effective_large_object_role_authority() -> None:
+    admin_url = _required_url(ADMIN_URL_ENV)
+    marker_role = f"prm_bootstrap_large_object_{uuid.uuid4().hex}"
+    with _temporary_migration_database("prm_bootstrap_large_object_inherited") as migration_url:
+        assert _run_alembic("upgrade", "20260819_08").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        admin_target_url = _url_with_database(admin_url, database)
+        large_object_oid: int | None = None
+        try:
+            with psycopg.connect(admin_url, autocommit=True) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(sql.SQL("CREATE ROLE {}").format(sql.Identifier(marker_role)))
+                    cursor.execute(
+                        sql.SQL("GRANT {} TO prm_bootstrap WITH INHERIT TRUE, SET TRUE").format(
+                            sql.Identifier(marker_role)
+                        )
+                    )
+            with psycopg.connect(admin_target_url) as connection:
+                large_object_oid = _create_large_object(connection)
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        sql.SQL("GRANT SELECT ON LARGE OBJECT {} TO {}").format(
+                            sql.Literal(large_object_oid), sql.Identifier(marker_role)
+                        )
+                    )
+                connection.commit()
+                assert _bootstrap_has_large_object_acl_authority(connection, large_object_oid)
+
+            result = _run_alembic("upgrade", "head")
+
+            _assert_bootstrap_authority_rejection_before_mutation(
+                migration_url=migration_url,
+                result=result,
+                expected_error="safe attributes and only bounded CONNECT authority",
+            )
+        finally:
+            if large_object_oid is not None:
+                with psycopg.connect(admin_target_url, autocommit=True) as connection:
+                    with connection.cursor() as cursor:
+                        cursor.execute(
+                            sql.SQL("REVOKE ALL ON LARGE OBJECT {} FROM {}").format(
+                                sql.Literal(large_object_oid), sql.Identifier(marker_role)
+                            )
+                        )
+            with psycopg.connect(admin_url, autocommit=True) as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        sql.SQL("REVOKE {} FROM prm_bootstrap").format(sql.Identifier(marker_role))
+                    )
+                    cursor.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(marker_role)))
+
+
+def test_protected_bootstrap_migration_rejects_public_large_object_authority() -> None:
+    with _temporary_migration_database("prm_bootstrap_large_object_public") as migration_url:
+        assert _run_alembic("upgrade", "20260819_08").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        admin_target_url = _url_with_database(_required_url(ADMIN_URL_ENV), database)
+        with psycopg.connect(admin_target_url) as connection:
+            large_object_oid = _create_large_object(connection)
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    sql.SQL("GRANT UPDATE ON LARGE OBJECT {} TO PUBLIC").format(
+                        sql.Literal(large_object_oid)
+                    )
+                )
+            connection.commit()
+            assert _bootstrap_has_large_object_acl_authority(connection, large_object_oid)
+
+        result = _run_alembic("upgrade", "head")
+
+        _assert_bootstrap_authority_rejection_before_mutation(
+            migration_url=migration_url,
+            result=result,
+            expected_error="safe attributes and only bounded CONNECT authority",
+        )
+
+
+def test_protected_bootstrap_migration_fails_closed_when_large_object_state_is_unprovable() -> None:
+    with _temporary_migration_database("prm_bootstrap_large_object_unprovable") as migration_url:
+        assert _run_alembic("upgrade", "20260819_08").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        admin_target_url = _url_with_database(_required_url(ADMIN_URL_ENV), database)
+        with psycopg.connect(admin_target_url, autocommit=True) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    sql.SQL(
+                        "ALTER DATABASE {} SET prm.test_force_large_object_authority_query_error "
+                        "TO 'force-query-error'"
+                    ).format(sql.Identifier(database))
+                )
+
+        result = _run_alembic("upgrade", "head")
+
+        _assert_bootstrap_authority_rejection_before_mutation(
+            migration_url=migration_url,
+            result=result,
+            expected_error="large-object authority state could not be proven safe",
+        )
+
+
+def _execute_atomic_owner_bootstrap(
+    connection: psycopg.Connection[tuple[object, ...]],
+) -> uuid.UUID:
+    actor_id = uuid.uuid4()
+    correlation_id = uuid.uuid4()
+    code_ids = [uuid.uuid4() for _ in range(10)]
+    verifiers = [
+        f"$argon2id$v=19$m=65536,t=3,p=4$bootstrap-salt-{index}$bootstrap-hash-{index}"
+        for index in range(10)
+    ]
+    work_factors = json.dumps({"memory_cost": 65536, "time_cost": 3, "parallelism": 4})
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SELECT app.begin_initial_owner_bootstrap_attempt(%s, %s)",
+            (actor_id, correlation_id),
+        )
+        assert cursor.fetchone() == (True,)
+        cursor.execute(
+            """
+            SELECT app.establish_initial_owner_bootstrap(
+                %s, %s, %s, %s, %s, %s, %s, %s, 'argon2id', %s::jsonb,
+                %s, %s, %s, %s::uuid[], %s::text[], 'argon2id', %s::jsonb
+            )
+            """,
+            (
+                actor_id,
+                correlation_id,
+                uuid.uuid4(),
+                uuid.uuid4(),
+                "initial-owner",
+                "Initial Owner",
+                "initial-owner",
+                "$argon2id$v=19$m=65536,t=3,p=4$password-salt$password-hash",
+                work_factors,
+                b"c" * 36,
+                b"n" * 12,
+                "bootstrap-test-key",
+                code_ids,
+                verifiers,
+                work_factors,
+            ),
+        )
+        assert cursor.fetchone() == (True,)
+    return actor_id
+
+
+def test_bootstrap_identity_atomically_persists_complete_owner_and_permanently_loses_mutation() -> (
+    None
+):
+    with _temporary_migration_database("prm_atomic_bootstrap") as migration_url:
+        assert _run_alembic("upgrade", "head").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        bootstrap_url = _url_with_database(_required_url(BOOTSTRAP_URL_ENV), database)
+        with psycopg.connect(bootstrap_url) as bootstrap_connection:
+            actor_id = _execute_atomic_owner_bootstrap(bootstrap_connection)
+            bootstrap_connection.commit()
+            with bootstrap_connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT app.begin_initial_owner_bootstrap_attempt(%s, %s)",
+                    (uuid.uuid4(), uuid.uuid4()),
+                )
+                assert cursor.fetchone() == (False,)
+            bootstrap_connection.commit()
+
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                for table_name, expected_count in (
+                    ("user_accounts", 1),
+                    ("password_credentials", 1),
+                    ("totp_mfa_enrollments", 1),
+                    ("recovery_code_sets", 1),
+                    ("recovery_codes", 10),
+                    ("initial_owner_bootstrap_closure", 1),
+                    ("initial_owner_bootstrap_audit_events", 2),
+                ):
+                    cursor.execute(
+                        sql.SQL("SELECT count(*) FROM app.{}").format(sql.Identifier(table_name))
+                    )
+                    assert cursor.fetchone() == (expected_count,)
+                cursor.execute(
+                    "SELECT enrollment_state FROM app.totp_mfa_enrollments WHERE actor_id = %s",
+                    (actor_id,),
+                )
+                assert cursor.fetchone() == ("active",)
+                cursor.execute(
+                    """
+                    SELECT
+                        has_function_privilege(
+                            'prm_bootstrap',
+                            'app.begin_initial_owner_bootstrap_attempt(uuid, uuid)', 'EXECUTE'
+                        ),
+                        has_function_privilege(
+                            'prm_bootstrap',
+                            'app.establish_initial_owner_bootstrap('
+                            'uuid, uuid, uuid, uuid, text, text, text, text, text, jsonb, '
+                            'bytea, bytea, text, uuid[], text[], text, jsonb)',
+                            'EXECUTE'
+                        ),
+                        has_table_privilege('prm_bootstrap', 'app.user_accounts', 'SELECT'),
+                        has_table_privilege('prm_bootstrap', 'app.user_accounts', 'INSERT')
+                    """
+                )
+                assert cursor.fetchone() == (True, False, False, False)
+                cursor.execute(
+                    """
+                    SELECT count(*)
+                    FROM pg_catalog.pg_class AS relation
+                    JOIN pg_catalog.pg_namespace AS namespace
+                      ON namespace.oid = relation.relnamespace
+                    WHERE namespace.nspname = 'app'
+                      AND CASE
+                          WHEN relation.relkind = 'S' THEN has_sequence_privilege(
+                              'prm_bootstrap', relation.oid, 'USAGE,SELECT,UPDATE'
+                          )
+                          ELSE has_table_privilege(
+                              'prm_bootstrap', relation.oid,
+                              'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'
+                          )
+                      END
+                    """
+                )
+                assert cursor.fetchone() == (0,)
+                cursor.execute(
+                    """
+                    SELECT
+                        has_database_privilege(
+                            'prm_bootstrap', current_database(), 'CREATE,TEMP'
+                        ),
+                        has_schema_privilege('prm_bootstrap', 'app', 'CREATE')
+                    """
+                )
+                assert cursor.fetchone() == (False, False)
+
+
+def test_bootstrap_acknowledgement_rollback_removes_every_effect_and_preserves_one_time_grant() -> (
+    None
+):
+    with _temporary_migration_database("prm_bootstrap_rollback") as migration_url:
+        assert _run_alembic("upgrade", "head").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        bootstrap_url = _url_with_database(_required_url(BOOTSTRAP_URL_ENV), database)
+        with psycopg.connect(bootstrap_url) as bootstrap_connection:
+            _execute_atomic_owner_bootstrap(bootstrap_connection)
+            bootstrap_connection.rollback()
+
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                for table_name in (
+                    "user_accounts",
+                    "password_credentials",
+                    "totp_mfa_enrollments",
+                    "recovery_code_sets",
+                    "recovery_codes",
+                    "initial_owner_bootstrap_closure",
+                    "initial_owner_bootstrap_audit_events",
+                ):
+                    cursor.execute(
+                        sql.SQL("SELECT count(*) FROM app.{}").format(sql.Identifier(table_name))
+                    )
+                    assert cursor.fetchone() == (0,)
+                cursor.execute(
+                    """
+                    SELECT has_function_privilege(
+                        'prm_bootstrap',
+                        'app.establish_initial_owner_bootstrap('
+                        'uuid, uuid, uuid, uuid, text, text, text, text, text, jsonb, '
+                        'bytea, bytea, text, uuid[], text[], text, jsonb)',
+                        'EXECUTE'
+                    )
+                    """
+                )
+                assert cursor.fetchone() == (True,)
+
+
+def _bootstrap_service_request() -> BootstrapRequest:
+    return BootstrapRequest(
+        actor_id=uuid.uuid4(),
+        correlation_id=uuid.uuid4(),
+        enrollment_id=uuid.uuid4(),
+        recovery_set_id=uuid.uuid4(),
+        recovery_code_ids=tuple(uuid.uuid4() for _ in range(10)),
+        username="initial-owner",
+        display_name="Initial Owner",
+        audit_name="initial-owner",
+    )
+
+
+def test_real_postgresql_production_service_pseudo_tty_failure_rolls_back_every_effect() -> None:
+    class DeterministicFactory:
+        def create(
+            self, *, request: BootstrapRequest, normalized_password: str
+        ) -> BootstrapSecretBundle:
+            del request
+            assert normalized_password == "correct horse battery staple"
+            return BootstrapSecretBundle(
+                password_verifier=("$argon2id$v=19$m=65536,t=3,p=4$password-salt$password-hash"),
+                password_algorithm="argon2id",
+                password_work_factors={
+                    "memory_cost": 65536,
+                    "time_cost": 3,
+                    "parallelism": 4,
+                },
+                totp_plaintext="TOTP-SECRET",
+                totp_ciphertext=b"c" * 36,
+                totp_nonce=b"n" * 12,
+                totp_key_identifier="bootstrap-test-key",
+                recovery_plaintexts=tuple(f"recovery-{index}" for index in range(10)),
+                recovery_verifiers=tuple(
+                    f"$argon2id$v=19$m=65536,t=3,p=4$salt-{index}$hash-{index}"
+                    for index in range(10)
+                ),
+                recovery_algorithm="argon2id",
+                recovery_work_factors={
+                    "memory_cost": 65536,
+                    "time_cost": 3,
+                    "parallelism": 4,
+                },
+            )
+
+        def verify_totp(self, bundle: BootstrapSecretBundle, candidate: str) -> bool:
+            del bundle
+            return candidate == "123456"
+
+    with _temporary_migration_database("prm_bootstrap_pseudo_tty_rollback") as migration_url:
+        assert _run_alembic("upgrade", "head").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        bootstrap_url = _url_with_database(_required_url(BOOTSTRAP_URL_ENV), database)
+        master_fd, slave_fd = os.openpty()
+        terminal = object.__new__(bootstrap_cli.ControllingTerminal)
+        terminal._fd = slave_fd
+        transcript = bytearray()
+        driver_failures: list[BaseException] = []
+
+        def respond(marker: bytes, response: bytes) -> None:
+            while marker not in transcript:
+                transcript.extend(os.read(master_fd, 4096))
+            os.write(master_fd, response + b"\n")
+
+        def drive_terminal() -> None:
+            try:
+                respond(b"Initial Owner password: ", b"correct horse battery staple")
+                respond(b"Confirm password: ", b"correct horse battery staple")
+                respond(b"Enter the current six-digit code: ", b"123456")
+                respond(b"to commit: ", b"not acknowledged")
+            except BaseException as error:
+                driver_failures.append(error)
+
+        driver = threading.Thread(target=drive_terminal)
+        driver.start()
+        try:
+            with psycopg.connect(bootstrap_url) as bootstrap_connection:
+                service = InitialOwnerBootstrapService(
+                    repository=PostgresInitialOwnerBootstrapRepository(
+                        cast(InitialOwnerBootstrapClosureConnection, bootstrap_connection)
+                    ),
+                    terminal=terminal,
+                    password_policy=BootstrapPasswordPolicy(blocked_passwords=set()),
+                    material_factory=DeterministicFactory(),
+                    ceremony_timeout_seconds=30,
+                )
+                with pytest.raises(BootstrapFailed, match=r"^initial Owner bootstrap failed$"):
+                    service.run(_bootstrap_service_request())
+        finally:
+            driver.join(timeout=5)
+            os.close(master_fd)
+            os.close(slave_fd)
+
+        assert not driver.is_alive()
+        assert driver_failures == []
+        assert b"correct horse battery staple" not in transcript
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                for table_name in (
+                    "user_accounts",
+                    "password_credentials",
+                    "totp_mfa_enrollments",
+                    "recovery_code_sets",
+                    "recovery_codes",
+                    "initial_owner_bootstrap_closure",
+                    "initial_owner_bootstrap_audit_events",
+                ):
+                    cursor.execute(
+                        sql.SQL("SELECT count(*) FROM app.{}").format(sql.Identifier(table_name))
+                    )
+                    assert cursor.fetchone() == (0,)
+
+
+def test_production_recovery_factory_persists_random_codes_with_independent_salts() -> None:
+    fixed_totp_time = 1_700_000_000
+
+    class ConfirmingTerminal:
+        recovery_codes: tuple[str, ...] = ()
+
+        def read_password(self) -> str:
+            return "correct horse battery staple"
+
+        def present_totp_and_read_code(self, secret: str, *, deadline: float) -> str:
+            assert deadline > time.monotonic()
+            return TotpService().generate_code(
+                TotpSecret.from_base32(secret), at_time=fixed_totp_time
+            )
+
+        def present_recovery_codes(self, codes: tuple[str, ...], *, deadline: float) -> None:
+            assert deadline > time.monotonic()
+            self.recovery_codes = codes
+
+        def read_acknowledgement(self, *, deadline: float) -> str:
+            assert deadline > time.monotonic()
+            return BOOTSTRAP_ACKNOWLEDGEMENT
+
+    with _temporary_migration_database("prm_bootstrap_production_factory") as migration_url:
+        assert _run_alembic("upgrade", "head").returncode == 0
+        database = urlsplit(migration_url).path.removeprefix("/")
+        bootstrap_url = _url_with_database(_required_url(BOOTSTRAP_URL_ENV), database)
+        terminal = ConfirmingTerminal()
+        request = _bootstrap_service_request()
+        with psycopg.connect(bootstrap_url) as bootstrap_connection:
+            service = InitialOwnerBootstrapService(
+                repository=PostgresInitialOwnerBootstrapRepository(
+                    cast(InitialOwnerBootstrapClosureConnection, bootstrap_connection)
+                ),
+                terminal=terminal,
+                password_policy=BootstrapPasswordPolicy(blocked_passwords=set()),
+                material_factory=RealBootstrapMaterialFactory(
+                    totp_key=b"k" * 32,
+                    totp_key_identifier="bootstrap-production-factory-test",
+                    clock=lambda: fixed_totp_time,
+                ),
+                ceremony_timeout_seconds=120,
+            )
+            service.run(request)
+
+        assert len(terminal.recovery_codes) == 10
+        assert len(set(terminal.recovery_codes)) == 10
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT verifier_encoding FROM app.recovery_codes")
+                stored_verifiers = [cast(str, row[0]) for row in cursor.fetchall()]
+
+        assert len(stored_verifiers) == 10
+        salts = [verifier.split("$")[4] for verifier in stored_verifiers]
+        assert len(set(salts)) == 10
+        verifier_provider = Argon2idRecoveryCodeVerifierProvider()
+        assert all(
+            sum(verifier_provider.matches(code, verifier) for verifier in stored_verifiers) == 1
+            for code in terminal.recovery_codes
+        )
+        assert all(code not in stored_verifiers for code in terminal.recovery_codes)
+
+        class DatabaseTestAuditSink:
+            def __init__(self) -> None:
+                self.evidence: list[object] = []
+
+            def record(self, evidence: object) -> None:
+                self.evidence.append(evidence)
+
+        runtime_url = _url_with_database(_required_url(RUNTIME_URL_ENV), database)
+        with psycopg.connect(runtime_url) as runtime_connection:
+            consumer = RecoveryCodeConsumptionService(
+                repository=PostgresRecoveryCodeConsumptionRepository(
+                    cast(RecoveryCodeConsumptionConnection, runtime_connection)
+                ),
+                verifier_provider=verifier_provider,
+                audit_sink=DatabaseTestAuditSink(),
+                clock=lambda: datetime(2026, 8, 21, tzinfo=UTC),
+            )
+            consumption = RecoveryCodeConsumptionRequest(
+                consuming_actor_id=request.actor_id,
+                target_actor_id=request.actor_id,
+                set_id=request.recovery_set_id,
+                candidate=terminal.recovery_codes[0],
+                correlation_id="bootstrap-production-factory-consumption",
+                provenance="protected-bootstrap-recovery-test",
+            )
+
+            first = consumer.consume(consumption)
+            repeated = consumer.consume(consumption)
+
+        assert first.completed is True
+        assert first.reason == "code_consumed"
+        assert repeated.completed is False
+        assert repeated.reason == "code_rejected"

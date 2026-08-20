@@ -1030,14 +1030,32 @@ authorization checks.
 
 Verify bootstrap creates the initial unique Owner only when none exists, accepts the
 password through protected interactive/secret input rather than command-line arguments,
-does not log or commit password/MFA/recovery secrets, creates immutable audit evidence,
-and requires Owner MFA enrollment before normal privileged use.
+and enforces 15/128 Unicode-code-point boundaries before NFC normalization, nonempty 15/128
+boundaries after normalization, complete-normalized-value local blocklisting, and full-value
+verification without truncation, space/paste/password-manager acceptance, no composition or
+periodic-rotation rule, and local non-disclosing compromised/common/expected/project-context
+blocklist rejection. Verify exactly 10 random single-use recovery codes are shown exactly
+once only on the controlling TTY; password, TOTP, and recovery secrets never enter argv,
+ordinary environment, redirectable stdout, logs, state, compact state, or audit; and only
+protected verifier material persists. Verify one ceremony-wide absolute monotonic deadline
+starts before TOTP confirmation and covers TOTP input, recovery presentation and complete
+persistence writes, acknowledgement, and commit preparation without reset or extension by
+writes, partial input, retries, or trickled input. Verify explicit acknowledgement precedes
+commit and presentation, TTY, timeout, acknowledgement, or TOTP-confirmation failure rolls
+back the complete account, credential, MFA, recovery, audit, closure, and privilege change.
+Verify the dedicated least-privilege bootstrap database identity, root-controlled
+descriptor/equivalent secret-file TOTP key input, one atomic PostgreSQL boundary, immutable
+secret-free audit, and confirmed Owner MFA enrollment.
 
 ## TEST-134 — Bootstrap Backdoor Prevention
 
 Verify repeated bootstrap and attempts to create an additional Owner are rejected,
 there is no public “Create First Owner” web/API path, and recovery tooling cannot be used
-as an ordinary unauthenticated Owner reset.
+as an ordinary unauthenticated Owner reset. Verify successful closure permanently revokes
+bootstrap mutation capability, the identity has no table or out-of-boundary privilege,
+every repeat fails closed with immutable secret-free rejection evidence, and no equivalent
+guard, recovery path, redirect, argument, environment input, or ordinary runtime identity
+can reopen or bypass bootstrap.
 
 ## TEST-135 — Authentication Integration Regression
 

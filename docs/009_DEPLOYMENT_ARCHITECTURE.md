@@ -620,12 +620,40 @@ applicable, CSRF controls, revocation, and high-risk reauthentication remain ena
 ## DEPLOY-070 — Initial Owner Bootstrap Operation
 
 Deployment documentation provides a protected server-side command-line bootstrap that
-is available only before the initial Owner is established or through an equivalently
-strong one-time guard. It accepts passwords by protected interactive/secret input, never
-command arguments; does not log password, MFA secret, or recovery codes; requires
-production password policy and secure Owner MFA enrollment before privileged use; emits
-non-secret audit evidence; and refuses subsequent/additional Owner creation. No public
-first-Owner web route is deployed.
+is available only before any account or bootstrap closure exists. It accepts passwords only
+through the controlling TTY, validates the supplied value at 15–128 code points, NFC-normalizes
+it, revalidates the result as nonempty and 15–128 code points, and applies the local blocklist
+and hash/verification to the complete normalized value without composition, rotation, external disclosure, or truncation. It permits paste
+and password managers. It generates exactly 10 random single-use recovery codes, writes
+them exactly once directly to the controlling TTY rather than stdout, persists only
+protected verifiers, and requires explicit acknowledgement before commit. One ceremony-wide
+absolute monotonic deadline starts before TOTP confirmation and covers TOTP input, recovery
+presentation and complete persistence writes, acknowledgement input, and commit preparation;
+writes, partial input, retries, and trickled input never reset or extend it. Any presentation,
+TTY, TOTP-confirmation, deadline, or acknowledgement failure rolls back all effects.
+
+The operation uses a dedicated least-privilege one-time PostgreSQL identity confined to the
+atomic Owner/account, password, confirmed MFA, recovery, audit, and closure operation. The
+cluster administrator provisions that identity and its protected credential before applying
+the bootstrap migration; the non-role-creating migration validates this prerequisite and
+fails without partial schema changes when it is absent. Fresh installations use the
+reviewed database-identity initialization path, while existing clusters add the identity
+through their controlled cluster-administration procedure without resetting data. The
+identity has `NOINHERIT`, `NOSUPERUSER`, `NOCREATEDB`, `NOCREATEROLE`, `NOREPLICATION`,
+`NOBYPASSRLS`, a connection limit of one, no memberships or ownership, and only target-database
+`CONNECT` before migration. Provisioning must attest that this dedicated role is unused in
+every other database. The operator verifies that attestation by inventorying `pg_database`,
+connecting separately to every connectable database, and inspecting memberships, ownership
+dependencies, database/schema/object/default ACLs, and direct grants. Runtime does not perform
+cross-database introspection. The target-database migration fails closed and publishes no
+V1-017 functions when any role attribute, membership, ACL, ownership, or authority check fails.
+The
+TOTP protection key is read from an already-open root-controlled descriptor or equivalent
+protected secret file and never from arguments, ordinary environment variables, logs,
+runbook/repository content, or compact state. Successful closure permanently revokes
+bootstrap mutation capability; repeats fail closed and audit without secrets. Password,
+TOTP, and recovery material never enters arguments, redirectable stdout, logs, state, or
+audit. No public first-Owner web route is deployed.
 
 ## DEPLOY-071 — Controlled Recovery Operation
 
@@ -641,7 +669,10 @@ Password verifiers, MFA verifier/secret material, protected recovery-code verifi
 material, session revocation state, bootstrap-closure state, and security audit evidence
 are included in encrypted backup/restore validation with least-privilege access.
 Bootstrap credentials, MFA secrets, usable recovery codes, and actual recovery secrets
-must never be committed to Git or included in ordinary logs/runbooks.
+must never be committed to Git or included in ordinary logs/runbooks. Usable recovery codes
+and bootstrap input secrets are never durable state or backup content. TOTP-key delivery
+must not be converted into arguments, ordinary environment variables, runbook/repository
+content, compact state, or logging.
 
 # 16. Traceability
 

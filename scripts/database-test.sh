@@ -20,7 +20,8 @@ redact_container_logs() {
       paths[4] = ENVIRON["POSTGRES_BACKUP_PASSWORD_FILE"]
       paths[5] = ENVIRON["POSTGRES_RESTORE_PASSWORD_FILE"]
       paths[6] = ENVIRON["POSTGRES_HUMAN_ADMIN_PASSWORD_FILE"]
-      for (secret_index = 1; secret_index <= 6; secret_index++) {
+      paths[7] = ENVIRON["POSTGRES_BOOTSTRAP_PASSWORD_FILE"]
+      for (secret_index = 1; secret_index <= 7; secret_index++) {
         if ((getline value < paths[secret_index]) > 0 && value != "") {
           secrets[++secret_count] = value
         }
@@ -42,6 +43,7 @@ POSTGRES_RUNTIME_PASSWORD_FILE="$secret_directory/postgres_runtime_password"
 POSTGRES_BACKUP_PASSWORD_FILE="$secret_directory/postgres_backup_password"
 POSTGRES_RESTORE_PASSWORD_FILE="$secret_directory/postgres_restore_password"
 POSTGRES_HUMAN_ADMIN_PASSWORD_FILE="$secret_directory/postgres_human_admin_password"
+POSTGRES_BOOTSTRAP_PASSWORD_FILE="$secret_directory/postgres_bootstrap_password"
 POSTGRES_PORT=0
 
 for secret_file in \
@@ -50,7 +52,8 @@ for secret_file in \
   "$POSTGRES_RUNTIME_PASSWORD_FILE" \
   "$POSTGRES_BACKUP_PASSWORD_FILE" \
   "$POSTGRES_RESTORE_PASSWORD_FILE" \
-  "$POSTGRES_HUMAN_ADMIN_PASSWORD_FILE"
+  "$POSTGRES_HUMAN_ADMIN_PASSWORD_FILE" \
+  "$POSTGRES_BOOTSTRAP_PASSWORD_FILE"
 do
   openssl rand -hex 32 >"$secret_file"
   chmod 0444 "$secret_file"
@@ -59,6 +62,7 @@ done
 export POSTGRES_ADMIN_PASSWORD_FILE POSTGRES_MIGRATION_PASSWORD_FILE
 export POSTGRES_RUNTIME_PASSWORD_FILE POSTGRES_BACKUP_PASSWORD_FILE
 export POSTGRES_RESTORE_PASSWORD_FILE POSTGRES_HUMAN_ADMIN_PASSWORD_FILE
+export POSTGRES_BOOTSTRAP_PASSWORD_FILE
 export POSTGRES_PORT
 
 if docker compose --project-name "$project_name" up --detach --wait postgres >/dev/null; then
@@ -86,6 +90,7 @@ APP_DATABASE_URL="postgresql://prm_runtime:$(cat "$POSTGRES_RUNTIME_PASSWORD_FIL
 BACKUP_DATABASE_URL="postgresql://prm_backup:$(cat "$POSTGRES_BACKUP_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
 RESTORE_DATABASE_URL="postgresql://prm_restore:$(cat "$POSTGRES_RESTORE_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
 HUMAN_ADMIN_DATABASE_URL="postgresql://prm_human_admin:$(cat "$POSTGRES_HUMAN_ADMIN_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
+BOOTSTRAP_DATABASE_URL="postgresql://prm_bootstrap:$(cat "$POSTGRES_BOOTSTRAP_PASSWORD_FILE")@127.0.0.1:${published_port}/prm"
 
 export TEST_ADMIN_DATABASE_URL
 export MIGRATION_DATABASE_URL
@@ -93,6 +98,7 @@ export APP_DATABASE_URL
 export BACKUP_DATABASE_URL
 export RESTORE_DATABASE_URL
 export HUMAN_ADMIN_DATABASE_URL
+export BOOTSTRAP_DATABASE_URL
 
 cd backend
 REQUIRE_DATABASE_TESTS=1 uv run --extra dev pytest --tb=short --no-header tests/test_migrations.py

@@ -7,7 +7,9 @@
     "BACKUP_DATABASE_URL_FILE": "/run/secrets/prm_production_backup_database_url",
     "RESTORE_DATABASE_URL_FILE": "/run/secrets/prm_production_restore_database_url",
     "HUMAN_ADMIN_DATABASE_URL_FILE": "/run/secrets/prm_production_human_admin_database_url",
+    "BOOTSTRAP_DATABASE_URL_FILE": "/run/secrets/prm_production_bootstrap_database_url",
     "APP_SECRET_KEY_FILE": "/run/secrets/prm_production_application_secret",
-    "BACKUP_ENCRYPTION_KEY_FILE": "/run/secrets/prm_production_backup_encryption_key"
+    "BACKUP_ENCRYPTION_KEY_FILE": "/run/secrets/prm_production_backup_encryption_key",
+    "BOOTSTRAP_TOTP_KEY_FILE": "/run/secrets/prm_production_bootstrap_totp_key"
   }
 }

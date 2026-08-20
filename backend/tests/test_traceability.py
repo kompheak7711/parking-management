@@ -52,6 +52,88 @@ class TraceabilityEntry(TypedDict):
     notes: str
 
 
+V1_017_AUTHORITIES: Final = {
+    "API-100",
+    "TEST-133",
+    "TEST-134",
+    "SEC-073",
+    "SEC-074",
+    "SEC-075",
+    "DEPLOY-070",
+    "DEPLOY-071",
+    "DEPLOY-072",
+    "DL-059",
+}
+V1_017_SECURITY_CLAUSE_TESTS: Final = {
+    "supplied-and-normalized-password-code-point-bounds": (
+        "test_password_policy_revalidates_nfc_result_without_waiving_supplied_length",
+    ),
+    "complete-normalized-password-blocklist-hash-and-verification": (
+        "test_password_policy_blocks_the_complete_untruncated_128_code_point_value",
+        "test_password_verification_uses_the_complete_value_without_truncation",
+    ),
+    "spaces-paste-password-managers-unicode-no-composition-no-rotation": (
+        "test_password_policy_accepts_boundaries_spaces_and_nfc_without_composition_rules",
+    ),
+    "compromised-common-expected-project-context-rejection": (
+        "test_password_policy_rejects_length_blocklist_and_project_context",
+    ),
+    "one-absolute-monotonic-ceremony-deadline": (
+        "test_ceremony_deadline_never_resets_and_timeout_before_commit_rolls_back",
+        "test_tty_timeout_is_not_extended_by_trickled_input",
+    ),
+    "exactly-ten-random-single-use-codes-with-independent-salts": (
+        "test_production_recovery_factory_persists_random_codes_with_independent_salts",
+    ),
+    "controlling-tty-once-only-and-no-process-output": (
+        "test_recovery_codes_are_written_to_the_dedicated_tty_descriptor_not_stdout",
+        "test_main_uses_protected_descriptors_and_dedicated_identity_without_process_output",
+    ),
+    "root-controlled-totp-key-and-confirmed-mfa": (
+        "test_totp_key_reader_requires_root_owned_private_regular_descriptor",
+        "test_bootstrap_identity_atomically_persists_complete_owner_and_permanently_loses_mutation",
+    ),
+    "atomic-postgresql-failure-rollback": (
+        "test_real_postgresql_production_service_pseudo_tty_failure_rolls_back_every_effect",
+        "test_bootstrap_acknowledgement_rollback_removes_every_effect_and_preserves_one_time_grant",
+    ),
+    "safe-cluster-role-and-target-database-least-privilege": (
+        "test_operational_database_identities_have_separate_least_privilege",
+        "test_protected_bootstrap_migration_requires_preprovisioned_bounded_role",
+        "test_protected_bootstrap_migration_rejects_overprivileged_existing_cluster_role",
+        "test_protected_bootstrap_migration_rejects_unsafe_role_membership",
+        "test_protected_bootstrap_migration_rejects_preexisting_object_privilege",
+        "test_protected_bootstrap_migration_rejects_target_database_ownership",
+        "test_protected_bootstrap_migration_rejects_public_table_authority",
+    ),
+    "pre-existing-postgresql-large-object-authority-fails-closed": (
+        "test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_authority",
+        "test_protected_bootstrap_migration_rejects_large_object_ownership",
+        "test_protected_bootstrap_migration_rejects_direct_large_object_acl_authority",
+        "test_protected_bootstrap_migration_rejects_effective_large_object_role_authority",
+        "test_protected_bootstrap_migration_rejects_public_large_object_authority",
+        "test_protected_bootstrap_migration_fails_closed_when_large_object_state_is_unprovable",
+    ),
+    "password-file-source-inventory-consistency": (
+        "test_readme_password_file_inventory_matches_env_compose_and_postgres_init",
+    ),
+    "permanent-closure-mutation-revocation-and-repeat-audit": (
+        "test_bootstrap_identity_atomically_persists_complete_owner_and_permanently_loses_mutation",
+        "test_closed_bootstrap_audits_through_preflight_without_reading_or_generating_secrets",
+    ),
+    "no-bootstrap-or-reset-http-backdoor": (
+        "test_fastapi_openapi_inventory_has_no_bootstrap_or_reset_http_route",
+    ),
+    "recovery-cannot-create-ordinary-owner-reset": (
+        "test_recovery_code_orchestration_cannot_be_used_as_an_owner_reset",
+    ),
+    "secret-free-immutable-bootstrap-audit": (
+        "test_initial_owner_bootstrap_history_rejects_update_delete_and_truncate",
+        "test_closed_bootstrap_audits_through_preflight_without_reading_or_generating_secrets",
+    ),
+}
+
+
 def collect_test_ids(path: Path) -> set[str]:
     """Collect module-level and class-contained pytest function identifiers."""
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
@@ -104,6 +186,51 @@ def test_traceability_manifest_covers_executable_tests() -> None:
         executable_ids.update(collect_frontend_test_ids(test_path))
 
     assert executable_ids == manifest_ids
+
+
+def test_protected_initial_owner_bootstrap_has_complete_v1_017_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    bootstrap_entries = [
+        entry
+        for entry in entries
+        if entry["status"] == "implemented"
+        and (
+            entry["test_path"].endswith("test_initial_owner_bootstrap_cli.py")
+            or entry["test_id"].startswith("test_bootstrap_")
+            or entry["test_id"]
+            == "test_protected_initial_owner_bootstrap_has_complete_v1_017_traceability"
+        )
+    ]
+
+    assert bootstrap_entries
+    assert V1_017_AUTHORITIES <= {
+        identifier for entry in bootstrap_entries for identifier in entry["upstream_ids"]
+    }
+    expected_clauses = {
+        "supplied-and-normalized-password-code-point-bounds",
+        "complete-normalized-password-blocklist-hash-and-verification",
+        "spaces-paste-password-managers-unicode-no-composition-no-rotation",
+        "compromised-common-expected-project-context-rejection",
+        "one-absolute-monotonic-ceremony-deadline",
+        "exactly-ten-random-single-use-codes-with-independent-salts",
+        "controlling-tty-once-only-and-no-process-output",
+        "root-controlled-totp-key-and-confirmed-mfa",
+        "atomic-postgresql-failure-rollback",
+        "safe-cluster-role-and-target-database-least-privilege",
+        "pre-existing-postgresql-large-object-authority-fails-closed",
+        "password-file-source-inventory-consistency",
+        "permanent-closure-mutation-revocation-and-repeat-audit",
+        "no-bootstrap-or-reset-http-backdoor",
+        "recovery-cannot-create-ordinary-owner-reset",
+        "secret-free-immutable-bootstrap-audit",
+    }
+    assert set(V1_017_SECURITY_CLAUSE_TESTS) == expected_clauses
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    for test_ids in V1_017_SECURITY_CLAUSE_TESTS.values():
+        assert test_ids
+        for test_id in test_ids:
+            assert entries_by_id[test_id]["status"] == "implemented"
 
 
 def test_password_credential_requirements_have_implemented_traceability() -> None:

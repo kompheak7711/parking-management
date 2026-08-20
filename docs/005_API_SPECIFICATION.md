@@ -962,7 +962,8 @@ administration may require recent password authentication or an additional facto
 ## API-098 — Recovery Codes
 
 Recovery-code generation/presentation is available only in a protected authenticated
-enrollment or regeneration flow. Codes are shown securely once, individually consumed,
+enrollment or regeneration flow, except for the one-time pre-authentication trust-root
+operation governed by `API-100`. Codes are shown securely once, individually consumed,
 not returned again, and reuse is rejected. Recovery actions are rate-limited,
 enumeration-resistant, session-revoking where appropriate, and immutably audited.
 
@@ -976,9 +977,30 @@ is never an ordinary unauthenticated web endpoint.
 ## API-100 — Initial Owner Bootstrap Exclusion
 
 No public API or web route creates the first Owner. The protected server command-line
-bootstrap is a deployment operation and becomes unavailable after initial Owner
-establishment except through an equivalently strong separately controlled one-time
-mechanism.
+bootstrap is a deployment operation available only before any account or bootstrap closure
+exists. It first validates the supplied password as 15–128 Unicode code points, then
+NFC-normalizes it and revalidates the normalized result as nonempty and 15–128 code points.
+The complete normalized value is locally blocklisted, hashed, and verified without truncation.
+The operation permits spaces, paste, and
+password managers, and imposes neither composition nor periodic-rotation rules. It rejects
+locally blocked compromised, common, expected, and project-context values without sending a
+candidate to an external service.
+
+Bootstrap creates exactly 10 cryptographically random independently single-use recovery
+codes. It presents them exactly once through the controlling TTY, never redirectable stdout,
+arguments, ordinary environment variables, logs, state, compact state, or audit; persists
+only protected verifiers; and requires explicit acknowledgement before commit. One absolute
+monotonic ceremony deadline begins before TOTP confirmation and covers TOTP input,
+recovery-code presentation and complete persistence writes, acknowledgement input, and commit
+preparation. Writes, partial input, retries, and trickled input never reset or extend it.
+Presentation, acknowledgement, or deadline failure rolls back the entire operation.
+Initial Owner identity, password verifier, confirmed protected MFA enrollment, recovery-code
+verifiers, immutable audit, and closure are one atomic PostgreSQL operation through a
+dedicated least-privilege one-time database identity. The TOTP protection key enters only
+through an already-open root-controlled descriptor or equivalent protected secret file,
+never arguments, logs, repository or compact state, or ordinary environment variables.
+Successful closure permanently revokes bootstrap mutation capability. Repeats fail closed
+and create immutable secret-free rejection evidence.
 
 ## API-080 — Roles and Capabilities
 

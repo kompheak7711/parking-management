@@ -62,3 +62,22 @@ def test_verify_password_marks_valid_older_work_factor_for_rehash() -> None:
 
     assert result.is_valid is True
     assert result.needs_rehash is True
+
+
+def test_password_hashing_normalizes_unicode_to_nfc_before_hashing_and_verification() -> None:
+    service = PasswordHashService()
+    decomposed = "Cafe\u0301 password phrase"
+    composed = "Café password phrase"
+
+    credential = service.hash_password(decomposed)
+
+    assert service.verify_password(composed, credential.verifier_encoding).is_valid is True
+
+
+def test_password_verification_uses_the_complete_value_without_truncation() -> None:
+    service = PasswordHashService()
+    accepted = "x" * 128
+    credential = service.hash_password(accepted)
+
+    assert service.verify_password(accepted, credential.verifier_encoding).is_valid is True
+    assert service.verify_password(accepted + "y", credential.verifier_encoding).is_valid is False

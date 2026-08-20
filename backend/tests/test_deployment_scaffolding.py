@@ -58,15 +58,58 @@ def _run_validator(*arguments: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def test_deployment_examples_define_five_distinct_database_identities() -> None:
+def test_deployment_examples_define_six_distinct_database_identities() -> None:
     contract = json.loads((CONFIG_ROOT / "identity-secret-contract.json").read_text())
     identities = contract["database_identities"]
 
-    assert set(identities) == {"runtime", "migration", "backup", "restore", "human_admin"}
-    assert len({identity["database_role"] for identity in identities.values()}) == 5
-    assert len({identity["source_key"] for identity in identities.values()}) == 5
+    assert set(identities) == {
+        "runtime",
+        "migration",
+        "backup",
+        "restore",
+        "human_admin",
+        "bootstrap",
+    }
+    assert len({identity["database_role"] for identity in identities.values()}) == 6
+    assert len({identity["source_key"] for identity in identities.values()}) == 6
     assert "no standing table mutation" in identities["human_admin"]["standing_access"]
     assert "Connect only by default" in identities["restore"]["standing_access"]
+    assert "one-time" in identities["bootstrap"]["standing_access"]
+
+
+def test_readme_password_file_inventory_matches_env_compose_and_postgres_init() -> None:
+    expected_names = {
+        "postgres_admin_password",
+        "postgres_migration_password",
+        "postgres_runtime_password",
+        "postgres_backup_password",
+        "postgres_restore_password",
+        "postgres_human_admin_password",
+        "postgres_bootstrap_password",
+    }
+    env_example = (REPOSITORY_ROOT / ".env.example").read_text(encoding="utf-8")
+    compose = (REPOSITORY_ROOT / "compose.yaml").read_text(encoding="utf-8")
+    postgres_init = (REPOSITORY_ROOT / "scripts" / "postgres-init.sh").read_text(encoding="utf-8")
+    readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
+
+    env_names = set(
+        re.findall(
+            r"^POSTGRES_[A-Z_]+_PASSWORD_FILE=.local/secrets/(postgres_[a-z_]+_password)$",
+            env_example,
+            re.MULTILINE,
+        )
+    )
+    compose_names = set(re.findall(r"^  (postgres_[a-z_]+_password):$", compose, re.MULTILINE))
+    init_source_keys = set(re.findall(r"\$\{(POSTGRES_[A-Z_]+_PASSWORD_FILE):", postgres_init))
+    init_names = {
+        f"postgres_{source_key.removeprefix('POSTGRES_').removesuffix('_PASSWORD_FILE').lower()}_password"
+        for source_key in init_source_keys
+    }
+    if '"$POSTGRES_PASSWORD"' in postgres_init:
+        init_names.add("postgres_admin_password")
+    readme_names = set(re.findall(r"`(postgres_[a-z_]+_password)`", readme))
+
+    assert env_names == compose_names == init_names == readme_names == expected_names
 
 
 def test_deployment_examples_use_separate_environment_bound_protected_sources() -> None:
@@ -157,6 +200,41 @@ def test_postgres_bootstrap_avoids_secret_command_arguments_and_limits_admin_rol
     assert "GRANT CONNECT ON DATABASE prm TO prm_human_admin" in init_script
     assert "GRANT pg_read_all_data TO prm_restore" not in init_script
     assert "GRANT pg_write_all_data TO prm_human_admin" not in init_script
+    assert (
+        "CREATE ROLE prm_bootstrap LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT "
+        "NOREPLICATION" in init_script
+    )
+    assert "NOBYPASSRLS CONNECTION LIMIT 1" in init_script
+    assert "GRANT CONNECT ON DATABASE prm TO prm_bootstrap" in init_script
+    assert "REVOKE ALL ON DATABASE postgres FROM PUBLIC" in init_script
+    assert "REVOKE ALL ON DATABASE template1 FROM PUBLIC" in init_script
+    assert "GRANT CONNECT, TEMPORARY ON DATABASE postgres TO prm_admin" in init_script
+    assert "GRANT CONNECT, TEMPORARY ON DATABASE template1 TO prm_admin" in init_script
+    assert "GRANT pg_read_all_data TO prm_bootstrap" not in init_script
+    assert "GRANT pg_write_all_data TO prm_bootstrap" not in init_script
+
+
+def test_protected_bootstrap_migration_requires_preprovisioned_bounded_role() -> None:
+    migration = (
+        REPOSITORY_ROOT / "backend/migrations/versions/20260820_09_protected_owner_bootstrap.py"
+    ).read_text(encoding="utf-8")
+    init_script = (REPOSITORY_ROOT / "scripts/postgres-init.sh").read_text(encoding="utf-8")
+    readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert "FROM pg_catalog.pg_roles" in migration
+    assert "WHERE rolname = 'prm_bootstrap'" in migration
+    assert "bootstrap_role.rolsuper" in migration
+    assert "bootstrap_role.rolbypassrls" in migration
+    assert "bootstrap_role.rolinherit" in migration
+    assert "bootstrap_role.rolconnlimit <> 1" in migration
+    assert "pg_catalog.pg_auth_members" in migration
+    assert "pg_catalog.pg_shdepend" in migration
+    assert "before migration" in migration
+    assert "NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION" in init_script
+    assert "unused in every other database" in readme
+    assert "connect separately to every connectable" in readme
+    assert "no runtime cross-database introspection" in readme
+    assert "reset an existing volume" in readme
 
 
 def test_database_test_secret_files_are_readable_by_native_linux_container_user(
@@ -178,6 +256,7 @@ def test_database_test_secret_files_are_readable_by_native_linux_container_user(
                 "POSTGRES_BACKUP_PASSWORD_FILE",
                 "POSTGRES_RESTORE_PASSWORD_FILE",
                 "POSTGRES_HUMAN_ADMIN_PASSWORD_FILE",
+                "POSTGRES_BOOTSTRAP_PASSWORD_FILE",
             )
             source_paths = [os.environ[name] for name in source_names]
             modes = [stat.S_IMODE(os.stat(path).st_mode) for path in source_paths]

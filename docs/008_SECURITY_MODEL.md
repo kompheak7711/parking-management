@@ -584,20 +584,37 @@ All security-sensitive recovery actions create immutable audit evidence without 
 ## SEC-073 — Initial Owner Bootstrap
 
 The initial Owner is created through a protected command-line procedure on the
-production server. It is permitted only while no initial Owner exists or under an
-equivalently strong one-time guard. Password input must be interactive or use another
-protected secret-input mechanism and must not appear in command arguments, shell
-history, process listings, logs, or source control. Password policy applies. Required
-Owner MFA is enrolled securely during bootstrap or at first login before normal
-privileged use.
+production server, only while no account or bootstrap closure exists. Password input is
+interactive and first validated as 15–128 Unicode code points. It is then NFC-normalized,
+revalidated as nonempty and 15–128 code points, locally blocklisted as the complete normalized
+value, and hashed and verified in full without truncation. Spaces, paste, and password managers are permitted;
+character-composition and periodic-rotation rules are prohibited. A locally controlled
+blocklist rejects compromised, common, expected, and project-context passwords without
+exposing candidates externally. Password material never appears in arguments, shell
+history, process listings, ordinary environment variables, logs, source control, or compact
+state.
+
+Bootstrap generates exactly 10 cryptographically random independently single-use recovery
+codes, presents them exactly once through the controlling TTY, persists only protected
+verifiers, and requires explicit acknowledgement before commit. One absolute monotonic
+ceremony deadline starts before TOTP confirmation and covers TOTP input, recovery presentation
+and complete persistence writes, acknowledgement input, and commit preparation. Writes,
+partial input, retries, and trickled input never reset or extend it. Presentation,
+confirmation, TTY, acknowledgement, or deadline failure rolls back completely. Required
+Owner TOTP enrollment is confirmed and its protected material is persisted within the same
+atomic operation. Its protection key is supplied only through an already-open
+root-controlled descriptor or equivalent protected secret file, never arguments, logs,
+repository or compact state, or ordinary environment variables. A dedicated least-privilege
+one-time database identity is restricted to this atomic boundary.
 
 ## SEC-074 — Bootstrap Closure
 
 After the initial Owner is established, bootstrap cannot create another Owner or remain
 as a credential/recovery backdoor. Subsequent account creation follows normal authorized
 account-management controls. Bootstrap, password, MFA, and recovery-code secrets are
-never committed to Git. The bootstrap event and rejected unsafe/repeated attempts are
-auditable without recording secrets.
+never committed to Git. Successful atomic closure permanently revokes bootstrap mutation
+capability. Every later attempt fails closed and creates immutable secret-free rejection
+evidence; recovery and emergency procedures cannot reactivate or bypass closure.
 
 ## SEC-075 — Recovery and Authentication Audit
 

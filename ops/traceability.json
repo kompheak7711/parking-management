@@ -1055,12 +1055,20 @@
       "notes": "The TEST-117 manifest structure and executable test coverage are validated automatically."
     },
     {
-      "test_id": "test_deployment_examples_define_five_distinct_database_identities",
+      "test_id": "test_deployment_examples_define_six_distinct_database_identities",
       "upstream_ids": ["SEC-045", "SEC-047", "DEPLOY-065", "DEPLOY-066", "TEST-111"],
       "test_level": "security",
       "test_path": "backend/tests/test_deployment_scaffolding.py",
       "status": "implemented",
       "notes": "The machine-readable contract names distinct runtime, migration, backup, restore, and exceptional human-administration roles with bounded standing access."
+    },
+    {
+      "test_id": "test_readme_password_file_inventory_matches_env_compose_and_postgres_init",
+      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "DEPLOY-070", "DEPLOY-072", "DL-059"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "The documented seven PostgreSQL password-file names must exactly equal the inventories in .env.example, Compose, and the PostgreSQL initialization script."
     },
     {
       "test_id": "test_deployment_examples_use_separate_environment_bound_protected_sources",
@@ -1112,11 +1120,19 @@
     },
     {
       "test_id": "test_postgres_bootstrap_avoids_secret_command_arguments_and_limits_admin_roles",
-      "upstream_ids": ["SEC-045", "SEC-047", "SEC-049", "DEPLOY-062", "DEPLOY-065", "DEPLOY-066", "TEST-111"],
+      "upstream_ids": ["SEC-045", "SEC-047", "SEC-049", "SEC-075", "DEPLOY-062", "DEPLOY-065", "DEPLOY-066", "DEPLOY-070", "DEPLOY-072", "TEST-111", "TEST-134", "DL-059"],
       "test_level": "security",
       "test_path": "backend/tests/test_deployment_scaffolding.py",
       "status": "implemented",
       "notes": "Local bootstrap reads secret values through environment-backed psql variables, grants backup read and human monitoring only, and leaves restore without standing data access."
+    },
+    {
+      "test_id": "test_protected_bootstrap_migration_requires_preprovisioned_bounded_role",
+      "upstream_ids": ["TEST-134", "SEC-075", "DEPLOY-070", "DEPLOY-071", "DEPLOY-072", "DL-059"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "Static deployment scaffolding requires the migration's first operation to validate a pre-provisioned bounded bootstrap role; disposable PostgreSQL tests separately execute missing, elevated, and pre-existing-ACL rejection paths."
     },
     {
       "test_id": "test_database_test_secret_files_are_readable_by_native_linux_container_user",
@@ -1136,11 +1152,11 @@
     },
     {
       "test_id": "test_operational_database_identities_have_separate_least_privilege",
-      "upstream_ids": ["SEC-045", "SEC-047", "DEPLOY-062", "DEPLOY-065", "DEPLOY-066", "TEST-111"],
+      "upstream_ids": ["SEC-045", "SEC-047", "SEC-073", "DEPLOY-062", "DEPLOY-065", "DEPLOY-066", "DEPLOY-070", "TEST-111", "TEST-133", "TEST-134", "DL-059"],
       "test_level": "security",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
-      "notes": "Real PostgreSQL proves five non-superuser/non-role-creating identities, read-only backup access, and no standing data path for restore or human administration."
+      "notes": "Real PostgreSQL proves six bounded operational identities, read-only backup access, no standing data path for restore or human administration, and no prm_bootstrap CONNECT or TEMP authority in the fresh cluster's other connectable databases."
     },
     {
       "test_id": "test_authorized_issuance_persists_independent_verifiers_before_one_time_return",
@@ -2551,6 +2567,302 @@
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
       "notes": "Real PostgreSQL privilege inspection proves runtime cannot directly update password credentials or fabricate recovery audit and may invoke only the controlled security-definer boundaries."
+    },
+    {
+      "test_id": "test_password_policy_rejects_length_blocklist_and_project_context",
+      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "Deterministic boundary, local blocklist, and project-context cases reject generically without returning the candidate."
+    },
+    {
+      "test_id": "test_password_policy_accepts_boundaries_spaces_and_nfc_without_composition_rules",
+      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "Password acceptance covers both code-point boundaries, NFC, spaces, and the absence of composition rules."
+    },
+    {
+      "test_id": "test_password_policy_blocks_the_complete_untruncated_128_code_point_value",
+      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "A blocked 128-code-point value is compared in full while a value differing only at the final code point remains eligible."
+    },
+    {
+      "test_id": "test_success_persists_then_presents_exactly_ten_codes_and_acknowledges_before_commit",
+      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "SEC-074", "SEC-075", "DEPLOY-070", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "The service orders atomic persistence, exactly-ten one-time presentation, bounded acknowledgement, and commit while redacting all secret representations."
+    },
+    {
+      "test_id": "test_presentation_acknowledgement_timeout_or_totp_failure_rolls_back_completely",
+      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "Presentation, acknowledgement, timeout, and TOTP confirmation failures all use the same secret-free full rollback path."
+    },
+    {
+      "test_id": "test_establishment_or_commit_failure_rolls_back_without_secret_detail",
+      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "Rejected establishment and commit exceptions both invoke rollback and expose only the generic secret-free bootstrap failure."
+    },
+    {
+      "test_id": "test_closed_bootstrap_audits_through_preflight_without_reading_or_generating_secrets",
+      "upstream_ids": ["API-100", "TEST-134", "SEC-074", "SEC-075", "DEPLOY-070", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "A closed preflight is committed as rejection evidence before any password, TOTP, or recovery material is read or generated."
+    },
+    {
+      "test_id": "test_request_requires_exactly_ten_distinct_recovery_code_identifiers",
+      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "DL-059"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "The bootstrap persistence request structurally requires exactly ten distinct recovery-code identities."
+    },
+    {
+      "test_id": "test_recovery_codes_are_written_to_the_dedicated_tty_descriptor_not_stdout",
+      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "DEPLOY-070", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "Recovery material is written through the dedicated terminal descriptor while captured stdout and stderr remain empty."
+    },
+    {
+      "test_id": "test_totp_key_reader_requires_root_owned_private_regular_descriptor",
+      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "DEPLOY-070", "DEPLOY-072", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "The TOTP protection key reader accepts exact key material only from an already-open root-owned private regular-file descriptor."
+    },
+    {
+      "test_id": "test_totp_key_reader_rejects_nonroot_or_group_readable_descriptor",
+      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "DEPLOY-070", "DEPLOY-072", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "Non-root or group-readable TOTP key descriptors fail closed without exposing key material."
+    },
+    {
+      "test_id": "test_tty_timeout_is_an_absolute_deadline_after_partial_input",
+      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "SEC-074", "DEPLOY-070", "DEPLOY-071", "DEPLOY-072", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "A partial controlling-TTY input byte followed by a stall cannot extend the absolute monotonic acknowledgement deadline."
+    },
+    {
+      "test_id": "test_tty_timeout_is_not_extended_by_trickled_input",
+      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "SEC-074", "DEPLOY-070", "DEPLOY-071", "DEPLOY-072", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "Repeated trickled controlling-TTY bytes cannot extend the one absolute monotonic acknowledgement deadline."
+    },
+    {
+      "test_id": "test_controlling_tty_write_completes_short_writes",
+      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "DEPLOY-070", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "Controlling-TTY presentation loops until every byte is written, so a short descriptor write cannot silently truncate protected material."
+    },
+    {
+      "test_id": "test_main_uses_protected_descriptors_and_dedicated_identity_without_process_output",
+      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DEPLOY-072", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "The packaged command reads protected sources from inherited descriptors, requires the dedicated database identity, and emits no stdout or stderr."
+    },
+    {
+      "test_id": "test_password_hashing_normalizes_unicode_to_nfc_before_hashing_and_verification",
+      "upstream_ids": ["DB-AUTH-002", "API-100", "TEST-133", "SEC-073", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_password_security.py",
+      "status": "implemented",
+      "notes": "Canonically equivalent accepted Unicode verifies against the same NFC-normalized Argon2id credential."
+    },
+    {
+      "test_id": "test_password_verification_uses_the_complete_value_without_truncation",
+      "upstream_ids": ["DB-AUTH-002", "API-100", "TEST-133", "SEC-073", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_password_security.py",
+      "status": "implemented",
+      "notes": "A 128-code-point credential verifies while an otherwise identical longer candidate does not, proving full-value processing."
+    },
+    {
+      "test_id": "test_bootstrap_identity_atomically_persists_complete_owner_and_permanently_loses_mutation",
+      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DEPLOY-070", "DEPLOY-071", "DEPLOY-072", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Disposable PostgreSQL proves complete atomic persistence, exactly ten protected recovery verifiers, secret-free repeat audit, no table access, and permanent mutation-function revocation."
+    },
+    {
+      "test_id": "test_protected_bootstrap_migration_rejects_overprivileged_existing_cluster_role",
+      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A prior-head disposable database refuses the bootstrap migration before function creation when the existing cluster role is elevated, and the Alembic version remains unchanged."
+    },
+    {
+      "test_id": "test_protected_bootstrap_migration_requires_existing_cluster_role_before_schema_change",
+      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A prior-head disposable database with the cluster role absent rejects the migration, retains the prior Alembic version, and publishes no V1-017 function."
+    },
+    {
+      "test_id": "test_protected_bootstrap_migration_rejects_preexisting_object_privilege",
+      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A prior-head disposable database rejects a bootstrap identity with pre-existing table authority before publishing either V1-017 function."
+    },
+    {
+      "test_id": "test_protected_bootstrap_migration_rejects_public_table_authority",
+      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A privileged disposable-database fixture proves PUBLIC table authority reaches prm_bootstrap and is rejected before either V1-017 function or revision can be published."
+    },
+    {
+      "test_id": "test_bootstrap_acknowledgement_rollback_removes_every_effect_and_preserves_one_time_grant",
+      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Disposable PostgreSQL rollback removes account, credential, MFA, recovery, audit, closure, and transactional privilege-revocation effects."
+    },
+    {
+      "test_id": "test_protected_initial_owner_bootstrap_has_complete_v1_017_traceability",
+      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DEPLOY-070", "DEPLOY-071", "DEPLOY-072", "DL-059"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "The executable clause-to-test map mechanically covers the complete V1-017 security contract and every approved API, testing, security, deployment, and decision authority."
+    },
+    {
+      "test_id": "test_password_policy_revalidates_nfc_result_without_waiving_supplied_length",
+      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "Deterministic decomposed-Unicode cases prove both the supplied and NFC-normalized values independently satisfy the 15-128-code-point policy."
+    },
+    {
+      "test_id": "test_ceremony_deadline_never_resets_and_timeout_before_commit_rolls_back",
+      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "An injected monotonic clock proves one unchanged ceremony deadline bounds TOTP, database writes, recovery presentation, acknowledgement, and commit preparation and triggers rollback at expiry."
+    },
+    {
+      "test_id": "test_fastapi_openapi_inventory_has_no_bootstrap_or_reset_http_route",
+      "upstream_ids": ["API-100", "TEST-134", "SEC-074", "DEPLOY-070", "DEPLOY-071", "DL-059"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "status": "implemented",
+      "notes": "The executable production FastAPI and OpenAPI route inventories are identical and contain no bootstrap, initial-owner, first-owner, or reset route."
+    },
+    {
+      "test_id": "test_protected_bootstrap_migration_rejects_unsafe_role_membership",
+      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Disposable PostgreSQL proves any cluster role membership fails the target migration closed before V1-017 publication."
+    },
+    {
+      "test_id": "test_protected_bootstrap_migration_rejects_target_database_ownership",
+      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Disposable PostgreSQL proves target-database object ownership fails closed before V1-017 functions are published."
+    },
+    {
+      "test_id": "test_real_postgresql_production_service_pseudo_tty_failure_rolls_back_every_effect",
+      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DEPLOY-070", "DL-059"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The production service and controlling-terminal adapter run against disposable PostgreSQL and a pseudo-TTY; failed acknowledgement leaves every account, credential, MFA, recovery, audit, and closure table empty without password echo."
+    },
+    {
+      "test_id": "test_production_recovery_factory_persists_random_codes_with_independent_salts",
+      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "SEC-075", "DEPLOY-070", "DEPLOY-072", "DL-059"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The production bootstrap material factory and PostgreSQL adapter persist exactly ten distinct random recovery codes as matching Argon2id verifiers with ten independent salts and no plaintext storage; a generated code is then consumed once and rejected on reuse through the production consumption service."
+    },
+    {
+      "test_id": "test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_authority",
+      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A clean pre-existing PostgreSQL large object owned by the administrative fixture does not falsely block the V1-017 migration."
+    },
+    {
+      "test_id": "test_protected_bootstrap_migration_rejects_large_object_ownership",
+      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Disposable PostgreSQL proves prm_bootstrap large-object ownership is rejected before the migration publishes functions or changes its revision."
+    },
+    {
+      "test_id": "test_protected_bootstrap_migration_rejects_direct_large_object_acl_authority",
+      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Disposable PostgreSQL proves a direct large-object ACL grant to prm_bootstrap is rejected before any V1-017 migration mutation."
+    },
+    {
+      "test_id": "test_protected_bootstrap_migration_rejects_effective_large_object_role_authority",
+      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Disposable PostgreSQL proves effective large-object ACL authority through a role relationship is rejected before any V1-017 migration mutation."
+    },
+    {
+      "test_id": "test_protected_bootstrap_migration_rejects_public_large_object_authority",
+      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Disposable PostgreSQL proves applicable PUBLIC large-object authority is rejected before any V1-017 migration mutation."
+    },
+    {
+      "test_id": "test_protected_bootstrap_migration_fails_closed_when_large_object_state_is_unprovable",
+      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A privileged disposable-database fault fixture proves unreadable or otherwise unprovable large-object authority state fails closed before migration mutation without leaking credentials."
     }
   ]
 }

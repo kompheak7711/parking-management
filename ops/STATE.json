@@ -6,29 +6,43 @@
   "status": "active",
   "active_cycle": "v1-017-protected-initial-owner-cli-bootstrap-command",
   "branch": "implementation/foundation",
-  "commit": "8b4cfb33b70e47710002c09dd333085bef414a20",
-  "timestamp": "2026-08-20T04:21:48Z",
+  "commit": "b397247839d6a8a85d10e0c3884bc3ef191d520e",
+  "timestamp": "2026-08-20T14:45:48Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
     "basis": "structured durable-v1 successor selection",
     "implementation_started": true,
-    "implementation_completed": false,
+    "implementation_completed": true,
     "publication_completed": false
   },
   "authorities": [
     "API-100",
     "TEST-133-134",
+    "SEC-073-075",
     "DEPLOY-070-072",
     "DL-059"
   ],
   "touched_areas": [
-    "interactive secret input, first-Owner creation, MFA gating, one-time codes"
+    "canonical security/bootstrap policy and traceability",
+    "protected server CLI bootstrap service and command",
+    "atomic PostgreSQL bootstrap migration and least-privilege identity",
+    "focused deterministic and disposable-PostgreSQL acceptance tests"
   ],
-  "tests": [],
+  "tests": [
+    "PASS: focused V1-017 suite, 65 passed",
+    "PASS: repository-owned disposable real PostgreSQL suite, 105 passed / 0 skipped",
+    "PASS: full backend suite, 313 passed / 105 expected database-environment skips; all 105 separately passed against real PostgreSQL",
+    "PASS: frontend suite, 3 passed",
+    "PASS: backend/frontend formatting, lint, strict typing, and builds",
+    "PASS: explicit runtime liveness/fail-closed readiness suite, 20 passed",
+    "PASS: locked backend runtime/development and frontend dependency audits",
+    "PASS: deterministic automation/roadmap, traceability, deployment configuration, JSON, 28-path scope, static secret/security, canonical integrity, and git diff --check"
+  ],
   "relevant_docs": [
     "API-100",
     "TEST-133-134",
+    "SEC-073-075",
     "DEPLOY-070-072",
     "DL-059"
   ],
@@ -64,21 +78,57 @@
     "status": "approved_ready",
     "roadmap_id": "V1-017"
   },
-  "next_action": "Implement the approved bounded candidate: Protected initial Owner CLI bootstrap command",
+  "next_action": "Stage the reviewed 28-path allowlist individually, run cached pre-publication checks, commit, and push V1-017 normally",
   "idle_reason": null,
   "owner_action": "none",
   "blockers": [],
   "repair": {
     "tranche_id": "V1-017",
-    "failure": null,
+    "failure": "two independent reviews found six concrete in-scope security/evidence defects; all are corrected and reverified",
     "scope_preserved": true,
-    "attempts": 0,
+    "attempts": 2,
     "max_attempts": 2,
     "requires_owner_decision": false,
     "suspected_secret": false,
     "scope_expansion": false,
     "protected_operation": false,
-    "last_outcome": null
+    "last_outcome": "third fresh read-only final review PASS; verified_unpublished"
+  },
+  "evidence_applicability": {
+    "complete_profile_remains_applicable": true,
+    "basis": "all gates invalidated by reviewer-requested product, migration, provisioning, test, traceability, README, and compact-state corrections were rerun; unchanged frontend, dependency, automation, and canonical evidence remains current from this Codex session",
+    "prior_review_disposition": "FAIL findings corrected: effective PUBLIC authority, fresh-cluster cross-database confinement, exact boundary-space blocklist values, one-use/reuse proof, exact path-and-complete-method HTTP inventory, and current compact evidence"
+  },
+  "review": {
+    "status": "PASS",
+    "complete_candidate_paths": 28,
+    "first_verdict": "FAIL",
+    "first_findings_corrected": 5,
+    "second_verdict": "FAIL",
+    "second_findings_corrected": 1,
+    "final_verdict": "PASS",
+    "final_reviewer_edits": false,
+    "final_independent_checks": [
+      "PASS: exact 28-path baseline diff",
+      "PASS: complete runtime and all-eight-verb OpenAPI negative HTTP inventory",
+      "PASS: large-object fail-closed matrix and real PostgreSQL evidence present",
+      "PASS: V1-017 clause traceability",
+      "PASS: compact evidence and git diff --check"
+    ]
+  },
+  "publication": {
+    "status": "unpublished",
+    "commit_completed": false,
+    "push_completed": false,
+    "ci_completed": false,
+    "sha_reconciled": false
+  },
+  "owner_decisions": {
+    "password": "validate supplied value as 15-128 Unicode code points; NFC-normalize; revalidate normalized result as nonempty and 15-128 code points; blocklist, hash, and verify the complete normalized value without truncation; preserve spaces, paste, password managers, Unicode, no composition/rotation, and local compromised/common/expected/project-context rejection",
+    "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists",
+    "ceremony_deadline": "one absolute monotonic deadline begins before TOTP confirmation and covers TOTP input, recovery presentation and COMPLETE writes, acknowledgement input, and commit preparation; writes, partial input, retries, and trickled input never reset or extend it; timeout rolls back the ceremony",
+    "bootstrap_protection": "prm_bootstrap has safe cluster-global attributes and no unsafe memberships, ownership, or authority in the target database; no runtime cross-database introspection; provisioning attests and verifies the dedicated role is unused in every other database; target checks fail closed; atomic closure/revocation and secret-free repeat audit remain mandatory",
+    "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability"
   },
   "secrets_present": false
 }

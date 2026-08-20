@@ -1,17 +1,31 @@
-# V1-017 Protected Initial Owner CLI Bootstrap — active, not implemented
+# V1-017 Protected Initial Owner CLI Bootstrap — verified, unpublished
 
-- V1-016 recovery orchestration was published at `8b4cfb3`; GitHub Actions run
-  `32331313053` passed backend, frontend, dependency-security, and isolated PostgreSQL
-  migration jobs.
-- Dispatcher session-isolation repair was published separately at `17a6f59`.
-- Publication state was reconciled at `f452692`, and structured successor selection
-  activated V1-017 at `dc67f6c`; both state commits passed GitHub Actions.
-- Roadmap state: V1-016 is complete; V1-017 is the approved dependency-ready current
-  candidate under API-100, TEST-133-134, DEPLOY-070-072, and DL-059.
-- Approved V1-017 scope: interactive secret input, first-Owner creation, MFA gating,
-  and one-time codes. Exclude actual production credentials and web bootstrap.
-- Implementation has not begun in this handoff; no V1-017 product, canonical,
-  production configuration, credential, or data files were changed.
-- Blockers: none. Owner action: none.
-- Exact next action: implement the approved bounded V1-017 candidate in a fresh
-  compact-state-only working session.
+- Baseline remains synchronized at `b397247839d6a8a85d10e0c3884bc3ef191d520e` on
+  `implementation/foundation`; the reviewed 28-path V1-017 allowlist remains dirty and
+  unpublished.
+- The CLI-only bootstrap implements the approved password, TOTP, one-time recovery-code,
+  ceremony-deadline, atomic PostgreSQL, least-privilege identity, permanent closure, and
+  secret-free audit rules. No bootstrap or Owner-reset HTTP operation exists.
+- The first independent review returned FAIL on effective `PUBLIC` target authority,
+  fresh-cluster cross-database access, boundary-space blocklist parsing, single-use and exact
+  HTTP-inventory proof, and stale compact evidence. All five findings are corrected in scope.
+- The second fresh review confirmed those corrections and found one remaining evidence defect:
+  the negative HTTP inventory compared exact paths but not the complete runtime method surface.
+  It now compares every runtime path-and-method pair and all eight OpenAPI HTTP verbs, including
+  `HEAD`, `OPTIONS`, and `TRACE`; focused and full backend verification pass after the correction.
+- Current PostgreSQL evidence passes all 105 tests with no skips, including clean and unsafe
+  large-object states, `PUBLIC` table authority rejection before mutation, fresh-cluster
+  cross-database confinement, real production service plus pseudo-TTY rollback, and production
+  recovery generation followed by one successful consumption and rejected reuse.
+- Current executable evidence passes: focused V1-017 65; full backend 313 with 105 expected
+  database-environment skips whose complete set passed separately; frontend 3; explicit health
+  20. Backend/frontend formatting, lint, strict typing, builds, runtime/development dependency
+  audits, deterministic automation/roadmap, deployment configuration, traceability, JSON,
+  28-path scope, secret-pattern, canonical integrity, and `git diff --check` pass.
+- A third fresh read-only Codex review returned explicit PASS after independently checking the
+  complete 28-path diff, exact runtime/OpenAPI method inventory, large-object fail-closed matrix,
+  traceability, compact evidence, and `git diff --check`; no concrete defect remains.
+- Status is `verified_unpublished`. Blockers and Owner action: none. Exact next action: stage the
+  reviewed allowlist individually, run cached pre-publication gates, commit, and push normally.
+  V1-018 and the separate continuation automation remain untouched, and the property-rental
+  supervisor remains disabled.

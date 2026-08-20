@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Final
+from unicodedata import normalize
 
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
@@ -38,7 +39,7 @@ class PasswordHashService:
 
     def hash_password(self, password: str) -> PasswordCredentialMaterial:
         """Hash a password with the current Argon2id policy and a fresh random salt."""
-        encoding = self._hasher.hash(password)
+        encoding = self._hasher.hash(normalize("NFC", password))
         parameters = _ARGON2ID_PARAMETERS
         metadata = MappingProxyType(
             {
@@ -59,7 +60,7 @@ class PasswordHashService:
     def verify_password(self, password: str, verifier_encoding: str) -> PasswordVerification:
         """Verify a password and identify verifier material below the current policy."""
         try:
-            is_valid = self._hasher.verify(verifier_encoding, password)
+            is_valid = self._hasher.verify(verifier_encoding, normalize("NFC", password))
         except (InvalidHashError, VerificationError):
             return PasswordVerification(is_valid=False, needs_rehash=False)
         return PasswordVerification(
