@@ -50,9 +50,14 @@
   GitHub Actions run `32413282286` then passed all four jobs for `f1582eee406b14aeadfad22e58143d95c14f6b92`.
   Local HEAD, configured upstream, and remote branch HEAD were equal at that SHA before this
   focused metadata reconciliation.
-- The supervisor schedule remains intentionally disabled. V1-018 has not been implemented or
-  dispatched. Blockers: none. Idle reason: automation repair publication and restoration gates
-  must complete before the approved successor can be dispatched. Owner action: none.
-- Exact next action: Install and verify the repository-owned Hermes wrapper, pass deterministic
-  restoration probes, enable exactly one 30-minute schedule, then allow V1-018 to dispatch
-  automatically.
+- The repository-owned Hermes wrapper is installed and matches exactly. The single existing
+  Property Rental supervisor schedule `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is enabled at
+  1,800,000 ms. Its observed model-free restoration run completed `ok` in 214 ms without
+  dispatching V1-018, no overlapping cycle exists, and the next run is
+  `2026-08-20T20:31:43.487Z`.
+- V1-018 has not been implemented or dispatched. Blockers: none. Idle reason: the restored
+  healthy supervisor is waiting for its next scheduled cycle to dispatch the canonically
+  approved successor. Owner action: none.
+- Exact next action: Allow the enabled supervisor's next scheduled cycle at
+  `2026-08-20T20:31:43.487Z` to dispatch V1-018 automatically, then monitor its deterministic
+  stage evidence.

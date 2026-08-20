@@ -72,8 +72,8 @@
     "status": "approved_ready",
     "roadmap_id": "V1-018"
   },
-  "next_action": "Install and verify the repository-owned Hermes wrapper, pass deterministic restoration probes, enable exactly one 30-minute supervisor schedule, then allow V1-018 automatic dispatch.",
-  "idle_reason": "the approved V1-018 candidate is intentionally held while the published and remotely verified automation repair completes installation and scheduler-restoration gates",
+  "next_action": "Allow the enabled supervisor's next scheduled cycle at 2026-08-20T20:31:43.487Z to dispatch V1-018 automatically, then monitor its deterministic stage evidence.",
+  "idle_reason": "the restored healthy 30-minute supervisor is waiting for its next scheduled cycle to dispatch the approved V1-018 candidate",
   "owner_action": "none",
   "blockers": [],
   "repair": {
@@ -129,13 +129,13 @@
     "metadata_reconciliation": "current focused metadata-only reconciliation"
   },
   "automation_repair": {
-    "status": "published_awaiting_restoration",
+    "status": "restored",
     "baseline": "8a27a4c75059f862a93856ffba51006115481d98",
     "branch": "implementation/foundation",
     "changed_path_count": 24,
     "v1_017_product_modified": false,
     "v1_018_implementation_started": false,
-    "scheduler_enabled": false,
+    "scheduler_enabled": true,
     "verification": {
       "focused_automation_tests": 80,
       "compact_state_routing": "PASS",
@@ -289,10 +289,28 @@
       "successful_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32413282286",
       "successful_ci_conclusion": "success",
       "successful_ci_jobs": 4,
+      "metadata_reconciliation_commit": "652d379b4c7931db896e1e810ca087ccdbf16b92",
+      "metadata_ci_run_id": 32413711833,
+      "metadata_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32413711833",
+      "metadata_ci_conclusion": "success",
       "local_upstream_remote_sha_equal": true
     },
-    "next_action": "Install and verify the repository-owned Hermes wrapper, pass deterministic restoration probes, enable exactly one 30-minute supervisor schedule, then allow V1-018 automatic dispatch.",
-    "timestamp": "2026-08-20T20:20:11Z"
+    "restoration": {
+      "status": "healthy",
+      "installed_wrapper_matches_repository": true,
+      "schedule_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+      "schedule_count": 1,
+      "enabled_schedule_count": 1,
+      "interval_ms": 1800000,
+      "health_run_id": "manual:658ffdaf-1ac1-45a6-a842-f5f7d7a226eb:1787257643630:7",
+      "health_run_status": "ok",
+      "health_run_duration_ms": 214,
+      "next_run_at_ms": 1787257903487,
+      "next_run_at": "2026-08-20T20:31:43.487Z",
+      "overlapping_immediate_cycle": false
+    },
+    "next_action": "Allow the enabled supervisor's next scheduled cycle at 2026-08-20T20:31:43.487Z to dispatch V1-018 automatically, then monitor its deterministic stage evidence.",
+    "timestamp": "2026-08-20T20:27:47Z"
   },
   "owner_decisions": {
     "password": "validate supplied value as 15-128 Unicode code points; NFC-normalize; revalidate normalized result as nonempty and 15-128 code points; blocklist, hash, and verify the complete normalized value without truncation; preserve spaces, paste, password managers, Unicode, no composition/rotation, and local compromised/common/expected/project-context rejection",
