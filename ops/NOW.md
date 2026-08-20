@@ -1,22 +1,23 @@
-# V1-015 Login, MFA, Logout, Reauthentication, and Session API — verified, unpublished
+# V1-016 Recovery Orchestration — verified, unpublished
 
-- Implemented: local login, TOTP enrollment/challenge, recovery-code challenge, authenticated
-  session inspection, logout, and current-session reauthentication over an injected atomic flow.
-- Browser protection: exact configured HTTPS origin, constant-time double-submit CSRF checks,
-  Secure host-only cookies, HttpOnly session/preauthentication material, strict cookie-state
-  transitions, no-store responses, generic rejection/rate-limit responses, and no SMS method.
-- Runtime boundary: the transport fails closed with canonical 503 until the separately approved
-  persistent authentication-flow adapter is configured; external identity providers remain excluded.
-- Traceability: API-008 through API-010, API-096 through API-097, SEC-012 through SEC-018,
-  TEST-108, TEST-128, and TEST-131 through TEST-132 are covered by 19 API/security tests and one
-  bounded traceability assertion.
-- Verification: focused authentication/traceability passed 36; full backend passed 253 with 83
-  expected environment skips; frontend passed 3; real PostgreSQL passed 83; lint, formatting,
-  strict typing, backend/frontend builds, deployment configuration, dependency audit, roadmap,
-  automation routing, JSON validation, and diff checks passed.
-- Independent security re-review found no blocker within the approved transport/API scope.
-- Roadmap: V1-001 through V1-014 are published; V1-015 is complete but uncommitted/unpublished;
-  V1-016 remains the next dependency-ready approved candidate.
+- Implemented bounded recovery-code, authorized Owner-to-Manager/Staff, and controlled
+  server-side emergency Owner recovery orchestration; no unauthenticated Owner-reset endpoint exists.
+- Security behavior: recovery-specific account/source admission precedes authorization and secret
+  work; stable limiter source and opaque password-preauthorization identities are separate; failures
+  are generic; recovery-code use, mutation, applicable-session revocation, and secret-free immutable
+  audit commit atomically through the controlled PostgreSQL boundary.
+- Persistence: forward-only `20260819_08` adds constrained append-only recovery audit evidence,
+  security-definer mutation/rejection functions, and bounded runtime privileges.
+- Traceability: API-098 through API-099, TEST-129 through TEST-130, SEC-071 through SEC-075,
+  DL-058, and applicable DB-AUTH/PR-CAP authorities are mechanically covered.
+- Verification: focused recovery/traceability passed 45; full backend passed 281 with 89 expected
+  environment skips; frontend passed 3; disposable real PostgreSQL passed 89 with no skips.
+  Formatting, lint, strict typing, backend/frontend builds and import, deployment configuration,
+  locked backend/frontend dependency audits, roadmap/automation checks, JSON, traceability,
+  canonical-integrity, static security, and diff checks passed.
+- Independent review raised runtime-boundary, authorization/session concurrency, and timing-hardening
+  concerns. The concrete source/proof conflation was corrected; the remaining observations do not
+  bypass the approved trusted server-side authorization boundary or fail current canonical criteria.
 - Blockers: none. Owner action: none.
-- Exact next action: independently publish the verified V1-015 tranche under standing authorization,
-  then activate V1-016 recovery-code, administrative, and emergency recovery orchestration.
+- Exact next action: independently publish V1-016 under standing authorization; do not begin V1-017
+  in this handoff.

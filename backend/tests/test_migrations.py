@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import shutil
 import subprocess
@@ -24,7 +25,14 @@ from alembic.config import Config
 from alembic.script import ScriptDirectory
 from psycopg import sql
 
+from property_rental.account_recovery import (
+    AccountRecoveryConnection,
+    AccountRecoveryMutation,
+    AccountRecoveryRequest,
+    PostgresAccountRecoveryRepository,
+)
 from property_rental.app import create_app
+from property_rental.password_security import PasswordHashService
 from property_rental.recovery_code_consumption import (
     PostgresRecoveryCodeConsumptionRepository,
     RecoveryCodeConsumptionConnection,
@@ -624,7 +632,7 @@ def test_runtime_has_only_bounded_password_credential_privileges() -> None:
                 cursor.execute(
                     """
                     UPDATE app.password_credentials
-                    SET verifier_encoding = '$adaptive$params$forbiddenchange'
+                    SET created_at = statement_timestamp()
                     """
                 )
 
@@ -2957,3 +2965,341 @@ def test_browser_session_migration_refuses_destructive_downgrade() -> None:
                 assert cursor.fetchone() == ("app.browser_sessions",)
                 cursor.execute("SELECT version_num FROM alembic_version")
                 assert cursor.fetchone() == ("20260819_07",)
+
+
+def test_account_recovery_audit_storage_is_bounded_immutable_and_secret_free() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'app'
+                  AND table_name = 'account_recovery_audit_events'
+                ORDER BY ordinal_position
+                """
+            )
+            assert [row[0] for row in cursor.fetchall()] == [
+                "event_id",
+                "actor_id",
+                "target_actor_id",
+                "occurred_at",
+                "correlation_id",
+                "recovery_mode",
+                "procedure_identity",
+                "reason",
+                "outcome",
+                "previous_state",
+                "resulting_state",
+                "password_changed",
+                "mfa_disabled",
+                "recovery_code_consumed",
+                "sessions_revoked",
+            ]
+            cursor.execute(
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'app'
+                  AND table_name = 'account_recovery_audit_events'
+                  AND column_name ~ '(password|verifier|ciphertext|nonce|token|candidate)'
+                """
+            )
+            assert cursor.fetchall() == [("password_changed",)]
+
+
+def test_account_recovery_functions_are_the_only_runtime_password_and_audit_boundary() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    has_column_privilege(
+                        'prm_runtime', 'app.password_credentials',
+                        'verifier_encoding', 'UPDATE'
+                    ),
+                    has_table_privilege(
+                        'prm_runtime', 'app.account_recovery_audit_events', 'INSERT'
+                    ),
+                    has_sequence_privilege(
+                        'prm_runtime', 'app.account_recovery_audit_events_event_id_seq', 'USAGE'
+                    ),
+                    has_function_privilege(
+                        'prm_runtime',
+                        'app.perform_account_recovery(uuid,uuid,uuid,text,text,text,text,text,jsonb,boolean,uuid)',
+                        'EXECUTE'
+                    ),
+                    has_function_privilege(
+                        'prm_runtime',
+                        'app.record_account_recovery_rejection(uuid,uuid,timestamptz,uuid,text,text,text)',
+                        'EXECUTE'
+                    )
+                """
+            )
+            assert cursor.fetchone() == (False, False, False, True, True)
+            cursor.execute(
+                """
+                SELECT prosecdef, proconfig
+                FROM pg_proc
+                WHERE oid IN (
+                    'app.perform_account_recovery(uuid,uuid,uuid,text,text,text,text,text,jsonb,boolean,uuid)'::regprocedure,
+                    'app.record_account_recovery_rejection(uuid,uuid,timestamptz,uuid,text,text,text)'::regprocedure
+                )
+                ORDER BY proname
+                """
+            )
+            assert cursor.fetchall() == [
+                (True, ["search_path=pg_catalog"]),
+                (True, ["search_path=pg_catalog"]),
+            ]
+
+
+def test_account_recovery_repository_atomically_resets_password_revokes_sessions_and_audits() -> (
+    None
+):
+    assert _run_alembic("upgrade", "head").returncode == 0
+    owner_id = uuid.uuid4()
+    target_id = uuid.uuid4()
+    session_id = uuid.uuid4()
+    initial = PasswordHashService().hash_password("initial-password")
+    replacement = PasswordHashService().hash_password("replacement-password")
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            for actor_id, username, policy in (
+                (owner_id, "recovery-owner", "required"),
+                (target_id, "recovery-manager", "required"),
+            ):
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, %s, %s, %s, 'active', %s, 'recovery-test')
+                    """,
+                    (actor_id, username, username, username, policy),
+                )
+            cursor.execute(
+                """
+                INSERT INTO app.password_credentials (
+                    actor_id, verifier_encoding, algorithm, work_factor_metadata, provenance
+                ) VALUES (%s, %s, %s, %s::jsonb, 'initial-credential')
+                """,
+                (
+                    target_id,
+                    initial.verifier_encoding,
+                    initial.algorithm,
+                    json.dumps(dict(initial.work_factor_metadata)),
+                ),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.browser_sessions (
+                    session_id, actor_id, token_verifier, verifier_algorithm,
+                    creation_provenance
+                ) VALUES (%s, %s, %s, 'sha256', 'recovery-test-session')
+                """,
+                (session_id, target_id, os.urandom(32)),
+            )
+        connection.commit()
+
+    request = AccountRecoveryRequest(
+        mode="administrative",
+        actor_id=owner_id,
+        target_actor_id=target_id,
+        actor_class="owner",
+        target_class="manager",
+        request_source="authenticated-owner",
+        correlation_id=uuid.uuid4(),
+        reason="authorized_account_recovery",
+    )
+    with psycopg.connect(_required_url(RUNTIME_URL_ENV)) as runtime_connection:
+        result = PostgresAccountRecoveryRepository(
+            connection=cast(AccountRecoveryConnection, runtime_connection),
+            recovery_code_verifier=Argon2idRecoveryCodeVerifierProvider(),
+        ).recover_atomically(
+            request,
+            AccountRecoveryMutation(password_credential=replacement),
+            None,
+        )
+
+    assert result.password_changed
+    assert result.sessions_revoked == 1
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT verifier_encoding FROM app.password_credentials WHERE actor_id = %s",
+                (target_id,),
+            )
+            assert cursor.fetchone() == (replacement.verifier_encoding,)
+            cursor.execute(
+                "SELECT revocation_reason FROM app.browser_sessions WHERE session_id = %s",
+                (session_id,),
+            )
+            assert cursor.fetchone() == ("password_reset",)
+            cursor.execute(
+                """
+                SELECT recovery_mode, outcome, password_changed, sessions_revoked
+                FROM app.account_recovery_audit_events
+                WHERE correlation_id = %s
+                """,
+                (request.correlation_id,),
+            )
+            assert cursor.fetchone() == ("administrative", "completed", True, 1)
+
+
+def test_owner_recovery_code_consumption_revocation_and_audit_are_one_transaction() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+    owner_id = uuid.uuid4()
+    set_id = uuid.uuid4()
+    code_id = uuid.uuid4()
+    session_id = uuid.uuid4()
+    candidate = "owner-recovery-code"
+    provider = Argon2idRecoveryCodeVerifierProvider()
+    verifier = provider.encode(candidate)
+
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Recovery Owner', 'recovery-owner', 'active',
+                          'required', 'recovery-code-test')
+                """,
+                (owner_id, f"recovery-code-owner-{owner_id.hex}"),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.recovery_code_sets (
+                    set_id, actor_id, created_by_actor_id, provenance
+                ) VALUES (%s, %s, %s, 'protected-owner-enrollment')
+                """,
+                (set_id, owner_id, owner_id),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.recovery_codes (
+                    code_id, set_id, verifier_encoding, algorithm,
+                    work_factor_metadata, provenance
+                ) VALUES (%s, %s, %s, %s, %s::jsonb, 'protected-owner-enrollment')
+                """,
+                (
+                    code_id,
+                    set_id,
+                    verifier.verifier_encoding,
+                    verifier.algorithm,
+                    json.dumps(dict(verifier.work_factor_metadata)),
+                ),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.browser_sessions (
+                    session_id, actor_id, token_verifier, verifier_algorithm,
+                    creation_provenance
+                ) VALUES (%s, %s, %s, 'sha256', 'recovery-code-session')
+                """,
+                (session_id, owner_id, os.urandom(32)),
+            )
+        connection.commit()
+
+    request = AccountRecoveryRequest(
+        mode="recovery_code",
+        actor_id=owner_id,
+        target_actor_id=owner_id,
+        actor_class="owner",
+        target_class="owner",
+        request_source="password-verified-preauth",
+        correlation_id=uuid.uuid4(),
+        reason="mfa_recovery",
+    )
+    with psycopg.connect(_required_url(RUNTIME_URL_ENV)) as runtime_connection:
+        result = PostgresAccountRecoveryRepository(
+            connection=cast(AccountRecoveryConnection, runtime_connection),
+            recovery_code_verifier=provider,
+        ).recover_atomically(request, AccountRecoveryMutation(), candidate)
+
+    assert result.recovery_code_consumed
+    assert result.sessions_revoked == 1
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT consumed_at IS NOT NULL FROM app.recovery_codes WHERE code_id = %s",
+                (code_id,),
+            )
+            assert cursor.fetchone() == (True,)
+            cursor.execute(
+                "SELECT revocation_reason FROM app.browser_sessions WHERE session_id = %s",
+                (session_id,),
+            )
+            assert cursor.fetchone() == ("mfa_recovery",)
+            cursor.execute(
+                """
+                SELECT recovery_mode, outcome, recovery_code_consumed, sessions_revoked
+                FROM app.account_recovery_audit_events
+                WHERE correlation_id = %s
+                """,
+                (request.correlation_id,),
+            )
+            assert cursor.fetchone() == ("recovery_code", "completed", True, 1)
+
+
+def test_account_recovery_audit_history_rejects_change_and_destruction() -> None:
+    assert _run_alembic("upgrade", "head").returncode == 0
+    target_id = uuid.uuid4()
+    with psycopg.connect(_required_url(MIGRATION_URL_ENV)) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s, %s, 'Audit Target', 'audit-target', 'active',
+                          'required', 'recovery-audit-test')
+                """,
+                (target_id, f"audit-target-{target_id.hex}"),
+            )
+            cursor.execute(
+                """
+                INSERT INTO app.account_recovery_audit_events (
+                    target_actor_id, correlation_id, recovery_mode,
+                    procedure_identity, reason, outcome, previous_state,
+                    resulting_state
+                ) VALUES (%s, %s, 'emergency', 'controlled-test-procedure',
+                          'documented_emergency_recovery', 'rejected', '{"state":"unknown"}',
+                          '{"state":"unchanged"}')
+                """,
+                (target_id, uuid.uuid4()),
+            )
+        connection.commit()
+
+        for statement in (
+            "UPDATE app.account_recovery_audit_events SET reason = 'changed'",
+            "DELETE FROM app.account_recovery_audit_events",
+            "TRUNCATE app.account_recovery_audit_events",
+        ):
+            with pytest.raises(psycopg.errors.IntegrityConstraintViolation):
+                with connection.cursor() as cursor:
+                    cursor.execute(statement)
+            connection.rollback()
+
+
+def test_account_recovery_migration_refuses_destructive_downgrade() -> None:
+    with _temporary_migration_database("prm_account_recovery_downgrade") as migration_url:
+        assert _run_alembic("upgrade", "20260819_08").returncode == 0
+
+        result = _run_alembic("downgrade", "20260819_07")
+
+        assert result.returncode != 0
+        assert "DB-AUTH-005 account-recovery migration is forward-only" in result.stderr
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT to_regclass('app.account_recovery_audit_events')")
+                assert cursor.fetchone() == ("app.account_recovery_audit_events",)
+                cursor.execute("SELECT version_num FROM alembic_version")
+                assert cursor.fetchone() == ("20260819_08",)

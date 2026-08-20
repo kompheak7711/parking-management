@@ -672,3 +672,58 @@ def test_authentication_api_has_bounded_traceability() -> None:
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert routed_authorities == set(entry["upstream_ids"])
+
+
+def test_account_recovery_orchestration_has_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    routed_authorities = {
+        "DB-AUTH-002",
+        "DB-AUTH-003",
+        "DB-AUTH-004",
+        "DB-AUTH-005",
+        "PR-CAP-009",
+        "API-098",
+        "API-099",
+        "TEST-129",
+        "TEST-130",
+        "SEC-071",
+        "SEC-072",
+        "SEC-075",
+        "DL-058",
+    }
+    expected_test_ids = {
+        "test_authorized_owner_administrative_recovery_applies_mutation_and_revocation_atomically",
+        "test_administrative_recovery_never_broadens_the_approved_matrix",
+        "test_rate_limit_is_checked_before_authorization_or_secret_work",
+        "test_owner_recovery_code_path_requires_owner_self_target_and_no_credential_mutation",
+        "test_recovery_code_orchestration_cannot_be_used_as_an_owner_reset",
+        "test_emergency_owner_recovery_requires_controlled_procedure_identity",
+        "test_emergency_recovery_rejects_missing_procedure_or_non_owner_target",
+        "test_administrative_and_emergency_paths_require_an_actual_recovery_mutation",
+        "test_authorization_or_repository_failure_is_generic_and_secret_free",
+        "test_invalid_recovery_code_is_outwardly_equivalent_to_authorization_denial_and_audited",
+        "test_rejected_recovery_fails_closed_when_immutable_audit_is_unavailable",
+        "test_recovery_audit_evidence_is_bounded_and_secret_free",
+        "test_recovery_reason_and_procedure_are_bounded_safe_identifiers",
+        "test_trusted_authorizer_resolves_classes_and_requires_password_preauthorization",
+        "test_trusted_authorizer_fails_closed_for_unknown_target_or_unverified_proof",
+        "test_trusted_authorizer_requires_registered_emergency_procedure_for_resolved_owner",
+        "test_postgres_administrative_recovery_mutates_revokes_and_audits_in_one_transaction",
+        "test_postgres_owner_recovery_code_is_consumed_with_revocation_and_audit_atomically",
+        "test_postgres_recovery_rolls_back_every_effect_when_a_required_step_fails",
+        "test_postgres_recovery_rejects_a_requested_bundle_that_mutates_nothing",
+        "test_account_recovery_audit_storage_is_bounded_immutable_and_secret_free",
+        "test_account_recovery_functions_are_the_only_runtime_password_and_audit_boundary",
+        "test_account_recovery_repository_atomically_resets_password_revokes_sessions_and_audits",
+        "test_owner_recovery_code_consumption_revocation_and_audit_are_one_transaction",
+        "test_account_recovery_audit_history_rejects_change_and_destruction",
+        "test_account_recovery_migration_refuses_destructive_downgrade",
+        "test_account_recovery_orchestration_has_bounded_traceability",
+    }
+
+    for test_id in expected_test_ids:
+        entry = entries_by_id[test_id]
+        assert entry["status"] == "implemented"
+        assert routed_authorities == set(entry["upstream_ids"])

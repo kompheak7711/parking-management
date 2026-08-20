@@ -9,7 +9,11 @@ packaged FastAPI service, environment-backed settings, minimal liveness and
 database-backed readiness endpoints, backend quality gates, a non-root container, and
 a bounded PostgreSQL development and migration foundation. It also exposes the bounded
 local login, TOTP MFA enrollment/challenge, recovery-code challenge, logout, session
-inspection, and reauthentication API over secure browser-cookie and CSRF transport. A
+inspection, and reauthentication API over secure browser-cookie and CSRF transport. The
+backend also provides atomic recovery-code, authorized Owner-to-Manager/Staff, and controlled
+server-side emergency Owner recovery orchestration with recovery-specific rate limiting,
+applicable-session revocation, and immutable secret-free audit evidence; it exposes no
+unauthenticated Owner-reset endpoint. A
 bounded frontend foundation provides a strict React/TypeScript/Vite build and a non-business
 bootstrap surface. Business workflow APIs, the runtime authentication-flow adapter, worker,
 business screens, and production deployment posture remain future work.
