@@ -3,18 +3,18 @@
   "phase": "Identity",
   "tranche": "Protected initial Owner CLI bootstrap command",
   "task": "Implement the approved bounded candidate: Protected initial Owner CLI bootstrap command",
-  "status": "active",
+  "status": "published",
   "active_cycle": "v1-017-protected-initial-owner-cli-bootstrap-command",
   "branch": "implementation/foundation",
-  "commit": "b397247839d6a8a85d10e0c3884bc3ef191d520e",
-  "timestamp": "2026-08-20T14:45:48Z",
+  "commit": "d2be562bb54d0111dd2448e94fd33065e71fef22",
+  "timestamp": "2026-08-20T14:50:15Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
     "basis": "structured durable-v1 successor selection",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": [
     "API-100",
@@ -78,7 +78,7 @@
     "status": "approved_ready",
     "roadmap_id": "V1-017"
   },
-  "next_action": "Stage the reviewed 28-path allowlist individually, run cached pre-publication checks, commit, and push V1-017 normally",
+  "next_action": "V1-017 is published and CI-verified; stop without selecting or beginning V1-018",
   "idle_reason": null,
   "owner_action": "none",
   "blockers": [],
@@ -92,7 +92,7 @@
     "suspected_secret": false,
     "scope_expansion": false,
     "protected_operation": false,
-    "last_outcome": "third fresh read-only final review PASS; verified_unpublished"
+    "last_outcome": "third fresh read-only final review PASS; implementation commit published and all GitHub Actions jobs passed; compact publication reconciliation recorded in this focused metadata commit"
   },
   "evidence_applicability": {
     "complete_profile_remains_applicable": true,
@@ -117,11 +117,16 @@
     ]
   },
   "publication": {
-    "status": "unpublished",
-    "commit_completed": false,
-    "push_completed": false,
-    "ci_completed": false,
-    "sha_reconciled": false
+    "status": "published",
+    "implementation_commit": "d2be562bb54d0111dd2448e94fd33065e71fef22",
+    "commit_completed": true,
+    "push_completed": true,
+    "ci_completed": true,
+    "ci_run_id": 32382252402,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32382252402",
+    "ci_conclusion": "success",
+    "sha_reconciled": true,
+    "metadata_reconciliation": "this focused metadata commit"
   },
   "owner_decisions": {
     "password": "validate supplied value as 15-128 Unicode code points; NFC-normalize; revalidate normalized result as nonempty and 15-128 code points; blocklist, hash, and verify the complete normalized value without truncation; preserve spaces, paste, password managers, Unicode, no composition/rotation, and local compromised/common/expected/project-context rejection",

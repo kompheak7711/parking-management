@@ -1,8 +1,7 @@
-# V1-017 Protected Initial Owner CLI Bootstrap — verified, unpublished
+# V1-017 Protected Initial Owner CLI Bootstrap — published and CI-verified
 
-- Baseline remains synchronized at `b397247839d6a8a85d10e0c3884bc3ef191d520e` on
-  `implementation/foundation`; the reviewed 28-path V1-017 allowlist remains dirty and
-  unpublished.
+- The reviewed 28-path V1-017 implementation is published on `implementation/foundation` as
+  `d2be562bb54d0111dd2448e94fd33065e71fef22`.
 - The CLI-only bootstrap implements the approved password, TOTP, one-time recovery-code,
   ceremony-deadline, atomic PostgreSQL, least-privilege identity, permanent closure, and
   secret-free audit rules. No bootstrap or Owner-reset HTTP operation exists.
@@ -25,7 +24,9 @@
 - A third fresh read-only Codex review returned explicit PASS after independently checking the
   complete 28-path diff, exact runtime/OpenAPI method inventory, large-object fail-closed matrix,
   traceability, compact evidence, and `git diff --check`; no concrete defect remains.
-- Status is `verified_unpublished`. Blockers and Owner action: none. Exact next action: stage the
-  reviewed allowlist individually, run cached pre-publication gates, commit, and push normally.
-  V1-018 and the separate continuation automation remain untouched, and the property-rental
-  supervisor remains disabled.
+- GitHub Actions run `32382252402` passed all four jobs for the implementation commit: backend
+  quality/tests/build/traceability, frontend quality/tests/build, PostgreSQL migration, and
+  dependency security.
+- Status is `published`. Blockers and Owner action: none. This focused metadata reconciliation
+  records the completed publication; stop without selecting or beginning V1-018. The separate
+  continuation automation remains untouched, and the property-rental supervisor remains disabled.
