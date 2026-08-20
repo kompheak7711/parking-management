@@ -25,7 +25,13 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 if [ "$command_kind" = gateway-call ]; then
-  model="$(printf '%s' "$params" | jq -r '.model')"
+  printf '%s' "$params" | jq -e '
+    (has("model") | not)
+    and .agentId == "property-rental-supervisor"
+    and (.sessionId | type == "string" and length > 0)
+    and (.message | type == "string" and length > 0)
+  ' >/dev/null
+  model=gateway-default
   session="$(printf '%s' "$params" | jq -r '.sessionId')"
   message="$(printf '%s' "$params" | jq -r '.message')"
 else
@@ -43,6 +49,14 @@ grep -q 'openclaw-hermes-task.sh' "$message_capture"
 task_file="$(sed -n 's/.*openclaw-hermes-task.sh \([^`]*\)`.*/\1/p' "$message_capture" | tail -1)"
 [ -f "$task_file" ]
 [ -n "$(tr -d '[:space:]' <"$task_file")" ]
+if [ "$FAKE_SCENARIO" = gateway_infrastructure_rejection ]; then
+  [ "$command_kind" = gateway-call ]
+  printf '%s\n' '{"ok":false,"error":{"code":"INVALID_REQUEST","category":"provider/model override not authorized","message":"model override rejected: bearer secret-value and full task body must not persist"},"usage":{"total":0}}'
+  exit 1
+fi
+if [ -n "${FAKE_MODEL_CALLS:-}" ]; then
+  printf '%s\n' "$model" >>"$FAKE_MODEL_CALLS"
+fi
 if [ "$FAKE_SCENARIO" = gateway_timeout_oversized ] && [ "$call_number" -eq 1 ]; then
   [ "$command_kind" = gateway-call ]
   printf '%s\n' '{"ok":false,"error":{"code":"TIMEOUT","message":"gateway request timed out"}}'
@@ -72,13 +86,13 @@ case "$FAKE_SCENARIO:$model" in
     printf '%s\n' '{"usage":{"total":1300}}'
     exit 0
     ;;
-  codex_stall:openai/*)
+  codex_stall:gateway-default)
     printf '%s\n' '{"usage":{"total":1500}}'
     exit 0
     ;;
 esac
 case "$FAKE_SCENARIO:$model" in
-  local_fail:openai/*|local_stall:openai/*)
+  local_fail:gateway-default|local_stall:gateway-default)
     grep -q 'Execution route override: codex-escalation' "$message_capture"
     grep -q 'PROPERTY_RENTAL_HERMES_ROUTE=codex' "$message_capture"
     ;;

@@ -14,6 +14,7 @@ lock_dir="$state_dir/lock"
 attempt_dir="$state_dir/fingerprint-attempts"
 exhausted_dir="$state_dir/repair-exhausted"
 oversized_dir="$state_dir/oversized-fingerprints"
+infrastructure_dir="$state_dir/infrastructure-failures"
 max_repair_attempts="${PROPERTY_RENTAL_MAX_REPAIR_ATTEMPTS:-2}"
 token_ceiling=60000
 case "$max_repair_attempts" in
@@ -25,7 +26,7 @@ preflight="$($repo/scripts/openclaw-supervisor-preflight.sh)"
 actionable="$(printf '%s' "$preflight" | jq -r '.actionable')"
 [ "$actionable" = true ] || exit 0
 
-mkdir -p "$state_dir" "$attempt_dir" "$exhausted_dir" "$oversized_dir"
+mkdir -p "$state_dir" "$attempt_dir" "$exhausted_dir" "$oversized_dir" "$infrastructure_dir"
 if ! mkdir "$lock_dir" 2>/dev/null; then
   exit 0
 fi
@@ -92,6 +93,44 @@ gateway_timed_out() {
   jq -e '.. | strings | select(test("timeout|timed out"; "i"))' "$result_file" >/dev/null 2>&1
 }
 
+gateway_infrastructure_category() {
+  jq -er '
+    ([.. | objects | select(has("usage")) | .usage.total? // empty] | max // 0) as $tokens
+    | ([.. | objects | .error? // empty | objects | .code? // empty] | any(. == "INVALID_REQUEST")) as $invalid_request
+    | ([.. | objects | .error? // empty | objects | (.category? // empty), (.message? // empty) | strings] | join(" ")) as $detail
+    | if $tokens == 0
+        and $invalid_request
+        and ($detail | test("provider/model override.*not authorized|model override.*(not authorized|rejected)"; "i"))
+      then "provider_model_override_not_authorized"
+      else empty
+      end
+  ' "$result_file" 2>/dev/null
+}
+
+persist_infrastructure_failure() {
+  infrastructure_file="$infrastructure_dir/$attempt_key.json"
+  infrastructure_tmp="$(mktemp "$infrastructure_dir/.infrastructure-$attempt_key.XXXXXX")"
+  jq -cn \
+    --arg category "$gateway_failure_category" \
+    '{status:"gateway_infrastructure_failure",category:$category}' \
+    >"$infrastructure_tmp"
+  mv "$infrastructure_tmp" "$infrastructure_file"
+}
+
+rollback_attempt_reservation() {
+  [ -f "$attempt_file" ] || return 0
+  reserved_attempts="$(cat "$attempt_file")"
+  [ "$reserved_attempts" = "$attempts" ] || return 0
+  previous_attempts=$((attempts - 1))
+  if [ "$previous_attempts" -eq 0 ] && [ "$attempt_file_existed" = false ]; then
+    rm -f "$attempt_file"
+    return 0
+  fi
+  attempt_tmp="$(mktemp "$attempt_dir/.attempt-$attempt_key.XXXXXX")"
+  printf '%s\n' "$previous_attempts" >"$attempt_tmp"
+  mv "$attempt_tmp" "$attempt_file"
+}
+
 write_compact_fallback_message() {
   compact_route="$1"
   compact_model="$2"
@@ -109,13 +148,37 @@ execute_cycle() {
   cycle_model="$2"
   cycle_session="$3"
   cycle_message_file="$4"
+  execution_failure_kind=model_or_gateway
+
+  if [ "$cycle_route" = local ]; then
+    local_session="$cycle_session-local-$(date -u '+%Y%m%dT%H%M%S')-$$-$cycle"
+    : >"$result_file"
+    if "$openclaw_bin" agent \
+      --local \
+      --agent property-rental-supervisor \
+      --session-id "$local_session" \
+      --message-file "$cycle_message_file" \
+      --model "$cycle_model" \
+      --thinking low \
+      --timeout 1800 \
+      --json >"$result_file"; then
+      execution_route="$cycle_route"
+      execution_session="$local_session"
+      record_usage model_cycle "$execution_route" "$cycle_model" "$execution_session"
+      return 0
+    fi
+    execution_route="$cycle_route"
+    execution_session="$local_session"
+    record_usage model_failure "$execution_route" "$cycle_model" "$execution_session"
+    return 1
+  fi
+
   gateway_params="$(jq -cn \
     --rawfile message "$cycle_message_file" \
     --arg agent_id property-rental-supervisor \
     --arg session_id "$cycle_session" \
-    --arg model "$cycle_model" \
     --arg idempotency_key "$cycle_session" \
-    '{message:$message,agentId:$agent_id,sessionId:$session_id,model:$model,thinking:"low",timeout:1800,idempotencyKey:$idempotency_key}')"
+    '{message:$message,agentId:$agent_id,sessionId:$session_id,thinking:"low",timeout:1800,idempotencyKey:$idempotency_key}')"
   : >"$result_file"
   if "$openclaw_bin" gateway call agent \
     --expect-final \
@@ -130,6 +193,14 @@ execute_cycle() {
 
   execution_route="$cycle_route-gateway"
   execution_session="$cycle_session"
+  if gateway_failure_category="$(gateway_infrastructure_category)"; then
+    execution_failure_kind=infrastructure
+    record_usage gateway_infrastructure_failure "$execution_route" "$cycle_model" "$execution_session"
+    persist_infrastructure_failure
+    rollback_attempt_reservation
+    echo "Gateway infrastructure rejected the request before model execution; candidate attempt reservation was released (category: $gateway_failure_category)." >&2
+    return 1
+  fi
   record_usage gateway_failure "$execution_route" "$cycle_model" "$execution_session"
   gateway_timed_out || return 1
 
@@ -196,7 +267,9 @@ while [ "$cycle" -lt "$max_cycles" ]; do
   attempt_file="$attempt_dir/$attempt_key"
   exhausted_file="$exhausted_dir/$attempt_key.json"
   attempts=0
+  attempt_file_existed=false
   if [ -f "$attempt_file" ]; then
+    attempt_file_existed=true
     attempts="$(cat "$attempt_file")"
   fi
   if [ "$attempts" -ge "$max_repair_attempts" ]; then
@@ -215,7 +288,9 @@ while [ "$cycle" -lt "$max_cycles" ]; do
     exit 0
   fi
   attempts=$((attempts + 1))
-  printf '%s\n' "$attempts" >"$attempt_file"
+  attempt_tmp="$(mktemp "$attempt_dir/.attempt-$attempt_key.XXXXXX")"
+  printf '%s\n' "$attempts" >"$attempt_tmp"
+  mv "$attempt_tmp" "$attempt_file"
   : >"$result_file"
 
   task_packet="$($repo/scripts/openclaw-task-packet.sh)"
@@ -241,6 +316,7 @@ while [ "$cycle" -lt "$max_cycles" ]; do
 
   session_id="property-rental-$fingerprint-$route-$attempts"
   if ! execute_cycle "$route" "$model" "$session_id" "$message_file"; then
+    [ "$execution_failure_kind" != infrastructure ] || exit 69
     if [ "$route" != local ]; then
       if [ "$attempts" -lt "$max_repair_attempts" ]; then
         cycle=$((cycle + 1))
@@ -254,6 +330,7 @@ while [ "$cycle" -lt "$max_cycles" ]; do
     printf '\nExecution route override: codex-escalation. Invoke Hermes with PROPERTY_RENTAL_HERMES_ROUTE=codex. The local execution failed; diagnose it and perform one bounded Codex escalation.\n' >>"$message_file"
     session_id="property-rental-$fingerprint-$route-$attempts"
     if ! execute_cycle "$route" "$model" "$session_id" "$message_file"; then
+      [ "$execution_failure_kind" != infrastructure ] || exit 69
       if [ "$attempts" -lt "$max_repair_attempts" ]; then
         cycle=$((cycle + 1))
         continue
@@ -272,6 +349,7 @@ while [ "$cycle" -lt "$max_cycles" ]; do
     printf '\nExecution route override: codex-escalation. Invoke Hermes with PROPERTY_RENTAL_HERMES_ROUTE=codex. Local execution returned without advancing compact state; diagnose and complete one bounded Codex escalation.\n' >>"$message_file"
     session_id="property-rental-$fingerprint-$route-$attempts"
     if ! execute_cycle "$route" "$model" "$session_id" "$message_file"; then
+      [ "$execution_failure_kind" != infrastructure ] || exit 69
       if [ "$attempts" -lt "$max_repair_attempts" ]; then
         cycle=$((cycle + 1))
         continue

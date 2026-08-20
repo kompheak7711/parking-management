@@ -76,12 +76,75 @@ run_case() {
   }
 }
 
-run_case high high openai/gpt-5.6-sol
-run_case unknown unknown openai/gpt-5.6-sol
+run_case high high gateway-default
+run_case unknown unknown gateway-default
 run_case local_success low ollama/qwen35-hermes:latest
-run_case local_fail low ollama/qwen35-hermes:latest,openai/gpt-5.6-sol
-run_case local_stall low ollama/qwen35-hermes:latest,openai/gpt-5.6-sol
-run_case mislabeled_sensitive low openai/gpt-5.6-sol 'payment formatting'
+run_case local_fail low ollama/qwen35-hermes:latest,gateway-default
+run_case local_stall low ollama/qwen35-hermes:latest,gateway-default
+run_case mislabeled_sensitive low gateway-default 'payment formatting'
+
+# Low-risk work selects the configured local model only on a direct --local
+# invocation, with a dispatcher-owned session distinct from the deterministic
+# gateway session name that could otherwise reuse conversational context.
+local_calls="$test_root/local_success/calls"
+[ "$(cut -d '|' -f 3 "$local_calls")" = local ]
+local_session="$(cut -d '|' -f 2 "$local_calls")"
+case "$local_session" in
+  property-rental-*-local-1-local-*) ;;
+  *) echo "low-risk local route did not use a fresh dispatcher-owned session: $local_session" >&2; exit 1 ;;
+esac
+
+# Healthy high-risk gateway dispatch advances compact state while the fixture's
+# gateway contract assertion proves no unauthorized model parameter was sent.
+jq -e '.status == "published" and .next_action == ""' \
+  "$test_root/high/repo/ops/STATE.json" >/dev/null
+
+# Two identical structured gateway rejections that occur before model execution
+# are infrastructure failures, not candidate implementation/repair attempts.
+make_repo gateway_infrastructure_rejection high 'bounded infrastructure rejection'
+infrastructure_repo="$test_root/gateway_infrastructure_rejection/repo"
+infrastructure_state_dir="$test_root/gateway_infrastructure_rejection/state"
+infrastructure_calls="$test_root/gateway_infrastructure_rejection/calls"
+infrastructure_model_calls="$test_root/gateway_infrastructure_rejection/model-calls"
+mkdir -p "$infrastructure_state_dir/fingerprint-attempts"
+infrastructure_preflight="$(PROPERTY_RENTAL_REPO="$infrastructure_repo" "$infrastructure_repo/scripts/openclaw-supervisor-preflight.sh")"
+infrastructure_attempt_key="$(printf '%s' "$infrastructure_preflight" | jq -c '{attempt_tranche_id,active_cycle,status,next_action,state_issue,repair_failure}' | shasum -a 256 | awk '{print $1}')"
+infrastructure_attempt_file="$infrastructure_state_dir/fingerprint-attempts/$infrastructure_attempt_key"
+printf '0\n' >"$infrastructure_attempt_file"
+for invocation in 1 2; do
+  set +e
+  FAKE_CALLS="$infrastructure_calls" \
+  FAKE_MODEL_CALLS="$infrastructure_model_calls" \
+  FAKE_SCENARIO=gateway_infrastructure_rejection \
+  PROPERTY_RENTAL_REPO="$infrastructure_repo" \
+  PROPERTY_RENTAL_DISPATCH_STATE_DIR="$infrastructure_state_dir" \
+  PROPERTY_RENTAL_OPENCLAW_BIN="$fake_openclaw" \
+  PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES=1 \
+    "$infrastructure_repo/scripts/openclaw-supervisor-dispatch.sh" \
+    >"$test_root/gateway_infrastructure_rejection/stdout.$invocation" \
+    2>"$test_root/gateway_infrastructure_rejection/stderr.$invocation"
+  infrastructure_exit=$?
+  set -e
+  [ "$infrastructure_exit" -eq 69 ]
+  [ "$(cat "$infrastructure_attempt_file")" -eq 0 ]
+done
+[ "$(wc -l <"$infrastructure_calls" | tr -d ' ')" -eq 2 ]
+[ ! -s "$infrastructure_model_calls" ]
+infrastructure_diagnostic="$infrastructure_state_dir/infrastructure-failures/$infrastructure_attempt_key.json"
+jq -e '
+  keys == ["category", "status"]
+  and .status == "gateway_infrastructure_failure"
+  and .category == "provider_model_override_not_authorized"
+' "$infrastructure_diagnostic" >/dev/null
+if grep -Eqi 'bearer|secret-value|full task body|Hermes|verification failure|bounded Codex failure' \
+  "$infrastructure_diagnostic" \
+  "$test_root/gateway_infrastructure_rejection/stderr.1" \
+  "$test_root/gateway_infrastructure_rejection/stderr.2"; then
+  echo 'infrastructure diagnostic leaked raw detail or masqueraded as model/Hermes/verification failure' >&2
+  exit 1
+fi
+grep -q 'Gateway infrastructure rejected the request before model execution' \
+  "$test_root/gateway_infrastructure_rejection/stderr.1"
 
 # A gateway timeout must use a dispatcher-owned, fresh local session whose
 # message contains compact state and the task instruction, never the canonical
@@ -180,7 +243,7 @@ set -e
 [ "$(find "$gateway_state_dir/oversized-fingerprints" -type f -name '*.json' | wc -l | tr -d ' ')" -eq 2 ]
 
 # The authorized ceiling remains exactly 60000: a 60000-token cycle succeeds.
-run_case ceiling_exact high openai/gpt-5.6-sol
+run_case ceiling_exact high gateway-default
 
 make_repo codex_stall high 'repair approved CI failure'
 stall_repo="$test_root/codex_stall/repo"
