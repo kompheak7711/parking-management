@@ -1,90 +1,84 @@
 {
   "schema_version": 1,
   "phase": "Identity",
-  "tranche": "Recovery-code, administrative, and emergency recovery orchestration",
-  "task": "Implement the approved bounded candidate: Recovery-code, administrative, and emergency recovery orchestration",
-  "status": "published",
-  "active_cycle": "v1-016-recovery-code-administrative-and-emergency-recovery-orchestration",
+  "tranche": "Protected initial Owner CLI bootstrap command",
+  "task": "Implement the approved bounded candidate: Protected initial Owner CLI bootstrap command",
+  "status": "active",
+  "active_cycle": "v1-017-protected-initial-owner-cli-bootstrap-command",
   "branch": "implementation/foundation",
   "commit": "8b4cfb33b70e47710002c09dd333085bef414a20",
-  "timestamp": "2026-08-20T04:19:23Z",
+  "timestamp": "2026-08-20T04:21:48Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
     "basis": "structured durable-v1 successor selection",
     "implementation_started": true,
-    "implementation_completed": true,
-    "publication_completed": true
+    "implementation_completed": false,
+    "publication_completed": false
   },
   "authorities": [
-    "API-098-099",
-    "TEST-129-130",
-    "SEC-071-075",
-    "DL-058"
+    "API-100",
+    "TEST-133-134",
+    "DEPLOY-070-072",
+    "DL-059"
   ],
   "touched_areas": [
-    "authorized recovery mutations, revocation, rate limiting, audit"
+    "interactive secret input, first-Owner creation, MFA gating, one-time codes"
   ],
-  "tests": [
-    "focused recovery and traceability: 45 passed",
-    "full backend: 281 passed, 89 environment skips",
-    "frontend: 3 passed",
-    "disposable PostgreSQL migration gate: 89 passed, 0 skipped",
-    "format, lint, strict typing, builds/import, deployment, dependency, roadmap, automation, traceability, JSON, canonical-integrity, security, and diff gates: passed"
-  ],
+  "tests": [],
   "relevant_docs": [
-    "API-098-099",
-    "TEST-129-130",
-    "SEC-071-075",
-    "DL-058"
+    "API-100",
+    "TEST-133-134",
+    "DEPLOY-070-072",
+    "DL-059"
   ],
   "roadmap": {
     "id": "property-rental-v1",
-    "current_id": "V1-016",
+    "current_id": "V1-017",
     "total": 60
   },
   "next_candidate": {
-    "id": "V1-016",
-    "order": 16,
+    "id": "V1-017",
+    "order": 17,
     "phase": "Identity",
-    "task": "Recovery-code, administrative, and emergency recovery orchestration",
+    "task": "Protected initial Owner CLI bootstrap command",
     "dependencies": [
-      "V1-010",
-      "V1-014"
+      "V1-012",
+      "V1-013"
     ],
     "authorities": [
-      "API-098-099",
-      "TEST-129-130",
-      "SEC-071-075",
-      "DL-058"
+      "API-100",
+      "TEST-133-134",
+      "DEPLOY-070-072",
+      "DL-059"
     ],
     "include": [
-      "authorized recovery mutations, revocation, rate limiting, audit"
+      "interactive secret input, first-Owner creation, MFA gating, one-time codes"
     ],
     "exclude": [
-      "unauthenticated Owner reset"
+      "actual production credentials or web bootstrap"
     ],
     "risk_class": "high",
     "acceptance_profile": "database",
     "authorization": "durable_v1",
     "status": "approved_ready",
-    "roadmap_id": "V1-016"
+    "roadmap_id": "V1-017"
   },
-  "next_action": "Implement the approved bounded candidate: Recovery-code, administrative, and emergency recovery orchestration",
+  "next_action": "Implement the approved bounded candidate: Protected initial Owner CLI bootstrap command",
   "idle_reason": null,
   "owner_action": "none",
   "blockers": [],
   "repair": {
-    "tranche_id": "V1-016",
+    "tranche_id": "V1-017",
     "failure": null,
     "scope_preserved": true,
-    "attempts": 1,
+    "attempts": 0,
     "max_attempts": 2,
     "requires_owner_decision": false,
     "suspected_secret": false,
     "scope_expansion": false,
     "protected_operation": false,
-    "last_outcome": "verified_unpublished"
+    "last_outcome": null
   },
   "secrets_present": false
 }
