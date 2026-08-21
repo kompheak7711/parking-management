@@ -385,6 +385,166 @@
       "notes": "Authorization, actor, capability, role, Property, and object headers are inert when no trusted external provider is injected, so client assertions cannot establish identity or authority."
     },
     {
+      "test_id": "test_administration_openapi_exposes_only_api_079_080_operations_and_safe_fields",
+      "upstream_ids": ["API-079", "API-080", "SEC-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "The versioned OpenAPI contract exposes every approved account, session-revocation, capability, role-bundle, and role-assignment operation without credential or secret fields."
+    },
+    {
+      "test_id": "test_every_administration_operation_denies_without_an_authenticated_actor",
+      "upstream_ids": ["API-079", "API-080", "PR-AUTH-001", "SEC-023"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "All account and capability administration operations deny by default before an application service can read or mutate state."
+    },
+    {
+      "test_id": "test_property_scoped_routes_reject_an_access_grant_for_another_property",
+      "upstream_ids": ["API-079", "API-080", "SEC-019", "SEC-023"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "A provider-established administration capability for another Property cannot read account or role-bundle state."
+    },
+    {
+      "test_id": "test_missing_capability_and_inactive_sessions_fail_closed",
+      "upstream_ids": ["API-008", "API-009", "API-079", "API-080", "SEC-014", "SEC-017", "SEC-023", "TEST-084"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Missing permission and provider-rejected disabled, stale, or revoked browser sessions fail closed before any administration application call."
+    },
+    {
+      "test_id": "test_every_browser_mutation_requires_exact_origin_and_csrf_proof",
+      "upstream_ids": ["API-008", "API-079", "API-080", "SEC-016", "SEC-023", "TEST-085", "TEST-128"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Every account, session, role-bundle, and assignment mutation rejects missing CSRF proof or a non-allowlisted browser origin before application work."
+    },
+    {
+      "test_id": "test_identifier_mutations_require_exact_object_grants",
+      "upstream_ids": ["API-009", "API-079", "API-080", "SEC-019", "SEC-023", "TEST-084"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Identifier mutations require the provider-established exact account or role-bundle object grant before authoritative existence resolution, then require the matching Property and capability."
+    },
+    {
+      "test_id": "test_account_list_and_creation_are_scoped_audited_and_never_return_credentials",
+      "upstream_ids": ["API-011", "API-012", "API-079", "PR-AUTH-001", "SEC-019", "SEC-020", "SEC-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Account list and creation pass trusted Property, actor, pagination, and correlation context to the application boundary, return no credential material, and creation returns 201 with Location."
+    },
+    {
+      "test_id": "test_account_disable_and_explicit_session_revocation_use_authoritative_resource_scope",
+      "upstream_ids": ["API-006", "API-009", "API-079", "PR-AUTH-001", "SEC-019", "SEC-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Profile and disablement updates plus explicit session revocation resolve the account's authoritative Property and exact object before passing actor and request evidence to the application boundary."
+    },
+    {
+      "test_id": "test_mutable_resources_expose_versions_and_reject_missing_invalid_or_stale_preconditions",
+      "upstream_ids": ["API-006", "API-014", "API-079", "API-080", "TEST-088", "TEST-090"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Mutable account and role-bundle responses expose integer versions; missing, malformed, and stale If-Match preconditions fail without overwriting current state."
+    },
+    {
+      "test_id": "test_disable_and_privilege_reduction_bind_audit_and_session_revocation_atomically",
+      "upstream_ids": ["API-079", "API-080", "SEC-014", "SEC-017", "SEC-023", "TEST-084"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "The typed application boundary requires account disablement and role-bundle capability reduction to atomically persist immutable actor/request audit context and revoke every applicable affected session."
+    },
+    {
+      "test_id": "test_capabilities_and_role_bundles_are_data_not_role_title_authority",
+      "upstream_ids": ["API-011", "API-080", "SEC-020", "SEC-021", "SEC-022", "SEC-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Capabilities are explicit catalog identifiers and configurable role-bundle names map only to selected capabilities; creation returns 201 with Location and no title receives hard-coded business authority."
+    },
+    {
+      "test_id": "test_collection_pagination_is_bounded_and_forwarded_to_the_flow",
+      "upstream_ids": ["API-012", "API-079", "API-080", "SEC-019", "TEST-089"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Administration collections use bounded cursor/limit inputs and canonical page metadata, pass scope and pagination to the application boundary, and fail closed on non-deterministic or duplicate identifiers."
+    },
+    {
+      "test_id": "test_collection_cursors_traverse_stable_pages_without_duplicates_or_skips",
+      "upstream_ids": ["API-012", "API-079", "API-080", "SEC-019", "TEST-089"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Cursor-aware account, capability, and role-bundle fixtures traverse two stable bounded pages to termination with identifier order and no duplicate or skipped results."
+    },
+    {
+      "test_id": "test_role_assignment_validates_both_resource_properties_before_mutation",
+      "upstream_ids": ["API-009", "API-011", "API-080", "SEC-019", "SEC-021", "SEC-023", "TEST-087"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "The 200 command resolves and authorizes both exact resources and their trusted Property scopes before reporting an authorized cross-Property relationship conflict or invoking mutation."
+    },
+    {
+      "test_id": "test_mutation_results_must_match_every_requested_identifier",
+      "upstream_ids": ["API-009", "API-079", "API-080", "SEC-019", "SEC-023", "TEST-087", "TEST-088"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Account, role-bundle, and role-assignment commands fail closed when an application adapter returns a different requested identifier or Property."
+    },
+    {
+      "test_id": "test_resource_routes_deny_wrong_scope_before_any_mutation",
+      "upstream_ids": ["API-079", "API-080", "SEC-019", "SEC-023"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Identifier-only mutation routes use trusted resource-to-Property resolution and deny a wrong-scope administrator before changing state."
+    },
+    {
+      "test_id": "test_request_validation_rejects_unknown_fields_blank_updates_and_invalid_capabilities",
+      "upstream_ids": ["API-079", "API-080", "SEC-021", "SEC-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Strict request models reject role-title assertions, unknown fields, empty patches, and malformed capability identifiers before application work."
+    },
+    {
+      "test_id": "test_missing_and_unavailable_administration_resources_fail_closed",
+      "upstream_ids": ["API-079", "API-080", "SEC-023"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Missing resources and an absent audited runtime adapter return canonical secret-free failures rather than allowing an operation."
+    },
+    {
+      "test_id": "test_conflicts_use_canonical_secret_free_error_envelope",
+      "upstream_ids": ["API-080", "SEC-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Role-bundle conflicts use the canonical correlated response without provider diagnostics."
+    },
+    {
+      "test_id": "test_client_role_capability_and_property_headers_never_create_authority",
+      "upstream_ids": ["API-079", "API-080", "PR-AUTH-001", "SEC-019", "SEC-021", "SEC-023"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Client role, capability, Property, and actor headers are inert and cannot establish administration authority."
+    },
+    {
       "test_id": "test_property_business_date_changes_at_phnom_penh_midnight",
       "upstream_ids": ["PR-PROP-003"],
       "test_level": "domain",

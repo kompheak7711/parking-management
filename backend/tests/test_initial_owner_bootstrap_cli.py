@@ -583,6 +583,13 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_reset_http_route() -> Non
         "/api/v1/auth/session": {"get"},
         "/api/v1/auth/logout": {"post"},
         "/api/v1/auth/reauthenticate": {"post"},
+        "/api/v1/properties/{property_id}/users": {"get", "post"},
+        "/api/v1/users/{user_id}": {"patch"},
+        "/api/v1/users/{user_id}/revoke-sessions": {"post"},
+        "/api/v1/capabilities": {"get"},
+        "/api/v1/properties/{property_id}/role-bundles": {"get", "post"},
+        "/api/v1/role-bundles/{role_bundle_id}": {"patch"},
+        "/api/v1/users/{user_id}/role-assignments": {"post"},
     }
     openapi_operations = {
         path: set(path_item) & http_methods for path, path_item in app.openapi()["paths"].items()

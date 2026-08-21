@@ -14,6 +14,14 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from property_rental.access_admin_api import (
+    AccessAdministrationConflict,
+    AccessAdministrationFlow,
+    AccessAdministrationNotFound,
+    AccessAdministrationUnavailable,
+    UnavailableAccessAdministrationFlow,
+    create_access_admin_router,
+)
 from property_rental.api import create_api_router
 from property_rental.auth_api import (
     AuthenticationFlow,
@@ -136,6 +144,7 @@ def create_app(
     application_logger: Logger | None = None,
     actor_resolver: ActorResolver = deny_unauthenticated_actor,
     authentication_flow: AuthenticationFlow | None = None,
+    access_administration_flow: AccessAdministrationFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -196,6 +205,27 @@ def create_app(
     ) -> JSONResponse:
         return error_response(status.HTTP_429_TOO_MANY_REQUESTS, request.state.request_id)
 
+    @app.exception_handler(AccessAdministrationUnavailable)
+    async def access_administration_unavailable(
+        request: Request,
+        _: AccessAdministrationUnavailable,
+    ) -> JSONResponse:
+        return error_response(status.HTTP_503_SERVICE_UNAVAILABLE, request.state.request_id)
+
+    @app.exception_handler(AccessAdministrationNotFound)
+    async def access_administration_not_found(
+        request: Request,
+        _: AccessAdministrationNotFound,
+    ) -> JSONResponse:
+        return error_response(status.HTTP_404_NOT_FOUND, request.state.request_id)
+
+    @app.exception_handler(AccessAdministrationConflict)
+    async def access_administration_conflict(
+        request: Request,
+        _: AccessAdministrationConflict,
+    ) -> JSONResponse:
+        return error_response(status.HTTP_409_CONFLICT, request.state.request_id)
+
     @app.middleware("http")
     async def add_request_id(
         request: Request,
@@ -242,6 +272,13 @@ def create_app(
         create_auth_router(
             resolved_settings,
             authentication_flow or UnavailableAuthenticationFlow(),
+        )
+    )
+    app.include_router(
+        create_access_admin_router(
+            actor_resolver,
+            access_administration_flow or UnavailableAccessAdministrationFlow(),
+            resolved_settings,
         )
     )
     return app
