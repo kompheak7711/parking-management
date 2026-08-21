@@ -1,8 +1,8 @@
 # V1-018 Account and capability administration API — published and reconciled
 
 - Objective: implement the approved bounded V1-018 Account and capability administration API.
-- Current task: independently review and publish the verified API-079/080 routes,
-  SEC-019-023 enforcement, and PR-AUTH capability checks on `implementation/foundation`.
+- Current task: preserve the published API-079/080, SEC-019-023, and PR-AUTH result on
+  `implementation/foundation` while restoring the safe 24/7 supervisor.
 - Implemented: all nine approved account, session-revocation, capability-catalog,
   configurable role-bundle, and role-assignment operations under `/api/v1`.
 - Authorization is deny-by-default, capability-based, and Property-scoped. Identifier-only
@@ -37,6 +37,8 @@
 - Reconciliation commit `5a580c33be98cc29f30caf195000c712fd62998c` is pushed and
   synchronized; GitHub Actions run 32461385184 passed all four jobs. The supervisor restoration
   metadata is ready for its final CI gate before the external schedule is re-enabled.
+- The operational roadmap now records V1-018 complete at 18/60. V1-019 remains `approved_ready`
+  and was not selected, activated, implemented, or dispatched in this session.
 - Exact next action: require successful CI for the scheduler-restoration metadata, then re-enable
   the existing supervisor without manually activating V1-019 in this session.
 

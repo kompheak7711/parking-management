@@ -44,7 +44,7 @@
     "id": "property-rental-v1",
     "current_id": "V1-018",
     "total": 60,
-    "completed": 17
+    "completed": 18
   },
   "next_candidate": {
     "id": "V1-018",
@@ -68,8 +68,8 @@
     ],
     "risk_class": "high",
     "acceptance_profile": "api_ui",
-    "authorization": "durable_v1",
-    "status": "complete_uncommitted",
+    "authorization": "complete",
+    "status": "complete",
     "roadmap_id": "V1-018"
   },
   "next_action": "Require successful CI for scheduler-restoration metadata, verify SHA equality and no process overlap, then enable the existing supervisor without manually activating V1-019 in this session.",
@@ -123,7 +123,8 @@
     "reconciliation_commit": "5a580c33be98cc29f30caf195000c712fd62998c",
     "reconciliation_ci_run_id": 32461385184,
     "reconciliation_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32461385184",
-    "reconciliation_ci_conclusion": "success"
+    "reconciliation_ci_conclusion": "success",
+    "roadmap_reconciliation": "current focused three-path commit; V1-019 remains unselected"
   },
   "automation_repair": {
     "status": "restored",
