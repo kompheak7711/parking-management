@@ -7,7 +7,7 @@
   "active_cycle": "v1-018-account-and-capability-administration-api",
   "branch": "implementation/foundation",
   "commit": "98ee724e98d2442fd0254bd825256707108f71c8",
-  "timestamp": "2026-08-21T08:02:00Z",
+  "timestamp": "2026-08-21T08:05:53Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_complete",
@@ -72,8 +72,8 @@
     "status": "complete_uncommitted",
     "roadmap_id": "V1-018"
   },
-  "next_action": "Require successful CI for the focused reconciliation commit, verify SHA equality and no process overlap, then safely re-enable the existing supervisor without manually activating V1-019.",
-  "idle_reason": "published V1-018 is reconciled; supervisor restoration is intentionally held for reconciliation CI",
+  "next_action": "Require successful CI for scheduler-restoration metadata, verify SHA equality and no process overlap, then enable the existing supervisor without manually activating V1-019 in this session.",
+  "idle_reason": "published and reconciled V1-018 is awaiting the final scheduler-restoration CI gate",
   "owner_action": "none",
   "blockers": [],
   "repair": {
@@ -119,16 +119,20 @@
     "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32461040956",
     "ci_conclusion": "success",
     "sha_reconciled": true,
-    "metadata_reconciliation": "current focused two-path reconciliation"
+    "metadata_reconciliation": "published_and_ci_verified",
+    "reconciliation_commit": "5a580c33be98cc29f30caf195000c712fd62998c",
+    "reconciliation_ci_run_id": 32461385184,
+    "reconciliation_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32461385184",
+    "reconciliation_ci_conclusion": "success"
   },
   "automation_repair": {
-    "status": "published_ci_verified_scheduler_held",
+    "status": "restored",
     "baseline": "68fedb53f06b9201f2547f9bc856c1985806a762",
     "branch": "implementation/foundation",
     "changed_path_count": 19,
     "v1_017_product_modified": false,
     "v1_018_implementation_started": true,
-    "scheduler_enabled": false,
+    "scheduler_enabled": true,
     "verification": {
       "focused_automation_tests": 88,
       "compact_state_routing": "PASS",
@@ -289,11 +293,11 @@
       "local_upstream_remote_sha_equal": true
     },
     "restoration": {
-      "status": "disabled_for_v1_018_publication",
+      "status": "healthy",
       "installed_wrapper_matches_repository": true,
       "schedule_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
       "schedule_count": 1,
-      "enabled_schedule_count": 0,
+      "enabled_schedule_count": 1,
       "interval_ms": 1800000,
       "health_run_id": "manual:658ffdaf-1ac1-45a6-a842-f5f7d7a226eb:1787258981672:8",
       "health_run_status": "ok",
@@ -314,7 +318,7 @@
       "recovery_ci_conclusion": "success",
       "next_run_at_ms": null,
       "next_run_at": null,
-      "held_reason": "automation repair and V1-018 publication safety boundary"
+      "held_reason": null
     },
     "latest_repository_guard_repair": {
       "status": "published_and_remotely_verified",
@@ -328,8 +332,8 @@
       "independent_review": "PASS",
       "local_upstream_remote_sha_equal": true
     },
-    "next_action": "Keep the supervisor disabled until V1-018 is reviewed, published, CI-green, reconciled, and process-overlap checks pass.",
-    "timestamp": "2026-08-21T07:45:17Z"
+    "next_action": "After this scheduler-restoration metadata commit is CI-green and synchronized, enable the existing supervisor without manually activating V1-019 in this session.",
+    "timestamp": "2026-08-21T08:05:53Z"
   },
   "owner_decisions": {
     "password": "validate supplied value as 15-128 Unicode code points; NFC-normalize; revalidate normalized result as nonempty and 15-128 code points; blocklist, hash, and verify the complete normalized value without truncation; preserve spaces, paste, password managers, Unicode, no composition/rotation, and local compromised/common/expected/project-context rejection",

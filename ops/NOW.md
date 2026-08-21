@@ -34,12 +34,15 @@
   correction are synchronized at `9f93cef90bbfa8dcab24b58dae05bd1113e96bbb`; GitHub Actions
   run 32458068234 passed all four jobs. The supervisor remains disabled during V1-018 publication.
 - Blockers: none. Owner action: none.
-- Exact next action: publish this focused compact-state reconciliation, require GitHub Actions
-  success, then safely re-enable the supervisor without manually activating V1-019.
+- Reconciliation commit `5a580c33be98cc29f30caf195000c712fd62998c` is pushed and
+  synchronized; GitHub Actions run 32461385184 passed all four jobs. The supervisor restoration
+  metadata is ready for its final CI gate before the external schedule is re-enabled.
+- Exact next action: require successful CI for the scheduler-restoration metadata, then re-enable
+  the existing supervisor without manually activating V1-019 in this session.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation publication state: V1-018 published on `implementation/foundation` at
   `98ee724e98d2442fd0254bd825256707108f71c8`.
-- Automation exact next action: Verify reconciliation CI and SHA equality, then safely re-enable
+- Automation exact next action: After scheduler-restoration metadata CI and SHA equality, enable
   the existing supervisor; do not manually activate V1-019 in this session.
 <!-- AUTOMATION_STATUS_END -->
