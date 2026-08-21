@@ -123,6 +123,16 @@
     {"clause": "post-exit restoration supersedes only the exact failed routing fingerprint waits for zero overlap enables only the existing supervisor proves natural V1-019 progress propagates protected Owner boundaries and disables on failure", "test_id": "test_post_exit_restoration_succeeds_naturally_and_fails_closed"},
     {"clause": "terminal post-exit success and failed-closed evidence unload the exact one-shot label and cannot reset to pending in a launchd keepalive restart", "test_id": "test_post_exit_restoration_succeeds_naturally_and_fails_closed"},
     {"clause": "post-exit restoration resumes idempotently after its exact two-path metadata commit is already published", "test_id": "test_post_exit_restoration_succeeds_naturally_and_fails_closed"},
+    {"clause": "launchd-minimal PATH uses the exact configured GitHub executable resolves one workflow run ID and recognizes delayed success", "test_id": "test_ci_wait_uses_exact_github_path_and_recognizes_delayed_success"},
+    {"clause": "an unavailable configured GitHub executable fails immediately without entering the thirty-minute polling loop", "test_id": "test_ci_wait_missing_configured_github_fails_immediately"},
+    {"clause": "terminal CI failure evidence preserves a final authoritative command result run identity URL workflow status and conclusion", "test_id": "test_ci_wait_preserves_final_authoritative_failure_lookup"},
+    {"clause": "terminal CI timeout evidence preserves a final authoritative command result run identity URL workflow status and conclusion", "test_id": "test_ci_wait_preserves_final_authoritative_timeout_lookup"},
+    {"clause": "false restoration CI failure reconciliation is bound only to commit 7c0f67d and successful run 32511133185", "test_id": "test_false_ci_failure_reconciliation_is_bound_to_exact_run_and_commit"},
+    {"clause": "complete and failed-closed restoration truth each attempt one deduplicated Telegram notification whose delivery outcome cannot change restoration truth or expose its route", "test_id": "test_post_exit_restoration_succeeds_naturally_and_fails_closed"},
+    {"clause": "a separate launchd terminalizer survives source-continuation SIGTERM unloads the exact source then sends one bounded notification", "test_id": "test_post_exit_restoration_succeeds_naturally_and_fails_closed"},
+    {"clause": "asynchronous terminalizer handoff waits for terminal evidence and an OS-locked notification claim prevents duplicate sends across competing processes", "test_id": "test_terminal_notification_claim_is_process_safe"},
+    {"clause": "an exact continuation unload failure converts apparent completion to failed-closed disables the supervisor and sends no false completion notification", "test_id": "test_post_exit_restoration_succeeds_naturally_and_fails_closed"},
+    {"clause": "installation validation reconciliation and launchctl submission failures preserve diagnostics disable the supervisor notify once and unload the exact label", "test_id": "test_post_exit_install_failures_terminalize_with_exact_diagnostics"},
     {"clause": "V1-020 remains unselected after the approved V1-019 terminal scope", "test_id": "test_v1_019_terminal_scope_holds_v1_020_without_owner_block"}
   ]
 }

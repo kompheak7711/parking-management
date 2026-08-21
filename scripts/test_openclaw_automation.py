@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import importlib.util
 import io
 import json
@@ -11,7 +12,9 @@ import shlex
 import shutil
 import sqlite3
 import subprocess
+import sys
 import tempfile
+import time
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -146,6 +149,216 @@ class AutomationPolicyTests(unittest.TestCase):
                 model_policy("publication")
             self.assertFalse(attempt.exists())
 
+    def test_ci_wait_uses_exact_github_path_and_recognizes_delayed_success(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            state = root / "calls.json"
+            log = root / "endpoints.jsonl"
+            fake_github = root / "gh"
+            fake_github.write_text(
+                """#!/usr/bin/env python3
+import json, os, pathlib, sys
+state = pathlib.Path(os.environ['FAKE_GH_STATE'])
+count = json.loads(state.read_text()) if state.exists() else 0
+count += 1
+state.write_text(json.dumps(count))
+endpoint = sys.argv[4]
+with pathlib.Path(os.environ['FAKE_GH_LOG']).open('a') as handle:
+    handle.write(json.dumps(endpoint) + '\\n')
+run = {'id': 12345, 'head_sha': os.environ['FAKE_SHA'], 'html_url': 'https://example.invalid/runs/12345', 'created_at': '2026-08-21T00:00:00Z'}
+if endpoint.endswith('/runs'):
+    run.update({'status': 'queued', 'conclusion': None})
+    print(json.dumps({'workflow_runs': [run]}))
+elif count == 2:
+    run.update({'status': 'in_progress', 'conclusion': None})
+    print(json.dumps(run))
+else:
+    run.update({'status': 'completed', 'conclusion': 'success'})
+    print(json.dumps(run))
+"""
+            )
+            fake_github.chmod(0o755)
+            evidence = root / "ci.json"
+            sha = "a" * 40
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts/openclaw-wait-for-ci.sh"),
+                    "--github",
+                    str(fake_github),
+                    "--evidence",
+                    str(evidence),
+                    "--expected-run-id",
+                    "12345",
+                    "--poll-seconds",
+                    "0",
+                    "--max-polls",
+                    "5",
+                    sha,
+                ],
+                env={
+                    "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+                    "FAKE_GH_STATE": str(state),
+                    "FAKE_GH_LOG": str(log),
+                    "FAKE_SHA": sha,
+                },
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            observed = json.loads(evidence.read_text())
+            self.assertEqual(observed["status"], "success")
+            self.assertEqual(observed["workflow_status"], "completed")
+            self.assertEqual(observed["run_id"], 12345)
+            endpoints = [json.loads(line) for line in log.read_text().splitlines()]
+            self.assertEqual(
+                sum(endpoint.endswith("/runs") for endpoint in endpoints), 1
+            )
+            self.assertTrue(all("12345" in endpoint for endpoint in endpoints[1:]))
+
+    def test_ci_wait_missing_configured_github_fails_immediately(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            evidence = Path(directory) / "ci.json"
+            started = time.monotonic()
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts/openclaw-wait-for-ci.sh"),
+                    "--github",
+                    str(Path(directory) / "missing-gh"),
+                    "--evidence",
+                    str(evidence),
+                    "--poll-seconds",
+                    "15",
+                    "--max-polls",
+                    "120",
+                    "b" * 40,
+                ],
+                env={"PATH": "/usr/bin:/bin:/usr/sbin:/sbin"},
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            elapsed = time.monotonic() - started
+            self.assertEqual(result.returncode, 69)
+            self.assertLess(elapsed, 2)
+            self.assertEqual(
+                json.loads(evidence.read_text())["status"],
+                "github_executable_unavailable",
+            )
+
+    def test_ci_wait_preserves_final_authoritative_failure_lookup(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            state = root / "calls.json"
+            fake_github = root / "gh"
+            fake_github.write_text(
+                """#!/usr/bin/env python3
+import json, os, pathlib, sys
+state = pathlib.Path(os.environ['FAKE_GH_STATE'])
+count = json.loads(state.read_text()) if state.exists() else 0
+count += 1
+state.write_text(json.dumps(count))
+endpoint = sys.argv[4]
+run = {'id': 67890, 'head_sha': os.environ['FAKE_SHA'], 'html_url': 'https://example.invalid/runs/67890', 'created_at': '2026-08-21T00:00:00Z'}
+if endpoint.endswith('/runs'):
+    run.update({'status': 'queued', 'conclusion': None})
+    print(json.dumps({'workflow_runs': [run]}))
+else:
+    run.update({'status': 'completed', 'conclusion': 'failure'})
+    if count >= 3:
+        print(os.environ['GH_TOKEN'], file=sys.stderr)
+        print('final authoritative stderr', file=sys.stderr)
+    print(json.dumps(run))
+"""
+            )
+            fake_github.chmod(0o755)
+            evidence = root / "ci.json"
+            sha = "c" * 40
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts/openclaw-wait-for-ci.sh"),
+                    "--github",
+                    str(fake_github),
+                    "--evidence",
+                    str(evidence),
+                    "--poll-seconds",
+                    "0",
+                    "--max-polls",
+                    "4",
+                    sha,
+                ],
+                env={
+                    "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+                    "FAKE_GH_STATE": str(state),
+                    "FAKE_SHA": sha,
+                    "GH_TOKEN": "synthetic-secret-token",
+                },
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 74)
+            observed = json.loads(evidence.read_text())
+            self.assertEqual(observed["status"], "failure")
+            self.assertEqual(observed["run_id"], 67890)
+            self.assertEqual(observed["workflow_status"], "completed")
+            self.assertEqual(observed["conclusion"], "failure")
+            final_lookup = observed["final_authoritative_lookup"]
+            self.assertEqual(final_lookup["exit_status"], 0)
+            self.assertIn('"id": 67890', final_lookup["stdout"])
+            self.assertTrue(
+                final_lookup["stderr"].endswith("final authoritative stderr\n")
+            )
+            self.assertTrue(final_lookup["redactions_applied"])
+            self.assertNotIn("synthetic-secret-token", evidence.read_text())
+
+    def test_ci_wait_preserves_final_authoritative_timeout_lookup(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            fake_github = root / "gh"
+            fake_github.write_text(
+                """#!/usr/bin/env python3
+import json, os, sys
+endpoint = sys.argv[4]
+run = {'id': 24680, 'head_sha': os.environ['FAKE_SHA'], 'html_url': 'https://example.invalid/runs/24680', 'created_at': '2026-08-21T00:00:00Z', 'status': 'queued', 'conclusion': None}
+print(json.dumps({'workflow_runs': [run]}) if endpoint.endswith('/runs') else json.dumps(run))
+"""
+            )
+            fake_github.chmod(0o755)
+            evidence = root / "ci.json"
+            sha = "e" * 40
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(ROOT / "scripts/openclaw-wait-for-ci.sh"),
+                    "--github",
+                    str(fake_github),
+                    "--evidence",
+                    str(evidence),
+                    "--poll-seconds",
+                    "0",
+                    "--max-polls",
+                    "2",
+                    sha,
+                ],
+                env={"PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "FAKE_SHA": sha},
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 75)
+            observed = json.loads(evidence.read_text())
+            self.assertEqual(observed["status"], "timeout")
+            self.assertEqual(observed["workflow_status"], "queued")
+            self.assertEqual(observed["run_id"], 24680)
+            self.assertEqual(observed["url"], "https://example.invalid/runs/24680")
+            self.assertEqual(observed["final_authoritative_lookup"]["exit_status"], 0)
+
     def test_effective_usage_reporting_and_unavailable_provider_fields(self) -> None:
         policy = model_policy("implementation")
         report = normalize_usage(
@@ -206,7 +419,9 @@ class AutomationPolicyTests(unittest.TestCase):
                 },
                 policy,
             )
-        validate_usage({"model": "gpt-5.6-sol", "configured_max_tokens": 60_000}, policy)
+        validate_usage(
+            {"model": "gpt-5.6-sol", "configured_max_tokens": 60_000}, policy
+        )
         with self.assertRaisesRegex(AutomationError, "max_turns"):
             validate_usage(
                 {
@@ -348,7 +563,9 @@ class AutomationPolicyTests(unittest.TestCase):
         self.assertIn("empty_or_invalid_task_delivery", FAILURE_CATEGORIES)
         self.assertIn("test_fixture_failure", FAILURE_CATEGORIES)
         self.assertIn("remote_ci_failure", FAILURE_CATEGORIES)
-        self.assertIn("lock_or_overlapping_process_failure", RECOVERABLE_ROUTING_FAILURES)
+        self.assertIn(
+            "lock_or_overlapping_process_failure", RECOVERABLE_ROUTING_FAILURES
+        )
         self.assertIn("model_session_or_token_ceiling", RECOVERABLE_ROUTING_FAILURES)
 
     def test_scheduler_health_requires_success_after_latest_restoration(self) -> None:
@@ -360,10 +577,14 @@ class AutomationPolicyTests(unittest.TestCase):
             "heartbeat_ms": 10_000,
         }
         self.assertFalse(
-            post_restoration_scheduler_ok(**common, last_run_ms=19_000, restored_at_ms=19_500)
+            post_restoration_scheduler_ok(
+                **common, last_run_ms=19_000, restored_at_ms=19_500
+            )
         )
         self.assertTrue(
-            post_restoration_scheduler_ok(**common, last_run_ms=19_750, restored_at_ms=19_500)
+            post_restoration_scheduler_ok(
+                **common, last_run_ms=19_750, restored_at_ms=19_500
+            )
         )
 
 
@@ -530,7 +751,9 @@ class RepositoryEvidenceTests(unittest.TestCase):
         subprocess.run(["git", "commit", "-qm", "baseline"], cwd=repo, check=True)
         origin = directory / "origin.git"
         subprocess.run(["git", "init", "-q", "--bare", str(origin)], check=True)
-        subprocess.run(["git", "remote", "add", "origin", str(origin)], cwd=repo, check=True)
+        subprocess.run(
+            ["git", "remote", "add", "origin", str(origin)], cwd=repo, check=True
+        )
         subprocess.run(["git", "push", "-qu", "origin", "main"], cwd=repo, check=True)
         return repo, candidate
 
@@ -651,7 +874,9 @@ class RepositoryEvidenceTests(unittest.TestCase):
             roadmap = json.loads(roadmap_path.read_text())
             roadmap["tranches"][0].pop("acceptance")
             roadmap["tranches"][0]["acceptance_profile"] = "api_ui"
-            roadmap["acceptance_profiles"] = {"api_ui": ["API authorization", "frontend build"]}
+            roadmap["acceptance_profiles"] = {
+                "api_ui": ["API authorization", "frontend build"]
+            }
             atomic_write_json(roadmap_path, roadmap)
             packet = task_packet(repo, {"actionable": True}, "implementation")
             self.assertEqual(
@@ -736,9 +961,15 @@ class RepositoryEvidenceTests(unittest.TestCase):
             subprocess.run(["git", "add", "."], cwd=repo, check=True)
             subprocess.run(["git", "commit", "-qm", "published"], cwd=repo, check=True)
             origin = root / "origin.git"
-            subprocess.run(["git", "init", "-q", "--bare", str(origin)], cwd=repo, check=True)
-            subprocess.run(["git", "remote", "add", "origin", str(origin)], cwd=repo, check=True)
-            subprocess.run(["git", "push", "-qu", "-u", "origin", "HEAD"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "init", "-q", "--bare", str(origin)], cwd=repo, check=True
+            )
+            subprocess.run(
+                ["git", "remote", "add", "origin", str(origin)], cwd=repo, check=True
+            )
+            subprocess.run(
+                ["git", "push", "-qu", "-u", "origin", "HEAD"], cwd=repo, check=True
+            )
             subprocess.run(
                 [str(repo / "scripts/openclaw-select-next-candidate.sh")],
                 cwd=repo,
@@ -757,7 +988,9 @@ class RepositoryEvidenceTests(unittest.TestCase):
             self.assertFalse(selected["approval"]["implementation_started"])
             now = (repo / "ops/NOW.md").read_text()
             self.assertIn("V1-018 approved and active", now)
-            self.assertIn("Implement the approved bounded candidate: Exact successor", now)
+            self.assertIn(
+                "Implement the approved bounded candidate: Exact successor", now
+            )
             self.assertTrue(ci_marker.exists())
             invalid_state = json.loads((repo / "ops/STATE.json").read_text())
             invalid_state["branch"] = 7
@@ -862,8 +1095,12 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
             self.assertTrue(evidence["implementation_complete"])
             self.assertEqual(evidence["events"][0]["stage"], "reconciliation_dispatch")
             self.assertEqual(evidence["events"][0]["result"], "passed")
-            self.assertEqual(evidence["model_usage"][0]["effective_model"], "gpt-5.6-sol")
-            self.assertRegex(str(evidence["model_usage"][0]["session_id"]), r"^[0-9a-f]{32}$")
+            self.assertEqual(
+                evidence["model_usage"][0]["effective_model"], "gpt-5.6-sol"
+            )
+            self.assertRegex(
+                str(evidence["model_usage"][0]["session_id"]), r"^[0-9a-f]{32}$"
+            )
             usage = json.loads(next((state_dir / "usage").glob("*.json")).read_text())
             self.assertTrue(usage["preflight_guard_loaded"])
             self.assertTrue(usage["chat_guard_loaded"])
@@ -958,7 +1195,9 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
                             "TEST-094-095",
                             "TEST-135",
                         ],
-                        "include": ["sign-in, MFA, recovery, session, account/capability screens"],
+                        "include": [
+                            "sign-in, MFA, recovery, session, account/capability screens"
+                        ],
                         "exclude": ["first-Owner web bootstrap"],
                         "acceptance_profile": "api_ui",
                         "protected_operation": False,
@@ -1047,8 +1286,12 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
             failure = json.loads((evidence / "last-failure.json").read_text())
             self.assertEqual(failure["category"], "model_session_or_token_ceiling")
             self.assertFalse(failure["owner_action_required"])
-            self.assertTrue(list((evidence / "terminal/routing_recovery_pending").glob("*.json")))
-            first_usage = json.loads(sorted((evidence / "usage").glob("*.json"))[0].read_text())
+            self.assertTrue(
+                list((evidence / "terminal/routing_recovery_pending").glob("*.json"))
+            )
+            first_usage = json.loads(
+                sorted((evidence / "usage").glob("*.json"))[0].read_text()
+            )
             self.assertTrue(first_usage["reservation_blocked"])
             self.assertEqual(first_usage["in_flight_overshoot_tokens"], 0)
             self.assertEqual(first_usage["configured_max_tokens"], 60_000)
@@ -1121,7 +1364,9 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
                 check=False,
             )
             self.assertEqual(second.returncode, 0, second.stderr)
-            second_record = json.loads((evidence / "candidates/V1-019.json").read_text())
+            second_record = json.loads(
+                (evidence / "candidates/V1-019.json").read_text()
+            )
             self.assertFalse(second_record["recovery_pending"])
             self.assertFalse((evidence / "last-failure.json").exists())
             self.assertEqual(
@@ -1132,8 +1377,12 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
                 len(list((evidence / "terminal/recovery_succeeded").glob("*.json"))),
                 1,
             )
-            self.assertEqual(len(list((evidence / "resolved-failures").glob("*.json"))), 1)
-            self.assertEqual(second_record["completed_implementation_substages"], ["sign_in"])
+            self.assertEqual(
+                len(list((evidence / "resolved-failures").glob("*.json"))), 1
+            )
+            self.assertEqual(
+                second_record["completed_implementation_substages"], ["sign_in"]
+            )
             self.assertEqual(len(list((evidence / "manifests").glob("*.json"))), 2)
             self.assertEqual(len(list((evidence / "tasks").glob("*.json"))), 2)
             first_prompt = (captures / "1.txt").read_text()
@@ -1235,7 +1484,9 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
                 cwd=repo,
                 check=True,
             )
-            subprocess.run(["git", "commit", "-qm", "implementation"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "implementation"], cwd=repo, check=True
+            )
             fake = root / "fake-review.py"
             capture = root / "review-prompt.txt"
             capture_args = root / "review-args.json"
@@ -1278,7 +1529,9 @@ print(json.dumps(result))
                     "implementation_complete": True,
                     "deterministic_verification_passed": True,
                     "scoped_changed_paths": [],
-                    "events": [{"stage": "deterministic_verification", "exit_status": 0}],
+                    "events": [
+                        {"stage": "deterministic_verification", "exit_status": 0}
+                    ],
                 },
             )
             before = repository_fingerprint(repo)
@@ -1311,8 +1564,12 @@ print(json.dumps(result))
             evidence = json.loads((state_dir / "candidates/V1-018.json").read_text())
             self.assertEqual(evidence["stage"], "publication")
             self.assertTrue(evidence["review_verdict"]["passed"])
-            self.assertEqual(evidence["model_usage"][0]["requested_reasoning_effort"], "xhigh")
-            self.assertRegex(str(evidence["model_usage"][0]["session_id"]), r"^[0-9a-f]{32}$")
+            self.assertEqual(
+                evidence["model_usage"][0]["requested_reasoning_effort"], "xhigh"
+            )
+            self.assertRegex(
+                str(evidence["model_usage"][0]["session_id"]), r"^[0-9a-f]{32}$"
+            )
             self.assertIn('"review_only": true', capture.read_text())
             arguments = json.loads(capture_args.read_text())
             self.assertIn("gpt-5.6-sol", arguments)
@@ -1335,7 +1592,9 @@ print(json.dumps(result))
             target.write_bytes(source.read_bytes())
             target.chmod(0o755)
             automation = repo / "scripts/openclaw_automation.py"
-            automation.write_bytes((ROOT / "scripts/openclaw_automation.py").read_bytes())
+            automation.write_bytes(
+                (ROOT / "scripts/openclaw_automation.py").read_bytes()
+            )
             subprocess.run(["git", "add", "--", "scripts"], cwd=repo, check=True)
             subprocess.run(
                 ["git", "commit", "-qm", "test dispatcher harness"],
@@ -1389,7 +1648,9 @@ print(json.dumps(result))
                 )
             )
             self.assertFalse(preflight["actionable"])
-            self.assertEqual(preflight["state_issue"], "automation_repair_publication_required")
+            self.assertEqual(
+                preflight["state_issue"], "automation_repair_publication_required"
+            )
 
     def test_exact_terminal_fingerprint_suppresses_only_unchanged_dispatch(
         self,
@@ -1403,7 +1664,9 @@ print(json.dumps(result))
             target.write_bytes(source.read_bytes())
             target.chmod(0o755)
             automation = repo / "scripts/openclaw_automation.py"
-            automation.write_bytes((ROOT / "scripts/openclaw_automation.py").read_bytes())
+            automation.write_bytes(
+                (ROOT / "scripts/openclaw_automation.py").read_bytes()
+            )
             subprocess.run(["git", "add", "--", "scripts"], cwd=repo, check=True)
             subprocess.run(
                 ["git", "commit", "-qm", "test dispatcher harness"],
@@ -1737,8 +2000,12 @@ print(json.dumps(result))
                 ),
                 self.assertRaises(AutomationError) as raised,
             ):
-                dispatcher.invoke_model(record, packet, model_policy("direct_codex_recovery"))
-            self.assertEqual(raised.exception.category, "model_session_or_token_ceiling")
+                dispatcher.invoke_model(
+                    record, packet, model_policy("direct_codex_recovery")
+                )
+            self.assertEqual(
+                raised.exception.category, "model_session_or_token_ceiling"
+            )
             self.assertEqual(record["stage"], "deterministic_verification")
             self.assertEqual(record["requested_stage"], "deterministic_verification")
             usage_files = [
@@ -1916,7 +2183,9 @@ print(json.dumps(result))
             ):
                 dispatcher.post_publication(record)
             self.assertEqual(raised.exception.category, "remote_ci_failure")
-            self.assertEqual(record["reconciliation_substage"], "reconciliation_ci_failed")
+            self.assertEqual(
+                record["reconciliation_substage"], "reconciliation_ci_failed"
+            )
 
     def test_reconciliation_resumes_when_commit_precedes_substage_save(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -2093,13 +2362,17 @@ print(json.dumps(result))
                     "activation_base_commit": base,
                     "activation_candidate": candidate,
                 }
-                with mock.patch.object(dispatcher, "cached_publication_guard", return_value=None):
+                with mock.patch.object(
+                    dispatcher, "cached_publication_guard", return_value=None
+                ):
                     dispatcher.activate_next(record, {})
             self.assertEqual(record["stage"], "complete")
             self.assertEqual(record["activation_substage"], "complete")
             self.assertTrue(record["activation_ci_passed"])
             self.assertEqual(
-                subprocess.check_output(["git", "status", "--porcelain=v1"], cwd=repo, text=True),
+                subprocess.check_output(
+                    ["git", "status", "--porcelain=v1"], cwd=repo, text=True
+                ),
                 "",
             )
 
@@ -2111,9 +2384,13 @@ print(json.dumps(result))
             repo, candidate = self.make_activation_repo(root)
             roadmap_path = repo / "ops/V1_ROADMAP.json"
             roadmap = json.loads(roadmap_path.read_text())
-            roadmap["tranches"][0].update({"status": "complete", "authorization": "complete"})
+            roadmap["tranches"][0].update(
+                {"status": "complete", "authorization": "complete"}
+            )
             atomic_write_json(roadmap_path, roadmap)
-            subprocess.run(["git", "add", "--", "ops/V1_ROADMAP.json"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "add", "--", "ops/V1_ROADMAP.json"], cwd=repo, check=True
+            )
             subprocess.run(
                 ["git", "commit", "-qm", "reconcile predecessor"],
                 cwd=repo,
@@ -2180,9 +2457,13 @@ print(json.dumps(result))
                 self.assertRaises(AutomationError) as blocked,
             ):
                 dispatcher.dispatch()
-            self.assertEqual(blocked.exception.category, "lock_or_overlapping_process_failure")
             self.assertEqual(
-                subprocess.check_output(["git", "diff", "--cached", "--binary"], cwd=repo),
+                blocked.exception.category, "lock_or_overlapping_process_failure"
+            )
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "diff", "--cached", "--binary"], cwd=repo
+                ),
                 staged_before,
             )
             preserved = json.loads(dispatcher.stage_file("V1-017").read_text())
@@ -2190,19 +2471,25 @@ print(json.dumps(result))
             self.assertNotIn("attempts", preserved)
             with (
                 mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}),
-                mock.patch.object(dispatcher, "cached_publication_guard", return_value=None),
+                mock.patch.object(
+                    dispatcher, "cached_publication_guard", return_value=None
+                ),
             ):
                 self.assertEqual(dispatcher.dispatch(), 0)
             completed = json.loads(dispatcher.stage_file("V1-017").read_text())
             self.assertEqual(completed["activation_substage"], "complete")
-            self.assertEqual(completed["activation_paths"], ["ops/NOW.md", "ops/STATE.json"])
+            self.assertEqual(
+                completed["activation_paths"], ["ops/NOW.md", "ops/STATE.json"]
+            )
             self.assertNotIn("attempts", completed)
             state = json.loads((repo / "ops/STATE.json").read_text())
             self.assertEqual(state["next_candidate"]["id"], "V1-018")
             self.assertFalse(state["approval"]["implementation_started"])
             self.assertFalse(dispatcher.stage_file("V1-018").exists())
             self.assertEqual(
-                subprocess.check_output(["git", "status", "--porcelain=v1"], cwd=repo, text=True),
+                subprocess.check_output(
+                    ["git", "status", "--porcelain=v1"], cwd=repo, text=True
+                ),
                 "",
             )
 
@@ -2248,7 +2535,9 @@ print(json.dumps(result))
                 }
                 with self.assertRaises(AutomationError) as raised:
                     dispatcher.activate_next(record, {})
-            self.assertEqual(raised.exception.category, "repository_integrity_uncertainty")
+            self.assertEqual(
+                raised.exception.category, "repository_integrity_uncertainty"
+            )
 
     def test_already_pushed_activation_persists_successful_ci_proof(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -2454,7 +2743,9 @@ print(json.dumps(result))
             self.assertEqual(reconciled["commit"], published)
             self.assertTrue(reconciled["approval"]["publication_completed"])
             now = (repo / "ops/NOW.md").read_text()
-            self.assertIn(f"Automation publication state: published on main at {published}", now)
+            self.assertIn(
+                f"Automation publication state: published on main at {published}", now
+            )
             self.assertIn(
                 "Select the exact structured approved successor from ops/V1_ROADMAP.json",
                 now,
@@ -2485,7 +2776,9 @@ print(json.dumps(result))
                 complex_review=True,
                 classification_reason="test review",
             )
-            usage_report = normalize_usage({"model": "gpt-5.6-sol", "total_tokens": 7}, policy)
+            usage_report = normalize_usage(
+                {"model": "gpt-5.6-sol", "total_tokens": 7}, policy
+            )
             usage_report["repository_fingerprint"] = fingerprint
             verdict = json.dumps(
                 {
@@ -2545,7 +2838,9 @@ print(json.dumps(result))
                 target.write_bytes((ROOT / "scripts" / name).read_bytes())
                 target.chmod(0o755)
             subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
-            subprocess.run(["git", "commit", "-qm", "model harness"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "model harness"], cwd=repo, check=True
+            )
             fake = root / "fake-hermes.py"
             fake.write_text(
                 """#!/usr/bin/env python3
@@ -2574,11 +2869,19 @@ raise SystemExit(64)
                 record = {"candidate": "V1-018", "stage": "implementation"}
                 packet = task_packet(repo, {"actionable": True}, "implementation")
                 with self.assertRaises(AutomationError) as first:
-                    dispatcher.invoke_model(record, packet, model_policy("implementation"))
-                self.assertEqual(first.exception.category, "unsupported_invocation_configuration")
+                    dispatcher.invoke_model(
+                        record, packet, model_policy("implementation")
+                    )
+                self.assertEqual(
+                    first.exception.category, "unsupported_invocation_configuration"
+                )
                 with self.assertRaises(AutomationError) as second:
-                    dispatcher.invoke_model(record, packet, model_policy("implementation"))
-            self.assertEqual(second.exception.category, "unsupported_invocation_configuration")
+                    dispatcher.invoke_model(
+                        record, packet, model_policy("implementation")
+                    )
+            self.assertEqual(
+                second.exception.category, "unsupported_invocation_configuration"
+            )
             attempts = json.loads((state_dir / "attempts/V1-018.json").read_text())
             self.assertEqual(attempts["counters"].get("implementation", 0), 0)
             self.assertEqual(list((state_dir / "calls").glob("*.json")), [])
@@ -2591,7 +2894,9 @@ raise SystemExit(64)
         dispatcher = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(dispatcher)
         completed = subprocess.CompletedProcess([], 0, "", "")
-        with mock.patch.object(dispatcher.subprocess, "run", return_value=completed) as invoked:
+        with mock.patch.object(
+            dispatcher.subprocess, "run", return_value=completed
+        ) as invoked:
             dispatcher.cached_publication_guard()
         environment = invoked.call_args.kwargs["env"]
         self.assertEqual(environment["PROPERTY_RENTAL_GUARD_MODE"], "cached")
@@ -2632,7 +2937,9 @@ raise SystemExit(64)
             canonical.write_text("unauthorized change\n")
             automation_module = repo / "scripts/openclaw_automation.py"
             automation_module.parent.mkdir(exist_ok=True)
-            automation_module.write_bytes((ROOT / "scripts/openclaw_automation.py").read_bytes())
+            automation_module.write_bytes(
+                (ROOT / "scripts/openclaw_automation.py").read_bytes()
+            )
             result = subprocess.run(
                 [str(ROOT / "scripts/openclaw-publication-guard.sh")],
                 env={**os.environ, "PROPERTY_RENTAL_REPO": str(repo)},
@@ -2703,7 +3010,9 @@ raise SystemExit(64)
                 spec.loader.exec_module(dispatcher)
                 with self.assertRaises(AutomationError) as raised:
                     dispatcher.authorized_branch()
-            self.assertEqual(raised.exception.category, "repository_integrity_uncertainty")
+            self.assertEqual(
+                raised.exception.category, "repository_integrity_uncertainty"
+            )
 
             subprocess.run(["git", "switch", "-q", bound_branch], cwd=repo, check=True)
             state = json.loads((repo / "ops/STATE.json").read_text())
@@ -2711,7 +3020,9 @@ raise SystemExit(64)
             atomic_write_json(repo / "ops/STATE.json", state)
             with self.assertRaises(AutomationError) as missing:
                 dispatcher.authorized_branch()
-            self.assertEqual(missing.exception.category, "repository_integrity_uncertainty")
+            self.assertEqual(
+                missing.exception.category, "repository_integrity_uncertainty"
+            )
 
     def test_actual_execed_hermes_worker_is_detected(self) -> None:
         rows = [
@@ -2830,14 +3141,18 @@ raise SystemExit(64)
                 "verified_repository_fingerprint": fingerprint,
             }
             with (
-                mock.patch.object(dispatcher, "invoke_model", return_value=(0, "", usage)),
+                mock.patch.object(
+                    dispatcher, "invoke_model", return_value=(0, "", usage)
+                ),
                 self.assertRaisesRegex(AutomationError, "JSON contract"),
             ):
                 dispatcher.independent_review(record, {"actionable": True})
             self.assertEqual(record["review_verdict"], {})
             self.assertEqual(record["stage"], "independent_review")
             self.assertIsNone(record["repair_failure"])
-            self.assertEqual(record["last_failure_category"], "empty_or_invalid_task_delivery")
+            self.assertEqual(
+                record["last_failure_category"], "empty_or_invalid_task_delivery"
+            )
 
     def test_model_contract_rejects_blockers_extras_and_secret_evidence(self) -> None:
         spec = importlib.util.spec_from_file_location(
@@ -2854,7 +3169,9 @@ raise SystemExit(64)
             "exact_next_action": "run complete verification",
         }
         self.assertEqual(
-            dispatcher.sanitized_implementation_result(base, ["candidate.txt"])["blockers"],
+            dispatcher.sanitized_implementation_result(base, ["candidate.txt"])[
+                "blockers"
+            ],
             [],
         )
         with self.assertRaisesRegex(AutomationError, "blocker"):
@@ -2869,7 +3186,9 @@ raise SystemExit(64)
             dispatcher.sanitized_implementation_result(
                 {**base, "verification": ["AKIA" + "A" * 16]}, ["candidate.txt"]
             )
-        self.assertEqual(secret.exception.category, "secret_credential_or_protected_operation")
+        self.assertEqual(
+            secret.exception.category, "secret_credential_or_protected_operation"
+        )
         review = {
             "passed": False,
             "findings": [
@@ -2930,7 +3249,9 @@ raise SystemExit(64)
             )
             verification.chmod(0o755)
             subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
-            subprocess.run(["git", "commit", "-qm", "verification harness"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "verification harness"], cwd=repo, check=True
+            )
             spec = importlib.util.spec_from_file_location(
                 "verification_dispatch", ROOT / "scripts/openclaw_dispatch.py"
             )
@@ -2971,7 +3292,9 @@ raise SystemExit(64)
                     "candidate_base_commit": subprocess.check_output(
                         ["git", "rev-parse", "HEAD"], cwd=repo, text=True
                     ).strip(),
-                    "scoped_changed_paths": ["scripts/openclaw-deterministic-verification.sh"],
+                    "scoped_changed_paths": [
+                        "scripts/openclaw-deterministic-verification.sh"
+                    ],
                 }
             )
             with self.assertRaises(AutomationError) as failure:
@@ -2980,8 +3303,12 @@ raise SystemExit(64)
             self.assertEqual(record["stage"], "deterministic_verification")
             with self.assertRaises(AutomationError) as repeated:
                 dispatcher.deterministic_verification(record)
-            self.assertEqual(repeated.exception.category, "repeated_identical_tool_call")
-            self.assertIn("exit 125; failed gate database-test", str(repeated.exception))
+            self.assertEqual(
+                repeated.exception.category, "repeated_identical_tool_call"
+            )
+            self.assertIn(
+                "exit 125; failed gate database-test", str(repeated.exception)
+            )
 
 
 class ContinuationAndAttemptTests(unittest.TestCase):
@@ -3000,8 +3327,9 @@ class ContinuationAndAttemptTests(unittest.TestCase):
             "completed_implementation_substages": [],
             "recovery_generation": 0,
         }
-        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
-            dispatcher, "STATE_DIR", Path(directory)
+        with (
+            tempfile.TemporaryDirectory() as directory,
+            mock.patch.object(dispatcher, "STATE_DIR", Path(directory)),
         ):
             self.assertFalse(
                 dispatcher.schedule_implementation_ceiling_recovery(
@@ -3057,8 +3385,7 @@ class ContinuationAndAttemptTests(unittest.TestCase):
             )
             review_marker = json.loads(
                 (
-                    state_dir
-                    / "terminal/routing_recovery_pending/review-first.json"
+                    state_dir / "terminal/routing_recovery_pending/review-first.json"
                 ).read_text()
             )
             self.assertIn("independent-review retry", review_marker["next_action"])
@@ -3144,7 +3471,9 @@ class ContinuationAndAttemptTests(unittest.TestCase):
                 spec.loader.exec_module(dispatcher)
             record = {"implementation_complete": True}
             self.assertIsNone(
-                dispatcher.verified_continuation_handoff("{}", record, "independent_review")
+                dispatcher.verified_continuation_handoff(
+                    "{}", record, "independent_review"
+                )
             )
             safe = {
                 "stage_result": "model_session_or_token_ceiling",
@@ -3178,7 +3507,9 @@ class ContinuationAndAttemptTests(unittest.TestCase):
             safe["required_check_failed"] = False
             for key in ("failed_check", "repair_failure", "last_failure_category"):
                 record[key] = "durable failure remains"
-                with mock.patch.object(dispatcher, "relevant_processes", return_value=[]):
+                with mock.patch.object(
+                    dispatcher, "relevant_processes", return_value=[]
+                ):
                     self.assertIsNone(
                         dispatcher.verified_continuation_handoff(
                             json.dumps(safe), record, "independent_review"
@@ -3232,7 +3563,9 @@ class ContinuationAndAttemptTests(unittest.TestCase):
                 self.assertTrue(record["continuation_used"])
                 self.assertFalse(record["product_code_modification_permitted"])
                 with self.assertRaisesRegex(AutomationError, "already consumed"):
-                    dispatcher.consume_pending_continuation(record, "independent_review")
+                    dispatcher.consume_pending_continuation(
+                        record, "independent_review"
+                    )
 
     def test_pre_model_attempt_reservation_is_released(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -3301,7 +3634,9 @@ class ContinuationAndAttemptTests(unittest.TestCase):
                     "stage": "implementation",
                     "last_failure_category": "gateway_or_network_failure",
                 }
-                packet_fingerprint = dispatcher.packet_actionable_fingerprint(record, packet)
+                packet_fingerprint = dispatcher.packet_actionable_fingerprint(
+                    record, packet
+                )
                 routing_fingerprint = dispatcher.stage_actionable_fingerprint(
                     repo,
                     preflight,
@@ -3317,14 +3652,20 @@ class ContinuationAndAttemptTests(unittest.TestCase):
                     },
                 )
                 with self.assertRaises(AutomationError) as raised:
-                    dispatcher.invoke_model(record, packet, model_policy("implementation"))
+                    dispatcher.invoke_model(
+                        record, packet, model_policy("implementation")
+                    )
             self.assertEqual(raised.exception.category, "gateway_or_network_failure")
-            marker = dispatcher.terminal_marker(state_dir / "terminal", routing_fingerprint)
+            marker = dispatcher.terminal_marker(
+                state_dir / "terminal", routing_fingerprint
+            )
             self.assertIsNotNone(marker)
             assert marker is not None
             evidence = json.loads(marker.read_text())
             self.assertEqual(evidence["status"], "repair_exhausted")
-            self.assertEqual(evidence["root_failure_category"], "gateway_or_network_failure")
+            self.assertEqual(
+                evidence["root_failure_category"], "gateway_or_network_failure"
+            )
             self.assertIn("Owner action", evidence["next_action"])
 
     def test_direct_recovery_exhaustion_uses_implementation_lifecycle_marker(
@@ -3356,7 +3697,9 @@ class ContinuationAndAttemptTests(unittest.TestCase):
                     "repair_failure": "authorized concrete defect",
                     "last_failure_category": "deterministic_test_failure",
                 }
-                packet_fingerprint = dispatcher.packet_actionable_fingerprint(record, packet)
+                packet_fingerprint = dispatcher.packet_actionable_fingerprint(
+                    record, packet
+                )
                 lifecycle_fingerprint = dispatcher.stage_actionable_fingerprint(
                     repo,
                     preflight,
@@ -3372,15 +3715,21 @@ class ContinuationAndAttemptTests(unittest.TestCase):
                     },
                 )
                 with self.assertRaises(AutomationError) as raised:
-                    dispatcher.invoke_model(record, packet, model_policy("direct_codex_recovery"))
+                    dispatcher.invoke_model(
+                        record, packet, model_policy("direct_codex_recovery")
+                    )
             self.assertEqual(raised.exception.category, "deterministic_test_failure")
-            marker = dispatcher.terminal_marker(state_dir / "terminal", lifecycle_fingerprint)
+            marker = dispatcher.terminal_marker(
+                state_dir / "terminal", lifecycle_fingerprint
+            )
             self.assertIsNotNone(marker)
             assert marker is not None
             evidence = json.loads(marker.read_text())
             self.assertEqual(evidence["status"], "repair_exhausted")
             self.assertEqual(evidence["stage"], "direct_codex_recovery")
-            self.assertEqual(evidence["root_failure_category"], "deterministic_test_failure")
+            self.assertEqual(
+                evidence["root_failure_category"], "deterministic_test_failure"
+            )
 
     def test_repeated_call_guard_preserves_underlying_result(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -3408,7 +3757,9 @@ class ContinuationAndAttemptTests(unittest.TestCase):
             )
             preserved = repeated_call_result(path, key)
             assert preserved is not None
-            self.assertEqual(preserved["preserved_underlying_result"], "exit 70 after one API call")
+            self.assertEqual(
+                preserved["preserved_underlying_result"], "exit 70 after one API call"
+            )
             self.assertEqual(
                 preserved["exact_next_eligible_action"],
                 "run focused network diagnostic",
@@ -3474,7 +3825,9 @@ class LockHealthAndWrapperTests(unittest.TestCase):
             path = Path(directory) / "lock"
             identity = {"pid": os.getpid(), "identity": "live"}
             with (
-                mock.patch.object(self.dispatch, "process_identity", return_value=identity),
+                mock.patch.object(
+                    self.dispatch, "process_identity", return_value=identity
+                ),
                 self.dispatch.CycleLock(path),
                 self.assertRaises(AutomationError),
             ):
@@ -3497,10 +3850,403 @@ class LockHealthAndWrapperTests(unittest.TestCase):
             self.assertTrue(path.exists())
             self.assertFalse(path.with_suffix(".owner.json").exists())
 
-    def test_post_exit_restoration_succeeds_naturally_and_fails_closed(self) -> None:
-        for natural_status in ("ok", "error", "ok_no_progress", "protected"):
+    def test_false_ci_failure_reconciliation_is_bound_to_exact_run_and_commit(
+        self,
+    ) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "post_exit_reconciliation",
+            ROOT / "scripts/openclaw-post-exit-restoration.py",
+        )
+        assert spec and spec.loader
+        restoration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(restoration)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evidence = root / "restoration/current.json"
+            evidence.parent.mkdir(parents=True)
+            repair_head = "e0469b6d519c0947662204869a535c7080185638"
+            metadata_commit = "7c0f67d07092702229329a57176ae0fdc95afd12"
+            continuation_head = "d" * 40
+            atomic_write_json(
+                evidence,
+                {
+                    "status": "failed_closed",
+                    "expected_repair_head": repair_head,
+                    "failure": f"restoration metadata CI failed for {metadata_commit}",
+                },
+            )
+            executable = root / "gh"
+            executable.write_text("#!/bin/sh\nexit 0\n")
+            executable.chmod(0o755)
+            args = argparse.Namespace(
+                expected_repair_head=repair_head,
+                expected_metadata_commit=metadata_commit,
+                expected_metadata_run_id=32511133186,
+                expected_continuation_head=continuation_head,
+                ci_evidence=str(root / "restoration/ci.json"),
+                github=str(executable),
+            )
+            with self.assertRaisesRegex(
+                restoration.RestorationError, "identity is not exact"
+            ):
+                restoration.reconcile_false_ci_failure(args, root, evidence)
+
+            args.expected_metadata_run_id = 32511133185
             with (
-                self.subTest(natural_status=natural_status),
+                mock.patch.object(restoration, "git", return_value=continuation_head),
+                mock.patch.object(
+                    restoration,
+                    "restoration_metadata",
+                    return_value=metadata_commit,
+                ),
+                mock.patch.object(
+                    restoration,
+                    "successful_ci_evidence",
+                    return_value={
+                        "run_id": 32511133185,
+                        "url": "https://example.invalid/runs/32511133185",
+                        "workflow_status": "completed",
+                        "conclusion": "success",
+                    },
+                ),
+            ):
+                restoration.reconcile_false_ci_failure(args, root, evidence)
+            reconciled = json.loads(evidence.read_text())
+            self.assertEqual(reconciled["status"], "reconciled_false_ci_failure")
+            self.assertEqual(reconciled["metadata_commit"], metadata_commit)
+            self.assertEqual(reconciled["run_id"], 32511133185)
+            self.assertIsNone(reconciled["notification"])
+            self.assertTrue(Path(reconciled["prior_evidence"]).exists())
+
+    def test_post_exit_install_failures_terminalize_with_exact_diagnostics(
+        self,
+    ) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "install_failure_post_exit",
+            ROOT / "scripts/openclaw-post-exit-restoration.py",
+        )
+        assert spec and spec.loader
+        restoration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(restoration)
+
+        for failure_kind in ("validation", "reconciliation", "submit"):
+            with (
+                self.subTest(failure_kind=failure_kind),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                root = Path(directory)
+                repo = root / "repo"
+                repo.mkdir()
+                job_path = root / "job.json"
+                atomic_write_json(
+                    job_path,
+                    {
+                        "id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+                        "declarationKey": "property-rental-24x7-v1",
+                        "name": "property-rental-24x7-supervisor",
+                        "agentId": "property-rental-supervisor",
+                        "sessionTarget": "isolated",
+                        "enabled": False,
+                        "schedule": {"kind": "every", "everyMs": 1_800_000},
+                        "payload": {
+                            "kind": "command",
+                            "argv": [
+                                str(repo / "scripts/openclaw-supervisor-dispatch.sh")
+                            ],
+                            "cwd": str(repo),
+                        },
+                        "state": {
+                            "lastRunAtMs": 1,
+                            "lastRunStatus": "ok",
+                            "consecutiveErrors": 0,
+                            "runningAtMs": None,
+                        },
+                    },
+                )
+                notification_log = root / "notification.log"
+                fake_openclaw = root / "openclaw"
+                fake_openclaw.write_text(
+                    """#!/usr/bin/env python3
+import json, os, pathlib, sys
+if sys.argv[1:3] == ['message', 'send']:
+    with pathlib.Path(os.environ['FAKE_NOTIFICATION_LOG']).open('a') as handle:
+        handle.write('failed_closed\\n')
+    print('{}')
+    raise SystemExit(0)
+path = pathlib.Path(os.environ['FAKE_JOB'])
+job = json.loads(path.read_text())
+if sys.argv[2] == 'disable':
+    job['enabled'] = False
+path.write_text(json.dumps(job))
+print(json.dumps(job))
+"""
+                )
+                fake_openclaw.chmod(0o755)
+                launchctl_log = root / "launchctl.log"
+                fake_launchctl = root / "launchctl"
+                fake_launchctl.write_text(
+                    "#!/bin/sh\n"
+                    'if [ "$1" = "submit" ]; then\n'
+                    "  printf 'submit stdout\\n'\n"
+                    "  printf '%s\\n' \"$GH_TOKEN\" >&2\n"
+                    "  exit 7\n"
+                    "fi\n"
+                    'printf \'%s\\n\' "$*" >> "$FAKE_LAUNCHCTL_LOG"\n'
+                )
+                fake_launchctl.chmod(0o755)
+                fake_github = root / "gh"
+                fake_github.write_text("#!/bin/sh\nexit 0\n")
+                fake_github.chmod(0o755)
+                openclaw_db = root / "openclaw.sqlite"
+                with sqlite3.connect(openclaw_db) as connection:
+                    connection.execute(
+                        """CREATE TABLE cron_jobs (
+                            job_id TEXT, name TEXT, enabled INTEGER,
+                            delivery_channel TEXT, delivery_to TEXT,
+                            delivery_account_id TEXT
+                        )"""
+                    )
+                    connection.execute(
+                        "INSERT INTO cron_jobs VALUES (?, ?, ?, ?, ?, ?)",
+                        (
+                            "8db8cc98-56a1-4687-9988-fd7e3750c51b",
+                            "property-rental-visibility-watchdog",
+                            1,
+                            "telegram",
+                            "test-sensitive-target",
+                            "test-sensitive-account",
+                        ),
+                    )
+                evidence = root / "restoration.json"
+                atomic_write_json(
+                    evidence,
+                    {
+                        "status": "failed_closed",
+                        "expected_repair_head": restoration.REPAIR_PUBLICATION_COMMIT,
+                        "failure": (
+                            "restoration metadata CI failed for "
+                            f"{restoration.FALSE_FAILURE_METADATA_COMMIT}"
+                        ),
+                        "notification": None,
+                    },
+                )
+                args = argparse.Namespace(
+                    repo=str(repo),
+                    dispatch_state=str(root / "dispatch"),
+                    evidence=str(evidence),
+                    ci_evidence=str(root / "ci.json"),
+                    openclaw=str(fake_openclaw),
+                    launchctl=str(fake_launchctl),
+                    github=(
+                        str(root / "missing-gh")
+                        if failure_kind == "validation"
+                        else str(fake_github)
+                    ),
+                    openclaw_db=str(openclaw_db),
+                    notification_source_job_id=restoration.NOTIFICATION_SOURCE_JOB_ID,
+                    notification_timeout=0.2,
+                    terminalizer_handoff_timeout=0.2,
+                    owner_pid=999999,
+                    expected_repair_head=restoration.REPAIR_PUBLICATION_COMMIT,
+                    expected_continuation_head="a" * 40,
+                    expected_metadata_commit=restoration.FALSE_FAILURE_METADATA_COMMIT,
+                    expected_metadata_run_id=restoration.FALSE_FAILURE_RUN_ID,
+                    poll=0.01,
+                    overlap_timeout=1.0,
+                    natural_run_timeout=1.0,
+                )
+                reconcile_effect = (
+                    restoration.RestorationError("synthetic reconciliation failure")
+                    if failure_kind == "reconciliation"
+                    else None
+                )
+                with (
+                    mock.patch.object(
+                        restoration,
+                        "reconcile_false_ci_failure",
+                        side_effect=reconcile_effect,
+                    ),
+                    mock.patch.dict(
+                        os.environ,
+                        {
+                            "FAKE_JOB": str(job_path),
+                            "FAKE_NOTIFICATION_LOG": str(notification_log),
+                            "FAKE_LAUNCHCTL_LOG": str(launchctl_log),
+                            "GH_TOKEN": "synthetic-secret-token",
+                        },
+                    ),
+                ):
+                    result = restoration.install(args)
+
+                self.assertEqual(result, 69)
+                terminal_text = evidence.read_text()
+                terminal = json.loads(terminal_text)
+                self.assertEqual(terminal["status"], "failed_closed")
+                self.assertFalse(terminal["scheduler_enabled"])
+                self.assertEqual(
+                    terminal["notification"]["delivery_status"], "delivered"
+                )
+                self.assertEqual(terminal["unload_status"], "unloaded")
+                self.assertEqual(
+                    notification_log.read_text().splitlines(), ["failed_closed"]
+                )
+                self.assertEqual(
+                    launchctl_log.read_text().splitlines(),
+                    [
+                        "bootout "
+                        f"gui/{os.getuid()}/"
+                        "com.property-rental.post-exit-restoration.e0469b6d519c"
+                    ],
+                )
+                self.assertNotIn("synthetic-secret-token", terminal_text)
+                self.assertNotIn("test-sensitive-target", terminal_text)
+                self.assertNotIn("test-sensitive-account", terminal_text)
+                if failure_kind == "validation":
+                    self.assertEqual(terminal["failure_phase"], "argument_validation")
+                    self.assertIsNone(terminal["launchctl_submit"])
+                elif failure_kind == "reconciliation":
+                    self.assertEqual(
+                        terminal["failure_phase"], "false_failure_reconciliation"
+                    )
+                    self.assertIsNone(terminal["launchctl_submit"])
+                else:
+                    self.assertEqual(terminal["failure_phase"], "launchctl_submit")
+                    self.assertEqual(terminal["launchctl_submit"]["exit_status"], 7)
+                    self.assertEqual(
+                        terminal["launchctl_submit"]["stdout"], "submit stdout\n"
+                    )
+                    self.assertEqual(
+                        terminal["launchctl_submit"]["stderr"], "[REDACTED]\n"
+                    )
+                    self.assertTrue(terminal["launchctl_submit"]["redactions_applied"])
+
+    def test_terminal_notification_claim_is_process_safe(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / "repo"
+            repo.mkdir()
+            evidence = root / "restoration.json"
+            repair_head = "e0469b6d519c0947662204869a535c7080185638"
+            atomic_write_json(
+                evidence,
+                {
+                    "status": "failed_closed",
+                    "expected_repair_head": repair_head,
+                    "failure": "synthetic terminal failure",
+                    "owner_action_required": False,
+                },
+            )
+            notification_log = root / "notification.log"
+            fake_openclaw = root / "openclaw"
+            fake_openclaw.write_text(
+                """#!/usr/bin/env python3
+import os, pathlib, sys, time
+if sys.argv[1:3] == ['message', 'send']:
+    time.sleep(0.1)
+    with pathlib.Path(os.environ['FAKE_NOTIFICATION_LOG']).open('a') as handle:
+        handle.write('sent\\n')
+    print('{}')
+    raise SystemExit(0)
+raise SystemExit(9)
+"""
+            )
+            fake_openclaw.chmod(0o755)
+            fake_launchctl = root / "launchctl"
+            fake_launchctl.write_text("#!/bin/sh\nexit 0\n")
+            fake_launchctl.chmod(0o755)
+            openclaw_db = root / "openclaw.sqlite"
+            with sqlite3.connect(openclaw_db) as connection:
+                connection.execute(
+                    """CREATE TABLE cron_jobs (
+                        job_id TEXT, name TEXT, enabled INTEGER,
+                        delivery_channel TEXT, delivery_to TEXT,
+                        delivery_account_id TEXT
+                    )"""
+                )
+                connection.execute(
+                    "INSERT INTO cron_jobs VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        "8db8cc98-56a1-4687-9988-fd7e3750c51b",
+                        "property-rental-visibility-watchdog",
+                        1,
+                        "telegram",
+                        "test-sensitive-target",
+                        "test-sensitive-account",
+                    ),
+                )
+            command = [
+                "python3",
+                str(ROOT / "scripts/openclaw-post-exit-restoration.py"),
+                "finalize",
+                "--repo",
+                str(repo),
+                "--dispatch-state",
+                str(root / "dispatch"),
+                "--evidence",
+                str(evidence),
+                "--openclaw",
+                str(fake_openclaw),
+                "--launchctl",
+                str(fake_launchctl),
+                "--github",
+                str(fake_openclaw),
+                "--openclaw-db",
+                str(openclaw_db),
+                "--notification-timeout",
+                "1",
+                "--expected-repair-head",
+                repair_head,
+            ]
+            environment = {
+                **os.environ,
+                "FAKE_NOTIFICATION_LOG": str(notification_log),
+            }
+            workers = [
+                subprocess.Popen(
+                    command,
+                    cwd=repo,
+                    env=environment,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                )
+                for _ in range(2)
+            ]
+            results = [worker.communicate(timeout=5) for worker in workers]
+            self.assertTrue(all(worker.returncode == 69 for worker in workers), results)
+            self.assertEqual(notification_log.read_text().splitlines(), ["sent"])
+            terminal_text = evidence.read_text()
+            terminal = json.loads(terminal_text)
+            self.assertTrue(terminal["notification"]["attempted"])
+            self.assertEqual(terminal["notification"]["delivery_status"], "delivered")
+            self.assertNotIn("test-sensitive-target", terminal_text)
+            self.assertNotIn("test-sensitive-account", terminal_text)
+
+    def test_post_exit_restoration_succeeds_naturally_and_fails_closed(self) -> None:
+        for (
+            natural_status,
+            notification_failure,
+            notification_hang,
+            unload_failure,
+            terminate_source_on_unload,
+        ) in (
+            ("ok", False, False, False, False),
+            ("ok", True, False, False, False),
+            ("error", False, False, False, False),
+            ("ok_no_progress", False, False, False, False),
+            ("protected", False, False, False, False),
+            ("error", False, True, False, False),
+            ("ok", False, False, True, False),
+            ("ok", False, False, False, True),
+        ):
+            with (
+                self.subTest(
+                    natural_status=natural_status,
+                    notification_failure=notification_failure,
+                    notification_hang=notification_hang,
+                    unload_failure=unload_failure,
+                    terminate_source_on_unload=terminate_source_on_unload,
+                ),
                 tempfile.TemporaryDirectory() as directory,
             ):
                 root = Path(directory)
@@ -3528,23 +4274,42 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                     },
                 )
                 wait_script = repo / "scripts/openclaw-wait-for-ci.sh"
-                wait_script.write_text("#!/bin/sh\nexit 0\n")
+                wait_script.write_text(
+                    """#!/usr/bin/env python3
+import json, pathlib, sys
+if '--evidence' in sys.argv:
+    path = pathlib.Path(sys.argv[sys.argv.index('--evidence') + 1])
+    sha = sys.argv[-1]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({'status':'success','workflow_status':'completed','commit':sha,'head_sha':sha,'conclusion':'success','run_id':999,'url':'https://example.invalid/runs/999'}))
+"""
+                )
                 wait_script.chmod(0o755)
-                subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
-                subprocess.run(["git", "config", "user.name", "test"], cwd=repo, check=True)
+                subprocess.run(
+                    ["git", "init", "-q", "-b", "main"], cwd=repo, check=True
+                )
+                subprocess.run(
+                    ["git", "config", "user.name", "test"], cwd=repo, check=True
+                )
                 subprocess.run(
                     ["git", "config", "user.email", "test@example.invalid"],
                     cwd=repo,
                     check=True,
                 )
                 subprocess.run(["git", "add", "."], cwd=repo, check=True)
-                subprocess.run(["git", "commit", "-qm", "repair publication"], cwd=repo, check=True)
+                subprocess.run(
+                    ["git", "commit", "-qm", "repair publication"], cwd=repo, check=True
+                )
                 origin = root / "origin.git"
                 subprocess.run(["git", "init", "-q", "--bare", str(origin)], check=True)
                 subprocess.run(
-                    ["git", "remote", "add", "origin", str(origin)], cwd=repo, check=True
+                    ["git", "remote", "add", "origin", str(origin)],
+                    cwd=repo,
+                    check=True,
                 )
-                subprocess.run(["git", "push", "-qu", "-u", "origin", "HEAD"], cwd=repo, check=True)
+                subprocess.run(
+                    ["git", "push", "-qu", "-u", "origin", "HEAD"], cwd=repo, check=True
+                )
                 repair_head = subprocess.check_output(
                     ["git", "rev-parse", "HEAD"], cwd=repo, text=True
                 ).strip()
@@ -3615,7 +4380,9 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                         "schedule": {"kind": "every", "everyMs": 1_800_000},
                         "payload": {
                             "kind": "command",
-                            "argv": [str(repo / "scripts/openclaw-supervisor-dispatch.sh")],
+                            "argv": [
+                                str(repo / "scripts/openclaw-supervisor-dispatch.sh")
+                            ],
                             "cwd": str(repo),
                         },
                         "state": {
@@ -3630,6 +4397,17 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                 fake.write_text(
                     """#!/usr/bin/env python3
 import json, os, pathlib, sys, time
+if sys.argv[1:3] == ['message', 'send']:
+    message = sys.argv[sys.argv.index('--message') + 1]
+    kind = 'complete' if message.startswith('RESTORATION_COMPLETE') else 'failed_closed'
+    with pathlib.Path(os.environ['FAKE_NOTIFICATION_LOG']).open('a') as handle:
+        handle.write(kind + '\\n')
+    if os.environ.get('FAKE_NOTIFICATION_HANG') == '1':
+        time.sleep(5)
+    if os.environ.get('FAKE_NOTIFICATION_FAIL') == '1':
+        raise SystemExit(9)
+    print('{}')
+    raise SystemExit(0)
 path = pathlib.Path(os.environ['FAKE_JOB'])
 job = json.loads(path.read_text())
 action = sys.argv[2]
@@ -3655,10 +4433,52 @@ print(json.dumps(job))
 """
                 )
                 fake.chmod(0o755)
+                notification_log = root / "notification.log"
+                openclaw_db = root / "openclaw.sqlite"
+                with sqlite3.connect(openclaw_db) as connection:
+                    connection.execute(
+                        """CREATE TABLE cron_jobs (
+                            job_id TEXT, name TEXT, enabled INTEGER,
+                            delivery_channel TEXT, delivery_to TEXT,
+                            delivery_account_id TEXT
+                        )"""
+                    )
+                    connection.execute(
+                        "INSERT INTO cron_jobs VALUES (?, ?, ?, ?, ?, ?)",
+                        (
+                            "8db8cc98-56a1-4687-9988-fd7e3750c51b",
+                            "property-rental-visibility-watchdog",
+                            1,
+                            "telegram",
+                            "test-sensitive-target",
+                            "test-sensitive-account",
+                        ),
+                    )
                 launchctl_log = root / "launchctl.log"
                 fake_launchctl = root / "launchctl"
                 fake_launchctl.write_text(
-                    "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$FAKE_LAUNCHCTL_LOG\"\n"
+                    """#!/usr/bin/env python3
+import os, pathlib, subprocess, sys
+if sys.argv[1] == 'submit':
+    separator = sys.argv.index('--')
+    child_env = dict(os.environ)
+    child_env['FAKE_SOURCE_PID'] = str(os.getppid())
+    subprocess.Popen(
+        sys.argv[separator + 1:],
+        env=child_env,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    raise SystemExit(0)
+with pathlib.Path(os.environ['FAKE_LAUNCHCTL_LOG']).open('a') as handle:
+    handle.write(' '.join(sys.argv[1:]) + '\\n')
+if os.environ.get('FAKE_UNLOAD_FAIL') == '1' and not sys.argv[-1].endswith('.terminalizer'):
+    raise SystemExit(7)
+if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith('.terminalizer'):
+    os.kill(int(os.environ['FAKE_SOURCE_PID']), 15)
+"""
                 )
                 fake_launchctl.chmod(0o755)
                 evidence = root / "restoration.json"
@@ -3689,10 +4509,16 @@ print(json.dumps(job))
                         str(fake),
                         "--launchctl",
                         str(fake_launchctl),
+                        "--github",
+                        str(fake),
+                        "--openclaw-db",
+                        str(openclaw_db),
                         "--owner-pid",
                         "999999",
                         "--expected-repair-head",
                         repair_head,
+                        "--notification-timeout",
+                        "0.05",
                         "--poll",
                         "0.01",
                         "--overlap-timeout",
@@ -3707,16 +4533,45 @@ print(json.dumps(job))
                         "FAKE_DISPATCH": str(dispatch_state),
                         "FAKE_NATURAL_STATUS": natural_status,
                         "FAKE_LAUNCHCTL_LOG": str(launchctl_log),
+                        "FAKE_NOTIFICATION_LOG": str(notification_log),
+                        "FAKE_NOTIFICATION_FAIL": "1" if notification_failure else "0",
+                        "FAKE_NOTIFICATION_HANG": "1" if notification_hang else "0",
+                        "FAKE_UNLOAD_FAIL": "1" if unload_failure else "0",
+                        "FAKE_TERMINATE_SOURCE": (
+                            "1" if terminate_source_on_unload else "0"
+                        ),
                         "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
                     },
                     capture_output=True,
                     text=True,
                     check=False,
                 )
+                terminalizer_deadline = time.monotonic() + 2
+                while time.monotonic() < terminalizer_deadline:
+                    observed = json.loads(evidence.read_text())
+                    if (
+                        (observed.get("notification") or {}).get("delivery_status")
+                        in {"delivered", "failed"}
+                        and (observed.get("terminalizer") or {}).get(
+                            "self_unload_requested_at"
+                        )
+                        and launchctl_log.exists()
+                        and any(
+                            line.endswith(".terminalizer")
+                            for line in launchctl_log.read_text().splitlines()
+                        )
+                    ):
+                        break
+                    time.sleep(0.01)
                 restored = json.loads(evidence.read_text())
                 job = json.loads(job_path.read_text())
-                if natural_status == "ok":
-                    self.assertEqual(result.returncode, 0, result.stderr)
+                expected_complete = natural_status == "ok" and not unload_failure
+                if expected_complete:
+                    self.assertEqual(
+                        result.returncode,
+                        -15 if terminate_source_on_unload else 0,
+                        result.stderr,
+                    )
                     self.assertEqual(restored["status"], "complete")
                     self.assertTrue(job["enabled"])
                     self.assertFalse(restored["v1_020_started"])
@@ -3737,22 +4592,24 @@ print(json.dumps(job))
                     self.assertEqual(
                         fresh["corrected_routing_retry"]["consumed_attempts"], 0
                     )
-                    self.assertEqual(fresh["candidate_base_commit"], restored["metadata_commit"])
+                    self.assertEqual(
+                        fresh["candidate_base_commit"], restored["metadata_commit"]
+                    )
                     self.assertEqual(
                         fresh["completed_implementation_substages"], ["sign_in"]
                     )
                     self.assertFalse((dispatch_state / "last-failure.json").exists())
                     self.assertFalse((dispatch_state / "attempts/V1-019.json").exists())
                     archived = list(
-                        (
-                            dispatch_state
-                            / "superseded/v1-019-invocation-contract"
-                        ).glob("*.json")
+                        (dispatch_state / "superseded/v1-019-invocation-contract").glob(
+                            "*.json"
+                        )
                     )
                     self.assertEqual(len(archived), 5)
                     self.assertTrue(
                         (
-                            dispatch_state / "terminal/oversized_or_ceiling_stopped/stale.json"
+                            dispatch_state
+                            / "terminal/oversized_or_ceiling_stopped/stale.json"
                         ).exists()
                     )
                     self.assertFalse(
@@ -3784,10 +4641,16 @@ print(json.dumps(job))
                             str(fake),
                             "--launchctl",
                             str(fake_launchctl),
+                            "--github",
+                            str(fake),
+                            "--openclaw-db",
+                            str(openclaw_db),
                             "--owner-pid",
                             "999999",
                             "--expected-repair-head",
                             repair_head,
+                            "--notification-timeout",
+                            "0.05",
                         ],
                         cwd=repo,
                         env={
@@ -3796,6 +4659,13 @@ print(json.dumps(job))
                             "FAKE_DISPATCH": str(dispatch_state),
                             "FAKE_NATURAL_STATUS": natural_status,
                             "FAKE_LAUNCHCTL_LOG": str(launchctl_log),
+                            "FAKE_NOTIFICATION_LOG": str(notification_log),
+                            "FAKE_NOTIFICATION_FAIL": "1"
+                            if notification_failure
+                            else "0",
+                            "FAKE_NOTIFICATION_HANG": "1" if notification_hang else "0",
+                            "FAKE_UNLOAD_FAIL": "1" if unload_failure else "0",
+                            "FAKE_TERMINATE_SOURCE": "0",
                             "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
                         },
                         capture_output=True,
@@ -3807,14 +4677,50 @@ print(json.dumps(job))
                         json.loads(evidence.read_text())["status"], "failed_closed"
                     )
                     self.assertNotIn("pending_post_exit", evidence.read_text())
+                final_evidence_text = evidence.read_text()
+                final_evidence = json.loads(final_evidence_text)
+                self.assertEqual(
+                    final_evidence["notification"]["delivery_status"],
+                    "failed"
+                    if notification_failure or notification_hang
+                    else "delivered",
+                )
+                expected_notification = (
+                    "complete" if expected_complete else "failed_closed"
+                )
+                self.assertEqual(
+                    notification_log.read_text().splitlines(), [expected_notification]
+                )
+                self.assertNotIn("test-sensitive-target", final_evidence_text)
+                self.assertNotIn("test-sensitive-account", final_evidence_text)
+                if notification_hang:
+                    self.assertEqual(
+                        final_evidence["notification"]["failure"],
+                        "OpenClaw Telegram message command timed out",
+                    )
+                if unload_failure:
+                    self.assertEqual(final_evidence["unload_status"], "failed")
+                    self.assertEqual(
+                        final_evidence["restoration_result_before_terminal_failure"],
+                        "complete",
+                    )
+                    self.assertFalse(job["enabled"])
                 expected_target = (
                     f"bootout gui/{os.getuid()}/"
                     f"com.property-rental.post-exit-restoration.{repair_head[:12]}"
                 )
                 launchctl_calls = launchctl_log.read_text().splitlines()
-                self.assertTrue(all(call == expected_target for call in launchctl_calls))
+                expected_terminalizer_target = f"{expected_target}.terminalizer"
+                self.assertTrue(
+                    all(
+                        call in {expected_target, expected_terminalizer_target}
+                        for call in launchctl_calls
+                    )
+                )
+                expected_pairs = 1 if expected_complete else 2
+                self.assertEqual(launchctl_calls.count(expected_target), expected_pairs)
                 self.assertEqual(
-                    len(launchctl_calls), 1 if natural_status == "ok" else 2
+                    launchctl_calls.count(expected_terminalizer_target), expected_pairs
                 )
 
     def test_atomic_lock_fails_closed_for_unprovable_owner_metadata(self) -> None:
@@ -3933,7 +4839,9 @@ print(json.dumps(job))
             with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}):
                 classified = classify_compact_state(repo)
             self.assertEqual(classified["lifecycle"], "verification_pending")
-            self.assertEqual(classified["state_issue"], "capability_verification_continuation")
+            self.assertEqual(
+                classified["state_issue"], "capability_verification_continuation"
+            )
             self.assertFalse(classified["implementation_allowed"])
             self.assertTrue(classified["preservation_valid"])
             self.assertTrue(classified["exact_identity"]["no_failed_check"])
@@ -3963,12 +4871,16 @@ print(json.dumps(job))
                     )
             invoked.assert_not_called()
             self.assertEqual(record["stage"], "deterministic_verification")
-            self.assertEqual(record["scoped_changed_paths"], ["candidate.txt", "ops/STATE.json"])
+            self.assertEqual(
+                record["scoped_changed_paths"], ["candidate.txt", "ops/STATE.json"]
+            )
 
             candidate_path.write_text("drifted implementation\n")
             with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}):
                 drifted = classify_compact_state(repo)
-            self.assertNotEqual(drifted["state_issue"], "capability_verification_continuation")
+            self.assertNotEqual(
+                drifted["state_issue"], "capability_verification_continuation"
+            )
             self.assertFalse(drifted["preservation_valid"])
 
     def test_genuine_owner_category_remains_blocked(self) -> None:
@@ -4056,7 +4968,9 @@ print(json.dumps(job))
             with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}):
                 repair = classify_compact_state(repo)
             self.assertEqual(repair["lifecycle"], "bounded_repair_pending")
-            self.assertEqual(repair["state_issue"], "bounded_automatic_repair_authorized")
+            self.assertEqual(
+                repair["state_issue"], "bounded_automatic_repair_authorized"
+            )
             self.assertTrue(repair["actionable"])
             self.assertFalse(repair["owner_action_required"])
 
@@ -4112,7 +5026,9 @@ print(json.dumps(job))
             classified = classify_compact_state(repo)
             self.assertFalse(classified["actionable"])
             self.assertFalse(classified["owner_action_required"])
-            self.assertEqual(classified["state_issue"], "successor_held_by_approved_scope")
+            self.assertEqual(
+                classified["state_issue"], "successor_held_by_approved_scope"
+            )
             self.assertEqual(classified["queue_candidate"]["id"], "V1-020")
 
     def test_installed_openai_codex_contract_uses_local_reservation_without_unsupported_parameter(
@@ -4172,7 +5088,9 @@ print(json.dumps(job))
             ):
                 enforce_llm_call({"max_output_tokens": 40_000}, invoke)
                 enforce_llm_call({"max_output_tokens": 40_000}, invoke)
-                with self.assertRaisesRegex(GuardError, "PROACTIVE_BUDGET_RESERVATION_STOP"):
+                with self.assertRaisesRegex(
+                    GuardError, "PROACTIVE_BUDGET_RESERVATION_STOP"
+                ):
                     enforce_llm_call({"max_output_tokens": 40_000}, invoke)
             self.assertEqual(len(observed_requests), 2)
             self.assertTrue(
@@ -4197,9 +5115,7 @@ print(json.dumps(job))
                 budget["unsupported_provider_parameters_removed"],
                 ["max_output_tokens"],
             )
-            self.assertGreaterEqual(
-                budget["locally_reserved_next_call_tokens"], 2_048
-            )
+            self.assertGreaterEqual(budget["locally_reserved_next_call_tokens"], 2_048)
 
     def test_hermes_tool_guard_enforces_repository_least_privilege(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -4228,7 +5144,9 @@ print(json.dumps(job))
                 )
                 writable_subdirectory = repo / "backend/src/property_rental"
                 writable_subdirectory.mkdir(parents=True)
-                (writable_subdirectory / "Makefile").write_text("backend-test:\n\tgit push\n")
+                (writable_subdirectory / "Makefile").write_text(
+                    "backend-test:\n\tgit push\n"
+                )
                 with self.assertRaisesRegex(GuardError, "repository root"):
                     guard_tool(
                         "terminal",
@@ -4237,7 +5155,9 @@ print(json.dumps(job))
                             "workdir": str(writable_subdirectory),
                         },
                     )
-                guard_tool("write_file", {"path": "backend/src/property_rental/candidate.py"})
+                guard_tool(
+                    "write_file", {"path": "backend/src/property_rental/candidate.py"}
+                )
                 guard_tool(
                     "patch",
                     {
@@ -4297,7 +5217,9 @@ print(json.dumps(job))
                         },
                     )
                 with self.assertRaises(GuardError):
-                    guard_tool("terminal", {"command": "psql property", "workdir": str(repo)})
+                    guard_tool(
+                        "terminal", {"command": "psql property", "workdir": str(repo)}
+                    )
                 with self.assertRaises(GuardError):
                     guard_tool("process", {"command": "make test"})
                 with self.assertRaises(GuardError):
@@ -4384,7 +5306,9 @@ print(json.dumps(job))
                 blocked = context.middleware["tool_execution"](
                     "terminal", {"command": "git push"}, tool
                 )
-                directive = context.hooks["pre_tool_call"]("terminal", {"command": "git push"})
+                directive = context.hooks["pre_tool_call"](
+                    "terminal", {"command": "git push"}
+                )
             self.assertFalse(provider_called)
             self.assertFalse(tool_called)
             self.assertIn("only read-only git", blocked)
@@ -4455,7 +5379,9 @@ print(json.dumps(job))
             ):
                 register_plugin(Context())
             self.assertTrue((session_home / "auth.json").is_symlink())
-            self.assertEqual((session_home / "auth.json").resolve(), source_auth.resolve())
+            self.assertEqual(
+                (session_home / "auth.json").resolve(), source_auth.resolve()
+            )
             ledger = json.loads(budget.read_text())
             self.assertTrue(ledger["preflight_guard_loaded"])
             self.assertTrue(ledger["chat_guard_loaded"])
@@ -4598,7 +5524,7 @@ raise SystemExit(1)
                 "#!/bin/sh\n"
                 'case "$*" in\n'
                 f"  *ppid=*) printf '%s\\n' {os.getpid()} ;;\n"
-                '  *) printf \'%s\\n\' "$PROPERTY_RENTAL_REPO/scripts/openclaw_dispatch.py" ;;\n'
+                "  *) printf '%s\\n' \"$PROPERTY_RENTAL_REPO/scripts/openclaw_dispatch.py\" ;;\n"
                 "esac\n"
             )
             fake_ps.chmod(0o755)
@@ -4774,13 +5700,17 @@ raise SystemExit(1)
             repo = RepositoryEvidenceTests().make_repo(root)
             preflight = repo / "scripts/openclaw-supervisor-preflight.sh"
             preflight.parent.mkdir(exist_ok=True)
-            preflight.write_bytes((ROOT / "scripts/openclaw-supervisor-preflight.sh").read_bytes())
+            preflight.write_bytes(
+                (ROOT / "scripts/openclaw-supervisor-preflight.sh").read_bytes()
+            )
             preflight.chmod(0o755)
             (repo / "scripts/openclaw_automation.py").write_bytes(
                 (ROOT / "scripts/openclaw_automation.py").read_bytes()
             )
             subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
-            subprocess.run(["git", "commit", "-qm", "report harness"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "report harness"], cwd=repo, check=True
+            )
             database = root / "openclaw.sqlite"
             with sqlite3.connect(database) as connection:
                 connection.execute(
@@ -4863,7 +5793,9 @@ raise SystemExit(1)
                     None,
                     9_999_000,
                 )
-                connection.execute("INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", row)
+                connection.execute(
+                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", row
+                )
                 connection.execute(
                     "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                     ("duplicate", *row[1:]),
@@ -4935,7 +5867,9 @@ print('{}')
                 candidate="V1-018",
                 stage="implementation",
                 repository_fingerprint=fingerprint,
-                preserved_worktree_fingerprint=preservation_evidence(ROOT).get("fingerprint"),
+                preserved_worktree_fingerprint=preservation_evidence(ROOT).get(
+                    "fingerprint"
+                ),
                 task_path=task,
                 provider="openai-codex",
                 model="gpt-5.6-sol",
@@ -5089,7 +6023,9 @@ print('{}')
             workspace = root / "workspace"
             (workspace / "bin").mkdir(parents=True)
             installed = workspace / "bin/hermes-property-rental"
-            installed.write_bytes((ROOT / "scripts/hermes-property-rental").read_bytes())
+            installed.write_bytes(
+                (ROOT / "scripts/hermes-property-rental").read_bytes()
+            )
             installed.chmod(0o755)
             database = root / "openclaw.sqlite"
             payload = json.dumps(
@@ -5156,7 +6092,9 @@ print('{}')
             self.assertNotEqual(duplicate.returncode, 0)
             self.assertIn("exactly one", duplicate.stderr)
             with sqlite3.connect(database) as connection:
-                connection.execute("DELETE FROM cron_jobs WHERE job_id = 'different-supervisor-id'")
+                connection.execute(
+                    "DELETE FROM cron_jobs WHERE job_id = 'different-supervisor-id'"
+                )
                 connection.execute("UPDATE cron_jobs SET every_ms = 60000")
             refused = subprocess.run(
                 [str(ROOT / "scripts/openclaw-installation-check.sh")],

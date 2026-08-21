@@ -1,47 +1,51 @@
-# V1-019 openai-codex invocation-contract follow-up — verified; publication pending
+# V1-019 post-exit CI detection repair — independently reviewed; publication pending
 
-- Objective: repair only the published V1-019 automation route after Hermes session
-  `6baf17e6e77d7582e72b2e19a40ab806` failed before model execution.
-- Baseline: clean synchronized `d877cf3b6648083f97e54d661933e3d188999dae` on
-  `implementation/foundation`; V1-019 product files and canonical specifications remain unchanged.
-- Exact failure: the installed direct `openai-codex` endpoint rejected injected
-  `max_output_tokens` with HTTP 400. One API call started, zero completed, zero tokens were
-  counted, and no model or Owner-authorized implementation attempt was consumed.
-- Classification: `unsupported_invocation_configuration`, recoverable without Owner action.
-  The exact failed routing fingerprint is
-  `ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2`.
-- Repair: keep the 60,000 cumulative ceiling; reserve predicted context plus completion/checkpoint
-  allowance locally; omit unsupported provider parameters; preserve exact zero-usage provider
-  diagnostics and attempt accounting; publish routing revision
-  `v1-019-invocation-contract-repair-v2` with one bounded eligible retry.
-- Restoration: `failed_closed` and `complete` are terminal. Both unload the exact submitted
-  one-shot label; restart re-entry never resets terminal evidence to `pending_post_exit`.
-- Safety boundary: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is disabled with no next
-  run. Malfunctioning label `com.property-rental.post-exit-restoration.ca4143c8deb3` is unloaded.
-  No other cron job was modified.
-- Verification: PASS. The complete profile observed all 15 gates, including 97 automation tests,
+- Objective: repair only the false post-exit CI failure and terminal-notification path under
+  existing durable V1 authorization. No renewed Owner authorization was used.
+- Baseline: clean synchronized `7c0f67d07092702229329a57176ae0fdc95afd12` on
+  `implementation/foundation`; V1-019 product files and canonical specifications are unchanged.
+- Root cause: launchd lacks Homebrew in `PATH`; the CI waiter invoked bare `gh` in a pipeline whose
+  successful `head` command masked the missing executable and caused a false 30-minute timeout.
+- Exact historical truth: restoration-metadata commit `7c0f67d07092702229329a57176ae0fdc95afd12`
+  is bound to GitHub Actions run `32511133185`, workflow status `completed`, conclusion `success`.
+- Repair: installation supplies and verifies one absolute GitHub executable. The waiter captures
+  each GitHub command before parsing, resolves and persists one exact run ID, polls only that run,
+  and performs a final authoritative lookup with stdout, stderr, exit status, run ID, URL, workflow
+  status, and conclusion before failure or timeout.
+- Regression coverage: launchd-minimal `PATH` recognizes delayed success; a missing configured
+  executable fails immediately; failure and timeout preserve final evidence; reconciliation is
+  exact-run/commit bound.
+- Terminal behavior: a separate asynchronous launchd terminalizer unloads the source continuation
+  before `complete` notification, so source SIGTERM cannot preempt delivery. The source waits on a
+  bounded durable handoff instead of failure-exiting into keepalive restart, and an OS-locked claim
+  makes the notification deduplication cross-process safe. No credential or route is persisted.
+- Safety boundary: terminal results attempt exact one-shot self-unload. An unload failure converts
+  apparent completion to `failed_closed`, disables supervisor
+  `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb`, and sends no false completion notification. Installation
+  validation, reconciliation, and submit failures follow the same terminal boundary. Overlap
+  detection is unchanged.
+- Verification: PASS. The complete profile observed all 15 gates, including 104 automation tests,
   backend 333 pass with 105 expected environment skips, disposable PostgreSQL 105 pass, frontend
   3 pass, formatting, lint, strict typing, builds, audits, traceability, JSON, and diff integrity.
-  Evidence: `/private/tmp/property-rental-v1-019-invocation-contract-follow-up.json`.
-- Independent review: PASS with no blocking findings across the exact nine-path snapshot;
-  repository fingerprint `13494038c776a3d7c03bf36e1372745ad7a3c9a836f679813d8460ffd532fccb`
-  and compact-state fingerprint `a16d7db426cb8bee697b20e24d7971e3e75cb47b1f9db35340e5cd00222c791a`.
-- Blockers: none. Owner action: none. Durable V1 authorization remains valid.
-- Exact next action: publish and require successful GitHub Actions, then install the corrected
-  fail-closed post-exit continuation. This repository-bound CLI must not enable the supervisor.
+  Evidence: `/private/tmp/property-rental-post-exit-ci-detection-repair-async-final.json`.
+- Independent review: PASS on the exact seven-path snapshot; five material lifecycle findings over
+  the review rounds were corrected, and the final pass found no blocking or material issue.
+- Blockers: none. Owner action: none. Token ceilings and V1-020 are unchanged.
+- Exact next action: commit, push, require successful GitHub Actions, then reconcile only run
+  `32511133185`, install the corrected post-exit continuation, and verify the supervisor remains
+  disabled until this repository-bound CLI exits.
 
 ## Preserved predecessor
 
-- V1-018 product commit `98ee724e98d2442fd0254bd825256707108f71c8` and GitHub Actions
-  run `32461040956` remain published and verified.
-- Prior V1-019 routing repair `ca4143c8deb348fddf3c44414022de1fef54831e` and restoration
-  metadata `d877cf3b6648083f97e54d661933e3d188999dae` remain preserved.
+- V1-019 routing repair commit `e0469b6d519c0947662204869a535c7080185638` remains unchanged.
+- The false `failed_closed` evidence remains local and unnotified until exact reconciliation.
+- V1-019 remains the only active candidate; V1-020 successor activation remains held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation candidate state: V1-019 approved and active; implementation has not started.
-- Automation exact next action: Publish the corrected routing revision, then run one naturally scheduled bounded V1-019 retry.
+- Automation exact next action: Complete this post-exit repair, then run one naturally scheduled bounded V1-019 retry.
 <!-- AUTOMATION_STATUS_END -->
 <!-- POST_EXIT_RESTORATION_BEGIN -->
-- Post-exit restoration metadata is published; the existing supervisor remains disabled until the continuation enables it.
-- V1-019 remains the only active candidate; V1-020 successor activation is held.
+- Post-exit repair is verified but unpublished; the existing supervisor remains disabled.
+- Restoration success requires post-CLI zero overlap and naturally scheduled bounded V1-019 progress.
 <!-- POST_EXIT_RESTORATION_END -->

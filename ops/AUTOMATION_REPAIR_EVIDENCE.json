@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "repair": "v1-019-openai-codex-invocation-contract-follow-up",
-  "status": "published_awaiting_post_exit_restoration",
+  "status": "post_exit_ci_detection_repair_verified_awaiting_publication",
   "baseline_branch": "implementation/foundation",
   "baseline_head": "d877cf3b6648083f97e54d661933e3d188999dae",
   "candidate": "V1-019",
@@ -9,6 +9,44 @@
   "canonical_specifications_modified": false,
   "token_ceiling": 60000,
   "token_ceiling_increased": false,
+  "post_exit_ci_detection_follow_up": {
+    "baseline": "7c0f67d07092702229329a57176ae0fdc95afd12",
+    "changed_path_count": 7,
+    "classification": "launchd_path_pipeline_status_masking",
+    "false_failure": {
+      "commit": "7c0f67d07092702229329a57176ae0fdc95afd12",
+      "notification_requested_or_delivered": false,
+      "run_id": 32511133185,
+      "run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32511133185",
+      "workflow_status": "completed",
+      "conclusion": "success"
+    },
+    "github_executable": "exact absolute path supplied and verified at installation",
+    "notification": {
+      "bounded_delivery_timeout": true,
+      "cross_process_locked_claim": true,
+      "deduplicated_terminal_attempts": true,
+      "delivery_status_separate_from_restoration_truth": true,
+      "source_sigterm_safe_terminalizer_handoff": true,
+      "route_or_credentials_persisted": false
+    },
+    "owner_action_required": false,
+    "product_files_changed": [],
+    "independent_review": {
+      "compact_state_fingerprint": "916d5a72ce02a976b69400ad1f9c8ef7803daf4c3a8d7c92ce5b7d89af59947d",
+      "final_verdict": "PASS",
+      "material_findings_remediated": 5,
+      "repository_fingerprint": "c868fd60caca36cad6ad6860371d225772946e0cb42fb975d5439548b401bfa5",
+      "reviewer_edits": false
+    },
+    "status": "independently_reviewed_awaiting_publication",
+    "token_ceiling_changed": false,
+    "verification": {
+      "automation_tests": "104 passed plus compact-state routing and visibility watchdog suites",
+      "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-post-exit-ci-detection-repair-async-final.json",
+      "historical_ci_lookup": "PASS: exact commit and run completed successfully"
+    }
+  },
   "incident": {
     "routing_fingerprint": "ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2",
     "hermes_session": "6baf17e6e77d7582e72b2e19a40ab806",
