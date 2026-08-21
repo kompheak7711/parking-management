@@ -397,6 +397,7 @@ class RepositoryEvidenceTests(unittest.TestCase):
                 ],
             },
         )
+        (repo / ".gitignore").write_text("__pycache__/\n")
         subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
         subprocess.run(["git", "config", "user.name", "test"], cwd=repo, check=True)
         subprocess.run(
@@ -404,7 +405,7 @@ class RepositoryEvidenceTests(unittest.TestCase):
             cwd=repo,
             check=True,
         )
-        subprocess.run(["git", "add", "--", "ops"], cwd=repo, check=True)
+        subprocess.run(["git", "add", "--", "ops", ".gitignore"], cwd=repo, check=True)
         subprocess.run(["git", "commit", "-qm", "baseline"], cwd=repo, check=True)
         return repo
 

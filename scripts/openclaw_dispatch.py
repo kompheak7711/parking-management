@@ -636,7 +636,7 @@ def invoke_model(
         "stage_state": digest(model_call_state(record)),
         "actionable": actionable,
     }
-    call_identity = "openclaw-hermes-task"
+    call_identity = "hermes-property-rental"
     call_key = repeated_call_key(
         identity=call_identity,
         arguments=[stage, str(task_path)],
@@ -713,7 +713,7 @@ def invoke_model(
     try:
         result = subprocess.run(
             [
-                str(REPO / "scripts/openclaw-hermes-task.sh"),
+                str(REPO / "scripts/hermes-property-rental"),
                 str(task_path),
                 str(manifest_path),
             ],
