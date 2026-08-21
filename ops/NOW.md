@@ -1,4 +1,31 @@
-# V1-018 Account and capability administration API — published and reconciled
+# V1-019 code-69 automation-routing repair — verified; publication pending
+
+- Objective: repair the V1-019 implementation routing failure without changing the approved
+  product scope, canonical specifications, or the 60,000-token implementation ceiling.
+- Preserved baseline: `1d091b6b581703b54eb370f3b3106a3dae45c19c`; V1-019 product files
+  remain unchanged and the original implementation attempt counter is one.
+- Root failure: guarded Hermes session `907e45dd7a00a62dbe30f19ef6d9225b` consumed
+  73,493 counted tokens over seven calls because the packet omitted UI routing/excerpts,
+  referenced an inaccessible external skill, repeated dispatcher-proven Git discovery, and
+  reserved no safe allowance for the next request context plus completion/checkpoint output.
+- Approved repair: repository-local compact guidance; exact UI-092/UI-109-113 and
+  TEST-094/095/135 excerpts; trusted dispatcher evidence; proactive budget reservation;
+  deterministic V1-019-only substages; recoverable ceiling classification; eligible changed
+  retry fingerprints; accurate recovery health; and production-shaped wrapper-path coverage.
+- Scheduler: intentionally disabled at `2026-08-21T14:37:12Z` while this repository-bound
+  repair/publication CLI is an overlapping worker. No scheduler restoration may occur in this
+  CLI; a tested fail-closed post-exit continuation must perform the eventual restoration.
+- Verification: PASS. The complete deterministic profile observed all 15 gates, including 96
+  automation tests; evidence is `/private/tmp/property-rental-v1-019-routing-repair-final.json`.
+- Independent review: PASS with no findings across all 12 repair paths; repository fingerprint
+  `e8693a83884882ee682ed9fe546aa7cd837dd3693d8bd26a9e5627b416e5254d` and compact-state
+  fingerprint `6c158d6f7bec7a1c32fec8b1cf8dfe4adeaa0e23b0574ba82c9c2c7bc8b39030`.
+- Blockers: none. Owner action: none. Durable V1 authorization remains valid.
+- Exact next action: publish the verified repair, require successful GitHub Actions, then install
+  the tested fail-closed post-exit continuation. It alone may restore the existing supervisor
+  after repository-worker overlap reaches zero and must prove a naturally scheduled V1-019 run.
+
+## Preserved published predecessor
 
 - Objective: implement the approved bounded V1-018 Account and capability administration API.
 - Current task: preserve the published API-079/080, SEC-019-023, and PR-AUTH result on

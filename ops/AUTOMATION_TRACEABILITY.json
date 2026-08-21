@@ -93,8 +93,8 @@
     {"clause": "supervisor to dispatcher to guarded Hermes wrapper delivery", "test_id": "test_dispatcher_runs_fresh_implementation_then_persists_next_stage"},
     {"clause": "capability-only continuation binds exact preserved identity and skips implementation", "test_id": "test_capability_only_continuation_requires_exact_preserved_identity"},
     {"clause": "genuine structured Owner blockers remain non-actionable", "test_id": "test_genuine_owner_category_remains_blocked"},
-    {"clause": "cumulative multi-call boundary blocks the next API and records in-flight overshoot", "test_id": "test_cumulative_guard_stops_before_third_api_call_and_records_cache"},
-    {"clause": "cache-read usage is reported separately without double-counting", "test_id": "test_cumulative_guard_stops_before_third_api_call_and_records_cache"},
+    {"clause": "proactive cumulative reservation blocks a request unless predicted context plus checkpoint output fits without ordinary in-flight overshoot", "test_id": "test_proactive_guard_reserves_context_and_checkpoint_before_third_call"},
+    {"clause": "cache-read usage is reported separately without double-counting", "test_id": "test_proactive_guard_reserves_context_and_checkpoint_before_third_call"},
     {"clause": "Hermes file terminal Git database process make-root and patch-endpoint permissions are least-privilege", "test_id": "test_hermes_tool_guard_enforces_repository_least_privilege"},
     {"clause": "scheduler recovery and recovery notification are deduplicated", "test_id": "test-openclaw-visibility-watchdog.sh"},
     {"clause": "120000 review manifest requires persisted exceptional classification", "test_id": "test_exceptional_review_manifest_requires_persisted_classification"},
@@ -107,6 +107,19 @@
     {"clause": "post-model configuration failures consume the bounded attempt", "test_id": "test_model_invocation_accounting_does_not_infer_missing_api_calls"},
     {"clause": "repository-bound interactive Codex workers block successor mutation before any file changes", "test_id": "test_staged_two_path_successor_waits_for_repository_codex_then_resumes_without_implementation"},
     {"clause": "already-complete predecessor metadata permits exact two-path activation resumption without consuming attempts or starting implementation", "test_id": "test_staged_two_path_successor_waits_for_repository_codex_then_resumes_without_implementation"},
-    {"clause": "scheduler health requires a successful check after the latest restoration timestamp", "test_id": "test_scheduler_health_requires_success_after_latest_restoration"}
+    {"clause": "scheduler health requires a successful check after the latest restoration timestamp", "test_id": "test_scheduler_health_requires_success_after_latest_restoration"},
+    {"clause": "V1-019 packets route UI authorities to UI specification and embed only UI-092 UI-109-113 TEST-094-095 and TEST-135", "test_id": "test_v1_019_packet_embeds_only_exact_ui_and_test_authorities"},
+    {"clause": "V1-019 repository-local continuity guidance replaces an inaccessible external skill and trusts dispatcher evidence", "test_id": "test_v1_019_packet_embeds_only_exact_ui_and_test_authorities"},
+    {"clause": "schema-two routing repair evidence retains the legacy exact preserved-candidate identity contract", "test_id": "test_v1_019_packet_embeds_only_exact_ui_and_test_authorities"},
+    {"clause": "V1-019 is deterministically divided into sign-in MFA-recovery sessions and account-capability implementation substages", "test_id": "test_v1_019_real_wrapper_ceiling_recovery_retries_with_changed_route"},
+    {"clause": "V1-019 production-shaped recovery crosses the real packet manifest wrapper guard accounting marker retry and watchdog path", "test_id": "test_v1_019_real_wrapper_ceiling_recovery_retries_with_changed_route"},
+    {"clause": "normalized durable model usage preserves API call reservation boundary prediction and overshoot evidence with unavailable semantics", "test_id": "test_v1_019_real_wrapper_ceiling_recovery_retries_with_changed_route"},
+    {"clause": "watchdog repair-exhaustion matching uses the exact V1-019 routing revision substage and recovery generation", "test_id": "test_v1_019_real_wrapper_ceiling_recovery_retries_with_changed_route"},
+    {"clause": "model-session or token-ceiling state is recoverable without Owner action while a bounded retry is scheduled", "test_id": "test_v1_019_real_wrapper_ceiling_recovery_retries_with_changed_route"},
+    {"clause": "Owner action is permitted only after two changed-fingerprint ceiling recoveries for the exact V1-019 substage are exhausted", "test_id": "test_v1_019_ceiling_recovery_exhausts_only_after_two_changed_retries"},
+    {"clause": "an independent-review ceiling stop also schedules a real fresh bounded recovery instead of an unscheduled pending state", "test_id": "test_v1_019_ceiling_recovery_exhausts_only_after_two_changed_retries"},
+    {"clause": "post-exit restoration supersedes stale evidence waits for zero overlap enables only the existing supervisor proves natural V1-019 progress propagates protected Owner boundaries and disables on failure", "test_id": "test_post_exit_restoration_succeeds_naturally_and_fails_closed"},
+    {"clause": "post-exit restoration resumes idempotently after its exact two-path metadata commit is already published", "test_id": "test_post_exit_restoration_succeeds_naturally_and_fails_closed"},
+    {"clause": "V1-020 remains unselected after the approved V1-019 terminal scope", "test_id": "test_v1_019_terminal_scope_holds_v1_020_without_owner_block"}
   ]
 }

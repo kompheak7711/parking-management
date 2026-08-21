@@ -24,11 +24,15 @@ printf '%s' "$preflight" | jq -e '
   --argjson completed "$expected_completed" --argjson total "$expected_total" >/dev/null
 packet="$(PROPERTY_RENTAL_AUTOMATION_STAGE=implementation PROPERTY_RENTAL_TEST_PROCESS_ROWS= "$repo/scripts/openclaw-task-packet.sh")"
 printf '%s' "$packet" | jq -e '
-  .schema_version == 2
+  .schema_version == 3
   and .candidate == $candidate
   and .stage == "implementation"
   and (.authorization_boundaries.standing_authorization | type) == "boolean"
   and (.compact_inputs | length) == 4
+  and .canonical_paths == ["docs/006_UI_SPECIFICATION.md", "docs/007_TESTING_STRATEGY.md"]
+  and (.authoritative_excerpts | map(.authority)) == ["UI-092", "UI-109", "UI-110", "UI-111", "UI-112", "UI-113", "TEST-094", "TEST-095", "TEST-135"]
+  and (.continuity_instructions | join(" ") | contains("no external skill lookup"))
+  and (.dispatcher_evidence_trust.instruction | contains("Do not spend tool calls rediscovering"))
   and (.output_contract.required | index("exact_next_action") != null)
 ' --arg candidate "$expected_candidate" >/dev/null
 

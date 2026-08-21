@@ -16,6 +16,7 @@ from openclaw_automation import (
     health_classification,
     post_restoration_scheduler_ok,
     stage_actionable_fingerprint,
+    v1_019_routing_identity,
 )
 
 REPO = Path(os.environ.get("PROPERTY_RENTAL_REPO", Path(__file__).resolve().parents[1]))
@@ -232,6 +233,7 @@ def main() -> None:
         or "unknown"
     )
     stage = "idle"
+    stage_record: dict[str, object] = {}
     blocker_kind = preflight.get("blocker_category")
     stage_path = DISPATCH_STATE_DIR / "candidates" / f"{candidate_id}.json"
     if stage_path.exists():
@@ -245,7 +247,11 @@ def main() -> None:
     exhausted_records = sorted(EXHAUSTED_DIR.glob("*.json"))
     exhausted_matched = False
     current_actionable = stage_actionable_fingerprint(
-        REPO, preflight, candidate=candidate_id, stage=stage
+        REPO,
+        preflight,
+        candidate=candidate_id,
+        stage=stage,
+        routing_identity=v1_019_routing_identity(stage_record, stage),
     )
     for exhausted_path in exhausted_records:
         try:

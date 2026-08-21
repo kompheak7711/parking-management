@@ -16,6 +16,7 @@ from openclaw_automation import (
     FAILURE_CATEGORIES,
     RECOVERABLE_ROUTING_FAILURES,
     SECRET_PATTERN,
+    V1_019_ROUTING_REVISION as ROUTING_REVISION,
     AutomationError,
     ModelPolicy,
     atomic_write_json,
@@ -42,6 +43,7 @@ from openclaw_automation import (
     task_packet,
     utc_now,
     validate_usage,
+    v1_019_routing_identity as record_routing_identity,
 )
 from openclaw_hermes_guard import create_manifest
 
@@ -63,6 +65,37 @@ MAX_CYCLES = min(
 RECONCILIATION_NEXT_ACTION = (
     "Select the exact structured approved successor from ops/V1_ROADMAP.json "
     "without a model; do not reimplement the published candidate."
+)
+MAX_CEILING_RECOVERIES_PER_SUBSTAGE = 2
+V1_019_SUBSTAGES: tuple[dict[str, Any], ...] = (
+    {
+        "id": "sign_in",
+        "order": 1,
+        "total": 4,
+        "task": "Local sign-in and enumeration-safe authentication UI",
+        "include": ["local username/password sign-in", "generic failure and recovery responses"],
+    },
+    {
+        "id": "mfa_recovery",
+        "order": 2,
+        "total": 4,
+        "task": "MFA enrollment/challenge and protected recovery UI",
+        "include": ["MFA enrollment and challenge", "recovery codes", "administrative recovery"],
+    },
+    {
+        "id": "sessions",
+        "order": 3,
+        "total": 4,
+        "task": "Session expiry, reauthentication, and revocation UI",
+        "include": ["inactivity and absolute expiry", "reauthentication", "session revocation"],
+    },
+    {
+        "id": "account_capability",
+        "order": 4,
+        "total": 4,
+        "task": "Account, role-bundle, capability, and authorization-history UI",
+        "include": ["account administration", "capability-sensitive controls", "authorization history"],
+    },
 )
 
 
@@ -598,11 +631,135 @@ def packet_prompt(packet: dict[str, Any]) -> str:
     )
     return (
         f"{introduction}\n"
-        "Use the property-rental-continuity skill and only the compact paths and authorities listed below. "
+        "The packet contains the complete repository-local continuity instructions and exact authoritative excerpts. "
+        "Do not attempt to load an external skill. Trust the dispatcher-supplied branch, HEAD, fingerprints, and clean/preserved-state evidence; do not rediscover them with Git or process commands. "
+        "When bounded_substage is present, implement only that substage and do not begin a later one in this session. "
         "Do not load any supervisor transcript, earlier model reasoning, unrelated diff, raw log, or broad canonical set. "
         "Return only the required JSON object.\n\n"
         + json.dumps(packet, sort_keys=True, indent=2)
     )
+
+
+def current_bounded_substage(record: dict[str, Any]) -> dict[str, Any] | None:
+    if record.get("candidate") != "V1-019":
+        return None
+    completed = set(record.get("completed_implementation_substages") or [])
+    return next(
+        (dict(item) for item in V1_019_SUBSTAGES if item["id"] not in completed),
+        None,
+    )
+
+
+def schedule_implementation_ceiling_recovery(
+    record: dict[str, Any], *, actionable: str, phase: str | None = None
+) -> bool:
+    """Schedule one changed-fingerprint retry, or terminally exhaust its exact budget."""
+    resolve_pending_routing_recovery(record, outcome="attempted")
+    substage = current_bounded_substage(record)
+    substage_id = phase or str((substage or {}).get("id") or "undivided")
+    lifecycle_stage = phase or "implementation"
+    recoveries = record.setdefault("ceiling_recovery_attempts", {})
+    recovery_count = int(recoveries.get(substage_id, 0)) + 1
+    recoveries[substage_id] = recovery_count
+    if recovery_count > MAX_CEILING_RECOVERIES_PER_SUBSTAGE:
+        record.update(
+            {
+                "stage": lifecycle_stage,
+                "recovery_pending": False,
+                "bounded_recovery_exhausted": True,
+                "last_failure_category": "model_session_or_token_ceiling",
+            }
+        )
+        persist_terminal_marker(
+            STATE_DIR / "terminal",
+            status="repair_exhausted",
+            fingerprint=actionable,
+            evidence={
+                "candidate": record["candidate"],
+                "phase": substage_id,
+                "attempts": recovery_count,
+                "root_failure_category": "model_session_or_token_ceiling",
+                "next_action": "Owner action is required because the bounded ceiling-recovery budget is exhausted.",
+            },
+        )
+        return True
+    record.update(
+        {
+            "stop_reason": "model_session_or_token_ceiling",
+            "recovery_pending": True,
+            "recovery_generation": int(record.get("recovery_generation") or 0) + 1,
+            "last_failure_category": None,
+            "stage": lifecycle_stage,
+            "pending_recovery_marker_fingerprint": actionable,
+        }
+    )
+    next_action = (
+        "Dispatch the scheduled fresh bounded independent-review retry."
+        if phase == "independent_review"
+        else "Dispatch the scheduled fresh bounded implementation retry for the same V1-019 substage."
+    )
+    persist_terminal_marker(
+        STATE_DIR / "terminal",
+        status="routing_recovery_pending",
+        fingerprint=actionable,
+        evidence={
+            "candidate": record["candidate"],
+            "phase": substage_id,
+            "attempt": recovery_count,
+            "root_failure_category": "model_session_or_token_ceiling",
+            "next_action": next_action,
+        },
+    )
+    return False
+
+
+def resolve_pending_routing_recovery(
+    record: dict[str, Any], *, outcome: str
+) -> None:
+    """Archive dispatched recovery evidence and clear only its recoverable live failure."""
+    fingerprint = record.get("pending_recovery_marker_fingerprint")
+    if isinstance(fingerprint, str) and fingerprint:
+        source = (
+            STATE_DIR / "terminal/routing_recovery_pending" / f"{fingerprint}.json"
+        )
+        if not source.exists():
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "the persisted pending recovery marker is missing",
+            )
+        target = STATE_DIR / "terminal" / f"recovery_{outcome}" / source.name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        source.replace(target)
+        marker = json.loads(target.read_text())
+        marker.update(
+            {
+                "status": f"recovery_{outcome}",
+                "resolved_at": utc_now(),
+            }
+        )
+        atomic_write_json(target, marker)
+        record.pop("pending_recovery_marker_fingerprint", None)
+    else:
+        return
+    failure_path = STATE_DIR / "last-failure.json"
+    if not failure_path.exists():
+        return
+    try:
+        failure = json.loads(failure_path.read_text())
+    except json.JSONDecodeError:
+        return
+    if (
+        not isinstance(failure, dict)
+        or failure.get("category") != "model_session_or_token_ceiling"
+        or failure.get("owner_action_required") is True
+    ):
+        return
+    archive = STATE_DIR / "resolved-failures" / f"{digest(failure)[:20]}.json"
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    failure_path.replace(archive)
+    failure["status"] = f"recovery_{outcome}"
+    failure["resolved_at"] = utc_now()
+    atomic_write_json(archive, failure)
 
 
 def packet_actionable_fingerprint(
@@ -621,6 +778,7 @@ def packet_actionable_fingerprint(
             "actionable": packet["preflight_fingerprint"],
             "candidate": record["candidate"],
             "stage": lifecycle_stage,
+            "routing_identity": packet.get("routing_identity") or {},
         }
     )
 
@@ -636,6 +794,9 @@ def model_call_state(record: dict[str, Any]) -> dict[str, Any]:
         "repair_failure",
         "failed_check",
         "last_failure_category",
+        "recovery_generation",
+        "recovery_pending",
+        "completed_implementation_substages",
     )
     return {key: record.get(key) for key in keys}
 
@@ -920,17 +1081,6 @@ def invoke_model(
             },
         )
         if error.category == "model_session_or_token_ceiling":
-            persist_terminal_marker(
-                STATE_DIR / "terminal",
-                status="oversized_or_ceiling_stopped",
-                fingerprint=actionable,
-                evidence={
-                    "candidate": record["candidate"],
-                    "stage": stage,
-                    "underlying_result": str(error),
-                    "next_action": "Consume the one eligible fresh verification-only continuation for this exact fingerprint.",
-                },
-            )
             handoff_output = result.stdout.strip()
             handoff = verified_continuation_handoff(handoff_output, record, stage)
             if handoff:
@@ -943,6 +1093,14 @@ def invoke_model(
                     }
                 )
                 save_stage(record)
+            elif stage in {"implementation", "direct_codex_recovery"}:
+                schedule_implementation_ceiling_recovery(
+                    record, actionable=actionable
+                )
+            elif stage == "independent_review":
+                schedule_implementation_ceiling_recovery(
+                    record, actionable=actionable, phase="independent_review"
+                )
         save_stage(record)
         raise
     consume_attempt(attempt_path, stage=stage)
@@ -1002,7 +1160,7 @@ def safe_model_text(value: Any, *, field: str, maximum: int = 2000) -> str:
 
 
 def sanitized_implementation_result(
-    value: dict[str, Any], actual: list[str]
+    value: dict[str, Any], actual: list[str], *, expected_substage: str | None = None
 ) -> dict[str, Any]:
     required = {
         "stage_result",
@@ -1011,6 +1169,8 @@ def sanitized_implementation_result(
         "blockers",
         "exact_next_action",
     }
+    if expected_substage is not None:
+        required.add("substage_complete")
     if set(value) != required:
         raise AutomationError(
             "empty_or_invalid_task_delivery",
@@ -1019,6 +1179,11 @@ def sanitized_implementation_result(
     if value.get("stage_result") not in {"passed", "complete", "completed"}:
         raise AutomationError(
             "empty_or_invalid_task_delivery", "implementation did not report completion"
+        )
+    if expected_substage is not None and value.get("substage_complete") is not True:
+        raise AutomationError(
+            "empty_or_invalid_task_delivery",
+            f"bounded implementation substage {expected_substage} did not report completion",
         )
     paths = value.get("changed_paths")
     if not isinstance(paths, list) or not all(isinstance(path, str) for path in paths):
@@ -1045,7 +1210,7 @@ def sanitized_implementation_result(
             "empty_or_invalid_task_delivery",
             "implementation reported a blocker and cannot advance",
         )
-    return {
+    result = {
         "stage_result": str(value["stage_result"]),
         "changed_paths": actual,
         "verification": safe_verification,
@@ -1054,6 +1219,9 @@ def sanitized_implementation_result(
             value.get("exact_next_action"), field="exact_next_action"
         ),
     }
+    if expected_substage is not None:
+        result["substage_complete"] = True
+    return result
 
 
 def sanitized_review_verdict(value: dict[str, Any]) -> dict[str, Any]:
@@ -1408,7 +1576,20 @@ def publish_state_contract_repair(record: dict[str, Any]) -> None:
 def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
     is_recovery = bool(record.get("repair_failure"))
     model_stage = "direct_codex_recovery" if is_recovery else "implementation"
-    packet = task_packet(REPO, preflight, model_stage)
+    substage = current_bounded_substage(record)
+    if record.get("candidate") == "V1-019" and substage is None:
+        record["stage"] = "deterministic_verification"
+        record["implementation_complete"] = True
+        save_stage(record)
+        return
+    packet = task_packet(
+        REPO,
+        preflight,
+        model_stage,
+        bounded_substage=substage,
+        recovery_generation=int(record.get("recovery_generation") or 0),
+    )
+    packet["routing_identity"] = record_routing_identity(record, "implementation")
     if is_recovery:
         packet["repair"] = {
             "authorized": True,
@@ -1446,14 +1627,33 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
     try:
         raw_result = parse_model_json(output)
         state = json.loads((REPO / "ops/STATE.json").read_text())
-        completed = bool((state.get("approval") or {}).get("implementation_completed"))
-        if not completed:
+        approval = state.get("approval") or {}
+        completed = bool(approval.get("implementation_completed"))
+        started = bool(approval.get("implementation_started"))
+        final_substage = bool(
+            substage and substage.get("order") == substage.get("total")
+        )
+        if substage and not started:
+            raise AutomationError(
+                "empty_or_invalid_task_delivery",
+                "implementation did not durably record that V1-019 started",
+            )
+        if (substage is None or final_substage) and not completed:
             raise AutomationError(
                 "empty_or_invalid_task_delivery",
                 "implementation did not durably record completion",
             )
+        if substage and not final_substage and completed:
+            raise AutomationError(
+                "empty_or_invalid_task_delivery",
+                "a non-final V1-019 substage prematurely marked the candidate complete",
+            )
         after = changed_paths(REPO)
-        result = sanitized_implementation_result(raw_result, after)
+        result = sanitized_implementation_result(
+            raw_result,
+            after,
+            expected_substage=str(substage["id"]) if substage else None,
+        )
     except AutomationError as error:
         finalize_usage(
             record,
@@ -1464,23 +1664,44 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         record["last_failure_category"] = error.category
         save_stage(record)
         raise
+    completed_substages = list(record.get("completed_implementation_substages") or [])
+    if substage:
+        completed_substages.append(str(substage["id"]))
+    all_substages_complete = bool(
+        record.get("candidate") != "V1-019"
+        or len(completed_substages) == len(V1_019_SUBSTAGES)
+    )
+    next_action = (
+        "Run deterministic verification in a separate stage."
+        if all_substages_complete
+        else "Dispatch the next fresh bounded V1-019 implementation substage."
+    )
+    resolve_pending_routing_recovery(record, outcome="succeeded")
     finalize_usage(
         record,
         usage_report,
         stage_result="passed",
-        exact_next_action="Run deterministic verification in a separate stage.",
+        exact_next_action=next_action,
     )
     record.update(
         {
-            "stage": "deterministic_verification",
-            "implementation_complete": True,
+            "stage": (
+                "deterministic_verification"
+                if all_substages_complete
+                else "implementation"
+            ),
+            "implementation_complete": all_substages_complete,
             "implementation_result": result,
+            "completed_implementation_substages": completed_substages,
             "scoped_changed_paths": full_candidate_paths(record),
             "expected_worktree_paths": after,
             "repository_fingerprint": repository_fingerprint(REPO),
             "repair_failure": None,
             "failed_check": None,
             "last_failure_category": None,
+            "stop_reason": None,
+            "recovery_pending": False,
+            "recovery_generation": 0,
             "product_code_modification_permitted": True,
             "publication_substage": None,
             "reviewed_paths": [],
@@ -1747,6 +1968,7 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
         )
         save_stage(record)
         raise inconsistent_verdict_error
+    resolve_pending_routing_recovery(record, outcome="succeeded")
     finalize_usage(
         record,
         usage_report,
@@ -1762,6 +1984,10 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
             "reviewed_paths": expected_paths,
             "publication_paths": changed_paths(REPO),
             "publication_substage": None,
+            "stop_reason": None,
+            "recovery_pending": False,
+            "recovery_generation": 0,
+            "bounded_recovery_exhausted": False,
         }
     )
     save_stage(record)
@@ -2150,10 +2376,15 @@ def post_publication(record: dict[str, Any]) -> None:
     synchronized = synchronized_repository_shas()
     record.update(
         {
-            "stage": "next_candidate_activation",
+            "stage": (
+                "complete"
+                if record.get("candidate") == "V1-019"
+                else "next_candidate_activation"
+            ),
             "reconciliation_substage": "complete",
             "reconciliation_commit": commit,
             "reconciliation_shas": synchronized,
+            "successor_activation_held": record.get("candidate") == "V1-019",
         }
     )
     save_stage(record)
@@ -2551,6 +2782,7 @@ def dispatch() -> int:
                 preflight,
                 candidate=candidate,
                 stage=str(stage),
+                routing_identity=record_routing_identity(record, str(stage)),
             )
             existing_terminal = terminal_marker(STATE_DIR / "terminal", actionable)
             continuation_pending = bool(
@@ -2616,7 +2848,7 @@ def main() -> int:
             "pre_model_infrastructure_failure": "Retry the same compact stage once infrastructure is available; no model attempt was consumed.",
             "gateway_or_network_failure": "Run a focused gateway diagnostic, then use the bounded retry only if the actionable fingerprint changes.",
             "unsupported_invocation_configuration": "Correct the supported invocation boundary without changing product scope; no model attempt was consumed.",
-            "model_session_or_token_ceiling": "Use the single eligible fresh verification-only continuation for the exact preserved fingerprint, or stop if it was already consumed.",
+            "model_session_or_token_ceiling": "Run the scheduled fresh bounded recovery for the exact V1-019 model stage or substage; request Owner action only if its bounded recovery budget is exhausted.",
             "repeated_identical_tool_call": "Use the preserved underlying result to choose a different focused diagnostic; do not repeat the unchanged call.",
             "deterministic_test_failure": "Repair only the proven in-scope failing check, rerun the complete profile, and obtain a fresh review.",
             "independent_review_defect": "Repair only the concrete in-scope review findings, rerun all gates, and obtain a fresh review.",
@@ -2631,6 +2863,7 @@ def main() -> int:
             "Request Owner action only if the recorded blocker crosses a protected boundary.",
         )
         actionable = fingerprint
+        routing_record: dict[str, Any] = {}
         try:
             preflight = command_json(
                 str(REPO / "scripts/openclaw-supervisor-preflight.sh")
@@ -2639,9 +2872,14 @@ def main() -> int:
             existing = stage_file(candidate)
             stage = "reconciliation_dispatch"
             if existing.exists():
-                stage = str(json.loads(existing.read_text()).get("stage") or stage)
+                routing_record = json.loads(existing.read_text())
+                stage = str(routing_record.get("stage") or stage)
             actionable = stage_actionable_fingerprint(
-                REPO, preflight, candidate=candidate, stage=stage
+                REPO,
+                preflight,
+                candidate=candidate,
+                stage=stage,
+                routing_identity=record_routing_identity(routing_record, stage),
             )
         except (AutomationError, OSError, json.JSONDecodeError):
             actionable = digest(
@@ -2655,7 +2893,10 @@ def main() -> int:
         exhausted_marker = (
             STATE_DIR / "terminal" / "repair_exhausted" / f"{actionable}.json"
         )
-        if exhausted_marker.exists():
+        bounded_recovery_exhausted = bool(
+            routing_record.get("bounded_recovery_exhausted") is True
+        )
+        if exhausted_marker.exists() or bounded_recovery_exhausted:
             exact_next_action = (
                 "Owner action is required after the bounded repair budget is exhausted; "
                 f"the preserved root failure category is {error.category}."
@@ -2667,12 +2908,16 @@ def main() -> int:
             "repository_fingerprint": fingerprint,
             "actionable_fingerprint": actionable,
             "exact_next_action": exact_next_action,
-            "owner_action_required": error.category not in RECOVERABLE_ROUTING_FAILURES,
+            "owner_action_required": bool(
+                exhausted_marker.exists()
+                or bounded_recovery_exhausted
+                or error.category not in RECOVERABLE_ROUTING_FAILURES
+            ),
         }
         atomic_write_json(STATE_DIR / "last-failure.json", failure)
         marker_status = (
             "repair_exhausted"
-            if exhausted_marker.exists()
+            if exhausted_marker.exists() or bounded_recovery_exhausted
             else {
                 "deterministic_test_failure": "repair_pending",
                 "test_fixture_failure": "repair_pending",
@@ -2682,21 +2927,29 @@ def main() -> int:
                 "lock_or_overlapping_process_failure": "routing_recovery_pending",
                 "gateway_or_network_failure": "infrastructure_failure",
                 "unsupported_invocation_configuration": "routing_recovery_pending",
-                "model_session_or_token_ceiling": "oversized_or_ceiling_stopped",
+                "model_session_or_token_ceiling": "routing_recovery_pending",
                 "repeated_identical_tool_call": "repeated_identical_tool_call",
             }.get(error.category, "blocked")
         )
-        persist_terminal_marker(
-            STATE_DIR / "terminal",
-            status=marker_status,
-            fingerprint=actionable,
-            evidence={
-                "category": error.category,
-                "root_failure_category": error.category,
-                "next_action": exact_next_action,
-                "exact_next_action": failure["exact_next_action"],
-            },
+        recovery_marker_already_persisted = bool(
+            error.category == "model_session_or_token_ceiling"
+            and (
+                routing_record.get("recovery_pending") is True
+                or bounded_recovery_exhausted
+            )
         )
+        if not recovery_marker_already_persisted:
+            persist_terminal_marker(
+                STATE_DIR / "terminal",
+                status=marker_status,
+                fingerprint=actionable,
+                evidence={
+                    "category": error.category,
+                    "root_failure_category": error.category,
+                    "next_action": exact_next_action,
+                    "exact_next_action": failure["exact_next_action"],
+                },
+            )
         print(f"{error.category}: {error}", file=sys.stderr)
         return 69
 

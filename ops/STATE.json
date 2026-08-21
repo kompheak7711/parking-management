@@ -7,7 +7,7 @@
   "active_cycle": "v1-019-authentication-and-account-administration-ui",
   "branch": "implementation/foundation",
   "commit": "98ee724e98d2442fd0254bd825256707108f71c8",
-  "timestamp": "2026-08-21T13:01:44Z",
+  "timestamp": "2026-08-21T14:37:18Z",
   "risk_class": "high",
   "approval": {
     "status": "approved_ready",
@@ -122,14 +122,16 @@
     "roadmap_reconciliation": "current focused three-path commit; V1-019 remains unselected"
   },
   "automation_repair": {
-    "status": "restored",
-    "baseline": "68fedb53f06b9201f2547f9bc856c1985806a762",
+    "status": "published_awaiting_post_exit_restoration",
+    "baseline": "1d091b6b581703b54eb370f3b3106a3dae45c19c",
     "branch": "implementation/foundation",
-    "changed_path_count": 19,
-    "v1_017_product_modified": false,
-    "v1_018_implementation_started": true,
-    "scheduler_enabled": true,
-    "verification": {
+    "changed_path_count": 12,
+    "v1_019_product_modified": false,
+    "v1_019_original_implementation_attempts": 1,
+    "v1_019_original_automatic_recovery_attempts": 0,
+    "scheduler_enabled": false,
+    "stop_after_candidate": "V1-019",
+    "predecessor_verification": {
       "focused_automation_tests": 88,
       "compact_state_routing": "PASS",
       "watchdog_notifications": "PASS",
@@ -141,7 +143,7 @@
       "roadmap_traceability_json_scope_secret_canonical_diff": "PASS",
       "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-v1-018-final-verification.json"
     },
-    "independent_review": {
+    "predecessor_independent_review": {
       "status": "PASS",
       "first_verdict": "FAIL",
       "first_review_model": "gpt-5.6-sol",
@@ -254,7 +256,7 @@
       "required_reasoning": "xhigh",
       "token_ceiling": 90000
     },
-    "ci_correction_review": {
+    "predecessor_ci_correction_review": {
       "status": "PASS",
       "reviewed_repository_fingerprint": "33cdb97377056cd6d1bb551eadb944b9a337583de446bfd334712140d5aefa14",
       "reviewed_compact_state_fingerprint": "22f9be18d8fa3ffd84b02b929a56fa956f485639dca271af1c7280518b2ab7a3",
@@ -270,7 +272,7 @@
       "token_ceiling": 90000,
       "findings": 0
     },
-    "publication": {
+    "predecessor_publication": {
       "status": "published_and_remotely_verified",
       "repair_commit": "fdf2e23fdf9ebeb1d7f0a1687f0770a3c6d0715b",
       "ci_portability_correction_commit": "f1582eee406b14aeadfad22e58143d95c14f6b92",
@@ -288,7 +290,7 @@
       "metadata_ci_conclusion": "success",
       "local_upstream_remote_sha_equal": true
     },
-    "restoration": {
+    "predecessor_restoration": {
       "status": "healthy",
       "installed_wrapper_matches_repository": true,
       "schedule_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -316,7 +318,7 @@
       "next_run_at": null,
       "held_reason": null
     },
-    "latest_repository_guard_repair": {
+    "predecessor_repository_guard_repair": {
       "status": "published_and_remotely_verified",
       "implementation_commit": "6de59e043e2d82f7cae485e55e7c0f217220dd44",
       "portable_parent_proof_commit": "c332d83119d61f50e81c27f6c897e973a49a9737",
@@ -328,8 +330,23 @@
       "independent_review": "PASS",
       "local_upstream_remote_sha_equal": true
     },
-    "next_action": "After this scheduler-restoration metadata commit is CI-green and synchronized, enable the existing supervisor without manually activating V1-019 in this session.",
-    "timestamp": "2026-08-21T08:05:53Z"
+    "verification": {
+      "automation_tests": "96 passed",
+      "production_shaped_v1_019_route": "PASS",
+      "post_exit_fail_closed_restoration": "PASS",
+      "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-v1-019-routing-repair-final.json"
+    },
+    "independent_review": {
+      "status": "PASS",
+      "final_verdict": "PASS",
+      "findings": 0,
+      "reviewed_path_count": 12,
+      "reviewer_edits": false,
+      "repository_fingerprint": "e8693a83884882ee682ed9fe546aa7cd837dd3693d8bd26a9e5627b416e5254d",
+      "compact_state_fingerprint": "6c158d6f7bec7a1c32fec8b1cf8dfe4adeaa0e23b0574ba82c9c2c7bc8b39030"
+    },
+    "next_action": "Publish the verified repair, require successful GitHub Actions, then install the tested fail-closed post-exit restoration continuation while keeping the supervisor disabled until repository-worker overlap reaches zero.",
+    "timestamp": "2026-08-21T15:34:06Z"
   },
   "owner_decisions": {
     "password": "validate supplied value as 15-128 Unicode code points; NFC-normalize; revalidate normalized result as nonempty and 15-128 code points; blocklist, hash, and verify the complete normalized value without truncation; preserve spaces, paste, password managers, Unicode, no composition/rotation, and local compromised/common/expected/project-context rejection",

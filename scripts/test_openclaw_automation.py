@@ -48,9 +48,11 @@ from openclaw_automation import (
     repeated_call_result,
     repository_fingerprint,
     reserve_attempt,
+    stage_actionable_fingerprint,
     task_packet,
     usage_record,
     validate_usage,
+    v1_019_routing_identity,
 )
 from openclaw_hermes_guard import (
     GuardError,
@@ -204,9 +206,7 @@ class AutomationPolicyTests(unittest.TestCase):
                 },
                 policy,
             )
-        validate_usage(
-            {"model": "gpt-5.6-sol", "configured_max_tokens": 60_000}, policy
-        )
+        validate_usage({"model": "gpt-5.6-sol", "configured_max_tokens": 60_000}, policy)
         with self.assertRaisesRegex(AutomationError, "max_turns"):
             validate_usage(
                 {
@@ -348,9 +348,8 @@ class AutomationPolicyTests(unittest.TestCase):
         self.assertIn("empty_or_invalid_task_delivery", FAILURE_CATEGORIES)
         self.assertIn("test_fixture_failure", FAILURE_CATEGORIES)
         self.assertIn("remote_ci_failure", FAILURE_CATEGORIES)
-        self.assertIn(
-            "lock_or_overlapping_process_failure", RECOVERABLE_ROUTING_FAILURES
-        )
+        self.assertIn("lock_or_overlapping_process_failure", RECOVERABLE_ROUTING_FAILURES)
+        self.assertIn("model_session_or_token_ceiling", RECOVERABLE_ROUTING_FAILURES)
 
     def test_scheduler_health_requires_success_after_latest_restoration(self) -> None:
         common = {
@@ -361,14 +360,10 @@ class AutomationPolicyTests(unittest.TestCase):
             "heartbeat_ms": 10_000,
         }
         self.assertFalse(
-            post_restoration_scheduler_ok(
-                **common, last_run_ms=19_000, restored_at_ms=19_500
-            )
+            post_restoration_scheduler_ok(**common, last_run_ms=19_000, restored_at_ms=19_500)
         )
         self.assertTrue(
-            post_restoration_scheduler_ok(
-                **common, last_run_ms=19_750, restored_at_ms=19_500
-            )
+            post_restoration_scheduler_ok(**common, last_run_ms=19_750, restored_at_ms=19_500)
         )
 
 
@@ -385,6 +380,13 @@ class RepositoryEvidenceTests(unittest.TestCase):
     def make_repo(self, directory: Path) -> Path:
         repo = directory / "repo"
         (repo / "ops").mkdir(parents=True)
+        (repo / "docs").mkdir()
+        (repo / "docs/005_API_SPECIFICATION.md").write_text(
+            "# API\n\n## API-100 — Test API authority\n\nExact API requirement.\n"
+        )
+        (repo / "docs/008_SECURITY_MODEL.md").write_text(
+            "# Security\n\n## SEC-020 — Test security authority\n\nExact security requirement.\n"
+        )
         (repo / "ops/NOW.md").write_text("# Compact state\n")
         (repo / "ops/QUEUE.md").write_text("durable queue\n")
         state = {
@@ -429,7 +431,11 @@ class RepositoryEvidenceTests(unittest.TestCase):
             cwd=repo,
             check=True,
         )
-        subprocess.run(["git", "add", "--", "ops", ".gitignore"], cwd=repo, check=True)
+        subprocess.run(
+            ["git", "add", "--", "ops", "docs", ".gitignore"],
+            cwd=repo,
+            check=True,
+        )
         subprocess.run(["git", "commit", "-qm", "baseline"], cwd=repo, check=True)
         return repo
 
@@ -524,9 +530,7 @@ class RepositoryEvidenceTests(unittest.TestCase):
         subprocess.run(["git", "commit", "-qm", "baseline"], cwd=repo, check=True)
         origin = directory / "origin.git"
         subprocess.run(["git", "init", "-q", "--bare", str(origin)], check=True)
-        subprocess.run(
-            ["git", "remote", "add", "origin", str(origin)], cwd=repo, check=True
-        )
+        subprocess.run(["git", "remote", "add", "origin", str(origin)], cwd=repo, check=True)
         subprocess.run(["git", "push", "-qu", "origin", "main"], cwd=repo, check=True)
         return repo, candidate
 
@@ -543,6 +547,54 @@ class RepositoryEvidenceTests(unittest.TestCase):
             self.assertNotIn("previous transcript", rendered.lower())
             self.assertNotIn("reasoning history", rendered.lower())
             self.assertEqual(len(packet["compact_inputs"]), 4)
+
+    def test_v1_019_packet_embeds_only_exact_ui_and_test_authorities(self) -> None:
+        packet = task_packet(
+            ROOT,
+            {"actionable": True, "next_action": "Implement V1-019"},
+            "implementation",
+            bounded_substage={
+                "id": "sign_in",
+                "order": 1,
+                "total": 4,
+                "task": "Local sign-in",
+                "include": ["local sign-in"],
+            },
+        )
+        self.assertEqual(
+            packet["canonical_paths"],
+            [
+                "docs/006_UI_SPECIFICATION.md",
+                "docs/007_TESTING_STRATEGY.md",
+            ],
+        )
+        self.assertEqual(
+            [item["authority"] for item in packet["authoritative_excerpts"]],
+            [
+                "UI-092",
+                "UI-109",
+                "UI-110",
+                "UI-111",
+                "UI-112",
+                "UI-113",
+                "TEST-094",
+                "TEST-095",
+                "TEST-135",
+            ],
+        )
+        rendered = json.dumps(packet)
+        self.assertIn("no external skill lookup is required or permitted", rendered)
+        self.assertIn("Do not spend tool calls rediscovering", rendered)
+        self.assertIn("leave every later V1-019 substage", rendered)
+        self.assertNotIn("UI-108", rendered)
+        self.assertNotIn("TEST-093", rendered)
+        self.assertTrue(packet["authorization_boundaries"]["standing_authorization"])
+        self.assertEqual(packet["bounded_substage"]["id"], "sign_in")
+        self.assertIn("substage_complete", packet["output_contract"]["required"])
+        predecessor = preservation_evidence(ROOT)
+        self.assertEqual(predecessor["candidate"], "V1-018")
+        self.assertEqual(len(predecessor["paths"]), 7)
+        self.assertIsNotNone(predecessor["fingerprint"])
 
     def test_review_packet_is_separate_and_read_only(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -599,9 +651,7 @@ class RepositoryEvidenceTests(unittest.TestCase):
             roadmap = json.loads(roadmap_path.read_text())
             roadmap["tranches"][0].pop("acceptance")
             roadmap["tranches"][0]["acceptance_profile"] = "api_ui"
-            roadmap["acceptance_profiles"] = {
-                "api_ui": ["API authorization", "frontend build"]
-            }
+            roadmap["acceptance_profiles"] = {"api_ui": ["API authorization", "frontend build"]}
             atomic_write_json(roadmap_path, roadmap)
             packet = task_packet(repo, {"actionable": True}, "implementation")
             self.assertEqual(
@@ -686,15 +736,9 @@ class RepositoryEvidenceTests(unittest.TestCase):
             subprocess.run(["git", "add", "."], cwd=repo, check=True)
             subprocess.run(["git", "commit", "-qm", "published"], cwd=repo, check=True)
             origin = root / "origin.git"
-            subprocess.run(
-                ["git", "init", "-q", "--bare", str(origin)], cwd=repo, check=True
-            )
-            subprocess.run(
-                ["git", "remote", "add", "origin", str(origin)], cwd=repo, check=True
-            )
-            subprocess.run(
-                ["git", "push", "-qu", "-u", "origin", "HEAD"], cwd=repo, check=True
-            )
+            subprocess.run(["git", "init", "-q", "--bare", str(origin)], cwd=repo, check=True)
+            subprocess.run(["git", "remote", "add", "origin", str(origin)], cwd=repo, check=True)
+            subprocess.run(["git", "push", "-qu", "-u", "origin", "HEAD"], cwd=repo, check=True)
             subprocess.run(
                 [str(repo / "scripts/openclaw-select-next-candidate.sh")],
                 cwd=repo,
@@ -713,9 +757,7 @@ class RepositoryEvidenceTests(unittest.TestCase):
             self.assertFalse(selected["approval"]["implementation_started"])
             now = (repo / "ops/NOW.md").read_text()
             self.assertIn("V1-018 approved and active", now)
-            self.assertIn(
-                "Implement the approved bounded candidate: Exact successor", now
-            )
+            self.assertIn("Implement the approved bounded candidate: Exact successor", now)
             self.assertTrue(ci_marker.exists())
             invalid_state = json.loads((repo / "ops/STATE.json").read_text())
             invalid_state["branch"] = 7
@@ -820,12 +862,8 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
             self.assertTrue(evidence["implementation_complete"])
             self.assertEqual(evidence["events"][0]["stage"], "reconciliation_dispatch")
             self.assertEqual(evidence["events"][0]["result"], "passed")
-            self.assertEqual(
-                evidence["model_usage"][0]["effective_model"], "gpt-5.6-sol"
-            )
-            self.assertRegex(
-                str(evidence["model_usage"][0]["session_id"]), r"^[0-9a-f]{32}$"
-            )
+            self.assertEqual(evidence["model_usage"][0]["effective_model"], "gpt-5.6-sol")
+            self.assertRegex(str(evidence["model_usage"][0]["session_id"]), r"^[0-9a-f]{32}$")
             usage = json.loads(next((state_dir / "usage").glob("*.json")).read_text())
             self.assertTrue(usage["preflight_guard_loaded"])
             self.assertTrue(usage["chat_guard_loaded"])
@@ -833,6 +871,339 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
             prompt = capture.read_text()
             self.assertIn('"candidate": "V1-018"', prompt)
             self.assertNotIn("OPENCLAW_SUPERVISOR_PROMPT", prompt)
+
+    def test_v1_019_real_wrapper_ceiling_recovery_retries_with_changed_route(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            for name in (
+                "openclaw-supervisor-dispatch.sh",
+                "openclaw-supervisor-preflight.sh",
+                "openclaw_dispatch.py",
+                "openclaw-hermes-task.sh",
+                "hermes-property-rental",
+                "openclaw_automation.py",
+                "openclaw_hermes_guard.py",
+                "openclaw-visibility-watchdog.py",
+            ):
+                target = repo / "scripts" / name
+                target.parent.mkdir(exist_ok=True)
+                target.write_bytes((ROOT / "scripts" / name).read_bytes())
+                target.chmod(0o755)
+            shutil.copy(
+                ROOT / "docs/006_UI_SPECIFICATION.md",
+                repo / "docs/006_UI_SPECIFICATION.md",
+            )
+            shutil.copy(
+                ROOT / "docs/007_TESTING_STRATEGY.md",
+                repo / "docs/007_TESTING_STRATEGY.md",
+            )
+            state = json.loads((repo / "ops/STATE.json").read_text())
+            state.update(
+                {
+                    "status": "active",
+                    "roadmap": {"current_id": "V1-019", "total": 60},
+                    "approval": {
+                        "status": "approved_ready",
+                        "implementation_started": False,
+                        "implementation_completed": False,
+                        "publication_completed": False,
+                    },
+                    "next_candidate": {
+                        "id": "V1-019",
+                        "roadmap_id": "V1-019",
+                        "phase": "Identity",
+                        "task": "Authentication and account administration UI",
+                        "status": "approved_ready",
+                        "authorities": [
+                            "UI-092",
+                            "UI-109-113",
+                            "TEST-094-095",
+                            "TEST-135",
+                        ],
+                    },
+                    "next_action": "Implement V1-019",
+                    "owner_action": "none",
+                    "blockers": [],
+                    "repair": {
+                        "tranche_id": "V1-019",
+                        "failure": None,
+                        "scope_preserved": True,
+                        "attempts": 0,
+                        "max_attempts": 2,
+                        "requires_owner_decision": False,
+                        "suspected_secret": False,
+                        "scope_expansion": False,
+                        "protected_operation": False,
+                    },
+                    "automation_repair": {"status": "restored"},
+                }
+            )
+            atomic_write_json(repo / "ops/STATE.json", state)
+            roadmap = {
+                "total_tranches": 60,
+                "acceptance_profiles": {"api_ui": ["frontend tests", "build"]},
+                "tranches": [
+                    {
+                        "id": "V1-019",
+                        "task": "Authentication and account administration UI",
+                        "phase": "Identity",
+                        "status": "approved_ready",
+                        "authorization": "durable_v1",
+                        "authorities": [
+                            "UI-092",
+                            "UI-109-113",
+                            "TEST-094-095",
+                            "TEST-135",
+                        ],
+                        "include": ["sign-in, MFA, recovery, session, account/capability screens"],
+                        "exclude": ["first-Owner web bootstrap"],
+                        "acceptance_profile": "api_ui",
+                        "protected_operation": False,
+                    }
+                ],
+            }
+            atomic_write_json(repo / "ops/V1_ROADMAP.json", roadmap)
+            (repo / "ops/QUEUE.md").write_text(
+                "Remaining v1 application tranches are authorized when bounded by canonical documents 001-010.\n"
+            )
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "V1-019 production-shaped fixture"],
+                cwd=repo,
+                check=True,
+            )
+
+            fake = root / "fake-hermes.py"
+            counter = root / "chat-count"
+            captures = root / "prompts"
+            captures.mkdir()
+            fake.write_text(
+                """#!/usr/bin/env python3
+import json, os, pathlib, sys
+args = sys.argv[1:]
+manifest = json.load(open(os.environ['PROPERTY_RENTAL_INVOCATION_MANIFEST']))
+budget_path = manifest['budget_path']
+budget = json.load(open(budget_path))
+if 'prompt-size' in args:
+    budget.update({'guard_loaded':True,'preflight_guard_loaded':True,'guard_capabilities':['cumulative_llm_execution','least_privilege_pre_tool_block','least_privilege_tool_execution']})
+    open(budget_path, 'w').write(json.dumps(budget))
+    print('{}')
+    raise SystemExit(0)
+counter = pathlib.Path(os.environ['CHAT_COUNTER'])
+number = int(counter.read_text()) + 1 if counter.exists() else 1
+counter.write_text(str(number))
+prompt = args[args.index('--query') + 1]
+pathlib.Path(os.environ['CAPTURE_DIR'], f'{number}.txt').write_text(prompt)
+if number == 1:
+    budget.update({'chat_guard_loaded':True,'chat_guard_pid':os.getpid(),'effective_model':'gpt-5.6-sol','api_calls_started':2,'api_calls_completed':2,'input_tokens':50000,'output_tokens':4000,'cache_read_tokens':12000,'reasoning_tokens':500,'counted_total_tokens':54000,'reservation_blocked':True,'predicted_next_context_tokens':7000,'next_api_call_blocked':True,'boundary_reached':False,'in_flight_overshoot_tokens':0,'reservation_violation':False})
+    open(budget_path, 'w').write(json.dumps(budget))
+    print('{}')
+    raise SystemExit(0)
+state_path = pathlib.Path(os.environ['PROPERTY_RENTAL_REPO'], 'ops', 'STATE.json')
+state = json.loads(state_path.read_text())
+state['approval']['implementation_started'] = True
+state_path.write_text(json.dumps(state, sort_keys=True, indent=2) + '\\n')
+budget.update({'chat_guard_loaded':True,'chat_guard_pid':os.getpid(),'effective_model':'gpt-5.6-sol','api_calls_started':1,'api_calls_completed':1,'input_tokens':8000,'output_tokens':1000,'cache_read_tokens':2000,'reasoning_tokens':100,'counted_total_tokens':9000})
+open(budget_path, 'w').write(json.dumps(budget))
+print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],'verification':['sign-in substage checks passed'],'blockers':[],'exact_next_action':'dispatch MFA/recovery substage','substage_complete':True}))
+"""
+            )
+            fake.chmod(0o755)
+            fake_ps = root / "ps"
+            fake_ps.write_text(dispatcher_ps_probe_script())
+            fake_ps.chmod(0o755)
+            hermes_home = root / "hermes-home"
+            hermes_home.mkdir()
+            (hermes_home / "auth.json").write_text("{}\n")
+            evidence = root / "evidence"
+            environment = {
+                **os.environ,
+                "CHAT_COUNTER": str(counter),
+                "CAPTURE_DIR": str(captures),
+                "PROPERTY_RENTAL_REPO": str(repo),
+                "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(evidence),
+                "PROPERTY_RENTAL_HERMES_BIN": str(fake),
+                "PROPERTY_RENTAL_HERMES_SOURCE_HOME": str(hermes_home),
+                "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                "PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES": "1",
+                "PATH": f"{root}:{os.environ['PATH']}",
+            }
+            first = subprocess.run(
+                [str(repo / "scripts/openclaw-supervisor-dispatch.sh")],
+                cwd=repo,
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(first.returncode, 69, first.stderr)
+            first_record = json.loads((evidence / "candidates/V1-019.json").read_text())
+            self.assertTrue(first_record["recovery_pending"])
+            self.assertEqual(first_record["recovery_generation"], 1)
+            self.assertEqual(first_record["ceiling_recovery_attempts"], {"sign_in": 1})
+            failure = json.loads((evidence / "last-failure.json").read_text())
+            self.assertEqual(failure["category"], "model_session_or_token_ceiling")
+            self.assertFalse(failure["owner_action_required"])
+            self.assertTrue(list((evidence / "terminal/routing_recovery_pending").glob("*.json")))
+            first_usage = json.loads(sorted((evidence / "usage").glob("*.json"))[0].read_text())
+            self.assertTrue(first_usage["reservation_blocked"])
+            self.assertEqual(first_usage["in_flight_overshoot_tokens"], 0)
+            self.assertEqual(first_usage["configured_max_tokens"], 60_000)
+            durable_usage = first_record["model_usage"][-1]
+            self.assertEqual(durable_usage["api_calls_started"], 2)
+            self.assertEqual(durable_usage["api_calls_completed"], 2)
+            self.assertTrue(durable_usage["reservation_blocked"])
+            self.assertEqual(durable_usage["predicted_next_context_tokens"], 7_000)
+            self.assertEqual(durable_usage["in_flight_overshoot_tokens"], 0)
+            self.assertFalse(durable_usage["reservation_violation"])
+
+            database = root / "openclaw.sqlite"
+            payload = json.dumps(
+                {
+                    "kind": "command",
+                    "argv": [str(repo / "scripts/openclaw-supervisor-dispatch.sh")],
+                    "cwd": str(repo),
+                    "noOutputTimeoutSeconds": 10860,
+                    "outputMaxBytes": 20000,
+                },
+                separators=(",", ":"),
+            )
+            with sqlite3.connect(database) as connection:
+                connection.execute(
+                    "CREATE TABLE cron_jobs (job_id TEXT, name TEXT, enabled INTEGER, schedule_kind TEXT, every_ms INTEGER, payload_kind TEXT, payload_message TEXT, last_run_at_ms INTEGER, last_run_status TEXT, consecutive_errors INTEGER, running_at_ms INTEGER, updated_at INTEGER)"
+                )
+                connection.execute(
+                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+                        "property-rental-24x7-supervisor",
+                        1,
+                        "every",
+                        1_800_000,
+                        "command",
+                        payload,
+                        2_000,
+                        "ok",
+                        0,
+                        None,
+                        1_000,
+                    ),
+                )
+            watchdog = subprocess.run(
+                ["python3", str(repo / "scripts/openclaw-visibility-watchdog.py")],
+                cwd=repo,
+                env={
+                    **environment,
+                    "PROPERTY_RENTAL_OPENCLAW_DB": str(database),
+                    "PROPERTY_RENTAL_WATCHDOG_STATE_DIR": str(root / "watchdog"),
+                    "PROPERTY_RENTAL_INSTALLED_HERMES_WRAPPER": str(
+                        repo / "scripts/hermes-property-rental"
+                    ),
+                    "PROPERTY_RENTAL_NOW_MS": "2000",
+                },
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(watchdog.returncode, 0, watchdog.stderr)
+            self.assertIn("automatic recovery: in progress", watchdog.stdout)
+            self.assertIn("Owner action required: false", watchdog.stdout)
+
+            second = subprocess.run(
+                [str(repo / "scripts/openclaw-supervisor-dispatch.sh")],
+                cwd=repo,
+                env=environment,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(second.returncode, 0, second.stderr)
+            second_record = json.loads((evidence / "candidates/V1-019.json").read_text())
+            self.assertFalse(second_record["recovery_pending"])
+            self.assertFalse((evidence / "last-failure.json").exists())
+            self.assertEqual(
+                list((evidence / "terminal/routing_recovery_pending").glob("*.json")),
+                [],
+            )
+            self.assertEqual(
+                len(list((evidence / "terminal/recovery_succeeded").glob("*.json"))),
+                1,
+            )
+            self.assertEqual(len(list((evidence / "resolved-failures").glob("*.json"))), 1)
+            self.assertEqual(second_record["completed_implementation_substages"], ["sign_in"])
+            self.assertEqual(len(list((evidence / "manifests").glob("*.json"))), 2)
+            self.assertEqual(len(list((evidence / "tasks").glob("*.json"))), 2)
+            first_prompt = (captures / "1.txt").read_text()
+            second_prompt = (captures / "2.txt").read_text()
+            self.assertIn('"bounded_substage": {', first_prompt)
+            self.assertIn('"id": "sign_in"', first_prompt)
+            self.assertIn('"recovery_generation": 1', second_prompt)
+            self.assertNotIn("Use the property-rental-continuity skill", first_prompt)
+
+            second_record.update(
+                {
+                    "recovery_generation": 2,
+                    "recovery_pending": False,
+                    "bounded_recovery_exhausted": True,
+                    "last_failure_category": "model_session_or_token_ceiling",
+                }
+            )
+            atomic_write_json(evidence / "candidates/V1-019.json", second_record)
+            preflight = json.loads(
+                subprocess.check_output(
+                    [str(repo / "scripts/openclaw-supervisor-preflight.sh")],
+                    cwd=repo,
+                    env=environment,
+                    text=True,
+                )
+            )
+            exhausted_fingerprint = stage_actionable_fingerprint(
+                repo,
+                preflight,
+                candidate="V1-019",
+                stage="implementation",
+                routing_identity=v1_019_routing_identity(
+                    second_record, "implementation"
+                ),
+            )
+            persist_terminal_marker(
+                evidence / "terminal",
+                status="repair_exhausted",
+                fingerprint=exhausted_fingerprint,
+                evidence={
+                    "phase": "mfa_recovery",
+                    "next_action": "Owner action after bounded recovery exhaustion.",
+                },
+            )
+            exhausted_watchdog = subprocess.run(
+                ["python3", str(repo / "scripts/openclaw-visibility-watchdog.py")],
+                cwd=repo,
+                env={
+                    **environment,
+                    "PROPERTY_RENTAL_OPENCLAW_DB": str(database),
+                    "PROPERTY_RENTAL_WATCHDOG_STATE_DIR": str(
+                        root / "watchdog-exhausted"
+                    ),
+                    "PROPERTY_RENTAL_REPAIR_EXHAUSTED_DIR": str(
+                        evidence / "terminal/repair_exhausted"
+                    ),
+                    "PROPERTY_RENTAL_INSTALLED_HERMES_WRAPPER": str(
+                        repo / "scripts/hermes-property-rental"
+                    ),
+                    "PROPERTY_RENTAL_NOW_MS": "2000",
+                },
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(
+                exhausted_watchdog.returncode, 0, exhausted_watchdog.stderr
+            )
+            self.assertIn("REPAIR_EXHAUSTED", exhausted_watchdog.stdout)
+            self.assertIn("Owner action required: true", exhausted_watchdog.stdout)
 
     def test_dispatcher_runs_distinct_xhigh_read_only_review_session(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -864,9 +1235,7 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
                 cwd=repo,
                 check=True,
             )
-            subprocess.run(
-                ["git", "commit", "-qm", "implementation"], cwd=repo, check=True
-            )
+            subprocess.run(["git", "commit", "-qm", "implementation"], cwd=repo, check=True)
             fake = root / "fake-review.py"
             capture = root / "review-prompt.txt"
             capture_args = root / "review-args.json"
@@ -909,9 +1278,7 @@ print(json.dumps(result))
                     "implementation_complete": True,
                     "deterministic_verification_passed": True,
                     "scoped_changed_paths": [],
-                    "events": [
-                        {"stage": "deterministic_verification", "exit_status": 0}
-                    ],
+                    "events": [{"stage": "deterministic_verification", "exit_status": 0}],
                 },
             )
             before = repository_fingerprint(repo)
@@ -944,12 +1311,8 @@ print(json.dumps(result))
             evidence = json.loads((state_dir / "candidates/V1-018.json").read_text())
             self.assertEqual(evidence["stage"], "publication")
             self.assertTrue(evidence["review_verdict"]["passed"])
-            self.assertEqual(
-                evidence["model_usage"][0]["requested_reasoning_effort"], "xhigh"
-            )
-            self.assertRegex(
-                str(evidence["model_usage"][0]["session_id"]), r"^[0-9a-f]{32}$"
-            )
+            self.assertEqual(evidence["model_usage"][0]["requested_reasoning_effort"], "xhigh")
+            self.assertRegex(str(evidence["model_usage"][0]["session_id"]), r"^[0-9a-f]{32}$")
             self.assertIn('"review_only": true', capture.read_text())
             arguments = json.loads(capture_args.read_text())
             self.assertIn("gpt-5.6-sol", arguments)
@@ -972,9 +1335,7 @@ print(json.dumps(result))
             target.write_bytes(source.read_bytes())
             target.chmod(0o755)
             automation = repo / "scripts/openclaw_automation.py"
-            automation.write_bytes(
-                (ROOT / "scripts/openclaw_automation.py").read_bytes()
-            )
+            automation.write_bytes((ROOT / "scripts/openclaw_automation.py").read_bytes())
             subprocess.run(["git", "add", "--", "scripts"], cwd=repo, check=True)
             subprocess.run(
                 ["git", "commit", "-qm", "test dispatcher harness"],
@@ -1028,9 +1389,7 @@ print(json.dumps(result))
                 )
             )
             self.assertFalse(preflight["actionable"])
-            self.assertEqual(
-                preflight["state_issue"], "automation_repair_publication_required"
-            )
+            self.assertEqual(preflight["state_issue"], "automation_repair_publication_required")
 
     def test_exact_terminal_fingerprint_suppresses_only_unchanged_dispatch(
         self,
@@ -1044,9 +1403,7 @@ print(json.dumps(result))
             target.write_bytes(source.read_bytes())
             target.chmod(0o755)
             automation = repo / "scripts/openclaw_automation.py"
-            automation.write_bytes(
-                (ROOT / "scripts/openclaw_automation.py").read_bytes()
-            )
+            automation.write_bytes((ROOT / "scripts/openclaw_automation.py").read_bytes())
             subprocess.run(["git", "add", "--", "scripts"], cwd=repo, check=True)
             subprocess.run(
                 ["git", "commit", "-qm", "test dispatcher harness"],
@@ -1380,12 +1737,8 @@ print(json.dumps(result))
                 ),
                 self.assertRaises(AutomationError) as raised,
             ):
-                dispatcher.invoke_model(
-                    record, packet, model_policy("direct_codex_recovery")
-                )
-            self.assertEqual(
-                raised.exception.category, "model_session_or_token_ceiling"
-            )
+                dispatcher.invoke_model(record, packet, model_policy("direct_codex_recovery"))
+            self.assertEqual(raised.exception.category, "model_session_or_token_ceiling")
             self.assertEqual(record["stage"], "deterministic_verification")
             self.assertEqual(record["requested_stage"], "deterministic_verification")
             usage_files = [
@@ -1563,9 +1916,7 @@ print(json.dumps(result))
             ):
                 dispatcher.post_publication(record)
             self.assertEqual(raised.exception.category, "remote_ci_failure")
-            self.assertEqual(
-                record["reconciliation_substage"], "reconciliation_ci_failed"
-            )
+            self.assertEqual(record["reconciliation_substage"], "reconciliation_ci_failed")
 
     def test_reconciliation_resumes_when_commit_precedes_substage_save(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1742,17 +2093,13 @@ print(json.dumps(result))
                     "activation_base_commit": base,
                     "activation_candidate": candidate,
                 }
-                with mock.patch.object(
-                    dispatcher, "cached_publication_guard", return_value=None
-                ):
+                with mock.patch.object(dispatcher, "cached_publication_guard", return_value=None):
                     dispatcher.activate_next(record, {})
             self.assertEqual(record["stage"], "complete")
             self.assertEqual(record["activation_substage"], "complete")
             self.assertTrue(record["activation_ci_passed"])
             self.assertEqual(
-                subprocess.check_output(
-                    ["git", "status", "--porcelain=v1"], cwd=repo, text=True
-                ),
+                subprocess.check_output(["git", "status", "--porcelain=v1"], cwd=repo, text=True),
                 "",
             )
 
@@ -1764,13 +2111,9 @@ print(json.dumps(result))
             repo, candidate = self.make_activation_repo(root)
             roadmap_path = repo / "ops/V1_ROADMAP.json"
             roadmap = json.loads(roadmap_path.read_text())
-            roadmap["tranches"][0].update(
-                {"status": "complete", "authorization": "complete"}
-            )
+            roadmap["tranches"][0].update({"status": "complete", "authorization": "complete"})
             atomic_write_json(roadmap_path, roadmap)
-            subprocess.run(
-                ["git", "add", "--", "ops/V1_ROADMAP.json"], cwd=repo, check=True
-            )
+            subprocess.run(["git", "add", "--", "ops/V1_ROADMAP.json"], cwd=repo, check=True)
             subprocess.run(
                 ["git", "commit", "-qm", "reconcile predecessor"],
                 cwd=repo,
@@ -1837,13 +2180,9 @@ print(json.dumps(result))
                 self.assertRaises(AutomationError) as blocked,
             ):
                 dispatcher.dispatch()
+            self.assertEqual(blocked.exception.category, "lock_or_overlapping_process_failure")
             self.assertEqual(
-                blocked.exception.category, "lock_or_overlapping_process_failure"
-            )
-            self.assertEqual(
-                subprocess.check_output(
-                    ["git", "diff", "--cached", "--binary"], cwd=repo
-                ),
+                subprocess.check_output(["git", "diff", "--cached", "--binary"], cwd=repo),
                 staged_before,
             )
             preserved = json.loads(dispatcher.stage_file("V1-017").read_text())
@@ -1851,25 +2190,19 @@ print(json.dumps(result))
             self.assertNotIn("attempts", preserved)
             with (
                 mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}),
-                mock.patch.object(
-                    dispatcher, "cached_publication_guard", return_value=None
-                ),
+                mock.patch.object(dispatcher, "cached_publication_guard", return_value=None),
             ):
                 self.assertEqual(dispatcher.dispatch(), 0)
             completed = json.loads(dispatcher.stage_file("V1-017").read_text())
             self.assertEqual(completed["activation_substage"], "complete")
-            self.assertEqual(
-                completed["activation_paths"], ["ops/NOW.md", "ops/STATE.json"]
-            )
+            self.assertEqual(completed["activation_paths"], ["ops/NOW.md", "ops/STATE.json"])
             self.assertNotIn("attempts", completed)
             state = json.loads((repo / "ops/STATE.json").read_text())
             self.assertEqual(state["next_candidate"]["id"], "V1-018")
             self.assertFalse(state["approval"]["implementation_started"])
             self.assertFalse(dispatcher.stage_file("V1-018").exists())
             self.assertEqual(
-                subprocess.check_output(
-                    ["git", "status", "--porcelain=v1"], cwd=repo, text=True
-                ),
+                subprocess.check_output(["git", "status", "--porcelain=v1"], cwd=repo, text=True),
                 "",
             )
 
@@ -1915,9 +2248,7 @@ print(json.dumps(result))
                 }
                 with self.assertRaises(AutomationError) as raised:
                     dispatcher.activate_next(record, {})
-            self.assertEqual(
-                raised.exception.category, "repository_integrity_uncertainty"
-            )
+            self.assertEqual(raised.exception.category, "repository_integrity_uncertainty")
 
     def test_already_pushed_activation_persists_successful_ci_proof(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -2123,9 +2454,7 @@ print(json.dumps(result))
             self.assertEqual(reconciled["commit"], published)
             self.assertTrue(reconciled["approval"]["publication_completed"])
             now = (repo / "ops/NOW.md").read_text()
-            self.assertIn(
-                f"Automation publication state: published on main at {published}", now
-            )
+            self.assertIn(f"Automation publication state: published on main at {published}", now)
             self.assertIn(
                 "Select the exact structured approved successor from ops/V1_ROADMAP.json",
                 now,
@@ -2156,9 +2485,7 @@ print(json.dumps(result))
                 complex_review=True,
                 classification_reason="test review",
             )
-            usage_report = normalize_usage(
-                {"model": "gpt-5.6-sol", "total_tokens": 7}, policy
-            )
+            usage_report = normalize_usage({"model": "gpt-5.6-sol", "total_tokens": 7}, policy)
             usage_report["repository_fingerprint"] = fingerprint
             verdict = json.dumps(
                 {
@@ -2218,9 +2545,7 @@ print(json.dumps(result))
                 target.write_bytes((ROOT / "scripts" / name).read_bytes())
                 target.chmod(0o755)
             subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
-            subprocess.run(
-                ["git", "commit", "-qm", "model harness"], cwd=repo, check=True
-            )
+            subprocess.run(["git", "commit", "-qm", "model harness"], cwd=repo, check=True)
             fake = root / "fake-hermes.py"
             fake.write_text(
                 """#!/usr/bin/env python3
@@ -2249,19 +2574,11 @@ raise SystemExit(64)
                 record = {"candidate": "V1-018", "stage": "implementation"}
                 packet = task_packet(repo, {"actionable": True}, "implementation")
                 with self.assertRaises(AutomationError) as first:
-                    dispatcher.invoke_model(
-                        record, packet, model_policy("implementation")
-                    )
-                self.assertEqual(
-                    first.exception.category, "unsupported_invocation_configuration"
-                )
+                    dispatcher.invoke_model(record, packet, model_policy("implementation"))
+                self.assertEqual(first.exception.category, "unsupported_invocation_configuration")
                 with self.assertRaises(AutomationError) as second:
-                    dispatcher.invoke_model(
-                        record, packet, model_policy("implementation")
-                    )
-            self.assertEqual(
-                second.exception.category, "unsupported_invocation_configuration"
-            )
+                    dispatcher.invoke_model(record, packet, model_policy("implementation"))
+            self.assertEqual(second.exception.category, "unsupported_invocation_configuration")
             attempts = json.loads((state_dir / "attempts/V1-018.json").read_text())
             self.assertEqual(attempts["counters"].get("implementation", 0), 0)
             self.assertEqual(list((state_dir / "calls").glob("*.json")), [])
@@ -2274,9 +2591,7 @@ raise SystemExit(64)
         dispatcher = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(dispatcher)
         completed = subprocess.CompletedProcess([], 0, "", "")
-        with mock.patch.object(
-            dispatcher.subprocess, "run", return_value=completed
-        ) as invoked:
+        with mock.patch.object(dispatcher.subprocess, "run", return_value=completed) as invoked:
             dispatcher.cached_publication_guard()
         environment = invoked.call_args.kwargs["env"]
         self.assertEqual(environment["PROPERTY_RENTAL_GUARD_MODE"], "cached")
@@ -2306,7 +2621,7 @@ raise SystemExit(64)
         with tempfile.TemporaryDirectory() as directory:
             repo = self.make_repo(Path(directory))
             canonical = repo / "docs/007_TESTING_STRATEGY.md"
-            canonical.parent.mkdir()
+            canonical.parent.mkdir(exist_ok=True)
             canonical.write_text("canonical\n")
             subprocess.run(["git", "add", "docs"], cwd=repo, check=True)
             subprocess.run(
@@ -2317,9 +2632,7 @@ raise SystemExit(64)
             canonical.write_text("unauthorized change\n")
             automation_module = repo / "scripts/openclaw_automation.py"
             automation_module.parent.mkdir(exist_ok=True)
-            automation_module.write_bytes(
-                (ROOT / "scripts/openclaw_automation.py").read_bytes()
-            )
+            automation_module.write_bytes((ROOT / "scripts/openclaw_automation.py").read_bytes())
             result = subprocess.run(
                 [str(ROOT / "scripts/openclaw-publication-guard.sh")],
                 env={**os.environ, "PROPERTY_RENTAL_REPO": str(repo)},
@@ -2335,7 +2648,7 @@ raise SystemExit(64)
         with tempfile.TemporaryDirectory() as directory:
             repo = self.make_repo(Path(directory))
             canonical = repo / "docs/007_TESTING_STRATEGY.md"
-            canonical.parent.mkdir()
+            canonical.parent.mkdir(exist_ok=True)
             canonical.write_text("canonical\n")
             subprocess.run(["git", "add", "docs"], cwd=repo, check=True)
             subprocess.run(
@@ -2390,9 +2703,7 @@ raise SystemExit(64)
                 spec.loader.exec_module(dispatcher)
                 with self.assertRaises(AutomationError) as raised:
                     dispatcher.authorized_branch()
-            self.assertEqual(
-                raised.exception.category, "repository_integrity_uncertainty"
-            )
+            self.assertEqual(raised.exception.category, "repository_integrity_uncertainty")
 
             subprocess.run(["git", "switch", "-q", bound_branch], cwd=repo, check=True)
             state = json.loads((repo / "ops/STATE.json").read_text())
@@ -2400,9 +2711,7 @@ raise SystemExit(64)
             atomic_write_json(repo / "ops/STATE.json", state)
             with self.assertRaises(AutomationError) as missing:
                 dispatcher.authorized_branch()
-            self.assertEqual(
-                missing.exception.category, "repository_integrity_uncertainty"
-            )
+            self.assertEqual(missing.exception.category, "repository_integrity_uncertainty")
 
     def test_actual_execed_hermes_worker_is_detected(self) -> None:
         rows = [
@@ -2521,18 +2830,14 @@ raise SystemExit(64)
                 "verified_repository_fingerprint": fingerprint,
             }
             with (
-                mock.patch.object(
-                    dispatcher, "invoke_model", return_value=(0, "", usage)
-                ),
+                mock.patch.object(dispatcher, "invoke_model", return_value=(0, "", usage)),
                 self.assertRaisesRegex(AutomationError, "JSON contract"),
             ):
                 dispatcher.independent_review(record, {"actionable": True})
             self.assertEqual(record["review_verdict"], {})
             self.assertEqual(record["stage"], "independent_review")
             self.assertIsNone(record["repair_failure"])
-            self.assertEqual(
-                record["last_failure_category"], "empty_or_invalid_task_delivery"
-            )
+            self.assertEqual(record["last_failure_category"], "empty_or_invalid_task_delivery")
 
     def test_model_contract_rejects_blockers_extras_and_secret_evidence(self) -> None:
         spec = importlib.util.spec_from_file_location(
@@ -2549,9 +2854,7 @@ raise SystemExit(64)
             "exact_next_action": "run complete verification",
         }
         self.assertEqual(
-            dispatcher.sanitized_implementation_result(base, ["candidate.txt"])[
-                "blockers"
-            ],
+            dispatcher.sanitized_implementation_result(base, ["candidate.txt"])["blockers"],
             [],
         )
         with self.assertRaisesRegex(AutomationError, "blocker"):
@@ -2566,9 +2869,7 @@ raise SystemExit(64)
             dispatcher.sanitized_implementation_result(
                 {**base, "verification": ["AKIA" + "A" * 16]}, ["candidate.txt"]
             )
-        self.assertEqual(
-            secret.exception.category, "secret_credential_or_protected_operation"
-        )
+        self.assertEqual(secret.exception.category, "secret_credential_or_protected_operation")
         review = {
             "passed": False,
             "findings": [
@@ -2629,9 +2930,7 @@ raise SystemExit(64)
             )
             verification.chmod(0o755)
             subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
-            subprocess.run(
-                ["git", "commit", "-qm", "verification harness"], cwd=repo, check=True
-            )
+            subprocess.run(["git", "commit", "-qm", "verification harness"], cwd=repo, check=True)
             spec = importlib.util.spec_from_file_location(
                 "verification_dispatch", ROOT / "scripts/openclaw_dispatch.py"
             )
@@ -2672,9 +2971,7 @@ raise SystemExit(64)
                     "candidate_base_commit": subprocess.check_output(
                         ["git", "rev-parse", "HEAD"], cwd=repo, text=True
                     ).strip(),
-                    "scoped_changed_paths": [
-                        "scripts/openclaw-deterministic-verification.sh"
-                    ],
+                    "scoped_changed_paths": ["scripts/openclaw-deterministic-verification.sh"],
                 }
             )
             with self.assertRaises(AutomationError) as failure:
@@ -2683,15 +2980,89 @@ raise SystemExit(64)
             self.assertEqual(record["stage"], "deterministic_verification")
             with self.assertRaises(AutomationError) as repeated:
                 dispatcher.deterministic_verification(record)
-            self.assertEqual(
-                repeated.exception.category, "repeated_identical_tool_call"
-            )
-            self.assertIn(
-                "exit 125; failed gate database-test", str(repeated.exception)
-            )
+            self.assertEqual(repeated.exception.category, "repeated_identical_tool_call")
+            self.assertIn("exit 125; failed gate database-test", str(repeated.exception))
 
 
 class ContinuationAndAttemptTests(unittest.TestCase):
+    def test_v1_019_ceiling_recovery_exhausts_only_after_two_changed_retries(
+        self,
+    ) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "bounded_ceiling_dispatch", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        record = {
+            "candidate": "V1-019",
+            "stage": "implementation",
+            "completed_implementation_substages": [],
+            "recovery_generation": 0,
+        }
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(
+            dispatcher, "STATE_DIR", Path(directory)
+        ):
+            self.assertFalse(
+                dispatcher.schedule_implementation_ceiling_recovery(
+                    record, actionable="first"
+                )
+            )
+            self.assertFalse(record.get("bounded_recovery_exhausted", False))
+            self.assertEqual(record["recovery_generation"], 1)
+            self.assertFalse(
+                dispatcher.schedule_implementation_ceiling_recovery(
+                    record, actionable="second"
+                )
+            )
+            self.assertEqual(record["recovery_generation"], 2)
+            self.assertTrue(
+                dispatcher.schedule_implementation_ceiling_recovery(
+                    record, actionable="third"
+                )
+            )
+            state_dir = Path(directory)
+            self.assertEqual(record["ceiling_recovery_attempts"], {"sign_in": 3})
+            self.assertTrue(record["bounded_recovery_exhausted"])
+            self.assertFalse(record["recovery_pending"])
+            self.assertEqual(
+                len(list((state_dir / "terminal/recovery_attempted").glob("*.json"))),
+                2,
+            )
+            exhausted = json.loads(
+                (state_dir / "terminal/repair_exhausted/third.json").read_text()
+            )
+            self.assertEqual(exhausted["status"], "repair_exhausted")
+            review = {
+                "candidate": "V1-019",
+                "stage": "independent_review",
+                "completed_implementation_substages": [
+                    "sign_in",
+                    "mfa_recovery",
+                    "sessions",
+                    "account_capability",
+                ],
+            }
+            self.assertFalse(
+                dispatcher.schedule_implementation_ceiling_recovery(
+                    review,
+                    actionable="review-first",
+                    phase="independent_review",
+                )
+            )
+            self.assertEqual(review["stage"], "independent_review")
+            self.assertTrue(review["recovery_pending"])
+            self.assertEqual(
+                review["ceiling_recovery_attempts"], {"independent_review": 1}
+            )
+            review_marker = json.loads(
+                (
+                    state_dir
+                    / "terminal/routing_recovery_pending/review-first.json"
+                ).read_text()
+            )
+            self.assertIn("independent-review retry", review_marker["next_action"])
+
     def eligible_record(self) -> tuple[dict[str, object], dict[str, str]]:
         current = {
             "repository": "repo",
@@ -2773,9 +3144,7 @@ class ContinuationAndAttemptTests(unittest.TestCase):
                 spec.loader.exec_module(dispatcher)
             record = {"implementation_complete": True}
             self.assertIsNone(
-                dispatcher.verified_continuation_handoff(
-                    "{}", record, "independent_review"
-                )
+                dispatcher.verified_continuation_handoff("{}", record, "independent_review")
             )
             safe = {
                 "stage_result": "model_session_or_token_ceiling",
@@ -2809,9 +3178,7 @@ class ContinuationAndAttemptTests(unittest.TestCase):
             safe["required_check_failed"] = False
             for key in ("failed_check", "repair_failure", "last_failure_category"):
                 record[key] = "durable failure remains"
-                with mock.patch.object(
-                    dispatcher, "relevant_processes", return_value=[]
-                ):
+                with mock.patch.object(dispatcher, "relevant_processes", return_value=[]):
                     self.assertIsNone(
                         dispatcher.verified_continuation_handoff(
                             json.dumps(safe), record, "independent_review"
@@ -2865,9 +3232,7 @@ class ContinuationAndAttemptTests(unittest.TestCase):
                 self.assertTrue(record["continuation_used"])
                 self.assertFalse(record["product_code_modification_permitted"])
                 with self.assertRaisesRegex(AutomationError, "already consumed"):
-                    dispatcher.consume_pending_continuation(
-                        record, "independent_review"
-                    )
+                    dispatcher.consume_pending_continuation(record, "independent_review")
 
     def test_pre_model_attempt_reservation_is_released(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -2936,9 +3301,7 @@ class ContinuationAndAttemptTests(unittest.TestCase):
                     "stage": "implementation",
                     "last_failure_category": "gateway_or_network_failure",
                 }
-                packet_fingerprint = dispatcher.packet_actionable_fingerprint(
-                    record, packet
-                )
+                packet_fingerprint = dispatcher.packet_actionable_fingerprint(record, packet)
                 routing_fingerprint = dispatcher.stage_actionable_fingerprint(
                     repo,
                     preflight,
@@ -2954,20 +3317,14 @@ class ContinuationAndAttemptTests(unittest.TestCase):
                     },
                 )
                 with self.assertRaises(AutomationError) as raised:
-                    dispatcher.invoke_model(
-                        record, packet, model_policy("implementation")
-                    )
+                    dispatcher.invoke_model(record, packet, model_policy("implementation"))
             self.assertEqual(raised.exception.category, "gateway_or_network_failure")
-            marker = dispatcher.terminal_marker(
-                state_dir / "terminal", routing_fingerprint
-            )
+            marker = dispatcher.terminal_marker(state_dir / "terminal", routing_fingerprint)
             self.assertIsNotNone(marker)
             assert marker is not None
             evidence = json.loads(marker.read_text())
             self.assertEqual(evidence["status"], "repair_exhausted")
-            self.assertEqual(
-                evidence["root_failure_category"], "gateway_or_network_failure"
-            )
+            self.assertEqual(evidence["root_failure_category"], "gateway_or_network_failure")
             self.assertIn("Owner action", evidence["next_action"])
 
     def test_direct_recovery_exhaustion_uses_implementation_lifecycle_marker(
@@ -2999,9 +3356,7 @@ class ContinuationAndAttemptTests(unittest.TestCase):
                     "repair_failure": "authorized concrete defect",
                     "last_failure_category": "deterministic_test_failure",
                 }
-                packet_fingerprint = dispatcher.packet_actionable_fingerprint(
-                    record, packet
-                )
+                packet_fingerprint = dispatcher.packet_actionable_fingerprint(record, packet)
                 lifecycle_fingerprint = dispatcher.stage_actionable_fingerprint(
                     repo,
                     preflight,
@@ -3017,21 +3372,15 @@ class ContinuationAndAttemptTests(unittest.TestCase):
                     },
                 )
                 with self.assertRaises(AutomationError) as raised:
-                    dispatcher.invoke_model(
-                        record, packet, model_policy("direct_codex_recovery")
-                    )
+                    dispatcher.invoke_model(record, packet, model_policy("direct_codex_recovery"))
             self.assertEqual(raised.exception.category, "deterministic_test_failure")
-            marker = dispatcher.terminal_marker(
-                state_dir / "terminal", lifecycle_fingerprint
-            )
+            marker = dispatcher.terminal_marker(state_dir / "terminal", lifecycle_fingerprint)
             self.assertIsNotNone(marker)
             assert marker is not None
             evidence = json.loads(marker.read_text())
             self.assertEqual(evidence["status"], "repair_exhausted")
             self.assertEqual(evidence["stage"], "direct_codex_recovery")
-            self.assertEqual(
-                evidence["root_failure_category"], "deterministic_test_failure"
-            )
+            self.assertEqual(evidence["root_failure_category"], "deterministic_test_failure")
 
     def test_repeated_call_guard_preserves_underlying_result(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -3059,9 +3408,7 @@ class ContinuationAndAttemptTests(unittest.TestCase):
             )
             preserved = repeated_call_result(path, key)
             assert preserved is not None
-            self.assertEqual(
-                preserved["preserved_underlying_result"], "exit 70 after one API call"
-            )
+            self.assertEqual(preserved["preserved_underlying_result"], "exit 70 after one API call")
             self.assertEqual(
                 preserved["exact_next_eligible_action"],
                 "run focused network diagnostic",
@@ -3127,9 +3474,7 @@ class LockHealthAndWrapperTests(unittest.TestCase):
             path = Path(directory) / "lock"
             identity = {"pid": os.getpid(), "identity": "live"}
             with (
-                mock.patch.object(
-                    self.dispatch, "process_identity", return_value=identity
-                ),
+                mock.patch.object(self.dispatch, "process_identity", return_value=identity),
                 self.dispatch.CycleLock(path),
                 self.assertRaises(AutomationError),
             ):
@@ -3151,6 +3496,236 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                 self.assertTrue(path.with_suffix(".owner.json").exists())
             self.assertTrue(path.exists())
             self.assertFalse(path.with_suffix(".owner.json").exists())
+
+    def test_post_exit_restoration_succeeds_naturally_and_fails_closed(self) -> None:
+        for natural_status in ("ok", "error", "ok_no_progress", "protected"):
+            with (
+                self.subTest(natural_status=natural_status),
+                tempfile.TemporaryDirectory() as directory,
+            ):
+                root = Path(directory)
+                repo = root / "repo"
+                (repo / "ops").mkdir(parents=True)
+                (repo / "scripts").mkdir()
+                (repo / "ops/NOW.md").write_text("# V1-019 repair published\n")
+                atomic_write_json(
+                    repo / "ops/STATE.json",
+                    {
+                        "branch": "main",
+                        "status": "active",
+                        "timestamp": "2026-08-21T00:00:00Z",
+                        "roadmap": {"current_id": "V1-019", "total": 60},
+                        "next_candidate": {
+                            "id": "V1-019",
+                            "roadmap_id": "V1-019",
+                            "task": "Authentication and account administration UI",
+                        },
+                        "automation_repair": {
+                            "status": "published_awaiting_post_exit_restoration",
+                            "scheduler_enabled": False,
+                            "stop_after_candidate": "V1-019",
+                        },
+                    },
+                )
+                wait_script = repo / "scripts/openclaw-wait-for-ci.sh"
+                wait_script.write_text("#!/bin/sh\nexit 0\n")
+                wait_script.chmod(0o755)
+                subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+                subprocess.run(["git", "config", "user.name", "test"], cwd=repo, check=True)
+                subprocess.run(
+                    ["git", "config", "user.email", "test@example.invalid"],
+                    cwd=repo,
+                    check=True,
+                )
+                subprocess.run(["git", "add", "."], cwd=repo, check=True)
+                subprocess.run(["git", "commit", "-qm", "repair publication"], cwd=repo, check=True)
+                origin = root / "origin.git"
+                subprocess.run(["git", "init", "-q", "--bare", str(origin)], check=True)
+                subprocess.run(
+                    ["git", "remote", "add", "origin", str(origin)], cwd=repo, check=True
+                )
+                subprocess.run(["git", "push", "-qu", "-u", "origin", "HEAD"], cwd=repo, check=True)
+                repair_head = subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+                ).strip()
+
+                dispatch_state = root / "dispatch"
+                stale_candidate = dispatch_state / "candidates/V1-019.json"
+                atomic_write_json(
+                    stale_candidate,
+                    {
+                        "candidate": "V1-019",
+                        "stage": "implementation",
+                        "candidate_base_commit": "1d091b6b581703b54eb370f3b3106a3dae45c19c",
+                        "repository_fingerprint": "stale",
+                        "session_id": "907e45dd7a00a62dbe30f19ef6d9225b",
+                        "model_usage": [
+                            {
+                                "input_tokens": 71_801,
+                                "output_tokens": 1_692,
+                                "counted_total_tokens": 73_493,
+                            }
+                        ],
+                    },
+                )
+                atomic_write_json(
+                    dispatch_state / "attempts/V1-019.json",
+                    {
+                        "fingerprint": "stale",
+                        "counters": {"implementation": 1},
+                        "pending": None,
+                    },
+                )
+                atomic_write_json(
+                    dispatch_state / "last-failure.json",
+                    {
+                        "category": "model_session_or_token_ceiling",
+                        "owner_action_required": True,
+                    },
+                )
+                atomic_write_json(
+                    dispatch_state / "terminal/oversized_or_ceiling_stopped/stale.json",
+                    {"fingerprint": "stale"},
+                )
+
+                job_path = root / "job.json"
+                atomic_write_json(
+                    job_path,
+                    {
+                        "id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+                        "declarationKey": "property-rental-24x7-v1",
+                        "name": "property-rental-24x7-supervisor",
+                        "agentId": "property-rental-supervisor",
+                        "sessionTarget": "isolated",
+                        "enabled": False,
+                        "schedule": {"kind": "every", "everyMs": 1_800_000},
+                        "payload": {
+                            "kind": "command",
+                            "argv": [str(repo / "scripts/openclaw-supervisor-dispatch.sh")],
+                            "cwd": str(repo),
+                        },
+                        "state": {
+                            "lastRunAtMs": 1,
+                            "lastRunStatus": "ok",
+                            "consecutiveErrors": 0,
+                            "runningAtMs": None,
+                        },
+                    },
+                )
+                fake = root / "openclaw"
+                fake.write_text(
+                    """#!/usr/bin/env python3
+import json, os, pathlib, sys, time
+path = pathlib.Path(os.environ['FAKE_JOB'])
+job = json.loads(path.read_text())
+action = sys.argv[2]
+if action == 'enable':
+    job['enabled'] = True
+elif action == 'disable':
+    job['enabled'] = False
+elif action == 'get' and job['enabled']:
+    outcome = os.environ['FAKE_NATURAL_STATUS']
+    status = 'error' if outcome in {'error', 'protected'} else 'ok'
+    dispatch = pathlib.Path(os.environ['FAKE_DISPATCH'])
+    if outcome == 'ok':
+        candidate = dispatch / 'candidates/V1-019.json'
+        record = json.loads(candidate.read_text())
+        record.update({'completed_implementation_substages':['sign_in'],'recovery_pending':False,'stage':'implementation'})
+        candidate.write_text(json.dumps(record))
+    elif outcome == 'protected':
+        failure = dispatch / 'last-failure.json'
+        failure.write_text(json.dumps({'category':'protected_operation','owner_action_required':True,'exact_next_action':'Owner must decide the protected operation.'}))
+    job['state'].update({'lastRunAtMs':int(time.time() * 1000) + 10,'lastRunStatus':status,'lastStatus':status,'consecutiveErrors':0 if status == 'ok' else 1,'runningAtMs':None})
+path.write_text(json.dumps(job))
+print(json.dumps(job))
+"""
+                )
+                fake.chmod(0o755)
+                evidence = root / "restoration.json"
+                if natural_status == "ok":
+                    spec = importlib.util.spec_from_file_location(
+                        "resumable_post_exit",
+                        ROOT / "scripts/openclaw-post-exit-restoration.py",
+                    )
+                    assert spec and spec.loader
+                    resumable = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(resumable)
+                    metadata_once = resumable.restoration_metadata(repo, repair_head)
+                    self.assertEqual(
+                        resumable.restoration_metadata(repo, repair_head), metadata_once
+                    )
+                result = subprocess.run(
+                    [
+                        "python3",
+                        str(ROOT / "scripts/openclaw-post-exit-restoration.py"),
+                        "run",
+                        "--repo",
+                        str(repo),
+                        "--dispatch-state",
+                        str(dispatch_state),
+                        "--evidence",
+                        str(evidence),
+                        "--openclaw",
+                        str(fake),
+                        "--owner-pid",
+                        "999999",
+                        "--expected-repair-head",
+                        repair_head,
+                        "--poll",
+                        "0.01",
+                        "--overlap-timeout",
+                        "1",
+                        "--natural-run-timeout",
+                        "1",
+                    ],
+                    cwd=repo,
+                    env={
+                        **os.environ,
+                        "FAKE_JOB": str(job_path),
+                        "FAKE_DISPATCH": str(dispatch_state),
+                        "FAKE_NATURAL_STATUS": natural_status,
+                        "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                    },
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                restored = json.loads(evidence.read_text())
+                job = json.loads(job_path.read_text())
+                if natural_status == "ok":
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(restored["status"], "complete")
+                    self.assertTrue(job["enabled"])
+                    self.assertFalse(restored["v1_020_started"])
+                    self.assertEqual(
+                        restored["bounded_retry_progress"][
+                            "completed_implementation_substages"
+                        ],
+                        ["sign_in"],
+                    )
+                    fresh = json.loads(stale_candidate.read_text())
+                    self.assertEqual(fresh["routing_revision"], "v1-019-code69-repair-v1")
+                    self.assertEqual(fresh["candidate_base_commit"], restored["metadata_commit"])
+                    self.assertEqual(
+                        fresh["completed_implementation_substages"], ["sign_in"]
+                    )
+                    self.assertFalse((dispatch_state / "last-failure.json").exists())
+                    self.assertFalse((dispatch_state / "attempts/V1-019.json").exists())
+                    archived = list((dispatch_state / "superseded/v1-019-code69").glob("*.json"))
+                    self.assertEqual(len(archived), 4)
+                    self.assertTrue(
+                        (
+                            dispatch_state / "terminal/oversized_or_ceiling_stopped/stale.json"
+                        ).exists()
+                    )
+                else:
+                    self.assertEqual(result.returncode, 69)
+                    self.assertEqual(restored["status"], "failed_closed")
+                    self.assertEqual(
+                        restored["owner_action_required"],
+                        natural_status == "protected",
+                    )
+                    self.assertFalse(job["enabled"])
 
     def test_atomic_lock_fails_closed_for_unprovable_owner_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -3268,9 +3843,7 @@ class LockHealthAndWrapperTests(unittest.TestCase):
             with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}):
                 classified = classify_compact_state(repo)
             self.assertEqual(classified["lifecycle"], "verification_pending")
-            self.assertEqual(
-                classified["state_issue"], "capability_verification_continuation"
-            )
+            self.assertEqual(classified["state_issue"], "capability_verification_continuation")
             self.assertFalse(classified["implementation_allowed"])
             self.assertTrue(classified["preservation_valid"])
             self.assertTrue(classified["exact_identity"]["no_failed_check"])
@@ -3300,16 +3873,12 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                     )
             invoked.assert_not_called()
             self.assertEqual(record["stage"], "deterministic_verification")
-            self.assertEqual(
-                record["scoped_changed_paths"], ["candidate.txt", "ops/STATE.json"]
-            )
+            self.assertEqual(record["scoped_changed_paths"], ["candidate.txt", "ops/STATE.json"])
 
             candidate_path.write_text("drifted implementation\n")
             with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}):
                 drifted = classify_compact_state(repo)
-            self.assertNotEqual(
-                drifted["state_issue"], "capability_verification_continuation"
-            )
+            self.assertNotEqual(drifted["state_issue"], "capability_verification_continuation")
             self.assertFalse(drifted["preservation_valid"])
 
     def test_genuine_owner_category_remains_blocked(self) -> None:
@@ -3397,13 +3966,66 @@ class LockHealthAndWrapperTests(unittest.TestCase):
             with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}):
                 repair = classify_compact_state(repo)
             self.assertEqual(repair["lifecycle"], "bounded_repair_pending")
-            self.assertEqual(
-                repair["state_issue"], "bounded_automatic_repair_authorized"
-            )
+            self.assertEqual(repair["state_issue"], "bounded_automatic_repair_authorized")
             self.assertTrue(repair["actionable"])
             self.assertFalse(repair["owner_action_required"])
 
-    def test_cumulative_guard_stops_before_third_api_call_and_records_cache(
+    def test_v1_019_terminal_scope_holds_v1_020_without_owner_block(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = RepositoryEvidenceTests().make_repo(Path(directory))
+            (repo / "ops/QUEUE.md").write_text(
+                "Remaining v1 application tranches are authorized when bounded by canonical documents 001-010.\n"
+            )
+            state = json.loads((repo / "ops/STATE.json").read_text())
+            state.update(
+                {
+                    "status": "published",
+                    "roadmap": {"current_id": "V1-019", "total": 60},
+                    "next_candidate": {
+                        "id": "V1-019",
+                        "roadmap_id": "V1-019",
+                        "phase": "Identity",
+                        "task": "Authentication UI",
+                        "status": "complete",
+                    },
+                    "approval": {
+                        "status": "approved_complete",
+                        "implementation_started": True,
+                        "implementation_completed": True,
+                        "publication_completed": True,
+                    },
+                    "automation_repair": {
+                        "status": "restored",
+                        "stop_after_candidate": "V1-019",
+                    },
+                }
+            )
+            atomic_write_json(repo / "ops/STATE.json", state)
+            atomic_write_json(
+                repo / "ops/V1_ROADMAP.json",
+                {
+                    "total_tranches": 60,
+                    "tranches": [
+                        {"id": "V1-019", "order": 19, "status": "complete"},
+                        {
+                            "id": "V1-020",
+                            "order": 20,
+                            "phase": "Identity",
+                            "task": "Identity hardening",
+                            "status": "approved_ready",
+                            "authorization": "durable_v1",
+                            "dependencies": ["V1-019"],
+                        },
+                    ],
+                },
+            )
+            classified = classify_compact_state(repo)
+            self.assertFalse(classified["actionable"])
+            self.assertFalse(classified["owner_action_required"])
+            self.assertEqual(classified["state_issue"], "successor_held_by_approved_scope")
+            self.assertEqual(classified["queue_candidate"]["id"], "V1-020")
+
+    def test_proactive_guard_reserves_context_and_checkpoint_before_third_call(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -3433,16 +4055,16 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                     {
                         "model": "gpt-5.6-sol",
                         "usage": {
-                            "input_tokens": 30_000,
-                            "output_tokens": 20_000,
+                            "input_tokens": 12_000,
+                            "output_tokens": 4_000,
                             "cache_read_tokens": 8_000,
                         },
                     },
                     {
                         "model": "gpt-5.6-sol",
                         "usage": {
-                            "input_tokens": 8_000,
-                            "output_tokens": 5_000,
+                            "input_tokens": 18_000,
+                            "output_tokens": 4_000,
                             "cache_read_tokens": 4_000,
                         },
                     },
@@ -3460,18 +4082,20 @@ class LockHealthAndWrapperTests(unittest.TestCase):
             ):
                 enforce_llm_call({"max_output_tokens": 40_000}, invoke)
                 enforce_llm_call({"max_output_tokens": 40_000}, invoke)
-                with self.assertRaisesRegex(
-                    GuardError, "CUMULATIVE_TOKEN_CEILING_REACHED"
-                ):
+                with self.assertRaisesRegex(GuardError, "PROACTIVE_BUDGET_RESERVATION_STOP"):
                     enforce_llm_call({"max_output_tokens": 40_000}, invoke)
-            self.assertEqual(observed_maxima, [40_000, 10_000])
+            self.assertEqual(observed_maxima[0], 40_000)
+            self.assertGreaterEqual(observed_maxima[1], 2_048)
+            self.assertLess(observed_maxima[1], 40_000)
             budget = json.loads(budget_path.read_text())
             self.assertEqual(budget["api_calls_started"], 2)
             self.assertEqual(budget["api_calls_completed"], 2)
-            self.assertEqual(budget["counted_total_tokens"], 63_000)
+            self.assertEqual(budget["counted_total_tokens"], 38_000)
             self.assertEqual(budget["cache_read_tokens"], 12_000)
-            self.assertEqual(budget["in_flight_overshoot_tokens"], 3_000)
-            self.assertTrue(budget["boundary_reached"])
+            self.assertEqual(budget["in_flight_overshoot_tokens"], 0)
+            self.assertFalse(budget["boundary_reached"])
+            self.assertTrue(budget["reservation_blocked"])
+            self.assertFalse(budget["reservation_violation"])
             self.assertTrue(budget["next_api_call_blocked"])
 
     def test_hermes_tool_guard_enforces_repository_least_privilege(self) -> None:
@@ -3501,9 +4125,7 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                 )
                 writable_subdirectory = repo / "backend/src/property_rental"
                 writable_subdirectory.mkdir(parents=True)
-                (writable_subdirectory / "Makefile").write_text(
-                    "backend-test:\n\tgit push\n"
-                )
+                (writable_subdirectory / "Makefile").write_text("backend-test:\n\tgit push\n")
                 with self.assertRaisesRegex(GuardError, "repository root"):
                     guard_tool(
                         "terminal",
@@ -3512,9 +4134,7 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                             "workdir": str(writable_subdirectory),
                         },
                     )
-                guard_tool(
-                    "write_file", {"path": "backend/src/property_rental/candidate.py"}
-                )
+                guard_tool("write_file", {"path": "backend/src/property_rental/candidate.py"})
                 guard_tool(
                     "patch",
                     {
@@ -3574,9 +4194,7 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                         },
                     )
                 with self.assertRaises(GuardError):
-                    guard_tool(
-                        "terminal", {"command": "psql property", "workdir": str(repo)}
-                    )
+                    guard_tool("terminal", {"command": "psql property", "workdir": str(repo)})
                 with self.assertRaises(GuardError):
                     guard_tool("process", {"command": "make test"})
                 with self.assertRaises(GuardError):
@@ -3663,9 +4281,7 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                 blocked = context.middleware["tool_execution"](
                     "terminal", {"command": "git push"}, tool
                 )
-                directive = context.hooks["pre_tool_call"](
-                    "terminal", {"command": "git push"}
-                )
+                directive = context.hooks["pre_tool_call"]("terminal", {"command": "git push"})
             self.assertFalse(provider_called)
             self.assertFalse(tool_called)
             self.assertIn("only read-only git", blocked)
@@ -3736,9 +4352,7 @@ class LockHealthAndWrapperTests(unittest.TestCase):
             ):
                 register_plugin(Context())
             self.assertTrue((session_home / "auth.json").is_symlink())
-            self.assertEqual(
-                (session_home / "auth.json").resolve(), source_auth.resolve()
-            )
+            self.assertEqual((session_home / "auth.json").resolve(), source_auth.resolve())
             ledger = json.loads(budget.read_text())
             self.assertTrue(ledger["preflight_guard_loaded"])
             self.assertTrue(ledger["chat_guard_loaded"])
@@ -3948,17 +4562,13 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
             repo = RepositoryEvidenceTests().make_repo(root)
             preflight = repo / "scripts/openclaw-supervisor-preflight.sh"
             preflight.parent.mkdir(exist_ok=True)
-            preflight.write_bytes(
-                (ROOT / "scripts/openclaw-supervisor-preflight.sh").read_bytes()
-            )
+            preflight.write_bytes((ROOT / "scripts/openclaw-supervisor-preflight.sh").read_bytes())
             preflight.chmod(0o755)
             (repo / "scripts/openclaw_automation.py").write_bytes(
                 (ROOT / "scripts/openclaw_automation.py").read_bytes()
             )
             subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
-            subprocess.run(
-                ["git", "commit", "-qm", "report harness"], cwd=repo, check=True
-            )
+            subprocess.run(["git", "commit", "-qm", "report harness"], cwd=repo, check=True)
             database = root / "openclaw.sqlite"
             with sqlite3.connect(database) as connection:
                 connection.execute(
@@ -4041,9 +4651,7 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
                     None,
                     9_999_000,
                 )
-                connection.execute(
-                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", row
-                )
+                connection.execute("INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", row)
                 connection.execute(
                     "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                     ("duplicate", *row[1:]),
@@ -4115,9 +4723,7 @@ print('{}')
                 candidate="V1-018",
                 stage="implementation",
                 repository_fingerprint=fingerprint,
-                preserved_worktree_fingerprint=preservation_evidence(ROOT).get(
-                    "fingerprint"
-                ),
+                preserved_worktree_fingerprint=preservation_evidence(ROOT).get("fingerprint"),
                 task_path=task,
                 provider="openai-codex",
                 model="gpt-5.6-sol",
@@ -4271,9 +4877,7 @@ print('{}')
             workspace = root / "workspace"
             (workspace / "bin").mkdir(parents=True)
             installed = workspace / "bin/hermes-property-rental"
-            installed.write_bytes(
-                (ROOT / "scripts/hermes-property-rental").read_bytes()
-            )
+            installed.write_bytes((ROOT / "scripts/hermes-property-rental").read_bytes())
             installed.chmod(0o755)
             database = root / "openclaw.sqlite"
             payload = json.dumps(
@@ -4340,9 +4944,7 @@ print('{}')
             self.assertNotEqual(duplicate.returncode, 0)
             self.assertIn("exactly one", duplicate.stderr)
             with sqlite3.connect(database) as connection:
-                connection.execute(
-                    "DELETE FROM cron_jobs WHERE job_id = 'different-supervisor-id'"
-                )
+                connection.execute("DELETE FROM cron_jobs WHERE job_id = 'different-supervisor-id'")
                 connection.execute("UPDATE cron_jobs SET every_ms = 60000")
             refused = subprocess.run(
                 [str(ROOT / "scripts/openclaw-installation-check.sh")],

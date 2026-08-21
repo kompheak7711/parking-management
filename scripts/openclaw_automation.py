@@ -30,6 +30,13 @@ EXCEPTIONAL_REVIEW_TOKEN_CEILING: Final = 120_000
 MODEL_ID: Final = "gpt-5.6-sol"
 PROVIDER: Final = "openai-codex"
 PRESERVATION_EVIDENCE_PATH: Final = "ops/AUTOMATION_REPAIR_EVIDENCE.json"
+V1_019_ROUTING_REVISION: Final = "v1-019-code69-repair-v1"
+V1_019_SUBSTAGE_IDS: Final = (
+    "sign_in",
+    "mfa_recovery",
+    "sessions",
+    "account_capability",
+)
 
 RECOVERABLE_ROUTING_FAILURES: Final = frozenset(
     {
@@ -37,6 +44,7 @@ RECOVERABLE_ROUTING_FAILURES: Final = frozenset(
         "unsupported_invocation_configuration",
         "verification_tooling_unavailable",
         "lock_or_overlapping_process_failure",
+        "model_session_or_token_ceiling",
     }
 )
 
@@ -326,6 +334,8 @@ def preservation_evidence(repo: Path) -> dict[str, Any]:
             "paths": [],
             "fingerprint": None,
         }
+    if isinstance(value.get("predecessor_preservation_evidence"), dict):
+        value = value["predecessor_preservation_evidence"]
     recorded = value.get("preserved_paths")
     if not isinstance(recorded, dict) or not recorded:
         return {
@@ -495,6 +505,14 @@ def classify_compact_state(repo: Path) -> dict[str, Any]:
         "Remaining v1 application tranches are authorized when bounded by canonical documents"
         in queue_text
     )
+    automation_repair = state.get("automation_repair") or {}
+    if not isinstance(automation_repair, dict):
+        automation_repair = {}
+    successor_hold = bool(
+        status == "published"
+        and roadmap_current_id == "V1-019"
+        and automation_repair.get("stop_after_candidate") == "V1-019"
+    )
     implementation_started = approval.get("implementation_started") is True
     implementation_completed = approval.get("implementation_completed") is True
     publication_completed = approval.get("publication_completed") is True
@@ -633,6 +651,16 @@ def classify_compact_state(repo: Path) -> dict[str, Any]:
         actionable = True
         implementation_allowed = True
         normalized = True
+    elif successor_hold:
+        lifecycle = "scheduler_healthy_idle"
+        state_issue = "successor_held_by_approved_scope"
+        next_action = (
+            "Keep V1-020 unselected; V1-019 is the approved terminal boundary for "
+            "this restoration workflow."
+        )
+        actionable = False
+        implementation_allowed = False
+        normalized = True
     elif (
         status == "published"
         and durable_v1
@@ -717,7 +745,6 @@ def classify_compact_state(repo: Path) -> dict[str, Any]:
         )
         normalized = True
 
-    automation_repair = state.get("automation_repair") or {}
     if (
         isinstance(automation_repair, dict)
         and automation_repair.get("status", "restored") != "restored"
@@ -879,6 +906,7 @@ def stage_actionable_fingerprint(
     *,
     candidate: str,
     stage: str,
+    routing_identity: dict[str, Any] | None = None,
 ) -> str:
     """Bind a terminal/attempt decision to every actionable state input."""
     return digest(
@@ -886,8 +914,27 @@ def stage_actionable_fingerprint(
             **actionable_fingerprint(repo, preflight),
             "candidate": candidate,
             "stage": stage,
+            "routing_identity": routing_identity or {},
         }
     )
+
+
+def v1_019_routing_identity(
+    record: dict[str, Any], stage: str | None = None
+) -> dict[str, Any]:
+    """Return the shared dispatcher/health identity for one V1-019 route."""
+    if record.get("candidate") != "V1-019":
+        return {}
+    completed = set(record.get("completed_implementation_substages") or [])
+    substage = next(
+        (item for item in V1_019_SUBSTAGE_IDS if item not in completed), None
+    )
+    return {
+        "revision": V1_019_ROUTING_REVISION,
+        "lifecycle_stage": stage or record.get("stage"),
+        "bounded_substage": substage,
+        "recovery_generation": int(record.get("recovery_generation") or 0),
+    }
 
 
 def normalize_usage(
@@ -912,6 +959,23 @@ def normalize_usage(
         "output_token_usage": available("output_tokens"),
         "reasoning_token_usage": available("reasoning_tokens"),
         "total_token_usage": available("total_tokens"),
+        "api_calls_started": available("api_calls_started"),
+        "api_calls_completed": available("api_calls"),
+        "counted_token_definition": available("counted_token_definition"),
+        "cache_read_double_counted": available("cache_read_double_counted"),
+        "cumulative_boundary": available("cumulative_boundary"),
+        "boundary_reached": available("boundary_reached"),
+        "next_api_call_blocked": available("next_api_call_blocked"),
+        "reservation_blocked": available("reservation_blocked"),
+        "predicted_next_context_tokens": available("predicted_next_context_tokens"),
+        "reserved_completion_checkpoint_tokens": available(
+            "reserved_completion_checkpoint_tokens"
+        ),
+        "context_reservation_margin_tokens": available(
+            "context_reservation_margin_tokens"
+        ),
+        "reservation_violation": available("reservation_violation"),
+        "in_flight_overshoot_tokens": available("in_flight_overshoot_tokens"),
         "applicable_token_ceiling": policy.token_ceiling,
         "stage_name": policy.stage,
         "complex_review_classification_reason": policy.complex_review_reason,
@@ -945,6 +1009,7 @@ def validate_usage(usage: dict[str, Any], policy: ModelPolicy) -> None:
         "tool_ceiling",
         "session_ceiling",
         "token_ceiling",
+        "proactive_budget_reservation",
         "length",
         "max_tokens",
         "max_turns",
@@ -1274,7 +1339,69 @@ def persist_terminal_marker(
     return path
 
 
-def task_packet(repo: Path, preflight: dict[str, Any], stage: str) -> dict[str, Any]:
+AUTHORITY_PATHS: Final = {
+    "PR": "docs/003_PRODUCT_REQUIREMENTS.md",
+    "DB": "docs/004_DATABASE_MODEL.md",
+    "API": "docs/005_API_SPECIFICATION.md",
+    "UI": "docs/006_UI_SPECIFICATION.md",
+    "TEST": "docs/007_TESTING_STRATEGY.md",
+    "SEC": "docs/008_SECURITY_MODEL.md",
+    "DEPLOY": "docs/009_DEPLOYMENT_ARCHITECTURE.md",
+    "DL": "docs/010_DECISION_LOG.md",
+}
+
+
+def expand_authorities(authorities: list[object]) -> list[str]:
+    """Expand compact same-prefix numeric ranges without inventing authorities."""
+    expanded: list[str] = []
+    for raw in authorities:
+        authority = str(raw)
+        match = re.fullmatch(r"([A-Z]+)-(\d+)(?:-(\d+))?", authority)
+        if not match:
+            expanded.append(authority)
+            continue
+        prefix, first_text, last_text = match.groups()
+        if last_text is None:
+            expanded.append(authority)
+            continue
+        first = int(first_text)
+        last = int(last_text)
+        if last < first or last - first > 20:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                f"authority range {authority!r} is invalid",
+            )
+        width = len(first_text)
+        expanded.extend(f"{prefix}-{number:0{width}d}" for number in range(first, last + 1))
+    return expanded
+
+
+def authoritative_excerpt(repo: Path, authority: str, relative: str) -> str:
+    """Return exactly one canonical requirement section, never the full document."""
+    document = (repo / relative).read_text()
+    heading = re.compile(
+        rf"^## {re.escape(authority)}(?:\s+—[^\n]*)?\n(?:\n)?",
+        re.MULTILINE,
+    )
+    match = heading.search(document)
+    if match is None:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            f"authoritative requirement {authority} is missing from {relative}",
+        )
+    next_heading = re.search(r"^##?\s", document[match.end() :], re.MULTILINE)
+    end = match.end() + next_heading.start() if next_heading else len(document)
+    return document[match.start() : end].strip()
+
+
+def task_packet(
+    repo: Path,
+    preflight: dict[str, Any],
+    stage: str,
+    *,
+    bounded_substage: dict[str, Any] | None = None,
+    recovery_generation: int = 0,
+) -> dict[str, Any]:
     state = json.loads((repo / "ops/STATE.json").read_text())
     roadmap = json.loads((repo / "ops/V1_ROADMAP.json").read_text())
     candidate = state.get("next_candidate") or {}
@@ -1293,8 +1420,28 @@ def task_packet(repo: Path, preflight: dict[str, Any], stage: str) -> dict[str, 
     )
     fingerprints = actionable_fingerprint(repo, preflight)
     preserved = preservation_evidence(repo)
+    raw_authorities = roadmap_item.get("authorities") or candidate.get("authorities") or []
+    authorities = expand_authorities(raw_authorities)
+    canonical_paths = sorted(
+        {
+            path
+            for authority in authorities
+            for prefix, path in AUTHORITY_PATHS.items()
+            if authority.startswith(prefix + "-")
+        }
+    )
+    excerpts = [
+        {
+            "authority": authority,
+            "path": path,
+            "excerpt": authoritative_excerpt(repo, authority, path),
+        }
+        for authority in authorities
+        for prefix, path in AUTHORITY_PATHS.items()
+        if authority.startswith(prefix + "-")
+    ]
     packet = {
-        "schema_version": 2,
+        "schema_version": 3,
         "candidate": candidate_id,
         "stage": stage,
         "branch": git(repo, "branch", "--show-current"),
@@ -1307,9 +1454,8 @@ def task_packet(repo: Path, preflight: dict[str, Any], stage: str) -> dict[str, 
         "task": roadmap_item.get("task")
         or candidate.get("task")
         or preflight.get("next_action"),
-        "authorities": roadmap_item.get("authorities")
-        or candidate.get("authorities")
-        or [],
+        "authorities": raw_authorities,
+        "expanded_authorities": authorities,
         "include": roadmap_item.get("include") or [],
         "exclude": roadmap_item.get("exclude") or [],
         "compact_inputs": [
@@ -1323,22 +1469,28 @@ def task_packet(repo: Path, preflight: dict[str, Any], stage: str) -> dict[str, 
             roadmap_item.get("acceptance_profile") or "complete", []
         ),
         "acceptance_profile": roadmap_item.get("acceptance_profile") or "complete",
-        "canonical_paths": sorted(
-            {
-                path
-                for authority in (roadmap_item.get("authorities") or [])
-                for prefix, path in (
-                    ("PR", "docs/003_PRODUCT_REQUIREMENTS.md"),
-                    ("DB", "docs/004_DATABASE_MODEL.md"),
-                    ("API", "docs/005_API_SPECIFICATION.md"),
-                    ("TEST", "docs/007_TESTING_STRATEGY.md"),
-                    ("SEC", "docs/008_SECURITY_MODEL.md"),
-                    ("DEPLOY", "docs/009_DEPLOYMENT_ARCHITECTURE.md"),
-                    ("DL", "docs/010_DECISION_LOG.md"),
-                )
-                if str(authority).startswith(prefix)
-            }
-        ),
+        "canonical_paths": canonical_paths,
+        "authoritative_excerpts": excerpts,
+        "continuity_instructions": [
+            "Use this packet as the complete continuity router result; no external skill lookup is required or permitted.",
+            "Read only the listed compact inputs, authoritative excerpts, and directly relevant product/test files.",
+            "Canonical documents are read-only; do not load a complete canonical document because the exact controlling excerpts are embedded.",
+            "When bounded_substage is present, implement only that substage and leave every later V1-019 substage for its own fresh session.",
+            "Keep business logic outside route handlers, keep frontend API access in a dedicated typed client, and preserve audit/data-integrity boundaries.",
+            "Update ops/NOW.md and ops/STATE.json with concise secret-free substage evidence before returning the exact JSON contract.",
+        ],
+        "dispatcher_evidence_trust": {
+            "instruction": "Trust these dispatcher-supplied values. Do not spend tool calls rediscovering them with Git or process commands.",
+            "branch": git(repo, "branch", "--show-current"),
+            "head": git(repo, "rev-parse", "HEAD"),
+            "repository_fingerprint": fingerprints["repository"],
+            "compact_state_fingerprint": fingerprints["compact_state"],
+            "process_state_fingerprint": fingerprints["process_state"],
+            "changed_path_count": len(changed_paths(repo)),
+            "worktree_clean": changed_paths(repo) == [],
+            "clean_or_preserved_state": preserved,
+        },
+        "recovery_generation": recovery_generation,
         "durable_evidence_paths": [
             "ops/STATE.json",
             "ops/traceability.json",
@@ -1366,6 +1518,9 @@ def task_packet(repo: Path, preflight: dict[str, Any], stage: str) -> dict[str, 
             ],
         },
     }
+    if bounded_substage is not None:
+        packet["bounded_substage"] = bounded_substage
+        packet["output_contract"]["required"].append("substage_complete")
     if stage == "independent_review":
         packet["review_only"] = True
         packet["output_contract"] = {

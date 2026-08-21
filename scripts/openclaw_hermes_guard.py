@@ -20,6 +20,9 @@ MANIFEST_SCHEMA_VERSION = 1
 GUARD_SCHEMA_VERSION = 1
 COUNTED_TOKEN_FIELDS = ("input_tokens", "output_tokens")
 CACHE_TOKEN_FIELD = "cache_read_tokens"
+MINIMUM_COMPLETION_CHECKPOINT_TOKENS = 2_048
+CONTEXT_RESERVATION_MARGIN_TOKENS = 1_024
+CONTEXT_PREDICTION_METHOD = "utf8_request_bytes_upper_bound"
 ALLOWED_STAGES = {"implementation", "direct_codex_recovery", "independent_review"}
 ALLOWED_MAKE_TARGETS = {
     "automation-test",
@@ -148,6 +151,9 @@ def create_manifest(
             "cache_read_field": CACHE_TOKEN_FIELD,
             "cache_read_double_counted": False,
             "session_scope": "fresh_stage_session",
+            "minimum_completion_checkpoint_tokens": MINIMUM_COMPLETION_CHECKPOINT_TOKENS,
+            "context_reservation_margin_tokens": CONTEXT_RESERVATION_MARGIN_TOKENS,
+            "context_prediction_method": CONTEXT_PREDICTION_METHOD,
             "exceptional_review_classification": exceptional_review_classification,
         },
     }
@@ -262,6 +268,9 @@ def validate_manifest(
         "cache_read_field",
         "cache_read_double_counted",
         "session_scope",
+        "minimum_completion_checkpoint_tokens",
+        "context_reservation_margin_tokens",
+        "context_prediction_method",
         "exceptional_review_classification",
     }:
         raise GuardError("invocation token policy is invalid")
@@ -272,6 +281,11 @@ def validate_manifest(
         or policy.get("cache_read_field") != CACHE_TOKEN_FIELD
         or policy.get("cache_read_double_counted") is not False
         or policy.get("session_scope") != "fresh_stage_session"
+        or policy.get("minimum_completion_checkpoint_tokens")
+        != MINIMUM_COMPLETION_CHECKPOINT_TOKENS
+        or policy.get("context_reservation_margin_tokens")
+        != CONTEXT_RESERVATION_MARGIN_TOKENS
+        or policy.get("context_prediction_method") != CONTEXT_PREDICTION_METHOD
         or policy.get("cumulative_ceiling") not in {60_000, 90_000, 120_000}
     ):
         raise GuardError("invocation token policy does not match repository policy")
@@ -394,6 +408,13 @@ def prepare_session_home(
             "boundary_reached": False,
             "in_flight_overshoot_tokens": 0,
             "next_api_call_blocked": False,
+            "reservation_blocked": False,
+            "predicted_next_context_tokens": 0,
+            "reserved_completion_checkpoint_tokens": MINIMUM_COMPLETION_CHECKPOINT_TOKENS,
+            "context_reservation_margin_tokens": CONTEXT_RESERVATION_MARGIN_TOKENS,
+            "last_call_input_tokens": 0,
+            "last_call_output_tokens": 0,
+            "reservation_violation": False,
             "guard_loaded": False,
             "preflight_guard_loaded": False,
             "chat_guard_loaded": False,
@@ -451,11 +472,14 @@ def _load_budget(path: Path) -> dict[str, Any]:
 def enforce_llm_call(
     request: dict[str, Any], next_call: Callable[[dict[str, Any]], Any]
 ) -> Any:
-    """Block before the next API call once observed cumulative usage reaches policy."""
+    """Reserve predicted input plus checkpoint output before every provider call."""
     manifest_path = Path(os.environ["PROPERTY_RENTAL_INVOCATION_MANIFEST"])
     manifest = json.loads(manifest_path.read_text())
     budget_path = Path(str(manifest["budget_path"]))
     budget = _load_budget(budget_path)
+    budget.setdefault("reservation_blocked", False)
+    budget.setdefault("reservation_violation", False)
+    budget.setdefault("in_flight_overshoot_tokens", 0)
     ceiling = int(budget["ceiling"])
     if int(budget["counted_total_tokens"]) >= ceiling:
         budget["boundary_reached"] = True
@@ -463,11 +487,44 @@ def enforce_llm_call(
         atomic_json(budget_path, budget)
         raise GuardError("PROPERTY_RENTAL_CUMULATIVE_TOKEN_CEILING_REACHED")
     remaining = ceiling - int(budget["counted_total_tokens"])
+    serialized = json.dumps(
+        request, sort_keys=True, separators=(",", ":"), default=str
+    ).encode("utf-8", "surrogatepass")
+    serialized_prediction = len(serialized)
+    prior_prediction = (
+        int(budget.get("last_call_input_tokens", 0))
+        + int(budget.get("last_call_output_tokens", 0))
+        + CONTEXT_RESERVATION_MARGIN_TOKENS
+    )
+    predicted_context = max(serialized_prediction, prior_prediction)
+    minimum_completion = int(
+        budget.get(
+            "reserved_completion_checkpoint_tokens",
+            MINIMUM_COMPLETION_CHECKPOINT_TOKENS,
+        )
+    )
+    margin = int(
+        budget.get(
+            "context_reservation_margin_tokens", CONTEXT_RESERVATION_MARGIN_TOKENS
+        )
+    )
+    required = predicted_context + minimum_completion + margin
+    budget["predicted_next_context_tokens"] = predicted_context
+    if required > remaining:
+        budget["reservation_blocked"] = True
+        budget["next_api_call_blocked"] = True
+        atomic_json(budget_path, budget)
+        raise GuardError("PROPERTY_RENTAL_PROACTIVE_BUDGET_RESERVATION_STOP")
     guarded_request = dict(request)
+    maximum_completion = remaining - predicted_context - margin
+    configured_limit = False
     for key in ("max_output_tokens", "max_completion_tokens", "max_tokens"):
         current = guarded_request.get(key)
         if isinstance(current, int) and current > 0:
-            guarded_request[key] = min(current, remaining)
+            guarded_request[key] = min(current, maximum_completion)
+            configured_limit = True
+    if not configured_limit:
+        guarded_request["max_output_tokens"] = maximum_completion
     budget["api_calls_started"] = int(budget["api_calls_started"]) + 1
     atomic_json(budget_path, budget)
     response = next_call(guarded_request)
@@ -484,12 +541,15 @@ def enforce_llm_call(
     budget["counted_total_tokens"] = int(budget["input_tokens"]) + int(
         budget["output_tokens"]
     )
+    budget["last_call_input_tokens"] = int(observed["input_tokens"])
+    budget["last_call_output_tokens"] = int(observed["output_tokens"])
     budget["effective_model"] = observed.get("model")
     if int(budget["counted_total_tokens"]) >= ceiling:
         budget["boundary_reached"] = True
         budget["in_flight_overshoot_tokens"] = max(
             0, int(budget["counted_total_tokens"]) - ceiling
         )
+        budget["reservation_violation"] = int(budget["counted_total_tokens"]) > ceiling
     atomic_json(budget_path, budget)
     return response
 
@@ -731,13 +791,29 @@ def finalize_usage(manifest: dict[str, Any], usage_path: Path) -> None:
             "cumulative_boundary": budget["ceiling"],
             "boundary_reached": budget["boundary_reached"],
             "next_api_call_blocked": budget["next_api_call_blocked"],
+            "reservation_blocked": budget.get("reservation_blocked") is True,
+            "predicted_next_context_tokens": budget.get(
+                "predicted_next_context_tokens", 0
+            ),
+            "reserved_completion_checkpoint_tokens": budget.get(
+                "reserved_completion_checkpoint_tokens",
+                MINIMUM_COMPLETION_CHECKPOINT_TOKENS,
+            ),
+            "context_reservation_margin_tokens": budget.get(
+                "context_reservation_margin_tokens", CONTEXT_RESERVATION_MARGIN_TOKENS
+            ),
+            "reservation_violation": budget.get("reservation_violation") is True,
             "in_flight_overshoot_tokens": budget["in_flight_overshoot_tokens"],
             "guard_loaded": budget.get("guard_loaded") is True,
             "preflight_guard_loaded": budget.get("preflight_guard_loaded") is True,
             "chat_guard_loaded": budget.get("chat_guard_loaded") is True,
             "chat_guard_pid": budget.get("chat_guard_pid"),
             "guard_capabilities": budget.get("guard_capabilities") or [],
-            **({"stop_reason": "token_ceiling"} if budget["boundary_reached"] else {}),
+            **(
+                {"stop_reason": "proactive_budget_reservation"}
+                if budget.get("reservation_blocked") is True
+                else ({"stop_reason": "token_ceiling"} if budget["boundary_reached"] else {})
+            ),
         },
     )
 

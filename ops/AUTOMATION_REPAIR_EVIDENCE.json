@@ -1,33 +1,63 @@
 {
-  "schema_version": 1,
-  "repair": "openclaw-dispatch-and-hermes-session-enforcement",
-  "status": "active",
+  "schema_version": 2,
+  "repair": "v1-019-code69-automation-routing",
+  "status": "published_awaiting_post_exit_restoration",
   "baseline_branch": "implementation/foundation",
-  "baseline_head": "68fedb53f06b9201f2547f9bc856c1985806a762",
-  "candidate": "V1-018",
-  "preserved_paths": {
-    "backend/src/property_rental/access_admin_api.py": "d86fdbaacd7c199c3bb52d5cb87f872bf9d4afd83116a1beab53259b59ba5543",
-    "backend/src/property_rental/app.py": "8f361c7470b0b9b89c500194e9cd2ec3e772157a30a392f4103c9f23274ed0fb",
-    "backend/tests/test_access_admin_api.py": "99b37690b9db62884318d1fc9436f0614ae4761c4fc9fdd7a71ba448352a295c",
-    "backend/tests/test_initial_owner_bootstrap_cli.py": "d2edfc3e6cf1faeadf58624c082e3bdd5574451e50f70094fc5ae8291c77e64b",
-    "ops/NOW.md": "8cbb9f4c11527d35235f98ab7048c987930476ea62b13807324d7cf3a0cd8531",
-    "ops/STATE.json": "61aff664d1bbac59db7ed419401e7d80dc5a63419b361082650674b1332a1049",
-    "ops/traceability.json": "f0ab59fd673cd3590193781458cc3f2567a6ca8085edd8b330af495c0bd44664"
+  "baseline_head": "1d091b6b581703b54eb370f3b3106a3dae45c19c",
+  "candidate": "V1-019",
+  "durable_v1_authorization_preserved": true,
+  "canonical_specifications_modified": false,
+  "token_ceiling": 60000,
+  "token_ceiling_increased": false,
+  "incident": {
+    "hermes_session": "907e45dd7a00a62dbe30f19ef6d9225b",
+    "stage": "implementation",
+    "input_tokens": 71801,
+    "output_tokens": 1692,
+    "counted_total_tokens": 73493,
+    "cache_read_tokens": 35840,
+    "in_flight_overshoot_tokens": 13493,
+    "api_calls": 7,
+    "implementation_attempt_counter": 1,
+    "automatic_repair_counter": 0,
+    "product_files_changed": [],
+    "worktree_clean": true,
+    "owner_action_required": false
   },
-  "automation_repair_may_modify_preserved_paths": false,
-  "v1_019_may_start": false,
-  "scheduler_restoration_followup": {
-    "baseline_head": "28411b0a61429ddc05f64791fc56eeec22e28ae4",
-    "failed_run_at_ms": 1787301103497,
-    "failed_run_exit": 69,
-    "diagnostic": "repository_integrity_uncertainty: resumed successor mutation has unexpected paths",
-    "preserved_staged_patch_sha256": "4cf9cc62aa9d013b977e97d51a3634ddf0c19d96138981559a547177e1699584",
-    "preserved_staged_paths": {
-      "ops/NOW.md": "e1872eb789857490cfcb270f0d10914de0df04be8b27ecf2d1c1c7d98cdbac66",
-      "ops/STATE.json": "705634ad5768b34b296dcf24291f5c5c1b1a33d68e8b6417d98665ed73076828"
+  "routing_revision": "v1-019-code69-repair-v1",
+  "predecessor_preservation_evidence": {
+    "schema_version": 1,
+    "candidate": "V1-018",
+    "baseline_branch": "implementation/foundation",
+    "baseline_head": "68fedb53f06b9201f2547f9bc856c1985806a762",
+    "preserved_paths": {
+      "backend/src/property_rental/access_admin_api.py": "d86fdbaacd7c199c3bb52d5cb87f872bf9d4afd83116a1beab53259b59ba5543",
+      "backend/src/property_rental/app.py": "8f361c7470b0b9b89c500194e9cd2ec3e772157a30a392f4103c9f23274ed0fb",
+      "backend/tests/test_access_admin_api.py": "99b37690b9db62884318d1fc9436f0614ae4761c4fc9fdd7a71ba448352a295c",
+      "backend/tests/test_initial_owner_bootstrap_cli.py": "d2edfc3e6cf1faeadf58624c082e3bdd5574451e50f70094fc5ae8291c77e64b",
+      "ops/NOW.md": "8cbb9f4c11527d35235f98ab7048c987930476ea62b13807324d7cf3a0cd8531",
+      "ops/STATE.json": "61aff664d1bbac59db7ed419401e7d80dc5a63419b361082650674b1332a1049",
+      "ops/traceability.json": "f0ab59fd673cd3590193781458cc3f2567a6ca8085edd8b330af495c0bd44664"
     },
-    "implementation_started": false,
-    "repair_scope": "repository-bound Codex overlap detection, deterministic two-or-three-path activation resumption, activation/implementation stage separation, and post-restoration scheduled-health proof",
-    "reconciliation": "restored the exact published V1-018 compact state by reversing only the proven automation-generated two-path patch; the durable activation record remains selection_pending and no V1-019 implementation path exists"
+    "automation_repair_may_modify_preserved_paths": false,
+    "v1_019_may_start": false
+  },
+  "bounded_substages": [
+    "sign_in",
+    "mfa_recovery",
+    "sessions",
+    "account_capability"
+  ],
+  "scheduler": {
+    "id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+    "enabled": false,
+    "restoration": "tested fail-closed post-exit continuation required"
+  },
+  "verification": {
+    "automation_tests": "96 passed",
+    "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-v1-019-routing-repair-final.json",
+    "independent_review": "PASS: no findings; repository e8693a83884882ee682ed9fe546aa7cd837dd3693d8bd26a9e5627b416e5254d; compact state 6c158d6f7bec7a1c32fec8b1cf8dfe4adeaa0e23b0574ba82c9c2c7bc8b39030; 12 paths; reviewer made no edits",
+    "publication_ci": "pending",
+    "post_exit_natural_run": "pending"
   }
 }
