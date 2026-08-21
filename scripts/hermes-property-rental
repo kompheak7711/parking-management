@@ -6,10 +6,6 @@ manifest_file="${2:-}"
 repo="${PROPERTY_RENTAL_REPO:-$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)}"
 guard="$repo/scripts/openclaw_hermes_guard.py"
 hermes_bin="${PROPERTY_RENTAL_HERMES_BIN:-hermes}"
-PROPERTY_RENTAL_WRAPPER_PARENT_PID="$PPID"
-PROPERTY_RENTAL_WRAPPER_PID="$$"
-export PROPERTY_RENTAL_WRAPPER_PARENT_PID
-export PROPERTY_RENTAL_WRAPPER_PID
 
 [ "$#" -eq 2 ] && [ -f "$task_file" ] && [ -f "$manifest_file" ] || {
   echo "A compact task file and dispatcher-created invocation manifest are required" >&2
@@ -19,6 +15,15 @@ export PROPERTY_RENTAL_WRAPPER_PID
   echo "Repository-owned Hermes guard is unavailable" >&2
   exit 64
 }
+
+wrapper_parent_pid="$(ps -o ppid= -p "$$")" || {
+  echo "Unable to determine the repository wrapper parent process" >&2
+  exit 64
+}
+PROPERTY_RENTAL_WRAPPER_PARENT_PID="$(printf '%s' "$wrapper_parent_pid" | tr -d '[:space:]')"
+PROPERTY_RENTAL_WRAPPER_PID="$$"
+export PROPERTY_RENTAL_WRAPPER_PARENT_PID
+export PROPERTY_RENTAL_WRAPPER_PID
 
 python3 "$guard" validate "$manifest_file" "$task_file" || exit 64
 

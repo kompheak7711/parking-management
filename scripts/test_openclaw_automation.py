@@ -7,6 +7,8 @@ import importlib.util
 import io
 import json
 import os
+import shlex
+import shutil
 import sqlite3
 import subprocess
 import tempfile
@@ -58,6 +60,20 @@ from openclaw_hermes_guard import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def dispatcher_ps_probe_script() -> str:
+    """Use the real OS parent query while isolating dispatcher command lookup."""
+    real_ps = shutil.which("ps")
+    if not real_ps:
+        raise RuntimeError("system ps is required for process-ancestry tests")
+    return (
+        "#!/bin/sh\n"
+        'case "$*" in\n'
+        f'  *ppid=*) exec {shlex.quote(real_ps)} "$@" ;;\n'
+        "  *) printf '%s\\n' \"$PROPERTY_RENTAL_REPO/scripts/openclaw_dispatch.py\" ;;\n"
+        "esac\n"
+    )
 
 
 class AutomationPolicyTests(unittest.TestCase):
@@ -749,9 +765,7 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
             )
             fake.chmod(0o755)
             fake_ps = root / "ps"
-            fake_ps.write_text(
-                "#!/bin/sh\nprintf '%s\\n' \"$PROPERTY_RENTAL_REPO/scripts/openclaw_dispatch.py\"\n"
-            )
+            fake_ps.write_text(dispatcher_ps_probe_script())
             fake_ps.chmod(0o755)
             hermes_home = root / "hermes-home"
             hermes_home.mkdir()
@@ -856,9 +870,7 @@ print(json.dumps(result))
             )
             fake.chmod(0o755)
             fake_ps = root / "ps"
-            fake_ps.write_text(
-                "#!/bin/sh\nprintf '%s\\n' \"$PROPERTY_RENTAL_REPO/scripts/openclaw_dispatch.py\"\n"
-            )
+            fake_ps.write_text(dispatcher_ps_probe_script())
             fake_ps.chmod(0o755)
             hermes_home = root / "hermes-home"
             hermes_home.mkdir()
@@ -1311,9 +1323,7 @@ print(json.dumps(result))
             )
             fake.chmod(0o755)
             fake_ps = root / "ps"
-            fake_ps.write_text(
-                "#!/bin/sh\nprintf '%s\\n' \"$PROPERTY_RENTAL_REPO/scripts/openclaw_dispatch.py\"\n"
-            )
+            fake_ps.write_text(dispatcher_ps_probe_script())
             fake_ps.chmod(0o755)
             hermes_home = root / "hermes-home"
             hermes_home.mkdir()
@@ -3629,13 +3639,7 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
             fake_bin = root / "bin"
             fake_bin.mkdir()
             fake_ps = fake_bin / "ps"
-            fake_ps.write_text(
-                "#!/bin/sh\n"
-                'case "$*" in\n'
-                "  *ppid=*) printf '%s\\n' \"$TEST_DISPATCHER_PID\" ;;\n"
-                "  *) printf '%s\\n' \"$PROPERTY_RENTAL_REPO/scripts/openclaw_dispatch.py\" ;;\n"
-                "esac\n"
-            )
+            fake_ps.write_text(dispatcher_ps_probe_script())
             fake_ps.chmod(0o755)
             spec = importlib.util.spec_from_file_location(
                 "accounting_dispatch", ROOT / "scripts/openclaw_dispatch.py"
@@ -3650,7 +3654,6 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
                 "PROPERTY_RENTAL_HERMES_BIN": str(fake),
                 "PROPERTY_RENTAL_HERMES_SOURCE_HOME": str(hermes_home),
                 "PATH": f"{fake_bin}:{os.environ['PATH']}",
-                "TEST_DISPATCHER_PID": str(os.getpid()),
                 "FAKE_EXIT": "70",
             }
             with mock.patch.dict(os.environ, environment):
@@ -3996,7 +3999,7 @@ print('{}')
                 check=False,
             )
             self.assertEqual(direct_manifest.returncode, 64)
-            self.assertIn("dispatcher", direct_manifest.stderr)
+            self.assertRegex(direct_manifest.stderr, r"dispatcher|parent process")
             self.assertFalse(Path(str(manifest["usage_path"])).exists())
             direct = subprocess.run(
                 [str(ROOT / "scripts/hermes-property-rental"), str(task)],
