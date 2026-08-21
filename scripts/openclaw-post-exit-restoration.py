@@ -27,13 +27,22 @@ from openclaw_automation import (
 SUPERVISOR_ID = "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb"
 SUPERVISOR_NAME = "property-rental-24x7-supervisor"
 EXPECTED_INTERVAL_MS = 1_800_000
-ROUTING_REVISION = "v1-019-invocation-contract-repair-v2"
-INCIDENT_BASELINE = "d877cf3b6648083f97e54d661933e3d188999dae"
+ROUTING_REVISION = "v1-019-context-restoration-repair-v3"
+PRIOR_ROUTING_REVISION = "v1-019-invocation-contract-repair-v2"
+INCIDENT_BASELINE = "d6eb7e73610b2a72cf38f4b32468226e9e76a436"
+LEGACY_INVOCATION_INCIDENT_BASELINE = "d877cf3b6648083f97e54d661933e3d188999dae"
 REPAIR_PUBLICATION_COMMIT = "e0469b6d519c0947662204869a535c7080185638"
 FAILED_ROUTING_FINGERPRINT = (
     "ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2"
 )
 FAILED_SESSION_ID = "6baf17e6e77d7582e72b2e19a40ab806"
+CONTEXT_INCIDENT_SESSION_ID = "61d145e0655c5298cbcfa576fff3ff78"
+CONTEXT_INCIDENT_API_CALLS = 2
+CONTEXT_INCIDENT_INPUT_TOKENS = 16_881
+CONTEXT_INCIDENT_OUTPUT_TOKENS = 422
+CONTEXT_INCIDENT_COUNTED_TOKENS = 17_303
+CONTEXT_INCIDENT_CACHE_READ_TOKENS = 9_216
+CONTEXT_INCIDENT_FALSE_PREDICTION = 109_152
 TERMINAL_RESTORATION_STATUSES = {"complete", "failed_closed"}
 FALSE_FAILURE_METADATA_COMMIT = "7c0f67d07092702229329a57176ae0fdc95afd12"
 FALSE_FAILURE_RUN_ID = 32511133185
@@ -517,7 +526,7 @@ def supersede_v1_019_incident(
     if current is not None and (
         current.get("stage") != "implementation"
         or current.get("routing_revision") != "v1-019-code69-repair-v1"
-        or current.get("candidate_base_commit") != INCIDENT_BASELINE
+        or current.get("candidate_base_commit") != LEGACY_INVOCATION_INCIDENT_BASELINE
         or current.get("implementation_complete") is True
         or current.get("expected_worktree_paths") not in (None, [])
         or current.get("completed_implementation_substages") not in (None, [])
@@ -659,6 +668,181 @@ def supersede_v1_019_incident(
     return incident
 
 
+def validate_pending_sign_in_marker(
+    dispatch_state: Path, record: dict[str, Any], *, expected_attempt: int
+) -> None:
+    pending_fingerprint = record.get("pending_recovery_marker_fingerprint")
+    if not isinstance(pending_fingerprint, str) or not pending_fingerprint:
+        raise RestorationError("the pending sign-in recovery marker identity is missing")
+    marker_path = (
+        dispatch_state
+        / "terminal/routing_recovery_pending"
+        / f"{pending_fingerprint}.json"
+    )
+    marker = read_json_object(marker_path, "pending V1-019 recovery marker")
+    if (
+        marker.get("phase") != "sign_in"
+        or marker.get("attempt") != expected_attempt
+        or marker.get("actionable_fingerprint") != pending_fingerprint
+    ):
+        raise RestorationError("the exact pending sign-in recovery marker drifted")
+
+
+def rebase_scheduled_v1_019_recovery(
+    repo: Path, dispatch_state: Path, *, candidate_base_commit: str
+) -> dict[str, Any]:
+    """Rebind only the proven pending sign-in recovery to the repair commit."""
+    candidate_path = dispatch_state / "candidates/V1-019.json"
+    attempt_path = dispatch_state / "attempts/V1-019.json"
+    failure_path = dispatch_state / "last-failure.json"
+    record = read_json_object(candidate_path, "V1-019 candidate recovery record")
+    attempt = read_json_object(attempt_path, "V1-019 attempt record")
+    failure = read_json_object(failure_path, "V1-019 current failure")
+    fingerprint = repository_fingerprint(repo)
+    usage = record.get("model_usage") or []
+    latest_usage = usage[-1] if isinstance(usage, list) and usage else {}
+    recoveries = record.get("ceiling_recovery_attempts") or {}
+    if record.get("routing_revision") == ROUTING_REVISION:
+        recovery_attempt = int(recoveries.get("sign_in") or 0)
+        if (
+            record.get("candidate") != "V1-019"
+            or record.get("candidate_base_commit") != candidate_base_commit
+            or record.get("repository_fingerprint") != fingerprint
+            or record.get("stage") != "implementation"
+            or record.get("expected_worktree_paths") != []
+            or record.get("completed_implementation_substages") != []
+            or record.get("recovery_pending") is not True
+            or not 1 <= int(record.get("recovery_generation") or 0) <= 2
+            or not 1 <= recovery_attempt <= 2
+            or record.get("bounded_recovery_exhausted") is True
+            or failure.get("category")
+            not in {
+                "model_session_or_token_ceiling",
+                "pre_model_infrastructure_failure",
+                "unsupported_invocation_configuration",
+                "lock_or_overlapping_process_failure",
+            }
+            or failure.get("owner_action_required") is not False
+            or not 1
+            <= int((attempt.get("counters") or {}).get("implementation") or 0)
+            <= 3
+            or attempt.get("pending") is not None
+        ):
+            raise RestorationError(
+                "the already-rebased V1-019 sign-in recovery boundary drifted"
+            )
+        validate_pending_sign_in_marker(
+            dispatch_state, record, expected_attempt=recovery_attempt
+        )
+        return {"status": "already_rebased", "archive": None}
+    if (
+        record.get("candidate") != "V1-019"
+        or record.get("routing_revision") != PRIOR_ROUTING_REVISION
+        or record.get("candidate_base_commit") != INCIDENT_BASELINE
+        or record.get("stage") != "implementation"
+        or record.get("completed_implementation_substages") != []
+        or record.get("expected_worktree_paths") != []
+        or record.get("recovery_pending") is not True
+        or record.get("recovery_generation") != 1
+        or recoveries != {"sign_in": 1}
+        or record.get("bounded_recovery_exhausted") is True
+        or latest_usage.get("session_id") != CONTEXT_INCIDENT_SESSION_ID
+        or latest_usage.get("api_calls_started") != CONTEXT_INCIDENT_API_CALLS
+        or latest_usage.get("api_calls_completed") != CONTEXT_INCIDENT_API_CALLS
+        or latest_usage.get("input_token_usage") != CONTEXT_INCIDENT_INPUT_TOKENS
+        or latest_usage.get("output_token_usage") != CONTEXT_INCIDENT_OUTPUT_TOKENS
+        or latest_usage.get("total_token_usage") != CONTEXT_INCIDENT_COUNTED_TOKENS
+        or latest_usage.get("cache_read_token_usage")
+        != CONTEXT_INCIDENT_CACHE_READ_TOKENS
+        or latest_usage.get("predicted_next_context_tokens")
+        != CONTEXT_INCIDENT_FALSE_PREDICTION
+        or latest_usage.get("in_flight_overshoot_tokens") != 0
+        or latest_usage.get("unsupported_provider_parameters_removed") != []
+        or failure.get("category") != "model_session_or_token_ceiling"
+        or failure.get("owner_action_required") is not False
+        or ((attempt.get("counters") or {}).get("implementation")) != 1
+        or attempt.get("pending") is not None
+    ):
+        raise RestorationError(
+            "the pending V1-019 sign-in recovery no longer matches the exact context incident"
+        )
+    validate_pending_sign_in_marker(dispatch_state, record, expected_attempt=1)
+
+    archive = dispatch_state / "superseded/v1-019-context-reservation"
+    archive.mkdir(parents=True, exist_ok=True)
+    archive_key = f"{int(time.time() * 1000)}-{candidate_base_commit[:12]}"
+    archived = archive / f"candidate-{archive_key}.json"
+    atomic_write_json(archived, record)
+    record.update(
+        {
+            "routing_revision": ROUTING_REVISION,
+            "candidate_base_commit": candidate_base_commit,
+            "initial_repository_fingerprint": fingerprint,
+            "repository_fingerprint": fingerprint,
+            "updated_at": utc_now(),
+        }
+    )
+    record.setdefault("events", []).append(
+        {
+            "stage": "automation_context_restoration_repair",
+            "result": "pending_sign_in_recovery_rebased",
+            "routing_revision": ROUTING_REVISION,
+            "repository_commit": candidate_base_commit,
+            "repository_fingerprint": fingerprint,
+            "recovery_generation": 1,
+            "recovery_attempt": 1,
+            "owner_action_required": False,
+        }
+    )
+    atomic_write_json(candidate_path, record)
+    return {
+        "status": "pending_sign_in_recovery_rebased",
+        "archive": str(archived),
+        "repository_fingerprint": fingerprint,
+    }
+
+
+def restoration_boundary_path(dispatch_state: Path) -> Path:
+    return dispatch_state / "restoration/active-v1-019-boundary.json"
+
+
+def persist_restoration_boundary(
+    dispatch_state: Path, *, candidate_base_commit: str, sequence_floor: int
+) -> Path:
+    path = restoration_boundary_path(dispatch_state)
+    atomic_write_json(
+        path,
+        {
+            "schema_version": 1,
+            "status": "active",
+            "candidate": "V1-019",
+            "bounded_substage": "sign_in",
+            "routing_revision": ROUTING_REVISION,
+            "candidate_base_commit": candidate_base_commit,
+            "sequence_floor": sequence_floor,
+            "created_at": utc_now(),
+        },
+    )
+    return path
+
+
+def archive_restoration_boundary(dispatch_state: Path, *, status: str) -> str | None:
+    path = restoration_boundary_path(dispatch_state)
+    if not path.exists():
+        return None
+    boundary = read_json_object(path, "active restoration boundary")
+    boundary["status"] = status
+    boundary["resolved_at"] = utc_now()
+    target = (
+        dispatch_state
+        / "restoration/boundaries"
+        / f"{status}-{int(time.time() * 1000)}.json"
+    )
+    atomic_write_json(target, boundary)
+    path.unlink()
+    return str(target)
+
+
 def v1_019_dispatch_progress(
     dispatch_state: Path, *, candidate_base_commit: str
 ) -> dict[str, Any]:
@@ -683,7 +867,7 @@ def v1_019_dispatch_progress(
     ):
         raise RestorationError("the natural run drifted from the bounded V1-019 record")
     stage = str(record.get("stage") or "")
-    progressed = bool(completed) or stage != "implementation"
+    progressed = bool(completed and completed[0] == "sign_in")
     if not progressed:
         raise RestorationError(
             "the natural run returned success without dispatching a bounded V1-019 substage"
@@ -693,6 +877,7 @@ def v1_019_dispatch_progress(
         "completed_implementation_substages": completed,
         "repository_fingerprint": record.get("repository_fingerprint"),
         "recovery_generation": int(record.get("recovery_generation") or 0),
+        "recovery_pending": record.get("recovery_pending") is True,
     }
 
 
@@ -734,6 +919,85 @@ def job_state(job: dict[str, Any]) -> tuple[int | None, str | None, int, bool]:
         errors if isinstance(errors, int) else 0,
         running,
     )
+
+
+def supervisor_runs_after(database: Path, sequence: int) -> list[dict[str, Any]]:
+    """Return completed supervisor runs strictly after one durable sequence."""
+    try:
+        with sqlite3.connect(f"file:{database}?mode=ro", uri=True) as connection:
+            rows = connection.execute(
+                """
+                SELECT seq, status, run_at_ms, duration_ms
+                FROM cron_run_logs
+                WHERE job_id = ? AND seq > ?
+                ORDER BY seq ASC
+                """,
+                (SUPERVISOR_ID, sequence),
+            ).fetchall()
+    except sqlite3.Error as error:
+        raise RestorationError(
+            "supervisor run-sequence evidence is unavailable"
+        ) from error
+    return [
+        {
+            "sequence": int(row[0]),
+            "status": str(row[1]) if row[1] is not None else None,
+            "run_at_ms": int(row[2]) if row[2] is not None else None,
+            "duration_ms": int(row[3]) if row[3] is not None else None,
+        }
+        for row in rows
+    ]
+
+
+def latest_supervisor_sequence(database: Path) -> int:
+    try:
+        with sqlite3.connect(f"file:{database}?mode=ro", uri=True) as connection:
+            row = connection.execute(
+                "SELECT MAX(seq) FROM cron_run_logs WHERE job_id = ?",
+                (SUPERVISOR_ID,),
+            ).fetchone()
+    except sqlite3.Error as error:
+        raise RestorationError(
+            "supervisor run-sequence baseline is unavailable"
+        ) from error
+    if row is None or not isinstance(row[0], int):
+        raise RestorationError("supervisor run-sequence baseline is missing")
+    return int(row[0])
+
+
+def eligible_bounded_recovery(dispatch_state: Path) -> dict[str, Any]:
+    """Prove a recoverable V1-019 sign-in retry remains dispatchable."""
+    boundary = current_failure_boundary(dispatch_state)
+    record = read_json_object(
+        dispatch_state / "candidates/V1-019.json", "V1-019 recovery record"
+    )
+    completed = record.get("completed_implementation_substages") or []
+    recoveries = record.get("ceiling_recovery_attempts") or {}
+    category = boundary.get("category")
+    eligible = bool(
+        category
+        in {
+            "model_session_or_token_ceiling",
+            "pre_model_infrastructure_failure",
+            "unsupported_invocation_configuration",
+            "lock_or_overlapping_process_failure",
+        }
+        and boundary.get("owner_action_required") is False
+        and boundary.get("recovery_pending_in_record") is True
+        and record.get("bounded_recovery_exhausted") is not True
+        and record.get("stage") == "implementation"
+        and completed == []
+        and int(record.get("recovery_generation") or 0) >= 1
+        and 1 <= int(recoveries.get("sign_in") or 0) <= 2
+    )
+    return {
+        "eligible": eligible,
+        "category": category,
+        "recovery_generation": int(record.get("recovery_generation") or 0),
+        "sign_in_recovery_attempts": int(recoveries.get("sign_in") or 0),
+        "owner_action_required": boundary.get("owner_action_required") is True,
+        "exact_next_action": boundary.get("exact_next_action"),
+    }
 
 
 def wait_for_zero_overlap(
@@ -783,6 +1047,15 @@ def telegram_route(database: Path, source_job_id: str) -> tuple[str, str, str | 
 
 
 def terminal_message(evidence: dict[str, Any]) -> str:
+    if evidence.get("status") == "recovery_scheduled":
+        recovery = evidence.get("bounded_recovery") or {}
+        return (
+            "RECOVERY_SCHEDULED — Property Rental supervisor remains enabled for "
+            "the exact bounded V1-019 sign_in retry. "
+            f"Post-repair run sequence: {evidence.get('last_observed_sequence')}; "
+            f"recovery generation: {recovery.get('recovery_generation')}; "
+            "Owner action required: no."
+        )
     if evidence.get("status") == "complete":
         progress = evidence.get("bounded_retry_progress") or {}
         completed = progress.get("completed_implementation_substages") or []
@@ -879,6 +1152,87 @@ def notify_terminal_once(args: argparse.Namespace, evidence_path: Path) -> None:
             atomic_write_json(evidence_path, latest)
 
 
+def notify_recovery_scheduled_once(
+    args: argparse.Namespace, evidence_path: Path, *, sequence: int
+) -> None:
+    """Send one nonterminal notification for one exact scheduled recovery."""
+    lock_path = evidence_path.with_name(f".{evidence_path.name}.notification.lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+", encoding="utf-8") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        evidence = read_json_object(evidence_path, "recovery-scheduled evidence")
+        notifications = evidence.get("recovery_notifications") or []
+        if any(item.get("sequence") == sequence for item in notifications):
+            return
+        attempted_at = utc_now()
+        entry = {
+            "sequence": sequence,
+            "attempted": True,
+            "attempted_at": attempted_at,
+            "delivery_status": "attempting",
+            "source_job_id": args.notification_source_job_id,
+        }
+        evidence["recovery_notifications"] = [*notifications, entry]
+        atomic_write_json(evidence_path, evidence)
+        fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+    completion: dict[str, Any]
+    try:
+        openclaw = exact_executable(args.openclaw, "OpenClaw")
+        channel, target, account = telegram_route(
+            Path(args.openclaw_db).resolve(), args.notification_source_job_id
+        )
+        command = [
+            openclaw,
+            "message",
+            "send",
+            "--channel",
+            channel,
+            "--target",
+            target,
+            "--message",
+            terminal_message(evidence),
+            "--json",
+        ]
+        if account is not None:
+            command.extend(["--account", account])
+        result = subprocess.run(
+            command,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=args.notification_timeout,
+        )
+        completion = {
+            "completed_at": utc_now(),
+            "exit_status": result.returncode,
+            "delivery_status": "delivered" if result.returncode == 0 else "failed",
+        }
+        if result.returncode:
+            completion["failure"] = "OpenClaw Telegram message command failed"
+    except subprocess.TimeoutExpired:
+        completion = {
+            "completed_at": utc_now(),
+            "delivery_status": "failed",
+            "failure": "OpenClaw Telegram message command timed out",
+            "timeout_seconds": args.notification_timeout,
+        }
+    except Exception:
+        completion = {
+            "completed_at": utc_now(),
+            "delivery_status": "failed",
+            "failure": "Telegram notification route or executable was unavailable",
+        }
+    with lock_path.open("a+", encoding="utf-8") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        latest = read_json_object(evidence_path, "recovery-scheduled evidence")
+        notifications = latest.get("recovery_notifications") or []
+        for item in notifications:
+            if item.get("sequence") == sequence and item.get("attempted_at") == attempted_at:
+                item.update(completion)
+        latest["recovery_notifications"] = notifications
+        atomic_write_json(evidence_path, latest)
+
+
 def disable_supervisor(args: argparse.Namespace, repo: Path) -> str | None:
     try:
         openclaw = exact_executable(args.openclaw, "OpenClaw")
@@ -915,49 +1269,59 @@ def finalize_terminal_direct(
     args: argparse.Namespace, evidence_path: Path, *, unload_terminalizer: bool
 ) -> bool:
     """Finalize from a process that is not the continuation being unloaded."""
-    terminal = read_json_object(evidence_path, "terminal restoration evidence")
-    unload_failure = attempt_terminal_unload(args, evidence_path)
-    if unload_failure is not None and terminal.get("status") == "complete":
+    lock_path = evidence_path.with_name(f".{evidence_path.name}.finalize.lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+", encoding="utf-8") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
         terminal = read_json_object(evidence_path, "terminal restoration evidence")
-        terminal["restoration_result_before_terminal_failure"] = "complete"
-        terminal["enabled_before_terminal_failure"] = terminal.get("enabled")
-        terminal["status"] = "failed_closed"
-        terminal["enabled"] = False
-        terminal["failure"] = unload_failure
-        terminal["failure_phase"] = "terminal_self_unload"
-        terminal["disable_failure"] = disable_supervisor(
-            args, Path(args.repo).resolve()
-        )
-        terminal["owner_action_required"] = False
-        terminal["exact_next_action"] = (
-            "Repair the exact continuation self-unload failure before another "
-            "restoration attempt."
-        )
-        atomic_write_json(evidence_path, terminal)
-    try:
-        notify_terminal_once(args, evidence_path)
-    finally:
-        if unload_terminalizer:
-            terminal = read_json_object(evidence_path, "terminal restoration evidence")
-            terminal["terminalizer"] = {
-                **(terminal.get("terminalizer") or {}),
-                "self_unload_requested_at": utc_now(),
-            }
+        unload_failure = attempt_terminal_unload(args, evidence_path)
+        if unload_failure is not None and terminal.get("status") == "complete":
+            terminal = read_json_object(
+                evidence_path, "terminal restoration evidence"
+            )
+            terminal["restoration_result_before_terminal_failure"] = "complete"
+            terminal["enabled_before_terminal_failure"] = terminal.get("enabled")
+            terminal["status"] = "failed_closed"
+            terminal["enabled"] = False
+            terminal["failure"] = unload_failure
+            terminal["failure_phase"] = "terminal_self_unload"
+            terminal["disable_failure"] = disable_supervisor(
+                args, Path(args.repo).resolve()
+            )
+            terminal["owner_action_required"] = False
+            terminal["exact_next_action"] = (
+                "Repair the exact continuation self-unload failure before another "
+                "restoration attempt."
+            )
             atomic_write_json(evidence_path, terminal)
-            try:
-                unload_launchd_label(
-                    args.launchctl, terminalizer_label(args.expected_repair_head)
-                )
-            except Exception as error:
+        try:
+            notify_terminal_once(args, evidence_path)
+        finally:
+            if unload_terminalizer:
                 terminal = read_json_object(
                     evidence_path, "terminal restoration evidence"
                 )
-                terminal["terminalizer"]["self_unload_failure"] = str(error)
+                terminal["terminalizer"] = {
+                    **(terminal.get("terminalizer") or {}),
+                    "self_unload_requested_at": utc_now(),
+                }
                 atomic_write_json(evidence_path, terminal)
-    return (
-        read_json_object(evidence_path, "terminal restoration evidence").get("status")
-        == "complete"
-    )
+                try:
+                    unload_launchd_label(
+                        args.launchctl, terminalizer_label(args.expected_repair_head)
+                    )
+                except Exception as error:
+                    terminal = read_json_object(
+                        evidence_path, "terminal restoration evidence"
+                    )
+                    terminal["terminalizer"]["self_unload_failure"] = str(error)
+                    atomic_write_json(evidence_path, terminal)
+        return (
+            read_json_object(evidence_path, "terminal restoration evidence").get(
+                "status"
+            )
+            == "complete"
+        )
 
 
 def terminalizer_command(args: argparse.Namespace, evidence_path: Path) -> list[str]:
@@ -1231,9 +1595,15 @@ def execute(args: argparse.Namespace) -> int:
                 if prior
                 else None
             ),
+            "recovery_notifications": (
+                prior.get("recovery_notifications", []) if prior else []
+            ),
         },
     )
     enabled = False
+    sequence_floor: int | None = None
+    processed_sequence: int | None = None
+    post_repair_runs: list[dict[str, Any]] = []
     try:
         github = exact_executable(args.github, "GitHub CLI")
         pre_metadata_head = args.expected_continuation_head or git(
@@ -1257,10 +1627,25 @@ def execute(args: argparse.Namespace) -> int:
             github=github,
             ci_evidence=ci_evidence_path,
         )
-        continuation_head = args.expected_continuation_head or metadata_commit
-        supersession = supersede_v1_019_incident(
+        continuation_head = metadata_commit
+        current_candidate = read_json_object(
+            dispatch_state / "candidates/V1-019.json", "V1-019 candidate record"
+        )
+        if current_candidate.get("routing_revision") not in {
+            PRIOR_ROUTING_REVISION,
+            ROUTING_REVISION,
+        }:
+            raise RestorationError(
+                "post-exit restoration permits only the exact pending V1-019 sign-in recovery"
+            )
+        supersession = rebase_scheduled_v1_019_recovery(
             repo, dispatch_state, candidate_base_commit=continuation_head
         )
+        recovery_before_enable = eligible_bounded_recovery(dispatch_state)
+        if not recovery_before_enable["eligible"]:
+            raise RestorationError(
+                "the exact V1-019 sign-in recovery became ineligible before enable"
+            )
         wait_for_zero_overlap(repo, args.owner_pid, args.overlap_timeout, args.poll)
         v1_019_integrity(repo, dispatch_state, expected_head=continuation_head)
         before_enable = cron(args.openclaw, repo, "get")
@@ -1269,36 +1654,107 @@ def execute(args: argparse.Namespace) -> int:
             raise RestorationError(
                 "the supervisor changed state before the exact enable operation"
             )
-        prior_run, _, _, _ = job_state(before_enable)
+        sequence_floor = latest_supervisor_sequence(Path(args.openclaw_db).resolve())
+        boundary_path = persist_restoration_boundary(
+            dispatch_state,
+            candidate_base_commit=continuation_head,
+            sequence_floor=sequence_floor,
+        )
         enabled_job = cron(args.openclaw, repo, "enable")
         exact_supervisor(enabled_job, repo)
         if enabled_job.get("enabled") is not True:
             raise RestorationError("the exact supervisor did not become enabled")
         enabled = True
-        enabled_at_ms = int(time.time() * 1000)
+        processed_sequence = sequence_floor
+        post_repair_runs = []
         deadline = time.monotonic() + args.natural_run_timeout
         while time.monotonic() < deadline:
             observed = cron(args.openclaw, repo, "get")
             exact_supervisor(observed, repo)
-            last_run, status, errors, running = job_state(observed)
-            if (
-                last_run is not None
-                and last_run >= enabled_at_ms
-                and (prior_run is None or last_run > prior_run)
-                and not running
-            ):
-                if status != "ok" or errors != 0:
-                    raise RestorationError(
-                        "the naturally scheduled supervisor run failed"
-                    )
-                progress = v1_019_dispatch_progress(
-                    dispatch_state, candidate_base_commit=continuation_head
+            if observed.get("enabled") is not True:
+                raise RestorationError(
+                    "the supervisor became disabled during the scheduled bounded recovery"
                 )
-                integrity = v1_019_integrity(repo, dispatch_state, expected_head=None)
+            _, _, inherited_errors, running = job_state(observed)
+            if running:
+                time.sleep(args.poll)
+                continue
+            runs = supervisor_runs_after(
+                Path(args.openclaw_db).resolve(), processed_sequence
+            )
+            if not runs:
+                time.sleep(args.poll)
+                continue
+            for run_evidence in runs:
+                processed_sequence = int(run_evidence["sequence"])
+                run_evidence["aggregate_consecutive_errors"] = inherited_errors
+                post_repair_runs.append(run_evidence)
+                if run_evidence.get("status") == "ok":
+                    try:
+                        progress = v1_019_dispatch_progress(
+                            dispatch_state, candidate_base_commit=continuation_head
+                        )
+                    except RestorationError:
+                        recovery = eligible_bounded_recovery(dispatch_state)
+                        if recovery["eligible"]:
+                            continue
+                        raise
+                    integrity = v1_019_integrity(
+                        repo, dispatch_state, expected_head=None
+                    )
+                    boundary_archive = archive_restoration_boundary(
+                        dispatch_state, status="progress_verified"
+                    )
+                    current_evidence = read_json_object(
+                        evidence_path, "post-exit restoration evidence"
+                    )
+                    atomic_write_json(
+                        evidence_path,
+                        {
+                            "status": "complete",
+                            "timestamp": utc_now(),
+                            "expected_repair_head": args.expected_repair_head,
+                            "restoration_label": restoration_label(
+                                args.expected_repair_head
+                            ),
+                            "supervisor_id": SUPERVISOR_ID,
+                            "enabled": True,
+                            "metadata_commit": metadata_commit,
+                            "continuation_commit": continuation_head,
+                            "restoration_metadata_ci_evidence": str(ci_evidence_path),
+                            "post_repair_sequence_floor": sequence_floor,
+                            "verified_progress_sequence": processed_sequence,
+                            "post_repair_runs": post_repair_runs,
+                            "inherited_consecutive_errors_ignored": inherited_errors,
+                            "candidate": "V1-019",
+                            "repository_branch": integrity["branch"],
+                            "repository_head": integrity["head"],
+                            "repository_paths": integrity["paths"],
+                            "v1_020_started": False,
+                            "incident_supersession": supersession,
+                            "bounded_retry_progress": progress,
+                            "restoration_boundary": boundary_archive,
+                            "recovery_notifications": current_evidence.get(
+                                "recovery_notifications", []
+                            ),
+                        },
+                    )
+                    return 0 if finalize_terminal(args, evidence_path) else 69
+
+                recovery = eligible_bounded_recovery(dispatch_state)
+                if not recovery["eligible"]:
+                    raise RestorationError(
+                        "post-repair supervisor sequence failed without an eligible bounded recovery"
+                    )
+                v1_019_integrity(repo, dispatch_state, expected_head=None)
+                current_evidence = read_json_object(
+                    evidence_path, "post-exit restoration evidence"
+                )
                 atomic_write_json(
                     evidence_path,
                     {
-                        "status": "complete",
+                        **current_evidence,
+                        "status": "recovery_scheduled",
                         "timestamp": utc_now(),
                         "expected_repair_head": args.expected_repair_head,
                         "restoration_label": restoration_label(
@@ -1306,22 +1762,19 @@ def execute(args: argparse.Namespace) -> int:
                         ),
                         "supervisor_id": SUPERVISOR_ID,
                         "enabled": True,
-                        "metadata_commit": metadata_commit,
-                        "continuation_commit": continuation_head,
-                        "restoration_metadata_ci_evidence": str(ci_evidence_path),
-                        "natural_run_at_ms": last_run,
-                        "natural_run_status": status,
-                        "consecutive_errors": errors,
-                        "candidate": "V1-019",
-                        "repository_branch": integrity["branch"],
-                        "repository_head": integrity["head"],
-                        "repository_paths": integrity["paths"],
-                        "v1_020_started": False,
-                        "incident_supersession": supersession,
-                        "bounded_retry_progress": progress,
+                        "post_repair_sequence_floor": sequence_floor,
+                        "last_observed_sequence": processed_sequence,
+                        "post_repair_runs": post_repair_runs,
+                        "inherited_consecutive_errors_ignored": inherited_errors,
+                        "bounded_recovery": recovery,
+                        "restoration_boundary": str(boundary_path),
+                        "owner_action_required": False,
+                        "exact_next_action": recovery["exact_next_action"],
                     },
                 )
-                return 0 if finalize_terminal(args, evidence_path) else 69
+                notify_recovery_scheduled_once(
+                    args, evidence_path, sequence=processed_sequence
+                )
             time.sleep(args.poll)
         raise RestorationError(
             "no naturally scheduled successful run completed before timeout"
@@ -1336,6 +1789,15 @@ def execute(args: argparse.Namespace) -> int:
                 disable_error = "disable command did not leave the supervisor disabled"
         except Exception as disable_failure:
             disable_error = str(disable_failure)
+        boundary_archive = archive_restoration_boundary(
+            dispatch_state, status="failed_closed"
+        )
+        try:
+            current_evidence = read_json_object(
+                evidence_path, "post-exit restoration evidence"
+            )
+        except RestorationError:
+            current_evidence = {}
         atomic_write_json(
             evidence_path,
             {
@@ -1349,10 +1811,13 @@ def execute(args: argparse.Namespace) -> int:
                 "disable_failure": disable_error,
                 "owner_action_required": failure_boundary["owner_action_required"],
                 "dispatcher_failure_category": failure_boundary["category"],
-                "recovery_state": (
-                    "scheduled_in_record_but_not_running_due_fail_closed_disable"
-                    if failure_boundary["recovery_pending_in_record"]
-                    else "not_running"
+                "recovery_state": "terminal_failure",
+                "post_repair_sequence_floor": sequence_floor,
+                "last_observed_sequence": processed_sequence,
+                "post_repair_runs": post_repair_runs,
+                "restoration_boundary": boundary_archive,
+                "recovery_notifications": current_evidence.get(
+                    "recovery_notifications", []
                 ),
                 "exact_next_action": failure_boundary["exact_next_action"]
                 or (
@@ -1378,7 +1843,7 @@ def install(args: argparse.Namespace) -> int:
         prior = None
     if not args.ci_evidence:
         args.ci_evidence = str(
-            evidence_path.with_name(f"ci-{FALSE_FAILURE_METADATA_COMMIT[:12]}.json")
+            evidence_path.with_name(f"ci-{args.expected_repair_head[:12]}.json")
         )
     try:
         args.github = exact_executable(args.github, "GitHub CLI")
@@ -1394,8 +1859,28 @@ def install(args: argparse.Namespace) -> int:
             raise RestorationError(
                 "the supervisor must remain disabled during installation"
             )
-        installation_phase = "false_failure_reconciliation"
-        reconcile_false_ci_failure(args, repo, evidence_path)
+        installation_phase = "pending_recovery_validation"
+        if (
+            prior is None
+            or prior.get("status") != "failed_closed"
+            or prior.get("dispatcher_failure_category")
+            != "model_session_or_token_ceiling"
+            or prior.get("recovery_state")
+            != "scheduled_in_record_but_not_running_due_fail_closed_disable"
+            or prior.get("owner_action_required") is not False
+        ):
+            raise RestorationError(
+                "prior restoration evidence is not the exact pending-recovery incident"
+            )
+        continuation_head = args.expected_continuation_head or args.expected_repair_head
+        if (
+            continuation_head != args.expected_repair_head
+            or git(repo, "rev-parse", "HEAD") != continuation_head
+            or git(repo, "rev-parse", "@{upstream}") != continuation_head
+        ):
+            raise RestorationError(
+                "the published context/restoration repair is not exactly synchronized"
+            )
 
         installation_phase = "launchctl_submit"
         label = restoration_label(args.expected_repair_head)
@@ -1435,7 +1920,7 @@ def install(args: argparse.Namespace) -> int:
             "--expected-repair-head",
             args.expected_repair_head,
             "--expected-continuation-head",
-            args.expected_continuation_head,
+            continuation_head,
             "--expected-metadata-commit",
             args.expected_metadata_commit,
             "--expected-metadata-run-id",

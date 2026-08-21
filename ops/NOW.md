@@ -1,51 +1,51 @@
-# V1-019 post-exit CI detection repair — independently reviewed; publication pending
+# V1-019 context-budget and restoration-recovery repair — independently reviewed; publication pending
 
-- Objective: repair only the false post-exit CI failure and terminal-notification path under
-  existing durable V1 authorization. No renewed Owner authorization was used.
-- Baseline: clean synchronized `7c0f67d07092702229329a57176ae0fdc95afd12` on
-  `implementation/foundation`; V1-019 product files and canonical specifications are unchanged.
-- Root cause: launchd lacks Homebrew in `PATH`; the CI waiter invoked bare `gh` in a pipeline whose
-  successful `head` command masked the missing executable and caused a false 30-minute timeout.
-- Exact historical truth: restoration-metadata commit `7c0f67d07092702229329a57176ae0fdc95afd12`
-  is bound to GitHub Actions run `32511133185`, workflow status `completed`, conclusion `success`.
-- Repair: installation supplies and verifies one absolute GitHub executable. The waiter captures
-  each GitHub command before parsing, resolves and persists one exact run ID, polls only that run,
-  and performs a final authoritative lookup with stdout, stderr, exit status, run ID, URL, workflow
-  status, and conclusion before failure or timeout.
-- Regression coverage: launchd-minimal `PATH` recognizes delayed success; a missing configured
-  executable fails immediately; failure and timeout preserve final evidence; reconciliation is
-  exact-run/commit bound.
-- Terminal behavior: a separate asynchronous launchd terminalizer unloads the source continuation
-  before `complete` notification, so source SIGTERM cannot preempt delivery. The source waits on a
-  bounded durable handoff instead of failure-exiting into keepalive restart, and an OS-locked claim
-  makes the notification deduplication cross-process safe. No credential or route is persisted.
-- Safety boundary: terminal results attempt exact one-shot self-unload. An unload failure converts
-  apparent completion to `failed_closed`, disables supervisor
-  `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb`, and sends no false completion notification. Installation
-  validation, reconciliation, and submit failures follow the same terminal boundary. Overlap
-  detection is unchanged.
-- Verification: PASS. The complete profile observed all 15 gates, including 104 automation tests,
-  backend 333 pass with 105 expected environment skips, disposable PostgreSQL 105 pass, frontend
-  3 pass, formatting, lint, strict typing, builds, audits, traceability, JSON, and diff integrity.
-  Evidence: `/private/tmp/property-rental-post-exit-ci-detection-repair-async-final.json`.
-- Independent review: PASS on the exact seven-path snapshot; five material lifecycle findings over
-  the review rounds were corrected, and the final pass found no blocking or material issue.
-- Blockers: none. Owner action: none. Token ceilings and V1-020 are unchanged.
-- Exact next action: commit, push, require successful GitHub Actions, then reconcile only run
-  `32511133185`, install the corrected post-exit continuation, and verify the supervisor remains
-  disabled until this repository-bound CLI exits.
-
-## Preserved predecessor
-
-- V1-019 routing repair commit `e0469b6d519c0947662204869a535c7080185638` remains unchanged.
-- The false `failed_closed` evidence remains local and unnotified until exact reconciliation.
-- V1-019 remains the only active candidate; V1-020 successor activation remains held.
+- Objective: repair only the bounded V1-019 `sign_in` context and post-exit recovery
+  gates under existing durable V1 authorization. No renewed Owner authorization is used.
+- Baseline: clean synchronized `d6eb7e73610b2a72cf38f4b32468226e9e76a436` on
+  `implementation/foundation`; product files and canonical specifications are unchanged.
+- Incident: natural supervisor sequence 365 and Hermes session
+  `61d145e0655c5298cbcfa576fff3ff78` completed 2/2 provider calls with 16,881
+  input tokens, 422 output tokens, 17,303 counted tokens, and 9,216 separately
+  recorded cache-read tokens. No in-flight overshoot or provider-parameter error occurred.
+- Context root cause: the packet directed broad compact-state and repository rereads, then
+  a one-byte-equals-one-token reservation falsely predicted 109,152 tokens. The repaired
+  schema-four packet materializes only exact state, authorization, acceptance, requirement,
+  and deterministic path evidence; the guard blocks broad reads and planning and caps tool output.
+- Estimation repair: the unchanged 60,000-token ceiling now uses a conservative serialized
+  request estimate with persisted byte classes, provider-observed calibration, and a 1,024-token
+  validation margin. Unavailable estimation is a recoverable zero-model-attempt routing fault.
+- Restoration root cause: the monitor disabled the supervisor after the first recoverable run
+  even though `recovery_pending=true`, generation 1, `sign_in` attempt 1 remained eligible.
+- Restoration repair: health is bound to run sequences after the captured floor, inherited
+  `consecutive_errors` is evidence only, `RECOVERY_SCHEDULED` is nonterminal, and the supervisor
+  remains enabled through the exact retry. Unknown/protected failures and bounded exhaustion
+  alone use `RESTORATION_FAILED_CLOSED` and disable the supervisor.
+- Regression evidence: the exact 9,614-byte historical packet (SHA-256
+  `2a6e8126bc9c285f5f400137ab0b97dc87c4c1ca7b40523591128a387d9ccc3b`) and observed
+  tool-output sizes prove no broad compact reread, no false 109,152-token reservation, and
+  progress or an eligible fresh recovery. End-to-end restoration covers recoverable-then-success
+  and exhaustion.
+- Verification: PASS. The automation gate passed 108 tests plus compact-state routing,
+  visibility-watchdog, shell syntax, and Python compilation. The complete profile passed all
+  15/15 gates: backend 333 passed with 105 expected environment skips, disposable PostgreSQL
+  105 passed, frontend 3 passed, formatting, linting, strict typing, builds, audits, scope,
+  traceability, JSON, and diff checks. Evidence:
+  `/private/tmp/property-rental-v1-019-context-restoration-repair-final.json`.
+- Independent review: PASS on the exact 13-path snapshot. The first pass found six material
+  boundary/test gaps; all six were remediated and regression-covered, and the final pass found
+  no blocking or material issue. The reviewer made no edits.
+- Safety boundary: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains disabled;
+  V1-019 product implementation and V1-020 have not started; overlap detection is unchanged.
+- Exact next action: publish and require successful GitHub Actions, then install the corrected
+  post-exit continuation. It may enable only the exact bounded
+  V1-019 `sign_in` recovery after repository-bound CLI overlap clears and must verify progress.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-019 approved and active; implementation has not started.
-- Automation exact next action: Complete this post-exit repair, then run one naturally scheduled bounded V1-019 retry.
+- Automation candidate state: V1-019 approved and active; product implementation has not started.
+- Automation exact next action: publish this repair, then permit only the scheduled V1-019 sign-in recovery.
 <!-- AUTOMATION_STATUS_END -->
 <!-- POST_EXIT_RESTORATION_BEGIN -->
-- Post-exit repair is verified but unpublished; the existing supervisor remains disabled.
-- Restoration success requires post-CLI zero overlap and naturally scheduled bounded V1-019 progress.
+- The supervisor remains disabled while this repository-bound CLI is active.
+- Restoration success requires zero overlap and post-repair run-sequence evidence of bounded V1-019 sign-in progress.
 <!-- POST_EXIT_RESTORATION_END -->

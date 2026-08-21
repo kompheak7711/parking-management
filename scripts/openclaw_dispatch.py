@@ -633,6 +633,8 @@ def packet_prompt(packet: dict[str, Any]) -> str:
         "The packet contains the complete repository-local continuity instructions and exact authoritative excerpts. "
         "Do not attempt to load an external skill. Trust the dispatcher-supplied branch, HEAD, fingerprints, and clean/preserved-state evidence; do not rediscover them with Git or process commands. "
         "When bounded_substage is present, implement only that substage and do not begin a later one in this session. "
+        "The packet already materializes compact-state and canonical evidence: do not reread ops/NOW.md, ops/STATE.json, ops/QUEUE.md, ops/V1_ROADMAP.json, Makefile, or canonical documents. "
+        "Use only directly_relevant_paths; do not call todo/planning tools or perform broad repository discovery. "
         "Do not load any supervisor transcript, earlier model reasoning, unrelated diff, raw log, or broad canonical set. "
         "Return only the required JSON object.\n\n"
         + json.dumps(packet, sort_keys=True, indent=2)
@@ -647,6 +649,56 @@ def current_bounded_substage(record: dict[str, Any]) -> dict[str, Any] | None:
         (dict(item) for item in V1_019_SUBSTAGES if item["id"] not in completed),
         None,
     )
+
+
+def active_restoration_boundary(record: dict[str, Any]) -> dict[str, Any] | None:
+    path = STATE_DIR / "restoration/active-v1-019-boundary.json"
+    if not path.exists():
+        return None
+    try:
+        boundary = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the post-exit restoration boundary is unreadable",
+        ) from error
+    routing = record_routing_identity(record, "implementation")
+    if (
+        not isinstance(boundary, dict)
+        or boundary.get("schema_version") != 1
+        or boundary.get("status") not in {"active", "progress_verified"}
+        or boundary.get("candidate") != "V1-019"
+        or boundary.get("bounded_substage") != "sign_in"
+        or boundary.get("routing_revision") != routing.get("revision")
+        or boundary.get("candidate_base_commit")
+        != record.get("candidate_base_commit")
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the post-exit restoration boundary drifted from V1-019 sign_in",
+        )
+    return boundary
+
+
+def restoration_boundary_reached(record: dict[str, Any]) -> bool:
+    boundary = active_restoration_boundary(record)
+    if boundary is None:
+        return False
+    completed = record.get("completed_implementation_substages") or []
+    if completed[:1] != ["sign_in"]:
+        return False
+    boundary.update(
+        {
+            "status": "progress_verified",
+            "verified_at": utc_now(),
+            "recovery_pending": record.get("recovery_pending") is True,
+            "completed_implementation_substages": completed,
+        }
+    )
+    atomic_write_json(
+        STATE_DIR / "restoration/active-v1-019-boundary.json", boundary
+    )
+    return True
 
 
 def schedule_implementation_ceiling_recovery(
@@ -868,6 +920,16 @@ def zero_usage_provider_failure(
     )
     if any(usage.get(field) not in (None, 0) for field in token_fields):
         return None
+    if usage.get("stop_reason") == "token_estimation_unavailable":
+        return {
+            "category": "unsupported_invocation_configuration",
+            "diagnostic": (
+                "Reliable provider-request token estimation is unavailable; "
+                "the provider was not called and the configured ceiling was not reached."
+            ),
+            "token_estimation_status": "unavailable",
+            "configured_ceiling_reached": False,
+        }
     status_match = re.search(r"Error code:\s*(\d{3})", stderr)
     parameter_match = re.search(
         r"Unsupported parameter:\s*([A-Za-z][A-Za-z0-9_.-]*)", stderr
@@ -883,7 +945,12 @@ def zero_usage_provider_failure(
         }
     if usage.get("model") is not None or completed_calls is None and returncode != 64:
         return None
-    diagnostic = f"Hermes stopped before model execution (exit {returncode})"
+    safe_guard_lines = [line.strip() for line in stderr.splitlines() if line.strip()]
+    diagnostic = (
+        safe_model_text(safe_guard_lines[-1], field="pre-model diagnostic", maximum=500)
+        if safe_guard_lines
+        else f"Hermes stopped before model execution (exit {returncode})"
+    )
     return {
         "category": (
             "unsupported_invocation_configuration"
@@ -936,6 +1003,7 @@ def invoke_model(
     )
     task_path.parent.mkdir(parents=True, exist_ok=True)
     writable_paths = authorized_candidate_writes(record, packet, stage)
+    readable_paths = sorted(set(packet.get("directly_relevant_paths") or []))
     packet["dispatcher_authorized_writable_paths"] = writable_paths
     atomic_write_text(task_path, packet_prompt(packet) + "\n")
     record["repository_fingerprint"] = fingerprint
@@ -1003,6 +1071,12 @@ def invoke_model(
         cumulative_ceiling=policy.token_ceiling,
         dispatcher_record_path=stage_file(str(record["candidate"])),
         writable_paths=writable_paths,
+        readable_paths=readable_paths,
+        bounded_substage_id=(
+            str((packet.get("bounded_substage") or {}).get("id"))
+            if packet.get("bounded_substage")
+            else None
+        ),
         exceptional_review_classification=(
             policy.complex_review_reason if policy.token_ceiling == 120_000 else None
         ),
@@ -1649,6 +1723,14 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
     is_recovery = bool(record.get("repair_failure"))
     model_stage = "direct_codex_recovery" if is_recovery else "implementation"
     substage = current_bounded_substage(record)
+    boundary = active_restoration_boundary(record)
+    if boundary is not None and (
+        substage is None or substage.get("id") != boundary.get("bounded_substage")
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "post-exit restoration permits only the exact V1-019 sign_in recovery",
+        )
     if record.get("candidate") == "V1-019" and substage is None:
         record["stage"] = "deterministic_verification"
         record["implementation_complete"] = True
@@ -1660,6 +1742,19 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         model_stage,
         bounded_substage=substage,
         recovery_generation=int(record.get("recovery_generation") or 0),
+        recovery_state={
+            "recovery_pending": record.get("recovery_pending") is True,
+            "bounded_recovery_attempt": int(
+                (record.get("ceiling_recovery_attempts") or {}).get(
+                    str((substage or {}).get("id") or "")
+                )
+                or 0
+            ),
+            "current_failure_category": record.get("last_failure_category")
+            or record.get("stop_reason"),
+            "bounded_recovery_exhausted": record.get("bounded_recovery_exhausted")
+            is True,
+        },
     )
     packet["routing_identity"] = record_routing_identity(record, "implementation")
     if is_recovery:
@@ -2890,6 +2985,8 @@ def dispatch() -> int:
                 stage = "implementation"
             if stage == "implementation":
                 implementation(record, preflight)
+                if restoration_boundary_reached(record):
+                    return 0
             elif stage == "deterministic_verification":
                 deterministic_verification(record)
             elif stage == "independent_review":

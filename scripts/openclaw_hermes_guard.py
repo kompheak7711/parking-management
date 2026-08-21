@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import fcntl
 import hashlib
 import json
 import os
@@ -16,13 +17,16 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-MANIFEST_SCHEMA_VERSION = 1
+MANIFEST_SCHEMA_VERSION = 2
 GUARD_SCHEMA_VERSION = 1
 COUNTED_TOKEN_FIELDS = ("input_tokens", "output_tokens")
 CACHE_TOKEN_FIELD = "cache_read_tokens"
 MINIMUM_COMPLETION_CHECKPOINT_TOKENS = 2_048
 CONTEXT_RESERVATION_MARGIN_TOKENS = 1_024
-CONTEXT_PREDICTION_METHOD = "utf8_request_bytes_upper_bound"
+CONTEXT_PREDICTION_METHOD = "validated_serialized_request_estimate_v1"
+SERIALIZED_ASCII_CHARS_PER_TOKEN = 3
+TOOL_OUTPUT_LIMIT_BYTES = 12_000
+SESSION_TOOL_OUTPUT_LIMIT_BYTES = 36_000
 ALLOWED_STAGES = {"implementation", "direct_codex_recovery", "independent_review"}
 ALLOWED_MAKE_TARGETS = {
     "automation-test",
@@ -55,6 +59,10 @@ PATCH_FILE_HEADER = re.compile(r"^\s*\*\*.*File:.*$", re.MULTILINE)
 
 class GuardError(RuntimeError):
     """A repository-owned enforcement failure."""
+
+
+class TokenEstimationUnavailable(GuardError):
+    """The supported request shape could not be estimated before provider use."""
 
 
 def digest(value: bytes | str | Any) -> str:
@@ -106,6 +114,8 @@ def create_manifest(
     cumulative_ceiling: int,
     dispatcher_record_path: Path,
     writable_paths: list[str],
+    readable_paths: list[str],
+    bounded_substage_id: str | None,
     exceptional_review_classification: str | None = None,
 ) -> tuple[Path, dict[str, Any], str]:
     """Create one unique, immutable invocation authorization manifest."""
@@ -142,6 +152,8 @@ def create_manifest(
         "usage_path": str(usage_path.resolve()),
         "budget_path": str(budget_path.resolve()),
         "writable_paths": sorted(set(writable_paths)),
+        "readable_paths": sorted(set(readable_paths)),
+        "bounded_substage_id": bounded_substage_id,
         "token_policy": {
             "provider": provider,
             "model": model,
@@ -154,6 +166,9 @@ def create_manifest(
             "minimum_completion_checkpoint_tokens": MINIMUM_COMPLETION_CHECKPOINT_TOKENS,
             "context_reservation_margin_tokens": CONTEXT_RESERVATION_MARGIN_TOKENS,
             "context_prediction_method": CONTEXT_PREDICTION_METHOD,
+            "serialized_ascii_chars_per_token": SERIALIZED_ASCII_CHARS_PER_TOKEN,
+            "tool_output_limit_bytes": TOOL_OUTPUT_LIMIT_BYTES,
+            "session_tool_output_limit_bytes": SESSION_TOOL_OUTPUT_LIMIT_BYTES,
             "exceptional_review_classification": exceptional_review_classification,
         },
     }
@@ -198,6 +213,8 @@ def validate_manifest(
         "usage_path",
         "budget_path",
         "writable_paths",
+        "readable_paths",
+        "bounded_substage_id",
         "token_policy",
     }
     if set(manifest) != required | {"schema_version"}:
@@ -271,6 +288,9 @@ def validate_manifest(
         "minimum_completion_checkpoint_tokens",
         "context_reservation_margin_tokens",
         "context_prediction_method",
+        "serialized_ascii_chars_per_token",
+        "tool_output_limit_bytes",
+        "session_tool_output_limit_bytes",
         "exceptional_review_classification",
     }:
         raise GuardError("invocation token policy is invalid")
@@ -286,6 +306,11 @@ def validate_manifest(
         or policy.get("context_reservation_margin_tokens")
         != CONTEXT_RESERVATION_MARGIN_TOKENS
         or policy.get("context_prediction_method") != CONTEXT_PREDICTION_METHOD
+        or policy.get("serialized_ascii_chars_per_token")
+        != SERIALIZED_ASCII_CHARS_PER_TOKEN
+        or policy.get("tool_output_limit_bytes") != TOOL_OUTPUT_LIMIT_BYTES
+        or policy.get("session_tool_output_limit_bytes")
+        != SESSION_TOOL_OUTPUT_LIMIT_BYTES
         or policy.get("cumulative_ceiling") not in {60_000, 90_000, 120_000}
     ):
         raise GuardError("invocation token policy does not match repository policy")
@@ -352,6 +377,20 @@ def validate_manifest(
         resolved = (repository / path).resolve()
         if not _resolved_under(resolved, repository):
             raise GuardError("candidate writable path escapes the repository")
+    readable_paths = manifest.get("readable_paths")
+    if not isinstance(readable_paths, list) or any(
+        not isinstance(path, str) or not path or Path(path).is_absolute()
+        for path in readable_paths
+    ):
+        raise GuardError("candidate readable paths are invalid")
+    for path in readable_paths:
+        if not _resolved_under((repository / path).resolve(), repository):
+            raise GuardError("candidate readable path escapes the repository")
+    bounded_substage_id = manifest.get("bounded_substage_id")
+    if bounded_substage_id is not None and (
+        not isinstance(bounded_substage_id, str) or not bounded_substage_id
+    ):
+        raise GuardError("bounded substage identity is invalid")
     authorization = authorization or os.environ.get(
         "PROPERTY_RENTAL_INVOCATION_AUTHORIZATION", ""
     )
@@ -410,6 +449,11 @@ def prepare_session_home(
             "next_api_call_blocked": False,
             "reservation_blocked": False,
             "predicted_next_context_tokens": 0,
+            "token_estimation_status": "ready",
+            "token_estimate_inputs": {},
+            "token_estimate_method": CONTEXT_PREDICTION_METHOD,
+            "token_estimate_validation_margin_tokens": CONTEXT_RESERVATION_MARGIN_TOKENS,
+            "serialized_ascii_chars_per_token": SERIALIZED_ASCII_CHARS_PER_TOKEN,
             "reserved_completion_checkpoint_tokens": MINIMUM_COMPLETION_CHECKPOINT_TOKENS,
             "context_reservation_margin_tokens": CONTEXT_RESERVATION_MARGIN_TOKENS,
             "locally_reserved_next_call_tokens": 0,
@@ -419,6 +463,11 @@ def prepare_session_home(
             "last_call_input_tokens": 0,
             "last_call_output_tokens": 0,
             "reservation_violation": False,
+            "tool_output_limit_bytes": TOOL_OUTPUT_LIMIT_BYTES,
+            "session_tool_output_limit_bytes": SESSION_TOOL_OUTPUT_LIMIT_BYTES,
+            "tool_output_observed_bytes": 0,
+            "tool_output_returned_bytes": 0,
+            "tool_output_truncations": 0,
             "guard_loaded": False,
             "preflight_guard_loaded": False,
             "chat_guard_loaded": False,
@@ -473,6 +522,40 @@ def _load_budget(path: Path) -> dict[str, Any]:
     return value
 
 
+def estimate_serialized_request_tokens(request: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+    """Estimate the supported wire request without treating bytes as tokens.
+
+    The three-ASCII-characters-per-token divisor is deliberately more
+    conservative than Hermes' four-character planning heuristic. Non-ASCII
+    UTF-8 bytes retain a one-byte floor. Provider-returned input usage from
+    every completed call validates the estimate and any observed shortfall is
+    carried into the next reservation.
+    """
+    if not isinstance(request, dict) or not request:
+        raise TokenEstimationUnavailable("supported request object is unavailable")
+    try:
+        serialized = json.dumps(
+            request, sort_keys=True, separators=(",", ":"), default=str
+        ).encode("utf-8", "surrogatepass")
+    except (TypeError, UnicodeError, ValueError) as error:
+        raise TokenEstimationUnavailable(
+            "supported request serialization is unavailable"
+        ) from error
+    if not serialized:
+        raise TokenEstimationUnavailable("supported request serialization is empty")
+    ascii_bytes = sum(byte < 0x80 for byte in serialized)
+    non_ascii_bytes = len(serialized) - ascii_bytes
+    estimate = (
+        ascii_bytes + SERIALIZED_ASCII_CHARS_PER_TOKEN - 1
+    ) // SERIALIZED_ASCII_CHARS_PER_TOKEN + non_ascii_bytes
+    return estimate, {
+        "serialized_request_bytes": len(serialized),
+        "serialized_ascii_bytes": ascii_bytes,
+        "serialized_non_ascii_bytes": non_ascii_bytes,
+        "serialized_ascii_chars_per_token": SERIALIZED_ASCII_CHARS_PER_TOKEN,
+    }
+
+
 def enforce_llm_call(
     request: dict[str, Any], next_call: Callable[[dict[str, Any]], Any]
 ) -> Any:
@@ -498,16 +581,28 @@ def enforce_llm_call(
         atomic_json(budget_path, budget)
         raise GuardError("PROPERTY_RENTAL_CUMULATIVE_TOKEN_CEILING_REACHED")
     remaining = ceiling - int(budget["counted_total_tokens"])
-    serialized = json.dumps(
-        request, sort_keys=True, separators=(",", ":"), default=str
-    ).encode("utf-8", "surrogatepass")
-    serialized_prediction = len(serialized)
+    try:
+        serialized_prediction, estimate_inputs = estimate_serialized_request_tokens(
+            request
+        )
+    except TokenEstimationUnavailable as error:
+        budget["token_estimation_status"] = "unavailable"
+        budget["token_estimation_failure"] = str(error)
+        budget["next_api_call_blocked"] = True
+        budget["reservation_blocked"] = False
+        atomic_json(budget_path, budget)
+        raise GuardError("PROPERTY_RENTAL_TOKEN_ESTIMATION_UNAVAILABLE") from error
+    calibration_shortfall = max(
+        0, int(budget.get("token_estimate_observed_shortfall_tokens", 0))
+    )
     prior_prediction = (
         int(budget.get("last_call_input_tokens", 0))
         + int(budget.get("last_call_output_tokens", 0))
         + CONTEXT_RESERVATION_MARGIN_TOKENS
     )
-    predicted_context = max(serialized_prediction, prior_prediction)
+    predicted_context = max(
+        serialized_prediction + calibration_shortfall, prior_prediction
+    )
     minimum_completion = int(
         budget.get(
             "reserved_completion_checkpoint_tokens",
@@ -521,6 +616,17 @@ def enforce_llm_call(
     )
     required = predicted_context + minimum_completion + margin
     budget["predicted_next_context_tokens"] = predicted_context
+    budget["token_estimation_status"] = "estimated"
+    budget["token_estimate_method"] = CONTEXT_PREDICTION_METHOD
+    budget["token_estimate_inputs"] = {
+        **estimate_inputs,
+        "serialized_estimate_tokens": serialized_prediction,
+        "prior_observed_context_floor_tokens": prior_prediction,
+        "carried_observed_shortfall_tokens": calibration_shortfall,
+        "completion_checkpoint_tokens": minimum_completion,
+        "validation_margin_tokens": margin,
+    }
+    budget["last_estimated_context_tokens"] = predicted_context
     if required > remaining:
         budget["reservation_blocked"] = True
         budget["next_api_call_blocked"] = True
@@ -553,6 +659,13 @@ def enforce_llm_call(
     )
     budget["last_call_input_tokens"] = int(observed["input_tokens"])
     budget["last_call_output_tokens"] = int(observed["output_tokens"])
+    observed_shortfall = max(
+        0,
+        int(observed["input_tokens"])
+        - int(budget.get("last_estimated_context_tokens", 0)),
+    )
+    budget["token_estimate_observed_shortfall_tokens"] = observed_shortfall
+    budget["token_estimate_provider_validated"] = observed_shortfall == 0
     budget["effective_model"] = observed.get("model")
     if int(budget["counted_total_tokens"]) >= ceiling:
         budget["boundary_reached"] = True
@@ -562,6 +675,70 @@ def enforce_llm_call(
         budget["reservation_violation"] = int(budget["counted_total_tokens"]) > ceiling
     atomic_json(budget_path, budget)
     return response
+
+
+def bounded_tool_output(tool_name: str, result: Any) -> Any:
+    """Cap one tool result and the cumulative bounded-session tool context."""
+    manifest = json.loads(
+        Path(os.environ["PROPERTY_RENTAL_INVOCATION_MANIFEST"]).read_text()
+    )
+    if manifest.get("bounded_substage_id") is None:
+        return result
+    budget_path = Path(str(manifest["budget_path"]))
+    lock_path = budget_path.with_name(f".{budget_path.name}.tool-output.lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+", encoding="utf-8") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        return _bounded_tool_output_locked(tool_name, result, budget_path)
+
+
+def _bounded_tool_output_locked(
+    tool_name: str, result: Any, budget_path: Path
+) -> Any:
+    budget = _load_budget(budget_path)
+    rendered = result if isinstance(result, str) else json.dumps(result, default=str)
+    encoded = rendered.encode("utf-8", "replace")
+    observed = len(encoded)
+    prior_returned = int(budget.get("tool_output_returned_bytes", 0))
+    per_call_limit = int(budget.get("tool_output_limit_bytes", TOOL_OUTPUT_LIMIT_BYTES))
+    session_remaining = max(
+        0,
+        int(
+            budget.get(
+                "session_tool_output_limit_bytes", SESSION_TOOL_OUTPUT_LIMIT_BYTES
+            )
+        )
+        - prior_returned,
+    )
+    returned_limit = min(per_call_limit, session_remaining)
+    budget["tool_output_observed_bytes"] = int(
+        budget.get("tool_output_observed_bytes", 0)
+    ) + observed
+    if observed <= returned_limit:
+        budget["tool_output_returned_bytes"] = prior_returned + observed
+        atomic_json(budget_path, budget)
+        return result
+    preview_bytes = encoded[: max(0, returned_limit - 180)]
+    preview = preview_bytes.decode("utf-8", "ignore")
+    bounded = json.dumps(
+        {
+            "error": "Hermes guard: bounded tool-output limit reached",
+            "tool": tool_name,
+            "observed_bytes": observed,
+            "returned_limit_bytes": returned_limit,
+            "preview": preview,
+        },
+        sort_keys=True,
+    )
+    bounded_bytes = bounded.encode("utf-8")[:returned_limit]
+    bounded = bounded_bytes.decode("utf-8", "ignore")
+    bounded_size = len(bounded.encode("utf-8"))
+    budget["tool_output_returned_bytes"] = prior_returned + bounded_size
+    budget["tool_output_truncations"] = int(
+        budget.get("tool_output_truncations", 0)
+    ) + 1
+    atomic_json(budget_path, budget)
+    return bounded
 
 
 def _repo_path(value: str, repository: Path) -> Path:
@@ -624,13 +801,38 @@ def guard_tool(tool_name: str, args: dict[str, Any]) -> None:
     )
     repository = Path(str(manifest["repository"])).resolve()
     review_only = manifest.get("stage") == "independent_review"
+    bounded_substage = manifest.get("bounded_substage_id")
     writable_paths = manifest.get("writable_paths")
+    readable_paths = manifest.get("readable_paths")
     if not isinstance(writable_paths, list) or any(
         not isinstance(path, str) for path in writable_paths
     ):
         raise GuardError("dispatcher-authorized candidate write scope is invalid")
+    if not isinstance(readable_paths, list) or any(
+        not isinstance(path, str) for path in readable_paths
+    ):
+        raise GuardError("dispatcher-authorized candidate read scope is invalid")
     if tool_name in {"read_file", "search_files"}:
-        _repo_path(str(args.get("path") or "."), repository)
+        resolved = _repo_path(str(args.get("path") or "."), repository)
+        relative = resolved.relative_to(repository).as_posix()
+        if bounded_substage is not None:
+            forbidden = {
+                "Makefile",
+                "ops/NOW.md",
+                "ops/STATE.json",
+                "ops/QUEUE.md",
+                "ops/V1_ROADMAP.json",
+            }
+            if relative in forbidden or CANONICAL_DOCUMENT.fullmatch(relative):
+                raise GuardError(
+                    "bounded packet already materializes compact and canonical evidence"
+                )
+            if relative not in readable_paths:
+                raise GuardError(
+                    "read is outside the dispatcher-identified relevant paths"
+                )
+            if tool_name == "search_files" and int(args.get("limit") or 50) > 50:
+                raise GuardError("bounded search result limit exceeds 50")
         return
     if tool_name in {"write_file", "patch"}:
         if review_only:
@@ -648,6 +850,10 @@ def guard_tool(tool_name: str, args: dict[str, Any]) -> None:
         raise GuardError("background process control is not permitted")
     if tool_name != "terminal":
         if tool_name in {"todo", "todo_read", "todo_write"}:
+            if bounded_substage is not None:
+                raise GuardError(
+                    "todo and planning tools are forbidden for a bounded substage"
+                )
             return
         raise GuardError("tool is outside the stage-appropriate allowlist")
     if args.get("background") or args.get("pty"):
@@ -682,12 +888,28 @@ def guard_tool(tool_name: str, args: dict[str, Any]) -> None:
                 "Git options that execute helpers or escape scope are forbidden"
             )
         path_mode = False
+        pathspec_count = 0
         for word in words[2:]:
             if word == "--":
                 path_mode = True
                 continue
             if path_mode:
-                _repo_path(word, repository)
+                resolved = _repo_path(word, repository)
+                pathspec_count += 1
+                if (
+                    bounded_substage is not None
+                    and resolved.relative_to(repository).as_posix()
+                    not in readable_paths
+                ):
+                    raise GuardError(
+                        "bounded git diff path is outside the directly relevant paths"
+                    )
+        if bounded_substage is not None and words[1] == "diff" and (
+            not path_mode or pathspec_count == 0
+        ):
+            raise GuardError(
+                "bounded git diff requires directly relevant explicit pathspecs"
+            )
         return
     if words[0] == "make":
         if review_only:
@@ -737,7 +959,7 @@ def register_plugin(ctx: Any) -> None:
             # Short-circuit without raising: Hermes deliberately treats an
             # ordinary middleware Exception as fail-open.
             return json.dumps({"error": f"Hermes guard: {error}"})
-        return next_call(args)
+        return bounded_tool_output(tool_name, next_call(args))
 
     ctx.register_hook("pre_tool_call", pre_tool_call)
     ctx.register_middleware("llm_execution", llm_execution)
@@ -805,6 +1027,19 @@ def finalize_usage(manifest: dict[str, Any], usage_path: Path) -> None:
             "predicted_next_context_tokens": budget.get(
                 "predicted_next_context_tokens", 0
             ),
+            "token_estimation_status": budget.get("token_estimation_status"),
+            "token_estimate_method": budget.get("token_estimate_method"),
+            "token_estimate_inputs": budget.get("token_estimate_inputs") or {},
+            "token_estimate_validation_margin_tokens": budget.get(
+                "token_estimate_validation_margin_tokens",
+                CONTEXT_RESERVATION_MARGIN_TOKENS,
+            ),
+            "token_estimate_provider_validated": budget.get(
+                "token_estimate_provider_validated"
+            ),
+            "token_estimate_observed_shortfall_tokens": budget.get(
+                "token_estimate_observed_shortfall_tokens", 0
+            ),
             "reserved_completion_checkpoint_tokens": budget.get(
                 "reserved_completion_checkpoint_tokens",
                 MINIMUM_COMPLETION_CHECKPOINT_TOKENS,
@@ -827,13 +1062,26 @@ def finalize_usage(manifest: dict[str, Any], usage_path: Path) -> None:
             ),
             "reservation_violation": budget.get("reservation_violation") is True,
             "in_flight_overshoot_tokens": budget["in_flight_overshoot_tokens"],
+            "tool_output_limit_bytes": budget.get("tool_output_limit_bytes"),
+            "session_tool_output_limit_bytes": budget.get(
+                "session_tool_output_limit_bytes"
+            ),
+            "tool_output_observed_bytes": budget.get(
+                "tool_output_observed_bytes", 0
+            ),
+            "tool_output_returned_bytes": budget.get(
+                "tool_output_returned_bytes", 0
+            ),
+            "tool_output_truncations": budget.get("tool_output_truncations", 0),
             "guard_loaded": budget.get("guard_loaded") is True,
             "preflight_guard_loaded": budget.get("preflight_guard_loaded") is True,
             "chat_guard_loaded": budget.get("chat_guard_loaded") is True,
             "chat_guard_pid": budget.get("chat_guard_pid"),
             "guard_capabilities": budget.get("guard_capabilities") or [],
             **(
-                {"stop_reason": "proactive_budget_reservation"}
+                {"stop_reason": "token_estimation_unavailable"}
+                if budget.get("token_estimation_status") == "unavailable"
+                else {"stop_reason": "proactive_budget_reservation"}
                 if budget.get("reservation_blocked") is True
                 else ({"stop_reason": "token_ceiling"} if budget["boundary_reached"] else {})
             ),

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import importlib.util
 import io
 import json
@@ -59,6 +60,8 @@ from openclaw_automation import (
 )
 from openclaw_hermes_guard import (
     GuardError,
+    TokenEstimationUnavailable,
+    bounded_tool_output,
     enforce_llm_call,
     guard_tool,
     prepare_session_home,
@@ -769,7 +772,8 @@ class RepositoryEvidenceTests(unittest.TestCase):
             self.assertNotIn("OPENCLAW_SUPERVISOR_PROMPT", rendered)
             self.assertNotIn("previous transcript", rendered.lower())
             self.assertNotIn("reasoning history", rendered.lower())
-            self.assertEqual(len(packet["compact_inputs"]), 4)
+            self.assertNotIn("compact_inputs", packet)
+            self.assertNotIn("canonical_paths", packet)
 
     def test_v1_019_packet_embeds_only_exact_ui_and_test_authorities(self) -> None:
         packet = task_packet(
@@ -783,36 +787,49 @@ class RepositoryEvidenceTests(unittest.TestCase):
                 "task": "Local sign-in",
                 "include": ["local sign-in"],
             },
+            recovery_generation=1,
+            recovery_state={
+                "recovery_pending": True,
+                "bounded_recovery_attempt": 1,
+                "current_failure_category": "model_session_or_token_ceiling",
+                "bounded_recovery_exhausted": False,
+            },
         )
         self.assertEqual(
-            packet["canonical_paths"],
+            [item["authority"] for item in packet["requirement_evidence"]],
             [
-                "docs/006_UI_SPECIFICATION.md",
-                "docs/007_TESTING_STRATEGY.md",
-            ],
-        )
-        self.assertEqual(
-            [item["authority"] for item in packet["authoritative_excerpts"]],
-            [
-                "UI-092",
                 "UI-109",
-                "UI-110",
-                "UI-111",
-                "UI-112",
                 "UI-113",
                 "TEST-094",
-                "TEST-095",
                 "TEST-135",
             ],
         )
         rendered = json.dumps(packet)
-        self.assertIn("no external skill lookup is required or permitted", rendered)
+        self.assertIn(
+            "no external skill lookup or compact-state reread is required or permitted",
+            rendered,
+        )
         self.assertIn("Do not spend tool calls rediscovering", rendered)
         self.assertIn("leave every later V1-019 substage", rendered)
         self.assertNotIn("UI-108", rendered)
         self.assertNotIn("TEST-093", rendered)
-        self.assertTrue(packet["authorization_boundaries"]["standing_authorization"])
+        self.assertTrue(
+            packet["authorization_boundaries"]["existing_durable_v1"]
+        )
+        self.assertFalse(
+            packet["authorization_boundaries"]["renewed_owner_authorization"]
+        )
         self.assertEqual(packet["bounded_substage"]["id"], "sign_in")
+        self.assertTrue(packet["candidate_state"]["recovery_pending"])
+        self.assertEqual(packet["candidate_state"]["recovery_generation"], 1)
+        self.assertEqual(packet["candidate_state"]["bounded_recovery_attempt"], 1)
+        self.assertEqual(
+            packet["candidate_state"]["current_failure_category"],
+            "model_session_or_token_ceiling",
+        )
+        self.assertEqual(len(packet["directly_relevant_paths"]), 10)
+        self.assertNotIn("ops/STATE.json", packet["directly_relevant_paths"])
+        self.assertNotIn("ops/V1_ROADMAP.json", packet["directly_relevant_paths"])
         self.assertIn("substage_complete", packet["output_contract"]["required"])
         predecessor = preservation_evidence(ROOT)
         self.assertEqual(predecessor["candidate"], "V1-018")
@@ -1181,7 +1198,15 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
             atomic_write_json(repo / "ops/STATE.json", state)
             roadmap = {
                 "total_tranches": 60,
-                "acceptance_profiles": {"api_ui": ["frontend tests", "build"]},
+                "acceptance_profiles": {
+                    "api_ui": [
+                        "API contract and authorization tests",
+                        "frontend component/accessibility tests",
+                        "backend and frontend builds",
+                        "full foundation gates",
+                        "GitHub Actions success",
+                    ]
+                },
                 "tranches": [
                     {
                         "id": "V1-019",
@@ -1280,6 +1305,7 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
             )
             self.assertEqual(first.returncode, 69, first.stderr)
             first_record = json.loads((evidence / "candidates/V1-019.json").read_text())
+            self.assertIn("recovery_pending", first_record, first.stderr)
             self.assertTrue(first_record["recovery_pending"])
             self.assertEqual(first_record["recovery_generation"], 1)
             self.assertEqual(first_record["ceiling_recovery_attempts"], {"sign_in": 1})
@@ -3958,7 +3984,7 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                         "state": {
                             "lastRunAtMs": 1,
                             "lastRunStatus": "ok",
-                            "consecutiveErrors": 0,
+                            "consecutiveErrors": 3,
                             "runningAtMs": None,
                         },
                     },
@@ -4017,18 +4043,41 @@ print(json.dumps(job))
                             "test-sensitive-account",
                         ),
                     )
+                    connection.execute(
+                        """CREATE TABLE cron_run_logs (
+                            job_id TEXT, seq INTEGER, ts INTEGER, status TEXT,
+                            run_at_ms INTEGER, duration_ms INTEGER
+                        )"""
+                    )
+                    connection.execute(
+                        "INSERT INTO cron_run_logs VALUES (?, ?, ?, ?, ?, ?)",
+                        (
+                            "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+                            365,
+                            1,
+                            "error",
+                            1,
+                            10,
+                        ),
+                    )
                 evidence = root / "restoration.json"
                 atomic_write_json(
                     evidence,
-                    {
-                        "status": "failed_closed",
-                        "expected_repair_head": restoration.REPAIR_PUBLICATION_COMMIT,
-                        "failure": (
-                            "restoration metadata CI failed for "
-                            f"{restoration.FALSE_FAILURE_METADATA_COMMIT}"
-                        ),
-                        "notification": None,
-                    },
+                    (
+                        {
+                            "status": "failed_closed",
+                            "dispatcher_failure_category": "unknown",
+                            "recovery_state": "not_running",
+                            "owner_action_required": False,
+                        }
+                        if failure_kind == "reconciliation"
+                        else {
+                            "status": "failed_closed",
+                            "dispatcher_failure_category": "model_session_or_token_ceiling",
+                            "recovery_state": "scheduled_in_record_but_not_running_due_fail_closed_disable",
+                            "owner_action_required": False,
+                        }
+                    ),
                 )
                 args = argparse.Namespace(
                     repo=str(repo),
@@ -4048,23 +4097,18 @@ print(json.dumps(job))
                     terminalizer_handoff_timeout=0.2,
                     owner_pid=999999,
                     expected_repair_head=restoration.REPAIR_PUBLICATION_COMMIT,
-                    expected_continuation_head="a" * 40,
+                    expected_continuation_head=restoration.REPAIR_PUBLICATION_COMMIT,
                     expected_metadata_commit=restoration.FALSE_FAILURE_METADATA_COMMIT,
                     expected_metadata_run_id=restoration.FALSE_FAILURE_RUN_ID,
                     poll=0.01,
                     overlap_timeout=1.0,
                     natural_run_timeout=1.0,
                 )
-                reconcile_effect = (
-                    restoration.RestorationError("synthetic reconciliation failure")
-                    if failure_kind == "reconciliation"
-                    else None
-                )
                 with (
                     mock.patch.object(
                         restoration,
-                        "reconcile_false_ci_failure",
-                        side_effect=reconcile_effect,
+                        "git",
+                        return_value=restoration.REPAIR_PUBLICATION_COMMIT,
                     ),
                     mock.patch.dict(
                         os.environ,
@@ -4106,7 +4150,7 @@ print(json.dumps(job))
                     self.assertIsNone(terminal["launchctl_submit"])
                 elif failure_kind == "reconciliation":
                     self.assertEqual(
-                        terminal["failure_phase"], "false_failure_reconciliation"
+                        terminal["failure_phase"], "pending_recovery_validation"
                     )
                     self.assertIsNone(terminal["launchctl_submit"])
                 else:
@@ -4232,6 +4276,9 @@ raise SystemExit(9)
         ) in (
             ("ok", False, False, False, False),
             ("ok", True, False, False, False),
+            ("recoverable_then_ok", False, False, False, False),
+            ("recoverable_then_disabled", False, False, False, False),
+            ("exhausted", False, False, False, False),
             ("error", False, False, False, False),
             ("ok_no_progress", False, False, False, False),
             ("protected", False, False, False, False),
@@ -4316,31 +4363,43 @@ if '--evidence' in sys.argv:
 
                 dispatch_state = root / "dispatch"
                 stale_candidate = dispatch_state / "candidates/V1-019.json"
+                pending_fingerprint = "a" * 64
                 atomic_write_json(
                     stale_candidate,
                     {
                         "candidate": "V1-019",
                         "stage": "implementation",
-                        "routing_revision": "v1-019-code69-repair-v1",
-                        "candidate_base_commit": "d877cf3b6648083f97e54d661933e3d188999dae",
+                        "routing_revision": "v1-019-invocation-contract-repair-v2",
+                        "candidate_base_commit": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
                         "repository_fingerprint": "stale",
                         "expected_worktree_paths": [],
                         "completed_implementation_substages": [],
+                        "recovery_pending": True,
+                        "recovery_generation": 1,
+                        "ceiling_recovery_attempts": {"sign_in": 1},
+                        "pending_recovery_marker_fingerprint": pending_fingerprint,
                         "model_usage": [
                             {
-                                "session_id": "6baf17e6e77d7582e72b2e19a40ab806",
-                                "stage_result": "unsupported_invocation_configuration",
-                                "api_calls_started": 1,
-                                "api_calls_completed": 0,
-                                "total_token_usage": 0,
+                                "session_id": "61d145e0655c5298cbcfa576fff3ff78",
+                                "stage_result": "model_session_or_token_ceiling",
+                                "api_calls_started": 2,
+                                "api_calls_completed": 2,
+                                "input_token_usage": 16_881,
+                                "output_token_usage": 422,
+                                "total_token_usage": 17_303,
+                                "cache_read_token_usage": 9_216,
+                                "predicted_next_context_tokens": 109_152,
+                                "in_flight_overshoot_tokens": 0,
+                                "unsupported_provider_parameters_removed": [],
                             }
                         ],
+                        "events": [],
                     },
                 )
                 atomic_write_json(
                     dispatch_state / "attempts/V1-019.json",
                     {
-                        "fingerprint": "stale",
+                        "fingerprint": pending_fingerprint,
                         "counters": {"implementation": 1},
                         "pending": None,
                     },
@@ -4348,18 +4407,19 @@ if '--evidence' in sys.argv:
                 atomic_write_json(
                     dispatch_state / "last-failure.json",
                     {
-                        "actionable_fingerprint": "ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2",
-                        "category": "unsupported_invocation_configuration",
-                        "diagnostic": "HTTP 400: Unsupported parameter: max_output_tokens",
+                        "actionable_fingerprint": pending_fingerprint,
+                        "category": "model_session_or_token_ceiling",
                         "owner_action_required": False,
                     },
                 )
                 atomic_write_json(
                     dispatch_state
-                    / "terminal/routing_recovery_pending/ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2.json",
+                    / f"terminal/routing_recovery_pending/{pending_fingerprint}.json",
                     {
-                        "actionable_fingerprint": "ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2",
-                        "category": "unsupported_invocation_configuration",
+                        "actionable_fingerprint": pending_fingerprint,
+                        "category": "model_session_or_token_ceiling",
+                        "phase": "sign_in",
+                        "attempt": 1,
                     },
                 )
                 atomic_write_json(
@@ -4388,7 +4448,7 @@ if '--evidence' in sys.argv:
                         "state": {
                             "lastRunAtMs": 1,
                             "lastRunStatus": "ok",
-                            "consecutiveErrors": 0,
+                            "consecutiveErrors": 3,
                             "runningAtMs": None,
                         },
                     },
@@ -4399,7 +4459,12 @@ if '--evidence' in sys.argv:
 import json, os, pathlib, sys, time
 if sys.argv[1:3] == ['message', 'send']:
     message = sys.argv[sys.argv.index('--message') + 1]
-    kind = 'complete' if message.startswith('RESTORATION_COMPLETE') else 'failed_closed'
+    if message.startswith('RESTORATION_COMPLETE'):
+        kind = 'complete'
+    elif message.startswith('RECOVERY_SCHEDULED'):
+        kind = 'recovery_scheduled'
+    else:
+        kind = 'failed_closed'
     with pathlib.Path(os.environ['FAKE_NOTIFICATION_LOG']).open('a') as handle:
         handle.write(kind + '\\n')
     if os.environ.get('FAKE_NOTIFICATION_HANG') == '1':
@@ -4415,19 +4480,51 @@ if action == 'enable':
     job['enabled'] = True
 elif action == 'disable':
     job['enabled'] = False
-elif action == 'get' and job['enabled']:
+if action in {'enable', 'disable'}:
+    with pathlib.Path(os.environ['FAKE_CRON_ACTION_LOG']).open('a') as handle:
+        handle.write(action + '\\n')
+if action == 'get' and job['enabled']:
     outcome = os.environ['FAKE_NATURAL_STATUS']
-    status = 'error' if outcome in {'error', 'protected'} else 'ok'
+    run_number = int(job.get('fakeRunNumber', 0)) + 1
+    job['fakeRunNumber'] = run_number
+    status = 'error' if outcome in {'error', 'protected', 'recoverable_then_ok', 'recoverable_then_disabled', 'exhausted'} else 'ok'
+    if outcome == 'recoverable_then_ok' and run_number > 1:
+        status = 'ok'
     dispatch = pathlib.Path(os.environ['FAKE_DISPATCH'])
-    if outcome == 'ok':
-        candidate = dispatch / 'candidates/V1-019.json'
-        record = json.loads(candidate.read_text())
+    candidate = dispatch / 'candidates/V1-019.json'
+    record = json.loads(candidate.read_text())
+    if outcome == 'ok' or (outcome == 'recoverable_then_ok' and run_number > 1):
         record.update({'completed_implementation_substages':['sign_in'],'recovery_pending':False,'stage':'implementation'})
         candidate.write_text(json.dumps(record))
+        failure = dispatch / 'last-failure.json'
+        if failure.exists():
+            failure.unlink()
+    elif outcome in {'recoverable_then_ok', 'recoverable_then_disabled', 'exhausted'}:
+        if outcome == 'exhausted' and run_number > 1:
+            record.update({'recovery_pending':False,'bounded_recovery_exhausted':True,'recovery_generation':2,'ceiling_recovery_attempts':{'sign_in':3}})
+        else:
+            record.update({'recovery_pending':True,'recovery_generation':1,'ceiling_recovery_attempts':{'sign_in':1}})
+        candidate.write_text(json.dumps(record))
+        failure = dispatch / 'last-failure.json'
+        failure.write_text(json.dumps({'category':'model_session_or_token_ceiling','owner_action_required':outcome == 'exhausted' and run_number > 1,'exact_next_action':'Run the exact bounded sign_in recovery.'}))
     elif outcome == 'protected':
         failure = dispatch / 'last-failure.json'
         failure.write_text(json.dumps({'category':'protected_operation','owner_action_required':True,'exact_next_action':'Owner must decide the protected operation.'}))
-    job['state'].update({'lastRunAtMs':int(time.time() * 1000) + 10,'lastRunStatus':status,'lastStatus':status,'consecutiveErrors':0 if status == 'ok' else 1,'runningAtMs':None})
+    elif outcome == 'error':
+        failure = dispatch / 'last-failure.json'
+        failure.write_text(json.dumps({'category':'gateway_or_network_failure','owner_action_required':False,'exact_next_action':'Repair the unknown route.'}))
+    elif outcome == 'ok_no_progress':
+        record.update({'recovery_pending':False})
+        candidate.write_text(json.dumps(record))
+        failure = dispatch / 'last-failure.json'
+        failure.write_text(json.dumps({'category':'repository_integrity_uncertainty','owner_action_required':False,'exact_next_action':'Repair missing progress evidence.'}))
+    aggregate_errors = 0 if status == 'ok' else int(job['state'].get('consecutiveErrors', 0)) + 1
+    job['state'].update({'lastRunAtMs':int(time.time() * 1000) + 10,'lastRunStatus':status,'lastStatus':status,'consecutiveErrors':aggregate_errors,'runningAtMs':None})
+    if outcome == 'recoverable_then_disabled':
+        job['enabled'] = False
+    import sqlite3
+    with sqlite3.connect(os.environ['FAKE_OPENCLAW_DB']) as connection:
+        connection.execute('INSERT INTO cron_run_logs (job_id,seq,ts,status,run_at_ms,duration_ms) VALUES (?,?,?,?,?,?)', ('658ffdaf-1ac1-45a6-a842-f5f7d7a226eb',365 + run_number,int(time.time() * 1000),status,job['state']['lastRunAtMs'],10))
 path.write_text(json.dumps(job))
 print(json.dumps(job))
 """
@@ -4454,7 +4551,25 @@ print(json.dumps(job))
                             "test-sensitive-account",
                         ),
                     )
+                    connection.execute(
+                        """CREATE TABLE cron_run_logs (
+                            job_id TEXT, seq INTEGER, ts INTEGER, status TEXT,
+                            run_at_ms INTEGER, duration_ms INTEGER
+                        )"""
+                    )
+                    connection.execute(
+                        "INSERT INTO cron_run_logs VALUES (?, ?, ?, ?, ?, ?)",
+                        (
+                            "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+                            365,
+                            1,
+                            "error",
+                            1,
+                            10,
+                        ),
+                    )
                 launchctl_log = root / "launchctl.log"
+                cron_action_log = root / "cron-actions.log"
                 fake_launchctl = root / "launchctl"
                 fake_launchctl.write_text(
                     """#!/usr/bin/env python3
@@ -4534,6 +4649,8 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                         "FAKE_NATURAL_STATUS": natural_status,
                         "FAKE_LAUNCHCTL_LOG": str(launchctl_log),
                         "FAKE_NOTIFICATION_LOG": str(notification_log),
+                        "FAKE_OPENCLAW_DB": str(openclaw_db),
+                        "FAKE_CRON_ACTION_LOG": str(cron_action_log),
                         "FAKE_NOTIFICATION_FAIL": "1" if notification_failure else "0",
                         "FAKE_NOTIFICATION_HANG": "1" if notification_hang else "0",
                         "FAKE_UNLOAD_FAIL": "1" if unload_failure else "0",
@@ -4565,7 +4682,10 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                     time.sleep(0.01)
                 restored = json.loads(evidence.read_text())
                 job = json.loads(job_path.read_text())
-                expected_complete = natural_status == "ok" and not unload_failure
+                expected_complete = natural_status in {
+                    "ok",
+                    "recoverable_then_ok",
+                } and not unload_failure
                 if expected_complete:
                     self.assertEqual(
                         result.returncode,
@@ -4584,13 +4704,7 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                     fresh = json.loads(stale_candidate.read_text())
                     self.assertEqual(
                         fresh["routing_revision"],
-                        "v1-019-invocation-contract-repair-v2",
-                    )
-                    self.assertEqual(
-                        fresh["corrected_routing_retry"]["eligible_attempts"], 1
-                    )
-                    self.assertEqual(
-                        fresh["corrected_routing_retry"]["consumed_attempts"], 0
+                        "v1-019-context-restoration-repair-v3",
                     )
                     self.assertEqual(
                         fresh["candidate_base_commit"], restored["metadata_commit"]
@@ -4599,23 +4713,16 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                         fresh["completed_implementation_substages"], ["sign_in"]
                     )
                     self.assertFalse((dispatch_state / "last-failure.json").exists())
-                    self.assertFalse((dispatch_state / "attempts/V1-019.json").exists())
                     archived = list(
-                        (dispatch_state / "superseded/v1-019-invocation-contract").glob(
-                            "*.json"
+                        (dispatch_state / "superseded/v1-019-context-reservation").glob(
+                            "candidate-*.json"
                         )
                     )
-                    self.assertEqual(len(archived), 5)
+                    self.assertEqual(len(archived), 1)
                     self.assertTrue(
                         (
                             dispatch_state
                             / "terminal/oversized_or_ceiling_stopped/stale.json"
-                        ).exists()
-                    )
-                    self.assertFalse(
-                        (
-                            dispatch_state
-                            / "terminal/routing_recovery_pending/ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2.json"
                         ).exists()
                     )
                 else:
@@ -4623,7 +4730,7 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                     self.assertEqual(restored["status"], "failed_closed")
                     self.assertEqual(
                         restored["owner_action_required"],
-                        natural_status == "protected",
+                        natural_status in {"protected", "exhausted"},
                     )
                     self.assertFalse(job["enabled"])
                     rerun = subprocess.run(
@@ -4660,6 +4767,8 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                             "FAKE_NATURAL_STATUS": natural_status,
                             "FAKE_LAUNCHCTL_LOG": str(launchctl_log),
                             "FAKE_NOTIFICATION_LOG": str(notification_log),
+                            "FAKE_OPENCLAW_DB": str(openclaw_db),
+                            "FAKE_CRON_ACTION_LOG": str(cron_action_log),
                             "FAKE_NOTIFICATION_FAIL": "1"
                             if notification_failure
                             else "0",
@@ -4685,14 +4794,71 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                     if notification_failure or notification_hang
                     else "delivered",
                 )
-                expected_notification = (
-                    "complete" if expected_complete else "failed_closed"
-                )
+                expected_notification = [
+                    *(
+                        ["recovery_scheduled"]
+                        if natural_status in {"recoverable_then_ok", "exhausted"}
+                        else []
+                    ),
+                    "complete" if expected_complete else "failed_closed",
+                ]
                 self.assertEqual(
-                    notification_log.read_text().splitlines(), [expected_notification]
+                    notification_log.read_text().splitlines(), expected_notification
                 )
                 self.assertNotIn("test-sensitive-target", final_evidence_text)
                 self.assertNotIn("test-sensitive-account", final_evidence_text)
+                if natural_status == "recoverable_then_ok":
+                    self.assertEqual(
+                        [
+                            item["sequence"]
+                            for item in final_evidence["post_repair_runs"]
+                        ],
+                        [366, 367],
+                    )
+                    self.assertEqual(
+                        final_evidence["recovery_notifications"][0]["sequence"],
+                        366,
+                    )
+                    self.assertEqual(
+                        final_evidence["post_repair_runs"][0][
+                            "aggregate_consecutive_errors"
+                        ],
+                        4,
+                    )
+                    self.assertTrue(job["enabled"])
+                    self.assertEqual(
+                        cron_action_log.read_text().splitlines(), ["enable"]
+                    )
+                if natural_status == "recoverable_then_disabled":
+                    self.assertIn(
+                        "became disabled during the scheduled bounded recovery",
+                        final_evidence["failure"],
+                    )
+                    self.assertEqual(
+                        final_evidence.get("recovery_notifications", []), []
+                    )
+                    self.assertEqual(
+                        notification_log.read_text().splitlines(), ["failed_closed"]
+                    )
+                if natural_status == "exhausted":
+                    self.assertEqual(
+                        [
+                            item["sequence"]
+                            for item in final_evidence["post_repair_runs"]
+                        ],
+                        [366, 367],
+                    )
+                    self.assertEqual(
+                        final_evidence["recovery_notifications"][0]["sequence"],
+                        366,
+                    )
+                    self.assertFalse(job["enabled"])
+                    self.assertEqual(
+                        cron_action_log.read_text().splitlines()[0], "enable"
+                    )
+                    self.assertIn(
+                        "disable", cron_action_log.read_text().splitlines()[1:]
+                    )
                 if notification_hang:
                     self.assertEqual(
                         final_evidence["notification"]["failure"],
@@ -4721,6 +4887,119 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                 self.assertEqual(launchctl_calls.count(expected_target), expected_pairs)
                 self.assertEqual(
                     launchctl_calls.count(expected_terminalizer_target), expected_pairs
+                )
+
+    def test_current_context_incident_rebases_only_pending_sign_in_recovery(
+        self,
+    ) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "context_rebase_post_exit",
+            ROOT / "scripts/openclaw-post-exit-restoration.py",
+        )
+        assert spec and spec.loader
+        restoration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(restoration)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / "repo"
+            repo.mkdir()
+            (repo / "tracked.txt").write_text("repair\n")
+            subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.name", "test"], cwd=repo, check=True
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "context repair"], cwd=repo, check=True
+            )
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            dispatch = root / "dispatch"
+            pending_fingerprint = "a" * 64
+            atomic_write_json(
+                dispatch / "candidates/V1-019.json",
+                {
+                    "candidate": "V1-019",
+                    "candidate_base_commit": restoration.INCIDENT_BASELINE,
+                    "routing_revision": restoration.PRIOR_ROUTING_REVISION,
+                    "stage": "implementation",
+                    "completed_implementation_substages": [],
+                    "expected_worktree_paths": [],
+                    "recovery_pending": True,
+                    "recovery_generation": 1,
+                    "ceiling_recovery_attempts": {"sign_in": 1},
+                    "pending_recovery_marker_fingerprint": pending_fingerprint,
+                    "model_usage": [
+                        {
+                            "session_id": restoration.CONTEXT_INCIDENT_SESSION_ID,
+                            "api_calls_started": 2,
+                            "api_calls_completed": 2,
+                            "input_token_usage": 16_881,
+                            "output_token_usage": 422,
+                            "total_token_usage": 17_303,
+                            "cache_read_token_usage": 9_216,
+                            "predicted_next_context_tokens": 109_152,
+                            "in_flight_overshoot_tokens": 0,
+                            "unsupported_provider_parameters_removed": [],
+                        }
+                    ],
+                    "events": [],
+                },
+            )
+            atomic_write_json(
+                dispatch / "attempts/V1-019.json",
+                {
+                    "fingerprint": pending_fingerprint,
+                    "counters": {"implementation": 1},
+                    "pending": None,
+                },
+            )
+            atomic_write_json(
+                dispatch / "last-failure.json",
+                {
+                    "category": "model_session_or_token_ceiling",
+                    "owner_action_required": False,
+                },
+            )
+            atomic_write_json(
+                dispatch
+                / f"terminal/routing_recovery_pending/{pending_fingerprint}.json",
+                {
+                    "actionable_fingerprint": pending_fingerprint,
+                    "phase": "sign_in",
+                    "attempt": 1,
+                },
+            )
+            result = restoration.rebase_scheduled_v1_019_recovery(
+                repo, dispatch, candidate_base_commit=head
+            )
+            self.assertEqual(result["status"], "pending_sign_in_recovery_rebased")
+            record = json.loads((dispatch / "candidates/V1-019.json").read_text())
+            self.assertEqual(record["routing_revision"], restoration.ROUTING_REVISION)
+            self.assertEqual(record["candidate_base_commit"], head)
+            self.assertTrue(record["recovery_pending"])
+            self.assertEqual(record["recovery_generation"], 1)
+            self.assertEqual(record["ceiling_recovery_attempts"], {"sign_in": 1})
+            self.assertEqual(record["completed_implementation_substages"], [])
+            resumed = restoration.rebase_scheduled_v1_019_recovery(
+                repo, dispatch, candidate_base_commit=head
+            )
+            self.assertEqual(resumed["status"], "already_rebased")
+            failure_path = dispatch / "last-failure.json"
+            failure = json.loads(failure_path.read_text())
+            failure["owner_action_required"] = True
+            atomic_write_json(failure_path, failure)
+            with self.assertRaisesRegex(
+                restoration.RestorationError, "already-rebased.*drifted"
+            ):
+                restoration.rebase_scheduled_v1_019_recovery(
+                    repo, dispatch, candidate_base_commit=head
                 )
 
     def test_atomic_lock_fails_closed_for_unprovable_owner_metadata(self) -> None:
@@ -5117,6 +5396,316 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
             )
             self.assertGreaterEqual(budget["locally_reserved_next_call_tokens"], 2_048)
 
+    def test_exact_v1_019_packet_and_observed_outputs_do_not_false_reserve(
+        self,
+    ) -> None:
+        packet = base64.b64decode(
+            (
+                ROOT
+                / "scripts/test-fixtures/v1-019-sign-in-packet-9614.b64"
+            ).read_text()
+        )
+        self.assertEqual(len(packet), 9_614)
+        self.assertEqual(
+            digest(packet),
+            "2a6e8126bc9c285f5f400137ab0b97dc87c4c1ca7b40523591128a387d9ccc3b",
+        )
+        observed_tool_output_sizes = [
+            639,
+            4_202,
+            26_386,
+            4_508,
+            16_595,
+            127,
+            153,
+            194,
+            56,
+            57,
+            5_333,
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            budget_path = root / "budget.json"
+            manifest_path = root / "manifest.json"
+            atomic_write_json(
+                budget_path,
+                {
+                    "schema_version": 1,
+                    "ceiling": 60_000,
+                    "api_calls_started": 2,
+                    "api_calls_completed": 2,
+                    "input_tokens": 16_881,
+                    "output_tokens": 422,
+                    "cache_read_tokens": 9_216,
+                    "reasoning_tokens": 60,
+                    "counted_total_tokens": 17_303,
+                    "last_call_input_tokens": 8_613,
+                    "last_call_output_tokens": 250,
+                    "boundary_reached": False,
+                    "in_flight_overshoot_tokens": 0,
+                    "next_api_call_blocked": False,
+                    "reserved_completion_checkpoint_tokens": 2_048,
+                    "context_reservation_margin_tokens": 1_024,
+                    "tool_output_limit_bytes": 12_000,
+                    "session_tool_output_limit_bytes": 36_000,
+                    "tool_output_observed_bytes": 0,
+                    "tool_output_returned_bytes": 0,
+                    "tool_output_truncations": 0,
+                },
+            )
+            atomic_write_json(
+                manifest_path,
+                {
+                    "budget_path": str(budget_path),
+                    "bounded_substage_id": "sign_in",
+                },
+            )
+            provider_calls = 0
+
+            def provider(_: dict[str, Any]) -> dict[str, Any]:
+                nonlocal provider_calls
+                provider_calls += 1
+                return {
+                    "model": "gpt-5.6-sol",
+                    "usage": {
+                        "input_tokens": 18_000,
+                        "output_tokens": 500,
+                        "cache_read_tokens": 9_000,
+                    },
+                }
+
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_INVOCATION_MANIFEST": str(manifest_path)},
+            ):
+                bounded_outputs = [
+                    bounded_tool_output("read_file", "x" * size)
+                    for size in observed_tool_output_sizes
+                ]
+                request = {
+                    "messages": [
+                        {"role": "user", "content": packet.decode()},
+                        *[
+                            {
+                                "role": "tool",
+                                "tool_call_id": f"observed-{index}",
+                                "content": content,
+                            }
+                            for index, content in enumerate(bounded_outputs)
+                        ],
+                    ],
+                    "tools": [{"type": "function", "name": "read_file"}],
+                }
+                enforce_llm_call(request, provider)
+            budget = json.loads(budget_path.read_text())
+            self.assertEqual(provider_calls, 1)
+            self.assertLess(budget["predicted_next_context_tokens"], 42_697)
+            self.assertNotEqual(budget["predicted_next_context_tokens"], 109_152)
+            self.assertEqual(
+                budget["token_estimate_method"],
+                "validated_serialized_request_estimate_v1",
+            )
+            self.assertEqual(
+                budget["token_estimate_inputs"]["validation_margin_tokens"], 1_024
+            )
+            self.assertEqual(budget["in_flight_overshoot_tokens"], 0)
+            self.assertEqual(
+                budget["tool_output_observed_bytes"], sum(observed_tool_output_sizes)
+            )
+            self.assertLessEqual(budget["tool_output_returned_bytes"], 36_000)
+            self.assertGreater(budget["tool_output_truncations"], 0)
+
+    def test_bounded_guard_blocks_broad_context_and_caps_tool_outputs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / "repo"
+            (repo / "frontend/src").mkdir(parents=True)
+            (repo / "frontend/src/App.tsx").write_text("export {}\n")
+            budget = root / "budget.json"
+            manifest = root / "manifest.json"
+            atomic_write_json(
+                budget,
+                {
+                    "schema_version": 1,
+                    "tool_output_limit_bytes": 12_000,
+                    "session_tool_output_limit_bytes": 36_000,
+                    "tool_output_observed_bytes": 0,
+                    "tool_output_returned_bytes": 0,
+                    "tool_output_truncations": 0,
+                },
+            )
+            atomic_write_json(
+                manifest,
+                {
+                    "repository": str(repo),
+                    "budget_path": str(budget),
+                    "stage": "implementation",
+                    "bounded_substage_id": "sign_in",
+                    "readable_paths": ["frontend/src/App.tsx"],
+                    "writable_paths": ["frontend/src"],
+                },
+            )
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_INVOCATION_MANIFEST": str(manifest)},
+            ):
+                guard_tool("read_file", {"path": "frontend/src/App.tsx"})
+                for forbidden in (
+                    "ops/NOW.md",
+                    "ops/STATE.json",
+                    "ops/QUEUE.md",
+                    "ops/V1_ROADMAP.json",
+                    "Makefile",
+                ):
+                    with self.assertRaisesRegex(GuardError, "materializes"):
+                        guard_tool("read_file", {"path": forbidden})
+                with self.assertRaisesRegex(GuardError, "planning"):
+                    guard_tool("todo", {"todos": []})
+                with self.assertRaisesRegex(GuardError, "explicit pathspecs"):
+                    guard_tool(
+                        "terminal",
+                        {"command": "git diff", "workdir": str(repo)},
+                    )
+                guard_tool(
+                    "terminal",
+                    {
+                        "command": "git diff -- frontend/src/App.tsx",
+                        "workdir": str(repo),
+                    },
+                )
+                with self.assertRaisesRegex(GuardError, "directly relevant"):
+                    guard_tool(
+                        "terminal",
+                        {
+                            "command": "git diff -- backend/src/unrelated.py",
+                            "workdir": str(repo),
+                        },
+                    )
+                with self.assertRaisesRegex(GuardError, "relevant paths"):
+                    guard_tool(
+                        "search_files",
+                        {"path": "frontend/src", "pattern": "*"},
+                    )
+                bounded = bounded_tool_output("read_file", "x" * 26_386)
+            self.assertLessEqual(len(bounded.encode()), 12_000)
+            ledger = json.loads(budget.read_text())
+            self.assertEqual(ledger["tool_output_observed_bytes"], 26_386)
+            self.assertEqual(ledger["tool_output_truncations"], 1)
+
+            atomic_write_json(
+                budget,
+                {
+                    "schema_version": 1,
+                    "tool_output_limit_bytes": 12_000,
+                    "session_tool_output_limit_bytes": 36_000,
+                    "tool_output_observed_bytes": 0,
+                    "tool_output_returned_bytes": 0,
+                    "tool_output_truncations": 0,
+                },
+            )
+            child_environment = {
+                **os.environ,
+                "PROPERTY_RENTAL_INVOCATION_MANIFEST": str(manifest),
+                "PYTHONPATH": str(ROOT / "scripts"),
+            }
+            workers = [
+                subprocess.Popen(
+                    [
+                        sys.executable,
+                        "-c",
+                        (
+                            "from openclaw_hermes_guard import bounded_tool_output; "
+                            "bounded_tool_output('read_file', 'x' * 12000)"
+                        ),
+                    ],
+                    env=child_environment,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                )
+                for _ in range(4)
+            ]
+            results = [worker.communicate(timeout=5) for worker in workers]
+            self.assertTrue(all(worker.returncode == 0 for worker in workers), results)
+            concurrent_ledger = json.loads(budget.read_text())
+            self.assertEqual(concurrent_ledger["tool_output_observed_bytes"], 48_000)
+            self.assertLessEqual(
+                concurrent_ledger["tool_output_returned_bytes"], 36_000
+            )
+            self.assertGreaterEqual(concurrent_ledger["tool_output_truncations"], 1)
+
+    def test_unavailable_token_estimation_is_zero_call_routing_fault(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            budget = root / "budget.json"
+            manifest = root / "manifest.json"
+            atomic_write_json(
+                budget,
+                {
+                    "schema_version": 1,
+                    "ceiling": 60_000,
+                    "api_calls_started": 0,
+                    "api_calls_completed": 0,
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "cache_read_tokens": 0,
+                    "reasoning_tokens": 0,
+                    "counted_total_tokens": 0,
+                    "boundary_reached": False,
+                    "in_flight_overshoot_tokens": 0,
+                    "next_api_call_blocked": False,
+                },
+            )
+            atomic_write_json(manifest, {"budget_path": str(budget)})
+            provider_calls = 0
+
+            def provider(_: dict[str, Any]) -> None:
+                nonlocal provider_calls
+                provider_calls += 1
+
+            with (
+                mock.patch.dict(
+                    os.environ,
+                    {"PROPERTY_RENTAL_INVOCATION_MANIFEST": str(manifest)},
+                ),
+                mock.patch(
+                    "openclaw_hermes_guard.estimate_serialized_request_tokens",
+                    side_effect=TokenEstimationUnavailable("no supported tokenizer"),
+                ),
+                self.assertRaisesRegex(GuardError, "TOKEN_ESTIMATION_UNAVAILABLE"),
+            ):
+                enforce_llm_call({"messages": []}, provider)
+            ledger = json.loads(budget.read_text())
+            self.assertEqual(provider_calls, 0)
+            self.assertEqual(ledger["api_calls_started"], 0)
+            self.assertFalse(ledger["boundary_reached"])
+            self.assertEqual(ledger["token_estimation_status"], "unavailable")
+            spec = importlib.util.spec_from_file_location(
+                "token_estimation_dispatch", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            token_dispatch = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(token_dispatch)
+            classified = token_dispatch.zero_usage_provider_failure(
+                returncode=1,
+                stderr="Hermes guard stopped model execution",
+                usage={
+                    "api_calls": 0,
+                    "api_calls_started": 0,
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "cache_read_tokens": 0,
+                    "reasoning_tokens": 0,
+                    "total_tokens": 0,
+                    "stop_reason": "token_estimation_unavailable",
+                },
+            )
+            assert classified is not None
+            self.assertEqual(
+                classified["category"], "unsupported_invocation_configuration"
+            )
+            self.assertFalse(classified["configured_ceiling_reached"])
+
     def test_hermes_tool_guard_enforces_repository_least_privilege(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -5130,6 +5719,8 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                     "repository": str(repo),
                     "stage": "implementation",
                     "writable_paths": ["backend/src/property_rental", "backend/tests"],
+                    "readable_paths": [],
+                    "bounded_substage_id": None,
                 },
             )
             with mock.patch.dict(
@@ -5232,6 +5823,8 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                         "repository": str(repo),
                         "stage": "independent_review",
                         "writable_paths": [],
+                        "readable_paths": [],
+                        "bounded_substage_id": None,
                     },
                 )
                 with self.assertRaisesRegex(GuardError, "review is read-only"):
@@ -5278,6 +5871,8 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                     "repository": str(repo),
                     "budget_path": str(budget),
                     "writable_paths": [],
+                    "readable_paths": [],
+                    "bounded_substage_id": None,
                 },
             )
             context = Context()
@@ -5877,6 +6472,8 @@ print('{}')
                 cumulative_ceiling=60_000,
                 dispatcher_record_path=dispatcher_record,
                 writable_paths=["backend/src/property_rental", "backend/tests"],
+                readable_paths=[],
+                bounded_substage_id=None,
             )
             environment = os.environ.copy()
             environment.update(
@@ -5950,6 +6547,8 @@ print('{}')
                 cumulative_ceiling=120_000,
                 dispatcher_record_path=bad_record,
                 writable_paths=[],
+                readable_paths=[],
+                bounded_substage_id=None,
             )
             with self.assertRaisesRegex(GuardError, "exceptional classification"):
                 validate_manifest(
@@ -5973,6 +6572,8 @@ print('{}')
                 cumulative_ceiling=120_000,
                 dispatcher_record_path=good_record,
                 writable_paths=[],
+                readable_paths=[],
+                bounded_substage_id=None,
                 exceptional_review_classification="persisted broad security review",
             )
             validated = validate_manifest(

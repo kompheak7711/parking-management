@@ -14,9 +14,53 @@
     "TEST-135"
   ],
   "automation_repair": {
-    "baseline": "1d091b6b581703b54eb370f3b3106a3dae45c19c",
+    "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
     "branch": "implementation/foundation",
-    "changed_path_count": 12,
+    "changed_path_count": 13,
+    "context_budget_restoration_repair": {
+      "authorization": "existing_durable_v1",
+      "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
+      "bounded_substage": "sign_in",
+      "canonical_specifications_modified": false,
+      "hermes_session_id": "61d145e0655c5298cbcfa576fff3ff78",
+      "owner_action_required": false,
+      "packet_fixture": {
+        "decoded_bytes": 9614,
+        "decoded_sha256": "2a6e8126bc9c285f5f400137ab0b97dc87c4c1ca7b40523591128a387d9ccc3b",
+        "observed_tool_output_bytes": [
+          639,
+          4202,
+          26386,
+          4508,
+          16595,
+          127,
+          153,
+          194,
+          56,
+          57,
+          5333
+        ]
+      },
+      "product_files_modified": false,
+      "recovery_generation": 1,
+      "recovery_pending": true,
+      "restoration_sequence_floor": 365,
+      "routing_revision": "v1-019-context-restoration-repair-v3",
+      "status": "independently_reviewed_awaiting_publication",
+      "supervisor_enabled": false,
+      "supervisor_sequence": 365,
+      "token_ceiling": 60000,
+      "token_ceiling_changed": false,
+      "token_estimation": {
+        "margin_tokens": 1024,
+        "method": "validated_serialized_request_estimate_v1",
+        "unavailable_is_zero_model_attempt_routing_fault": true
+      },
+      "verification": {
+        "automation": "PASS: 108 tests plus compact-state routing, visibility watchdog, shell syntax, and Python compilation",
+        "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-v1-019-context-restoration-repair-final.json"
+      }
+    },
     "post_exit_ci_detection_repair": {
       "authorization": "existing_durable_v1",
       "baseline": "7c0f67d07092702229329a57176ae0fdc95afd12",
@@ -107,19 +151,20 @@
       }
     },
     "independent_review": {
-      "compact_state_fingerprint": "6c158d6f7bec7a1c32fec8b1cf8dfe4adeaa0e23b0574ba82c9c2c7bc8b39030",
+      "compact_state_fingerprint": "bd9568a555622162451e57ee579fe15406d8a0aaea658ddbaad24465c5977631",
       "final_verdict": "PASS",
-      "findings": 0,
-      "repository_fingerprint": "e8693a83884882ee682ed9fe546aa7cd837dd3693d8bd26a9e5627b416e5254d",
-      "reviewed_path_count": 12,
+      "initial_findings": 6,
+      "material_findings_remediated": 6,
+      "repository_fingerprint": "eedeec75377075f227c5cac155acf295d82dc5f5bfb60b60973eca59c2fc1836",
+      "reviewed_path_count": 13,
       "reviewer_edits": false,
       "status": "PASS"
     },
-    "next_action": "Publish the independently reviewed post-exit CI detection repair, require successful GitHub Actions, then install the exact corrected continuation while the supervisor remains disabled.",
+    "next_action": "Publish this independently reviewed bounded repair, require successful GitHub Actions, then install the corrected post-exit continuation while the supervisor remains disabled.",
     "post_exit_restoration": {
-      "repair_publication_commit": "e0469b6d519c0947662204869a535c7080185638",
-      "status": "metadata_published_waiting_enable",
-      "timestamp": "2026-08-21T18:00:39Z"
+      "allowed_recovery": "V1-019 sign_in only",
+      "status": "awaiting_repair_publication",
+      "supervisor_enabled": false
     },
     "predecessor_ci_correction_review": {
       "cache_read_tokens": "unavailable from provider",
@@ -321,17 +366,17 @@
       "watchdog_notifications": "PASS"
     },
     "scheduler_enabled": false,
-    "status": "restored",
+    "status": "published_awaiting_post_exit_restoration",
     "stop_after_candidate": "V1-019",
-    "timestamp": "2026-08-21T15:34:06Z",
+    "timestamp": "2026-08-21T22:18:48Z",
     "v1_019_original_automatic_recovery_attempts": 0,
     "v1_019_original_implementation_attempts": 1,
     "v1_019_product_modified": false,
     "verification": {
-      "automation_tests": "96 passed",
-      "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-v1-019-routing-repair-final.json",
-      "post_exit_fail_closed_restoration": "PASS",
-      "production_shaped_v1_019_route": "PASS"
+      "automation_tests": "108 passed",
+      "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-v1-019-context-restoration-repair-final.json",
+      "post_exit_bounded_retry_restoration": "PASS",
+      "production_shaped_v1_019_context_route": "PASS"
     }
   },
   "blockers": [],

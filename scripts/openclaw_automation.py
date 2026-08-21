@@ -30,13 +30,73 @@ EXCEPTIONAL_REVIEW_TOKEN_CEILING: Final = 120_000
 MODEL_ID: Final = "gpt-5.6-sol"
 PROVIDER: Final = "openai-codex"
 PRESERVATION_EVIDENCE_PATH: Final = "ops/AUTOMATION_REPAIR_EVIDENCE.json"
-V1_019_ROUTING_REVISION: Final = "v1-019-invocation-contract-repair-v2"
+V1_019_ROUTING_REVISION: Final = "v1-019-context-restoration-repair-v3"
 V1_019_SUBSTAGE_IDS: Final = (
     "sign_in",
     "mfa_recovery",
     "sessions",
     "account_capability",
 )
+V1_019_SUBSTAGE_AUTHORITIES: Final = {
+    "sign_in": ("UI-109", "UI-113", "TEST-094", "TEST-135"),
+    "mfa_recovery": ("UI-110", "UI-112", "TEST-094", "TEST-135"),
+    "sessions": ("UI-111", "TEST-094", "TEST-135"),
+    "account_capability": ("UI-092", "UI-112", "TEST-094", "TEST-095", "TEST-135"),
+}
+V1_019_SUBSTAGE_ACCEPTANCE: Final = {
+    substage: (
+        "API contract and authorization tests",
+        "frontend component/accessibility tests",
+        "backend and frontend builds",
+    )
+    for substage in V1_019_SUBSTAGE_IDS
+}
+V1_019_SUBSTAGE_PATHS: Final = {
+    "sign_in": (
+        "backend/src/property_rental/app.py",
+        "backend/src/property_rental/auth_api.py",
+        "backend/src/property_rental/local_authentication.py",
+        "backend/tests/test_auth_api.py",
+        "backend/tests/test_authentication_api.py",
+        "backend/tests/test_local_authentication.py",
+        "frontend/src/App.tsx",
+        "frontend/src/App.test.tsx",
+        "frontend/src/styles.css",
+        "ops/traceability.json",
+    ),
+    "mfa_recovery": (
+        "backend/src/property_rental/account_recovery.py",
+        "backend/src/property_rental/administrative_recovery.py",
+        "backend/src/property_rental/mfa_policy.py",
+        "backend/src/property_rental/recovery_code_lifecycle.py",
+        "backend/tests/test_account_recovery.py",
+        "backend/tests/test_administrative_recovery.py",
+        "backend/tests/test_mfa_policy.py",
+        "frontend/src/App.tsx",
+        "frontend/src/App.test.tsx",
+        "frontend/src/styles.css",
+        "ops/traceability.json",
+    ),
+    "sessions": (
+        "backend/src/property_rental/browser_session.py",
+        "backend/src/property_rental/session_revocation.py",
+        "backend/tests/test_browser_session.py",
+        "backend/tests/test_session_revocation.py",
+        "frontend/src/App.tsx",
+        "frontend/src/App.test.tsx",
+        "frontend/src/styles.css",
+        "ops/traceability.json",
+    ),
+    "account_capability": (
+        "backend/src/property_rental/access_admin_api.py",
+        "backend/src/property_rental/app.py",
+        "backend/tests/test_access_admin_api.py",
+        "frontend/src/App.tsx",
+        "frontend/src/App.test.tsx",
+        "frontend/src/styles.css",
+        "ops/traceability.json",
+    ),
+}
 
 RECOVERABLE_ROUTING_FAILURES: Final = frozenset(
     {
@@ -968,6 +1028,18 @@ def normalize_usage(
         "next_api_call_blocked": available("next_api_call_blocked"),
         "reservation_blocked": available("reservation_blocked"),
         "predicted_next_context_tokens": available("predicted_next_context_tokens"),
+        "token_estimation_status": available("token_estimation_status"),
+        "token_estimate_method": available("token_estimate_method"),
+        "token_estimate_inputs": available("token_estimate_inputs"),
+        "token_estimate_validation_margin_tokens": available(
+            "token_estimate_validation_margin_tokens"
+        ),
+        "token_estimate_provider_validated": available(
+            "token_estimate_provider_validated"
+        ),
+        "token_estimate_observed_shortfall_tokens": available(
+            "token_estimate_observed_shortfall_tokens"
+        ),
         "reserved_completion_checkpoint_tokens": available(
             "reserved_completion_checkpoint_tokens"
         ),
@@ -988,6 +1060,13 @@ def normalize_usage(
         ),
         "reservation_violation": available("reservation_violation"),
         "in_flight_overshoot_tokens": available("in_flight_overshoot_tokens"),
+        "tool_output_limit_bytes": available("tool_output_limit_bytes"),
+        "session_tool_output_limit_bytes": available(
+            "session_tool_output_limit_bytes"
+        ),
+        "tool_output_observed_bytes": available("tool_output_observed_bytes"),
+        "tool_output_returned_bytes": available("tool_output_returned_bytes"),
+        "tool_output_truncations": available("tool_output_truncations"),
         "applicable_token_ceiling": policy.token_ceiling,
         "stage_name": policy.stage,
         "complex_review_classification_reason": policy.complex_review_reason,
@@ -1413,6 +1492,7 @@ def task_packet(
     *,
     bounded_substage: dict[str, Any] | None = None,
     recovery_generation: int = 0,
+    recovery_state: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     state = json.loads((repo / "ops/STATE.json").read_text())
     roadmap = json.loads((repo / "ops/V1_ROADMAP.json").read_text())
@@ -1433,15 +1513,16 @@ def task_packet(
     fingerprints = actionable_fingerprint(repo, preflight)
     preserved = preservation_evidence(repo)
     raw_authorities = roadmap_item.get("authorities") or candidate.get("authorities") or []
-    authorities = expand_authorities(raw_authorities)
-    canonical_paths = sorted(
-        {
-            path
-            for authority in authorities
-            for prefix, path in AUTHORITY_PATHS.items()
-            if authority.startswith(prefix + "-")
-        }
+    candidate_authorities = expand_authorities(raw_authorities)
+    substage_id = str((bounded_substage or {}).get("id") or "")
+    authorities = list(
+        V1_019_SUBSTAGE_AUTHORITIES.get(substage_id, tuple(candidate_authorities))
     )
+    if any(authority not in candidate_authorities for authority in authorities):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "bounded substage authority routing exceeds the approved candidate",
+        )
     excerpts = [
         {
             "authority": authority,
@@ -1452,8 +1533,21 @@ def task_packet(
         for prefix, path in AUTHORITY_PATHS.items()
         if authority.startswith(prefix + "-")
     ]
+    complete_acceptance = roadmap_item.get("acceptance") or (
+        roadmap.get("acceptance_profiles") or {}
+    ).get(roadmap_item.get("acceptance_profile") or "complete", [])
+    substage_acceptance = list(
+        V1_019_SUBSTAGE_ACCEPTANCE.get(substage_id, tuple(complete_acceptance))
+    )
+    if any(item not in complete_acceptance for item in substage_acceptance):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "bounded substage acceptance routing exceeds the approved profile",
+        )
+    directly_relevant_paths = list(V1_019_SUBSTAGE_PATHS.get(substage_id, ()))
+    materialized_recovery = recovery_state or {}
     packet = {
-        "schema_version": 3,
+        "schema_version": 4,
         "candidate": candidate_id,
         "stage": stage,
         "branch": git(repo, "branch", "--show-current"),
@@ -1463,33 +1557,48 @@ def task_packet(
         "process_state_fingerprint": fingerprints["process_state"],
         "preflight_fingerprint": fingerprints["actionable"],
         "preserved_worktree_fingerprint": preserved.get("fingerprint"),
-        "task": roadmap_item.get("task")
-        or candidate.get("task")
-        or preflight.get("next_action"),
-        "authorities": raw_authorities,
-        "expanded_authorities": authorities,
-        "include": roadmap_item.get("include") or [],
-        "exclude": roadmap_item.get("exclude") or [],
-        "compact_inputs": [
-            "ops/NOW.md",
-            "ops/STATE.json",
-            "ops/QUEUE.md",
-            "ops/V1_ROADMAP.json",
-        ],
-        "acceptance_criteria": roadmap_item.get("acceptance")
-        or (roadmap.get("acceptance_profiles") or {}).get(
-            roadmap_item.get("acceptance_profile") or "complete", []
-        ),
+        "task": roadmap_item.get("task") or candidate.get("task") or preflight.get("next_action"),
+        "candidate_state": {
+            "approval_status": (state.get("approval") or {}).get("status"),
+            "implementation_started": bool(
+                (state.get("approval") or {}).get("implementation_started")
+            ),
+            "implementation_completed": bool(
+                (state.get("approval") or {}).get("implementation_completed")
+            ),
+            "owner_action": state.get("owner_action"),
+            "active_roadmap_id": (state.get("roadmap") or {}).get("current_id"),
+            "bounded_substage": substage_id or None,
+            "recovery_pending": materialized_recovery.get("recovery_pending") is True,
+            "recovery_generation": recovery_generation,
+            "bounded_recovery_attempt": int(
+                materialized_recovery.get("bounded_recovery_attempt") or 0
+            ),
+            "current_failure_category": materialized_recovery.get(
+                "current_failure_category"
+            ),
+            "bounded_recovery_exhausted": materialized_recovery.get(
+                "bounded_recovery_exhausted"
+            )
+            is True,
+        },
+        "candidate_scope": {
+            "include": roadmap_item.get("include") or [],
+            "exclude": roadmap_item.get("exclude") or [],
+        },
+        "controlling_authorities": authorities,
+        "acceptance_criteria": substage_acceptance,
         "acceptance_profile": roadmap_item.get("acceptance_profile") or "complete",
-        "canonical_paths": canonical_paths,
-        "authoritative_excerpts": excerpts,
+        "requirement_evidence": excerpts,
+        "directly_relevant_paths": directly_relevant_paths,
         "continuity_instructions": [
-            "Use this packet as the complete continuity router result; no external skill lookup is required or permitted.",
-            "Read only the listed compact inputs, authoritative excerpts, and directly relevant product/test files.",
-            "Canonical documents are read-only; do not load a complete canonical document because the exact controlling excerpts are embedded.",
+            "Use this packet as the complete continuity and authority record; no external skill lookup or compact-state reread is required or permitted.",
+            "The exact candidate, authorization, acceptance, state, and controlling requirement excerpts are materialized here.",
+            "Read only directly_relevant_paths. Do not read ops/STATE.json, ops/V1_ROADMAP.json, ops/NOW.md, ops/QUEUE.md, Makefile, a canonical document, or an unrelated source tree.",
+            "Do not call todo/planning tools or rediscover repository paths with broad searches.",
             "When bounded_substage is present, implement only that substage and leave every later V1-019 substage for its own fresh session.",
             "Keep business logic outside route handlers, keep frontend API access in a dedicated typed client, and preserve audit/data-integrity boundaries.",
-            "Update ops/NOW.md and ops/STATE.json with concise secret-free substage evidence before returning the exact JSON contract.",
+            "Write concise secret-free substage evidence to the authorized state paths without rereading their complete contents.",
         ],
         "dispatcher_evidence_trust": {
             "instruction": "Trust these dispatcher-supplied values. Do not spend tool calls rediscovering them with Git or process commands.",
@@ -1500,16 +1609,14 @@ def task_packet(
             "process_state_fingerprint": fingerprints["process_state"],
             "changed_path_count": len(changed_paths(repo)),
             "worktree_clean": changed_paths(repo) == [],
-            "clean_or_preserved_state": preserved,
+            "preserved_worktree_fingerprint": preserved.get("fingerprint"),
         },
         "recovery_generation": recovery_generation,
-        "durable_evidence_paths": [
-            "ops/STATE.json",
-            "ops/traceability.json",
-            ".openclaw-automation-evidence (external, secret-free)",
-        ],
+        "durable_state_write_paths": ["ops/NOW.md", "ops/STATE.json", "ops/traceability.json"],
         "authorization_boundaries": {
-            "standing_authorization": roadmap_item.get("authorization") == "durable_v1",
+            "authorization": roadmap_item.get("authorization"),
+            "existing_durable_v1": roadmap_item.get("authorization") == "durable_v1",
+            "renewed_owner_authorization": False,
             "protected_operation": bool(roadmap_item.get("protected_operation")),
             "prohibited": [
                 "canonical policy invention",

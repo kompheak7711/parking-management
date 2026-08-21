@@ -16,10 +16,11 @@ hermes_bin="${PROPERTY_RENTAL_HERMES_BIN:-hermes}"
   exit 64
 }
 
-wrapper_parent_pid="$(ps -o ppid= -p "$$")" || {
-  echo "Unable to determine the repository wrapper parent process" >&2
-  exit 64
-}
+wrapper_parent_pid="${PPID:-}"
+[ -n "$wrapper_parent_pid" ] || wrapper_parent_pid="$(ps -o ppid= -p "$$")" || {
+    echo "Unable to determine the repository wrapper parent process" >&2
+    exit 64
+  }
 PROPERTY_RENTAL_WRAPPER_PARENT_PID="$(printf '%s' "$wrapper_parent_pid" | tr -d '[:space:]')"
 PROPERTY_RENTAL_WRAPPER_PID="$$"
 export PROPERTY_RENTAL_WRAPPER_PARENT_PID
@@ -32,8 +33,11 @@ reasoning="$(jq -er '.token_policy.requested_reasoning' "$manifest_file")"
 token_ceiling="$(jq -er '.token_policy.cumulative_ceiling' "$manifest_file")"
 manifest_id="$(jq -er '.manifest_id' "$manifest_file")"
 usage_file="$(jq -er '.usage_path' "$manifest_file")"
+bounded_substage_id="$(jq -r '.bounded_substage_id // empty' "$manifest_file")"
 state_root="$(CDPATH= cd -- "$(dirname "$manifest_file")/.." && pwd)"
 session_home="$state_root/hermes-sessions/$manifest_id"
+toolsets="file,terminal,todo"
+[ -z "$bounded_substage_id" ] || toolsets="file,terminal"
 
 [ "${PROPERTY_RENTAL_HERMES_STAGE:-$stage}" = "$stage" ] \
   && [ "${PROPERTY_RENTAL_HERMES_USAGE_FILE:-$usage_file}" = "$usage_file" ] \
@@ -71,7 +75,7 @@ export PROPERTY_RENTAL_REPO="$repo"
 export HERMES_MAX_TOKENS="$token_ceiling"
 
 export PROPERTY_RENTAL_HERMES_PROCESS_MODE=preflight
-"$hermes_bin" --in "$repo" --toolsets file,terminal,todo prompt-size --json >/dev/null 2>&1 || {
+"$hermes_bin" --in "$repo" --toolsets "$toolsets" prompt-size --json >/dev/null 2>&1 || {
   echo "Hermes plugin capability preflight failed" >&2
   exit 64
 }
@@ -95,7 +99,7 @@ set +e
   --provider openai-codex \
   --model gpt-5.6-sol \
   --reasoning "$reasoning" \
-  --toolsets file,terminal,todo \
+  --toolsets "$toolsets" \
   --max-turns 120 \
   --source tool \
   --in "$repo" \
