@@ -1,4 +1,4 @@
-# V1-018 Account and capability administration API — verified, unpublished
+# V1-018 Account and capability administration API — published and reconciled
 
 - Objective: implement the approved bounded V1-018 Account and capability administration API.
 - Current task: independently review and publish the verified API-079/080 routes,
@@ -26,10 +26,20 @@
   applicable-session revocation atomically; cursor-aware tests traverse every collection to
   termination without duplicates or skips. OpenAPI safety checks inspect recursively exposed
   field names instead of safety prose.
+- Independent review: PASS with no findings for the exact seven-path fingerprint
+  `0241af6b4a96cccffdc87ae6be53446fc4344b8c8ca32cbe6b2063ba8b6b390d`;
+  the reviewer made no edits. Product commit `98ee724e98d2442fd0254bd825256707108f71c8`
+  is pushed and synchronized; GitHub Actions run 32461040956 passed all four jobs.
 - Published automation predecessor: repository-owned dispatch/guard repair and its CI fixture
   correction are synchronized at `9f93cef90bbfa8dcab24b58dae05bd1113e96bbb`; GitHub Actions
   run 32458068234 passed all four jobs. The supervisor remains disabled during V1-018 publication.
 - Blockers: none. Owner action: none.
-- Exact next action: obtain a fresh independent review of the exact seven V1-018 paths, publish
-  only those reviewed paths, require GitHub Actions success, reconcile V1-018 as published, and
-  stop without activating V1-019.
+- Exact next action: publish this focused compact-state reconciliation, require GitHub Actions
+  success, then safely re-enable the supervisor without manually activating V1-019.
+
+<!-- AUTOMATION_STATUS_BEGIN -->
+- Automation publication state: V1-018 published on `implementation/foundation` at
+  `98ee724e98d2442fd0254bd825256707108f71c8`.
+- Automation exact next action: Verify reconciliation CI and SHA equality, then safely re-enable
+  the existing supervisor; do not manually activate V1-019 in this session.
+<!-- AUTOMATION_STATUS_END -->

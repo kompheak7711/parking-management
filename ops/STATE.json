@@ -3,18 +3,18 @@
   "phase": "Identity",
   "tranche": "Account and capability administration API",
   "task": "Implement the approved bounded candidate: Account and capability administration API",
-  "status": "complete_uncommitted",
+  "status": "published",
   "active_cycle": "v1-018-account-and-capability-administration-api",
   "branch": "implementation/foundation",
-  "commit": "9f93cef90bbfa8dcab24b58dae05bd1113e96bbb",
+  "commit": "98ee724e98d2442fd0254bd825256707108f71c8",
   "timestamp": "2026-08-21T08:02:00Z",
   "risk_class": "high",
   "approval": {
-    "status": "approved_ready",
+    "status": "approved_complete",
     "basis": "structured durable-v1 successor selection",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": [
     "API-079-080",
@@ -72,8 +72,8 @@
     "status": "complete_uncommitted",
     "roadmap_id": "V1-018"
   },
-  "next_action": "Obtain a fresh independent review, publish the exact reviewed V1-018 paths, require successful GitHub Actions, reconcile V1-018, and stop before V1-019.",
-  "idle_reason": null,
+  "next_action": "Require successful CI for the focused reconciliation commit, verify SHA equality and no process overlap, then safely re-enable the existing supervisor without manually activating V1-019.",
+  "idle_reason": "published V1-018 is reconciled; supervisor restoration is intentionally held for reconciliation CI",
   "owner_action": "none",
   "blockers": [],
   "repair": {
@@ -96,24 +96,30 @@
   },
   "review": {
     "tranche_id": "V1-018",
-    "status": "pending",
+    "status": "PASS",
     "complete_candidate_paths": 7,
-    "final_verdict": null,
+    "final_verdict": "PASS",
     "final_reviewer_edits": false,
-    "final_independent_checks": []
+    "final_repository_fingerprint": "0241af6b4a96cccffdc87ae6be53446fc4344b8c8ca32cbe6b2063ba8b6b390d",
+    "final_independent_checks": [
+      "PASS: exact seven-path snapshot and hashes",
+      "PASS: API-079/080 authorization, browser, concurrency, pagination, audit, revocation, and result-binding contracts",
+      "PASS: focused V1-018 suite: 47",
+      "PASS: git diff --check"
+    ]
   },
   "publication": {
     "tranche_id": "V1-018",
-    "status": "verified_unpublished",
-    "implementation_commit": null,
-    "commit_completed": false,
-    "push_completed": false,
-    "ci_completed": false,
-    "ci_run_id": null,
-    "ci_run_url": null,
-    "ci_conclusion": null,
-    "sha_reconciled": false,
-    "metadata_reconciliation": "pending"
+    "status": "published",
+    "implementation_commit": "98ee724e98d2442fd0254bd825256707108f71c8",
+    "commit_completed": true,
+    "push_completed": true,
+    "ci_completed": true,
+    "ci_run_id": 32461040956,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32461040956",
+    "ci_conclusion": "success",
+    "sha_reconciled": true,
+    "metadata_reconciliation": "current focused two-path reconciliation"
   },
   "automation_repair": {
     "status": "published_ci_verified_scheduler_held",
