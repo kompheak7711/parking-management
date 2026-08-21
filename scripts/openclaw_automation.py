@@ -36,6 +36,7 @@ RECOVERABLE_ROUTING_FAILURES: Final = frozenset(
         "pre_model_infrastructure_failure",
         "unsupported_invocation_configuration",
         "verification_tooling_unavailable",
+        "lock_or_overlapping_process_failure",
     }
 )
 
@@ -827,6 +828,7 @@ def relevant_processes(
         "codex exec",
     )
     own_pid = os.getpid()
+    repositories = {str(repo), str(repo.resolve())}
     identities: list[str] = []
     for row in process_rows:
         normalized = " ".join(row.split())
@@ -839,10 +841,19 @@ def relevant_processes(
             re.search(r"(?:^|\s)(?:[^\s]*/)?hermes(?:\s|$)", normalized)
             and "--provider openai-codex" in normalized
         )
-        if not hermes_worker and not any(needle in normalized for needle in needles):
+        normalized_lower = normalized.lower()
+        repository_codex_worker = bool(
+            any(repository in normalized for repository in repositories)
+            and re.search(r"(?:^|\s)\S*codex\S*(?:\s|$)", normalized_lower)
+        )
+        if (
+            not hermes_worker
+            and not repository_codex_worker
+            and not any(needle in normalized for needle in needles)
+        ):
             continue
-        # Generic OpenClaw gateway and the controlling Codex process are not a
-        # candidate worker.  Persist only a digest, never raw process arguments.
+        # A generic OpenClaw gateway is not a candidate worker. Repository-bound
+        # Codex processes are workers; persist only a digest, never raw arguments.
         if "openclaw gateway" in normalized and str(repo) not in normalized:
             continue
         identities.append(digest(normalized))
@@ -1403,6 +1414,28 @@ def health_classification(
         "recovered": "automation_recovered",
     }
     return mapping.get(project_stage, "scheduler_healthy_idle")
+
+
+def post_restoration_scheduler_ok(
+    *,
+    enabled: bool,
+    last_run_ms: object,
+    last_status: object,
+    consecutive_errors: object,
+    restored_at_ms: object,
+    now_ms: int,
+    heartbeat_ms: int,
+) -> bool:
+    """Require a fresh successful check after the latest schedule mutation."""
+    return bool(
+        enabled
+        and isinstance(last_run_ms, int)
+        and isinstance(restored_at_ms, int)
+        and last_run_ms >= restored_at_ms
+        and 0 <= now_ms - last_run_ms <= heartbeat_ms
+        and last_status == "ok"
+        and consecutive_errors == 0
+    )
 
 
 def usage_record(

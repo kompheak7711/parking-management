@@ -104,6 +104,9 @@
     {"clause": "chat credentials remain withheld until actual chat-process guard attachment", "test_id": "test_chat_authentication_is_released_only_by_chat_guard_registration"},
     {"clause": "unexpected guard exceptions cannot fail open", "test_id": "test_registered_guard_cannot_fail_open_at_policy_boundary"},
     {"clause": "structured owner categories block while genuine test blockers enter repair", "test_id": "test_structured_owner_categories_and_test_blockers_route_exactly"},
-    {"clause": "post-model configuration failures consume the bounded attempt", "test_id": "test_model_invocation_accounting_does_not_infer_missing_api_calls"}
+    {"clause": "post-model configuration failures consume the bounded attempt", "test_id": "test_model_invocation_accounting_does_not_infer_missing_api_calls"},
+    {"clause": "repository-bound interactive Codex workers block successor mutation before any file changes", "test_id": "test_staged_two_path_successor_waits_for_repository_codex_then_resumes_without_implementation"},
+    {"clause": "already-complete predecessor metadata permits exact two-path activation resumption without consuming attempts or starting implementation", "test_id": "test_staged_two_path_successor_waits_for_repository_codex_then_resumes_without_implementation"},
+    {"clause": "scheduler health requires a successful check after the latest restoration timestamp", "test_id": "test_scheduler_health_requires_success_after_latest_restoration"}
   ]
 }

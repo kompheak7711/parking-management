@@ -52,13 +52,14 @@ CREATE TABLE cron_jobs (
   last_run_at_ms INTEGER,
   last_run_status TEXT,
   consecutive_errors INTEGER,
-  running_at_ms INTEGER
+  running_at_ms INTEGER,
+  updated_at INTEGER
 );
 INSERT INTO cron_jobs VALUES (
   '658ffdaf-1ac1-45a6-a842-f5f7d7a226eb',
   'property-rental-24x7-supervisor', 1, 'every', 1800000, 'command',
   '{"kind":"command","argv":["REPLACE_DISPATCHER"],"cwd":"REPLACE_REPO","noOutputTimeoutSeconds":10860,"outputMaxBytes":20000}',
-  1787011200000, 'ok', 0, NULL
+  1787011200000, 'ok', 0, NULL, 1787011100000
 );
 SQL
 sqlite3 "$database" "UPDATE cron_jobs SET payload_message=json_set(payload_message, '$.argv[0]', '$repo/scripts/openclaw-supervisor-dispatch.sh', '$.cwd', '$repo');"
@@ -80,7 +81,7 @@ printf '%s' "$first" | grep -q 'published at 1234567'
 printf '%s' "$first" | grep -q 'Roadmap progress: 2/60 complete; current V1-012'
 printf '%s' "$first" | grep -q 'Next: Implement the approved bounded candidate: MFA enrollment persistence foundation'
 [ -z "$(run_watchdog)" ]
-sqlite3 "$database" "UPDATE cron_jobs SET last_run_at_ms=1787011260000;"
+sqlite3 "$database" "UPDATE cron_jobs SET last_run_at_ms=1787011190000;"
 [ -z "$(run_watchdog)" ]
 
 sqlite3 "$database" "UPDATE cron_jobs SET every_ms=60000;"
@@ -88,7 +89,7 @@ malformed_alert="$(run_watchdog)"
 printf '%s' "$malformed_alert" | grep -q 'SCHEDULER_UNHEALTHY'
 sqlite3 "$database" "UPDATE cron_jobs SET every_ms=1800000;"
 run_watchdog >/dev/null
-sqlite3 "$database" "INSERT INTO cron_jobs SELECT 'duplicate-supervisor',name,enabled,schedule_kind,every_ms,payload_kind,payload_message,last_run_at_ms,last_run_status,consecutive_errors,running_at_ms FROM cron_jobs WHERE job_id='658ffdaf-1ac1-45a6-a842-f5f7d7a226eb';"
+sqlite3 "$database" "INSERT INTO cron_jobs SELECT 'duplicate-supervisor',name,enabled,schedule_kind,every_ms,payload_kind,payload_message,last_run_at_ms,last_run_status,consecutive_errors,running_at_ms,updated_at FROM cron_jobs WHERE job_id='658ffdaf-1ac1-45a6-a842-f5f7d7a226eb';"
 duplicate_alert="$(run_watchdog)"
 printf '%s' "$duplicate_alert" | grep -q 'SCHEDULER_UNHEALTHY'
 sqlite3 "$database" "DELETE FROM cron_jobs WHERE job_id='duplicate-supervisor';"
@@ -127,7 +128,7 @@ contract_alert="$(run_watchdog)"
 printf '%s' "$contract_alert" | grep -q 'STATE_CONTRACT_VIOLATION — Property Rental compact state'
 [ -z "$(run_watchdog)" ]
 
-sqlite3 "$database" "UPDATE cron_jobs SET enabled=0, last_run_status='error', consecutive_errors=3;"
+sqlite3 "$database" "UPDATE cron_jobs SET enabled=0, last_run_status='error', consecutive_errors=3, updated_at=1787011195000;"
 disabled_alert="$(run_watchdog)"
 printf '%s' "$disabled_alert" | grep -q 'SCHEDULER_DISABLED — Property Rental supervisor is intentionally disabled'
 printf '%s' "$disabled_alert" | grep -q 'Owner action required: no'
@@ -137,7 +138,11 @@ if printf '%s' "$disabled_alert" | grep -q 'Investigation is required'; then
 fi
 [ -z "$(run_watchdog)" ]
 
-sqlite3 "$database" "UPDATE cron_jobs SET enabled=1, last_run_at_ms=1787011200000, last_run_status='ok', consecutive_errors=0;"
+sqlite3 "$database" "UPDATE cron_jobs SET enabled=1, last_run_at_ms=1787011190000, last_run_status='ok', consecutive_errors=0;"
+pending_restoration_alert="$(run_watchdog)"
+printf '%s' "$pending_restoration_alert" | grep -q 'SCHEDULER_UNHEALTHY — Property Rental scheduler is unhealthy'
+[ -z "$(run_watchdog)" ]
+sqlite3 "$database" "UPDATE cron_jobs SET last_run_at_ms=1787011200000;"
 recovered_alert="$(run_watchdog)"
 printf '%s' "$recovered_alert" | grep -q 'AUTOMATION_RECOVERED — Property Rental scheduler is healthy again'
 [ -z "$(run_watchdog)" ]

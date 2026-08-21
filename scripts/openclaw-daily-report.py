@@ -11,7 +11,10 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from openclaw_automation import stage_actionable_fingerprint
+from openclaw_automation import (
+    post_restoration_scheduler_ok,
+    stage_actionable_fingerprint,
+)
 
 
 def effective_next_action(state: dict[str, object]) -> str:
@@ -155,7 +158,7 @@ def supervisor_status() -> dict[str, object]:
             row = connection.execute(
                 """SELECT name, enabled, schedule_kind, every_ms, payload_kind,
                           payload_message, last_run_at_ms, last_run_status,
-                          consecutive_errors, running_at_ms
+                          consecutive_errors, running_at_ms, updated_at
                      FROM cron_jobs WHERE job_id = ?""",
                 (SUPERVISOR_ID,),
             ).fetchone()
@@ -198,6 +201,7 @@ def supervisor_status() -> dict[str, object]:
         "status": row[7] or "unknown",
         "errors": row[8] or 0,
         "running": row[9],
+        "restored_at": row[10],
     }
 
 
@@ -212,6 +216,7 @@ def main() -> None:
     last_status = service.get("status", "missing")
     errors = service.get("errors", 0)
     running_ms = service.get("running")
+    restored_at_ms = service.get("restored_at")
     recent_totals, unavailable_totals, recent_cache_totals = recent_model_usage()
 
     head = git("rev-parse", "--short", "HEAD")
@@ -302,11 +307,14 @@ def main() -> None:
         health = "UNHEALTHY — SCHEDULE CONFIGURATION MISMATCH"
     elif not enabled:
         health = "INTENTIONALLY DISABLED"
-    elif (
-        last_status == "ok"
-        and not errors
-        and isinstance(last_run_ms, int)
-        and NOW_MS - last_run_ms <= HEARTBEAT_MS
+    elif post_restoration_scheduler_ok(
+        enabled=enabled,
+        last_run_ms=last_run_ms,
+        last_status=last_status,
+        consecutive_errors=errors,
+        restored_at_ms=restored_at_ms,
+        now_ms=NOW_MS,
+        heartbeat_ms=HEARTBEAT_MS,
     ):
         health = "HEALTHY"
     else:

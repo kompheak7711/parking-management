@@ -166,22 +166,19 @@ def ascii_slug(value: str) -> str:
     return re.sub(r"(^-|-$)", "", re.sub(r"[^a-z0-9]+", "-", lowered))
 
 
-def exact_activation_contract(
+def activation_documents(
     *,
     base: str,
     prior_candidate_id: str,
     candidate: dict[str, Any],
-    state: dict[str, Any],
-    roadmap: dict[str, Any],
-    now: str,
-) -> bool:
+    timestamp: str,
+) -> tuple[dict[str, Any], dict[str, Any], str] | None:
     try:
         expected_state = json.loads(git_document(base, "ops/STATE.json"))
         expected_roadmap = json.loads(git_document(base, "ops/V1_ROADMAP.json"))
         base_now = git_document(base, "ops/NOW.md")
     except (subprocess.CalledProcessError, json.JSONDecodeError):
-        return False
-    timestamp = state.get("timestamp")
+        return None
     candidate_id = candidate.get("id")
     task = candidate.get("task")
     phase = candidate.get("phase")
@@ -194,10 +191,10 @@ def exact_activation_contract(
         and isinstance(phase, str)
         and phase
     ):
-        return False
+        return None
     roadmap_state = expected_state.setdefault("roadmap", {})
     if not isinstance(roadmap_state, dict):
-        return False
+        return None
     roadmap_state["current_id"] = candidate_id
     roadmap_state["total"] = expected_roadmap.get("total_tranches")
     expected_state.update(
@@ -241,14 +238,14 @@ def exact_activation_contract(
     )
     tranches = expected_roadmap.get("tranches")
     if not isinstance(tranches, list):
-        return False
+        return None
     roadmap_candidates = [
         item
         for item in tranches
         if isinstance(item, dict) and item.get("id") == candidate_id
     ]
     if len(roadmap_candidates) != 1 or roadmap_candidates[0] != candidate:
-        return False
+        return None
     for item in tranches:
         if isinstance(item, dict) and item.get("id") == prior_candidate_id:
             item["status"] = "complete"
@@ -262,9 +259,124 @@ def exact_activation_contract(
             "<!-- AUTOMATION_STATUS_END -->",
         ],
     )
+    return expected_state, expected_roadmap, expected_now
+
+
+def exact_activation_contract(
+    *,
+    base: str,
+    prior_candidate_id: str,
+    candidate: dict[str, Any],
+    state: dict[str, Any],
+    roadmap: dict[str, Any],
+    now: str,
+) -> bool:
+    timestamp = state.get("timestamp")
+    if not isinstance(timestamp, str):
+        return False
+    expected = activation_documents(
+        base=base,
+        prior_candidate_id=prior_candidate_id,
+        candidate=candidate,
+        timestamp=timestamp,
+    )
+    if expected is None:
+        return False
+    expected_state, expected_roadmap, expected_now = expected
     return (
         state == expected_state and roadmap == expected_roadmap and now == expected_now
     )
+
+
+ACTIVATION_PATHS = (
+    "ops/NOW.md",
+    "ops/STATE.json",
+    "ops/V1_ROADMAP.json",
+)
+
+
+def render_activation_documents(
+    *,
+    base: str,
+    prior_candidate_id: str,
+    candidate: dict[str, Any],
+    timestamp: str,
+) -> dict[str, str] | None:
+    expected = activation_documents(
+        base=base,
+        prior_candidate_id=prior_candidate_id,
+        candidate=candidate,
+        timestamp=timestamp,
+    )
+    if expected is None:
+        return None
+    state, roadmap, now = expected
+    return {
+        "ops/NOW.md": now,
+        "ops/STATE.json": json.dumps(state, indent=2) + "\n",
+        "ops/V1_ROADMAP.json": json.dumps(roadmap, indent=2) + "\n",
+    }
+
+
+def git_blob(specification: str) -> str:
+    return run("git", "show", specification).stdout
+
+
+def validate_resumable_activation_files(
+    *, base: str, expected: dict[str, str]
+) -> list[str]:
+    def matches(relative: str, content: str, permitted: set[str]) -> bool:
+        if content in permitted:
+            return True
+        if not relative.endswith(".json"):
+            return False
+        try:
+            parsed = json.loads(content)
+            return any(parsed == json.loads(item) for item in permitted)
+        except json.JSONDecodeError:
+            return False
+
+    allowed = set(ACTIVATION_PATHS)
+    current = set(changed_paths(REPO))
+    cached = set(run("git", "diff", "--cached", "--name-only").stdout.splitlines())
+    if not current <= allowed or not cached <= allowed:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "resumed successor mutation has paths outside the activation contract",
+        )
+    expected_paths: list[str] = []
+    for relative in ACTIVATION_PATHS:
+        base_content = git_blob(f"{base}:{relative}")
+        target_content = expected[relative]
+        if base_content != target_content:
+            expected_paths.append(relative)
+        try:
+            worktree_content = (REPO / relative).read_text()
+        except OSError as error:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "successor activation target is unreadable",
+            ) from error
+        permitted = {base_content, target_content}
+        if not matches(relative, worktree_content, permitted):
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                f"resumed successor worktree content for {relative} is neither the base nor deterministic target",
+            )
+        if relative in cached:
+            try:
+                index_content = git_blob(f":{relative}")
+            except subprocess.CalledProcessError as error:
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    f"resumed successor index content for {relative} is unreadable",
+                ) from error
+            if not matches(relative, index_content, permitted):
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    f"resumed successor index content for {relative} is neither the base nor deterministic target",
+                )
+    return expected_paths
 
 
 def process_identity(pid: int) -> dict[str, Any] | None:
@@ -2049,6 +2161,12 @@ def post_publication(record: dict[str, Any]) -> None:
 
 def activate_next(record: dict[str, Any], preflight: dict[str, Any]) -> None:
     preflight = command_json(str(REPO / "scripts/openclaw-supervisor-preflight.sh"))
+    overlaps = relevant_processes(REPO)
+    if overlaps:
+        raise AutomationError(
+            "lock_or_overlapping_process_failure",
+            "successor activation refused before mutation while a relevant repository worker remains",
+        )
     substage = record.get("activation_substage")
     if substage is None:
         if preflight.get("state_issue") != "authorized_candidate_selection_required":
@@ -2061,42 +2179,81 @@ def activate_next(record: dict[str, Any], preflight: dict[str, Any]) -> None:
                 "activation_substage": "selection_pending",
                 "activation_base_commit": git(REPO, "rev-parse", "HEAD"),
                 "activation_candidate": preflight.get("queue_candidate"),
+                "activation_timestamp": utc_now(),
             }
         )
         save_stage(record)
         substage = "selection_pending"
     base = str(record.get("activation_base_commit") or "")
     head = git(REPO, "rev-parse", "HEAD")
-    expected_paths = ["ops/NOW.md", "ops/STATE.json", "ops/V1_ROADMAP.json"]
-    if substage == "selection_pending" and head == base:
-        current = changed_paths(REPO)
-        if not current:
-            environment = os.environ.copy()
-            environment["PROPERTY_RENTAL_SELECT_MUTATE_ONLY"] = "true"
-            result = subprocess.run(
-                [str(REPO / "scripts/openclaw-select-next-candidate.sh")],
-                cwd=REPO,
-                text=True,
-                capture_output=True,
-                check=False,
-                env=environment,
-            )
-            if result.returncode:
+    expected_candidate = record.get("activation_candidate")
+    if not isinstance(expected_candidate, dict):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "successor activation has no persisted deterministic candidate",
+        )
+    timestamp = record.get("activation_timestamp")
+    if not valid_dynamic_timestamp(timestamp):
+        current_paths = changed_paths(REPO)
+        if head == base and not current_paths:
+            timestamp = utc_now()
+        else:
+            try:
+                if head == base:
+                    observed_state = json.loads((REPO / "ops/STATE.json").read_text())
+                else:
+                    observed_state = json.loads(git_document(head, "ops/STATE.json"))
+                observed_timestamp = observed_state.get("timestamp")
+            except (
+                OSError,
+                subprocess.CalledProcessError,
+                json.JSONDecodeError,
+            ) as error:
                 raise AutomationError(
-                    "state_reconciliation_failure",
-                    f"candidate activation mutation exited {result.returncode}",
+                    "repository_integrity_uncertainty",
+                    "resumed successor activation has no recoverable timestamp",
+                ) from error
+            if not valid_dynamic_timestamp(observed_timestamp):
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    "resumed successor activation timestamp is invalid",
                 )
-            current = changed_paths(REPO)
+            timestamp = observed_timestamp
+        record["activation_timestamp"] = timestamp
+        save_stage(record)
+    assert isinstance(timestamp, str)
+    expected_documents = render_activation_documents(
+        base=base,
+        prior_candidate_id=str(record["candidate"]),
+        candidate=expected_candidate,
+        timestamp=timestamp,
+    )
+    if expected_documents is None:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "successor activation documents cannot be derived from the persisted candidate",
+        )
+    expected_paths = [
+        relative
+        for relative in ACTIVATION_PATHS
+        if git_blob(f"{base}:{relative}") != expected_documents[relative]
+    ]
+    if substage == "selection_pending" and head == base:
+        resumable_paths = validate_resumable_activation_files(
+            base=base, expected=expected_documents
+        )
+        if resumable_paths != expected_paths:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "successor activation derived inconsistent deterministic paths",
+            )
+        for relative, content in expected_documents.items():
+            atomic_write_text(REPO / relative, content)
+        current = changed_paths(REPO)
         if current != expected_paths:
             raise AutomationError(
                 "repository_integrity_uncertainty",
-                "resumed successor mutation has unexpected paths",
-            )
-        expected_candidate = record.get("activation_candidate")
-        if not isinstance(expected_candidate, dict):
-            raise AutomationError(
-                "repository_integrity_uncertainty",
-                "successor activation has no persisted deterministic candidate",
+                "deterministic successor mutation did not produce its exact path set",
             )
         try:
             state = json.loads((REPO / "ops/STATE.json").read_text())
@@ -2123,6 +2280,12 @@ def activate_next(record: dict[str, Any], preflight: dict[str, Any]) -> None:
             for relative in expected_paths:
                 run("git", "add", "--", relative)
             run("git", "diff", "--cached", "--check")
+            cached = run("git", "diff", "--cached", "--name-only").stdout.splitlines()
+            if cached != expected_paths:
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    "successor activation index does not match its deterministic path set",
+                )
             cached_publication_guard()
         except (subprocess.CalledProcessError, AutomationError) as error:
             raise AutomationError(
@@ -2133,6 +2296,7 @@ def activate_next(record: dict[str, Any], preflight: dict[str, Any]) -> None:
             {
                 "activation_substage": "staged",
                 "activation_tree": git(REPO, "write-tree"),
+                "activation_paths": expected_paths,
             }
         )
         save_stage(record)
@@ -2145,6 +2309,28 @@ def activate_next(record: dict[str, Any], preflight: dict[str, Any]) -> None:
                 raise AutomationError(
                     "repository_integrity_uncertainty",
                     "successor activation state lost its staged tree",
+                )
+            resumable_paths = validate_resumable_activation_files(
+                base=base, expected=expected_documents
+            )
+            if resumable_paths != expected_paths:
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    "staged successor activation no longer has its deterministic path set",
+                )
+            for relative, content in expected_documents.items():
+                atomic_write_text(REPO / relative, content)
+            for relative in expected_paths:
+                run("git", "add", "--", relative)
+            if (
+                run("git", "diff", "--cached", "--name-only").stdout.splitlines()
+                != expected_paths
+                or changed_paths(REPO) != expected_paths
+                or git(REPO, "write-tree") != record.get("activation_tree")
+            ):
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    "staged successor activation changed before its commit boundary",
                 )
             try:
                 run(
@@ -2163,9 +2349,19 @@ def activate_next(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         committed_paths = git(
             REPO, "diff-tree", "--no-commit-id", "--name-only", "-r", head
         ).splitlines()
+        persisted_paths = record.get("activation_paths")
+        if persisted_paths is None:
+            persisted_paths = expected_paths
+            record["activation_paths"] = persisted_paths
+            save_stage(record)
+        if not isinstance(persisted_paths, list) or persisted_paths != expected_paths:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "successor activation path evidence differs from the deterministic contract",
+            )
         if (
             git(REPO, "rev-parse", f"{head}^") != base
-            or sorted(committed_paths) != expected_paths
+            or sorted(committed_paths) != sorted(persisted_paths)
             or (
                 record.get("activation_tree")
                 and git(REPO, "rev-parse", f"{head}^{{tree}}")
@@ -2175,12 +2371,6 @@ def activate_next(record: dict[str, Any], preflight: dict[str, Any]) -> None:
             raise AutomationError(
                 "repository_integrity_uncertainty",
                 "successor selection commit boundary is not exact",
-            )
-        expected_candidate = record.get("activation_candidate")
-        if not isinstance(expected_candidate, dict):
-            raise AutomationError(
-                "repository_integrity_uncertainty",
-                "successor activation has no persisted deterministic candidate",
             )
         try:
             state = json.loads(git_document(head, "ops/STATE.json"))
@@ -2277,7 +2467,7 @@ def activate_next(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         ),
         evidence={
             "candidate": record["candidate"],
-            "next_action": "Begin reconciliation and dispatch for the newly activated approved candidate.",
+            "next_action": "Activation is complete; implementation remains a separate later scheduled cycle.",
         },
     )
 
@@ -2303,7 +2493,7 @@ def dispatch() -> int:
                     continue
                 if pending_stage == "next_candidate_activation":
                     activate_next(record, preflight)
-                    continue
+                    return 0
             if preflight.get("actionable") is not True:
                 return 0
             issue = preflight.get("state_issue")
@@ -2330,7 +2520,7 @@ def dispatch() -> int:
                     record["stage"] = "next_candidate_activation"
                     save_stage(record)
                 activate_next(record, preflight)
-                continue
+                return 0
             candidate = (
                 str(record["candidate"])
                 if record is not None
@@ -2406,6 +2596,7 @@ def dispatch() -> int:
                 post_publication(record)
             elif stage == "next_candidate_activation":
                 activate_next(record, preflight)
+                return 0
             elif stage == "complete":
                 return 0
             else:
@@ -2488,6 +2679,7 @@ def main() -> int:
                 "independent_review_defect": "repair_pending",
                 "remote_ci_failure": "repair_pending",
                 "pre_model_infrastructure_failure": "routing_recovery_pending",
+                "lock_or_overlapping_process_failure": "routing_recovery_pending",
                 "gateway_or_network_failure": "infrastructure_failure",
                 "unsupported_invocation_configuration": "routing_recovery_pending",
                 "model_session_or_token_ceiling": "oversized_or_ceiling_stopped",

@@ -23,6 +23,7 @@ from openclaw_automation import (
     EXCEPTIONAL_REVIEW_TOKEN_CEILING,
     FAILURE_CATEGORIES,
     ORDINARY_TOKEN_CEILING,
+    RECOVERABLE_ROUTING_FAILURES,
     STAGES,
     UNAVAILABLE,
     AutomationError,
@@ -38,6 +39,7 @@ from openclaw_automation import (
     model_policy,
     normalize_usage,
     persist_terminal_marker,
+    post_restoration_scheduler_ok,
     preservation_evidence,
     publication_candidate_guard,
     release_attempt,
@@ -346,6 +348,28 @@ class AutomationPolicyTests(unittest.TestCase):
         self.assertIn("empty_or_invalid_task_delivery", FAILURE_CATEGORIES)
         self.assertIn("test_fixture_failure", FAILURE_CATEGORIES)
         self.assertIn("remote_ci_failure", FAILURE_CATEGORIES)
+        self.assertIn(
+            "lock_or_overlapping_process_failure", RECOVERABLE_ROUTING_FAILURES
+        )
+
+    def test_scheduler_health_requires_success_after_latest_restoration(self) -> None:
+        common = {
+            "enabled": True,
+            "last_status": "ok",
+            "consecutive_errors": 0,
+            "now_ms": 20_000,
+            "heartbeat_ms": 10_000,
+        }
+        self.assertFalse(
+            post_restoration_scheduler_ok(
+                **common, last_run_ms=19_000, restored_at_ms=19_500
+            )
+        )
+        self.assertTrue(
+            post_restoration_scheduler_ok(
+                **common, last_run_ms=19_750, restored_at_ms=19_500
+            )
+        )
 
 
 class RepositoryEvidenceTests(unittest.TestCase):
@@ -1732,6 +1756,123 @@ print(json.dumps(result))
                 "",
             )
 
+    def test_staged_two_path_successor_waits_for_repository_codex_then_resumes_without_implementation(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo, candidate = self.make_activation_repo(root)
+            roadmap_path = repo / "ops/V1_ROADMAP.json"
+            roadmap = json.loads(roadmap_path.read_text())
+            roadmap["tranches"][0].update(
+                {"status": "complete", "authorization": "complete"}
+            )
+            atomic_write_json(roadmap_path, roadmap)
+            subprocess.run(
+                ["git", "add", "--", "ops/V1_ROADMAP.json"], cwd=repo, check=True
+            )
+            subprocess.run(
+                ["git", "commit", "-qm", "reconcile predecessor"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(["git", "push", "-q"], cwd=repo, check=True)
+            base = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            mutation_environment = {
+                **os.environ,
+                "PROPERTY_RENTAL_SELECT_MUTATE_ONLY": "true",
+                "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+            }
+            subprocess.run(
+                [str(repo / "scripts/openclaw-select-next-candidate.sh")],
+                cwd=repo,
+                check=True,
+                env=mutation_environment,
+            )
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "diff", "--cached", "--name-only"],
+                    cwd=repo,
+                    text=True,
+                ).splitlines(),
+                ["ops/NOW.md", "ops/STATE.json"],
+            )
+            staged_before = subprocess.check_output(
+                ["git", "diff", "--cached", "--binary"], cwd=repo
+            )
+            state_dir = root / "dispatch"
+            spec = importlib.util.spec_from_file_location(
+                "two_path_activation_dispatch", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state_dir),
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            atomic_write_json(
+                dispatcher.stage_file("V1-017"),
+                {
+                    "candidate": "V1-017",
+                    "stage": "next_candidate_activation",
+                    "activation_substage": "selection_pending",
+                    "activation_base_commit": base,
+                    "activation_candidate": candidate,
+                    "events": [],
+                },
+            )
+            with (
+                mock.patch.object(
+                    dispatcher,
+                    "relevant_processes",
+                    return_value=["repository-codex-worker"],
+                ),
+                self.assertRaises(AutomationError) as blocked,
+            ):
+                dispatcher.dispatch()
+            self.assertEqual(
+                blocked.exception.category, "lock_or_overlapping_process_failure"
+            )
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "diff", "--cached", "--binary"], cwd=repo
+                ),
+                staged_before,
+            )
+            preserved = json.loads(dispatcher.stage_file("V1-017").read_text())
+            self.assertEqual(preserved["activation_substage"], "selection_pending")
+            self.assertNotIn("attempts", preserved)
+            with (
+                mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}),
+                mock.patch.object(
+                    dispatcher, "cached_publication_guard", return_value=None
+                ),
+            ):
+                self.assertEqual(dispatcher.dispatch(), 0)
+            completed = json.loads(dispatcher.stage_file("V1-017").read_text())
+            self.assertEqual(completed["activation_substage"], "complete")
+            self.assertEqual(
+                completed["activation_paths"], ["ops/NOW.md", "ops/STATE.json"]
+            )
+            self.assertNotIn("attempts", completed)
+            state = json.loads((repo / "ops/STATE.json").read_text())
+            self.assertEqual(state["next_candidate"]["id"], "V1-018")
+            self.assertFalse(state["approval"]["implementation_started"])
+            self.assertFalse(dispatcher.stage_file("V1-018").exists())
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "status", "--porcelain=v1"], cwd=repo, text=True
+                ),
+                "",
+            )
+
     def test_successor_activation_rejects_altered_persisted_scope(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -2266,6 +2407,13 @@ raise SystemExit(64)
     def test_actual_execed_hermes_worker_is_detected(self) -> None:
         rows = [
             "4321 Thu Aug 21 12:00:00 2026 /usr/local/bin/hermes --provider openai-codex --model gpt-5.6-sol"
+        ]
+        self.assertEqual(len(relevant_processes(ROOT, rows)), 1)
+
+    def test_repository_bound_interactive_codex_worker_is_detected(self) -> None:
+        rows = [
+            f"4321 Thu Aug 21 12:00:00 2026 /usr/local/bin/codex -C {ROOT}",
+            "9876 Thu Aug 21 12:00:00 2026 /usr/local/bin/codex -C /tmp/unrelated",
         ]
         self.assertEqual(len(relevant_processes(ROOT, rows)), 1)
 
@@ -3875,7 +4023,8 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
                       job_id TEXT, name TEXT, enabled INTEGER, schedule_kind TEXT,
                       every_ms INTEGER, payload_kind TEXT, payload_message TEXT,
                       last_run_at_ms INTEGER, last_run_status TEXT,
-                      consecutive_errors INTEGER, running_at_ms INTEGER
+                      consecutive_errors INTEGER, running_at_ms INTEGER,
+                      updated_at INTEGER
                     )"""
                 )
                 row = (
@@ -3890,12 +4039,13 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
                     "ok",
                     0,
                     None,
+                    9_999_000,
                 )
                 connection.execute(
-                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?)", row
+                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", row
                 )
                 connection.execute(
-                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
                     ("duplicate", *row[1:]),
                 )
             spec = importlib.util.spec_from_file_location(

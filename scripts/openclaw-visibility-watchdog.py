@@ -14,6 +14,7 @@ from pathlib import Path
 from openclaw_automation import (
     digest,
     health_classification,
+    post_restoration_scheduler_ok,
     stage_actionable_fingerprint,
 )
 
@@ -94,7 +95,7 @@ def supervisor() -> dict[str, object]:
             row = connection.execute(
                 """SELECT name, enabled, schedule_kind, every_ms, payload_kind,
                           payload_message, last_run_at_ms, last_run_status,
-                          consecutive_errors, running_at_ms
+                          consecutive_errors, running_at_ms, updated_at
                      FROM cron_jobs WHERE job_id = ?""",
                 (SUPERVISOR_ID,),
             ).fetchone()
@@ -153,6 +154,7 @@ def supervisor() -> dict[str, object]:
         "status": row[7] or "unknown",
         "errors": row[8] or 0,
         "running": row[9],
+        "restored_at": row[10],
         "config_valid": config_valid,
     }
 
@@ -279,12 +281,16 @@ def main() -> None:
     last_run = last_run_value if isinstance(last_run_value, int) else None
     error_value = service["errors"]
     error_count = error_value if isinstance(error_value, int) else 0
-    scheduler_ok = bool(
-        service["enabled"]
-        and last_run
-        and NOW_MS - last_run <= HEARTBEAT_MS
-        and service["status"] == "ok"
-        and error_count == 0
+    restored_value = service.get("restored_at")
+    restored_at = restored_value if isinstance(restored_value, int) else None
+    scheduler_ok = post_restoration_scheduler_ok(
+        enabled=bool(service["enabled"]),
+        last_run_ms=last_run,
+        last_status=service["status"],
+        consecutive_errors=error_count,
+        restored_at_ms=restored_at,
+        now_ms=NOW_MS,
+        heartbeat_ms=HEARTBEAT_MS,
     )
     classification = health_classification(
         enabled=bool(service["enabled"]),
