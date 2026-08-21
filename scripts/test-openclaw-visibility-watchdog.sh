@@ -137,6 +137,11 @@ if printf '%s' "$disabled_alert" | grep -q 'Investigation is required'; then
 fi
 [ -z "$(run_watchdog)" ]
 
+sqlite3 "$database" "UPDATE cron_jobs SET enabled=1, last_run_at_ms=1787011200000, last_run_status='ok', consecutive_errors=0;"
+recovered_alert="$(run_watchdog)"
+printf '%s' "$recovered_alert" | grep -q 'AUTOMATION_RECOVERED — Property Rental scheduler is healthy again'
+[ -z "$(run_watchdog)" ]
+
 sqlite3 "$database" "DELETE FROM cron_jobs;"
 missing_alert="$(run_watchdog)"
 printf '%s' "$missing_alert" | grep -q 'SCHEDULER_UNHEALTHY — Property Rental scheduler is unhealthy'

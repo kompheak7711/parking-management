@@ -230,12 +230,37 @@ review, publication, post-publication reconciliation, and next-candidate activat
 Immediate chaining is capped at six stage transitions per wake-up.
 
 Each model stage receives a compact deterministic task packet and a fresh one-shot session.
-The repository-owned Hermes wrapper uses `openai-codex`/`gpt-5.6-sol` with requested
+`scripts/openclaw_dispatch.py` is the only model-invocation authority. It creates a
+single-use manifest binding candidate, stage, branch, HEAD, repository/worktree and
+preserved-candidate fingerprints, task hash, unique usage path, and token policy. The
+supervisor and the Hermes wrapper reject direct or unmanifested model calls. The
+manifest is also bound to the live dispatcher process and exact candidate-stage record;
+each implementation receives an explicit product-path write allowlist, while repair is
+limited to the already-persisted candidate paths and review has no write paths.
+repository-owned Hermes wrapper uses `openai-codex`/`gpt-5.6-sol` with requested
 reasoning `high` for implementation and `xhigh` for an independent review. The ordinary
 ceiling remains exactly 60,000 tokens. A review preclassified as complex uses 90,000;
 120,000 is allowed only with a reason, repository fingerprint, and scope recorded before
 invocation. Implementation cannot promote itself to a review ceiling, and an unsupported
 configuration stops without consuming an attempt.
+
+The repository-local Hermes guard enforces the ceiling cumulatively across provider API
+calls. Counted usage is `input_tokens + output_tokens`; cache-read tokens are recorded
+separately and are not added again. Once observed counted usage reaches the boundary, no
+later API call starts. Any unavoidable overshoot from the already-started call is recorded.
+Implementation and ordinary repair each receive a fresh 60,000-token session; review gets
+90,000 unless the persisted exceptional-review classification authorizes 120,000.
+
+Hermes implementation sessions have repository-scoped file access, read-only `git status`
+and `git diff`, and one allowlisted repository-owned `make` verification target per terminal
+call, always from the repository root. Patch operations validate every source and
+destination, including move operations. `make database-test` is the only database verification route. Git mutation, direct
+database commands, scheduler control, background processes, unrestricted browsing,
+delegation, secrets, and writes to canonical documents are denied. Review, publication,
+GitHub mutation, and scheduler control remain separate dispatcher/operator stages.
+Provider authentication is withheld from the isolated session until the guard registers
+inside the actual chat process, so a plugin-load failure cannot silently run a model
+without the repository guard.
 
 One verification-only continuation may be atomically consumed for an exact unchanged
 fingerprint when implementation is complete and the exclusive stop reason is a tool,
@@ -249,7 +274,13 @@ compact-state, process-state, and prior-result fingerprints. It suppresses an un
 failed call while preserving the safe underlying exit/category evidence and exact next
 eligible action. Lock recovery verifies PID/process identity rather than age alone.
 
-The model-free preflight also enforces durable handoff invariants learned from prior
+The shell preflight is a thin consumer of the dispatcher's authoritative Python lifecycle
+classifier. Lifecycle and blocker categories—not free-form blocker prose—control routing.
+A preserved capability-only continuation requires the exact candidate, branch, HEAD,
+preserved-worktree fingerprint, approved scope, no failed check, no overlapping worker,
+and `owner_action: none`; it routes directly to deterministic verification and never reruns
+implementation. Genuine Owner-policy, secrets, protected-operation, scope, and exhausted-
+attempt categories remain blocked. The model-free classifier also enforces durable handoff invariants learned from prior
 recovery incidents. An approved candidate with a missing `next_action` is dispatched
 from its already-approved task instead of silently idling. A verified
 `verified_unpublished`, `complete_uncommitted`, or `complete_unpublished` tranche covered by standing
@@ -309,7 +340,8 @@ including the verified commit, roadmap progress, and exact next action. It also 
 approval request, a stalled approved tranche, an intentionally disabled or unhealthy
 scheduler, stage progress, or recovery. Identical notification types at an unchanged material
 state fingerprint are deduplicated. The daily 08:00 Asia/Phnom_Penh report includes automation
-health, last check and state update, repository synchronization, 24-hour model usage,
+health, last check and state update, repository synchronization, 24-hour counted model usage
+and separately reported cache-read usage,
 the reason for being idle, blockers, commits, and the exact next owner action.
 
 ## Security

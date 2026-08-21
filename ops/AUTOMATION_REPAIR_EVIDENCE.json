@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "repair": "openclaw-dispatch-and-hermes-session-enforcement",
+  "status": "active",
+  "baseline_branch": "implementation/foundation",
+  "baseline_head": "68fedb53f06b9201f2547f9bc856c1985806a762",
+  "candidate": "V1-018",
+  "preserved_paths": {
+    "backend/src/property_rental/access_admin_api.py": "d86fdbaacd7c199c3bb52d5cb87f872bf9d4afd83116a1beab53259b59ba5543",
+    "backend/src/property_rental/app.py": "8f361c7470b0b9b89c500194e9cd2ec3e772157a30a392f4103c9f23274ed0fb",
+    "backend/tests/test_access_admin_api.py": "99b37690b9db62884318d1fc9436f0614ae4761c4fc9fdd7a71ba448352a295c",
+    "backend/tests/test_initial_owner_bootstrap_cli.py": "d2edfc3e6cf1faeadf58624c082e3bdd5574451e50f70094fc5ae8291c77e64b",
+    "ops/NOW.md": "8cbb9f4c11527d35235f98ab7048c987930476ea62b13807324d7cf3a0cd8531",
+    "ops/STATE.json": "61aff664d1bbac59db7ed419401e7d80dc5a63419b361082650674b1332a1049",
+    "ops/traceability.json": "f0ab59fd673cd3590193781458cc3f2567a6ca8085edd8b330af495c0bd44664"
+  },
+  "automation_repair_may_modify_preserved_paths": false,
+  "v1_019_may_start": false
+}

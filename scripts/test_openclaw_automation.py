@@ -27,6 +27,7 @@ from openclaw_automation import (
     actionable_fingerprint,
     atomic_write_json,
     changed_paths,
+    classify_compact_state,
     consume_attempt,
     consume_continuation,
     digest,
@@ -35,6 +36,7 @@ from openclaw_automation import (
     model_policy,
     normalize_usage,
     persist_terminal_marker,
+    preservation_evidence,
     publication_candidate_guard,
     release_attempt,
     relevant_processes,
@@ -45,6 +47,14 @@ from openclaw_automation import (
     task_packet,
     usage_record,
     validate_usage,
+)
+from openclaw_hermes_guard import (
+    GuardError,
+    enforce_llm_call,
+    guard_tool,
+    prepare_session_home,
+    register_plugin,
+    validate_manifest,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -75,7 +85,7 @@ class AutomationPolicyTests(unittest.TestCase):
         )
         self.assertEqual(implementation.token_ceiling, ORDINARY_TOKEN_CEILING)
         recovery = model_policy("direct_codex_recovery")
-        self.assertEqual(recovery.route, "direct Codex")
+        self.assertEqual(recovery.route, "Hermes")
         self.assertEqual(recovery.requested_reasoning, "high")
         self.assertEqual(recovery.token_ceiling, ORDINARY_TOKEN_CEILING)
         review = model_policy(
@@ -389,6 +399,7 @@ class RepositoryEvidenceTests(unittest.TestCase):
         for name in (
             "openclaw-select-next-candidate.sh",
             "openclaw-supervisor-preflight.sh",
+            "openclaw_automation.py",
         ):
             target = repo / "scripts" / name
             target.write_bytes((ROOT / "scripts" / name).read_bytes())
@@ -567,6 +578,7 @@ class RepositoryEvidenceTests(unittest.TestCase):
                 "openclaw-select-next-candidate.sh",
                 "openclaw-supervisor-preflight.sh",
                 "openclaw-wait-for-ci.sh",
+                "openclaw_automation.py",
             ):
                 source = ROOT / "scripts" / name
                 target = repo / "scripts" / name
@@ -685,9 +697,13 @@ class RepositoryEvidenceTests(unittest.TestCase):
             root = Path(directory)
             repo = self.make_repo(root)
             for name in (
+                "openclaw-supervisor-dispatch.sh",
                 "openclaw-supervisor-preflight.sh",
+                "openclaw_dispatch.py",
                 "openclaw-hermes-task.sh",
                 "hermes-property-rental",
+                "openclaw_automation.py",
+                "openclaw_hermes_guard.py",
             ):
                 source = ROOT / "scripts" / name
                 target = repo / "scripts" / name
@@ -706,7 +722,13 @@ class RepositoryEvidenceTests(unittest.TestCase):
                 """#!/usr/bin/env python3
 import json, os, sys
 args = sys.argv[1:]
-usage = os.environ['PROPERTY_RENTAL_HERMES_USAGE_FILE']
+if 'prompt-size' in args:
+    manifest = json.load(open(os.environ['PROPERTY_RENTAL_INVOCATION_MANIFEST']))
+    budget = json.load(open(manifest['budget_path']))
+    budget.update({'guard_loaded':True,'preflight_guard_loaded':True,'guard_capabilities':['cumulative_llm_execution','least_privilege_pre_tool_block','least_privilege_tool_execution']})
+    open(manifest['budget_path'], 'w').write(json.dumps(budget))
+    print('{}')
+    raise SystemExit(0)
 reasoning = args[args.index('--reasoning') + 1]
 model = args[args.index('--model') + 1]
 prompt = args[args.index('--query') + 1]
@@ -717,14 +739,26 @@ if reasoning == 'high':
     state['status'] = 'complete_uncommitted'
     state['approval'] = {'status':'approved_ready','implementation_started':True,'implementation_completed':True,'publication_completed':False}
     open(state_path, 'w').write(json.dumps(state, sort_keys=True, indent=2) + '\\n')
-json.dump({'model':model,'reasoning_effort':reasoning,'configured_max_tokens':int(os.environ['HERMES_MAX_TOKENS']),'session_id':'fresh-' + reasoning,'input_tokens':10,'cache_read_tokens':2,'output_tokens':4,'reasoning_tokens':3,'total_tokens':17,'api_calls':1}, open(usage, 'w'))
+manifest = json.load(open(os.environ['PROPERTY_RENTAL_INVOCATION_MANIFEST']))
+budget_path = manifest['budget_path']
+budget = json.load(open(budget_path))
+budget.update({'chat_guard_loaded':True,'chat_guard_pid':os.getpid(),'effective_model':model,'api_calls_started':1,'api_calls_completed':1,'input_tokens':10,'cache_read_tokens':2,'output_tokens':4,'reasoning_tokens':3,'counted_total_tokens':14})
+open(budget_path, 'w').write(json.dumps(budget))
 print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],'verification':['focused implementation checks passed'],'blockers':[],'exact_next_action':'deterministic verification'}))
 """
             )
             fake.chmod(0o755)
+            fake_ps = root / "ps"
+            fake_ps.write_text(
+                "#!/bin/sh\nprintf '%s\\n' \"$PROPERTY_RENTAL_REPO/scripts/openclaw_dispatch.py\"\n"
+            )
+            fake_ps.chmod(0o755)
+            hermes_home = root / "hermes-home"
+            hermes_home.mkdir()
+            (hermes_home / "auth.json").write_text("{}\n")
             state_dir = root / "evidence"
             result = subprocess.run(
-                ["python3", str(ROOT / "scripts/openclaw_dispatch.py")],
+                [str(repo / "scripts/openclaw-supervisor-dispatch.sh")],
                 cwd=repo,
                 env={
                     **os.environ,
@@ -732,8 +766,10 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
                     "PROPERTY_RENTAL_REPO": str(repo),
                     "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state_dir),
                     "PROPERTY_RENTAL_HERMES_BIN": str(fake),
+                    "PROPERTY_RENTAL_HERMES_SOURCE_HOME": str(hermes_home),
                     "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
                     "PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES": "1",
+                    "PATH": f"{root}:{os.environ['PATH']}",
                 },
                 capture_output=True,
                 text=True,
@@ -748,7 +784,13 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
             self.assertEqual(
                 evidence["model_usage"][0]["effective_model"], "gpt-5.6-sol"
             )
-            self.assertEqual(evidence["model_usage"][0]["session_id"], "fresh-high")
+            self.assertRegex(
+                str(evidence["model_usage"][0]["session_id"]), r"^[0-9a-f]{32}$"
+            )
+            usage = json.loads(next((state_dir / "usage").glob("*.json")).read_text())
+            self.assertTrue(usage["preflight_guard_loaded"])
+            self.assertTrue(usage["chat_guard_loaded"])
+            self.assertGreater(usage["chat_guard_pid"], 1)
             prompt = capture.read_text()
             self.assertIn('"candidate": "V1-018"', prompt)
             self.assertNotIn("OPENCLAW_SUPERVISOR_PROMPT", prompt)
@@ -761,6 +803,8 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
                 "openclaw-supervisor-preflight.sh",
                 "openclaw-hermes-task.sh",
                 "hermes-property-rental",
+                "openclaw_automation.py",
+                "openclaw_hermes_guard.py",
             ):
                 source = ROOT / "scripts" / name
                 target = repo / "scripts" / name
@@ -791,17 +835,34 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
                 """#!/usr/bin/env python3
 import json, os, sys
 args = sys.argv[1:]
-prompt = sys.stdin.read()
+if 'prompt-size' in args:
+    manifest = json.load(open(os.environ['PROPERTY_RENTAL_INVOCATION_MANIFEST']))
+    budget = json.load(open(manifest['budget_path']))
+    budget.update({'guard_loaded':True,'preflight_guard_loaded':True,'guard_capabilities':['cumulative_llm_execution','least_privilege_pre_tool_block','least_privilege_tool_execution']})
+    open(manifest['budget_path'], 'w').write(json.dumps(budget))
+    print('{}')
+    raise SystemExit(0)
+prompt = args[args.index('--query') + 1]
 open(os.environ['CAPTURE'], 'w').write(prompt)
 open(os.environ['CAPTURE_ARGS'], 'w').write(json.dumps(args))
 packet = json.loads(prompt[prompt.index('{'):])
 result = {'passed': True, 'findings': [], 'reviewed_repository_fingerprint':packet['repository_fingerprint'],'reviewed_paths':packet['scoped_changed_paths'],'exact_next_action': 'publish'}
-open(args[args.index('--output-last-message') + 1], 'w').write(json.dumps(result))
-print(json.dumps({'type':'thread.started','thread_id':'fresh-review'}))
-print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_input_tokens':5,'output_tokens':5,'reasoning_output_tokens':8}}))
+manifest = json.load(open(os.environ['PROPERTY_RENTAL_INVOCATION_MANIFEST']))
+budget = json.load(open(manifest['budget_path']))
+budget.update({'chat_guard_loaded':True,'chat_guard_pid':os.getpid(),'effective_model':'gpt-5.6-sol','api_calls_started':1,'api_calls_completed':1,'input_tokens':20,'cache_read_tokens':5,'output_tokens':5,'reasoning_tokens':8,'counted_total_tokens':25})
+open(manifest['budget_path'], 'w').write(json.dumps(budget))
+print(json.dumps(result))
 """
             )
             fake.chmod(0o755)
+            fake_ps = root / "ps"
+            fake_ps.write_text(
+                "#!/bin/sh\nprintf '%s\\n' \"$PROPERTY_RENTAL_REPO/scripts/openclaw_dispatch.py\"\n"
+            )
+            fake_ps.chmod(0o755)
+            hermes_home = root / "hermes-home"
+            hermes_home.mkdir()
+            (hermes_home / "auth.json").write_text("{}\n")
             state_dir = root / "evidence"
             atomic_write_json(
                 state_dir / "candidates/V1-018.json",
@@ -831,9 +892,11 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
                     "CAPTURE_ARGS": str(capture_args),
                     "PROPERTY_RENTAL_REPO": str(repo),
                     "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state_dir),
-                    "PROPERTY_RENTAL_CODEX_BIN": str(fake),
+                    "PROPERTY_RENTAL_HERMES_BIN": str(fake),
+                    "PROPERTY_RENTAL_HERMES_SOURCE_HOME": str(hermes_home),
                     "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
                     "PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES": "1",
+                    "PATH": f"{root}:{os.environ['PATH']}",
                 },
                 capture_output=True,
                 text=True,
@@ -847,14 +910,15 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
             self.assertEqual(
                 evidence["model_usage"][0]["requested_reasoning_effort"], "xhigh"
             )
-            self.assertEqual(evidence["model_usage"][0]["session_id"], "fresh-review")
+            self.assertRegex(
+                str(evidence["model_usage"][0]["session_id"]), r"^[0-9a-f]{32}$"
+            )
             self.assertIn('"review_only": true', capture.read_text())
             arguments = json.loads(capture_args.read_text())
-            self.assertIn("read-only", arguments)
             self.assertIn("gpt-5.6-sol", arguments)
-            self.assertIn('model_reasoning_effort="xhigh"', arguments)
-            self.assertIn("model_context_window=90000", arguments)
-            self.assertIn("--ephemeral", arguments)
+            self.assertIn("xhigh", arguments)
+            self.assertIn("file,terminal,todo", arguments)
+            self.assertNotIn("--yolo", arguments)
             self.assertEqual(evidence["reviewed_paths"], [])
             self.assertEqual(
                 evidence["reviewed_repository_fingerprint"],
@@ -870,6 +934,10 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
             target.parent.mkdir(exist_ok=True)
             target.write_bytes(source.read_bytes())
             target.chmod(0o755)
+            automation = repo / "scripts/openclaw_automation.py"
+            automation.write_bytes(
+                (ROOT / "scripts/openclaw_automation.py").read_bytes()
+            )
             subprocess.run(["git", "add", "--", "scripts"], cwd=repo, check=True)
             subprocess.run(
                 ["git", "commit", "-qm", "test dispatcher harness"],
@@ -908,9 +976,7 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
                 "next_action": "Complete bounded restoration gates",
             }
             atomic_write_json(state_path, state)
-            subprocess.run(
-                ["git", "add", "--", "ops/STATE.json"], cwd=repo, check=True
-            )
+            subprocess.run(["git", "add", "--", "ops/STATE.json"], cwd=repo, check=True)
             subprocess.run(
                 ["git", "commit", "-qm", "record repair hold"],
                 cwd=repo,
@@ -940,6 +1006,10 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
             target.parent.mkdir(exist_ok=True)
             target.write_bytes(source.read_bytes())
             target.chmod(0o755)
+            automation = repo / "scripts/openclaw_automation.py"
+            automation.write_bytes(
+                (ROOT / "scripts/openclaw_automation.py").read_bytes()
+            )
             subprocess.run(["git", "add", "--", "scripts"], cwd=repo, check=True)
             subprocess.run(
                 ["git", "commit", "-qm", "test dispatcher harness"],
@@ -1084,7 +1154,7 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
             policy = invoked.call_args.args[2]
             self.assertEqual(packet["stage"], "direct_codex_recovery")
             self.assertEqual(policy.stage, "direct_codex_recovery")
-            self.assertEqual(policy.route, "direct Codex")
+            self.assertEqual(policy.route, "Hermes")
 
     def test_successful_recovery_clears_live_failure_for_later_ceiling(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1098,9 +1168,7 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
                 "publication_completed": False,
             }
             atomic_write_json(repo / "ops/STATE.json", state)
-            subprocess.run(
-                ["git", "add", "--", "ops/STATE.json"], cwd=repo, check=True
-            )
+            subprocess.run(["git", "add", "--", "ops/STATE.json"], cwd=repo, check=True)
             subprocess.run(
                 ["git", "commit", "-qm", "record successful repair"],
                 cwd=repo,
@@ -1141,7 +1209,11 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
             with mock.patch.object(
                 dispatcher,
                 "invoke_model",
-                return_value=(0, json.dumps(result), {"stage_name": "direct_codex_recovery"}),
+                return_value=(
+                    0,
+                    json.dumps(result),
+                    {"stage_name": "direct_codex_recovery"},
+                ),
             ):
                 dispatcher.implementation(record, {"actionable": True})
             self.assertIsNone(record["last_failure_category"])
@@ -1170,10 +1242,20 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
                 handoff,
             )
 
-    def test_direct_codex_ceiling_uses_last_message_for_safe_handoff(self) -> None:
+    def test_guarded_repair_ceiling_uses_last_message_for_safe_handoff(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             repo = self.make_repo(root)
+            for name in (
+                "openclaw-hermes-task.sh",
+                "hermes-property-rental",
+                "openclaw_automation.py",
+                "openclaw_hermes_guard.py",
+            ):
+                target = repo / "scripts" / name
+                target.parent.mkdir(exist_ok=True)
+                target.write_bytes((ROOT / "scripts" / name).read_bytes())
+                target.chmod(0o755)
             spec = importlib.util.spec_from_file_location(
                 "direct_ceiling_dispatch", ROOT / "scripts/openclaw_dispatch.py"
             )
@@ -1207,18 +1289,35 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
                 "blockers": [],
                 "requested_stage": "deterministic_verification",
             }
-            fake = root / "fake-codex.py"
+            fake = root / "fake-hermes.py"
             fake.write_text(
                 "#!/usr/bin/env python3\n"
-                "import json, sys\n"
+                "import json, os, sys\n"
                 "args = sys.argv[1:]\n"
                 f"handoff = {handoff!r}\n"
-                "open(args[args.index('--output-last-message') + 1], 'w').write(json.dumps(handoff))\n"
-                "print(json.dumps({'type':'thread.started','thread_id':'ceiling-session'}))\n"
-                "print(json.dumps({'type':'turn.failed','error':{'code':'context_length_exceeded','message':'maximum tokens reached'}}))\n"
+                "\nif 'prompt-size' in args:\n"
+                "    manifest = json.load(open(os.environ['PROPERTY_RENTAL_INVOCATION_MANIFEST']))\n"
+                "    budget = json.load(open(manifest['budget_path']))\n"
+                "    budget.update({'guard_loaded':True,'preflight_guard_loaded':True,'guard_capabilities':['cumulative_llm_execution','least_privilege_pre_tool_block','least_privilege_tool_execution']})\n"
+                "    open(manifest['budget_path'], 'w').write(json.dumps(budget))\n"
+                "    print('{}')\n"
+                "    raise SystemExit(0)\n"
+                "manifest = json.load(open(os.environ['PROPERTY_RENTAL_INVOCATION_MANIFEST']))\n"
+                "budget = json.load(open(manifest['budget_path']))\n"
+                "budget.update({'chat_guard_loaded':True,'chat_guard_pid':os.getpid(),'effective_model':'gpt-5.6-sol','api_calls_started':2,'api_calls_completed':2,'input_tokens':50000,'output_tokens':10000,'cache_read_tokens':7000,'reasoning_tokens':3000,'counted_total_tokens':60000,'boundary_reached':True,'next_api_call_blocked':True})\n"
+                "open(manifest['budget_path'], 'w').write(json.dumps(budget))\n"
+                "print(json.dumps(handoff))\n"
                 "raise SystemExit(1)\n"
             )
             fake.chmod(0o755)
+            fake_ps = root / "ps"
+            fake_ps.write_text(
+                "#!/bin/sh\nprintf '%s\\n' \"$PROPERTY_RENTAL_REPO/scripts/openclaw_dispatch.py\"\n"
+            )
+            fake_ps.chmod(0o755)
+            hermes_home = root / "hermes-home"
+            hermes_home.mkdir()
+            (hermes_home / "auth.json").write_text("{}\n")
             record = {
                 "candidate": "V1-018",
                 "stage": "implementation",
@@ -1238,7 +1337,11 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
             with (
                 mock.patch.dict(
                     os.environ,
-                    {"PROPERTY_RENTAL_CODEX_BIN": str(fake)},
+                    {
+                        "PROPERTY_RENTAL_HERMES_BIN": str(fake),
+                        "PROPERTY_RENTAL_HERMES_SOURCE_HOME": str(hermes_home),
+                        "PATH": f"{root}:{os.environ['PATH']}",
+                    },
                 ),
                 self.assertRaises(AutomationError) as raised,
             ):
@@ -1257,7 +1360,7 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
             ]
             self.assertEqual(len(usage_files), 1)
             usage = json.loads(usage_files[0].read_text())
-            self.assertEqual(usage["stop_reason"], "length")
+            self.assertEqual(usage["stop_reason"], "token_ceiling")
 
     def test_dispatch_routes_persisted_post_publication_before_generic_reconcile(
         self,
@@ -1814,6 +1917,7 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
             for name in (
                 "openclaw-reconcile-published-state.sh",
                 "openclaw-supervisor-preflight.sh",
+                "openclaw_automation.py",
             ):
                 target = scripts / name
                 target.write_bytes((ROOT / "scripts" / name).read_bytes())
@@ -1947,11 +2051,16 @@ print(json.dumps({'type':'turn.completed','usage':{'input_tokens':20,'cached_inp
             self.assertNotEqual(ledger[0]["stage_result"], "passed")
             self.assertTrue(ledger[0]["exact_next_action"])
 
-    def test_pre_model_failure_is_suppressed_when_exact_call_is_unchanged(self) -> None:
+    def test_pre_model_routing_fault_is_retryable_without_product_attempt(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             repo = self.make_repo(root)
-            for name in ("openclaw-hermes-task.sh", "hermes-property-rental"):
+            for name in (
+                "openclaw-hermes-task.sh",
+                "hermes-property-rental",
+                "openclaw_automation.py",
+                "openclaw_hermes_guard.py",
+            ):
                 target = repo / "scripts" / name
                 target.parent.mkdir(exist_ok=True)
                 target.write_bytes((ROOT / "scripts" / name).read_bytes())
@@ -1998,10 +2107,12 @@ raise SystemExit(64)
                     dispatcher.invoke_model(
                         record, packet, model_policy("implementation")
                     )
-            self.assertEqual(second.exception.category, "repeated_identical_tool_call")
-            self.assertIn("preserved_underlying_result", str(second.exception))
+            self.assertEqual(
+                second.exception.category, "unsupported_invocation_configuration"
+            )
             attempts = json.loads((state_dir / "attempts/V1-018.json").read_text())
             self.assertEqual(attempts["counters"].get("implementation", 0), 0)
+            self.assertEqual(list((state_dir / "calls").glob("*.json")), [])
 
     def test_cached_publication_guard_uses_cached_mode(self) -> None:
         spec = importlib.util.spec_from_file_location(
@@ -2416,7 +2527,9 @@ raise SystemExit(64)
             self.assertEqual(
                 repeated.exception.category, "repeated_identical_tool_call"
             )
-            self.assertIn("exit 125; failed gate database-test", str(repeated.exception))
+            self.assertIn(
+                "exit 125; failed gate database-test", str(repeated.exception)
+            )
 
 
 class ContinuationAndAttemptTests(unittest.TestCase):
@@ -2609,13 +2722,13 @@ class ContinuationAndAttemptTests(unittest.TestCase):
             self.assertEqual(released["counters"].get("implementation", 0), 0)
             self.assertIsNone(released["pending"])
 
-    def test_interrupted_reservation_is_recovered_without_attempt_consumption(self) -> None:
+    def test_interrupted_reservation_is_recovered_without_attempt_consumption(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "attempt.json"
             reserve_attempt(path, stage="implementation", fingerprint="one")
-            recovered = reserve_attempt(
-                path, stage="implementation", fingerprint="one"
-            )
+            recovered = reserve_attempt(path, stage="implementation", fingerprint="one")
             self.assertEqual(recovered["counters"].get("implementation", 0), 0)
             self.assertEqual(
                 recovered["interrupted_reservations"][0]["classification"],
@@ -2904,6 +3017,574 @@ class LockHealthAndWrapperTests(unittest.TestCase):
         ):
             self.dispatch.synchronized_repository_shas()
 
+    def test_capability_only_continuation_requires_exact_preserved_identity(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = RepositoryEvidenceTests().make_repo(root)
+            candidate_path = repo / "candidate.txt"
+            candidate_path.write_text("baseline\n")
+            (repo / "ops/QUEUE.md").write_text(
+                "Remaining v1 application tranches are authorized when bounded by canonical documents 001-010.\n"
+            )
+            subprocess.run(
+                ["git", "add", "--", "candidate.txt", "ops/QUEUE.md"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "commit", "-qm", "preservation baseline"],
+                cwd=repo,
+                check=True,
+            )
+            baseline = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            desired_state = json.loads((repo / "ops/STATE.json").read_text())
+            desired_state.update(
+                {
+                    "branch": "main",
+                    "commit": baseline,
+                    "status": "partial",
+                    "owner_action": "none",
+                    "blockers": [{"category": "verification_tooling_unavailable"}],
+                    "approval": {
+                        "status": "approved_ready",
+                        "implementation_started": True,
+                        "implementation_completed": False,
+                        "publication_completed": False,
+                    },
+                    "repair": {
+                        "tranche_id": "V1-018",
+                        "failure": "verification_tooling_unavailable",
+                        "scope_preserved": True,
+                        "attempts": 0,
+                        "max_attempts": 2,
+                        "requires_owner_decision": False,
+                        "suspected_secret": False,
+                        "scope_expansion": False,
+                        "protected_operation": False,
+                    },
+                    "tests": ["PASS: focused implementation checks"],
+                }
+            )
+            atomic_write_json(repo / "ops/STATE.json", desired_state)
+            candidate_path.write_text("preserved implementation\n")
+            evidence = {
+                "schema_version": 1,
+                "candidate": "V1-018",
+                "baseline_branch": "main",
+                "baseline_head": baseline,
+                "preserved_paths": {
+                    "candidate.txt": digest(candidate_path.read_bytes()),
+                    "ops/STATE.json": digest((repo / "ops/STATE.json").read_bytes()),
+                },
+                "automation_repair_may_modify_preserved_paths": False,
+                "v1_019_may_start": False,
+            }
+            atomic_write_json(repo / "ops/AUTOMATION_REPAIR_EVIDENCE.json", evidence)
+            subprocess.run(
+                ["git", "add", "--", "ops/AUTOMATION_REPAIR_EVIDENCE.json"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "commit", "-qm", "record preservation evidence"],
+                cwd=repo,
+                check=True,
+            )
+            origin = root / "origin.git"
+            subprocess.run(["git", "init", "-q", "--bare", str(origin)], check=True)
+            subprocess.run(
+                ["git", "remote", "add", "origin", str(origin)],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "push", "-qu", "-u", "origin", "HEAD"],
+                cwd=repo,
+                check=True,
+            )
+            with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}):
+                classified = classify_compact_state(repo)
+            self.assertEqual(classified["lifecycle"], "verification_pending")
+            self.assertEqual(
+                classified["state_issue"], "capability_verification_continuation"
+            )
+            self.assertFalse(classified["implementation_allowed"])
+            self.assertTrue(classified["preservation_valid"])
+            self.assertTrue(classified["exact_identity"]["no_failed_check"])
+            self.assertTrue(classified["exact_identity"]["no_overlap"])
+
+            spec = importlib.util.spec_from_file_location(
+                "capability_dispatch", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(root / "dispatch"),
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+                record = {
+                    "candidate": "V1-018",
+                    "stage": "implementation",
+                }
+                with mock.patch.object(dispatcher, "invoke_model") as invoked:
+                    dispatcher.bootstrap_completed_candidate(
+                        record, require_preserved_identity=True
+                    )
+            invoked.assert_not_called()
+            self.assertEqual(record["stage"], "deterministic_verification")
+            self.assertEqual(
+                record["scoped_changed_paths"], ["candidate.txt", "ops/STATE.json"]
+            )
+
+            candidate_path.write_text("drifted implementation\n")
+            with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}):
+                drifted = classify_compact_state(repo)
+            self.assertNotEqual(
+                drifted["state_issue"], "capability_verification_continuation"
+            )
+            self.assertFalse(drifted["preservation_valid"])
+
+    def test_genuine_owner_category_remains_blocked(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = RepositoryEvidenceTests().make_repo(Path(directory))
+            state = json.loads((repo / "ops/STATE.json").read_text())
+            state.update({"owner_action": "confirm protected credential rotation"})
+            state["approval"] = {
+                "status": "approved_ready",
+                "implementation_started": True,
+                "implementation_completed": False,
+                "publication_completed": False,
+            }
+            state["repair"] = {
+                "tranche_id": "V1-018",
+                "failure": "suspected secret",
+                "scope_preserved": True,
+                "attempts": 0,
+                "max_attempts": 2,
+                "requires_owner_decision": True,
+                "suspected_secret": True,
+                "scope_expansion": False,
+                "protected_operation": False,
+            }
+            atomic_write_json(repo / "ops/STATE.json", state)
+            with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}):
+                classified = classify_compact_state(repo)
+            self.assertEqual(classified["lifecycle"], "owner_blocked")
+            self.assertEqual(
+                classified["blocker_category"],
+                "secret_credential_or_protected_operation",
+            )
+            self.assertTrue(classified["owner_action_required"])
+            self.assertFalse(classified["actionable"])
+            state["status"] = "verified_unpublished"
+            state["approval"]["implementation_completed"] = True
+            atomic_write_json(repo / "ops/STATE.json", state)
+            with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}):
+                verified_but_blocked = classify_compact_state(repo)
+            self.assertEqual(verified_but_blocked["lifecycle"], "owner_blocked")
+            self.assertEqual(
+                verified_but_blocked["blocker_category"],
+                "secret_credential_or_protected_operation",
+            )
+            self.assertFalse(verified_but_blocked["actionable"])
+
+    def test_structured_owner_categories_and_test_blockers_route_exactly(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = RepositoryEvidenceTests().make_repo(Path(directory))
+            state = json.loads((repo / "ops/STATE.json").read_text())
+            state.update(
+                {
+                    "status": "failed",
+                    "owner_action": "none",
+                    "blockers": [{"category": "conflicting_owner_work"}],
+                    "approval": {
+                        "status": "approved_ready",
+                        "implementation_started": True,
+                        "implementation_completed": False,
+                        "publication_completed": False,
+                    },
+                    "repair": {
+                        "tranche_id": "V1-018",
+                        "failure": "conflicting_owner_work",
+                        "scope_preserved": True,
+                        "attempts": 0,
+                        "max_attempts": 2,
+                        "requires_owner_decision": False,
+                        "suspected_secret": False,
+                        "scope_expansion": False,
+                        "protected_operation": False,
+                    },
+                }
+            )
+            atomic_write_json(repo / "ops/STATE.json", state)
+            with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}):
+                owner = classify_compact_state(repo)
+            self.assertEqual(owner["lifecycle"], "owner_blocked")
+            self.assertEqual(owner["blocker_category"], "conflicting_owner_work")
+            self.assertTrue(owner["owner_action_required"])
+
+            state["blockers"] = ["backend focused test failed"]
+            state["repair"]["failure"] = "deterministic_test_failure"
+            atomic_write_json(repo / "ops/STATE.json", state)
+            with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}):
+                repair = classify_compact_state(repo)
+            self.assertEqual(repair["lifecycle"], "bounded_repair_pending")
+            self.assertEqual(
+                repair["state_issue"], "bounded_automatic_repair_authorized"
+            )
+            self.assertTrue(repair["actionable"])
+            self.assertFalse(repair["owner_action_required"])
+
+    def test_cumulative_guard_stops_before_third_api_call_and_records_cache(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            budget_path = root / "budget.json"
+            manifest_path = root / "manifest.json"
+            atomic_write_json(
+                budget_path,
+                {
+                    "schema_version": 1,
+                    "ceiling": 60_000,
+                    "api_calls_started": 0,
+                    "api_calls_completed": 0,
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "cache_read_tokens": 0,
+                    "reasoning_tokens": 0,
+                    "counted_total_tokens": 0,
+                    "boundary_reached": False,
+                    "in_flight_overshoot_tokens": 0,
+                    "next_api_call_blocked": False,
+                },
+            )
+            atomic_write_json(manifest_path, {"budget_path": str(budget_path)})
+            responses = iter(
+                [
+                    {
+                        "model": "gpt-5.6-sol",
+                        "usage": {
+                            "input_tokens": 30_000,
+                            "output_tokens": 20_000,
+                            "cache_read_tokens": 8_000,
+                        },
+                    },
+                    {
+                        "model": "gpt-5.6-sol",
+                        "usage": {
+                            "input_tokens": 8_000,
+                            "output_tokens": 5_000,
+                            "cache_read_tokens": 4_000,
+                        },
+                    },
+                ]
+            )
+            observed_maxima: list[int] = []
+
+            def invoke(request: dict[str, Any]) -> dict[str, Any]:
+                observed_maxima.append(request["max_output_tokens"])
+                return next(responses)
+
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_INVOCATION_MANIFEST": str(manifest_path)},
+            ):
+                enforce_llm_call({"max_output_tokens": 40_000}, invoke)
+                enforce_llm_call({"max_output_tokens": 40_000}, invoke)
+                with self.assertRaisesRegex(
+                    GuardError, "CUMULATIVE_TOKEN_CEILING_REACHED"
+                ):
+                    enforce_llm_call({"max_output_tokens": 40_000}, invoke)
+            self.assertEqual(observed_maxima, [40_000, 10_000])
+            budget = json.loads(budget_path.read_text())
+            self.assertEqual(budget["api_calls_started"], 2)
+            self.assertEqual(budget["api_calls_completed"], 2)
+            self.assertEqual(budget["counted_total_tokens"], 63_000)
+            self.assertEqual(budget["cache_read_tokens"], 12_000)
+            self.assertEqual(budget["in_flight_overshoot_tokens"], 3_000)
+            self.assertTrue(budget["boundary_reached"])
+            self.assertTrue(budget["next_api_call_blocked"])
+
+    def test_hermes_tool_guard_enforces_repository_least_privilege(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / "repo"
+            (repo / "docs").mkdir(parents=True)
+            (repo / "docs/001_DOMAIN_MODEL.md").write_text("canonical\n")
+            manifest = root / "manifest.json"
+            atomic_write_json(
+                manifest,
+                {
+                    "repository": str(repo),
+                    "stage": "implementation",
+                    "writable_paths": ["backend/src/property_rental", "backend/tests"],
+                },
+            )
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_INVOCATION_MANIFEST": str(manifest)},
+            ):
+                guard_tool("read_file", {"path": "docs/001_DOMAIN_MODEL.md"})
+                guard_tool("terminal", {"command": "git diff", "workdir": str(repo)})
+                guard_tool(
+                    "terminal",
+                    {"command": "make database-test", "workdir": str(repo)},
+                )
+                writable_subdirectory = repo / "backend/src/property_rental"
+                writable_subdirectory.mkdir(parents=True)
+                (writable_subdirectory / "Makefile").write_text(
+                    "backend-test:\n\tgit push\n"
+                )
+                with self.assertRaisesRegex(GuardError, "repository root"):
+                    guard_tool(
+                        "terminal",
+                        {
+                            "command": "make backend-test",
+                            "workdir": str(writable_subdirectory),
+                        },
+                    )
+                guard_tool(
+                    "write_file", {"path": "backend/src/property_rental/candidate.py"}
+                )
+                guard_tool(
+                    "patch",
+                    {
+                        "mode": "patch",
+                        "patch": "*** Update File: backend/src/property_rental/candidate.py\n",
+                    },
+                )
+                with self.assertRaisesRegex(GuardError, "candidate scope"):
+                    guard_tool(
+                        "patch",
+                        {
+                            "mode": "patch",
+                            "patch": (
+                                "*** Update File: backend/src/property_rental/candidate.py\n"
+                                "***Move File: backend/src/property_rental/candidate.py -> scripts/escape.py\n"
+                            ),
+                        },
+                    )
+                with self.assertRaisesRegex(GuardError, "candidate scope"):
+                    guard_tool(
+                        "patch",
+                        {"mode": "patch", "patch": "***Update File: Makefile\n"},
+                    )
+                with self.assertRaisesRegex(GuardError, "explicit repository paths"):
+                    guard_tool(
+                        "patch",
+                        {
+                            "mode": "patch",
+                            "patch": "*** Copy File: backend/src/property_rental/candidate.py\n",
+                        },
+                    )
+                with self.assertRaisesRegex(GuardError, "candidate scope"):
+                    guard_tool("write_file", {"path": "Makefile"})
+                with self.assertRaisesRegex(GuardError, "candidate scope"):
+                    guard_tool("write_file", {"path": "scripts/openclaw_dispatch.py"})
+                with self.assertRaises(GuardError):
+                    guard_tool("write_file", {"path": "docs/001_DOMAIN_MODEL.md"})
+                with self.assertRaises(GuardError):
+                    guard_tool(
+                        "terminal",
+                        {"command": "git commit -m forbidden", "workdir": str(repo)},
+                    )
+                with self.assertRaises(GuardError):
+                    guard_tool(
+                        "terminal",
+                        {
+                            "command": "git diff --no-index /etc/passwd candidate.txt",
+                            "workdir": str(repo),
+                        },
+                    )
+                with self.assertRaises(GuardError):
+                    guard_tool(
+                        "terminal",
+                        {
+                            "command": "git diff --output=/tmp/escaped",
+                            "workdir": str(repo),
+                        },
+                    )
+                with self.assertRaises(GuardError):
+                    guard_tool(
+                        "terminal", {"command": "psql property", "workdir": str(repo)}
+                    )
+                with self.assertRaises(GuardError):
+                    guard_tool("process", {"command": "make test"})
+                with self.assertRaises(GuardError):
+                    guard_tool("read_file", {"path": str(root / "outside")})
+                with self.assertRaisesRegex(GuardError, "credential"):
+                    guard_tool("read_file", {"path": "backend/.env.production"})
+                atomic_write_json(
+                    manifest,
+                    {
+                        "repository": str(repo),
+                        "stage": "independent_review",
+                        "writable_paths": [],
+                    },
+                )
+                with self.assertRaisesRegex(GuardError, "review is read-only"):
+                    guard_tool("write_file", {"path": "candidate.txt"})
+
+    def test_registered_guard_cannot_fail_open_at_policy_boundary(self) -> None:
+        class Context:
+            def __init__(self) -> None:
+                self.middleware: dict[str, Any] = {}
+                self.hooks: dict[str, Any] = {}
+
+            def register_middleware(self, kind: str, callback: Any) -> None:
+                self.middleware[kind] = callback
+
+            def register_hook(self, kind: str, callback: Any) -> None:
+                self.hooks[kind] = callback
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / "repo"
+            repo.mkdir()
+            budget = root / "budget.json"
+            manifest = root / "manifest.json"
+            atomic_write_json(
+                budget,
+                {
+                    "schema_version": 1,
+                    "ceiling": 60_000,
+                    "api_calls_started": 1,
+                    "api_calls_completed": 1,
+                    "input_tokens": 45_000,
+                    "output_tokens": 15_000,
+                    "cache_read_tokens": 7_000,
+                    "reasoning_tokens": 0,
+                    "counted_total_tokens": 60_000,
+                    "boundary_reached": True,
+                    "in_flight_overshoot_tokens": 0,
+                    "next_api_call_blocked": False,
+                },
+            )
+            atomic_write_json(
+                manifest,
+                {
+                    "repository": str(repo),
+                    "budget_path": str(budget),
+                    "writable_paths": [],
+                },
+            )
+            context = Context()
+            provider_called = False
+
+            def provider(_: dict[str, Any]) -> None:
+                nonlocal provider_called
+                provider_called = True
+
+            tool_called = False
+
+            def tool(_: dict[str, Any]) -> None:
+                nonlocal tool_called
+                tool_called = True
+
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_INVOCATION_MANIFEST": str(manifest),
+                    "PROPERTY_RENTAL_HERMES_PROCESS_MODE": "preflight",
+                },
+            ):
+                register_plugin(context)
+                with self.assertRaises(SystemExit):
+                    context.middleware["llm_execution"]({}, provider)
+                blocked = context.middleware["tool_execution"](
+                    "terminal", {"command": "git push"}, tool
+                )
+                directive = context.hooks["pre_tool_call"](
+                    "terminal", {"command": "git push"}
+                )
+            self.assertFalse(provider_called)
+            self.assertFalse(tool_called)
+            self.assertIn("only read-only git", blocked)
+            self.assertEqual(directive["action"], "block")
+            manifest.write_text("{ malformed\n")
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_INVOCATION_MANIFEST": str(manifest),
+                    "PROPERTY_RENTAL_HERMES_PROCESS_MODE": "preflight",
+                },
+            ):
+                with self.assertRaises(SystemExit):
+                    context.middleware["llm_execution"]({}, provider)
+                malformed_tool = context.middleware["tool_execution"](
+                    "terminal", {"command": "git status"}, tool
+                )
+                malformed_directive = context.hooks["pre_tool_call"](
+                    "terminal", {"command": "git status"}
+                )
+            self.assertFalse(provider_called)
+            self.assertFalse(tool_called)
+            self.assertIn("Expecting property name", malformed_tool)
+            self.assertEqual(malformed_directive["action"], "block")
+
+    def test_chat_authentication_is_released_only_by_chat_guard_registration(
+        self,
+    ) -> None:
+        class Context:
+            def register_middleware(self, _kind: str, _callback: Any) -> None:
+                return None
+
+            def register_hook(self, _kind: str, _callback: Any) -> None:
+                return None
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source_home = root / "source"
+            source_home.mkdir()
+            source_auth = source_home / "auth.json"
+            source_auth.write_text("{}\n")
+            session_home = root / "session"
+            budget = root / "budget.json"
+            manifest_path = root / "manifest.json"
+            manifest = {
+                "manifest_id": "guarded-session",
+                "candidate": "V1-018",
+                "stage": "implementation",
+                "budget_path": str(budget),
+                "token_policy": {"cumulative_ceiling": 60_000},
+            }
+            atomic_write_json(manifest_path, manifest)
+            prepare_session_home(manifest, session_home, source_home)
+            self.assertFalse((session_home / "auth.json").exists())
+            common = {
+                "PROPERTY_RENTAL_INVOCATION_MANIFEST": str(manifest_path),
+                "HERMES_HOME": str(session_home),
+            }
+            with mock.patch.dict(
+                os.environ,
+                {**common, "PROPERTY_RENTAL_HERMES_PROCESS_MODE": "preflight"},
+            ):
+                register_plugin(Context())
+            self.assertFalse((session_home / "auth.json").exists())
+            with mock.patch.dict(
+                os.environ,
+                {**common, "PROPERTY_RENTAL_HERMES_PROCESS_MODE": "chat"},
+            ):
+                register_plugin(Context())
+            self.assertTrue((session_home / "auth.json").is_symlink())
+            self.assertEqual(
+                (session_home / "auth.json").resolve(), source_auth.resolve()
+            )
+            ledger = json.loads(budget.read_text())
+            self.assertTrue(ledger["preflight_guard_loaded"])
+            self.assertTrue(ledger["chat_guard_loaded"])
+            self.assertEqual(ledger["chat_guard_pid"], os.getpid())
+
     def test_model_invocation_accounting_does_not_infer_missing_api_calls(
         self,
     ) -> None:
@@ -2911,7 +3592,12 @@ class LockHealthAndWrapperTests(unittest.TestCase):
             root = Path(directory)
             helper = RepositoryEvidenceTests()
             repo = helper.make_repo(root)
-            for name in ("openclaw-hermes-task.sh", "hermes-property-rental"):
+            for name in (
+                "openclaw-hermes-task.sh",
+                "hermes-property-rental",
+                "openclaw_automation.py",
+                "openclaw_hermes_guard.py",
+            ):
                 target = repo / "scripts" / name
                 target.parent.mkdir(exist_ok=True)
                 target.write_bytes((ROOT / "scripts" / name).read_bytes())
@@ -2921,15 +3607,36 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                 """#!/usr/bin/env python3
 import json, os, sys
 args = sys.argv[1:]
-usage = os.environ['PROPERTY_RENTAL_HERMES_USAGE_FILE']
-data = {'model':os.environ.get('RETURNED_MODEL','gpt-5.6-sol'),'configured_max_tokens':int(os.environ['HERMES_MAX_TOKENS']),'total_tokens':1}
-if os.environ.get('INCLUDE_API_CALLS') == 'true': data['api_calls'] = 1
-json.dump(data, open(usage, 'w'))
+if 'prompt-size' in args:
+    manifest = json.load(open(os.environ['PROPERTY_RENTAL_INVOCATION_MANIFEST']))
+    budget = json.load(open(manifest['budget_path']))
+    budget.update({'guard_loaded':True,'preflight_guard_loaded':True,'guard_capabilities':['cumulative_llm_execution','least_privilege_pre_tool_block','least_privilege_tool_execution']})
+    open(manifest['budget_path'], 'w').write(json.dumps(budget))
+    print('{}')
+    raise SystemExit(0)
+manifest = json.load(open(os.environ['PROPERTY_RENTAL_INVOCATION_MANIFEST']))
+budget = json.load(open(manifest['budget_path']))
+budget.update({'chat_guard_loaded':True,'chat_guard_pid':os.getpid(),'effective_model':os.environ.get('RETURNED_MODEL','gpt-5.6-sol'),'api_calls_started':1,'api_calls_completed':1,'input_tokens':1,'output_tokens':0,'counted_total_tokens':1})
+json.dump(budget, open(manifest['budget_path'], 'w'))
 print('{}')
 raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
 """
             )
             fake.chmod(0o755)
+            hermes_home = root / "hermes-home"
+            hermes_home.mkdir()
+            (hermes_home / "auth.json").write_text("{}\n")
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            fake_ps = fake_bin / "ps"
+            fake_ps.write_text(
+                "#!/bin/sh\n"
+                'case "$*" in\n'
+                "  *ppid=*) printf '%s\\n' \"$TEST_DISPATCHER_PID\" ;;\n"
+                "  *) printf '%s\\n' \"$PROPERTY_RENTAL_REPO/scripts/openclaw_dispatch.py\" ;;\n"
+                "esac\n"
+            )
+            fake_ps.chmod(0o755)
             spec = importlib.util.spec_from_file_location(
                 "accounting_dispatch", ROOT / "scripts/openclaw_dispatch.py"
             )
@@ -2941,6 +3648,9 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
                 "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state_dir),
                 "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
                 "PROPERTY_RENTAL_HERMES_BIN": str(fake),
+                "PROPERTY_RENTAL_HERMES_SOURCE_HOME": str(hermes_home),
+                "PATH": f"{fake_bin}:{os.environ['PATH']}",
+                "TEST_DISPATCHER_PID": str(os.getpid()),
                 "FAKE_EXIT": "70",
             }
             with mock.patch.dict(os.environ, environment):
@@ -2961,7 +3671,6 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
                     {
                         **environment,
                         "FAKE_EXIT": "0",
-                        "INCLUDE_API_CALLS": "true",
                         "RETURNED_MODEL": "unsupported-model",
                     },
                 ),
@@ -2973,7 +3682,7 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
                     model_policy("implementation"),
                 )
             attempts = json.loads((state_dir / "attempts/V1-018.json").read_text())
-            self.assertEqual(attempts["counters"].get("implementation", 0), 0)
+            self.assertEqual(attempts["counters"].get("implementation", 0), 1)
 
     def test_health_classifications_and_disabled_scheduler_accuracy(self) -> None:
         self.assertEqual(
@@ -3007,6 +3716,24 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
             health_classification(
                 enabled=True,
                 scheduler_ok=True,
+                project_stage="implementation",
+                blocker_kind="conflicting_owner_work",
+            ),
+            "project_blocked_owner_decision",
+        )
+        self.assertEqual(
+            health_classification(
+                enabled=True,
+                scheduler_ok=True,
+                project_stage="implementation",
+                blocker_kind="destructive_or_production_operation",
+            ),
+            "project_blocked_protected_operation",
+        )
+        self.assertEqual(
+            health_classification(
+                enabled=True,
+                scheduler_ok=True,
                 project_stage="post_publication_reconciliation",
                 blocker_kind=None,
             ),
@@ -3034,6 +3761,7 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
                             {
                                 "timestamp": "1970-01-01T00:00:10+00:00",
                                 "total_token_usage": 5,
+                                "cache_read_token_usage": 3,
                             }
                         ),
                         json.dumps(
@@ -3056,9 +3784,10 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
                 {"PROPERTY_RENTAL_MODEL_USAGE_LEDGER": str(ledger)},
             ):
                 spec.loader.exec_module(report)
-            totals, unavailable = report.recent_model_usage(now=20)
+            totals, unavailable, cache_totals = report.recent_model_usage(now=20)
             self.assertEqual(totals, [5])
             self.assertEqual(unavailable, 1)
+            self.assertEqual(cache_totals, [3])
             self.assertNotIn(0, totals)
 
     def test_daily_report_rejects_stale_success_as_healthy(self) -> None:
@@ -3071,6 +3800,9 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
                 (ROOT / "scripts/openclaw-supervisor-preflight.sh").read_bytes()
             )
             preflight.chmod(0o755)
+            (repo / "scripts/openclaw_automation.py").write_bytes(
+                (ROOT / "scripts/openclaw_automation.py").read_bytes()
+            )
             subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
             subprocess.run(
                 ["git", "commit", "-qm", "report harness"], cwd=repo, check=True
@@ -3181,100 +3913,196 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
 
     def test_repository_owned_wrapper_enforces_supported_route(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            capture = Path(directory) / "args.json"
-            fake = Path(directory) / "hermes"
+            from openclaw_hermes_guard import create_manifest
+
+            root = Path(directory)
+            capture = root / "args.json"
+            fake = root / "hermes"
             fake.write_text(
-                '#!/bin/sh\npython3 -c \'import json,os,sys; open(os.environ["CAPTURE"],"w").write(json.dumps({"args":sys.argv[1:],"ceiling":os.environ.get("HERMES_MAX_TOKENS")}))\' "$@"\n'
+                """#!/usr/bin/env python3
+import json, os, sys
+args = sys.argv[1:]
+if 'prompt-size' in args:
+    manifest = json.load(open(os.environ['PROPERTY_RENTAL_INVOCATION_MANIFEST']))
+    budget = json.load(open(manifest['budget_path']))
+    budget.update({'guard_loaded':True,'preflight_guard_loaded':True,'guard_capabilities':['cumulative_llm_execution','least_privilege_pre_tool_block','least_privilege_tool_execution']})
+    open(manifest['budget_path'], 'w').write(json.dumps(budget))
+    print('{}')
+    raise SystemExit(0)
+manifest = json.load(open(os.environ['PROPERTY_RENTAL_INVOCATION_MANIFEST']))
+budget = json.load(open(manifest['budget_path']))
+budget.update({'chat_guard_loaded':True,'chat_guard_pid':os.getpid(),'effective_model':'gpt-5.6-sol','api_calls_started':1,'api_calls_completed':1,'input_tokens':8,'output_tokens':3,'cache_read_tokens':2,'reasoning_tokens':1,'counted_total_tokens':11})
+open(manifest['budget_path'], 'w').write(json.dumps(budget))
+open(os.environ['CAPTURE'],'w').write(json.dumps({'args':args,'ceiling':os.environ.get('HERMES_MAX_TOKENS')}))
+print('{}')
+"""
             )
             fake.chmod(0o755)
-            usage = Path(directory) / "usage.json"
+            hermes_home = root / "hermes-home"
+            hermes_home.mkdir()
+            (hermes_home / "auth.json").write_text("{}\n")
+            task = root / "task.txt"
+            task.write_text("compact task\n")
+            state_root = root / "state"
+            dispatcher_record = state_root / "candidates/V1-018.json"
+            fingerprint = repository_fingerprint(ROOT)
+            atomic_write_json(
+                dispatcher_record,
+                {
+                    "candidate": "V1-018",
+                    "stage": "implementation",
+                    "repository_fingerprint": fingerprint,
+                },
+            )
+            manifest_path, manifest, authorization = create_manifest(
+                state_root=state_root,
+                repository=ROOT,
+                dispatcher_pid=os.getpid(),
+                candidate="V1-018",
+                stage="implementation",
+                repository_fingerprint=fingerprint,
+                preserved_worktree_fingerprint=preservation_evidence(ROOT).get(
+                    "fingerprint"
+                ),
+                task_path=task,
+                provider="openai-codex",
+                model="gpt-5.6-sol",
+                requested_reasoning="high",
+                cumulative_ceiling=60_000,
+                dispatcher_record_path=dispatcher_record,
+                writable_paths=["backend/src/property_rental", "backend/tests"],
+            )
             environment = os.environ.copy()
             environment.update(
                 {
                     "CAPTURE": str(capture),
                     "PROPERTY_RENTAL_HERMES_BIN": str(fake),
-                    "PROPERTY_RENTAL_HERMES_USAGE_FILE": str(usage),
+                    "PROPERTY_RENTAL_HERMES_SOURCE_HOME": str(hermes_home),
+                    "PROPERTY_RENTAL_HERMES_USAGE_FILE": str(manifest["usage_path"]),
                     "PROPERTY_RENTAL_HERMES_STAGE": "implementation",
                     "PROPERTY_RENTAL_HERMES_TOKEN_CEILING": "60000",
+                    "PROPERTY_RENTAL_INVOCATION_AUTHORIZATION": authorization,
                 }
             )
-            subprocess.run(
-                [str(ROOT / "scripts/hermes-property-rental"), "compact task"],
-                env=environment,
-                check=True,
-            )
-            captured = json.loads(capture.read_text())
-            arguments = captured["args"]
-            self.assertEqual(captured["ceiling"], "60000")
-            self.assertEqual(
-                arguments[:7],
+            direct_manifest = subprocess.run(
                 [
-                    "chat",
-                    "--provider",
-                    "openai-codex",
-                    "--model",
-                    "gpt-5.6-sol",
-                    "--reasoning",
-                    "high",
+                    str(ROOT / "scripts/hermes-property-rental"),
+                    str(task),
+                    str(manifest_path),
                 ],
-            )
-            self.assertIn("file,skills,todo", arguments)
-            self.assertIn("--quiet", arguments)
-            self.assertNotIn("--oneshot", arguments)
-            self.assertNotIn("--yolo", arguments)
-            self.assertNotIn("--resume", arguments)
-            self.assertNotIn("--continue", arguments)
-            environment["PROPERTY_RENTAL_HERMES_STAGE"] = "independent_review"
-            environment["PROPERTY_RENTAL_HERMES_TOKEN_CEILING"] = "90000"
-            subprocess.run(
-                [str(ROOT / "scripts/hermes-property-rental"), "review"],
-                env=environment,
-                check=True,
-            )
-            captured = json.loads(capture.read_text())
-            self.assertIn("xhigh", captured["args"])
-            self.assertEqual(captured["ceiling"], "90000")
-            environment["PROPERTY_RENTAL_HERMES_TOKEN_CEILING"] = "120000"
-            exceptional_rejected = subprocess.run(
-                [str(ROOT / "scripts/hermes-property-rental"), "review"],
                 env=environment,
                 capture_output=True,
                 text=True,
                 check=False,
             )
-            self.assertEqual(exceptional_rejected.returncode, 64)
-            environment.update(
-                {
-                    "PROPERTY_RENTAL_EXCEPTIONAL_REVIEW_REASON": "preclassified broad review",
-                    "PROPERTY_RENTAL_EXCEPTIONAL_REVIEW_REPOSITORY_FINGERPRINT": "f"
-                    * 64,
-                    "PROPERTY_RENTAL_EXCEPTIONAL_REVIEW_SCOPE": '["scripts/example"]',
-                }
-            )
-            subprocess.run(
-                [str(ROOT / "scripts/hermes-property-rental"), "review"],
-                env=environment,
-                check=True,
-            )
-            self.assertEqual(json.loads(capture.read_text())["ceiling"], "120000")
-            environment["PROPERTY_RENTAL_HERMES_STAGE"] = "implementation"
-            environment["PROPERTY_RENTAL_HERMES_TOKEN_CEILING"] = "90000"
-            rejected = subprocess.run(
-                [str(ROOT / "scripts/hermes-property-rental"), "implementation"],
-                env=environment,
+            self.assertEqual(direct_manifest.returncode, 64)
+            self.assertIn("dispatcher", direct_manifest.stderr)
+            self.assertFalse(Path(str(manifest["usage_path"])).exists())
+            direct = subprocess.run(
+                [str(ROOT / "scripts/hermes-property-rental"), str(task)],
                 capture_output=True,
                 text=True,
                 check=False,
             )
-            self.assertEqual(rejected.returncode, 64)
-            self.assertIn("exact 60000-token ceiling", rejected.stderr)
+            self.assertEqual(direct.returncode, 64)
+            self.assertIn("dispatcher-created invocation manifest", direct.stderr)
+
+    def test_exceptional_review_manifest_requires_persisted_classification(
+        self,
+    ) -> None:
+        from openclaw_hermes_guard import create_manifest
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            task = root / "review.json"
+            task.write_text("{}\n")
+            preserved = preservation_evidence(ROOT).get("fingerprint")
+            fingerprint = repository_fingerprint(ROOT)
+            bad_record = root / "bad/candidates/V1-018.json"
+            good_record = root / "good/candidates/V1-018.json"
+            for record_path in (bad_record, good_record):
+                atomic_write_json(
+                    record_path,
+                    {
+                        "candidate": "V1-018",
+                        "stage": "independent_review",
+                        "repository_fingerprint": fingerprint,
+                    },
+                )
+            bad_path, _, bad_authorization = create_manifest(
+                state_root=root / "bad",
+                repository=ROOT,
+                dispatcher_pid=os.getpid(),
+                candidate="V1-018",
+                stage="independent_review",
+                repository_fingerprint=fingerprint,
+                preserved_worktree_fingerprint=preserved,
+                task_path=task,
+                provider="openai-codex",
+                model="gpt-5.6-sol",
+                requested_reasoning="xhigh",
+                cumulative_ceiling=120_000,
+                dispatcher_record_path=bad_record,
+                writable_paths=[],
+            )
+            with self.assertRaisesRegex(GuardError, "exceptional classification"):
+                validate_manifest(
+                    bad_path,
+                    task_path=task,
+                    consume=False,
+                    authorization=bad_authorization,
+                )
+            good_path, _, good_authorization = create_manifest(
+                state_root=root / "good",
+                repository=ROOT,
+                dispatcher_pid=os.getpid(),
+                candidate="V1-018",
+                stage="independent_review",
+                repository_fingerprint=fingerprint,
+                preserved_worktree_fingerprint=preserved,
+                task_path=task,
+                provider="openai-codex",
+                model="gpt-5.6-sol",
+                requested_reasoning="xhigh",
+                cumulative_ceiling=120_000,
+                dispatcher_record_path=good_record,
+                writable_paths=[],
+                exceptional_review_classification="persisted broad security review",
+            )
+            validated = validate_manifest(
+                good_path,
+                task_path=task,
+                consume=False,
+                authorization=good_authorization,
+            )
+            self.assertEqual(
+                validated["token_policy"]["exceptional_review_classification"],
+                "persisted broad security review",
+            )
+            drifted_record = json.loads(good_record.read_text())
+            drifted_record["stage"] = "implementation"
+            atomic_write_json(good_record, drifted_record)
+            with self.assertRaisesRegex(GuardError, "manifest path or repository"):
+                validate_manifest(
+                    good_path,
+                    task_path=task,
+                    consume=False,
+                    authorization=good_authorization,
+                )
 
     def test_empty_task_delivery_fails_before_model(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
-            task = Path(directory) / "empty"
+            root = Path(directory)
+            task = root / "empty"
+            manifest = root / "manifest.json"
             task.write_text(" \n")
+            manifest.write_text("{}\n")
             result = subprocess.run(
-                [str(ROOT / "scripts/openclaw-hermes-task.sh"), str(task)],
+                [
+                    str(ROOT / "scripts/openclaw-hermes-task.sh"),
+                    str(task),
+                    str(manifest),
+                ],
                 env={**os.environ, "PROPERTY_RENTAL_REPO": str(ROOT)},
                 capture_output=True,
                 text=True,

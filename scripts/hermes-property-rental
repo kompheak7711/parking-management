@@ -1,65 +1,119 @@
 #!/bin/sh
 set -eu
 
-stage="${PROPERTY_RENTAL_HERMES_STAGE:-implementation}"
-usage_file="${PROPERTY_RENTAL_HERMES_USAGE_FILE:-}"
+task_file="${1:-}"
+manifest_file="${2:-}"
+repo="${PROPERTY_RENTAL_REPO:-$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)}"
+guard="$repo/scripts/openclaw_hermes_guard.py"
 hermes_bin="${PROPERTY_RENTAL_HERMES_BIN:-hermes}"
-token_ceiling="${PROPERTY_RENTAL_HERMES_TOKEN_CEILING:-}"
+PROPERTY_RENTAL_WRAPPER_PARENT_PID="$PPID"
+PROPERTY_RENTAL_WRAPPER_PID="$$"
+export PROPERTY_RENTAL_WRAPPER_PARENT_PID
+export PROPERTY_RENTAL_WRAPPER_PID
 
-[ -n "$usage_file" ] || {
-  echo "PROPERTY_RENTAL_HERMES_USAGE_FILE is required" >&2
+[ "$#" -eq 2 ] && [ -f "$task_file" ] && [ -f "$manifest_file" ] || {
+  echo "A compact task file and dispatcher-created invocation manifest are required" >&2
   exit 64
 }
-[ "$#" -eq 1 ] && [ -n "$1" ] || {
-  echo "A nonempty compact task is required" >&2
+[ -x "$guard" ] || {
+  echo "Repository-owned Hermes guard is unavailable" >&2
   exit 64
 }
 
-case "$stage" in
-  implementation)
-    reasoning=high
-    [ "$token_ceiling" = 60000 ] || {
-      echo "Implementation requires the exact 60000-token ceiling" >&2
+python3 "$guard" validate "$manifest_file" "$task_file" || exit 64
+
+stage="$(jq -er '.stage' "$manifest_file")"
+reasoning="$(jq -er '.token_policy.requested_reasoning' "$manifest_file")"
+token_ceiling="$(jq -er '.token_policy.cumulative_ceiling' "$manifest_file")"
+manifest_id="$(jq -er '.manifest_id' "$manifest_file")"
+usage_file="$(jq -er '.usage_path' "$manifest_file")"
+state_root="$(CDPATH= cd -- "$(dirname "$manifest_file")/.." && pwd)"
+session_home="$state_root/hermes-sessions/$manifest_id"
+
+[ "${PROPERTY_RENTAL_HERMES_STAGE:-$stage}" = "$stage" ] \
+  && [ "${PROPERTY_RENTAL_HERMES_USAGE_FILE:-$usage_file}" = "$usage_file" ] \
+  && [ "${PROPERTY_RENTAL_HERMES_TOKEN_CEILING:-$token_ceiling}" = "$token_ceiling" ] || {
+  echo "Invocation environment differs from the dispatcher manifest" >&2
+  exit 64
+}
+
+case "$stage:$reasoning:$token_ceiling" in
+  implementation:high:60000|direct_codex_recovery:high:60000) ;;
+  independent_review:xhigh:90000) ;;
+  independent_review:xhigh:120000)
+    jq -e '
+      .token_policy.cumulative_ceiling == 120000
+      and (.token_policy.exceptional_review_classification | type == "string" and length > 0)
+      and (.preserved_worktree_fingerprint | type == "string" and length == 64)
+    ' "$manifest_file" >/dev/null || {
+      echo "120000-token review requires persisted exceptional classification evidence" >&2
       exit 64
     }
     ;;
-  independent_review)
-    reasoning=xhigh
-    case "$token_ceiling" in
-      90000) ;;
-      120000)
-        [ -n "${PROPERTY_RENTAL_EXCEPTIONAL_REVIEW_REASON:-}" ] \
-          && [ -n "${PROPERTY_RENTAL_EXCEPTIONAL_REVIEW_REPOSITORY_FINGERPRINT:-}" ] \
-          && [ -n "${PROPERTY_RENTAL_EXCEPTIONAL_REVIEW_SCOPE:-}" ] || {
-          echo "120000-token review requires pre-recorded reason, fingerprint, and scope" >&2
-          exit 64
-        }
-        ;;
-      *) echo "Independent review requires an approved 90000 or 120000-token ceiling" >&2; exit 64 ;;
-    esac
-    ;;
   *)
-    echo "Unsupported Hermes stage: $stage" >&2
+    echo "Unsupported Hermes stage, reasoning, or cumulative token policy" >&2
     exit 64
     ;;
 esac
 
-# HERMES_MAX_TOKENS is the installed CLI's supported per-invocation model
-# configuration boundary. Do not mutate persistent user configuration.
+PROPERTY_RENTAL_HERMES_SOURCE_HOME="${PROPERTY_RENTAL_HERMES_SOURCE_HOME:-$HOME/.hermes}" \
+  python3 "$guard" prepare-home "$manifest_file" "$task_file" "$session_home" || exit 64
+
+export HERMES_HOME="$session_home"
+export HERMES_ENABLE_PROJECT_PLUGINS=1
+export PROPERTY_RENTAL_INVOCATION_MANIFEST="$manifest_file"
+export PROPERTY_RENTAL_REPO="$repo"
 export HERMES_MAX_TOKENS="$token_ceiling"
 
-# The installed quiet chat route is the supported boundary that both honors
-# HERMES_MAX_TOKENS and does not force YOLO.  Stage toolsets deliberately omit
-# terminal, web, browser, delegation, cron, memory, and session-history tools;
-# publication and verification are separate deterministic stages.
-exec "$hermes_bin" \
-  chat \
+export PROPERTY_RENTAL_HERMES_PROCESS_MODE=preflight
+"$hermes_bin" --in "$repo" --toolsets file,terminal,todo prompt-size --json >/dev/null 2>&1 || {
+  echo "Hermes plugin capability preflight failed" >&2
+  exit 64
+}
+jq -e '
+  .preflight_guard_loaded == true
+  and .chat_guard_loaded == false
+  and .guard_capabilities == [
+    "cumulative_llm_execution",
+    "least_privilege_pre_tool_block",
+    "least_privilege_tool_execution"
+  ]
+' "$(jq -r '.budget_path' "$manifest_file")" >/dev/null || {
+  echo "Repository-owned Hermes guard did not load" >&2
+  exit 64
+}
+
+stderr_file="$session_home/hermes.stderr"
+export PROPERTY_RENTAL_HERMES_PROCESS_MODE=chat
+set +e
+"$hermes_bin" chat \
   --provider openai-codex \
   --model gpt-5.6-sol \
   --reasoning "$reasoning" \
-  --toolsets file,skills,todo \
+  --toolsets file,terminal,todo \
   --max-turns 120 \
   --source tool \
-  --in "${PROPERTY_RENTAL_REPO:-$(pwd)}" \
+  --in "$repo" \
   --quiet \
-  --query "$1"
+  --query "$(cat "$task_file")" \
+  2>"$stderr_file"
+status=$?
+set -e
+
+python3 "$guard" finalize-usage "$manifest_file" || {
+  cat "$stderr_file" >&2
+  echo "Hermes cumulative usage evidence could not be finalized" >&2
+  exit 64
+}
+usage_file="$(jq -er '.usage_path' "$manifest_file")"
+jq -e '
+  .preflight_guard_loaded == true
+  and .chat_guard_loaded == true
+  and (.chat_guard_pid | type == "number" and . > 1)
+' "$usage_file" >/dev/null || {
+  cat "$stderr_file" >&2
+  echo "Hermes guard did not attach to the chat process" >&2
+  exit 64
+}
+cat "$stderr_file" >&2
+exit "$status"

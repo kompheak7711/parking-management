@@ -84,15 +84,16 @@ NOW_MS = int(os.environ.get("PROPERTY_RENTAL_NOW_MS", str(int(time.time() * 1000
 HEARTBEAT_MS = int(os.environ.get("PROPERTY_RENTAL_HEARTBEAT_MS", str(75 * 60 * 1000)))
 
 
-def recent_model_usage(now: float | None = None) -> tuple[list[int], int]:
+def recent_model_usage(now: float | None = None) -> tuple[list[int], int, list[int]]:
     """Read actual dispatcher usage records from the last 24 hours."""
     cutoff = (time.time() if now is None else now) - 86400
     totals: list[int] = []
+    cache_totals: list[int] = []
     unavailable = 0
     try:
         lines = USAGE_LEDGER.read_text().splitlines()
     except OSError:
-        return totals, unavailable
+        return totals, unavailable, cache_totals
     for line in lines:
         try:
             record = json.loads(line)
@@ -100,10 +101,15 @@ def recent_model_usage(now: float | None = None) -> tuple[list[int], int]:
                 str(record["timestamp"]).replace("Z", "+00:00")
             ).timestamp()
             raw_tokens = record.get("total_token_usage", record.get("total_tokens"))
+            raw_cache = record.get(
+                "cache_read_token_usage", record.get("cache_read_tokens")
+            )
         except (KeyError, TypeError, ValueError, json.JSONDecodeError):
             continue
         if timestamp < cutoff:
             continue
+        if isinstance(raw_cache, int) and raw_cache >= 0:
+            cache_totals.append(raw_cache)
         if raw_tokens == "unavailable from provider" or raw_tokens is None:
             unavailable += 1
             continue
@@ -114,7 +120,7 @@ def recent_model_usage(now: float | None = None) -> tuple[list[int], int]:
             continue
         if tokens >= 0:
             totals.append(tokens)
-    return totals, unavailable
+    return totals, unavailable, cache_totals
 
 
 def git(*args: str) -> str:
@@ -206,7 +212,7 @@ def main() -> None:
     last_status = service.get("status", "missing")
     errors = service.get("errors", 0)
     running_ms = service.get("running")
-    recent_totals, unavailable_totals = recent_model_usage()
+    recent_totals, unavailable_totals, recent_cache_totals = recent_model_usage()
 
     head = git("rev-parse", "--short", "HEAD")
     branch = git("branch", "--show-current")
@@ -246,6 +252,9 @@ def main() -> None:
     if repair_exhausted:
         automation_state = "REPAIR_EXHAUSTED"
         idle_reason = "A bounded repair fingerprint exhausted its permitted attempts"
+    elif preflight.get("owner_action_required") is True:
+        automation_state = "WAITING_FOR_OWNER"
+        idle_reason = "A structured owner decision is required"
     elif state_issue == "handoff_missing":
         automation_state = "HANDOFF_MISSING"
         idle_reason = "Durable authorization exists, but no unique safe structured successor is recorded"
@@ -274,12 +283,6 @@ def main() -> None:
             if state_issue == "bounded_automatic_repair_authorized"
             else "Approved work is active or queued"
         )
-    elif candidate.get("status") == "not_approved" or "approval" in next_action.lower():
-        automation_state = "WAITING_FOR_OWNER"
-        idle_reason = "Intentionally waiting for owner approval"
-    elif state.get("blockers"):
-        automation_state = "WAITING_FOR_OWNER"
-        idle_reason = "Blocked; owner attention may be required"
     else:
         automation_state = "IDLE"
         idle_reason = "No actionable work is recorded"
@@ -320,6 +323,11 @@ def main() -> None:
         )
     else:
         token_text = "0 model tokens; no model cycle was recorded"
+    cache_text = (
+        f"{sum(recent_cache_totals):,} cache-read tokens (reported separately; not double-counted)"
+        if recent_cache_totals
+        else "0 cache-read tokens reported separately"
+    )
     if not commits:
         commits = f"- No commits; reason: {idle_reason}"
 
@@ -346,7 +354,7 @@ def main() -> None:
         f"Git: {branch} at {head}; {'synchronized' if synchronized else 'not synchronized'}; worktree {'clean' if clean else 'changed'}"
     )
     print(f"Last meaningful state update: {state.get('timestamp', 'Not recorded')}")
-    print(f"Model usage in last 24 hours: {token_text}")
+    print(f"Model usage in last 24 hours: {token_text}; {cache_text}")
     print(f"Workflow state: {automation_state}")
     print(f"Reason idle: {idle_reason}")
     print(f"Blockers: {'None' if not blockers else '; '.join(map(str, blockers))}")

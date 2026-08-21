@@ -29,6 +29,27 @@ COMPLEX_REVIEW_TOKEN_CEILING: Final = 90_000
 EXCEPTIONAL_REVIEW_TOKEN_CEILING: Final = 120_000
 MODEL_ID: Final = "gpt-5.6-sol"
 PROVIDER: Final = "openai-codex"
+PRESERVATION_EVIDENCE_PATH: Final = "ops/AUTOMATION_REPAIR_EVIDENCE.json"
+
+RECOVERABLE_ROUTING_FAILURES: Final = frozenset(
+    {
+        "pre_model_infrastructure_failure",
+        "unsupported_invocation_configuration",
+        "verification_tooling_unavailable",
+    }
+)
+
+OWNER_BLOCKER_CATEGORIES: Final = frozenset(
+    {
+        "owner_policy_decision",
+        "scope_or_policy_ambiguity",
+        "secret_credential_or_protected_operation",
+        "destructive_or_production_operation",
+        "conflicting_owner_work",
+        "protected_operation",
+        "bounded_attempts_exhausted",
+    }
+)
 
 STAGES: Final = (
     "reconciliation_dispatch",
@@ -97,9 +118,8 @@ def model_policy(
                 "unsupported_invocation_configuration",
                 "implementation cannot promote itself to a review ceiling",
             )
-        route = "Hermes" if stage == "implementation" else "direct Codex"
         return ModelPolicy(
-            stage, PROVIDER, MODEL_ID, "high", ORDINARY_TOKEN_CEILING, route
+            stage, PROVIDER, MODEL_ID, "high", ORDINARY_TOKEN_CEILING, "Hermes"
         )
     if stage != "independent_review":
         raise AutomationError(
@@ -127,7 +147,7 @@ def model_policy(
         MODEL_ID,
         "xhigh",
         ceiling,
-        "direct Codex",
+        "Hermes",
         classification_reason,
     )
 
@@ -273,6 +293,513 @@ def compact_state_fingerprint(repo: Path) -> str:
     return digest(content)
 
 
+def preserved_paths_fingerprint(repo: Path, paths: Iterable[str]) -> str:
+    """Hash an exact path allowlist without including unrelated automation work."""
+    entries: list[dict[str, str]] = []
+    for relative in sorted(set(paths)):
+        path = repo / relative
+        if path.is_symlink():
+            kind = "symlink"
+            content = digest(os.readlink(path))
+        elif path.is_file():
+            kind = "regular"
+            content = digest(path.read_bytes())
+        else:
+            kind = "missing"
+            content = "missing"
+        entries.append({"path": relative, "kind": kind, "sha256": content})
+    return digest(entries)
+
+
+def preservation_evidence(repo: Path) -> dict[str, Any]:
+    """Validate the recorded preserved candidate paths and return safe evidence."""
+    path = repo / PRESERVATION_EVIDENCE_PATH
+    try:
+        value = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        return {
+            "valid": False,
+            "candidate": None,
+            "branch": None,
+            "baseline_head": None,
+            "paths": [],
+            "fingerprint": None,
+        }
+    recorded = value.get("preserved_paths")
+    if not isinstance(recorded, dict) or not recorded:
+        return {
+            "valid": False,
+            "candidate": value.get("candidate"),
+            "branch": value.get("baseline_branch"),
+            "baseline_head": value.get("baseline_head"),
+            "paths": [],
+            "fingerprint": None,
+        }
+    paths = sorted(str(item) for item in recorded)
+    hashes_match = all(
+        isinstance(expected, str)
+        and re.fullmatch(r"[0-9a-f]{64}", expected) is not None
+        and (repo / relative).is_file()
+        and digest((repo / relative).read_bytes()) == expected
+        for relative, expected in recorded.items()
+    )
+    return {
+        "valid": bool(
+            hashes_match
+            and value.get("automation_repair_may_modify_preserved_paths") is False
+            and value.get("v1_019_may_start") is False
+        ),
+        "candidate": value.get("candidate"),
+        "branch": value.get("baseline_branch"),
+        "baseline_head": value.get("baseline_head"),
+        "paths": paths,
+        "fingerprint": preserved_paths_fingerprint(repo, paths),
+    }
+
+
+def _integer(value: Any, default: int, *, minimum: int, maximum: int) -> int:
+    if (
+        isinstance(value, int)
+        and not isinstance(value, bool)
+        and minimum <= value <= maximum
+    ):
+        return value
+    return default
+
+
+def _required_check_failed(state: dict[str, Any]) -> bool:
+    repair = state.get("repair") or {}
+    if isinstance(repair, dict) and any(
+        repair.get(key) not in (None, "", False)
+        for key in ("failed_check", "known_failing_check", "required_check_failed")
+    ):
+        return True
+    tests = state.get("tests") or []
+    return isinstance(tests, list) and any(
+        isinstance(item, str) and item.strip().upper().startswith("FAIL:")
+        for item in tests
+    )
+
+
+def _queue_successor(roadmap: dict[str, Any], current_id: str) -> dict[str, Any] | None:
+    tranches = roadmap.get("tranches") or []
+    if not isinstance(tranches, list):
+        return None
+    current = next(
+        (
+            item
+            for item in tranches
+            if isinstance(item, dict) and item.get("id") == current_id
+        ),
+        None,
+    )
+    if not isinstance(current, dict) or not isinstance(current.get("order"), int):
+        return None
+    status_by_id = {
+        str(item.get("id")): item.get("status")
+        for item in tranches
+        if isinstance(item, dict) and item.get("id")
+    }
+    candidates = [
+        item
+        for item in tranches
+        if isinstance(item, dict)
+        and item.get("order") == current["order"] + 1
+        and item.get("status") == "approved_ready"
+        and item.get("authorization") == "durable_v1"
+        and all(
+            dependency == current_id or status_by_id.get(str(dependency)) == "complete"
+            for dependency in item.get("dependencies") or []
+        )
+    ]
+    return candidates[0] if len(candidates) == 1 else None
+
+
+def classify_compact_state(repo: Path) -> dict[str, Any]:
+    """Return the one authoritative lifecycle and blocker classification."""
+    state = json.loads((repo / "ops/STATE.json").read_text())
+    roadmap_path = repo / "ops/V1_ROADMAP.json"
+    roadmap = json.loads(roadmap_path.read_text()) if roadmap_path.is_file() else {}
+    queue_text = (repo / "ops/QUEUE.md").read_text()
+    status = str(state.get("status") or "unknown")
+    approval = state.get("approval") or {}
+    candidate = state.get("next_candidate") or {}
+    repair = state.get("repair") or {}
+    if not isinstance(approval, dict):
+        approval = {}
+    if not isinstance(candidate, dict):
+        candidate = {}
+    if not isinstance(repair, dict):
+        repair = {}
+
+    branch = git(repo, "branch", "--show-current")
+    head = git(repo, "rev-parse", "HEAD")
+    upstream = git(repo, "rev-parse", "@{upstream}", check=False)
+    state_branch = state.get("branch")
+    roadmap_state = state.get("roadmap") or {}
+    roadmap_current_id = str(
+        (roadmap_state.get("current_id") if isinstance(roadmap_state, dict) else "")
+        or ""
+    )
+    candidate_id = str(
+        candidate.get("roadmap_id") or candidate.get("id") or roadmap_current_id
+    )
+    attempt_tranche_id = (
+        candidate_id
+        or roadmap_current_id
+        or str(state.get("active_cycle") or state.get("task") or "unknown")
+    )
+    repair_tranche_id = str(repair.get("tranche_id") or "")
+    repair_matches = bool(repair_tranche_id and repair_tranche_id == attempt_tranche_id)
+    repair_attempts = _integer(
+        repair.get("attempts") if repair_matches else 0,
+        0,
+        minimum=0,
+        maximum=2,
+    )
+    repair_max_attempts = _integer(
+        repair.get("max_attempts") if repair_matches else 2,
+        2,
+        minimum=1,
+        maximum=2,
+    )
+    repair_failure = str(repair.get("failure") or "") if repair_matches else ""
+    owner_action = str(state.get("owner_action") or "").strip()
+    protected_flags = {
+        "requires_owner_decision": repair.get("requires_owner_decision") is True,
+        "suspected_secret": repair.get("suspected_secret") is True,
+        "scope_expansion": repair.get("scope_expansion") is True,
+        "protected_operation": repair.get("protected_operation") is True
+        or candidate.get("protected_operation") is True,
+    }
+    owner_category: str | None = None
+    if repair_failure in OWNER_BLOCKER_CATEGORIES:
+        owner_category = repair_failure
+    elif protected_flags["suspected_secret"]:
+        owner_category = "secret_credential_or_protected_operation"
+    elif protected_flags["protected_operation"]:
+        owner_category = "protected_operation"
+    elif protected_flags["scope_expansion"]:
+        owner_category = "scope_or_policy_ambiguity"
+    elif protected_flags["requires_owner_decision"] or owner_action not in {"", "none"}:
+        owner_category = "owner_policy_decision"
+    elif repair_attempts >= repair_max_attempts and repair_failure:
+        owner_category = "bounded_attempts_exhausted"
+
+    blockers = state.get("blockers") or []
+    blocker_count = len(blockers) if isinstance(blockers, list) else 1
+    recorded_next_action = str(state.get("next_action") or "")
+    next_action = recorded_next_action
+    durable_v1 = (
+        "Remaining v1 application tranches are authorized when bounded by canonical documents"
+        in queue_text
+    )
+    implementation_started = approval.get("implementation_started") is True
+    implementation_completed = approval.get("implementation_completed") is True
+    publication_completed = approval.get("publication_completed") is True
+    approval_status = str(approval.get("status") or "unknown")
+    candidate_status = str(candidate.get("status") or "unknown")
+    candidate_task = str(candidate.get("task") or "")
+    candidate_concrete = bool(
+        candidate_id and candidate_task and candidate.get("phase")
+    )
+    candidate_current = bool(candidate_id and candidate_id == roadmap_current_id)
+    changed = changed_paths(repo)
+    preservation = preservation_evidence(repo)
+    branch_exact = bool(branch and state_branch == branch)
+    head_synchronized = bool(head and upstream == head)
+    state_commit = str(state.get("commit") or "")
+    state_commit_ancestor = bool(
+        re.fullmatch(r"[0-9a-f]{40}", state_commit)
+        and subprocess.run(
+            ["git", "merge-base", "--is-ancestor", state_commit, head],
+            cwd=repo,
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode
+        == 0
+    )
+    try:
+        no_overlap = relevant_processes(repo) == []
+    except (OSError, subprocess.SubprocessError):
+        no_overlap = False
+    capability_continuation = bool(
+        status == "partial"
+        and approval_status == "approved_ready"
+        and implementation_started
+        and not publication_completed
+        and repair_matches
+        and repair_failure == "verification_tooling_unavailable"
+        and repair.get("scope_preserved") is True
+        and repair_attempts < repair_max_attempts
+        and owner_category is None
+        and owner_action == "none"
+        and not _required_check_failed(state)
+        and candidate_current
+        and branch_exact
+        and head_synchronized
+        and state_commit_ancestor
+        and no_overlap
+        and preservation.get("valid") is True
+        and preservation.get("candidate") == candidate_id
+        and preservation.get("branch") == branch
+        and sorted(changed) == sorted(preservation.get("paths") or [])
+    )
+
+    known_statuses = {
+        "approved_ready",
+        "active",
+        "in_progress",
+        "partial",
+        "verified_for_review",
+        "complete_unpublished",
+        "complete_uncommitted",
+        "published",
+        "failed",
+        "not_verified",
+        "discrepancy",
+        "repair_required",
+        "verified_unpublished",
+        "implemented_awaiting_supervisor_review",
+    }
+    state_issue = ""
+    lifecycle = "idle"
+    blocker_category = owner_category or (repair_failure or None)
+    owner_action_required = owner_category is not None
+    actionable = False
+    implementation_allowed = False
+    normalized = False
+
+    if owner_category is not None:
+        lifecycle = "owner_blocked"
+        state_issue = owner_category
+        actionable = False
+        normalized = True
+    elif (
+        status == "verified_unpublished"
+        and implementation_completed
+        and not publication_completed
+    ):
+        lifecycle = "post_publication_reconciliation_pending"
+        state_issue = "published_compact_state_reconciliation_required"
+        next_action = (
+            "Reconcile the already-published candidate into compact state after "
+            "proving synchronized HEAD and successful CI."
+        )
+        actionable = True
+        normalized = True
+    elif capability_continuation:
+        lifecycle = "verification_pending"
+        state_issue = "capability_verification_continuation"
+        next_action = (
+            "Resume the exact preserved candidate at deterministic verification; "
+            "do not rerun implementation."
+        )
+        actionable = True
+        normalized = True
+        implementation_allowed = False
+    elif implementation_completed and not publication_completed:
+        lifecycle = "review_publication_pending"
+        state_issue = "completed_tranche_publication_action_enforced"
+        next_action = (
+            "Independently verify and publish the completed bounded tranche under "
+            "standing authorization, then dispatch the next approved candidate."
+        )
+        actionable = True
+        normalized = True
+    elif (
+        status == "approved_ready"
+        and not next_action
+        and candidate_status == "approved_ready"
+        and candidate_task
+    ):
+        lifecycle = "implementation_pending"
+        state_issue = "missing_next_action_derived_from_approved_candidate"
+        next_action = f"Implement the approved bounded candidate: {candidate_task}"
+        actionable = True
+        implementation_allowed = True
+        normalized = True
+    elif (
+        status == "published"
+        and not candidate_current
+        and candidate_status == "approved_ready"
+        and candidate_task
+    ):
+        lifecycle = "implementation_pending"
+        state_issue = "published_next_candidate_dispatch_required"
+        next_action = f"Implement the approved bounded candidate: {candidate_task}"
+        actionable = True
+        implementation_allowed = True
+        normalized = True
+    elif (
+        status == "published"
+        and durable_v1
+        and (not candidate_concrete or candidate_current)
+    ):
+        successor = _queue_successor(roadmap, roadmap_current_id)
+        if successor and successor.get("protected_operation") is not True:
+            lifecycle = "successor_activation_pending"
+            state_issue = "authorized_candidate_selection_required"
+            next_action = (
+                "Materialize the exact structured approved successor from "
+                "ops/V1_ROADMAP.json without a model, then dispatch it immediately."
+            )
+            actionable = True
+        else:
+            lifecycle = "owner_blocked"
+            state_issue = "handoff_missing"
+            next_action = (
+                "No unique safe structured successor exists for the published phase. "
+                "Record an explicit bounded candidate or protected Owner-decision reason."
+            )
+        normalized = True
+    elif (
+        status in {"failed", "not_verified", "discrepancy", "repair_required"}
+        and approval_status
+        in {"approved_ready", "approved_active", "approved_complete"}
+        and repair.get("scope_preserved") is True
+        and repair_failure
+        and repair_attempts < repair_max_attempts
+    ):
+        lifecycle = "bounded_repair_pending"
+        state_issue = "bounded_automatic_repair_authorized"
+        next_action = (
+            f"Perform bounded automatic repair attempt {repair_attempts + 1} of "
+            f"{repair_max_attempts} for the already-approved tranche: {repair_failure}."
+        )
+        actionable = True
+        implementation_allowed = True
+        normalized = True
+    elif blocker_count:
+        lifecycle = "blocked_unclassified"
+        state_issue = "structured_blocker_required"
+        blocker_category = "repository_integrity_uncertainty"
+        actionable = False
+        normalized = True
+    elif (
+        status not in known_statuses
+        and approval_status
+        in {"approved_ready", "approved_active", "approved_complete"}
+        and durable_v1
+    ):
+        lifecycle = "state_contract_repair_pending"
+        state_issue = "state_contract_repair_authorized"
+        next_action = f"Perform a bounded compact-state contract repair for unrecognized status {status!r}."
+        actionable = True
+        normalized = True
+    elif status in {"approved_ready", "active", "in_progress"} and next_action:
+        lifecycle = "implementation_pending"
+        actionable = True
+        implementation_allowed = True
+    elif (
+        status
+        in {
+            "verified_for_review",
+            "verified_unpublished",
+            "complete_unpublished",
+            "complete_uncommitted",
+            "implemented_awaiting_supervisor_review",
+        }
+        and next_action
+    ):
+        lifecycle = "review_publication_pending"
+        actionable = True
+    elif status not in known_statuses:
+        lifecycle = "owner_blocked"
+        state_issue = "state_contract_violation"
+        blocker_category = "scope_or_policy_ambiguity"
+        owner_action_required = True
+        next_action = (
+            "Resolve the unrecognized compact-state contract before dispatch; "
+            "no safe authorized normalization is available."
+        )
+        normalized = True
+
+    automation_repair = state.get("automation_repair") or {}
+    if (
+        isinstance(automation_repair, dict)
+        and automation_repair.get("status", "restored") != "restored"
+    ):
+        lifecycle = "automation_repair_hold"
+        state_issue = "automation_repair_publication_required"
+        next_action = str(
+            automation_repair.get("next_action")
+            or "Publish and restore the bounded automation repair before candidate dispatch."
+        )
+        actionable = False
+        normalized = True
+        implementation_allowed = False
+
+    current_roadmap = next(
+        (
+            item
+            for item in roadmap.get("tranches") or []
+            if isinstance(item, dict) and item.get("id") == roadmap_current_id
+        ),
+        {},
+    )
+    return {
+        "head": head,
+        "branch": branch,
+        "upstream": upstream,
+        "status": status,
+        "lifecycle": lifecycle,
+        "blocker_category": blocker_category,
+        "owner_action_required": owner_action_required,
+        "active_cycle": state.get("active_cycle") or state.get("task") or "unknown",
+        "attempt_tranche_id": attempt_tranche_id,
+        "candidate": candidate_id,
+        "next_action": next_action,
+        "recorded_next_action": recorded_next_action,
+        "state_issue": state_issue,
+        "automation_repair_status": (
+            automation_repair.get("status", "restored")
+            if isinstance(automation_repair, dict)
+            else "restored"
+        ),
+        "repair_tranche_id": repair_tranche_id,
+        "repair_matches_tranche": repair_matches,
+        "repair_failure": repair_failure,
+        "normalized": normalized,
+        "blockers": blocker_count,
+        "repair_attempts": repair_attempts,
+        "repair_max_attempts": repair_max_attempts,
+        "durable_v1_authorization": durable_v1,
+        "candidate_is_concrete": candidate_concrete,
+        "status_known": status in known_statuses,
+        "implementation_started": implementation_started,
+        "implementation_completed": implementation_completed,
+        "implementation_allowed": implementation_allowed,
+        "publication_completed": publication_completed,
+        "queue_candidate": _queue_successor(roadmap, roadmap_current_id),
+        "roadmap": {
+            "current_id": roadmap_current_id,
+            "current_status": current_roadmap.get("status", "unknown"),
+            "total": roadmap.get("total_tranches", 0),
+            "completed": sum(
+                1
+                for item in roadmap.get("tranches") or []
+                if isinstance(item, dict) and item.get("status") == "complete"
+            ),
+        },
+        "worktree": repository_fingerprint(repo),
+        "preserved_worktree_fingerprint": preservation.get("fingerprint"),
+        "preservation_valid": preservation.get("valid") is True,
+        "exact_identity": {
+            "candidate": candidate_id,
+            "branch": branch,
+            "head": head,
+            "preserved_worktree_fingerprint": preservation.get("fingerprint"),
+            "no_failed_check": not _required_check_failed(state),
+            "no_overlap": no_overlap,
+            "approved_scope": repair.get("scope_preserved") is True,
+            "owner_action_none": owner_action == "none",
+        },
+        "actionable": actionable,
+    }
+
+
 def relevant_processes(
     repo: Path, process_rows: Iterable[str] | None = None
 ) -> list[str]:
@@ -382,15 +909,7 @@ def normalize_usage(
 
 def validate_usage(usage: dict[str, Any], policy: ModelPolicy) -> None:
     returned_model = usage.get("model")
-    if returned_model is None and policy.route == "direct Codex":
-        if usage.get("invocation_config_verified") is not True:
-            raise AutomationError(
-                "unsupported_invocation_configuration",
-                "direct Codex invocation configuration was not proved",
-            )
-    elif (
-        not isinstance(returned_model, str) or returned_model.split("/")[-1] != MODEL_ID
-    ):
+    if not isinstance(returned_model, str) or returned_model.split("/")[-1] != MODEL_ID:
         raise AutomationError(
             "unsupported_invocation_configuration",
             f"provider returned unsupported model {returned_model!r}",
@@ -479,15 +998,16 @@ def hermes_chat_usage(stderr: str, database: Path) -> dict[str, Any]:
         config = {}
     reasoning = config.get("reasoning_config")
     effort = reasoning.get("effort") if isinstance(reasoning, dict) else None
+
     def exact_metric(aggregate: object, session_value: object) -> int | None:
         value = aggregate if aggregate is not None else session_value
-        return int(value) if value is not None else None
+        if isinstance(value, (int, str, bytes, bytearray)):
+            return int(value)
+        return None
 
     input_tokens = exact_metric(usage["input_tokens"], session["input_tokens"])
     output_tokens = exact_metric(usage["output_tokens"], session["output_tokens"])
-    cache_read = exact_metric(
-        usage["cache_read_tokens"], session["cache_read_tokens"]
-    )
+    cache_read = exact_metric(usage["cache_read_tokens"], session["cache_read_tokens"])
     reasoning_tokens = exact_metric(
         usage["reasoning_tokens"], session["reasoning_tokens"]
     )
@@ -761,6 +1281,7 @@ def task_packet(repo: Path, preflight: dict[str, Any], stage: str) -> dict[str, 
         {},
     )
     fingerprints = actionable_fingerprint(repo, preflight)
+    preserved = preservation_evidence(repo)
     packet = {
         "schema_version": 2,
         "candidate": candidate_id,
@@ -771,6 +1292,7 @@ def task_packet(repo: Path, preflight: dict[str, Any], stage: str) -> dict[str, 
         "compact_state_fingerprint": fingerprints["compact_state"],
         "process_state_fingerprint": fingerprints["process_state"],
         "preflight_fingerprint": fingerprints["actionable"],
+        "preserved_worktree_fingerprint": preserved.get("fingerprint"),
         "task": roadmap_item.get("task")
         or candidate.get("task")
         or preflight.get("next_action"),
@@ -862,10 +1384,14 @@ def health_classification(
         return "scheduler_intentionally_disabled"
     if not scheduler_ok:
         return "scheduler_unhealthy"
-    if blocker_kind == "owner_policy_decision":
+    if blocker_kind in OWNER_BLOCKER_CATEGORIES:
+        if blocker_kind in {
+            "secret_credential_or_protected_operation",
+            "destructive_or_production_operation",
+            "protected_operation",
+        }:
+            return "project_blocked_protected_operation"
         return "project_blocked_owner_decision"
-    if blocker_kind == "secret_credential_or_protected_operation":
-        return "project_blocked_protected_operation"
     mapping = {
         "implementation": "implementation_in_progress",
         "deterministic_verification": "verification_in_progress",
@@ -901,6 +1427,10 @@ def usage_record(
 
 
 if __name__ == "__main__":
+    if len(sys.argv) in {2, 3} and sys.argv[1] == "classify-state":
+        target = Path(sys.argv[2] if len(sys.argv) == 3 else os.getcwd()).resolve()
+        print(json.dumps(classify_compact_state(target), sort_keys=True))
+        raise SystemExit(0)
     if len(sys.argv) == 3 and sys.argv[1] == "publication-guard":
         failure = publication_candidate_guard(Path.cwd(), sys.argv[2])
         if failure == "canonical":

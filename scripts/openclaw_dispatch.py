@@ -14,6 +14,7 @@ from typing import Any
 
 from openclaw_automation import (
     FAILURE_CATEGORIES,
+    RECOVERABLE_ROUTING_FAILURES,
     SECRET_PATTERN,
     AutomationError,
     ModelPolicy,
@@ -29,6 +30,7 @@ from openclaw_automation import (
     model_policy,
     normalize_usage,
     persist_terminal_marker,
+    preservation_evidence,
     process_fingerprint,
     release_attempt,
     relevant_processes,
@@ -41,6 +43,7 @@ from openclaw_automation import (
     utc_now,
     validate_usage,
 )
+from openclaw_hermes_guard import create_manifest
 
 REPO = Path(
     os.environ.get(
@@ -539,93 +542,34 @@ def terminal_marker(root: Path, fingerprint: str) -> Path | None:
     return None
 
 
-def direct_codex_jsonl_usage(stdout: str, token_ceiling: int) -> dict[str, Any]:
-    """Extract only provider metadata from the direct Codex JSONL event stream."""
-    thread_id: str | None = None
-    stop_reason: str | None = None
-    totals: dict[str, int | None] = {
-        "input_tokens": None,
-        "cache_read_tokens": None,
-        "output_tokens": None,
-        "reasoning_tokens": None,
+def authorized_candidate_writes(
+    record: dict[str, Any], packet: dict[str, Any], stage: str
+) -> list[str]:
+    """Return the dispatcher-enforced write scope for one fresh model stage."""
+    if stage == "independent_review":
+        return []
+    exact_existing = sorted(
+        set(
+            record.get("scoped_changed_paths")
+            or record.get("expected_worktree_paths")
+            or []
+        )
+    )
+    if stage == "direct_codex_recovery" and exact_existing:
+        return exact_existing
+    profile = str(packet.get("acceptance_profile") or "")
+    paths = {
+        "backend/src/property_rental",
+        "backend/tests",
+        "ops/NOW.md",
+        "ops/STATE.json",
+        "ops/traceability.json",
     }
-
-    def ceiling_reason(value: object) -> str | None:
-        if not isinstance(value, str):
-            return None
-        normalized = value.strip().lower().replace("-", "_").replace(" ", "_")
-        exact = {
-            "length": "length",
-            "max_tokens": "max_tokens",
-            "token_ceiling": "token_ceiling",
-            "session_ceiling": "session_ceiling",
-            "tool_ceiling": "tool_ceiling",
-            "max_turns": "max_turns",
-        }
-        if normalized in exact:
-            return exact[normalized]
-        phrases = {
-            "max_tokens": ("maximum_tokens", "max_token", "token_limit"),
-            "token_ceiling": ("token_ceiling", "weighted_token_limit"),
-            "session_ceiling": ("session_limit", "session_ceiling"),
-            "length": ("context_window", "context_length"),
-            "max_turns": ("maximum_turns", "max_turns", "turn_limit"),
-        }
-        for reason, needles in phrases.items():
-            if any(needle in normalized for needle in needles):
-                return reason
-        return None
-
-    for line in stdout.splitlines():
-        try:
-            event = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if not isinstance(event, dict):
-            continue
-        event_type = event.get("type")
-        if event_type == "thread.started" and isinstance(event.get("thread_id"), str):
-            thread_id = event["thread_id"]
-        event_usage = event.get("usage")
-        if isinstance(event_usage, dict):
-            mappings = {
-                "input_tokens": "input_tokens",
-                "cached_input_tokens": "cache_read_tokens",
-                "output_tokens": "output_tokens",
-                "reasoning_output_tokens": "reasoning_tokens",
-            }
-            for source, target in mappings.items():
-                value = event_usage.get(source)
-                if isinstance(value, int) and value >= 0:
-                    previous = totals[target]
-                    totals[target] = value if previous is None else max(previous, value)
-        for key in ("stop_reason", "finish_reason", "termination_reason"):
-            stop_reason = stop_reason or ceiling_reason(event.get(key))
-        if event_type in {"turn.failed", "error"}:
-            failure = event.get("error")
-            if isinstance(failure, dict):
-                for key in ("code", "type", "reason", "message"):
-                    stop_reason = stop_reason or ceiling_reason(failure.get(key))
-            elif isinstance(failure, str):
-                stop_reason = stop_reason or ceiling_reason(failure)
-            for key in ("code", "reason", "message"):
-                stop_reason = stop_reason or ceiling_reason(event.get(key))
-
-    input_total = totals["input_tokens"]
-    output_total = totals["output_tokens"]
-    return {
-        **totals,
-        "session_id": thread_id,
-        "configured_max_tokens": token_ceiling,
-        "invocation_config_verified": True,
-        "total_tokens": (
-            input_total + output_total
-            if isinstance(input_total, int) and isinstance(output_total, int)
-            else None
-        ),
-        "api_calls": "unavailable from provider",
-        **({"stop_reason": stop_reason} if stop_reason else {}),
-    }
+    if profile in {"api_ui", "release"}:
+        paths.add("frontend/src")
+    if profile in {"database", "financial", "release"}:
+        paths.add("backend/migrations/versions")
+    return sorted(paths)
 
 
 def invoke_model(
@@ -669,7 +613,10 @@ def invoke_model(
         / f"{record['candidate']}-{stage}-{digest(packet)[:16]}.json"
     )
     task_path.parent.mkdir(parents=True, exist_ok=True)
+    writable_paths = authorized_candidate_writes(record, packet, stage)
+    packet["dispatcher_authorized_writable_paths"] = writable_paths
     atomic_write_text(task_path, packet_prompt(packet) + "\n")
+    record["repository_fingerprint"] = fingerprint
     record["model_stage_policy"] = {
         "stage": stage,
         "provider": policy.provider,
@@ -689,9 +636,7 @@ def invoke_model(
         "stage_state": digest(model_call_state(record)),
         "actionable": actionable,
     }
-    call_identity = (
-        "codex exec" if policy.route == "direct Codex" else "openclaw-hermes-task"
-    )
+    call_identity = "openclaw-hermes-task"
     call_key = repeated_call_key(
         identity=call_identity,
         arguments=[stage, str(task_path)],
@@ -704,14 +649,43 @@ def invoke_model(
         raise AutomationError(
             "repeated_identical_tool_call", json.dumps(preserved, sort_keys=True)
         )
-    attempts = reserve_attempt(attempt_path, stage=stage, fingerprint=actionable)
-    attempt_number = int(attempts.get("counters", {}).get(stage, 0)) + 1
-    usage_path = (
-        STATE_DIR
-        / "usage"
-        / f"{record['candidate']}-{stage}-{attempt_number}-{digest(call_key + utc_now())[:12]}.json"
+    reserve_attempt(attempt_path, stage=stage, fingerprint=actionable)
+    if policy.token_ceiling == 120000 and not (
+        policy.complex_review_reason
+        and record.get("model_stage_policy", {}).get(
+            "complex_review_classification_reason"
+        )
+        == policy.complex_review_reason
+        and record.get("model_stage_policy", {}).get("repository_fingerprint")
+        == fingerprint
+        and record.get("model_stage_policy", {}).get("review_scope")
+        == sorted(record.get("scoped_changed_paths") or [])
+    ):
+        release_attempt(attempt_path, stage=stage)
+        raise AutomationError(
+            "unsupported_invocation_configuration",
+            "exceptional review classification was not persisted before invocation",
+        )
+    manifest_path, manifest, invocation_authorization = create_manifest(
+        state_root=STATE_DIR,
+        repository=REPO,
+        dispatcher_pid=os.getpid(),
+        candidate=str(record["candidate"]),
+        stage=stage,
+        repository_fingerprint=fingerprint,
+        preserved_worktree_fingerprint=packet.get("preserved_worktree_fingerprint"),
+        task_path=task_path,
+        provider=policy.provider,
+        model=policy.model,
+        requested_reasoning=policy.requested_reasoning,
+        cumulative_ceiling=policy.token_ceiling,
+        dispatcher_record_path=stage_file(str(record["candidate"])),
+        writable_paths=writable_paths,
+        exceptional_review_classification=(
+            policy.complex_review_reason if policy.token_ceiling == 120_000 else None
+        ),
     )
-    usage_path.parent.mkdir(parents=True, exist_ok=True)
+    usage_path = Path(str(manifest["usage_path"]))
     environment = os.environ.copy()
     environment.update(
         {
@@ -719,6 +693,8 @@ def invoke_model(
             "PROPERTY_RENTAL_HERMES_STAGE": stage,
             "PROPERTY_RENTAL_HERMES_USAGE_FILE": str(usage_path),
             "PROPERTY_RENTAL_HERMES_TOKEN_CEILING": str(policy.token_ceiling),
+            "PROPERTY_RENTAL_INVOCATION_MANIFEST": str(manifest_path),
+            "PROPERTY_RENTAL_INVOCATION_AUTHORIZATION": invocation_authorization,
         }
     )
     if policy.token_ceiling == 120000:
@@ -734,68 +710,27 @@ def invoke_model(
                 ),
             }
         )
-    output_path = usage_path.with_suffix(".result.json")
     try:
-        if policy.route == "direct Codex":
-            result = subprocess.run(
-                [
-                    os.environ.get("PROPERTY_RENTAL_CODEX_BIN", "codex"),
-                    "exec",
-                    "--json",
-                    "--ephemeral",
-                    "--ignore-user-config",
-                    "--strict-config",
-                    "--cd",
-                    str(REPO),
-                    "--sandbox",
-                    "read-only" if stage == "independent_review" else "workspace-write",
-                    "--model",
-                    policy.model,
-                    "--config",
-                    f'model_reasoning_effort="{policy.requested_reasoning}"',
-                    "--config",
-                    f"model_context_window={policy.token_ceiling}",
-                    "--output-last-message",
-                    str(output_path),
-                    "-",
-                ],
-                cwd=REPO,
-                text=True,
-                input=packet_prompt(packet),
-                capture_output=True,
-                check=False,
-                env=environment,
-            )
-        else:
-            result = subprocess.run(
-                [str(REPO / "scripts/openclaw-hermes-task.sh"), str(task_path)],
-                cwd=REPO,
-                text=True,
-                capture_output=True,
-                check=False,
-                env=environment,
-            )
+        result = subprocess.run(
+            [
+                str(REPO / "scripts/openclaw-hermes-task.sh"),
+                str(task_path),
+                str(manifest_path),
+            ],
+            cwd=REPO,
+            text=True,
+            capture_output=True,
+            check=False,
+            env=environment,
+        )
     except OSError as error:
         release_attempt(attempt_path, stage=stage)
-        atomic_write_json(
-            call_path,
-            {
-                "call_key": call_key,
-                "result": "failed",
-                "normalized_call": f"{call_identity} {stage}",
-                "underlying_result": "model executable could not start",
-                "exact_next_eligible_action": "restore the executable or infrastructure before retrying this unchanged call",
-            },
-        )
         raise AutomationError(
             "pre_model_infrastructure_failure", "model executable could not start"
         ) from error
 
     usage: dict[str, Any] = {}
-    if policy.route == "direct Codex":
-        usage = direct_codex_jsonl_usage(result.stdout, policy.token_ceiling)
-        atomic_write_json(usage_path, usage)
-    elif usage_path.exists():
+    if usage_path.exists():
         try:
             usage = json.loads(usage_path.read_text())
         except json.JSONDecodeError:
@@ -813,15 +748,20 @@ def invoke_model(
         if usage:
             atomic_write_json(usage_path, usage)
     api_calls = usage.get("api_calls")
+    api_calls_started = usage.get("api_calls_started")
+    observed_api_calls = max(
+        [
+            value
+            for value in (api_calls_started, api_calls)
+            if isinstance(value, int) and value >= 0
+        ],
+        default=-1,
+    )
     stopped_before_model = bool(
         result.returncode
         and (
-            (isinstance(api_calls, int) and api_calls == 0)
-            or (
-                policy.route == "direct Codex"
-                and not usage.get("session_id")
-                and not usage.get("stop_reason")
-            )
+            observed_api_calls == 0
+            or (observed_api_calls == -1 and result.returncode == 64)
         )
     )
     if stopped_before_model:
@@ -832,16 +772,6 @@ def invoke_model(
             else "pre_model_infrastructure_failure"
         )
         diagnostic = f"Hermes stopped before model execution (exit {result.returncode})"
-        atomic_write_json(
-            call_path,
-            {
-                "call_key": call_key,
-                "result": "failed",
-                "normalized_call": f"{call_identity} {stage}",
-                "underlying_result": diagnostic,
-                "exact_next_eligible_action": "change the supported infrastructure or invocation configuration before retrying",
-            },
-        )
         raise AutomationError(category, diagnostic)
 
     report = normalize_usage(usage, policy)
@@ -849,7 +779,17 @@ def invoke_model(
     try:
         validate_usage(usage, policy)
     except AutomationError as error:
-        if error.category == "model_session_or_token_ceiling":
+        pre_model_routing_fault = bool(
+            error.category
+            in {
+                "unsupported_invocation_configuration",
+                "pre_model_infrastructure_failure",
+            }
+            and observed_api_calls == 0
+        )
+        if pre_model_routing_fault:
+            release_attempt(attempt_path, stage=stage)
+        else:
             consume_attempt(attempt_path, stage=stage)
         finalize_usage(
             record,
@@ -879,11 +819,7 @@ def invoke_model(
                     "next_action": "Consume the one eligible fresh verification-only continuation for this exact fingerprint.",
                 },
             )
-            handoff_output = (
-                output_path.read_text().strip()
-                if policy.route == "direct Codex" and output_path.exists()
-                else result.stdout.strip()
-            )
+            handoff_output = result.stdout.strip()
             handoff = verified_continuation_handoff(handoff_output, record, stage)
             if handoff:
                 record.update(handoff)
@@ -895,11 +831,6 @@ def invoke_model(
                     }
                 )
                 save_stage(record)
-        if error.category in {
-            "unsupported_invocation_configuration",
-            "pre_model_infrastructure_failure",
-        }:
-            release_attempt(attempt_path, stage=stage)
         save_stage(record)
         raise
     consume_attempt(attempt_path, stage=stage)
@@ -923,11 +854,7 @@ def invoke_model(
         )
         record["last_failure_category"] = "gateway_or_network_failure"
         save_stage(record)
-    model_output = (
-        output_path.read_text().strip()
-        if policy.route == "direct Codex" and output_path.exists()
-        else result.stdout.strip()
-    )
+    model_output = result.stdout.strip()
     return result.returncode, model_output, report
 
 
@@ -1216,28 +1143,49 @@ def reconciliation_dispatch(record: dict[str, Any], preflight: dict[str, Any]) -
     save_stage(record)
 
 
-def bootstrap_completed_candidate(record: dict[str, Any]) -> None:
+def bootstrap_completed_candidate(
+    record: dict[str, Any], *, require_preserved_identity: bool = False
+) -> None:
     paths = changed_paths(REPO)
     if not paths:
         raise AutomationError(
             "repository_integrity_uncertainty",
             "compact state says implementation is complete but no unpublished candidate diff exists",
         )
-    state = json.loads((REPO / "ops/STATE.json").read_text())
-    base = state.get("commit")
-    if not isinstance(base, str) or not re.fullmatch(r"[0-9a-f]{40}", base):
+    preserved = preservation_evidence(REPO)
+    if require_preserved_identity:
+        preserved_paths = sorted(preserved.get("paths") or [])
+        if preserved.get("valid") is not True or sorted(paths) != preserved_paths:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "capability continuation differs from the exact preserved candidate paths",
+            )
         base = git(REPO, "rev-parse", "HEAD")
+        scoped_paths = preserved_paths
+    else:
+        state = json.loads((REPO / "ops/STATE.json").read_text())
+        base = state.get("commit")
+        if not isinstance(base, str) or not re.fullmatch(r"[0-9a-f]{40}", base):
+            base = git(REPO, "rev-parse", "HEAD")
+        scoped_paths = full_candidate_paths({"candidate_base_commit": base})
     record.update(
         {
             "stage": "deterministic_verification",
             "implementation_complete": True,
             "candidate_base_commit": base,
-            "scoped_changed_paths": full_candidate_paths(
-                {"candidate_base_commit": base}
-            ),
-            "expected_worktree_paths": paths,
+            "scoped_changed_paths": scoped_paths,
+            "expected_worktree_paths": sorted(paths),
             "repository_fingerprint": repository_fingerprint(REPO),
             "product_code_modification_permitted": False,
+            "capability_continuation_identity": {
+                "candidate": record["candidate"],
+                "branch": git(REPO, "branch", "--show-current"),
+                "head": git(REPO, "rev-parse", "HEAD"),
+                "repository_fingerprint": repository_fingerprint(REPO),
+                "preserved_worktree_fingerprint": preserved.get("fingerprint"),
+                "owner_action": "none",
+                "failed_check": None,
+            },
         }
     )
     save_stage(record)
@@ -2389,15 +2337,17 @@ def dispatch() -> int:
                 else (candidate or candidate_id())
             )
             record = record or load_stage(candidate)
-            if (
-                issue
-                in {
-                    "completed_tranche_publication_action_enforced",
-                    "completed_status_alias_publication_enforced",
-                }
-                and record.get("stage") == "reconciliation_dispatch"
-            ):
-                bootstrap_completed_candidate(record)
+            if issue in {
+                "completed_tranche_publication_action_enforced",
+                "completed_status_alias_publication_enforced",
+                "capability_verification_continuation",
+            } and record.get("stage") in {"reconciliation_dispatch", "implementation"}:
+                bootstrap_completed_candidate(
+                    record,
+                    require_preserved_identity=(
+                        issue == "capability_verification_continuation"
+                    ),
+                )
             elif issue == "state_contract_repair_authorized":
                 state_contract_repair(record)
                 publish_state_contract_repair(record)
@@ -2526,6 +2476,7 @@ def main() -> int:
             "repository_fingerprint": fingerprint,
             "actionable_fingerprint": actionable,
             "exact_next_action": exact_next_action,
+            "owner_action_required": error.category not in RECOVERABLE_ROUTING_FAILURES,
         }
         atomic_write_json(STATE_DIR / "last-failure.json", failure)
         marker_status = (
@@ -2536,9 +2487,9 @@ def main() -> int:
                 "test_fixture_failure": "repair_pending",
                 "independent_review_defect": "repair_pending",
                 "remote_ci_failure": "repair_pending",
-                "pre_model_infrastructure_failure": "infrastructure_failure",
+                "pre_model_infrastructure_failure": "routing_recovery_pending",
                 "gateway_or_network_failure": "infrastructure_failure",
-                "unsupported_invocation_configuration": "unsupported_configuration",
+                "unsupported_invocation_configuration": "routing_recovery_pending",
                 "model_session_or_token_ceiling": "oversized_or_ceiling_stopped",
                 "repeated_identical_tool_call": "repeated_identical_tool_call",
             }.get(error.category, "blocked")

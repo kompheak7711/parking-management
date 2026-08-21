@@ -230,13 +230,13 @@ def main() -> None:
         or "unknown"
     )
     stage = "idle"
-    blocker_kind = None
+    blocker_kind = preflight.get("blocker_category")
     stage_path = DISPATCH_STATE_DIR / "candidates" / f"{candidate_id}.json"
     if stage_path.exists():
         try:
             stage_record = json.loads(stage_path.read_text())
             stage = str(stage_record.get("stage") or "idle")
-            blocker_kind = stage_record.get("last_failure_category")
+            blocker_kind = stage_record.get("last_failure_category") or blocker_kind
         except (OSError, json.JSONDecodeError):
             stage = "state_reconciliation_required"
 
@@ -349,7 +349,9 @@ def main() -> None:
         "scheduler_unhealthy",
         "scheduler_healthy_idle",
     }:
-        owner_required = classification in {
+        owner_required = preflight.get(
+            "owner_action_required"
+        ) is True or classification in {
             "project_blocked_owner_decision",
             "project_blocked_protected_operation",
             "bounded_repair_exhausted",

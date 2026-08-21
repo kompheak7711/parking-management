@@ -48,7 +48,7 @@ repo="$test_root/completion-alias/repo"
 jq '.status="verified_unpublished" | .approval.implementation_completed=true | .next_action="wait"' "$repo/ops/STATE.json" >"$repo/ops/state.tmp"
 mv "$repo/ops/state.tmp" "$repo/ops/STATE.json"
 result="$(PROPERTY_RENTAL_REPO="$repo" "$repo/scripts/openclaw-supervisor-preflight.sh")"
-printf '%s' "$result" | jq -e '.actionable and .state_issue == "completed_tranche_publication_action_enforced" and (.next_action | contains("standing authorization"))' >/dev/null
+printf '%s' "$result" | jq -e '.actionable and .lifecycle == "post_publication_reconciliation_pending" and .state_issue == "published_compact_state_reconciliation_required" and (.next_action | contains("already-published candidate"))' >/dev/null
 
 make_repo unknown-status
 repo="$test_root/unknown-status/repo"

@@ -10,6 +10,9 @@ expected_enabled="${PROPERTY_RENTAL_EXPECT_SCHEDULER_ENABLED:-any}"
 
 [ -x "$repo/scripts/openclaw-supervisor-dispatch.sh" ]
 [ -x "$repo/scripts/hermes-property-rental" ]
+[ -x "$repo/scripts/openclaw_hermes_guard.py" ]
+[ -f "$repo/.hermes/plugins/property-rental-guard/plugin.yaml" ]
+[ -f "$repo/.hermes/plugins/property-rental-guard/__init__.py" ]
 [ -x "$installed_wrapper" ]
 
 schedule_count="$(sqlite3 "$state_db" \
