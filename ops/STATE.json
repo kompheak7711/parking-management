@@ -72,9 +72,9 @@
     },
     "next_action": "Publish the corrected routing revision, require successful GitHub Actions, then install the terminal self-unloading fail-closed continuation.",
     "post_exit_restoration": {
-      "predecessor_repair_publication_commit": "ca4143c8deb348fddf3c44414022de1fef54831e",
-      "status": "corrected_continuation_install_pending",
-      "timestamp": "2026-08-21T17:12:36Z"
+      "repair_publication_commit": "e0469b6d519c0947662204869a535c7080185638",
+      "status": "metadata_published_waiting_enable",
+      "timestamp": "2026-08-21T18:00:39Z"
     },
     "predecessor_ci_correction_review": {
       "cache_read_tokens": "unavailable from provider",
@@ -276,7 +276,7 @@
       "watchdog_notifications": "PASS"
     },
     "scheduler_enabled": false,
-    "status": "published_awaiting_post_exit_restoration",
+    "status": "restored",
     "stop_after_candidate": "V1-019",
     "timestamp": "2026-08-21T15:34:06Z",
     "v1_019_original_automatic_recovery_attempts": 0,
@@ -400,7 +400,7 @@
   "task": "Implement the approved bounded candidate: Authentication and account administration UI",
   "tests": [],
   "tests_tranche_id": "V1-018",
-  "timestamp": "2026-08-21T17:12:36Z",
+  "timestamp": "2026-08-21T18:00:39Z",
   "touched_areas": [
     "sign-in, MFA, recovery, session, account/capability screens"
   ],
