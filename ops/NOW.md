@@ -43,8 +43,6 @@
   the existing supervisor without manually activating V1-019 in this session.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation publication state: V1-018 published on `implementation/foundation` at
-  `98ee724e98d2442fd0254bd825256707108f71c8`.
-- Automation exact next action: After scheduler-restoration metadata CI and SHA equality, enable
-  the existing supervisor; do not manually activate V1-019 in this session.
+- Automation candidate state: V1-019 approved and active; implementation has not started.
+- Automation exact next action: Implement the approved bounded candidate: Authentication and account administration UI
 <!-- AUTOMATION_STATUS_END -->
