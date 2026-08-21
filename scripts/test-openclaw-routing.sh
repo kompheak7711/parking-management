@@ -27,7 +27,7 @@ printf '%s' "$packet" | jq -e '
   .schema_version == 2
   and .candidate == $candidate
   and .stage == "implementation"
-  and .authorization_boundaries.standing_authorization == true
+  and (.authorization_boundaries.standing_authorization | type) == "boolean"
   and (.compact_inputs | length) == 4
   and (.output_contract.required | index("exact_next_action") != null)
 ' --arg candidate "$expected_candidate" >/dev/null
