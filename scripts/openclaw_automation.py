@@ -30,7 +30,7 @@ EXCEPTIONAL_REVIEW_TOKEN_CEILING: Final = 120_000
 MODEL_ID: Final = "gpt-5.6-sol"
 PROVIDER: Final = "openai-codex"
 PRESERVATION_EVIDENCE_PATH: Final = "ops/AUTOMATION_REPAIR_EVIDENCE.json"
-V1_019_ROUTING_REVISION: Final = "v1-019-code69-repair-v1"
+V1_019_ROUTING_REVISION: Final = "v1-019-invocation-contract-repair-v2"
 V1_019_SUBSTAGE_IDS: Final = (
     "sign_in",
     "mfa_recovery",
@@ -973,6 +973,18 @@ def normalize_usage(
         ),
         "context_reservation_margin_tokens": available(
             "context_reservation_margin_tokens"
+        ),
+        "locally_reserved_next_call_tokens": available(
+            "locally_reserved_next_call_tokens"
+        ),
+        "provider_completion_limit_mode": available(
+            "provider_completion_limit_mode"
+        ),
+        "provider_request_omits_max_output_tokens": available(
+            "provider_request_omits_max_output_tokens"
+        ),
+        "unsupported_provider_parameters_removed": available(
+            "unsupported_provider_parameters_removed"
         ),
         "reservation_violation": available("reservation_violation"),
         "in_flight_overshoot_tokens": available("in_flight_overshoot_tokens"),

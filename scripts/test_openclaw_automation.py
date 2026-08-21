@@ -3556,14 +3556,18 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                     {
                         "candidate": "V1-019",
                         "stage": "implementation",
-                        "candidate_base_commit": "1d091b6b581703b54eb370f3b3106a3dae45c19c",
+                        "routing_revision": "v1-019-code69-repair-v1",
+                        "candidate_base_commit": "d877cf3b6648083f97e54d661933e3d188999dae",
                         "repository_fingerprint": "stale",
-                        "session_id": "907e45dd7a00a62dbe30f19ef6d9225b",
+                        "expected_worktree_paths": [],
+                        "completed_implementation_substages": [],
                         "model_usage": [
                             {
-                                "input_tokens": 71_801,
-                                "output_tokens": 1_692,
-                                "counted_total_tokens": 73_493,
+                                "session_id": "6baf17e6e77d7582e72b2e19a40ab806",
+                                "stage_result": "unsupported_invocation_configuration",
+                                "api_calls_started": 1,
+                                "api_calls_completed": 0,
+                                "total_token_usage": 0,
                             }
                         ],
                     },
@@ -3579,8 +3583,18 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                 atomic_write_json(
                     dispatch_state / "last-failure.json",
                     {
-                        "category": "model_session_or_token_ceiling",
-                        "owner_action_required": True,
+                        "actionable_fingerprint": "ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2",
+                        "category": "unsupported_invocation_configuration",
+                        "diagnostic": "HTTP 400: Unsupported parameter: max_output_tokens",
+                        "owner_action_required": False,
+                    },
+                )
+                atomic_write_json(
+                    dispatch_state
+                    / "terminal/routing_recovery_pending/ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2.json",
+                    {
+                        "actionable_fingerprint": "ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2",
+                        "category": "unsupported_invocation_configuration",
                     },
                 )
                 atomic_write_json(
@@ -3641,6 +3655,12 @@ print(json.dumps(job))
 """
                 )
                 fake.chmod(0o755)
+                launchctl_log = root / "launchctl.log"
+                fake_launchctl = root / "launchctl"
+                fake_launchctl.write_text(
+                    "#!/bin/sh\nprintf '%s\\n' \"$*\" >> \"$FAKE_LAUNCHCTL_LOG\"\n"
+                )
+                fake_launchctl.chmod(0o755)
                 evidence = root / "restoration.json"
                 if natural_status == "ok":
                     spec = importlib.util.spec_from_file_location(
@@ -3667,6 +3687,8 @@ print(json.dumps(job))
                         str(evidence),
                         "--openclaw",
                         str(fake),
+                        "--launchctl",
+                        str(fake_launchctl),
                         "--owner-pid",
                         "999999",
                         "--expected-repair-head",
@@ -3684,6 +3706,7 @@ print(json.dumps(job))
                         "FAKE_JOB": str(job_path),
                         "FAKE_DISPATCH": str(dispatch_state),
                         "FAKE_NATURAL_STATUS": natural_status,
+                        "FAKE_LAUNCHCTL_LOG": str(launchctl_log),
                         "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
                     },
                     capture_output=True,
@@ -3704,18 +3727,38 @@ print(json.dumps(job))
                         ["sign_in"],
                     )
                     fresh = json.loads(stale_candidate.read_text())
-                    self.assertEqual(fresh["routing_revision"], "v1-019-code69-repair-v1")
+                    self.assertEqual(
+                        fresh["routing_revision"],
+                        "v1-019-invocation-contract-repair-v2",
+                    )
+                    self.assertEqual(
+                        fresh["corrected_routing_retry"]["eligible_attempts"], 1
+                    )
+                    self.assertEqual(
+                        fresh["corrected_routing_retry"]["consumed_attempts"], 0
+                    )
                     self.assertEqual(fresh["candidate_base_commit"], restored["metadata_commit"])
                     self.assertEqual(
                         fresh["completed_implementation_substages"], ["sign_in"]
                     )
                     self.assertFalse((dispatch_state / "last-failure.json").exists())
                     self.assertFalse((dispatch_state / "attempts/V1-019.json").exists())
-                    archived = list((dispatch_state / "superseded/v1-019-code69").glob("*.json"))
-                    self.assertEqual(len(archived), 4)
+                    archived = list(
+                        (
+                            dispatch_state
+                            / "superseded/v1-019-invocation-contract"
+                        ).glob("*.json")
+                    )
+                    self.assertEqual(len(archived), 5)
                     self.assertTrue(
                         (
                             dispatch_state / "terminal/oversized_or_ceiling_stopped/stale.json"
+                        ).exists()
+                    )
+                    self.assertFalse(
+                        (
+                            dispatch_state
+                            / "terminal/routing_recovery_pending/ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2.json"
                         ).exists()
                     )
                 else:
@@ -3726,6 +3769,53 @@ print(json.dumps(job))
                         natural_status == "protected",
                     )
                     self.assertFalse(job["enabled"])
+                    rerun = subprocess.run(
+                        [
+                            "python3",
+                            str(ROOT / "scripts/openclaw-post-exit-restoration.py"),
+                            "run",
+                            "--repo",
+                            str(repo),
+                            "--dispatch-state",
+                            str(dispatch_state),
+                            "--evidence",
+                            str(evidence),
+                            "--openclaw",
+                            str(fake),
+                            "--launchctl",
+                            str(fake_launchctl),
+                            "--owner-pid",
+                            "999999",
+                            "--expected-repair-head",
+                            repair_head,
+                        ],
+                        cwd=repo,
+                        env={
+                            **os.environ,
+                            "FAKE_JOB": str(job_path),
+                            "FAKE_DISPATCH": str(dispatch_state),
+                            "FAKE_NATURAL_STATUS": natural_status,
+                            "FAKE_LAUNCHCTL_LOG": str(launchctl_log),
+                            "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                        },
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+                    self.assertEqual(rerun.returncode, 69)
+                    self.assertEqual(
+                        json.loads(evidence.read_text())["status"], "failed_closed"
+                    )
+                    self.assertNotIn("pending_post_exit", evidence.read_text())
+                expected_target = (
+                    f"bootout gui/{os.getuid()}/"
+                    f"com.property-rental.post-exit-restoration.{repair_head[:12]}"
+                )
+                launchctl_calls = launchctl_log.read_text().splitlines()
+                self.assertTrue(all(call == expected_target for call in launchctl_calls))
+                self.assertEqual(
+                    len(launchctl_calls), 1 if natural_status == "ok" else 2
+                )
 
     def test_atomic_lock_fails_closed_for_unprovable_owner_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -4025,7 +4115,7 @@ print(json.dumps(job))
             self.assertEqual(classified["state_issue"], "successor_held_by_approved_scope")
             self.assertEqual(classified["queue_candidate"]["id"], "V1-020")
 
-    def test_proactive_guard_reserves_context_and_checkpoint_before_third_call(
+    def test_installed_openai_codex_contract_uses_local_reservation_without_unsupported_parameter(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -4070,10 +4160,10 @@ print(json.dumps(job))
                     },
                 ]
             )
-            observed_maxima: list[int] = []
+            observed_requests: list[dict[str, Any]] = []
 
             def invoke(request: dict[str, Any]) -> dict[str, Any]:
-                observed_maxima.append(request["max_output_tokens"])
+                observed_requests.append(request)
                 return next(responses)
 
             with mock.patch.dict(
@@ -4084,9 +4174,10 @@ print(json.dumps(job))
                 enforce_llm_call({"max_output_tokens": 40_000}, invoke)
                 with self.assertRaisesRegex(GuardError, "PROACTIVE_BUDGET_RESERVATION_STOP"):
                     enforce_llm_call({"max_output_tokens": 40_000}, invoke)
-            self.assertEqual(observed_maxima[0], 40_000)
-            self.assertGreaterEqual(observed_maxima[1], 2_048)
-            self.assertLess(observed_maxima[1], 40_000)
+            self.assertEqual(len(observed_requests), 2)
+            self.assertTrue(
+                all("max_output_tokens" not in request for request in observed_requests)
+            )
             budget = json.loads(budget_path.read_text())
             self.assertEqual(budget["api_calls_started"], 2)
             self.assertEqual(budget["api_calls_completed"], 2)
@@ -4097,6 +4188,18 @@ print(json.dumps(job))
             self.assertTrue(budget["reservation_blocked"])
             self.assertFalse(budget["reservation_violation"])
             self.assertTrue(budget["next_api_call_blocked"])
+            self.assertEqual(
+                budget["provider_completion_limit_mode"],
+                "local_proactive_reservation",
+            )
+            self.assertTrue(budget["provider_request_omits_max_output_tokens"])
+            self.assertEqual(
+                budget["unsupported_provider_parameters_removed"],
+                ["max_output_tokens"],
+            )
+            self.assertGreaterEqual(
+                budget["locally_reserved_next_call_tokens"], 2_048
+            )
 
     def test_hermes_tool_guard_enforces_repository_least_privilege(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -4449,6 +4552,115 @@ raise SystemExit(int(os.environ.get('FAKE_EXIT','0')))
                 )
             attempts = json.loads((state_dir / "attempts/V1-018.json").read_text())
             self.assertEqual(attempts["counters"].get("implementation", 0), 1)
+
+    def test_zero_usage_provider_rejection_preserves_exact_error_and_no_attempt(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = RepositoryEvidenceTests().make_repo(root)
+            for name in (
+                "hermes-property-rental",
+                "openclaw_automation.py",
+                "openclaw_hermes_guard.py",
+            ):
+                target = repo / "scripts" / name
+                target.parent.mkdir(exist_ok=True)
+                target.write_bytes((ROOT / "scripts" / name).read_bytes())
+                target.chmod(0o755)
+            subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "zero usage provider fixture"],
+                cwd=repo,
+                check=True,
+            )
+            fake = root / "fake-hermes.py"
+            fake.write_text(
+                """#!/usr/bin/env python3
+import json, os, sys
+manifest = json.load(open(os.environ['PROPERTY_RENTAL_INVOCATION_MANIFEST']))
+budget_path = manifest['budget_path']
+budget = json.load(open(budget_path))
+if 'prompt-size' in sys.argv[1:]:
+    budget.update({'guard_loaded':True,'preflight_guard_loaded':True,'guard_capabilities':['cumulative_llm_execution','least_privilege_pre_tool_block','least_privilege_tool_execution']})
+    json.dump(budget, open(budget_path, 'w'))
+    print('{}')
+    raise SystemExit(0)
+budget.update({'chat_guard_loaded':True,'chat_guard_pid':os.getpid(),'api_calls_started':1,'api_calls_completed':0,'input_tokens':0,'output_tokens':0,'cache_read_tokens':0,'reasoning_tokens':0,'counted_total_tokens':0})
+json.dump(budget, open(budget_path, 'w'))
+print("Hermes guard stopped model execution: Error code: 400 - {'detail': 'Unsupported parameter: max_output_tokens'}", file=sys.stderr)
+raise SystemExit(1)
+"""
+            )
+            fake.chmod(0o755)
+            fake_ps = root / "ps"
+            fake_ps.write_text(
+                "#!/bin/sh\n"
+                'case "$*" in\n'
+                f"  *ppid=*) printf '%s\\n' {os.getpid()} ;;\n"
+                '  *) printf \'%s\\n\' "$PROPERTY_RENTAL_REPO/scripts/openclaw_dispatch.py" ;;\n'
+                "esac\n"
+            )
+            fake_ps.chmod(0o755)
+            hermes_home = root / "hermes-home"
+            hermes_home.mkdir()
+            (hermes_home / "auth.json").write_text("{}\n")
+            spec = importlib.util.spec_from_file_location(
+                "zero_usage_dispatch", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            state_dir = root / "state"
+            environment = {
+                "PROPERTY_RENTAL_REPO": str(repo),
+                "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state_dir),
+                "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                "PROPERTY_RENTAL_HERMES_BIN": str(fake),
+                "PROPERTY_RENTAL_HERMES_SOURCE_HOME": str(hermes_home),
+                "PATH": f"{root}:{os.environ['PATH']}",
+            }
+            with mock.patch.dict(os.environ, environment):
+                spec.loader.exec_module(dispatcher)
+                record = {"candidate": "V1-018", "stage": "implementation"}
+                packet = task_packet(repo, {"actionable": True}, "implementation")
+                with self.assertRaises(AutomationError) as rejected:
+                    dispatcher.invoke_model(
+                        record, packet, model_policy("implementation")
+                    )
+                self.assertEqual(
+                    rejected.exception.category,
+                    "unsupported_invocation_configuration",
+                )
+                self.assertEqual(
+                    str(rejected.exception),
+                    "HTTP 400: Unsupported parameter: max_output_tokens",
+                )
+                with self.assertRaises(AutomationError) as repeated:
+                    dispatcher.invoke_model(
+                        record,
+                        task_packet(repo, {"actionable": True}, "implementation"),
+                        model_policy("implementation"),
+                    )
+            self.assertEqual(
+                repeated.exception.category, "repeated_identical_tool_call"
+            )
+            attempts = json.loads((state_dir / "attempts/V1-018.json").read_text())
+            self.assertEqual(attempts["counters"].get("implementation", 0), 0)
+            self.assertIsNone(attempts["pending"])
+            durable = record["model_usage"][-1]
+            self.assertEqual(durable["api_calls_started"], 1)
+            self.assertEqual(durable["api_calls_completed"], 0)
+            self.assertEqual(durable["total_token_usage"], 0)
+            self.assertEqual(durable["provider_http_status"], 400)
+            self.assertEqual(
+                durable["provider_error"],
+                "Unsupported parameter: max_output_tokens",
+            )
+            call = json.loads(next((state_dir / "calls").glob("*.json")).read_text())
+            self.assertEqual(
+                call["underlying_result"],
+                "HTTP 400: Unsupported parameter: max_output_tokens",
+            )
 
     def test_health_classifications_and_disabled_scheduler_accuracy(self) -> None:
         self.assertEqual(

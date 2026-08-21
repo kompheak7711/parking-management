@@ -93,8 +93,10 @@
     {"clause": "supervisor to dispatcher to guarded Hermes wrapper delivery", "test_id": "test_dispatcher_runs_fresh_implementation_then_persists_next_stage"},
     {"clause": "capability-only continuation binds exact preserved identity and skips implementation", "test_id": "test_capability_only_continuation_requires_exact_preserved_identity"},
     {"clause": "genuine structured Owner blockers remain non-actionable", "test_id": "test_genuine_owner_category_remains_blocked"},
-    {"clause": "proactive cumulative reservation blocks a request unless predicted context plus checkpoint output fits without ordinary in-flight overshoot", "test_id": "test_proactive_guard_reserves_context_and_checkpoint_before_third_call"},
-    {"clause": "cache-read usage is reported separately without double-counting", "test_id": "test_proactive_guard_reserves_context_and_checkpoint_before_third_call"},
+    {"clause": "proactive cumulative reservation blocks a request unless predicted context plus checkpoint output fits without ordinary in-flight overshoot", "test_id": "test_installed_openai_codex_contract_uses_local_reservation_without_unsupported_parameter"},
+    {"clause": "installed openai-codex request contract omits unsupported max_output_tokens while retaining the 60000 local cumulative ceiling", "test_id": "test_installed_openai_codex_contract_uses_local_reservation_without_unsupported_parameter"},
+    {"clause": "cache-read usage is reported separately without double-counting", "test_id": "test_installed_openai_codex_contract_uses_local_reservation_without_unsupported_parameter"},
+    {"clause": "zero-usage provider request rejection preserves its HTTP diagnostic and consumes no model attempt", "test_id": "test_zero_usage_provider_rejection_preserves_exact_error_and_no_attempt"},
     {"clause": "Hermes file terminal Git database process make-root and patch-endpoint permissions are least-privilege", "test_id": "test_hermes_tool_guard_enforces_repository_least_privilege"},
     {"clause": "scheduler recovery and recovery notification are deduplicated", "test_id": "test-openclaw-visibility-watchdog.sh"},
     {"clause": "120000 review manifest requires persisted exceptional classification", "test_id": "test_exceptional_review_manifest_requires_persisted_classification"},
@@ -118,7 +120,8 @@
     {"clause": "model-session or token-ceiling state is recoverable without Owner action while a bounded retry is scheduled", "test_id": "test_v1_019_real_wrapper_ceiling_recovery_retries_with_changed_route"},
     {"clause": "Owner action is permitted only after two changed-fingerprint ceiling recoveries for the exact V1-019 substage are exhausted", "test_id": "test_v1_019_ceiling_recovery_exhausts_only_after_two_changed_retries"},
     {"clause": "an independent-review ceiling stop also schedules a real fresh bounded recovery instead of an unscheduled pending state", "test_id": "test_v1_019_ceiling_recovery_exhausts_only_after_two_changed_retries"},
-    {"clause": "post-exit restoration supersedes stale evidence waits for zero overlap enables only the existing supervisor proves natural V1-019 progress propagates protected Owner boundaries and disables on failure", "test_id": "test_post_exit_restoration_succeeds_naturally_and_fails_closed"},
+    {"clause": "post-exit restoration supersedes only the exact failed routing fingerprint waits for zero overlap enables only the existing supervisor proves natural V1-019 progress propagates protected Owner boundaries and disables on failure", "test_id": "test_post_exit_restoration_succeeds_naturally_and_fails_closed"},
+    {"clause": "terminal post-exit success and failed-closed evidence unload the exact one-shot label and cannot reset to pending in a launchd keepalive restart", "test_id": "test_post_exit_restoration_succeeds_naturally_and_fails_closed"},
     {"clause": "post-exit restoration resumes idempotently after its exact two-path metadata commit is already published", "test_id": "test_post_exit_restoration_succeeds_naturally_and_fails_closed"},
     {"clause": "V1-020 remains unselected after the approved V1-019 terminal scope", "test_id": "test_v1_019_terminal_scope_holds_v1_020_without_owner_block"}
   ]

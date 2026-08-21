@@ -1,30 +1,41 @@
 {
-  "schema_version": 2,
-  "repair": "v1-019-code69-automation-routing",
+  "schema_version": 3,
+  "repair": "v1-019-openai-codex-invocation-contract-follow-up",
   "status": "published_awaiting_post_exit_restoration",
   "baseline_branch": "implementation/foundation",
-  "baseline_head": "1d091b6b581703b54eb370f3b3106a3dae45c19c",
+  "baseline_head": "d877cf3b6648083f97e54d661933e3d188999dae",
   "candidate": "V1-019",
   "durable_v1_authorization_preserved": true,
   "canonical_specifications_modified": false,
   "token_ceiling": 60000,
   "token_ceiling_increased": false,
   "incident": {
-    "hermes_session": "907e45dd7a00a62dbe30f19ef6d9225b",
+    "routing_fingerprint": "ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2",
+    "hermes_session": "6baf17e6e77d7582e72b2e19a40ab806",
     "stage": "implementation",
-    "input_tokens": 71801,
-    "output_tokens": 1692,
-    "counted_total_tokens": 73493,
-    "cache_read_tokens": 35840,
-    "in_flight_overshoot_tokens": 13493,
-    "api_calls": 7,
-    "implementation_attempt_counter": 1,
+    "provider_http_status": 400,
+    "provider_error": "Unsupported parameter: max_output_tokens",
+    "api_calls_started": 1,
+    "api_calls_completed": 0,
+    "input_tokens": 0,
+    "output_tokens": 0,
+    "counted_total_tokens": 0,
+    "cache_read_tokens": 0,
+    "in_flight_overshoot_tokens": 0,
+    "recorded_implementation_attempt_counter": 1,
+    "model_attempts_consumed": 0,
     "automatic_repair_counter": 0,
     "product_files_changed": [],
     "worktree_clean": true,
     "owner_action_required": false
   },
-  "routing_revision": "v1-019-code69-repair-v1",
+  "published_predecessor_incident": {
+    "hermes_session": "907e45dd7a00a62dbe30f19ef6d9225b",
+    "counted_total_tokens": 73493,
+    "published_repair_commit": "ca4143c8deb348fddf3c44414022de1fef54831e",
+    "restoration_metadata_commit": "d877cf3b6648083f97e54d661933e3d188999dae"
+  },
+  "routing_revision": "v1-019-invocation-contract-repair-v2",
   "predecessor_preservation_evidence": {
     "schema_version": 1,
     "candidate": "V1-018",
@@ -51,12 +62,13 @@
   "scheduler": {
     "id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
     "enabled": false,
-    "restoration": "tested fail-closed post-exit continuation required"
+    "malfunctioning_restoration_label_unloaded": "com.property-rental.post-exit-restoration.ca4143c8deb3",
+    "restoration": "corrected terminal self-unloading post-exit continuation required"
   },
   "verification": {
-    "automation_tests": "96 passed",
-    "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-v1-019-routing-repair-final.json",
-    "independent_review": "PASS: no findings; repository e8693a83884882ee682ed9fe546aa7cd837dd3693d8bd26a9e5627b416e5254d; compact state 6c158d6f7bec7a1c32fec8b1cf8dfe4adeaa0e23b0574ba82c9c2c7bc8b39030; 12 paths; reviewer made no edits",
+    "automation_tests": "97 passed plus compact-state routing and visibility watchdog suites",
+    "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-v1-019-invocation-contract-follow-up.json",
+    "independent_review": "PASS: no blocking findings; local qwen35-hermes reviewer; repository fingerprint 13494038c776a3d7c03bf36e1372745ad7a3c9a836f679813d8460ffd532fccb; compact-state fingerprint a16d7db426cb8bee697b20e24d7971e3e75cb47b1f9db35340e5cd00222c791a; nine paths; reviewer made no edits",
     "publication_ci": "pending",
     "post_exit_natural_run": "pending"
   }

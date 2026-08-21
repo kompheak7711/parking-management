@@ -412,6 +412,10 @@ def prepare_session_home(
             "predicted_next_context_tokens": 0,
             "reserved_completion_checkpoint_tokens": MINIMUM_COMPLETION_CHECKPOINT_TOKENS,
             "context_reservation_margin_tokens": CONTEXT_RESERVATION_MARGIN_TOKENS,
+            "locally_reserved_next_call_tokens": 0,
+            "provider_completion_limit_mode": "local_proactive_reservation",
+            "provider_request_omits_max_output_tokens": True,
+            "unsupported_provider_parameters_removed": [],
             "last_call_input_tokens": 0,
             "last_call_output_tokens": 0,
             "reservation_violation": False,
@@ -472,7 +476,14 @@ def _load_budget(path: Path) -> dict[str, Any]:
 def enforce_llm_call(
     request: dict[str, Any], next_call: Callable[[dict[str, Any]], Any]
 ) -> Any:
-    """Reserve predicted input plus checkpoint output before every provider call."""
+    """Reserve predicted input plus checkpoint output before every provider call.
+
+    The installed ``openai-codex`` transport targets the Codex backend, whose
+    request contract deliberately omits ``max_output_tokens``.  The cumulative
+    ceiling is therefore enforced entirely in this local ledger before the
+    provider callback is entered; no output-limit parameter is injected into
+    the transport request.
+    """
     manifest_path = Path(os.environ["PROPERTY_RENTAL_INVOCATION_MANIFEST"])
     manifest = json.loads(manifest_path.read_text())
     budget_path = Path(str(manifest["budget_path"]))
@@ -516,15 +527,14 @@ def enforce_llm_call(
         atomic_json(budget_path, budget)
         raise GuardError("PROPERTY_RENTAL_PROACTIVE_BUDGET_RESERVATION_STOP")
     guarded_request = dict(request)
-    maximum_completion = remaining - predicted_context - margin
-    configured_limit = False
-    for key in ("max_output_tokens", "max_completion_tokens", "max_tokens"):
-        current = guarded_request.get(key)
-        if isinstance(current, int) and current > 0:
-            guarded_request[key] = min(current, maximum_completion)
-            configured_limit = True
-    if not configured_limit:
-        guarded_request["max_output_tokens"] = maximum_completion
+    removed_unsupported = "max_output_tokens" in guarded_request
+    guarded_request.pop("max_output_tokens", None)
+    budget["provider_completion_limit_mode"] = "local_proactive_reservation"
+    budget["provider_request_omits_max_output_tokens"] = True
+    budget["unsupported_provider_parameters_removed"] = (
+        ["max_output_tokens"] if removed_unsupported else []
+    )
+    budget["locally_reserved_next_call_tokens"] = required
     budget["api_calls_started"] = int(budget["api_calls_started"]) + 1
     atomic_json(budget_path, budget)
     response = next_call(guarded_request)
@@ -801,6 +811,19 @@ def finalize_usage(manifest: dict[str, Any], usage_path: Path) -> None:
             ),
             "context_reservation_margin_tokens": budget.get(
                 "context_reservation_margin_tokens", CONTEXT_RESERVATION_MARGIN_TOKENS
+            ),
+            "locally_reserved_next_call_tokens": budget.get(
+                "locally_reserved_next_call_tokens", 0
+            ),
+            "provider_completion_limit_mode": budget.get(
+                "provider_completion_limit_mode", "local_proactive_reservation"
+            ),
+            "provider_request_omits_max_output_tokens": budget.get(
+                "provider_request_omits_max_output_tokens"
+            )
+            is True,
+            "unsupported_provider_parameters_removed": budget.get(
+                "unsupported_provider_parameters_removed", []
             ),
             "reservation_violation": budget.get("reservation_violation") is True,
             "in_flight_overshoot_tokens": budget["in_flight_overshoot_tokens"],

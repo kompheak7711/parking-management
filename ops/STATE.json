@@ -17,6 +17,50 @@
     "baseline": "1d091b6b581703b54eb370f3b3106a3dae45c19c",
     "branch": "implementation/foundation",
     "changed_path_count": 12,
+    "follow_up_repair": {
+      "baseline": "d877cf3b6648083f97e54d661933e3d188999dae",
+      "changed_path_count": 9,
+      "classification": "unsupported_invocation_configuration",
+      "corrected_routing_revision": "v1-019-invocation-contract-repair-v2",
+      "failed_routing_fingerprint": "ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2",
+      "failed_session_id": "6baf17e6e77d7582e72b2e19a40ab806",
+      "independent_review": {
+        "compact_state_fingerprint": "a16d7db426cb8bee697b20e24d7971e3e75cb47b1f9db35340e5cd00222c791a",
+        "final_verdict": "PASS",
+        "findings": 0,
+        "invocation_route": "local qwen35-hermes independent reviewer",
+        "repository_fingerprint": "13494038c776a3d7c03bf36e1372745ad7a3c9a836f679813d8460ffd532fccb",
+        "reviewed_path_count": 9,
+        "reviewer_edits": false
+      },
+      "model_attempts_consumed": 0,
+      "owner_action_required": false,
+      "post_exit_restoration": {
+        "malfunctioning_label_unloaded": "com.property-rental.post-exit-restoration.ca4143c8deb3",
+        "replacement_status": "install_after_successful_publication_ci",
+        "terminal_self_unload_verified": true
+      },
+      "product_files_modified": false,
+      "provider_error": "HTTP 400: Unsupported parameter: max_output_tokens",
+      "retry": {
+        "eligible_attempts_after_publication": 1,
+        "failed_fingerprint_only": "ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2"
+      },
+      "scheduler_enabled": false,
+      "status": "verified_awaiting_publication",
+      "timestamp": "2026-08-21T17:12:36Z",
+      "token_ceiling": 60000,
+      "verification": {
+        "automation": "PASS: 97 tests plus compact-state routing, watchdog, shell syntax, and Python compilation",
+        "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-v1-019-invocation-contract-follow-up.json",
+        "independent_review": "PASS: no blocking findings; exact nine-path snapshot reviewed locally"
+      },
+      "zero_usage": {
+        "api_calls_completed": 0,
+        "api_calls_started": 1,
+        "counted_tokens": 0
+      }
+    },
     "independent_review": {
       "compact_state_fingerprint": "6c158d6f7bec7a1c32fec8b1cf8dfe4adeaa0e23b0574ba82c9c2c7bc8b39030",
       "final_verdict": "PASS",
@@ -26,11 +70,11 @@
       "reviewer_edits": false,
       "status": "PASS"
     },
-    "next_action": "Publish the verified repair, require successful GitHub Actions, then install the tested fail-closed post-exit restoration continuation while keeping the supervisor disabled until repository-worker overlap reaches zero.",
+    "next_action": "Publish the corrected routing revision, require successful GitHub Actions, then install the terminal self-unloading fail-closed continuation.",
     "post_exit_restoration": {
-      "repair_publication_commit": "ca4143c8deb348fddf3c44414022de1fef54831e",
-      "status": "metadata_published_waiting_enable",
-      "timestamp": "2026-08-21T15:48:45Z"
+      "predecessor_repair_publication_commit": "ca4143c8deb348fddf3c44414022de1fef54831e",
+      "status": "corrected_continuation_install_pending",
+      "timestamp": "2026-08-21T17:12:36Z"
     },
     "predecessor_ci_correction_review": {
       "cache_read_tokens": "unavailable from provider",
@@ -232,7 +276,7 @@
       "watchdog_notifications": "PASS"
     },
     "scheduler_enabled": false,
-    "status": "restored",
+    "status": "published_awaiting_post_exit_restoration",
     "stop_after_candidate": "V1-019",
     "timestamp": "2026-08-21T15:34:06Z",
     "v1_019_original_automatic_recovery_attempts": 0,
@@ -356,7 +400,7 @@
   "task": "Implement the approved bounded candidate: Authentication and account administration UI",
   "tests": [],
   "tests_tranche_id": "V1-018",
-  "timestamp": "2026-08-21T15:48:45Z",
+  "timestamp": "2026-08-21T17:12:36Z",
   "touched_areas": [
     "sign-in, MFA, recovery, session, account/capability screens"
   ],

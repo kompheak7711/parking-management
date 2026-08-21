@@ -25,8 +25,13 @@ from openclaw_automation import (
 SUPERVISOR_ID = "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb"
 SUPERVISOR_NAME = "property-rental-24x7-supervisor"
 EXPECTED_INTERVAL_MS = 1_800_000
-ROUTING_REVISION = "v1-019-code69-repair-v1"
-INCIDENT_BASELINE = "1d091b6b581703b54eb370f3b3106a3dae45c19c"
+ROUTING_REVISION = "v1-019-invocation-contract-repair-v2"
+INCIDENT_BASELINE = "d877cf3b6648083f97e54d661933e3d188999dae"
+FAILED_ROUTING_FINGERPRINT = (
+    "ab2d0cb1c2d3de9e287d595effddd4e4f9de5bdafc361deea003cbde10dcfdc2"
+)
+FAILED_SESSION_ID = "6baf17e6e77d7582e72b2e19a40ab806"
+TERMINAL_RESTORATION_STATUSES = {"complete", "failed_closed"}
 
 
 class RestorationError(RuntimeError):
@@ -88,6 +93,34 @@ def cron(openclaw: str, repo: Path, action: str) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise RestorationError(f"openclaw cron {action} returned a non-object")
     return value
+
+
+def restoration_label(expected_repair_head: str) -> str:
+    return f"com.property-rental.post-exit-restoration.{expected_repair_head[:12]}"
+
+
+def unload_restoration_job(launchctl: str, expected_repair_head: str) -> None:
+    """Unload only this exact submitted one-shot job.
+
+    ``launchctl submit`` jobs have inferred keepalive behavior.  Terminal
+    evidence is written before this function is called so a delayed signal
+    cannot erase the fail-closed result.
+    """
+    label = restoration_label(expected_repair_head)
+    target = f"gui/{os.getuid()}/{label}"
+    result = subprocess.run(
+        [launchctl, "bootout", target],
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    if result.returncode:
+        combined = f"{result.stdout}\n{result.stderr}".strip()
+        if "Could not find service" not in combined:
+            raise RestorationError(
+                f"launchctl could not unload exact restoration label {label}: "
+                f"exit {result.returncode}"
+            )
 
 
 def exact_supervisor(job: dict[str, Any], repo: Path) -> None:
@@ -246,7 +279,7 @@ def supersede_v1_019_incident(
         current = None
     except json.JSONDecodeError as error:
         raise RestorationError("the stale V1-019 candidate record is invalid JSON") from error
-    if current is not None and (
+    if current is None or (
         not isinstance(current, dict) or current.get("candidate") != "V1-019"
     ):
         raise RestorationError("the stale candidate record does not identify V1-019")
@@ -263,22 +296,24 @@ def supersede_v1_019_incident(
             "candidate_base_commit": candidate_base_commit,
             "repository_fingerprint": fingerprint,
         }
+    current_usage = current.get("model_usage") if isinstance(current, dict) else None
+    failed_usage = current_usage[-1] if isinstance(current_usage, list) and current_usage else {}
     if current is not None and (
         current.get("stage") != "implementation"
+        or current.get("routing_revision") != "v1-019-code69-repair-v1"
         or current.get("candidate_base_commit") != INCIDENT_BASELINE
         or current.get("implementation_complete") is True
         or current.get("expected_worktree_paths") not in (None, [])
         or current.get("completed_implementation_substages") not in (None, [])
+        or failed_usage.get("session_id") != FAILED_SESSION_ID
+        or failed_usage.get("stage_result")
+        != "unsupported_invocation_configuration"
+        or failed_usage.get("api_calls_completed") != 0
+        or failed_usage.get("total_token_usage") != 0
     ):
         raise RestorationError(
-            "the stale V1-019 record no longer matches the preserved code-69 incident"
+            "the V1-019 record no longer matches the exact zero-usage invocation incident"
         )
-
-    archive = dispatch_state / "superseded/v1-019-code69"
-    archive.mkdir(parents=True, exist_ok=True)
-    archive_key = f"{int(time.time() * 1000)}-{candidate_base_commit[:12]}"
-    if current is not None:
-        atomic_write_json(archive / f"candidate-{archive_key}.json", current)
 
     prior_attempt: dict[str, Any] | None = None
     try:
@@ -288,16 +323,13 @@ def supersede_v1_019_incident(
         pass
     except json.JSONDecodeError as error:
         raise RestorationError("the stale V1-019 attempt evidence is invalid JSON") from error
-    if prior_attempt is not None:
-        implementation_attempts = int(
-            (prior_attempt.get("counters") or {}).get("implementation", 0)
+    implementation_attempts = int(
+        ((prior_attempt or {}).get("counters") or {}).get("implementation", 0)
+    )
+    if prior_attempt is None or implementation_attempts != 1:
+        raise RestorationError(
+            "the V1-019 recorded attempt evidence no longer matches the incident"
         )
-        if implementation_attempts != 1:
-            raise RestorationError(
-                "the V1-019 implementation attempt counter no longer equals one"
-            )
-        atomic_write_json(archive / f"attempt-{archive_key}.json", prior_attempt)
-        attempt_path.unlink()
 
     prior_failure: dict[str, Any] | None = None
     try:
@@ -307,11 +339,46 @@ def supersede_v1_019_incident(
         pass
     except json.JSONDecodeError as error:
         raise RestorationError("the stale last-failure evidence is invalid JSON") from error
-    if prior_failure is not None:
-        atomic_write_json(archive / f"last-failure-{archive_key}.json", prior_failure)
-        last_failure_path.unlink()
+    if (
+        prior_failure is None
+        or prior_failure.get("actionable_fingerprint") != FAILED_ROUTING_FINGERPRINT
+        or prior_failure.get("category") != "unsupported_invocation_configuration"
+        or prior_failure.get("owner_action_required") is not False
+    ):
+        raise RestorationError(
+            "the current failure does not match the exact recoverable routing fingerprint"
+        )
+    failed_marker = (
+        dispatch_state
+        / "terminal/routing_recovery_pending"
+        / f"{FAILED_ROUTING_FINGERPRINT}.json"
+    )
+    try:
+        marker_evidence = json.loads(failed_marker.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise RestorationError(
+            "the exact failed routing marker is missing or invalid"
+        ) from error
+    if (
+        marker_evidence.get("actionable_fingerprint")
+        != FAILED_ROUTING_FINGERPRINT
+        or marker_evidence.get("category")
+        != "unsupported_invocation_configuration"
+    ):
+        raise RestorationError("the exact failed routing marker changed before supersession")
 
-    stale_markers = sorted(
+    # All incident identities are proven before any live evidence is moved.
+    archive = dispatch_state / "superseded/v1-019-invocation-contract"
+    archive.mkdir(parents=True, exist_ok=True)
+    archive_key = f"{int(time.time() * 1000)}-{candidate_base_commit[:12]}"
+    atomic_write_json(archive / f"candidate-{archive_key}.json", current)
+    atomic_write_json(archive / f"attempt-{archive_key}.json", prior_attempt)
+    atomic_write_json(archive / f"last-failure-{archive_key}.json", prior_failure)
+    attempt_path.unlink()
+    last_failure_path.unlink()
+    failed_marker.replace(archive / f"terminal-{archive_key}.json")
+
+    preserved_markers = sorted(
         str(path.relative_to(dispatch_state))
         for path in (dispatch_state / "terminal").glob("*/*.json")
         if path.is_file()
@@ -320,14 +387,16 @@ def supersede_v1_019_incident(
         "status": "superseded_by_routing_repair",
         "timestamp": utc_now(),
         "routing_revision": ROUTING_REVISION,
+        "superseded_routing_fingerprint": FAILED_ROUTING_FINGERPRINT,
         "prior_stage": current.get("stage") if current else None,
-        "prior_session_id": current.get("session_id") if current else None,
+        "prior_session_id": FAILED_SESSION_ID,
         "prior_model_usage": current.get("model_usage") if current else None,
         "prior_attempt_evidence": prior_attempt,
-        "prior_attempt_counter": 1,
+        "prior_recorded_attempt_counter": 1,
+        "model_attempts_consumed": 0,
         "prior_automatic_repair_counter": 0,
         "prior_last_failure": prior_failure,
-        "preserved_terminal_markers": stale_markers,
+        "preserved_terminal_markers": preserved_markers,
         "archive_key": archive_key,
     }
     atomic_write_json(archive / f"supersession-{archive_key}.json", incident)
@@ -346,6 +415,12 @@ def supersede_v1_019_incident(
         "ceiling_recovery_attempts": {},
         "recovery_generation": 0,
         "recovery_pending": False,
+        "corrected_routing_retry": {
+            "eligible_attempts": 1,
+            "consumed_attempts": 0,
+            "failed_routing_fingerprint": FAILED_ROUTING_FINGERPRINT,
+            "status": "eligible_after_publication",
+        },
         "continuation_used": False,
         "events": [
             {
@@ -354,7 +429,8 @@ def supersede_v1_019_incident(
                 "routing_revision": ROUTING_REVISION,
                 "repository_commit": candidate_base_commit,
                 "repository_fingerprint": fingerprint,
-                "original_implementation_attempts": 1,
+                "original_recorded_attempts": 1,
+                "model_attempts_consumed": 0,
                 "original_automatic_recovery_attempts": 0,
                 "archive_key": archive_key,
             }
@@ -469,12 +545,41 @@ def execute(args: argparse.Namespace) -> int:
         prior = value if isinstance(value, dict) else None
     except (OSError, json.JSONDecodeError):
         prior = None
+    if (
+        prior
+        and prior.get("status") in TERMINAL_RESTORATION_STATUSES
+        and prior.get("expected_repair_head") == args.expected_repair_head
+    ):
+        reentry_errors: list[str] = []
+        if prior.get("status") == "failed_closed":
+            try:
+                terminal_job = cron(args.openclaw, repo, "get")
+                exact_supervisor(terminal_job, repo)
+                if terminal_job.get("enabled") is not False:
+                    terminal_job = cron(args.openclaw, repo, "disable")
+                    exact_supervisor(terminal_job, repo)
+                    if terminal_job.get("enabled") is not False:
+                        raise RestorationError(
+                            "terminal restoration evidence could not keep the supervisor disabled"
+                        )
+            except Exception as error:
+                reentry_errors.append(str(error))
+        try:
+            unload_restoration_job(args.launchctl, args.expected_repair_head)
+        except Exception as error:
+            reentry_errors.append(str(error))
+        if reentry_errors:
+            prior["terminal_reentry_errors"] = reentry_errors
+            prior["terminal_reentry_at"] = utc_now()
+            atomic_write_json(evidence_path, prior)
+        return 0 if prior.get("status") == "complete" and not reentry_errors else 69
     atomic_write_json(
         evidence_path,
         {
             "status": "pending_post_exit",
             "started_at": utc_now(),
             "expected_repair_head": args.expected_repair_head,
+            "restoration_label": restoration_label(args.expected_repair_head),
             "owner_pid": args.owner_pid,
             "superseded_evidence": (
                 {"status": prior.get("status"), "timestamp": prior.get("timestamp")}
@@ -535,6 +640,10 @@ def execute(args: argparse.Namespace) -> int:
                     {
                         "status": "complete",
                         "timestamp": utc_now(),
+                        "expected_repair_head": args.expected_repair_head,
+                        "restoration_label": restoration_label(
+                            args.expected_repair_head
+                        ),
                         "supervisor_id": SUPERVISOR_ID,
                         "enabled": True,
                         "metadata_commit": metadata_commit,
@@ -550,6 +659,7 @@ def execute(args: argparse.Namespace) -> int:
                         "bounded_retry_progress": progress,
                     },
                 )
+                unload_restoration_job(args.launchctl, args.expected_repair_head)
                 return 0
             time.sleep(args.poll)
         raise RestorationError("no naturally scheduled successful run completed before timeout")
@@ -568,6 +678,10 @@ def execute(args: argparse.Namespace) -> int:
             {
                 "status": "failed_closed",
                 "timestamp": utc_now(),
+                "expected_repair_head": args.expected_repair_head,
+                "restoration_label": restoration_label(
+                    args.expected_repair_head
+                ),
                 "supervisor_id": SUPERVISOR_ID,
                 "enabled_before_failure": enabled,
                 "failure": str(error),
@@ -586,14 +700,23 @@ def execute(args: argparse.Namespace) -> int:
                 ),
             },
         )
+        unload_failure: str | None = None
+        try:
+            unload_restoration_job(args.launchctl, args.expected_repair_head)
+        except Exception as unload_error:
+            unload_failure = str(unload_error)
+        if unload_failure is not None:
+            terminal = json.loads(evidence_path.read_text())
+            terminal["unload_failure"] = unload_failure
+            atomic_write_json(evidence_path, terminal)
         print(f"post-exit restoration failed closed: {error}", file=sys.stderr)
         return 69
 
 
 def install(args: argparse.Namespace) -> int:
-    label = f"com.property-rental.post-exit-restoration.{args.expected_repair_head[:12]}"
+    label = restoration_label(args.expected_repair_head)
     command = [
-        "launchctl",
+        args.launchctl,
         "submit",
         "-l",
         label,
@@ -609,6 +732,8 @@ def install(args: argparse.Namespace) -> int:
         str(Path(args.evidence).resolve()),
         "--openclaw",
         args.openclaw,
+        "--launchctl",
+        args.launchctl,
         "--owner-pid",
         str(args.owner_pid),
         "--expected-repair-head",
@@ -629,6 +754,7 @@ def parser() -> argparse.ArgumentParser:
         child.add_argument("--dispatch-state", default=str(dispatch))
         child.add_argument("--evidence", default=str(dispatch / "restoration/current.json"))
         child.add_argument("--openclaw", default=str(Path.home() / ".openclaw/bin/openclaw"))
+        child.add_argument("--launchctl", default="launchctl")
         child.add_argument("--owner-pid", type=int, default=os.getppid())
         child.add_argument("--expected-repair-head", required=True)
         child.add_argument("--poll", type=float, default=15.0)

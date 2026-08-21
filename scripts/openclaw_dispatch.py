@@ -16,7 +16,6 @@ from openclaw_automation import (
     FAILURE_CATEGORIES,
     RECOVERABLE_ROUTING_FAILURES,
     SECRET_PATTERN,
-    V1_019_ROUTING_REVISION as ROUTING_REVISION,
     AutomationError,
     ModelPolicy,
     atomic_write_json,
@@ -845,6 +844,56 @@ def authorized_candidate_writes(
     return sorted(paths)
 
 
+def zero_usage_provider_failure(
+    *, returncode: int, stderr: str, usage: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Classify a provider rejection that completed no model request.
+
+    A transport callback may be entered (``api_calls_started == 1``) before
+    the provider validates its request.  Only completed calls plus usage/model
+    metadata count as a model attempt.  Preserve the exact supported diagnostic
+    instead of asking model-validation code to interpret missing metadata.
+    """
+    completed_calls = usage.get("api_calls")
+    if returncode == 0 or (
+        isinstance(completed_calls, int) and completed_calls > 0
+    ):
+        return None
+    token_fields = (
+        "input_tokens",
+        "output_tokens",
+        "cache_read_tokens",
+        "reasoning_tokens",
+        "total_tokens",
+    )
+    if any(usage.get(field) not in (None, 0) for field in token_fields):
+        return None
+    status_match = re.search(r"Error code:\s*(\d{3})", stderr)
+    parameter_match = re.search(
+        r"Unsupported parameter:\s*([A-Za-z][A-Za-z0-9_.-]*)", stderr
+    )
+    if status_match and parameter_match:
+        status = int(status_match.group(1))
+        provider_error = f"Unsupported parameter: {parameter_match.group(1)}"
+        return {
+            "category": "unsupported_invocation_configuration",
+            "diagnostic": f"HTTP {status}: {provider_error}",
+            "provider_http_status": status,
+            "provider_error": provider_error,
+        }
+    if usage.get("model") is not None or completed_calls is None and returncode != 64:
+        return None
+    diagnostic = f"Hermes stopped before model execution (exit {returncode})"
+    return {
+        "category": (
+            "unsupported_invocation_configuration"
+            if returncode == 64
+            else "pre_model_infrastructure_failure"
+        ),
+        "diagnostic": diagnostic,
+    }
+
+
 def invoke_model(
     record: dict[str, Any], packet: dict[str, Any], policy: ModelPolicy
 ) -> tuple[int, str, dict[str, Any]]:
@@ -1030,21 +1079,44 @@ def invoke_model(
         ],
         default=-1,
     )
-    stopped_before_model = bool(
-        result.returncode
-        and (
-            observed_api_calls == 0
-            or (observed_api_calls == -1 and result.returncode == 64)
-        )
+    zero_usage_failure = zero_usage_provider_failure(
+        returncode=result.returncode, stderr=result.stderr, usage=usage
     )
-    if stopped_before_model:
+    if zero_usage_failure is not None:
         release_attempt(attempt_path, stage=stage)
-        category = (
-            "unsupported_invocation_configuration"
-            if result.returncode == 64
-            else "pre_model_infrastructure_failure"
+        report = normalize_usage(usage, policy)
+        report["repository_fingerprint"] = fingerprint
+        report.update(
+            {
+                key: value
+                for key, value in zero_usage_failure.items()
+                if key not in {"category", "diagnostic"}
+            }
         )
-        diagnostic = f"Hermes stopped before model execution (exit {result.returncode})"
+        diagnostic = str(zero_usage_failure["diagnostic"])
+        category = str(zero_usage_failure["category"])
+        finalize_usage(
+            record,
+            report,
+            stage_result=category,
+            exact_next_action=(
+                "Correct the supported invocation boundary; no model attempt was consumed."
+            ),
+        )
+        if "provider_http_status" in zero_usage_failure:
+            atomic_write_json(
+                call_path,
+                {
+                    "call_key": call_key,
+                    "result": "failed",
+                    "normalized_call": f"{call_identity} {stage}",
+                    "underlying_result": diagnostic,
+                    "exact_next_eligible_action": (
+                        "publish a corrected routing revision before one bounded retry"
+                    ),
+                },
+            )
+        save_stage(record)
         raise AutomationError(category, diagnostic)
 
     report = normalize_usage(usage, policy)
