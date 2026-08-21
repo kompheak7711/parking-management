@@ -4097,8 +4097,12 @@ def test_production_recovery_factory_persists_random_codes_with_independent_salt
         assert len(set(terminal.recovery_codes)) == 10
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
-                cursor.execute("SELECT verifier_encoding FROM app.recovery_codes")
-                stored_verifiers = [cast(str, row[0]) for row in cursor.fetchall()]
+                cursor.execute("SELECT verifier_encoding, created_at FROM app.recovery_codes")
+                stored_rows = cursor.fetchall()
+                stored_verifiers = [cast(str, row[0]) for row in stored_rows]
+                consumption_time = max(cast(datetime, row[1]) for row in stored_rows) + (
+                    timedelta(seconds=1)
+                )
 
         assert len(stored_verifiers) == 10
         salts = [verifier.split("$")[4] for verifier in stored_verifiers]
@@ -4125,7 +4129,7 @@ def test_production_recovery_factory_persists_random_codes_with_independent_salt
                 ),
                 verifier_provider=verifier_provider,
                 audit_sink=DatabaseTestAuditSink(),
-                clock=lambda: datetime(2026, 8, 21, tzinfo=UTC),
+                clock=lambda: consumption_time,
             )
             consumption = RecoveryCodeConsumptionRequest(
                 consuming_actor_id=request.actor_id,
