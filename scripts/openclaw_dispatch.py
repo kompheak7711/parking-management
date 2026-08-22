@@ -11,7 +11,6 @@ import sqlite3
 import stat
 import subprocess
 import sys
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -1578,104 +1577,111 @@ def preserved_final_assistant_output(usage_report: dict[str, Any]) -> str | None
         directory_flags |= os.O_CLOEXEC
         file_flags |= os.O_CLOEXEC
 
-    directory_fd: int | None = None
+    descriptors: list[int] = []
     try:
-        directory_fd = os.open(STATE_DIR, directory_flags)
+        state_fd = os.open(STATE_DIR, directory_flags)
+        descriptors.append(state_fd)
+        directory_chain: list[tuple[int, str, int]] = []
+        parent_fd = state_fd
         for component in ("hermes-sessions", session_id):
             next_fd = os.open(
                 component,
                 directory_flags,
-                dir_fd=directory_fd,
+                dir_fd=parent_fd,
             )
-            os.close(directory_fd)
-            directory_fd = next_fd
+            descriptors.append(next_fd)
+            directory_chain.append((parent_fd, component, next_fd))
+            parent_fd = next_fd
+        session_fd = parent_fd
 
-        def stable_regular_snapshot(name: str, *, required: bool) -> bytes | None:
-            assert directory_fd is not None
+        def open_regular(name: str, *, required: bool) -> int | None:
             try:
-                descriptor = os.open(name, file_flags, dir_fd=directory_fd)
+                descriptor = os.open(name, file_flags, dir_fd=session_fd)
             except FileNotFoundError:
                 if required:
                     raise
                 return None
-            try:
-                before = os.fstat(descriptor)
-                if (
-                    not stat.S_ISREG(before.st_mode)
-                    or before.st_nlink != 1
-                    or before.st_size < 0
-                    or before.st_size > 64 * 1024 * 1024
-                ):
-                    raise OSError("unsafe Hermes session database evidence")
-                chunks: list[bytes] = []
-                remaining = before.st_size
-                while remaining:
-                    chunk = os.read(descriptor, min(remaining, 1024 * 1024))
-                    if not chunk:
-                        raise OSError("short Hermes session database read")
-                    chunks.append(chunk)
-                    remaining -= len(chunk)
-                after = os.fstat(descriptor)
-                current = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
-                identity = lambda value: (
-                    value.st_dev,
-                    value.st_ino,
-                    value.st_mode,
-                    value.st_nlink,
-                    value.st_size,
-                    value.st_mtime_ns,
-                    value.st_ctime_ns,
-                )
-                if identity(before) != identity(after) or identity(after) != identity(
-                    current
-                ):
-                    raise OSError("Hermes session database changed during recovery")
-                return b"".join(chunks)
-            finally:
+            evidence = os.fstat(descriptor)
+            if (
+                not stat.S_ISREG(evidence.st_mode)
+                or evidence.st_nlink != 1
+                or evidence.st_size < 0
+                or evidence.st_size > 64 * 1024 * 1024
+            ):
                 os.close(descriptor)
+                raise OSError("unsafe Hermes session database evidence")
+            descriptors.append(descriptor)
+            return descriptor
 
-        database_bytes = stable_regular_snapshot("state.db", required=True)
-        wal_bytes = stable_regular_snapshot("state.db-wal", required=False)
+        database_fd = open_regular("state.db", required=True)
+        wal_fd = open_regular("state.db-wal", required=False)
+        shm_fd = open_regular("state.db-shm", required=False)
         try:
-            os.stat("state.db-journal", dir_fd=directory_fd, follow_symlinks=False)
+            os.stat("state.db-journal", dir_fd=session_fd, follow_symlinks=False)
         except FileNotFoundError:
             pass
         else:
             return None
-    except OSError:
-        return None
-    finally:
-        if directory_fd is not None:
-            os.close(directory_fd)
+        database = STATE_DIR / "hermes-sessions" / session_id / "state.db"
+        connection = sqlite3.connect(f"{database.as_uri()}?mode=ro", uri=True)
+        try:
+            connection.execute("BEGIN")
+            row = connection.execute(
+                """SELECT role, content, finish_reason
+                   FROM messages
+                   WHERE active = 1
+                   ORDER BY id DESC
+                   LIMIT 1"""
+            ).fetchone()
 
-    if not database_bytes:
-        return None
-    try:
-        with tempfile.TemporaryDirectory(
-            prefix="property-rental-review-recovery-"
-        ) as directory:
-            snapshot_database = Path(directory) / "state.db"
-            snapshot_database.write_bytes(database_bytes)
-            snapshot_database.chmod(0o600)
-            if wal_bytes is not None:
-                snapshot_wal = Path(directory) / "state.db-wal"
-                snapshot_wal.write_bytes(wal_bytes)
-                snapshot_wal.chmod(0o600)
-            connection = sqlite3.connect(
-                f"{snapshot_database.as_uri()}?mode=ro", uri=True
+            object_identity = lambda value: (
+                value.st_dev,
+                value.st_ino,
+                value.st_mode,
+                value.st_nlink,
             )
-            try:
-                row = connection.execute(
-                    """SELECT role, content, finish_reason
-                       FROM messages
-                       WHERE active = 1
-                       ORDER BY id DESC
-                       LIMIT 1"""
-                ).fetchone()
-            finally:
-                connection.close()
+            stable_identity = lambda value: (
+                *object_identity(value),
+                value.st_size,
+                value.st_mtime_ns,
+                value.st_ctime_ns,
+            )
+            if STATE_DIR.is_symlink() or object_identity(os.fstat(state_fd)) != object_identity(
+                os.stat(STATE_DIR, follow_symlinks=False)
+            ):
+                raise OSError("Hermes state root changed during recovery")
+            for chain_parent, component, child in directory_chain:
+                if object_identity(os.fstat(child)) != object_identity(
+                    os.stat(component, dir_fd=chain_parent, follow_symlinks=False)
+                ):
+                    raise OSError("Hermes session path changed during recovery")
+            assert database_fd is not None
+            if stable_identity(os.fstat(database_fd)) != stable_identity(
+                os.stat("state.db", dir_fd=session_fd, follow_symlinks=False)
+            ):
+                raise OSError("Hermes session database changed during recovery")
+            for name, descriptor, require_stability in (
+                ("state.db-wal", wal_fd, True),
+                ("state.db-shm", shm_fd, False),
+            ):
+                if descriptor is None:
+                    try:
+                        os.stat(name, dir_fd=session_fd, follow_symlinks=False)
+                    except FileNotFoundError:
+                        continue
+                    raise OSError("Hermes SQLite evidence appeared during recovery")
+                identity = stable_identity if require_stability else object_identity
+                if identity(os.fstat(descriptor)) != identity(
+                    os.stat(name, dir_fd=session_fd, follow_symlinks=False)
+                ):
+                    raise OSError("Hermes SQLite evidence changed during recovery")
+        finally:
+            connection.close()
     except (OSError, sqlite3.Error):
         return None
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
     if (
         row is None
         or row[0] != "assistant"
@@ -2656,6 +2662,11 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
         )
     packet = task_packet(REPO, preflight, "independent_review")
     expected_paths = sorted(record.get("scoped_changed_paths") or [])
+    if expected_paths != current_paths:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "independent-review scope omits or adds a base-to-HEAD candidate path",
+        )
     base_commit = str(record.get("candidate_base_commit") or "")
     if not re.fullmatch(r"[0-9a-f]{40}", base_commit):
         raise AutomationError(

@@ -94,9 +94,9 @@
 - Second fresh review: session `a8359284d26732844114341dd015d30e` used 48,764 tokens in one
   zero-tool call and found one remaining recovery boundary: canonicalizing a symlinked Hermes
   session root and reopening `state.db` left ancestor-symlink and replacement races. Recovery now
-  walks only non-symlinked session-root components, reads regular database and WAL evidence through
-  bound descriptors with stable identity checks, and queries a private snapshot. Focused
-  regressions cover both the ancestor symlink and database replacement race.
+  walks only non-symlinked session-root components and binds one coherent SQLite read transaction
+  to regular database, WAL, and session-path identities. Focused regressions cover ancestor
+  symlinks, database replacement, and concurrent WAL checkpoint races.
 - Final fresh review: session `278528a25dd788fa99ce6981e15478d1` used 48,421 tokens in one
   zero-tool call and passed with no findings. The reviewed candidate is already clean, pushed, and
   CI-green across cumulative bounded commits, so publication now accepts that state only when the
@@ -106,6 +106,11 @@
   bytes above the former 120,000-byte packet cap. No model call or recovery attempt was consumed.
   The bounded complete-diff cap is now 160,000 bytes; the separate 90,000-token complex-review
   reservation and normal 60,000-token ceiling are unchanged.
+- Complete-diff review: session `445cf26755eecec282bfe266bd268949` used 56,004 tokens in one
+  zero-tool call and found two final review-boundary gaps. Independent review now explicitly
+  rejects any stored scope that differs from the exact base-to-HEAD Git path set. Recovered Hermes
+  output now uses a coherent SQLite transaction and fails closed if database, WAL, or session-path
+  identity changes during the read.
 - Owner action: none.
 - Exact next action: verify and publish the clean cumulative-publication repair, repeat the exact
   candidate-wide review, then reconcile V1-020 complete after exact-HEAD CI.

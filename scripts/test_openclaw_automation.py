@@ -3636,6 +3636,53 @@ raise SystemExit(64)
                 dispatcher.independent_review(record, {"actionable": True})
             invoke.assert_not_called()
 
+    def test_independent_review_refuses_omitted_base_to_head_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            base_commit = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=repo,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            (repo / "ops/NOW.md").write_text("# Candidate NOW\n")
+            state = json.loads((repo / "ops/STATE.json").read_text())
+            state["next_action"] = "Candidate state change"
+            atomic_write_json(repo / "ops/STATE.json", state)
+            spec = importlib.util.spec_from_file_location(
+                "omitted_review_path", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(root / "state"),
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            fingerprint = repository_fingerprint(repo)
+            record: dict[str, object] = {
+                "candidate": "V1-018",
+                "candidate_base_commit": base_commit,
+                "stage": "independent_review",
+                "implementation_complete": True,
+                "deterministic_verification_passed": True,
+                "scoped_changed_paths": ["ops/NOW.md"],
+                "verified_paths": ["ops/NOW.md", "ops/STATE.json"],
+                "verified_repository_fingerprint": fingerprint,
+            }
+            with (
+                mock.patch.object(dispatcher, "invoke_model") as invoke,
+                self.assertRaisesRegex(AutomationError, "omits or adds"),
+            ):
+                dispatcher.independent_review(record, {"actionable": True})
+            invoke.assert_not_called()
+
     def test_invalid_review_delivery_is_classified_without_unbound_error(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -3908,7 +3955,65 @@ raise SystemExit(64)
                 recovered = dispatcher.preserved_final_assistant_output(
                     {"session_id": session_id, "api_calls_completed": 1}
                 )
-            self.assertEqual(recovered, "validated")
+            self.assertIsNone(recovered)
+
+    def test_completed_session_recovery_fails_closed_during_wal_checkpoint(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            state = root / "state"
+            session_id = "6" * 32
+            session_directory = state / "hermes-sessions" / session_id
+            session_directory.mkdir(parents=True)
+            database_path = session_directory / "state.db"
+            writer = sqlite3.connect(database_path)
+            writer.execute("PRAGMA journal_mode=WAL")
+            writer.execute(
+                "CREATE TABLE messages "
+                "(id INTEGER, role TEXT, content TEXT, finish_reason TEXT, active INTEGER)"
+            )
+            writer.execute(
+                "INSERT INTO messages VALUES (1, 'assistant', 'stale', 'stop', 1)"
+            )
+            writer.commit()
+            writer.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            writer.execute(
+                "INSERT INTO messages VALUES (2, 'user', 'continued', NULL, 1)"
+            )
+            writer.commit()
+            spec = importlib.util.spec_from_file_location(
+                "transport_recovery_checkpoint_race",
+                ROOT / "scripts/openclaw_dispatch.py",
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state)},
+            ):
+                spec.loader.exec_module(dispatcher)
+            real_connect = sqlite3.connect
+
+            def checkpoint_before_read(
+                *args: object, **kwargs: object
+            ) -> sqlite3.Connection:
+                connection = real_connect(*args, **kwargs)
+                writer.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                return connection
+
+            try:
+                with mock.patch.object(
+                    dispatcher.sqlite3,
+                    "connect",
+                    side_effect=checkpoint_before_read,
+                ):
+                    recovered = dispatcher.preserved_final_assistant_output(
+                        {"session_id": session_id, "api_calls_completed": 1}
+                    )
+            finally:
+                writer.close()
+            self.assertIsNone(recovered)
 
     def test_completed_session_recovery_requires_global_final_assistant_message(
         self,
