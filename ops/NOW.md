@@ -1,4 +1,4 @@
-# V1-020 identity and security hardening — read-batch routing repair
+# V1-020 identity and security hardening — bounded implementation ready
 
 - Candidate: `V1-020` — Identity and security end-to-end hardening gate.
 - Authorization: standing authorization for the remaining approved V1 roadmap; no renewed
@@ -19,14 +19,15 @@
   traceability/profile fallback prevent later approved candidates from receiving empty packets.
 - Verification: all 128 automation tests, routing/state/watchdog suites, shell and Python
   syntax, JSON validation, publication guard, and diff checks pass.
-- Scheduler: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is paused before the remaining
-  bounded retry; daily reporting and watchdog jobs are unchanged.
+- Publication: routing revision v2 commit `324cb36` passed GitHub Actions run `32589644022`;
+  the no-change ceiling checkpoint was archived as recovered.
+- Scheduler: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is cleared to resume after this
+  publication record; daily reporting and watchdog jobs are unchanged.
 - Product status: V1-020 implementation has not started and no product path has changed.
 - Owner action: none.
-- Exact next action: verify and publish routing revision v2, archive the no-change ceiling
-  checkpoint as recovered, then retry only V1-020 `authentication_core`.
+- Exact next action: re-enable the supervisor and dispatch only V1-020 `authentication_core`.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-020 active; no product changes; read-batch routing repair in progress.
-- Automation exact next action: Publish routing revision v2, then dispatch authentication_core under standing authorization.
+- Automation candidate state: V1-020 active; routing revision v2 published; bounded implementation ready.
+- Automation exact next action: Dispatch authentication_core under standing authorization.
 <!-- AUTOMATION_STATUS_END -->

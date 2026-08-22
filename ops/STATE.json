@@ -455,7 +455,7 @@
       "roadmap_traceability_json_scope_secret_canonical_diff": "PASS",
       "watchdog_notifications": "PASS"
     },
-    "scheduler_enabled": false,
+    "scheduler_enabled": true,
     "standing_v1_autonomy": {
       "authorized_at": "2026-08-23T00:15:17+07:00",
       "authorization": "owner_approved_remaining_v1_roadmap",
@@ -492,7 +492,9 @@
       "second_failure_model_calls": 4,
       "second_failure_session_id": "b1e598250832cd5eafbdb11d1afe4c29",
       "second_failure_tool_batch_bytes": 82472,
-      "status": "active_repair_v2",
+      "routing_v2_ci_run_id": 32589644022,
+      "routing_v2_commit": "324cb362e4abc0cad62d88736830556f2c6b46eb",
+      "status": "published_v2",
       "token_ceiling": 60000,
       "token_ceiling_changed": false
     },
@@ -519,7 +521,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Publish V1-020 routing revision v2, then retry authentication_core under standing authorization.",
+  "next_action": "Implement V1-020 authentication_core under standing authorization.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
