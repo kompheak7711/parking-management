@@ -479,7 +479,8 @@
         "authentication_api",
         "sensitive_data_and_privileges",
         "mfa_policy",
-        "recovery"
+        "recovery",
+        "sessions_integration"
       ],
       "failed_session_api_calls": 1,
       "failed_session_changed_paths": 0,
@@ -528,7 +529,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Publish V1-020 recovery evidence, then dispatch sessions_integration.",
+  "next_action": "Review and publish V1-020 sessions_integration, then dispatch bootstrap_release.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
@@ -636,10 +637,13 @@
     "PASS: V1-020 mfa_policy complete verification profile 15/15; backend 353 passed; PostgreSQL 105 passed; frontend 32 passed; automation 128 passed",
     "PASS: direct review of seven mfa_policy paths; no material findings; candidate-wide independent review remains pending",
     "PASS: 146 focused recovery-code, administrative/emergency recovery, session-revocation, and traceability tests; recovery required no product change",
-    "PASS: direct review of recovery authorities and implementation coverage; no material findings; candidate-wide independent review remains pending"
+    "PASS: direct review of recovery authorities and implementation coverage; no material findings; candidate-wide independent review remains pending",
+    "PASS: 101 focused session, authentication-integration, authorization-scope, and traceability tests",
+    "PASS: V1-020 sessions_integration complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 128 passed",
+    "PASS: direct review of five sessions_integration paths; no material findings; candidate-wide independent review remains pending"
   ],
   "tests_tranche_id": "V1-020",
-  "timestamp": "2026-08-22T18:44:27Z",
+  "timestamp": "2026-08-22T18:55:32Z",
   "touched_areas": [
     "complete authentication abuse, lifecycle, recovery, session, and bootstrap tests"
   ],

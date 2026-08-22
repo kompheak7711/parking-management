@@ -8,7 +8,11 @@ from uuid import UUID
 import pytest
 
 import property_rental.session_revocation as session_revocation_module
-from property_rental.browser_session import BrowserSessionState
+from property_rental.browser_session import (
+    BrowserSessionAuditEvidence,
+    BrowserSessionLifetimeService,
+    BrowserSessionState,
+)
 from property_rental.session_revocation import (
     SessionRevocationAuditEvidence,
     SessionRevocationFailed,
@@ -23,6 +27,14 @@ class CollectingSessionRevocationAuditSink:
         self.evidence: list[SessionRevocationAuditEvidence] = []
 
     def record(self, evidence: SessionRevocationAuditEvidence) -> None:
+        self.evidence.append(evidence)
+
+
+class CollectingBrowserSessionAuditSink:
+    def __init__(self) -> None:
+        self.evidence: list[BrowserSessionAuditEvidence] = []
+
+    def record(self, evidence: BrowserSessionAuditEvidence) -> None:
         self.evidence.append(evidence)
 
 
@@ -229,7 +241,12 @@ def test_browser_boundary_failure_is_generic_and_has_no_partial_result(
 
 @pytest.mark.parametrize(
     "trigger",
-    ["password_reset", "account_disabled", "material_privilege_reduction"],
+    [
+        "password_reset",
+        "mfa_recovery",
+        "account_disabled",
+        "material_privilege_reduction",
+    ],
 )
 def test_each_approved_trigger_records_the_exact_revocation_reason(
     trigger: SessionRevocationTrigger,
@@ -247,6 +264,21 @@ def test_each_approved_trigger_records_the_exact_revocation_reason(
     assert result.revoked_count == 1
     assert audit_sink.evidence[0].trigger == trigger
     assert audit_sink.evidence[0].reason == "applicable_sessions_revoked"
+
+    browser_audit_sink = CollectingBrowserSessionAuditSink()
+    browser_service = BrowserSessionLifetimeService(
+        clock=lambda: REVOKED_AT + timedelta(seconds=1),
+        audit_sink=browser_audit_sink,
+    )
+    decision = browser_service.evaluate(result.revoked_sessions[0])
+
+    assert not decision.active
+    assert decision.reason == "revoked"
+    assert browser_service.record_activity(result.revoked_sessions[0]) is None
+    assert browser_audit_sink.evidence == [
+        BrowserSessionAuditEvidence(operation="evaluate", outcome="denied", reason="revoked"),
+        BrowserSessionAuditEvidence(operation="activity", outcome="denied", reason="revoked"),
+    ]
 
 
 def test_revocation_audit_evidence_is_fixed_bounded_and_secret_free() -> None:

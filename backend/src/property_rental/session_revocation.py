@@ -14,6 +14,7 @@ from property_rental.browser_session import (
 
 SessionRevocationTrigger = Literal[
     "password_reset",
+    "mfa_recovery",
     "account_disabled",
     "material_privilege_reduction",
 ]
@@ -21,6 +22,7 @@ SessionRevocationOutcome = Literal["completed", "failed"]
 SessionRevocationReason = Literal["applicable_sessions_revoked", "revocation_failed"]
 APPROVED_REVOCATION_TRIGGERS: Final = {
     "password_reset",
+    "mfa_recovery",
     "account_disabled",
     "material_privilege_reduction",
 }

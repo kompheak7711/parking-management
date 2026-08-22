@@ -49,13 +49,17 @@
   reuse rejection, regeneration invalidation, rate limiting, enumeration-safe outcomes, session
   revocation, controlled administrative/emergency recovery, and secret-free immutable audit;
   all 146 focused recovery, revocation, and traceability tests pass.
-- Product status: V1-020 implementation is in progress; the first five substages are complete;
-  sessions/integration and bootstrap/release have not started.
+- Sessions/integration: session `b07fbe99f1be2a7119e6e88e7841e080` added the missing
+  MFA-recovery session-revocation trigger and strengthened logout, authentication-recency, and
+  provider-neutral authorization-boundary coverage. All 101 focused tests and all 15
+  complete-profile gates pass (357 backend, 105 PostgreSQL, 32 frontend, 128 automation).
+- Product status: V1-020 implementation is in progress; the first six substages are complete;
+  bootstrap/release has not started.
 - Owner action: none.
-- Exact next action: publish the no-change `recovery` evidence, then dispatch only V1-020
-  `sessions_integration`.
+- Exact next action: review and publish `sessions_integration`, then dispatch only V1-020
+  `bootstrap_release`.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-020 active; five of seven bounded substages complete.
-- Automation exact next action: Publish recovery evidence, then dispatch sessions_integration.
+- Automation candidate state: V1-020 active; six of seven bounded substages complete.
+- Automation exact next action: Publish sessions_integration, then dispatch bootstrap_release.
 <!-- AUTOMATION_STATUS_END -->
