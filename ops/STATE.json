@@ -455,7 +455,7 @@
       "roadmap_traceability_json_scope_secret_canonical_diff": "PASS",
       "watchdog_notifications": "PASS"
     },
-    "scheduler_enabled": true,
+    "scheduler_enabled": false,
     "standing_v1_autonomy": {
       "authorized_at": "2026-08-23T00:15:17+07:00",
       "authorization": "owner_approved_remaining_v1_roadmap",
@@ -471,6 +471,23 @@
       ],
       "repeated_tranche_authorization_required": false,
       "token_ceiling": 60000
+    },
+    "v1_020_context_routing": {
+      "authorization": "owner_approved_remaining_v1_roadmap",
+      "failed_session_api_calls": 1,
+      "failed_session_changed_paths": 0,
+      "failed_session_id": "20260823_003208_38266a",
+      "failure_category": "empty_or_invalid_task_delivery",
+      "repair_scope": [
+        "five bounded V1-020 substages",
+        "exact per-substage source and test paths",
+        "repository-backed wildcard authority expansion",
+        "traceability-based generic candidate path fallback"
+      ],
+      "routing_revision": "v1-020-security-hardening-routing-v1",
+      "status": "active_repair",
+      "token_ceiling": 60000,
+      "token_ceiling_changed": false
     },
     "status": "restored",
     "stop_after_candidate": null,
@@ -495,7 +512,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Implement the approved bounded candidate: Identity and security end-to-end hardening gate",
+  "next_action": "Publish the bounded V1-020 context-routing repair, then retry authentication_abuse without consuming another Owner authorization.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
@@ -591,9 +608,12 @@
   "secrets_present": false,
   "status": "active",
   "task": "Implement the approved bounded candidate: Identity and security end-to-end hardening gate",
-  "tests": [],
-  "tests_tranche_id": "V1-019",
-  "timestamp": "2026-08-22T17:20:22Z",
+  "tests": [
+    "PASS: exact V1-020 authentication_abuse packet materializes seven authorities and eight source/test paths",
+    "PASS: 128 automation tests plus routing, compact-state, visibility-watchdog, syntax, JSON, publication, and diff checks"
+  ],
+  "tests_tranche_id": "V1-020",
+  "timestamp": "2026-08-22T17:47:14Z",
   "touched_areas": [
     "complete authentication abuse, lifecycle, recovery, session, and bootstrap tests"
   ],

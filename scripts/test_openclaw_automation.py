@@ -32,6 +32,9 @@ from openclaw_automation import (
     STAGES,
     UNAVAILABLE,
     V1_019_FRONTEND_CONTEXT_MAX_BYTES,
+    V1_020_SUBSTAGE_AUTHORITIES,
+    V1_020_SUBSTAGE_IDS,
+    V1_020_SUBSTAGE_PATHS,
     AutomationError,
     actionable_fingerprint,
     atomic_write_json,
@@ -41,6 +44,7 @@ from openclaw_automation import (
     consume_attempt,
     consume_continuation,
     digest,
+    expand_authorities,
     health_classification,
     hermes_chat_usage,
     model_policy,
@@ -936,6 +940,7 @@ class RepositoryEvidenceTests(unittest.TestCase):
             context["backend_contract"]["route_inventory"][0]["path"],
             "/api/v1/auth/login",
         )
+
         self.assertEqual(
             context["backend_contract"]["route_inventory"][0]["router_prefix"],
             "/api/v1/auth",
@@ -996,6 +1001,40 @@ class RepositoryEvidenceTests(unittest.TestCase):
         self.assertEqual(predecessor["candidate"], "V1-018")
         self.assertEqual(len(predecessor["paths"]), 7)
         self.assertIsNotNone(predecessor["fingerprint"])
+
+    def test_v1_020_packets_have_bounded_paths_and_authorities(self) -> None:
+        roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())
+        candidate = next(
+            item for item in roadmap["tranches"] if item["id"] == "V1-020"
+        )
+        expanded = set(expand_authorities(candidate["authorities"], repo=ROOT))
+        self.assertNotIn("*", "".join(expanded))
+        self.assertTrue(expand_authorities(["BR-PROP-*"], repo=ROOT))
+        for substage in V1_020_SUBSTAGE_IDS:
+            authorities = V1_020_SUBSTAGE_AUTHORITIES[substage]
+            paths = V1_020_SUBSTAGE_PATHS[substage]
+            with self.subTest(substage=substage):
+                self.assertTrue(set(authorities).issubset(expanded))
+                self.assertGreaterEqual(len(paths), 1)
+                self.assertLessEqual(len(paths), 8)
+                self.assertTrue(all((ROOT / path).is_file() for path in paths))
+        spec = importlib.util.spec_from_file_location(
+            "v1_020_substage_dispatch", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        record: dict[str, Any] = {
+            "candidate": "V1-020",
+            "completed_implementation_substages": [],
+        }
+        for expected in V1_020_SUBSTAGE_IDS:
+            current = dispatcher.current_bounded_substage(record)
+            self.assertIsNotNone(current)
+            assert current is not None
+            self.assertEqual(current["id"], expected)
+            record["completed_implementation_substages"].append(expected)
+        self.assertIsNone(dispatcher.current_bounded_substage(record))
 
     def test_sign_in_contract_fails_closed_on_router_or_decorator_drift(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

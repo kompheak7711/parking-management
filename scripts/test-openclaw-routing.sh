@@ -13,7 +13,7 @@ expected_candidate="$(jq -r '.next_candidate.roadmap_id // .next_candidate.id' "
 expected_current="$(jq -r '.roadmap.current_id' "$repo/ops/STATE.json")"
 expected_completed="$(jq '[.tranches[] | select(.status == "complete")] | length' "$repo/ops/V1_ROADMAP.json")"
 expected_total="$(jq -r '.total_tranches' "$repo/ops/V1_ROADMAP.json")"
-expected_authorities="$(PYTHONPATH="$repo/scripts" python3 -c 'import json, sys; from openclaw_automation import expand_authorities; roadmap = json.load(open(sys.argv[1], encoding="utf-8")); candidate = next(item for item in roadmap["tranches"] if item["id"] == sys.argv[2]); print(json.dumps(expand_authorities(candidate.get("authorities") or []), separators=(",", ":")))' "$repo/ops/V1_ROADMAP.json" "$expected_candidate")"
+expected_authorities="$(PYTHONPATH="$repo/scripts" python3 -c 'import json, sys; from pathlib import Path; from openclaw_automation import expand_authorities; roadmap = json.load(open(sys.argv[1], encoding="utf-8")); candidate = next(item for item in roadmap["tranches"] if item["id"] == sys.argv[2]); print(json.dumps(expand_authorities(candidate.get("authorities") or [], repo=Path(sys.argv[3])), separators=(",", ":")))' "$repo/ops/V1_ROADMAP.json" "$expected_candidate" "$repo")"
 printf '%s' "$preflight" | jq -e '
   .status == $status
   and .roadmap.current_id == $current

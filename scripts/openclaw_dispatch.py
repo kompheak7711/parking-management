@@ -113,6 +113,47 @@ V1_019_SUBSTAGES: tuple[dict[str, Any], ...] = (
         ],
     },
 )
+V1_020_SUBSTAGES: tuple[dict[str, Any], ...] = (
+    {
+        "id": "authentication_abuse",
+        "order": 1,
+        "total": 5,
+        "task": "Authentication abuse, input, leakage, and privilege tests",
+        "include": ["TEST-108 through TEST-111", "SEC-068 through SEC-070"],
+    },
+    {
+        "id": "mfa_policy",
+        "order": 2,
+        "total": 5,
+        "task": "MFA policy and TOTP hardening tests",
+        "include": ["TEST-128", "MFA audit and rejection coverage"],
+    },
+    {
+        "id": "recovery",
+        "order": 3,
+        "total": 5,
+        "task": "Recovery-code and administrative-recovery hardening tests",
+        "include": ["TEST-129", "TEST-130", "SEC-071", "SEC-072"],
+    },
+    {
+        "id": "sessions_integration",
+        "order": 4,
+        "total": 5,
+        "task": "Session, reauthentication, and authentication integration tests",
+        "include": ["TEST-131", "TEST-132", "TEST-135"],
+    },
+    {
+        "id": "bootstrap_release",
+        "order": 5,
+        "total": 5,
+        "task": "Initial Owner bootstrap and release-gate hardening tests",
+        "include": ["TEST-133", "TEST-134", "SEC-073 through SEC-075"],
+    },
+)
+CANDIDATE_SUBSTAGES: dict[str, tuple[dict[str, Any], ...]] = {
+    "V1-019": V1_019_SUBSTAGES,
+    "V1-020": V1_020_SUBSTAGES,
+}
 
 
 def run(
@@ -661,11 +702,12 @@ def packet_prompt(packet: dict[str, Any]) -> str:
 
 
 def current_bounded_substage(record: dict[str, Any]) -> dict[str, Any] | None:
-    if record.get("candidate") != "V1-019":
+    substages = CANDIDATE_SUBSTAGES.get(str(record.get("candidate") or ""))
+    if substages is None:
         return None
     completed = set(record.get("completed_implementation_substages") or [])
     return next(
-        (dict(item) for item in V1_019_SUBSTAGES if item["id"] not in completed),
+        (dict(item) for item in substages if item["id"] not in completed),
         None,
     )
 
@@ -764,7 +806,7 @@ def schedule_implementation_ceiling_recovery(
     next_action = (
         "Dispatch the scheduled fresh bounded independent-review retry."
         if phase == "independent_review"
-        else "Dispatch the scheduled fresh bounded implementation retry for the same V1-019 substage."
+        else f"Dispatch the scheduled fresh bounded implementation retry for the same {record['candidate']} substage."
     )
     persist_terminal_marker(
         STATE_DIR / "terminal",
@@ -2168,7 +2210,9 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
             "repository_integrity_uncertainty",
             "post-exit restoration permits only the exact V1-019 sign_in recovery",
         )
-    if record.get("candidate") == "V1-019" and substage is None:
+    candidate = str(record.get("candidate") or "")
+    candidate_substages = CANDIDATE_SUBSTAGES.get(candidate)
+    if candidate_substages is not None and substage is None:
         record["stage"] = "deterministic_verification"
         record["implementation_complete"] = True
         save_stage(record)
@@ -2246,7 +2290,7 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         if substage and not started:
             raise AutomationError(
                 "empty_or_invalid_task_delivery",
-                "implementation did not durably record that V1-019 started",
+                f"implementation did not durably record that {candidate} started",
             )
         if (substage is None or final_substage) and not completed:
             raise AutomationError(
@@ -2256,7 +2300,7 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         if substage and not final_substage and completed:
             raise AutomationError(
                 "empty_or_invalid_task_delivery",
-                "a non-final V1-019 substage prematurely marked the candidate complete",
+                f"a non-final {candidate} substage prematurely marked the candidate complete",
             )
         after = changed_paths(REPO)
         result = sanitized_implementation_result(
@@ -2278,13 +2322,13 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
     if substage:
         completed_substages.append(str(substage["id"]))
     all_substages_complete = bool(
-        record.get("candidate") != "V1-019"
-        or len(completed_substages) == len(V1_019_SUBSTAGES)
+        candidate_substages is None
+        or len(completed_substages) == len(candidate_substages)
     )
     next_action = (
         "Run deterministic verification in a separate stage."
         if all_substages_complete
-        else "Dispatch the next fresh bounded V1-019 implementation substage."
+        else f"Dispatch the next fresh bounded {candidate} implementation substage."
     )
     resolve_pending_routing_recovery(record, outcome="succeeded")
     finalize_usage(
@@ -3460,8 +3504,8 @@ def main() -> int:
             "pre_model_infrastructure_failure": "Retry the same compact stage once infrastructure is available; no model attempt was consumed.",
             "gateway_or_network_failure": "Run a focused gateway diagnostic, then use the bounded retry only if the actionable fingerprint changes.",
             "unsupported_invocation_configuration": "Correct the supported invocation boundary without changing product scope; no model attempt was consumed.",
-            "model_session_or_token_ceiling": "Run the scheduled fresh bounded recovery for the exact V1-019 model stage or substage; request Owner action only if its bounded recovery budget is exhausted.",
-            "context_materialization_required": "Run the scheduled fresh materialized-context route for the exact V1-019 substage; do not consume a ceiling-recovery attempt.",
+            "model_session_or_token_ceiling": "Run the scheduled fresh bounded recovery for the exact candidate model stage or substage; request Owner action only if its bounded recovery budget is exhausted.",
+            "context_materialization_required": "Run the scheduled fresh materialized-context route for the exact candidate substage; do not consume a ceiling-recovery attempt.",
             "repeated_identical_tool_call": "Use the preserved underlying result to choose a different focused diagnostic; do not repeat the unchanged call.",
             "deterministic_test_failure": "Repair only the proven in-scope failing check, rerun the complete profile, and obtain a fresh review.",
             "independent_review_defect": "Repair only the concrete in-scope review findings, rerun all gates, and obtain a fresh review.",

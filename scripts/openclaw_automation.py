@@ -94,6 +94,108 @@ V1_019_SUBSTAGE_PATHS: Final = {
         "ops/traceability.json",
     ),
 }
+V1_020_ROUTING_REVISION: Final = "v1-020-security-hardening-routing-v1"
+V1_020_SUBSTAGE_IDS: Final = (
+    "authentication_abuse",
+    "mfa_policy",
+    "recovery",
+    "sessions_integration",
+    "bootstrap_release",
+)
+V1_020_SUBSTAGE_AUTHORITIES: Final = {
+    "authentication_abuse": (
+        "TEST-108",
+        "TEST-109",
+        "TEST-110",
+        "TEST-111",
+        "SEC-068",
+        "SEC-069",
+        "SEC-070",
+    ),
+    "mfa_policy": ("TEST-128", "SEC-068", "SEC-069", "SEC-075"),
+    "recovery": (
+        "TEST-129",
+        "TEST-130",
+        "SEC-071",
+        "SEC-072",
+        "SEC-075",
+    ),
+    "sessions_integration": (
+        "TEST-131",
+        "TEST-132",
+        "TEST-135",
+        "SEC-068",
+        "SEC-069",
+        "SEC-070",
+        "SEC-075",
+    ),
+    "bootstrap_release": (
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+    ),
+}
+V1_020_SUBSTAGE_ACCEPTANCE: Final = {
+    substage: (
+        "complete backend, frontend, database, integration, end-to-end, security, dependency, backup/restore, and traceability suites",
+        "clean synchronized repository",
+        "GitHub Actions success",
+        "no unresolved non-protected v1 gap",
+    )
+    for substage in V1_020_SUBSTAGE_IDS
+}
+V1_020_SUBSTAGE_PATHS: Final = {
+    "authentication_abuse": (
+        "backend/src/property_rental/auth_api.py",
+        "backend/src/property_rental/local_authentication.py",
+        "backend/src/property_rental/logging.py",
+        "backend/src/property_rental/password_security.py",
+        "backend/tests/test_authentication_api.py",
+        "backend/tests/test_local_authentication.py",
+        "backend/tests/test_operations.py",
+        "backend/tests/test_password_security.py",
+    ),
+    "mfa_policy": (
+        "backend/src/property_rental/auth_api.py",
+        "backend/src/property_rental/mfa_policy.py",
+        "backend/src/property_rental/totp_security.py",
+        "backend/tests/test_authentication_api.py",
+        "backend/tests/test_mfa_policy.py",
+        "backend/tests/test_totp_security.py",
+    ),
+    "recovery": (
+        "backend/src/property_rental/account_recovery.py",
+        "backend/src/property_rental/administrative_recovery.py",
+        "backend/src/property_rental/auth_api.py",
+        "backend/src/property_rental/recovery_code_lifecycle.py",
+        "backend/tests/test_account_recovery.py",
+        "backend/tests/test_administrative_recovery.py",
+        "backend/tests/test_authentication_api.py",
+        "backend/tests/test_recovery_code_lifecycle.py",
+    ),
+    "sessions_integration": (
+        "backend/src/property_rental/access_admin_api.py",
+        "backend/src/property_rental/auth_api.py",
+        "backend/src/property_rental/browser_session.py",
+        "backend/src/property_rental/session_revocation.py",
+        "backend/tests/test_access_admin_api.py",
+        "backend/tests/test_authentication_api.py",
+        "backend/tests/test_browser_session.py",
+        "backend/tests/test_session_revocation.py",
+    ),
+    "bootstrap_release": (
+        "backend/src/property_rental/bootstrap_cli.py",
+        "backend/src/property_rental/initial_owner_bootstrap.py",
+        "backend/src/property_rental/password_security.py",
+        "backend/src/property_rental/recovery_code_issuance.py",
+        "backend/tests/test_deployment_scaffolding.py",
+        "backend/tests/test_initial_owner_bootstrap.py",
+        "backend/tests/test_initial_owner_bootstrap_cli.py",
+        "backend/tests/test_migrations.py",
+    ),
+}
 
 RECOVERABLE_ROUTING_FAILURES: Final = frozenset(
     {
@@ -981,15 +1083,20 @@ def stage_actionable_fingerprint(
 def v1_019_routing_identity(
     record: dict[str, Any], stage: str | None = None
 ) -> dict[str, Any]:
-    """Return the shared dispatcher/health identity for one V1-019 route."""
-    if record.get("candidate") != "V1-019":
+    """Return the shared dispatcher/health identity for a bounded candidate route."""
+    candidate = record.get("candidate")
+    routes = {
+        "V1-019": (V1_019_ROUTING_REVISION, V1_019_SUBSTAGE_IDS),
+        "V1-020": (V1_020_ROUTING_REVISION, V1_020_SUBSTAGE_IDS),
+    }
+    route = routes.get(candidate)
+    if route is None:
         return {}
+    revision, substages = route
     completed = set(record.get("completed_implementation_substages") or [])
-    substage = next(
-        (item for item in V1_019_SUBSTAGE_IDS if item not in completed), None
-    )
+    substage = next((item for item in substages if item not in completed), None)
     return {
-        "revision": V1_019_ROUTING_REVISION,
+        "revision": revision,
         "lifecycle_stage": stage or record.get("stage"),
         "bounded_substage": substage,
         "recovery_generation": int(record.get("recovery_generation") or 0),
@@ -1448,6 +1555,7 @@ def persist_terminal_marker(
 
 
 AUTHORITY_PATHS: Final = {
+    "BR": "docs/002_BUSINESS_RULES.md",
     "PR": "docs/003_PRODUCT_REQUIREMENTS.md",
     "DB": "docs/004_DATABASE_MODEL.md",
     "API": "docs/005_API_SPECIFICATION.md",
@@ -1459,11 +1567,41 @@ AUTHORITY_PATHS: Final = {
 }
 
 
-def expand_authorities(authorities: list[object]) -> list[str]:
-    """Expand compact same-prefix numeric ranges without inventing authorities."""
+def expand_authorities(
+    authorities: list[object], *, repo: Path | None = None
+) -> list[str]:
+    """Expand compact numeric ranges and repository-backed wildcard authorities."""
     expanded: list[str] = []
     for raw in authorities:
         authority = str(raw)
+        if "*" in authority and repo is not None:
+            prefix = authority.split("-", 1)[0]
+            relative = AUTHORITY_PATHS.get(prefix)
+            if relative is None:
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    f"authority wildcard {authority!r} has no canonical document route",
+                )
+            document = (repo / relative).read_text()
+            expression = re.compile(
+                "^" + re.escape(authority).replace(r"\*", ".*") + "$"
+            )
+            matches = [
+                match.group(1)
+                for match in re.finditer(
+                    r"^## ([A-Z]+-[A-Z0-9][A-Z0-9-]*)(?:\s+—[^\n]*)?$",
+                    document,
+                    re.MULTILINE,
+                )
+                if expression.fullmatch(match.group(1))
+            ]
+            if not matches:
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    f"authority wildcard {authority!r} matched no canonical requirement",
+                )
+            expanded.extend(matches)
+            continue
         match = re.fullmatch(r"([A-Z]+)-(\d+)(?:-(\d+))?", authority)
         if not match:
             expanded.append(authority)
@@ -1483,7 +1621,76 @@ def expand_authorities(authorities: list[object]) -> list[str]:
         expanded.extend(
             f"{prefix}-{number:0{width}d}" for number in range(first, last + 1)
         )
-    return expanded
+    return list(dict.fromkeys(expanded))
+
+
+def candidate_relevant_paths(
+    repo: Path, authorities: list[str], candidate: dict[str, Any]
+) -> list[str]:
+    """Derive a small deterministic path set for non-specialized candidates.
+
+    Exact traceability paths win. Existing source siblings and bounded profile
+    templates provide implementation context without granting broad discovery.
+    """
+    paths: list[str] = []
+    traceability_path = repo / "ops/traceability.json"
+    if traceability_path.is_file():
+        try:
+            traceability = json.loads(traceability_path.read_text())
+        except json.JSONDecodeError as error:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "candidate traceability is not valid JSON",
+            ) from error
+        authority_set = set(authorities)
+        for entry in traceability.get("entries") or []:
+            if not isinstance(entry, dict) or not authority_set.intersection(
+                str(item) for item in entry.get("upstream_ids") or []
+            ):
+                continue
+            relative = entry.get("test_path")
+            if isinstance(relative, str) and (repo / relative).is_file():
+                paths.append(relative)
+                match = re.fullmatch(r"backend/tests/test_(.+)\.py", relative)
+                if match:
+                    source = f"backend/src/property_rental/{match.group(1)}.py"
+                    if (repo / source).is_file():
+                        paths.append(source)
+                frontend = re.fullmatch(r"frontend/src/(.+)\.test\.(tsx?|jsx?)", relative)
+                if frontend:
+                    for extension in ("tsx", "ts", "jsx", "js"):
+                        source = f"frontend/src/{frontend.group(1)}.{extension}"
+                        if (repo / source).is_file():
+                            paths.append(source)
+                            break
+
+    profile = str(candidate.get("acceptance_profile") or "")
+    templates = {
+        "api_ui": (
+            "backend/src/property_rental/app.py",
+            "backend/src/property_rental/api.py",
+            "frontend/src/App.tsx",
+            "frontend/src/App.test.tsx",
+        ),
+        "database": (
+            "backend/tests/test_migrations.py",
+            "backend/src/property_rental/identity.py",
+        ),
+        "financial": (
+            "backend/src/property_rental/api.py",
+            "backend/tests/test_migrations.py",
+        ),
+        "release": (
+            "backend/tests/test_traceability.py",
+            "ops/traceability.json",
+        ),
+    }
+    paths.extend(
+        relative
+        for relative in templates.get(profile, ())
+        if (repo / relative).is_file()
+    )
+    return list(dict.fromkeys(paths))[:16]
 
 
 def authoritative_excerpt(repo: Path, authority: str, relative: str) -> str:
@@ -1699,10 +1906,14 @@ def task_packet(
     raw_authorities = (
         roadmap_item.get("authorities") or candidate.get("authorities") or []
     )
-    candidate_authorities = expand_authorities(raw_authorities)
+    candidate_authorities = expand_authorities(raw_authorities, repo=repo)
     substage_id = str((bounded_substage or {}).get("id") or "")
+    substage_authorities = {
+        "V1-019": V1_019_SUBSTAGE_AUTHORITIES,
+        "V1-020": V1_020_SUBSTAGE_AUTHORITIES,
+    }.get(str(candidate_id), {})
     authorities = list(
-        V1_019_SUBSTAGE_AUTHORITIES.get(substage_id, tuple(candidate_authorities))
+        substage_authorities.get(substage_id, tuple(candidate_authorities))
     )
     if any(authority not in candidate_authorities for authority in authorities):
         raise AutomationError(
@@ -1722,15 +1933,36 @@ def task_packet(
     complete_acceptance = roadmap_item.get("acceptance") or (
         roadmap.get("acceptance_profiles") or {}
     ).get(roadmap_item.get("acceptance_profile") or "complete", [])
+    substage_acceptance_map = {
+        "V1-019": V1_019_SUBSTAGE_ACCEPTANCE,
+        "V1-020": V1_020_SUBSTAGE_ACCEPTANCE,
+    }.get(str(candidate_id), {})
     substage_acceptance = list(
-        V1_019_SUBSTAGE_ACCEPTANCE.get(substage_id, tuple(complete_acceptance))
+        substage_acceptance_map.get(substage_id, tuple(complete_acceptance))
     )
     if any(item not in complete_acceptance for item in substage_acceptance):
         raise AutomationError(
             "repository_integrity_uncertainty",
             "bounded substage acceptance routing exceeds the approved profile",
         )
-    directly_relevant_paths = list(V1_019_SUBSTAGE_PATHS.get(substage_id, ()))
+    substage_paths = {
+        "V1-019": V1_019_SUBSTAGE_PATHS,
+        "V1-020": V1_020_SUBSTAGE_PATHS,
+    }.get(str(candidate_id), {})
+    directly_relevant_paths = list(substage_paths.get(substage_id, ()))
+    if not directly_relevant_paths:
+        directly_relevant_paths = candidate_relevant_paths(
+            repo, authorities, roadmap_item or candidate
+        )
+    candidate_number_match = re.fullmatch(r"V1-(\d+)", str(candidate_id))
+    candidate_number = (
+        int(candidate_number_match.group(1)) if candidate_number_match else 0
+    )
+    if not directly_relevant_paths and candidate_number >= 20:
+        raise AutomationError(
+            "context_materialization_required",
+            f"no deterministic repository paths were materialized for {candidate_id}",
+        )
     materialized_recovery = recovery_state or {}
     packet = {
         "schema_version": 5,
@@ -1788,7 +2020,7 @@ def task_packet(
             "The exact candidate, authorization, acceptance, state, and controlling requirement excerpts are materialized here.",
             "Read only directly_relevant_paths. Do not read ops/STATE.json, ops/V1_ROADMAP.json, ops/NOW.md, ops/QUEUE.md, Makefile, a canonical document, or an unrelated source tree.",
             "Do not call todo/planning tools or rediscover repository paths with broad searches.",
-            "When bounded_substage is present, implement only that substage and leave every later V1-019 substage for its own fresh session.",
+            f"When bounded_substage is present, implement only that substage and leave every later {candidate_id} substage for its own fresh session.",
             "Keep business logic outside route handlers, keep frontend API access in a dedicated typed client, and preserve audit/data-integrity boundaries.",
             "Write concise secret-free substage evidence to the authorized state paths without rereading their complete contents.",
             "In changed_paths, include every candidate_state.preserved_changed_paths entry plus every path changed in this session; do not read a preserved operational path merely to rediscover it.",
