@@ -13,6 +13,7 @@ expected_candidate="$(jq -r '.next_candidate.roadmap_id // .next_candidate.id' "
 expected_current="$(jq -r '.roadmap.current_id' "$repo/ops/STATE.json")"
 expected_completed="$(jq '[.tranches[] | select(.status == "complete")] | length' "$repo/ops/V1_ROADMAP.json")"
 expected_total="$(jq -r '.total_tranches' "$repo/ops/V1_ROADMAP.json")"
+expected_authorities="$(PYTHONPATH="$repo/scripts" python3 -c 'import json, sys; from openclaw_automation import expand_authorities; roadmap = json.load(open(sys.argv[1], encoding="utf-8")); candidate = next(item for item in roadmap["tranches"] if item["id"] == sys.argv[2]); print(json.dumps(expand_authorities(candidate.get("authorities") or []), separators=(",", ":")))' "$repo/ops/V1_ROADMAP.json" "$expected_candidate")"
 printf '%s' "$preflight" | jq -e '
   .status == $status
   and .roadmap.current_id == $current
@@ -31,11 +32,11 @@ printf '%s' "$packet" | jq -e '
   and .authorization_boundaries.renewed_owner_authorization == false
   and (has("compact_inputs") | not)
   and (has("canonical_paths") | not)
-  and (.requirement_evidence | map(.authority)) == ["UI-092", "UI-109", "UI-110", "UI-111", "UI-112", "UI-113", "TEST-094", "TEST-095", "TEST-135"]
+  and (.requirement_evidence | map(.authority)) == $authorities
   and (.continuity_instructions | join(" ") | contains("no external skill lookup or compact-state reread"))
   and (.dispatcher_evidence_trust.instruction | contains("Do not spend tool calls rediscovering"))
   and (.output_contract.required | index("exact_next_action") != null)
-' --arg candidate "$expected_candidate" >/dev/null
+' --arg candidate "$expected_candidate" --argjson authorities "$expected_authorities" >/dev/null
 
 if printf '%s' "$packet" | grep -q 'OPENCLAW_SUPERVISOR_PROMPT'; then
   echo "compact packet included the broad supervisor prompt" >&2

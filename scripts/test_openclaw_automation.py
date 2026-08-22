@@ -787,25 +787,98 @@ class RepositoryEvidenceTests(unittest.TestCase):
             self.assertNotIn("canonical_paths", packet)
 
     def test_v1_019_packet_embeds_only_exact_ui_and_test_authorities(self) -> None:
-        packet = task_packet(
-            ROOT,
-            {"actionable": True, "next_action": "Implement V1-019"},
-            "implementation",
-            bounded_substage={
-                "id": "sign_in",
-                "order": 1,
-                "total": 4,
-                "task": "Local sign-in",
-                "include": ["local sign-in"],
-            },
-            recovery_generation=1,
-            recovery_state={
-                "recovery_pending": True,
-                "bounded_recovery_attempt": 1,
-                "current_failure_category": "model_session_or_token_ceiling",
-                "bounded_recovery_exhausted": False,
-            },
-        )
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            for relative in (
+                "docs/006_UI_SPECIFICATION.md",
+                "docs/007_TESTING_STRATEGY.md",
+                "backend/src/property_rental/auth_api.py",
+                "frontend/src/App.tsx",
+                "frontend/src/App.test.tsx",
+                "frontend/src/styles.css",
+            ):
+                target = repo / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(ROOT / relative, target)
+            (repo / "ops").mkdir()
+            (repo / "ops/NOW.md").write_text("# V1-019 fixture\n")
+            (repo / "ops/QUEUE.md").write_text("durable V1 fixture\n")
+            candidate = {
+                "id": "V1-019",
+                "roadmap_id": "V1-019",
+                "order": 19,
+                "phase": "Identity",
+                "task": "Authentication and account administration UI",
+                "status": "approved_ready",
+                "authorization": "durable_v1",
+                "authorities": [
+                    "UI-092",
+                    "UI-109-113",
+                    "TEST-094-095",
+                    "TEST-135",
+                ],
+                "acceptance_profile": "api_ui",
+                "include": ["bounded authentication UI"],
+                "exclude": ["first-Owner web bootstrap"],
+            }
+            atomic_write_json(
+                repo / "ops/STATE.json",
+                {
+                    "branch": "main",
+                    "status": "active",
+                    "roadmap": {"current_id": "V1-019", "total": 60},
+                    "next_candidate": candidate,
+                    "approval": {
+                        "status": "approved_ready",
+                        "implementation_started": True,
+                        "implementation_completed": False,
+                    },
+                    "owner_action": "none",
+                    "next_action": "Implement V1-019",
+                },
+            )
+            atomic_write_json(
+                repo / "ops/V1_ROADMAP.json",
+                {
+                    "total_tranches": 60,
+                    "acceptance_profiles": {
+                        "api_ui": [
+                            "API contract and authorization tests",
+                            "frontend component/accessibility tests",
+                            "backend and frontend builds",
+                        ]
+                    },
+                    "tranches": [candidate],
+                },
+            )
+            subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+            subprocess.run(["git", "config", "user.name", "test"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(["git", "add", "--", "."], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "fixture"], cwd=repo, check=True)
+            packet = task_packet(
+                repo,
+                {"actionable": True, "next_action": "Implement V1-019"},
+                "implementation",
+                bounded_substage={
+                    "id": "sign_in",
+                    "order": 1,
+                    "total": 4,
+                    "task": "Local sign-in",
+                    "include": ["local sign-in"],
+                },
+                recovery_generation=1,
+                recovery_state={
+                    "recovery_pending": True,
+                    "bounded_recovery_attempt": 1,
+                    "current_failure_category": "model_session_or_token_ceiling",
+                    "bounded_recovery_exhausted": False,
+                },
+            )
         self.assertEqual(
             [item["authority"] for item in packet["requirement_evidence"]],
             [
