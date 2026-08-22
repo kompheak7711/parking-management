@@ -943,8 +943,17 @@ def _deliver_policy_rejection(
         budget["tool_output_policy_rejections_delivered"] = (
             int(budget.get("tool_output_policy_rejections_delivered", 0)) + 1
         )
-        budget["context_materialization_checkpoint"] = True
-        budget["next_api_call_blocked"] = True
+        rejection_history = budget.setdefault("tool_output_policy_rejection_history", [])
+        repeated_rejection = signature in rejection_history
+        rejection_history.append(signature)
+        rejection_history[:] = rejection_history[-20:]
+        budget["tool_output_policy_rejection_repeated"] = repeated_rejection
+        # A first policy rejection is already a safe, bounded result. Allow the
+        # model one provider call to honor it and return its stage JSON. Only an
+        # identical retry becomes a context-materialization checkpoint.
+        if repeated_rejection:
+            budget["context_materialization_checkpoint"] = True
+            budget["next_api_call_blocked"] = True
         atomic_json(budget_path, budget)
         return rendered
 

@@ -1,14 +1,64 @@
 {
   "schema_version": 3,
-  "repair": "v1-019-sign-in-context-routing-v4",
-  "status": "follow_up_verified_awaiting_publication",
+  "repair": "v1-019-sign-in-context-routing-v5",
+  "status": "policy_rejection_repair_locally_reviewed_awaiting_publication",
   "baseline_branch": "implementation/foundation",
-  "baseline_head": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
+  "baseline_head": "39ee4426366bb3966d2751b4cdf7a3a869f8f2b3",
   "candidate": "V1-019",
   "durable_v1_authorization_preserved": true,
   "canonical_specifications_modified": false,
   "token_ceiling": 60000,
   "token_ceiling_increased": false,
+  "sign_in_policy_rejection_v5": {
+    "authorization": "owner direct takeover on 2026-08-22",
+    "status": "complete_profile_and_local_review_passed_awaiting_publication",
+    "routing_revision": "v1-019-sign-in-context-routing-v5",
+    "incident_baseline": "39ee4426366bb3966d2751b4cdf7a3a869f8f2b3",
+    "incident_sessions": [
+      "c473dbfd0aed07e1f9c38186868f4b9e",
+      "d991bfe641017fbbb3ac3fdc1e1c7f9d",
+      "e541e46a90e70ddb8a54c4eb7ed43f02"
+    ],
+    "root_cause": "the bounded packet instructed Hermes to run npm verification while the guard forbade npm; the guard safely delivered two small policy rejections but incorrectly set a context checkpoint before Hermes could return its completion JSON, so fresh sessions repeated the same commands",
+    "repair_behavior": {
+      "implementation_verification_delegated_to_supervisor": true,
+      "first_safe_policy_rejection_allows_one_corrective_provider_call": true,
+      "identical_repeated_policy_violation_blocks": true,
+      "exact_v4_incident_rebases_to_v5": true,
+      "owner_authorization_consumed_again": false,
+      "ceiling_recovery_attempt_consumed": false,
+      "implementation_attempt_consumed": false
+    },
+    "preserved_worktree_paths": [
+      "frontend/src/App.test.tsx",
+      "frontend/src/App.tsx",
+      "frontend/src/authClient.test.ts",
+      "frontend/src/authClient.ts",
+      "frontend/src/styles.css",
+      "ops/traceability.json"
+    ],
+    "automation_repair_product_files_changed": [],
+    "product_verification_corrections": [
+      "frontend/src/App.test.tsx",
+      "frontend/src/App.tsx",
+      "frontend/src/authClient.test.ts",
+      "frontend/src/authClient.ts",
+      "ops/traceability.json"
+    ],
+    "canonical_specifications_modified": false,
+    "v1_020_started": false,
+    "token_ceiling": 60000,
+    "token_ceiling_changed": false,
+    "verification": {
+      "automation": "PASS: 125 tests plus compact-state routing, visibility watchdog, shell syntax, and Python compilation",
+      "backend": "PASS: 333 tests; 105 expected local database-environment skips",
+      "postgresql": "PASS: 105 tests",
+      "frontend": "PASS: 13 tests",
+      "complete_profile": "PASS: 15/15 gates",
+      "review": "PASS: complete local diff and lifecycle review; external review was not used because transmitting the full uncommitted diff was outside the approved privacy boundary",
+      "evidence": "/private/tmp/property-rental-v1-019-policy-rejection-v5-final.json"
+    }
+  },
   "cleanup_semantic_follow_up": {
     "authorization": "owner direct takeover on 2026-08-22",
     "status": "verified_awaiting_publication",
@@ -247,7 +297,7 @@
     "published_repair_commit": "ca4143c8deb348fddf3c44414022de1fef54831e",
     "restoration_metadata_commit": "d877cf3b6648083f97e54d661933e3d188999dae"
   },
-  "routing_revision": "v1-019-sign-in-context-routing-v4",
+  "routing_revision": "v1-019-sign-in-context-routing-v5",
   "predecessor_preservation_evidence": {
     "schema_version": 1,
     "candidate": "V1-018",

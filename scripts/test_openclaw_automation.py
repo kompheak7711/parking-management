@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import importlib.util
 import io
 import json
@@ -828,6 +829,11 @@ class RepositoryEvidenceTests(unittest.TestCase):
         self.assertTrue(packet["candidate_state"]["recovery_pending"])
         self.assertEqual(packet["candidate_state"]["recovery_generation"], 1)
         self.assertEqual(packet["candidate_state"]["bounded_recovery_attempt"], 1)
+        self.assertIsInstance(packet["candidate_state"]["preserved_changed_paths"], list)
+        self.assertIn(
+            "include every candidate_state.preserved_changed_paths entry",
+            rendered,
+        )
         self.assertEqual(
             packet["candidate_state"]["current_failure_category"],
             "model_session_or_token_ceiling",
@@ -838,7 +844,20 @@ class RepositoryEvidenceTests(unittest.TestCase):
             all(path.startswith("frontend/src/") for path in packet["directly_relevant_paths"])
         )
         context = packet["materialized_implementation_context"]
-        self.assertEqual(context["routing_revision"], "v1-019-sign-in-context-routing-v4")
+        self.assertEqual(context["routing_revision"], "v1-019-sign-in-context-routing-v5")
+        self.assertTrue(
+            any(
+                "Do not invoke terminal, Git, npm, make, or any verification command"
+                in step
+                for step in context["shortest_execution_sequence"]
+            )
+        )
+        self.assertTrue(
+            any(
+                "deferred_to_deterministic_supervisor" in step
+                for step in context["shortest_execution_sequence"]
+            )
+        )
         self.assertEqual(
             context["backend_contract"]["route_inventory"][0]["path"],
             "/api/v1/auth/login",
@@ -4805,7 +4824,7 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                     fresh = json.loads(stale_candidate.read_text())
                     self.assertEqual(
                         fresh["routing_revision"],
-                        "v1-019-sign-in-context-routing-v4",
+                        "v1-019-sign-in-context-routing-v5",
                     )
                     self.assertEqual(fresh["candidate_base_commit"], restored["metadata_commit"])
                     self.assertEqual(fresh["completed_implementation_substages"], ["sign_in"])
@@ -5111,6 +5130,157 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                 restoration.rebase_scheduled_v1_019_recovery(
                     repo, dispatch, candidate_base_commit=head
                 )
+
+    def test_exact_policy_rejection_loop_rebases_without_new_owner_or_attempt(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "policy_rejection_post_exit",
+            ROOT / "scripts/openclaw-post-exit-restoration.py",
+        )
+        assert spec and spec.loader
+        restoration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(restoration)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / "repo"
+            (repo / "frontend/src").mkdir(parents=True)
+            incident_paths = sorted(
+                {
+                    "frontend/src/App.tsx",
+                    "frontend/src/App.test.tsx",
+                    "frontend/src/styles.css",
+                    "frontend/src/authClient.ts",
+                    "frontend/src/authClient.test.ts",
+                }
+            )
+            corrected_contents = {
+                relative: f"corrected {relative}\n".encode()
+                for relative in restoration.POLICY_REJECTION_CORRECTED_PATH_HASHES
+            }
+            restoration.POLICY_REJECTION_CORRECTED_PATH_HASHES = {
+                relative: hashlib.sha256(content).hexdigest()
+                for relative, content in corrected_contents.items()
+            }
+            corrected_paths = sorted(corrected_contents)
+            for relative in corrected_paths:
+                path = repo / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("baseline\n")
+            subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+            subprocess.run(["git", "config", "user.name", "test"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "repair"], cwd=repo, check=True)
+            for relative, content in corrected_contents.items():
+                (repo / relative).write_bytes(content)
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            dispatch = root / "dispatch"
+            usage = [
+                {"session_id": session_id}
+                for session_id in restoration.POLICY_REJECTION_SESSIONS[:-1]
+            ]
+            usage.append(
+                {
+                    "session_id": restoration.POLICY_REJECTION_SESSIONS[-1],
+                    "api_calls_started": 2,
+                    "api_calls_completed": 2,
+                    "input_token_usage": 31_983,
+                    "output_token_usage": 1_059,
+                    "total_token_usage": 33_042,
+                    "cache_read_token_usage": 15_360,
+                    "tool_output_batch_rejections": 1,
+                    "tool_output_control_bytes": 504,
+                    "context_materialization_checkpoint": True,
+                }
+            )
+            candidate = {
+                "candidate": "V1-019",
+                "candidate_base_commit": restoration.POLICY_REJECTION_INCIDENT_BASELINE,
+                "routing_revision": restoration.POLICY_REJECTION_ROUTING_REVISION,
+                "stage": "implementation",
+                "completed_implementation_substages": [],
+                "expected_worktree_paths": incident_paths,
+                "repository_fingerprint": restoration.POLICY_REJECTION_REPOSITORY_FINGERPRINT,
+                "recovery_pending": True,
+                "recovery_generation": 4,
+                "ceiling_recovery_attempts": {"sign_in": 1},
+                "context_materialization_attempts": {"sign_in": 2},
+                "pending_recovery_marker_status": "context_materialization_pending",
+                "pending_recovery_marker_fingerprint": restoration.POLICY_REJECTION_PENDING_FINGERPRINT,
+                "bounded_recovery_exhausted": False,
+                "stop_reason": "context_materialization_required",
+                "preserved_partial_work": {
+                    "paths": incident_paths,
+                    "repository_fingerprint": restoration.POLICY_REJECTION_REPOSITORY_FINGERPRINT,
+                },
+                "owner_authorized_fresh_sign_in_sequence": {
+                    "consumed": True,
+                    "transition_status": "complete",
+                },
+                "model_stage_policy": {
+                    "repository_fingerprint": restoration.POLICY_REJECTION_REPOSITORY_FINGERPRINT,
+                },
+                "model_usage": usage,
+                "events": [],
+            }
+            atomic_write_json(dispatch / "candidates/V1-019.json", candidate)
+            atomic_write_json(
+                dispatch / "attempts/V1-019.json",
+                {
+                    "fingerprint": restoration.POLICY_REJECTION_PENDING_FINGERPRINT,
+                    "counters": {"implementation": 1},
+                    "pending": None,
+                },
+            )
+            atomic_write_json(
+                dispatch / "last-failure.json",
+                {
+                    "category": "context_materialization_required",
+                    "owner_action_required": False,
+                    "repository_fingerprint": restoration.POLICY_REJECTION_REPOSITORY_FINGERPRINT,
+                },
+            )
+            atomic_write_json(
+                dispatch
+                / "terminal/context_materialization_pending"
+                / f"{restoration.POLICY_REJECTION_PENDING_FINGERPRINT}.json",
+                {
+                    "status": "context_materialization_pending",
+                    "phase": "sign_in",
+                    "attempt": 2,
+                    "actionable_fingerprint": restoration.POLICY_REJECTION_PENDING_FINGERPRINT,
+                },
+            )
+            self.assertTrue(
+                restoration.policy_rejection_rebase_required(dispatch, candidate)
+            )
+            self.assertTrue(restoration.policy_rejection_corrected_worktree(repo))
+            result = restoration.rebase_scheduled_v1_019_recovery(
+                repo, dispatch, candidate_base_commit=head
+            )
+            self.assertEqual(
+                result["status"],
+                "pending_sign_in_policy_rejection_recovery_rebased",
+            )
+            rebound = json.loads((dispatch / "candidates/V1-019.json").read_text())
+            self.assertEqual(rebound["routing_revision"], restoration.ROUTING_REVISION)
+            self.assertEqual(rebound["candidate_base_commit"], head)
+            self.assertEqual(rebound["expected_worktree_paths"], corrected_paths)
+            self.assertEqual(rebound["ceiling_recovery_attempts"], {"sign_in": 1})
+            self.assertEqual(
+                rebound["context_materialization_attempts"], {"sign_in": 2}
+            )
+            self.assertTrue(rebound["recovery_pending"])
+            self.assertFalse(rebound["bounded_recovery_exhausted"])
+            self.assertEqual(
+                json.loads((dispatch / "attempts/V1-019.json").read_text())["counters"],
+                {"implementation": 1},
+            )
 
     def test_exact_exhausted_sign_in_is_archived_and_authorized_once(self) -> None:
         spec = importlib.util.spec_from_file_location(
@@ -6568,7 +6738,7 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                 json.loads(budget_path.read_text()).get("context_materialization_checkpoint", False)
             )
 
-    def test_pre_tool_policy_rejection_is_charged_and_blocks_next_provider_call(
+    def test_pre_tool_policy_rejection_allows_one_correction_then_blocks_repeat(
         self,
     ) -> None:
         class Context:
@@ -6641,9 +6811,18 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
             context = Context()
             provider_calls = 0
 
-            def provider(_: dict[str, Any]) -> None:
+            def provider(_: dict[str, Any]) -> dict[str, Any]:
                 nonlocal provider_calls
                 provider_calls += 1
+                return {
+                    "model": "gpt-5.6-sol",
+                    "usage": {
+                        "input_tokens": 100,
+                        "output_tokens": 20,
+                        "cache_read_tokens": 0,
+                    },
+                    "output": response["output"],
+                }
 
             with mock.patch.dict(
                 os.environ,
@@ -6654,11 +6833,16 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
             ):
                 register_plugin(context)
                 directive = context.hooks["pre_tool_call"]("read_file", {"path": "ops/NOW.md"})
+                context.middleware["llm_execution"]({"messages": []}, provider)
+                repeated = context.hooks["pre_tool_call"](
+                    "read_file", {"path": "ops/NOW.md"}
+                )
                 with self.assertRaises(SystemExit):
                     context.middleware["llm_execution"]({"messages": []}, provider)
             self.assertEqual(directive["action"], "block")
             self.assertIn("guard_policy_rejection", directive["message"])
-            self.assertEqual(provider_calls, 0)
+            self.assertEqual(repeated["action"], "block")
+            self.assertEqual(provider_calls, 1)
             ledger = json.loads(budget_path.read_text())
             self.assertGreater(ledger["tool_output_control_bytes"], 0)
             self.assertEqual(ledger["tool_output_control_reserved_bytes"], 0)
@@ -6668,6 +6852,8 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
             )
             self.assertTrue(ledger["context_materialization_checkpoint"])
             self.assertTrue(ledger["next_api_call_blocked"])
+            self.assertTrue(ledger["tool_output_policy_rejection_repeated"])
+            self.assertEqual(len(ledger["tool_output_policy_rejection_history"]), 2)
             self.assertLessEqual(ledger["tool_output_control_bytes"], 2_000)
 
     def test_parallel_unreserved_rejections_reserve_control_atomically(self) -> None:

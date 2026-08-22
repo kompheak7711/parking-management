@@ -129,6 +129,28 @@
       "token_ceiling": 60000,
       "token_ceiling_changed": false
     },
+    "context_routing_v5": {
+      "authorization": "owner_direct_takeover_2026-08-22",
+      "automation_tests_passed": 125,
+      "bounded_substage": "sign_in",
+      "complete_verification_gates": "15/15",
+      "incident_baseline": "39ee4426366bb3966d2751b4cdf7a3a869f8f2b3",
+      "implementation_verification_delegated_to_supervisor": true,
+      "first_policy_rejection_allows_correction": true,
+      "identical_policy_rejection_retry_blocks": true,
+      "exact_v4_incident_rebase": true,
+      "owner_action_consumed_again": false,
+      "ceiling_recovery_attempt_consumed": false,
+      "implementation_attempt_consumed": false,
+      "preserved_worktree_path_count": 6,
+      "product_files_modified_by_automation_repair": false,
+      "routing_revision": "v1-019-sign-in-context-routing-v5",
+      "status": "complete_profile_and_local_review_passed_awaiting_publication",
+      "supervisor_enabled": false,
+      "token_ceiling": 60000,
+      "token_ceiling_changed": false,
+      "verification_evidence": "/private/tmp/property-rental-v1-019-policy-rejection-v5-final.json"
+    },
     "follow_up_repair": {
       "baseline": "d877cf3b6648083f97e54d661933e3d188999dae",
       "changed_path_count": 9,

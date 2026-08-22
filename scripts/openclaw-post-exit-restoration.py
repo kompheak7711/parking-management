@@ -29,10 +29,31 @@ from openclaw_automation import (
 SUPERVISOR_ID = "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb"
 SUPERVISOR_NAME = "property-rental-24x7-supervisor"
 EXPECTED_INTERVAL_MS = 1_800_000
-ROUTING_REVISION = "v1-019-sign-in-context-routing-v4"
+ROUTING_REVISION = "v1-019-sign-in-context-routing-v5"
+POLICY_REJECTION_ROUTING_REVISION = "v1-019-sign-in-context-routing-v4"
 EXHAUSTED_ROUTING_REVISION = "v1-019-context-restoration-repair-v3"
 PRIOR_ROUTING_REVISION = "v1-019-invocation-contract-repair-v2"
 INCIDENT_BASELINE = "d6eb7e73610b2a72cf38f4b32468226e9e76a436"
+POLICY_REJECTION_INCIDENT_BASELINE = "39ee4426366bb3966d2751b4cdf7a3a869f8f2b3"
+POLICY_REJECTION_REPOSITORY_FINGERPRINT = (
+    "649a2f277468294071c52fa47f97e23de166cf3c8eedf0c73f35fe874acea44a"
+)
+POLICY_REJECTION_PENDING_FINGERPRINT = (
+    "2a62f6e232763317bf33a4132d22ce2b46c5dc7c37f43242447d08a171d0dc8e"
+)
+POLICY_REJECTION_SESSIONS = (
+    "c473dbfd0aed07e1f9c38186868f4b9e",
+    "d991bfe641017fbbb3ac3fdc1e1c7f9d",
+    "e541e46a90e70ddb8a54c4eb7ed43f02",
+)
+POLICY_REJECTION_CORRECTED_PATH_HASHES = {
+    "frontend/src/App.test.tsx": "c2b3f465e23f910657f5bdcf26790c441324131b509b1e7b53e050a73f7705f4",
+    "frontend/src/App.tsx": "0f81a74a79b5e0d3a74b5c038c7328f6e9dd5354a4687278d80eba49ab6e0cba",
+    "frontend/src/authClient.test.ts": "477a828d43d38677ad3b3e939ebe3db249f06c5079cc2532de08e05dc5c42cff",
+    "frontend/src/authClient.ts": "fedc151fbf5e2243372d0286dbf4d84493edf5d02c7edb3323be611fdb1f571e",
+    "frontend/src/styles.css": "0eaf75ddabeed1abd8a3ee44b8573c8497aeb5b095b626068d374791cc9424a1",
+    "ops/traceability.json": "ad86f1265f6b219e61ee5485aa790042abbc5952843fe8e3e11cd9e2916f07c6",
+}
 LEGACY_INVOCATION_INCIDENT_BASELINE = "d877cf3b6648083f97e54d661933e3d188999dae"
 REPAIR_PUBLICATION_COMMIT = "e0469b6d519c0947662204869a535c7080185638"
 FAILED_ROUTING_FINGERPRINT = (
@@ -327,7 +348,11 @@ def v1_019_integrity(
             and record.get("expected_worktree_paths") == []
             and all(path in SIGN_IN_WRITABLE_PATHS for path in paths)
         )
-        if not interrupted_fresh_scope and (
+        interrupted_policy_rejection_scope = bool(
+            policy_rejection_rebase_required(dispatch_state, record)
+            and policy_rejection_corrected_worktree(repo)
+        )
+        if not interrupted_fresh_scope and not interrupted_policy_rejection_scope and (
             record.get("candidate") != "V1-019"
             or sorted(record.get("expected_worktree_paths") or []) != paths
             or record.get("repository_fingerprint") != repository_fingerprint(repo)
@@ -1225,6 +1250,120 @@ def interrupted_exhausted_cleanup_install_required(
     return True
 
 
+def policy_rejection_rebase_required(
+    dispatch_state: Path, record: dict[str, Any]
+) -> bool:
+    """Recognize only the exact v4 sign-in verification-command loop."""
+    if not (
+        record.get("routing_revision") == POLICY_REJECTION_ROUTING_REVISION
+        and record.get("candidate_base_commit")
+        == POLICY_REJECTION_INCIDENT_BASELINE
+    ):
+        return False
+    attempt = read_json_object(
+        dispatch_state / "attempts/V1-019.json",
+        "policy-rejection V1-019 attempt",
+    )
+    failure = read_json_object(
+        dispatch_state / "last-failure.json",
+        "policy-rejection V1-019 failure",
+    )
+    usage = record.get("model_usage") or []
+    session_ids = (
+        tuple(item.get("session_id") for item in usage)
+        if isinstance(usage, list) and all(isinstance(item, dict) for item in usage)
+        else ()
+    )
+    latest_usage = usage[-1] if session_ids else {}
+    expected_paths = sorted(
+        {
+            "frontend/src/App.tsx",
+            "frontend/src/App.test.tsx",
+            "frontend/src/styles.css",
+            "frontend/src/authClient.ts",
+            "frontend/src/authClient.test.ts",
+        }
+    )
+    authorization = record.get("owner_authorized_fresh_sign_in_sequence") or {}
+    partial = record.get("preserved_partial_work") or {}
+    if (
+        record.get("candidate") != "V1-019"
+        or record.get("stage") != "implementation"
+        or record.get("completed_implementation_substages") != []
+        or sorted(record.get("expected_worktree_paths") or []) != expected_paths
+        or record.get("repository_fingerprint")
+        != POLICY_REJECTION_REPOSITORY_FINGERPRINT
+        or record.get("recovery_pending") is not True
+        or record.get("recovery_generation") != 4
+        or record.get("ceiling_recovery_attempts") != {"sign_in": 1}
+        or record.get("context_materialization_attempts") != {"sign_in": 2}
+        or record.get("pending_recovery_marker_status")
+        != "context_materialization_pending"
+        or record.get("pending_recovery_marker_fingerprint")
+        != POLICY_REJECTION_PENDING_FINGERPRINT
+        or record.get("bounded_recovery_exhausted") is True
+        or record.get("stop_reason") != "context_materialization_required"
+        or partial.get("paths") != expected_paths
+        or partial.get("repository_fingerprint")
+        != POLICY_REJECTION_REPOSITORY_FINGERPRINT
+        or authorization.get("consumed") is not True
+        or authorization.get("transition_status") != "complete"
+        or session_ids != POLICY_REJECTION_SESSIONS
+        or latest_usage.get("api_calls_started") != 2
+        or latest_usage.get("api_calls_completed") != 2
+        or latest_usage.get("input_token_usage") != 31_983
+        or latest_usage.get("output_token_usage") != 1_059
+        or latest_usage.get("total_token_usage") != 33_042
+        or latest_usage.get("cache_read_token_usage") != 15_360
+        or latest_usage.get("tool_output_batch_rejections") != 1
+        or latest_usage.get("tool_output_control_bytes") != 504
+        or latest_usage.get("context_materialization_checkpoint") is not True
+        or attempt.get("fingerprint") != POLICY_REJECTION_PENDING_FINGERPRINT
+        or (attempt.get("counters") or {}).get("implementation") != 1
+        or attempt.get("pending") is not None
+        or failure.get("category") != "context_materialization_required"
+        or failure.get("owner_action_required") is not False
+        or failure.get("repository_fingerprint")
+        != POLICY_REJECTION_REPOSITORY_FINGERPRINT
+    ):
+        raise RestorationError(
+            "the pending V1-019 state does not match the exact policy-rejection loop incident"
+        )
+    validate_pending_sign_in_marker(
+        dispatch_state,
+        record,
+        expected_attempt=2,
+        expected_status="context_materialization_pending",
+    )
+    return True
+
+
+def policy_rejection_corrected_worktree(repo: Path) -> bool:
+    """Bind direct-takeover product corrections to exact reviewed bytes."""
+    expected_paths = sorted(POLICY_REJECTION_CORRECTED_PATH_HASHES)
+    if changed_paths(repo) != expected_paths:
+        raise RestorationError(
+            "the corrected V1-019 policy-rejection worktree path set drifted"
+        )
+    for relative, expected_hash in POLICY_REJECTION_CORRECTED_PATH_HASHES.items():
+        path = repo / relative
+        try:
+            metadata = path.lstat()
+        except OSError as error:
+            raise RestorationError(
+                f"the corrected V1-019 path is missing: {relative}"
+            ) from error
+        if path.is_symlink() or not stat.S_ISREG(metadata.st_mode):
+            raise RestorationError(
+                f"the corrected V1-019 path is not a regular file: {relative}"
+            )
+        if digest(path.read_bytes()) != expected_hash:
+            raise RestorationError(
+                f"the corrected V1-019 path content drifted: {relative}"
+            )
+    return True
+
+
 def rebase_scheduled_v1_019_recovery(
     repo: Path, dispatch_state: Path, *, candidate_base_commit: str
 ) -> dict[str, Any]:
@@ -1240,6 +1379,50 @@ def rebase_scheduled_v1_019_recovery(
     latest_usage = usage[-1] if isinstance(usage, list) and usage else {}
     recoveries = record.get("ceiling_recovery_attempts") or {}
     materializations = record.get("context_materialization_attempts") or {}
+    if policy_rejection_rebase_required(dispatch_state, record):
+        policy_rejection_corrected_worktree(repo)
+        corrected_paths = sorted(POLICY_REJECTION_CORRECTED_PATH_HASHES)
+        archive = dispatch_state / "superseded/v1-019-policy-rejection-loop"
+        archive.mkdir(parents=True, exist_ok=True)
+        archive_key = f"{int(time.time() * 1000)}-{candidate_base_commit[:12]}"
+        archived = archive / f"candidate-{archive_key}.json"
+        atomic_write_json(archived, record)
+        record.update(
+            {
+                "routing_revision": ROUTING_REVISION,
+                "candidate_base_commit": candidate_base_commit,
+                "initial_repository_fingerprint": fingerprint,
+                "repository_fingerprint": fingerprint,
+                "expected_worktree_paths": corrected_paths,
+                "updated_at": utc_now(),
+            }
+        )
+        policy = record.get("model_stage_policy") or {}
+        policy["repository_fingerprint"] = fingerprint
+        record["model_stage_policy"] = policy
+        partial = record.get("preserved_partial_work") or {}
+        partial["repository_fingerprint"] = fingerprint
+        partial["paths"] = corrected_paths
+        record["preserved_partial_work"] = partial
+        record.setdefault("events", []).append(
+            {
+                "stage": "automation_policy_rejection_repair",
+                "result": "pending_sign_in_policy_rejection_recovery_rebased",
+                "routing_revision": ROUTING_REVISION,
+                "repository_commit": candidate_base_commit,
+                "repository_fingerprint": fingerprint,
+                "recovery_generation": 4,
+                "ceiling_recovery_attempt": 1,
+                "context_materialization_attempt": 2,
+                "owner_action_required": False,
+            }
+        )
+        atomic_write_json(candidate_path, record)
+        return {
+            "status": "pending_sign_in_policy_rejection_recovery_rebased",
+            "archive": str(archived),
+            "repository_fingerprint": fingerprint,
+        }
     if record.get("routing_revision") == ROUTING_REVISION:
         recovery_attempt = int(recoveries.get("sign_in") or 0)
         materialization_attempt = int(materializations.get("sign_in") or 0)
@@ -2232,6 +2415,7 @@ def execute(args: argparse.Namespace) -> int:
         if current_candidate.get("routing_revision") not in {
             PRIOR_ROUTING_REVISION,
             EXHAUSTED_ROUTING_REVISION,
+            POLICY_REJECTION_ROUTING_REVISION,
             ROUTING_REVISION,
         }:
             raise RestorationError(
@@ -2479,11 +2663,34 @@ def install(args: argparse.Namespace) -> int:
             and prior.get("recovery_state") == "terminal_failure"
             and prior.get("owner_action_required") is True
         )
+        exact_policy_rejection_install = bool(
+            prior is not None
+            and prior.get("status") == "failed_closed"
+            and prior.get("expected_repair_head")
+            == "ee18ecd5fa3d9122df44a7e6a5392dfcd420a9c5"
+            and prior.get("dispatcher_failure_category")
+            == "context_materialization_required"
+            and prior.get("failure")
+            == "the supervisor became disabled during the scheduled bounded recovery"
+            and prior.get("recovery_state") == "terminal_failure"
+            and prior.get("owner_action_required") is False
+        )
         interrupted_cleanup_install = interrupted_exhausted_cleanup_install_required(
             prior, Path(args.dispatch_state).resolve()
         )
         if exact_exhausted_install:
             validate_exhausted_v1_019_sign_in(Path(args.dispatch_state).resolve())
+        elif exact_policy_rejection_install:
+            if not policy_rejection_rebase_required(
+                Path(args.dispatch_state).resolve(),
+                read_json_object(
+                    Path(args.dispatch_state).resolve() / "candidates/V1-019.json",
+                    "policy-rejection V1-019 candidate",
+                ),
+            ):
+                raise RestorationError(
+                    "the exact policy-rejection recovery incident is no longer pending"
+                )
         elif interrupted_cleanup_install:
             pass
         elif (

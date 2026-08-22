@@ -652,6 +652,8 @@ def packet_prompt(packet: dict[str, Any]) -> str:
         "The packet already materializes compact-state and canonical evidence: do not reread ops/NOW.md, ops/STATE.json, ops/QUEUE.md, ops/V1_ROADMAP.json, Makefile, or canonical documents. "
         "Use only directly_relevant_paths; do not call todo/planning tools or perform broad repository discovery. "
         "Do not load any supervisor transcript, earlier model reasoning, unrelated diff, raw log, or broad canonical set. "
+        "For an implementation substage, do not invoke terminal, Git, npm, make, or verification commands; the execution-capable supervisor runs deterministic verification after your JSON result. "
+        "A verification value of deferred_to_deterministic_supervisor is required and is not a blocker. "
         "Return only the required JSON object.\n\n"
         + json.dumps(packet, sort_keys=True, indent=2)
     )

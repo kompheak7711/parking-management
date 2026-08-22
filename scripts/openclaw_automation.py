@@ -31,7 +31,7 @@ EXCEPTIONAL_REVIEW_TOKEN_CEILING: Final = 120_000
 MODEL_ID: Final = "gpt-5.6-sol"
 PROVIDER: Final = "openai-codex"
 PRESERVATION_EVIDENCE_PATH: Final = "ops/AUTOMATION_REPAIR_EVIDENCE.json"
-V1_019_ROUTING_REVISION: Final = "v1-019-sign-in-context-routing-v4"
+V1_019_ROUTING_REVISION: Final = "v1-019-sign-in-context-routing-v5"
 V1_019_FRONTEND_CONTEXT_MAX_BYTES: Final = 48_000
 V1_019_SUBSTAGE_IDS: Final = (
     "sign_in",
@@ -1772,6 +1772,7 @@ def task_packet(
             "context_materialization_attempt": int(
                 materialized_recovery.get("context_materialization_attempt") or 0
             ),
+            "preserved_changed_paths": changed_paths(repo),
         },
         "candidate_scope": {
             "include": roadmap_item.get("include") or [],
@@ -1790,6 +1791,7 @@ def task_packet(
             "When bounded_substage is present, implement only that substage and leave every later V1-019 substage for its own fresh session.",
             "Keep business logic outside route handlers, keep frontend API access in a dedicated typed client, and preserve audit/data-integrity boundaries.",
             "Write concise secret-free substage evidence to the authorized state paths without rereading their complete contents.",
+            "In changed_paths, include every candidate_state.preserved_changed_paths entry plus every path changed in this session; do not read a preserved operational path merely to rediscover it.",
         ],
         "dispatcher_evidence_trust": {
             "instruction": "Trust these dispatcher-supplied values. Do not spend tool calls rediscovering them with Git or process commands.",
@@ -1852,7 +1854,9 @@ def task_packet(
                 "Replace only the bootstrap App surface with an accessible local username/password sign-in experience.",
                 "Use one generic authentication failure message and expose no account, lifecycle, MFA-enrollment, or privilege details.",
                 "Add focused client and component tests, including keyboard/label/error announcement coverage and proof that no first-Owner route exists.",
-                "Run the focused frontend checks, then return the exact changed paths and verification evidence.",
+                "Do not invoke terminal, Git, npm, make, or any verification command; the execution-capable supervisor owns all tests and builds after this implementation result.",
+                "Patch ops/STATE.json without reading it so approval.implementation_started is true; for this non-final substage leave implementation_completed and publication_completed false.",
+                "Return the exact changed paths with verification set to deferred_to_deterministic_supervisor and substage_complete true when the bounded code and tests are ready.",
             ],
         }
     if bounded_substage is not None:
