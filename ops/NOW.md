@@ -46,6 +46,6 @@
 - Automation exact next action: publish this repair, then permit only the scheduled V1-019 sign-in recovery.
 <!-- AUTOMATION_STATUS_END -->
 <!-- POST_EXIT_RESTORATION_BEGIN -->
-- The supervisor remains disabled while this repository-bound CLI is active.
-- Restoration success requires zero overlap and post-repair run-sequence evidence of bounded V1-019 sign-in progress.
+- Post-exit restoration metadata is published; the existing supervisor remains disabled until the continuation enables it.
+- V1-019 remains the only active candidate; V1-020 successor activation is held.
 <!-- POST_EXIT_RESTORATION_END -->

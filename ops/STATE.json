@@ -61,51 +61,6 @@
         "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-v1-019-context-restoration-repair-final.json"
       }
     },
-    "post_exit_ci_detection_repair": {
-      "authorization": "existing_durable_v1",
-      "baseline": "7c0f67d07092702229329a57176ae0fdc95afd12",
-      "canonical_specifications_modified": false,
-      "changed_path_count": 7,
-      "classification": "launchd_path_pipeline_status_masking",
-      "false_failure_commit": "7c0f67d07092702229329a57176ae0fdc95afd12",
-      "false_failure_run_id": 32511133185,
-      "github_executable_installation_contract": "exact_absolute_executable_path",
-      "independent_review": {
-        "compact_state_fingerprint": "916d5a72ce02a976b69400ad1f9c8ef7803daf4c3a8d7c92ce5b7d89af59947d",
-        "final_verdict": "PASS",
-        "material_findings_remediated": 5,
-        "repository_fingerprint": "c868fd60caca36cad6ad6860371d225772946e0cb42fb975d5439548b401bfa5",
-        "reviewed_path_count": 7,
-        "reviewer_edits": false
-      },
-      "notification": {
-        "bounded_delivery_timeout": true,
-        "cross_process_locked_claim": true,
-        "delivery_outcome_changes_restoration_truth": false,
-        "exactly_once_terminal_attempt": true,
-        "route_source": "existing property-rental visibility watchdog metadata",
-        "secrets_or_destination_persisted": false,
-        "source_sigterm_safe_terminalizer_handoff": true
-      },
-      "owner_action_required": false,
-      "post_exit_restoration": "install_after_successful_repair_publication_ci",
-      "product_files_modified": false,
-      "reconciliation_binding": {
-        "commit": "7c0f67d07092702229329a57176ae0fdc95afd12",
-        "conclusion": "success",
-        "run_id": 32511133185,
-        "workflow_status": "completed"
-      },
-      "scheduler_enabled": false,
-      "status": "independently_reviewed_awaiting_publication",
-      "timestamp": "2026-08-21T19:52:17Z",
-      "token_ceiling_changed": false,
-      "verification": {
-        "automation": "PASS: 104 tests plus compact-state routing, visibility watchdog, shell syntax, and Python compilation",
-        "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-post-exit-ci-detection-repair-async-final.json",
-        "exact_historical_ci_lookup": "PASS: commit 7c0f67d, run 32511133185, completed/success"
-      }
-    },
     "follow_up_repair": {
       "baseline": "d877cf3b6648083f97e54d661933e3d188999dae",
       "changed_path_count": 9,
@@ -161,10 +116,55 @@
       "status": "PASS"
     },
     "next_action": "Publish this independently reviewed bounded repair, require successful GitHub Actions, then install the corrected post-exit continuation while the supervisor remains disabled.",
+    "post_exit_ci_detection_repair": {
+      "authorization": "existing_durable_v1",
+      "baseline": "7c0f67d07092702229329a57176ae0fdc95afd12",
+      "canonical_specifications_modified": false,
+      "changed_path_count": 7,
+      "classification": "launchd_path_pipeline_status_masking",
+      "false_failure_commit": "7c0f67d07092702229329a57176ae0fdc95afd12",
+      "false_failure_run_id": 32511133185,
+      "github_executable_installation_contract": "exact_absolute_executable_path",
+      "independent_review": {
+        "compact_state_fingerprint": "916d5a72ce02a976b69400ad1f9c8ef7803daf4c3a8d7c92ce5b7d89af59947d",
+        "final_verdict": "PASS",
+        "material_findings_remediated": 5,
+        "repository_fingerprint": "c868fd60caca36cad6ad6860371d225772946e0cb42fb975d5439548b401bfa5",
+        "reviewed_path_count": 7,
+        "reviewer_edits": false
+      },
+      "notification": {
+        "bounded_delivery_timeout": true,
+        "cross_process_locked_claim": true,
+        "delivery_outcome_changes_restoration_truth": false,
+        "exactly_once_terminal_attempt": true,
+        "route_source": "existing property-rental visibility watchdog metadata",
+        "secrets_or_destination_persisted": false,
+        "source_sigterm_safe_terminalizer_handoff": true
+      },
+      "owner_action_required": false,
+      "post_exit_restoration": "install_after_successful_repair_publication_ci",
+      "product_files_modified": false,
+      "reconciliation_binding": {
+        "commit": "7c0f67d07092702229329a57176ae0fdc95afd12",
+        "conclusion": "success",
+        "run_id": 32511133185,
+        "workflow_status": "completed"
+      },
+      "scheduler_enabled": false,
+      "status": "independently_reviewed_awaiting_publication",
+      "timestamp": "2026-08-21T19:52:17Z",
+      "token_ceiling_changed": false,
+      "verification": {
+        "automation": "PASS: 104 tests plus compact-state routing, visibility watchdog, shell syntax, and Python compilation",
+        "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-post-exit-ci-detection-repair-async-final.json",
+        "exact_historical_ci_lookup": "PASS: commit 7c0f67d, run 32511133185, completed/success"
+      }
+    },
     "post_exit_restoration": {
-      "allowed_recovery": "V1-019 sign_in only",
-      "status": "awaiting_repair_publication",
-      "supervisor_enabled": false
+      "repair_publication_commit": "2b364db013678a09ea0e140da7cc205e368cbc26",
+      "status": "metadata_published_waiting_enable",
+      "timestamp": "2026-08-22T03:45:30Z"
     },
     "predecessor_ci_correction_review": {
       "cache_read_tokens": "unavailable from provider",
@@ -366,7 +366,7 @@
       "watchdog_notifications": "PASS"
     },
     "scheduler_enabled": false,
-    "status": "published_awaiting_post_exit_restoration",
+    "status": "restored",
     "stop_after_candidate": "V1-019",
     "timestamp": "2026-08-21T22:18:48Z",
     "v1_019_original_automatic_recovery_attempts": 0,
@@ -490,7 +490,7 @@
   "task": "Implement the approved bounded candidate: Authentication and account administration UI",
   "tests": [],
   "tests_tranche_id": "V1-018",
-  "timestamp": "2026-08-21T18:00:39Z",
+  "timestamp": "2026-08-22T03:45:30Z",
   "touched_areas": [
     "sign-in, MFA, recovery, session, account/capability screens"
   ],
