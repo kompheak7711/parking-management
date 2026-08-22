@@ -480,10 +480,19 @@
         "sensitive_data_and_privileges",
         "mfa_policy",
         "recovery",
-        "sessions_integration"
+        "sessions_integration",
+        "bootstrap_release"
       ],
       "failed_session_api_calls": 1,
       "failed_session_changed_paths": 0,
+      "independent_review_failure_category": "model_session_or_token_ceiling",
+      "independent_review_failure_session_id": "5c98b1abe28618f6e6d3bc8d5f93889b",
+      "independent_review_failure_total_tokens": 13653,
+      "independent_review_next_serialized_tokens": 89547,
+      "independent_review_routing_revision": "v1-020-independent-review-materialization-v3",
+      "independent_review_patch_byte_limit": 120000,
+      "independent_review_tools_required": false,
+      "independent_review_token_ceiling": 90000,
       "failed_session_id": "20260823_003208_38266a",
       "failure_category": "empty_or_invalid_task_delivery",
       "repair_scope": [
@@ -529,7 +538,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Review and publish V1-020 sessions_integration, then dispatch bootstrap_release.",
+  "next_action": "Verify and publish the bounded independent-review routing repair, then rerun candidate-wide verification and independent review and publish V1-020 if every gate passes.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
@@ -640,10 +649,13 @@
     "PASS: direct review of recovery authorities and implementation coverage; no material findings; candidate-wide independent review remains pending",
     "PASS: 101 focused session, authentication-integration, authorization-scope, and traceability tests",
     "PASS: V1-020 sessions_integration complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 128 passed",
-    "PASS: direct review of five sessions_integration paths; no material findings; candidate-wide independent review remains pending"
+    "PASS: direct review of five sessions_integration paths; no material findings; candidate-wide independent review remains pending",
+    "PASS: 93 focused initial-Owner bootstrap, recovery issuance/backdoor, and traceability tests; bootstrap_release required no product change",
+    "PASS: 129 automation tests cover exact independent-review diff materialization, compact verification evidence, failure accounting, and invalid delivery",
+    "PASS: V1-020 independent-review routing repair complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 129 passed"
   ],
   "tests_tranche_id": "V1-020",
-  "timestamp": "2026-08-22T18:55:32Z",
+  "timestamp": "2026-08-22T19:21:38Z",
   "touched_areas": [
     "complete authentication abuse, lifecycle, recovery, session, and bootstrap tests"
   ],

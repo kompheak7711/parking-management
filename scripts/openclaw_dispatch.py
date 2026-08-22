@@ -1125,7 +1125,9 @@ def bind_authorized_partial_work(
             "interrupted model stage changed work outside its exact dispatcher-authorized scope",
         )
     current_fingerprint = repository_fingerprint(REPO)
-    if current != previous or current_fingerprint != record.get("repository_fingerprint"):
+    if current != previous or current_fingerprint != record.get(
+        "repository_fingerprint"
+    ):
         record.update(
             {
                 "expected_worktree_paths": current,
@@ -1801,8 +1803,7 @@ def recover_preserved_substage_result(
         current_head != expected_repair_head
         or repair_paths != exact_repair_paths
         or actual != expected
-        or preserved_paths_fingerprint(REPO, actual)
-        != expected_preserved_fingerprint
+        or preserved_paths_fingerprint(REPO, actual) != expected_preserved_fingerprint
     ):
         raise AutomationError(
             "repository_integrity_uncertainty",
@@ -1816,9 +1817,10 @@ def recover_preserved_substage_result(
             "the preserved compact state is unreadable",
         ) from error
     approval = state.get("approval") or {}
-    if approval.get("implementation_started") is not True or approval.get(
-        "implementation_completed"
-    ) is True:
+    if (
+        approval.get("implementation_started") is not True
+        or approval.get("implementation_completed") is True
+    ):
         raise AutomationError(
             "repository_integrity_uncertainty",
             "the preserved non-final V1-019 substage state is not exact",
@@ -2505,8 +2507,58 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
             "repository drifted after deterministic verification; complete gates must rerun",
         )
     packet = task_packet(REPO, preflight, "independent_review")
-    packet["scoped_changed_paths"] = record.get("scoped_changed_paths", [])
-    packet["verification_evidence"] = record.get("events", [])
+    expected_paths = sorted(record.get("scoped_changed_paths") or [])
+    base_commit = str(record.get("candidate_base_commit") or "")
+    if not re.fullmatch(r"[0-9a-f]{40}", base_commit):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "independent review omitted the exact candidate base commit",
+        )
+    if expected_paths:
+        patch_result = subprocess.run(
+            ["git", "diff", "--binary", base_commit, "--", *expected_paths],
+            cwd=REPO,
+            check=True,
+            stdout=subprocess.PIPE,
+        ).stdout
+    else:
+        patch_result = b""
+    if len(patch_result) > 120_000:
+        raise AutomationError(
+            "context_materialization_required",
+            "the exact candidate review patch exceeds the bounded materialization limit",
+        )
+    verification_event = next(
+        (
+            event
+            for event in reversed(record.get("events") or [])
+            if isinstance(event, dict)
+            and event.get("stage") == "deterministic_verification"
+        ),
+        {},
+    )
+    packet["scoped_changed_paths"] = expected_paths
+    packet["directly_relevant_paths"] = []
+    packet["materialized_candidate_diff"] = {
+        "base_commit": base_commit,
+        "format": "git_diff_binary",
+        "byte_count": len(patch_result),
+        "content": patch_result.decode("utf-8", errors="replace"),
+    }
+    packet["verification_evidence"] = {
+        "deterministic_verification_passed": record.get(
+            "deterministic_verification_passed"
+        )
+        is True,
+        "command": verification_event.get("command"),
+        "exit_status": verification_event.get("exit_status"),
+        "artifact": verification_event.get("artifact"),
+        "checks_passed": verification_event.get("checks_passed"),
+    }
+    packet.setdefault("continuity_instructions", []).append(
+        "Review only materialized_candidate_diff and the compact verification evidence. "
+        "Do not call any tool or reread any repository file; return the review JSON directly."
+    )
     policy = model_policy(
         "independent_review",
         complex_review=True,
@@ -2549,7 +2601,6 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
         )
         save_stage(record)
         raise
-    expected_paths = sorted(record.get("scoped_changed_paths") or [])
     findings = verdict["findings"]
     if (
         verdict["reviewed_repository_fingerprint"] != after

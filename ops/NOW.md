@@ -53,13 +53,23 @@
   MFA-recovery session-revocation trigger and strengthened logout, authentication-recency, and
   provider-neutral authorization-boundary coverage. All 101 focused tests and all 15
   complete-profile gates pass (357 backend, 105 PostgreSQL, 32 frontend, 128 automation).
-- Product status: V1-020 implementation is in progress; the first six substages are complete;
-  bootstrap/release has not started.
+- Bootstrap/release: session `3b0aa565a6f4daf69c359800c90065b8` completed a bounded
+  review with no product changes. Existing coverage proves the protected one-time Owner ceremony,
+  exact recovery-code issuance, atomic rollback and closure, least privilege, no public bootstrap
+  or reset path, and immutable secret-free evidence; all 93 focused tests pass.
+- Product status: all seven V1-020 implementation substages are complete; final candidate-wide
+  verification, review, and publication remain.
+- Independent-review routing: session `5c98b1abe28618f6e6d3bc8d5f93889b` used 13,653
+  tokens before the guard safely rejected a projected 89,547-token follow-up. No tools ran and no
+  repository files changed. The repair now materializes only the exact candidate diff and compact
+  verification evidence for a direct JSON verdict; the complex-review ceiling remains 90,000.
+  The repaired path passes all 129 automation tests and the complete 15/15 release profile
+  (357 backend, 105 PostgreSQL, and 32 frontend tests).
 - Owner action: none.
-- Exact next action: review and publish `sessions_integration`, then dispatch only V1-020
-  `bootstrap_release`.
+- Exact next action: verify and publish the bounded independent-review routing repair, then rerun
+  candidate-wide verification and independent review and publish V1-020 if every gate passes.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-020 active; six of seven bounded substages complete.
-- Automation exact next action: Publish sessions_integration, then dispatch bootstrap_release.
+- Automation candidate state: V1-020 active; all seven bounded substages complete; final gates pending.
+- Automation exact next action: Publish the review-packet repair, then verify, review, and publish V1-020.
 <!-- AUTOMATION_STATUS_END -->
