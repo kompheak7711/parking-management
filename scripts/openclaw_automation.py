@@ -196,6 +196,7 @@ RECOVERABLE_ROUTING_FAILURES: Final = frozenset(
     {
         "pre_model_infrastructure_failure",
         "unsupported_invocation_configuration",
+        "empty_or_invalid_task_delivery",
         "verification_tooling_unavailable",
         "lock_or_overlapping_process_failure",
         "model_session_or_token_ceiling",
@@ -2107,6 +2108,17 @@ def task_packet(
                 "reviewed_paths",
                 "exact_next_action",
             ],
+            "field_contracts": {
+                "passed": "boolean",
+                "findings": (
+                    "array of objects; every object has exactly severity, path, line, and evidence "
+                    "as nonempty strings; use [] when passed is true"
+                ),
+                "reviewed_repository_fingerprint": "the exact 64-character packet repository_fingerprint",
+                "reviewed_paths": "the exact sorted scoped_changed_paths array",
+                "exact_next_action": "one nonempty string",
+            },
+            "exact_keys_only": True,
         }
     return packet
 

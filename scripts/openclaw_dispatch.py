@@ -2528,6 +2528,25 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
             "repository_integrity_uncertainty",
             "independent review omitted the exact candidate base commit",
         )
+    untracked_result = subprocess.run(
+        [
+            "git",
+            "ls-files",
+            "--others",
+            "--exclude-standard",
+            "-z",
+            "--",
+            *expected_paths,
+        ],
+        cwd=REPO,
+        check=True,
+        stdout=subprocess.PIPE,
+    ).stdout
+    if any(item for item in untracked_result.split(b"\0") if item):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "independent review refuses untracked candidate files because their contents are absent from the exact Git diff",
+        )
     if expected_paths:
         patch_result = subprocess.run(
             ["git", "diff", "--binary", base_commit, "--", *expected_paths],
@@ -2558,6 +2577,7 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
         "format": "git_diff_binary",
         "byte_count": len(patch_result),
         "content": patch_result.decode("utf-8", errors="replace"),
+        "untracked_files_prohibited": True,
     }
     packet["verification_evidence"] = {
         "deterministic_verification_passed": record.get(
@@ -3583,6 +3603,7 @@ def main() -> int:
             "pre_model_infrastructure_failure": "Retry the same compact stage once infrastructure is available; no model attempt was consumed.",
             "gateway_or_network_failure": "Run a focused gateway diagnostic, then use the bounded retry only if the actionable fingerprint changes.",
             "unsupported_invocation_configuration": "Correct the supported invocation boundary without changing product scope; no model attempt was consumed.",
+            "empty_or_invalid_task_delivery": "Retry the exact unchanged stage through one fresh bounded session with the explicit output schema; require Owner action only after bounded attempts exhaust.",
             "model_session_or_token_ceiling": "Run the scheduled fresh bounded recovery for the exact candidate model stage or substage; request Owner action only if its bounded recovery budget is exhausted.",
             "context_materialization_required": "Run the scheduled fresh materialized-context route for the exact candidate substage; do not consume a ceiling-recovery attempt.",
             "repeated_identical_tool_call": "Use the preserved underlying result to choose a different focused diagnostic; do not repeat the unchanged call.",
@@ -3663,6 +3684,7 @@ def main() -> int:
                 "lock_or_overlapping_process_failure": "routing_recovery_pending",
                 "gateway_or_network_failure": "infrastructure_failure",
                 "unsupported_invocation_configuration": "routing_recovery_pending",
+                "empty_or_invalid_task_delivery": "routing_recovery_pending",
                 "model_session_or_token_ceiling": "routing_recovery_pending",
                 "context_materialization_required": "context_materialization_pending",
                 "repeated_identical_tool_call": "repeated_identical_tool_call",

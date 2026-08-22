@@ -498,6 +498,13 @@
       "verification_live_failure_gate": "automation-test",
       "verification_live_model_calls": 0,
       "verification_live_product_changes": 0,
+      "review_contract_revision": "v1-020-independent-review-contract-v5",
+      "review_contract_failure_session_id": "6436d586904295897c2a55d15490f2c2",
+      "review_contract_failure_total_tokens": 37061,
+      "review_contract_failure_tool_calls": 0,
+      "review_contract_failure_category": "empty_or_invalid_task_delivery",
+      "review_untracked_candidate_policy": "fail_closed_before_model",
+      "review_invalid_delivery_owner_action_before_exhaustion": false,
       "failed_session_id": "20260823_003208_38266a",
       "failure_category": "empty_or_invalid_task_delivery",
       "repair_scope": [
@@ -543,7 +550,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Verify and publish the bounded verification-isolation follow-up, then rerun candidate-wide verification and independent review and publish V1-020 if every gate passes.",
+  "next_action": "Verify and publish the bounded review-contract follow-up, then rerun candidate-wide verification and independent review and publish V1-020 if every gate passes.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
@@ -658,10 +665,12 @@
     "PASS: 93 focused initial-Owner bootstrap, recovery issuance/backdoor, and traceability tests; bootstrap_release required no product change",
     "PASS: 129 automation tests cover exact independent-review diff materialization, compact verification evidence, failure accounting, and invalid delivery",
     "PASS: V1-020 independent-review routing repair complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 129 passed",
-    "PASS: focused dispatcher child-environment and contaminated-parent activation regressions prevent live automation controls from leaking into temporary test fixtures"
+    "PASS: focused dispatcher child-environment and contaminated-parent activation regressions prevent live automation controls from leaking into temporary test fixtures",
+    "PASS: 130 automation tests enforce exact finding objects, reject untracked candidate files before any model call, and keep malformed delivery recoverable until bounded exhaustion",
+    "PASS: V1-020 review-contract follow-up complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 130 passed"
   ],
   "tests_tranche_id": "V1-020",
-  "timestamp": "2026-08-22T19:35:27Z",
+  "timestamp": "2026-08-22T19:56:44Z",
   "touched_areas": [
     "complete authentication abuse, lifecycle, recovery, session, and bootstrap tests"
   ],

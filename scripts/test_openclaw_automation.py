@@ -585,6 +585,7 @@ print(json.dumps({'workflow_runs': [run]}) if endpoint.endswith('/runs') else js
         self.assertIn("gateway_or_network_failure", FAILURE_CATEGORIES)
         self.assertIn("unsupported_invocation_configuration", FAILURE_CATEGORIES)
         self.assertIn("empty_or_invalid_task_delivery", FAILURE_CATEGORIES)
+        self.assertIn("empty_or_invalid_task_delivery", RECOVERABLE_ROUTING_FAILURES)
         self.assertIn("test_fixture_failure", FAILURE_CATEGORIES)
         self.assertIn("remote_ci_failure", FAILURE_CATEGORIES)
         self.assertIn("lock_or_overlapping_process_failure", RECOVERABLE_ROUTING_FAILURES)
@@ -1066,6 +1067,11 @@ class RepositoryEvidenceTests(unittest.TestCase):
             self.assertTrue(packet["review_only"])
             self.assertIn("passed", packet["output_contract"]["required"])
             self.assertNotIn("changed_paths", packet["output_contract"]["required"])
+            self.assertIn(
+                "exactly severity, path, line, and evidence",
+                packet["output_contract"]["field_contracts"]["findings"],
+            )
+            self.assertTrue(packet["output_contract"]["exact_keys_only"])
 
     def test_repository_fingerprint_changes_with_untracked_content(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -3414,6 +3420,7 @@ raise SystemExit(64)
             assert isinstance(materialized, dict)
             self.assertEqual(materialized["base_commit"], base_commit)
             self.assertIn("+candidate review", str(materialized["content"]))
+            self.assertTrue(materialized["untracked_files_prohibited"])
             self.assertNotIn("x" * 100, json.dumps(captured))
             self.assertEqual(
                 captured["verification_evidence"],
@@ -3426,6 +3433,50 @@ raise SystemExit(64)
                 },
             )
             self.assertEqual(record["stage"], "publication")
+
+    def test_independent_review_refuses_untracked_candidate_before_model_call(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            base_commit = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=repo,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            (repo / "candidate-review.py").write_text("print('untracked')\n")
+            spec = importlib.util.spec_from_file_location(
+                "untracked_review", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(root / "state"),
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            fingerprint = repository_fingerprint(repo)
+            record: dict[str, object] = {
+                "candidate": "V1-018",
+                "candidate_base_commit": base_commit,
+                "stage": "independent_review",
+                "implementation_complete": True,
+                "deterministic_verification_passed": True,
+                "scoped_changed_paths": ["candidate-review.py"],
+                "verified_paths": ["candidate-review.py"],
+                "verified_repository_fingerprint": fingerprint,
+            }
+            with (
+                mock.patch.object(dispatcher, "invoke_model") as invoke,
+                self.assertRaisesRegex(AutomationError, "refuses untracked candidate files"),
+            ):
+                dispatcher.independent_review(record, {"actionable": True})
+            invoke.assert_not_called()
 
     def test_invalid_review_delivery_is_classified_without_unbound_error(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

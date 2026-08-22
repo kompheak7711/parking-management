@@ -69,11 +69,17 @@
   repository, state, process, and Hermes variables leaked into child acceptance tests. No model
   call or product change occurred. The dispatcher now scrubs those controls, and the affected
   activation regression explicitly binds its temporary repository.
+- Review contract follow-up: Hermes session `6436d586904295897c2a55d15490f2c2` used 37,061
+  tokens in one zero-tool call and identified that untracked files are absent from a Git diff, but
+  returned its finding as a string instead of the required object. The strict parser correctly
+  rejected the verdict. Review now fails closed before sending any untracked candidate content,
+  publishes the exact finding-object schema, and treats invalid delivery as bounded recoverable
+  routing rather than immediate Owner work. All 130 automation tests and all 15 release gates pass.
 - Owner action: none.
-- Exact next action: verify and publish the bounded verification-isolation follow-up, then rerun
+- Exact next action: verify and publish the bounded review-contract follow-up, then rerun
   candidate-wide verification and independent review and publish V1-020 if every gate passes.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation candidate state: V1-020 active; all seven bounded substages complete; final gates pending.
-- Automation exact next action: Publish the verification-isolation follow-up, then verify, review, and publish V1-020.
+- Automation exact next action: Publish the review-contract follow-up, then verify, review, and publish V1-020.
 <!-- AUTOMATION_STATUS_END -->
