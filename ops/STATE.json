@@ -19,44 +19,44 @@
     "changed_path_count": 10,
     "cleanup_semantic_follow_up": {
       "authorization": "owner_direct_takeover_2026-08-22",
-      "failed_restoration_commit": "cb5d3eca1015481f14a6ebeb1986fd2c47ad7e31",
-      "failed_restoration_run_id": 32562545129,
-      "failed_metadata_resumption_commit": "e0585c71252660eb7cee4980246373a73541cc41",
-      "failed_metadata_resumption_run_id": 32563201203,
       "failed_metadata_pathset_commit": "bcbf5642f869871070fe0a76a6bad4c12fd56d15",
       "failed_metadata_pathset_run_id": 32563641052,
+      "failed_metadata_resumption_commit": "e0585c71252660eb7cee4980246373a73541cc41",
+      "failed_metadata_resumption_run_id": 32563201203,
+      "failed_restoration_commit": "cb5d3eca1015481f14a6ebeb1986fd2c47ad7e31",
+      "failed_restoration_run_id": 32562545129,
+      "failure_category": "deterministic_cleanup_serialization_mismatch",
+      "independent_review": {
+        "corrected_findings": 1,
+        "final_status": "PASS",
+        "initial_findings": 1,
+        "reviewer_edits": false,
+        "session_id": "01a0288d-0c01-7390-8280-f70679de1d1d"
+      },
       "metadata_pathset_verification": {
         "automation_tests": 124,
         "complete_profile": "PASS: 15/15",
-        "independent_review": "PASS: no material findings",
-        "evidence": "/private/tmp/property-rental-v1-019-metadata-pathset-final.json"
+        "evidence": "/private/tmp/property-rental-v1-019-metadata-pathset-final.json",
+        "independent_review": "PASS: no material findings"
       },
-      "failure_category": "deterministic_cleanup_serialization_mismatch",
       "model_attempts_consumed": 0,
       "owner_action_consumed_again": false,
       "product_files_modified": false,
       "scheduler_enabled": false,
       "status": "verified_awaiting_publication",
-      "token_ceiling": 60000,
-      "token_ceiling_changed": false,
-      "independent_review": {
-        "initial_findings": 1,
-        "corrected_findings": 1,
-        "final_status": "PASS",
-        "reviewer_edits": false,
-        "session_id": "01a0288d-0c01-7390-8280-f70679de1d1d"
-      },
-      "verification": {
-        "automation_tests": 124,
-        "complete_profile": "PASS: 15/15",
-        "evidence": "/private/tmp/property-rental-v1-019-metadata-lifecycle-correction-final.json",
-        "metadata_lifecycle_independent_review": "PASS: no material findings"
-      },
       "superseded_restoration_metadata": {
         "metadata_commit": "cb5d3eca1015481f14a6ebeb1986fd2c47ad7e31",
         "repair_publication_commit": "f74726d2a8f9bb884e4d76f0969b39a177d21e6b",
         "run_id": 32562545129,
         "status": "green_but_failed_before_enable"
+      },
+      "token_ceiling": 60000,
+      "token_ceiling_changed": false,
+      "verification": {
+        "automation_tests": 124,
+        "complete_profile": "PASS: 15/15",
+        "evidence": "/private/tmp/property-rental-v1-019-metadata-lifecycle-correction-final.json",
+        "metadata_lifecycle_independent_review": "PASS: no material findings"
       }
     },
     "context_budget_restoration_repair": {
@@ -230,9 +230,9 @@
       }
     },
     "post_exit_restoration": {
-      "repair_publication_commit": "f74726d2a8f9bb884e4d76f0969b39a177d21e6b",
+      "repair_publication_commit": "ee18ecd5fa3d9122df44a7e6a5392dfcd420a9c5",
       "status": "metadata_published_waiting_enable",
-      "timestamp": "2026-08-22T08:32:08Z"
+      "timestamp": "2026-08-22T09:11:12Z"
     },
     "predecessor_ci_correction_review": {
       "cache_read_tokens": "unavailable from provider",
@@ -434,7 +434,7 @@
       "watchdog_notifications": "PASS"
     },
     "scheduler_enabled": false,
-    "status": "published_awaiting_post_exit_restoration",
+    "status": "restored",
     "stop_after_candidate": "V1-019",
     "timestamp": "2026-08-21T22:18:48Z",
     "v1_019_original_automatic_recovery_attempts": 0,
@@ -558,7 +558,7 @@
   "task": "Implement the approved bounded candidate: Authentication and account administration UI",
   "tests": [],
   "tests_tranche_id": "V1-018",
-  "timestamp": "2026-08-22T08:32:08Z",
+  "timestamp": "2026-08-22T09:11:12Z",
   "touched_areas": [
     "sign-in, MFA, recovery, session, account/capability screens"
   ],
