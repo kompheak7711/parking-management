@@ -131,7 +131,7 @@
     },
     "context_routing_v5": {
       "authorization": "owner_direct_takeover_2026-08-22",
-      "automation_tests_passed": 125,
+      "automation_tests_passed": 126,
       "bounded_substage": "sign_in",
       "complete_verification_gates": "15/15",
       "incident_baseline": "39ee4426366bb3966d2751b4cdf7a3a869f8f2b3",
@@ -142,6 +142,7 @@
       "owner_action_consumed_again": false,
       "ceiling_recovery_attempt_consumed": false,
       "implementation_attempt_consumed": false,
+      "metadata_preserves_dirty_v1_019_paths": true,
       "preserved_worktree_path_count": 6,
       "product_files_modified_by_automation_repair": false,
       "routing_revision": "v1-019-sign-in-context-routing-v5",
@@ -149,7 +150,7 @@
       "supervisor_enabled": false,
       "token_ceiling": 60000,
       "token_ceiling_changed": false,
-      "verification_evidence": "/private/tmp/property-rental-v1-019-policy-rejection-v5-final.json"
+      "verification_evidence": "/private/tmp/property-rental-v1-019-policy-rejection-v5-follow-up-final.json"
     },
     "follow_up_repair": {
       "baseline": "d877cf3b6648083f97e54d661933e3d188999dae",
@@ -205,7 +206,7 @@
       "reviewer_edits": false,
       "status": "PASS"
     },
-    "next_action": "Publish this independently reviewed bounded repair, require successful GitHub Actions, then run the corrected continuation while the supervisor remains disabled.",
+    "next_action": "Publish the verified dirty-worktree metadata follow-up, require successful GitHub Actions, then restore the exact V1-019 sign-in recovery while the supervisor remains disabled until enablement.",
     "post_exit_ci_detection_repair": {
       "authorization": "existing_durable_v1",
       "baseline": "7c0f67d07092702229329a57176ae0fdc95afd12",
@@ -252,9 +253,7 @@
       }
     },
     "post_exit_restoration": {
-      "repair_publication_commit": "ee18ecd5fa3d9122df44a7e6a5392dfcd420a9c5",
-      "status": "metadata_published_waiting_enable",
-      "timestamp": "2026-08-22T09:11:12Z"
+      "status": "repair_follow_up_awaiting_publication"
     },
     "predecessor_ci_correction_review": {
       "cache_read_tokens": "unavailable from provider",
@@ -456,7 +455,7 @@
       "watchdog_notifications": "PASS"
     },
     "scheduler_enabled": false,
-    "status": "restored",
+    "status": "published_awaiting_post_exit_restoration",
     "stop_after_candidate": "V1-019",
     "timestamp": "2026-08-21T22:18:48Z",
     "v1_019_original_automatic_recovery_attempts": 0,

@@ -370,7 +370,13 @@ def restoration_metadata(
     expected_continuation_head: str | None = None,
     github: str | None = None,
     ci_evidence: Path | None = None,
+    preserved_paths: list[str] | None = None,
 ) -> str:
+    preserved = sorted(preserved_paths or [])
+    if changed_paths(repo) != preserved:
+        raise RestorationError(
+            "the worktree changed before restoration metadata publication"
+        )
     state_path = repo / "ops/STATE.json"
     now_path = repo / "ops/NOW.md"
     state = json.loads(state_path.read_text())
@@ -510,7 +516,8 @@ def restoration_metadata(
         atomic_text(now_path, updated_now)
         expected_metadata_paths.append("ops/NOW.md")
     expected_metadata_paths.sort()
-    if changed_paths(repo) != expected_metadata_paths:
+    expected_worktree_paths = sorted(set(preserved + expected_metadata_paths))
+    if changed_paths(repo) != expected_worktree_paths:
         raise RestorationError(
             "restoration metadata changed unexpected repository paths"
         )
@@ -518,6 +525,10 @@ def restoration_metadata(
     run(repo, "git", "diff", "--cached", "--check")
     run(repo, "git", "commit", "-m", "ops: authorize post-exit supervisor restoration")
     commit = git(repo, "rev-parse", "HEAD")
+    if changed_paths(repo) != preserved:
+        raise RestorationError(
+            "restoration metadata commit did not preserve the bounded product worktree"
+        )
     run(repo, "git", "push")
     if github is not None and ci_evidence is not None:
         ci = wait_for_ci(
@@ -2400,13 +2411,16 @@ def execute(args: argparse.Namespace) -> int:
                     "a resumed continuation could not fail-close the enabled supervisor"
                 )
         wait_for_zero_overlap(repo, args.owner_pid, args.overlap_timeout, args.poll)
-        v1_019_integrity(repo, dispatch_state, expected_head=pre_metadata_head)
+        pre_metadata_integrity = v1_019_integrity(
+            repo, dispatch_state, expected_head=pre_metadata_head
+        )
         metadata_commit = restoration_metadata(
             repo,
             args.expected_repair_head,
             expected_continuation_head=args.expected_continuation_head,
             github=github,
             ci_evidence=ci_evidence_path,
+            preserved_paths=pre_metadata_integrity["paths"],
         )
         continuation_head = metadata_commit
         current_candidate = read_json_object(

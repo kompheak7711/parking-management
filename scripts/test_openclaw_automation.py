@@ -4370,6 +4370,97 @@ raise SystemExit(9)
             self.assertNotIn("test-sensitive-target", terminal_text)
             self.assertNotIn("test-sensitive-account", terminal_text)
 
+    def test_restoration_metadata_preserves_exact_dirty_product_paths(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "dirty_metadata_post_exit",
+            ROOT / "scripts/openclaw-post-exit-restoration.py",
+        )
+        assert spec and spec.loader
+        restoration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(restoration)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / "repo"
+            (repo / "ops").mkdir(parents=True)
+            (repo / "scripts").mkdir()
+            (repo / "frontend/src").mkdir(parents=True)
+            (repo / "ops/NOW.md").write_text("# V1-019 repair published\n")
+            atomic_write_json(
+                repo / "ops/STATE.json",
+                {
+                    "automation_repair": {
+                        "status": "published_awaiting_post_exit_restoration",
+                        "scheduler_enabled": False,
+                        "stop_after_candidate": "V1-019",
+                    }
+                },
+            )
+            product = repo / "frontend/src/App.tsx"
+            product.write_text("baseline\n")
+            wait_script = repo / "scripts/openclaw-wait-for-ci.sh"
+            wait_script.write_text("#!/bin/sh\nexit 0\n")
+            wait_script.chmod(0o755)
+            subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+            subprocess.run(["git", "config", "user.name", "test"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            subprocess.run(["git", "commit", "-qm", "repair"], cwd=repo, check=True)
+            origin = root / "origin.git"
+            subprocess.run(["git", "init", "-q", "--bare", str(origin)], check=True)
+            subprocess.run(
+                ["git", "remote", "add", "origin", str(origin)],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "push", "-qu", "-u", "origin", "HEAD"],
+                cwd=repo,
+                check=True,
+            )
+            repair_head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            product.write_text("preserved V1-019 sign-in work\n")
+
+            with self.assertRaisesRegex(
+                restoration.RestorationError,
+                "worktree changed before restoration metadata publication",
+            ):
+                restoration.restoration_metadata(repo, repair_head)
+            metadata_commit = restoration.restoration_metadata(
+                repo,
+                repair_head,
+                preserved_paths=["frontend/src/App.tsx"],
+            )
+
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "rev-parse", f"{metadata_commit}^"], cwd=repo, text=True
+                ).strip(),
+                repair_head,
+            )
+            self.assertEqual(
+                subprocess.check_output(
+                    [
+                        "git",
+                        "diff-tree",
+                        "--no-commit-id",
+                        "--name-only",
+                        "-r",
+                        metadata_commit,
+                    ],
+                    cwd=repo,
+                    text=True,
+                ).splitlines(),
+                ["ops/NOW.md", "ops/STATE.json"],
+            )
+            self.assertEqual(changed_paths(repo), ["frontend/src/App.tsx"])
+            self.assertEqual(product.read_text(), "preserved V1-019 sign-in work\n")
+
     def test_post_exit_restoration_succeeds_naturally_and_fails_closed(self) -> None:
         for (
             natural_status,
