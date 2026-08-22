@@ -32,7 +32,7 @@ MODEL_ID: Final = "gpt-5.6-sol"
 PROVIDER: Final = "openai-codex"
 PRESERVATION_EVIDENCE_PATH: Final = "ops/AUTOMATION_REPAIR_EVIDENCE.json"
 V1_019_ROUTING_REVISION: Final = "v1-019-sign-in-context-routing-v5"
-V1_019_FRONTEND_CONTEXT_MAX_BYTES: Final = 48_000
+V1_019_FRONTEND_CONTEXT_MAX_BYTES: Final = 64_000
 V1_019_SUBSTAGE_IDS: Final = (
     "sign_in",
     "mfa_recovery",
