@@ -1179,12 +1179,15 @@ def _validate_exhausted_rebase_cleanup(
 def interrupted_exhausted_cleanup_install_required(
     prior: dict[str, Any] | None, dispatch_state: Path
 ) -> bool:
-    """Recognize only the exact formatting-mismatch cleanup crash for one safe retry."""
+    """Recognize only exact fail-closed checkpoints in one interrupted cleanup."""
     if not (
         isinstance(prior, dict)
         and prior.get("status") == "failed_closed"
         and prior.get("failure")
-        == "live exhausted sign-in evidence differs from its archive"
+        in {
+            "live exhausted sign-in evidence differs from its archive",
+            "published restoration metadata does not match its exact resumable contract",
+        }
         and prior.get("recovery_state") == "terminal_failure"
         and prior.get("owner_action_required") is False
     ):

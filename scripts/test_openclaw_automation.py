@@ -5279,17 +5279,21 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                 pending["owner_authorized_fresh_sign_in_sequence"]["transition_status"],
                 "cleanup_pending",
             )
-            prior_cleanup_failure = {
-                "status": "failed_closed",
-                "failure": "live exhausted sign-in evidence differs from its archive",
-                "recovery_state": "terminal_failure",
-                "owner_action_required": False,
-            }
-            self.assertTrue(
-                restoration.interrupted_exhausted_cleanup_install_required(
-                    prior_cleanup_failure, dispatch
+            for retry_failure in (
+                "live exhausted sign-in evidence differs from its archive",
+                "published restoration metadata does not match its exact resumable contract",
+            ):
+                prior_cleanup_failure = {
+                    "status": "failed_closed",
+                    "failure": retry_failure,
+                    "recovery_state": "terminal_failure",
+                    "owner_action_required": False,
+                }
+                self.assertTrue(
+                    restoration.interrupted_exhausted_cleanup_install_required(
+                        prior_cleanup_failure, dispatch
+                    )
                 )
-            )
             remaining_failure = dispatch / "last-failure.json"
             remaining_failure_value = remaining_failure.read_text()
             remaining_failure.unlink()

@@ -21,6 +21,8 @@
       "authorization": "owner_direct_takeover_2026-08-22",
       "failed_restoration_commit": "cb5d3eca1015481f14a6ebeb1986fd2c47ad7e31",
       "failed_restoration_run_id": 32562545129,
+      "failed_metadata_resumption_commit": "e0585c71252660eb7cee4980246373a73541cc41",
+      "failed_metadata_resumption_run_id": 32563201203,
       "failure_category": "deterministic_cleanup_serialization_mismatch",
       "model_attempts_consumed": 0,
       "owner_action_consumed_again": false,
@@ -39,7 +41,14 @@
       "verification": {
         "automation_tests": 124,
         "complete_profile": "PASS: 15/15",
-        "evidence": "/private/tmp/property-rental-v1-019-cleanup-semantic-follow-up-final.json"
+        "evidence": "/private/tmp/property-rental-v1-019-metadata-lifecycle-correction-final.json",
+        "metadata_lifecycle_independent_review": "PASS: no material findings"
+      },
+      "superseded_restoration_metadata": {
+        "metadata_commit": "cb5d3eca1015481f14a6ebeb1986fd2c47ad7e31",
+        "repair_publication_commit": "f74726d2a8f9bb884e4d76f0969b39a177d21e6b",
+        "run_id": 32562545129,
+        "status": "green_but_failed_before_enable"
       }
     },
     "context_budget_restoration_repair": {
@@ -417,7 +426,7 @@
       "watchdog_notifications": "PASS"
     },
     "scheduler_enabled": false,
-    "status": "restored",
+    "status": "published_awaiting_post_exit_restoration",
     "stop_after_candidate": "V1-019",
     "timestamp": "2026-08-21T22:18:48Z",
     "v1_019_original_automatic_recovery_attempts": 0,

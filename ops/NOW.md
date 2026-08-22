@@ -28,6 +28,10 @@
   final verdict is PASS with no material findings.
 - Follow-up verification: PASS, complete profile 15/15 with the same 333 backend, 105
   disposable PostgreSQL, 3 frontend, and 124 automation test results.
+- Metadata retry: the green follow-up `e0585c7` stopped before cleanup because compact state still
+  described the prior `cb5d3ec` metadata as restored. This bounded correction explicitly returns
+  the repair lifecycle to `published_awaiting_post_exit_restoration`; it does not broaden generic
+  supersession, and a new two-file metadata commit plus CI gate remains mandatory.
 - Scope repair: the Hermes manifest enforces the packet's exact sign-in write allowlist.
   The login URL is derived from router and decorator AST literals and fails closed on drift.
 - Verification: PASS, complete profile 15/15. Backend 333 passed with 105 expected local
@@ -41,8 +45,8 @@
   including symlinked parent directories. Final independent verdict: PASS, no material findings.
 - Safety: token ceiling remains exactly 60,000. V1-020 has not started. No product attempt or
   prior historical evidence was deleted or rewritten.
-- Exact next action: verify and independently review this bounded follow-up, publish it, require
-  successful GitHub Actions, then resume the exact cleanup and prove bounded `sign_in` progress.
+- Exact next action: publish this explicit metadata-lifecycle correction, require successful
+  GitHub Actions, then create and verify new restoration metadata before resuming exact cleanup.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation candidate state: V1-019 approved and active; product implementation has not started.
