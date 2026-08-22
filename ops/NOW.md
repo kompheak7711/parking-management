@@ -30,8 +30,8 @@
 - Review: the seven-path authentication-core diff was reviewed against TEST-108 and
   SEC-068–070; no material finding remains. Candidate-wide independent review remains at the
   final V1-020 publication gate.
-- Scheduler: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is paused while the preserved
-  authentication-core diff is verified and published; daily reporting and watchdog jobs are unchanged.
+- Scheduler: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is paused between bounded
+  substages; daily reporting and watchdog jobs are unchanged.
 - Authentication API: session `aa20ea3470d021ff8aed6b5e5aecaaff` reviewed the complete
   route module and changed zero files. Its attempted broad patch failed atomically; direct review
   retained the existing bounded inputs, origin/CSRF checks, secure cookies, generic errors, and
@@ -44,13 +44,18 @@
   API already excludes and tests SMS. Codex added RFC SHA-256/SHA-512 vectors, non-byte protected
   material rejection, immutable audit evidence, and traceability; 69 focused tests and all 15
   complete-profile gates pass (353 backend, 105 PostgreSQL, 32 frontend, 128 automation).
-- Product status: V1-020 implementation is in progress; the first four substages are complete;
-  recovery, sessions/integration, and bootstrap/release have not started.
+- Recovery: session `f29c92616ed39c67c304e2bd76c1e2fb` completed a bounded review with
+  no product changes. Existing coverage proves secure generation, one-time presentation and use,
+  reuse rejection, regeneration invalidation, rate limiting, enumeration-safe outcomes, session
+  revocation, controlled administrative/emergency recovery, and secret-free immutable audit;
+  all 146 focused recovery, revocation, and traceability tests pass.
+- Product status: V1-020 implementation is in progress; the first five substages are complete;
+  sessions/integration and bootstrap/release have not started.
 - Owner action: none.
-- Exact next action: run the complete profile, review and publish `mfa_policy`, then dispatch
-  only V1-020 `recovery`.
+- Exact next action: publish the no-change `recovery` evidence, then dispatch only V1-020
+  `sessions_integration`.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-020 active; four of seven bounded substages complete.
-- Automation exact next action: Verify and publish mfa_policy, then dispatch recovery.
+- Automation candidate state: V1-020 active; five of seven bounded substages complete.
+- Automation exact next action: Publish recovery evidence, then dispatch sessions_integration.
 <!-- AUTOMATION_STATUS_END -->
