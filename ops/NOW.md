@@ -65,11 +65,15 @@
   verification evidence for a direct JSON verdict; the complex-review ceiling remains 90,000.
   The repaired path passes all 129 automation tests and the complete 15/15 release profile
   (357 backend, 105 PostgreSQL, and 32 frontend tests).
+- Verification isolation: the real dispatcher exposed a fixture-only failure because live
+  repository, state, process, and Hermes variables leaked into child acceptance tests. No model
+  call or product change occurred. The dispatcher now scrubs those controls, and the affected
+  activation regression explicitly binds its temporary repository.
 - Owner action: none.
-- Exact next action: verify and publish the bounded independent-review routing repair, then rerun
+- Exact next action: verify and publish the bounded verification-isolation follow-up, then rerun
   candidate-wide verification and independent review and publish V1-020 if every gate passes.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation candidate state: V1-020 active; all seven bounded substages complete; final gates pending.
-- Automation exact next action: Publish the review-packet repair, then verify, review, and publish V1-020.
+- Automation exact next action: Publish the verification-isolation follow-up, then verify, review, and publish V1-020.
 <!-- AUTOMATION_STATUS_END -->

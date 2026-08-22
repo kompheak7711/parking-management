@@ -2651,6 +2651,7 @@ print(json.dumps(result))
             ).strip()
             mutation_environment = {
                 **os.environ,
+                "PROPERTY_RENTAL_REPO": str(repo),
                 "PROPERTY_RENTAL_SELECT_MUTATE_ONLY": "true",
                 "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
             }
@@ -3750,6 +3751,14 @@ raise SystemExit(64)
             verification.parent.mkdir(exist_ok=True)
             verification.write_text(
                 "#!/bin/sh\n"
+                "for variable in HERMES_HOME HERMES_MAX_TOKENS "
+                "PROPERTY_RENTAL_DISPATCH_STATE_DIR PROPERTY_RENTAL_HERMES_STAGE "
+                "PROPERTY_RENTAL_HERMES_TOKEN_CEILING PROPERTY_RENTAL_HERMES_USAGE_FILE "
+                "PROPERTY_RENTAL_INVOCATION_MANIFEST PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES "
+                "PROPERTY_RENTAL_REPO PROPERTY_RENTAL_TEST_PROCESS_ROWS; do\n"
+                '  eval "present=\\${${variable}+set}"\n'
+                '  [ "$present" != set ] || exit 91\n'
+                "done\n"
                 'mkdir -p "$(dirname "$PROPERTY_RENTAL_VERIFICATION_EVIDENCE_FILE")"\n'
                 'jq -cn --arg profile "$PROPERTY_RENTAL_VERIFICATION_PROFILE" '
                 '\'{profile:$profile,result:"passed"}\' >"$PROPERTY_RENTAL_VERIFICATION_EVIDENCE_FILE"\n'
@@ -3767,6 +3776,14 @@ raise SystemExit(64)
                 {
                     "PROPERTY_RENTAL_REPO": str(repo),
                     "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(root / "state"),
+                    "PROPERTY_RENTAL_HERMES_STAGE": "implementation",
+                    "PROPERTY_RENTAL_HERMES_TOKEN_CEILING": "60000",
+                    "PROPERTY_RENTAL_HERMES_USAGE_FILE": str(root / "live-usage.json"),
+                    "PROPERTY_RENTAL_INVOCATION_MANIFEST": str(root / "live-manifest.json"),
+                    "PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES": "1",
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "live-worker",
+                    "HERMES_HOME": str(root / "live-hermes-home"),
+                    "HERMES_MAX_TOKENS": "60000",
                     "PROPERTY_RENTAL_VERIFICATION_PROFILE": "automation",
                 },
             ):

@@ -2391,6 +2391,20 @@ def deterministic_verification(record: dict[str, Any]) -> None:
         )
     evidence_path = STATE_DIR / "verification" / f"{record['candidate']}.json"
     environment = os.environ.copy()
+    for variable in (
+        "HERMES_ENABLE_PROJECT_PLUGINS",
+        "HERMES_HOME",
+        "HERMES_MAX_TOKENS",
+        "PROPERTY_RENTAL_DISPATCH_STATE_DIR",
+        "PROPERTY_RENTAL_HERMES_STAGE",
+        "PROPERTY_RENTAL_HERMES_TOKEN_CEILING",
+        "PROPERTY_RENTAL_HERMES_USAGE_FILE",
+        "PROPERTY_RENTAL_INVOCATION_MANIFEST",
+        "PROPERTY_RENTAL_MAX_IMMEDIATE_CYCLES",
+        "PROPERTY_RENTAL_REPO",
+        "PROPERTY_RENTAL_TEST_PROCESS_ROWS",
+    ):
+        environment.pop(variable, None)
     environment["PROPERTY_RENTAL_VERIFICATION_EVIDENCE_FILE"] = str(evidence_path)
     environment["PROPERTY_RENTAL_VERIFICATION_PROFILE"] = "complete"
     fixture_call_fingerprints = {

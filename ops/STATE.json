@@ -493,6 +493,11 @@
       "independent_review_patch_byte_limit": 120000,
       "independent_review_tools_required": false,
       "independent_review_token_ceiling": 90000,
+      "verification_isolation_revision": "v1-020-verification-environment-isolation-v4",
+      "verification_live_environment_leak": true,
+      "verification_live_failure_gate": "automation-test",
+      "verification_live_model_calls": 0,
+      "verification_live_product_changes": 0,
       "failed_session_id": "20260823_003208_38266a",
       "failure_category": "empty_or_invalid_task_delivery",
       "repair_scope": [
@@ -538,7 +543,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Verify and publish the bounded independent-review routing repair, then rerun candidate-wide verification and independent review and publish V1-020 if every gate passes.",
+  "next_action": "Verify and publish the bounded verification-isolation follow-up, then rerun candidate-wide verification and independent review and publish V1-020 if every gate passes.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
@@ -652,10 +657,11 @@
     "PASS: direct review of five sessions_integration paths; no material findings; candidate-wide independent review remains pending",
     "PASS: 93 focused initial-Owner bootstrap, recovery issuance/backdoor, and traceability tests; bootstrap_release required no product change",
     "PASS: 129 automation tests cover exact independent-review diff materialization, compact verification evidence, failure accounting, and invalid delivery",
-    "PASS: V1-020 independent-review routing repair complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 129 passed"
+    "PASS: V1-020 independent-review routing repair complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 129 passed",
+    "PASS: focused dispatcher child-environment and contaminated-parent activation regressions prevent live automation controls from leaking into temporary test fixtures"
   ],
   "tests_tranche_id": "V1-020",
-  "timestamp": "2026-08-22T19:21:38Z",
+  "timestamp": "2026-08-22T19:35:27Z",
   "touched_areas": [
     "complete authentication abuse, lifecycle, recovery, session, and bootstrap tests"
   ],
