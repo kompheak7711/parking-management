@@ -17,32 +17,6 @@
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
     "branch": "implementation/foundation",
     "changed_path_count": 10,
-    "context_routing_v4": {
-      "authorization": "owner_direct_takeover_2026-08-22",
-      "bounded_substage": "sign_in",
-      "exhausted_fingerprint": "f6a8bbead87cacf9ae60da196459bc4f2ef760dd32e6dff8624c24ef4f8b8e77",
-      "product_files_modified": false,
-      "routing_revision": "v1-019-sign-in-context-routing-v4",
-      "status": "independently_reviewed_awaiting_publication",
-      "supervisor_enabled": false,
-      "token_ceiling": 60000,
-      "token_ceiling_changed": false,
-      "packet_schema": 5,
-      "exact_read_path_count": 5,
-      "exact_write_path_count": 8,
-      "automation_tests_passed": 124,
-      "complete_verification_gates": "15/15",
-      "initial_review_findings": 30,
-      "initial_review_findings_corrected": 30,
-      "review_p1_findings": 16,
-      "review_p2_findings": 12,
-      "review_p3_findings": 2,
-      "historical_artifacts_required": 24,
-      "crash_resumable_rebase": true,
-      "final_review_status": "PASS",
-      "final_review_session_id": "01a0288d-0c01-7390-8280-f70679de1d1d",
-      "final_reviewer_edits": false
-    },
     "context_budget_restoration_repair": {
       "authorization": "existing_durable_v1",
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -86,6 +60,32 @@
         "automation": "PASS: 108 tests plus compact-state routing, visibility watchdog, shell syntax, and Python compilation",
         "complete_profile": "PASS: 15/15 observed gates; /private/tmp/property-rental-v1-019-context-restoration-repair-final.json"
       }
+    },
+    "context_routing_v4": {
+      "authorization": "owner_direct_takeover_2026-08-22",
+      "automation_tests_passed": 124,
+      "bounded_substage": "sign_in",
+      "complete_verification_gates": "15/15",
+      "crash_resumable_rebase": true,
+      "exact_read_path_count": 5,
+      "exact_write_path_count": 8,
+      "exhausted_fingerprint": "f6a8bbead87cacf9ae60da196459bc4f2ef760dd32e6dff8624c24ef4f8b8e77",
+      "final_review_session_id": "01a0288d-0c01-7390-8280-f70679de1d1d",
+      "final_review_status": "PASS",
+      "final_reviewer_edits": false,
+      "historical_artifacts_required": 24,
+      "initial_review_findings": 30,
+      "initial_review_findings_corrected": 30,
+      "packet_schema": 5,
+      "product_files_modified": false,
+      "review_p1_findings": 16,
+      "review_p2_findings": 12,
+      "review_p3_findings": 2,
+      "routing_revision": "v1-019-sign-in-context-routing-v4",
+      "status": "independently_reviewed_awaiting_publication",
+      "supervisor_enabled": false,
+      "token_ceiling": 60000,
+      "token_ceiling_changed": false
     },
     "follow_up_repair": {
       "baseline": "d877cf3b6648083f97e54d661933e3d188999dae",
@@ -188,9 +188,9 @@
       }
     },
     "post_exit_restoration": {
-      "repair_publication_commit": "2b364db013678a09ea0e140da7cc205e368cbc26",
+      "repair_publication_commit": "f74726d2a8f9bb884e4d76f0969b39a177d21e6b",
       "status": "metadata_published_waiting_enable",
-      "timestamp": "2026-08-22T03:45:30Z"
+      "timestamp": "2026-08-22T08:32:08Z"
     },
     "predecessor_ci_correction_review": {
       "cache_read_tokens": "unavailable from provider",
@@ -392,7 +392,7 @@
       "watchdog_notifications": "PASS"
     },
     "scheduler_enabled": false,
-    "status": "published_awaiting_post_exit_restoration",
+    "status": "restored",
     "stop_after_candidate": "V1-019",
     "timestamp": "2026-08-21T22:18:48Z",
     "v1_019_original_automatic_recovery_attempts": 0,
@@ -516,7 +516,7 @@
   "task": "Implement the approved bounded candidate: Authentication and account administration UI",
   "tests": [],
   "tests_tranche_id": "V1-018",
-  "timestamp": "2026-08-22T05:56:50Z",
+  "timestamp": "2026-08-22T08:32:08Z",
   "touched_areas": [
     "sign-in, MFA, recovery, session, account/capability screens"
   ],

@@ -40,3 +40,7 @@
 - Automation candidate state: V1-019 approved and active; product implementation has not started.
 - Automation exact next action: publish this repair, then permit only the fresh bounded V1-019 sign-in sequence.
 <!-- AUTOMATION_STATUS_END -->
+<!-- POST_EXIT_RESTORATION_BEGIN -->
+- Post-exit restoration metadata is published; the existing supervisor remains disabled until the continuation enables it.
+- V1-019 remains the only active candidate; V1-020 successor activation is held.
+<!-- POST_EXIT_RESTORATION_END -->
