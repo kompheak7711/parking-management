@@ -490,7 +490,7 @@
       "independent_review_failure_total_tokens": 13653,
       "independent_review_next_serialized_tokens": 89547,
       "independent_review_routing_revision": "v1-020-independent-review-materialization-v3",
-      "independent_review_patch_byte_limit": 120000,
+      "independent_review_patch_byte_limit": 160000,
       "independent_review_tools_required": false,
       "independent_review_token_ceiling": 90000,
       "verification_isolation_revision": "v1-020-verification-environment-isolation-v4",

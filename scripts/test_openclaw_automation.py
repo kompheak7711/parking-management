@@ -3571,6 +3571,10 @@ raise SystemExit(64)
             self.assertIsInstance(materialized, dict)
             assert isinstance(materialized, dict)
             self.assertEqual(materialized["base_commit"], base_commit)
+            self.assertEqual(dispatcher.MAX_REVIEW_PATCH_BYTES, 160_000)
+            self.assertLessEqual(
+                materialized["byte_count"], dispatcher.MAX_REVIEW_PATCH_BYTES
+            )
             self.assertIn("+candidate review", str(materialized["content"]))
             self.assertTrue(materialized["untracked_files_prohibited"])
             self.assertFalse(external_diff_marker.exists())

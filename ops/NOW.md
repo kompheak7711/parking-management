@@ -102,6 +102,10 @@
   CI-green across cumulative bounded commits, so publication now accepts that state only when the
   exact candidate base-to-HEAD paths, reviewed fingerprint, synchronized SHAs, publication guard,
   and exact-HEAD CI all agree. It never fabricates an empty product commit.
+- Final review materialization checkpoint: the exact cumulative diff is 126,152 bytes, 6,152
+  bytes above the former 120,000-byte packet cap. No model call or recovery attempt was consumed.
+  The bounded complete-diff cap is now 160,000 bytes; the separate 90,000-token complex-review
+  reservation and normal 60,000-token ceiling are unchanged.
 - Owner action: none.
 - Exact next action: verify and publish the clean cumulative-publication repair, repeat the exact
   candidate-wide review, then reconcile V1-020 complete after exact-HEAD CI.

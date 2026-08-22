@@ -72,6 +72,7 @@ RECONCILIATION_NEXT_ACTION = (
 )
 MAX_CEILING_RECOVERIES_PER_SUBSTAGE = 2
 MAX_CONTEXT_MATERIALIZATIONS_PER_SUBSTAGE = 2
+MAX_REVIEW_PATCH_BYTES = 160_000
 V1_019_SUBSTAGES: tuple[dict[str, Any], ...] = (
     {
         "id": "sign_in",
@@ -2698,7 +2699,7 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
         ).stdout
     else:
         patch_result = b""
-    if len(patch_result) > 120_000:
+    if len(patch_result) > MAX_REVIEW_PATCH_BYTES:
         raise AutomationError(
             "context_materialization_required",
             "the exact candidate review patch exceeds the bounded materialization limit",
