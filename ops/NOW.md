@@ -26,6 +26,6 @@
   activation record through CI, then dispatch its first bounded implementation cycle.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation publication state: published on implementation/foundation at c1cdea447d8c013f4add9a7337657f968f4336cc.
-- Automation exact next action: Activate the exact V1-020 structured successor without a model, then continue bounded autonomous V1 execution.
+- Automation candidate state: V1-020 approved and active; implementation has not started.
+- Automation exact next action: Implement the approved bounded candidate: Identity and security end-to-end hardening gate
 <!-- AUTOMATION_STATUS_END -->
