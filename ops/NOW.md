@@ -1,4 +1,4 @@
-# V1-019 authentication and account administration UI — verified for publication
+# V1-019 published — autonomous V1 successor execution authorized
 
 - Candidate: `V1-019` — Authentication and account administration UI.
 - Authorization: existing durable V1 authorization; no renewed Owner decision was consumed.
@@ -16,13 +16,16 @@
 - Verification: complete profile PASS 15/15; backend 337 passed with 105 expected local
   environment skips; disposable PostgreSQL 105 passed; frontend 32 passed; automation routing
   127 passed. Local review findings were corrected. The 60,000-token ceiling remains unchanged.
-- Scheduler: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains disabled while this
-  repository-bound direct-takeover task verifies and publishes V1-019.
-- V1-020: not started.
-- Exact next action: publish the reviewed V1-019 candidate, require successful GitHub Actions,
-  reconcile durable state, and restore the existing supervisor without overlap.
+- Scheduler: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is enabled and healthy with
+  zero consecutive errors.
+- Standing authorization: execute the remaining approved V1 roadmap autonomously in bounded
+  tranches; do not request repeated authorization for ordinary implementation, verification,
+  review, publication, or recoverable automation-routing faults.
+- V1-020: approved successor awaiting deterministic activation; implementation has not started.
+- Exact next action: deterministically activate V1-020 from `ops/V1_ROADMAP.json`, publish its
+  activation record through CI, then dispatch its first bounded implementation cycle.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation publication state: published on implementation/foundation at c1cdea447d8c013f4add9a7337657f968f4336cc.
-- Automation exact next action: Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.
+- Automation exact next action: Activate the exact V1-020 structured successor without a model, then continue bounded autonomous V1 execution.
 <!-- AUTOMATION_STATUS_END -->

@@ -456,9 +456,25 @@
       "roadmap_traceability_json_scope_secret_canonical_diff": "PASS",
       "watchdog_notifications": "PASS"
     },
-    "scheduler_enabled": false,
+    "scheduler_enabled": true,
+    "standing_v1_autonomy": {
+      "authorized_at": "2026-08-23T00:15:17+07:00",
+      "authorization": "owner_approved_remaining_v1_roadmap",
+      "bounded_execution": true,
+      "canonical_scope_required": true,
+      "owner_action_only_for": [
+        "scope_or_policy_ambiguity",
+        "suspected_secret_or_credential",
+        "destructive_operation",
+        "production_access_or_deployment",
+        "conflicting_work",
+        "bounded_recovery_exhaustion"
+      ],
+      "repeated_tranche_authorization_required": false,
+      "token_ceiling": 60000
+    },
     "status": "restored",
-    "stop_after_candidate": "V1-019",
+    "stop_after_candidate": null,
     "timestamp": "2026-08-21T22:18:48Z",
     "v1_019_original_automatic_recovery_attempts": 0,
     "v1_019_original_implementation_attempts": 1,
@@ -587,7 +603,7 @@
     "automation routing: 127 passed"
   ],
   "tests_tranche_id": "V1-019",
-  "timestamp": "2026-08-22T12:16:52Z",
+  "timestamp": "2026-08-22T17:15:17Z",
   "touched_areas": [
     "sign-in, MFA, recovery, session, account/capability screens"
   ],
