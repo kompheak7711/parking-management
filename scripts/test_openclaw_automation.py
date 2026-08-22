@@ -3702,6 +3702,107 @@ raise SystemExit(64)
                 )
             )
 
+    def test_completed_session_recovery_rejects_symlinked_session_ancestor(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            state = root / "state"
+            state.mkdir()
+            session_id = "4" * 32
+            outside_sessions = root / "outside-sessions"
+            session_directory = outside_sessions / session_id
+            session_directory.mkdir(parents=True)
+            database = sqlite3.connect(session_directory / "state.db")
+            database.execute(
+                "CREATE TABLE messages "
+                "(id INTEGER, role TEXT, content TEXT, finish_reason TEXT, active INTEGER)"
+            )
+            database.execute(
+                "INSERT INTO messages VALUES (1, 'assistant', 'outside', 'stop', 1)"
+            )
+            database.commit()
+            database.close()
+            (state / "hermes-sessions").symlink_to(
+                outside_sessions, target_is_directory=True
+            )
+            spec = importlib.util.spec_from_file_location(
+                "transport_recovery_ancestor_symlink",
+                ROOT / "scripts/openclaw_dispatch.py",
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state)},
+            ):
+                spec.loader.exec_module(dispatcher)
+            self.assertIsNone(
+                dispatcher.preserved_final_assistant_output(
+                    {"session_id": session_id, "api_calls_completed": 1}
+                )
+            )
+
+    def test_completed_session_recovery_reads_validated_database_snapshot(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            state = root / "state"
+            session_id = "5" * 32
+            session_directory = state / "hermes-sessions" / session_id
+            session_directory.mkdir(parents=True)
+            database_path = session_directory / "state.db"
+            database = sqlite3.connect(database_path)
+            database.execute(
+                "CREATE TABLE messages "
+                "(id INTEGER, role TEXT, content TEXT, finish_reason TEXT, active INTEGER)"
+            )
+            database.execute(
+                "INSERT INTO messages VALUES (1, 'assistant', 'validated', 'stop', 1)"
+            )
+            database.commit()
+            database.close()
+            replacement = root / "replacement.db"
+            database = sqlite3.connect(replacement)
+            database.execute(
+                "CREATE TABLE messages "
+                "(id INTEGER, role TEXT, content TEXT, finish_reason TEXT, active INTEGER)"
+            )
+            database.execute(
+                "INSERT INTO messages VALUES (1, 'assistant', 'replacement', 'stop', 1)"
+            )
+            database.commit()
+            database.close()
+            spec = importlib.util.spec_from_file_location(
+                "transport_recovery_replacement_race",
+                ROOT / "scripts/openclaw_dispatch.py",
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state)},
+            ):
+                spec.loader.exec_module(dispatcher)
+            real_connect = sqlite3.connect
+
+            def replace_before_connect(
+                *args: object, **kwargs: object
+            ) -> sqlite3.Connection:
+                os.replace(replacement, database_path)
+                return real_connect(*args, **kwargs)
+
+            with mock.patch.object(
+                dispatcher.sqlite3,
+                "connect",
+                side_effect=replace_before_connect,
+            ):
+                recovered = dispatcher.preserved_final_assistant_output(
+                    {"session_id": session_id, "api_calls_completed": 1}
+                )
+            self.assertEqual(recovered, "validated")
+
     def test_completed_session_recovery_requires_global_final_assistant_message(
         self,
     ) -> None:

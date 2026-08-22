@@ -91,11 +91,17 @@
   cover the incomplete-session, external-diff, and text-conversion boundaries. Concrete in-scope
   review and test findings now remain automatic repair work; Owner action is reserved for the
   protected decision categories or actual bounded-repair exhaustion.
+- Second fresh review: session `a8359284d26732844114341dd015d30e` used 48,764 tokens in one
+  zero-tool call and found one remaining recovery boundary: canonicalizing a symlinked Hermes
+  session root and reopening `state.db` left ancestor-symlink and replacement races. Recovery now
+  walks only non-symlinked session-root components, reads regular database and WAL evidence through
+  bound descriptors with stable identity checks, and queries a private snapshot. Focused
+  regressions cover both the ancestor symlink and database replacement race.
 - Owner action: none.
-- Exact next action: run the complete release profile, publish the fresh review hardening, then
+- Exact next action: run the complete release profile, publish the stable-session-snapshot hardening, then
   repeat candidate-wide independent review and publish V1-020 if every gate passes.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation candidate state: V1-020 active; all seven bounded substages complete; final gates pending.
-- Automation exact next action: Verify and publish the fresh review hardening, then review and publish V1-020.
+- Automation exact next action: Verify and publish the stable-session-snapshot hardening, then review and publish V1-020.
 <!-- AUTOMATION_STATUS_END -->

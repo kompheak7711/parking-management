@@ -8,8 +8,10 @@ import json
 import os
 import re
 import sqlite3
+import stat
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -1566,34 +1568,112 @@ def preserved_final_assistant_output(usage_report: dict[str, Any]) -> str | None
         or api_calls < 1
     ):
         return None
-    session_root = (STATE_DIR / "hermes-sessions").resolve()
-    session_directory = session_root / session_id
-    database = session_directory / "state.db"
+    if not STATE_DIR.is_absolute() or STATE_DIR.is_symlink():
+        return None
+
+    directory_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    file_flags = os.O_RDONLY | os.O_NOFOLLOW
+    if hasattr(os, "O_CLOEXEC"):
+        directory_flags |= os.O_CLOEXEC
+        file_flags |= os.O_CLOEXEC
+
+    directory_fd: int | None = None
     try:
-        if session_directory.is_symlink() or database.is_symlink() or not database.is_file():
+        directory_fd = os.open(STATE_DIR, directory_flags)
+        for component in ("hermes-sessions", session_id):
+            next_fd = os.open(
+                component,
+                directory_flags,
+                dir_fd=directory_fd,
+            )
+            os.close(directory_fd)
+            directory_fd = next_fd
+
+        def stable_regular_snapshot(name: str, *, required: bool) -> bytes | None:
+            assert directory_fd is not None
+            try:
+                descriptor = os.open(name, file_flags, dir_fd=directory_fd)
+            except FileNotFoundError:
+                if required:
+                    raise
+                return None
+            try:
+                before = os.fstat(descriptor)
+                if (
+                    not stat.S_ISREG(before.st_mode)
+                    or before.st_nlink != 1
+                    or before.st_size < 0
+                    or before.st_size > 64 * 1024 * 1024
+                ):
+                    raise OSError("unsafe Hermes session database evidence")
+                chunks: list[bytes] = []
+                remaining = before.st_size
+                while remaining:
+                    chunk = os.read(descriptor, min(remaining, 1024 * 1024))
+                    if not chunk:
+                        raise OSError("short Hermes session database read")
+                    chunks.append(chunk)
+                    remaining -= len(chunk)
+                after = os.fstat(descriptor)
+                current = os.stat(name, dir_fd=directory_fd, follow_symlinks=False)
+                identity = lambda value: (
+                    value.st_dev,
+                    value.st_ino,
+                    value.st_mode,
+                    value.st_nlink,
+                    value.st_size,
+                    value.st_mtime_ns,
+                    value.st_ctime_ns,
+                )
+                if identity(before) != identity(after) or identity(after) != identity(
+                    current
+                ):
+                    raise OSError("Hermes session database changed during recovery")
+                return b"".join(chunks)
+            finally:
+                os.close(descriptor)
+
+        database_bytes = stable_regular_snapshot("state.db", required=True)
+        wal_bytes = stable_regular_snapshot("state.db-wal", required=False)
+        try:
+            os.stat("state.db-journal", dir_fd=directory_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            pass
+        else:
             return None
-        resolved_directory = session_directory.resolve(strict=True)
-        resolved_database = database.resolve(strict=True)
     except OSError:
         return None
-    if (
-        resolved_directory.parent != session_root
-        or resolved_database.parent != resolved_directory
-    ):
+    finally:
+        if directory_fd is not None:
+            os.close(directory_fd)
+
+    if not database_bytes:
         return None
     try:
-        connection = sqlite3.connect(f"{resolved_database.as_uri()}?mode=ro", uri=True)
-        try:
-            row = connection.execute(
-                """SELECT role, content, finish_reason
-                   FROM messages
-                   WHERE active = 1
-                   ORDER BY id DESC
-                   LIMIT 1"""
-            ).fetchone()
-        finally:
-            connection.close()
-    except sqlite3.Error:
+        with tempfile.TemporaryDirectory(
+            prefix="property-rental-review-recovery-"
+        ) as directory:
+            snapshot_database = Path(directory) / "state.db"
+            snapshot_database.write_bytes(database_bytes)
+            snapshot_database.chmod(0o600)
+            if wal_bytes is not None:
+                snapshot_wal = Path(directory) / "state.db-wal"
+                snapshot_wal.write_bytes(wal_bytes)
+                snapshot_wal.chmod(0o600)
+            connection = sqlite3.connect(
+                f"{snapshot_database.as_uri()}?mode=ro", uri=True
+            )
+            try:
+                row = connection.execute(
+                    """SELECT role, content, finish_reason
+                       FROM messages
+                       WHERE active = 1
+                       ORDER BY id DESC
+                       LIMIT 1"""
+                ).fetchone()
+            finally:
+                connection.close()
+    except (OSError, sqlite3.Error):
         return None
     if (
         row is None

@@ -522,7 +522,16 @@
       "fresh_review_replacement_model_calls": 0,
       "fresh_review_findings": 2,
       "fresh_review_findings_corrected": 2,
+      "second_fresh_review_session_id": "a8359284d26732844114341dd015d30e",
+      "second_fresh_review_total_tokens": 48764,
+      "second_fresh_review_tool_calls": 0,
+      "second_fresh_review_transport_recovered": true,
+      "second_fresh_review_findings": 1,
+      "second_fresh_review_findings_corrected": 1,
       "recovered_verdict_requires_global_final_message": true,
+      "recovered_verdict_rejects_symlinked_session_root": true,
+      "recovered_verdict_uses_stable_regular_database_snapshot": true,
+      "recovered_verdict_path_replacement_safe": true,
       "materialized_review_diff_external_helpers_disabled": true,
       "materialized_review_diff_text_conversion_disabled": true,
       "in_scope_review_defect_owner_action_required": false,
@@ -572,7 +581,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Run the complete release profile, publish the fresh independent-review hardening, then repeat independent review and publish V1-020 if every gate passes.",
+  "next_action": "Run the complete release profile, publish the stable-session-snapshot hardening, then repeat independent review and publish V1-020 if every gate passes.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
