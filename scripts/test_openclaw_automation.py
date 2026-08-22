@@ -3957,6 +3957,72 @@ raise SystemExit(64)
                 )
             self.assertIsNone(recovered)
 
+    def test_completed_session_recovery_rejects_swap_and_restore_database(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            state = root / "state"
+            session_id = "7" * 32
+            session_directory = state / "hermes-sessions" / session_id
+            session_directory.mkdir(parents=True)
+            database_path = session_directory / "state.db"
+            database = sqlite3.connect(database_path)
+            database.execute(
+                "CREATE TABLE messages "
+                "(id INTEGER, role TEXT, content TEXT, finish_reason TEXT, active INTEGER)"
+            )
+            database.execute(
+                "INSERT INTO messages VALUES (1, 'assistant', 'validated', 'stop', 1)"
+            )
+            database.commit()
+            database.close()
+            replacement = root / "replacement.db"
+            database = sqlite3.connect(replacement)
+            database.execute(
+                "CREATE TABLE messages "
+                "(id INTEGER, role TEXT, content TEXT, finish_reason TEXT, active INTEGER)"
+            )
+            database.execute(
+                "INSERT INTO messages VALUES (1, 'assistant', 'fabricated', 'stop', 1)"
+            )
+            database.commit()
+            database.close()
+            original = root / "original.db"
+            spec = importlib.util.spec_from_file_location(
+                "transport_recovery_swap_restore_race",
+                ROOT / "scripts/openclaw_dispatch.py",
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state)},
+            ):
+                spec.loader.exec_module(dispatcher)
+            real_connect = sqlite3.connect
+
+            def swap_and_restore_before_connect(
+                *args: object, **kwargs: object
+            ) -> sqlite3.Connection:
+                os.replace(database_path, original)
+                os.replace(replacement, database_path)
+                try:
+                    return real_connect(*args, **kwargs)
+                finally:
+                    os.replace(database_path, replacement)
+                    os.replace(original, database_path)
+
+            with mock.patch.object(
+                dispatcher.sqlite3,
+                "connect",
+                side_effect=swap_and_restore_before_connect,
+            ):
+                recovered = dispatcher.preserved_final_assistant_output(
+                    {"session_id": session_id, "api_calls_completed": 1}
+                )
+            self.assertIsNone(recovered)
+
     def test_completed_session_recovery_fails_closed_during_wal_checkpoint(
         self,
     ) -> None:
@@ -4007,6 +4073,68 @@ raise SystemExit(64)
                     dispatcher.sqlite3,
                     "connect",
                     side_effect=checkpoint_before_read,
+                ):
+                    recovered = dispatcher.preserved_final_assistant_output(
+                        {"session_id": session_id, "api_calls_completed": 1}
+                    )
+            finally:
+                writer.close()
+            self.assertIsNone(recovered)
+
+    def test_completed_session_recovery_rejects_inter_snapshot_checkpoint(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            state = root / "state"
+            session_id = "8" * 32
+            session_directory = state / "hermes-sessions" / session_id
+            session_directory.mkdir(parents=True)
+            database_path = session_directory / "state.db"
+            writer = sqlite3.connect(database_path)
+            writer.execute("PRAGMA journal_mode=WAL")
+            writer.execute(
+                "CREATE TABLE messages "
+                "(id INTEGER, role TEXT, content TEXT, finish_reason TEXT, active INTEGER)"
+            )
+            writer.execute(
+                "INSERT INTO messages VALUES (1, 'assistant', 'stale', 'stop', 1)"
+            )
+            writer.commit()
+            writer.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            writer.execute(
+                "INSERT INTO messages VALUES (2, 'user', 'continued', NULL, 1)"
+            )
+            writer.commit()
+            spec = importlib.util.spec_from_file_location(
+                "transport_recovery_inter_snapshot_checkpoint",
+                ROOT / "scripts/openclaw_dispatch.py",
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state)},
+            ):
+                spec.loader.exec_module(dispatcher)
+            real_fstat = os.fstat
+            database_inode = database_path.stat().st_ino
+            database_fstats = 0
+
+            def checkpoint_after_database_snapshot(descriptor: int) -> os.stat_result:
+                nonlocal database_fstats
+                evidence = real_fstat(descriptor)
+                if evidence.st_ino == database_inode:
+                    database_fstats += 1
+                    if database_fstats == 3:
+                        writer.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+                return evidence
+
+            try:
+                with mock.patch.object(
+                    dispatcher.os,
+                    "fstat",
+                    side_effect=checkpoint_after_database_snapshot,
                 ):
                     recovered = dispatcher.preserved_final_assistant_output(
                         {"session_id": session_id, "api_calls_completed": 1}

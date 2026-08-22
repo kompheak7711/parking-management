@@ -111,11 +111,23 @@
   rejects any stored scope that differs from the exact base-to-HEAD Git path set. Recovered Hermes
   output now uses a coherent SQLite transaction and fails closed if database, WAL, or session-path
   identity changes during the read.
+- Exact-snapshot review: session `c9f1cca3f0401e4b84e623dc6f5568f7` used 51,164 tokens in one
+  zero-tool call and found one remaining swap-and-restore race: recovery validated an open database
+  descriptor but reopened the database by pathname. Recovery now copies the database and WAL only
+  through the already-validated descriptors into a private snapshot before SQLite reads it, then
+  revalidates every source identity. The exact swap-and-restore regression proves a substituted
+  pathname cannot supply the recovered verdict; all 140 automation tests and all 15 complete gates
+  pass after the repair.
+- Full-window review: session `e0abcf5f8f0ba841a2a11ce3fa14f6bb` used 54,674 tokens in one
+  zero-tool call and found that a checkpoint could still occur between the database and WAL copies.
+  Recovery now captures both source identities before either copy and revalidates both after all
+  copying and again after the private SQLite read. A production-shaped checkpoint in that exact
+  inter-snapshot gap now fails closed; all 141 automation tests pass.
 - Owner action: none.
-- Exact next action: verify and publish the clean cumulative-publication repair, repeat the exact
-  candidate-wide review, then reconcile V1-020 complete after exact-HEAD CI.
+- Exact next action: obtain a fresh exact candidate-wide review, publish its exact synchronized
+  snapshot after successful CI, then reconcile V1-020 complete.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation candidate state: V1-020 active; all seven bounded substages complete; final gates pending.
-- Automation exact next action: Verify and publish the clean cumulative-publication repair, repeat exact review, then reconcile V1-020 complete.
+- Automation exact next action: Obtain a fresh exact candidate-wide review, publish its exact synchronized snapshot after successful CI, then reconcile V1-020 complete.
 <!-- AUTOMATION_STATUS_END -->

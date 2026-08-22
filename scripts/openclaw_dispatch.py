@@ -11,6 +11,7 @@ import sqlite3
 import stat
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -1622,61 +1623,125 @@ def preserved_final_assistant_output(usage_report: dict[str, Any]) -> str | None
             pass
         else:
             return None
-        database = STATE_DIR / "hermes-sessions" / session_id / "state.db"
-        connection = sqlite3.connect(f"{database.as_uri()}?mode=ro", uri=True)
-        try:
-            connection.execute("BEGIN")
-            row = connection.execute(
-                """SELECT role, content, finish_reason
-                   FROM messages
-                   WHERE active = 1
-                   ORDER BY id DESC
-                   LIMIT 1"""
-            ).fetchone()
 
-            object_identity = lambda value: (
+        def object_identity(value: os.stat_result) -> tuple[int, ...]:
+            return (
                 value.st_dev,
                 value.st_ino,
                 value.st_mode,
                 value.st_nlink,
             )
-            stable_identity = lambda value: (
+
+        def stable_identity(value: os.stat_result) -> tuple[int, ...]:
+            return (
                 *object_identity(value),
                 value.st_size,
                 value.st_mtime_ns,
                 value.st_ctime_ns,
             )
-            if STATE_DIR.is_symlink() or object_identity(os.fstat(state_fd)) != object_identity(
-                os.stat(STATE_DIR, follow_symlinks=False)
+
+        assert database_fd is not None
+        database_source_identity = stable_identity(os.fstat(database_fd))
+        wal_source_identity = (
+            stable_identity(os.fstat(wal_fd)) if wal_fd is not None else None
+        )
+
+        def snapshot_file(descriptor: int, expected_identity: tuple[int, ...]) -> bytes:
+            before = os.fstat(descriptor)
+            if stable_identity(before) != expected_identity:
+                raise OSError("Hermes SQLite evidence changed before snapshotting")
+            chunks: list[bytes] = []
+            offset = 0
+            while offset < before.st_size:
+                chunk = os.pread(
+                    descriptor, min(1024 * 1024, before.st_size - offset), offset
+                )
+                if not chunk:
+                    raise OSError("short Hermes SQLite evidence read")
+                chunks.append(chunk)
+                offset += len(chunk)
+            if stable_identity(os.fstat(descriptor)) != expected_identity:
+                raise OSError("Hermes SQLite evidence changed while snapshotting")
+            return b"".join(chunks)
+
+        database_snapshot = snapshot_file(database_fd, database_source_identity)
+        wal_snapshot = (
+            snapshot_file(wal_fd, wal_source_identity)
+            if wal_fd is not None and wal_source_identity is not None
+            else None
+        )
+        if stable_identity(os.fstat(database_fd)) != database_source_identity or (
+            wal_fd is not None
+            and wal_source_identity is not None
+            and stable_identity(os.fstat(wal_fd)) != wal_source_identity
+        ):
+            raise OSError("Hermes SQLite evidence changed across snapshot window")
+        with tempfile.TemporaryDirectory(
+            prefix="property-rental-review-"
+        ) as snapshot_dir:
+            snapshot_root = Path(snapshot_dir)
+
+            def write_snapshot(name: str, content: bytes) -> None:
+                flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+                if hasattr(os, "O_CLOEXEC"):
+                    flags |= os.O_CLOEXEC
+                snapshot_fd = os.open(snapshot_root / name, flags, 0o600)
+                try:
+                    view = memoryview(content)
+                    while view:
+                        written = os.write(snapshot_fd, view)
+                        if written < 1:
+                            raise OSError("short Hermes SQLite snapshot write")
+                        view = view[written:]
+                finally:
+                    os.close(snapshot_fd)
+
+            write_snapshot("state.db", database_snapshot)
+            if wal_snapshot is not None:
+                write_snapshot("state.db-wal", wal_snapshot)
+            connection = sqlite3.connect(snapshot_root / "state.db")
+            try:
+                connection.execute("BEGIN")
+                row = connection.execute(
+                    """SELECT role, content, finish_reason
+                       FROM messages
+                       WHERE active = 1
+                       ORDER BY id DESC
+                       LIMIT 1"""
+                ).fetchone()
+            finally:
+                connection.close()
+        if STATE_DIR.is_symlink() or object_identity(
+            os.fstat(state_fd)
+        ) != object_identity(os.stat(STATE_DIR, follow_symlinks=False)):
+            raise OSError("Hermes state root changed during recovery")
+        for chain_parent, component, child in directory_chain:
+            if object_identity(os.fstat(child)) != object_identity(
+                os.stat(component, dir_fd=chain_parent, follow_symlinks=False)
             ):
-                raise OSError("Hermes state root changed during recovery")
-            for chain_parent, component, child in directory_chain:
-                if object_identity(os.fstat(child)) != object_identity(
-                    os.stat(component, dir_fd=chain_parent, follow_symlinks=False)
-                ):
-                    raise OSError("Hermes session path changed during recovery")
-            assert database_fd is not None
-            if stable_identity(os.fstat(database_fd)) != stable_identity(
-                os.stat("state.db", dir_fd=session_fd, follow_symlinks=False)
-            ):
-                raise OSError("Hermes session database changed during recovery")
-            for name, descriptor, require_stability in (
-                ("state.db-wal", wal_fd, True),
-                ("state.db-shm", shm_fd, False),
-            ):
-                if descriptor is None:
-                    try:
-                        os.stat(name, dir_fd=session_fd, follow_symlinks=False)
-                    except FileNotFoundError:
-                        continue
-                    raise OSError("Hermes SQLite evidence appeared during recovery")
-                identity = stable_identity if require_stability else object_identity
-                if identity(os.fstat(descriptor)) != identity(
+                raise OSError("Hermes session path changed during recovery")
+        if stable_identity(os.fstat(database_fd)) != database_source_identity or stable_identity(
+            os.stat("state.db", dir_fd=session_fd, follow_symlinks=False)
+        ) != database_source_identity:
+            raise OSError("Hermes session database changed during recovery")
+        for name, descriptor, require_stability in (
+            ("state.db-wal", wal_fd, True),
+            ("state.db-shm", shm_fd, False),
+        ):
+            if descriptor is None:
+                try:
                     os.stat(name, dir_fd=session_fd, follow_symlinks=False)
-                ):
-                    raise OSError("Hermes SQLite evidence changed during recovery")
-        finally:
-            connection.close()
+                except FileNotFoundError:
+                    continue
+                raise OSError("Hermes SQLite evidence appeared during recovery")
+            identity = stable_identity if require_stability else object_identity
+            expected = wal_source_identity if require_stability else object_identity(
+                os.fstat(descriptor)
+            )
+            if expected is None or identity(os.fstat(descriptor)) != expected or identity(
+                os.stat(name, dir_fd=session_fd, follow_symlinks=False)
+            ) != expected:
+                raise OSError("Hermes SQLite evidence changed during recovery")
     except (OSError, sqlite3.Error):
         return None
     finally:

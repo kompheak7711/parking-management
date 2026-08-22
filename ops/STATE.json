@@ -551,6 +551,20 @@
       "clean_cumulative_publication_requires_synchronized_head": true,
       "clean_cumulative_publication_requires_exact_head_ci": true,
       "independent_review_requires_exact_base_to_head_path_equality": true,
+      "latest_review_session_id": "c9f1cca3f0401e4b84e623dc6f5568f7",
+      "latest_review_total_tokens": 51164,
+      "latest_review_tool_calls": 0,
+      "latest_review_findings": 1,
+      "latest_review_findings_corrected": 1,
+      "recovered_verdict_reads_only_validated_descriptor_snapshot": true,
+      "recovered_verdict_swap_and_restore_safe": true,
+      "full_window_review_session_id": "e0abcf5f8f0ba841a2a11ce3fa14f6bb",
+      "full_window_review_total_tokens": 54674,
+      "full_window_review_tool_calls": 0,
+      "full_window_review_findings": 1,
+      "full_window_review_findings_corrected": 1,
+      "recovered_verdict_database_and_wal_share_one_snapshot_window": true,
+      "recovered_verdict_inter_snapshot_checkpoint_fails_closed": true,
       "failed_session_id": "20260823_003208_38266a",
       "failure_category": "empty_or_invalid_task_delivery",
       "repair_scope": [
@@ -596,7 +610,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Verify and publish the clean cumulative-publication lifecycle repair, repeat exact V1-020 review, then reconcile V1-020 complete after exact-HEAD CI.",
+  "next_action": "Obtain a fresh exact V1-020 candidate-wide review, publish its synchronized snapshot after exact-HEAD CI, then reconcile V1-020 complete.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
