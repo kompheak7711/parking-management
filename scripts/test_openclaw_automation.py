@@ -48,6 +48,7 @@ from openclaw_automation import (
     persist_terminal_marker,
     post_restoration_scheduler_ok,
     preservation_evidence,
+    preserved_paths_fingerprint,
     publication_candidate_guard,
     release_attempt,
     relevant_processes,
@@ -885,6 +886,23 @@ class RepositoryEvidenceTests(unittest.TestCase):
         self.assertNotIn("ops/STATE.json", packet["directly_relevant_paths"])
         self.assertNotIn("ops/V1_ROADMAP.json", packet["directly_relevant_paths"])
         self.assertIn("substage_complete", packet["output_contract"]["required"])
+        self.assertEqual(
+            packet["output_contract"]["field_contracts"],
+            {
+                "stage_result": "completed",
+                "changed_paths": "array of every exact current candidate worktree path",
+                "verification": ["deferred_to_deterministic_supervisor"],
+                "blockers": [],
+                "exact_next_action": "one nonempty string",
+            },
+        )
+        self.assertTrue(
+            any(
+                "stage_result set to completed" in step
+                and '["deferred_to_deterministic_supervisor"]' in step
+                for step in context["shortest_execution_sequence"]
+            )
+        )
         spec = importlib.util.spec_from_file_location(
             "exact_sign_in_write_scope_dispatch", ROOT / "scripts/openclaw_dispatch.py"
         )
@@ -3275,6 +3293,196 @@ raise SystemExit(64)
             review_secret.exception.category,
             "secret_credential_or_protected_operation",
         )
+
+    def test_rejected_bounded_completion_contract_recovers_without_model_call(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            (repo / "ops").mkdir(exist_ok=True)
+            state_path = repo / "ops/STATE.json"
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "approval": {
+                            "implementation_started": False,
+                            "implementation_completed": False,
+                        }
+                    }
+                )
+                + "\n"
+            )
+            (repo / "candidate.txt").write_text("baseline\n")
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-m", "baseline"],
+                cwd=repo,
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
+            base = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=repo,
+                check=True,
+                text=True,
+                stdout=subprocess.PIPE,
+            ).stdout.strip()
+            state_path.write_text(
+                json.dumps(
+                    {
+                        "approval": {
+                            "implementation_started": True,
+                            "implementation_completed": False,
+                        }
+                    }
+                )
+                + "\n"
+            )
+            (repo / "candidate.txt").write_text("implemented\n")
+            dispatch_state = root / "dispatch-state"
+            spec = importlib.util.spec_from_file_location(
+                "contract_recovery_dispatch", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(dispatch_state),
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            paths = ["candidate.txt", "ops/STATE.json"]
+            fingerprint = repository_fingerprint(repo)
+            pending_fingerprint = "a" * 64
+            blocked_fingerprint = "b" * 64
+            session_id = "c" * 32
+            record = {
+                "candidate": "V1-019",
+                "candidate_base_commit": base,
+                "stage": "implementation",
+                "routing_revision": "v1-019-sign-in-context-routing-v5",
+                "completed_implementation_substages": [],
+                "expected_worktree_paths": paths,
+                "repository_fingerprint": fingerprint,
+                "last_failure_category": "empty_or_invalid_task_delivery",
+                "pending_recovery_marker_fingerprint": pending_fingerprint,
+                "pending_recovery_marker_status": "routing_recovery_pending",
+                "recovery_pending": True,
+                "recovery_generation": 5,
+                "bounded_recovery_exhausted": False,
+                "events": [],
+                "model_usage": [
+                    {
+                        "session_id": session_id,
+                        "stage_name": "implementation",
+                        "stage_result": "empty_or_invalid_task_delivery",
+                        "api_calls_completed": 2,
+                    }
+                ],
+            }
+            atomic_write_json(
+                dispatch_state
+                / "terminal/routing_recovery_pending"
+                / f"{pending_fingerprint}.json",
+                {
+                    "actionable_fingerprint": pending_fingerprint,
+                    "status": "routing_recovery_pending",
+                },
+            )
+            atomic_write_json(
+                dispatch_state / "terminal/blocked" / f"{blocked_fingerprint}.json",
+                {
+                    "actionable_fingerprint": blocked_fingerprint,
+                    "status": "blocked",
+                },
+            )
+            atomic_write_json(
+                dispatch_state / "last-failure.json",
+                {
+                    "category": "empty_or_invalid_task_delivery",
+                    "repository_fingerprint": fingerprint,
+                    "actionable_fingerprint": blocked_fingerprint,
+                },
+            )
+            raw = {
+                "stage_result": "implemented",
+                "changed_paths": paths,
+                "verification": "deferred_to_deterministic_supervisor",
+                "blockers": [],
+                "exact_next_action": "run deterministic supervisor verification",
+                "substage_complete": True,
+            }
+            original_usage = json.loads(json.dumps(record["model_usage"]))
+            repair_paths = [
+                "ops/AUTOMATION_TRACEABILITY.json",
+                "scripts/openclaw_automation.py",
+                "scripts/openclaw_dispatch.py",
+                "scripts/test_openclaw_automation.py",
+            ]
+            for path in repair_paths:
+                target = repo / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(f"repair {path}\n")
+            subprocess.run(["git", "add", *repair_paths], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-m", "repair"],
+                cwd=repo,
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
+            repair_head = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=repo,
+                check=True,
+                text=True,
+                stdout=subprocess.PIPE,
+            ).stdout.strip()
+            preserved_fingerprint = preserved_paths_fingerprint(repo, paths)
+            with mock.patch.object(dispatcher, "invoke_model") as invoke:
+                evidence = dispatcher.recover_preserved_substage_result(
+                    record,
+                    raw,
+                    session_id=session_id,
+                    expected_repair_head=repair_head,
+                    expected_preserved_fingerprint=preserved_fingerprint,
+                )
+            invoke.assert_not_called()
+            self.assertEqual(evidence["result"], "recovered_without_model_call")
+            self.assertEqual(evidence["model_calls_replayed"], 0)
+            self.assertEqual(evidence["post_result_deterministic_repairs"], [])
+            self.assertEqual(record["completed_implementation_substages"], ["sign_in"])
+            self.assertEqual(record["implementation_result"]["stage_result"], "completed")
+            self.assertEqual(
+                record["implementation_result"]["verification"],
+                ["deferred_to_deterministic_supervisor"],
+            )
+            self.assertEqual(record["model_usage"], original_usage)
+            self.assertEqual(record["stage"], "implementation")
+            self.assertEqual(record["candidate_base_commit"], repair_head)
+            self.assertFalse(record["recovery_pending"])
+            self.assertFalse((dispatch_state / "last-failure.json").exists())
+            self.assertTrue(
+                (
+                    dispatch_state
+                    / "terminal/recovery_succeeded"
+                    / f"{pending_fingerprint}.json"
+                ).exists()
+            )
+            recovered_blocked = (
+                dispatch_state
+                / "terminal/recovery_succeeded"
+                / f"{blocked_fingerprint}.json"
+            )
+            self.assertTrue(recovered_blocked.exists())
+            self.assertEqual(
+                json.loads(recovered_blocked.read_text())["recovered_session_id"],
+                session_id,
+            )
+            self.assertTrue(
+                (dispatch_state / "recovered-results" / f"{session_id}.json").exists()
+            )
 
     def test_completed_dirty_candidate_bootstraps_at_verification(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

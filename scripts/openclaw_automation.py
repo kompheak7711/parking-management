@@ -1832,6 +1832,13 @@ def task_packet(
                 "blockers",
                 "exact_next_action",
             ],
+            "field_contracts": {
+                "stage_result": "completed",
+                "changed_paths": "array of every exact current candidate worktree path",
+                "verification": ["deferred_to_deterministic_supervisor"],
+                "blockers": [],
+                "exact_next_action": "one nonempty string",
+            },
         },
     }
     if substage_id == "sign_in":
@@ -1856,7 +1863,7 @@ def task_packet(
                 "Add focused client and component tests, including keyboard/label/error announcement coverage and proof that no first-Owner route exists.",
                 "Do not invoke terminal, Git, npm, make, or any verification command; the execution-capable supervisor owns all tests and builds after this implementation result.",
                 "Patch ops/STATE.json without reading it so approval.implementation_started is true; for this non-final substage leave implementation_completed and publication_completed false.",
-                "Return the exact changed paths with verification set to deferred_to_deterministic_supervisor and substage_complete true when the bounded code and tests are ready.",
+                "Return stage_result set to completed, the exact changed paths, verification set to the one-item array [\"deferred_to_deterministic_supervisor\"], blockers set to [], and substage_complete true when the bounded code and tests are ready.",
             ],
         }
     if bounded_substage is not None:

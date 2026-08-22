@@ -32,6 +32,7 @@ from openclaw_automation import (
     persist_terminal_marker,
     preservation_evidence,
     process_fingerprint,
+    preserved_paths_fingerprint,
     release_attempt,
     relevant_processes,
     repeated_call_key,
@@ -1526,7 +1527,14 @@ def sanitized_implementation_result(
             "empty_or_invalid_task_delivery",
             "implementation result schema is not exact",
         )
-    if value.get("stage_result") not in {"passed", "complete", "completed"}:
+    stage_result = value.get("stage_result")
+    if stage_result == "implemented" and expected_substage is not None:
+        # Schema-five packets historically instructed a bounded Hermes substage to
+        # return "implemented" even though the receiver accepted "completed".
+        # Normalize only that bounded compatibility case; new packets require the
+        # canonical value explicitly.
+        stage_result = "completed"
+    if stage_result not in {"passed", "complete", "completed"}:
         raise AutomationError(
             "empty_or_invalid_task_delivery", "implementation did not report completion"
         )
@@ -1545,6 +1553,13 @@ def sanitized_implementation_result(
             "empty_or_invalid_task_delivery", "declared paths do not match the worktree"
         )
     verification = value.get("verification")
+    if (
+        expected_substage is not None
+        and verification == "deferred_to_deterministic_supervisor"
+    ):
+        # Match the exact legacy bounded-packet instruction without weakening the
+        # ordinary implementation contract.
+        verification = [verification]
     if not isinstance(verification, list) or not verification:
         raise AutomationError(
             "empty_or_invalid_task_delivery",
@@ -1561,7 +1576,7 @@ def sanitized_implementation_result(
             "implementation reported a blocker and cannot advance",
         )
     result = {
-        "stage_result": str(value["stage_result"]),
+        "stage_result": str(stage_result),
         "changed_paths": actual,
         "verification": safe_verification,
         "blockers": [],
@@ -1649,6 +1664,224 @@ def full_candidate_paths(record: dict[str, Any]) -> list[str]:
     ).stdout
     committed = [os.fsdecode(item) for item in result.split(b"\0") if item]
     return sorted(set(committed + changed_paths(REPO)))
+
+
+def recover_preserved_substage_result(
+    record: dict[str, Any],
+    value: dict[str, Any],
+    *,
+    session_id: str,
+    expected_repair_head: str,
+    expected_preserved_fingerprint: str,
+    post_result_deterministic_repairs: tuple[str, ...] = (),
+) -> dict[str, Any]:
+    """Advance one exact rejected bounded result without another model call.
+
+    This is intentionally narrower than normal implementation dispatch.  It is
+    available only when the latest persisted Hermes usage and failure prove that
+    the current bounded substage returned a completion contract which the former
+    packet/receiver mismatch rejected.
+    """
+    substage = current_bounded_substage(record)
+    if (
+        record.get("candidate") != "V1-019"
+        or record.get("stage") != "implementation"
+        or not substage
+        or record.get("last_failure_category") != "empty_or_invalid_task_delivery"
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "preserved-result recovery is not bound to the failed V1-019 implementation substage",
+        )
+    usages = record.get("model_usage")
+    latest_usage = usages[-1] if isinstance(usages, list) and usages else None
+    if (
+        not isinstance(latest_usage, dict)
+        or latest_usage.get("session_id") != session_id
+        or latest_usage.get("stage_name") != "implementation"
+        or latest_usage.get("stage_result") != "empty_or_invalid_task_delivery"
+        or latest_usage.get("api_calls_completed") in {None, 0}
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "preserved-result recovery does not match the latest failed Hermes session",
+        )
+    actual = changed_paths(REPO)
+    expected = sorted(record.get("expected_worktree_paths") or [])
+    scoped_follow_up_repairs = sorted(set(post_result_deterministic_repairs))
+    if scoped_follow_up_repairs not in ([], ["ops/traceability.json"]):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the post-result deterministic repair scope is not authorized",
+        )
+    prior_repository_fingerprint = record.get("repository_fingerprint")
+    current_head = git(REPO, "rev-parse", "HEAD")
+    base = str(record.get("candidate_base_commit") or "")
+    if (
+        not re.fullmatch(r"[0-9a-f]{40}", base)
+        or not re.fullmatch(r"[0-9a-f]{40}", expected_repair_head)
+        or not re.fullmatch(r"[0-9a-f]{64}", expected_preserved_fingerprint)
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the contract-repair publication identity is invalid",
+        )
+    repair_paths = sorted(
+        item
+        for item in git(
+            REPO, "diff", "--name-only", base, expected_repair_head, "--"
+        ).splitlines()
+        if item
+    )
+    exact_repair_paths = sorted(
+        [
+            "ops/AUTOMATION_TRACEABILITY.json",
+            "scripts/openclaw_automation.py",
+            "scripts/openclaw_dispatch.py",
+            "scripts/test_openclaw_automation.py",
+        ]
+    )
+    if (
+        current_head != expected_repair_head
+        or repair_paths != exact_repair_paths
+        or actual != expected
+        or preserved_paths_fingerprint(REPO, actual)
+        != expected_preserved_fingerprint
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the published contract repair or preserved worktree is not exact",
+        )
+    try:
+        state = json.loads((REPO / "ops/STATE.json").read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the preserved compact state is unreadable",
+        ) from error
+    approval = state.get("approval") or {}
+    if approval.get("implementation_started") is not True or approval.get(
+        "implementation_completed"
+    ) is True:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the preserved non-final V1-019 substage state is not exact",
+        )
+    result = sanitized_implementation_result(
+        value, actual, expected_substage=str(substage["id"])
+    )
+
+    failure_path = STATE_DIR / "last-failure.json"
+    try:
+        failure = json.loads(failure_path.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the rejected-result failure evidence is unavailable",
+        ) from error
+    actionable = failure.get("actionable_fingerprint")
+    blocked = STATE_DIR / "terminal" / "blocked" / f"{actionable}.json"
+    try:
+        blocked_marker = json.loads(blocked.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the rejected-result terminal marker is unavailable",
+        ) from error
+    if (
+        failure.get("category") != "empty_or_invalid_task_delivery"
+        or failure.get("repository_fingerprint") != prior_repository_fingerprint
+        or not isinstance(actionable, str)
+        or not isinstance(blocked_marker, dict)
+        or blocked_marker.get("actionable_fingerprint") != actionable
+        or blocked_marker.get("status") != "blocked"
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the rejected-result terminal evidence is not exact",
+        )
+
+    resolve_pending_routing_recovery(record, outcome="succeeded")
+    target = STATE_DIR / "terminal" / "recovery_succeeded" / blocked.name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    blocked.replace(target)
+    blocked_marker.update(
+        {
+            "status": "recovery_succeeded",
+            "resolved_at": utc_now(),
+            "recovered_session_id": session_id,
+            "model_calls_replayed": 0,
+        }
+    )
+    atomic_write_json(target, blocked_marker)
+    archive = STATE_DIR / "resolved-failures" / f"{digest(failure)[:20]}.json"
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    failure_path.replace(archive)
+    failure.update(
+        {
+            "status": "recovery_succeeded",
+            "resolved_at": utc_now(),
+            "recovered_session_id": session_id,
+            "model_calls_replayed": 0,
+        }
+    )
+    atomic_write_json(archive, failure)
+
+    completed = list(record.get("completed_implementation_substages") or [])
+    completed.append(str(substage["id"]))
+    record.setdefault("events", []).append(
+        {
+            "stage": "implementation_contract_recovery",
+            "result": "passed",
+            "bounded_substage": str(substage["id"]),
+            "session_id": session_id,
+            "model_calls_replayed": 0,
+            "rejected_contract_recovered": True,
+            "post_result_deterministic_repairs": scoped_follow_up_repairs,
+            "actionable_fingerprint": actionable,
+            "repository_fingerprint": repository_fingerprint(REPO),
+        }
+    )
+    record.update(
+        {
+            "stage": "implementation",
+            "candidate_base_commit": current_head,
+            "implementation_complete": False,
+            "implementation_result": result,
+            "completed_implementation_substages": completed,
+            "scoped_changed_paths": actual,
+            "expected_worktree_paths": actual,
+            "repository_fingerprint": repository_fingerprint(REPO),
+            "repair_failure": None,
+            "failed_check": None,
+            "last_failure_category": None,
+            "stop_reason": None,
+            "recovery_pending": False,
+            "recovery_generation": 0,
+            "bounded_recovery_exhausted": False,
+            "product_code_modification_permitted": True,
+            "publication_substage": None,
+            "reviewed_paths": [],
+            "reviewed_repository_fingerprint": None,
+        }
+    )
+    save_stage(record)
+    recovery_evidence = {
+        "schema_version": 1,
+        "candidate": "V1-019",
+        "bounded_substage": str(substage["id"]),
+        "session_id": session_id,
+        "result": "recovered_without_model_call",
+        "model_calls_replayed": 0,
+        "post_result_deterministic_repairs": scoped_follow_up_repairs,
+        "repository_fingerprint": record["repository_fingerprint"],
+        "completed_implementation_substages": completed,
+        "timestamp": utc_now(),
+    }
+    atomic_write_json(
+        STATE_DIR / "recovered-results" / f"{session_id}.json", recovery_evidence
+    )
+    return recovery_evidence
 
 
 def verified_continuation_handoff(
