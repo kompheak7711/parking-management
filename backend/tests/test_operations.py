@@ -104,9 +104,13 @@ def test_unexpected_exception_log_uses_safe_type_without_exception_diagnostic() 
         }.items()
     )
     serialized = stream.getvalue()
+    diagnostic_fields = [
+        {key: value for key, value in entry.items() if key not in {"timestamp", "duration_ms"}}
+        for entry in logs
+    ]
     assert "credential-secret" not in serialized
     assert "known" not in serialized
-    assert "999" not in serialized
+    assert "999" not in json.dumps(diagnostic_fields)
     assert "private-customer" not in serialized
     assert "Traceback" not in serialized
 

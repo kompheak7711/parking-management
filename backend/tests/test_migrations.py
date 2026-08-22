@@ -1058,9 +1058,13 @@ def test_recovery_code_consumption_adapter_is_atomic_and_single_use_on_postgresq
                 INSERT INTO app.recovery_code_sets (
                     set_id, actor_id, created_by_actor_id, provenance
                 ) VALUES (%s, %s, %s, 'protected-enrollment')
+                RETURNING created_at
                 """,
                 (set_id, actor_id, actor_id),
             )
+            created_row = cursor.fetchone()
+            assert created_row is not None
+            set_created_at = cast(datetime, created_row[0])
             cursor.executemany(
                 """
                 INSERT INTO app.recovery_codes (
@@ -1085,9 +1089,16 @@ def test_recovery_code_consumption_adapter_is_atomic_and_single_use_on_postgresq
                     ),
                 ],
             )
+            cursor.execute(
+                "SELECT max(created_at) FROM app.recovery_codes WHERE set_id = %s",
+                (set_id,),
+            )
+            code_created_row = cursor.fetchone()
+            assert code_created_row is not None and code_created_row[0] is not None
+            code_created_at = cast(datetime, code_created_row[0])
         connection.commit()
 
-    consumed_at = datetime.now(UTC)
+    consumed_at = max(set_created_at, code_created_at) + timedelta(microseconds=1)
     with psycopg.connect(_required_url(RUNTIME_URL_ENV)) as runtime_connection:
         audit_evidence = []
 
@@ -1175,9 +1186,13 @@ def test_recovery_code_regeneration_is_atomic_and_invalidates_prior_set_on_postg
                 INSERT INTO app.recovery_code_sets (
                     set_id, actor_id, created_by_actor_id, provenance
                 ) VALUES (%s, %s, %s, 'protected-enrollment')
+                RETURNING created_at
                 """,
                 (prior_set_id, actor_id, actor_id),
             )
+            created_row = cursor.fetchone()
+            assert created_row is not None
+            prior_set_created_at = cast(datetime, created_row[0])
             cursor.execute(
                 """
                 INSERT INTO app.recovery_codes (
@@ -1195,7 +1210,7 @@ def test_recovery_code_regeneration_is_atomic_and_invalidates_prior_set_on_postg
             )
         connection.commit()
 
-    occurred_at = datetime.now(UTC)
+    occurred_at = prior_set_created_at + timedelta(microseconds=1)
     replacement = RecoveryCodeSetRecord(
         set_id=replacement_set_id,
         target_actor_id=actor_id,

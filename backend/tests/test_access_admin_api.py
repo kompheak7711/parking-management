@@ -3,6 +3,7 @@
 import asyncio
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
+from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -16,6 +17,8 @@ from property_rental.access_admin_api import (
     AccessAdministrationConflict,
     AccessAdministrationFlow,
     AdministrationAuditContext,
+    AdministrativeRecoveryView,
+    AuthorizationHistoryView,
     CapabilityView,
     RoleAssignmentView,
     RoleBundleView,
@@ -301,6 +304,67 @@ class RecordingAccessAdministrationFlow(AccessAdministrationFlow):
             property_id=property_id,
         )
 
+    def list_authorization_history(
+        self,
+        *,
+        property_id: str,
+        cursor: str | None,
+        limit: int,
+        actor_id: str,
+        request_id: str,
+    ) -> tuple[tuple[AuthorizationHistoryView, ...], str | None]:
+        self.calls.append(
+            (
+                "list_authorization_history",
+                (property_id, cursor, limit, actor_id, request_id),
+            )
+        )
+        return (
+            (
+                AuthorizationHistoryView(
+                    event_id=UUID("55555555-5555-4555-8555-555555555555"),
+                    property_id=property_id,
+                    occurred_at=datetime(2026, 8, 22, 10, 0, tzinfo=UTC),
+                    action="role_bundle_assigned",
+                    actor_id=actor_id,
+                    target_id=str(USER_ID),
+                    outcome="completed",
+                ),
+            ),
+            None,
+        )
+
+    def administratively_recover_user(
+        self,
+        *,
+        user_id: UUID,
+        property_id: str,
+        new_password: str,
+        reset_mfa: bool,
+        reason: str,
+        audit_context: AdministrationAuditContext,
+    ) -> AdministrativeRecoveryView:
+        self.calls.append(
+            (
+                "administratively_recover_user",
+                (
+                    user_id,
+                    property_id,
+                    new_password,
+                    reset_mfa,
+                    reason,
+                    audit_context.actor_id,
+                    audit_context.request_id,
+                ),
+            )
+        )
+        return AdministrativeRecoveryView(
+            user_id=user_id,
+            password_changed=True,
+            mfa_reset=reset_mfa,
+            sessions_revoked=3,
+        )
+
 
 class ConflictingAccessAdministrationFlow(RecordingAccessAdministrationFlow):
     def create_role_bundle(
@@ -503,6 +567,8 @@ def test_administration_openapi_exposes_only_api_079_080_operations_and_safe_fie
         ("/api/v1/properties/{property_id}/role-bundles", "post"),
         ("/api/v1/role-bundles/{role_bundle_id}", "patch"),
         ("/api/v1/users/{user_id}/role-assignments", "post"),
+        ("/api/v1/properties/{property_id}/authorization-history", "get"),
+        ("/api/v1/users/{user_id}/administrative-recovery", "post"),
     }
     actual_operations = {
         (path, method)
@@ -1265,3 +1331,77 @@ def test_client_role_capability_and_property_headers_never_create_authority() ->
     assert response.status_code == 401
     assert flow.calls == []
     assert ACTOR_ID not in response.text
+
+
+def test_authorized_administrator_can_inspect_secret_free_authorization_history() -> None:
+    flow = RecordingAccessAdministrationFlow()
+
+    response = request(
+        authorized_app(flow),
+        "GET",
+        f"/api/v1/properties/{PROPERTY_ID}/authorization-history?limit=50",
+        request_id="authorization-history",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"] == [
+        {
+            "event_id": "55555555-5555-4555-8555-555555555555",
+            "property_id": PROPERTY_ID,
+            "occurred_at": "2026-08-22T10:00:00Z",
+            "action": "role_bundle_assigned",
+            "actor_id": ACTOR_ID,
+            "target_id": str(USER_ID),
+            "outcome": "completed",
+        }
+    ]
+    assert "password" not in response.text.lower()
+    assert (
+        "list_authorization_history",
+        (PROPERTY_ID, None, 50, ACTOR_ID, "authorization-history"),
+    ) in flow.calls
+
+
+def test_administrative_recovery_requires_scope_csrf_and_explicit_audit_reason() -> None:
+    flow = RecordingAccessAdministrationFlow()
+    payload = {
+        "new_password": "a sufficiently long replacement password",
+        "reset_mfa": True,
+        "reason": "approved account recovery",
+    }
+
+    response = request(
+        authorized_app(flow),
+        "POST",
+        f"/api/v1/users/{USER_ID}/administrative-recovery",
+        payload=payload,
+        request_id="administrative-recovery",
+    )
+    denied = request(
+        authorized_app(flow, object_scopes=()),
+        "POST",
+        f"/api/v1/users/{USER_ID}/administrative-recovery",
+        payload=payload,
+        request_id="administrative-recovery-denied",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["data"] == {
+        "user_id": str(USER_ID),
+        "password_changed": True,
+        "mfa_reset": True,
+        "sessions_revoked": 3,
+    }
+    assert denied.status_code == 403
+    assert (
+        "administratively_recover_user",
+        (
+            USER_ID,
+            PROPERTY_ID,
+            "a sufficiently long replacement password",
+            True,
+            "approved account recovery",
+            ACTOR_ID,
+            "administrative-recovery",
+        ),
+    ) in flow.calls

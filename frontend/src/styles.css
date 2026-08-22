@@ -57,12 +57,276 @@ h1 {
 }
 
 .app-content {
-  padding-block: 2rem;
+  display: grid;
+  place-items: start center;
+  padding-block: 3rem;
 }
 
 .app-content p {
   max-width: 42rem;
   line-height: 1.6;
+}
+
+.auth-panel,
+.workspace-panel {
+  width: min(100%, 30rem);
+  padding: clamp(1.5rem, 5vw, 2.5rem);
+  border: 1px solid #c7ced8;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  box-shadow: 0 0.75rem 2rem rgb(23 32 51 / 8%);
+}
+
+.workspace-panel {
+  width: min(100%, 52rem);
+}
+
+.auth-panel h2,
+.workspace-panel h2 {
+  margin: 0.25rem 0 0;
+  font-size: 2rem;
+}
+
+.panel-introduction {
+  margin-block: 0.75rem 1.5rem;
+  color: #465367;
+}
+
+.form-stack,
+.form-field {
+  display: grid;
+}
+
+.form-stack {
+  gap: 1.25rem;
+}
+
+.form-field {
+  gap: 0.375rem;
+}
+
+.form-field label {
+  font-weight: 700;
+}
+
+.form-field input,
+.form-field select {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #68758a;
+  border-radius: 0.375rem;
+  color: inherit;
+  background: #ffffff;
+  font: inherit;
+}
+
+.form-field input[aria-invalid="true"] {
+  border-color: #a32222;
+}
+
+.form-stack button,
+.auth-panel > button,
+.workspace-panel button {
+  min-height: 2.75rem;
+  padding: 0.625rem 1rem;
+  border: 0;
+  border-radius: 0.375rem;
+  color: #ffffff;
+  background: #174f85;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.form-stack button:disabled,
+.auth-panel > button:disabled,
+.workspace-panel button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.authentication-error {
+  margin: 0;
+  padding: 0.75rem;
+  border-left: 0.25rem solid #a32222;
+  color: #741717;
+  background: #fff1f1;
+}
+
+.global-status {
+  width: min(100%, 52rem);
+  margin: 0 0 1rem;
+  padding: 0.875rem 1rem;
+  border-left: 0.25rem solid #26734d;
+  color: #175236;
+  background: #edf8f2;
+}
+
+.panel-help {
+  margin: 1.5rem 0 0;
+  color: #465367;
+  font-size: 0.9375rem;
+}
+
+.app-content {
+  align-content: start;
+}
+
+.form-stack fieldset {
+  display: grid;
+  gap: 0.625rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid #c7ced8;
+  border-radius: 0.375rem;
+}
+
+.form-stack fieldset label {
+  display: flex;
+  gap: 0.625rem;
+  align-items: center;
+}
+
+.form-stack legend {
+  padding-inline: 0.375rem;
+  font-weight: 700;
+}
+
+.one-time-material {
+  display: grid;
+  gap: 0.75rem;
+  margin-block: 1.25rem;
+  padding: 1rem;
+  border: 0.125rem solid #9b6b13;
+  border-radius: 0.375rem;
+  background: #fff8e8;
+}
+
+.one-time-material p {
+  margin: 0;
+}
+
+.one-time-material code {
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.workspace-panel {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.workspace-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: start;
+  justify-content: space-between;
+}
+
+.information-card {
+  padding: 1.25rem;
+  border: 1px solid #c7ced8;
+  border-radius: 0.5rem;
+  background: #f9fafb;
+}
+
+.information-card h3 {
+  margin-top: 0;
+}
+
+.detail-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+}
+
+.detail-list div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.detail-list dt {
+  color: #465367;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.detail-list dd {
+  margin: 0;
+}
+
+.nested-form {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #c7ced8;
+}
+
+.inline-form {
+  grid-template-columns: minmax(12rem, 1fr) auto;
+  align-items: end;
+}
+
+.administration-grid {
+  display: grid;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.administration-grid > section {
+  padding-top: 1.25rem;
+  border-top: 1px solid #c7ced8;
+}
+
+.record-list {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.record-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem;
+  border: 1px solid #d9dee6;
+  border-radius: 0.375rem;
+  background: #ffffff;
+}
+
+.record-list li > div:first-child {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.record-list span,
+.muted {
+  color: #465367;
+  font-size: 0.875rem;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.confirmation-panel {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 0.125rem solid #a32222;
+  border-radius: 0.375rem;
+  background: #fff1f1;
+}
+
+@media (max-width: 36rem) {
+  .inline-form {
+    grid-template-columns: 1fr;
+  }
 }
 
 .app-footer {

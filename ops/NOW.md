@@ -1,62 +1,28 @@
-# V1-019 sign-in cleanup comparison follow-up — verified; publication pending
+# V1-019 authentication and account administration UI — verified for publication
 
-- Objective: recover only the exhausted bounded V1-019 `sign_in` route under the
-  Owner's direct-takeover authorization. Product and canonical files remain unchanged.
-- Baseline: synchronized `d6eb7e73610b2a72cf38f4b32468226e9e76a436` on
-  `implementation/foundation`; supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb`
-  remains disabled during repair and publication.
-- Exact incident: three preserved Hermes sessions ended with zero completed substages and
-  zero product paths. The last two repeated the same ten-file full-read batch, returned the
-  complete 36,000-byte session allowance, and then reached the unchanged 60,000-token guard.
-- Packet repair: schema 5 deterministically embeds the AST-derived login contract, the
-  aggregate-bounded current frontend evidence, exact requirement excerpts, five frontend read paths,
-  eight exact write paths, and the shortest sign-in implementation sequence.
-- Guard repair: the full provider-returned tool-call batch is reserved atomically before any
-  tool executes. Oversized batches return valid structured results; an identical retry becomes
-  a separate context-materialization checkpoint and consumes no ceiling-recovery attempt.
-  Reservation identity mirrors every Hermes schema coercion. Policy-rejected and unreserved calls
-  fail closed before another provider call, and parallel rejection controls reserve and charge the
-  same cumulative tool-context allowance atomically.
-- Recovery repair: the exact exhausted candidate, attempt, failure, marker, manifests, tasks,
-  budgets, usage, and session diagnostics are archived before this authorization is consumed
-  once. Unknown/protected failures cannot reuse it. Materialization-marker reentry is supported.
-- Live follow-up: the first green restoration metadata run `32562545129` remained fail-closed
-  because a compact live JSON marker and its indented archive were compared byte-for-byte. They
-  were semantically identical. Cleanup now validates strict regular-file containment and compares
-  parsed objects, while the exact partially completed transition can resume after follow-up CI.
-  Independent review found one broken-symlink edge; it is corrected, regression-covered, and the
-  final verdict is PASS with no material findings.
-- Follow-up verification: PASS, complete profile 15/15 with the same 333 backend, 105
-  disposable PostgreSQL, 3 frontend, and 124 automation test results.
-- Metadata retry: the green follow-up `e0585c7` stopped before cleanup because compact state still
-  described the prior `cb5d3ec` metadata as restored. This bounded correction explicitly returns
-  the repair lifecycle to `published_awaiting_post_exit_restoration`; it does not broaden generic
-  supersession, and a new exact metadata commit plus CI gate remains mandatory.
-- Idempotent marker retry: green lifecycle correction `bcbf564` then stopped because the existing
-  POST_EXIT marker made only `ops/STATE.json` change while the code demanded both metadata paths.
-  The path set is now computed exactly: STATE is mandatory, NOW is included only when changed, and
-  either exact commit shape must still pass its own CI gate.
-- Scope repair: the Hermes manifest enforces the packet's exact sign-in write allowlist.
-  The login URL is derived from router and decorator AST literals and fails closed on drift.
-- Verification: PASS, complete profile 15/15. Backend 333 passed with 105 expected local
-  database skips; disposable PostgreSQL 105 passed; frontend 3 passed; automation 124 passed;
-  format, lint, typing, builds, audits, traceability, JSON, publication guards, and diff checks
-  passed. Evidence: `/private/tmp/property-rental-v1-019-routing-v4-verification-final.json`.
-- Independent review: nine passes found thirty findings (sixteen P1, twelve P2, two P3);
-  all were corrected and regression-covered. The latest pass closed production middleware
-  fail-open behavior, interrupted-attempt and partial-work restoration reentry, crash-atomic
-  marker resolution, exact incident-session validation, and artifact symlink escape handling,
-  including symlinked parent directories. Final independent verdict: PASS, no material findings.
-- Safety: token ceiling remains exactly 60,000. V1-020 has not started. No product attempt or
-  prior historical evidence was deleted or rewritten.
-- Exact next action: publish this idempotent metadata-path correction, require successful
-  GitHub Actions, then create and verify new restoration metadata before resuming exact cleanup.
+- Candidate: `V1-019` — Authentication and account administration UI.
+- Authorization: existing durable V1 authorization; no renewed Owner decision was consumed.
+- Implemented: local sign-in, generic enumeration-safe failure, TOTP enrollment and challenge,
+  one-time recovery-code issuance/replacement and challenge, session restoration/expiry, logout,
+  recent reauthentication, capability-checked account administration, complete paginated
+  authorization history, role-bundle configuration, Owner-only administrative recovery, account
+  disablement, and applicable-session revocation.
+- Safety: no first-Owner web route, no SMS or security-question flow, no role-label authority,
+  no persistent display of MFA/recovery material, explicit UTC timestamps, and explicit
+  consequence confirmation for protected account/session/recovery commands.
+- Automation recovery: the exact stored Hermes `sign_in` result from session
+  `39182e96abab6d976b148209cb6a6336` was recovered without another model call after the
+  sender/receiver JSON contract mismatch was repaired and published at `347954b`.
+- Verification: complete profile PASS 15/15; backend 337 passed with 105 expected local
+  environment skips; disposable PostgreSQL 105 passed; frontend 32 passed; automation routing
+  127 passed. Local review findings were corrected. The 60,000-token ceiling remains unchanged.
+- Scheduler: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains disabled while this
+  repository-bound direct-takeover task verifies and publishes V1-019.
+- V1-020: not started.
+- Exact next action: publish the reviewed V1-019 candidate, require successful GitHub Actions,
+  reconcile durable state, and restore the existing supervisor without overlap.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-019 approved and active; product implementation has not started.
-- Automation exact next action: publish the cleanup-comparison follow-up, then resume only the already-consumed fresh V1-019 sign-in sequence.
+- Automation candidate state: V1-019 locally verified and reviewed; publication pending.
+- Automation exact next action: publish, prove CI, reconcile, then restore the supervisor.
 <!-- AUTOMATION_STATUS_END -->
-<!-- POST_EXIT_RESTORATION_BEGIN -->
-- Post-exit restoration metadata is published; the existing supervisor remains disabled until the continuation enables it.
-- V1-019 remains the only active candidate; V1-020 successor activation is held.
-<!-- POST_EXIT_RESTORATION_END -->

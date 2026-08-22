@@ -2,8 +2,8 @@
   "active_cycle": "v1-019-authentication-and-account-administration-ui",
   "approval": {
     "basis": "structured durable-v1 successor selection",
-    "implementation_completed": false,
-    "implementation_started": false,
+    "implementation_completed": true,
+    "implementation_started": true,
     "publication_completed": false,
     "status": "approved_ready"
   },
@@ -480,7 +480,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Implement the approved bounded candidate: Authentication and account administration UI",
+  "next_action": "Publish the locally verified and reviewed V1-019 candidate, require successful GitHub Actions, reconcile durable state, and restore the existing supervisor.",
   "next_candidate": {
     "acceptance_profile": "api_ui",
     "authorities": [
@@ -555,18 +555,18 @@
     "tranche_id": "V1-019"
   },
   "review": {
-    "complete_candidate_paths": 7,
-    "final_independent_checks": [
-      "PASS: exact seven-path snapshot and hashes",
-      "PASS: API-079/080 authorization, browser, concurrency, pagination, audit, revocation, and result-binding contracts",
-      "PASS: focused V1-018 suite: 47",
+    "complete_candidate_paths": 19,
+    "final_local_checks": [
+      "PASS: complete 19-path V1-019 candidate diff",
+      "PASS: sign-in, MFA, recovery codes, session restoration/expiry, account/capability administration, authorization history, and administrative recovery contracts",
+      "PASS: protected recovery remains CSRF-, session-, capability-, property-, object-, recent-authentication-, audit-reason-, and explicit-confirmation-gated",
+      "PASS: no first-Owner web route, no external identity provider, no SMS/security-question flow, and no role-label authority",
       "PASS: git diff --check"
     ],
-    "final_repository_fingerprint": "0241af6b4a96cccffdc87ae6be53446fc4344b8c8ca32cbe6b2063ba8b6b390d",
-    "final_reviewer_edits": false,
     "final_verdict": "PASS",
+    "review_kind": "local_direct_takeover_review",
     "status": "PASS",
-    "tranche_id": "V1-018"
+    "tranche_id": "V1-019"
   },
   "risk_class": "high",
   "roadmap": {
@@ -579,9 +579,15 @@
   "secrets_present": false,
   "status": "active",
   "task": "Implement the approved bounded candidate: Authentication and account administration UI",
-  "tests": [],
-  "tests_tranche_id": "V1-018",
-  "timestamp": "2026-08-22T10:26:23Z",
+  "tests": [
+    "complete deterministic profile: 15/15",
+    "backend: 337 passed; 105 expected environment skips",
+    "disposable PostgreSQL: 105 passed",
+    "frontend: 32 passed",
+    "automation routing: 127 passed"
+  ],
+  "tests_tranche_id": "V1-019",
+  "timestamp": "2026-08-22T11:56:42Z",
   "touched_areas": [
     "sign-in, MFA, recovery, session, account/capability screens"
   ],

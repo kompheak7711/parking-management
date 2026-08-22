@@ -4,6 +4,7 @@ import asyncio
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Literal
+from uuid import UUID
 
 import httpx
 import pytest
@@ -18,6 +19,7 @@ from property_rental.auth_api import (
     AuthenticationResult,
     MfaEnrollmentResult,
     ReauthenticationResult,
+    RecoveryCodeSetResult,
     SessionView,
 )
 from property_rental.settings import Settings
@@ -85,6 +87,23 @@ class StubAuthenticationFlow(AuthenticationFlow):
         second_factor_code: str | None,
         request_id: str,
     ) -> ReauthenticationResult:
+        raise NotImplementedError
+
+    def issue_recovery_codes(
+        self,
+        *,
+        session_token: str,
+        request_id: str,
+    ) -> RecoveryCodeSetResult:
+        raise NotImplementedError
+
+    def regenerate_recovery_codes(
+        self,
+        *,
+        session_token: str,
+        prior_set_id: UUID,
+        request_id: str,
+    ) -> RecoveryCodeSetResult:
         raise NotImplementedError
 
 
@@ -624,6 +643,84 @@ def test_reauthentication_records_additional_evidence_without_granting_authority
         "__Host-prm_csrf=rotated-csrf-secret" in value
         for value in response.headers.get_list("set-cookie")
     )
+
+
+def test_recovery_code_sets_are_returned_once_only_through_protected_session_routes() -> None:
+    prior_set_id = UUID("11111111-1111-4111-8111-111111111111")
+    replacement_set_id = UUID("22222222-2222-4222-8222-222222222222")
+
+    class RecoveryCodesFlow(StubAuthenticationFlow):
+        def issue_recovery_codes(
+            self,
+            *,
+            session_token: str,
+            request_id: str,
+        ) -> RecoveryCodeSetResult:
+            assert session_token == "session-token-secret"
+            assert request_id == "issue-recovery-codes"
+            return RecoveryCodeSetResult(set_id=prior_set_id, codes=("one-time-1", "one-time-2"))
+
+        def regenerate_recovery_codes(
+            self,
+            *,
+            session_token: str,
+            prior_set_id: UUID,
+            request_id: str,
+        ) -> RecoveryCodeSetResult:
+            assert session_token == "session-token-secret"
+            assert prior_set_id == UUID("11111111-1111-4111-8111-111111111111")
+            assert request_id == "replace-recovery-codes"
+            return RecoveryCodeSetResult(
+                set_id=replacement_set_id,
+                codes=("replacement-1", "replacement-2"),
+            )
+
+    app = create_app(
+        Settings(allowed_browser_origin="https://property.test"),
+        authentication_flow=RecoveryCodesFlow(authenticated_result()),
+    )
+    protected_headers = {
+        "Cookie": ("__Host-prm_session=session-token-secret; __Host-prm_csrf=csrf-token-secret"),
+        "Origin": "https://property.test",
+        "X-CSRF-Token": "csrf-token-secret",
+    }
+    issued = request(
+        app,
+        "POST",
+        "/api/v1/auth/recovery-codes",
+        headers={**protected_headers, "X-Request-ID": "issue-recovery-codes"},
+    )
+    replaced = request(
+        app,
+        "POST",
+        "/api/v1/auth/recovery-codes/regenerate",
+        json={"prior_set_id": str(prior_set_id)},
+        headers={**protected_headers, "X-Request-ID": "replace-recovery-codes"},
+    )
+
+    assert issued.status_code == 200
+    assert issued.headers["Cache-Control"] == "no-store"
+    assert issued.json()["data"] == {
+        "set_id": str(prior_set_id),
+        "codes": ["one-time-1", "one-time-2"],
+    }
+    assert replaced.status_code == 200
+    assert replaced.headers["Cache-Control"] == "no-store"
+    assert replaced.json()["data"] == {
+        "set_id": str(replacement_set_id),
+        "codes": ["replacement-1", "replacement-2"],
+    }
+
+
+def test_recovery_code_routes_reject_missing_browser_protection_before_flow() -> None:
+    app = create_app(
+        Settings(allowed_browser_origin="https://property.test"),
+        authentication_flow=StubAuthenticationFlow(authenticated_result()),
+    )
+
+    response = request(app, "POST", "/api/v1/auth/recovery-codes")
+
+    assert response.status_code == 403
 
 
 def test_authentication_routes_fail_closed_when_no_runtime_flow_is_configured() -> None:

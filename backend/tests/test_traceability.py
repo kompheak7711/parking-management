@@ -122,7 +122,7 @@ V1_017_SECURITY_CLAUSE_TESTS: Final = {
         "test_closed_bootstrap_audits_through_preflight_without_reading_or_generating_secrets",
     ),
     "no-bootstrap-or-reset-http-backdoor": (
-        "test_fastapi_openapi_inventory_has_no_bootstrap_or_reset_http_route",
+        "test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_reset_route",
     ),
     "recovery-cannot-create-ordinary-owner-reset": (
         "test_recovery_code_orchestration_cannot_be_used_as_an_owner_reset",

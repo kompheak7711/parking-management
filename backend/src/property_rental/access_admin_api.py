@@ -2,6 +2,7 @@
 
 import hmac
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Annotated, Final, Literal, Protocol
 from uuid import UUID
 
@@ -74,6 +75,29 @@ class RoleAssignmentView:
     user_id: UUID
     role_bundle_id: UUID
     property_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class AuthorizationHistoryView:
+    """Bounded secret-free authorization event exposed to an authorized administrator."""
+
+    event_id: UUID
+    property_id: str
+    occurred_at: datetime
+    action: str
+    actor_id: str
+    target_id: str
+    outcome: Literal["completed", "rejected"]
+
+
+@dataclass(frozen=True, slots=True)
+class AdministrativeRecoveryView:
+    """Non-secret result of an audited Owner-authorized account recovery."""
+
+    user_id: UUID
+    password_changed: bool
+    mfa_reset: bool
+    sessions_revoked: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -186,6 +210,27 @@ class AccessAdministrationFlow(Protocol):
         property_id: str,
         audit_context: AdministrationAuditContext,
     ) -> RoleAssignmentView: ...
+
+    def list_authorization_history(
+        self,
+        *,
+        property_id: str,
+        cursor: str | None,
+        limit: int,
+        actor_id: str,
+        request_id: str,
+    ) -> tuple[tuple[AuthorizationHistoryView, ...], str | None]: ...
+
+    def administratively_recover_user(
+        self,
+        *,
+        user_id: UUID,
+        property_id: str,
+        new_password: str,
+        reset_mfa: bool,
+        reason: str,
+        audit_context: AdministrationAuditContext,
+    ) -> AdministrativeRecoveryView: ...
 
 
 class AccessAdministrationUnavailable(RuntimeError):
@@ -324,6 +369,31 @@ class UnavailableAccessAdministrationFlow:
         self._unavailable()
         raise AssertionError
 
+    def list_authorization_history(
+        self,
+        *,
+        property_id: str,
+        cursor: str | None,
+        limit: int,
+        actor_id: str,
+        request_id: str,
+    ) -> tuple[tuple[AuthorizationHistoryView, ...], str | None]:
+        self._unavailable()
+        raise AssertionError
+
+    def administratively_recover_user(
+        self,
+        *,
+        user_id: UUID,
+        property_id: str,
+        new_password: str,
+        reset_mfa: bool,
+        reason: str,
+        audit_context: AdministrationAuditContext,
+    ) -> AdministrativeRecoveryView:
+        self._unavailable()
+        raise AssertionError
+
 
 class UserCreateRequest(BaseModel):
     """Bounded profile and MFA policy for a new account; credentials are separate."""
@@ -393,6 +463,16 @@ class RoleAssignmentRequest(BaseModel):
     role_bundle_id: UUID
 
 
+class AdministrativeRecoveryRequest(BaseModel):
+    """Explicit protected credential/MFA recovery request with an audit reason."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    new_password: str = Field(min_length=15, max_length=128)
+    reset_mfa: bool = False
+    reason: BoundedName
+
+
 class UserAccountData(BaseModel):
     """Safe account representation."""
 
@@ -449,6 +529,27 @@ class SessionRevocationData(BaseModel):
     sessions_revoked: int = Field(ge=0)
 
 
+class AuthorizationHistoryData(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    event_id: UUID
+    property_id: str = Field(min_length=1, max_length=128)
+    occurred_at: datetime
+    action: str = Field(min_length=1, max_length=128)
+    actor_id: str = Field(min_length=1, max_length=256)
+    target_id: str = Field(min_length=1, max_length=256)
+    outcome: Literal["completed", "rejected"]
+
+
+class AdministrativeRecoveryData(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    user_id: UUID
+    password_changed: bool
+    mfa_reset: bool
+    sessions_revoked: int = Field(ge=0)
+
+
 class UserAccountResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
@@ -498,6 +599,21 @@ class SessionRevocationResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     data: SessionRevocationData
+    meta: ResponseMeta
+
+
+class AuthorizationHistoryListResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    data: tuple[AuthorizationHistoryData, ...]
+    page: "PageMeta"
+    meta: ResponseMeta
+
+
+class AdministrativeRecoveryResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    data: AdministrativeRecoveryData
     meta: ResponseMeta
 
 
@@ -929,6 +1045,69 @@ def create_access_admin_router(
         _require_matching_identifier(assignment.role_bundle_id, payload.role_bundle_id)
         return RoleAssignmentResponse(
             data=RoleAssignmentData.model_validate(assignment, from_attributes=True),
+            meta=ResponseMeta(request_id=request.state.request_id),
+        )
+
+    @router.get(
+        "/properties/{property_id}/authorization-history",
+        response_model=AuthorizationHistoryListResponse,
+    )
+    def list_authorization_history(
+        property_id: PropertyIdentifier,
+        request: Request,
+        cursor: Annotated[str | None, Query(min_length=1, max_length=256)] = None,
+        limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    ) -> AuthorizationHistoryListResponse:
+        actor = _require_access_actor(request, actor_resolver, property_id=property_id)
+        events, next_cursor = flow.list_authorization_history(
+            property_id=property_id,
+            cursor=cursor,
+            limit=limit,
+            actor_id=actor.actor_id,
+            request_id=request.state.request_id,
+        )
+        for event in events:
+            _require_matching_property(event.property_id, property_id)
+        if len({event.event_id for event in events}) != len(events):
+            raise AccessAdministrationUnavailable
+        return AuthorizationHistoryListResponse(
+            data=tuple(
+                AuthorizationHistoryData.model_validate(event, from_attributes=True)
+                for event in events
+            ),
+            page=_page(events, cursor, next_cursor, limit),
+            meta=ResponseMeta(request_id=request.state.request_id),
+        )
+
+    @router.post(
+        "/users/{user_id}/administrative-recovery",
+        response_model=AdministrativeRecoveryResponse,
+    )
+    def administratively_recover_user(
+        user_id: UUID,
+        payload: AdministrativeRecoveryRequest,
+        request: Request,
+    ) -> AdministrativeRecoveryResponse:
+        actor = _require_access_actor(request, actor_resolver)
+        _require_browser_mutation(request, settings)
+        user_scope = ObjectScope(object_type=USER_ACCOUNT_OBJECT_TYPE, object_id=str(user_id))
+        _require_object_access(actor, user_scope)
+        property_id = _resource_property_id(flow.user_property_id(user_id=user_id))
+        _require_property_access(actor, property_id, object_scope=user_scope)
+        result = flow.administratively_recover_user(
+            user_id=user_id,
+            property_id=property_id,
+            new_password=payload.new_password,
+            reset_mfa=payload.reset_mfa,
+            reason=payload.reason,
+            audit_context=AdministrationAuditContext(
+                actor_id=actor.actor_id,
+                request_id=request.state.request_id,
+            ),
+        )
+        _require_matching_identifier(result.user_id, user_id)
+        return AdministrativeRecoveryResponse(
+            data=AdministrativeRecoveryData.model_validate(result, from_attributes=True),
             meta=ResponseMeta(request_id=request.state.request_id),
         )
 

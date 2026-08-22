@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 from typing import Literal, Protocol
+from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -68,6 +69,20 @@ class ReauthenticationResult:
     csrf_token: str = field(repr=False)
 
 
+@dataclass(frozen=True, slots=True)
+class RecoveryCodeSetResult:
+    """One-time recovery-code material returned by a protected service boundary."""
+
+    set_id: UUID
+    codes: tuple[str, ...] = field(repr=False)
+
+    def __post_init__(self) -> None:
+        if not self.codes or len(self.codes) > 20 or len(set(self.codes)) != len(self.codes):
+            raise ValueError("invalid recovery-code presentation")
+        if any(not code or len(code) > 256 or not code.isprintable() for code in self.codes):
+            raise ValueError("invalid recovery-code presentation")
+
+
 class AuthenticationFlow(Protocol):
     """Application boundary that atomically performs authentication commands."""
 
@@ -117,6 +132,21 @@ class AuthenticationFlow(Protocol):
         second_factor_code: str | None,
         request_id: str,
     ) -> ReauthenticationResult: ...
+
+    def issue_recovery_codes(
+        self,
+        *,
+        session_token: str,
+        request_id: str,
+    ) -> RecoveryCodeSetResult: ...
+
+    def regenerate_recovery_codes(
+        self,
+        *,
+        session_token: str,
+        prior_set_id: UUID,
+        request_id: str,
+    ) -> RecoveryCodeSetResult: ...
 
 
 class AuthenticationRejected(RuntimeError):
@@ -198,6 +228,25 @@ class UnavailableAuthenticationFlow:
         self._unavailable()
         raise AssertionError
 
+    def issue_recovery_codes(
+        self,
+        *,
+        session_token: str,
+        request_id: str,
+    ) -> RecoveryCodeSetResult:
+        self._unavailable()
+        raise AssertionError
+
+    def regenerate_recovery_codes(
+        self,
+        *,
+        session_token: str,
+        prior_set_id: UUID,
+        request_id: str,
+    ) -> RecoveryCodeSetResult:
+        self._unavailable()
+        raise AssertionError
+
 
 class LoginRequest(BaseModel):
     """Bounded local credential input."""
@@ -241,6 +290,14 @@ class ReauthenticationRequest(BaseModel):
 
     password: str = Field(min_length=1, max_length=1024)
     second_factor: ReauthenticationFactor | None = None
+
+
+class RecoveryCodeRegenerationRequest(BaseModel):
+    """Identify the exact active set replaced by a protected regeneration."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    prior_set_id: UUID
 
 
 class SessionData(BaseModel):
@@ -299,6 +356,22 @@ class MfaEnrollmentResponse(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     data: MfaEnrollmentData
+    meta: ResponseMeta
+
+
+class RecoveryCodeSetData(BaseModel):
+    """Secret-bearing one-time recovery-code response; never persisted by the UI."""
+
+    model_config = ConfigDict(frozen=True)
+
+    set_id: UUID
+    codes: tuple[str, ...] = Field(min_length=1, max_length=20)
+
+
+class RecoveryCodeSetResponse(BaseModel):
+    model_config = ConfigDict(frozen=True)
+
+    data: RecoveryCodeSetData
     meta: ResponseMeta
 
 
@@ -633,6 +706,62 @@ def create_auth_router(settings: Settings, flow: AuthenticationFlow) -> APIRoute
         )
         return SessionResponse(
             data=SessionData.model_validate(result.session, from_attributes=True),
+            meta=ResponseMeta(request_id=request.state.request_id),
+        )
+
+    @router.post(
+        "/recovery-codes",
+        response_model=RecoveryCodeSetResponse,
+        summary="Issue recovery codes through a protected authenticated flow",
+    )
+    def issue_recovery_codes(
+        request: Request,
+        response: Response,
+    ) -> RecoveryCodeSetResponse:
+        _require_browser_origin(request, settings)
+        _require_csrf(request)
+        session_token = request.cookies.get(SESSION_COOKIE_NAME)
+        if session_token is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        try:
+            result = flow.issue_recovery_codes(
+                session_token=session_token,
+                request_id=request.state.request_id,
+            )
+        except AuthenticationRejected:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from None
+        response.headers["Cache-Control"] = "no-store"
+        return RecoveryCodeSetResponse(
+            data=RecoveryCodeSetData(set_id=result.set_id, codes=result.codes),
+            meta=ResponseMeta(request_id=request.state.request_id),
+        )
+
+    @router.post(
+        "/recovery-codes/regenerate",
+        response_model=RecoveryCodeSetResponse,
+        summary="Atomically replace an active recovery-code set",
+    )
+    def regenerate_recovery_codes(
+        payload: RecoveryCodeRegenerationRequest,
+        request: Request,
+        response: Response,
+    ) -> RecoveryCodeSetResponse:
+        _require_browser_origin(request, settings)
+        _require_csrf(request)
+        session_token = request.cookies.get(SESSION_COOKIE_NAME)
+        if session_token is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        try:
+            result = flow.regenerate_recovery_codes(
+                session_token=session_token,
+                prior_set_id=payload.prior_set_id,
+                request_id=request.state.request_id,
+            )
+        except AuthenticationRejected:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED) from None
+        response.headers["Cache-Control"] = "no-store"
+        return RecoveryCodeSetResponse(
+            data=RecoveryCodeSetData(set_id=result.set_id, codes=result.codes),
             meta=ResponseMeta(request_id=request.state.request_id),
         )
 

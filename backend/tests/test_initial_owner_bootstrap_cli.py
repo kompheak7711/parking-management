@@ -560,7 +560,7 @@ def _collect_runtime_http_operations(routes: list[BaseRoute]) -> dict[str, set[s
     return operations
 
 
-def test_fastapi_openapi_inventory_has_no_bootstrap_or_reset_http_route() -> None:
+def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_reset_route() -> None:
     app = create_app(Settings())
     http_methods = {
         "delete",
@@ -583,6 +583,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_reset_http_route() -> Non
         "/api/v1/auth/session": {"get"},
         "/api/v1/auth/logout": {"post"},
         "/api/v1/auth/reauthenticate": {"post"},
+        "/api/v1/auth/recovery-codes": {"post"},
+        "/api/v1/auth/recovery-codes/regenerate": {"post"},
         "/api/v1/properties/{property_id}/users": {"get", "post"},
         "/api/v1/users/{user_id}": {"patch"},
         "/api/v1/users/{user_id}/revoke-sessions": {"post"},
@@ -590,6 +592,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_reset_http_route() -> Non
         "/api/v1/properties/{property_id}/role-bundles": {"get", "post"},
         "/api/v1/role-bundles/{role_bundle_id}": {"patch"},
         "/api/v1/users/{user_id}/role-assignments": {"post"},
+        "/api/v1/properties/{property_id}/authorization-history": {"get"},
+        "/api/v1/users/{user_id}/administrative-recovery": {"post"},
     }
     openapi_operations = {
         path: set(path_item) & http_methods for path, path_item in app.openapi()["paths"].items()

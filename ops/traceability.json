@@ -3,11 +3,11 @@
   "entries": [
     {
       "test_id": "TEST-FE-001",
-      "upstream_ids": ["UI-007", "TEST-013"],
+      "upstream_ids": ["UI-109", "TEST-094"],
       "test_level": "UI component",
       "test_path": "frontend/src/App.test.tsx",
       "status": "implemented",
-      "notes": "The bootstrap exposes semantic heading and main landmarks without unapproved business actions."
+      "notes": "The local sign-in surface exposes semantic headings, a named main landmark, labeled username and password controls, and a submit button."
     },
     {
       "test_id": "TEST-FE-002",
@@ -24,6 +24,134 @@
       "test_path": "frontend/src/App.test.tsx",
       "status": "implemented",
       "notes": "Production omits the environment indicator while retaining the public build identifier."
+    },
+    {
+      "test_id": "TEST-FE-004",
+      "upstream_ids": ["UI-109", "TEST-094", "TEST-135"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "The semantic local sign-in form submits the labeled username and password values and announces accepted authentication."
+    },
+    {
+      "test_id": "TEST-FE-005",
+      "upstream_ids": ["UI-109", "TEST-094"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Every authentication failure uses one associated, announced, enumeration-safe message without exposing lifecycle details."
+    },
+    {
+      "test_id": "TEST-FE-006",
+      "upstream_ids": ["UI-109", "UI-113", "TEST-135"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "The sign-in surface exposes no first-Owner, external-provider, SMS, security-question, or privilege-disclosing flow."
+    },
+    {
+      "test_id": "TEST-FE-007",
+      "upstream_ids": ["UI-109", "TEST-094", "TEST-135"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "The local sign-in controls retain native focus behavior and a logical username, password, then submit keyboard order."
+    },
+    {
+      "test_id": "TEST-FE-008",
+      "upstream_ids": ["UI-109", "UI-113", "TEST-094"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "After an enumeration-safe authentication failure, the user can retry with preserved credentials and complete sign-in."
+    },
+    {
+      "test_id": "TEST-FE-009",
+      "upstream_ids": ["UI-110", "UI-112", "TEST-094", "TEST-135"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "The protected MFA challenge accepts standards-based TOTP or one single-use recovery code without revealing account lifecycle or privilege state."
+    },
+    {
+      "test_id": "TEST-FE-010",
+      "upstream_ids": ["UI-110", "TEST-094", "TEST-135"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Required TOTP enrollment displays provisioning material only inside the protected transient flow and confirms it with a bounded authenticator code."
+    },
+    {
+      "test_id": "TEST-FE-011",
+      "upstream_ids": ["UI-111", "TEST-094", "TEST-135"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "An inactivity or absolute session expiry clears accessible session state, returns to sign-in, and explicitly says unsaved commands were not submitted."
+    },
+    {
+      "test_id": "TEST-FE-012",
+      "upstream_ids": ["UI-092", "UI-111", "UI-112", "TEST-094", "TEST-095", "TEST-135"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Account administration appears only after server capability and recent-authentication checks, and destructive session/account commands require explicit consequence confirmation."
+    },
+    {
+      "test_id": "TEST-FE-013",
+      "upstream_ids": ["UI-110", "UI-112", "TEST-094", "TEST-135"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Protected recovery-code generation presents bounded one-time material and clears it from accessible UI state after explicit acknowledgement."
+    },
+    {
+      "test_id": "TEST-FE-014",
+      "upstream_ids": ["UI-092", "UI-111", "UI-112", "TEST-094", "TEST-135"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Owner-authorized Manager/Staff recovery remains server-gated and requires recent authentication, an audit reason, and explicit consequence confirmation before submission."
+    },
+    {
+      "test_id": "TEST-FE-015",
+      "upstream_ids": ["UI-111", "TEST-094", "TEST-135"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "A browser refresh restores only a server-validated authenticated session and otherwise remains on the anonymous sign-in screen."
+    },
+    {
+      "test_id": "test_recovery_code_sets_are_returned_once_only_through_protected_session_routes",
+      "upstream_ids": ["API-098", "SEC-071", "UI-112", "TEST-129"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Authenticated CSRF-protected routes return one-time recovery-code issuance and exact-set atomic replacement with no-store responses."
+    },
+    {
+      "test_id": "test_recovery_code_routes_reject_missing_browser_protection_before_flow",
+      "upstream_ids": ["API-098", "SEC-071", "SEC-075", "TEST-129"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_authentication_api.py",
+      "status": "implemented",
+      "notes": "Recovery-code issuance rejects missing same-origin and CSRF protection before invoking any recovery service boundary."
+    },
+    {
+      "test_id": "test_administrative_recovery_requires_scope_csrf_and_explicit_audit_reason",
+      "upstream_ids": ["API-099", "SEC-072", "SEC-075", "UI-112", "TEST-130"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Administrative recovery requires authenticated object/property scope, browser CSRF protection, explicit audit reason, and returns only non-secret mutation evidence."
+    },
+    {
+      "test_id": "test_authorized_administrator_can_inspect_secret_free_authorization_history",
+      "upstream_ids": ["UI-092", "SEC-075", "TEST-095", "TEST-135"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_access_admin_api.py",
+      "status": "implemented",
+      "notes": "Property-scoped authorization history is capability-protected, paginated, timestamped, and excludes credential material."
     },
     {
       "test_id": "test_upgrade_from_empty_database_reaches_reviewed_head",
@@ -2937,7 +3065,7 @@
       "notes": "An injected monotonic clock proves one unchanged ceremony deadline bounds TOTP, database writes, recovery presentation, acknowledgement, and commit preparation and triggers rollback at expiry."
     },
     {
-      "test_id": "test_fastapi_openapi_inventory_has_no_bootstrap_or_reset_http_route",
+      "test_id": "test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_reset_route",
       "upstream_ids": ["API-100", "TEST-134", "SEC-074", "DEPLOY-070", "DEPLOY-071", "DL-059"],
       "test_level": "API",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
