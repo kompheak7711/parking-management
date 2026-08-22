@@ -94,23 +94,29 @@ V1_019_SUBSTAGE_PATHS: Final = {
         "ops/traceability.json",
     ),
 }
-V1_020_ROUTING_REVISION: Final = "v1-020-security-hardening-routing-v1"
+V1_020_ROUTING_REVISION: Final = "v1-020-security-hardening-routing-v2"
 V1_020_SUBSTAGE_IDS: Final = (
-    "authentication_abuse",
+    "authentication_core",
+    "authentication_api",
+    "sensitive_data_and_privileges",
     "mfa_policy",
     "recovery",
     "sessions_integration",
     "bootstrap_release",
 )
 V1_020_SUBSTAGE_AUTHORITIES: Final = {
-    "authentication_abuse": (
+    "authentication_core": (
         "TEST-108",
-        "TEST-109",
+        "SEC-068",
+        "SEC-069",
+        "SEC-070",
+    ),
+    "authentication_api": ("TEST-109", "SEC-068", "SEC-069", "SEC-070"),
+    "sensitive_data_and_privileges": (
         "TEST-110",
         "TEST-111",
         "SEC-068",
         "SEC-069",
-        "SEC-070",
     ),
     "mfa_policy": ("TEST-128", "SEC-068", "SEC-069", "SEC-075"),
     "recovery": (
@@ -147,53 +153,42 @@ V1_020_SUBSTAGE_ACCEPTANCE: Final = {
     for substage in V1_020_SUBSTAGE_IDS
 }
 V1_020_SUBSTAGE_PATHS: Final = {
-    "authentication_abuse": (
-        "backend/src/property_rental/auth_api.py",
+    "authentication_core": (
         "backend/src/property_rental/local_authentication.py",
-        "backend/src/property_rental/logging.py",
         "backend/src/property_rental/password_security.py",
-        "backend/tests/test_authentication_api.py",
         "backend/tests/test_local_authentication.py",
-        "backend/tests/test_operations.py",
         "backend/tests/test_password_security.py",
     ),
+    "authentication_api": ("backend/src/property_rental/auth_api.py",),
+    "sensitive_data_and_privileges": (
+        "backend/src/property_rental/logging.py",
+        "backend/tests/test_operations.py",
+        "backend/tests/test_deployment_scaffolding.py",
+        "scripts/postgres-init.sh",
+        "config/deployment/identity-secret-contract.json",
+    ),
     "mfa_policy": (
-        "backend/src/property_rental/auth_api.py",
         "backend/src/property_rental/mfa_policy.py",
         "backend/src/property_rental/totp_security.py",
-        "backend/tests/test_authentication_api.py",
         "backend/tests/test_mfa_policy.py",
         "backend/tests/test_totp_security.py",
     ),
     "recovery": (
-        "backend/src/property_rental/account_recovery.py",
         "backend/src/property_rental/administrative_recovery.py",
-        "backend/src/property_rental/auth_api.py",
         "backend/src/property_rental/recovery_code_lifecycle.py",
-        "backend/tests/test_account_recovery.py",
         "backend/tests/test_administrative_recovery.py",
-        "backend/tests/test_authentication_api.py",
-        "backend/tests/test_recovery_code_lifecycle.py",
+        "backend/tests/test_recovery_code_security.py",
     ),
     "sessions_integration": (
-        "backend/src/property_rental/access_admin_api.py",
-        "backend/src/property_rental/auth_api.py",
         "backend/src/property_rental/browser_session.py",
         "backend/src/property_rental/session_revocation.py",
-        "backend/tests/test_access_admin_api.py",
-        "backend/tests/test_authentication_api.py",
         "backend/tests/test_browser_session.py",
         "backend/tests/test_session_revocation.py",
     ),
     "bootstrap_release": (
-        "backend/src/property_rental/bootstrap_cli.py",
         "backend/src/property_rental/initial_owner_bootstrap.py",
-        "backend/src/property_rental/password_security.py",
         "backend/src/property_rental/recovery_code_issuance.py",
-        "backend/tests/test_deployment_scaffolding.py",
         "backend/tests/test_initial_owner_bootstrap.py",
-        "backend/tests/test_initial_owner_bootstrap_cli.py",
-        "backend/tests/test_migrations.py",
     ),
 }
 

@@ -455,7 +455,7 @@
       "roadmap_traceability_json_scope_secret_canonical_diff": "PASS",
       "watchdog_notifications": "PASS"
     },
-    "scheduler_enabled": true,
+    "scheduler_enabled": false,
     "standing_v1_autonomy": {
       "authorized_at": "2026-08-23T00:15:17+07:00",
       "authorization": "owner_approved_remaining_v1_roadmap",
@@ -479,15 +479,20 @@
       "failed_session_id": "20260823_003208_38266a",
       "failure_category": "empty_or_invalid_task_delivery",
       "repair_scope": [
-        "five bounded V1-020 substages",
+        "seven bounded V1-020 substages",
         "exact per-substage source and test paths",
         "repository-backed wildcard authority expansion",
         "traceability-based generic candidate path fallback"
       ],
-      "routing_revision": "v1-020-security-hardening-routing-v1",
+      "routing_revision": "v1-020-security-hardening-routing-v2",
       "repair_commit": "21334e2bd46b51f4170a8cb6070fe52f43fc5505",
       "repair_ci_run_id": 32588816502,
-      "status": "published",
+      "second_failure_category": "model_session_or_token_ceiling",
+      "second_failure_changed_paths": 0,
+      "second_failure_model_calls": 4,
+      "second_failure_session_id": "b1e598250832cd5eafbdb11d1afe4c29",
+      "second_failure_tool_batch_bytes": 82472,
+      "status": "active_repair_v2",
       "token_ceiling": 60000,
       "token_ceiling_changed": false
     },
@@ -514,7 +519,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Implement V1-020 authentication_abuse under standing authorization.",
+  "next_action": "Publish V1-020 routing revision v2, then retry authentication_core under standing authorization.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
@@ -611,7 +616,7 @@
   "status": "active",
   "task": "Implement the approved bounded candidate: Identity and security end-to-end hardening gate",
   "tests": [
-    "PASS: exact V1-020 authentication_abuse packet materializes seven authorities and eight source/test paths",
+    "PASS: every V1-020 substage authority is in scope and every complete parallel read batch is at most 30000 bytes",
     "PASS: 128 automation tests plus routing, compact-state, visibility-watchdog, syntax, JSON, publication, and diff checks"
   ],
   "tests_tranche_id": "V1-020",

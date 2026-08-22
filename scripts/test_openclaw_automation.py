@@ -1018,6 +1018,11 @@ class RepositoryEvidenceTests(unittest.TestCase):
                 self.assertGreaterEqual(len(paths), 1)
                 self.assertLessEqual(len(paths), 8)
                 self.assertTrue(all((ROOT / path).is_file() for path in paths))
+                self.assertLessEqual(
+                    sum((ROOT / path).stat().st_size for path in paths),
+                    30_000,
+                    "one Hermes read batch must fit beneath the 36,000-byte session allowance",
+                )
         spec = importlib.util.spec_from_file_location(
             "v1_020_substage_dispatch", ROOT / "scripts/openclaw_dispatch.py"
         )
