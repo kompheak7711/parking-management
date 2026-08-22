@@ -31,7 +31,11 @@
 - Metadata retry: the green follow-up `e0585c7` stopped before cleanup because compact state still
   described the prior `cb5d3ec` metadata as restored. This bounded correction explicitly returns
   the repair lifecycle to `published_awaiting_post_exit_restoration`; it does not broaden generic
-  supersession, and a new two-file metadata commit plus CI gate remains mandatory.
+  supersession, and a new exact metadata commit plus CI gate remains mandatory.
+- Idempotent marker retry: green lifecycle correction `bcbf564` then stopped because the existing
+  POST_EXIT marker made only `ops/STATE.json` change while the code demanded both metadata paths.
+  The path set is now computed exactly: STATE is mandatory, NOW is included only when changed, and
+  either exact commit shape must still pass its own CI gate.
 - Scope repair: the Hermes manifest enforces the packet's exact sign-in write allowlist.
   The login URL is derived from router and decorator AST literals and fails closed on drift.
 - Verification: PASS, complete profile 15/15. Backend 333 passed with 105 expected local
@@ -45,7 +49,7 @@
   including symlinked parent directories. Final independent verdict: PASS, no material findings.
 - Safety: token ceiling remains exactly 60,000. V1-020 has not started. No product attempt or
   prior historical evidence was deleted or rewritten.
-- Exact next action: publish this explicit metadata-lifecycle correction, require successful
+- Exact next action: publish this idempotent metadata-path correction, require successful
   GitHub Actions, then create and verify new restoration metadata before resuming exact cleanup.
 
 <!-- AUTOMATION_STATUS_BEGIN -->

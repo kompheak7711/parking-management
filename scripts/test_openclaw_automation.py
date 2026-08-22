@@ -4385,7 +4385,17 @@ raise SystemExit(9)
                 repo = root / "repo"
                 (repo / "ops").mkdir(parents=True)
                 (repo / "scripts").mkdir()
-                (repo / "ops/NOW.md").write_text("# V1-019 repair published\n")
+                initial_now = "# V1-019 repair published\n"
+                if natural_status == "recoverable_then_ok":
+                    initial_now = initial_now.rstrip() + (
+                        "\n<!-- POST_EXIT_RESTORATION_BEGIN -->\n"
+                        "- Post-exit restoration metadata is published; the existing supervisor "
+                        "remains disabled until the continuation enables it.\n"
+                        "- V1-019 remains the only active candidate; V1-020 successor activation "
+                        "is held.\n"
+                        "<!-- POST_EXIT_RESTORATION_END -->\n"
+                    )
+                (repo / "ops/NOW.md").write_text(initial_now)
                 atomic_write_json(
                     repo / "ops/STATE.json",
                     {
@@ -4754,6 +4764,23 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                     time.sleep(0.01)
                 restored = json.loads(evidence.read_text())
                 job = json.loads(job_path.read_text())
+                if natural_status == "recoverable_then_ok":
+                    metadata_head = subprocess.check_output(
+                        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+                    ).strip()
+                    metadata_paths = subprocess.check_output(
+                        [
+                            "git",
+                            "diff-tree",
+                            "--no-commit-id",
+                            "--name-only",
+                            "-r",
+                            metadata_head,
+                        ],
+                        cwd=repo,
+                        text=True,
+                    ).splitlines()
+                    self.assertEqual(metadata_paths, ["ops/STATE.json"])
                 expected_complete = (
                     natural_status
                     in {
@@ -5282,6 +5309,7 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
             for retry_failure in (
                 "live exhausted sign-in evidence differs from its archive",
                 "published restoration metadata does not match its exact resumable contract",
+                "restoration metadata changed unexpected repository paths",
             ):
                 prior_cleanup_failure = {
                     "status": "failed_closed",

@@ -385,10 +385,10 @@ def restoration_metadata(
                 ).splitlines()
                 if line
             )
-            if parent == expected_repair_head and committed_paths == [
-                "ops/NOW.md",
-                "ops/STATE.json",
-            ]:
+            if parent == expected_repair_head and committed_paths in (
+                ["ops/STATE.json"],
+                ["ops/NOW.md", "ops/STATE.json"],
+            ):
                 metadata_commit = candidate
                 break
         ancestor = (
@@ -467,6 +467,7 @@ def restoration_metadata(
     )
     state["timestamp"] = utc_now()
     atomic_write_json(state_path, state)
+    expected_metadata_paths = ["ops/STATE.json"]
     now = now_path.read_text()
     marker = (
         "\n<!-- POST_EXIT_RESTORATION_BEGIN -->\n"
@@ -477,11 +478,14 @@ def restoration_metadata(
     )
     if "<!-- POST_EXIT_RESTORATION_BEGIN -->" in now:
         before = now.split("<!-- POST_EXIT_RESTORATION_BEGIN -->", 1)[0].rstrip()
-        now = before + marker
+        updated_now = before + marker
     else:
-        now = now.rstrip() + marker
-    atomic_text(now_path, now)
-    if changed_paths(repo) != ["ops/NOW.md", "ops/STATE.json"]:
+        updated_now = now.rstrip() + marker
+    if updated_now != now:
+        atomic_text(now_path, updated_now)
+        expected_metadata_paths.append("ops/NOW.md")
+    expected_metadata_paths.sort()
+    if changed_paths(repo) != expected_metadata_paths:
         raise RestorationError(
             "restoration metadata changed unexpected repository paths"
         )
@@ -1187,6 +1191,7 @@ def interrupted_exhausted_cleanup_install_required(
         in {
             "live exhausted sign-in evidence differs from its archive",
             "published restoration metadata does not match its exact resumable contract",
+            "restoration metadata changed unexpected repository paths",
         }
         and prior.get("recovery_state") == "terminal_failure"
         and prior.get("owner_action_required") is False

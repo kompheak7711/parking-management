@@ -23,6 +23,14 @@
       "failed_restoration_run_id": 32562545129,
       "failed_metadata_resumption_commit": "e0585c71252660eb7cee4980246373a73541cc41",
       "failed_metadata_resumption_run_id": 32563201203,
+      "failed_metadata_pathset_commit": "bcbf5642f869871070fe0a76a6bad4c12fd56d15",
+      "failed_metadata_pathset_run_id": 32563641052,
+      "metadata_pathset_verification": {
+        "automation_tests": 124,
+        "complete_profile": "PASS: 15/15",
+        "independent_review": "PASS: no material findings",
+        "evidence": "/private/tmp/property-rental-v1-019-metadata-pathset-final.json"
+      },
       "failure_category": "deterministic_cleanup_serialization_mismatch",
       "model_attempts_consumed": 0,
       "owner_action_consumed_again": false,

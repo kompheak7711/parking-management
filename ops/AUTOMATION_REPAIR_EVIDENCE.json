@@ -16,6 +16,8 @@
     "failed_restoration_run_id": 32562545129,
     "failed_metadata_resumption_commit": "e0585c71252660eb7cee4980246373a73541cc41",
     "failed_metadata_resumption_run_id": 32563201203,
+    "failed_metadata_pathset_commit": "bcbf5642f869871070fe0a76a6bad4c12fd56d15",
+    "failed_metadata_pathset_run_id": 32563641052,
     "failure": "live exhausted sign-in evidence differs from its archive",
     "root_cause": "the immutable live and archived JSON objects were semantically identical but cleanup compared their different compact and indented byte serializations",
     "supervisor_enabled": false,
@@ -24,7 +26,14 @@
     "token_ceiling": 60000,
     "product_files_changed": [],
     "canonical_specifications_modified": false,
-    "metadata_lifecycle_correction": "the bounded follow-up explicitly returns compact state to published_awaiting_post_exit_restoration so a new two-file metadata commit and CI gate are mandatory; generic supersession is not enabled",
+    "metadata_lifecycle_correction": "the bounded follow-up explicitly returns compact state to published_awaiting_post_exit_restoration so a new exact metadata commit and CI gate are mandatory; generic supersession is not enabled",
+    "metadata_pathset_correction": "restoration metadata now computes the exact changed path set: ops/STATE.json is mandatory and ops/NOW.md is included only when its idempotent marker changes; either exact commit shape remains CI-gated",
+    "metadata_pathset_verification": {
+      "complete_profile": "PASS: 15/15 gates",
+      "automation_tests": 124,
+      "independent_review": "PASS: no material findings",
+      "evidence": "/private/tmp/property-rental-v1-019-metadata-pathset-final.json"
+    },
     "metadata_lifecycle_verification": {
       "complete_profile": "PASS: 15/15 gates",
       "independent_review": "PASS: no material findings",
