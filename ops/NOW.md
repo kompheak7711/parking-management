@@ -75,11 +75,19 @@
   rejected the verdict. Review now fails closed before sending any untracked candidate content,
   publishes the exact finding-object schema, and treats invalid delivery as bounded recoverable
   routing rather than immediate Owner work. All 130 automation tests and all 15 release gates pass.
+- Review transport and findings: Hermes session `161b6941ab6d1df2f595c95147060189` used
+  37,921 tokens in one zero-tool call and saved a valid exact verdict, but the wrapper returned an
+  empty command response. The preserved verdict identified two non-probative browser-session
+  tests. They are replaced by production authentication/administration authorization checks and
+  exact capability, Property, object, and SEC-070 boundary checks. The dispatcher now recovers
+  only a completed final assistant message from the exact regular non-symlinked session database
+  and revalidates it through the unchanged strict review contract; it never makes a replacement
+  model call for transport loss.
 - Owner action: none.
-- Exact next action: verify and publish the bounded review-contract follow-up, then rerun
-  candidate-wide verification and independent review and publish V1-020 if every gate passes.
+- Exact next action: run the complete release profile, publish this bounded finding/transport
+  repair, then repeat candidate-wide independent review and publish V1-020 if every gate passes.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation candidate state: V1-020 active; all seven bounded substages complete; final gates pending.
-- Automation exact next action: Publish the review-contract follow-up, then verify, review, and publish V1-020.
+- Automation exact next action: Verify and publish the finding/transport repair, then review and publish V1-020.
 <!-- AUTOMATION_STATUS_END -->

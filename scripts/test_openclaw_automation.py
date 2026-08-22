@@ -3531,6 +3531,126 @@ raise SystemExit(64)
             self.assertIsNone(record["repair_failure"])
             self.assertEqual(record["last_failure_category"], "empty_or_invalid_task_delivery")
 
+    def test_independent_review_recovers_exact_completed_session_output(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            state = root / "state"
+            session_id = "1" * 32
+            session_directory = state / "hermes-sessions" / session_id
+            session_directory.mkdir(parents=True)
+            database = sqlite3.connect(session_directory / "state.db")
+            database.execute(
+                """CREATE TABLE messages (
+                    id INTEGER PRIMARY KEY,
+                    role TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    finish_reason TEXT,
+                    active INTEGER NOT NULL
+                )"""
+            )
+            fingerprint = repository_fingerprint(repo)
+            verdict = {
+                "passed": True,
+                "findings": [],
+                "reviewed_repository_fingerprint": fingerprint,
+                "reviewed_paths": [],
+                "exact_next_action": "publish the exact reviewed candidate",
+            }
+            database.execute(
+                "INSERT INTO messages VALUES (1, 'assistant', ?, 'stop', 1)",
+                (json.dumps(verdict),),
+            )
+            database.commit()
+            database.close()
+            spec = importlib.util.spec_from_file_location(
+                "transport_recovery_review", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state),
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            base_commit = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=repo,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            usage = normalize_usage(
+                {"model": "gpt-5.6-sol", "session_id": session_id, "api_calls": 1},
+                model_policy(
+                    "independent_review",
+                    complex_review=True,
+                    classification_reason="test",
+                ),
+            )
+            record: dict[str, object] = {
+                "candidate": "V1-018",
+                "candidate_base_commit": base_commit,
+                "stage": "independent_review",
+                "implementation_complete": True,
+                "deterministic_verification_passed": True,
+                "scoped_changed_paths": [],
+                "verified_paths": [],
+                "verified_repository_fingerprint": fingerprint,
+                "events": [],
+            }
+            with mock.patch.object(
+                dispatcher, "invoke_model", return_value=(0, "", usage)
+            ):
+                dispatcher.independent_review(record, {"actionable": True})
+            self.assertEqual(record["stage"], "publication")
+            self.assertEqual(
+                record["review_transport_recovery"],
+                {
+                    "session_id": session_id,
+                    "source": "exact_completed_hermes_session",
+                    "validated_through_exact_review_contract": True,
+                },
+            )
+            self.assertTrue(record["model_usage"][-1]["output_transport_recovered"])
+
+    def test_completed_session_recovery_rejects_symlinked_database(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            state = root / "state"
+            session_id = "2" * 32
+            session_directory = state / "hermes-sessions" / session_id
+            session_directory.mkdir(parents=True)
+            outside = root / "outside.db"
+            database = sqlite3.connect(outside)
+            database.execute(
+                "CREATE TABLE messages (id INTEGER, role TEXT, content TEXT, finish_reason TEXT, active INTEGER)"
+            )
+            database.commit()
+            database.close()
+            (session_directory / "state.db").symlink_to(outside)
+            spec = importlib.util.spec_from_file_location(
+                "transport_recovery_symlink", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state),
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            self.assertIsNone(
+                dispatcher.preserved_final_assistant_output(
+                    {"session_id": session_id, "api_calls_completed": 1}
+                )
+            )
+
     def test_model_contract_rejects_blockers_extras_and_secret_evidence(self) -> None:
         spec = importlib.util.spec_from_file_location(
             "contract_dispatch", ROOT / "scripts/openclaw_dispatch.py"

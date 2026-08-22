@@ -168,6 +168,8 @@
     {"clause": "an exact continuation unload failure converts apparent completion to failed-closed disables the supervisor and sends no false completion notification", "test_id": "test_post_exit_restoration_succeeds_naturally_and_fails_closed"},
     {"clause": "installation validation reconciliation and launchctl submission failures preserve diagnostics disable the supervisor notify once and unload the exact label", "test_id": "test_post_exit_install_failures_terminalize_with_exact_diagnostics"},
     {"clause": "V1-020 remains unselected after the approved V1-019 terminal scope", "test_id": "test_v1_019_terminal_scope_holds_v1_020_without_owner_block"},
-    {"clause": "bounded completion output uses one exact sender receiver contract and an already returned legacy schema-five result advances once without another model call", "test_id": "test_rejected_bounded_completion_contract_recovers_without_model_call"}
+    {"clause": "bounded completion output uses one exact sender receiver contract and an already returned legacy schema-five result advances once without another model call", "test_id": "test_rejected_bounded_completion_contract_recovers_without_model_call"},
+    {"clause": "lost independent-review command output is recovered without another model call only from the exact completed Hermes session and is revalidated through the unchanged strict verdict contract", "test_id": "test_independent_review_recovers_exact_completed_session_output"},
+    {"clause": "independent-review transport recovery rejects a symlinked session database instead of reading evidence outside the exact session boundary", "test_id": "test_completed_session_recovery_rejects_symlinked_database"}
   ]
 }

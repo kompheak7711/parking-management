@@ -505,6 +505,16 @@
       "review_contract_failure_category": "empty_or_invalid_task_delivery",
       "review_untracked_candidate_policy": "fail_closed_before_model",
       "review_invalid_delivery_owner_action_before_exhaustion": false,
+      "review_transport_revision": "v1-020-exact-session-output-recovery-v6",
+      "review_transport_failure_session_id": "161b6941ab6d1df2f595c95147060189",
+      "review_transport_failure_total_tokens": 37921,
+      "review_transport_failure_tool_calls": 0,
+      "review_transport_saved_verdict_valid": true,
+      "review_transport_recovery_source": "exact_completed_regular_hermes_session_database",
+      "review_transport_recovery_revalidates_strict_contract": true,
+      "review_transport_replacement_model_call": false,
+      "review_transport_findings": 2,
+      "review_transport_findings_corrected": 2,
       "failed_session_id": "20260823_003208_38266a",
       "failure_category": "empty_or_invalid_task_delivery",
       "repair_scope": [
@@ -550,7 +560,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Verify and publish the bounded review-contract follow-up, then rerun candidate-wide verification and independent review and publish V1-020 if every gate passes.",
+  "next_action": "Run the complete release profile, publish the bounded finding and exact-session transport repair, then repeat independent review and publish V1-020 if every gate passes.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
@@ -667,7 +677,10 @@
     "PASS: V1-020 independent-review routing repair complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 129 passed",
     "PASS: focused dispatcher child-environment and contaminated-parent activation regressions prevent live automation controls from leaking into temporary test fixtures",
     "PASS: 130 automation tests enforce exact finding objects, reject untracked candidate files before any model call, and keep malformed delivery recoverable until bounded exhaustion",
-    "PASS: V1-020 review-contract follow-up complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 130 passed"
+    "PASS: V1-020 review-contract follow-up complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 130 passed",
+    "PASS: 56 focused authentication, browser-session, and traceability tests replace the two non-probative review findings with production authorization evidence",
+    "PASS: 132 automation tests recover only a completed final assistant answer from the exact regular non-symlinked Hermes session and revalidate the unchanged strict review contract",
+    "PASS: V1-020 finding and transport repair complete verification profile 15/15; backend 361 passed with 105 expected local environment skips; PostgreSQL 105 passed; frontend 32 passed; automation 132 passed"
   ],
   "tests_tranche_id": "V1-020",
   "timestamp": "2026-08-22T19:56:44Z",

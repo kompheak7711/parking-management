@@ -1055,14 +1055,6 @@
       "notes": "Recent recorded activity advances only inactivity state and cannot move the fixed authentication timestamp or 24-hour absolute expiry."
     },
     {
-      "test_id": "test_recent_activity_does_not_replace_recent_authentication_for_high_risk_access",
-      "upstream_ids": ["PR-CAP-009", "API-097", "TEST-132", "SEC-017", "DL-057"],
-      "test_level": "security",
-      "test_path": "backend/tests/test_browser_session.py",
-      "status": "implemented",
-      "notes": "Fresh activity updates inactivity state but cannot replace the fixed authentication instant used by an independent high-risk recency gate."
-    },
-    {
       "test_id": "test_activity_updates_only_last_activity_for_an_active_session",
       "upstream_ids": ["API-097", "TEST-131", "SEC-017", "DL-057"],
       "test_level": "unit",
@@ -1095,12 +1087,12 @@
       "notes": "A logged-out session remains revoked when later activity is attempted and cannot be refreshed back into an active state."
     },
     {
-      "test_id": "test_provider_neutral_session_state_does_not_embed_external_identity_or_authority",
-      "upstream_ids": ["PR-CAP-009", "TEST-132", "TEST-135", "SEC-070", "DL-057"],
+      "test_id": "test_production_authorizer_keeps_session_state_and_high_value_capabilities_independent",
+      "upstream_ids": ["PR-CAP-009", "TEST-135", "SEC-070", "DL-057"],
       "test_level": "security",
       "test_path": "backend/tests/test_browser_session.py",
       "status": "implemented",
-      "notes": "Provider-neutral session state carries only lifecycle timestamps; capability, Property/object scope, and business authorization remain independent server-side decisions."
+      "notes": "The production authorizer keeps provider-neutral session state separate from exact capability, Property, object, and high-value workflow boundaries across every SEC-070 capability pair."
     },
     {
       "test_id": "test_invalid_or_future_session_timestamps_fail_closed",

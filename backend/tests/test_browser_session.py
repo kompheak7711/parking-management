@@ -10,6 +10,13 @@ from property_rental.browser_session import (
     BrowserSessionLifetimeService,
     BrowserSessionState,
 )
+from property_rental.identity import (
+    AuthenticatedActor,
+    AuthorizationRequirement,
+    CapabilityGrant,
+    ObjectScope,
+    is_authorized,
+)
 
 
 class ControlledClock:
@@ -87,27 +94,6 @@ def test_recent_activity_never_extends_fixed_twenty_four_hour_absolute_expiry() 
     assert decision.reason == "absolute_expired"
 
 
-def test_recent_activity_does_not_replace_recent_authentication_for_high_risk_access() -> None:
-    reauthentication_cutoff = AUTHENTICATED_AT + timedelta(hours=1)
-    service, clock, _ = service_at(AUTHENTICATED_AT + timedelta(hours=2))
-    active_session = session_state(
-        last_activity_at=clock.instant - timedelta(minutes=1),
-    )
-
-    refreshed_session = service.record_activity(active_session)
-
-    assert refreshed_session is not None
-    assert refreshed_session.authenticated_at < reauthentication_cutoff
-    assert refreshed_session.last_activity_at == clock.instant
-
-    reauthenticated_session = BrowserSessionState(
-        authenticated_at=clock.instant,
-        last_activity_at=clock.instant,
-    )
-    assert reauthenticated_session.authenticated_at >= reauthentication_cutoff
-    assert service.evaluate(reauthenticated_session).active
-
-
 def test_activity_updates_only_last_activity_for_an_active_session() -> None:
     service, clock, audit_sink = service_at(AUTHENTICATED_AT + timedelta(minutes=10))
 
@@ -159,24 +145,75 @@ def test_logout_revocation_cannot_be_bypassed_by_fresh_activity() -> None:
     assert decision.reason == "revoked"
 
 
-def test_provider_neutral_session_state_does_not_embed_external_identity_or_authority() -> None:
+@pytest.mark.parametrize(
+    ("ordinary_capability", "high_value_capability"),
+    [
+        ("invoices.edit", "late_payment.final_decision"),
+        ("late_payment.final_decision", "late_payment.charge_correction"),
+        ("payments.read", "receipts.reprint"),
+        ("deposits.manage", "pet_deposits.active_lease_refund_qualify"),
+        ("leases.warn", "rent_nonpayment.case_manage"),
+        ("customer_ledger.read", "customer_ledger.source_mutate"),
+    ],
+)
+def test_production_authorizer_keeps_session_state_and_high_value_capabilities_independent(
+    ordinary_capability: str,
+    high_value_capability: str,
+) -> None:
     assert {field.name for field in fields(BrowserSessionState)} == {
         "authenticated_at",
         "last_activity_at",
         "revoked_at",
     }
+    object_scope = ObjectScope(object_type="workflow", object_id="workflow-1")
+    actor = AuthenticatedActor(
+        actor_id="actor-1",
+        capability_grants=frozenset(
+            {
+                CapabilityGrant(
+                    capability=ordinary_capability,
+                    property_ids=frozenset({"property-1"}),
+                    object_scopes=frozenset({object_scope}),
+                )
+            }
+        ),
+    )
 
-    service, _, _ = service_at(AUTHENTICATED_AT + timedelta(minutes=1))
-    decision = service.evaluate(session_state())
-    independent_server_authorizations = {
-        "capability": False,
-        "property_scope": False,
-        "object_scope": False,
-        "business_action": False,
-    }
-
-    assert decision.active
-    assert not all(independent_server_authorizations.values())
+    assert is_authorized(
+        actor,
+        AuthorizationRequirement(
+            capability=ordinary_capability,
+            property_id="property-1",
+            object_scope=object_scope,
+        ),
+    )
+    assert not is_authorized(
+        actor,
+        AuthorizationRequirement(
+            capability=high_value_capability,
+            property_id="property-1",
+            object_scope=object_scope,
+        ),
+    )
+    assert not is_authorized(
+        actor,
+        AuthorizationRequirement(
+            capability=ordinary_capability,
+            property_id="property-2",
+            object_scope=object_scope,
+        ),
+    )
+    assert not is_authorized(
+        actor,
+        AuthorizationRequirement(
+            capability=ordinary_capability,
+            property_id="property-1",
+            object_scope=ObjectScope(
+                object_type="workflow",
+                object_id="workflow-2",
+            ),
+        ),
+    )
 
 
 @pytest.mark.parametrize(

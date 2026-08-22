@@ -422,13 +422,6 @@ def test_browser_session_lifetime_requirements_have_implemented_traceability() -
             "SEC-017",
             "DL-057",
         },
-        "test_recent_activity_does_not_replace_recent_authentication_for_high_risk_access": {
-            "PR-CAP-009",
-            "API-097",
-            "TEST-132",
-            "SEC-017",
-            "DL-057",
-        },
         "test_explicit_revocation_fails_closed_for_evaluation_and_activity": {
             "API-097",
             "TEST-131",
@@ -441,9 +434,8 @@ def test_browser_session_lifetime_requirements_have_implemented_traceability() -
             "SEC-017",
             "DL-057",
         },
-        "test_provider_neutral_session_state_does_not_embed_external_identity_or_authority": {
+        "test_production_authorizer_keeps_session_state_and_high_value_capabilities_independent": {
             "PR-CAP-009",
-            "TEST-132",
             "TEST-135",
             "SEC-070",
             "DL-057",

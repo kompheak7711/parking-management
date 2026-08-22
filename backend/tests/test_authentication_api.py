@@ -22,6 +22,7 @@ from property_rental.auth_api import (
     RecoveryCodeSetResult,
     SessionView,
 )
+from property_rental.identity import AuthenticatedActor
 from property_rental.settings import Settings
 
 
@@ -616,6 +617,7 @@ def test_reauthentication_records_additional_evidence_without_granting_authority
 
     app = create_app(
         Settings(allowed_browser_origin="https://property.test"),
+        actor_resolver=lambda _: AuthenticatedActor(actor_id="actor-1"),
         authentication_flow=ReauthenticationFlow(authenticated_result()),
     )
 
@@ -643,6 +645,15 @@ def test_reauthentication_records_additional_evidence_without_granting_authority
         "__Host-prm_csrf=rotated-csrf-secret" in value
         for value in response.headers.get_list("set-cookie")
     )
+
+    forbidden_administration = request(
+        app,
+        "GET",
+        "/api/v1/properties/property-main/users",
+        headers={"X-Request-ID": "reauth-still-requires-capability"},
+    )
+    assert forbidden_administration.status_code == 403
+    assert forbidden_administration.json()["error"]["code"] == "FORBIDDEN"
 
 
 def test_recovery_code_sets_are_returned_once_only_through_protected_session_routes() -> None:

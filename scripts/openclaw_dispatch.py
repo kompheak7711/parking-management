@@ -7,6 +7,7 @@ import fcntl
 import json
 import os
 import re
+import sqlite3
 import subprocess
 import sys
 from pathlib import Path
@@ -1553,6 +1554,56 @@ def parse_model_json(output: str) -> dict[str, Any]:
     return value
 
 
+def preserved_final_assistant_output(usage_report: dict[str, Any]) -> str | None:
+    """Recover one completed Hermes answer when command output transport lost it."""
+    session_id = usage_report.get("session_id")
+    api_calls = usage_report.get("api_calls_completed")
+    if (
+        not isinstance(session_id, str)
+        or re.fullmatch(r"[0-9a-f]{32}", session_id) is None
+        or not isinstance(api_calls, int)
+        or api_calls < 1
+    ):
+        return None
+    session_root = (STATE_DIR / "hermes-sessions").resolve()
+    session_directory = session_root / session_id
+    database = session_directory / "state.db"
+    try:
+        if session_directory.is_symlink() or database.is_symlink() or not database.is_file():
+            return None
+        resolved_directory = session_directory.resolve(strict=True)
+        resolved_database = database.resolve(strict=True)
+    except OSError:
+        return None
+    if (
+        resolved_directory.parent != session_root
+        or resolved_database.parent != resolved_directory
+    ):
+        return None
+    try:
+        connection = sqlite3.connect(f"{resolved_database.as_uri()}?mode=ro", uri=True)
+        try:
+            row = connection.execute(
+                """SELECT content, finish_reason
+                   FROM messages
+                   WHERE role = 'assistant' AND active = 1
+                   ORDER BY id DESC
+                   LIMIT 1"""
+            ).fetchone()
+        finally:
+            connection.close()
+    except sqlite3.Error:
+        return None
+    if (
+        row is None
+        or not isinstance(row[0], str)
+        or not row[0].strip()
+        or row[1] != "stop"
+    ):
+        return None
+    return row[0].strip()
+
+
 def safe_model_text(value: Any, *, field: str, maximum: int = 2000) -> str:
     if not isinstance(value, str) or not value.strip() or len(value) > maximum:
         raise AutomationError(
@@ -2616,9 +2667,38 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
         raise AutomationError(
             "gateway_or_network_failure", f"independent reviewer exited {exit_status}"
         )
+    verdict: dict[str, Any] | None = None
+    delivery_error: AutomationError | None = None
     try:
         verdict = sanitized_review_verdict(parse_model_json(output))
     except AutomationError as error:
+        delivery_error = error
+    if (
+        verdict is None
+        and delivery_error is not None
+        and delivery_error.category == "empty_or_invalid_task_delivery"
+    ):
+        preserved_output = preserved_final_assistant_output(usage_report)
+        if preserved_output is not None:
+            try:
+                verdict = sanitized_review_verdict(parse_model_json(preserved_output))
+            except AutomationError as error:
+                delivery_error = error
+            else:
+                usage_report["output_transport_recovered"] = True
+                usage_report["output_transport_recovery_source"] = (
+                    "exact_completed_hermes_session"
+                )
+                record["review_transport_recovery"] = {
+                    "session_id": usage_report["session_id"],
+                    "source": "exact_completed_hermes_session",
+                    "validated_through_exact_review_contract": True,
+                }
+    if verdict is None:
+        error = delivery_error or AutomationError(
+            "empty_or_invalid_task_delivery",
+            "model stage did not return its JSON contract",
+        )
         finalize_usage(
             record,
             usage_report,
@@ -2634,7 +2714,7 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
             }
         )
         save_stage(record)
-        raise
+        raise error
     findings = verdict["findings"]
     if (
         verdict["reviewed_repository_fingerprint"] != after
