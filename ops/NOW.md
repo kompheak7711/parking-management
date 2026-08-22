@@ -23,6 +23,6 @@
   reconcile durable state, and restore the existing supervisor without overlap.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-019 locally verified and reviewed; publication pending.
-- Automation exact next action: publish, prove CI, reconcile, then restore the supervisor.
+- Automation publication state: published on implementation/foundation at c1cdea447d8c013f4add9a7337657f968f4336cc.
+- Automation exact next action: Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.
 <!-- AUTOMATION_STATUS_END -->
