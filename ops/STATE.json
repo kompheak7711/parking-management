@@ -528,6 +528,11 @@
       "second_fresh_review_transport_recovered": true,
       "second_fresh_review_findings": 1,
       "second_fresh_review_findings_corrected": 1,
+      "final_fresh_review_session_id": "278528a25dd788fa99ce6981e15478d1",
+      "final_fresh_review_total_tokens": 48421,
+      "final_fresh_review_tool_calls": 0,
+      "final_fresh_review_findings": 0,
+      "final_fresh_review_status": "PASS",
       "recovered_verdict_requires_global_final_message": true,
       "recovered_verdict_rejects_symlinked_session_root": true,
       "recovered_verdict_uses_stable_regular_database_snapshot": true,
@@ -536,6 +541,9 @@
       "materialized_review_diff_text_conversion_disabled": true,
       "in_scope_review_defect_owner_action_required": false,
       "owner_action_reserved_for_protected_or_exhausted_failure": true,
+      "clean_cumulative_publication_requires_exact_review_binding": true,
+      "clean_cumulative_publication_requires_synchronized_head": true,
+      "clean_cumulative_publication_requires_exact_head_ci": true,
       "failed_session_id": "20260823_003208_38266a",
       "failure_category": "empty_or_invalid_task_delivery",
       "repair_scope": [
@@ -581,7 +589,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Run the complete release profile, publish the stable-session-snapshot hardening, then repeat independent review and publish V1-020 if every gate passes.",
+  "next_action": "Verify and publish the clean cumulative-publication lifecycle repair, repeat exact V1-020 review, then reconcile V1-020 complete after exact-HEAD CI.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [

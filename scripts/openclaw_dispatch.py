@@ -2964,17 +2964,88 @@ def publication(record: dict[str, Any], preflight: dict[str, Any]) -> None:
     if substage is None:
         actual = changed_paths(REPO)
         reviewed_fingerprint = record.get("reviewed_repository_fingerprint")
+        if not actual and not expected:
+            base_commit = str(record.get("candidate_base_commit") or "")
+            current_head = git(REPO, "rev-parse", "HEAD")
+            if (
+                not reviewed
+                or reviewed != scoped
+                or full_candidate_paths(record) != scoped
+                or reviewed_fingerprint != repository_fingerprint(REPO)
+                or not re.fullmatch(r"[0-9a-f]{40}", base_commit)
+                or base_commit == current_head
+            ):
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    "clean cumulative publication differs from the exact independent-review evidence",
+                )
+            ancestor = subprocess.run(
+                ["git", "merge-base", "--is-ancestor", base_commit, current_head],
+                cwd=REPO,
+                check=False,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            if ancestor.returncode:
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    "clean cumulative publication base is not an ancestor of HEAD",
+                )
+            if relevant_processes(REPO):
+                raise AutomationError(
+                    "lock_or_overlapping_process_failure",
+                    "publication refused while a relevant worker or verification process remains",
+                )
+            synchronized = synchronized_repository_shas()
+            guard = subprocess.run(
+                [str(REPO / "scripts/openclaw-publication-guard.sh")],
+                cwd=REPO,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            if guard.returncode:
+                raise AutomationError(
+                    "publication_failure",
+                    "clean cumulative publication guard failed",
+                )
+            if (
+                changed_paths(REPO)
+                or git(REPO, "rev-parse", "HEAD") != current_head
+                or repository_fingerprint(REPO) != reviewed_fingerprint
+                or full_candidate_paths(record) != scoped
+            ):
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    "clean cumulative publication drifted during validation",
+                )
+            record.update(
+                {
+                    "publication_mode": "reviewed_cumulative_already_published",
+                    "publication_paths": scoped,
+                    "publication_substage": "pushed_waiting_ci",
+                    "publication_commit": current_head,
+                    "publication_shas": synchronized,
+                }
+            )
+            save_stage(record)
+            expected = scoped
+            substage = "pushed_waiting_ci"
         if (
-            not reviewed
-            or reviewed != scoped
-            or not expected
-            or actual != expected
-            or reviewed_fingerprint != repository_fingerprint(REPO)
+            substage is None
+            and (
+                not reviewed
+                or reviewed != scoped
+                or not expected
+                or actual != expected
+                or reviewed_fingerprint != repository_fingerprint(REPO)
+            )
         ):
             raise AutomationError(
                 "repository_integrity_uncertainty",
                 "publication content or paths differ from the exact independent-review evidence",
             )
+    if substage is None:
         overlaps = relevant_processes(REPO)
         if overlaps:
             raise AutomationError(
@@ -3082,7 +3153,12 @@ def publication(record: dict[str, Any], preflight: dict[str, Any]) -> None:
             "repository_integrity_uncertainty",
             f"unknown publication substage {substage!r}",
         )
-    ci = run(str(REPO / "scripts/openclaw-wait-for-ci.sh"), published, check=False)
+    ci_arguments = [str(REPO / "scripts/openclaw-wait-for-ci.sh"), published]
+    ci_evidence_path: Path | None = None
+    if record.get("publication_mode") == "reviewed_cumulative_already_published":
+        ci_evidence_path = STATE_DIR / "ci" / f"{candidate}-{published}.json"
+        ci_arguments.extend(["--evidence", str(ci_evidence_path)])
+    ci = run(*ci_arguments, check=False)
     if ci.returncode:
         record.update(
             {
@@ -3105,7 +3181,44 @@ def publication(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         raise AutomationError(
             "remote_ci_failure", f"CI exited {ci.returncode} for {published}"
         )
+    if ci_evidence_path is not None:
+        try:
+            ci_evidence = json.loads(ci_evidence_path.read_text())
+        except (OSError, json.JSONDecodeError) as error:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "clean cumulative publication has no readable exact-CI evidence",
+            ) from error
+        if (
+            not isinstance(ci_evidence, dict)
+            or ci_evidence.get("status") != "success"
+            or ci_evidence.get("commit") != published
+            or ci_evidence.get("head_sha") != published
+            or not isinstance(ci_evidence.get("run_id"), int)
+        ):
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "clean cumulative publication CI evidence is not bound to the exact successful HEAD",
+            )
+        record.update(
+            {
+                "publication_ci_evidence": str(ci_evidence_path),
+                "publication_ci_run_id": ci_evidence["run_id"],
+                "publication_ci_url": ci_evidence.get("url"),
+            }
+        )
     synchronized = synchronized_repository_shas()
+    if record.get("publication_mode") == "reviewed_cumulative_already_published" and (
+        changed_paths(REPO)
+        or synchronized["local"] != published
+        or repository_fingerprint(REPO)
+        != record.get("reviewed_repository_fingerprint")
+        or full_candidate_paths(record) != sorted(record.get("reviewed_paths") or [])
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "clean cumulative publication drifted before final CI binding",
+        )
     record.update(
         {
             "stage": "post_publication_reconciliation",

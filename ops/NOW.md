@@ -97,11 +97,16 @@
   walks only non-symlinked session-root components, reads regular database and WAL evidence through
   bound descriptors with stable identity checks, and queries a private snapshot. Focused
   regressions cover both the ancestor symlink and database replacement race.
+- Final fresh review: session `278528a25dd788fa99ce6981e15478d1` used 48,421 tokens in one
+  zero-tool call and passed with no findings. The reviewed candidate is already clean, pushed, and
+  CI-green across cumulative bounded commits, so publication now accepts that state only when the
+  exact candidate base-to-HEAD paths, reviewed fingerprint, synchronized SHAs, publication guard,
+  and exact-HEAD CI all agree. It never fabricates an empty product commit.
 - Owner action: none.
-- Exact next action: run the complete release profile, publish the stable-session-snapshot hardening, then
-  repeat candidate-wide independent review and publish V1-020 if every gate passes.
+- Exact next action: verify and publish the clean cumulative-publication repair, repeat the exact
+  candidate-wide review, then reconcile V1-020 complete after exact-HEAD CI.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation candidate state: V1-020 active; all seven bounded substages complete; final gates pending.
-- Automation exact next action: Verify and publish the stable-session-snapshot hardening, then review and publish V1-020.
+- Automation exact next action: Verify and publish the clean cumulative-publication repair, repeat exact review, then reconcile V1-020 complete.
 <!-- AUTOMATION_STATUS_END -->

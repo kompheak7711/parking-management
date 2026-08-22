@@ -175,6 +175,7 @@
     {"clause": "independent-review transport recovery queries a private stable snapshot of the validated regular database and WAL bytes so path replacement cannot substitute a different verdict", "test_id": "test_completed_session_recovery_reads_validated_database_snapshot"},
     {"clause": "independent-review transport recovery requires the globally newest active session message itself to be a completed assistant response", "test_id": "test_completed_session_recovery_requires_global_final_assistant_message"},
     {"clause": "independent-review patch materialization disables repository and user external diff helpers and text conversion", "test_id": "test_independent_review_materializes_exact_diff_without_broad_reads_or_event_history"},
-    {"clause": "ordinary in-scope review test CI publication and integrity repairs do not request Owner action before bounded exhaustion", "test_id": "test_owner_action_is_reserved_for_protected_or_exhausted_failures"}
+    {"clause": "ordinary in-scope review test CI publication and integrity repairs do not request Owner action before bounded exhaustion", "test_id": "test_owner_action_is_reserved_for_protected_or_exhausted_failures"},
+    {"clause": "a clean cumulative candidate may advance only when its exact base-to-synchronized-HEAD path set and repository fingerprint match the completed independent review and exact-HEAD CI passes", "test_id": "test_clean_cumulative_candidate_uses_exact_published_head"}
   ]
 }

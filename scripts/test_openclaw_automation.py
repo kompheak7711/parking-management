@@ -2868,6 +2868,109 @@ print(json.dumps(result))
             with self.assertRaisesRegex(AutomationError, "independent-review"):
                 dispatcher.publication(record, {"actionable": True})
 
+    def test_clean_cumulative_candidate_uses_exact_published_head(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            scripts = repo / "scripts"
+            scripts.mkdir()
+            guard = scripts / "openclaw-publication-guard.sh"
+            guard.write_text("#!/bin/sh\nexit 0\n")
+            guard.chmod(0o755)
+            wait = scripts / "openclaw-wait-for-ci.sh"
+            wait.write_text(
+                """#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
+
+sha = sys.argv[1]
+evidence = Path(sys.argv[sys.argv.index("--evidence") + 1])
+evidence.parent.mkdir(parents=True, exist_ok=True)
+evidence.write_text(json.dumps({
+    "status": "success",
+    "commit": sha,
+    "head_sha": sha,
+    "run_id": 12345,
+    "url": "https://example.invalid/actions/runs/12345",
+}))
+"""
+            )
+            wait.chmod(0o755)
+            subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "publication harness"],
+                cwd=repo,
+                check=True,
+            )
+            origin = root / "origin.git"
+            subprocess.run(["git", "init", "-q", "--bare", str(origin)], check=True)
+            subprocess.run(
+                ["git", "remote", "add", "origin", str(origin)],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "push", "-qu", "-u", "origin", "HEAD"],
+                cwd=repo,
+                check=True,
+            )
+            base = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            (repo / "candidate.txt").write_text("reviewed and published\n")
+            subprocess.run(["git", "add", "candidate.txt"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "published candidate"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(["git", "push", "-q"], cwd=repo, check=True)
+            published = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            spec = importlib.util.spec_from_file_location(
+                "clean_cumulative_publication_dispatch",
+                ROOT / "scripts/openclaw_dispatch.py",
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            state_dir = root / "state"
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state_dir),
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+                fingerprint = dispatcher.repository_fingerprint(repo)
+                record = {
+                    "candidate": "V1-018",
+                    "candidate_base_commit": base,
+                    "stage": "publication",
+                    "scoped_changed_paths": ["candidate.txt"],
+                    "reviewed_paths": ["candidate.txt"],
+                    "reviewed_repository_fingerprint": fingerprint,
+                    "publication_paths": [],
+                }
+                dispatcher.publication(record, {"actionable": True})
+            self.assertEqual(record["stage"], "post_publication_reconciliation")
+            self.assertEqual(record["publication_commit"], published)
+            self.assertEqual(
+                record["publication_mode"],
+                "reviewed_cumulative_already_published",
+            )
+            self.assertEqual(record["publication_paths"], ["candidate.txt"])
+            self.assertEqual(record["publication_ci_run_id"], 12345)
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+                ).strip(),
+                published,
+            )
+
     def test_publication_resumes_after_commit_before_push(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
