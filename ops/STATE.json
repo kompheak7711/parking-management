@@ -133,16 +133,16 @@
       "authorization": "owner_direct_takeover_2026-08-22",
       "automation_tests_passed": 126,
       "bounded_substage": "sign_in",
+      "ceiling_recovery_attempt_consumed": false,
       "complete_verification_gates": "15/15",
-      "incident_baseline": "39ee4426366bb3966d2751b4cdf7a3a869f8f2b3",
-      "implementation_verification_delegated_to_supervisor": true,
+      "exact_v4_incident_rebase": true,
       "first_policy_rejection_allows_correction": true,
       "identical_policy_rejection_retry_blocks": true,
-      "exact_v4_incident_rebase": true,
-      "owner_action_consumed_again": false,
-      "ceiling_recovery_attempt_consumed": false,
       "implementation_attempt_consumed": false,
+      "implementation_verification_delegated_to_supervisor": true,
+      "incident_baseline": "39ee4426366bb3966d2751b4cdf7a3a869f8f2b3",
       "metadata_preserves_dirty_v1_019_paths": true,
+      "owner_action_consumed_again": false,
       "preserved_worktree_path_count": 6,
       "product_files_modified_by_automation_repair": false,
       "routing_revision": "v1-019-sign-in-context-routing-v5",
@@ -253,7 +253,9 @@
       }
     },
     "post_exit_restoration": {
-      "status": "repair_follow_up_awaiting_publication"
+      "repair_publication_commit": "c50264ea4edc8b7166d059aecb0581e1c13891c5",
+      "status": "metadata_published_waiting_enable",
+      "timestamp": "2026-08-22T10:26:23Z"
     },
     "predecessor_ci_correction_review": {
       "cache_read_tokens": "unavailable from provider",
@@ -455,7 +457,7 @@
       "watchdog_notifications": "PASS"
     },
     "scheduler_enabled": false,
-    "status": "published_awaiting_post_exit_restoration",
+    "status": "restored",
     "stop_after_candidate": "V1-019",
     "timestamp": "2026-08-21T22:18:48Z",
     "v1_019_original_automatic_recovery_attempts": 0,
@@ -579,7 +581,7 @@
   "task": "Implement the approved bounded candidate: Authentication and account administration UI",
   "tests": [],
   "tests_tranche_id": "V1-018",
-  "timestamp": "2026-08-22T09:11:12Z",
+  "timestamp": "2026-08-22T10:26:23Z",
   "touched_areas": [
     "sign-in, MFA, recovery, session, account/capability screens"
   ],
