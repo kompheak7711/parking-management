@@ -259,6 +259,11 @@ class AutomationError(RuntimeError):
         self.category = category
 
 
+def failure_owner_action_required(category: str, *, exhausted: bool = False) -> bool:
+    """Reserve Owner action for protected decisions or an exhausted bounded repair."""
+    return exhausted or category in OWNER_BLOCKER_CATEGORIES
+
+
 @dataclass(frozen=True)
 class ModelPolicy:
     stage: str
@@ -409,7 +414,15 @@ def repository_fingerprint(repo: Path) -> str:
     branch = git(repo, "branch", "--show-current")
     head = git(repo, "rev-parse", "HEAD")
     diff = subprocess.run(
-        ["git", "diff", "--binary", "HEAD", "--"],
+        [
+            "git",
+            "diff",
+            "--no-ext-diff",
+            "--no-textconv",
+            "--binary",
+            "HEAD",
+            "--",
+        ],
         cwd=repo,
         check=True,
         stdout=subprocess.PIPE,

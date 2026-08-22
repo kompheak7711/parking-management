@@ -515,6 +515,18 @@
       "review_transport_replacement_model_call": false,
       "review_transport_findings": 2,
       "review_transport_findings_corrected": 2,
+      "fresh_review_session_id": "2cc185b461d1e12be101193344bb7994",
+      "fresh_review_total_tokens": 43974,
+      "fresh_review_tool_calls": 0,
+      "fresh_review_transport_recovered": true,
+      "fresh_review_replacement_model_calls": 0,
+      "fresh_review_findings": 2,
+      "fresh_review_findings_corrected": 2,
+      "recovered_verdict_requires_global_final_message": true,
+      "materialized_review_diff_external_helpers_disabled": true,
+      "materialized_review_diff_text_conversion_disabled": true,
+      "in_scope_review_defect_owner_action_required": false,
+      "owner_action_reserved_for_protected_or_exhausted_failure": true,
       "failed_session_id": "20260823_003208_38266a",
       "failure_category": "empty_or_invalid_task_delivery",
       "repair_scope": [
@@ -560,7 +572,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Run the complete release profile, publish the bounded finding and exact-session transport repair, then repeat independent review and publish V1-020 if every gate passes.",
+  "next_action": "Run the complete release profile, publish the fresh independent-review hardening, then repeat independent review and publish V1-020 if every gate passes.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
@@ -680,7 +692,9 @@
     "PASS: V1-020 review-contract follow-up complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 130 passed",
     "PASS: 56 focused authentication, browser-session, and traceability tests replace the two non-probative review findings with production authorization evidence",
     "PASS: 132 automation tests recover only a completed final assistant answer from the exact regular non-symlinked Hermes session and revalidate the unchanged strict review contract",
-    "PASS: V1-020 finding and transport repair complete verification profile 15/15; backend 361 passed with 105 expected local environment skips; PostgreSQL 105 passed; frontend 32 passed; automation 132 passed"
+    "PASS: V1-020 finding and transport repair complete verification profile 15/15; backend 361 passed with 105 expected local environment skips; PostgreSQL 105 passed; frontend 32 passed; automation 132 passed",
+    "PASS: fresh review transport recovery consumed zero replacement model calls and its two concrete findings are covered by global-final-message and exact-diff regressions",
+    "PASS: Owner action is false for ordinary review, test, CI, publication, and integrity repair categories and true only for protected categories or bounded exhaustion"
   ],
   "tests_tranche_id": "V1-020",
   "timestamp": "2026-08-22T19:56:44Z",

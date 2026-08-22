@@ -83,11 +83,19 @@
   only a completed final assistant message from the exact regular non-symlinked session database
   and revalidates it through the unchanged strict review contract; it never makes a replacement
   model call for transport loss.
+- Fresh review: session `2cc185b461d1e12be101193344bb7994` proved the repaired transport
+  path by recovering and validating one 43,974-token zero-tool verdict without a replacement
+  model call. It found two further hardening gaps. Recovery now requires the globally newest
+  active session message itself to be the completed assistant verdict, and candidate-diff
+  materialization disables both external diff helpers and text conversion. Focused regressions
+  cover the incomplete-session, external-diff, and text-conversion boundaries. Concrete in-scope
+  review and test findings now remain automatic repair work; Owner action is reserved for the
+  protected decision categories or actual bounded-repair exhaustion.
 - Owner action: none.
-- Exact next action: run the complete release profile, publish this bounded finding/transport
-  repair, then repeat candidate-wide independent review and publish V1-020 if every gate passes.
+- Exact next action: run the complete release profile, publish the fresh review hardening, then
+  repeat candidate-wide independent review and publish V1-020 if every gate passes.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation candidate state: V1-020 active; all seven bounded substages complete; final gates pending.
-- Automation exact next action: Verify and publish the finding/transport repair, then review and publish V1-020.
+- Automation exact next action: Verify and publish the fresh review hardening, then review and publish V1-020.
 <!-- AUTOMATION_STATUS_END -->

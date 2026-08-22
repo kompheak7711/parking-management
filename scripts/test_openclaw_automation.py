@@ -27,6 +27,7 @@ from openclaw_automation import (
     COMPLEX_REVIEW_TOKEN_CEILING,
     EXCEPTIONAL_REVIEW_TOKEN_CEILING,
     FAILURE_CATEGORIES,
+    OWNER_BLOCKER_CATEGORIES,
     ORDINARY_TOKEN_CEILING,
     RECOVERABLE_ROUTING_FAILURES,
     STAGES,
@@ -45,6 +46,7 @@ from openclaw_automation import (
     consume_continuation,
     digest,
     expand_authorities,
+    failure_owner_action_required,
     health_classification,
     hermes_chat_usage,
     model_policy,
@@ -98,6 +100,24 @@ def dispatcher_ps_probe_script() -> str:
 
 
 class AutomationPolicyTests(unittest.TestCase):
+    def test_owner_action_is_reserved_for_protected_or_exhausted_failures(self) -> None:
+        for category in (
+            "independent_review_defect",
+            "deterministic_test_failure",
+            "remote_ci_failure",
+            "publication_failure",
+            "repository_integrity_uncertainty",
+        ):
+            self.assertFalse(failure_owner_action_required(category), category)
+        for category in OWNER_BLOCKER_CATEGORIES:
+            self.assertTrue(failure_owner_action_required(category), category)
+        self.assertTrue(
+            failure_owner_action_required(
+                "independent_review_defect",
+                exhausted=True,
+            )
+        )
+
     def test_supported_model_configuration_and_stage_separation(self) -> None:
         self.assertEqual(
             STAGES,
@@ -3341,6 +3361,35 @@ raise SystemExit(64)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             repo = self.make_repo(root)
+            external_diff_marker = root / "external-diff-used"
+            textconv_marker = root / "textconv-used"
+            external_diff = root / "external-diff.sh"
+            external_diff.write_text(
+                f"#!/bin/sh\nprintf used > {shlex.quote(str(external_diff_marker))}\n"
+            )
+            external_diff.chmod(0o700)
+            textconv = root / "textconv.sh"
+            textconv.write_text(
+                "#!/bin/sh\n"
+                f"printf used > {shlex.quote(str(textconv_marker))}\n"
+                "/bin/cat \"$1\"\n"
+            )
+            textconv.chmod(0o700)
+            (repo / ".gitattributes").write_text("ops/NOW.md diff=review-textconv\n")
+            subprocess.run(["git", "add", ".gitattributes"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "review attributes"], cwd=repo, check=True
+            )
+            subprocess.run(
+                ["git", "config", "diff.external", str(external_diff)],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "diff.review-textconv.textconv", str(textconv)],
+                cwd=repo,
+                check=True,
+            )
             base_commit = subprocess.run(
                 ["git", "rev-parse", "HEAD"],
                 cwd=repo,
@@ -3421,6 +3470,8 @@ raise SystemExit(64)
             self.assertEqual(materialized["base_commit"], base_commit)
             self.assertIn("+candidate review", str(materialized["content"]))
             self.assertTrue(materialized["untracked_files_prohibited"])
+            self.assertFalse(external_diff_marker.exists())
+            self.assertFalse(textconv_marker.exists())
             self.assertNotIn("x" * 100, json.dumps(captured))
             self.assertEqual(
                 captured["verification_evidence"],
@@ -3643,6 +3694,49 @@ raise SystemExit(64)
                 {
                     "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state),
                 },
+            ):
+                spec.loader.exec_module(dispatcher)
+            self.assertIsNone(
+                dispatcher.preserved_final_assistant_output(
+                    {"session_id": session_id, "api_calls_completed": 1}
+                )
+            )
+
+    def test_completed_session_recovery_requires_global_final_assistant_message(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            state = root / "state"
+            session_id = "3" * 32
+            session_directory = state / "hermes-sessions" / session_id
+            session_directory.mkdir(parents=True)
+            database = sqlite3.connect(session_directory / "state.db")
+            database.execute(
+                """CREATE TABLE messages (
+                    id INTEGER PRIMARY KEY,
+                    role TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    finish_reason TEXT,
+                    active INTEGER NOT NULL
+                )"""
+            )
+            database.execute(
+                "INSERT INTO messages VALUES (1, 'assistant', '{}', 'stop', 1)"
+            )
+            database.execute(
+                "INSERT INTO messages VALUES (2, 'user', 'continued', NULL, 1)"
+            )
+            database.commit()
+            database.close()
+            spec = importlib.util.spec_from_file_location(
+                "transport_recovery_global_final", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state)},
             ):
                 spec.loader.exec_module(dispatcher)
             self.assertIsNone(

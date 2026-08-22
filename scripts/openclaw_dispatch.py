@@ -26,6 +26,7 @@ from openclaw_automation import (
     consume_attempt,
     consume_continuation,
     digest,
+    failure_owner_action_required,
     git,
     hermes_chat_usage,
     model_policy,
@@ -1584,9 +1585,9 @@ def preserved_final_assistant_output(usage_report: dict[str, Any]) -> str | None
         connection = sqlite3.connect(f"{resolved_database.as_uri()}?mode=ro", uri=True)
         try:
             row = connection.execute(
-                """SELECT content, finish_reason
+                """SELECT role, content, finish_reason
                    FROM messages
-                   WHERE role = 'assistant' AND active = 1
+                   WHERE active = 1
                    ORDER BY id DESC
                    LIMIT 1"""
             ).fetchone()
@@ -1596,12 +1597,13 @@ def preserved_final_assistant_output(usage_report: dict[str, Any]) -> str | None
         return None
     if (
         row is None
-        or not isinstance(row[0], str)
-        or not row[0].strip()
-        or row[1] != "stop"
+        or row[0] != "assistant"
+        or not isinstance(row[1], str)
+        or not row[1].strip()
+        or row[2] != "stop"
     ):
         return None
-    return row[0].strip()
+    return row[1].strip()
 
 
 def safe_model_text(value: Any, *, field: str, maximum: int = 2000) -> str:
@@ -2600,7 +2602,16 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
         )
     if expected_paths:
         patch_result = subprocess.run(
-            ["git", "diff", "--binary", base_commit, "--", *expected_paths],
+            [
+                "git",
+                "diff",
+                "--no-ext-diff",
+                "--no-textconv",
+                "--binary",
+                base_commit,
+                "--",
+                *expected_paths,
+            ],
             cwd=REPO,
             check=True,
             stdout=subprocess.PIPE,
@@ -3748,7 +3759,7 @@ def main() -> int:
             "owner_action_required": bool(
                 exhausted_marker.exists()
                 or bounded_recovery_exhausted
-                or error.category not in RECOVERABLE_ROUTING_FAILURES
+                or failure_owner_action_required(error.category)
             ),
         }
         atomic_write_json(STATE_DIR / "last-failure.json", failure)
