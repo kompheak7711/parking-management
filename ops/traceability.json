@@ -1007,6 +1007,14 @@
       "notes": "An optional unenrolled actor receives no authority from MFA policy and retains only separately provider-established capability grants."
     },
     {
+      "test_id": "test_mfa_policy_audit_evidence_is_immutable",
+      "upstream_ids": ["PR-CAP-009", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_mfa_policy.py",
+      "status": "implemented",
+      "notes": "MFA policy decision evidence is immutable after recording so later code cannot rewrite the audited outcome."
+    },
+    {
       "test_id": "test_invalid_mfa_policy_evidence_fails_closed_without_actor_establishment",
       "upstream_ids": ["TEST-128", "SEC-013", "DL-056"],
       "test_level": "security",
@@ -1975,6 +1983,14 @@
       "notes": "Deterministic RFC 6238 Appendix B vectors verify the standards-based SHA-1 TOTP calculation."
     },
     {
+      "test_id": "test_totp_matches_rfc_6238_algorithm_vectors",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_totp_security.py",
+      "status": "implemented",
+      "notes": "RFC 6238 Appendix B vectors verify the supported SHA-1, SHA-256, and SHA-512 TOTP algorithms at the same deterministic instant."
+    },
+    {
       "test_id": "test_totp_verification_accepts_exact_counter_and_rejects_wrong_or_malformed_codes",
       "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
       "test_level": "security",
@@ -2005,6 +2021,14 @@
       "test_path": "backend/tests/test_totp_security.py",
       "status": "implemented",
       "notes": "Authenticated secret protection rejects ciphertext tampering, wrong keys, and invalid AES-256 key material through one generic failure."
+    },
+    {
+      "test_id": "test_aes_gcm_unprotect_rejects_non_byte_material",
+      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_totp_security.py",
+      "status": "implemented",
+      "notes": "Runtime-corrupted nonce or ciphertext types fail closed through the generic protected-material error before reaching the cryptographic provider."
     },
     {
       "test_id": "test_totp_operations_do_not_emit_or_represent_secret_material",

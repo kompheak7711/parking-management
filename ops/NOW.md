@@ -36,13 +36,21 @@
   route module and changed zero files. Its attempted broad patch failed atomically; direct review
   retained the existing bounded inputs, origin/CSRF checks, secure cookies, generic errors, and
   centralized rate-limit/unavailable handling. The focused API/error suite passes 47 tests.
-- Product status: V1-020 implementation is in progress; `authentication_core` and
-  `authentication_api` are complete and later substages have not started.
+- Sensitive data and privileges: session `9e84786468ca446b69359637c3263bd3` reviewed the logging
+  allowlist, redaction tests, distinct database identities, protected secret sources, and grants;
+  no product change was required and 16 focused checks pass.
+- MFA policy: session `3e412c9d1876fdb6b07b2a8d360333df` identified useful TOTP
+  hardening mixed with an unnecessary SMS-domain change. The SMS change was rejected because the
+  API already excludes and tests SMS. Codex added RFC SHA-256/SHA-512 vectors, non-byte protected
+  material rejection, immutable audit evidence, and traceability; 69 focused tests and all 15
+  complete-profile gates pass (353 backend, 105 PostgreSQL, 32 frontend, 128 automation).
+- Product status: V1-020 implementation is in progress; the first four substages are complete;
+  recovery, sessions/integration, and bootstrap/release have not started.
 - Owner action: none.
-- Exact next action: publish the no-change `authentication_api` evidence, then dispatch only
-  V1-020 `sensitive_data_and_privileges`.
+- Exact next action: run the complete profile, review and publish `mfa_policy`, then dispatch
+  only V1-020 `recovery`.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-020 active; authentication_core and authentication_api complete.
-- Automation exact next action: Publish authentication_api evidence, then dispatch sensitive_data_and_privileges.
+- Automation candidate state: V1-020 active; four of seven bounded substages complete.
+- Automation exact next action: Verify and publish mfa_policy, then dispatch recovery.
 <!-- AUTOMATION_STATUS_END -->

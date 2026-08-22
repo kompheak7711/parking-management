@@ -377,6 +377,13 @@ def test_mfa_policy_requirements_have_implemented_traceability() -> None:
             "SEC-013",
             "DL-056",
         },
+        "test_mfa_policy_audit_evidence_is_immutable": {
+            "PR-CAP-009",
+            "API-096",
+            "TEST-128",
+            "SEC-013",
+            "DL-056",
+        },
         "test_invalid_mfa_policy_evidence_fails_closed_without_actor_establishment": {
             "TEST-128",
             "SEC-013",
@@ -724,10 +731,12 @@ def test_totp_mfa_foundation_has_bounded_traceability() -> None:
     routed_authorities = {"DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"}
     expected_test_ids = {
         "test_totp_matches_rfc_6238_sha1_vectors",
+        "test_totp_matches_rfc_6238_algorithm_vectors",
         "test_totp_verification_accepts_exact_counter_and_rejects_wrong_or_malformed_codes",
         "test_secret_generator_requests_fixed_os_entropy_and_returns_base32_material",
         "test_aes_gcm_protection_round_trips_only_with_bound_enrollment_context",
         "test_aes_gcm_protection_rejects_wrong_key_tampering_and_invalid_material",
+        "test_aes_gcm_unprotect_rejects_non_byte_material",
         "test_totp_operations_do_not_emit_or_represent_secret_material",
         "test_totp_enrollments_store_only_protected_material_separate_from_account_authority",
         "test_totp_enrollments_reject_unprotected_or_malformed_verifier_material",

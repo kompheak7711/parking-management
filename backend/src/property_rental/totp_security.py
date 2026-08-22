@@ -213,7 +213,9 @@ class Aes256GcmTotpSecretProtector:
         if (
             protected.encryption_algorithm != AES_256_GCM_ALGORITHM
             or protected.key_identifier != self._key_identifier
+            or not isinstance(protected.nonce, bytes)
             or len(protected.nonce) != AES_GCM_NONCE_BYTES
+            or not isinstance(protected.ciphertext, bytes)
         ):
             raise TotpSecretProtectionError("protected TOTP material is invalid")
         associated_data = self._associated_data(

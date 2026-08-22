@@ -3,6 +3,7 @@
 import logging
 import uuid
 from collections.abc import Callable
+from typing import cast
 
 import pytest
 
@@ -10,6 +11,7 @@ from property_rental.totp_security import (
     TOTP_SECRET_ENTROPY_BYTES,
     Aes256GcmTotpSecretProtector,
     ProtectedTotpSecret,
+    TotpAlgorithm,
     TotpParameters,
     TotpSecret,
     TotpSecretGenerator,
@@ -44,6 +46,34 @@ def test_totp_matches_rfc_6238_sha1_vectors(at_time: int, expected_code: str) ->
     parameters = TotpParameters(algorithm="sha1", digits=8, period_seconds=30)
 
     generated = TotpService().generate_code(secret, at_time=at_time, parameters=parameters)
+
+    assert generated == expected_code
+
+
+@pytest.mark.parametrize(
+    ("algorithm", "secret_bytes", "expected_code"),
+    [
+        ("sha1", b"12345678901234567890", "94287082"),
+        ("sha256", b"12345678901234567890123456789012", "46119246"),
+        (
+            "sha512",
+            b"1234567890123456789012345678901234567890123456789012345678901234",
+            "90693936",
+        ),
+    ],
+)
+def test_totp_matches_rfc_6238_algorithm_vectors(
+    algorithm: TotpAlgorithm,
+    secret_bytes: bytes,
+    expected_code: str,
+) -> None:
+    parameters = TotpParameters(algorithm=algorithm, digits=8, period_seconds=30)
+
+    generated = TotpService().generate_code(
+        TotpSecret.from_bytes(secret_bytes),
+        at_time=59,
+        parameters=parameters,
+    )
 
     assert generated == expected_code
 
@@ -142,6 +172,35 @@ def test_aes_gcm_protection_rejects_wrong_key_tampering_and_invalid_material() -
                 key=bytes(range(32)),
                 key_identifier=invalid_key_identifier,
             )
+
+
+@pytest.mark.parametrize("invalid_field", ["nonce", "ciphertext"])
+def test_aes_gcm_unprotect_rejects_non_byte_material(invalid_field: str) -> None:
+    actor_id = uuid.uuid4()
+    enrollment_id = uuid.uuid4()
+    protector = Aes256GcmTotpSecretProtector(
+        key=bytes(range(32)),
+        key_identifier="current-key",
+        nonce_source=lambda size: b"n" * size,
+    )
+    protected = protector.protect(
+        TotpSecret.from_bytes(b"12345678901234567890"),
+        actor_id=actor_id,
+        enrollment_id=enrollment_id,
+    )
+    malformed = ProtectedTotpSecret(
+        ciphertext=(
+            cast(bytes, "not-byte-ciphertext")
+            if invalid_field == "ciphertext"
+            else protected.ciphertext
+        ),
+        nonce=(cast(bytes, "n" * 12) if invalid_field == "nonce" else protected.nonce),
+        key_identifier=protected.key_identifier,
+        encryption_algorithm=protected.encryption_algorithm,
+    )
+
+    with pytest.raises(TotpSecretProtectionError, match="protected TOTP material is invalid"):
+        protector.unprotect(malformed, actor_id=actor_id, enrollment_id=enrollment_id)
 
 
 def test_totp_operations_do_not_emit_or_represent_secret_material(

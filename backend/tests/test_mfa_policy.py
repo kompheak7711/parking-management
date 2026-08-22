@@ -1,7 +1,7 @@
 """Focused tests for provider-neutral MFA policy enforcement."""
 
 from collections.abc import Iterable
-from dataclasses import fields
+from dataclasses import FrozenInstanceError, fields
 from typing import cast
 
 import pytest
@@ -109,6 +109,17 @@ def test_optional_unenrolled_actor_keeps_only_separately_granted_capabilities() 
         ),
     )
     assert not is_authorized(actor, AuthorizationRequirement(capability="leases.write"))
+
+
+def test_mfa_policy_audit_evidence_is_immutable() -> None:
+    _, evidence = establish_actor(
+        mfa_policy_class="required",
+        enrollment_state="enrolled",
+        challenge_state="pending",
+    )
+
+    with pytest.raises(FrozenInstanceError):
+        evidence[0].outcome = "established"  # type: ignore[misc]
 
 
 @pytest.mark.parametrize(
