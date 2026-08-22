@@ -867,6 +867,39 @@ def rebase_exhausted_v1_019_sign_in(
     authorization = current.get("owner_authorized_fresh_sign_in_sequence") or {}
     if (
         current.get("routing_revision") == ROUTING_REVISION
+        and authorization.get("exhausted_fingerprint")
+        == EXHAUSTED_SIGN_IN_FINGERPRINT
+        and authorization.get("consumed") is True
+        and authorization.get("transition_status") == "cleanup_pending"
+    ):
+        _complete_exhausted_rebase_cleanup(dispatch_state, current)
+        current = read_json_object(candidate_path, "resumed fresh V1-019 candidate record")
+        current.update(
+            {
+                "candidate_base_commit": candidate_base_commit,
+                "initial_repository_fingerprint": fingerprint,
+                "repository_fingerprint": fingerprint,
+                "updated_at": utc_now(),
+            }
+        )
+        current.setdefault("events", []).append(
+            {
+                "stage": "automation_context_routing_repair",
+                "result": "exhausted_cleanup_rebased_after_follow_up_repair",
+                "routing_revision": ROUTING_REVISION,
+                "repository_commit": candidate_base_commit,
+                "repository_fingerprint": fingerprint,
+                "owner_authorization_consumed": False,
+            }
+        )
+        atomic_write_json(candidate_path, current)
+        return {
+            "status": "cleanup_rebased_after_follow_up_repair",
+            "archive": authorization.get("archive"),
+            "repository_fingerprint": fingerprint,
+        }
+    if (
+        current.get("routing_revision") == ROUTING_REVISION
         and current.get("candidate_base_commit") == candidate_base_commit
         and current.get("repository_fingerprint") == fingerprint
         and authorization.get("exhausted_fingerprint") == EXHAUSTED_SIGN_IN_FINGERPRINT
@@ -1071,37 +1104,9 @@ def _complete_exhausted_rebase_cleanup(
     dispatch_state: Path, record: dict[str, Any]
 ) -> None:
     """Idempotently finish the post-candidate cleanup of an exhausted rebase."""
-    authorization = record.get("owner_authorized_fresh_sign_in_sequence") or {}
-    archive = Path(str(authorization.get("archive") or "")).resolve()
-    expected_root = (dispatch_state / "superseded/v1-019-sign-in-context-v3").resolve()
-    try:
-        archive.relative_to(expected_root)
-    except ValueError as error:
-        raise RestorationError(
-            "the exhausted sign-in archive path escaped its boundary"
-        ) from error
-    pairs = (
-        (dispatch_state / "attempts/V1-019.json", archive / "attempt.json"),
-        (dispatch_state / "last-failure.json", archive / "last-failure.json"),
-        (
-            dispatch_state
-            / "terminal/repair_exhausted"
-            / f"{EXHAUSTED_SIGN_IN_FINGERPRINT}.json",
-            archive / "repair-exhausted.json",
-        ),
-    )
-    for live, archived in pairs:
-        if not archived.is_file():
-            raise RestorationError(
-                "the exhausted sign-in transition archive is incomplete"
-            )
-        if live.exists():
-            if not live.is_file() or digest(live.read_bytes()) != digest(
-                archived.read_bytes()
-            ):
-                raise RestorationError(
-                    "live exhausted sign-in evidence differs from its archive"
-                )
+    pairs = _validate_exhausted_rebase_cleanup(dispatch_state, record)
+    for live, _ in pairs:
+        if live.exists() or live.is_symlink():
             live.unlink()
     current_path = dispatch_state / "candidates/V1-019.json"
     current = read_json_object(current_path, "fresh V1-019 candidate record")
@@ -1112,6 +1117,104 @@ def _complete_exhausted_rebase_cleanup(
         current["owner_authorized_fresh_sign_in_sequence"] = current_authorization
         current["updated_at"] = utc_now()
         atomic_write_json(current_path, current)
+
+
+def _validate_exhausted_rebase_cleanup(
+    dispatch_state: Path, record: dict[str, Any]
+) -> tuple[tuple[Path, Path], ...]:
+    """Validate an interrupted cleanup without mutating its remaining live evidence."""
+    dispatch_state = dispatch_state.resolve()
+    authorization = record.get("owner_authorized_fresh_sign_in_sequence") or {}
+    archive = Path(str(authorization.get("archive") or "")).resolve()
+    expected_root = (dispatch_state / "superseded/v1-019-sign-in-context-v3").resolve()
+    try:
+        archive.relative_to(expected_root)
+    except ValueError as error:
+        raise RestorationError(
+            "the exhausted sign-in archive path escaped its boundary"
+        ) from error
+    pairs: tuple[tuple[Path, Path], ...] = (
+        (dispatch_state / "attempts/V1-019.json", archive / "attempt.json"),
+        (dispatch_state / "last-failure.json", archive / "last-failure.json"),
+        (
+            dispatch_state
+            / "terminal/repair_exhausted"
+            / f"{EXHAUSTED_SIGN_IN_FINGERPRINT}.json",
+            archive / "repair-exhausted.json",
+        ),
+    )
+    for live, archived in pairs:
+        try:
+            archived_metadata = archived.lstat()
+            archived.resolve(strict=True).relative_to(archive)
+        except (OSError, ValueError) as error:
+            raise RestorationError(
+                "the exhausted sign-in transition archive is incomplete"
+            ) from error
+        if archived.is_symlink() or not stat.S_ISREG(archived_metadata.st_mode):
+            raise RestorationError(
+                "the exhausted sign-in transition archive is incomplete"
+            )
+        archived_value = read_json_object(archived, "archived exhausted sign-in evidence")
+        if live.exists() or live.is_symlink():
+            try:
+                live_metadata = live.lstat()
+                live.resolve(strict=True).relative_to(dispatch_state)
+            except (OSError, ValueError) as error:
+                raise RestorationError(
+                    "live exhausted sign-in evidence differs from its archive"
+                ) from error
+            if live.is_symlink() or not stat.S_ISREG(live_metadata.st_mode):
+                raise RestorationError(
+                    "live exhausted sign-in evidence differs from its archive"
+                )
+            live_value = read_json_object(live, "live exhausted sign-in evidence")
+            if live_value != archived_value:
+                raise RestorationError(
+                    "live exhausted sign-in evidence differs from its archive"
+                )
+    return pairs
+
+
+def interrupted_exhausted_cleanup_install_required(
+    prior: dict[str, Any] | None, dispatch_state: Path
+) -> bool:
+    """Recognize only the exact formatting-mismatch cleanup crash for one safe retry."""
+    if not (
+        isinstance(prior, dict)
+        and prior.get("status") == "failed_closed"
+        and prior.get("failure")
+        == "live exhausted sign-in evidence differs from its archive"
+        and prior.get("recovery_state") == "terminal_failure"
+        and prior.get("owner_action_required") is False
+    ):
+        return False
+    try:
+        record = read_json_object(
+            dispatch_state / "candidates/V1-019.json",
+            "interrupted exhausted V1-019 cleanup candidate",
+        )
+        authorization = record.get("owner_authorized_fresh_sign_in_sequence") or {}
+        exact = bool(
+            record.get("candidate") == "V1-019"
+            and record.get("routing_revision") == ROUTING_REVISION
+            and record.get("stage") == "implementation"
+            and record.get("completed_implementation_substages") == []
+            and record.get("expected_worktree_paths") == []
+            and record.get("recovery_pending") is True
+            and record.get("bounded_recovery_exhausted") is False
+            and authorization.get("consumed") is True
+            and authorization.get("eligible_sequences") == 1
+            and authorization.get("exhausted_fingerprint")
+            == EXHAUSTED_SIGN_IN_FINGERPRINT
+            and authorization.get("transition_status") == "cleanup_pending"
+        )
+        if not exact:
+            return False
+        _validate_exhausted_rebase_cleanup(dispatch_state, record)
+    except RestorationError:
+        return False
+    return True
 
 
 def rebase_scheduled_v1_019_recovery(
@@ -2368,8 +2471,13 @@ def install(args: argparse.Namespace) -> int:
             and prior.get("recovery_state") == "terminal_failure"
             and prior.get("owner_action_required") is True
         )
+        interrupted_cleanup_install = interrupted_exhausted_cleanup_install_required(
+            prior, Path(args.dispatch_state).resolve()
+        )
         if exact_exhausted_install:
             validate_exhausted_v1_019_sign_in(Path(args.dispatch_state).resolve())
+        elif interrupted_cleanup_install:
+            pass
         elif (
             prior is None
             or prior.get("status") != "failed_closed"

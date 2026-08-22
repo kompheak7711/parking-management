@@ -17,6 +17,31 @@
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
     "branch": "implementation/foundation",
     "changed_path_count": 10,
+    "cleanup_semantic_follow_up": {
+      "authorization": "owner_direct_takeover_2026-08-22",
+      "failed_restoration_commit": "cb5d3eca1015481f14a6ebeb1986fd2c47ad7e31",
+      "failed_restoration_run_id": 32562545129,
+      "failure_category": "deterministic_cleanup_serialization_mismatch",
+      "model_attempts_consumed": 0,
+      "owner_action_consumed_again": false,
+      "product_files_modified": false,
+      "scheduler_enabled": false,
+      "status": "verified_awaiting_publication",
+      "token_ceiling": 60000,
+      "token_ceiling_changed": false,
+      "independent_review": {
+        "initial_findings": 1,
+        "corrected_findings": 1,
+        "final_status": "PASS",
+        "reviewer_edits": false,
+        "session_id": "01a0288d-0c01-7390-8280-f70679de1d1d"
+      },
+      "verification": {
+        "automation_tests": 124,
+        "complete_profile": "PASS: 15/15",
+        "evidence": "/private/tmp/property-rental-v1-019-cleanup-semantic-follow-up-final.json"
+      }
+    },
     "context_budget_restoration_repair": {
       "authorization": "existing_durable_v1",
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",

@@ -1,4 +1,4 @@
-# V1-019 sign-in context-routing v4 repair — independently reviewed; publication pending
+# V1-019 sign-in cleanup comparison follow-up — verified; publication pending
 
 - Objective: recover only the exhausted bounded V1-019 `sign_in` route under the
   Owner's direct-takeover authorization. Product and canonical files remain unchanged.
@@ -20,6 +20,14 @@
 - Recovery repair: the exact exhausted candidate, attempt, failure, marker, manifests, tasks,
   budgets, usage, and session diagnostics are archived before this authorization is consumed
   once. Unknown/protected failures cannot reuse it. Materialization-marker reentry is supported.
+- Live follow-up: the first green restoration metadata run `32562545129` remained fail-closed
+  because a compact live JSON marker and its indented archive were compared byte-for-byte. They
+  were semantically identical. Cleanup now validates strict regular-file containment and compares
+  parsed objects, while the exact partially completed transition can resume after follow-up CI.
+  Independent review found one broken-symlink edge; it is corrected, regression-covered, and the
+  final verdict is PASS with no material findings.
+- Follow-up verification: PASS, complete profile 15/15 with the same 333 backend, 105
+  disposable PostgreSQL, 3 frontend, and 124 automation test results.
 - Scope repair: the Hermes manifest enforces the packet's exact sign-in write allowlist.
   The login URL is derived from router and decorator AST literals and fails closed on drift.
 - Verification: PASS, complete profile 15/15. Backend 333 passed with 105 expected local
@@ -33,12 +41,12 @@
   including symlinked parent directories. Final independent verdict: PASS, no material findings.
 - Safety: token ceiling remains exactly 60,000. V1-020 has not started. No product attempt or
   prior historical evidence was deleted or rewritten.
-- Exact next action: publish only this repair, require successful
-  GitHub Actions, then run the repair-bound continuation and prove bounded `sign_in` progress.
+- Exact next action: verify and independently review this bounded follow-up, publish it, require
+  successful GitHub Actions, then resume the exact cleanup and prove bounded `sign_in` progress.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation candidate state: V1-019 approved and active; product implementation has not started.
-- Automation exact next action: publish this repair, then permit only the fresh bounded V1-019 sign-in sequence.
+- Automation exact next action: publish the cleanup-comparison follow-up, then resume only the already-consumed fresh V1-019 sign-in sequence.
 <!-- AUTOMATION_STATUS_END -->
 <!-- POST_EXIT_RESTORATION_BEGIN -->
 - Post-exit restoration metadata is published; the existing supervisor remains disabled until the continuation enables it.

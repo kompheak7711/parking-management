@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "repair": "v1-019-sign-in-context-routing-v4",
-  "status": "independently_reviewed_awaiting_publication",
+  "status": "follow_up_verified_awaiting_publication",
   "baseline_branch": "implementation/foundation",
   "baseline_head": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
   "candidate": "V1-019",
@@ -9,6 +9,35 @@
   "canonical_specifications_modified": false,
   "token_ceiling": 60000,
   "token_ceiling_increased": false,
+  "cleanup_semantic_follow_up": {
+    "authorization": "owner direct takeover on 2026-08-22",
+    "status": "verified_awaiting_publication",
+    "failed_restoration_commit": "cb5d3eca1015481f14a6ebeb1986fd2c47ad7e31",
+    "failed_restoration_run_id": 32562545129,
+    "failure": "live exhausted sign-in evidence differs from its archive",
+    "root_cause": "the immutable live and archived JSON objects were semantically identical but cleanup compared their different compact and indented byte serializations",
+    "supervisor_enabled": false,
+    "model_attempts_consumed": 0,
+    "owner_action_consumed_again": false,
+    "token_ceiling": 60000,
+    "product_files_changed": [],
+    "canonical_specifications_modified": false,
+    "independent_review": {
+      "initial_findings": 1,
+      "corrected_and_regression_covered": 1,
+      "final_status": "PASS",
+      "session_id": "01a0288d-0c01-7390-8280-f70679de1d1d",
+      "reviewer_edits": false
+    },
+    "verification": {
+      "complete_profile": "PASS: 15/15 gates",
+      "automation": "PASS: 124 tests plus compact-state routing, visibility watchdog, shell syntax, and Python compilation",
+      "backend": "333 passed; 105 expected local database-environment skips",
+      "postgresql": "105 passed",
+      "frontend": "3 passed",
+      "evidence": "/private/tmp/property-rental-v1-019-cleanup-semantic-follow-up-final.json"
+    }
+  },
   "sign_in_context_routing_v4": {
     "authorization": "owner direct takeover on 2026-08-22",
     "status": "independently_reviewed_awaiting_publication",

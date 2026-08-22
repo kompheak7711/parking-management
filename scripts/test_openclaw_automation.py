@@ -5248,10 +5248,19 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                 / "terminal/repair_exhausted"
                 / f"{restoration.EXHAUSTED_SIGN_IN_FINGERPRINT}.json",
             }
+            resolved_live_cleanup_paths = {
+                path.resolve() for path in live_cleanup_paths
+            }
+            compact_marker = next(
+                path for path in live_cleanup_paths if "repair_exhausted" in path.parts
+            )
+            compact_marker.write_text(
+                json.dumps(json.loads(compact_marker.read_text()), separators=(",", ":"))
+            )
 
             def interrupt_second_unlink(path: Path, *args: Any, **kwargs: Any) -> None:
                 nonlocal unlink_count
-                if path in live_cleanup_paths:
+                if path.resolve() in resolved_live_cleanup_paths:
                     unlink_count += 1
                     if unlink_count == 2:
                         raise OSError("simulated transition interruption")
@@ -5270,10 +5279,42 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                 pending["owner_authorized_fresh_sign_in_sequence"]["transition_status"],
                 "cleanup_pending",
             )
+            prior_cleanup_failure = {
+                "status": "failed_closed",
+                "failure": "live exhausted sign-in evidence differs from its archive",
+                "recovery_state": "terminal_failure",
+                "owner_action_required": False,
+            }
+            self.assertTrue(
+                restoration.interrupted_exhausted_cleanup_install_required(
+                    prior_cleanup_failure, dispatch
+                )
+            )
+            remaining_failure = dispatch / "last-failure.json"
+            remaining_failure_value = remaining_failure.read_text()
+            remaining_failure.unlink()
+            remaining_failure.symlink_to(root / "missing-live-cleanup-evidence")
+            self.assertFalse(
+                restoration.interrupted_exhausted_cleanup_install_required(
+                    prior_cleanup_failure, dispatch
+                )
+            )
+            remaining_failure.unlink()
+            remaining_failure.write_text(remaining_failure_value)
+            (repo / "tracked.txt").write_text("routing v4 follow-up\n")
+            subprocess.run(["git", "add", "tracked.txt"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "cleanup comparison follow-up"],
+                cwd=repo,
+                check=True,
+            )
+            head = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
             result = restoration.rebase_exhausted_v1_019_sign_in(
                 repo, dispatch, candidate_base_commit=head
             )
-            self.assertEqual(result["status"], "already_rebased_from_exhaustion")
+            self.assertEqual(result["status"], "cleanup_rebased_after_follow_up_repair")
             record = json.loads((dispatch / "candidates/V1-019.json").read_text())
             self.assertEqual(record["routing_revision"], restoration.ROUTING_REVISION)
             self.assertTrue(record["recovery_pending"])
