@@ -32,13 +32,17 @@
   final V1-020 publication gate.
 - Scheduler: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is paused while the preserved
   authentication-core diff is verified and published; daily reporting and watchdog jobs are unchanged.
-- Product status: V1-020 implementation is in progress; `authentication_core` is complete and
-  later substages have not started.
+- Authentication API: session `aa20ea3470d021ff8aed6b5e5aecaaff` reviewed the complete
+  route module and changed zero files. Its attempted broad patch failed atomically; direct review
+  retained the existing bounded inputs, origin/CSRF checks, secure cookies, generic errors, and
+  centralized rate-limit/unavailable handling. The focused API/error suite passes 47 tests.
+- Product status: V1-020 implementation is in progress; `authentication_core` and
+  `authentication_api` are complete and later substages have not started.
 - Owner action: none.
-- Exact next action: publish `authentication_core`, then dispatch only V1-020
-  `authentication_api`.
+- Exact next action: publish the no-change `authentication_api` evidence, then dispatch only
+  V1-020 `sensitive_data_and_privileges`.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-020 active; authentication_core complete and awaiting publication.
-- Automation exact next action: Publish authentication_core, then dispatch authentication_api.
+- Automation candidate state: V1-020 active; authentication_core and authentication_api complete.
+- Automation exact next action: Publish authentication_api evidence, then dispatch sensitive_data_and_privileges.
 <!-- AUTOMATION_STATUS_END -->

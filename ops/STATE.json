@@ -474,6 +474,10 @@
     },
     "v1_020_context_routing": {
       "authorization": "owner_approved_remaining_v1_roadmap",
+      "completed_substages": [
+        "authentication_core",
+        "authentication_api"
+      ],
       "failed_session_api_calls": 1,
       "failed_session_changed_paths": 0,
       "failed_session_id": "20260823_003208_38266a",
@@ -521,7 +525,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Publish V1-020 authentication_core, then dispatch authentication_api.",
+  "next_action": "Publish V1-020 authentication_api evidence, then dispatch sensitive_data_and_privileges.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
@@ -622,10 +626,11 @@
     "PASS: 128 automation tests plus routing, compact-state, visibility-watchdog, syntax, JSON, publication, and diff checks",
     "PASS: 44 focused authentication-core and traceability tests",
     "PASS: complete verification profile 15/15; backend 347 passed; PostgreSQL 105 passed; frontend 32 passed; automation 128 passed",
-    "PASS: direct review of seven authentication-core paths; no material findings; candidate-wide independent review remains pending"
+    "PASS: direct review of seven authentication-core paths; no material findings; candidate-wide independent review remains pending",
+    "PASS: 47 focused authentication API, error-envelope, and composition tests; authentication_api required no product change"
   ],
   "tests_tranche_id": "V1-020",
-  "timestamp": "2026-08-22T18:14:30Z",
+  "timestamp": "2026-08-22T18:35:30Z",
   "touched_areas": [
     "complete authentication abuse, lifecycle, recovery, session, and bootstrap tests"
   ],
