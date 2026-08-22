@@ -1,4 +1,4 @@
-# V1-020 identity and security hardening — context-routing repair
+# V1-020 identity and security hardening — bounded implementation ready
 
 - Candidate: `V1-020` — Identity and security end-to-end hardening gate.
 - Authorization: standing authorization for the remaining approved V1 roadmap; no renewed
@@ -14,14 +14,15 @@
   traceability/profile fallback prevent later approved candidates from receiving empty packets.
 - Verification: all 128 automation tests, routing/state/watchdog suites, shell and Python
   syntax, JSON validation, publication guard, and diff checks pass.
-- Scheduler: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is paused during repair
-  publication; daily reporting and watchdog jobs are unchanged.
+- Publication: repair commit `21334e2` passed GitHub Actions run `32588816502`; the exact
+  zero-change failure and blocked marker were archived as recovered.
+- Scheduler: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is cleared to resume after this
+  publication record; daily reporting and watchdog jobs are unchanged.
 - Product status: V1-020 implementation has not started and no product path has changed.
 - Owner action: none.
-- Exact next action: verify and publish the routing repair, rebase the failed no-change attempt,
-  re-enable the supervisor, and retry only V1-020 `authentication_abuse`.
+- Exact next action: re-enable the supervisor and retry only V1-020 `authentication_abuse`.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-020 active; no product changes; context-routing repair in progress.
-- Automation exact next action: Publish the bounded context-routing repair, then retry authentication_abuse under standing authorization.
+- Automation candidate state: V1-020 active; routing repair published; bounded implementation ready.
+- Automation exact next action: Dispatch authentication_abuse under standing authorization.
 <!-- AUTOMATION_STATUS_END -->

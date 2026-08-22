@@ -455,7 +455,7 @@
       "roadmap_traceability_json_scope_secret_canonical_diff": "PASS",
       "watchdog_notifications": "PASS"
     },
-    "scheduler_enabled": false,
+    "scheduler_enabled": true,
     "standing_v1_autonomy": {
       "authorized_at": "2026-08-23T00:15:17+07:00",
       "authorization": "owner_approved_remaining_v1_roadmap",
@@ -485,7 +485,9 @@
         "traceability-based generic candidate path fallback"
       ],
       "routing_revision": "v1-020-security-hardening-routing-v1",
-      "status": "active_repair",
+      "repair_commit": "21334e2bd46b51f4170a8cb6070fe52f43fc5505",
+      "repair_ci_run_id": 32588816502,
+      "status": "published",
       "token_ceiling": 60000,
       "token_ceiling_changed": false
     },
@@ -512,7 +514,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Publish the bounded V1-020 context-routing repair, then retry authentication_abuse without consuming another Owner authorization.",
+  "next_action": "Implement V1-020 authentication_abuse under standing authorization.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
@@ -613,7 +615,7 @@
     "PASS: 128 automation tests plus routing, compact-state, visibility-watchdog, syntax, JSON, publication, and diff checks"
   ],
   "tests_tranche_id": "V1-020",
-  "timestamp": "2026-08-22T17:47:14Z",
+  "timestamp": "2026-08-22T17:51:30Z",
   "touched_areas": [
     "complete authentication abuse, lifecycle, recovery, session, and bootstrap tests"
   ],
