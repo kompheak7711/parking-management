@@ -9,6 +9,7 @@ import json
 import os
 import signal
 import sqlite3
+import stat
 import subprocess
 import sys
 import tempfile
@@ -19,6 +20,7 @@ from typing import Any
 from openclaw_automation import (
     atomic_write_json,
     changed_paths,
+    digest,
     relevant_processes,
     repository_fingerprint,
     utc_now,
@@ -27,7 +29,8 @@ from openclaw_automation import (
 SUPERVISOR_ID = "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb"
 SUPERVISOR_NAME = "property-rental-24x7-supervisor"
 EXPECTED_INTERVAL_MS = 1_800_000
-ROUTING_REVISION = "v1-019-context-restoration-repair-v3"
+ROUTING_REVISION = "v1-019-sign-in-context-routing-v4"
+EXHAUSTED_ROUTING_REVISION = "v1-019-context-restoration-repair-v3"
 PRIOR_ROUTING_REVISION = "v1-019-invocation-contract-repair-v2"
 INCIDENT_BASELINE = "d6eb7e73610b2a72cf38f4b32468226e9e76a436"
 LEGACY_INVOCATION_INCIDENT_BASELINE = "d877cf3b6648083f97e54d661933e3d188999dae"
@@ -43,6 +46,24 @@ CONTEXT_INCIDENT_OUTPUT_TOKENS = 422
 CONTEXT_INCIDENT_COUNTED_TOKENS = 17_303
 CONTEXT_INCIDENT_CACHE_READ_TOKENS = 9_216
 CONTEXT_INCIDENT_FALSE_PREDICTION = 109_152
+EXHAUSTED_SIGN_IN_FINGERPRINT = (
+    "f6a8bbead87cacf9ae60da196459bc4f2ef760dd32e6dff8624c24ef4f8b8e77"
+)
+EXHAUSTED_SIGN_IN_SESSIONS = (
+    "61d145e0655c5298cbcfa576fff3ff78",
+    "c851c8930c35456a94a9dcb2c5ef9e09",
+    "990342c0dca23620d6e5958c0d4ad5d2",
+)
+SIGN_IN_WRITABLE_PATHS = {
+    "frontend/src/App.tsx",
+    "frontend/src/App.test.tsx",
+    "frontend/src/styles.css",
+    "frontend/src/authClient.ts",
+    "frontend/src/authClient.test.ts",
+    "ops/NOW.md",
+    "ops/STATE.json",
+    "ops/traceability.json",
+}
 TERMINAL_RESTORATION_STATUSES = {"complete", "failed_closed"}
 FALSE_FAILURE_METADATA_COMMIT = "7c0f67d07092702229329a57176ae0fdc95afd12"
 FALSE_FAILURE_RUN_ID = 32511133185
@@ -301,7 +322,12 @@ def v1_019_integrity(
             raise RestorationError(
                 "dirty V1-019 work has no readable dispatcher record"
             ) from error
-        if (
+        interrupted_fresh_scope = bool(
+            cleaned_fresh_sequence_resume_required(dispatch_state, record)
+            and record.get("expected_worktree_paths") == []
+            and all(path in SIGN_IN_WRITABLE_PATHS for path in paths)
+        )
+        if not interrupted_fresh_scope and (
             record.get("candidate") != "V1-019"
             or sorted(record.get("expected_worktree_paths") or []) != paths
             or record.get("repository_fingerprint") != repository_fingerprint(repo)
@@ -669,23 +695,423 @@ def supersede_v1_019_incident(
 
 
 def validate_pending_sign_in_marker(
-    dispatch_state: Path, record: dict[str, Any], *, expected_attempt: int
+    dispatch_state: Path,
+    record: dict[str, Any],
+    *,
+    expected_attempt: int,
+    expected_status: str = "routing_recovery_pending",
 ) -> None:
     pending_fingerprint = record.get("pending_recovery_marker_fingerprint")
     if not isinstance(pending_fingerprint, str) or not pending_fingerprint:
-        raise RestorationError("the pending sign-in recovery marker identity is missing")
+        raise RestorationError(
+            "the pending sign-in recovery marker identity is missing"
+        )
     marker_path = (
-        dispatch_state
-        / "terminal/routing_recovery_pending"
-        / f"{pending_fingerprint}.json"
+        dispatch_state / f"terminal/{expected_status}" / f"{pending_fingerprint}.json"
     )
     marker = read_json_object(marker_path, "pending V1-019 recovery marker")
     if (
-        marker.get("phase") != "sign_in"
+        marker.get("status") != expected_status
+        or marker.get("phase") != "sign_in"
         or marker.get("attempt") != expected_attempt
         or marker.get("actionable_fingerprint") != pending_fingerprint
     ):
         raise RestorationError("the exact pending sign-in recovery marker drifted")
+
+
+def _exhausted_incident_artifacts(dispatch_state: Path) -> list[dict[str, Any]]:
+    """Index exact immutable artifacts for the three exhausted sign-in sessions."""
+    dispatch_state = dispatch_state.resolve()
+    paths: set[Path] = set()
+    for session_id in EXHAUSTED_SIGN_IN_SESSIONS:
+        for relative in (
+            f"budgets/V1-019-implementation-{session_id}.json",
+            f"usage/V1-019-implementation-{session_id}.json",
+            f"hermes-sessions/{session_id}/hermes.stderr",
+            f"hermes-sessions/{session_id}/logs/agent.log",
+            f"hermes-sessions/{session_id}/logs/errors.log",
+            f"hermes-sessions/{session_id}/state.db",
+        ):
+            candidate = dispatch_state / relative
+            if not candidate.exists() and not candidate.is_symlink():
+                raise RestorationError(
+                    f"historical Hermes artifact is missing: {relative}"
+                )
+            try:
+                metadata = candidate.lstat()
+                resolved = candidate.resolve(strict=True)
+                resolved.relative_to(dispatch_state)
+            except (OSError, ValueError) as error:
+                raise RestorationError(
+                    f"historical Hermes artifact escaped its boundary: {relative}"
+                ) from error
+            if candidate.is_symlink() or not stat.S_ISREG(metadata.st_mode):
+                raise RestorationError(
+                    f"historical Hermes artifact is not an exact regular file: {relative}"
+                )
+            paths.add(candidate)
+        manifests = sorted(
+            path
+            for path in (dispatch_state / "manifests").glob(f"*{session_id}*.json")
+            if path.is_file()
+        )
+        if len(manifests) != 1:
+            raise RestorationError(
+                f"historical Hermes session {session_id} must have exactly one manifest"
+            )
+        manifest = manifests[0]
+        try:
+            manifest_metadata = manifest.lstat()
+            resolved_manifest = manifest.resolve(strict=True)
+            resolved_manifest.relative_to(dispatch_state)
+        except (OSError, ValueError) as error:
+            raise RestorationError(
+                f"historical Hermes manifest escaped its boundary: {manifest.name}"
+            ) from error
+        if manifest.is_symlink() or not stat.S_ISREG(manifest_metadata.st_mode):
+            raise RestorationError(
+                f"historical Hermes manifest is not an exact regular file: {manifest.name}"
+            )
+        paths.add(manifest)
+        value = read_json_object(manifest, "historical Hermes manifest")
+        raw_task_path = Path(str(value.get("task_path") or ""))
+        task_path = raw_task_path.resolve()
+        try:
+            task_path.relative_to(dispatch_state.resolve())
+        except ValueError as error:
+            raise RestorationError(
+                "historical Hermes task escaped the dispatch-state archive boundary"
+            ) from error
+        if (
+            raw_task_path.is_symlink()
+            or not task_path.is_file()
+            or not stat.S_ISREG(task_path.lstat().st_mode)
+        ):
+            raise RestorationError(
+                f"historical Hermes task is missing for session {session_id}"
+            )
+        paths.add(task_path)
+    if len(paths) != len(EXHAUSTED_SIGN_IN_SESSIONS) * 8:
+        raise RestorationError(
+            "the exhausted sign-in artifact set is not exact and complete"
+        )
+    return [
+        {
+            "path": str(path.relative_to(dispatch_state)),
+            "bytes": path.stat().st_size,
+            "sha256": digest(path.read_bytes()),
+        }
+        for path in sorted(paths)
+    ]
+
+
+def validate_exhausted_v1_019_sign_in(
+    dispatch_state: Path,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    candidate = read_json_object(
+        dispatch_state / "candidates/V1-019.json", "exhausted V1-019 candidate"
+    )
+    attempt = read_json_object(
+        dispatch_state / "attempts/V1-019.json", "exhausted V1-019 attempt"
+    )
+    failure = read_json_object(
+        dispatch_state / "last-failure.json", "exhausted V1-019 failure"
+    )
+    marker = read_json_object(
+        dispatch_state
+        / "terminal/repair_exhausted"
+        / f"{EXHAUSTED_SIGN_IN_FINGERPRINT}.json",
+        "exhausted V1-019 marker",
+    )
+    usage = candidate.get("model_usage") or []
+    exact_usage = bool(
+        isinstance(usage, list)
+        and len(usage) == len(EXHAUSTED_SIGN_IN_SESSIONS)
+        and all(isinstance(item, dict) for item in usage)
+    )
+    session_ids = tuple(item.get("session_id") for item in usage) if exact_usage else ()
+    if (
+        candidate.get("candidate") != "V1-019"
+        or candidate.get("routing_revision") != EXHAUSTED_ROUTING_REVISION
+        or candidate.get("stage") != "implementation"
+        or candidate.get("completed_implementation_substages") != []
+        or candidate.get("expected_worktree_paths") != []
+        or candidate.get("bounded_recovery_exhausted") is not True
+        or candidate.get("recovery_pending") is not False
+        or candidate.get("ceiling_recovery_attempts") != {"sign_in": 3}
+        or session_ids != EXHAUSTED_SIGN_IN_SESSIONS
+        or attempt.get("fingerprint") != EXHAUSTED_SIGN_IN_FINGERPRINT
+        or (attempt.get("counters") or {}).get("implementation") != 1
+        or attempt.get("pending") is not None
+        or failure.get("category") != "model_session_or_token_ceiling"
+        or failure.get("actionable_fingerprint") != EXHAUSTED_SIGN_IN_FINGERPRINT
+        or failure.get("owner_action_required") is not True
+        or marker.get("status") != "repair_exhausted"
+        or marker.get("phase") != "sign_in"
+        or marker.get("attempts") != 3
+        or marker.get("actionable_fingerprint") != EXHAUSTED_SIGN_IN_FINGERPRINT
+    ):
+        raise RestorationError(
+            "the live V1-019 state does not match the exact authorized exhausted sign-in incident"
+        )
+    return candidate, attempt, failure, marker
+
+
+def rebase_exhausted_v1_019_sign_in(
+    repo: Path, dispatch_state: Path, *, candidate_base_commit: str
+) -> dict[str, Any]:
+    """Consume this Owner action once after repair CI and create one fresh sequence."""
+    candidate_path = dispatch_state / "candidates/V1-019.json"
+    current = read_json_object(candidate_path, "V1-019 candidate record")
+    fingerprint = repository_fingerprint(repo)
+    authorization = current.get("owner_authorized_fresh_sign_in_sequence") or {}
+    if (
+        current.get("routing_revision") == ROUTING_REVISION
+        and current.get("candidate_base_commit") == candidate_base_commit
+        and current.get("repository_fingerprint") == fingerprint
+        and authorization.get("exhausted_fingerprint") == EXHAUSTED_SIGN_IN_FINGERPRINT
+        and authorization.get("consumed") is True
+    ):
+        _complete_exhausted_rebase_cleanup(dispatch_state, current)
+        return {
+            "status": "already_rebased_from_exhaustion",
+            "archive": authorization.get("archive"),
+        }
+    candidate, attempt, failure, marker = validate_exhausted_v1_019_sign_in(
+        dispatch_state
+    )
+    artifacts = _exhausted_incident_artifacts(dispatch_state)
+    archive = (
+        dispatch_state
+        / "superseded/v1-019-sign-in-context-v3"
+        / f"{int(time.time() * 1000)}-{candidate_base_commit[:12]}"
+    )
+    archive.mkdir(parents=True, exist_ok=False)
+    atomic_write_json(archive / "candidate.json", candidate)
+    atomic_write_json(archive / "attempt.json", attempt)
+    atomic_write_json(archive / "last-failure.json", failure)
+    atomic_write_json(archive / "repair-exhausted.json", marker)
+    atomic_write_json(
+        archive / "artifact-index.json",
+        {
+            "schema_version": 1,
+            "routing_revision": EXHAUSTED_ROUTING_REVISION,
+            "exhausted_fingerprint": EXHAUSTED_SIGN_IN_FINGERPRINT,
+            "sessions": list(EXHAUSTED_SIGN_IN_SESSIONS),
+            "artifacts": artifacts,
+        },
+    )
+    fresh = {
+        "candidate": "V1-019",
+        "stage": "implementation",
+        "created_at": utc_now(),
+        "updated_at": utc_now(),
+        "routing_revision": ROUTING_REVISION,
+        "candidate_base_commit": candidate_base_commit,
+        "initial_repository_fingerprint": fingerprint,
+        "repository_fingerprint": fingerprint,
+        "initial_changed_paths": [],
+        "expected_worktree_paths": [],
+        "completed_implementation_substages": [],
+        "ceiling_recovery_attempts": {},
+        "context_materialization_attempts": {},
+        "recovery_generation": 1,
+        "recovery_pending": True,
+        "bounded_recovery_exhausted": False,
+        "continuation_used": False,
+        "owner_authorized_fresh_sign_in_sequence": {
+            "authorization": "owner_direct_takeover_2026-08-22",
+            "consumed": True,
+            "consumed_at": utc_now(),
+            "eligible_sequences": 1,
+            "exhausted_fingerprint": EXHAUSTED_SIGN_IN_FINGERPRINT,
+            "archive": str(archive),
+            "transition_status": "cleanup_pending",
+        },
+        "events": [
+            {
+                "stage": "automation_context_routing_repair",
+                "result": "exhausted_sign_in_authorized_once",
+                "routing_revision": ROUTING_REVISION,
+                "repository_commit": candidate_base_commit,
+                "repository_fingerprint": fingerprint,
+                "owner_authorization_consumed": True,
+                "ceiling_recovery_attempts_reset": True,
+            }
+        ],
+    }
+    atomic_write_json(candidate_path, fresh)
+    _complete_exhausted_rebase_cleanup(dispatch_state, fresh)
+    return {
+        "status": "exhausted_sign_in_rebased",
+        "archive": str(archive),
+        "artifact_count": len(artifacts),
+        "repository_fingerprint": fingerprint,
+    }
+
+
+def exhausted_rebase_required(record: dict[str, Any]) -> bool:
+    """Select only the initial exhausted transition or interrupted cleanup."""
+    authorization = record.get("owner_authorized_fresh_sign_in_sequence") or {}
+    return bool(
+        record.get("bounded_recovery_exhausted") is True
+        or (
+            record.get("routing_revision") == ROUTING_REVISION
+            and authorization.get("exhausted_fingerprint")
+            == EXHAUSTED_SIGN_IN_FINGERPRINT
+            and authorization.get("transition_status") == "cleanup_pending"
+        )
+    )
+
+
+def cleaned_fresh_sequence_resume_required(
+    dispatch_state: Path, record: dict[str, Any]
+) -> bool:
+    """Select the crash window after exhausted cleanup and before first enable."""
+    authorization = record.get("owner_authorized_fresh_sign_in_sequence") or {}
+    attempt_path = dispatch_state / "attempts/V1-019.json"
+    attempt_valid = not attempt_path.exists()
+    if attempt_path.exists():
+        try:
+            attempt = read_json_object(attempt_path, "interrupted fresh V1-019 attempt")
+        except RestorationError:
+            attempt = {}
+        pending = attempt.get("pending") or {}
+        counters = attempt.get("counters") or {}
+        attempt_valid = bool(
+            isinstance(pending, dict)
+            and pending.get("stage") == "implementation"
+            and isinstance(attempt.get("fingerprint"), str)
+            and len(str(attempt.get("fingerprint"))) == 64
+            and int(counters.get("implementation") or 0) == 0
+        )
+    return bool(
+        record.get("candidate") == "V1-019"
+        and record.get("routing_revision") == ROUTING_REVISION
+        and record.get("stage") == "implementation"
+        and record.get("completed_implementation_substages") == []
+        and record.get("expected_worktree_paths") == []
+        and record.get("ceiling_recovery_attempts") == {}
+        and record.get("context_materialization_attempts") == {}
+        and record.get("recovery_generation") == 1
+        and record.get("recovery_pending") is True
+        and record.get("bounded_recovery_exhausted") is False
+        and authorization.get("consumed") is True
+        and authorization.get("eligible_sequences") == 1
+        and authorization.get("exhausted_fingerprint")
+        == EXHAUSTED_SIGN_IN_FINGERPRINT
+        and authorization.get("transition_status") == "complete"
+        and attempt_valid
+        and not (dispatch_state / "last-failure.json").exists()
+    )
+
+
+def resume_cleaned_fresh_sequence(
+    repo: Path,
+    dispatch_state: Path,
+    record: dict[str, Any],
+    *,
+    candidate_base_commit: str,
+) -> dict[str, Any]:
+    """Validate and resume the sole authorized fresh sequence after a crash."""
+    fingerprint = repository_fingerprint(repo)
+    attempt_path = dispatch_state / "attempts/V1-019.json"
+    interrupted_attempt = attempt_path.exists()
+    current_paths = changed_paths(repo)
+    partial_paths_valid = bool(
+        interrupted_attempt
+        and all(path in SIGN_IN_WRITABLE_PATHS for path in current_paths)
+    )
+    if (
+        not cleaned_fresh_sequence_resume_required(dispatch_state, record)
+        or record.get("candidate_base_commit") != candidate_base_commit
+        or (
+            record.get("repository_fingerprint") != fingerprint
+            and not partial_paths_valid
+        )
+    ):
+        raise RestorationError(
+            "the cleaned Owner-authorized V1-019 fresh sequence drifted before enable"
+        )
+    if interrupted_attempt:
+        if not partial_paths_valid:
+            raise RestorationError(
+                "the interrupted fresh sign-in attempt changed a path outside its exact scope"
+            )
+        record.update(
+            {
+                "expected_worktree_paths": current_paths,
+                "repository_fingerprint": fingerprint,
+                "preserved_partial_work": {
+                    "paths": current_paths,
+                    "repository_fingerprint": fingerprint,
+                    "recovery_generation": int(record.get("recovery_generation") or 0),
+                    "authorization": "post_exit_exact_sign_in_scope",
+                },
+                "updated_at": utc_now(),
+            }
+        )
+        atomic_write_json(dispatch_state / "candidates/V1-019.json", record)
+    else:
+        _complete_exhausted_rebase_cleanup(dispatch_state, record)
+    return {
+        "status": (
+            "interrupted_fresh_sequence_resumed"
+            if interrupted_attempt
+            else "cleaned_fresh_sequence_resumed"
+        ),
+        "archive": (record.get("owner_authorized_fresh_sign_in_sequence") or {}).get(
+            "archive"
+        ),
+        "repository_fingerprint": fingerprint,
+    }
+
+
+def _complete_exhausted_rebase_cleanup(
+    dispatch_state: Path, record: dict[str, Any]
+) -> None:
+    """Idempotently finish the post-candidate cleanup of an exhausted rebase."""
+    authorization = record.get("owner_authorized_fresh_sign_in_sequence") or {}
+    archive = Path(str(authorization.get("archive") or "")).resolve()
+    expected_root = (dispatch_state / "superseded/v1-019-sign-in-context-v3").resolve()
+    try:
+        archive.relative_to(expected_root)
+    except ValueError as error:
+        raise RestorationError(
+            "the exhausted sign-in archive path escaped its boundary"
+        ) from error
+    pairs = (
+        (dispatch_state / "attempts/V1-019.json", archive / "attempt.json"),
+        (dispatch_state / "last-failure.json", archive / "last-failure.json"),
+        (
+            dispatch_state
+            / "terminal/repair_exhausted"
+            / f"{EXHAUSTED_SIGN_IN_FINGERPRINT}.json",
+            archive / "repair-exhausted.json",
+        ),
+    )
+    for live, archived in pairs:
+        if not archived.is_file():
+            raise RestorationError(
+                "the exhausted sign-in transition archive is incomplete"
+            )
+        if live.exists():
+            if not live.is_file() or digest(live.read_bytes()) != digest(
+                archived.read_bytes()
+            ):
+                raise RestorationError(
+                    "live exhausted sign-in evidence differs from its archive"
+                )
+            live.unlink()
+    current_path = dispatch_state / "candidates/V1-019.json"
+    current = read_json_object(current_path, "fresh V1-019 candidate record")
+    current_authorization = current.get("owner_authorized_fresh_sign_in_sequence") or {}
+    if current_authorization.get("transition_status") != "complete":
+        current_authorization["transition_status"] = "complete"
+        current_authorization["cleanup_completed_at"] = utc_now()
+        current["owner_authorized_fresh_sign_in_sequence"] = current_authorization
+        current["updated_at"] = utc_now()
+        atomic_write_json(current_path, current)
 
 
 def rebase_scheduled_v1_019_recovery(
@@ -702,18 +1128,43 @@ def rebase_scheduled_v1_019_recovery(
     usage = record.get("model_usage") or []
     latest_usage = usage[-1] if isinstance(usage, list) and usage else {}
     recoveries = record.get("ceiling_recovery_attempts") or {}
+    materializations = record.get("context_materialization_attempts") or {}
     if record.get("routing_revision") == ROUTING_REVISION:
         recovery_attempt = int(recoveries.get("sign_in") or 0)
+        materialization_attempt = int(materializations.get("sign_in") or 0)
+        marker_status = str(record.get("pending_recovery_marker_status") or "")
+        owner_reset = record.get("owner_authorized_fresh_sign_in_sequence") or {}
+        initial_generation = 1 if owner_reset.get("consumed") is True else 0
+        expected_generation = (
+            initial_generation + recovery_attempt + materialization_attempt
+        )
+        expected_attempt = (
+            materialization_attempt
+            if marker_status == "context_materialization_pending"
+            else recovery_attempt
+        )
+        expected_paths = record.get("expected_worktree_paths")
+        exact_partial_paths = bool(
+            isinstance(expected_paths, list)
+            and len(expected_paths) == len(set(expected_paths))
+            and all(
+                isinstance(path, str) and path in SIGN_IN_WRITABLE_PATHS
+                for path in expected_paths
+            )
+            and sorted(expected_paths) == changed_paths(repo)
+        )
         if (
             record.get("candidate") != "V1-019"
             or record.get("candidate_base_commit") != candidate_base_commit
             or record.get("repository_fingerprint") != fingerprint
             or record.get("stage") != "implementation"
-            or record.get("expected_worktree_paths") != []
+            or not exact_partial_paths
             or record.get("completed_implementation_substages") != []
             or record.get("recovery_pending") is not True
-            or not 1 <= int(record.get("recovery_generation") or 0) <= 2
-            or not 1 <= recovery_attempt <= 2
+            or int(record.get("recovery_generation") or 0) != expected_generation
+            or marker_status
+            not in {"routing_recovery_pending", "context_materialization_pending"}
+            or not 1 <= expected_attempt <= 2
             or record.get("bounded_recovery_exhausted") is True
             or failure.get("category")
             not in {
@@ -721,6 +1172,7 @@ def rebase_scheduled_v1_019_recovery(
                 "pre_model_infrastructure_failure",
                 "unsupported_invocation_configuration",
                 "lock_or_overlapping_process_failure",
+                "context_materialization_required",
             }
             or failure.get("owner_action_required") is not False
             or not 1
@@ -732,7 +1184,10 @@ def rebase_scheduled_v1_019_recovery(
                 "the already-rebased V1-019 sign-in recovery boundary drifted"
             )
         validate_pending_sign_in_marker(
-            dispatch_state, record, expected_attempt=recovery_attempt
+            dispatch_state,
+            record,
+            expected_attempt=expected_attempt,
+            expected_status=marker_status,
         )
         return {"status": "already_rebased", "archive": None}
     if (
@@ -780,6 +1235,7 @@ def rebase_scheduled_v1_019_recovery(
             "initial_repository_fingerprint": fingerprint,
             "repository_fingerprint": fingerprint,
             "updated_at": utc_now(),
+            "pending_recovery_marker_status": "routing_recovery_pending",
         }
     )
     record.setdefault("events", []).append(
@@ -973,28 +1429,58 @@ def eligible_bounded_recovery(dispatch_state: Path) -> dict[str, Any]:
     )
     completed = record.get("completed_implementation_substages") or []
     recoveries = record.get("ceiling_recovery_attempts") or {}
+    materializations = record.get("context_materialization_attempts") or {}
     category = boundary.get("category")
-    eligible = bool(
-        category
-        in {
-            "model_session_or_token_ceiling",
-            "pre_model_infrastructure_failure",
-            "unsupported_invocation_configuration",
-            "lock_or_overlapping_process_failure",
-        }
+    owner_reset = record.get("owner_authorized_fresh_sign_in_sequence") or {}
+    zero_attempt_category = category in {
+        None,
+        "pre_model_infrastructure_failure",
+        "unsupported_invocation_configuration",
+        "lock_or_overlapping_process_failure",
+    }
+    owner_fresh_sequence = bool(
+        owner_reset.get("consumed") is True
+        and owner_reset.get("eligible_sequences") == 1
+        and owner_reset.get("exhausted_fingerprint") == EXHAUSTED_SIGN_IN_FINGERPRINT
+        and owner_reset.get("transition_status") == "complete"
+        and zero_attempt_category
         and boundary.get("owner_action_required") is False
+        and int(recoveries.get("sign_in") or 0) == 0
+        and int(materializations.get("sign_in") or 0) == 0
+    )
+    eligible = bool(
+        (
+            owner_fresh_sequence
+            or (
+                category
+                in {
+                    "model_session_or_token_ceiling",
+                    "context_materialization_required",
+                    "pre_model_infrastructure_failure",
+                    "unsupported_invocation_configuration",
+                    "lock_or_overlapping_process_failure",
+                }
+                and boundary.get("owner_action_required") is False
+            )
+        )
         and boundary.get("recovery_pending_in_record") is True
         and record.get("bounded_recovery_exhausted") is not True
         and record.get("stage") == "implementation"
         and completed == []
         and int(record.get("recovery_generation") or 0) >= 1
-        and 1 <= int(recoveries.get("sign_in") or 0) <= 2
+        and (
+            owner_fresh_sequence
+            or 1 <= int(recoveries.get("sign_in") or 0) <= 2
+            or 1 <= int(materializations.get("sign_in") or 0) <= 2
+        )
     )
     return {
         "eligible": eligible,
         "category": category,
         "recovery_generation": int(record.get("recovery_generation") or 0),
         "sign_in_recovery_attempts": int(recoveries.get("sign_in") or 0),
+        "sign_in_context_materializations": int(materializations.get("sign_in") or 0),
+        "owner_authorized_fresh_sequence": owner_fresh_sequence,
         "owner_action_required": boundary.get("owner_action_required") is True,
         "exact_next_action": boundary.get("exact_next_action"),
     }
@@ -1227,7 +1713,10 @@ def notify_recovery_scheduled_once(
         latest = read_json_object(evidence_path, "recovery-scheduled evidence")
         notifications = latest.get("recovery_notifications") or []
         for item in notifications:
-            if item.get("sequence") == sequence and item.get("attempted_at") == attempted_at:
+            if (
+                item.get("sequence") == sequence
+                and item.get("attempted_at") == attempted_at
+            ):
                 item.update(completion)
         latest["recovery_notifications"] = notifications
         atomic_write_json(evidence_path, latest)
@@ -1276,9 +1765,7 @@ def finalize_terminal_direct(
         terminal = read_json_object(evidence_path, "terminal restoration evidence")
         unload_failure = attempt_terminal_unload(args, evidence_path)
         if unload_failure is not None and terminal.get("status") == "complete":
-            terminal = read_json_object(
-                evidence_path, "terminal restoration evidence"
-            )
+            terminal = read_json_object(evidence_path, "terminal restoration evidence")
             terminal["restoration_result_before_terminal_failure"] = "complete"
             terminal["enabled_before_terminal_failure"] = terminal.get("enabled")
             terminal["status"] = "failed_closed"
@@ -1633,14 +2120,27 @@ def execute(args: argparse.Namespace) -> int:
         )
         if current_candidate.get("routing_revision") not in {
             PRIOR_ROUTING_REVISION,
+            EXHAUSTED_ROUTING_REVISION,
             ROUTING_REVISION,
         }:
             raise RestorationError(
                 "post-exit restoration permits only the exact pending V1-019 sign-in recovery"
             )
-        supersession = rebase_scheduled_v1_019_recovery(
-            repo, dispatch_state, candidate_base_commit=continuation_head
-        )
+        if exhausted_rebase_required(current_candidate):
+            supersession = rebase_exhausted_v1_019_sign_in(
+                repo, dispatch_state, candidate_base_commit=continuation_head
+            )
+        elif cleaned_fresh_sequence_resume_required(dispatch_state, current_candidate):
+            supersession = resume_cleaned_fresh_sequence(
+                repo,
+                dispatch_state,
+                current_candidate,
+                candidate_base_commit=continuation_head,
+            )
+        else:
+            supersession = rebase_scheduled_v1_019_recovery(
+                repo, dispatch_state, candidate_base_commit=continuation_head
+            )
         recovery_before_enable = eligible_bounded_recovery(dispatch_state)
         if not recovery_before_enable["eligible"]:
             raise RestorationError(
@@ -1860,7 +2360,17 @@ def install(args: argparse.Namespace) -> int:
                 "the supervisor must remain disabled during installation"
             )
         installation_phase = "pending_recovery_validation"
-        if (
+        exact_exhausted_install = bool(
+            prior is not None
+            and prior.get("status") == "failed_closed"
+            and prior.get("dispatcher_failure_category")
+            == "model_session_or_token_ceiling"
+            and prior.get("recovery_state") == "terminal_failure"
+            and prior.get("owner_action_required") is True
+        )
+        if exact_exhausted_install:
+            validate_exhausted_v1_019_sign_in(Path(args.dispatch_state).resolve())
+        elif (
             prior is None
             or prior.get("status") != "failed_closed"
             or prior.get("dispatcher_failure_category")

@@ -66,34 +66,50 @@ RECONCILIATION_NEXT_ACTION = (
     "without a model; do not reimplement the published candidate."
 )
 MAX_CEILING_RECOVERIES_PER_SUBSTAGE = 2
+MAX_CONTEXT_MATERIALIZATIONS_PER_SUBSTAGE = 2
 V1_019_SUBSTAGES: tuple[dict[str, Any], ...] = (
     {
         "id": "sign_in",
         "order": 1,
         "total": 4,
         "task": "Local sign-in and enumeration-safe authentication UI",
-        "include": ["local username/password sign-in", "generic failure and recovery responses"],
+        "include": [
+            "local username/password sign-in",
+            "generic failure and recovery responses",
+        ],
     },
     {
         "id": "mfa_recovery",
         "order": 2,
         "total": 4,
         "task": "MFA enrollment/challenge and protected recovery UI",
-        "include": ["MFA enrollment and challenge", "recovery codes", "administrative recovery"],
+        "include": [
+            "MFA enrollment and challenge",
+            "recovery codes",
+            "administrative recovery",
+        ],
     },
     {
         "id": "sessions",
         "order": 3,
         "total": 4,
         "task": "Session expiry, reauthentication, and revocation UI",
-        "include": ["inactivity and absolute expiry", "reauthentication", "session revocation"],
+        "include": [
+            "inactivity and absolute expiry",
+            "reauthentication",
+            "session revocation",
+        ],
     },
     {
         "id": "account_capability",
         "order": 4,
         "total": 4,
         "task": "Account, role-bundle, capability, and authorization-history UI",
-        "include": ["account administration", "capability-sensitive controls", "authorization history"],
+        "include": [
+            "account administration",
+            "capability-sensitive controls",
+            "authorization history",
+        ],
     },
 )
 
@@ -670,8 +686,7 @@ def active_restoration_boundary(record: dict[str, Any]) -> dict[str, Any] | None
         or boundary.get("candidate") != "V1-019"
         or boundary.get("bounded_substage") != "sign_in"
         or boundary.get("routing_revision") != routing.get("revision")
-        or boundary.get("candidate_base_commit")
-        != record.get("candidate_base_commit")
+        or boundary.get("candidate_base_commit") != record.get("candidate_base_commit")
     ):
         raise AutomationError(
             "repository_integrity_uncertainty",
@@ -695,9 +710,7 @@ def restoration_boundary_reached(record: dict[str, Any]) -> bool:
             "completed_implementation_substages": completed,
         }
     )
-    atomic_write_json(
-        STATE_DIR / "restoration/active-v1-019-boundary.json", boundary
-    )
+    atomic_write_json(STATE_DIR / "restoration/active-v1-019-boundary.json", boundary)
     return True
 
 
@@ -742,6 +755,7 @@ def schedule_implementation_ceiling_recovery(
             "last_failure_category": None,
             "stage": lifecycle_stage,
             "pending_recovery_marker_fingerprint": actionable,
+            "pending_recovery_marker_status": "routing_recovery_pending",
         }
     )
     next_action = (
@@ -764,24 +778,112 @@ def schedule_implementation_ceiling_recovery(
     return False
 
 
-def resolve_pending_routing_recovery(
-    record: dict[str, Any], *, outcome: str
-) -> None:
-    """Archive dispatched recovery evidence and clear only its recoverable live failure."""
+def schedule_context_materialization(
+    record: dict[str, Any], *, actionable: str
+) -> bool:
+    """Schedule a changed-route context checkpoint without using ceiling attempts."""
+    resolve_pending_routing_recovery(record, outcome="attempted")
+    substage = current_bounded_substage(record)
+    substage_id = str((substage or {}).get("id") or "undivided")
+    attempts = record.setdefault("context_materialization_attempts", {})
+    attempt = int(attempts.get(substage_id, 0)) + 1
+    attempts[substage_id] = attempt
+    if attempt > MAX_CONTEXT_MATERIALIZATIONS_PER_SUBSTAGE:
+        record.update(
+            {
+                "stage": "implementation",
+                "recovery_pending": False,
+                "bounded_recovery_exhausted": True,
+                "last_failure_category": "context_materialization_required",
+            }
+        )
+        persist_terminal_marker(
+            STATE_DIR / "terminal",
+            status="repair_exhausted",
+            fingerprint=actionable,
+            evidence={
+                "candidate": record["candidate"],
+                "phase": substage_id,
+                "attempts": attempt,
+                "root_failure_category": "context_materialization_required",
+                "next_action": "Owner action is required because the bounded context-materialization budget is exhausted.",
+            },
+        )
+        return True
+    record.update(
+        {
+            "stop_reason": "context_materialization_required",
+            "recovery_pending": True,
+            "recovery_generation": int(record.get("recovery_generation") or 0) + 1,
+            "last_failure_category": None,
+            "stage": "implementation",
+            "pending_recovery_marker_fingerprint": actionable,
+            "pending_recovery_marker_status": "context_materialization_pending",
+        }
+    )
+    persist_terminal_marker(
+        STATE_DIR / "terminal",
+        status="context_materialization_pending",
+        fingerprint=actionable,
+        evidence={
+            "candidate": record["candidate"],
+            "phase": substage_id,
+            "attempt": attempt,
+            "root_failure_category": "context_materialization_required",
+            "ceiling_recovery_attempt_consumed": False,
+            "next_action": "Dispatch one fresh session from the deterministic materialized packet.",
+        },
+    )
+    return False
+
+
+def resolve_pending_routing_recovery(record: dict[str, Any], *, outcome: str) -> None:
+    """Resolve one recovery marker through an idempotent two-phase transition."""
     fingerprint = record.get("pending_recovery_marker_fingerprint")
     if isinstance(fingerprint, str) and fingerprint:
-        source = (
-            STATE_DIR / "terminal/routing_recovery_pending" / f"{fingerprint}.json"
+        marker_status = str(
+            record.get("pending_recovery_marker_status") or "routing_recovery_pending"
         )
-        if not source.exists():
+        source = STATE_DIR / "terminal" / marker_status / f"{fingerprint}.json"
+        target = STATE_DIR / "terminal" / f"recovery_{outcome}" / source.name
+        journal = STATE_DIR / "recovery-transitions" / f"{fingerprint}.json"
+        atomic_write_json(
+            journal,
+            {
+                "schema_version": 1,
+                "fingerprint": fingerprint,
+                "source_status": marker_status,
+                "outcome": outcome,
+                "source": str(source),
+                "target": str(target),
+                "stage": "marker_transition_pending",
+                "updated_at": utc_now(),
+            },
+        )
+        if not source.exists() and not target.exists():
             raise AutomationError(
                 "repository_integrity_uncertainty",
                 "the persisted pending recovery marker is missing",
             )
-        target = STATE_DIR / "terminal" / f"recovery_{outcome}" / source.name
         target.parent.mkdir(parents=True, exist_ok=True)
-        source.replace(target)
-        marker = json.loads(target.read_text())
+        if source.exists():
+            source.replace(target)
+        try:
+            marker = json.loads(target.read_text())
+        except (OSError, json.JSONDecodeError) as error:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "the resolved recovery marker is unreadable",
+            ) from error
+        if (
+            not isinstance(marker, dict)
+            or marker.get("actionable_fingerprint") != fingerprint
+            or marker.get("status") not in {marker_status, f"recovery_{outcome}"}
+        ):
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "the resolved recovery marker identity drifted",
+            )
         marker.update(
             {
                 "status": f"recovery_{outcome}",
@@ -789,28 +891,44 @@ def resolve_pending_routing_recovery(
             }
         )
         atomic_write_json(target, marker)
+        atomic_write_json(
+            journal,
+            {
+                "schema_version": 1,
+                "fingerprint": fingerprint,
+                "source_status": marker_status,
+                "outcome": outcome,
+                "source": str(source),
+                "target": str(target),
+                "stage": "candidate_update_pending",
+                "updated_at": utc_now(),
+            },
+        )
         record.pop("pending_recovery_marker_fingerprint", None)
+        record.pop("pending_recovery_marker_status", None)
     else:
         return
     failure_path = STATE_DIR / "last-failure.json"
-    if not failure_path.exists():
-        return
-    try:
-        failure = json.loads(failure_path.read_text())
-    except json.JSONDecodeError:
-        return
-    if (
-        not isinstance(failure, dict)
-        or failure.get("category") != "model_session_or_token_ceiling"
-        or failure.get("owner_action_required") is True
-    ):
-        return
-    archive = STATE_DIR / "resolved-failures" / f"{digest(failure)[:20]}.json"
-    archive.parent.mkdir(parents=True, exist_ok=True)
-    failure_path.replace(archive)
-    failure["status"] = f"recovery_{outcome}"
-    failure["resolved_at"] = utc_now()
-    atomic_write_json(archive, failure)
+    if failure_path.exists():
+        try:
+            failure = json.loads(failure_path.read_text())
+        except json.JSONDecodeError:
+            failure = None
+        if (
+            isinstance(failure, dict)
+            and failure.get("category")
+            in {
+                "model_session_or_token_ceiling",
+                "context_materialization_required",
+            }
+            and failure.get("owner_action_required") is not True
+        ):
+            archive = STATE_DIR / "resolved-failures" / f"{digest(failure)[:20]}.json"
+            archive.parent.mkdir(parents=True, exist_ok=True)
+            failure_path.replace(archive)
+            failure["status"] = f"recovery_{outcome}"
+            failure["resolved_at"] = utc_now()
+            atomic_write_json(archive, failure)
 
 
 def packet_actionable_fingerprint(
@@ -881,6 +999,19 @@ def authorized_candidate_writes(
     )
     if stage == "direct_codex_recovery" and exact_existing:
         return exact_existing
+    materialized = packet.get("materialized_implementation_context") or {}
+    exact_materialized = materialized.get("exact_writable_paths") or []
+    if packet.get("bounded_substage", {}).get("id") == "sign_in":
+        if (
+            not isinstance(exact_materialized, list)
+            or not exact_materialized
+            or not all(isinstance(path, str) and path for path in exact_materialized)
+        ):
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "the bounded sign-in packet omitted its exact writable-path allowlist",
+            )
+        return sorted(set(exact_materialized))
     profile = str(packet.get("acceptance_profile") or "")
     paths = {
         "backend/src/property_rental",
@@ -896,6 +1027,60 @@ def authorized_candidate_writes(
     return sorted(paths)
 
 
+def bind_authorized_partial_work(
+    record: dict[str, Any],
+    writable_paths: list[str],
+    *,
+    exact_paths: bool,
+    previous_paths: list[str] | None = None,
+) -> None:
+    """Preserve an interrupted model stage only when every path remains authorized.
+
+    A model may make useful bounded edits before the guard requests a fresh
+    context-materialized or ceiling-recovery session.  Bind that exact worktree
+    to the durable candidate record so the next preflight can resume it instead
+    of misclassifying it as external drift.
+    """
+    previous = sorted(
+        set(
+            previous_paths
+            if previous_paths is not None
+            else record.get(
+                "expected_worktree_paths", record.get("scoped_changed_paths") or []
+            )
+        )
+    )
+    current = changed_paths(REPO)
+    allowed = [path.rstrip("/") for path in writable_paths]
+
+    def authorized(path: str) -> bool:
+        if exact_paths:
+            return path in allowed
+        return any(path == item or path.startswith(item + "/") for item in allowed)
+
+    added = sorted(set(current) - set(previous))
+    removed = sorted(set(previous) - set(current))
+    if any(not authorized(path) for path in added + removed):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "interrupted model stage changed work outside its exact dispatcher-authorized scope",
+        )
+    current_fingerprint = repository_fingerprint(REPO)
+    if current != previous or current_fingerprint != record.get("repository_fingerprint"):
+        record.update(
+            {
+                "expected_worktree_paths": current,
+                "repository_fingerprint": current_fingerprint,
+                "preserved_partial_work": {
+                    "paths": current,
+                    "repository_fingerprint": current_fingerprint,
+                    "recovery_generation": int(record.get("recovery_generation") or 0),
+                    "authorization": "dispatcher_exact_writable_scope",
+                },
+            }
+        )
+
+
 def zero_usage_provider_failure(
     *, returncode: int, stderr: str, usage: dict[str, Any]
 ) -> dict[str, Any] | None:
@@ -907,9 +1092,7 @@ def zero_usage_provider_failure(
     instead of asking model-validation code to interpret missing metadata.
     """
     completed_calls = usage.get("api_calls")
-    if returncode == 0 or (
-        isinstance(completed_calls, int) and completed_calls > 0
-    ):
+    if returncode == 0 or (isinstance(completed_calls, int) and completed_calls > 0):
         return None
     token_fields = (
         "input_tokens",
@@ -964,6 +1147,7 @@ def zero_usage_provider_failure(
 def invoke_model(
     record: dict[str, Any], packet: dict[str, Any], policy: ModelPolicy
 ) -> tuple[int, str, dict[str, Any]]:
+    invocation_worktree_paths = changed_paths(REPO)
     fingerprint = repository_fingerprint(REPO)
     stage = policy.stage
     actionable = packet_actionable_fingerprint(record, packet)
@@ -1198,6 +1382,21 @@ def invoke_model(
     try:
         validate_usage(usage, policy)
     except AutomationError as error:
+        if error.category in {
+            "model_session_or_token_ceiling",
+            "context_materialization_required",
+        } and stage in {"implementation", "direct_codex_recovery"}:
+            try:
+                bind_authorized_partial_work(
+                    record,
+                    writable_paths,
+                    exact_paths=(
+                        (packet.get("bounded_substage") or {}).get("id") == "sign_in"
+                    ),
+                    previous_paths=invocation_worktree_paths,
+                )
+            except AutomationError as scope_error:
+                error = scope_error
         pre_model_routing_fault = bool(
             error.category
             in {
@@ -1240,13 +1439,16 @@ def invoke_model(
                 )
                 save_stage(record)
             elif stage in {"implementation", "direct_codex_recovery"}:
-                schedule_implementation_ceiling_recovery(
-                    record, actionable=actionable
-                )
+                schedule_implementation_ceiling_recovery(record, actionable=actionable)
             elif stage == "independent_review":
                 schedule_implementation_ceiling_recovery(
                     record, actionable=actionable, phase="independent_review"
                 )
+        elif error.category == "context_materialization_required" and stage in {
+            "implementation",
+            "direct_codex_recovery",
+        }:
+            schedule_context_materialization(record, actionable=actionable)
         save_stage(record)
         raise
     consume_attempt(attempt_path, stage=stage)
@@ -1754,6 +1956,12 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
             or record.get("stop_reason"),
             "bounded_recovery_exhausted": record.get("bounded_recovery_exhausted")
             is True,
+            "context_materialization_attempt": int(
+                (record.get("context_materialization_attempts") or {}).get(
+                    str((substage or {}).get("id") or "")
+                )
+                or 0
+            ),
         },
     )
     packet["routing_identity"] = record_routing_identity(record, "implementation")
@@ -3018,6 +3226,7 @@ def main() -> int:
             "gateway_or_network_failure": "Run a focused gateway diagnostic, then use the bounded retry only if the actionable fingerprint changes.",
             "unsupported_invocation_configuration": "Correct the supported invocation boundary without changing product scope; no model attempt was consumed.",
             "model_session_or_token_ceiling": "Run the scheduled fresh bounded recovery for the exact V1-019 model stage or substage; request Owner action only if its bounded recovery budget is exhausted.",
+            "context_materialization_required": "Run the scheduled fresh materialized-context route for the exact V1-019 substage; do not consume a ceiling-recovery attempt.",
             "repeated_identical_tool_call": "Use the preserved underlying result to choose a different focused diagnostic; do not repeat the unchanged call.",
             "deterministic_test_failure": "Repair only the proven in-scope failing check, rerun the complete profile, and obtain a fresh review.",
             "independent_review_defect": "Repair only the concrete in-scope review findings, rerun all gates, and obtain a fresh review.",
@@ -3097,11 +3306,13 @@ def main() -> int:
                 "gateway_or_network_failure": "infrastructure_failure",
                 "unsupported_invocation_configuration": "routing_recovery_pending",
                 "model_session_or_token_ceiling": "routing_recovery_pending",
+                "context_materialization_required": "context_materialization_pending",
                 "repeated_identical_tool_call": "repeated_identical_tool_call",
             }.get(error.category, "blocked")
         )
         recovery_marker_already_persisted = bool(
-            error.category == "model_session_or_token_ceiling"
+            error.category
+            in {"model_session_or_token_ceiling", "context_materialization_required"}
             and (
                 routing_record.get("recovery_pending") is True
                 or bounded_recovery_exhausted

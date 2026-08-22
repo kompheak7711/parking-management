@@ -24,7 +24,7 @@ printf '%s' "$preflight" | jq -e '
   --argjson completed "$expected_completed" --argjson total "$expected_total" >/dev/null
 packet="$(PROPERTY_RENTAL_AUTOMATION_STAGE=implementation PROPERTY_RENTAL_TEST_PROCESS_ROWS= "$repo/scripts/openclaw-task-packet.sh")"
 printf '%s' "$packet" | jq -e '
-  .schema_version == 4
+  .schema_version == 5
   and .candidate == $candidate
   and .stage == "implementation"
   and (.authorization_boundaries.existing_durable_v1 | type) == "boolean"

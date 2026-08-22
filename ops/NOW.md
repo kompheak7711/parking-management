@@ -1,51 +1,42 @@
-# V1-019 context-budget and restoration-recovery repair — independently reviewed; publication pending
+# V1-019 sign-in context-routing v4 repair — independently reviewed; publication pending
 
-- Objective: repair only the bounded V1-019 `sign_in` context and post-exit recovery
-  gates under existing durable V1 authorization. No renewed Owner authorization is used.
-- Baseline: clean synchronized `d6eb7e73610b2a72cf38f4b32468226e9e76a436` on
-  `implementation/foundation`; product files and canonical specifications are unchanged.
-- Incident: natural supervisor sequence 365 and Hermes session
-  `61d145e0655c5298cbcfa576fff3ff78` completed 2/2 provider calls with 16,881
-  input tokens, 422 output tokens, 17,303 counted tokens, and 9,216 separately
-  recorded cache-read tokens. No in-flight overshoot or provider-parameter error occurred.
-- Context root cause: the packet directed broad compact-state and repository rereads, then
-  a one-byte-equals-one-token reservation falsely predicted 109,152 tokens. The repaired
-  schema-four packet materializes only exact state, authorization, acceptance, requirement,
-  and deterministic path evidence; the guard blocks broad reads and planning and caps tool output.
-- Estimation repair: the unchanged 60,000-token ceiling now uses a conservative serialized
-  request estimate with persisted byte classes, provider-observed calibration, and a 1,024-token
-  validation margin. Unavailable estimation is a recoverable zero-model-attempt routing fault.
-- Restoration root cause: the monitor disabled the supervisor after the first recoverable run
-  even though `recovery_pending=true`, generation 1, `sign_in` attempt 1 remained eligible.
-- Restoration repair: health is bound to run sequences after the captured floor, inherited
-  `consecutive_errors` is evidence only, `RECOVERY_SCHEDULED` is nonterminal, and the supervisor
-  remains enabled through the exact retry. Unknown/protected failures and bounded exhaustion
-  alone use `RESTORATION_FAILED_CLOSED` and disable the supervisor.
-- Regression evidence: the exact 9,614-byte historical packet (SHA-256
-  `2a6e8126bc9c285f5f400137ab0b97dc87c4c1ca7b40523591128a387d9ccc3b`) and observed
-  tool-output sizes prove no broad compact reread, no false 109,152-token reservation, and
-  progress or an eligible fresh recovery. End-to-end restoration covers recoverable-then-success
-  and exhaustion.
-- Verification: PASS. The automation gate passed 108 tests plus compact-state routing,
-  visibility-watchdog, shell syntax, and Python compilation. The complete profile passed all
-  15/15 gates: backend 333 passed with 105 expected environment skips, disposable PostgreSQL
-  105 passed, frontend 3 passed, formatting, linting, strict typing, builds, audits, scope,
-  traceability, JSON, and diff checks. Evidence:
-  `/private/tmp/property-rental-v1-019-context-restoration-repair-final.json`.
-- Independent review: PASS on the exact 13-path snapshot. The first pass found six material
-  boundary/test gaps; all six were remediated and regression-covered, and the final pass found
-  no blocking or material issue. The reviewer made no edits.
-- Safety boundary: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains disabled;
-  V1-019 product implementation and V1-020 have not started; overlap detection is unchanged.
-- Exact next action: publish and require successful GitHub Actions, then install the corrected
-  post-exit continuation. It may enable only the exact bounded
-  V1-019 `sign_in` recovery after repository-bound CLI overlap clears and must verify progress.
+- Objective: recover only the exhausted bounded V1-019 `sign_in` route under the
+  Owner's direct-takeover authorization. Product and canonical files remain unchanged.
+- Baseline: synchronized `d6eb7e73610b2a72cf38f4b32468226e9e76a436` on
+  `implementation/foundation`; supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb`
+  remains disabled during repair and publication.
+- Exact incident: three preserved Hermes sessions ended with zero completed substages and
+  zero product paths. The last two repeated the same ten-file full-read batch, returned the
+  complete 36,000-byte session allowance, and then reached the unchanged 60,000-token guard.
+- Packet repair: schema 5 deterministically embeds the AST-derived login contract, the
+  aggregate-bounded current frontend evidence, exact requirement excerpts, five frontend read paths,
+  eight exact write paths, and the shortest sign-in implementation sequence.
+- Guard repair: the full provider-returned tool-call batch is reserved atomically before any
+  tool executes. Oversized batches return valid structured results; an identical retry becomes
+  a separate context-materialization checkpoint and consumes no ceiling-recovery attempt.
+  Reservation identity mirrors every Hermes schema coercion. Policy-rejected and unreserved calls
+  fail closed before another provider call, and parallel rejection controls reserve and charge the
+  same cumulative tool-context allowance atomically.
+- Recovery repair: the exact exhausted candidate, attempt, failure, marker, manifests, tasks,
+  budgets, usage, and session diagnostics are archived before this authorization is consumed
+  once. Unknown/protected failures cannot reuse it. Materialization-marker reentry is supported.
+- Scope repair: the Hermes manifest enforces the packet's exact sign-in write allowlist.
+  The login URL is derived from router and decorator AST literals and fails closed on drift.
+- Verification: PASS, complete profile 15/15. Backend 333 passed with 105 expected local
+  database skips; disposable PostgreSQL 105 passed; frontend 3 passed; automation 124 passed;
+  format, lint, typing, builds, audits, traceability, JSON, publication guards, and diff checks
+  passed. Evidence: `/private/tmp/property-rental-v1-019-routing-v4-verification-final.json`.
+- Independent review: nine passes found thirty findings (sixteen P1, twelve P2, two P3);
+  all were corrected and regression-covered. The latest pass closed production middleware
+  fail-open behavior, interrupted-attempt and partial-work restoration reentry, crash-atomic
+  marker resolution, exact incident-session validation, and artifact symlink escape handling,
+  including symlinked parent directories. Final independent verdict: PASS, no material findings.
+- Safety: token ceiling remains exactly 60,000. V1-020 has not started. No product attempt or
+  prior historical evidence was deleted or rewritten.
+- Exact next action: publish only this repair, require successful
+  GitHub Actions, then run the repair-bound continuation and prove bounded `sign_in` progress.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation candidate state: V1-019 approved and active; product implementation has not started.
-- Automation exact next action: publish this repair, then permit only the scheduled V1-019 sign-in recovery.
+- Automation exact next action: publish this repair, then permit only the fresh bounded V1-019 sign-in sequence.
 <!-- AUTOMATION_STATUS_END -->
-<!-- POST_EXIT_RESTORATION_BEGIN -->
-- Post-exit restoration metadata is published; the existing supervisor remains disabled until the continuation enables it.
-- V1-019 remains the only active candidate; V1-020 successor activation is held.
-<!-- POST_EXIT_RESTORATION_END -->

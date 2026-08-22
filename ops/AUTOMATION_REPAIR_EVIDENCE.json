@@ -1,6 +1,6 @@
 {
   "schema_version": 3,
-  "repair": "v1-019-context-budget-restoration-recovery-repair",
+  "repair": "v1-019-sign-in-context-routing-v4",
   "status": "independently_reviewed_awaiting_publication",
   "baseline_branch": "implementation/foundation",
   "baseline_head": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -9,6 +9,62 @@
   "canonical_specifications_modified": false,
   "token_ceiling": 60000,
   "token_ceiling_increased": false,
+  "sign_in_context_routing_v4": {
+    "authorization": "owner direct takeover on 2026-08-22",
+    "status": "independently_reviewed_awaiting_publication",
+    "exhausted_fingerprint": "f6a8bbead87cacf9ae60da196459bc4f2ef760dd32e6dff8624c24ef4f8b8e77",
+    "exhausted_sessions": [
+      "61d145e0655c5298cbcfa576fff3ff78",
+      "c851c8930c35456a94a9dcb2c5ef9e09",
+      "990342c0dca23620d6e5958c0d4ad5d2"
+    ],
+    "root_cause": "two identical broad parallel read batches exhausted the process-safe per-result allowance because the complete batch was not reserved atomically",
+    "routing_revision": "v1-019-sign-in-context-routing-v4",
+    "packet_schema": 5,
+    "materialized_context": [
+      "AST-derived login request, response, phase, session, and route evidence",
+      "complete aggregate-bounded current App, App test, and stylesheet evidence, including authorized partial work",
+      "five exact frontend read paths and eight exact write paths",
+      "shortest bounded implementation and verification sequence"
+    ],
+    "guard_behavior": {
+      "complete_parallel_batch_reserved_before_execution": true,
+      "reservation_identity_survives_hermes_argument_coercion": true,
+      "unreserved_bounded_calls_fail_closed": true,
+      "rejection_controls_share_session_allowance": true,
+      "policy_rejections_are_charged_before_tool_execution": true,
+      "blocked_tool_calls_prevent_the_next_provider_call": true,
+      "parallel_unreserved_rejections_reserve_control_atomically": true,
+      "structured_rejection_and_truncation_json": true,
+      "identical_batch_retry_blocked": true,
+      "insufficient_context_classification": "context_materialization_required",
+      "ceiling_recovery_attempt_consumed": false
+    },
+    "historical_evidence_policy": "archive candidate, attempt, failure, exhausted marker, manifests, tasks, budgets, usage, and session diagnostics before consuming this authorization once",
+    "product_files_changed": [],
+    "canonical_specifications_modified": false,
+    "token_ceiling": 60000,
+    "token_ceiling_changed": false,
+    "verification": {
+      "complete_profile": "PASS: 15/15 gates",
+      "automation": "PASS: 124 tests plus compact-state routing, visibility watchdog, shell syntax, and Python compilation",
+      "backend": "333 passed; 105 expected local database-environment skips",
+      "postgresql": "105 passed",
+      "frontend": "3 passed",
+      "evidence": "/private/tmp/property-rental-v1-019-routing-v4-verification-final.json"
+    },
+    "independent_review": {
+      "initial_findings": 30,
+      "initial_p1": 16,
+      "initial_p2": 12,
+      "initial_p3": 2,
+      "corrected_and_regression_covered": 30,
+      "final_status": "PASS",
+      "final_session_id": "01a0288d-0c01-7390-8280-f70679de1d1d",
+      "final_reviewer_edits": false,
+      "final_verdict": "PASS: no material findings"
+    }
+  },
   "context_budget_restoration_repair": {
     "authorization": "existing durable V1; no renewed Owner authorization",
     "bounded_substage": "sign_in",
@@ -145,7 +201,7 @@
     "published_repair_commit": "ca4143c8deb348fddf3c44414022de1fef54831e",
     "restoration_metadata_commit": "d877cf3b6648083f97e54d661933e3d188999dae"
   },
-  "routing_revision": "v1-019-context-restoration-repair-v3",
+  "routing_revision": "v1-019-sign-in-context-routing-v4",
   "predecessor_preservation_evidence": {
     "schema_version": 1,
     "candidate": "V1-018",

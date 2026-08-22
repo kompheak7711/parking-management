@@ -8,6 +8,7 @@ the supported Hermes invocation contract, and persist resumable evidence.
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import json
 import os
@@ -30,7 +31,8 @@ EXCEPTIONAL_REVIEW_TOKEN_CEILING: Final = 120_000
 MODEL_ID: Final = "gpt-5.6-sol"
 PROVIDER: Final = "openai-codex"
 PRESERVATION_EVIDENCE_PATH: Final = "ops/AUTOMATION_REPAIR_EVIDENCE.json"
-V1_019_ROUTING_REVISION: Final = "v1-019-context-restoration-repair-v3"
+V1_019_ROUTING_REVISION: Final = "v1-019-sign-in-context-routing-v4"
+V1_019_FRONTEND_CONTEXT_MAX_BYTES: Final = 48_000
 V1_019_SUBSTAGE_IDS: Final = (
     "sign_in",
     "mfa_recovery",
@@ -53,16 +55,11 @@ V1_019_SUBSTAGE_ACCEPTANCE: Final = {
 }
 V1_019_SUBSTAGE_PATHS: Final = {
     "sign_in": (
-        "backend/src/property_rental/app.py",
-        "backend/src/property_rental/auth_api.py",
-        "backend/src/property_rental/local_authentication.py",
-        "backend/tests/test_auth_api.py",
-        "backend/tests/test_authentication_api.py",
-        "backend/tests/test_local_authentication.py",
         "frontend/src/App.tsx",
         "frontend/src/App.test.tsx",
         "frontend/src/styles.css",
-        "ops/traceability.json",
+        "frontend/src/authClient.ts",
+        "frontend/src/authClient.test.ts",
     ),
     "mfa_recovery": (
         "backend/src/property_rental/account_recovery.py",
@@ -105,6 +102,7 @@ RECOVERABLE_ROUTING_FAILURES: Final = frozenset(
         "verification_tooling_unavailable",
         "lock_or_overlapping_process_failure",
         "model_session_or_token_ceiling",
+        "context_materialization_required",
     }
 )
 
@@ -137,6 +135,7 @@ FAILURE_CATEGORIES: Final = frozenset(
         "unsupported_invocation_configuration",
         "empty_or_invalid_task_delivery",
         "model_session_or_token_ceiling",
+        "context_materialization_required",
         "repeated_identical_tool_call",
         "deterministic_test_failure",
         "test_fixture_failure",
@@ -1049,9 +1048,7 @@ def normalize_usage(
         "locally_reserved_next_call_tokens": available(
             "locally_reserved_next_call_tokens"
         ),
-        "provider_completion_limit_mode": available(
-            "provider_completion_limit_mode"
-        ),
+        "provider_completion_limit_mode": available("provider_completion_limit_mode"),
         "provider_request_omits_max_output_tokens": available(
             "provider_request_omits_max_output_tokens"
         ),
@@ -1061,12 +1058,18 @@ def normalize_usage(
         "reservation_violation": available("reservation_violation"),
         "in_flight_overshoot_tokens": available("in_flight_overshoot_tokens"),
         "tool_output_limit_bytes": available("tool_output_limit_bytes"),
-        "session_tool_output_limit_bytes": available(
-            "session_tool_output_limit_bytes"
-        ),
+        "session_tool_output_limit_bytes": available("session_tool_output_limit_bytes"),
         "tool_output_observed_bytes": available("tool_output_observed_bytes"),
         "tool_output_returned_bytes": available("tool_output_returned_bytes"),
         "tool_output_truncations": available("tool_output_truncations"),
+        "tool_output_control_bytes": available("tool_output_control_bytes"),
+        "tool_output_batch_rejections": available("tool_output_batch_rejections"),
+        "tool_output_batch_rejections_delivered": available(
+            "tool_output_batch_rejections_delivered"
+        ),
+        "context_materialization_checkpoint": available(
+            "context_materialization_checkpoint"
+        ),
         "applicable_token_ceiling": policy.token_ceiling,
         "stage_name": policy.stage,
         "complex_review_classification_reason": policy.complex_review_reason,
@@ -1096,7 +1099,7 @@ def validate_usage(usage: dict[str, Any], policy: ModelPolicy) -> None:
         )
     total = usage.get("total_tokens")
     stop_reason = usage.get("stop_reason") or usage.get("finish_reason")
-    if stop_reason in {
+    ceiling_stop = stop_reason in {
         "tool_ceiling",
         "session_ceiling",
         "token_ceiling",
@@ -1104,23 +1107,37 @@ def validate_usage(usage: dict[str, Any], policy: ModelPolicy) -> None:
         "length",
         "max_tokens",
         "max_turns",
-    }:
-        raise AutomationError(
-            "model_session_or_token_ceiling",
-            f"provider reported {stop_reason} at the configured ceiling",
-        )
-    if total is None:
-        return
-    if not isinstance(total, int) or total < 0:
+    }
+    if total is not None and (not isinstance(total, int) or total < 0):
         raise AutomationError(
             "pre_model_infrastructure_failure",
             "provider returned malformed total_tokens metadata",
         )
-    if total > policy.token_ceiling:
+    if (
+        ceiling_stop
+        or usage.get("boundary_reached") is True
+        or usage.get("reservation_violation") is True
+        or usage.get("reservation_blocked") is True
+        or isinstance(total, int)
+        and total > policy.token_ceiling
+    ):
         raise AutomationError(
             "model_session_or_token_ceiling",
-            f"observed {total} tokens above ceiling {policy.token_ceiling}",
+            (
+                f"provider reported {stop_reason} at the configured ceiling"
+                if ceiling_stop
+                else f"observed {total} tokens above ceiling {policy.token_ceiling}"
+                if isinstance(total, int) and total > policy.token_ceiling
+                else f"observed token-boundary evidence at ceiling {policy.token_ceiling}"
+            ),
         )
+    if stop_reason == "context_materialization_required":
+        raise AutomationError(
+            "context_materialization_required",
+            "the complete parallel tool batch exceeded its atomic context allowance",
+        )
+    if total is None:
+        return
 
 
 def hermes_chat_usage(stderr: str, database: Path) -> dict[str, Any]:
@@ -1463,7 +1480,9 @@ def expand_authorities(authorities: list[object]) -> list[str]:
                 f"authority range {authority!r} is invalid",
             )
         width = len(first_text)
-        expanded.extend(f"{prefix}-{number:0{width}d}" for number in range(first, last + 1))
+        expanded.extend(
+            f"{prefix}-{number:0{width}d}" for number in range(first, last + 1)
+        )
     return expanded
 
 
@@ -1483,6 +1502,171 @@ def authoritative_excerpt(repo: Path, authority: str, relative: str) -> str:
     next_heading = re.search(r"^##?\s", document[match.end() :], re.MULTILINE)
     end = match.end() + next_heading.start() if next_heading else len(document)
     return document[match.start() : end].strip()
+
+
+def _ast_excerpt(source: str, node: ast.AST) -> str:
+    """Return one decorator-aware, line-bounded Python syntax excerpt."""
+    start = int(getattr(node, "lineno", 1))
+    decorators = getattr(node, "decorator_list", [])
+    if decorators:
+        start = min(start, *(int(item.lineno) for item in decorators))
+    end = int(getattr(node, "end_lineno", start))
+    return "\n".join(source.splitlines()[start - 1 : end]).rstrip()
+
+
+def sign_in_backend_contract(repo: Path) -> dict[str, Any]:
+    """Materialize only the login transport contract needed by the frontend.
+
+    The dispatcher, rather than Hermes, performs this deterministic source read.
+    Full backend modules and test suites are never exposed to the bounded worker.
+    """
+    relative = "backend/src/property_rental/auth_api.py"
+    source = (repo / relative).read_text()
+    try:
+        tree = ast.parse(source, filename=relative)
+    except SyntaxError as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the local authentication API cannot be materialized",
+        ) from error
+    wanted = {
+        "AuthenticationPhase",
+        "LoginRequest",
+        "SessionData",
+        "AuthenticationData",
+        "AuthenticationResponse",
+    }
+    symbols: list[dict[str, Any]] = []
+    login_route: dict[str, Any] | None = None
+    router_prefix: str | None = None
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and any(
+            isinstance(target, ast.Name) and target.id == "router"
+            for target in node.targets
+        ):
+            call = node.value
+            if (
+                isinstance(call, ast.Call)
+                and isinstance(call.func, ast.Name)
+                and call.func.id == "APIRouter"
+            ):
+                prefix = next(
+                    (item.value for item in call.keywords if item.arg == "prefix"), None
+                )
+                if isinstance(prefix, ast.Constant) and isinstance(prefix.value, str):
+                    router_prefix = prefix.value
+        if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            if node.name in wanted and isinstance(node, ast.ClassDef):
+                symbols.append(
+                    {
+                        "name": node.name,
+                        "start_line": node.lineno,
+                        "end_line": node.end_lineno,
+                        "excerpt": _ast_excerpt(source, node),
+                    }
+                )
+            login_decorator = next(
+                (
+                    decorator
+                    for decorator in node.decorator_list
+                    if isinstance(decorator, ast.Call)
+                    and isinstance(decorator.func, ast.Attribute)
+                    and isinstance(decorator.func.value, ast.Name)
+                    and decorator.func.value.id == "router"
+                    and decorator.func.attr == "post"
+                ),
+                None,
+            )
+            if node.name == "login" and login_decorator is not None:
+                route_argument = (
+                    login_decorator.args[0]
+                    if isinstance(login_decorator, ast.Call) and login_decorator.args
+                    else None
+                )
+                route_path = (
+                    route_argument.value
+                    if isinstance(route_argument, ast.Constant)
+                    and isinstance(route_argument.value, str)
+                    else None
+                )
+                if router_prefix is None or route_path is None:
+                    raise AutomationError(
+                        "repository_integrity_uncertainty",
+                        "the local sign-in router prefix or route path is not a string literal",
+                    )
+                login_route = {
+                    "method": "POST",
+                    "router_prefix": router_prefix,
+                    "route_path": route_path,
+                    "path": router_prefix.rstrip("/") + "/" + route_path.lstrip("/"),
+                    "start_line": min(
+                        [node.lineno] + [item.lineno for item in node.decorator_list]
+                    ),
+                    "end_line": node.end_lineno,
+                    "excerpt": _ast_excerpt(source, node),
+                }
+    if (
+        {item["name"] for item in symbols} != wanted
+        or login_route is None
+        or login_route["path"] != "/api/v1/auth/login"
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the exact local sign-in API symbols or route are missing",
+        )
+    return {
+        "path": relative,
+        "source_sha256": digest(source),
+        "symbols": sorted(symbols, key=lambda item: int(item["start_line"])),
+        "route_inventory": [login_route],
+    }
+
+
+def complete_small_frontend_evidence(repo: Path) -> list[dict[str, Any]]:
+    """Embed current bounded frontend evidence, including authorized partial work."""
+    evidence: list[dict[str, Any]] = []
+    total_bytes = 0
+    for relative in (
+        "frontend/src/App.tsx",
+        "frontend/src/App.test.tsx",
+        "frontend/src/styles.css",
+    ):
+        source = repo / relative
+        if not source.exists():
+            evidence.append(
+                {
+                    "path": relative,
+                    "present": False,
+                    "sha256": None,
+                    "byte_length": 0,
+                    "complete_content": None,
+                }
+            )
+            continue
+        if not source.is_file():
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                f"authorized frontend evidence is not a regular file: {relative}",
+            )
+        content = source.read_text()
+        content_bytes = len(content.encode())
+        total_bytes += content_bytes
+        evidence.append(
+            {
+                "path": relative,
+                "present": True,
+                "sha256": digest(content),
+                "byte_length": content_bytes,
+                "complete_content": content,
+            }
+        )
+    if total_bytes > V1_019_FRONTEND_CONTEXT_MAX_BYTES:
+        raise AutomationError(
+            "context_materialization_required",
+            "the complete current frontend evidence exceeded the aggregate "
+            f"{V1_019_FRONTEND_CONTEXT_MAX_BYTES}-byte packet bound",
+        )
+    return evidence
 
 
 def task_packet(
@@ -1512,7 +1696,9 @@ def task_packet(
     )
     fingerprints = actionable_fingerprint(repo, preflight)
     preserved = preservation_evidence(repo)
-    raw_authorities = roadmap_item.get("authorities") or candidate.get("authorities") or []
+    raw_authorities = (
+        roadmap_item.get("authorities") or candidate.get("authorities") or []
+    )
     candidate_authorities = expand_authorities(raw_authorities)
     substage_id = str((bounded_substage or {}).get("id") or "")
     authorities = list(
@@ -1547,7 +1733,7 @@ def task_packet(
     directly_relevant_paths = list(V1_019_SUBSTAGE_PATHS.get(substage_id, ()))
     materialized_recovery = recovery_state or {}
     packet = {
-        "schema_version": 4,
+        "schema_version": 5,
         "candidate": candidate_id,
         "stage": stage,
         "branch": git(repo, "branch", "--show-current"),
@@ -1557,7 +1743,9 @@ def task_packet(
         "process_state_fingerprint": fingerprints["process_state"],
         "preflight_fingerprint": fingerprints["actionable"],
         "preserved_worktree_fingerprint": preserved.get("fingerprint"),
-        "task": roadmap_item.get("task") or candidate.get("task") or preflight.get("next_action"),
+        "task": roadmap_item.get("task")
+        or candidate.get("task")
+        or preflight.get("next_action"),
         "candidate_state": {
             "approval_status": (state.get("approval") or {}).get("status"),
             "implementation_started": bool(
@@ -1581,6 +1769,9 @@ def task_packet(
                 "bounded_recovery_exhausted"
             )
             is True,
+            "context_materialization_attempt": int(
+                materialized_recovery.get("context_materialization_attempt") or 0
+            ),
         },
         "candidate_scope": {
             "include": roadmap_item.get("include") or [],
@@ -1612,7 +1803,11 @@ def task_packet(
             "preserved_worktree_fingerprint": preserved.get("fingerprint"),
         },
         "recovery_generation": recovery_generation,
-        "durable_state_write_paths": ["ops/NOW.md", "ops/STATE.json", "ops/traceability.json"],
+        "durable_state_write_paths": [
+            "ops/NOW.md",
+            "ops/STATE.json",
+            "ops/traceability.json",
+        ],
         "authorization_boundaries": {
             "authorization": roadmap_item.get("authorization"),
             "existing_durable_v1": roadmap_item.get("authorization") == "durable_v1",
@@ -1637,6 +1832,29 @@ def task_packet(
             ],
         },
     }
+    if substage_id == "sign_in":
+        packet["materialized_implementation_context"] = {
+            "routing_revision": V1_019_ROUTING_REVISION,
+            "backend_contract": sign_in_backend_contract(repo),
+            "frontend_baseline": complete_small_frontend_evidence(repo),
+            "exact_writable_paths": [
+                "frontend/src/App.tsx",
+                "frontend/src/App.test.tsx",
+                "frontend/src/styles.css",
+                "frontend/src/authClient.ts",
+                "frontend/src/authClient.test.ts",
+                "ops/NOW.md",
+                "ops/STATE.json",
+                "ops/traceability.json",
+            ],
+            "shortest_execution_sequence": [
+                "Create a dedicated typed local-authentication client in frontend/src/authClient.ts.",
+                "Replace only the bootstrap App surface with an accessible local username/password sign-in experience.",
+                "Use one generic authentication failure message and expose no account, lifecycle, MFA-enrollment, or privilege details.",
+                "Add focused client and component tests, including keyboard/label/error announcement coverage and proof that no first-Owner route exists.",
+                "Run the focused frontend checks, then return the exact changed paths and verification evidence.",
+            ],
+        }
     if bounded_substage is not None:
         packet["bounded_substage"] = bounded_substage
         packet["output_contract"]["required"].append("substage_complete")
