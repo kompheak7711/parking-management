@@ -262,6 +262,11 @@ def test_password_credential_requirements_have_implemented_traceability() -> Non
             "SEC-011",
             "DL-055",
         },
+        "test_hash_metadata_is_immutable_security_policy_evidence": {
+            "TEST-108",
+            "SEC-011",
+            "DL-055",
+        },
         "test_verify_password_accepts_current_encoding_without_rehash": {
             "TEST-108",
             "SEC-011",
@@ -273,6 +278,11 @@ def test_password_credential_requirements_have_implemented_traceability() -> Non
             "DL-055",
         },
         "test_verify_password_marks_valid_older_work_factor_for_rehash": {
+            "TEST-108",
+            "SEC-011",
+            "DL-055",
+        },
+        "test_verify_password_rejects_non_argon2id_encodings": {
             "TEST-108",
             "SEC-011",
             "DL-055",
@@ -316,6 +326,19 @@ def test_local_login_security_requirements_have_implemented_traceability() -> No
             "DL-055",
         },
         "test_attempt_limiter_enforces_account_and_source_bounds": {
+            "API-096",
+            "TEST-108",
+            "SEC-012",
+            "DL-055",
+        },
+        "test_attempt_limiter_rejects_nonpositive_security_configuration": {
+            "API-096",
+            "TEST-108",
+            "SEC-012",
+            "DL-055",
+        },
+        "test_authentication_throttles_normalized_username_variants_before_lookup": {
+            "DB-AUTH-001",
             "API-096",
             "TEST-108",
             "SEC-012",

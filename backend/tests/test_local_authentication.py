@@ -4,6 +4,7 @@ import pytest
 
 from property_rental.local_authentication import (
     AuthenticationAuditEvidence,
+    AuthenticationResult,
     BoundedAuthenticationAttemptLimiter,
     LocalAccountCredential,
     LocalAuthenticationService,
@@ -64,6 +65,16 @@ class StubAccountRepository:
 
     def find_by_username(self, username: str) -> LocalAccountCredential | None:
         return self.account
+
+
+class RecordingAccountRepository(StubAccountRepository):
+    def __init__(self, account: LocalAccountCredential | None) -> None:
+        super().__init__(account)
+        self.usernames: list[str] = []
+
+    def find_by_username(self, username: str) -> LocalAccountCredential | None:
+        self.usernames.append(username)
+        return super().find_by_username(username)
 
 
 class StubAttemptLimiter:
@@ -186,6 +197,69 @@ def test_attempt_limiter_enforces_account_and_source_bounds(bounded_scope: str) 
 
     now[0] = 160.0
     assert limiter.allow(*keys(4)) is True
+
+
+@pytest.mark.parametrize(
+    ("max_attempts_per_account", "max_attempts_per_source", "window_seconds"),
+    [(0, 1, 1), (1, 0, 1), (1, 1, 0), (-1, 1, 1), (1, -1, 1), (1, 1, -1)],
+)
+def test_attempt_limiter_rejects_nonpositive_security_configuration(
+    max_attempts_per_account: int,
+    max_attempts_per_source: int,
+    window_seconds: float,
+) -> None:
+    with pytest.raises(ValueError):
+        BoundedAuthenticationAttemptLimiter(
+            max_attempts_per_account=max_attempts_per_account,
+            max_attempts_per_source=max_attempts_per_source,
+            window_seconds=window_seconds,
+        )
+
+
+def test_authentication_throttles_normalized_username_variants_before_lookup() -> None:
+    password_service = PasswordHashService()
+    credential = password_service.hash_password("stored password")
+    repository = RecordingAccountRepository(
+        LocalAccountCredential(
+            actor_id="actor-known",
+            lifecycle_state="active",
+            mfa_policy_class="required",
+            verifier_encoding=credential.verifier_encoding,
+        )
+    )
+    audit_sink = CollectingAuditSink()
+    service = LocalAuthenticationService(
+        repository=repository,
+        password_service=password_service,
+        attempt_limiter=BoundedAuthenticationAttemptLimiter(
+            max_attempts_per_account=2,
+            max_attempts_per_source=10,
+            window_seconds=60,
+        ),
+        audit_sink=audit_sink,
+    )
+
+    for username in ("Operator", " operator "):
+        result = service.authenticate(
+            username=username,
+            password="wrong password",
+            request_source="source-variant",
+        )
+        assert result == AuthenticationResult(is_authenticated=False)
+
+    limited_result = service.authenticate(
+        username="OPERATOR",
+        password="wrong password",
+        request_source="source-variant",
+    )
+
+    assert limited_result == AuthenticationResult(is_authenticated=False)
+    assert repository.usernames == ["Operator", " operator "]
+    assert audit_sink.evidence == [
+        AuthenticationAuditEvidence(outcome="rejected", reason="credentials_rejected"),
+        AuthenticationAuditEvidence(outcome="rejected", reason="credentials_rejected"),
+        AuthenticationAuditEvidence(outcome="rejected", reason="rate_limited"),
+    ]
 
 
 class DenyingAttemptLimiter:

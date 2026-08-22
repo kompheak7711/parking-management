@@ -11,6 +11,7 @@ from argon2.exceptions import InvalidHashError, VerificationError
 from argon2.profiles import RFC_9106_LOW_MEMORY
 
 ARGON2ID_ALGORITHM: Final = "argon2id"
+_ARGON2ID_ENCODING_PREFIX: Final = f"${ARGON2ID_ALGORITHM}$"
 _ARGON2ID_PARAMETERS: Final = RFC_9106_LOW_MEMORY
 
 
@@ -59,6 +60,8 @@ class PasswordHashService:
 
     def verify_password(self, password: str, verifier_encoding: str) -> PasswordVerification:
         """Verify a password and identify verifier material below the current policy."""
+        if not verifier_encoding.startswith(_ARGON2ID_ENCODING_PREFIX):
+            return PasswordVerification(is_valid=False, needs_rehash=False)
         try:
             is_valid = self._hasher.verify(verifier_encoding, normalize("NFC", password))
         except (InvalidHashError, VerificationError):

@@ -887,6 +887,14 @@
       "notes": "The service produces distinct Argon2id encodings for the same password with explicit current adaptive work-factor metadata and no plaintext persistence."
     },
     {
+      "test_id": "test_hash_metadata_is_immutable_security_policy_evidence",
+      "upstream_ids": ["DB-AUTH-002", "TEST-108", "SEC-011", "DL-055"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_password_security.py",
+      "status": "implemented",
+      "notes": "Password work-factor metadata is immutable after issuance so downstream code cannot silently rewrite the recorded Argon2id policy evidence."
+    },
+    {
       "test_id": "test_verify_password_accepts_current_encoding_without_rehash",
       "upstream_ids": ["DB-AUTH-002", "TEST-108", "SEC-011", "DL-055"],
       "test_level": "security",
@@ -909,6 +917,14 @@
       "test_path": "backend/tests/test_password_security.py",
       "status": "implemented",
       "notes": "A valid Argon2id encoding below the current approved policy verifies successfully while being marked for replacement with current parameters."
+    },
+    {
+      "test_id": "test_verify_password_rejects_non_argon2id_encodings",
+      "upstream_ids": ["DB-AUTH-002", "TEST-108", "SEC-011", "DL-055"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_password_security.py",
+      "status": "implemented",
+      "notes": "Legacy Argon2i and Argon2d verifier encodings fail closed instead of being accepted as the approved Argon2id credential policy."
     },
     {
       "test_id": "test_repository_normalizes_username_through_local_account_persistence",
@@ -941,6 +957,22 @@
       "test_path": "backend/tests/test_local_authentication.py",
       "status": "implemented",
       "notes": "Injected positive account, source, and rolling-window limits are enforced independently with a deterministic clock and no invented production threshold."
+    },
+    {
+      "test_id": "test_attempt_limiter_rejects_nonpositive_security_configuration",
+      "upstream_ids": ["API-096", "TEST-108", "SEC-012", "DL-055"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "Account, source, and rolling-window security bounds reject zero or negative configuration instead of silently disabling throttling."
+    },
+    {
+      "test_id": "test_authentication_throttles_normalized_username_variants_before_lookup",
+      "upstream_ids": ["DB-AUTH-001", "API-096", "TEST-108", "SEC-012", "DL-055"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_local_authentication.py",
+      "status": "implemented",
+      "notes": "Case and surrounding-space variants share one normalized account throttle key and the rejected attempt is stopped before repository lookup."
     },
     {
       "test_id": "test_rate_limited_authentication_is_generic_and_skips_account_lookup",

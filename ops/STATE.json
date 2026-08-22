@@ -3,7 +3,7 @@
   "approval": {
     "status": "approved_ready",
     "basis": "structured durable-v1 successor selection",
-    "implementation_started": false,
+    "implementation_started": true,
     "implementation_completed": false,
     "publication_completed": false
   },
@@ -455,7 +455,7 @@
       "roadmap_traceability_json_scope_secret_canonical_diff": "PASS",
       "watchdog_notifications": "PASS"
     },
-    "scheduler_enabled": true,
+    "scheduler_enabled": false,
     "standing_v1_autonomy": {
       "authorized_at": "2026-08-23T00:15:17+07:00",
       "authorization": "owner_approved_remaining_v1_roadmap",
@@ -521,7 +521,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Implement V1-020 authentication_core under standing authorization.",
+  "next_action": "Publish V1-020 authentication_core, then dispatch authentication_api.",
   "next_candidate": {
     "acceptance_profile": "release",
     "authorities": [
@@ -619,10 +619,13 @@
   "task": "Implement the approved bounded candidate: Identity and security end-to-end hardening gate",
   "tests": [
     "PASS: every V1-020 substage authority is in scope and every complete parallel read batch is at most 30000 bytes",
-    "PASS: 128 automation tests plus routing, compact-state, visibility-watchdog, syntax, JSON, publication, and diff checks"
+    "PASS: 128 automation tests plus routing, compact-state, visibility-watchdog, syntax, JSON, publication, and diff checks",
+    "PASS: 44 focused authentication-core and traceability tests",
+    "PASS: complete verification profile 15/15; backend 347 passed; PostgreSQL 105 passed; frontend 32 passed; automation 128 passed",
+    "PASS: direct review of seven authentication-core paths; no material findings; candidate-wide independent review remains pending"
   ],
   "tests_tranche_id": "V1-020",
-  "timestamp": "2026-08-22T17:51:30Z",
+  "timestamp": "2026-08-22T18:14:30Z",
   "touched_areas": [
     "complete authentication abuse, lifecycle, recovery, session, and bootstrap tests"
   ],

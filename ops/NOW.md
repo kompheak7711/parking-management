@@ -21,13 +21,24 @@
   syntax, JSON validation, publication guard, and diff checks pass.
 - Publication: routing revision v2 commit `324cb36` passed GitHub Actions run `32589644022`;
   the no-change ceiling checkpoint was archived as recovered.
-- Scheduler: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is cleared to resume after this
-  publication record; daily reporting and watchdog jobs are unchanged.
-- Product status: V1-020 implementation has not started and no product path has changed.
+- Authentication core: Hermes session `5b424640f4c7cc74346b7e687f02f455` successfully read
+  the 21,243-byte batch and changed three authorized paths before its final response call reached
+  the proactive ceiling. The partial work was preserved; Codex completed traceability and the
+  focused authentication/traceability suite passes 44 tests.
+- Complete verification: PASS 15/15; backend 347 passed with 105 expected local environment
+  skips, disposable PostgreSQL 105 passed, frontend 32 passed, and automation 128 passed.
+- Review: the seven-path authentication-core diff was reviewed against TEST-108 and
+  SEC-068–070; no material finding remains. Candidate-wide independent review remains at the
+  final V1-020 publication gate.
+- Scheduler: supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is paused while the preserved
+  authentication-core diff is verified and published; daily reporting and watchdog jobs are unchanged.
+- Product status: V1-020 implementation is in progress; `authentication_core` is complete and
+  later substages have not started.
 - Owner action: none.
-- Exact next action: re-enable the supervisor and dispatch only V1-020 `authentication_core`.
+- Exact next action: publish `authentication_core`, then dispatch only V1-020
+  `authentication_api`.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-020 active; routing revision v2 published; bounded implementation ready.
-- Automation exact next action: Dispatch authentication_core under standing authorization.
+- Automation candidate state: V1-020 active; authentication_core complete and awaiting publication.
+- Automation exact next action: Publish authentication_core, then dispatch authentication_api.
 <!-- AUTOMATION_STATUS_END -->
