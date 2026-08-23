@@ -682,7 +682,7 @@
       ],
       "authorities": [
         "API-030-031",
-        "UI-CUST-*",
+        "UI-028-030",
         "SEC-041-044"
       ],
       "include": [

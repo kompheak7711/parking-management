@@ -9,7 +9,7 @@
   },
   "authorities": [
     "API-030-031",
-    "UI-CUST-*",
+    "UI-028-030",
     "SEC-041-044"
   ],
   "automation_repair": {
@@ -683,7 +683,7 @@
     "acceptance_profile": "api_ui",
     "authorities": [
       "API-030-031",
-      "UI-CUST-*",
+      "UI-028-030",
       "SEC-041-044"
     ],
     "authorization": "durable_v1",
@@ -727,7 +727,7 @@
   },
   "relevant_docs": [
     "API-030-031",
-    "UI-CUST-*",
+    "UI-028-030",
     "SEC-041-044"
   ],
   "repair": {

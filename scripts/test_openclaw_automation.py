@@ -1186,6 +1186,26 @@ class RepositoryEvidenceTests(unittest.TestCase):
             )
         )
 
+    def test_v1_026_uses_exact_existing_customer_ui_authorities(self) -> None:
+        roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())
+        candidate = next(item for item in roadmap["tranches"] if item["id"] == "V1-026")
+
+        self.assertNotIn("UI-CUST-*", candidate["authorities"])
+        self.assertEqual(
+            set(expand_authorities(candidate["authorities"], repo=ROOT)),
+            {
+                "API-030",
+                "API-031",
+                "UI-028",
+                "UI-029",
+                "UI-030",
+                "SEC-041",
+                "SEC-042",
+                "SEC-043",
+                "SEC-044",
+            },
+        )
+
     def test_v1_021_wildcards_expand_across_canonical_heading_depths(self) -> None:
         roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())
         candidate = next(item for item in roadmap["tranches"] if item["id"] == "V1-021")
