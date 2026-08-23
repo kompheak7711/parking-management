@@ -287,6 +287,7 @@ V1_022_API_PRODUCT_PATHS: tuple[str, ...] = tuple(
         set(V1_022_STORAGE_PRODUCT_PATHS)
         | {
             "backend/src/property_rental/property_api.py",
+            "backend/src/property_rental/property_setup_cli.py",
             "backend/src/property_rental/app.py",
             "backend/tests/test_property_api.py",
         }
@@ -414,6 +415,30 @@ V1_022_STORAGE_TRACEABILITY: tuple[dict[str, Any], ...] = (
         "test_path": "backend/tests/test_property_migration.py",
         "status": "implemented",
         "notes": "PostgreSQL applies authorized configuration updates with a monotonic version precondition.",
+    },
+    {
+        "test_id": "test_runtime_initializes_property_only_through_protected_defaults",
+        "upstream_ids": ["API-026", "PR-PROP-001", "SEC-004"],
+        "test_level": "migration",
+        "test_path": "backend/tests/test_property_migration.py",
+        "status": "implemented",
+        "notes": "The runtime role cannot forge Property creation metadata and can initialize only through the protected defaulting function.",
+    },
+    {
+        "test_id": "test_postgres_setup_entrypoint_uses_the_protected_repository",
+        "upstream_ids": ["API-026", "PR-PROP-001"],
+        "test_level": "application",
+        "test_path": "backend/tests/test_property.py",
+        "status": "implemented",
+        "notes": "Fresh deployments have an application-controlled one-time Property setup entrypoint.",
+    },
+    {
+        "test_id": "test_property_setup_command_uses_runtime_database_identity",
+        "upstream_ids": ["API-026", "PR-PROP-001", "SEC-004"],
+        "test_level": "application",
+        "test_path": "backend/tests/test_property.py",
+        "status": "implemented",
+        "notes": "The setup command uses the configured runtime database identity without accepting a database secret on the command line.",
     },
 )
 
@@ -3269,6 +3294,7 @@ def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
             "paths": list(V1_022_API_VERIFIED_PATHS),
             "required_files": [
                 "backend/src/property_rental/property_api.py",
+                "backend/src/property_rental/property_setup_cli.py",
                 "backend/tests/test_property_api.py",
             ],
         },
@@ -4093,6 +4119,13 @@ def deterministic_verification(record: dict[str, Any]) -> None:
         "exit_status": result.returncode,
         "artifact": str(evidence_path),
     }
+    try:
+        verification_artifact = json.loads(evidence_path.read_text())
+    except (OSError, json.JSONDecodeError):
+        verification_artifact = {}
+    for key in ("profile", "result", "checks_passed", "checks_observed"):
+        if key in verification_artifact:
+            evidence[key] = verification_artifact[key]
     if not evidence_path.exists():
         atomic_write_json(evidence_path, evidence)
     record.setdefault("events", []).append(
@@ -4414,10 +4447,16 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
         "exit_status": verification_event.get("exit_status"),
         "artifact": verification_event.get("artifact"),
         "checks_passed": verification_event.get("checks_passed"),
+        "checks_observed": verification_event.get("checks_observed"),
     }
     packet.setdefault("continuity_instructions", []).append(
         "Review only materialized_candidate_diff and the compact verification evidence. "
         "Do not call any tool or reread any repository file; return the review JSON directly."
+    )
+    packet["continuity_instructions"].append(
+        "GitHub Actions is a mandatory post-review publication gate and cannot exist for the "
+        "uncommitted candidate. Do not report absent pre-publication CI as a finding; require "
+        "the dispatcher to publish only after review passes and then bind exact successful CI."
     )
     exceptional_review = patch_byte_count > EXCEPTIONAL_REVIEW_PATCH_BYTES
     review_classification = (

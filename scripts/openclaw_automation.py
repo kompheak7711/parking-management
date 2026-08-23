@@ -307,9 +307,8 @@ V1_022_SUBSTAGE_PATHS: Final = {
         "backend/src/property_rental/property.py",
         "backend/src/property_rental/identity.py",
         "backend/src/property_rental/app.py",
-        "backend/migrations/versions/20260823_11_property_configuration.py",
+        "backend/src/property_rental/settings.py",
         "backend/tests/test_property.py",
-        "backend/tests/test_property_migration.py",
     ),
 }
 V1_022_SUBSTAGE_WRITABLE_PATHS: Final = {
@@ -322,6 +321,7 @@ V1_022_SUBSTAGE_WRITABLE_PATHS: Final = {
     "property_api": (
         "backend/migrations/versions/20260823_11_property_configuration.py",
         "backend/src/property_rental/property.py",
+        "backend/src/property_rental/property_setup_cli.py",
         "backend/tests/test_property.py",
         "backend/tests/test_property_migration.py",
         "backend/src/property_rental/property_api.py",

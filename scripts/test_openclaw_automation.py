@@ -3719,7 +3719,7 @@ evidence.write_text(json.dumps({
             dispatcher.sync_v1_022_supervisor_artifacts("property_storage")
             dispatcher.sync_v1_022_supervisor_artifacts("property_api")
             traceability = json.loads((repo / "ops/traceability.json").read_text())
-            self.assertEqual(len(traceability["entries"]), 16)
+            self.assertEqual(len(traceability["entries"]), 19)
             rendered_traceability = (repo / "ops/traceability.json").read_text()
             self.assertTrue(rendered_traceability.startswith('{\n  "schema_version": 1,'))
             self.assertIn('"upstream_ids": ["BR-PROP-003", "PR-PROP-003"]', rendered_traceability)
@@ -3731,7 +3731,7 @@ evidence.write_text(json.dumps({
             dispatcher.sync_v1_022_supervisor_artifacts("property_api")
             self.assertEqual(
                 len(json.loads((repo / "ops/traceability.json").read_text())["entries"]),
-                16,
+                19,
             )
             traceability_path.write_text(
                 '{\n  "schema_version": 1,\n  "entries": [\n  ]\n}\n'
@@ -5175,6 +5175,7 @@ raise SystemExit(64)
                         "exit_status": 0,
                         "artifact": "verification.json",
                         "checks_passed": 15,
+                        "checks_observed": 15,
                     },
                 ],
             }
@@ -5203,7 +5204,14 @@ raise SystemExit(64)
                     "exit_status": 0,
                     "artifact": "verification.json",
                     "checks_passed": 15,
+                    "checks_observed": 15,
                 },
+            )
+            self.assertTrue(
+                any(
+                    "post-review publication gate" in instruction
+                    for instruction in captured["continuity_instructions"]
+                )
             )
             self.assertEqual(record["stage"], "publication")
 
