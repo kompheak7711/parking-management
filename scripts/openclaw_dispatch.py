@@ -2874,6 +2874,21 @@ def publish_state_contract_repair(record: dict[str, Any]) -> None:
     save_stage(record)
 
 
+def candidate_automation_rebase_allowed(record: dict[str, Any]) -> bool:
+    """Allow only recovery or exact verified V1-023 inter-substage rebases."""
+    return bool(
+        record.get("recovery_pending") is True
+        or (
+            record.get("candidate") == "V1-023"
+            and record.get("stage") == "implementation"
+            and record.get("completed_implementation_substages") == ["unit_storage"]
+            and record.get("implementation_complete") is False
+            and record.get("last_failure_category") is None
+            and record.get("product_code_modification_permitted") is True
+        )
+    )
+
+
 def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
     """Rebind untouched candidate work to one exact green automation-only descendant."""
     expected_paths = sorted(
@@ -2882,7 +2897,7 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
     current_paths = changed_paths(REPO)
     if (
         record.get("stage") != "implementation"
-        or record.get("recovery_pending") is not True
+        or not candidate_automation_rebase_allowed(record)
         or current_paths != expected_paths
     ):
         return

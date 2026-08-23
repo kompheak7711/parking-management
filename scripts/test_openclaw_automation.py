@@ -4270,6 +4270,36 @@ evidence.write_text(json.dumps({
             ["unit_storage", "unit_availability"],
         )
 
+    def test_v1_023_verified_storage_allows_only_exact_inter_substage_rebase(
+        self,
+    ) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "v1_023_inter_substage_rebase", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        record = {
+            "candidate": "V1-023",
+            "stage": "implementation",
+            "completed_implementation_substages": ["unit_storage"],
+            "implementation_complete": False,
+            "last_failure_category": None,
+            "product_code_modification_permitted": True,
+            "recovery_pending": False,
+        }
+        self.assertTrue(dispatcher.candidate_automation_rebase_allowed(record))
+        record["product_code_modification_permitted"] = False
+        self.assertFalse(dispatcher.candidate_automation_rebase_allowed(record))
+        record["product_code_modification_permitted"] = True
+        record["candidate"] = "V1-022"
+        self.assertFalse(dispatcher.candidate_automation_rebase_allowed(record))
+        self.assertTrue(
+            dispatcher.candidate_automation_rebase_allowed(
+                {"stage": "implementation", "recovery_pending": True}
+            )
+        )
+
     def test_database_gate_collects_v1_023_unit_migration(self) -> None:
         database_gate = (ROOT / "scripts/database-test.sh").read_text()
 
