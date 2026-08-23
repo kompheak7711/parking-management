@@ -189,6 +189,6 @@
   reconcile V1-020 complete from its exact successful publication commit.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-020 active; all seven bounded substages complete; final gates pending.
-- Automation exact next action: Verify, review, and publish the bounded reconciliation lifecycle repair, then reconcile V1-020 complete from its exact successful publication commit.
+- Automation publication state: published on implementation/foundation at 43596f44ea4c4481c3480bbac0edf3be42685a8b.
+- Automation exact next action: Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.
 <!-- AUTOMATION_STATUS_END -->
