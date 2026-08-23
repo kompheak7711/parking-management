@@ -568,8 +568,8 @@
       ],
       "risk_class": "high",
       "acceptance_profile": "database",
-      "authorization": "durable_v1",
-      "status": "approved_ready"
+      "authorization": "complete",
+      "status": "complete"
     },
     {
       "id": "V1-022",
