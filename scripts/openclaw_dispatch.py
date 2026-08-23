@@ -3156,6 +3156,16 @@ def sync_v1_022_traceability(substage_id: str) -> None:
                         "frontend/src/App.test.tsx",
                         "A server denial during a Payment Method update immediately hides the previously loaded management screen.",
                     ),
+                    (
+                        "TEST-FE-023",
+                        "frontend/src/App.test.tsx",
+                        "A stale Property load cannot restore management controls after sign-out.",
+                    ),
+                    (
+                        "TEST-FE-024",
+                        "frontend/src/App.test.tsx",
+                        "An older successful Property load cannot override a newer authoritative capability denial.",
+                    ),
                 )
             ]
         )
