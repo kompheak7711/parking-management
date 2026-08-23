@@ -3702,6 +3702,12 @@ evidence.write_text(json.dumps({
                 "def test_property_get(): pass\n"
                 "def test_property_patch(): pass\n"
             )
+            (repo / "backend/tests/test_initial_owner_bootstrap_cli.py").write_text(
+                "def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_reset_route():\n"
+                "    expected_api_operations = {\n"
+                '        "/api/v1/{resource_family}/{resource_id}/audit-events": {"get"},\n'
+                "    }\n"
+            )
             (repo / "backend/tests/test_migrations.py").write_text(
                 "def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_authority():\n"
                 "    if True:\n"
@@ -3712,7 +3718,7 @@ evidence.write_text(json.dumps({
             dispatcher.sync_v1_022_supervisor_artifacts("property_storage")
             dispatcher.sync_v1_022_supervisor_artifacts("property_api")
             traceability = json.loads((repo / "ops/traceability.json").read_text())
-            self.assertEqual(len(traceability["entries"]), 15)
+            self.assertEqual(len(traceability["entries"]), 16)
             self.assertIn(
                 '("20260823_11",)',
                 (repo / "backend/tests/test_migrations.py").read_text(),
@@ -3721,7 +3727,7 @@ evidence.write_text(json.dumps({
             dispatcher.sync_v1_022_supervisor_artifacts("property_api")
             self.assertEqual(
                 len(json.loads((repo / "ops/traceability.json").read_text())["entries"]),
-                15,
+                16,
             )
             atomic_write_json(
                 repo / "ops/traceability.json",
@@ -3912,6 +3918,13 @@ evidence.write_text(json.dumps({
                 "d" * 64,
             )
             failed_save.assert_called_once_with(failed_record)
+
+    def test_database_gate_collects_v1_022_property_migrations(self) -> None:
+        database_gate = (ROOT / "scripts/database-test.sh").read_text()
+
+        self.assertIn("tests/test_migrations.py", database_gate)
+        self.assertIn("tests/test_audit_migration.py", database_gate)
+        self.assertIn("tests/test_property_migration.py", database_gate)
 
     def test_format_only_verification_failure_resumes_without_a_model(self) -> None:
         spec = importlib.util.spec_from_file_location(

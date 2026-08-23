@@ -295,7 +295,11 @@ V1_022_API_PRODUCT_PATHS: tuple[str, ...] = tuple(
 V1_022_API_VERIFIED_PATHS: tuple[str, ...] = tuple(
     sorted(
         set(V1_022_API_PRODUCT_PATHS)
-        | {"backend/tests/test_migrations.py", "ops/traceability.json"}
+        | {
+            "backend/tests/test_initial_owner_bootstrap_cli.py",
+            "backend/tests/test_migrations.py",
+            "ops/traceability.json",
+        }
     )
 )
 V1_022_STORAGE_TRACEABILITY: tuple[dict[str, Any], ...] = (
@@ -402,6 +406,14 @@ V1_022_STORAGE_TRACEABILITY: tuple[dict[str, Any], ...] = (
         "test_path": "backend/tests/test_property_migration.py",
         "status": "implemented",
         "notes": "Database controls preserve Property identity, history, and timezone invariants against direct mutation.",
+    },
+    {
+        "test_id": "test_migration_allows_versioned_configuration_update",
+        "upstream_ids": ["API-026", "API-027", "BR-PROP-003", "PR-PROP-003"],
+        "test_level": "migration",
+        "test_path": "backend/tests/test_property_migration.py",
+        "status": "implemented",
+        "notes": "PostgreSQL applies authorized configuration updates with a monotonic version precondition.",
     },
 )
 
@@ -3136,9 +3148,38 @@ def sync_v1_022_migration_head_expectation() -> None:
     atomic_write_text(test_path, "\n".join(lines) + suffix)
 
 
+def sync_v1_022_api_inventory() -> None:
+    """Add only the exact API-026/027 routes to the protected route inventory."""
+    test_path = REPO / "backend/tests/test_initial_owner_bootstrap_cli.py"
+    try:
+        source = test_path.read_text()
+    except OSError as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the protected FastAPI route inventory is unavailable",
+        ) from error
+    anchor = '        "/api/v1/{resource_family}/{resource_id}/audit-events": {"get"},\n'
+    addition = (
+        anchor
+        + '        "/properties/{property_id}": {"get", "patch"},\n'
+        + '        "/properties/{property_id}/configuration": {"get", "patch"},\n'
+    )
+    if source.count(addition) == 1 and source.count(anchor) == 1:
+        return
+    if source.count(anchor) != 1 or addition in source:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the protected FastAPI route inventory drifted from its V1-022 form",
+        )
+    atomic_write_text(test_path, source.replace(anchor, addition, 1))
+
+
 def sync_v1_022_supervisor_artifacts(substage_id: str) -> None:
     """Materialize deterministic supervisor-owned V1-022 acceptance artifacts."""
     sync_v1_022_migration_head_expectation()
+    if substage_id == "property_api":
+        sync_v1_022_api_inventory()
+        sync_v1_022_traceability("property_storage")
     sync_v1_022_traceability(substage_id)
 
 
