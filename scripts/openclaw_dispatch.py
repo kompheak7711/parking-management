@@ -3146,6 +3146,16 @@ def sync_v1_022_traceability(substage_id: str) -> None:
                         "frontend/src/App.test.tsx",
                         "The Property management screen remains hidden when authoritative capability authorization is denied.",
                     ),
+                    (
+                        "TEST-FE-021",
+                        "frontend/src/App.test.tsx",
+                        "A server denial during a Property source update immediately hides the previously loaded management screen.",
+                    ),
+                    (
+                        "TEST-FE-022",
+                        "frontend/src/App.test.tsx",
+                        "A server denial during a Payment Method update immediately hides the previously loaded management screen.",
+                    ),
                 )
             ]
         )
