@@ -4300,6 +4300,54 @@ evidence.write_text(json.dumps({
             )
         )
 
+    def test_candidate_fingerprint_is_reproducible_across_automation_only_commit(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory) / "repo"
+            repo.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            (repo / "candidate.txt").write_text("baseline\n")
+            (repo / "automation.py").write_text("revision = 1\n")
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "baseline"], cwd=repo, check=True
+            )
+            base = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            (repo / "candidate.txt").write_text("candidate work\n")
+            (repo / "new-candidate.txt").write_text("new candidate work\n")
+            saved = repository_fingerprint(repo)
+            (repo / "automation.py").write_text("revision = 2\n")
+            subprocess.run(["git", "add", "automation.py"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "automation repair"],
+                cwd=repo,
+                check=True,
+            )
+            spec = importlib.util.spec_from_file_location(
+                "candidate_historical_fingerprint", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_REPO": str(repo)}):
+                spec.loader.exec_module(dispatcher)
+            self.assertEqual(
+                dispatcher.candidate_repository_fingerprint_at_base(
+                    base, ["candidate.txt", "new-candidate.txt"]
+                ),
+                saved,
+            )
+
     def test_database_gate_collects_v1_023_unit_migration(self) -> None:
         database_gate = (ROOT / "scripts/database-test.sh").read_text()
 

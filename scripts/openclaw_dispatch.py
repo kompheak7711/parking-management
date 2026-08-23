@@ -2889,6 +2889,64 @@ def candidate_automation_rebase_allowed(record: dict[str, Any]) -> bool:
     )
 
 
+def candidate_repository_fingerprint_at_base(
+    base: str, paths: list[str]
+) -> str:
+    """Reproduce a saved candidate fingerprint at an automation-only base."""
+    diff = subprocess.run(
+        [
+            "git",
+            "diff",
+            "--no-ext-diff",
+            "--no-textconv",
+            "--binary",
+            base,
+            "--",
+            *paths,
+        ],
+        cwd=REPO,
+        check=True,
+        stdout=subprocess.PIPE,
+    ).stdout
+    untracked: list[dict[str, str]] = []
+    for relative in sorted(paths):
+        tracked = subprocess.run(
+            ["git", "cat-file", "-e", f"{base}:{relative}"],
+            cwd=REPO,
+            capture_output=True,
+            check=False,
+        ).returncode == 0
+        if tracked:
+            continue
+        path = REPO / relative
+        metadata = path.lstat()
+        if stat.S_ISLNK(metadata.st_mode):
+            object_type = "symlink"
+            content = digest(os.readlink(path))
+        elif stat.S_ISREG(metadata.st_mode):
+            object_type = "regular"
+            content = digest(path.read_bytes())
+        else:
+            object_type = "other"
+            content = "non_file"
+        untracked.append(
+            {
+                "path": relative,
+                "object_type": object_type,
+                "mode": oct(stat.S_IMODE(metadata.st_mode)),
+                "content": content,
+            }
+        )
+    return digest(
+        {
+            "branch": git(REPO, "branch", "--show-current"),
+            "head": base,
+            "diff": digest(diff),
+            "untracked": untracked,
+        }
+    )
+
+
 def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
     """Rebind untouched candidate work to one exact green automation-only descendant."""
     expected_paths = sorted(
@@ -2903,6 +2961,52 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
         return
     preserved = record.get("preserved_partial_work")
     if current_paths:
+        preservation_matches = bool(
+            isinstance(preserved, dict)
+            and sorted(preserved.get("paths") or []) == current_paths
+            and preserved.get("path_fingerprint")
+            == preserved_paths_fingerprint(REPO, current_paths)
+        )
+        if not preservation_matches:
+            base = str(record.get("candidate_base_commit") or "")
+            current = git(REPO, "rev-parse", "HEAD")
+            ancestor = bool(
+                re.fullmatch(r"[0-9a-f]{40}", base)
+                and subprocess.run(
+                    ["git", "merge-base", "--is-ancestor", base, current],
+                    cwd=REPO,
+                    capture_output=True,
+                    check=False,
+                ).returncode
+                == 0
+            )
+            repair_paths = (
+                git(REPO, "diff", "--name-only", base, current, "--").splitlines()
+                if ancestor
+                else []
+            )
+            historical_match = bool(
+                record.get("recovery_pending") is not True
+                and ancestor
+                and activation_ci_repair_paths_allowed(repair_paths)
+                and candidate_repository_fingerprint_at_base(base, current_paths)
+                == record.get("repository_fingerprint")
+            )
+            if historical_match and isinstance(preserved, dict):
+                preserved.update(
+                    {
+                        "repository_fingerprint": record["repository_fingerprint"],
+                        "path_fingerprint": preserved_paths_fingerprint(
+                            REPO, current_paths
+                        ),
+                        "reconciled_after_verified_substage": utc_now(),
+                    }
+                )
+            else:
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    "candidate partial work lacks an exact unchanged path-content fingerprint",
+                )
         if (
             not isinstance(preserved, dict)
             or sorted(preserved.get("paths") or []) != current_paths
@@ -3725,6 +3829,15 @@ def recover_verified_v1_023_storage(record: dict[str, Any]) -> bool:
             "changed_paths": actual,
         }
     )
+    successful_fingerprint = repository_fingerprint(REPO)
+    record["preserved_partial_work"] = {
+        "paths": actual,
+        "repository_fingerprint": successful_fingerprint,
+        "path_fingerprint": preserved_paths_fingerprint(REPO, actual),
+        "recovery_generation": int(record.get("recovery_generation") or 0),
+        "authorization": "dispatcher_exact_writable_scope",
+        "verified_at": utc_now(),
+    }
     record.update(
         {
             "stage": "implementation",
@@ -3745,7 +3858,7 @@ def recover_verified_v1_023_storage(record: dict[str, Any]) -> bool:
             "completed_implementation_substages": ["unit_storage"],
             "scoped_changed_paths": actual,
             "expected_worktree_paths": actual,
-            "repository_fingerprint": repository_fingerprint(REPO),
+            "repository_fingerprint": successful_fingerprint,
             "last_failure_category": None,
             "failed_check": None,
             "stop_reason": None,
@@ -3880,6 +3993,15 @@ def recover_verified_v1_023_availability(record: dict[str, Any]) -> bool:
             "changed_paths": actual,
         }
     )
+    successful_fingerprint = repository_fingerprint(REPO)
+    record["preserved_partial_work"] = {
+        "paths": actual,
+        "repository_fingerprint": successful_fingerprint,
+        "path_fingerprint": preserved_paths_fingerprint(REPO, actual),
+        "recovery_generation": int(record.get("recovery_generation") or 0),
+        "authorization": "dispatcher_exact_writable_scope",
+        "verified_at": utc_now(),
+    }
     record.update(
         {
             "stage": "deterministic_verification",
@@ -3903,7 +4025,7 @@ def recover_verified_v1_023_availability(record: dict[str, Any]) -> bool:
             ],
             "scoped_changed_paths": actual,
             "expected_worktree_paths": actual,
-            "repository_fingerprint": repository_fingerprint(REPO),
+            "repository_fingerprint": successful_fingerprint,
             "last_failure_category": None,
             "failed_check": None,
             "stop_reason": None,
