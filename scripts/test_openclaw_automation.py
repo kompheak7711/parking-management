@@ -2889,6 +2889,117 @@ print(json.dumps(result))
             self.assertTrue(record["activation_ci_passed"])
             self.assertEqual(record["activation_substage"], "complete")
 
+    def test_failed_activation_ci_accepts_exact_green_automation_repair(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo, candidate = self.make_activation_repo(root)
+            wait = repo / "scripts/openclaw-wait-for-ci.sh"
+            wait.write_text("#!/bin/sh\nexit 74\n")
+            subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "failing CI harness"], cwd=repo, check=True
+            )
+            subprocess.run(["git", "push", "-q"], cwd=repo, check=True)
+            spec = importlib.util.spec_from_file_location(
+                "activation_ci_repair_dispatch", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            state_dir = root / "state"
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state_dir),
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+                base = subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+                ).strip()
+                record = {
+                    "candidate": "V1-017",
+                    "stage": "next_candidate_activation",
+                    "activation_substage": "selection_pending",
+                    "activation_base_commit": base,
+                    "activation_candidate": candidate,
+                    "activation_timestamp": "2026-08-23T00:00:00Z",
+                }
+                with (
+                    mock.patch.object(
+                        dispatcher, "cached_publication_guard", return_value=None
+                    ),
+                    self.assertRaises(AutomationError) as raised,
+                ):
+                    dispatcher.activate_next(record, {})
+                self.assertEqual(raised.exception.category, "remote_ci_failure")
+                activation_commit = record["activation_commit"]
+                self.assertEqual(record["activation_substage"], "activation_ci_failed")
+
+                wait.write_text(
+                    """#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
+
+sha = sys.argv[1]
+evidence = Path(sys.argv[sys.argv.index("--evidence") + 1])
+evidence.parent.mkdir(parents=True, exist_ok=True)
+evidence.write_text(json.dumps({
+    "status": "success",
+    "commit": sha,
+    "head_sha": sha,
+    "run_id": 24680,
+    "url": "https://example.invalid/actions/runs/24680",
+}))
+"""
+                )
+                wait.chmod(0o755)
+                subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
+                subprocess.run(
+                    ["git", "commit", "-qm", "repair activation routing"],
+                    cwd=repo,
+                    check=True,
+                )
+                subprocess.run(["git", "push", "-q"], cwd=repo, check=True)
+
+                dispatcher.activate_next(record, {})
+
+            repair_commit = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            self.assertEqual(record["stage"], "complete")
+            self.assertEqual(record["activation_substage"], "complete")
+            self.assertTrue(record["activation_ci_passed"])
+            self.assertEqual(record["activation_commit"], activation_commit)
+            self.assertEqual(record["activation_ci_repair"]["commit"], repair_commit)
+            self.assertEqual(
+                record["activation_ci_repair"]["paths"],
+                ["scripts/openclaw-wait-for-ci.sh"],
+            )
+            self.assertEqual(record["activation_ci_repair"]["run_id"], 24680)
+
+            self.assertTrue(
+                dispatcher.activation_ci_repair_paths_allowed(
+                    ["scripts/openclaw_automation.py", "scripts/test_openclaw_automation.py"]
+                )
+            )
+            self.assertFalse(
+                dispatcher.activation_ci_repair_paths_allowed(
+                    ["backend/src/property_rental/audit.py"]
+                )
+            )
+            self.assertFalse(
+                dispatcher.activation_ci_repair_paths_allowed(
+                    ["docs/003_PRODUCT_REQUIREMENTS.md"]
+                )
+            )
+            self.assertFalse(
+                dispatcher.activation_ci_repair_paths_allowed(
+                    ["ops/AUTOMATION_TRACEABILITY.json.untracked"]
+                )
+            )
+
     def test_publication_requires_exact_reviewed_content_and_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

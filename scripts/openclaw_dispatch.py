@@ -174,6 +174,31 @@ CANDIDATE_SUBSTAGES: dict[str, tuple[dict[str, Any], ...]] = {
     "V1-019": V1_019_SUBSTAGES,
     "V1-020": V1_020_SUBSTAGES,
 }
+ACTIVATION_CI_REPAIR_SCRIPT_PREFIXES: tuple[str, ...] = (
+    "scripts/openclaw",
+    "scripts/test-openclaw",
+    "scripts/test_openclaw",
+)
+ACTIVATION_CI_REPAIR_EXACT_PATHS: frozenset[str] = frozenset(
+    {
+        "scripts/test-fixtures/fake-openclaw.sh",
+        "ops/AUTOMATION_REPAIR_EVIDENCE.json",
+        "ops/AUTOMATION_TRACEABILITY.json",
+        "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
+    }
+)
+
+
+def activation_ci_repair_paths_allowed(paths: list[str]) -> bool:
+    """Restrict a failed activation's descendant repair to automation infrastructure."""
+    return bool(paths) and all(
+        path in ACTIVATION_CI_REPAIR_EXACT_PATHS
+        or any(
+            path.startswith(prefix)
+            for prefix in ACTIVATION_CI_REPAIR_SCRIPT_PREFIXES
+        )
+        for path in paths
+    )
 
 
 def run(
@@ -3864,10 +3889,123 @@ def activate_next(record: dict[str, Any], preflight: dict[str, Any]) -> None:
 
     head = str(record.get("activation_commit") or "")
     if substage == "activation_ci_failed":
-        raise AutomationError(
-            "remote_ci_failure",
-            f"preserved successor activation CI failure for {head}; no duplicate wait invoked",
+        current = git(REPO, "rev-parse", "HEAD")
+        repair_paths = git(
+            REPO, "diff", "--name-only", head, current, "--"
+        ).splitlines()
+        allowed_repair = activation_ci_repair_paths_allowed(repair_paths)
+        activation_paths = record.get("activation_paths")
+        try:
+            activation_state = json.loads(git_document(head, "ops/STATE.json"))
+            activation_roadmap = json.loads(
+                git_document(head, "ops/V1_ROADMAP.json")
+            )
+            activation_now = git_document(head, "ops/NOW.md")
+            activation_boundary_exact = bool(
+                head
+                and base
+                and isinstance(activation_paths, list)
+                and git(REPO, "rev-parse", f"{head}^") == base
+                and sorted(
+                    git(
+                        REPO,
+                        "diff-tree",
+                        "--no-commit-id",
+                        "--name-only",
+                        "-r",
+                        head,
+                    ).splitlines()
+                )
+                == sorted(activation_paths)
+                and (
+                    not record.get("activation_tree")
+                    or git(REPO, "rev-parse", f"{head}^{{tree}}")
+                    == record.get("activation_tree")
+                )
+                and exact_activation_contract(
+                    base=base,
+                    prior_candidate_id=str(record["candidate"]),
+                    candidate=expected_candidate,
+                    state=activation_state,
+                    roadmap=activation_roadmap,
+                    now=activation_now,
+                )
+            )
+        except (subprocess.CalledProcessError, json.JSONDecodeError):
+            activation_boundary_exact = False
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", head, current],
+            cwd=REPO,
+            capture_output=True,
+            check=False,
+        ).returncode == 0
+        if (
+            current == head
+            or changed_paths(REPO)
+            or not ancestor
+            or not activation_boundary_exact
+            or not allowed_repair
+        ):
+            raise AutomationError(
+                "remote_ci_failure",
+                f"preserved successor activation CI failure for {head}; no exact automation-only green repair is eligible",
+            )
+        synchronized_repository_shas()
+        evidence_path = STATE_DIR / "ci" / f"activation-repair-{current}.json"
+        ci = run(
+            str(REPO / "scripts/openclaw-wait-for-ci.sh"),
+            current,
+            "--evidence",
+            str(evidence_path),
+            check=False,
         )
+        if ci.returncode:
+            raise AutomationError(
+                "remote_ci_failure",
+                f"successor activation repair CI exited {ci.returncode} for {current}",
+            )
+        try:
+            evidence = json.loads(evidence_path.read_text())
+        except (OSError, json.JSONDecodeError) as error:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "successor activation repair has no readable exact-CI evidence",
+            ) from error
+        if (
+            evidence.get("status") != "success"
+            or evidence.get("commit") != current
+            or evidence.get("head_sha") != current
+            or not isinstance(evidence.get("run_id"), int)
+        ):
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "successor activation repair CI evidence is not bound to exact HEAD",
+            )
+        synchronized = synchronized_repository_shas()
+        if synchronized["local"] != current or changed_paths(REPO):
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "successor activation repair drifted during exact-CI verification",
+            )
+        record.update(
+            {
+                "stage": "complete",
+                "activation_substage": "complete",
+                "activation_ci_passed": True,
+                "activation_shas": synchronized,
+                "activation_ci_repair": {
+                    "commit": current,
+                    "paths": repair_paths,
+                    "run_id": evidence["run_id"],
+                    "url": evidence.get("url"),
+                },
+                "completed_at": utc_now(),
+            }
+        )
+        record.pop("failed_check", None)
+        record.pop("last_failure_category", None)
+        save_stage(record)
+        return
     if substage == "selection_committed":
         upstream = git(REPO, "rev-parse", "@{upstream}")
         if upstream != head:
