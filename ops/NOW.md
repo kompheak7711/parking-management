@@ -178,6 +178,12 @@
   exceptional-review policy now deterministically selects 120,000 tokens only when the complete
   diff exceeds 180,000 bytes, persists the exact classification/fingerprint/scope in the manifest,
   and leaves implementation at 60,000 and ordinary complex reviews at 90,000.
+- Final exceptional review: session `48c4cad06b0a32829c89b162ccc64e49` used 75,376 tokens in one
+  zero-tool call and passed all 19 paths with no findings. Commit `d8ca9e4` was published, but exact
+  GitHub Actions run `32606766929` failed only because a test temporary bare repository was still
+  creating `objects/pack` during cleanup; PostgreSQL, frontend, dependency security, backend tests,
+  and every preceding routing test passed. Test repositories now disable Git auto-GC and background
+  maintenance through process-scoped configuration, with a deterministic fixture regression.
 - Owner action: none.
 - Exact next action: verify, review, and publish the bounded reconciliation lifecycle repair, then
   reconcile V1-020 complete from its exact successful publication commit.

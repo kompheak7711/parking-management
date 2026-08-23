@@ -192,6 +192,7 @@
     {"clause": "independent-review verdict validation rejects every non-string finding location rather than coercing it into the declared string contract", "test_id": "test_review_contract_rejects_non_string_locations"},
     {"clause": "independent-review transport recovery opens a precreated private WAL and SHM snapshot in read-only mode so a clean WAL-mode database with no live sidecars remains recoverable without weakening identity checks", "test_id": "test_completed_session_recovery_reads_closed_wal_without_sidecars"},
     {"clause": "independent-review transport recovery retains and revalidates the private SHM descriptor and pathname identity inside the active transaction so pre-connect SHM substitution fails closed", "test_id": "test_completed_session_recovery_rejects_private_shm_substitution"},
-    {"clause": "an exact complete candidate diff above 180000 bytes is deterministically preclassified for the persisted scope-bound 120000-token exceptional review while smaller reviews and all implementation retain their lower ceilings", "test_id": "test_independent_review_preclassifies_exceptional_complete_diff"}
+    {"clause": "an exact complete candidate diff above 180000 bytes is deterministically preclassified for the persisted scope-bound 120000-token exceptional review while smaller reviews and all implementation retain their lower ceilings", "test_id": "test_independent_review_preclassifies_exceptional_complete_diff"},
+    {"clause": "automation Git fixtures disable auto-GC and background maintenance so temporary bare repositories cannot race deterministic cleanup after publication-path tests", "test_id": "test_git_fixtures_disable_background_maintenance"}
   ]
 }

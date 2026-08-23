@@ -633,7 +633,15 @@ print(json.dumps({'workflow_runs': [run]}) if endpoint.endswith('/runs') else js
 class RepositoryEvidenceTests(unittest.TestCase):
     def setUp(self) -> None:
         self.process_environment = mock.patch.dict(
-            os.environ, {"PROPERTY_RENTAL_TEST_PROCESS_ROWS": ""}
+            os.environ,
+            {
+                "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                "GIT_CONFIG_COUNT": "2",
+                "GIT_CONFIG_KEY_0": "gc.auto",
+                "GIT_CONFIG_VALUE_0": "0",
+                "GIT_CONFIG_KEY_1": "maintenance.auto",
+                "GIT_CONFIG_VALUE_1": "false",
+            },
         )
         self.process_environment.start()
 
@@ -701,6 +709,24 @@ class RepositoryEvidenceTests(unittest.TestCase):
         )
         subprocess.run(["git", "commit", "-qm", "baseline"], cwd=repo, check=True)
         return repo
+
+    def test_git_fixtures_disable_background_maintenance(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(Path(directory))
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "config", "--get", "gc.auto"], cwd=repo, text=True
+                ).strip(),
+                "0",
+            )
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "config", "--get", "maintenance.auto"],
+                    cwd=repo,
+                    text=True,
+                ).strip(),
+                "false",
+            )
 
     def make_activation_repo(self, directory: Path) -> tuple[Path, dict[str, Any]]:
         repo = directory / "repo"
