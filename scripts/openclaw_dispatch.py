@@ -286,10 +286,15 @@ V1_022_API_PRODUCT_PATHS: tuple[str, ...] = tuple(
     sorted(
         set(V1_022_STORAGE_PRODUCT_PATHS)
         | {
+            "backend/migrations/versions/20260823_12_property_business_configuration.py",
             "backend/src/property_rental/property_api.py",
             "backend/src/property_rental/property_setup_cli.py",
             "backend/src/property_rental/app.py",
             "backend/tests/test_property_api.py",
+            "frontend/src/App.tsx",
+            "frontend/src/App.test.tsx",
+            "frontend/src/propertyClient.ts",
+            "frontend/src/propertyClient.test.tsx",
         }
     )
 )
@@ -299,6 +304,7 @@ V1_022_API_VERIFIED_PATHS: tuple[str, ...] = tuple(
         | {
             "backend/tests/test_initial_owner_bootstrap_cli.py",
             "backend/tests/test_migrations.py",
+            "backend/tests/test_traceability.py",
             "ops/traceability.json",
         }
     )
@@ -327,6 +333,14 @@ V1_022_STORAGE_TRACEABILITY: tuple[dict[str, Any], ...] = (
         "test_path": "backend/tests/test_property.py",
         "status": "implemented",
         "notes": "Configuration rejects a timezone outside the authoritative business boundary.",
+    },
+    {
+        "test_id": "test_property_configuration_rejects_blank_source_fields",
+        "upstream_ids": ["API-026", "PR-PROP-001"],
+        "test_level": "domain",
+        "test_path": "backend/tests/test_property.py",
+        "status": "implemented",
+        "notes": "Property name and optional address source fields reject blank values.",
     },
     {
         "test_id": "test_service_configures_exactly_one_property",
@@ -3096,6 +3110,40 @@ def sync_v1_022_traceability(substage_id: str) -> None:
             }
             for test_id in test_ids
         ]
+        desired.extend(
+            [
+                {
+                    "test_id": test_id,
+                    "upstream_ids": ["API-026", "API-027", "UI-091"],
+                    "test_level": "UI component",
+                    "test_path": test_path,
+                    "status": "implemented",
+                    "notes": note,
+                }
+                for test_id, test_path, note in (
+                    (
+                        "TEST-FE-016",
+                        "frontend/src/App.test.tsx",
+                        "The capability-checked screen displays and updates approved Property business configuration.",
+                    ),
+                    (
+                        "TEST-FE-017",
+                        "frontend/src/propertyClient.test.tsx",
+                        "The typed client loads Property source fields and configured Payment Methods.",
+                    ),
+                    (
+                        "TEST-FE-018",
+                        "frontend/src/propertyClient.test.tsx",
+                        "Property mutations carry CSRF protection and the exact version precondition.",
+                    ),
+                    (
+                        "TEST-FE-019",
+                        "frontend/src/propertyClient.test.tsx",
+                        "The business-configuration client fails closed on capability denial.",
+                    ),
+                )
+            ]
+        )
     else:
         raise AutomationError(
             "repository_integrity_uncertainty",
@@ -3215,18 +3263,21 @@ def sync_v1_022_migration_head_expectation() -> None:
             "repository_integrity_uncertainty",
             "the protected migration-head assertion function is missing",
         )
-    old = '                assert cursor.fetchone() == ("20260823_10",)'
-    new = '                assert cursor.fetchone() == ("20260823_11",)'
+    prior = {
+        '                assert cursor.fetchone() == ("20260823_10",)',
+        '                assert cursor.fetchone() == ("20260823_11",)',
+    }
+    new = '                assert cursor.fetchone() == ("20260823_12",)'
     lines = source.splitlines()
     function_lines = lines[target.lineno - 1 : target.end_lineno]
-    old_count = function_lines.count(old)
     new_count = function_lines.count(new)
-    if old_count == 0 and new_count == 1 and source.count(new) == 1:
+    prior_matches = [line for line in prior if function_lines.count(line) == 1]
+    if not prior_matches and new_count == 1 and source.count(new) == 1:
         return
     if (
-        old_count != 1
+        len(prior_matches) != 1
         or new_count != 0
-        or source.count(old) != 1
+        or source.count(prior_matches[0]) != 1
         or source.count(new) != 0
     ):
         raise AutomationError(
@@ -3234,7 +3285,7 @@ def sync_v1_022_migration_head_expectation() -> None:
             "the protected migration-head assertion drifted from its exact V1-022 form",
         )
     lines[target.lineno - 1 : target.end_lineno] = [
-        new if line == old else line for line in function_lines
+        new if line == prior_matches[0] else line for line in function_lines
     ]
     suffix = "\n" if source.endswith("\n") else ""
     atomic_write_text(test_path, "\n".join(lines) + suffix)
@@ -3296,6 +3347,10 @@ def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
                 "backend/src/property_rental/property_api.py",
                 "backend/src/property_rental/property_setup_cli.py",
                 "backend/tests/test_property_api.py",
+                "frontend/src/App.tsx",
+                "frontend/src/App.test.tsx",
+                "frontend/src/propertyClient.ts",
+                "frontend/src/propertyClient.test.tsx",
             ],
         },
     }

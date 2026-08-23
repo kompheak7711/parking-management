@@ -32,7 +32,7 @@ MODEL_ID: Final = "gpt-5.6-sol"
 PROVIDER: Final = "openai-codex"
 PRESERVATION_EVIDENCE_PATH: Final = "ops/AUTOMATION_REPAIR_EVIDENCE.json"
 V1_019_ROUTING_REVISION: Final = "v1-019-sign-in-context-routing-v5"
-V1_019_FRONTEND_CONTEXT_MAX_BYTES: Final = 80_000
+V1_019_FRONTEND_CONTEXT_MAX_BYTES: Final = 90_000
 V1_019_SUBSTAGE_IDS: Final = (
     "sign_in",
     "mfa_recovery",
@@ -320,6 +320,7 @@ V1_022_SUBSTAGE_WRITABLE_PATHS: Final = {
     ),
     "property_api": (
         "backend/migrations/versions/20260823_11_property_configuration.py",
+        "backend/migrations/versions/20260823_12_property_business_configuration.py",
         "backend/src/property_rental/property.py",
         "backend/src/property_rental/property_setup_cli.py",
         "backend/tests/test_property.py",
@@ -327,6 +328,11 @@ V1_022_SUBSTAGE_WRITABLE_PATHS: Final = {
         "backend/src/property_rental/property_api.py",
         "backend/src/property_rental/app.py",
         "backend/tests/test_property_api.py",
+        "backend/tests/test_traceability.py",
+        "frontend/src/App.tsx",
+        "frontend/src/App.test.tsx",
+        "frontend/src/propertyClient.ts",
+        "frontend/src/propertyClient.test.tsx",
     ),
 }
 
