@@ -3614,6 +3614,52 @@ evidence.write_text(json.dumps({
                     ["git", "rev-parse", "HEAD"], cwd=repo, text=True
                 ).strip()
 
+                reviewed_repair_record = {
+                    "candidate": "V1-023",
+                    "candidate_base_commit": deterministic_base,
+                    "stage": "implementation",
+                    "completed_implementation_substages": [
+                        "unit_storage",
+                        "unit_availability",
+                    ],
+                    "implementation_complete": True,
+                    "last_failure_category": "independent_review_defect",
+                    "repair_failure": "fresh independent review returned concrete in-scope findings",
+                    "product_code_modification_permitted": True,
+                    "scoped_changed_paths": exact_v1_023_paths,
+                    "expected_worktree_paths": exact_v1_023_paths,
+                    "repository_fingerprint": "reviewed-before-repair",
+                    "pending_review_repair": {
+                        "reviewed_paths": exact_v1_023_paths,
+                        "reviewed_repository_fingerprint": "reviewed-before-repair",
+                        "verdict_fingerprint": "review-verdict",
+                    },
+                    "preserved_partial_work": {
+                        "paths": exact_v1_023_paths,
+                        "path_fingerprint": "reviewed-before-repair",
+                    },
+                }
+                with mock.patch.object(
+                    dispatcher,
+                    "v1_023_review_repair_contract_satisfied",
+                    return_value=True,
+                ):
+                    dispatcher.rebase_pending_automation_recovery(
+                        reviewed_repair_record
+                    )
+                self.assertEqual(
+                    reviewed_repair_record["candidate_base_commit"],
+                    deterministic_repair,
+                )
+                self.assertEqual(
+                    reviewed_repair_record["preserved_partial_work"][
+                        "path_fingerprint"
+                    ],
+                    dispatcher.preserved_paths_fingerprint(
+                        repo, exact_v1_023_paths
+                    ),
+                )
+
                 dispatcher.rebase_pending_automation_recovery(deterministic_record)
 
                 self.assertEqual(

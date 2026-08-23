@@ -3056,6 +3056,10 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
         or current_paths != expected_paths
     ):
         return
+    base = str(record.get("candidate_base_commit") or "")
+    current = git(REPO, "rev-parse", "HEAD")
+    if current == base:
+        return
     preserved = record.get("preserved_partial_work")
     if current_paths:
         preservation_matches = bool(
@@ -3094,9 +3098,20 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
                 and current_paths == list(V1_023_STORAGE_VERIFIED_PATHS)
                 and v1_023_availability_contract_satisfied()
             )
-            if (historical_match or mutation_transport_match) and isinstance(
-                preserved, dict
-            ):
+            reviewed_repair_match = bool(
+                v1_023_review_repair_rebase_allowed(record)
+                and current_paths == list(V1_023_STORAGE_VERIFIED_PATHS)
+                and v1_023_review_repair_contract_satisfied()
+                and repository_fingerprint(REPO)
+                != (record.get("pending_review_repair") or {}).get(
+                    "reviewed_repository_fingerprint"
+                )
+            )
+            if (
+                historical_match
+                or mutation_transport_match
+                or reviewed_repair_match
+            ) and isinstance(preserved, dict):
                 preserved.update(
                     {
                         "repository_fingerprint": record["repository_fingerprint"],
@@ -3121,10 +3136,6 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
                 "repository_integrity_uncertainty",
                 "candidate partial work lacks an exact unchanged path-content fingerprint",
             )
-    base = str(record.get("candidate_base_commit") or "")
-    current = git(REPO, "rev-parse", "HEAD")
-    if current == base:
-        return
     if not re.fullmatch(r"[0-9a-f]{40}", base):
         return
     ancestor = (
