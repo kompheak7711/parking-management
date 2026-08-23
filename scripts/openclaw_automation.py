@@ -2516,6 +2516,16 @@ def task_packet(
             "shortest_execution_sequence": [
                 f"Implement only the {substage_id} Unit substage.",
                 "Use only the materialized repository evidence and authority excerpts already in this packet.",
+                (
+                    "For unit_availability, implement the exact pure-domain symbols UnitAvailabilityFacts, "
+                    "UnitAvailabilityDecision, evaluate_unit_availability, and restored_unit_status; add exact "
+                    "tests named test_availability_rejects_active_reservation, test_availability_rejects_signed_lease, "
+                    "test_availability_rejects_actual_occupancy, test_availability_rejects_operational_blockers, "
+                    "test_status_alone_never_authorizes_conflict, test_restoration_derives_status_from_authoritative_facts, "
+                    "and test_state_decisions_preserve_unit_identity."
+                    if substage_id == "unit_availability"
+                    else "For unit_storage, implement only stable Unit identity, constrained persistence, and history-safe tests."
+                ),
                 "Do not call any read, search, listing, terminal, Git, database, make, or verification tool.",
                 "Create or update only exact_writable_paths in one complete parallel tool batch and do not begin the next Unit substage.",
                 "Do not implement Reservation or Lease mutations and do not edit ops files; the deterministic supervisor owns compact progress state.",

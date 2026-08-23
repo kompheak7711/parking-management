@@ -1328,7 +1328,6 @@ class RepositoryEvidenceTests(unittest.TestCase):
                     sorted(context["exact_writable_paths"]),
                 )
                 self.assertLess(len(dispatcher.packet_prompt(packet).encode()), 45_000)
-
         record: dict[str, Any] = {
             "candidate": "V1-022",
             "completed_implementation_substages": [],
@@ -1412,6 +1411,14 @@ class RepositoryEvidenceTests(unittest.TestCase):
                     sorted(context["exact_writable_paths"]),
                 )
                 self.assertLess(len(dispatcher.packet_prompt(packet).encode()), 45_000)
+                if substage == "unit_availability":
+                    rendered = json.dumps(
+                        context["shortest_execution_sequence"], sort_keys=True
+                    )
+                    self.assertIn("UnitAvailabilityFacts", rendered)
+                    self.assertIn(
+                        "test_status_alone_never_authorizes_conflict", rendered
+                    )
 
         record: dict[str, Any] = {
             "candidate": "V1-023",
@@ -4175,6 +4182,93 @@ evidence.write_text(json.dumps({
         self.assertEqual(record["completed_implementation_substages"], ["unit_storage"])
         self.assertEqual(record["stage"], "implementation")
         self.assertFalse(record["recovery_pending"])
+
+    def test_v1_023_availability_recovery_requires_exact_domain_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory) / "repo"
+            (repo / "backend/src/property_rental").mkdir(parents=True)
+            (repo / "backend/tests").mkdir(parents=True)
+            unit_path = repo / "backend/src/property_rental/unit.py"
+            unit_path.write_text(
+                "class UnitAvailabilityFacts: pass\n"
+                "class UnitAvailabilityDecision: pass\n"
+                "def evaluate_unit_availability(): pass\n"
+                "def restored_unit_status(): pass\n"
+            )
+            (repo / "backend/tests/test_unit.py").write_text(
+                "def test_availability_rejects_active_reservation(): pass\n"
+                "def test_availability_rejects_signed_lease(): pass\n"
+                "def test_availability_rejects_actual_occupancy(): pass\n"
+                "def test_availability_rejects_operational_blockers(): pass\n"
+                "def test_status_alone_never_authorizes_conflict(): pass\n"
+                "def test_restoration_derives_status_from_authoritative_facts(): pass\n"
+                "def test_state_decisions_preserve_unit_identity(): pass\n"
+            )
+            spec = importlib.util.spec_from_file_location(
+                "v1_023_availability_contract", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_REPO": str(repo)}):
+                spec.loader.exec_module(dispatcher)
+            self.assertTrue(dispatcher.v1_023_availability_contract_satisfied())
+            unit_path.write_text(unit_path.read_text() + "def create_reservation(): pass\n")
+            self.assertFalse(dispatcher.v1_023_availability_contract_satisfied())
+
+    def test_v1_023_ceiling_stopped_availability_recovers_after_contract_proof(
+        self,
+    ) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "v1_023_availability_recovery", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        record = {
+            "candidate": "V1-023",
+            "stage": "implementation",
+            "recovery_pending": True,
+            "recovery_generation": 1,
+            "completed_implementation_substages": ["unit_storage"],
+            "model_usage": [
+                {
+                    "stage_result": "model_session_or_token_ceiling",
+                    "api_calls_completed": 1,
+                    "repository_fingerprint": "a" * 64,
+                }
+            ],
+        }
+        paths = list(dispatcher.V1_023_STORAGE_VERIFIED_PATHS)
+        completed = subprocess.CompletedProcess([], 0, "", "")
+        with (
+            mock.patch.object(
+                dispatcher,
+                "current_bounded_substage",
+                return_value={"id": "unit_availability"},
+            ),
+            mock.patch.object(dispatcher, "repository_fingerprint", return_value="b" * 64),
+            mock.patch.object(dispatcher, "changed_paths", return_value=paths),
+            mock.patch.object(
+                dispatcher, "v1_023_availability_contract_satisfied", return_value=True
+            ),
+            mock.patch.object(dispatcher, "sync_v1_023_supervisor_artifacts") as sync,
+            mock.patch.object(dispatcher, "run", return_value=completed) as run_mock,
+            mock.patch.object(
+                dispatcher, "resolve_pending_routing_recovery"
+            ) as resolve_mock,
+            mock.patch.object(dispatcher, "save_stage") as save_mock,
+        ):
+            self.assertTrue(dispatcher.recover_verified_v1_023_availability(record))
+        sync.assert_called_once_with("unit_availability")
+        self.assertEqual(len(run_mock.call_args_list), 3)
+        resolve_mock.assert_called_once_with(record, outcome="succeeded")
+        save_mock.assert_called_once_with(record)
+        self.assertEqual(record["stage"], "deterministic_verification")
+        self.assertTrue(record["implementation_complete"])
+        self.assertEqual(
+            record["completed_implementation_substages"],
+            ["unit_storage", "unit_availability"],
+        )
 
     def test_database_gate_collects_v1_023_unit_migration(self) -> None:
         database_gate = (ROOT / "scripts/database-test.sh").read_text()

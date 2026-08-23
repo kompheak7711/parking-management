@@ -3744,6 +3744,164 @@ def recover_verified_v1_023_storage(record: dict[str, Any]) -> bool:
     return True
 
 
+def v1_023_availability_contract_satisfied() -> bool:
+    """Prove the exact bounded availability symbols and regressions are present."""
+    try:
+        unit_module = ast.parse(
+            (REPO / "backend/src/property_rental/unit.py").read_text()
+        )
+        test_module = ast.parse((REPO / "backend/tests/test_unit.py").read_text())
+    except (OSError, SyntaxError):
+        return False
+    classes = {
+        node.name for node in unit_module.body if isinstance(node, ast.ClassDef)
+    }
+    functions = {
+        node.name
+        for node in unit_module.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    tests = {
+        node.name
+        for node in test_module.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    required_tests = {
+        "test_availability_rejects_active_reservation",
+        "test_availability_rejects_signed_lease",
+        "test_availability_rejects_actual_occupancy",
+        "test_availability_rejects_operational_blockers",
+        "test_status_alone_never_authorizes_conflict",
+        "test_restoration_derives_status_from_authoritative_facts",
+        "test_state_decisions_preserve_unit_identity",
+    }
+    mutation_functions = {
+        "create_reservation",
+        "cancel_reservation",
+        "complete_reservation",
+        "sign_lease",
+        "terminate_lease",
+    }
+    return bool(
+        {"UnitAvailabilityFacts", "UnitAvailabilityDecision"}.issubset(classes)
+        and {"evaluate_unit_availability", "restored_unit_status"}.issubset(
+            functions
+        )
+        and required_tests.issubset(tests)
+        and mutation_functions.isdisjoint(functions)
+    )
+
+
+def recover_verified_v1_023_availability(record: dict[str, Any]) -> bool:
+    """Finish ceiling-stopped Unit availability after exact contract proof."""
+    substage = current_bounded_substage(record)
+    usages = record.get("model_usage")
+    latest_usage = usages[-1] if isinstance(usages, list) and usages else None
+    current_fingerprint = repository_fingerprint(REPO)
+    if (
+        record.get("candidate") != "V1-023"
+        or record.get("stage") != "implementation"
+        or record.get("recovery_pending") is not True
+        or not substage
+        or substage.get("id") != "unit_availability"
+        or record.get("completed_implementation_substages") != ["unit_storage"]
+        or not isinstance(latest_usage, dict)
+        or latest_usage.get("stage_result") != "model_session_or_token_ceiling"
+        or int(latest_usage.get("api_calls_completed") or 0) <= 0
+        or latest_usage.get("repository_fingerprint") == current_fingerprint
+        or not v1_023_availability_contract_satisfied()
+    ):
+        return False
+    actual = changed_paths(REPO)
+    if actual != list(V1_023_STORAGE_VERIFIED_PATHS):
+        return False
+    sync_v1_023_supervisor_artifacts("unit_availability")
+    if changed_paths(REPO) != actual:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "V1-023 availability sync changed an unexpected candidate path",
+        )
+    verification_commands = (
+        ("make", "automation-test"),
+        ("make", "test"),
+        ("make", "database-test"),
+    )
+    for command in verification_commands:
+        verification = run(*command, check=False, capture=False)
+        if verification.returncode:
+            rendered = " ".join(command)
+            current = changed_paths(REPO)
+            fingerprint = repository_fingerprint(REPO)
+            record.update(
+                {
+                    "last_failure_category": "deterministic_test_failure",
+                    "failed_check": rendered,
+                    "scoped_changed_paths": current,
+                    "expected_worktree_paths": current,
+                    "repository_fingerprint": fingerprint,
+                    "preserved_partial_work": {
+                        "paths": current,
+                        "repository_fingerprint": fingerprint,
+                        "path_fingerprint": preserved_paths_fingerprint(REPO, current),
+                        "recovery_generation": int(
+                            record.get("recovery_generation") or 0
+                        ),
+                        "authorization": "dispatcher_exact_writable_scope",
+                    },
+                }
+            )
+            save_stage(record)
+            raise AutomationError(
+                "deterministic_test_failure",
+                f"verified V1-023 unit_availability recovery failed {rendered}",
+            )
+    resolve_pending_routing_recovery(record, outcome="succeeded")
+    record.setdefault("events", []).append(
+        {
+            "stage": "implementation",
+            "substage": "unit_availability",
+            "result": "recovered_after_ceiling_with_complete_local_gates",
+            "verification": [" ".join(command) for command in verification_commands],
+            "changed_paths": actual,
+        }
+    )
+    record.update(
+        {
+            "stage": "deterministic_verification",
+            "implementation_complete": True,
+            "implementation_result": {
+                "stage_result": "completed",
+                "substage_complete": True,
+                "changed_paths": actual,
+                "verification": [
+                    f"{' '.join(command)}: passed"
+                    for command in verification_commands
+                ],
+                "blockers": [],
+                "exact_next_action": (
+                    "Run complete deterministic verification in a separate stage."
+                ),
+            },
+            "completed_implementation_substages": [
+                "unit_storage",
+                "unit_availability",
+            ],
+            "scoped_changed_paths": actual,
+            "expected_worktree_paths": actual,
+            "repository_fingerprint": repository_fingerprint(REPO),
+            "last_failure_category": None,
+            "failed_check": None,
+            "stop_reason": None,
+            "recovery_pending": False,
+            "recovery_generation": 0,
+            "bounded_recovery_exhausted": False,
+            "product_code_modification_permitted": True,
+        }
+    )
+    save_stage(record)
+    return True
+
+
 def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
     """Advance exact ceiling-stopped Property work after execution-capable checks."""
     substage = current_bounded_substage(record)
@@ -4348,6 +4506,8 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         )
     candidate = str(record.get("candidate") or "")
     rebase_pending_automation_recovery(record)
+    if recover_verified_v1_023_availability(record):
+        return
     if recover_verified_v1_023_storage(record):
         return
     if recover_verified_v1_022_substage(record):
