@@ -3694,9 +3694,10 @@ evidence.write_text(json.dumps({
                 path = repo / relative
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text("verified bounded work\n")
-            atomic_write_json(
-                repo / "ops/traceability.json",
-                {"schema_version": 1, "entries": []},
+            traceability_path = repo / "ops/traceability.json"
+            traceability_path.parent.mkdir(parents=True, exist_ok=True)
+            traceability_path.write_text(
+                '{\n  "schema_version": 1,\n  "entries": [\n  ]\n}\n'
             )
             (repo / "backend/tests/test_property_api.py").write_text(
                 "def test_property_get(): pass\n"
@@ -3719,6 +3720,9 @@ evidence.write_text(json.dumps({
             dispatcher.sync_v1_022_supervisor_artifacts("property_api")
             traceability = json.loads((repo / "ops/traceability.json").read_text())
             self.assertEqual(len(traceability["entries"]), 16)
+            rendered_traceability = (repo / "ops/traceability.json").read_text()
+            self.assertTrue(rendered_traceability.startswith('{\n  "schema_version": 1,'))
+            self.assertIn('"upstream_ids": ["BR-PROP-003", "PR-PROP-003"]', rendered_traceability)
             self.assertIn(
                 '("20260823_11",)',
                 (repo / "backend/tests/test_migrations.py").read_text(),
@@ -3729,9 +3733,8 @@ evidence.write_text(json.dumps({
                 len(json.loads((repo / "ops/traceability.json").read_text())["entries"]),
                 16,
             )
-            atomic_write_json(
-                repo / "ops/traceability.json",
-                {"schema_version": 1, "entries": []},
+            traceability_path.write_text(
+                '{\n  "schema_version": 1,\n  "entries": [\n  ]\n}\n'
             )
             completed = subprocess.CompletedProcess([], 0, "", "")
 

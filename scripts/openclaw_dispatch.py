@@ -3015,7 +3015,8 @@ def sync_v1_022_traceability(substage_id: str) -> None:
     """Materialize exact executable-test mappings without giving Hermes ops access."""
     traceability_path = REPO / "ops/traceability.json"
     try:
-        manifest = json.loads(traceability_path.read_text())
+        original_text = traceability_path.read_text()
+        manifest = json.loads(original_text)
     except (OSError, json.JSONDecodeError) as error:
         raise AutomationError(
             "repository_integrity_uncertainty",
@@ -3094,7 +3095,73 @@ def sync_v1_022_traceability(substage_id: str) -> None:
         existing[str(entry["test_id"])] = entry
         changed = True
     if changed:
-        atomic_write_json(traceability_path, manifest)
+        atomic_write_v1_022_traceability(
+            traceability_path,
+            manifest,
+            baseline_text=original_text,
+        )
+
+
+def atomic_write_v1_022_traceability(
+    path: Path,
+    manifest: dict[str, Any],
+    *,
+    baseline_text: str | None = None,
+) -> None:
+    """Preserve the compact canonical manifest layout while appending exact entries."""
+    entries = manifest.get("entries")
+    if manifest.get("schema_version") != 1 or not isinstance(entries, list):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "V1-022 traceability manifest cannot be rendered deterministically",
+        )
+    if baseline_text is None:
+        baseline_text = git(REPO, "show", "HEAD:ops/traceability.json") + "\n"
+    try:
+        baseline = json.loads(baseline_text)
+    except json.JSONDecodeError as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the V1-022 traceability baseline is invalid",
+        ) from error
+    baseline_entries = baseline.get("entries")
+    closing = "  ]\n}\n"
+    if (
+        baseline.get("schema_version") != 1
+        or not isinstance(baseline_entries, list)
+        or entries[: len(baseline_entries)] != baseline_entries
+        or not baseline_text.endswith(closing)
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "V1-022 traceability does not extend its exact baseline",
+        )
+    additions = entries[len(baseline_entries) :]
+    keys = ("test_id", "upstream_ids", "test_level", "test_path", "status", "notes")
+    body = baseline_text[: -len(closing)].rstrip("\n")
+    if additions and baseline_entries:
+        body += ","
+    lines = [body]
+    for index, entry in enumerate(additions):
+        if not isinstance(entry, dict) or set(entry) != set(keys):
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "V1-022 traceability entry has an unexpected shape",
+            )
+        lines.extend(
+            [
+                "    {",
+                f'      "test_id": {json.dumps(entry["test_id"], ensure_ascii=False)},',
+                f'      "upstream_ids": {json.dumps(entry["upstream_ids"], ensure_ascii=False)},',
+                f'      "test_level": {json.dumps(entry["test_level"], ensure_ascii=False)},',
+                f'      "test_path": {json.dumps(entry["test_path"], ensure_ascii=False)},',
+                f'      "status": {json.dumps(entry["status"], ensure_ascii=False)},',
+                f'      "notes": {json.dumps(entry["notes"], ensure_ascii=False)}',
+                "    }" + ("," if index + 1 < len(additions) else ""),
+            ]
+        )
+    lines.extend(["  ]", "}"])
+    atomic_write_text(path, "\n".join(lines) + "\n")
 
 
 def sync_v1_022_migration_head_expectation() -> None:
