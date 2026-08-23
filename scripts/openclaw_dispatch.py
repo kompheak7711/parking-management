@@ -3488,12 +3488,12 @@ def sync_v1_023_traceability() -> None:
                 "BR-UNIT-013",
                 "TEST-022",
             ],
-            "domain/service",
+            "domain",
         ),
         (
             "backend/tests/test_unit_migration.py",
             ["DB-UNIT-001", "TEST-022"],
-            "database integration",
+            "DB",
         ),
     )
     desired: list[dict[str, Any]] = []
@@ -3534,9 +3534,21 @@ def sync_v1_023_traceability() -> None:
         if isinstance(entry, dict) and isinstance(entry.get("test_id"), str)
     }
     changed = False
+    rewrite_candidate_additions_from_head = False
     for entry in desired:
         prior = existing.get(str(entry["test_id"]))
         if prior is not None:
+            legacy = dict(entry)
+            legacy["test_level"] = {
+                "domain": "domain/service",
+                "DB": "database integration",
+            }[str(entry["test_level"])]
+            if prior == legacy:
+                entries[entries.index(prior)] = entry
+                existing[str(entry["test_id"])] = entry
+                changed = True
+                rewrite_candidate_additions_from_head = True
+                continue
             if prior != entry:
                 raise AutomationError(
                     "repository_integrity_uncertainty",
@@ -3550,7 +3562,9 @@ def sync_v1_023_traceability() -> None:
         atomic_write_v1_022_traceability(
             traceability_path,
             manifest,
-            baseline_text=original_text,
+            baseline_text=(
+                None if rewrite_candidate_additions_from_head else original_text
+            ),
         )
 
 
@@ -3636,7 +3650,10 @@ def recover_verified_v1_023_storage(record: dict[str, Any]) -> bool:
     ):
         return False
     before_artifacts = changed_paths(REPO)
-    if before_artifacts != list(V1_023_STORAGE_PRODUCT_PATHS):
+    if before_artifacts not in (
+        list(V1_023_STORAGE_PRODUCT_PATHS),
+        list(V1_023_STORAGE_VERIFIED_PATHS),
+    ):
         return False
     if any(
         not (REPO / relative).is_file() for relative in V1_023_STORAGE_PRODUCT_PATHS

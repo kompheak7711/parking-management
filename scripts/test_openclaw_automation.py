@@ -4071,6 +4071,19 @@ evidence.write_text(json.dumps({
             traceability_path.write_text(
                 '{\n  "schema_version": 1,\n  "entries": [\n  ]\n}\n'
             )
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "test@example.invalid"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "Test"], cwd=repo, check=True
+            )
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "baseline"], cwd=repo, check=True
+            )
 
             dispatcher.sync_v1_023_supervisor_artifacts("unit_storage")
             first_traceability = traceability_path.read_text()
@@ -4085,6 +4098,15 @@ evidence.write_text(json.dumps({
             self.assertEqual(
                 len(json.loads(first_traceability)["entries"]),
                 3,
+            )
+            traceability_path.write_text(
+                first_traceability.replace(
+                    '"test_level": "domain"',
+                    '"test_level": "domain/service"',
+                ).replace(
+                    '"test_level": "DB"',
+                    '"test_level": "database integration"',
+                )
             )
             dispatcher.sync_v1_023_supervisor_artifacts("unit_availability")
             self.assertEqual(traceability_path.read_text(), first_traceability)
