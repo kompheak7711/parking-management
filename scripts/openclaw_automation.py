@@ -271,6 +271,7 @@ V1_021_SUBSTAGE_WRITABLE_PATHS: Final = {
 }
 V1_022_ROUTING_REVISION: Final = "v1-022-property-configuration-routing-v1"
 V1_022_SUBSTAGE_IDS: Final = ("property_storage", "property_api")
+SUPERVISOR_OWNED_PROGRESS_CANDIDATES: Final = frozenset({"V1-022"})
 V1_022_SUBSTAGE_AUTHORITIES: Final = {
     "property_storage": (
         "BR-PROP-001",
@@ -279,6 +280,8 @@ V1_022_SUBSTAGE_AUTHORITIES: Final = {
         "PR-PROP-001",
         "PR-PROP-002",
         "PR-PROP-003",
+        "API-026",
+        "API-027",
     ),
     "property_api": ("API-026", "API-027", "UI-091"),
 }
@@ -304,6 +307,9 @@ V1_022_SUBSTAGE_PATHS: Final = {
         "backend/src/property_rental/property.py",
         "backend/src/property_rental/identity.py",
         "backend/src/property_rental/app.py",
+        "backend/migrations/versions/20260823_11_property_configuration.py",
+        "backend/tests/test_property.py",
+        "backend/tests/test_property_migration.py",
     ),
 }
 V1_022_SUBSTAGE_WRITABLE_PATHS: Final = {
@@ -314,6 +320,10 @@ V1_022_SUBSTAGE_WRITABLE_PATHS: Final = {
         "backend/tests/test_property_migration.py",
     ),
     "property_api": (
+        "backend/migrations/versions/20260823_11_property_configuration.py",
+        "backend/src/property_rental/property.py",
+        "backend/tests/test_property.py",
+        "backend/tests/test_property_migration.py",
         "backend/src/property_rental/property_api.py",
         "backend/src/property_rental/app.py",
         "backend/tests/test_property_api.py",
@@ -2138,6 +2148,9 @@ def task_packet(
         or candidate.get("id")
         or (state.get("roadmap") or {}).get("current_id")
     )
+    supervisor_owned_progress = (
+        str(candidate_id) in SUPERVISOR_OWNED_PROGRESS_CANDIDATES
+    )
     roadmap_item: dict[str, Any] = next(
         (
             item
@@ -2294,7 +2307,11 @@ def task_packet(
             "Do not call todo/planning tools or rediscover repository paths with broad searches.",
             f"When bounded_substage is present, implement only that substage and leave every later {candidate_id} substage for its own fresh session.",
             "Keep business logic outside route handlers, keep frontend API access in a dedicated typed client, and preserve audit/data-integrity boundaries.",
-            "Write concise secret-free substage evidence to the authorized state paths without rereading their complete contents.",
+            (
+                "Do not edit compact operational state; the deterministic supervisor records bounded progress after verification."
+                if supervisor_owned_progress
+                else "Write concise secret-free substage evidence to the authorized state paths without rereading their complete contents."
+            ),
             "In changed_paths, include every candidate_state.preserved_changed_paths entry plus every path changed in this session; do not read a preserved operational path merely to rediscover it.",
         ],
         "dispatcher_evidence_trust": {
@@ -2309,11 +2326,11 @@ def task_packet(
             "preserved_worktree_fingerprint": preserved.get("fingerprint"),
         },
         "recovery_generation": recovery_generation,
-        "durable_state_write_paths": [
-            "ops/NOW.md",
-            "ops/STATE.json",
-            "ops/traceability.json",
-        ],
+        "durable_state_write_paths": (
+            []
+            if supervisor_owned_progress
+            else ["ops/NOW.md", "ops/STATE.json", "ops/traceability.json"]
+        ),
         "authorization_boundaries": {
             "authorization": roadmap_item.get("authorization"),
             "existing_durable_v1": roadmap_item.get("authorization") == "durable_v1",
@@ -2400,15 +2417,13 @@ def task_packet(
             "repository_evidence": materialized_repository_evidence,
             "exact_writable_paths": [
                 *V1_022_SUBSTAGE_WRITABLE_PATHS[substage_id],
-                "ops/NOW.md",
-                "ops/STATE.json",
-                "ops/traceability.json",
             ],
             "shortest_execution_sequence": [
                 f"Implement only the {substage_id} Property-configuration substage.",
                 "Use only the materialized repository evidence and authority excerpts already in this packet.",
                 "Do not call any read, search, listing, terminal, Git, database, make, or verification tool.",
-                "Create or update only exact_writable_paths and do not begin the next Property substage.",
+                "Create or update only exact_writable_paths in one complete parallel tool batch and do not begin the next Property substage.",
+                "Do not edit ops files; the deterministic supervisor owns compact progress state.",
                 "Return the exact completed substage JSON contract with deferred supervisor verification and no blockers.",
             ],
         }

@@ -1290,6 +1290,19 @@ class RepositoryEvidenceTests(unittest.TestCase):
                     ],
                     list(V1_022_SUBSTAGE_WRITABLE_PATHS[substage]),
                 )
+                self.assertEqual(packet["durable_state_write_paths"], [])
+                self.assertTrue(
+                    all(
+                        not path.startswith("ops/")
+                        for path in context["exact_writable_paths"]
+                    )
+                )
+                self.assertEqual(
+                    dispatcher.authorized_candidate_writes(
+                        {"candidate": "V1-022"}, packet, "implementation"
+                    ),
+                    sorted(context["exact_writable_paths"]),
+                )
                 self.assertLess(len(dispatcher.packet_prompt(packet).encode()), 45_000)
 
         record: dict[str, Any] = {
@@ -3265,8 +3278,66 @@ evidence.write_text(json.dumps({
                     ["scripts/openclaw-wait-for-ci.sh"],
                 )
 
+                partial = repo / "backend/src/property_rental/property.py"
+                partial.parent.mkdir(parents=True)
+                partial.write_text("preserved partial work\n")
+                subprocess.run(
+                    ["git", "config", "status.showUntrackedFiles", "all"],
+                    cwd=repo,
+                    check=True,
+                )
+                partial_paths = ["backend/src/property_rental/property.py"]
+                partial_record = {
+                    "candidate": "V1-022",
+                    "candidate_base_commit": repaired,
+                    "stage": "implementation",
+                    "recovery_pending": True,
+                    "expected_worktree_paths": partial_paths,
+                    "repository_fingerprint": dispatcher.repository_fingerprint(repo),
+                    "preserved_partial_work": {
+                        "paths": partial_paths,
+                        "path_fingerprint": dispatcher.preserved_paths_fingerprint(
+                            repo, partial_paths
+                        ),
+                    },
+                }
+                wait.write_text(wait.read_text() + "\n# second repair\n")
+                subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
+                subprocess.run(
+                    ["git", "commit", "-qm", "repair partial recovery routing"],
+                    cwd=repo,
+                    check=True,
+                )
+                subprocess.run(["git", "push", "-q"], cwd=repo, check=True)
+                second_repair = subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+                ).strip()
+                self.assertEqual(dispatcher.changed_paths(repo), partial_paths)
+                partial_repair_paths = dispatcher.git(
+                    repo, "diff", "--name-only", repaired, second_repair, "--"
+                ).splitlines()
+                self.assertTrue(
+                    dispatcher.activation_ci_repair_paths_allowed(
+                        partial_repair_paths
+                    ),
+                    partial_repair_paths,
+                )
+
+                dispatcher.rebase_pending_automation_recovery(partial_record)
+
+                self.assertEqual(partial_record["candidate_base_commit"], second_repair)
+                self.assertEqual(
+                    partial_record["preserved_partial_work"]["path_fingerprint"],
+                    dispatcher.preserved_paths_fingerprint(repo, partial_paths),
+                )
+                self.assertEqual(
+                    partial_record["automation_rebases"][0]["paths"],
+                    ["scripts/openclaw-wait-for-ci.sh"],
+                )
+                partial.unlink()
+
                 product = repo / "backend/src/property_rental/audit.py"
-                product.parent.mkdir(parents=True)
+                product.parent.mkdir(parents=True, exist_ok=True)
                 product.write_text("product change\n")
                 subprocess.run(["git", "add", "backend"], cwd=repo, check=True)
                 subprocess.run(
@@ -3579,6 +3650,155 @@ evidence.write_text(json.dumps({
                 ["audit_storage", "append_service", "authorized_query"],
             )
             self.assertFalse(query_record["recovery_pending"])
+
+    def test_v1_022_ceiling_recovery_advances_exact_verified_substages(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / "repo"
+            state_dir = root / "state"
+            spec = importlib.util.spec_from_file_location(
+                "v1_022_ceiling_recovery_dispatch",
+                ROOT / "scripts/openclaw_dispatch.py",
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state_dir),
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            for relative in dispatcher.V1_022_API_VERIFIED_PATHS:
+                path = repo / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("verified bounded work\n")
+            completed = subprocess.CompletedProcess([], 0, "", "")
+
+            storage_paths = list(dispatcher.V1_022_STORAGE_VERIFIED_PATHS)
+            storage_record = {
+                "candidate": "V1-022",
+                "stage": "implementation",
+                "recovery_pending": True,
+                "completed_implementation_substages": [],
+                "model_usage": [
+                    {
+                        "stage_result": "model_session_or_token_ceiling",
+                        "api_calls_completed": 2,
+                    }
+                ],
+            }
+            with (
+                mock.patch.object(
+                    dispatcher,
+                    "current_bounded_substage",
+                    return_value={"id": "property_storage"},
+                ),
+                mock.patch.object(
+                    dispatcher, "changed_paths", return_value=storage_paths
+                ),
+                mock.patch.object(
+                    dispatcher, "full_candidate_paths", return_value=storage_paths
+                ),
+                mock.patch.object(
+                    dispatcher, "repository_fingerprint", return_value="a" * 64
+                ),
+                mock.patch.object(dispatcher, "run", return_value=completed) as run_mock,
+                mock.patch.object(
+                    dispatcher, "resolve_pending_routing_recovery"
+                ) as resolve_mock,
+                mock.patch.object(dispatcher, "save_stage") as save_mock,
+            ):
+                self.assertTrue(
+                    dispatcher.recover_verified_v1_022_substage(storage_record)
+                )
+            self.assertEqual(
+                [call.args for call in run_mock.call_args_list],
+                [
+                    ("make", "automation-test"),
+                    ("make", "test"),
+                    ("make", "database-test"),
+                ],
+            )
+            resolve_mock.assert_called_once_with(storage_record, outcome="succeeded")
+            save_mock.assert_called_once_with(storage_record)
+            self.assertEqual(
+                storage_record["completed_implementation_substages"],
+                ["property_storage"],
+            )
+            self.assertEqual(storage_record["stage"], "implementation")
+
+            api_paths = list(dispatcher.V1_022_API_VERIFIED_PATHS)
+            api_record = {
+                "candidate": "V1-022",
+                "stage": "implementation",
+                "recovery_pending": True,
+                "completed_implementation_substages": ["property_storage"],
+                "model_usage": [
+                    {
+                        "stage_result": "model_session_or_token_ceiling",
+                        "api_calls_completed": 2,
+                    }
+                ],
+            }
+            with (
+                mock.patch.object(
+                    dispatcher,
+                    "current_bounded_substage",
+                    return_value={"id": "property_api"},
+                ),
+                mock.patch.object(dispatcher, "changed_paths", return_value=api_paths),
+                mock.patch.object(
+                    dispatcher, "full_candidate_paths", return_value=api_paths
+                ),
+                mock.patch.object(
+                    dispatcher, "repository_fingerprint", return_value="b" * 64
+                ),
+                mock.patch.object(dispatcher, "run", return_value=completed),
+                mock.patch.object(
+                    dispatcher, "resolve_pending_routing_recovery"
+                ),
+                mock.patch.object(dispatcher, "save_stage"),
+            ):
+                self.assertTrue(
+                    dispatcher.recover_verified_v1_022_substage(api_record)
+                )
+            self.assertEqual(api_record["stage"], "deterministic_verification")
+            self.assertTrue(api_record["implementation_complete"])
+            self.assertEqual(
+                api_record["completed_implementation_substages"],
+                ["property_storage", "property_api"],
+            )
+
+            with (
+                mock.patch.object(
+                    dispatcher,
+                    "current_bounded_substage",
+                    return_value={"id": "property_storage"},
+                ),
+                mock.patch.object(
+                    dispatcher, "changed_paths", return_value=storage_paths[:-1]
+                ),
+                mock.patch.object(dispatcher, "run") as rejected_run,
+            ):
+                self.assertFalse(
+                    dispatcher.recover_verified_v1_022_substage(
+                        {
+                            "candidate": "V1-022",
+                            "stage": "implementation",
+                            "recovery_pending": True,
+                            "completed_implementation_substages": [],
+                            "model_usage": [
+                                {
+                                    "stage_result": "model_session_or_token_ceiling",
+                                    "api_calls_completed": 2,
+                                }
+                            ],
+                        }
+                    )
+                )
+            rejected_run.assert_not_called()
 
     def test_format_only_verification_failure_resumes_without_a_model(self) -> None:
         spec = importlib.util.spec_from_file_location(

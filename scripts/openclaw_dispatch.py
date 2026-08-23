@@ -19,6 +19,7 @@ from openclaw_automation import (
     FAILURE_CATEGORIES,
     RECOVERABLE_ROUTING_FAILURES,
     SECRET_PATTERN,
+    SUPERVISOR_OWNED_PROGRESS_CANDIDATES,
     AutomationError,
     ModelPolicy,
     atomic_write_json,
@@ -261,6 +262,26 @@ V1_021_QUERY_VERIFIED_PATHS: tuple[str, ...] = tuple(
             "backend/tests/test_audit_api.py",
             "backend/tests/test_initial_owner_bootstrap_cli.py",
             "scripts/openclaw_automation.py",
+        }
+    )
+)
+V1_022_STORAGE_VERIFIED_PATHS: tuple[str, ...] = tuple(
+    sorted(
+        {
+            "backend/migrations/versions/20260823_11_property_configuration.py",
+            "backend/src/property_rental/property.py",
+            "backend/tests/test_property.py",
+            "backend/tests/test_property_migration.py",
+        }
+    )
+)
+V1_022_API_VERIFIED_PATHS: tuple[str, ...] = tuple(
+    sorted(
+        set(V1_022_STORAGE_VERIFIED_PATHS)
+        | {
+            "backend/src/property_rental/property_api.py",
+            "backend/src/property_rental/app.py",
+            "backend/tests/test_property_api.py",
         }
     )
 )
@@ -1215,7 +1236,12 @@ def authorized_candidate_writes(
     materialized = packet.get("materialized_implementation_context") or {}
     exact_materialized = materialized.get("exact_writable_paths") or []
     bounded_substage_id = packet.get("bounded_substage", {}).get("id")
-    if bounded_substage_id == "sign_in" or record.get("candidate") == "V1-021":
+    exact_scope_required = (
+        bounded_substage_id == "sign_in"
+        or record.get("candidate") == "V1-021"
+        or record.get("candidate") in SUPERVISOR_OWNED_PROGRESS_CANDIDATES
+    )
+    if exact_materialized or exact_scope_required:
         if (
             not isinstance(exact_materialized, list)
             or not exact_materialized
@@ -1223,7 +1249,7 @@ def authorized_candidate_writes(
         ):
             raise AutomationError(
                 "repository_integrity_uncertainty",
-                "the bounded sign-in packet omitted its exact writable-path allowlist",
+                "the bounded materialized packet omitted its exact writable-path allowlist",
             )
         return sorted(set(exact_materialized))
     profile = str(packet.get("acceptance_profile") or "")
@@ -1290,6 +1316,7 @@ def bind_authorized_partial_work(
                 "preserved_partial_work": {
                     "paths": current,
                     "repository_fingerprint": current_fingerprint,
+                    "path_fingerprint": preserved_paths_fingerprint(REPO, current),
                     "recovery_generation": int(record.get("recovery_generation") or 0),
                     "authorization": "dispatcher_exact_writable_scope",
                 },
@@ -2637,13 +2664,28 @@ def publish_state_contract_repair(record: dict[str, Any]) -> None:
 
 def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
     """Rebind untouched candidate work to one exact green automation-only descendant."""
+    expected_paths = sorted(
+        record.get("expected_worktree_paths", record.get("scoped_changed_paths") or [])
+    )
+    current_paths = changed_paths(REPO)
     if (
         record.get("stage") != "implementation"
         or record.get("recovery_pending") is not True
-        or record.get("expected_worktree_paths") not in (None, [])
-        or changed_paths(REPO)
+        or current_paths != expected_paths
     ):
         return
+    preserved = record.get("preserved_partial_work")
+    if current_paths:
+        if (
+            not isinstance(preserved, dict)
+            or sorted(preserved.get("paths") or []) != current_paths
+            or preserved.get("path_fingerprint")
+            != preserved_paths_fingerprint(REPO, current_paths)
+        ):
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "candidate partial work lacks an exact unchanged path-content fingerprint",
+            )
     base = str(record.get("candidate_base_commit") or "")
     current = git(REPO, "rev-parse", "HEAD")
     if current == base:
@@ -2692,7 +2734,7 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
             "candidate automation-rebase CI evidence is not bound to exact HEAD",
         )
     synchronized = synchronized_repository_shas()
-    if synchronized["local"] != current or changed_paths(REPO):
+    if synchronized["local"] != current or changed_paths(REPO) != current_paths:
         raise AutomationError(
             "repository_integrity_uncertainty",
             "candidate automation rebase drifted during exact-CI verification",
@@ -2713,6 +2755,16 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
             "repository_fingerprint": repository_fingerprint(REPO),
         }
     )
+    if current_paths and isinstance(preserved, dict):
+        preserved.update(
+            {
+                "repository_fingerprint": record["repository_fingerprint"],
+                "path_fingerprint": preserved_paths_fingerprint(
+                    REPO, current_paths
+                ),
+                "automation_rebased_at": utc_now(),
+            }
+        )
     save_stage(record)
 
 
@@ -2810,6 +2862,117 @@ def recover_verified_v1_021_storage(record: dict[str, Any]) -> bool:
                 ],
                 "blockers": [],
                 "exact_next_action": "Dispatch the fresh V1-021 append_service substage.",
+            },
+            "completed_implementation_substages": completed,
+            "scoped_changed_paths": full_candidate_paths(record),
+            "expected_worktree_paths": actual,
+            "repository_fingerprint": repository_fingerprint(REPO),
+            "last_failure_category": None,
+            "stop_reason": None,
+            "recovery_pending": False,
+            "recovery_generation": 0,
+            "bounded_recovery_exhausted": False,
+            "product_code_modification_permitted": True,
+        }
+    )
+    save_stage(record)
+    return True
+
+
+def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
+    """Advance exact ceiling-stopped Property work after execution-capable checks."""
+    substage = current_bounded_substage(record)
+    usages = record.get("model_usage")
+    latest_usage = usages[-1] if isinstance(usages, list) and usages else None
+    substage_id = str((substage or {}).get("id") or "")
+    configurations = {
+        "property_storage": {
+            "completed_before": [],
+            "paths": list(V1_022_STORAGE_VERIFIED_PATHS),
+            "required_files": list(V1_022_STORAGE_VERIFIED_PATHS),
+        },
+        "property_api": {
+            "completed_before": ["property_storage"],
+            "paths": list(V1_022_API_VERIFIED_PATHS),
+            "required_files": [
+                "backend/src/property_rental/property_api.py",
+                "backend/tests/test_property_api.py",
+            ],
+        },
+    }
+    configuration = configurations.get(substage_id)
+    if (
+        record.get("candidate") != "V1-022"
+        or record.get("stage") != "implementation"
+        or record.get("recovery_pending") is not True
+        or configuration is None
+        or record.get("completed_implementation_substages", [])
+        != configuration["completed_before"]
+        or not isinstance(latest_usage, dict)
+        or latest_usage.get("stage_result") != "model_session_or_token_ceiling"
+        or int(latest_usage.get("api_calls_completed") or 0) <= 0
+    ):
+        return False
+    actual = changed_paths(REPO)
+    if actual != configuration["paths"]:
+        return False
+    if any(
+        not (REPO / relative).is_file()
+        for relative in configuration["required_files"]
+    ):
+        return False
+    verification_commands = (
+        ("make", "automation-test"),
+        ("make", "test"),
+        ("make", "database-test"),
+    )
+    for command in verification_commands:
+        verification = run(*command, check=False, capture=False)
+        if verification.returncode:
+            rendered = " ".join(command)
+            record.update(
+                {
+                    "last_failure_category": "deterministic_test_failure",
+                    "failed_check": rendered,
+                    "repository_fingerprint": repository_fingerprint(REPO),
+                }
+            )
+            save_stage(record)
+            raise AutomationError(
+                "deterministic_test_failure",
+                f"verified V1-022 {substage_id} recovery failed {rendered}",
+            )
+    resolve_pending_routing_recovery(record, outcome="succeeded")
+    completed = [*configuration["completed_before"], substage_id]
+    all_complete = substage_id == "property_api"
+    next_action = (
+        "Run complete deterministic verification in a separate stage."
+        if all_complete
+        else "Dispatch the fresh V1-022 property_api substage."
+    )
+    record.setdefault("events", []).append(
+        {
+            "stage": "implementation",
+            "substage": substage_id,
+            "result": "recovered_after_ceiling_with_complete_local_gates",
+            "verification": [" ".join(command) for command in verification_commands],
+            "changed_paths": actual,
+        }
+    )
+    record.update(
+        {
+            "stage": "deterministic_verification" if all_complete else "implementation",
+            "implementation_complete": all_complete,
+            "implementation_result": {
+                "stage_result": "completed",
+                "substage_complete": True,
+                "changed_paths": actual,
+                "verification": [
+                    f"{' '.join(command)}: passed"
+                    for command in verification_commands
+                ],
+                "blockers": [],
+                "exact_next_action": next_action,
             },
             "completed_implementation_substages": completed,
             "scoped_changed_paths": full_candidate_paths(record),
@@ -3290,6 +3453,8 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         )
     candidate = str(record.get("candidate") or "")
     rebase_pending_automation_recovery(record)
+    if recover_verified_v1_022_substage(record):
+        return
     if recover_verified_v1_021_storage(record):
         return
     if recover_verified_v1_021_append_service(record):
@@ -3374,20 +3539,32 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         approval = state.get("approval") or {}
         completed = bool(approval.get("implementation_completed"))
         started = bool(approval.get("implementation_started"))
+        supervisor_owned_progress = (
+            candidate in SUPERVISOR_OWNED_PROGRESS_CANDIDATES
+        )
         final_substage = bool(
             substage and substage.get("order") == substage.get("total")
         )
-        if substage and not started:
+        if substage and not supervisor_owned_progress and not started:
             raise AutomationError(
                 "empty_or_invalid_task_delivery",
                 f"implementation did not durably record that {candidate} started",
             )
-        if (substage is None or final_substage) and not completed:
+        if (
+            not supervisor_owned_progress
+            and (substage is None or final_substage)
+            and not completed
+        ):
             raise AutomationError(
                 "empty_or_invalid_task_delivery",
                 "implementation did not durably record completion",
             )
-        if substage and not final_substage and completed:
+        if (
+            not supervisor_owned_progress
+            and substage
+            and not final_substage
+            and completed
+        ):
             raise AutomationError(
                 "empty_or_invalid_task_delivery",
                 f"a non-final {candidate} substage prematurely marked the candidate complete",
