@@ -123,11 +123,66 @@
   Recovery now captures both source identities before either copy and revalidates both after all
   copying and again after the private SQLite read. A production-shaped checkpoint in that exact
   inter-snapshot gap now fails closed; all 141 automation tests pass.
+- Fresh review: session `21c9d1be4ce3ba727bc227470a2c5ae5` used 59,856 tokens in one
+  zero-tool call and passed with no findings. The reviewed snapshot was published as `3ba5e2d` and
+  exact-commit GitHub Actions run `32602660541` passed. Post-publication reconciliation then exposed
+  one lifecycle-only defect: its mutator still depended on an older compact preflight label even
+  though the dispatcher held stronger exact-commit review and CI evidence. Dispatcher-bound
+  reconciliation now requires the exact 40-character synchronized base commit and pending
+  publication state, while retaining the older standalone gate. A production-shaped regression
+  covers the actual active-state publication path.
+- Lifecycle-repair review: session `35635c009a609b8e94a4ee4feed93bb5` used 59,429 tokens in one
+  zero-tool call. Its verdict was rejected because a 65-character test-symbol location exceeded
+  the former 40-character field bound, but safe recovery exposed one concrete medium finding: the
+  checkpoint regression fired before, rather than between, the database and WAL snapshots. The
+  regression now injects the checkpoint only after the completed database copy. Review locations
+  remain bounded but accept up to 200 characters so useful symbol names are no longer discarded.
+- Literal-path review: session `cd20b8a9558b03bfe1c7ddd1fae95aa0` used 60,099 tokens in one
+  zero-tool call and found that candidate filenames were passed to Git after `--` but without
+  disabling pathspec magic. Both untracked detection and exact diff materialization now set
+  `GIT_LITERAL_PATHSPECS=1`. Separate tracked and untracked regressions prove a filename such as
+  `:(exclude)*` is handled as one literal candidate path and cannot hide review bytes.
+- Review materialization checkpoint: the exact 19-path cumulative diff is 164,229 bytes, 4,229
+  bytes above the prior 160,000-byte transport cap. No model call or attempt was consumed. The
+  complete-diff byte cap is now 180,000; the ordinary 60,000-token ceiling and separate 90,000-token
+  complex-review reservation are unchanged.
+- Lossless-transport review: session `e96e6f2e5771ddd7f886023689354907` used 62,037 tokens in one
+  zero-tool call and found two materialization gaps. Review diffs now stream at most 180,001 bytes
+  from Git, kill and fail closed immediately above the 180,000-byte cap, and require strict UTF-8
+  instead of replacing distinct source bytes with the same character. Focused non-UTF-8 and
+  oversized-diff regressions prove both failures occur before any model call.
+- Private-snapshot review: session `db3ab5c7650583fd384bdee1d29ecb3f` used 72,723 tokens in one
+  zero-tool call and found two strict-boundary gaps. Recovery now retains and revalidates private
+  snapshot directory, database, and WAL descriptors inside the active read transaction before
+  legitimate close-time WAL cleanup. A private-path swap regression fails closed, while the exact
+  completed live WAL-backed review still recovers successfully. Review `line` values are no longer
+  coerced: missing, null, numeric, boolean, array, and object locations all fail the declared string
+  contract.
+- Final materialization checkpoint: the added private-snapshot evidence brings the exact cumulative
+  diff to 180,483 bytes, 483 bytes above the 180,000-byte cap. No model call was made. The bounded
+  diff transport cap is now 220,000 bytes; the ordinary 60,000-token ceiling and separate
+  90,000-token review ceiling remain unchanged and the proactive reservation guard still decides
+  whether a provider request is safe.
+- Closed-WAL review: session `8e323f42104fc6a70e9d19815437d9eb` used 72,884 tokens in one
+  zero-tool call and found the missing normal case where a WAL-mode database has no live sidecars.
+  The private snapshot now always precreates WAL and SHM entries and opens SQLite in read-only mode,
+  retaining the existing identity checks inside the transaction. Focused regressions now cover
+  DELETE mode, live WAL, checkpoint races, private-path swaps, and closed WAL with no sidecars.
+- Private-SHM review: session `79386215cbfd15abe4659d2831268a48` used 65,302 tokens in one
+  zero-tool call and found that the precreated private SHM pathname lacked its own retained identity.
+  Recovery now holds the SHM descriptor and revalidates its inode, type, link count, and pathname
+  inside the active transaction. A pre-connect SHM symlink-substitution regression fails closed,
+  while clean-WAL and exact live-WAL recovery remain successful.
+- Exceptional-review checkpoint: the 199,770-byte exact diff was safely stopped before any model
+  call because its predicted request did not fit beneath 90,000 tokens. The already-approved
+  exceptional-review policy now deterministically selects 120,000 tokens only when the complete
+  diff exceeds 180,000 bytes, persists the exact classification/fingerprint/scope in the manifest,
+  and leaves implementation at 60,000 and ordinary complex reviews at 90,000.
 - Owner action: none.
-- Exact next action: obtain a fresh exact candidate-wide review, publish its exact synchronized
-  snapshot after successful CI, then reconcile V1-020 complete.
+- Exact next action: verify, review, and publish the bounded reconciliation lifecycle repair, then
+  reconcile V1-020 complete from its exact successful publication commit.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 - Automation candidate state: V1-020 active; all seven bounded substages complete; final gates pending.
-- Automation exact next action: Obtain a fresh exact candidate-wide review, publish its exact synchronized snapshot after successful CI, then reconcile V1-020 complete.
+- Automation exact next action: Verify, review, and publish the bounded reconciliation lifecycle repair, then reconcile V1-020 complete from its exact successful publication commit.
 <!-- AUTOMATION_STATUS_END -->

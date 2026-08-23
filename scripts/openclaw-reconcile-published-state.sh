@@ -14,8 +14,6 @@ current_branch="$(git branch --show-current)"
   exit 73
 }
 
-preflight="$(scripts/openclaw-supervisor-preflight.sh)"
-[ "$(printf '%s' "$preflight" | jq -r '.state_issue')" = published_compact_state_reconciliation_required ] || exit 0
 [ -z "$(git status --porcelain=v1)" ] || {
   echo "Deterministic reconciliation requires a clean worktree" >&2
   exit 73
@@ -26,6 +24,30 @@ upstream="$(git rev-parse '@{upstream}')"
   echo "Deterministic reconciliation requires synchronized HEAD" >&2
   exit 73
 }
+
+preflight="$(scripts/openclaw-supervisor-preflight.sh)"
+if [ "$(printf '%s' "$preflight" | jq -r '.state_issue')" != published_compact_state_reconciliation_required ]; then
+  [ "${PROPERTY_RENTAL_RECONCILE_MUTATE_ONLY:-false}" = true ] || exit 0
+  expected_base="${PROPERTY_RENTAL_RECONCILE_BASE_COMMIT:-}"
+  case "$expected_base" in
+    ""|*[!0-9a-f]*)
+      echo "Dispatcher-bound reconciliation has no exact base commit" >&2
+      exit 73
+      ;;
+  esac
+  [ "${#expected_base}" -eq 40 ] || {
+    echo "Dispatcher-bound reconciliation has no exact base commit" >&2
+    exit 73
+  }
+  [ "$head" = "$expected_base" ] || {
+    echo "Dispatcher-bound reconciliation is not on its exact published commit" >&2
+    exit 73
+  }
+  [ "$(jq -r '.approval.publication_completed == false' ops/STATE.json)" = true ] || {
+    echo "Dispatcher-bound reconciliation is not pending publication completion" >&2
+    exit 73
+  }
+fi
 
 # Publication state is downstream of candidate CI. The resumable dispatcher
 # proves that gate before mutation; standalone use retains the same proof.

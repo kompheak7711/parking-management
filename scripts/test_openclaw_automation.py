@@ -18,6 +18,7 @@ import sys
 import tempfile
 import time
 import unittest
+import urllib.parse
 from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Any, ClassVar
@@ -3116,6 +3117,78 @@ evidence.write_text(json.dumps({
                 now,
             )
 
+    def test_dispatcher_bound_reconciliation_uses_exact_published_commit(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            scripts = repo / "scripts"
+            scripts.mkdir(exist_ok=True)
+            for name in (
+                "openclaw-reconcile-published-state.sh",
+                "openclaw-supervisor-preflight.sh",
+                "openclaw_automation.py",
+            ):
+                target = scripts / name
+                target.write_bytes((ROOT / "scripts" / name).read_bytes())
+                target.chmod(0o755)
+            state_path = repo / "ops/STATE.json"
+            state = json.loads(state_path.read_text())
+            state.update(
+                {
+                    "status": "active",
+                    "next_action": "Obtain a fresh review and publish the candidate.",
+                }
+            )
+            state["approval"] = {
+                "status": "approved_ready",
+                "implementation_started": True,
+                "implementation_completed": False,
+                "publication_completed": False,
+            }
+            atomic_write_json(state_path, state)
+            subprocess.run(["git", "add", "ops", "scripts"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "published active candidate"],
+                cwd=repo,
+                check=True,
+            )
+            published = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            origin = root / "origin.git"
+            subprocess.run(["git", "init", "-q", "--bare", str(origin)], check=True)
+            subprocess.run(
+                ["git", "remote", "add", "origin", str(origin)],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "push", "-qu", "-u", "origin", "HEAD"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(
+                [str(scripts / "openclaw-reconcile-published-state.sh")],
+                cwd=repo,
+                env={
+                    **os.environ,
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_RECONCILE_MUTATE_ONLY": "true",
+                    "PROPERTY_RENTAL_RECONCILE_BASE_COMMIT": published,
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                },
+                check=True,
+            )
+            self.assertEqual(
+                changed_paths(repo), ["ops/NOW.md", "ops/STATE.json"]
+            )
+            reconciled = json.loads(state_path.read_text())
+            self.assertEqual(reconciled["status"], "published")
+            self.assertEqual(reconciled["commit"], published)
+            self.assertTrue(reconciled["approval"]["publication_completed"])
+
     def test_failed_review_usage_is_persisted_as_failure_not_pass(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -3571,7 +3644,7 @@ raise SystemExit(64)
             self.assertIsInstance(materialized, dict)
             assert isinstance(materialized, dict)
             self.assertEqual(materialized["base_commit"], base_commit)
-            self.assertEqual(dispatcher.MAX_REVIEW_PATCH_BYTES, 160_000)
+            self.assertEqual(dispatcher.MAX_REVIEW_PATCH_BYTES, 220_000)
             self.assertLessEqual(
                 materialized["byte_count"], dispatcher.MAX_REVIEW_PATCH_BYTES
             )
@@ -3635,6 +3708,328 @@ raise SystemExit(64)
             ):
                 dispatcher.independent_review(record, {"actionable": True})
             invoke.assert_not_called()
+
+    def test_independent_review_treats_tracked_path_magic_as_literal(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            magic_path = ":(exclude)*"
+            (repo / magic_path).write_text("baseline\n")
+            literal_environment = {**os.environ, "GIT_LITERAL_PATHSPECS": "1"}
+            subprocess.run(
+                ["git", "add", "--", magic_path],
+                cwd=repo,
+                env=literal_environment,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "commit", "-qm", "path magic baseline"],
+                cwd=repo,
+                check=True,
+            )
+            base_commit = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            (repo / magic_path).write_text("reviewed literal change\n")
+            spec = importlib.util.spec_from_file_location(
+                "literal_tracked_review", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(root / "state"),
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            fingerprint = repository_fingerprint(repo)
+            usage = normalize_usage(
+                {"model": "gpt-5.6-sol", "total_tokens": 9},
+                model_policy(
+                    "independent_review",
+                    complex_review=True,
+                    classification_reason="test",
+                ),
+            )
+            captured: dict[str, object] = {}
+
+            def review_model(
+                record: dict[str, object],
+                packet: dict[str, object],
+                policy: object,
+            ) -> tuple[int, str, dict[str, object]]:
+                del record, policy
+                captured.update(packet)
+                return (
+                    0,
+                    json.dumps(
+                        {
+                            "passed": True,
+                            "findings": [],
+                            "reviewed_repository_fingerprint": fingerprint,
+                            "reviewed_paths": [magic_path],
+                            "exact_next_action": "publish",
+                        }
+                    ),
+                    usage,
+                )
+
+            record: dict[str, object] = {
+                "candidate": "V1-018",
+                "candidate_base_commit": base_commit,
+                "stage": "independent_review",
+                "implementation_complete": True,
+                "deterministic_verification_passed": True,
+                "scoped_changed_paths": [magic_path],
+                "verified_paths": [magic_path],
+                "verified_repository_fingerprint": fingerprint,
+                "events": [],
+            }
+            with mock.patch.object(
+                dispatcher, "invoke_model", side_effect=review_model
+            ):
+                dispatcher.independent_review(record, {"actionable": True})
+            materialized = captured["materialized_candidate_diff"]
+            assert isinstance(materialized, dict)
+            self.assertIn("+reviewed literal change", str(materialized["content"]))
+
+    def test_independent_review_detects_untracked_path_magic_literal(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            base_commit = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            magic_path = ":(exclude)*"
+            (repo / magic_path).write_text("untracked literal\n")
+            spec = importlib.util.spec_from_file_location(
+                "literal_untracked_review", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(root / "state"),
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            fingerprint = repository_fingerprint(repo)
+            record: dict[str, object] = {
+                "candidate": "V1-018",
+                "candidate_base_commit": base_commit,
+                "stage": "independent_review",
+                "implementation_complete": True,
+                "deterministic_verification_passed": True,
+                "scoped_changed_paths": [magic_path],
+                "verified_paths": [magic_path],
+                "verified_repository_fingerprint": fingerprint,
+            }
+            with (
+                mock.patch.object(dispatcher, "invoke_model") as invoke,
+                self.assertRaisesRegex(
+                    AutomationError, "refuses untracked candidate files"
+                ),
+            ):
+                dispatcher.independent_review(record, {"actionable": True})
+            invoke.assert_not_called()
+
+    def test_independent_review_rejects_non_utf8_diff_before_model(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            candidate = repo / "non-utf8-review.txt"
+            candidate.write_bytes(b"baseline\n")
+            subprocess.run(["git", "add", candidate.name], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "non-utf8 baseline"],
+                cwd=repo,
+                check=True,
+            )
+            base_commit = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            candidate.write_bytes(b"changed-\xff\n")
+            spec = importlib.util.spec_from_file_location(
+                "non_utf8_review", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(root / "state"),
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            fingerprint = repository_fingerprint(repo)
+            record: dict[str, object] = {
+                "candidate": "V1-018",
+                "candidate_base_commit": base_commit,
+                "stage": "independent_review",
+                "implementation_complete": True,
+                "deterministic_verification_passed": True,
+                "scoped_changed_paths": [candidate.name],
+                "verified_paths": [candidate.name],
+                "verified_repository_fingerprint": fingerprint,
+            }
+            with (
+                mock.patch.object(dispatcher, "invoke_model") as invoke,
+                self.assertRaisesRegex(
+                    AutomationError, "not lossless UTF-8"
+                ) as raised,
+            ):
+                dispatcher.independent_review(record, {"actionable": True})
+            invoke.assert_not_called()
+            self.assertEqual(
+                raised.exception.category, "context_materialization_required"
+            )
+
+    def test_independent_review_streams_only_bounded_oversized_diff(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            candidate = repo / "oversized-review.txt"
+            candidate.write_text("baseline\n")
+            subprocess.run(["git", "add", candidate.name], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "oversized baseline"],
+                cwd=repo,
+                check=True,
+            )
+            base_commit = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            candidate.write_text("x" * 230_000 + "\n")
+            spec = importlib.util.spec_from_file_location(
+                "oversized_streaming_review", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(root / "state"),
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            fingerprint = repository_fingerprint(repo)
+            record: dict[str, object] = {
+                "candidate": "V1-018",
+                "candidate_base_commit": base_commit,
+                "stage": "independent_review",
+                "implementation_complete": True,
+                "deterministic_verification_passed": True,
+                "scoped_changed_paths": [candidate.name],
+                "verified_paths": [candidate.name],
+                "verified_repository_fingerprint": fingerprint,
+            }
+            with (
+                mock.patch.object(dispatcher, "invoke_model") as invoke,
+                self.assertRaisesRegex(
+                    AutomationError, "exceeds the bounded materialization limit"
+                ) as raised,
+            ):
+                dispatcher.independent_review(record, {"actionable": True})
+            invoke.assert_not_called()
+            self.assertEqual(
+                raised.exception.category, "context_materialization_required"
+            )
+
+    def test_independent_review_preclassifies_exceptional_complete_diff(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            candidate = repo / "exceptional-review.txt"
+            candidate.write_text("baseline\n")
+            subprocess.run(["git", "add", candidate.name], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "exceptional baseline"],
+                cwd=repo,
+                check=True,
+            )
+            base_commit = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            candidate.write_text("x" * 190_000 + "\n")
+            spec = importlib.util.spec_from_file_location(
+                "exceptional_complete_review", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(root / "state"),
+                    "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            fingerprint = repository_fingerprint(repo)
+            usage = normalize_usage(
+                {"model": "gpt-5.6-sol", "total_tokens": 9},
+                model_policy(
+                    "independent_review",
+                    complex_review=True,
+                    exceptional_review=True,
+                    classification_reason="test",
+                ),
+            )
+            captured: dict[str, object] = {}
+
+            def review_model(
+                record: dict[str, object],
+                packet: dict[str, object],
+                policy: object,
+            ) -> tuple[int, str, dict[str, object]]:
+                del record
+                captured["packet"] = packet
+                captured["policy"] = policy
+                return (
+                    0,
+                    json.dumps(
+                        {
+                            "passed": True,
+                            "findings": [],
+                            "reviewed_repository_fingerprint": fingerprint,
+                            "reviewed_paths": [candidate.name],
+                            "exact_next_action": "publish",
+                        }
+                    ),
+                    usage,
+                )
+
+            record: dict[str, object] = {
+                "candidate": "V1-018",
+                "candidate_base_commit": base_commit,
+                "stage": "independent_review",
+                "implementation_complete": True,
+                "deterministic_verification_passed": True,
+                "scoped_changed_paths": [candidate.name],
+                "verified_paths": [candidate.name],
+                "verified_repository_fingerprint": fingerprint,
+                "events": [],
+            }
+            with mock.patch.object(
+                dispatcher, "invoke_model", side_effect=review_model
+            ):
+                dispatcher.independent_review(record, {"actionable": True})
+            policy = captured["policy"]
+            self.assertEqual(policy.token_ceiling, 120_000)
+            packet = captured["packet"]
+            assert isinstance(packet, dict)
+            self.assertTrue(packet["review_ceiling_classification"]["exceptional"])
+            self.assertEqual(record["stage"], "publication")
 
     def test_independent_review_refuses_omitted_base_to_head_path(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -4023,6 +4418,128 @@ raise SystemExit(64)
                 )
             self.assertIsNone(recovered)
 
+    def test_completed_session_recovery_rejects_private_snapshot_swap(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            state = root / "state"
+            session_id = "9" * 32
+            session_directory = state / "hermes-sessions" / session_id
+            session_directory.mkdir(parents=True)
+            database_path = session_directory / "state.db"
+            database = sqlite3.connect(database_path)
+            database.execute(
+                "CREATE TABLE messages "
+                "(id INTEGER, role TEXT, content TEXT, finish_reason TEXT, active INTEGER)"
+            )
+            database.execute(
+                "INSERT INTO messages VALUES (1, 'assistant', 'validated', 'stop', 1)"
+            )
+            database.commit()
+            database.close()
+            replacement = root / "fabricated.db"
+            database = sqlite3.connect(replacement)
+            database.execute(
+                "CREATE TABLE messages "
+                "(id INTEGER, role TEXT, content TEXT, finish_reason TEXT, active INTEGER)"
+            )
+            database.execute(
+                "INSERT INTO messages VALUES (1, 'assistant', 'fabricated', 'stop', 1)"
+            )
+            database.commit()
+            database.close()
+            original = root / "private-original.db"
+            spec = importlib.util.spec_from_file_location(
+                "transport_recovery_private_swap",
+                ROOT / "scripts/openclaw_dispatch.py",
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state)},
+            ):
+                spec.loader.exec_module(dispatcher)
+            real_connect = sqlite3.connect
+
+            def swap_private_snapshot(
+                *args: object, **kwargs: object
+            ) -> sqlite3.Connection:
+                parsed = urllib.parse.urlparse(str(args[0]))
+                private_database = Path(urllib.parse.unquote(parsed.path))
+                os.replace(private_database, original)
+                os.replace(replacement, private_database)
+                connection = real_connect(*args, **kwargs)
+                os.replace(private_database, replacement)
+                os.replace(original, private_database)
+                return connection
+
+            with mock.patch.object(
+                dispatcher.sqlite3,
+                "connect",
+                side_effect=swap_private_snapshot,
+            ):
+                recovered = dispatcher.preserved_final_assistant_output(
+                    {"session_id": session_id, "api_calls_completed": 1}
+                )
+            self.assertIsNone(recovered)
+
+    def test_completed_session_recovery_rejects_private_shm_substitution(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            state = root / "state"
+            session_id = "b" * 32
+            session_directory = state / "hermes-sessions" / session_id
+            session_directory.mkdir(parents=True)
+            database_path = session_directory / "state.db"
+            database = sqlite3.connect(database_path)
+            database.execute(
+                "CREATE TABLE messages "
+                "(id INTEGER, role TEXT, content TEXT, finish_reason TEXT, active INTEGER)"
+            )
+            database.execute(
+                "INSERT INTO messages VALUES (1, 'assistant', 'validated', 'stop', 1)"
+            )
+            database.commit()
+            database.close()
+            outside_shm = root / "outside-shm"
+            outside_shm.write_bytes(b"\x00" * 32_768)
+            spec = importlib.util.spec_from_file_location(
+                "transport_recovery_private_shm_swap",
+                ROOT / "scripts/openclaw_dispatch.py",
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state)},
+            ):
+                spec.loader.exec_module(dispatcher)
+            real_connect = sqlite3.connect
+
+            def substitute_private_shm(
+                *args: object, **kwargs: object
+            ) -> sqlite3.Connection:
+                parsed = urllib.parse.urlparse(str(args[0]))
+                private_database = Path(urllib.parse.unquote(parsed.path))
+                private_shm = private_database.with_name("state.db-shm")
+                private_shm.unlink()
+                private_shm.symlink_to(outside_shm)
+                return real_connect(*args, **kwargs)
+
+            with mock.patch.object(
+                dispatcher.sqlite3,
+                "connect",
+                side_effect=substitute_private_shm,
+            ):
+                recovered = dispatcher.preserved_final_assistant_output(
+                    {"session_id": session_id, "api_calls_completed": 1}
+                )
+            self.assertIsNone(recovered)
+
     def test_completed_session_recovery_fails_closed_during_wal_checkpoint(
         self,
     ) -> None:
@@ -4081,6 +4598,48 @@ raise SystemExit(64)
                 writer.close()
             self.assertIsNone(recovered)
 
+    def test_completed_session_recovery_reads_closed_wal_without_sidecars(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            state = root / "state"
+            session_id = "a" * 32
+            session_directory = state / "hermes-sessions" / session_id
+            session_directory.mkdir(parents=True)
+            database_path = session_directory / "state.db"
+            database = sqlite3.connect(database_path)
+            database.execute("PRAGMA journal_mode=WAL")
+            database.execute(
+                "CREATE TABLE messages "
+                "(id INTEGER, role TEXT, content TEXT, finish_reason TEXT, active INTEGER)"
+            )
+            database.execute(
+                "INSERT INTO messages VALUES (1, 'assistant', 'closed-wal', 'stop', 1)"
+            )
+            database.commit()
+            database.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+            database.close()
+            (session_directory / "state.db-wal").unlink(missing_ok=True)
+            (session_directory / "state.db-shm").unlink(missing_ok=True)
+            self.assertFalse((session_directory / "state.db-wal").exists())
+            self.assertFalse((session_directory / "state.db-shm").exists())
+            spec = importlib.util.spec_from_file_location(
+                "transport_recovery_closed_wal",
+                ROOT / "scripts/openclaw_dispatch.py",
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state)},
+            ):
+                spec.loader.exec_module(dispatcher)
+            recovered = dispatcher.preserved_final_assistant_output(
+                {"session_id": session_id, "api_calls_completed": 1}
+            )
+            self.assertEqual(recovered, "closed-wal")
+
     def test_completed_session_recovery_rejects_inter_snapshot_checkpoint(
         self,
     ) -> None:
@@ -4126,7 +4685,7 @@ raise SystemExit(64)
                 evidence = real_fstat(descriptor)
                 if evidence.st_ino == database_inode:
                     database_fstats += 1
-                    if database_fstats == 3:
+                    if database_fstats == 4:
                         writer.execute("PRAGMA wal_checkpoint(TRUNCATE)")
                 return evidence
 
@@ -4237,6 +4796,60 @@ raise SystemExit(64)
             review_secret.exception.category,
             "secret_credential_or_protected_operation",
         )
+
+    def test_review_contract_accepts_bounded_symbol_location(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "review_location_contract", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        symbol = "test_completed_session_recovery_rejects_inter_snapshot_checkpoint"
+        verdict = dispatcher.sanitized_review_verdict(
+            {
+                "passed": False,
+                "findings": [
+                    {
+                        "severity": "medium",
+                        "path": "scripts/test_openclaw_automation.py",
+                        "line": symbol,
+                        "evidence": "The named regression does not exercise its claimed boundary.",
+                    }
+                ],
+                "reviewed_repository_fingerprint": "f" * 64,
+                "reviewed_paths": ["scripts/test_openclaw_automation.py"],
+                "exact_next_action": "Correct the regression and repeat review.",
+            }
+        )
+        self.assertEqual(verdict["findings"][0]["line"], symbol)
+
+    def test_review_contract_rejects_non_string_locations(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "review_location_type_contract", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        for invalid in (None, 1, True, [], {}):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(
+                AutomationError, "model field line"
+            ):
+                dispatcher.sanitized_review_verdict(
+                    {
+                        "passed": False,
+                        "findings": [
+                            {
+                                "severity": "medium",
+                                "path": "candidate.py",
+                                "line": invalid,
+                                "evidence": "Concrete bounded evidence.",
+                            }
+                        ],
+                        "reviewed_repository_fingerprint": "f" * 64,
+                        "reviewed_paths": ["candidate.py"],
+                        "exact_next_action": "Correct the finding.",
+                    }
+                )
 
     def test_rejected_bounded_completion_contract_recovers_without_model_call(
         self,

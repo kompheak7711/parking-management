@@ -72,7 +72,8 @@ RECONCILIATION_NEXT_ACTION = (
 )
 MAX_CEILING_RECOVERIES_PER_SUBSTAGE = 2
 MAX_CONTEXT_MATERIALIZATIONS_PER_SUBSTAGE = 2
-MAX_REVIEW_PATCH_BYTES = 160_000
+MAX_REVIEW_PATCH_BYTES = 220_000
+EXCEPTIONAL_REVIEW_PATCH_BYTES = 180_000
 V1_019_SUBSTAGES: tuple[dict[str, Any], ...] = (
     {
         "id": "sign_in",
@@ -207,6 +208,52 @@ def command_json(*arguments: str) -> dict[str, Any]:
 
 def git_document(commit: str, relative: str) -> str:
     return git(REPO, "show", f"{commit}:{relative}") + "\n"
+
+
+def bounded_review_diff(
+    base_commit: str, paths: list[str], environment: dict[str, str]
+) -> str:
+    process = subprocess.Popen(
+        [
+            "git",
+            "diff",
+            "--no-ext-diff",
+            "--no-textconv",
+            "--binary",
+            base_commit,
+            "--",
+            *paths,
+        ],
+        cwd=REPO,
+        env=environment,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    assert process.stdout is not None
+    try:
+        patch = process.stdout.read(MAX_REVIEW_PATCH_BYTES + 1)
+        if len(patch) > MAX_REVIEW_PATCH_BYTES:
+            process.kill()
+            process.wait()
+            raise AutomationError(
+                "context_materialization_required",
+                "the exact candidate review patch exceeds the bounded materialization limit",
+            )
+        return_code = process.wait()
+    finally:
+        process.stdout.close()
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, process.args)
+    try:
+        return patch.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise AutomationError(
+            "context_materialization_required",
+            "the exact candidate review patch is not lossless UTF-8",
+        ) from error
 
 
 def replace_automation_status(source: str, lines: list[str]) -> str:
@@ -1697,20 +1744,86 @@ def preserved_final_assistant_output(usage_report: dict[str, Any]) -> str | None
                     os.close(snapshot_fd)
 
             write_snapshot("state.db", database_snapshot)
-            if wal_snapshot is not None:
-                write_snapshot("state.db-wal", wal_snapshot)
-            connection = sqlite3.connect(snapshot_root / "state.db")
+            write_snapshot("state.db-wal", wal_snapshot or b"")
+            write_snapshot("state.db-shm", b"")
+            snapshot_descriptors: list[int] = []
             try:
-                connection.execute("BEGIN")
-                row = connection.execute(
-                    """SELECT role, content, finish_reason
-                       FROM messages
-                       WHERE active = 1
-                       ORDER BY id DESC
-                       LIMIT 1"""
-                ).fetchone()
+                snapshot_directory_fd = os.open(snapshot_root, directory_flags)
+                snapshot_descriptors.append(snapshot_directory_fd)
+                snapshot_database_fd = os.open(
+                    "state.db", file_flags, dir_fd=snapshot_directory_fd
+                )
+                snapshot_descriptors.append(snapshot_database_fd)
+                snapshot_wal_fd = os.open(
+                    "state.db-wal", file_flags, dir_fd=snapshot_directory_fd
+                )
+                snapshot_descriptors.append(snapshot_wal_fd)
+                snapshot_shm_fd = os.open(
+                    "state.db-shm", file_flags, dir_fd=snapshot_directory_fd
+                )
+                snapshot_descriptors.append(snapshot_shm_fd)
+                snapshot_directory_identity = stable_identity(
+                    os.fstat(snapshot_directory_fd)
+                )
+                snapshot_database_identity = stable_identity(
+                    os.fstat(snapshot_database_fd)
+                )
+                snapshot_wal_identity = stable_identity(os.fstat(snapshot_wal_fd))
+                snapshot_shm_identity = object_identity(os.fstat(snapshot_shm_fd))
+                snapshot_database_uri = (
+                    f"{(snapshot_root / 'state.db').as_uri()}?mode=ro"
+                )
+                connection = sqlite3.connect(snapshot_database_uri, uri=True)
+                try:
+                    connection.execute("BEGIN")
+                    row = connection.execute(
+                        """SELECT role, content, finish_reason
+                           FROM messages
+                           WHERE active = 1
+                           ORDER BY id DESC
+                           LIMIT 1"""
+                    ).fetchone()
+                    if stable_identity(
+                        os.fstat(snapshot_directory_fd)
+                    ) != snapshot_directory_identity or stable_identity(
+                        os.stat(snapshot_root, follow_symlinks=False)
+                    ) != snapshot_directory_identity:
+                        raise OSError("private Hermes snapshot directory changed")
+                    if stable_identity(
+                        os.fstat(snapshot_database_fd)
+                    ) != snapshot_database_identity or stable_identity(
+                        os.stat(
+                            "state.db",
+                            dir_fd=snapshot_directory_fd,
+                            follow_symlinks=False,
+                        )
+                    ) != snapshot_database_identity:
+                        raise OSError("private Hermes snapshot database changed")
+                    if stable_identity(
+                        os.fstat(snapshot_wal_fd)
+                    ) != snapshot_wal_identity or stable_identity(
+                        os.stat(
+                            "state.db-wal",
+                            dir_fd=snapshot_directory_fd,
+                            follow_symlinks=False,
+                        )
+                    ) != snapshot_wal_identity:
+                        raise OSError("private Hermes snapshot WAL changed")
+                    if object_identity(
+                        os.fstat(snapshot_shm_fd)
+                    ) != snapshot_shm_identity or object_identity(
+                        os.stat(
+                            "state.db-shm",
+                            dir_fd=snapshot_directory_fd,
+                            follow_symlinks=False,
+                        )
+                    ) != snapshot_shm_identity:
+                        raise OSError("private Hermes snapshot SHM changed")
+                finally:
+                    connection.close()
             finally:
-                connection.close()
+                for descriptor in reversed(snapshot_descriptors):
+                    os.close(descriptor)
         if STATE_DIR.is_symlink() or object_identity(
             os.fstat(state_fd)
         ) != object_identity(os.stat(STATE_DIR, follow_symlinks=False)):
@@ -1887,7 +2000,7 @@ def sanitized_review_verdict(value: dict[str, Any]) -> dict[str, Any]:
                 ),
                 "path": safe_model_text(finding.get("path"), field="path", maximum=500),
                 "line": safe_model_text(
-                    str(finding.get("line")), field="line", maximum=40
+                    finding.get("line"), field="line", maximum=200
                 ),
                 "evidence": safe_model_text(finding.get("evidence"), field="evidence"),
             }
@@ -2738,6 +2851,8 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
             "repository_integrity_uncertainty",
             "independent review omitted the exact candidate base commit",
         )
+    literal_git_environment = os.environ.copy()
+    literal_git_environment["GIT_LITERAL_PATHSPECS"] = "1"
     untracked_result = subprocess.run(
         [
             "git",
@@ -2751,6 +2866,7 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
         cwd=REPO,
         check=True,
         stdout=subprocess.PIPE,
+        env=literal_git_environment,
     ).stdout
     if any(item for item in untracked_result.split(b"\0") if item):
         raise AutomationError(
@@ -2758,28 +2874,12 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
             "independent review refuses untracked candidate files because their contents are absent from the exact Git diff",
         )
     if expected_paths:
-        patch_result = subprocess.run(
-            [
-                "git",
-                "diff",
-                "--no-ext-diff",
-                "--no-textconv",
-                "--binary",
-                base_commit,
-                "--",
-                *expected_paths,
-            ],
-            cwd=REPO,
-            check=True,
-            stdout=subprocess.PIPE,
-        ).stdout
-    else:
-        patch_result = b""
-    if len(patch_result) > MAX_REVIEW_PATCH_BYTES:
-        raise AutomationError(
-            "context_materialization_required",
-            "the exact candidate review patch exceeds the bounded materialization limit",
+        patch_content = bounded_review_diff(
+            base_commit, expected_paths, literal_git_environment
         )
+    else:
+        patch_content = ""
+    patch_byte_count = len(patch_content.encode("utf-8"))
     verification_event = next(
         (
             event
@@ -2794,8 +2894,8 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
     packet["materialized_candidate_diff"] = {
         "base_commit": base_commit,
         "format": "git_diff_binary",
-        "byte_count": len(patch_result),
-        "content": patch_result.decode("utf-8", errors="replace"),
+        "byte_count": patch_byte_count,
+        "content": patch_content,
         "untracked_files_prohibited": True,
     }
     packet["verification_evidence"] = {
@@ -2812,10 +2912,23 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
         "Review only materialized_candidate_diff and the compact verification evidence. "
         "Do not call any tool or reread any repository file; return the review JSON directly."
     )
+    exceptional_review = patch_byte_count > EXCEPTIONAL_REVIEW_PATCH_BYTES
+    review_classification = (
+        "preclassified complete candidate diff above 180000 bytes after the 90000-token "
+        "reservation guard stopped before model execution"
+        if exceptional_review
+        else "security-sensitive complete candidate diff and publication evidence"
+    )
+    packet["review_ceiling_classification"] = {
+        "exceptional": exceptional_review,
+        "materialized_patch_bytes": patch_byte_count,
+        "ordinary_implementation_ceiling_unchanged": 60_000,
+    }
     policy = model_policy(
         "independent_review",
         complex_review=True,
-        classification_reason="security-sensitive complete candidate diff and publication evidence",
+        exceptional_review=exceptional_review,
+        classification_reason=review_classification,
     )
     before = repository_fingerprint(REPO)
     exit_status, output, usage_report = invoke_model(record, packet, policy)
@@ -3345,6 +3458,7 @@ def post_publication(record: dict[str, Any]) -> None:
         if not current:
             environment = os.environ.copy()
             environment["PROPERTY_RENTAL_RECONCILE_MUTATE_ONLY"] = "true"
+            environment["PROPERTY_RENTAL_RECONCILE_BASE_COMMIT"] = base
             result = subprocess.run(
                 [str(REPO / "scripts/openclaw-reconcile-published-state.sh")],
                 cwd=REPO,
