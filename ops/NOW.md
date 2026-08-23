@@ -25,6 +25,6 @@
   Actions, reconcile it complete, then activate V1-025 without starting V1-026 early.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation publication state: published on implementation/foundation at 085f1498293ccb4040f189312537547a349bd7ad.
-- Automation exact next action: Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.
+- Automation candidate state: V1-025 approved and active; implementation has not started.
+- Automation exact next action: Implement the approved bounded candidate: Customer identity and history persistence
 <!-- AUTOMATION_STATUS_END -->

@@ -644,8 +644,8 @@
       ],
       "risk_class": "medium",
       "acceptance_profile": "api_ui",
-      "authorization": "durable_v1",
-      "status": "approved_ready"
+      "authorization": "complete",
+      "status": "complete"
     },
     {
       "id": "V1-025",
