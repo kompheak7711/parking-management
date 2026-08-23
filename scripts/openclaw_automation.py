@@ -1392,6 +1392,9 @@ def normalize_usage(
         "tool_output_observed_bytes": available("tool_output_observed_bytes"),
         "tool_output_returned_bytes": available("tool_output_returned_bytes"),
         "tool_output_truncations": available("tool_output_truncations"),
+        "tool_output_mutation_success_truncations": available(
+            "tool_output_mutation_success_truncations"
+        ),
         "tool_output_control_bytes": available("tool_output_control_bytes"),
         "tool_output_batch_rejections": available("tool_output_batch_rejections"),
         "tool_output_batch_rejections_delivered": available(

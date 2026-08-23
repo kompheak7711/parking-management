@@ -28,6 +28,7 @@ SERIALIZED_ASCII_CHARS_PER_TOKEN = 3
 TOOL_OUTPUT_LIMIT_BYTES = 12_000
 SESSION_TOOL_OUTPUT_LIMIT_BYTES = 36_000
 STRUCTURED_TOOL_CONTROL_LIMIT_BYTES = 4_096
+MUTATING_TOOLS = {"patch", "write_file"}
 ALLOWED_STAGES = {"implementation", "direct_codex_recovery", "independent_review"}
 ALLOWED_MAKE_TARGETS = {
     "automation-test",
@@ -434,6 +435,7 @@ def prepare_session_home(manifest: dict[str, Any], target: Path, source_home: Pa
             "tool_output_observed_bytes": 0,
             "tool_output_returned_bytes": 0,
             "tool_output_truncations": 0,
+            "tool_output_mutation_success_truncations": 0,
             "tool_output_control_bytes": 0,
             "tool_output_control_reserved_bytes": 0,
             "tool_output_batch_history": [],
@@ -880,6 +882,19 @@ def _next_offset(arguments: dict[str, Any] | None) -> int | None:
     return None
 
 
+def _mutation_succeeded(tool_name: str, result: Any) -> bool:
+    """Recognize only an explicit successful result from an authorized mutation tool."""
+    if tool_name not in MUTATING_TOOLS:
+        return False
+    value = result
+    if isinstance(result, str):
+        try:
+            value = json.loads(result)
+        except json.JSONDecodeError:
+            return False
+    return isinstance(value, dict) and value.get("success") is True
+
+
 def _deliver_policy_rejection(
     tool_name: str,
     arguments: dict[str, Any],
@@ -1111,21 +1126,44 @@ def _bounded_tool_output_locked(
         budget["tool_output_returned_bytes"] = prior_returned + observed
         atomic_json(budget_path, budget)
         return result
-    preview_bytes = encoded[: max(0, returned_limit - 640)]
-    preview = preview_bytes.decode("utf-8", "ignore")
-    bounded = _fit_structured_result(
-        {
-            "error": "Hermes guard: bounded tool-output limit reached",
-            "classification": "bounded_truncation",
-            "tool": tool_name,
-            "observed_bytes": observed,
-            "returned_limit_bytes": returned_limit,
-            "next_offset": _next_offset(arguments),
-            "retry_allowed": _next_offset(arguments) is not None,
-            "preview": preview,
-        },
-        returned_limit,
-    )
+    mutation_succeeded = _mutation_succeeded(tool_name, result)
+    if mutation_succeeded:
+        # Patch/write results commonly include the entire generated diff. The
+        # bounded transport may omit that diagnostic payload, but it must not
+        # turn an already-applied mutation into a reported tool failure. Doing
+        # so encourages an identical retry and can leave useful work stranded.
+        bounded = _fit_structured_result(
+            {
+                "success": True,
+                "classification": "bounded_success_truncation",
+                "tool": tool_name,
+                "observed_bytes": observed,
+                "returned_limit_bytes": returned_limit,
+                "result_truncated": True,
+                "retry_allowed": False,
+                "next_action": "Mutation succeeded; do not repeat it. Continue from the updated file.",
+            },
+            returned_limit,
+        )
+        budget["tool_output_mutation_success_truncations"] = int(
+            budget.get("tool_output_mutation_success_truncations", 0)
+        ) + 1
+    else:
+        preview_bytes = encoded[: max(0, returned_limit - 640)]
+        preview = preview_bytes.decode("utf-8", "ignore")
+        bounded = _fit_structured_result(
+            {
+                "error": "Hermes guard: bounded tool-output limit reached",
+                "classification": "bounded_truncation",
+                "tool": tool_name,
+                "observed_bytes": observed,
+                "returned_limit_bytes": returned_limit,
+                "next_offset": _next_offset(arguments),
+                "retry_allowed": _next_offset(arguments) is not None,
+                "preview": preview,
+            },
+            returned_limit,
+        )
     bounded_size = len(bounded.encode("utf-8"))
     budget["tool_output_returned_bytes"] = prior_returned + bounded_size
     budget["tool_output_truncations"] = int(budget.get("tool_output_truncations", 0)) + 1
@@ -1500,6 +1538,9 @@ def finalize_usage(manifest: dict[str, Any], usage_path: Path) -> None:
             "tool_output_observed_bytes": budget.get("tool_output_observed_bytes", 0),
             "tool_output_returned_bytes": budget.get("tool_output_returned_bytes", 0),
             "tool_output_truncations": budget.get("tool_output_truncations", 0),
+            "tool_output_mutation_success_truncations": budget.get(
+                "tool_output_mutation_success_truncations", 0
+            ),
             "tool_output_control_bytes": budget.get("tool_output_control_bytes", 0),
             "tool_output_batch_rejections": budget.get("tool_output_batch_rejections", 0),
             "tool_output_batch_rejections_delivered": budget.get(

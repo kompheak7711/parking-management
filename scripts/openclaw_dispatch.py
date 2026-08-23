@@ -3921,20 +3921,33 @@ def v1_023_availability_contract_satisfied() -> bool:
 
 
 def recover_verified_v1_023_availability(record: dict[str, Any]) -> bool:
-    """Finish ceiling-stopped Unit availability after exact contract proof."""
+    """Finish safely stopped Unit availability after exact contract proof."""
     substage = current_bounded_substage(record)
     usages = record.get("model_usage")
     latest_usage = usages[-1] if isinstance(usages, list) and usages else None
     current_fingerprint = repository_fingerprint(REPO)
+    ceiling_recovery = bool(
+        isinstance(latest_usage, dict)
+        and latest_usage.get("stage_result") == "model_session_or_token_ceiling"
+        and record.get("recovery_pending") is True
+    )
+    successful_mutation_transport_recovery = bool(
+        isinstance(latest_usage, dict)
+        and latest_usage.get("stage_result") == "empty_or_invalid_task_delivery"
+        and record.get("last_failure_category") == "empty_or_invalid_task_delivery"
+        and int(latest_usage.get("tool_output_truncations") or 0) > 0
+        and int(latest_usage.get("tool_output_batch_rejections") or 0) == 0
+        and latest_usage.get("boundary_reached") is False
+        and record.get("recovery_pending") is not True
+    )
     if (
         record.get("candidate") != "V1-023"
         or record.get("stage") != "implementation"
-        or record.get("recovery_pending") is not True
+        or not (ceiling_recovery or successful_mutation_transport_recovery)
         or not substage
         or substage.get("id") != "unit_availability"
         or record.get("completed_implementation_substages") != ["unit_storage"]
         or not isinstance(latest_usage, dict)
-        or latest_usage.get("stage_result") != "model_session_or_token_ceiling"
         or int(latest_usage.get("api_calls_completed") or 0) <= 0
         or latest_usage.get("repository_fingerprint") == current_fingerprint
         or not v1_023_availability_contract_satisfied()
@@ -3988,7 +4001,11 @@ def recover_verified_v1_023_availability(record: dict[str, Any]) -> bool:
         {
             "stage": "implementation",
             "substage": "unit_availability",
-            "result": "recovered_after_ceiling_with_complete_local_gates",
+            "result": (
+                "recovered_after_successful_mutation_transport_truncation"
+                if successful_mutation_transport_recovery
+                else "recovered_after_ceiling_with_complete_local_gates"
+            ),
             "verification": [" ".join(command) for command in verification_commands],
             "changed_paths": actual,
         }

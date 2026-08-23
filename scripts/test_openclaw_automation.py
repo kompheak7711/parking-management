@@ -4276,6 +4276,99 @@ evidence.write_text(json.dumps({
             ["unit_storage", "unit_availability"],
         )
 
+    def test_v1_023_truncated_successful_mutations_recover_without_model_retry(
+        self,
+    ) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "v1_023_mutation_transport_recovery", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        record = {
+            "candidate": "V1-023",
+            "stage": "implementation",
+            "recovery_pending": False,
+            "last_failure_category": "empty_or_invalid_task_delivery",
+            "completed_implementation_substages": ["unit_storage"],
+            "model_usage": [
+                {
+                    "stage_result": "empty_or_invalid_task_delivery",
+                    "api_calls_completed": 2,
+                    "repository_fingerprint": "a" * 64,
+                    "tool_output_truncations": 2,
+                    "tool_output_batch_rejections": 0,
+                    "boundary_reached": False,
+                }
+            ],
+        }
+        paths = list(dispatcher.V1_023_STORAGE_VERIFIED_PATHS)
+        completed = subprocess.CompletedProcess([], 0, "", "")
+        with (
+            mock.patch.object(
+                dispatcher,
+                "current_bounded_substage",
+                return_value={"id": "unit_availability"},
+            ),
+            mock.patch.object(dispatcher, "repository_fingerprint", return_value="b" * 64),
+            mock.patch.object(dispatcher, "changed_paths", return_value=paths),
+            mock.patch.object(
+                dispatcher, "preserved_paths_fingerprint", return_value="c" * 64
+            ),
+            mock.patch.object(
+                dispatcher, "v1_023_availability_contract_satisfied", return_value=True
+            ),
+            mock.patch.object(dispatcher, "sync_v1_023_supervisor_artifacts"),
+            mock.patch.object(dispatcher, "run", return_value=completed),
+            mock.patch.object(dispatcher, "resolve_pending_routing_recovery"),
+            mock.patch.object(dispatcher, "save_stage"),
+        ):
+            self.assertTrue(dispatcher.recover_verified_v1_023_availability(record))
+        self.assertEqual(record["stage"], "deterministic_verification")
+        self.assertEqual(
+            record["events"][-1]["result"],
+            "recovered_after_successful_mutation_transport_truncation",
+        )
+
+    def test_successful_mutation_output_truncation_preserves_success_semantics(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            budget = root / "budget.json"
+            manifest = root / "manifest.json"
+            atomic_write_json(
+                budget,
+                {
+                    "schema_version": 1,
+                    "tool_output_limit_bytes": 1_000,
+                    "session_tool_output_limit_bytes": 2_000,
+                    "tool_output_observed_bytes": 0,
+                    "tool_output_returned_bytes": 0,
+                    "tool_output_control_bytes": 0,
+                    "tool_output_control_reserved_bytes": 0,
+                    "tool_output_truncations": 0,
+                    "tool_output_mutation_success_truncations": 0,
+                },
+            )
+            atomic_write_json(
+                manifest,
+                {"budget_path": str(budget), "bounded_substage_id": "unit_availability"},
+            )
+            result = json.dumps({"success": True, "diff": "x" * 5_000})
+            with mock.patch.dict(
+                os.environ,
+                {"PROPERTY_RENTAL_INVOCATION_MANIFEST": str(manifest)},
+            ):
+                bounded = bounded_tool_output("patch", result)
+            payload = json.loads(bounded)
+            self.assertTrue(payload["success"])
+            self.assertEqual(payload["classification"], "bounded_success_truncation")
+            self.assertNotIn("error", payload)
+            self.assertFalse(payload["retry_allowed"])
+            ledger = json.loads(budget.read_text())
+            self.assertEqual(ledger["tool_output_mutation_success_truncations"], 1)
+
     def test_v1_023_verified_storage_allows_only_exact_inter_substage_rebase(
         self,
     ) -> None:
