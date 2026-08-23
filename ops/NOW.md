@@ -189,6 +189,6 @@
   reconcile V1-020 complete from its exact successful publication commit.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-023 approved and active; implementation has not started.
-- Automation exact next action: Implement the approved bounded candidate: Unit identity, status, availability, and history persistence
+- Automation publication state: published on implementation/foundation at 61b2c5156ae32fd7c9d37139a6ca2258319d5cef.
+- Automation exact next action: Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.
 <!-- AUTOMATION_STATUS_END -->
