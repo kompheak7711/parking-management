@@ -1,10 +1,10 @@
 {
   "active_cycle": "v1-025-customer-identity-and-history-persistence",
   "approval": {
-    "status": "approved_ready",
-    "basis": "structured durable-v1 successor selection",
-    "implementation_started": false,
-    "implementation_completed": false,
+    "status": "approved_active",
+    "basis": "owner-approved direct takeover of V1-024 through V1-026 under durable V1 authorization",
+    "implementation_started": true,
+    "implementation_completed": true,
     "publication_completed": false
   },
   "authorities": [
@@ -671,7 +671,7 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "085f1498293ccb4040f189312537547a349bd7ad",
+  "commit": "f30041c77df9b8cf2bb78f9bd6f61c6c78e00ca4",
   "evidence_applicability": {
     "basis": "all 15 deterministic gates were rerun after the V1-018 reviewer-requested authorization, CSRF, concurrency, pagination, response, validation, result-binding, test, traceability, and compact-state corrections",
     "complete_profile_remains_applicable": true,
@@ -679,7 +679,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Implement the approved bounded candidate: Customer identity and history persistence",
+  "next_action": "Review and publish the verified V1-025 Customer persistence tranche, require successful CI, then activate V1-026.",
   "next_candidate": {
     "acceptance_profile": "database",
     "authorities": [
@@ -725,7 +725,7 @@
     "push_completed": false,
     "sha_reconciled": false,
     "status": "verified_unpublished",
-    "tranche_id": "V1-024"
+    "tranche_id": "V1-025"
   },
   "relevant_docs": [
     "BR-CUST-*",
@@ -746,33 +746,39 @@
     "last_outcome": null
   },
   "review": {
-    "complete_candidate_paths": 15,
+    "complete_candidate_paths": 9,
     "final_local_checks": [
-      "PASS: authenticated Unit list/detail and immutable timeline contracts",
-      "PASS: scoped property.manage mutations and optimistic concurrency",
-      "PASS: accessible capability-sensitive Unit management UI",
-      "PASS: 158 disposable-PostgreSQL migration and runtime tests",
+      "PASS: canonical Customer identity without fixed type or category",
+      "PASS: explicit reuse-or-distinct matching without silent merge",
+      "PASS: versioned contact updates with immutable before/after history",
+      "PASS: 170 disposable-PostgreSQL migration and runtime tests",
       "PASS: git diff --check"
     ],
     "final_verdict": "PASS",
     "review_kind": "local_direct_takeover_review",
     "status": "PASS",
-    "tranche_id": "V1-024"
+    "tranche_id": "V1-025"
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 23,
+    "completed": 24,
     "current_id": "V1-025",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "active",
+  "status": "verified_unpublished",
   "task": "Implement the approved bounded candidate: Customer identity and history persistence",
-  "tests": [],
-  "tests_tranche_id": "V1-024",
-  "timestamp": "2026-08-23T22:43:38Z",
+  "tests": [
+    "533 backend tests passed with 169 expected environment skips",
+    "170 disposable-PostgreSQL migration and runtime tests passed",
+    "Ruff formatting and lint passed",
+    "strict backend typing passed",
+    "TEST-023 traceability passed"
+  ],
+  "tests_tranche_id": "V1-025",
+  "timestamp": "2026-08-23T22:54:14Z",
   "touched_areas": [
     "reusable customer identity and history"
   ],

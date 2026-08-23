@@ -4215,6 +4215,102 @@
       "test_path": "backend/tests/test_unit_migration.py",
       "status": "implemented",
       "notes": "V1-024 proves the least-privilege runtime flow creates and version-updates Units atomically with immutable audit timeline events."
+    },
+    {
+      "test_id": "test_customer_rejects_invalid_identity_or_source_values",
+      "upstream_ids": ["BR-CUST-001", "DB-CUST-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "V1-025 rejects invalid Customer identity and non-normalized source values without requiring a contact channel."
+    },
+    {
+      "test_id": "test_service_normalizes_optional_contact_without_requiring_a_channel",
+      "upstream_ids": ["DB-CUST-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "V1-025 normalizes optional Customer contact data while preserving the canonical no-mandatory-channel rule."
+    },
+    {
+      "test_id": "test_service_requires_explicit_reuse_or_distinct_decision",
+      "upstream_ids": ["BR-CUST-002", "PR-CUST-002", "TEST-023"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "V1-025 surfaces reuse candidates and requires an explicit distinct-person decision instead of silently merging or duplicating."
+    },
+    {
+      "test_id": "test_one_customer_identity_can_be_reused_across_domain_relationships",
+      "upstream_ids": ["BR-CUST-001", "PR-CUST-001", "TEST-023"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "V1-025 proves one stable Customer identity can participate in multiple roles without a fixed Customer type or category."
+    },
+    {
+      "test_id": "test_contact_update_preserves_identity_and_advances_version",
+      "upstream_ids": ["BR-CUST-003", "PR-CUST-003"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "V1-025 changes current contact values through the same stable Customer identity and a new version."
+    },
+    {
+      "test_id": "test_phone_matching_is_conservative_and_never_merges_automatically",
+      "upstream_ids": ["BR-CUST-002", "DB-CUST-001", "TEST-023"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "V1-025 uses phone normalization only to surface bounded candidates and never as automatic merge authority."
+    },
+    {
+      "test_id": "test_migration_persists_canonical_customer_without_fixed_type",
+      "upstream_ids": ["DB-CUST-001", "TEST-023"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "V1-025 persists the canonical Customer columns and proves no Customer type or category exists."
+    },
+    {
+      "test_id": "test_migration_rejects_invalid_customer_name",
+      "upstream_ids": ["DB-CUST-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "V1-025 enforces a normalized nonblank legal Customer name at the database boundary."
+    },
+    {
+      "test_id": "test_migration_rejects_customer_identity_or_history_loss",
+      "upstream_ids": ["DB-CUST-001", "TEST-023"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "V1-025 prohibits Customer identity replacement, deletion, truncation, and provenance-history loss."
+    },
+    {
+      "test_id": "test_protected_update_preserves_previous_and_resulting_contact_history",
+      "upstream_ids": ["BR-CUST-003", "PR-CUST-003", "DB-CUST-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "V1-025 atomically preserves before/after Customer contact snapshots in immutable audit history."
+    },
+    {
+      "test_id": "test_version_conflict_changes_neither_customer_nor_audit",
+      "upstream_ids": ["BR-CUST-003", "DB-CUST-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "V1-025 rejects obsolete Customer writes without changing current data or manufacturing history."
+    },
+    {
+      "test_id": "test_runtime_repository_requires_reuse_decision_and_preserves_update_history",
+      "upstream_ids": ["BR-CUST-001", "BR-CUST-002", "BR-CUST-003", "TEST-023"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "V1-025 proves the least-privilege runtime route surfaces reuse candidates, keeps stable identity, and writes immutable update history."
     }
   ]
 }
