@@ -19,7 +19,7 @@ import tempfile
 import time
 import unittest
 import urllib.parse
-from contextlib import redirect_stdout
+from contextlib import ExitStack, redirect_stdout
 from pathlib import Path
 from typing import Any, ClassVar
 from unittest import mock
@@ -41,6 +41,10 @@ from openclaw_automation import (
     V1_021_SUBSTAGE_IDS,
     V1_021_SUBSTAGE_PATHS,
     V1_021_SUBSTAGE_WRITABLE_PATHS,
+    V1_022_SUBSTAGE_AUTHORITIES,
+    V1_022_SUBSTAGE_IDS,
+    V1_022_SUBSTAGE_PATHS,
+    V1_022_SUBSTAGE_WRITABLE_PATHS,
     AutomationError,
     actionable_fingerprint,
     atomic_write_json,
@@ -1215,6 +1219,84 @@ class RepositoryEvidenceTests(unittest.TestCase):
             "completed_implementation_substages": [],
         }
         for expected in V1_021_SUBSTAGE_IDS:
+            current = dispatcher.current_bounded_substage(record)
+            self.assertIsNotNone(current)
+            assert current is not None
+            self.assertEqual(current["id"], expected)
+            record["completed_implementation_substages"].append(expected)
+        self.assertIsNone(dispatcher.current_bounded_substage(record))
+
+    def test_v1_022_packets_are_split_and_exclude_large_migration_suite(self) -> None:
+        roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())
+        candidate = next(item for item in roadmap["tranches"] if item["id"] == "V1-022")
+        expanded = set(expand_authorities(candidate["authorities"], repo=ROOT))
+        spec = importlib.util.spec_from_file_location(
+            "v1_022_substage_dispatch", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        future_property_path = ROOT / "backend/src/property_rental/property.py"
+        original_is_file = Path.is_file
+        original_read_text = Path.read_text
+
+        def staged_is_file(path: Path) -> bool:
+            return path == future_property_path or original_is_file(path)
+
+        def staged_read_text(path: Path, *args: Any, **kwargs: Any) -> str:
+            if path == future_property_path:
+                return "class PropertyConfiguration:\n    pass\n"
+            return original_read_text(path, *args, **kwargs)
+
+        for index, substage in enumerate(V1_022_SUBSTAGE_IDS, start=1):
+            with self.subTest(substage=substage):
+                self.assertTrue(
+                    set(V1_022_SUBSTAGE_AUTHORITIES[substage]).issubset(expanded)
+                )
+                readable = V1_022_SUBSTAGE_PATHS[substage]
+                self.assertNotIn("backend/tests/test_migrations.py", readable)
+                existing_readable = [path for path in readable if (ROOT / path).is_file()]
+                self.assertLessEqual(
+                    sum((ROOT / path).stat().st_size for path in existing_readable),
+                    30_000,
+                )
+                patches = (
+                    (
+                        mock.patch.object(Path, "is_file", staged_is_file),
+                        mock.patch.object(Path, "read_text", staged_read_text),
+                    )
+                    if substage == "property_api"
+                    else ()
+                )
+                with ExitStack() as stack:
+                    for patch in patches:
+                        stack.enter_context(patch)
+                    packet = task_packet(
+                        ROOT,
+                        {"actionable": True},
+                        "implementation",
+                        candidate_id_override="V1-022",
+                        bounded_substage={"id": substage, "order": index, "total": 2},
+                    )
+                self.assertEqual(packet["directly_relevant_paths"], [])
+                context = packet["materialized_implementation_context"]
+                self.assertEqual(
+                    [item["path"] for item in context["repository_evidence"]],
+                    list(readable),
+                )
+                self.assertEqual(
+                    context["exact_writable_paths"][
+                        : len(V1_022_SUBSTAGE_WRITABLE_PATHS[substage])
+                    ],
+                    list(V1_022_SUBSTAGE_WRITABLE_PATHS[substage]),
+                )
+                self.assertLess(len(dispatcher.packet_prompt(packet).encode()), 45_000)
+
+        record: dict[str, Any] = {
+            "candidate": "V1-022",
+            "completed_implementation_substages": [],
+        }
+        for expected in V1_022_SUBSTAGE_IDS:
             current = dispatcher.current_bounded_substage(record)
             self.assertIsNotNone(current)
             assert current is not None

@@ -193,10 +193,27 @@ V1_021_SUBSTAGES: tuple[dict[str, Any], ...] = (
         "include": ["resource timeline", "bounded global search", "no mutation API"],
     },
 )
+V1_022_SUBSTAGES: tuple[dict[str, Any], ...] = (
+    {
+        "id": "property_storage",
+        "order": 1,
+        "total": 2,
+        "task": "Single-Property configuration domain and persistence",
+        "include": ["Property identity", "Asia/Phnom_Penh business timezone", "constraints"],
+    },
+    {
+        "id": "property_api",
+        "order": 2,
+        "total": 2,
+        "task": "Authorized Property resource and configuration API",
+        "include": ["GET/PATCH Property", "version precondition", "property.manage"],
+    },
+)
 CANDIDATE_SUBSTAGES: dict[str, tuple[dict[str, Any], ...]] = {
     "V1-019": V1_019_SUBSTAGES,
     "V1-020": V1_020_SUBSTAGES,
     "V1-021": V1_021_SUBSTAGES,
+    "V1-022": V1_022_SUBSTAGES,
 }
 ACTIVATION_CI_REPAIR_SCRIPT_PREFIXES: tuple[str, ...] = (
     "scripts/openclaw",
