@@ -24,6 +24,6 @@
   Actions, reconcile it complete, then activate V1-026.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-025 verified and awaiting publication.
-- Automation exact next action: Publish V1-025 after final review and successful gates, then activate V1-026.
+- Automation publication state: published on implementation/foundation at bc8d68c9241fffd96612d6608b82ae719069dbef.
+- Automation exact next action: Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.
 <!-- AUTOMATION_STATUS_END -->
