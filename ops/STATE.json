@@ -5,7 +5,7 @@
     "basis": "structured durable-v1 successor selection",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": [
     "PR-AUDIT-*",
@@ -672,15 +672,15 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "43596f44ea4c4481c3480bbac0edf3be42685a8b",
+  "commit": "69875d59f39cedb87b769809f033506cde9905e4",
   "evidence_applicability": {
     "basis": "all 15 deterministic gates were rerun after the V1-018 reviewer-requested authorization, CSRF, concurrency, pagination, response, validation, result-binding, test, traceability, and compact-state corrections",
     "complete_profile_remains_applicable": true,
     "prior_review_disposition": "Two FAIL rounds corrected: exact object, CSRF, concurrency, pagination, response, validation, result binding, pre-resolution authorization, immutable audit, and atomic session revocation findings; fresh exact-snapshot independent review pending",
     "tranche_id": "V1-018"
   },
-  "idle_reason": null,
-  "next_action": "Rerun complete deterministic verification and a fresh independent review, then publish and reconcile V1-021 only on PASS.",
+  "idle_reason": "published candidate awaits deterministic successor selection",
+  "next_action": "Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.",
   "next_candidate": {
     "acceptance_profile": "database",
     "authorities": [
@@ -777,11 +777,11 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "active",
+  "status": "published",
   "task": "Implement the approved bounded candidate: Append-only audit-event persistence and query foundation",
   "tests": [],
   "tests_tranche_id": "V1-020",
-  "timestamp": "2026-08-23T01:47:04Z",
+  "timestamp": "2026-08-23T06:57:56Z",
   "touched_areas": [
     "immutable audit storage and authorized query"
   ],

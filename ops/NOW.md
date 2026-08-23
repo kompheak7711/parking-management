@@ -189,6 +189,6 @@
   reconcile V1-020 complete from its exact successful publication commit.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-021 independent-review findings are repaired. Read/write key normalization now matches, classified camelCase facts round-trip, unknown-field secrets fail closed, and audit rows never establish resource ownership. Review bounds are unchanged; fresh gates remain pending.
-- Automation exact next action: Rerun complete deterministic verification and a fresh independent review, then publish and reconcile V1-021 only on PASS.
+- Automation publication state: published on implementation/foundation at 69875d59f39cedb87b769809f033506cde9905e4.
+- Automation exact next action: Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.
 <!-- AUTOMATION_STATUS_END -->
