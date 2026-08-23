@@ -3702,12 +3702,23 @@ evidence.write_text(json.dumps({
                 "def test_property_get(): pass\n"
                 "def test_property_patch(): pass\n"
             )
-            dispatcher.sync_v1_022_traceability("property_storage")
-            dispatcher.sync_v1_022_traceability("property_api")
+            (repo / "backend/tests/test_migrations.py").write_text(
+                "def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_authority():\n"
+                "    if True:\n"
+                "        if True:\n"
+                "            if True:\n"
+                "                assert cursor.fetchone() == (\"20260823_10\",)\n"
+            )
+            dispatcher.sync_v1_022_supervisor_artifacts("property_storage")
+            dispatcher.sync_v1_022_supervisor_artifacts("property_api")
             traceability = json.loads((repo / "ops/traceability.json").read_text())
             self.assertEqual(len(traceability["entries"]), 15)
-            dispatcher.sync_v1_022_traceability("property_storage")
-            dispatcher.sync_v1_022_traceability("property_api")
+            self.assertIn(
+                '("20260823_11",)',
+                (repo / "backend/tests/test_migrations.py").read_text(),
+            )
+            dispatcher.sync_v1_022_supervisor_artifacts("property_storage")
+            dispatcher.sync_v1_022_supervisor_artifacts("property_api")
             self.assertEqual(
                 len(json.loads((repo / "ops/traceability.json").read_text())["entries"]),
                 15,
@@ -3750,7 +3761,7 @@ evidence.write_text(json.dumps({
                     dispatcher, "repository_fingerprint", return_value="a" * 64
                 ),
                 mock.patch.object(dispatcher, "run", return_value=completed) as run_mock,
-                mock.patch.object(dispatcher, "sync_v1_022_traceability"),
+                mock.patch.object(dispatcher, "sync_v1_022_supervisor_artifacts"),
                 mock.patch.object(
                     dispatcher, "resolve_pending_routing_recovery"
                 ) as resolve_mock,
@@ -3802,7 +3813,7 @@ evidence.write_text(json.dumps({
                     dispatcher, "repository_fingerprint", return_value="b" * 64
                 ),
                 mock.patch.object(dispatcher, "run", return_value=completed),
-                mock.patch.object(dispatcher, "sync_v1_022_traceability"),
+                mock.patch.object(dispatcher, "sync_v1_022_supervisor_artifacts"),
                 mock.patch.object(
                     dispatcher, "resolve_pending_routing_recovery"
                 ),
@@ -3848,6 +3859,58 @@ evidence.write_text(json.dumps({
                     )
                 )
             rejected_run.assert_not_called()
+
+            failed_record = {
+                "candidate": "V1-022",
+                "stage": "implementation",
+                "recovery_pending": True,
+                "recovery_generation": 1,
+                "completed_implementation_substages": [],
+                "model_usage": [
+                    {
+                        "stage_result": "model_session_or_token_ceiling",
+                        "api_calls_completed": 2,
+                    }
+                ],
+            }
+            failed = subprocess.CompletedProcess([], 1, "", "")
+            with (
+                mock.patch.object(
+                    dispatcher,
+                    "current_bounded_substage",
+                    return_value={"id": "property_storage"},
+                ),
+                mock.patch.object(
+                    dispatcher,
+                    "changed_paths",
+                    side_effect=[storage_product_paths, storage_paths, storage_paths],
+                ),
+                mock.patch.object(
+                    dispatcher, "repository_fingerprint", return_value="c" * 64
+                ),
+                mock.patch.object(
+                    dispatcher,
+                    "preserved_paths_fingerprint",
+                    return_value="d" * 64,
+                ),
+                mock.patch.object(dispatcher, "run", return_value=failed),
+                mock.patch.object(
+                    dispatcher, "sync_v1_022_supervisor_artifacts"
+                ),
+                mock.patch.object(dispatcher, "save_stage") as failed_save,
+            ):
+                with self.assertRaises(dispatcher.AutomationError) as raised:
+                    dispatcher.recover_verified_v1_022_substage(failed_record)
+            self.assertEqual(raised.exception.category, "deterministic_test_failure")
+            self.assertEqual(failed_record["expected_worktree_paths"], storage_paths)
+            self.assertEqual(
+                failed_record["preserved_partial_work"]["paths"], storage_paths
+            )
+            self.assertEqual(
+                failed_record["preserved_partial_work"]["path_fingerprint"],
+                "d" * 64,
+            )
+            failed_save.assert_called_once_with(failed_record)
 
     def test_format_only_verification_failure_resumes_without_a_model(self) -> None:
         spec = importlib.util.spec_from_file_location(

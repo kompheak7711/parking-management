@@ -277,7 +277,10 @@ V1_022_STORAGE_PRODUCT_PATHS: tuple[str, ...] = tuple(
     )
 )
 V1_022_STORAGE_VERIFIED_PATHS: tuple[str, ...] = tuple(
-    sorted(set(V1_022_STORAGE_PRODUCT_PATHS) | {"ops/traceability.json"})
+    sorted(
+        set(V1_022_STORAGE_PRODUCT_PATHS)
+        | {"backend/tests/test_migrations.py", "ops/traceability.json"}
+    )
 )
 V1_022_API_PRODUCT_PATHS: tuple[str, ...] = tuple(
     sorted(
@@ -290,7 +293,10 @@ V1_022_API_PRODUCT_PATHS: tuple[str, ...] = tuple(
     )
 )
 V1_022_API_VERIFIED_PATHS: tuple[str, ...] = tuple(
-    sorted(set(V1_022_API_PRODUCT_PATHS) | {"ops/traceability.json"})
+    sorted(
+        set(V1_022_API_PRODUCT_PATHS)
+        | {"backend/tests/test_migrations.py", "ops/traceability.json"}
+    )
 )
 V1_022_STORAGE_TRACEABILITY: tuple[dict[str, Any], ...] = (
     {
@@ -3078,6 +3084,63 @@ def sync_v1_022_traceability(substage_id: str) -> None:
         atomic_write_json(traceability_path, manifest)
 
 
+def sync_v1_022_migration_head_expectation() -> None:
+    """Advance the protected bootstrap test only for the exact V1-022 revision."""
+    test_path = REPO / "backend/tests/test_migrations.py"
+    try:
+        source = test_path.read_text()
+        module = ast.parse(source, filename=str(test_path))
+    except (OSError, SyntaxError) as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the protected migration test is unavailable or invalid",
+        ) from error
+    target = next(
+        (
+            node
+            for node in module.body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name
+            == "test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_authority"
+        ),
+        None,
+    )
+    if target is None or target.end_lineno is None:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the protected migration-head assertion function is missing",
+        )
+    old = '                assert cursor.fetchone() == ("20260823_10",)'
+    new = '                assert cursor.fetchone() == ("20260823_11",)'
+    lines = source.splitlines()
+    function_lines = lines[target.lineno - 1 : target.end_lineno]
+    old_count = function_lines.count(old)
+    new_count = function_lines.count(new)
+    if old_count == 0 and new_count == 1 and source.count(new) == 1:
+        return
+    if (
+        old_count != 1
+        or new_count != 0
+        or source.count(old) != 1
+        or source.count(new) != 0
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the protected migration-head assertion drifted from its exact V1-022 form",
+        )
+    lines[target.lineno - 1 : target.end_lineno] = [
+        new if line == old else line for line in function_lines
+    ]
+    suffix = "\n" if source.endswith("\n") else ""
+    atomic_write_text(test_path, "\n".join(lines) + suffix)
+
+
+def sync_v1_022_supervisor_artifacts(substage_id: str) -> None:
+    """Materialize deterministic supervisor-owned V1-022 acceptance artifacts."""
+    sync_v1_022_migration_head_expectation()
+    sync_v1_022_traceability(substage_id)
+
+
 def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
     """Advance exact ceiling-stopped Property work after execution-capable checks."""
     substage = current_bounded_substage(record)
@@ -3114,10 +3177,9 @@ def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
         or int(latest_usage.get("api_calls_completed") or 0) <= 0
     ):
         return False
-    before_traceability = changed_paths(REPO)
-    if before_traceability not in (
-        configuration["product_paths"],
-        configuration["paths"],
+    before_artifacts = changed_paths(REPO)
+    if not set(configuration["product_paths"]).issubset(before_artifacts) or any(
+        path not in configuration["paths"] for path in before_artifacts
     ):
         return False
     if any(
@@ -3125,12 +3187,12 @@ def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
         for relative in configuration["required_files"]
     ):
         return False
-    sync_v1_022_traceability(substage_id)
+    sync_v1_022_supervisor_artifacts(substage_id)
     actual = changed_paths(REPO)
     if actual != configuration["paths"]:
         raise AutomationError(
             "repository_integrity_uncertainty",
-            "V1-022 traceability materialization changed an unexpected path",
+            "V1-022 supervisor artifact materialization changed an unexpected path",
         )
     verification_commands = (
         ("make", "automation-test"),
@@ -3141,11 +3203,24 @@ def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
         verification = run(*command, check=False, capture=False)
         if verification.returncode:
             rendered = " ".join(command)
+            current = changed_paths(REPO)
+            current_fingerprint = repository_fingerprint(REPO)
             record.update(
                 {
                     "last_failure_category": "deterministic_test_failure",
                     "failed_check": rendered,
-                    "repository_fingerprint": repository_fingerprint(REPO),
+                    "scoped_changed_paths": current,
+                    "expected_worktree_paths": current,
+                    "repository_fingerprint": current_fingerprint,
+                    "preserved_partial_work": {
+                        "paths": current,
+                        "repository_fingerprint": current_fingerprint,
+                        "path_fingerprint": preserved_paths_fingerprint(REPO, current),
+                        "recovery_generation": int(
+                            record.get("recovery_generation") or 0
+                        ),
+                        "authorization": "dispatcher_exact_writable_scope",
+                    },
                 }
             )
             save_stage(record)
@@ -3787,7 +3862,7 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
             expected_substage=str(substage["id"]) if substage else None,
         )
         if supervisor_owned_progress and substage:
-            sync_v1_022_traceability(str(substage["id"]))
+            sync_v1_022_supervisor_artifacts(str(substage["id"]))
             after = changed_paths(REPO)
             result["changed_paths"] = after
         else:
