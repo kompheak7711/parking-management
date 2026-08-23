@@ -3911,6 +3911,238 @@
       "test_path": "frontend/src/App.test.tsx",
       "status": "implemented",
       "notes": "Changing the Property identifier invalidates an in-flight load for the prior identifier."
+    },
+    {
+      "test_id": "test_service_normalizes_and_persists_unit_with_stable_identity",
+      "upstream_ids": ["BR-UNIT-003", "TEST-022"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_service_normalizes_and_persists_unit_with_stable_identity."
+    },
+    {
+      "test_id": "test_service_rejects_duplicate_unit_number_within_property",
+      "upstream_ids": ["BR-UNIT-003"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_service_rejects_duplicate_unit_number_within_property."
+    },
+    {
+      "test_id": "test_service_rejects_unit_outside_authoritative_property_scope",
+      "upstream_ids": ["BR-UNIT-003"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_service_rejects_unit_outside_authoritative_property_scope."
+    },
+    {
+      "test_id": "test_unit_accepts_each_supported_status",
+      "upstream_ids": ["BR-UNIT-002"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_unit_accepts_each_supported_status."
+    },
+    {
+      "test_id": "test_unit_accepts_each_supported_type",
+      "upstream_ids": ["BR-UNIT-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_unit_accepts_each_supported_type."
+    },
+    {
+      "test_id": "test_unit_rejects_invalid_identity_or_attributes",
+      "upstream_ids": ["BR-UNIT-001", "BR-UNIT-002"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_unit_rejects_invalid_identity_or_attributes."
+    },
+    {
+      "test_id": "test_migration_accepts_supported_unit_statuses",
+      "upstream_ids": ["DB-UNIT-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_migration.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_migration_accepts_supported_unit_statuses."
+    },
+    {
+      "test_id": "test_migration_accepts_supported_unit_types",
+      "upstream_ids": ["DB-UNIT-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_migration.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_migration_accepts_supported_unit_types."
+    },
+    {
+      "test_id": "test_migration_allows_versioned_state_change_without_replacing_identity",
+      "upstream_ids": ["DB-UNIT-001", "TEST-022"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_migration.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_migration_allows_versioned_state_change_without_replacing_identity."
+    },
+    {
+      "test_id": "test_migration_is_forward_only",
+      "upstream_ids": ["TEST-022"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_migration.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_migration_is_forward_only."
+    },
+    {
+      "test_id": "test_migration_persists_unit_identity_type_status_and_provenance",
+      "upstream_ids": ["DB-UNIT-001", "TEST-022"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_migration.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_migration_persists_unit_identity_type_status_and_provenance."
+    },
+    {
+      "test_id": "test_migration_rejects_duplicate_unit_number_within_property",
+      "upstream_ids": ["DB-UNIT-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_migration.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_migration_rejects_duplicate_unit_number_within_property."
+    },
+    {
+      "test_id": "test_migration_rejects_invalid_unit_values",
+      "upstream_ids": ["DB-UNIT-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_migration.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_migration_rejects_invalid_unit_values."
+    },
+    {
+      "test_id": "test_migration_rejects_unit_identity_mutation_and_history_loss",
+      "upstream_ids": ["DB-UNIT-001", "TEST-022"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_migration.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_migration_rejects_unit_identity_mutation_and_history_loss."
+    },
+    {
+      "test_id": "test_runtime_creates_units_only_through_protected_function",
+      "upstream_ids": ["DB-UNIT-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_migration.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_runtime_creates_units_only_through_protected_function."
+    },
+    {
+      "test_id": "test_availability_rejects_active_reservation",
+      "upstream_ids": ["BR-UNIT-004", "BR-UNIT-006", "BR-UNIT-013"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_availability_rejects_active_reservation."
+    },
+    {
+      "test_id": "test_availability_rejects_actual_occupancy",
+      "upstream_ids": ["BR-UNIT-007", "BR-UNIT-013"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_availability_rejects_actual_occupancy."
+    },
+    {
+      "test_id": "test_availability_rejects_operational_blockers",
+      "upstream_ids": ["BR-UNIT-008", "BR-UNIT-009", "BR-UNIT-013"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_availability_rejects_operational_blockers."
+    },
+    {
+      "test_id": "test_restoration_derives_status_from_authoritative_facts",
+      "upstream_ids": ["BR-UNIT-006", "BR-UNIT-007", "BR-UNIT-008", "BR-UNIT-010", "BR-UNIT-011", "BR-UNIT-012", "BR-UNIT-013"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_restoration_derives_status_from_authoritative_facts."
+    },
+    {
+      "test_id": "test_state_decisions_preserve_unit_identity",
+      "upstream_ids": ["BR-UNIT-013", "TEST-022"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_state_decisions_preserve_unit_identity."
+    },
+    {
+      "test_id": "test_status_alone_never_authorizes_conflict",
+      "upstream_ids": ["BR-UNIT-004", "BR-UNIT-013"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_status_alone_never_authorizes_conflict."
+    },
+    {
+      "test_id": "test_authorized_restoration_uses_current_facts",
+      "upstream_ids": ["BR-UNIT-009", "BR-UNIT-012", "BR-UNIT-013"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_authorized_restoration_uses_current_facts."
+    },
+    {
+      "test_id": "test_availability_allows_non_overlapping_signed_lease",
+      "upstream_ids": ["BR-UNIT-005", "BR-UNIT-013"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_availability_allows_non_overlapping_signed_lease."
+    },
+    {
+      "test_id": "test_availability_rejects_invalid_requested_or_lease_period",
+      "upstream_ids": ["BR-UNIT-005", "BR-UNIT-013"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_availability_rejects_invalid_requested_or_lease_period."
+    },
+    {
+      "test_id": "test_availability_rejects_overlapping_signed_lease",
+      "upstream_ids": ["BR-UNIT-005", "BR-UNIT-013"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_availability_rejects_overlapping_signed_lease."
+    },
+    {
+      "test_id": "test_missing_readiness_is_not_available",
+      "upstream_ids": ["BR-UNIT-008", "BR-UNIT-011", "BR-UNIT-013"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_missing_readiness_is_not_available."
+    },
+    {
+      "test_id": "test_protected_status_requires_authorized_restoration",
+      "upstream_ids": ["BR-UNIT-009", "BR-UNIT-012", "BR-UNIT-013"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_unit.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_protected_status_requires_authorized_restoration."
+    },
+    {
+      "test_id": "test_units_reference_canonical_properties_table",
+      "upstream_ids": ["DB-UNIT-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_migration.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_units_reference_canonical_properties_table."
+    },
+    {
+      "test_id": "test_postgres_repository_distinguishes_duplicate_unit_identity",
+      "upstream_ids": ["DB-UNIT-001", "TEST-022"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_migration.py",
+      "status": "implemented",
+      "notes": "V1-023 Unit identity, availability, and history coverage for test_postgres_repository_distinguishes_duplicate_unit_identity."
     }
   ]
 }

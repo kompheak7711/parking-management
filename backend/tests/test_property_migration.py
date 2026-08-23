@@ -165,7 +165,10 @@ def test_migration_rejects_mutation_of_property_configuration(
         parameters = (uuid4(),) if statement.as_string().find("%s") >= 0 else ()
         connection.execute(statement, parameters)
 
-    assert raised.value.sqlstate == "55000"
+    expected_sqlstate = (
+        "42809" if statement.as_string() == "TRUNCATE app.property_configuration" else "55000"
+    )
+    assert raised.value.sqlstate == expected_sqlstate
 
 
 def test_migration_allows_versioned_configuration_update(
