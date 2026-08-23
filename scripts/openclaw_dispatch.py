@@ -2878,6 +2878,7 @@ def candidate_automation_rebase_allowed(record: dict[str, Any]) -> bool:
     """Allow only recovery or exact verified V1-023 inter-substage rebases."""
     return bool(
         record.get("recovery_pending") is True
+        or v1_023_review_repair_rebase_allowed(record)
         or v1_023_mutation_transport_incident(
             record, repository_fingerprint(REPO)
         )
@@ -2889,6 +2890,28 @@ def candidate_automation_rebase_allowed(record: dict[str, Any]) -> bool:
             and record.get("last_failure_category") is None
             and record.get("product_code_modification_permitted") is True
         )
+    )
+
+
+def v1_023_review_repair_rebase_allowed(record: dict[str, Any]) -> bool:
+    """Permit only the exact reviewed seven-path V1-023 repair to adopt automation."""
+    pending = record.get("pending_review_repair")
+    exact_paths = list(V1_023_STORAGE_VERIFIED_PATHS)
+    return bool(
+        record.get("candidate") == "V1-023"
+        and record.get("stage") == "implementation"
+        and record.get("completed_implementation_substages")
+        == ["unit_storage", "unit_availability"]
+        and record.get("last_failure_category") == "independent_review_defect"
+        and record.get("repair_failure")
+        == "fresh independent review returned concrete in-scope findings"
+        and record.get("product_code_modification_permitted") is True
+        and sorted(record.get("expected_worktree_paths") or []) == exact_paths
+        and sorted(record.get("scoped_changed_paths") or []) == exact_paths
+        and isinstance(pending, dict)
+        and sorted(pending.get("reviewed_paths") or []) == exact_paths
+        and isinstance(pending.get("reviewed_repository_fingerprint"), str)
+        and isinstance(pending.get("verdict_fingerprint"), str)
     )
 
 
@@ -4733,7 +4756,7 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
     if recover_verified_v1_021_review_findings(record):
         return
     candidate_substages = CANDIDATE_SUBSTAGES.get(candidate)
-    if candidate_substages is not None and substage is None:
+    if candidate_substages is not None and substage is None and not is_recovery:
         record["stage"] = "deterministic_verification"
         record["implementation_complete"] = True
         save_stage(record)
@@ -6591,6 +6614,12 @@ def dispatch() -> int:
                 publish_state_contract_repair(record)
                 continue
             stage = record.get("stage")
+            if stage == "deterministic_verification" and v1_023_review_repair_rebase_allowed(
+                {**record, "stage": "implementation"}
+            ):
+                record["stage"] = "implementation"
+                save_stage(record)
+                stage = "implementation"
             actionable = stage_actionable_fingerprint(
                 REPO,
                 preflight,

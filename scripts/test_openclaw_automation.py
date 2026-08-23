@@ -4444,6 +4444,111 @@ evidence.write_text(json.dumps({
                 dispatcher.candidate_automation_rebase_allowed(transport_record)
             )
 
+        exact_paths = list(dispatcher.V1_023_STORAGE_VERIFIED_PATHS)
+        review_repair = {
+            "candidate": "V1-023",
+            "stage": "implementation",
+            "completed_implementation_substages": [
+                "unit_storage",
+                "unit_availability",
+            ],
+            "last_failure_category": "independent_review_defect",
+            "repair_failure": "fresh independent review returned concrete in-scope findings",
+            "product_code_modification_permitted": True,
+            "expected_worktree_paths": exact_paths,
+            "scoped_changed_paths": exact_paths,
+            "pending_review_repair": {
+                "reviewed_paths": exact_paths,
+                "reviewed_repository_fingerprint": "c" * 64,
+                "verdict_fingerprint": "d" * 64,
+            },
+        }
+        self.assertTrue(dispatcher.v1_023_review_repair_rebase_allowed(review_repair))
+        self.assertTrue(dispatcher.candidate_automation_rebase_allowed(review_repair))
+        review_repair["expected_worktree_paths"] = exact_paths[:-1]
+        self.assertFalse(dispatcher.v1_023_review_repair_rebase_allowed(review_repair))
+
+    def test_completed_v1_023_substages_do_not_skip_exact_review_repair(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "v1_023_completed_review_repair", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        paths = ["candidate.py"]
+        record: dict[str, Any] = {
+            "candidate": "V1-023",
+            "stage": "implementation",
+            "repair_failure": "fresh independent review returned concrete in-scope findings",
+            "last_failure_category": "independent_review_defect",
+            "completed_implementation_substages": [
+                "unit_storage",
+                "unit_availability",
+            ],
+            "expected_worktree_paths": paths,
+            "scoped_changed_paths": paths,
+            "repository_fingerprint": "a" * 64,
+        }
+        result = {
+            "stage_result": "completed",
+            "changed_paths": paths,
+            "verification": ["deferred_to_deterministic_supervisor"],
+            "blockers": [],
+            "exact_next_action": "rerun deterministic verification",
+        }
+        recovery_names = (
+            "recover_verified_v1_023_availability",
+            "recover_verified_v1_023_storage",
+            "recover_verified_v1_022_substage",
+            "recover_verified_v1_021_storage",
+            "recover_verified_v1_021_append_service",
+            "recover_verified_v1_021_authorized_query",
+            "recover_mechanical_format_failure",
+            "recover_verified_v1_021_review_findings",
+        )
+        with ExitStack() as stack:
+            stack.enter_context(
+                mock.patch.object(dispatcher, "rebase_pending_automation_recovery")
+            )
+            for name in recovery_names:
+                stack.enter_context(
+                    mock.patch.object(dispatcher, name, return_value=False)
+                )
+            stack.enter_context(
+                mock.patch.object(
+                    dispatcher,
+                    "task_packet",
+                    return_value={"stage": "direct_codex_recovery"},
+                )
+            )
+            stack.enter_context(
+                mock.patch.object(dispatcher, "changed_paths", return_value=paths)
+            )
+            stack.enter_context(
+                mock.patch.object(
+                    dispatcher, "repository_fingerprint", return_value="a" * 64
+                )
+            )
+            invoke = stack.enter_context(
+                mock.patch.object(
+                    dispatcher,
+                    "invoke_model",
+                    return_value=(0, json.dumps(result), {}),
+                )
+            )
+            stack.enter_context(
+                mock.patch.object(dispatcher, "full_candidate_paths", return_value=paths)
+            )
+            stack.enter_context(mock.patch.object(dispatcher, "finalize_usage"))
+            stack.enter_context(
+                mock.patch.object(dispatcher, "resolve_pending_routing_recovery")
+            )
+            stack.enter_context(mock.patch.object(dispatcher, "save_stage"))
+            dispatcher.implementation(record, {"actionable": True})
+        invoke.assert_called_once()
+        self.assertEqual(record["stage"], "deterministic_verification")
+        self.assertTrue(record["implementation_complete"])
+
     def test_candidate_fingerprint_is_reproducible_across_automation_only_commit(
         self,
     ) -> None:
