@@ -427,7 +427,7 @@ V1_022_STORAGE_TRACEABILITY: tuple[dict[str, Any], ...] = (
     {
         "test_id": "test_postgres_setup_entrypoint_uses_the_protected_repository",
         "upstream_ids": ["API-026", "PR-PROP-001"],
-        "test_level": "application",
+        "test_level": "integration",
         "test_path": "backend/tests/test_property.py",
         "status": "implemented",
         "notes": "Fresh deployments have an application-controlled one-time Property setup entrypoint.",
@@ -435,7 +435,7 @@ V1_022_STORAGE_TRACEABILITY: tuple[dict[str, Any], ...] = (
     {
         "test_id": "test_property_setup_command_uses_runtime_database_identity",
         "upstream_ids": ["API-026", "PR-PROP-001", "SEC-004"],
-        "test_level": "application",
+        "test_level": "unit",
         "test_path": "backend/tests/test_property.py",
         "status": "implemented",
         "notes": "The setup command uses the configured runtime database identity without accepting a database secret on the command line.",
