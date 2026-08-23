@@ -3767,6 +3767,10 @@ def sync_v1_023_traceability() -> None:
             "TEST-022",
         ],
         "test_runtime_creates_units_only_through_protected_function": ["DB-UNIT-001"],
+        "test_postgres_repository_distinguishes_duplicate_unit_identity": [
+            "DB-UNIT-001",
+            "TEST-022",
+        ],
         "test_migration_is_forward_only": ["TEST-022"],
         "test_units_reference_canonical_properties_table": ["DB-UNIT-001"],
     }
@@ -4194,6 +4198,7 @@ def v1_023_review_repair_contract_satisfied() -> bool:
         "REFERENCES app.properties(id) ON DELETE RESTRICT" in migration
         and "REFERENCES app.property_configuration" not in migration
         and "SignedLeasePeriod" in unit_classes
+        and "UnitIdentityAlreadyExistsError" in unit_classes
         and {
             "requested_starts_on",
             "requested_ends_on",
@@ -4209,6 +4214,8 @@ def v1_023_review_repair_contract_satisfied() -> bool:
             "test_missing_readiness_is_not_available",
         }.issubset(tests)
         and "test_units_reference_canonical_properties_table" in migration_test_ids
+        and "test_postgres_repository_distinguishes_duplicate_unit_identity"
+        in migration_test_ids
         and entries.get("test_unit_accepts_each_supported_type") == ["BR-UNIT-001"]
         and entries.get("test_availability_rejects_overlapping_signed_lease")
         == ["BR-UNIT-005", "BR-UNIT-013"]
@@ -4231,7 +4238,7 @@ def recover_verified_v1_023_review_findings(record: dict[str, Any]) -> bool:
         or record.get("repair_failure")
         != "fresh independent review returned concrete in-scope findings"
         or not isinstance(findings, list)
-        or len(findings) != 4
+        or not findings
         or any(
             not isinstance(finding, dict)
             or finding.get("severity") not in {"high", "medium"}
