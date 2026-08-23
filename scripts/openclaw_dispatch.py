@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 import fcntl
 import json
 import os
@@ -265,7 +266,7 @@ V1_021_QUERY_VERIFIED_PATHS: tuple[str, ...] = tuple(
         }
     )
 )
-V1_022_STORAGE_VERIFIED_PATHS: tuple[str, ...] = tuple(
+V1_022_STORAGE_PRODUCT_PATHS: tuple[str, ...] = tuple(
     sorted(
         {
             "backend/migrations/versions/20260823_11_property_configuration.py",
@@ -275,15 +276,127 @@ V1_022_STORAGE_VERIFIED_PATHS: tuple[str, ...] = tuple(
         }
     )
 )
-V1_022_API_VERIFIED_PATHS: tuple[str, ...] = tuple(
+V1_022_STORAGE_VERIFIED_PATHS: tuple[str, ...] = tuple(
+    sorted(set(V1_022_STORAGE_PRODUCT_PATHS) | {"ops/traceability.json"})
+)
+V1_022_API_PRODUCT_PATHS: tuple[str, ...] = tuple(
     sorted(
-        set(V1_022_STORAGE_VERIFIED_PATHS)
+        set(V1_022_STORAGE_PRODUCT_PATHS)
         | {
             "backend/src/property_rental/property_api.py",
             "backend/src/property_rental/app.py",
             "backend/tests/test_property_api.py",
         }
     )
+)
+V1_022_API_VERIFIED_PATHS: tuple[str, ...] = tuple(
+    sorted(set(V1_022_API_PRODUCT_PATHS) | {"ops/traceability.json"})
+)
+V1_022_STORAGE_TRACEABILITY: tuple[dict[str, Any], ...] = (
+    {
+        "test_id": "test_property_configuration_uses_authoritative_timezone",
+        "upstream_ids": ["BR-PROP-003", "PR-PROP-003"],
+        "test_level": "domain",
+        "test_path": "backend/tests/test_property.py",
+        "status": "implemented",
+        "notes": "Property configuration uses the authoritative Asia/Phnom_Penh timezone.",
+    },
+    {
+        "test_id": "test_property_configuration_rejects_nil_identity",
+        "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+        "test_level": "domain",
+        "test_path": "backend/tests/test_property.py",
+        "status": "implemented",
+        "notes": "The single Property configuration rejects a nil identity.",
+    },
+    {
+        "test_id": "test_property_configuration_rejects_non_authoritative_timezone",
+        "upstream_ids": ["BR-PROP-003", "PR-PROP-003"],
+        "test_level": "domain",
+        "test_path": "backend/tests/test_property.py",
+        "status": "implemented",
+        "notes": "Configuration rejects a timezone outside the authoritative business boundary.",
+    },
+    {
+        "test_id": "test_service_configures_exactly_one_property",
+        "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+        "test_level": "domain",
+        "test_path": "backend/tests/test_property.py",
+        "status": "implemented",
+        "notes": "The service configures exactly one Property identity.",
+    },
+    {
+        "test_id": "test_service_rejects_a_second_property_without_persisting_it",
+        "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+        "test_level": "domain",
+        "test_path": "backend/tests/test_property.py",
+        "status": "implemented",
+        "notes": "A second Property is rejected without persistence side effects.",
+    },
+    {
+        "test_id": "test_service_requires_an_existing_configuration",
+        "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+        "test_level": "domain",
+        "test_path": "backend/tests/test_property.py",
+        "status": "implemented",
+        "notes": "Missing single-Property configuration fails closed.",
+    },
+    {
+        "test_id": "test_service_returns_the_existing_configuration",
+        "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+        "test_level": "domain",
+        "test_path": "backend/tests/test_property.py",
+        "status": "implemented",
+        "notes": "The configured Property identity is returned unchanged.",
+    },
+    {
+        "test_id": "test_migration_persists_property_identity_and_timezone",
+        "upstream_ids": ["BR-PROP-001", "BR-PROP-003", "PR-PROP-001", "PR-PROP-003"],
+        "test_level": "migration",
+        "test_path": "backend/tests/test_property_migration.py",
+        "status": "implemented",
+        "notes": "PostgreSQL persists the one Property identity and authoritative timezone.",
+    },
+    {
+        "test_id": "test_migration_rejects_a_second_property",
+        "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+        "test_level": "migration",
+        "test_path": "backend/tests/test_property_migration.py",
+        "status": "implemented",
+        "notes": "The database singleton constraint rejects a second Property.",
+    },
+    {
+        "test_id": "test_migration_rejects_non_authoritative_timezone",
+        "upstream_ids": ["BR-PROP-003", "PR-PROP-003"],
+        "test_level": "migration",
+        "test_path": "backend/tests/test_property_migration.py",
+        "status": "implemented",
+        "notes": "The database rejects a non-authoritative Property timezone.",
+    },
+    {
+        "test_id": "test_migration_rejects_false_singleton_key",
+        "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+        "test_level": "migration",
+        "test_path": "backend/tests/test_property_migration.py",
+        "status": "implemented",
+        "notes": "The database singleton key cannot represent another Property row.",
+    },
+    {
+        "test_id": "test_migration_rejects_nil_property_identity",
+        "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+        "test_level": "migration",
+        "test_path": "backend/tests/test_property_migration.py",
+        "status": "implemented",
+        "notes": "The database rejects a nil Property identity.",
+    },
+    {
+        "test_id": "test_migration_rejects_mutation_of_property_configuration",
+        "upstream_ids": ["BR-PROP-001", "BR-PROP-002", "BR-PROP-003", "PR-PROP-001", "PR-PROP-002", "PR-PROP-003"],
+        "test_level": "migration",
+        "test_path": "backend/tests/test_property_migration.py",
+        "status": "implemented",
+        "notes": "Database controls preserve Property identity, history, and timezone invariants against direct mutation.",
+    },
 )
 
 
@@ -2879,6 +2992,92 @@ def recover_verified_v1_021_storage(record: dict[str, Any]) -> bool:
     return True
 
 
+def sync_v1_022_traceability(substage_id: str) -> None:
+    """Materialize exact executable-test mappings without giving Hermes ops access."""
+    traceability_path = REPO / "ops/traceability.json"
+    try:
+        manifest = json.loads(traceability_path.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "V1-022 traceability manifest is unavailable or invalid",
+        ) from error
+    entries = manifest.get("entries")
+    if not isinstance(entries, list):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "V1-022 traceability manifest has no entries array",
+        )
+    desired: list[dict[str, Any]] = []
+    if substage_id == "property_storage":
+        desired = [dict(entry) for entry in V1_022_STORAGE_TRACEABILITY]
+    elif substage_id == "property_api":
+        test_path = REPO / "backend/tests/test_property_api.py"
+        try:
+            module = ast.parse(test_path.read_text(), filename=str(test_path))
+        except (OSError, SyntaxError) as error:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "V1-022 Property API tests cannot be materialized for traceability",
+            ) from error
+        test_ids = sorted(
+            node.name
+            for node in module.body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name.startswith("test_")
+        )
+        if not test_ids:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "V1-022 Property API substage introduced no executable tests",
+            )
+        desired = [
+            {
+                "test_id": test_id,
+                "upstream_ids": [
+                    "PR-PROP-001",
+                    "PR-PROP-003",
+                    "API-026",
+                    "API-027",
+                    "UI-091",
+                ],
+                "test_level": "API",
+                "test_path": "backend/tests/test_property_api.py",
+                "status": "implemented",
+                "notes": (
+                    "V1-022 authorized Property resource and configuration API "
+                    f"acceptance coverage for {test_id}."
+                ),
+            }
+            for test_id in test_ids
+        ]
+    else:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            f"unknown V1-022 traceability substage {substage_id!r}",
+        )
+    existing = {
+        str(entry.get("test_id")): entry
+        for entry in entries
+        if isinstance(entry, dict) and isinstance(entry.get("test_id"), str)
+    }
+    changed = False
+    for entry in desired:
+        prior = existing.get(str(entry["test_id"]))
+        if prior is not None:
+            if prior != entry:
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    f"V1-022 traceability entry drifted: {entry['test_id']}",
+                )
+            continue
+        entries.append(entry)
+        existing[str(entry["test_id"])] = entry
+        changed = True
+    if changed:
+        atomic_write_json(traceability_path, manifest)
+
+
 def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
     """Advance exact ceiling-stopped Property work after execution-capable checks."""
     substage = current_bounded_substage(record)
@@ -2888,11 +3087,13 @@ def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
     configurations = {
         "property_storage": {
             "completed_before": [],
+            "product_paths": list(V1_022_STORAGE_PRODUCT_PATHS),
             "paths": list(V1_022_STORAGE_VERIFIED_PATHS),
-            "required_files": list(V1_022_STORAGE_VERIFIED_PATHS),
+            "required_files": list(V1_022_STORAGE_PRODUCT_PATHS),
         },
         "property_api": {
             "completed_before": ["property_storage"],
+            "product_paths": list(V1_022_API_PRODUCT_PATHS),
             "paths": list(V1_022_API_VERIFIED_PATHS),
             "required_files": [
                 "backend/src/property_rental/property_api.py",
@@ -2913,14 +3114,24 @@ def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
         or int(latest_usage.get("api_calls_completed") or 0) <= 0
     ):
         return False
-    actual = changed_paths(REPO)
-    if actual != configuration["paths"]:
+    before_traceability = changed_paths(REPO)
+    if before_traceability not in (
+        configuration["product_paths"],
+        configuration["paths"],
+    ):
         return False
     if any(
         not (REPO / relative).is_file()
         for relative in configuration["required_files"]
     ):
         return False
+    sync_v1_022_traceability(substage_id)
+    actual = changed_paths(REPO)
+    if actual != configuration["paths"]:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "V1-022 traceability materialization changed an unexpected path",
+        )
     verification_commands = (
         ("make", "automation-test"),
         ("make", "test"),
@@ -3569,12 +3780,18 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
                 "empty_or_invalid_task_delivery",
                 f"a non-final {candidate} substage prematurely marked the candidate complete",
             )
-        after = changed_paths(REPO)
+        model_after = changed_paths(REPO)
         result = sanitized_implementation_result(
             raw_result,
-            after,
+            model_after,
             expected_substage=str(substage["id"]) if substage else None,
         )
+        if supervisor_owned_progress and substage:
+            sync_v1_022_traceability(str(substage["id"]))
+            after = changed_paths(REPO)
+            result["changed_paths"] = after
+        else:
+            after = model_after
     except AutomationError as error:
         finalize_usage(
             record,

@@ -3690,12 +3690,35 @@ evidence.write_text(json.dumps({
                 },
             ):
                 spec.loader.exec_module(dispatcher)
-            for relative in dispatcher.V1_022_API_VERIFIED_PATHS:
+            for relative in dispatcher.V1_022_API_PRODUCT_PATHS:
                 path = repo / relative
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text("verified bounded work\n")
+            atomic_write_json(
+                repo / "ops/traceability.json",
+                {"schema_version": 1, "entries": []},
+            )
+            (repo / "backend/tests/test_property_api.py").write_text(
+                "def test_property_get(): pass\n"
+                "def test_property_patch(): pass\n"
+            )
+            dispatcher.sync_v1_022_traceability("property_storage")
+            dispatcher.sync_v1_022_traceability("property_api")
+            traceability = json.loads((repo / "ops/traceability.json").read_text())
+            self.assertEqual(len(traceability["entries"]), 15)
+            dispatcher.sync_v1_022_traceability("property_storage")
+            dispatcher.sync_v1_022_traceability("property_api")
+            self.assertEqual(
+                len(json.loads((repo / "ops/traceability.json").read_text())["entries"]),
+                15,
+            )
+            atomic_write_json(
+                repo / "ops/traceability.json",
+                {"schema_version": 1, "entries": []},
+            )
             completed = subprocess.CompletedProcess([], 0, "", "")
 
+            storage_product_paths = list(dispatcher.V1_022_STORAGE_PRODUCT_PATHS)
             storage_paths = list(dispatcher.V1_022_STORAGE_VERIFIED_PATHS)
             storage_record = {
                 "candidate": "V1-022",
@@ -3716,7 +3739,9 @@ evidence.write_text(json.dumps({
                     return_value={"id": "property_storage"},
                 ),
                 mock.patch.object(
-                    dispatcher, "changed_paths", return_value=storage_paths
+                    dispatcher,
+                    "changed_paths",
+                    side_effect=[storage_product_paths, storage_paths],
                 ),
                 mock.patch.object(
                     dispatcher, "full_candidate_paths", return_value=storage_paths
@@ -3725,6 +3750,7 @@ evidence.write_text(json.dumps({
                     dispatcher, "repository_fingerprint", return_value="a" * 64
                 ),
                 mock.patch.object(dispatcher, "run", return_value=completed) as run_mock,
+                mock.patch.object(dispatcher, "sync_v1_022_traceability"),
                 mock.patch.object(
                     dispatcher, "resolve_pending_routing_recovery"
                 ) as resolve_mock,
@@ -3776,6 +3802,7 @@ evidence.write_text(json.dumps({
                     dispatcher, "repository_fingerprint", return_value="b" * 64
                 ),
                 mock.patch.object(dispatcher, "run", return_value=completed),
+                mock.patch.object(dispatcher, "sync_v1_022_traceability"),
                 mock.patch.object(
                     dispatcher, "resolve_pending_routing_recovery"
                 ),
@@ -3798,7 +3825,9 @@ evidence.write_text(json.dumps({
                     return_value={"id": "property_storage"},
                 ),
                 mock.patch.object(
-                    dispatcher, "changed_paths", return_value=storage_paths[:-1]
+                    dispatcher,
+                    "changed_paths",
+                    return_value=storage_product_paths[:-1],
                 ),
                 mock.patch.object(dispatcher, "run") as rejected_run,
             ):
