@@ -5,7 +5,7 @@
     "basis": "owner-approved direct takeover of V1-024 through V1-026 under durable V1 authorization",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": [
     "API-028-029",
@@ -671,15 +671,15 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "757c04d968aba2652a0347f7b3f80f05367290d2",
+  "commit": "085f1498293ccb4040f189312537547a349bd7ad",
   "evidence_applicability": {
     "basis": "all 15 deterministic gates were rerun after the V1-018 reviewer-requested authorization, CSRF, concurrency, pagination, response, validation, result-binding, test, traceability, and compact-state corrections",
     "complete_profile_remains_applicable": true,
     "prior_review_disposition": "Two FAIL rounds corrected: exact object, CSRF, concurrency, pagination, response, validation, result binding, pre-resolution authorization, immutable audit, and atomic session revocation findings; fresh exact-snapshot independent review pending",
     "tranche_id": "V1-018"
   },
-  "idle_reason": null,
-  "next_action": "Review and publish the verified V1-024 candidate, require successful GitHub Actions, then activate V1-025.",
+  "idle_reason": "published candidate awaits deterministic successor selection",
+  "next_action": "Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.",
   "next_candidate": {
     "acceptance_profile": "api_ui",
     "authorities": [
@@ -768,7 +768,7 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "verified_unpublished",
+  "status": "published",
   "task": "Implement the approved bounded candidate: Unit API and management UI",
   "tests": [
     "PASS: format, lint, backend/frontend type checks, builds, and import checks",
@@ -777,7 +777,7 @@
     "PASS: 158 disposable-PostgreSQL tests"
   ],
   "tests_tranche_id": "V1-024",
-  "timestamp": "2026-08-23T22:28:25Z",
+  "timestamp": "2026-08-23T22:41:15Z",
   "touched_areas": [
     "unit list/detail/history and controlled operational status"
   ],
