@@ -1132,18 +1132,6 @@ class RepositoryEvidenceTests(unittest.TestCase):
                     sum((ROOT / path).stat().st_size for path in readable if (ROOT / path).is_file()),
                     30_000,
                 )
-                packet = task_packet(
-                    ROOT,
-                    {"actionable": True},
-                    "implementation",
-                    bounded_substage={
-                        "id": substage,
-                        "order": index,
-                        "total": len(V1_021_SUBSTAGE_IDS),
-                    },
-                )
-                self.assertEqual(packet["directly_relevant_paths"], list(readable))
-                materialized = packet["materialized_implementation_context"]
                 expected_writable = sorted(
                     {
                         *V1_021_SUBSTAGE_WRITABLE_PATHS[substage],
@@ -1152,15 +1140,42 @@ class RepositoryEvidenceTests(unittest.TestCase):
                         "ops/traceability.json",
                     }
                 )
-                self.assertEqual(
-                    dispatcher.authorized_candidate_writes(
-                        {"candidate": "V1-021"}, packet, "implementation"
-                    ),
-                    expected_writable,
-                )
-                self.assertEqual(
-                    sorted(materialized["exact_writable_paths"]), expected_writable
-                )
+                if substage == "audit_storage":
+                    packet = task_packet(
+                        ROOT,
+                        {"actionable": True},
+                        "implementation",
+                        bounded_substage={
+                            "id": substage,
+                            "order": index,
+                            "total": len(V1_021_SUBSTAGE_IDS),
+                        },
+                    )
+                    self.assertEqual(packet["directly_relevant_paths"], [])
+                    materialized = packet["materialized_implementation_context"]
+                    self.assertEqual(
+                        [item["path"] for item in materialized["repository_evidence"]],
+                        list(readable),
+                    )
+                    self.assertEqual(
+                        [
+                            item["complete_content"]
+                            for item in materialized["repository_evidence"]
+                        ],
+                        [(ROOT / path).read_text() for path in readable],
+                    )
+                    self.assertEqual(
+                        dispatcher.authorized_candidate_writes(
+                            {"candidate": "V1-021"}, packet, "implementation"
+                        ),
+                        expected_writable,
+                    )
+                    self.assertEqual(
+                        sorted(materialized["exact_writable_paths"]), expected_writable
+                    )
+                    prompt = dispatcher.packet_prompt(packet)
+                    self.assertIn("Do not call any read, search", prompt)
+                    self.assertLess(len(prompt.encode("utf-8")), 45_000)
 
         record: dict[str, Any] = {
             "candidate": "V1-021",

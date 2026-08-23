@@ -191,7 +191,7 @@ V1_020_SUBSTAGE_PATHS: Final = {
         "backend/tests/test_initial_owner_bootstrap.py",
     ),
 }
-V1_021_ROUTING_REVISION: Final = "v1-021-audit-foundation-routing-v1"
+V1_021_ROUTING_REVISION: Final = "v1-021-audit-foundation-routing-v2"
 V1_021_SUBSTAGE_IDS: Final = (
     "audit_storage",
     "append_service",
@@ -2045,15 +2045,33 @@ def task_packet(
         "V1-021": V1_021_SUBSTAGE_PATHS,
     }.get(str(candidate_id), {})
     directly_relevant_paths = list(substage_paths.get(substage_id, ()))
+    materialized_repository_evidence: list[dict[str, str]] = []
+    if str(candidate_id) == "V1-021" and substage_id in V1_021_SUBSTAGE_IDS:
+        for relative in directly_relevant_paths:
+            path = repo / relative
+            if not path.is_file():
+                raise AutomationError(
+                    "context_materialization_required",
+                    f"V1-021 materialized evidence path is unavailable: {relative}",
+                )
+            materialized_repository_evidence.append(
+                {"path": relative, "complete_content": path.read_text()}
+            )
+        directly_relevant_paths = []
     if not directly_relevant_paths:
-        directly_relevant_paths = candidate_relevant_paths(
-            repo, authorities, roadmap_item or candidate
-        )
+        if not materialized_repository_evidence:
+            directly_relevant_paths = candidate_relevant_paths(
+                repo, authorities, roadmap_item or candidate
+            )
     candidate_number_match = re.fullmatch(r"V1-(\d+)", str(candidate_id))
     candidate_number = (
         int(candidate_number_match.group(1)) if candidate_number_match else 0
     )
-    if not directly_relevant_paths and candidate_number >= 20:
+    if (
+        not directly_relevant_paths
+        and not materialized_repository_evidence
+        and candidate_number >= 20
+    ):
         raise AutomationError(
             "context_materialization_required",
             f"no deterministic repository paths were materialized for {candidate_id}",
@@ -2196,6 +2214,7 @@ def task_packet(
     if str(candidate_id) == "V1-021" and substage_id in V1_021_SUBSTAGE_IDS:
         packet["materialized_implementation_context"] = {
             "routing_revision": V1_021_ROUTING_REVISION,
+            "repository_evidence": materialized_repository_evidence,
             "exact_writable_paths": [
                 *V1_021_SUBSTAGE_WRITABLE_PATHS[substage_id],
                 "ops/NOW.md",
@@ -2204,9 +2223,9 @@ def task_packet(
             ],
             "shortest_execution_sequence": [
                 f"Implement only the {substage_id} audit-foundation substage.",
-                "Use only the materialized authority excerpts and directly relevant paths; do not inspect broad migration, test, or source trees.",
+                "Use only the complete materialized repository evidence and authority excerpts already in this packet.",
+                "Do not call any read, search, listing, terminal, Git, database, make, or verification tool; none is necessary or authorized.",
                 "Create or update only exact_writable_paths and do not begin the next audit substage.",
-                "Do not invoke terminal, Git, database, make, or verification commands; the execution-capable supervisor owns all gates.",
                 "Patch the authorized compact evidence paths without rereading their full contents.",
                 "Return stage_result completed, substage_complete true, every exact changed path, deferred_to_deterministic_supervisor verification, no blockers, and one exact next action.",
             ],
