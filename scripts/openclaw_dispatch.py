@@ -3166,6 +3166,16 @@ def sync_v1_022_traceability(substage_id: str) -> None:
                         "frontend/src/App.test.tsx",
                         "An older successful Property load cannot override a newer authoritative capability denial.",
                     ),
+                    (
+                        "TEST-FE-025",
+                        "frontend/src/App.test.tsx",
+                        "Changing the Property identifier immediately clears management controls for the previously loaded Property.",
+                    ),
+                    (
+                        "TEST-FE-026",
+                        "frontend/src/App.test.tsx",
+                        "Changing the Property identifier invalidates an in-flight load for the prior identifier.",
+                    ),
                 )
             ]
         )
