@@ -1,17 +1,16 @@
 {
-  "active_cycle": "v1-023-unit-identity-status-availability-and-history-persistence",
+  "active_cycle": "v1-024-unit-api-and-management-ui",
   "approval": {
     "status": "approved_ready",
     "basis": "structured durable-v1 successor selection",
     "implementation_started": false,
     "implementation_completed": false,
-    "publication_completed": true
+    "publication_completed": false
   },
   "authorities": [
-    "BR-UNIT-*",
-    "PR-UNIT-*",
-    "DB-UNIT-*",
-    "TEST-022"
+    "API-028-029",
+    "UI-UNIT-*",
+    "TEST-087-095"
   ],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -678,33 +677,32 @@
     "prior_review_disposition": "Two FAIL rounds corrected: exact object, CSRF, concurrency, pagination, response, validation, result binding, pre-resolution authorization, immutable audit, and atomic session revocation findings; fresh exact-snapshot independent review pending",
     "tranche_id": "V1-018"
   },
-  "idle_reason": "published candidate awaits deterministic successor selection",
-  "next_action": "Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.",
+  "idle_reason": null,
+  "next_action": "Implement the approved bounded candidate: Unit API and management UI",
   "next_candidate": {
-    "acceptance_profile": "database",
+    "acceptance_profile": "api_ui",
     "authorities": [
-      "BR-UNIT-*",
-      "PR-UNIT-*",
-      "DB-UNIT-*",
-      "TEST-022"
+      "API-028-029",
+      "UI-UNIT-*",
+      "TEST-087-095"
     ],
     "authorization": "durable_v1",
     "dependencies": [
-      "V1-022"
+      "V1-023"
     ],
     "exclude": [
-      "reservation and lease mutations"
+      "reservation workflows"
     ],
-    "id": "V1-023",
+    "id": "V1-024",
     "include": [
-      "unit constraints and authoritative availability"
+      "unit list/detail/history and controlled operational status"
     ],
-    "order": 23,
+    "order": 24,
     "phase": "Core",
-    "risk_class": "high",
+    "risk_class": "medium",
     "status": "approved_ready",
-    "task": "Unit identity, status, availability, and history persistence",
-    "roadmap_id": "V1-023"
+    "task": "Unit API and management UI",
+    "roadmap_id": "V1-024"
   },
   "owner_action": "none",
   "owner_decisions": {
@@ -734,13 +732,12 @@
     "tranche_id": "V1-018"
   },
   "relevant_docs": [
-    "BR-UNIT-*",
-    "PR-UNIT-*",
-    "DB-UNIT-*",
-    "TEST-022"
+    "API-028-029",
+    "UI-UNIT-*",
+    "TEST-087-095"
   ],
   "repair": {
-    "tranche_id": "V1-023",
+    "tranche_id": "V1-024",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -765,22 +762,22 @@
     "status": "PASS",
     "tranche_id": "V1-019"
   },
-  "risk_class": "high",
+  "risk_class": "medium",
   "roadmap": {
     "completed": 18,
-    "current_id": "V1-023",
+    "current_id": "V1-024",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Implement the approved bounded candidate: Unit identity, status, availability, and history persistence",
+  "status": "active",
+  "task": "Implement the approved bounded candidate: Unit API and management UI",
   "tests": [],
   "tests_tranche_id": "V1-020",
-  "timestamp": "2026-08-23T16:54:42Z",
+  "timestamp": "2026-08-23T16:56:57Z",
   "touched_areas": [
-    "unit constraints and authoritative availability"
+    "unit list/detail/history and controlled operational status"
   ],
-  "tranche": "Unit identity, status, availability, and history persistence"
+  "tranche": "Unit API and management UI"
 }
