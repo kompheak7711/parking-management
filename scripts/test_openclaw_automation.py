@@ -4767,10 +4767,11 @@ evidence.write_text(json.dumps({
         old_base = "a" * 40
         paths = list(dispatcher.V1_021_QUERY_VERIFIED_PATHS)
         record = {
-            "candidate": "V1-021",
+            "candidate": "V1-023",
             "stage": "independent_review",
             "deterministic_verification_passed": True,
             "candidate_base_commit": old_base,
+            "scoped_changed_paths": paths,
             "automation_rebases": [
                 {
                     "to_commit": target,
@@ -4783,8 +4784,21 @@ evidence.write_text(json.dumps({
             "repair_failure": "prior format failure",
         }
         synchronized = {"local": target, "upstream": target, "remote": target}
+
+        def review_base_git(_repo: Path, *arguments: str) -> str:
+            if arguments == ("rev-parse", "HEAD"):
+                return target
+            if arguments == ("diff", "--name-only", old_base, target, "--"):
+                return "scripts/openclaw_dispatch.py"
+            raise AssertionError(arguments)
+
         with (
-            mock.patch.object(dispatcher, "git", return_value=target),
+            mock.patch.object(dispatcher, "git", side_effect=review_base_git),
+            mock.patch.object(
+                dispatcher.subprocess,
+                "run",
+                return_value=subprocess.CompletedProcess([], 0, "", ""),
+            ),
             mock.patch.object(dispatcher, "changed_paths", return_value=paths),
             mock.patch.object(
                 dispatcher, "synchronized_repository_shas", return_value=synchronized
@@ -5783,7 +5797,9 @@ raise SystemExit(64)
             )
             self.assertEqual(record["stage"], "publication")
 
-    def test_independent_review_refuses_untracked_candidate_before_model_call(self) -> None:
+    def test_independent_review_materializes_verified_untracked_candidate_before_model_call(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             repo = self.make_repo(root)
@@ -5820,12 +5836,27 @@ raise SystemExit(64)
                 "verified_paths": ["candidate-review.py"],
                 "verified_repository_fingerprint": fingerprint,
             }
-            with (
-                mock.patch.object(dispatcher, "invoke_model") as invoke,
-                self.assertRaisesRegex(AutomationError, "refuses untracked candidate files"),
-            ):
-                dispatcher.independent_review(record, {"actionable": True})
-            invoke.assert_not_called()
+            dispatcher.materialize_verified_v1_021_untracked_review_diff(record)
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "ls-files", "--others", "--exclude-standard"],
+                    cwd=repo,
+                    text=True,
+                ),
+                "",
+            )
+            self.assertIn(
+                "+print('untracked')",
+                subprocess.check_output(
+                    ["git", "diff", "--binary", base_commit, "--", "candidate-review.py"],
+                    cwd=repo,
+                    text=True,
+                ),
+            )
+            self.assertEqual(
+                record["repository_fingerprint"],
+                record["verified_repository_fingerprint"],
+            )
 
     def test_independent_review_treats_tracked_path_magic_as_literal(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -5914,7 +5945,7 @@ raise SystemExit(64)
             assert isinstance(materialized, dict)
             self.assertIn("+reviewed literal change", str(materialized["content"]))
 
-    def test_independent_review_detects_untracked_path_magic_literal(self) -> None:
+    def test_independent_review_materializes_untracked_path_magic_literal(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             repo = self.make_repo(root)
@@ -5948,14 +5979,26 @@ raise SystemExit(64)
                 "verified_paths": [magic_path],
                 "verified_repository_fingerprint": fingerprint,
             }
-            with (
-                mock.patch.object(dispatcher, "invoke_model") as invoke,
-                self.assertRaisesRegex(
-                    AutomationError, "refuses untracked candidate files"
+            dispatcher.materialize_verified_v1_021_untracked_review_diff(record)
+            literal_environment = {**os.environ, "GIT_LITERAL_PATHSPECS": "1"}
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "ls-files", "--others", "--exclude-standard", "--", magic_path],
+                    cwd=repo,
+                    text=True,
+                    env=literal_environment,
                 ),
-            ):
-                dispatcher.independent_review(record, {"actionable": True})
-            invoke.assert_not_called()
+                "",
+            )
+            self.assertIn(
+                "+untracked literal",
+                subprocess.check_output(
+                    ["git", "diff", "--binary", base_commit, "--", magic_path],
+                    cwd=repo,
+                    text=True,
+                    env=literal_environment,
+                ),
+            )
 
     def test_independent_review_rejects_non_utf8_diff_before_model(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

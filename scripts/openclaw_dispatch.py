@@ -5045,46 +5045,105 @@ def deterministic_verification(record: dict[str, Any]) -> None:
 
 
 def normalize_verified_v1_021_review_base(record: dict[str, Any]) -> None:
-    """Restore the exact green V1-021 base after compact-state bootstrapping."""
+    """Rebind verified candidate work after an exact green automation-only repair."""
     if (
-        record.get("candidate") != "V1-021"
-        or record.get("stage") != "independent_review"
+        record.get("stage") != "independent_review"
         or record.get("deterministic_verification_passed") is not True
     ):
         return
+    previous = str(record.get("candidate_base_commit") or "")
+    target = git(REPO, "rev-parse", "HEAD")
+    if previous == target:
+        return
+    if not re.fullmatch(r"[0-9a-f]{40}", previous):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "verified review base is missing before automation rebase",
+        )
     rebases = record.get("automation_rebases")
     latest = rebases[-1] if isinstance(rebases, list) and rebases else None
-    if not isinstance(latest, dict):
-        return
-    target = str(latest.get("to_commit") or "")
-    if (
-        not re.fullmatch(r"[0-9a-f]{40}", target)
-        or target != git(REPO, "rev-parse", "HEAD")
-        or not isinstance(latest.get("run_id"), int)
-        or not latest.get("url")
-    ):
-        return
-    actual = changed_paths(REPO)
-    if actual != list(V1_021_QUERY_VERIFIED_PATHS):
-        return
+    exact_green_rebase = bool(
+        isinstance(latest, dict)
+        and latest.get("to_commit") == target
+        and isinstance(latest.get("run_id"), int)
+        and latest.get("url")
+    )
+    repair_paths = git(REPO, "diff", "--name-only", previous, target, "--").splitlines()
+    ancestor = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", previous, target],
+        cwd=REPO,
+        capture_output=True,
+        check=False,
+    ).returncode == 0
+    if not ancestor or not activation_ci_repair_paths_allowed(repair_paths):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "verified review candidate is not based on an automation-only descendant",
+        )
     synchronized = synchronized_repository_shas()
     if any(
         synchronized.get(name) != target for name in ("local", "upstream", "remote")
     ):
         raise AutomationError(
             "repository_integrity_uncertainty",
-            "the green V1-021 automation-rebase head is not synchronized",
+            "the green automation-review-rebase head is not synchronized",
+        )
+    if not exact_green_rebase:
+        candidate = str(record.get("candidate") or "unknown")
+        evidence_path = STATE_DIR / "ci" / f"review-rebase-{candidate}-{target}.json"
+        ci = run(
+            str(REPO / "scripts/openclaw-wait-for-ci.sh"),
+            target,
+            "--evidence",
+            str(evidence_path),
+            check=False,
+        )
+        if ci.returncode:
+            raise AutomationError(
+                "remote_ci_failure",
+                f"review automation-rebase CI exited {ci.returncode} for {target}",
+            )
+        try:
+            evidence = json.loads(evidence_path.read_text())
+        except (OSError, json.JSONDecodeError) as error:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "review automation rebase has no readable exact-CI evidence",
+            ) from error
+        if (
+            evidence.get("status") != "success"
+            or evidence.get("commit") != target
+            or evidence.get("head_sha") != target
+            or not isinstance(evidence.get("run_id"), int)
+        ):
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                "review automation-rebase CI evidence is not bound to exact HEAD",
+            )
+        latest = {
+            "from_commit": previous,
+            "to_commit": target,
+            "paths": repair_paths,
+            "run_id": evidence["run_id"],
+            "url": evidence.get("url"),
+            "timestamp": utc_now(),
+        }
+        record.setdefault("automation_rebases", []).append(latest)
+    assert isinstance(latest, dict)
+    actual = changed_paths(REPO)
+    expected = sorted(record.get("scoped_changed_paths") or [])
+    if actual != expected:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the green automation review rebase changed the candidate path scope",
         )
     rebased_paths = full_candidate_paths({"candidate_base_commit": target})
     if rebased_paths != actual:
         raise AutomationError(
             "repository_integrity_uncertainty",
-            "the green V1-021 review base does not isolate the exact dirty candidate",
+            "the green review base does not isolate the exact dirty candidate",
         )
     fingerprint = repository_fingerprint(REPO)
-    previous = str(record.get("candidate_base_commit") or "")
-    if previous == target:
-        return
     record.setdefault("events", []).append(
         {
             "stage": "independent_review",
@@ -5117,8 +5176,7 @@ def normalize_verified_v1_021_review_base(record: dict[str, Any]) -> None:
 def materialize_verified_v1_021_untracked_review_diff(record: dict[str, Any]) -> None:
     """Expose exact verified new files to Git diff without staging their content."""
     if (
-        record.get("candidate") != "V1-021"
-        or record.get("stage") != "independent_review"
+        record.get("stage") != "independent_review"
         or record.get("deterministic_verification_passed") is not True
     ):
         return
@@ -5127,10 +5185,14 @@ def materialize_verified_v1_021_untracked_review_diff(record: dict[str, Any]) ->
         return
     preparation_fingerprint = repository_fingerprint(REPO)
     current_paths = full_candidate_paths(record)
+    if current_paths != expected:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "independent-review scope omits or adds a base-to-HEAD candidate path",
+        )
     if (
         record.get("verified_repository_fingerprint") != preparation_fingerprint
         or sorted(record.get("verified_paths") or []) != current_paths
-        or current_paths != expected
     ):
         record.update(
             {
@@ -5158,7 +5220,7 @@ def materialize_verified_v1_021_untracked_review_diff(record: dict[str, Any]) ->
     if any(path not in expected for path in untracked):
         raise AutomationError(
             "repository_integrity_uncertainty",
-            "V1-021 review preparation encountered an unscoped untracked path",
+            "review preparation encountered an unscoped untracked path",
         )
     before = changed_paths(REPO)
     subprocess.run(
@@ -5181,7 +5243,7 @@ def materialize_verified_v1_021_untracked_review_diff(record: dict[str, Any]) ->
     ):
         raise AutomationError(
             "repository_integrity_uncertainty",
-            "V1-021 intent-to-add review preparation changed the candidate scope",
+            "intent-to-add review preparation changed the candidate scope",
         )
     fingerprint = repository_fingerprint(REPO)
     record.setdefault("events", []).append(
