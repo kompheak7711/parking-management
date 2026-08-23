@@ -3574,6 +3574,63 @@ evidence.write_text(json.dumps({
                 )
                 partial.unlink()
 
+                exact_v1_023_paths = list(dispatcher.V1_023_STORAGE_VERIFIED_PATHS)
+                for relative in exact_v1_023_paths:
+                    path = repo / relative
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_text(f"candidate content for {relative}\n")
+                deterministic_base = second_repair
+                deterministic_record = {
+                    "candidate": "V1-023",
+                    "candidate_base_commit": deterministic_base,
+                    "stage": "deterministic_verification",
+                    "completed_implementation_substages": [
+                        "unit_storage",
+                        "unit_availability",
+                    ],
+                    "implementation_complete": True,
+                    "deterministic_verification_passed": False,
+                    "last_failure_category": None,
+                    "repair_failure": None,
+                    "scoped_changed_paths": exact_v1_023_paths,
+                    "expected_worktree_paths": exact_v1_023_paths,
+                    "repository_fingerprint": dispatcher.repository_fingerprint(repo),
+                    "preserved_partial_work": {
+                        "paths": exact_v1_023_paths,
+                        "path_fingerprint": dispatcher.preserved_paths_fingerprint(
+                            repo, exact_v1_023_paths
+                        ),
+                    },
+                }
+                wait.write_text(wait.read_text() + "\n# deterministic repair\n")
+                subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
+                subprocess.run(
+                    ["git", "commit", "-qm", "repair deterministic routing"],
+                    cwd=repo,
+                    check=True,
+                )
+                subprocess.run(["git", "push", "-q"], cwd=repo, check=True)
+                deterministic_repair = subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+                ).strip()
+
+                dispatcher.rebase_pending_automation_recovery(deterministic_record)
+
+                self.assertEqual(
+                    deterministic_record["candidate_base_commit"],
+                    deterministic_repair,
+                )
+                self.assertEqual(
+                    deterministic_record["automation_rebases"][0]["paths"],
+                    ["scripts/openclaw-wait-for-ci.sh"],
+                )
+                self.assertEqual(
+                    dispatcher.full_candidate_paths(deterministic_record),
+                    exact_v1_023_paths,
+                )
+                for relative in exact_v1_023_paths:
+                    (repo / relative).unlink()
+
                 product = repo / "backend/src/property_rental/audit.py"
                 product.parent.mkdir(parents=True, exist_ok=True)
                 product.write_text("product change\n")

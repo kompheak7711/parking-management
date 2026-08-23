@@ -2908,6 +2908,7 @@ def candidate_automation_rebase_allowed(record: dict[str, Any]) -> bool:
     return bool(
         record.get("recovery_pending") is True
         or v1_023_review_repair_rebase_allowed(record)
+        or v1_023_deterministic_verification_rebase_allowed(record)
         or v1_023_mutation_transport_incident(record, repository_fingerprint(REPO))
         or (
             record.get("candidate") == "V1-023"
@@ -2917,6 +2918,25 @@ def candidate_automation_rebase_allowed(record: dict[str, Any]) -> bool:
             and record.get("last_failure_category") is None
             and record.get("product_code_modification_permitted") is True
         )
+    )
+
+
+def v1_023_deterministic_verification_rebase_allowed(
+    record: dict[str, Any],
+) -> bool:
+    """Permit complete V1-023 work to adopt only an automation-only green base."""
+    exact_paths = list(V1_023_STORAGE_VERIFIED_PATHS)
+    return bool(
+        record.get("candidate") == "V1-023"
+        and record.get("stage") == "deterministic_verification"
+        and record.get("completed_implementation_substages")
+        == ["unit_storage", "unit_availability"]
+        and record.get("implementation_complete") is True
+        and record.get("deterministic_verification_passed") is not True
+        and record.get("last_failure_category") is None
+        and record.get("repair_failure") is None
+        and sorted(record.get("expected_worktree_paths") or []) == exact_paths
+        and sorted(record.get("scoped_changed_paths") or []) == exact_paths
     )
 
 
@@ -3031,7 +3051,7 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
     )
     current_paths = changed_paths(REPO)
     if (
-        record.get("stage") != "implementation"
+        record.get("stage") not in {"implementation", "deterministic_verification"}
         or not candidate_automation_rebase_allowed(record)
         or current_paths != expected_paths
     ):
@@ -5237,6 +5257,7 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
 def deterministic_verification(record: dict[str, Any]) -> None:
     if recover_verified_v1_021_authorized_query(record):
         return
+    rebase_pending_automation_recovery(record)
     consume_pending_continuation(record, "deterministic_verification")
     current_paths = full_candidate_paths(record)
     if current_paths != sorted(record.get("scoped_changed_paths") or []):
