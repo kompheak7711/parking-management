@@ -24,6 +24,6 @@
   Actions, reconcile it complete, then activate V1-026.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation publication state: published on implementation/foundation at bc8d68c9241fffd96612d6608b82ae719069dbef.
-- Automation exact next action: Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.
+- Automation candidate state: V1-026 approved and active; implementation has not started.
+- Automation exact next action: Implement the approved bounded candidate: Customer API and management UI
 <!-- AUTOMATION_STATUS_END -->

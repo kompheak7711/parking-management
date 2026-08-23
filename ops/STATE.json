@@ -1,17 +1,16 @@
 {
-  "active_cycle": "v1-025-customer-identity-and-history-persistence",
+  "active_cycle": "v1-026-customer-api-and-management-ui",
   "approval": {
-    "status": "approved_active",
-    "basis": "owner-approved direct takeover of V1-024 through V1-026 under durable V1 authorization",
-    "implementation_started": true,
-    "implementation_completed": true,
-    "publication_completed": true
+    "status": "approved_ready",
+    "basis": "structured durable-v1 successor selection",
+    "implementation_started": false,
+    "implementation_completed": false,
+    "publication_completed": false
   },
   "authorities": [
-    "BR-CUST-*",
-    "PR-CUST-*",
-    "DB-CUST-*",
-    "TEST-023"
+    "API-030-031",
+    "UI-CUST-*",
+    "SEC-041-044"
   ],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -678,33 +677,32 @@
     "prior_review_disposition": "Two FAIL rounds corrected: exact object, CSRF, concurrency, pagination, response, validation, result binding, pre-resolution authorization, immutable audit, and atomic session revocation findings; fresh exact-snapshot independent review pending",
     "tranche_id": "V1-018"
   },
-  "idle_reason": "published candidate awaits deterministic successor selection",
-  "next_action": "Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.",
+  "idle_reason": null,
+  "next_action": "Implement the approved bounded candidate: Customer API and management UI",
   "next_candidate": {
-    "acceptance_profile": "database",
+    "acceptance_profile": "api_ui",
     "authorities": [
-      "BR-CUST-*",
-      "PR-CUST-*",
-      "DB-CUST-*",
-      "TEST-023"
+      "API-030-031",
+      "UI-CUST-*",
+      "SEC-041-044"
     ],
     "authorization": "durable_v1",
     "dependencies": [
-      "V1-022"
+      "V1-025"
     ],
     "exclude": [
       "financial ledger"
     ],
-    "id": "V1-025",
+    "id": "V1-026",
     "include": [
-      "reusable customer identity and history"
+      "customer create/read/update and history-safe deactivation"
     ],
-    "order": 25,
+    "order": 26,
     "phase": "Core",
     "risk_class": "high",
     "status": "approved_ready",
-    "task": "Customer identity and history persistence",
-    "roadmap_id": "V1-025"
+    "task": "Customer API and management UI",
+    "roadmap_id": "V1-026"
   },
   "owner_action": "none",
   "owner_decisions": {
@@ -728,13 +726,12 @@
     "tranche_id": "V1-025"
   },
   "relevant_docs": [
-    "BR-CUST-*",
-    "PR-CUST-*",
-    "DB-CUST-*",
-    "TEST-023"
+    "API-030-031",
+    "UI-CUST-*",
+    "SEC-041-044"
   ],
   "repair": {
-    "tranche_id": "V1-025",
+    "tranche_id": "V1-026",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -762,25 +759,19 @@
   "risk_class": "high",
   "roadmap": {
     "completed": 24,
-    "current_id": "V1-025",
+    "current_id": "V1-026",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Implement the approved bounded candidate: Customer identity and history persistence",
-  "tests": [
-    "533 backend tests passed with 169 expected environment skips",
-    "170 disposable-PostgreSQL migration and runtime tests passed",
-    "Ruff formatting and lint passed",
-    "strict backend typing passed",
-    "TEST-023 traceability passed"
-  ],
+  "status": "active",
+  "task": "Implement the approved bounded candidate: Customer API and management UI",
+  "tests": [],
   "tests_tranche_id": "V1-025",
-  "timestamp": "2026-08-23T23:00:22Z",
+  "timestamp": "2026-08-23T23:02:55Z",
   "touched_areas": [
-    "reusable customer identity and history"
+    "customer create/read/update and history-safe deactivation"
   ],
-  "tranche": "Customer identity and history persistence"
+  "tranche": "Customer API and management UI"
 }
