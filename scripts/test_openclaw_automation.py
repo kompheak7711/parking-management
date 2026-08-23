@@ -3785,6 +3785,7 @@ evidence.write_text(json.dumps({
                 ["property_storage"],
             )
             self.assertEqual(storage_record["stage"], "implementation")
+            self.assertIsNone(storage_record["failed_check"])
 
             api_paths = list(dispatcher.V1_022_API_VERIFIED_PATHS)
             api_record = {
