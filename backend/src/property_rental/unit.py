@@ -182,6 +182,7 @@ class Unit:
     floor: str
     unit_type: UnitType
     status: UnitStatus
+    version: int = 1
 
     def __post_init__(self) -> None:
         """Enforce Unit identity and supported-value invariants."""
@@ -201,6 +202,8 @@ class Unit:
             raise ValueError("unit_type is not supported")
         if not isinstance(self.status, UnitStatus):
             raise ValueError("status is not supported")
+        if self.version < 1:
+            raise ValueError("version must be positive")
 
 
 class UnitRepository(Protocol):
@@ -226,7 +229,7 @@ class PostgresUnitRepository:
         with psycopg.connect(self.database_url) as connection:
             row = connection.execute(
                 """
-                SELECT id, property_id, unit_number, floor, unit_type, status
+                SELECT id, property_id, unit_number, floor, unit_type, status, version
                 FROM app.units
                 WHERE property_id = %s
                   AND unit_number = %s
@@ -240,7 +243,7 @@ class PostgresUnitRepository:
             with psycopg.connect(self.database_url) as connection:
                 row = connection.execute(
                     """
-                    SELECT id, property_id, unit_number, floor, unit_type, status
+                    SELECT id, property_id, unit_number, floor, unit_type, status, version
                     FROM app.create_unit(%s, %s, %s, %s, %s, %s, %s)
                     """,
                     (
@@ -318,4 +321,5 @@ def _unit_from_row(row: tuple[object, ...]) -> Unit:
         floor=str(row[3]),
         unit_type=UnitType(str(row[4])),
         status=UnitStatus(str(row[5])),
+        version=int(str(row[6])),
     )

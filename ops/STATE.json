@@ -1,10 +1,10 @@
 {
   "active_cycle": "v1-024-unit-api-and-management-ui",
   "approval": {
-    "status": "approved_ready",
-    "basis": "structured durable-v1 successor selection",
-    "implementation_started": false,
-    "implementation_completed": false,
+    "status": "approved_active",
+    "basis": "owner-approved direct takeover of V1-024 through V1-026 under durable V1 authorization",
+    "implementation_started": true,
+    "implementation_completed": true,
     "publication_completed": false
   },
   "authorities": [
@@ -671,7 +671,7 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "61b2c5156ae32fd7c9d37139a6ca2258319d5cef",
+  "commit": "757c04d968aba2652a0347f7b3f80f05367290d2",
   "evidence_applicability": {
     "basis": "all 15 deterministic gates were rerun after the V1-018 reviewer-requested authorization, CSRF, concurrency, pagination, response, validation, result-binding, test, traceability, and compact-state corrections",
     "complete_profile_remains_applicable": true,
@@ -679,7 +679,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Implement the approved bounded candidate: Unit API and management UI",
+  "next_action": "Review and publish the verified V1-024 candidate, require successful GitHub Actions, then activate V1-025.",
   "next_candidate": {
     "acceptance_profile": "api_ui",
     "authorities": [
@@ -716,22 +716,16 @@
   },
   "phase": "Core",
   "publication": {
-    "ci_completed": true,
-    "ci_conclusion": "success",
-    "ci_run_id": 32461040956,
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32461040956",
-    "commit_completed": true,
-    "implementation_commit": "98ee724e98d2442fd0254bd825256707108f71c8",
-    "metadata_reconciliation": "published_and_ci_verified",
-    "push_completed": true,
-    "reconciliation_ci_conclusion": "success",
-    "reconciliation_ci_run_id": 32461385184,
-    "reconciliation_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32461385184",
-    "reconciliation_commit": "5a580c33be98cc29f30caf195000c712fd62998c",
-    "roadmap_reconciliation": "current focused three-path commit; V1-019 remains unselected",
-    "sha_reconciled": true,
-    "status": "published",
-    "tranche_id": "V1-018"
+    "ci_completed": false,
+    "ci_conclusion": null,
+    "ci_run_id": null,
+    "ci_run_url": null,
+    "commit_completed": false,
+    "implementation_commit": null,
+    "push_completed": false,
+    "sha_reconciled": false,
+    "status": "verified_unpublished",
+    "tranche_id": "V1-024"
   },
   "relevant_docs": [
     "API-028-029",
@@ -752,33 +746,38 @@
     "last_outcome": null
   },
   "review": {
-    "complete_candidate_paths": 19,
+    "complete_candidate_paths": 15,
     "final_local_checks": [
-      "PASS: complete 19-path V1-019 candidate diff",
-      "PASS: sign-in, MFA, recovery codes, session restoration/expiry, account/capability administration, authorization history, and administrative recovery contracts",
-      "PASS: protected recovery remains CSRF-, session-, capability-, property-, object-, recent-authentication-, audit-reason-, and explicit-confirmation-gated",
-      "PASS: no first-Owner web route, no external identity provider, no SMS/security-question flow, and no role-label authority",
+      "PASS: authenticated Unit list/detail and immutable timeline contracts",
+      "PASS: scoped property.manage mutations and optimistic concurrency",
+      "PASS: accessible capability-sensitive Unit management UI",
+      "PASS: 158 disposable-PostgreSQL migration and runtime tests",
       "PASS: git diff --check"
     ],
     "final_verdict": "PASS",
     "review_kind": "local_direct_takeover_review",
     "status": "PASS",
-    "tranche_id": "V1-019"
+    "tranche_id": "V1-024"
   },
   "risk_class": "medium",
   "roadmap": {
-    "completed": 18,
+    "completed": 23,
     "current_id": "V1-024",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "active",
+  "status": "verified_unpublished",
   "task": "Implement the approved bounded candidate: Unit API and management UI",
-  "tests": [],
-  "tests_tranche_id": "V1-020",
-  "timestamp": "2026-08-23T16:56:57Z",
+  "tests": [
+    "PASS: format, lint, backend/frontend type checks, builds, and import checks",
+    "PASS: 520 backend tests; 156 expected local database-environment skips",
+    "PASS: 47 frontend tests",
+    "PASS: 158 disposable-PostgreSQL tests"
+  ],
+  "tests_tranche_id": "V1-024",
+  "timestamp": "2026-08-23T22:28:25Z",
   "touched_areas": [
     "unit list/detail/history and controlled operational status"
   ],

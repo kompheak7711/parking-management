@@ -4143,6 +4143,78 @@
       "test_path": "backend/tests/test_unit_migration.py",
       "status": "implemented",
       "notes": "V1-023 Unit identity, availability, and history coverage for test_postgres_repository_distinguishes_duplicate_unit_identity."
+    },
+    {
+      "test_id": "test_unit_list_is_authenticated_bounded_filtered_and_capability_sensitive",
+      "upstream_ids": ["API-028", "TEST-087", "TEST-089", "TEST-095"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "V1-024 covers authenticated bounded Unit listing, filters, operational alerts, and scoped mutation capability metadata."
+    },
+    {
+      "test_id": "test_unit_create_rejects_unscoped_actor_and_unknown_fields",
+      "upstream_ids": ["API-028", "TEST-087", "TEST-088", "TEST-095"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "V1-024 rejects unscoped Unit creation and undeclared source fields before persistence."
+    },
+    {
+      "test_id": "test_unit_create_detail_and_version_checked_patch",
+      "upstream_ids": ["API-028", "TEST-087", "TEST-090"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "V1-024 covers stable Unit identity, detail, ETags, and version-precondition conflicts."
+    },
+    {
+      "test_id": "test_unit_timeline_preserves_event_identity_and_has_no_delete_route",
+      "upstream_ids": ["API-029", "UI-027", "UI-084", "TEST-088", "TEST-089"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_unit_api.py",
+      "status": "implemented",
+      "notes": "V1-024 returns immutable Unit event identity and deliberately exposes no generic Unit deletion route."
+    },
+    {
+      "test_id": "TEST-FE-027",
+      "upstream_ids": ["UI-025", "UI-027", "TEST-091", "TEST-094", "TEST-095"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "status": "implemented",
+      "notes": "V1-024 verifies semantic Unit tables, operational alerts, and authorized management controls."
+    },
+    {
+      "test_id": "TEST-FE-028",
+      "upstream_ids": ["UI-027", "TEST-095"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "status": "implemented",
+      "notes": "V1-024 hides Unit mutation controls unless the server confirms scoped capability."
+    },
+    {
+      "test_id": "TEST-FE-029",
+      "upstream_ids": ["UI-026", "UI-084", "TEST-091", "TEST-092", "TEST-094"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "status": "implemented",
+      "notes": "V1-024 keeps Unit source sections distinct and renders immutable event history."
+    },
+    {
+      "test_id": "TEST-FE-030",
+      "upstream_ids": ["TEST-088", "TEST-090", "TEST-091", "TEST-094", "TEST-095"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UnitManagement.test.tsx",
+      "status": "implemented",
+      "notes": "V1-024 announces authorization and optimistic-concurrency failures without exposing unavailable actions."
+    },
+    {
+      "test_id": "test_runtime_unit_flow_creates_updates_and_returns_immutable_timeline",
+      "upstream_ids": ["API-028", "API-029", "UI-084", "TEST-022", "TEST-090"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_unit_migration.py",
+      "status": "implemented",
+      "notes": "V1-024 proves the least-privilege runtime flow creates and version-updates Units atomically with immutable audit timeline events."
     }
   ]
 }

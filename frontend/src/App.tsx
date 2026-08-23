@@ -25,6 +25,8 @@ import {
   PropertyConfigurationUnavailableError,
   propertyConfigurationApi,
 } from "./propertyClient";
+import { UnitManagement } from "./UnitManagement";
+import { UnitApi } from "./unitClient";
 
 export interface AppProps {
   environment: string;
@@ -33,6 +35,7 @@ export interface AppProps {
   api?: AuthenticationApi;
   administrationApi?: AccessAdministrationApi;
   propertyApi?: PropertyConfigurationApi;
+  unitApi?: UnitApi;
   now?: () => number;
 }
 
@@ -59,6 +62,7 @@ export function App({
   api,
   administrationApi = accessAdministrationApi,
   propertyApi = propertyConfigurationApi,
+  unitApi,
   now = Date.now,
 }: AppProps) {
   const client = useMemo<AuthenticationApi>(
@@ -1137,6 +1141,7 @@ export function App({
                 </div>
               )}
             </section>
+            <UnitManagement api={unitApi} />
             <section
               aria-labelledby="administration-heading"
               className="information-card"

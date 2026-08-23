@@ -50,6 +50,13 @@ from property_rental.property_api import (
     create_property_router,
 )
 from property_rental.settings import Settings
+from property_rental.unit_api import (
+    PostgresUnitResourceFlow,
+    UnavailableUnitResourceFlow,
+    UnitResourceFlow,
+    UnitVersionConflict,
+    create_unit_router,
+)
 
 REQUEST_ID_HEADER: Final = "X-Request-ID"
 REQUEST_ID_PATTERN: Final = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -165,6 +172,7 @@ def create_app(
     access_administration_flow: AccessAdministrationFlow | None = None,
     audit_query_flow: AuditEventQueryFlow | None = None,
     property_resource_flow: PropertyResourceFlow | None = None,
+    unit_resource_flow: UnitResourceFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -288,6 +296,17 @@ def create_app(
             current_version=exc.current_version,
         )
 
+    @app.exception_handler(UnitVersionConflict)
+    async def unit_version_conflict(
+        request: Request,
+        exc: UnitVersionConflict,
+    ) -> JSONResponse:
+        return error_response(
+            status.HTTP_412_PRECONDITION_FAILED,
+            request.state.request_id,
+            current_version=exc.current_version,
+        )
+
     @app.middleware("http")
     async def add_request_id(
         request: Request,
@@ -362,6 +381,17 @@ def create_app(
                 PostgresPropertyResourceFlow(resolved_settings.database_url.get_secret_value())
                 if resolved_settings.database_url is not None
                 else UnavailablePropertyResourceFlow()
+            ),
+        )
+    )
+    app.include_router(
+        create_unit_router(
+            actor_resolver,
+            unit_resource_flow
+            or (
+                PostgresUnitResourceFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableUnitResourceFlow()
             ),
         )
     )

@@ -21,6 +21,7 @@ from property_rental.unit import (
     UnitStatus,
     UnitType,
 )
+from property_rental.unit_api import PostgresUnitResourceFlow
 
 
 @pytest.fixture(scope="session")
@@ -473,6 +474,72 @@ def test_postgres_repository_distinguishes_duplicate_unit_identity(
                 status=UnitStatus.VACANT,
             )
         )
+
+
+def test_runtime_unit_flow_creates_updates_and_returns_immutable_timeline(
+    migrated_database_url: str,
+) -> None:
+    runtime_url = os.environ.get("APP_DATABASE_URL")
+    if runtime_url is None:
+        pytest.skip("APP_DATABASE_URL is required for runtime-role migration tests")
+    actor_id = uuid4()
+    property_id = uuid4()
+    unit_number = f"API-{uuid4()}"
+    with psycopg.connect(migrated_database_url, autocommit=True) as admin:
+        admin.execute(
+            """
+            INSERT INTO app.user_accounts (
+                actor_id, normalized_username, display_name, audit_name,
+                lifecycle_state, mfa_policy_class, provenance
+            ) VALUES (%s, %s, 'Unit API', 'Unit API', 'active', 'optional', 'test')
+            """,
+            (actor_id, f"unit-api-{actor_id}"),
+        )
+        existing_property = admin.execute("SELECT id FROM app.properties").fetchone()
+        if existing_property is None:
+            admin.execute(
+                """
+                INSERT INTO app.properties (id, name, created_by, updated_by)
+                VALUES (%s, 'Unit API Property', %s, %s)
+                """,
+                (property_id, actor_id, actor_id),
+            )
+        else:
+            property_id = UUID(str(existing_property[0]))
+
+    flow = PostgresUnitResourceFlow(runtime_url)
+    created = flow.create(
+        property_id,
+        unit_number=unit_number,
+        floor="1",
+        unit_type=UnitType.STUDIO,
+        unit_status=UnitStatus.VACANT,
+        actor_id=str(actor_id),
+    )
+    updated = flow.patch(
+        created.unit_id,
+        unit_number=unit_number,
+        floor="2",
+        unit_type=UnitType.ONE_BEDROOM,
+        unit_status=UnitStatus.CLEANING,
+        expected_version=1,
+        actor_id=str(actor_id),
+    )
+    timeline = flow.timeline(created.unit_id, limit=10, cursor=None)
+
+    assert updated.version == 2
+    assert updated.floor == "2"
+    assert updated.status is UnitStatus.CLEANING
+    assert [event.action for event in timeline.items] == ["unit.updated", "unit.created"]
+    assert timeline.items[0].previous_state == {
+        "unit_id": str(created.unit_id),
+        "property_id": str(property_id),
+        "unit_number": unit_number,
+        "floor": "1",
+        "unit_type": "STUDIO",
+        "status": "VACANT",
+        "version": 1,
+    }
 
 
 def test_migration_is_forward_only(migrated_database_url: str) -> None:
