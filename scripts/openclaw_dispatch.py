@@ -3107,10 +3107,18 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
                     "reviewed_repository_fingerprint"
                 )
             )
+            deterministic_repair_match = bool(
+                v1_023_deterministic_verification_rebase_allowed(record)
+                and current_paths == list(V1_023_STORAGE_VERIFIED_PATHS)
+                and v1_023_review_repair_contract_satisfied()
+                and record.get("repository_fingerprint")
+                == repository_fingerprint(REPO)
+            )
             if (
                 historical_match
                 or mutation_transport_match
                 or reviewed_repair_match
+                or deterministic_repair_match
             ) and isinstance(preserved, dict):
                 preserved.update(
                     {

@@ -3597,9 +3597,7 @@ evidence.write_text(json.dumps({
                     "repository_fingerprint": dispatcher.repository_fingerprint(repo),
                     "preserved_partial_work": {
                         "paths": exact_v1_023_paths,
-                        "path_fingerprint": dispatcher.preserved_paths_fingerprint(
-                            repo, exact_v1_023_paths
-                        ),
+                        "path_fingerprint": "verified-before-automation",
                     },
                 }
                 wait.write_text(wait.read_text() + "\n# deterministic repair\n")
@@ -3660,7 +3658,14 @@ evidence.write_text(json.dumps({
                     ),
                 )
 
-                dispatcher.rebase_pending_automation_recovery(deterministic_record)
+                with mock.patch.object(
+                    dispatcher,
+                    "v1_023_review_repair_contract_satisfied",
+                    return_value=True,
+                ):
+                    dispatcher.rebase_pending_automation_recovery(
+                        deterministic_record
+                    )
 
                 self.assertEqual(
                     deterministic_record["candidate_base_commit"],
@@ -3673,6 +3678,14 @@ evidence.write_text(json.dumps({
                 self.assertEqual(
                     dispatcher.full_candidate_paths(deterministic_record),
                     exact_v1_023_paths,
+                )
+                self.assertEqual(
+                    deterministic_record["preserved_partial_work"][
+                        "path_fingerprint"
+                    ],
+                    dispatcher.preserved_paths_fingerprint(
+                        repo, exact_v1_023_paths
+                    ),
                 )
                 for relative in exact_v1_023_paths:
                     (repo / relative).unlink()
