@@ -3080,6 +3080,95 @@ evidence.write_text(json.dumps({
                 )
             )
 
+    def test_pending_candidate_recovery_rebases_only_green_automation_descendant(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo, _ = self.make_activation_repo(root)
+            base = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            wait = repo / "scripts/openclaw-wait-for-ci.sh"
+            wait.write_text(
+                """#!/usr/bin/env python3
+import json
+import sys
+from pathlib import Path
+
+sha = sys.argv[1]
+evidence = Path(sys.argv[sys.argv.index("--evidence") + 1])
+evidence.parent.mkdir(parents=True, exist_ok=True)
+evidence.write_text(json.dumps({
+    "status": "success",
+    "commit": sha,
+    "head_sha": sha,
+    "run_id": 13579,
+    "url": "https://example.invalid/actions/runs/13579",
+}))
+"""
+            )
+            wait.chmod(0o755)
+            subprocess.run(["git", "add", "scripts"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "repair candidate routing"],
+                cwd=repo,
+                check=True,
+            )
+            subprocess.run(["git", "push", "-q"], cwd=repo, check=True)
+            repaired = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            spec = importlib.util.spec_from_file_location(
+                "candidate_rebase_dispatch", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(root / "state"),
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+                record = {
+                    "candidate": "V1-021",
+                    "candidate_base_commit": base,
+                    "stage": "implementation",
+                    "recovery_pending": True,
+                    "expected_worktree_paths": [],
+                    "repository_fingerprint": "prior",
+                    "ceiling_recovery_attempts": {"audit_storage": 1},
+                }
+                dispatcher.rebase_pending_automation_recovery(record)
+                self.assertEqual(record["candidate_base_commit"], repaired)
+                self.assertEqual(record["ceiling_recovery_attempts"], {"audit_storage": 1})
+                self.assertEqual(record["automation_rebases"][0]["run_id"], 13579)
+                self.assertEqual(
+                    record["automation_rebases"][0]["paths"],
+                    ["scripts/openclaw-wait-for-ci.sh"],
+                )
+
+                product = repo / "backend/src/property_rental/audit.py"
+                product.parent.mkdir(parents=True)
+                product.write_text("product change\n")
+                subprocess.run(["git", "add", "backend"], cwd=repo, check=True)
+                subprocess.run(
+                    ["git", "commit", "-qm", "product change"], cwd=repo, check=True
+                )
+                subprocess.run(["git", "push", "-q"], cwd=repo, check=True)
+                rejected = {
+                    "candidate": "V1-021",
+                    "candidate_base_commit": repaired,
+                    "stage": "implementation",
+                    "recovery_pending": True,
+                    "expected_worktree_paths": [],
+                }
+                dispatcher.rebase_pending_automation_recovery(rejected)
+                self.assertEqual(rejected["candidate_base_commit"], repaired)
+                self.assertNotIn("automation_rebases", rejected)
+
     def test_publication_requires_exact_reviewed_content_and_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

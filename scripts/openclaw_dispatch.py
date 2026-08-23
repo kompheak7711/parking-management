@@ -2582,6 +2582,87 @@ def publish_state_contract_repair(record: dict[str, Any]) -> None:
     save_stage(record)
 
 
+def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
+    """Rebind untouched candidate work to one exact green automation-only descendant."""
+    if (
+        record.get("stage") != "implementation"
+        or record.get("recovery_pending") is not True
+        or record.get("expected_worktree_paths") not in (None, [])
+        or changed_paths(REPO)
+    ):
+        return
+    base = str(record.get("candidate_base_commit") or "")
+    current = git(REPO, "rev-parse", "HEAD")
+    if current == base:
+        return
+    if not re.fullmatch(r"[0-9a-f]{40}", base):
+        return
+    ancestor = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", base, current],
+        cwd=REPO,
+        capture_output=True,
+        check=False,
+    ).returncode == 0
+    repair_paths = git(REPO, "diff", "--name-only", base, current, "--").splitlines()
+    if not ancestor or not activation_ci_repair_paths_allowed(repair_paths):
+        return
+    synchronized_repository_shas()
+    candidate = str(record.get("candidate") or "unknown")
+    evidence_path = STATE_DIR / "ci" / f"candidate-rebase-{candidate}-{current}.json"
+    ci = run(
+        str(REPO / "scripts/openclaw-wait-for-ci.sh"),
+        current,
+        "--evidence",
+        str(evidence_path),
+        check=False,
+    )
+    if ci.returncode:
+        raise AutomationError(
+            "remote_ci_failure",
+            f"candidate automation-rebase CI exited {ci.returncode} for {current}",
+        )
+    try:
+        evidence = json.loads(evidence_path.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "candidate automation rebase has no readable exact-CI evidence",
+        ) from error
+    if (
+        evidence.get("status") != "success"
+        or evidence.get("commit") != current
+        or evidence.get("head_sha") != current
+        or not isinstance(evidence.get("run_id"), int)
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "candidate automation-rebase CI evidence is not bound to exact HEAD",
+        )
+    synchronized = synchronized_repository_shas()
+    if synchronized["local"] != current or changed_paths(REPO):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "candidate automation rebase drifted during exact-CI verification",
+        )
+    record.setdefault("automation_rebases", []).append(
+        {
+            "from_commit": base,
+            "to_commit": current,
+            "paths": repair_paths,
+            "run_id": evidence["run_id"],
+            "url": evidence.get("url"),
+            "timestamp": utc_now(),
+        }
+    )
+    record.update(
+        {
+            "candidate_base_commit": current,
+            "repository_fingerprint": repository_fingerprint(REPO),
+        }
+    )
+    save_stage(record)
+
+
 def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
     is_recovery = bool(record.get("repair_failure"))
     model_stage = "direct_codex_recovery" if is_recovery else "implementation"
@@ -2595,6 +2676,7 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
             "post-exit restoration permits only the exact V1-019 sign_in recovery",
         )
     candidate = str(record.get("candidate") or "")
+    rebase_pending_automation_recovery(record)
     candidate_substages = CANDIDATE_SUBSTAGES.get(candidate)
     if candidate_substages is not None and substage is None:
         record["stage"] = "deterministic_verification"
