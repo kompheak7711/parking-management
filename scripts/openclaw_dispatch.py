@@ -2878,6 +2878,9 @@ def candidate_automation_rebase_allowed(record: dict[str, Any]) -> bool:
     """Allow only recovery or exact verified V1-023 inter-substage rebases."""
     return bool(
         record.get("recovery_pending") is True
+        or v1_023_mutation_transport_incident(
+            record, repository_fingerprint(REPO)
+        )
         or (
             record.get("candidate") == "V1-023"
             and record.get("stage") == "implementation"
@@ -2886,6 +2889,29 @@ def candidate_automation_rebase_allowed(record: dict[str, Any]) -> bool:
             and record.get("last_failure_category") is None
             and record.get("product_code_modification_permitted") is True
         )
+    )
+
+
+def v1_023_mutation_transport_incident(
+    record: dict[str, Any], current_fingerprint: str
+) -> bool:
+    """Identify the exact successful-mutation/invalid-delivery availability stop."""
+    usages = record.get("model_usage")
+    latest_usage = usages[-1] if isinstance(usages, list) and usages else None
+    return bool(
+        record.get("candidate") == "V1-023"
+        and record.get("stage") == "implementation"
+        and record.get("completed_implementation_substages") == ["unit_storage"]
+        and record.get("implementation_complete") is False
+        and record.get("last_failure_category") == "empty_or_invalid_task_delivery"
+        and record.get("recovery_pending") is not True
+        and isinstance(latest_usage, dict)
+        and latest_usage.get("stage_result") == "empty_or_invalid_task_delivery"
+        and int(latest_usage.get("api_calls_completed") or 0) > 0
+        and int(latest_usage.get("tool_output_truncations") or 0) > 0
+        and int(latest_usage.get("tool_output_batch_rejections") or 0) == 0
+        and latest_usage.get("boundary_reached") is False
+        and latest_usage.get("repository_fingerprint") != current_fingerprint
     )
 
 
@@ -2992,7 +3018,16 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
                 and candidate_repository_fingerprint_at_base(base, current_paths)
                 == record.get("repository_fingerprint")
             )
-            if historical_match and isinstance(preserved, dict):
+            mutation_transport_match = bool(
+                v1_023_mutation_transport_incident(
+                    record, repository_fingerprint(REPO)
+                )
+                and current_paths == list(V1_023_STORAGE_VERIFIED_PATHS)
+                and v1_023_availability_contract_satisfied()
+            )
+            if (historical_match or mutation_transport_match) and isinstance(
+                preserved, dict
+            ):
                 preserved.update(
                     {
                         "repository_fingerprint": record["repository_fingerprint"],
@@ -3931,14 +3966,8 @@ def recover_verified_v1_023_availability(record: dict[str, Any]) -> bool:
         and latest_usage.get("stage_result") == "model_session_or_token_ceiling"
         and record.get("recovery_pending") is True
     )
-    successful_mutation_transport_recovery = bool(
-        isinstance(latest_usage, dict)
-        and latest_usage.get("stage_result") == "empty_or_invalid_task_delivery"
-        and record.get("last_failure_category") == "empty_or_invalid_task_delivery"
-        and int(latest_usage.get("tool_output_truncations") or 0) > 0
-        and int(latest_usage.get("tool_output_batch_rejections") or 0) == 0
-        and latest_usage.get("boundary_reached") is False
-        and record.get("recovery_pending") is not True
+    successful_mutation_transport_recovery = v1_023_mutation_transport_incident(
+        record, current_fingerprint
     )
     if (
         record.get("candidate") != "V1-023"

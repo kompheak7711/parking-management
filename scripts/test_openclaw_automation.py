@@ -4288,6 +4288,7 @@ evidence.write_text(json.dumps({
         record = {
             "candidate": "V1-023",
             "stage": "implementation",
+            "implementation_complete": False,
             "recovery_pending": False,
             "last_failure_category": "empty_or_invalid_task_delivery",
             "completed_implementation_substages": ["unit_storage"],
@@ -4398,6 +4399,37 @@ evidence.write_text(json.dumps({
                 {"stage": "implementation", "recovery_pending": True}
             )
         )
+        transport_record = {
+            "candidate": "V1-023",
+            "stage": "implementation",
+            "completed_implementation_substages": ["unit_storage"],
+            "implementation_complete": False,
+            "last_failure_category": "empty_or_invalid_task_delivery",
+            "recovery_pending": False,
+            "model_usage": [
+                {
+                    "stage_result": "empty_or_invalid_task_delivery",
+                    "api_calls_completed": 2,
+                    "repository_fingerprint": "a" * 64,
+                    "tool_output_truncations": 2,
+                    "tool_output_batch_rejections": 0,
+                    "boundary_reached": False,
+                }
+            ],
+        }
+        with mock.patch.object(
+            dispatcher, "repository_fingerprint", return_value="b" * 64
+        ):
+            self.assertTrue(
+                dispatcher.candidate_automation_rebase_allowed(transport_record)
+            )
+        transport_record["model_usage"][0]["tool_output_truncations"] = 0
+        with mock.patch.object(
+            dispatcher, "repository_fingerprint", return_value="b" * 64
+        ):
+            self.assertFalse(
+                dispatcher.candidate_automation_rebase_allowed(transport_record)
+            )
 
     def test_candidate_fingerprint_is_reproducible_across_automation_only_commit(
         self,
