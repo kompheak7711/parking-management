@@ -1623,6 +1623,8 @@ if 'prompt-size' in args:
 reasoning = args[args.index('--reasoning') + 1]
 model = args[args.index('--model') + 1]
 prompt = args[args.index('--query') + 1]
+if reasoning == 'high' and os.environ.get('HERMES_API_CALL_STALE_TIMEOUT') is not None:
+    raise SystemExit('implementation inherited the review-only stale timeout')
 open(os.environ['CAPTURE'], 'w').write(prompt)
 state_path = os.path.join(os.environ['PROPERTY_RENTAL_REPO'], 'ops', 'STATE.json')
 state = json.load(open(state_path))
@@ -2078,7 +2080,10 @@ if 'prompt-size' in args:
     raise SystemExit(0)
 prompt = args[args.index('--query') + 1]
 open(os.environ['CAPTURE'], 'w').write(prompt)
-open(os.environ['CAPTURE_ARGS'], 'w').write(json.dumps(args))
+open(os.environ['CAPTURE_ARGS'], 'w').write(json.dumps({
+    'args': args,
+    'stale_timeout': os.environ.get('HERMES_API_CALL_STALE_TIMEOUT'),
+}))
 packet = json.loads(prompt[prompt.index('{'):])
 result = {'passed': True, 'findings': [], 'reviewed_repository_fingerprint':packet['repository_fingerprint'],'reviewed_paths':packet['scoped_changed_paths'],'exact_next_action': 'publish'}
 manifest = json.load(open(os.environ['PROPERTY_RENTAL_INVOCATION_MANIFEST']))
@@ -2144,11 +2149,13 @@ print(json.dumps(result))
             packet = json.loads(capture.read_text()[capture.read_text().index("{") :])
             self.assertEqual(packet["directly_relevant_paths"], [])
             self.assertEqual(packet["materialized_candidate_diff"]["base_commit"], candidate_base_commit)
-            arguments = json.loads(capture_args.read_text())
+            captured_invocation = json.loads(capture_args.read_text())
+            arguments = captured_invocation["args"]
             self.assertIn("gpt-5.6-sol", arguments)
             self.assertIn("xhigh", arguments)
             self.assertIn("file,terminal,todo", arguments)
             self.assertNotIn("--yolo", arguments)
+            self.assertEqual(captured_invocation["stale_timeout"], "1200")
             self.assertEqual(evidence["reviewed_paths"], [])
             self.assertEqual(
                 evidence["reviewed_repository_fingerprint"],

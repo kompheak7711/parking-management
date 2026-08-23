@@ -74,6 +74,17 @@ export PROPERTY_RENTAL_INVOCATION_MANIFEST="$manifest_file"
 export PROPERTY_RENTAL_REPO="$repo"
 export HERMES_MAX_TOKENS="$token_ceiling"
 
+# A large, read-only xhigh review can legitimately spend more than ten minutes
+# reasoning before the Codex backend returns its first non-streaming response.
+# Keep implementation on Hermes' normal stale-call policy; extend only the
+# already-bounded independent-review transport wait. This does not change any
+# model token ceiling or request timeout.
+unset HERMES_API_CALL_STALE_TIMEOUT
+if [ "$stage" = "independent_review" ]; then
+  HERMES_API_CALL_STALE_TIMEOUT=1200
+  export HERMES_API_CALL_STALE_TIMEOUT
+fi
+
 export PROPERTY_RENTAL_HERMES_PROCESS_MODE=preflight
 "$hermes_bin" --in "$repo" --toolsets "$toolsets" prompt-size --json >/dev/null 2>&1 || {
   echo "Hermes plugin capability preflight failed" >&2

@@ -104,6 +104,7 @@
     {"clause": "Hermes file terminal Git database process make-root and patch-endpoint permissions are least-privilege", "test_id": "test_hermes_tool_guard_enforces_repository_least_privilege"},
     {"clause": "scheduler recovery and recovery notification are deduplicated", "test_id": "test-openclaw-visibility-watchdog.sh"},
     {"clause": "120000 review manifest requires persisted exceptional classification", "test_id": "test_exceptional_review_manifest_requires_persisted_classification"},
+    {"clause": "ordinary independent review retains its exact token ceiling while receiving a review-only 1200-second non-streaming stale-call allowance that implementation never inherits", "test_id": "test_dispatcher_runs_distinct_xhigh_read_only_review_session"},
     {"clause": "model writes are constrained to dispatcher-authorized candidate product paths", "test_id": "test_hermes_tool_guard_enforces_repository_least_privilege"},
     {"clause": "direct wrapper invocation lacks live dispatcher ancestry", "test_id": "test_repository_owned_wrapper_enforces_supported_route"},
     {"clause": "manifest identity remains bound to the live candidate-stage record", "test_id": "test_exceptional_review_manifest_requires_persisted_classification"},
