@@ -596,6 +596,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/users/{user_id}/administrative-recovery": {"post"},
         "/api/v1/properties/{property_id}/audit-events": {"get"},
         "/api/v1/{resource_family}/{resource_id}/audit-events": {"get"},
+        "/properties/{property_id}": {"get", "patch"},
+        "/properties/{property_id}/configuration": {"get", "patch"},
     }
     openapi_operations = {
         path: set(path_item) & http_methods for path, path_item in app.openapi()["paths"].items()

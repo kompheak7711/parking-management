@@ -42,6 +42,13 @@ from property_rental.auth_api import (
 )
 from property_rental.identity import ActorResolver, deny_unauthenticated_actor
 from property_rental.logging import create_application_logger
+from property_rental.property_api import (
+    PostgresPropertyResourceFlow,
+    PropertyResourceFlow,
+    PropertyVersionConflict,
+    UnavailablePropertyResourceFlow,
+    create_property_router,
+)
 from property_rental.settings import Settings
 
 REQUEST_ID_HEADER: Final = "X-Request-ID"
@@ -102,6 +109,7 @@ def error_response(
     request_id: str,
     *,
     fields: list[str] | None = None,
+    current_version: int | None = None,
 ) -> JSONResponse:
     """Build a canonical error envelope without accepting exception details."""
     code, message = ERROR_STATUS_DETAILS.get(
@@ -116,7 +124,7 @@ def error_response(
                 "message": message,
                 "fields": fields or [],
                 "rule_ids": [],
-                "current_version": None,
+                "current_version": current_version,
             },
             "meta": {"request_id": request_id},
         },
@@ -156,6 +164,7 @@ def create_app(
     authentication_flow: AuthenticationFlow | None = None,
     access_administration_flow: AccessAdministrationFlow | None = None,
     audit_query_flow: AuditEventQueryFlow | None = None,
+    property_resource_flow: PropertyResourceFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -268,6 +277,17 @@ def create_app(
             request.state.request_id,
         )
 
+    @app.exception_handler(PropertyVersionConflict)
+    async def property_version_conflict(
+        request: Request,
+        exc: PropertyVersionConflict,
+    ) -> JSONResponse:
+        return error_response(
+            status.HTTP_412_PRECONDITION_FAILED,
+            request.state.request_id,
+            current_version=exc.current_version,
+        )
+
     @app.middleware("http")
     async def add_request_id(
         request: Request,
@@ -331,6 +351,17 @@ def create_app(
                 PostgresAuditEventQueryFlow(resolved_settings.database_url.get_secret_value())
                 if resolved_settings.database_url is not None
                 else UnavailableAuditEventQueryFlow()
+            ),
+        )
+    )
+    app.include_router(
+        create_property_router(
+            actor_resolver,
+            property_resource_flow
+            or (
+                PostgresPropertyResourceFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailablePropertyResourceFlow()
             ),
         )
     )

@@ -15,6 +15,11 @@ import {
   AuthenticationApi,
   SessionData,
 } from "./authClient";
+import {
+  PropertyBusinessConfiguration,
+  PropertyConfigurationApi,
+  PropertyConfigurationUnavailableError,
+} from "./propertyClient";
 
 afterEach(() => {
   cleanup();
@@ -58,6 +63,63 @@ function mockAuthenticationApi(
     logout: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
+}
+
+const configuredProperty: PropertyBusinessConfiguration = {
+  property_id: "property-1",
+  name: "Riverside",
+  address_text: "Phnom Penh",
+  timezone_name: "Asia/Phnom_Penh",
+  payment_methods: [],
+  version: 3,
+};
+
+function propertyApiDouble(
+  overrides: Partial<PropertyConfigurationApi> = {},
+): PropertyConfigurationApi {
+  return {
+    load: vi.fn().mockResolvedValue(configuredProperty),
+    updateSource: vi.fn(),
+    updatePaymentMethods: vi.fn(),
+    ...overrides,
+  };
+}
+
+function renderPropertyConfigurationApp(propertyApi: PropertyConfigurationApi) {
+  render(
+    <App
+      api={mockAuthenticationApi()}
+      buildId="test-build"
+      environment="development"
+      now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      propertyApi={propertyApi}
+    />,
+  );
+}
+
+async function signInAndLoadProperty(propertyId = "property-1") {
+  fireEvent.change(screen.getByLabelText("Username"), {
+    target: { value: "manager" },
+  });
+  fireEvent.change(screen.getByLabelText("Password"), {
+    target: { value: "password" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+  const input = await screen.findByLabelText(
+    "Configuration Property identifier",
+  );
+  fireEvent.change(input, { target: { value: propertyId } });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Load business configuration" }),
+  );
+  return input;
+}
+
+function expectPropertyManagementHidden() {
+  expect(
+    screen.getByRole("heading", { name: "Business configuration access" }),
+  ).toBeInTheDocument();
+  expect(screen.queryByLabelText("Property name")).not.toBeInTheDocument();
 }
 
 describe("local sign-in", () => {
@@ -554,5 +616,193 @@ describe("local sign-in", () => {
     expect(
       await screen.findByRole("heading", { name: "Account and access" }),
     ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-016 shows and updates capability-checked Property business configuration", async () => {
+    const configured: PropertyBusinessConfiguration = {
+      property_id: "property-1",
+      name: "Riverside",
+      address_text: "Phnom Penh",
+      timezone_name: "Asia/Phnom_Penh",
+      payment_methods: [
+        { code: "BANK", display_name: "Bank transfer", accepted: true },
+      ],
+      version: 3,
+    };
+    const updateSource = vi.fn().mockResolvedValue({
+      ...configured,
+      name: "Riverside Apartments",
+      version: 4,
+    });
+    const propertyApi: PropertyConfigurationApi = {
+      load: vi.fn().mockResolvedValue(configured),
+      updateSource,
+      updatePaymentMethods: vi.fn(),
+    };
+    renderPropertyConfigurationApp(propertyApi);
+    await signInAndLoadProperty();
+
+    expect(await screen.findByDisplayValue("Riverside")).toBeInTheDocument();
+    expect(screen.getByText("Asia/Phnom_Penh")).toBeInTheDocument();
+    expect(screen.getByLabelText(/Bank transfer.*accepted/)).toBeChecked();
+    fireEvent.change(screen.getByLabelText("Property name"), {
+      target: { value: "Riverside Apartments" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Save Property source data" }),
+    );
+    await waitFor(() => {
+      expect(updateSource).toHaveBeenCalledWith(configured, {
+        name: "Riverside Apartments",
+        address_text: "Phnom Penh",
+      });
+    });
+  });
+
+  it("TEST-FE-020 keeps the management screen hidden when server capability authorization is denied", async () => {
+    const propertyApi = propertyApiDouble({
+      load: vi
+        .fn()
+        .mockRejectedValue(new PropertyConfigurationUnavailableError()),
+    });
+    renderPropertyConfigurationApp(propertyApi);
+    await signInAndLoadProperty();
+
+    expect(
+      await screen.findByText(
+        "Business configuration is not available for this session and property.",
+      ),
+    ).toBeInTheDocument();
+    expectPropertyManagementHidden();
+  });
+
+  it("TEST-FE-021 hides loaded management controls when source-update authorization is revoked", async () => {
+    const propertyApi = propertyApiDouble({
+      updateSource: vi
+        .fn()
+        .mockRejectedValue(new PropertyConfigurationUnavailableError()),
+    });
+    renderPropertyConfigurationApp(propertyApi);
+    await signInAndLoadProperty();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Save Property source data" }),
+    );
+
+    await screen.findByRole("heading", {
+      name: "Business configuration access",
+    });
+    expectPropertyManagementHidden();
+  });
+
+  it("TEST-FE-022 hides loaded management controls when configuration-update authorization is revoked", async () => {
+    const propertyApi = propertyApiDouble({
+      updatePaymentMethods: vi
+        .fn()
+        .mockRejectedValue(new PropertyConfigurationUnavailableError()),
+    });
+    renderPropertyConfigurationApp(propertyApi);
+    await signInAndLoadProperty();
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Save Payment Method configuration",
+      }),
+    );
+
+    await screen.findByRole("heading", {
+      name: "Business configuration access",
+    });
+    expectPropertyManagementHidden();
+  });
+
+  it("TEST-FE-023 ignores a stale Property load that resolves after sign-out", async () => {
+    let resolveLoad!: (value: PropertyBusinessConfiguration) => void;
+    const propertyApi = propertyApiDouble({
+      load: vi.fn().mockReturnValue(
+        new Promise<PropertyBusinessConfiguration>((resolve) => {
+          resolveLoad = resolve;
+        }),
+      ),
+    });
+    renderPropertyConfigurationApp(propertyApi);
+    await signInAndLoadProperty();
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    expect(await screen.findByLabelText("Username")).toBeInTheDocument();
+
+    await act(async () => {
+      resolveLoad(configuredProperty);
+      await Promise.resolve();
+    });
+
+    expect(
+      screen.queryByRole("heading", { name: "Business configuration" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Property name")).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-024 ignores an older successful Property load after a newer authorization denial", async () => {
+    let resolveFirstLoad!: (value: PropertyBusinessConfiguration) => void;
+    const propertyApi = propertyApiDouble({
+      load: vi
+        .fn()
+        .mockReturnValueOnce(
+          new Promise<PropertyBusinessConfiguration>((resolve) => {
+            resolveFirstLoad = resolve;
+          }),
+        )
+        .mockRejectedValueOnce(new PropertyConfigurationUnavailableError()),
+    });
+    renderPropertyConfigurationApp(propertyApi);
+    const propertyId = await signInAndLoadProperty();
+    fireEvent.change(propertyId, { target: { value: "property-2" } });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Load business configuration" }),
+    );
+    expect(
+      await screen.findByText(
+        "Business configuration is not available for this session and property.",
+      ),
+    ).toBeInTheDocument();
+
+    await act(async () => {
+      resolveFirstLoad(configuredProperty);
+      await Promise.resolve();
+    });
+
+    expect(
+      screen.queryByRole("heading", { name: "Business configuration" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Property name")).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-025 clears loaded management controls when the Property identifier changes", async () => {
+    const propertyApi = propertyApiDouble();
+    renderPropertyConfigurationApp(propertyApi);
+    const propertyId = await signInAndLoadProperty();
+    expect(await screen.findByLabelText("Property name")).toBeInTheDocument();
+
+    fireEvent.change(propertyId, { target: { value: "property-2" } });
+
+    expectPropertyManagementHidden();
+  });
+
+  it("TEST-FE-026 ignores an in-flight Property load when the identifier changes", async () => {
+    let resolveLoad!: (value: PropertyBusinessConfiguration) => void;
+    const propertyApi = propertyApiDouble({
+      load: vi.fn().mockReturnValue(
+        new Promise<PropertyBusinessConfiguration>((resolve) => {
+          resolveLoad = resolve;
+        }),
+      ),
+    });
+    renderPropertyConfigurationApp(propertyApi);
+    const propertyId = await signInAndLoadProperty();
+
+    fireEvent.change(propertyId, { target: { value: "property-2" } });
+    await act(async () => {
+      resolveLoad(configuredProperty);
+      await Promise.resolve();
+    });
+
+    expectPropertyManagementHidden();
   });
 });

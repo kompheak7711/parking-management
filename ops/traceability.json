@@ -3607,6 +3607,310 @@
       "test_path": "backend/tests/test_audit.py",
       "status": "implemented",
       "notes": "Bounded non-control identity text preserves required Property, Unit, and Customer name, number, email, phone, address, label, and description changes while the shared secret-field classifier remains fail closed."
+    },
+    {
+      "test_id": "test_property_configuration_uses_authoritative_timezone",
+      "upstream_ids": ["BR-PROP-003", "PR-PROP-003"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_property.py",
+      "status": "implemented",
+      "notes": "Property configuration uses the authoritative Asia/Phnom_Penh timezone."
+    },
+    {
+      "test_id": "test_property_configuration_rejects_nil_identity",
+      "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_property.py",
+      "status": "implemented",
+      "notes": "The single Property configuration rejects a nil identity."
+    },
+    {
+      "test_id": "test_property_configuration_rejects_non_authoritative_timezone",
+      "upstream_ids": ["BR-PROP-003", "PR-PROP-003"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_property.py",
+      "status": "implemented",
+      "notes": "Configuration rejects a timezone outside the authoritative business boundary."
+    },
+    {
+      "test_id": "test_service_configures_exactly_one_property",
+      "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_property.py",
+      "status": "implemented",
+      "notes": "The service configures exactly one Property identity."
+    },
+    {
+      "test_id": "test_service_rejects_a_second_property_without_persisting_it",
+      "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_property.py",
+      "status": "implemented",
+      "notes": "A second Property is rejected without persistence side effects."
+    },
+    {
+      "test_id": "test_service_requires_an_existing_configuration",
+      "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_property.py",
+      "status": "implemented",
+      "notes": "Missing single-Property configuration fails closed."
+    },
+    {
+      "test_id": "test_service_returns_the_existing_configuration",
+      "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_property.py",
+      "status": "implemented",
+      "notes": "The configured Property identity is returned unchanged."
+    },
+    {
+      "test_id": "test_migration_persists_property_identity_and_timezone",
+      "upstream_ids": ["BR-PROP-001", "BR-PROP-003", "PR-PROP-001", "PR-PROP-003"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_property_migration.py",
+      "status": "implemented",
+      "notes": "PostgreSQL persists the one Property identity and authoritative timezone."
+    },
+    {
+      "test_id": "test_migration_rejects_a_second_property",
+      "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_property_migration.py",
+      "status": "implemented",
+      "notes": "The database singleton constraint rejects a second Property."
+    },
+    {
+      "test_id": "test_migration_rejects_non_authoritative_timezone",
+      "upstream_ids": ["BR-PROP-003", "PR-PROP-003"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_property_migration.py",
+      "status": "implemented",
+      "notes": "The database rejects a non-authoritative Property timezone."
+    },
+    {
+      "test_id": "test_migration_rejects_false_singleton_key",
+      "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_property_migration.py",
+      "status": "implemented",
+      "notes": "The database singleton key cannot represent another Property row."
+    },
+    {
+      "test_id": "test_migration_rejects_nil_property_identity",
+      "upstream_ids": ["BR-PROP-001", "PR-PROP-001"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_property_migration.py",
+      "status": "implemented",
+      "notes": "The database rejects a nil Property identity."
+    },
+    {
+      "test_id": "test_migration_rejects_mutation_of_property_configuration",
+      "upstream_ids": ["BR-PROP-001", "BR-PROP-002", "BR-PROP-003", "PR-PROP-001", "PR-PROP-002", "PR-PROP-003"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_property_migration.py",
+      "status": "implemented",
+      "notes": "Database controls preserve Property identity, history, and timezone invariants against direct mutation."
+    },
+    {
+      "test_id": "test_get_property_requires_an_authenticated_actor",
+      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_property_api.py",
+      "status": "implemented",
+      "notes": "V1-022 authorized Property resource and configuration API acceptance coverage for test_get_property_requires_an_authenticated_actor."
+    },
+    {
+      "test_id": "test_get_property_returns_identity_timezone_version_and_etag",
+      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_property_api.py",
+      "status": "implemented",
+      "notes": "V1-022 authorized Property resource and configuration API acceptance coverage for test_get_property_returns_identity_timezone_version_and_etag."
+    },
+    {
+      "test_id": "test_patch_property_applies_matching_version_precondition",
+      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_property_api.py",
+      "status": "implemented",
+      "notes": "V1-022 authorized Property resource and configuration API acceptance coverage for test_patch_property_applies_matching_version_precondition."
+    },
+    {
+      "test_id": "test_patch_property_reports_current_version_for_missing_precondition",
+      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_property_api.py",
+      "status": "implemented",
+      "notes": "V1-022 authorized Property resource and configuration API acceptance coverage for test_patch_property_reports_current_version_for_missing_precondition."
+    },
+    {
+      "test_id": "test_patch_property_requires_scoped_property_manage",
+      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_property_api.py",
+      "status": "implemented",
+      "notes": "V1-022 authorized Property resource and configuration API acceptance coverage for test_patch_property_requires_scoped_property_manage."
+    },
+    {
+      "test_id": "test_property_configuration_routes_share_authorization_and_versioning",
+      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_property_api.py",
+      "status": "implemented",
+      "notes": "V1-022 authorized Property resource and configuration API acceptance coverage for test_property_configuration_routes_share_authorization_and_versioning."
+    },
+    {
+      "test_id": "test_migration_allows_versioned_configuration_update",
+      "upstream_ids": ["API-026", "API-027", "BR-PROP-003", "PR-PROP-003"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_property_migration.py",
+      "status": "implemented",
+      "notes": "PostgreSQL applies authorized configuration updates with a monotonic version precondition."
+    },
+    {
+      "test_id": "test_runtime_initializes_property_only_through_protected_defaults",
+      "upstream_ids": ["API-026", "PR-PROP-001", "SEC-004"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_property_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role cannot forge Property creation metadata and can initialize only through the protected defaulting function."
+    },
+    {
+      "test_id": "test_postgres_setup_entrypoint_uses_the_protected_repository",
+      "upstream_ids": ["API-026", "PR-PROP-001"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_property.py",
+      "status": "implemented",
+      "notes": "Fresh deployments have an application-controlled one-time Property setup entrypoint."
+    },
+    {
+      "test_id": "test_property_setup_command_uses_runtime_database_identity",
+      "upstream_ids": ["API-026", "PR-PROP-001", "SEC-004"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_property.py",
+      "status": "implemented",
+      "notes": "The setup command uses the configured runtime database identity without accepting a database secret on the command line."
+    },
+    {
+      "test_id": "test_property_configuration_rejects_blank_source_fields",
+      "upstream_ids": ["API-026", "PR-PROP-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_property.py",
+      "status": "implemented",
+      "notes": "Property name and optional address source fields reject blank values."
+    },
+    {
+      "test_id": "TEST-FE-016",
+      "upstream_ids": ["API-026", "API-027", "UI-091"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "The capability-checked screen displays and updates approved Property business configuration."
+    },
+    {
+      "test_id": "TEST-FE-017",
+      "upstream_ids": ["API-026", "API-027", "UI-091"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/propertyClient.test.tsx",
+      "status": "implemented",
+      "notes": "The typed client loads Property source fields and configured Payment Methods."
+    },
+    {
+      "test_id": "TEST-FE-018",
+      "upstream_ids": ["API-026", "API-027", "UI-091"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/propertyClient.test.tsx",
+      "status": "implemented",
+      "notes": "Property mutations carry CSRF protection and the exact version precondition."
+    },
+    {
+      "test_id": "TEST-FE-019",
+      "upstream_ids": ["API-026", "API-027", "UI-091"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/propertyClient.test.tsx",
+      "status": "implemented",
+      "notes": "The business-configuration client fails closed on capability denial."
+    },
+    {
+      "test_id": "test_get_property_configuration_requires_scoped_property_manage",
+      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_property_api.py",
+      "status": "implemented",
+      "notes": "V1-022 authorized Property resource and configuration API acceptance coverage for test_get_property_configuration_requires_scoped_property_manage."
+    },
+    {
+      "test_id": "test_postgres_property_read_uses_one_snapshot_statement",
+      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_property_api.py",
+      "status": "implemented",
+      "notes": "V1-022 authorized Property resource and configuration API acceptance coverage for test_postgres_property_read_uses_one_snapshot_statement."
+    },
+    {
+      "test_id": "TEST-FE-020",
+      "upstream_ids": ["API-026", "API-027", "UI-091"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "The Property management screen remains hidden when authoritative capability authorization is denied."
+    },
+    {
+      "test_id": "TEST-FE-021",
+      "upstream_ids": ["API-026", "API-027", "UI-091"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "A server denial during a Property source update immediately hides the previously loaded management screen."
+    },
+    {
+      "test_id": "TEST-FE-022",
+      "upstream_ids": ["API-026", "API-027", "UI-091"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "A server denial during a Payment Method update immediately hides the previously loaded management screen."
+    },
+    {
+      "test_id": "test_patch_property_rejects_mismatched_or_out_of_range_precondition",
+      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_property_api.py",
+      "status": "implemented",
+      "notes": "V1-022 authorized Property resource and configuration API acceptance coverage for test_patch_property_rejects_mismatched_or_out_of_range_precondition."
+    },
+    {
+      "test_id": "TEST-FE-023",
+      "upstream_ids": ["API-026", "API-027", "UI-091"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "A stale Property load cannot restore management controls after sign-out."
+    },
+    {
+      "test_id": "TEST-FE-024",
+      "upstream_ids": ["API-026", "API-027", "UI-091"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "An older successful Property load cannot override a newer authoritative capability denial."
+    },
+    {
+      "test_id": "TEST-FE-025",
+      "upstream_ids": ["API-026", "API-027", "UI-091"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Changing the Property identifier immediately clears management controls for the previously loaded Property."
+    },
+    {
+      "test_id": "TEST-FE-026",
+      "upstream_ids": ["API-026", "API-027", "UI-091"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Changing the Property identifier invalidates an in-flight load for the prior identifier."
     }
   ]
 }

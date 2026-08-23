@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   AUTHENTICATION_ERROR_MESSAGE,
@@ -19,6 +19,12 @@ import {
   UserAccount,
   accessAdministrationApi,
 } from "./adminClient";
+import {
+  PropertyBusinessConfiguration,
+  PropertyConfigurationApi,
+  PropertyConfigurationUnavailableError,
+  propertyConfigurationApi,
+} from "./propertyClient";
 
 export interface AppProps {
   environment: string;
@@ -26,6 +32,7 @@ export interface AppProps {
   authenticate?: LocalSignIn;
   api?: AuthenticationApi;
   administrationApi?: AccessAdministrationApi;
+  propertyApi?: PropertyConfigurationApi;
   now?: () => number;
 }
 
@@ -51,6 +58,7 @@ export function App({
   authenticate = signIn,
   api,
   administrationApi = accessAdministrationApi,
+  propertyApi = propertyConfigurationApi,
   now = Date.now,
 }: AppProps) {
   const client = useMemo<AuthenticationApi>(
@@ -73,13 +81,29 @@ export function App({
     string | null
   >(null);
   const [propertyId, setPropertyId] = useState("");
+  const [configurationPropertyId, setConfigurationPropertyId] = useState("");
+  const [propertyConfiguration, setPropertyConfiguration] =
+    useState<PropertyBusinessConfiguration | null>(null);
+  const [propertyConfigurationStatus, setPropertyConfigurationStatus] =
+    useState<string | null>(null);
+  const [propertyConfigurationAuthorized, setPropertyConfigurationAuthorized] =
+    useState(false);
+  const propertyOperationSequence = useRef(0);
   const [pendingCommand, setPendingCommand] = useState<{
     kind: "disable" | "revoke" | "recover";
     user: UserAccount;
     recovery?: { new_password: string; reset_mfa: boolean; reason: string };
   } | null>(null);
 
+  function invalidatePropertyConfiguration() {
+    propertyOperationSequence.current += 1;
+    setPropertyConfiguration(null);
+    setPropertyConfigurationAuthorized(false);
+  }
+
   function acceptAuthentication(result: AuthenticationData) {
+    invalidatePropertyConfiguration();
+    setPropertyConfigurationStatus(null);
     setSession(result.session);
     setScreen(phaseScreen(result));
     setSubmissionState("succeeded");
@@ -93,6 +117,8 @@ export function App({
     setSession(null);
     setEnrollment(null);
     setRecoveryCodes(null);
+    invalidatePropertyConfiguration();
+    setPropertyConfigurationStatus(null);
     setSubmissionState("idle");
     setShowReauthentication(false);
     setNotice(message);
@@ -219,6 +245,8 @@ export function App({
           : {}),
       })
       .then((result) => {
+        invalidatePropertyConfiguration();
+        setPropertyConfigurationStatus(null);
         setSession(result);
         setShowReauthentication(false);
         setSubmissionState("succeeded");
@@ -277,6 +305,140 @@ export function App({
       .catch(() => {
         setSubmissionState("failed");
         setNotice("Recovery codes could not be replaced.");
+      });
+  }
+
+  function loadPropertyConfiguration(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const operationSequence = ++propertyOperationSequence.current;
+    setPropertyConfigurationStatus(
+      "Checking server-authorized business configuration access…",
+    );
+    void propertyApi
+      .load(configurationPropertyId)
+      .then((result) => {
+        if (operationSequence !== propertyOperationSequence.current) return;
+        setPropertyConfiguration(result);
+        setPropertyConfigurationAuthorized(true);
+        setPropertyConfigurationStatus(
+          "Business configuration loaded from the authoritative server state.",
+        );
+      })
+      .catch((error: unknown) => {
+        if (operationSequence !== propertyOperationSequence.current) return;
+        invalidatePropertyConfiguration();
+        setPropertyConfigurationStatus(
+          error instanceof PropertyConfigurationUnavailableError
+            ? "Business configuration is not available for this session and property."
+            : "Business configuration could not be loaded.",
+        );
+      });
+  }
+
+  function updatePropertySource(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (propertyConfiguration === null) return;
+    const operationSequence = ++propertyOperationSequence.current;
+    const data = new FormData(event.currentTarget);
+    const name = data.get("property-name");
+    const address = data.get("property-address");
+    setPropertyConfigurationStatus(
+      "Submitting the version-checked Property update…",
+    );
+    void propertyApi
+      .updateSource(propertyConfiguration, {
+        name: typeof name === "string" ? name : "",
+        address_text:
+          typeof address === "string" && address.trim().length > 0
+            ? address
+            : null,
+      })
+      .then((result) => {
+        if (operationSequence !== propertyOperationSequence.current) return;
+        setPropertyConfiguration(result);
+        setPropertyConfigurationStatus("Property source data updated.");
+      })
+      .catch((error: unknown) => {
+        if (operationSequence !== propertyOperationSequence.current) return;
+        if (error instanceof PropertyConfigurationUnavailableError) {
+          invalidatePropertyConfiguration();
+          setPropertyConfigurationStatus(
+            "Business configuration is not available for this session and property.",
+          );
+          return;
+        }
+        setPropertyConfigurationStatus(
+          "The Property update was not completed. Reload before retrying.",
+        );
+      });
+  }
+
+  function addPaymentMethod(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (propertyConfiguration === null) return;
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const code = data.get("payment-method-code");
+    const displayName = data.get("payment-method-name");
+    if (typeof code !== "string" || typeof displayName !== "string") return;
+    const normalizedCode = code.trim();
+    if (
+      normalizedCode.length === 0 ||
+      displayName.trim().length === 0 ||
+      propertyConfiguration.payment_methods.some(
+        (method) => method.code === normalizedCode,
+      )
+    ) {
+      setPropertyConfigurationStatus(
+        "Payment Method code and name must be nonblank, and the code must be unique.",
+      );
+      return;
+    }
+    setPropertyConfiguration({
+      ...propertyConfiguration,
+      payment_methods: [
+        ...propertyConfiguration.payment_methods,
+        {
+          code: normalizedCode,
+          display_name: displayName.trim(),
+          accepted: true,
+        },
+      ],
+    });
+    setPropertyConfigurationStatus(
+      "Payment Method added locally. Save the configuration to make it authoritative.",
+    );
+    form.reset();
+  }
+
+  function savePaymentMethods() {
+    if (propertyConfiguration === null) return;
+    const operationSequence = ++propertyOperationSequence.current;
+    setPropertyConfigurationStatus(
+      "Submitting the version-checked Payment Method configuration…",
+    );
+    void propertyApi
+      .updatePaymentMethods(
+        propertyConfiguration,
+        propertyConfiguration.payment_methods,
+      )
+      .then((result) => {
+        if (operationSequence !== propertyOperationSequence.current) return;
+        setPropertyConfiguration(result);
+        setPropertyConfigurationStatus("Payment Method configuration updated.");
+      })
+      .catch((error: unknown) => {
+        if (operationSequence !== propertyOperationSequence.current) return;
+        if (error instanceof PropertyConfigurationUnavailableError) {
+          invalidatePropertyConfiguration();
+          setPropertyConfigurationStatus(
+            "Business configuration is not available for this session and property.",
+          );
+          return;
+        }
+        setPropertyConfigurationStatus(
+          "The Payment Method update was not completed. Reload before retrying.",
+        );
       });
   }
 
@@ -818,6 +980,160 @@ export function App({
                       I saved these codes—clear them
                     </button>
                   </div>
+                </div>
+              )}
+            </section>
+            <section
+              aria-labelledby="business-configuration-heading"
+              className="information-card"
+            >
+              <h3 id="business-configuration-heading">
+                {propertyConfigurationAuthorized
+                  ? "Business configuration"
+                  : "Business configuration access"}
+              </h3>
+              {propertyConfigurationAuthorized ? (
+                <p>
+                  The server authorized this Property with{" "}
+                  <code>property.manage</code> and checks the current version
+                  for every change. The fixed timezone is shown as an
+                  authoritative value, not an editable source field.
+                </p>
+              ) : (
+                <p>
+                  Enter the exact Property identifier. The server must confirm
+                  <code> property.manage</code> for that Property before any
+                  management screen or editing control is shown.
+                </p>
+              )}
+              <form
+                className="form-stack inline-form"
+                onSubmit={loadPropertyConfiguration}
+              >
+                <div className="form-field">
+                  <label htmlFor="configuration-property-id">
+                    Configuration Property identifier
+                  </label>
+                  <input
+                    id="configuration-property-id"
+                    onChange={(event) => {
+                      invalidatePropertyConfiguration();
+                      setPropertyConfigurationStatus(null);
+                      setConfigurationPropertyId(event.currentTarget.value);
+                    }}
+                    required
+                    value={configurationPropertyId}
+                  />
+                </div>
+                <button type="submit">Load business configuration</button>
+              </form>
+              {propertyConfigurationStatus !== null && (
+                <p role="status">{propertyConfigurationStatus}</p>
+              )}
+              {propertyConfiguration !== null && (
+                <div className="administration-grid">
+                  <section aria-labelledby="property-source-heading">
+                    <h4 id="property-source-heading">Property source data</h4>
+                    <dl className="detail-list">
+                      <div>
+                        <dt>Timezone</dt>
+                        <dd>{propertyConfiguration.timezone_name}</dd>
+                      </div>
+                      <div>
+                        <dt>Version</dt>
+                        <dd>{propertyConfiguration.version}</dd>
+                      </div>
+                    </dl>
+                    <form
+                      className="form-stack"
+                      key={`property-source-${String(propertyConfiguration.version)}`}
+                      onSubmit={updatePropertySource}
+                    >
+                      <div className="form-field">
+                        <label htmlFor="property-name">Property name</label>
+                        <input
+                          defaultValue={propertyConfiguration.name}
+                          id="property-name"
+                          name="property-name"
+                          required
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="property-address">
+                          Property address
+                        </label>
+                        <textarea
+                          defaultValue={
+                            propertyConfiguration.address_text ?? ""
+                          }
+                          id="property-address"
+                          name="property-address"
+                        />
+                      </div>
+                      <button type="submit">Save Property source data</button>
+                    </form>
+                  </section>
+                  <section aria-labelledby="payment-methods-heading">
+                    <h4 id="payment-methods-heading">Payment Methods</h4>
+                    {propertyConfiguration.payment_methods.length === 0 ? (
+                      <p>No Payment Methods are configured.</p>
+                    ) : (
+                      <ul className="record-list">
+                        {propertyConfiguration.payment_methods.map((method) => (
+                          <li key={method.code}>
+                            <label>
+                              <input
+                                checked={method.accepted}
+                                onChange={(event) => {
+                                  const accepted = event.currentTarget.checked;
+                                  setPropertyConfiguration({
+                                    ...propertyConfiguration,
+                                    payment_methods:
+                                      propertyConfiguration.payment_methods.map(
+                                        (candidate) =>
+                                          candidate.code === method.code
+                                            ? { ...candidate, accepted }
+                                            : candidate,
+                                      ),
+                                  });
+                                }}
+                                type="checkbox"
+                              />
+                              {method.display_name} ({method.code}) accepted
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <form className="form-stack" onSubmit={addPaymentMethod}>
+                      <div className="form-field">
+                        <label htmlFor="payment-method-code">Method code</label>
+                        <input
+                          id="payment-method-code"
+                          name="payment-method-code"
+                          required
+                        />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="payment-method-name">
+                          Method display name
+                        </label>
+                        <input
+                          id="payment-method-name"
+                          name="payment-method-name"
+                          required
+                        />
+                      </div>
+                      <button type="submit">Add Payment Method</button>
+                    </form>
+                    <button onClick={savePaymentMethods} type="button">
+                      Save Payment Method configuration
+                    </button>
+                    <p className="panel-help">
+                      Retired methods remain visible and are never deleted from
+                      configuration history.
+                    </p>
+                  </section>
                 </div>
               )}
             </section>
