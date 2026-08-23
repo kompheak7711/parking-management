@@ -4102,6 +4102,19 @@ evidence.write_text(json.dumps({
                 'if statement.as_string() == "TRUNCATE app.property_configuration"',
                 (repo / "backend/tests/test_property_migration.py").read_text(),
             )
+            property_test = repo / "backend/tests/test_property_migration.py"
+            property_test.write_text(
+                property_test.read_text().replace(
+                    '    expected_sqlstate = (\n'
+                    '        "0A000"\n'
+                    '        if statement.as_string() == "TRUNCATE app.property_configuration"\n'
+                    '        else "55000"\n'
+                    '    )\n',
+                    '    expected_sqlstate = (\n'
+                    '        "0A000" if statement.as_string() == "TRUNCATE app.property_configuration" else "55000"\n'
+                    '    )\n',
+                )
+            )
             self.assertEqual(
                 len(json.loads(first_traceability)["entries"]),
                 3,

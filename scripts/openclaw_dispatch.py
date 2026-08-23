@@ -3761,6 +3761,33 @@ def sync_v1_023_property_truncate_expectation() -> None:
     replacement_text = "\n".join(replacement)
     if replacement_text in "\n".join(function_lines):
         return
+    expected_value = ast.parse(
+        '"0A000" if statement.as_string() == "TRUNCATE app.property_configuration" else "55000"',
+        mode="eval",
+    ).body
+    expected_assertion = ast.parse(
+        "assert raised.value.sqlstate == expected_sqlstate"
+    ).body[0]
+    assert isinstance(expected_assertion, ast.Assert)
+    matching_assignments = [
+        node
+        for node in ast.walk(target)
+        if isinstance(node, ast.Assign)
+        and len(node.targets) == 1
+        and isinstance(node.targets[0], ast.Name)
+        and node.targets[0].id == "expected_sqlstate"
+        and ast.dump(node.value, include_attributes=False)
+        == ast.dump(expected_value, include_attributes=False)
+    ]
+    matching_assertions = [
+        node
+        for node in ast.walk(target)
+        if isinstance(node, ast.Assert)
+        and ast.dump(node.test, include_attributes=False)
+        == ast.dump(expected_assertion.test, include_attributes=False)
+    ]
+    if len(matching_assignments) == 1 and len(matching_assertions) == 1:
+        return
     if function_lines.count(prior) != 1 or source.count(prior) < 1:
         raise AutomationError(
             "repository_integrity_uncertainty",
