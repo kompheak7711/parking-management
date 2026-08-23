@@ -72,7 +72,7 @@ RECONCILIATION_NEXT_ACTION = (
 )
 MAX_CEILING_RECOVERIES_PER_SUBSTAGE = 2
 MAX_CONTEXT_MATERIALIZATIONS_PER_SUBSTAGE = 2
-MAX_REVIEW_PATCH_BYTES = 220_000
+MAX_REVIEW_PATCH_BYTES = 224_000
 EXCEPTIONAL_REVIEW_PATCH_BYTES = 180_000
 V1_019_SUBSTAGES: tuple[dict[str, Any], ...] = (
     {
@@ -210,6 +210,42 @@ ACTIVATION_CI_REPAIR_EXACT_PATHS: frozenset[str] = frozenset(
         "ops/AUTOMATION_TRACEABILITY.json",
         "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     }
+)
+V1_021_STORAGE_VERIFIED_PATHS: tuple[str, ...] = tuple(
+    sorted(
+        {
+            "backend/migrations/versions/20260823_10_audit_events.py",
+            "backend/tests/test_audit_migration.py",
+            "backend/tests/test_migrations.py",
+            "ops/NOW.md",
+            "ops/STATE.json",
+            "ops/traceability.json",
+            "scripts/database-test.sh",
+            "scripts/openclaw_dispatch.py",
+            "scripts/test_openclaw_automation.py",
+        }
+    )
+)
+V1_021_APPEND_VERIFIED_PATHS: tuple[str, ...] = tuple(
+    sorted(
+        set(V1_021_STORAGE_VERIFIED_PATHS)
+        | {
+            "backend/src/property_rental/audit.py",
+            "backend/tests/test_audit.py",
+        }
+    )
+)
+V1_021_QUERY_VERIFIED_PATHS: tuple[str, ...] = tuple(
+    sorted(
+        set(V1_021_APPEND_VERIFIED_PATHS)
+        | {
+            "backend/src/property_rental/app.py",
+            "backend/src/property_rental/audit_api.py",
+            "backend/tests/test_audit_api.py",
+            "backend/tests/test_initial_owner_bootstrap_cli.py",
+            "scripts/openclaw_automation.py",
+        }
+    )
 )
 
 
@@ -2663,6 +2699,566 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
     save_stage(record)
 
 
+def recover_verified_v1_021_storage(record: dict[str, Any]) -> bool:
+    """Advance exact ceiling-stopped storage work only after real PostgreSQL passes."""
+    substage = current_bounded_substage(record)
+    usages = record.get("model_usage")
+    latest_usage = usages[-1] if isinstance(usages, list) and usages else None
+    if (
+        record.get("candidate") != "V1-021"
+        or record.get("stage") != "implementation"
+        or record.get("recovery_pending") is not True
+        or not substage
+        or substage.get("id") != "audit_storage"
+        or not isinstance(latest_usage, dict)
+        or latest_usage.get("stage_result") != "model_session_or_token_ceiling"
+        or int(latest_usage.get("api_calls_completed") or 0) <= 0
+    ):
+        return False
+    actual = changed_paths(REPO)
+    if actual != list(V1_021_STORAGE_VERIFIED_PATHS):
+        return False
+    required_files = (
+        "backend/migrations/versions/20260823_10_audit_events.py",
+        "backend/tests/test_audit_migration.py",
+    )
+    if any(not (REPO / relative).is_file() for relative in required_files):
+        return False
+    try:
+        state = json.loads((REPO / "ops/STATE.json").read_text())
+        traceability = json.loads((REPO / "ops/traceability.json").read_text())
+        now = (REPO / "ops/NOW.md").read_text()
+    except (OSError, json.JSONDecodeError):
+        return False
+    approval = state.get("approval") or {}
+    traceability_ids = {
+        item.get("test_id")
+        for item in traceability.get("entries") or []
+        if isinstance(item, dict)
+    }
+    required_test_ids = {
+        "test_audit_event_schema_matches_the_authoritative_contract",
+        "test_audit_event_constraints_reject_invalid_rows",
+        "test_database_controls_prohibit_audit_event_mutation",
+        "test_audit_migration_is_forward_only",
+    }
+    if (
+        approval.get("implementation_started") is not True
+        or approval.get("implementation_completed") is True
+        or state.get("owner_action") != "none"
+        or not required_test_ids.issubset(traceability_ids)
+        or "V1-021 audit_storage is implemented and verified" not in now
+    ):
+        return False
+    verification_commands = (("make", "automation-test"), ("make", "database-test"))
+    for command in verification_commands:
+        verification = run(*command, check=False, capture=False)
+        if verification.returncode:
+            rendered = " ".join(command)
+            record.update(
+                {
+                    "last_failure_category": "deterministic_test_failure",
+                    "failed_check": rendered,
+                    "repository_fingerprint": repository_fingerprint(REPO),
+                }
+            )
+            save_stage(record)
+            raise AutomationError(
+                "deterministic_test_failure",
+                f"verified V1-021 audit_storage recovery failed {rendered}",
+            )
+    resolve_pending_routing_recovery(record, outcome="succeeded")
+    completed = list(record.get("completed_implementation_substages") or [])
+    completed.append("audit_storage")
+    record.setdefault("events", []).append(
+        {
+            "stage": "implementation",
+            "substage": "audit_storage",
+            "result": "recovered_after_ceiling_with_real_postgresql",
+            "verification": ["make automation-test", "make database-test"],
+            "changed_paths": actual,
+        }
+    )
+    record.update(
+        {
+            "stage": "implementation",
+            "implementation_complete": False,
+            "implementation_result": {
+                "stage_result": "completed",
+                "substage_complete": True,
+                "changed_paths": actual,
+                "verification": [
+                    "make automation-test: passed",
+                    "make database-test: passed",
+                ],
+                "blockers": [],
+                "exact_next_action": "Dispatch the fresh V1-021 append_service substage.",
+            },
+            "completed_implementation_substages": completed,
+            "scoped_changed_paths": full_candidate_paths(record),
+            "expected_worktree_paths": actual,
+            "repository_fingerprint": repository_fingerprint(REPO),
+            "last_failure_category": None,
+            "stop_reason": None,
+            "recovery_pending": False,
+            "recovery_generation": 0,
+            "bounded_recovery_exhausted": False,
+            "product_code_modification_permitted": True,
+        }
+    )
+    save_stage(record)
+    return True
+
+
+def recover_verified_v1_021_append_service(record: dict[str, Any]) -> bool:
+    """Advance exact ceiling-stopped append work only after every local gate passes."""
+    substage = current_bounded_substage(record)
+    usages = record.get("model_usage")
+    latest_usage = usages[-1] if isinstance(usages, list) and usages else None
+    if (
+        record.get("candidate") != "V1-021"
+        or record.get("stage") != "implementation"
+        or record.get("recovery_pending") is not True
+        or not substage
+        or substage.get("id") != "append_service"
+        or record.get("completed_implementation_substages") != ["audit_storage"]
+        or not isinstance(latest_usage, dict)
+        or latest_usage.get("stage_result") != "model_session_or_token_ceiling"
+        or int(latest_usage.get("api_calls_completed") or 0) <= 0
+    ):
+        return False
+    actual = changed_paths(REPO)
+    if actual != list(V1_021_APPEND_VERIFIED_PATHS):
+        return False
+    required_files = (
+        "backend/src/property_rental/audit.py",
+        "backend/tests/test_audit.py",
+    )
+    if any(not (REPO / relative).is_file() for relative in required_files):
+        return False
+    try:
+        state = json.loads((REPO / "ops/STATE.json").read_text())
+        traceability = json.loads((REPO / "ops/traceability.json").read_text())
+        now = (REPO / "ops/NOW.md").read_text()
+    except (OSError, json.JSONDecodeError):
+        return False
+    approval = state.get("approval") or {}
+    traceability_ids = {
+        item.get("test_id")
+        for item in traceability.get("entries") or []
+        if isinstance(item, dict)
+    }
+    required_test_ids = {
+        "test_append_records_complete_content_with_utc_and_property_date",
+        "test_append_snapshots_state_into_recursively_immutable_content",
+        "test_append_rejects_blank_minimum_content",
+        "test_append_rejects_naive_timestamp_before_persistence",
+        "test_append_rejects_mutable_or_non_json_state_values",
+        "test_append_propagates_persistence_failure",
+    }
+    if (
+        approval.get("implementation_started") is not True
+        or approval.get("implementation_completed") is True
+        or state.get("owner_action") != "none"
+        or not required_test_ids.issubset(traceability_ids)
+        or "V1-021 audit_storage and append_service are implemented and verified"
+        not in now
+    ):
+        return False
+    verification_commands = (
+        ("make", "automation-test"),
+        ("make", "test"),
+        ("make", "database-test"),
+    )
+    for command in verification_commands:
+        verification = run(*command, check=False, capture=False)
+        if verification.returncode:
+            rendered = " ".join(command)
+            record.update(
+                {
+                    "last_failure_category": "deterministic_test_failure",
+                    "failed_check": rendered,
+                    "repository_fingerprint": repository_fingerprint(REPO),
+                }
+            )
+            save_stage(record)
+            raise AutomationError(
+                "deterministic_test_failure",
+                f"verified V1-021 append_service recovery failed {rendered}",
+            )
+    resolve_pending_routing_recovery(record, outcome="succeeded")
+    completed = list(record.get("completed_implementation_substages") or [])
+    completed.append("append_service")
+    record.setdefault("events", []).append(
+        {
+            "stage": "implementation",
+            "substage": "append_service",
+            "result": "recovered_after_ceiling_with_complete_local_gates",
+            "verification": ["make automation-test", "make test", "make database-test"],
+            "changed_paths": actual,
+        }
+    )
+    record.update(
+        {
+            "stage": "implementation",
+            "implementation_complete": False,
+            "implementation_result": {
+                "stage_result": "completed",
+                "substage_complete": True,
+                "changed_paths": actual,
+                "verification": [
+                    "make automation-test: passed",
+                    "make test: passed",
+                    "make database-test: passed",
+                ],
+                "blockers": [],
+                "exact_next_action": "Dispatch the fresh V1-021 authorized_query substage.",
+            },
+            "completed_implementation_substages": completed,
+            "scoped_changed_paths": full_candidate_paths(record),
+            "expected_worktree_paths": actual,
+            "repository_fingerprint": repository_fingerprint(REPO),
+            "last_failure_category": None,
+            "stop_reason": None,
+            "recovery_pending": False,
+            "recovery_generation": 0,
+            "bounded_recovery_exhausted": False,
+            "product_code_modification_permitted": True,
+        }
+    )
+    save_stage(record)
+    return True
+
+
+def recover_verified_v1_021_authorized_query(record: dict[str, Any]) -> bool:
+    """Complete exact ceiling-stopped query work only after full local gates pass."""
+    substage = current_bounded_substage(record)
+    usages = record.get("model_usage")
+    latest_usage = usages[-1] if isinstance(usages, list) and usages else None
+    if (
+        record.get("candidate") != "V1-021"
+        or record.get("stage") not in {"implementation", "deterministic_verification"}
+        or record.get("recovery_pending") is not True
+        or not substage
+        or substage.get("id") != "authorized_query"
+        or record.get("completed_implementation_substages")
+        != ["audit_storage", "append_service"]
+        or not isinstance(latest_usage, dict)
+        or latest_usage.get("stage_result") != "model_session_or_token_ceiling"
+        or int(latest_usage.get("api_calls_completed") or 0) <= 0
+    ):
+        return False
+    actual = changed_paths(REPO)
+    if actual != list(V1_021_QUERY_VERIFIED_PATHS):
+        return False
+    required_files = (
+        "backend/src/property_rental/audit_api.py",
+        "backend/tests/test_audit_api.py",
+    )
+    if any(not (REPO / relative).is_file() for relative in required_files):
+        return False
+    try:
+        state = json.loads((REPO / "ops/STATE.json").read_text())
+        traceability = json.loads((REPO / "ops/traceability.json").read_text())
+        now = (REPO / "ops/NOW.md").read_text()
+    except (OSError, json.JSONDecodeError):
+        return False
+    approval = state.get("approval") or {}
+    traceability_ids = {
+        item.get("test_id")
+        for item in traceability.get("entries") or []
+        if isinstance(item, dict)
+    }
+    required_test_ids = {
+        "test_property_search_requires_authentication",
+        "test_property_search_requires_dedicated_capability_in_property_scope",
+        "test_property_search_cannot_cross_an_authorized_property_scope",
+        "test_property_search_passes_bounded_filters_and_returns_canonical_page",
+        "test_search_rejects_unknown_filters_before_querying",
+        "test_resource_timeline_resolves_and_authorizes_owning_property",
+        "test_resource_timeline_does_not_query_events_outside_property_scope",
+        "test_audit_routes_expose_no_mutation_api",
+    }
+    if (
+        approval.get("implementation_started") is not True
+        or approval.get("implementation_completed") is not True
+        or state.get("owner_action") != "none"
+        or not required_test_ids.issubset(traceability_ids)
+        or "V1-021 implementation is complete across audit_storage, append_service, and authorized_query"
+        not in now
+    ):
+        return False
+    verification_commands = (
+        ("make", "automation-test"),
+        ("make", "test"),
+        ("make", "database-test"),
+    )
+    for command in verification_commands:
+        verification = run(*command, check=False, capture=False)
+        if verification.returncode:
+            rendered = " ".join(command)
+            record.update(
+                {
+                    "last_failure_category": "deterministic_test_failure",
+                    "failed_check": rendered,
+                    "repository_fingerprint": repository_fingerprint(REPO),
+                }
+            )
+            save_stage(record)
+            raise AutomationError(
+                "deterministic_test_failure",
+                f"verified V1-021 authorized_query recovery failed {rendered}",
+            )
+    resolve_pending_routing_recovery(record, outcome="succeeded")
+    completed = list(record.get("completed_implementation_substages") or [])
+    completed.append("authorized_query")
+    record.setdefault("events", []).append(
+        {
+            "stage": "implementation",
+            "substage": "authorized_query",
+            "result": "recovered_after_ceiling_with_complete_local_gates",
+            "verification": ["make automation-test", "make test", "make database-test"],
+            "changed_paths": actual,
+        }
+    )
+    record.update(
+        {
+            "stage": "deterministic_verification",
+            "implementation_complete": True,
+            "implementation_result": {
+                "stage_result": "completed",
+                "substage_complete": True,
+                "changed_paths": actual,
+                "verification": [
+                    "make automation-test: passed",
+                    "make test: passed",
+                    "make database-test: passed",
+                ],
+                "blockers": [],
+                "exact_next_action": "Run complete deterministic verification in a separate stage.",
+            },
+            "completed_implementation_substages": completed,
+            "scoped_changed_paths": full_candidate_paths(record),
+            "expected_worktree_paths": actual,
+            "repository_fingerprint": repository_fingerprint(REPO),
+            "last_failure_category": None,
+            "stop_reason": None,
+            "recovery_pending": False,
+            "recovery_generation": 0,
+            "bounded_recovery_exhausted": False,
+            "product_code_modification_permitted": True,
+        }
+    )
+    save_stage(record)
+    return True
+
+
+def recover_mechanical_format_failure(record: dict[str, Any]) -> bool:
+    """Resume verification after the repository formatter fixes its sole gate."""
+    if (
+        record.get("stage") != "implementation"
+        or record.get("last_failure_category") != "deterministic_test_failure"
+        or record.get("failed_check") != "format-check"
+        or not record.get("repair_failure")
+    ):
+        return False
+    actual = full_candidate_paths(record)
+    scoped = sorted(record.get("scoped_changed_paths") or [])
+    if actual != scoped or changed_paths(REPO) != sorted(
+        record.get("expected_worktree_paths") or []
+    ):
+        return False
+    verification = run("make", "format-check", check=False, capture=False)
+    if verification.returncode:
+        return False
+    record.setdefault("events", []).append(
+        {
+            "stage": "implementation",
+            "result": "mechanical_format_repair_verified",
+            "verification": "make format-check",
+            "changed_paths": actual,
+        }
+    )
+    verdict = record.get("review_verdict")
+    findings = verdict.get("findings") if isinstance(verdict, dict) else None
+    pending_v1_021_review_repair = (
+        record.get("candidate") == "V1-021"
+        and isinstance(findings, list)
+        and bool(findings)
+        and all(
+            isinstance(finding, dict)
+            and finding.get("severity") in {"high", "medium"}
+            for finding in findings
+        )
+    )
+    record.update(
+        {
+            "stage": (
+                "implementation"
+                if pending_v1_021_review_repair
+                else "deterministic_verification"
+            ),
+            "last_failure_category": (
+                "independent_review_defect"
+                if pending_v1_021_review_repair
+                else None
+            ),
+            "failed_check": None,
+            "repair_failure": (
+                "fresh independent review returned concrete in-scope findings"
+                if pending_v1_021_review_repair
+                else None
+            ),
+            "repository_fingerprint": repository_fingerprint(REPO),
+            "product_code_modification_permitted": False,
+        }
+    )
+    save_stage(record)
+    return True
+
+
+def recover_verified_v1_021_review_findings(record: dict[str, Any]) -> bool:
+    """Resume gates after the current exact V1-021 reviewer findings are repaired."""
+    verdict = record.get("review_verdict")
+    findings = verdict.get("findings") if isinstance(verdict, dict) else None
+    failure_category = record.get("last_failure_category")
+    review_repair_gate_retry = (
+        failure_category == "deterministic_test_failure"
+        and record.get("failed_check")
+        in {"make automation-test", "make test", "make database-test"}
+    )
+    if (
+        record.get("candidate") != "V1-021"
+        or record.get("stage") not in {"implementation", "deterministic_verification"}
+        or (
+            failure_category != "independent_review_defect"
+            and not review_repair_gate_retry
+        )
+        or not isinstance(findings, list)
+        or not findings
+        or any(
+            not isinstance(finding, dict)
+            or finding.get("severity") not in {"high", "medium"}
+            for finding in findings
+        )
+    ):
+        return False
+    reviewed_fingerprint = verdict.get("reviewed_repository_fingerprint")
+    if not isinstance(reviewed_fingerprint, str) or not re.fullmatch(
+        r"[0-9a-f]{64}", reviewed_fingerprint
+    ):
+        return False
+    verdict_fingerprint = digest(verdict)
+    pending_repair = record.get("pending_review_repair")
+    if pending_repair is not None and (
+        not isinstance(pending_repair, dict)
+        or pending_repair.get("verdict_fingerprint") != verdict_fingerprint
+        or pending_repair.get("reviewed_repository_fingerprint")
+        != reviewed_fingerprint
+        or pending_repair.get("reviewed_paths") != verdict.get("reviewed_paths")
+    ):
+        return False
+    if repository_fingerprint(REPO) == reviewed_fingerprint:
+        return False
+    actual = changed_paths(REPO)
+    recorded = full_candidate_paths(record)
+    pre_packet_repair_paths = [
+        path
+        for path in V1_021_QUERY_VERIFIED_PATHS
+        if path != "scripts/openclaw_automation.py"
+    ]
+    if actual != list(V1_021_QUERY_VERIFIED_PATHS) or recorded not in (
+        actual,
+        pre_packet_repair_paths,
+    ):
+        return False
+    try:
+        state = json.loads((REPO / "ops/STATE.json").read_text())
+        traceability = json.loads((REPO / "ops/traceability.json").read_text())
+        now = (REPO / "ops/NOW.md").read_text()
+    except (OSError, json.JSONDecodeError):
+        return False
+    ids = {
+        item.get("test_id")
+        for item in traceability.get("entries") or []
+        if isinstance(item, dict)
+    }
+    required = {
+        "test_append_requires_snapshot_or_linked_source_event",
+        "test_append_rejects_secret_bearing_snapshot_fields",
+        "test_append_rejects_numeric_secret_bearing_snapshot_fields",
+        "test_append_rejects_unclassified_numeric_authentication_secret",
+        "test_append_rejects_secret_material_in_free_form_values",
+        "test_append_rejects_unknown_snapshot_fields_by_default",
+        "test_append_accepts_classified_financial_and_operational_facts",
+        "test_append_accepts_safe_business_identity_fields",
+        "test_postgres_appender_rejects_direct_event_with_secret_before_insert",
+        "test_postgres_appender_rejects_direct_blank_authorization_reference",
+        "test_postgres_appender_enforces_time_invariants_and_normalizes_utc",
+        "test_postgres_scope_resolver_uses_authoritative_table_and_canonical_entity_type",
+        "test_authoritative_reservation_resolves_without_audit_history",
+        "test_unimplemented_resource_families_never_use_audit_history_as_authority",
+        "test_customer_scope_resolver_collects_all_authorized_related_properties",
+        "test_resource_timeline_uses_resolver_canonical_irregular_entity_type",
+        "test_resource_timeline_includes_linked_lease_events_across_authorized_properties",
+        "test_resource_timeline_does_not_query_events_outside_property_scope",
+        "test_cursor_rejects_naive_timestamp_and_normalizes_aware_timestamp",
+        "test_loaded_historical_public_facts_are_classified_and_frozen",
+        "test_loaded_camel_case_classified_key_uses_write_normalization",
+        "test_stored_top_level_secret_material_is_rejected_before_event_exposure",
+        "test_stored_numeric_secret_fields_are_rejected_before_exposure",
+        "test_stored_unclassified_numeric_authentication_secret_is_not_exposed",
+        "test_stored_unclassified_text_authentication_secret_is_not_exposed",
+        "test_postgres_append_and_authorized_query_round_trip_is_lossless",
+        "test_database_rejects_blank_authorization_reference",
+        "test_postgres_appender_participates_in_the_callers_transaction",
+    }
+    if (
+        (state.get("approval") or {}).get("implementation_completed") is not True
+        or state.get("owner_action") != "none"
+        or not required.issubset(ids)
+        or "V1-021 independent-review findings are repaired" not in now
+    ):
+        return False
+    for command in (
+        ("make", "automation-test"),
+        ("make", "test"),
+        ("make", "database-test"),
+    ):
+        result = run(*command, check=False, capture=False)
+        if result.returncode:
+            rendered = " ".join(command)
+            record["failed_check"] = rendered
+            save_stage(record)
+            raise AutomationError(
+                "deterministic_test_failure",
+                f"V1-021 review repair failed {rendered}",
+            )
+    record.setdefault("review_history", []).append(verdict)
+    fingerprint = repository_fingerprint(REPO)
+    record.update(
+        {
+            "stage": "deterministic_verification",
+            "repository_fingerprint": fingerprint,
+            "scoped_changed_paths": actual,
+            "expected_worktree_paths": actual,
+            "deterministic_verification_passed": False,
+            "verified_repository_fingerprint": None,
+            "verified_paths": [],
+            "review_verdict": None,
+            "reviewed_paths": [],
+            "reviewed_repository_fingerprint": None,
+            "pending_review_repair": None,
+            "last_failure_category": None,
+            "repair_failure": None,
+            "failed_check": None,
+            "product_code_modification_permitted": False,
+        }
+    )
+    save_stage(record)
+    return True
+
+
 def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
     is_recovery = bool(record.get("repair_failure"))
     model_stage = "direct_codex_recovery" if is_recovery else "implementation"
@@ -2677,6 +3273,16 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         )
     candidate = str(record.get("candidate") or "")
     rebase_pending_automation_recovery(record)
+    if recover_verified_v1_021_storage(record):
+        return
+    if recover_verified_v1_021_append_service(record):
+        return
+    if recover_verified_v1_021_authorized_query(record):
+        return
+    if recover_mechanical_format_failure(record):
+        return
+    if recover_verified_v1_021_review_findings(record):
+        return
     candidate_substages = CANDIDATE_SUBSTAGES.get(candidate)
     if candidate_substages is not None and substage is None:
         record["stage"] = "deterministic_verification"
@@ -2832,6 +3438,8 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
 
 
 def deterministic_verification(record: dict[str, Any]) -> None:
+    if recover_verified_v1_021_authorized_query(record):
+        return
     consume_pending_continuation(record, "deterministic_verification")
     current_paths = full_candidate_paths(record)
     if current_paths != sorted(record.get("scoped_changed_paths") or []):
@@ -2945,12 +3553,177 @@ def deterministic_verification(record: dict[str, Any]) -> None:
             "repository_fingerprint": verified_fingerprint,
             "verified_repository_fingerprint": verified_fingerprint,
             "verified_paths": current_paths,
+            "last_failure_category": None,
+            "failed_check": None,
+            "repair_failure": None,
+        }
+    )
+    save_stage(record)
+
+
+def normalize_verified_v1_021_review_base(record: dict[str, Any]) -> None:
+    """Restore the exact green V1-021 base after compact-state bootstrapping."""
+    if (
+        record.get("candidate") != "V1-021"
+        or record.get("stage") != "independent_review"
+        or record.get("deterministic_verification_passed") is not True
+    ):
+        return
+    rebases = record.get("automation_rebases")
+    latest = rebases[-1] if isinstance(rebases, list) and rebases else None
+    if not isinstance(latest, dict):
+        return
+    target = str(latest.get("to_commit") or "")
+    if (
+        not re.fullmatch(r"[0-9a-f]{40}", target)
+        or target != git(REPO, "rev-parse", "HEAD")
+        or not isinstance(latest.get("run_id"), int)
+        or not latest.get("url")
+    ):
+        return
+    actual = changed_paths(REPO)
+    if actual != list(V1_021_QUERY_VERIFIED_PATHS):
+        return
+    synchronized = synchronized_repository_shas()
+    if any(
+        synchronized.get(name) != target for name in ("local", "upstream", "remote")
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the green V1-021 automation-rebase head is not synchronized",
+        )
+    rebased_paths = full_candidate_paths({"candidate_base_commit": target})
+    if rebased_paths != actual:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the green V1-021 review base does not isolate the exact dirty candidate",
+        )
+    fingerprint = repository_fingerprint(REPO)
+    previous = str(record.get("candidate_base_commit") or "")
+    if previous == target:
+        return
+    record.setdefault("events", []).append(
+        {
+            "stage": "independent_review",
+            "result": "review_base_changed_and_verification_invalidated",
+            "from_commit": previous,
+            "to_commit": target,
+            "ci_run_id": latest["run_id"],
+            "ci_url": latest["url"],
+            "changed_paths": actual,
+        }
+    )
+    record.update(
+        {
+            "stage": "deterministic_verification",
+            "candidate_base_commit": target,
+            "scoped_changed_paths": actual,
+            "expected_worktree_paths": actual,
+            "deterministic_verification_passed": False,
+            "verified_paths": [],
+            "repository_fingerprint": fingerprint,
+            "verified_repository_fingerprint": None,
+            "last_failure_category": None,
+            "failed_check": None,
+            "repair_failure": None,
+        }
+    )
+    save_stage(record)
+
+
+def materialize_verified_v1_021_untracked_review_diff(record: dict[str, Any]) -> None:
+    """Expose exact verified new files to Git diff without staging their content."""
+    if (
+        record.get("candidate") != "V1-021"
+        or record.get("stage") != "independent_review"
+        or record.get("deterministic_verification_passed") is not True
+    ):
+        return
+    expected = sorted(record.get("scoped_changed_paths") or [])
+    if not expected:
+        return
+    preparation_fingerprint = repository_fingerprint(REPO)
+    current_paths = full_candidate_paths(record)
+    if (
+        record.get("verified_repository_fingerprint") != preparation_fingerprint
+        or sorted(record.get("verified_paths") or []) != current_paths
+        or current_paths != expected
+    ):
+        record.update(
+            {
+                "stage": "deterministic_verification",
+                "deterministic_verification_passed": False,
+                "repository_fingerprint": preparation_fingerprint,
+            }
+        )
+        save_stage(record)
+        return
+    environment = os.environ.copy()
+    environment["GIT_LITERAL_PATHSPECS"] = "1"
+    untracked_result = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard", "-z", "--", *expected],
+        cwd=REPO,
+        check=True,
+        stdout=subprocess.PIPE,
+        env=environment,
+    ).stdout
+    untracked = sorted(
+        os.fsdecode(item) for item in untracked_result.split(b"\0") if item
+    )
+    if not untracked:
+        return
+    if any(path not in expected for path in untracked):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "V1-021 review preparation encountered an unscoped untracked path",
+        )
+    before = changed_paths(REPO)
+    subprocess.run(
+        ["git", "add", "--intent-to-add", "--", *untracked],
+        cwd=REPO,
+        check=True,
+        env=environment,
+    )
+    remaining = subprocess.run(
+        ["git", "ls-files", "--others", "--exclude-standard", "-z", "--", *expected],
+        cwd=REPO,
+        check=True,
+        stdout=subprocess.PIPE,
+        env=environment,
+    ).stdout
+    if (
+        any(item for item in remaining.split(b"\0") if item)
+        or changed_paths(REPO) != before
+        or full_candidate_paths(record) != expected
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "V1-021 intent-to-add review preparation changed the candidate scope",
+        )
+    fingerprint = repository_fingerprint(REPO)
+    record.setdefault("events", []).append(
+        {
+            "stage": "independent_review",
+            "result": "untracked_content_materialized_with_intent_to_add",
+            "paths": untracked,
+        }
+    )
+    record.update(
+        {
+            "repository_fingerprint": fingerprint,
+            "verified_repository_fingerprint": fingerprint,
         }
     )
     save_stage(record)
 
 
 def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> None:
+    normalize_verified_v1_021_review_base(record)
+    if record.get("stage") != "independent_review":
+        return
+    materialize_verified_v1_021_untracked_review_diff(record)
+    if record.get("stage") != "independent_review":
+        return
     consume_pending_continuation(record, "independent_review")
     current_fingerprint = repository_fingerprint(REPO)
     current_paths = full_candidate_paths(record)
@@ -3185,6 +3958,11 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
             {
                 "last_failure_category": "independent_review_defect",
                 "review_verdict": verdict,
+                "pending_review_repair": {
+                    "verdict_fingerprint": digest(verdict),
+                    "reviewed_repository_fingerprint": after,
+                    "reviewed_paths": expected_paths,
+                },
                 "repair_failure": "fresh independent review returned concrete in-scope findings",
                 "stage": "implementation",
             }
@@ -3230,6 +4008,7 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
             "reviewed_paths": expected_paths,
             "publication_paths": changed_paths(REPO),
             "publication_substage": None,
+            "pending_review_repair": None,
             "stop_reason": None,
             "recovery_pending": False,
             "recovery_generation": 0,
@@ -4235,7 +5014,13 @@ def dispatch() -> int:
                 "completed_tranche_publication_action_enforced",
                 "completed_status_alias_publication_enforced",
                 "capability_verification_continuation",
-            } and record.get("stage") in {"reconciliation_dispatch", "implementation"}:
+            } and (
+                record.get("stage") == "reconciliation_dispatch"
+                or (
+                    record.get("stage") == "implementation"
+                    and record.get("implementation_complete") is not True
+                )
+            ):
                 bootstrap_completed_candidate(
                     record,
                     require_preserved_identity=(

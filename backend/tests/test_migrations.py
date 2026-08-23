@@ -3625,7 +3625,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260820_09",)
+                assert cursor.fetchone() == ("20260823_10",)
 
 
 def test_protected_bootstrap_migration_rejects_large_object_ownership() -> None:

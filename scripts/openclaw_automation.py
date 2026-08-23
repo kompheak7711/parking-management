@@ -191,7 +191,7 @@ V1_020_SUBSTAGE_PATHS: Final = {
         "backend/tests/test_initial_owner_bootstrap.py",
     ),
 }
-V1_021_ROUTING_REVISION: Final = "v1-021-audit-foundation-routing-v2"
+V1_021_ROUTING_REVISION: Final = "v1-021-audit-foundation-routing-v3"
 V1_021_SUBSTAGE_IDS: Final = (
     "audit_storage",
     "append_service",
@@ -252,8 +252,6 @@ V1_021_SUBSTAGE_PATHS: Final = {
     "authorized_query": (
         "backend/src/property_rental/audit.py",
         "backend/src/property_rental/api.py",
-        "backend/src/property_rental/app.py",
-        "backend/tests/test_auth_api.py",
     ),
 }
 V1_021_SUBSTAGE_WRITABLE_PATHS: Final = {
@@ -1968,6 +1966,109 @@ def complete_small_frontend_evidence(repo: Path) -> list[dict[str, Any]]:
     return evidence
 
 
+def v1_021_authorized_query_integration_contract(repo: Path) -> dict[str, Any]:
+    """Materialize only the application-factory syntax needed for audit wiring."""
+    relative = "backend/src/property_rental/app.py"
+    source = (repo / relative).read_text()
+    try:
+        tree = ast.parse(source, filename=relative)
+    except SyntaxError as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the application factory cannot be materialized for audit routing",
+        ) from error
+
+    excerpts: list[dict[str, Any]] = []
+    for node in ast.walk(tree):
+        include = False
+        label = ""
+        if isinstance(node, ast.ImportFrom) and node.module == "property_rental.audit_api":
+            include = True
+            label = "audit_api_import"
+        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in {
+            "audit_query_unavailable",
+            "audit_query_forbidden",
+            "audit_query_not_found",
+            "audit_query_invalid",
+        }:
+            include = True
+            label = node.name
+        elif isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            rendered = _ast_excerpt(source, node)
+            if "app.include_router" in rendered and "create_audit_router" in rendered:
+                include = True
+                label = "audit_router_registration"
+        if include:
+            excerpts.append(
+                {
+                    "label": label,
+                    "start_line": node.lineno,
+                    "end_line": node.end_lineno,
+                    "excerpt": _ast_excerpt(source, node),
+                }
+            )
+
+    create_app = next(
+        (
+            node
+            for node in tree.body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name == "create_app"
+        ),
+        None,
+    )
+    labels = {item["label"] for item in excerpts}
+    required = {
+        "audit_api_import",
+        "audit_query_unavailable",
+        "audit_query_forbidden",
+        "audit_query_not_found",
+        "audit_query_invalid",
+        "audit_router_registration",
+    }
+    if create_app is None or labels != required:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the exact audit application integration points are unavailable",
+        )
+    arguments = [*create_app.args.posonlyargs, *create_app.args.args]
+    parameter_index = next(
+        (
+            index
+            for index, argument in enumerate(arguments)
+            if argument.arg == "audit_query_flow"
+        ),
+        None,
+    )
+    default_start = len(arguments) - len(create_app.args.defaults)
+    if parameter_index is None or parameter_index < default_start:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the exact audit query factory parameter is unavailable",
+        )
+    parameter = arguments[parameter_index]
+    default = create_app.args.defaults[parameter_index - default_start]
+    if parameter.annotation is None:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the audit query factory parameter has no materialized annotation",
+        )
+    rendered_parameter = (
+        f"{parameter.arg}: {ast.unparse(parameter.annotation)} = {ast.unparse(default)}"
+    )
+    if rendered_parameter != "audit_query_flow: AuditEventQueryFlow | None = None":
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the audit query factory parameter drifted from the bounded integration contract",
+        )
+    return {
+        "path": relative,
+        "factory_parameter": rendered_parameter,
+        "factory_start_line": create_app.lineno,
+        "syntax_excerpts": sorted(excerpts, key=lambda item: int(item["start_line"])),
+    }
+
+
 def task_packet(
     repo: Path,
     preflight: dict[str, Any],
@@ -2215,6 +2316,11 @@ def task_packet(
         packet["materialized_implementation_context"] = {
             "routing_revision": V1_021_ROUTING_REVISION,
             "repository_evidence": materialized_repository_evidence,
+            "application_integration_contract": (
+                v1_021_authorized_query_integration_contract(repo)
+                if substage_id == "authorized_query"
+                else None
+            ),
             "exact_writable_paths": [
                 *V1_021_SUBSTAGE_WRITABLE_PATHS[substage_id],
                 "ops/NOW.md",
@@ -2223,7 +2329,7 @@ def task_packet(
             ],
             "shortest_execution_sequence": [
                 f"Implement only the {substage_id} audit-foundation substage.",
-                "Use only the complete materialized repository evidence and authority excerpts already in this packet.",
+                "Use only the materialized repository evidence, integration contract, and authority excerpts already in this packet.",
                 "Do not call any read, search, listing, terminal, Git, database, make, or verification tool; none is necessary or authorized.",
                 "Create or update only exact_writable_paths and do not begin the next audit substage.",
                 "Patch the authorized compact evidence paths without rereading their full contents.",

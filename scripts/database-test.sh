@@ -101,4 +101,5 @@ export HUMAN_ADMIN_DATABASE_URL
 export BOOTSTRAP_DATABASE_URL
 
 cd backend
-REQUIRE_DATABASE_TESTS=1 uv run --extra dev pytest --tb=short --no-header tests/test_migrations.py
+REQUIRE_DATABASE_TESTS=1 uv run --extra dev pytest --tb=short --no-header \
+  tests/test_migrations.py tests/test_audit_migration.py

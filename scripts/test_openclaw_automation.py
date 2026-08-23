@@ -28,8 +28,8 @@ from openclaw_automation import (
     COMPLEX_REVIEW_TOKEN_CEILING,
     EXCEPTIONAL_REVIEW_TOKEN_CEILING,
     FAILURE_CATEGORIES,
-    OWNER_BLOCKER_CATEGORIES,
     ORDINARY_TOKEN_CEILING,
+    OWNER_BLOCKER_CATEGORIES,
     RECOVERABLE_ROUTING_FAILURES,
     STAGES,
     UNAVAILABLE,
@@ -73,6 +73,7 @@ from openclaw_automation import (
     task_packet,
     usage_record,
     v1_019_routing_identity,
+    v1_021_authorized_query_integration_contract,
     validate_usage,
 )
 from openclaw_hermes_guard import (
@@ -1140,42 +1141,73 @@ class RepositoryEvidenceTests(unittest.TestCase):
                         "ops/traceability.json",
                     }
                 )
-                if substage == "audit_storage":
-                    packet = task_packet(
-                        ROOT,
-                        {"actionable": True},
-                        "implementation",
-                        bounded_substage={
-                            "id": substage,
-                            "order": index,
-                            "total": len(V1_021_SUBSTAGE_IDS),
-                        },
-                    )
-                    self.assertEqual(packet["directly_relevant_paths"], [])
-                    materialized = packet["materialized_implementation_context"]
+                packet = task_packet(
+                    ROOT,
+                    {"actionable": True},
+                    "implementation",
+                    bounded_substage={
+                        "id": substage,
+                        "order": index,
+                        "total": len(V1_021_SUBSTAGE_IDS),
+                    },
+                )
+                self.assertEqual(packet["directly_relevant_paths"], [])
+                materialized = packet["materialized_implementation_context"]
+                self.assertEqual(
+                    [item["path"] for item in materialized["repository_evidence"]],
+                    list(readable),
+                )
+                self.assertEqual(
+                    [
+                        item["complete_content"]
+                        for item in materialized["repository_evidence"]
+                    ],
+                    [(ROOT / path).read_text() for path in readable],
+                )
+                if substage == "authorized_query":
+                    contract = materialized["application_integration_contract"]
                     self.assertEqual(
-                        [item["path"] for item in materialized["repository_evidence"]],
-                        list(readable),
-                    )
-                    self.assertEqual(
-                        [
-                            item["complete_content"]
-                            for item in materialized["repository_evidence"]
-                        ],
-                        [(ROOT / path).read_text() for path in readable],
-                    )
-                    self.assertEqual(
-                        dispatcher.authorized_candidate_writes(
-                            {"candidate": "V1-021"}, packet, "implementation"
-                        ),
-                        expected_writable,
+                        contract["path"], "backend/src/property_rental/app.py"
                     )
                     self.assertEqual(
-                        sorted(materialized["exact_writable_paths"]), expected_writable
+                        contract["factory_parameter"],
+                        "audit_query_flow: AuditEventQueryFlow | None = None",
                     )
-                    prompt = dispatcher.packet_prompt(packet)
-                    self.assertIn("Do not call any read, search", prompt)
-                    self.assertLess(len(prompt.encode("utf-8")), 45_000)
+                    self.assertEqual(len(contract["syntax_excerpts"]), 6)
+                    self.assertNotIn(
+                        (ROOT / "backend/src/property_rental/app.py").read_text(),
+                        json.dumps(packet),
+                    )
+                else:
+                    self.assertIsNone(materialized["application_integration_contract"])
+                self.assertEqual(
+                    dispatcher.authorized_candidate_writes(
+                        {"candidate": "V1-021"}, packet, "implementation"
+                    ),
+                    expected_writable,
+                )
+                self.assertEqual(
+                    sorted(materialized["exact_writable_paths"]), expected_writable
+                )
+                prompt = dispatcher.packet_prompt(packet)
+                self.assertIn("Do not call any read, search", prompt)
+                self.assertLess(len(prompt.encode("utf-8")), 45_000)
+
+        app_source = (ROOT / "backend/src/property_rental/app.py").read_text()
+        without_audit_parameter = app_source.replace(
+            "    audit_query_flow: AuditEventQueryFlow | None = None,\n",
+            "",
+            1,
+        )
+        self.assertNotEqual(app_source, without_audit_parameter)
+        with (
+            mock.patch.object(Path, "read_text", return_value=without_audit_parameter),
+            self.assertRaisesRegex(
+                AutomationError,
+                "audit query factory parameter",
+            ),
+        ):
+            v1_021_authorized_query_integration_contract(ROOT)
 
         record: dict[str, Any] = {
             "candidate": "V1-021",
@@ -2181,7 +2213,7 @@ print(json.dumps(result))
                 spec.loader.exec_module(dispatcher)
             record = {
                 "candidate": "V1-018",
-                "stage": "implementation",
+                "stage": "deterministic_verification",
                 "scoped_changed_paths": ["candidate.txt"],
                 "repository_fingerprint": repository_fingerprint(repo),
             }
@@ -3169,6 +3201,755 @@ evidence.write_text(json.dumps({
                 self.assertEqual(rejected["candidate_base_commit"], repaired)
                 self.assertNotIn("automation_rebases", rejected)
 
+    def test_v1_021_storage_recovery_advances_only_exact_verified_work(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / "repo"
+            state_dir = root / "state"
+            (repo / "backend/migrations/versions").mkdir(parents=True)
+            (repo / "backend/tests").mkdir(parents=True)
+            (repo / "ops").mkdir()
+            (repo / "backend/migrations/versions/20260823_10_audit_events.py").write_text(
+                "revision = '20260823_10'\n"
+            )
+            (repo / "backend/tests/test_audit_migration.py").write_text(
+                "def test_audit_migration_is_forward_only(): pass\n"
+            )
+            atomic_write_json(
+                repo / "ops/STATE.json",
+                {
+                    "approval": {
+                        "implementation_started": True,
+                        "implementation_completed": False,
+                    },
+                    "owner_action": "none",
+                },
+            )
+            atomic_write_json(
+                repo / "ops/traceability.json",
+                {
+                    "entries": [
+                        {"test_id": test_id}
+                        for test_id in (
+                            "test_audit_event_schema_matches_the_authoritative_contract",
+                            "test_audit_event_constraints_reject_invalid_rows",
+                            "test_database_controls_prohibit_audit_event_mutation",
+                            "test_audit_migration_is_forward_only",
+                        )
+                    ]
+                },
+            )
+            (repo / "ops/NOW.md").write_text(
+                "V1-021 audit_storage is implemented and verified\n"
+            )
+            spec = importlib.util.spec_from_file_location(
+                "v1_021_storage_recovery_dispatch",
+                ROOT / "scripts/openclaw_dispatch.py",
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(state_dir),
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            paths = list(dispatcher.V1_021_STORAGE_VERIFIED_PATHS)
+            record = {
+                "candidate": "V1-021",
+                "stage": "implementation",
+                "recovery_pending": True,
+                "completed_implementation_substages": [],
+                "model_usage": [
+                    {
+                        "stage_result": "model_session_or_token_ceiling",
+                        "api_calls_completed": 2,
+                    }
+                ],
+            }
+            completed = subprocess.CompletedProcess([], 0, "", "")
+            with (
+                mock.patch.object(
+                    dispatcher,
+                    "current_bounded_substage",
+                    return_value={"id": "audit_storage"},
+                ),
+                mock.patch.object(dispatcher, "changed_paths", return_value=paths),
+                mock.patch.object(
+                    dispatcher, "full_candidate_paths", return_value=paths
+                ),
+                mock.patch.object(
+                    dispatcher, "repository_fingerprint", return_value="a" * 64
+                ),
+                mock.patch.object(dispatcher, "run", return_value=completed) as run_mock,
+                mock.patch.object(
+                    dispatcher, "resolve_pending_routing_recovery"
+                ) as resolve_mock,
+                mock.patch.object(dispatcher, "save_stage") as save_mock,
+            ):
+                self.assertTrue(dispatcher.recover_verified_v1_021_storage(record))
+            self.assertEqual(
+                [call.args for call in run_mock.call_args_list],
+                [("make", "automation-test"), ("make", "database-test")],
+            )
+            resolve_mock.assert_called_once_with(record, outcome="succeeded")
+            save_mock.assert_called_once_with(record)
+            self.assertEqual(record["completed_implementation_substages"], ["audit_storage"])
+            self.assertFalse(record["recovery_pending"])
+            self.assertEqual(record["stage"], "implementation")
+
+            with (
+                mock.patch.object(
+                    dispatcher,
+                    "current_bounded_substage",
+                    return_value={"id": "audit_storage"},
+                ),
+                mock.patch.object(dispatcher, "changed_paths", return_value=paths[:-1]),
+                mock.patch.object(dispatcher, "run") as rejected_run,
+            ):
+                self.assertFalse(
+                    dispatcher.recover_verified_v1_021_storage(
+                        {
+                            "candidate": "V1-021",
+                            "stage": "implementation",
+                            "recovery_pending": True,
+                            "model_usage": [
+                                {
+                                    "stage_result": "model_session_or_token_ceiling",
+                                    "api_calls_completed": 2,
+                                }
+                            ],
+                        }
+                    )
+                )
+            rejected_run.assert_not_called()
+
+            (repo / "backend/src/property_rental").mkdir(parents=True)
+            (repo / "backend/src/property_rental/audit.py").write_text(
+                "class AuditEventAppendService: pass\n"
+            )
+            (repo / "backend/tests/test_audit.py").write_text(
+                "def test_append_records_complete_content_with_utc_and_property_date(): pass\n"
+            )
+            atomic_write_json(
+                repo / "ops/traceability.json",
+                {
+                    "entries": [
+                        {"test_id": test_id}
+                        for test_id in (
+                            "test_append_records_complete_content_with_utc_and_property_date",
+                            "test_append_snapshots_state_into_recursively_immutable_content",
+                            "test_append_rejects_blank_minimum_content",
+                            "test_append_rejects_naive_timestamp_before_persistence",
+                            "test_append_rejects_mutable_or_non_json_state_values",
+                            "test_append_propagates_persistence_failure",
+                        )
+                    ]
+                },
+            )
+            (repo / "ops/NOW.md").write_text(
+                "V1-021 audit_storage and append_service are implemented and verified\n"
+            )
+            append_paths = list(dispatcher.V1_021_APPEND_VERIFIED_PATHS)
+            append_record = {
+                "candidate": "V1-021",
+                "stage": "implementation",
+                "recovery_pending": True,
+                "completed_implementation_substages": ["audit_storage"],
+                "model_usage": [
+                    {
+                        "stage_result": "model_session_or_token_ceiling",
+                        "api_calls_completed": 2,
+                    }
+                ],
+            }
+            with (
+                mock.patch.object(
+                    dispatcher,
+                    "current_bounded_substage",
+                    return_value={"id": "append_service"},
+                ),
+                mock.patch.object(
+                    dispatcher, "changed_paths", return_value=append_paths
+                ),
+                mock.patch.object(
+                    dispatcher, "full_candidate_paths", return_value=append_paths
+                ),
+                mock.patch.object(
+                    dispatcher, "repository_fingerprint", return_value="b" * 64
+                ),
+                mock.patch.object(dispatcher, "run", return_value=completed) as run_mock,
+                mock.patch.object(
+                    dispatcher, "resolve_pending_routing_recovery"
+                ) as resolve_mock,
+                mock.patch.object(dispatcher, "save_stage") as save_mock,
+            ):
+                self.assertTrue(
+                    dispatcher.recover_verified_v1_021_append_service(append_record)
+                )
+            self.assertEqual(
+                [call.args for call in run_mock.call_args_list],
+                [
+                    ("make", "automation-test"),
+                    ("make", "test"),
+                    ("make", "database-test"),
+                ],
+            )
+            resolve_mock.assert_called_once_with(append_record, outcome="succeeded")
+            save_mock.assert_called_once_with(append_record)
+            self.assertEqual(
+                append_record["completed_implementation_substages"],
+                ["audit_storage", "append_service"],
+            )
+            self.assertFalse(append_record["recovery_pending"])
+
+            (repo / "backend/src/property_rental/audit_api.py").write_text(
+                "class AuthorizedAuditEventQueryService: pass\n"
+            )
+            (repo / "backend/src/property_rental/app.py").write_text("app = object()\n")
+            (repo / "backend/tests/test_audit_api.py").write_text(
+                "def test_audit_routes_expose_no_mutation_api(): pass\n"
+            )
+            query_test_ids = (
+                "test_property_search_requires_authentication",
+                "test_property_search_requires_dedicated_capability_in_property_scope",
+                "test_property_search_cannot_cross_an_authorized_property_scope",
+                "test_property_search_passes_bounded_filters_and_returns_canonical_page",
+                "test_search_rejects_unknown_filters_before_querying",
+                "test_resource_timeline_resolves_and_authorizes_owning_property",
+                "test_resource_timeline_does_not_query_events_outside_property_scope",
+                "test_audit_routes_expose_no_mutation_api",
+            )
+            atomic_write_json(
+                repo / "ops/STATE.json",
+                {
+                    "approval": {
+                        "implementation_started": True,
+                        "implementation_completed": True,
+                    },
+                    "owner_action": "none",
+                },
+            )
+            atomic_write_json(
+                repo / "ops/traceability.json",
+                {"entries": [{"test_id": test_id} for test_id in query_test_ids]},
+            )
+            (repo / "ops/NOW.md").write_text(
+                "V1-021 implementation is complete across audit_storage, append_service, and authorized_query\n"
+            )
+            query_paths = list(dispatcher.V1_021_QUERY_VERIFIED_PATHS)
+            query_record = {
+                "candidate": "V1-021",
+                "stage": "deterministic_verification",
+                "recovery_pending": True,
+                "completed_implementation_substages": [
+                    "audit_storage",
+                    "append_service",
+                ],
+                "model_usage": [
+                    {
+                        "stage_result": "model_session_or_token_ceiling",
+                        "api_calls_completed": 1,
+                    }
+                ],
+            }
+            with (
+                mock.patch.object(
+                    dispatcher,
+                    "current_bounded_substage",
+                    return_value={"id": "authorized_query"},
+                ),
+                mock.patch.object(
+                    dispatcher, "changed_paths", return_value=query_paths
+                ),
+                mock.patch.object(
+                    dispatcher, "full_candidate_paths", return_value=query_paths
+                ),
+                mock.patch.object(
+                    dispatcher, "repository_fingerprint", return_value="c" * 64
+                ),
+                mock.patch.object(dispatcher, "run", return_value=completed) as run_mock,
+                mock.patch.object(
+                    dispatcher, "resolve_pending_routing_recovery"
+                ) as resolve_mock,
+                mock.patch.object(dispatcher, "save_stage") as save_mock,
+            ):
+                self.assertTrue(
+                    dispatcher.recover_verified_v1_021_authorized_query(query_record)
+                )
+            self.assertEqual(
+                [call.args for call in run_mock.call_args_list],
+                [
+                    ("make", "automation-test"),
+                    ("make", "test"),
+                    ("make", "database-test"),
+                ],
+            )
+            resolve_mock.assert_called_once_with(query_record, outcome="succeeded")
+            save_mock.assert_called_once_with(query_record)
+            self.assertEqual(query_record["stage"], "deterministic_verification")
+            self.assertTrue(query_record["implementation_complete"])
+            self.assertEqual(
+                query_record["completed_implementation_substages"],
+                ["audit_storage", "append_service", "authorized_query"],
+            )
+            self.assertFalse(query_record["recovery_pending"])
+
+    def test_format_only_verification_failure_resumes_without_a_model(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "format_recovery_dispatch",
+            ROOT / "scripts/openclaw_dispatch.py",
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        paths = ["backend/src/property_rental/audit.py"]
+        record = {
+            "candidate": "V1-021",
+            "stage": "implementation",
+            "last_failure_category": "deterministic_test_failure",
+            "failed_check": "format-check",
+            "repair_failure": "deterministic verification exited 2",
+            "scoped_changed_paths": paths,
+            "expected_worktree_paths": paths,
+        }
+        completed = subprocess.CompletedProcess([], 0, "", "")
+        with (
+            mock.patch.object(dispatcher, "full_candidate_paths", return_value=paths),
+            mock.patch.object(dispatcher, "changed_paths", return_value=paths),
+            mock.patch.object(dispatcher, "run", return_value=completed) as run_mock,
+            mock.patch.object(
+                dispatcher, "repository_fingerprint", return_value="d" * 64
+            ),
+            mock.patch.object(dispatcher, "save_stage") as save_mock,
+        ):
+            self.assertTrue(dispatcher.recover_mechanical_format_failure(record))
+        run_mock.assert_called_once_with(
+            "make", "format-check", check=False, capture=False
+        )
+        save_mock.assert_called_once_with(record)
+        self.assertEqual(record["stage"], "deterministic_verification")
+        self.assertIsNone(record["repair_failure"])
+
+        self.assertIsNone(record["failed_check"])
+        self.assertIsNone(record["last_failure_category"])
+
+        review_record = {
+            **record,
+            "stage": "implementation",
+            "last_failure_category": "deterministic_test_failure",
+            "failed_check": "format-check",
+            "repair_failure": "deterministic verification exited 2",
+            "review_verdict": {
+                "passed": False,
+                "findings": [{"severity": "high"} for _ in range(3)],
+            },
+        }
+        with (
+            mock.patch.object(dispatcher, "full_candidate_paths", return_value=paths),
+            mock.patch.object(dispatcher, "changed_paths", return_value=paths),
+            mock.patch.object(dispatcher, "run", return_value=completed),
+            mock.patch.object(
+                dispatcher, "repository_fingerprint", return_value="d" * 64
+            ),
+            mock.patch.object(dispatcher, "save_stage"),
+        ):
+            self.assertTrue(
+                dispatcher.recover_mechanical_format_failure(review_record)
+            )
+        self.assertEqual(review_record["stage"], "implementation")
+        self.assertEqual(
+            review_record["last_failure_category"], "independent_review_defect"
+        )
+        self.assertIsNotNone(review_record["review_verdict"])
+
+    def test_exact_v1_021_review_repairs_resume_gates_without_a_model(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "v1_021_review_repair_dispatch", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        paths = list(dispatcher.V1_021_QUERY_VERIFIED_PATHS)
+        verdict = {
+            "passed": False,
+            "findings": [{"severity": "high"} for _ in range(3)],
+            "reviewed_repository_fingerprint": "f" * 64,
+            "reviewed_paths": paths,
+        }
+        record = {
+            "candidate": "V1-021",
+            "stage": "implementation",
+            "last_failure_category": "independent_review_defect",
+            "review_verdict": verdict,
+        }
+        completed = subprocess.CompletedProcess([], 0, "", "")
+        prior_packet_paths = [
+            path for path in paths if path != "scripts/openclaw_automation.py"
+        ]
+        with (
+            mock.patch.object(dispatcher, "changed_paths", return_value=paths),
+            mock.patch.object(
+                dispatcher,
+                "full_candidate_paths",
+                return_value=prior_packet_paths,
+            ),
+            mock.patch.object(dispatcher, "run", return_value=completed) as run_mock,
+            mock.patch.object(
+                dispatcher, "repository_fingerprint", return_value="e" * 64
+            ),
+            mock.patch.object(dispatcher, "save_stage") as save_mock,
+            mock.patch.object(dispatcher.Path, "read_text") as read_mock,
+        ):
+            read_mock.side_effect = [
+                json.dumps(
+                    {
+                        "approval": {"implementation_completed": True},
+                        "owner_action": "none",
+                    }
+                ),
+                json.dumps(
+                    {
+                        "entries": [
+                            {"test_id": item}
+                            for item in (
+                                "test_append_requires_snapshot_or_linked_source_event",
+                                "test_append_rejects_secret_bearing_snapshot_fields",
+                                "test_append_rejects_numeric_secret_bearing_snapshot_fields",
+                                "test_append_rejects_unclassified_numeric_authentication_secret",
+                                "test_append_rejects_secret_material_in_free_form_values",
+                                "test_append_rejects_unknown_snapshot_fields_by_default",
+                                "test_append_accepts_classified_financial_and_operational_facts",
+                                "test_append_accepts_safe_business_identity_fields",
+                                "test_postgres_appender_rejects_direct_event_with_secret_before_insert",
+                                "test_postgres_appender_rejects_direct_blank_authorization_reference",
+                                "test_postgres_appender_enforces_time_invariants_and_normalizes_utc",
+                                "test_postgres_scope_resolver_uses_authoritative_table_and_canonical_entity_type",
+                                "test_authoritative_reservation_resolves_without_audit_history",
+                                "test_unimplemented_resource_families_never_use_audit_history_as_authority",
+                                "test_customer_scope_resolver_collects_all_authorized_related_properties",
+                                "test_resource_timeline_uses_resolver_canonical_irregular_entity_type",
+                                "test_resource_timeline_includes_linked_lease_events_across_authorized_properties",
+                                "test_resource_timeline_does_not_query_events_outside_property_scope",
+                                "test_cursor_rejects_naive_timestamp_and_normalizes_aware_timestamp",
+                                "test_loaded_historical_public_facts_are_classified_and_frozen",
+                                "test_loaded_camel_case_classified_key_uses_write_normalization",
+                                "test_stored_top_level_secret_material_is_rejected_before_event_exposure",
+                                "test_stored_numeric_secret_fields_are_rejected_before_exposure",
+                                "test_stored_unclassified_numeric_authentication_secret_is_not_exposed",
+                                "test_stored_unclassified_text_authentication_secret_is_not_exposed",
+                                "test_postgres_append_and_authorized_query_round_trip_is_lossless",
+                                "test_database_rejects_blank_authorization_reference",
+                                "test_postgres_appender_participates_in_the_callers_transaction",
+                                "test_verified_v1_021_review_rebase_invalidates_prior_verification",
+                            )
+                        ]
+                    }
+                ),
+                "V1-021 independent-review findings are repaired",
+            ]
+            self.assertTrue(dispatcher.recover_verified_v1_021_review_findings(record))
+        self.assertEqual(len(run_mock.call_args_list), 3)
+        save_mock.assert_called_once_with(record)
+        self.assertEqual(record["expected_worktree_paths"], paths)
+        self.assertEqual(record["stage"], "deterministic_verification")
+        self.assertIsNone(record["review_verdict"])
+        self.assertEqual(record["review_history"], [verdict])
+
+        unchanged_record = {
+            "candidate": "V1-021",
+            "stage": "implementation",
+            "last_failure_category": "independent_review_defect",
+            "review_verdict": verdict,
+            "pending_review_repair": {
+                "verdict_fingerprint": dispatcher.digest(verdict),
+                "reviewed_repository_fingerprint": "f" * 64,
+                "reviewed_paths": paths,
+            },
+        }
+        with (
+            mock.patch.object(
+                dispatcher,
+                "repository_fingerprint",
+                return_value="f" * 64,
+            ),
+            mock.patch.object(dispatcher, "run") as unchanged_run,
+        ):
+            self.assertFalse(
+                dispatcher.recover_verified_v1_021_review_findings(
+                    unchanged_record
+                )
+            )
+        unchanged_run.assert_not_called()
+
+        stale_verification_record = {
+            "candidate": "V1-021",
+            "stage": "deterministic_verification",
+            "deterministic_verification_passed": True,
+            "last_failure_category": "independent_review_defect",
+            "review_verdict": verdict,
+        }
+        with (
+            mock.patch.object(dispatcher, "changed_paths", return_value=paths),
+            mock.patch.object(dispatcher, "full_candidate_paths", return_value=paths),
+            mock.patch.object(dispatcher, "run", return_value=completed),
+            mock.patch.object(
+                dispatcher, "repository_fingerprint", return_value="e" * 64
+            ),
+            mock.patch.object(dispatcher, "save_stage"),
+            mock.patch.object(dispatcher.Path, "read_text") as read_mock,
+        ):
+            read_mock.side_effect = [
+                json.dumps(
+                    {
+                        "approval": {"implementation_completed": True},
+                        "owner_action": "none",
+                    }
+                ),
+                json.dumps(
+                    {
+                        "entries": [
+                            {"test_id": item}
+                            for item in (
+                                "test_append_requires_snapshot_or_linked_source_event",
+                                "test_append_rejects_secret_bearing_snapshot_fields",
+                                "test_append_rejects_numeric_secret_bearing_snapshot_fields",
+                                "test_append_rejects_unclassified_numeric_authentication_secret",
+                                "test_append_rejects_secret_material_in_free_form_values",
+                                "test_append_rejects_unknown_snapshot_fields_by_default",
+                                "test_append_accepts_classified_financial_and_operational_facts",
+                                "test_append_accepts_safe_business_identity_fields",
+                                "test_postgres_appender_rejects_direct_event_with_secret_before_insert",
+                                "test_postgres_appender_rejects_direct_blank_authorization_reference",
+                                "test_postgres_appender_enforces_time_invariants_and_normalizes_utc",
+                                "test_postgres_scope_resolver_uses_authoritative_table_and_canonical_entity_type",
+                                "test_authoritative_reservation_resolves_without_audit_history",
+                                "test_unimplemented_resource_families_never_use_audit_history_as_authority",
+                                "test_customer_scope_resolver_collects_all_authorized_related_properties",
+                                "test_resource_timeline_uses_resolver_canonical_irregular_entity_type",
+                                "test_resource_timeline_includes_linked_lease_events_across_authorized_properties",
+                                "test_resource_timeline_does_not_query_events_outside_property_scope",
+                                "test_cursor_rejects_naive_timestamp_and_normalizes_aware_timestamp",
+                                "test_loaded_historical_public_facts_are_classified_and_frozen",
+                                "test_loaded_camel_case_classified_key_uses_write_normalization",
+                                "test_stored_top_level_secret_material_is_rejected_before_event_exposure",
+                                "test_stored_numeric_secret_fields_are_rejected_before_exposure",
+                                "test_stored_unclassified_numeric_authentication_secret_is_not_exposed",
+                                "test_stored_unclassified_text_authentication_secret_is_not_exposed",
+                                "test_postgres_append_and_authorized_query_round_trip_is_lossless",
+                                "test_database_rejects_blank_authorization_reference",
+                                "test_postgres_appender_participates_in_the_callers_transaction",
+                            )
+                        ]
+                    }
+                ),
+                "V1-021 independent-review findings are repaired",
+            ]
+            self.assertTrue(
+                dispatcher.recover_verified_v1_021_review_findings(
+                    stale_verification_record
+                )
+            )
+        self.assertFalse(stale_verification_record["deterministic_verification_passed"])
+        self.assertIsNone(stale_verification_record["review_verdict"])
+
+    def test_verified_v1_021_review_rebase_invalidates_prior_verification(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "v1_021_review_base_dispatch",
+            ROOT / "scripts/openclaw_dispatch.py",
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        target = "b" * 40
+        old_base = "a" * 40
+        paths = list(dispatcher.V1_021_QUERY_VERIFIED_PATHS)
+        record = {
+            "candidate": "V1-021",
+            "stage": "independent_review",
+            "deterministic_verification_passed": True,
+            "candidate_base_commit": old_base,
+            "automation_rebases": [
+                {
+                    "to_commit": target,
+                    "run_id": 24680,
+                    "url": "https://example.invalid/actions/runs/24680",
+                }
+            ],
+            "last_failure_category": "deterministic_test_failure",
+            "failed_check": "format-check",
+            "repair_failure": "prior format failure",
+        }
+        synchronized = {"local": target, "upstream": target, "remote": target}
+        with (
+            mock.patch.object(dispatcher, "git", return_value=target),
+            mock.patch.object(dispatcher, "changed_paths", return_value=paths),
+            mock.patch.object(
+                dispatcher, "synchronized_repository_shas", return_value=synchronized
+            ),
+            mock.patch.object(
+                dispatcher, "full_candidate_paths", return_value=paths
+            ),
+            mock.patch.object(
+                dispatcher, "repository_fingerprint", return_value="c" * 64
+            ),
+            mock.patch.object(dispatcher, "save_stage") as save_mock,
+        ):
+            dispatcher.normalize_verified_v1_021_review_base(record)
+        save_mock.assert_called_once_with(record)
+        self.assertEqual(record["candidate_base_commit"], target)
+        self.assertEqual(record["scoped_changed_paths"], paths)
+        self.assertEqual(record["stage"], "deterministic_verification")
+        self.assertFalse(record["deterministic_verification_passed"])
+        self.assertEqual(record["verified_paths"], [])
+        self.assertIsNone(record["verified_repository_fingerprint"])
+        self.assertIsNone(record["repair_failure"])
+
+        already_normalized = {
+            **record,
+            "stage": "independent_review",
+            "deterministic_verification_passed": True,
+            "candidate_base_commit": target,
+            "verified_paths": paths,
+            "verified_repository_fingerprint": "c" * 64,
+        }
+        with (
+            mock.patch.object(dispatcher, "git", return_value=target),
+            mock.patch.object(dispatcher, "changed_paths", return_value=paths),
+            mock.patch.object(
+                dispatcher, "synchronized_repository_shas", return_value=synchronized
+            ),
+            mock.patch.object(dispatcher, "full_candidate_paths", return_value=paths),
+            mock.patch.object(
+                dispatcher, "repository_fingerprint", return_value="c" * 64
+            ),
+            mock.patch.object(dispatcher, "save_stage") as no_op_save,
+        ):
+            dispatcher.normalize_verified_v1_021_review_base(already_normalized)
+        no_op_save.assert_not_called()
+        self.assertEqual(already_normalized["stage"], "independent_review")
+        self.assertTrue(already_normalized["deterministic_verification_passed"])
+
+    def test_verified_v1_021_new_file_is_materialized_for_review_without_staging(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            candidate = repo / "candidate.txt"
+            candidate.write_text("audit_candidate = True\n")
+            base = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            spec = importlib.util.spec_from_file_location(
+                "v1_021_untracked_review_dispatch",
+                ROOT / "scripts/openclaw_dispatch.py",
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(root / "state"),
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            relative = "candidate.txt"
+            record = {
+                "candidate": "V1-021",
+                "stage": "independent_review",
+                "deterministic_verification_passed": True,
+                "candidate_base_commit": base,
+                "scoped_changed_paths": [relative],
+                "verified_paths": [relative],
+                "verified_repository_fingerprint": dispatcher.repository_fingerprint(
+                    repo
+                ),
+            }
+            dispatcher.materialize_verified_v1_021_untracked_review_diff(record)
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "ls-files", "--others", "--exclude-standard"],
+                    cwd=repo,
+                    text=True,
+                ),
+                "",
+            )
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "diff", "--name-only"], cwd=repo, text=True
+                ).splitlines(),
+                [relative],
+            )
+            self.assertEqual(record["verified_paths"], [relative])
+            self.assertEqual(
+                record["repository_fingerprint"],
+                record["verified_repository_fingerprint"],
+            )
+
+    def test_v1_021_review_materialization_rejects_tracked_drift_before_index_change(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = self.make_repo(root)
+            tracked = repo / "tracked.txt"
+            tracked.write_text("baseline\n")
+            subprocess.run(["git", "add", "tracked.txt"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-m", "add tracked review fixture"],
+                cwd=repo,
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
+            base = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            tracked.write_text("verified candidate\n")
+            untracked = repo / "candidate.txt"
+            untracked.write_text("verified new file\n")
+            spec = importlib.util.spec_from_file_location(
+                "v1_021_pre_materialization_drift_dispatch",
+                ROOT / "scripts/openclaw_dispatch.py",
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_DISPATCH_STATE_DIR": str(root / "state"),
+                },
+            ):
+                spec.loader.exec_module(dispatcher)
+            paths = ["candidate.txt", "tracked.txt"]
+            record = {
+                "candidate": "V1-021",
+                "stage": "independent_review",
+                "deterministic_verification_passed": True,
+                "candidate_base_commit": base,
+                "scoped_changed_paths": paths,
+                "verified_paths": paths,
+                "verified_repository_fingerprint": dispatcher.repository_fingerprint(
+                    repo
+                ),
+            }
+            tracked.write_text("drifted after verification\n")
+
+            dispatcher.materialize_verified_v1_021_untracked_review_diff(record)
+
+            self.assertEqual(record["stage"], "deterministic_verification")
+            self.assertFalse(record["deterministic_verification_passed"])
+            self.assertEqual(
+                subprocess.check_output(
+                    ["git", "ls-files", "--others", "--exclude-standard"],
+                    cwd=repo,
+                    text=True,
+                ).splitlines(),
+                ["candidate.txt"],
+            )
+
     def test_publication_requires_exact_reviewed_content_and_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -3973,7 +4754,7 @@ raise SystemExit(64)
             self.assertIsInstance(materialized, dict)
             assert isinstance(materialized, dict)
             self.assertEqual(materialized["base_commit"], base_commit)
-            self.assertEqual(dispatcher.MAX_REVIEW_PATCH_BYTES, 220_000)
+            self.assertEqual(dispatcher.MAX_REVIEW_PATCH_BYTES, 224_000)
             self.assertLessEqual(
                 materialized["byte_count"], dispatcher.MAX_REVIEW_PATCH_BYTES
             )

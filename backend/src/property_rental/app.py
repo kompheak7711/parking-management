@@ -23,6 +23,16 @@ from property_rental.access_admin_api import (
     create_access_admin_router,
 )
 from property_rental.api import create_api_router
+from property_rental.audit_api import (
+    AuditEventQueryFlow,
+    AuditQueryForbidden,
+    AuditQueryInvalid,
+    AuditQueryNotFound,
+    AuditQueryUnavailable,
+    PostgresAuditEventQueryFlow,
+    UnavailableAuditEventQueryFlow,
+    create_audit_router,
+)
 from property_rental.auth_api import (
     AuthenticationFlow,
     AuthenticationRateLimited,
@@ -145,6 +155,7 @@ def create_app(
     actor_resolver: ActorResolver = deny_unauthenticated_actor,
     authentication_flow: AuthenticationFlow | None = None,
     access_administration_flow: AccessAdministrationFlow | None = None,
+    audit_query_flow: AuditEventQueryFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -226,6 +237,37 @@ def create_app(
     ) -> JSONResponse:
         return error_response(status.HTTP_409_CONFLICT, request.state.request_id)
 
+    @app.exception_handler(AuditQueryUnavailable)
+    async def audit_query_unavailable(
+        request: Request,
+        _: AuditQueryUnavailable,
+    ) -> JSONResponse:
+        return error_response(status.HTTP_503_SERVICE_UNAVAILABLE, request.state.request_id)
+
+    @app.exception_handler(AuditQueryForbidden)
+    async def audit_query_forbidden(
+        request: Request,
+        _: AuditQueryForbidden,
+    ) -> JSONResponse:
+        return error_response(status.HTTP_403_FORBIDDEN, request.state.request_id)
+
+    @app.exception_handler(AuditQueryNotFound)
+    async def audit_query_not_found(
+        request: Request,
+        _: AuditQueryNotFound,
+    ) -> JSONResponse:
+        return error_response(status.HTTP_404_NOT_FOUND, request.state.request_id)
+
+    @app.exception_handler(AuditQueryInvalid)
+    async def audit_query_invalid(
+        request: Request,
+        _: AuditQueryInvalid,
+    ) -> JSONResponse:
+        return error_response(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            request.state.request_id,
+        )
+
     @app.middleware("http")
     async def add_request_id(
         request: Request,
@@ -279,6 +321,17 @@ def create_app(
             actor_resolver,
             access_administration_flow or UnavailableAccessAdministrationFlow(),
             resolved_settings,
+        )
+    )
+    app.include_router(
+        create_audit_router(
+            actor_resolver,
+            audit_query_flow
+            or (
+                PostgresAuditEventQueryFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableAuditEventQueryFlow()
+            ),
         )
     )
     return app

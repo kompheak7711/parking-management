@@ -3223,6 +3223,390 @@
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
       "notes": "A privileged disposable-database fault fixture proves unreadable or otherwise unprovable large-object authority state fails closed before migration mutation without leaking credentials."
+    },
+    {
+      "test_id": "test_audit_event_schema_matches_the_authoritative_contract",
+      "upstream_ids": ["DB-AUDIT-001", "DB-AUDIT-003", "SEC-030", "SEC-033"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_audit_migration.py",
+      "status": "implemented",
+      "notes": "Disposable PostgreSQL proves the audit-event columns, indexes, mandatory actor identity without speculative foreign key, UTC instant, business date, correlation identifier, and bounded source contract."
+    },
+    {
+      "test_id": "test_audit_event_constraints_reject_invalid_rows",
+      "upstream_ids": ["DB-AUDIT-001", "SEC-030"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_audit_migration.py",
+      "status": "implemented",
+      "notes": "Disposable PostgreSQL rejects audit events whose source is outside the canonical UI, API, scheduled, and administrative set."
+    },
+    {
+      "test_id": "test_database_controls_prohibit_audit_event_mutation",
+      "upstream_ids": ["PR-AUDIT-010", "DB-AUDIT-001", "SEC-031"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_audit_migration.py",
+      "status": "implemented",
+      "notes": "Database triggers reject update, delete, and truncate while the runtime role retains only insert and select privileges."
+    },
+    {
+      "test_id": "test_postgres_append_and_authorized_query_round_trip_is_lossless",
+      "upstream_ids": ["PR-AUDIT-001", "DB-AUDIT-001", "API-073", "API-074", "SEC-030", "SEC-032"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_audit_migration.py",
+      "status": "implemented",
+      "notes": "PostgreSQL durably round-trips scoped events, evidence, links, identifiers, and camelCase classified snapshot keys through authorized queries."
+    },
+    {
+      "test_id": "test_postgres_appender_participates_in_the_callers_transaction",
+      "upstream_ids": ["DB-AUDIT-002", "DB-TXN-001", "SEC-031"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_audit_migration.py",
+      "status": "implemented",
+      "notes": "A later business-transaction failure rolls back the audit append, proving the adapter never commits independently."
+    },
+    {
+      "test_id": "test_audit_migration_is_forward_only",
+      "upstream_ids": ["PR-AUDIT-010", "SEC-031"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit_migration.py",
+      "status": "implemented",
+      "notes": "The audit-history migration refuses destructive downgrade and requires a reviewed forward correction."
+    },
+    {
+      "test_id": "test_append_records_complete_content_with_utc_and_property_date",
+      "upstream_ids": ["PR-AUDIT-001", "DB-AUDIT-001", "SEC-030", "SEC-033"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "The append service records the complete bounded domain event with a generated stable identifier, UTC timestamp, Property-local business date, source linkage, correlation identity, outcome, and authorization evidence."
+    },
+    {
+      "test_id": "test_append_snapshots_state_into_recursively_immutable_content",
+      "upstream_ids": ["PR-AUDIT-010", "DB-AUDIT-001", "SEC-031"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "Caller-owned state is copied into recursively immutable values before the append-only persistence boundary is invoked."
+    },
+    {
+      "test_id": "test_append_rejects_blank_minimum_content",
+      "upstream_ids": ["PR-AUDIT-001", "SEC-030"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "Every required actor, Property, action, target, reason, correlation, and outcome field is validated before persistence."
+    },
+    {
+      "test_id": "test_append_rejects_naive_timestamp_before_persistence",
+      "upstream_ids": ["PR-AUDIT-001", "SEC-030", "SEC-033"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "A timestamp without timezone evidence fails before an audit record can be appended."
+    },
+    {
+      "test_id": "test_append_requires_snapshot_or_linked_source_event",
+      "upstream_ids": ["PR-AUDIT-001", "SEC-030"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "An event with neither a prior/resulting snapshot nor a linked source event fails before persistence."
+    },
+    {
+      "test_id": "test_append_rejects_mutable_or_non_json_state_values",
+      "upstream_ids": ["PR-AUDIT-001", "DB-AUDIT-001", "SEC-030"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "Unsupported state values fail before persistence so the append contract remains bounded to deterministic JSON-compatible snapshots."
+    },
+    {
+      "test_id": "test_append_rejects_secret_bearing_snapshot_fields",
+      "upstream_ids": ["PR-AUDIT-001", "SEC-030", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "Audit snapshots reject explicit password, token, verifier, recovery/access/reset/unlock-code, key, and credential fields before append-only persistence."
+    },
+    {
+      "test_id": "test_append_rejects_secret_material_in_free_form_values",
+      "upstream_ids": ["PR-AUDIT-001", "SEC-030", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "Audit reasons, references, snapshots, and authorization evidence reject credential assignments, bearer material, private keys, and token-shaped secrets before persistence."
+    },
+    {
+      "test_id": "test_append_rejects_unknown_snapshot_fields_by_default",
+      "upstream_ids": ["PR-AUDIT-001", "SEC-030", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "Snapshot and authorization-evidence serialization is fail-closed: only explicitly classified field names and safe identifier/value categories may be persisted."
+    },
+    {
+      "test_id": "test_append_propagates_persistence_failure",
+      "upstream_ids": ["DB-TXN-001", "DB-AUDIT-001", "SEC-031", "SEC-034"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "Audit persistence failure propagates to the owning transaction boundary instead of allowing the business action to continue silently."
+    },
+    {
+      "test_id": "test_property_search_requires_authentication",
+      "upstream_ids": ["API-074", "SEC-032"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "The Property audit search returns the canonical unauthenticated response before accessing audit data."
+    },
+    {
+      "test_id": "test_property_search_requires_dedicated_capability_in_property_scope",
+      "upstream_ids": ["API-074", "SEC-019", "SEC-020", "SEC-023", "SEC-032"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "An unrelated capability cannot authorize audit viewing, and denial occurs before repository access."
+    },
+    {
+      "test_id": "test_property_search_cannot_cross_an_authorized_property_scope",
+      "upstream_ids": ["API-074", "SEC-019", "SEC-032", "SEC-038"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "Audit viewing is denied before querying when the requested Property is outside the actor's capability grant."
+    },
+    {
+      "test_id": "test_property_search_passes_bounded_filters_and_returns_canonical_page",
+      "upstream_ids": ["API-019", "API-020", "API-023", "API-074", "SEC-032"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "The Property search passes only canonical bounded filters, returns stable cursor metadata, and excludes authorization evidence from its public representation."
+    },
+    {
+      "test_id": "test_search_rejects_an_unbounded_page_before_querying",
+      "upstream_ids": ["API-019", "API-074", "SEC-032"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "A page size above the canonical bound fails before repository access."
+    },
+    {
+      "test_id": "test_search_rejects_unknown_filters_before_querying",
+      "upstream_ids": ["API-020", "API-074", "SEC-032", "SEC-036"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "Unknown audit filters receive a canonical bad-request response and never reach persistence."
+    },
+    {
+      "test_id": "test_search_rejects_reversed_date_range_before_querying",
+      "upstream_ids": ["API-020", "API-074", "SEC-036"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "A reversed audit date range receives a canonical validation response before repository access."
+    },
+    {
+      "test_id": "test_resource_timeline_resolves_and_authorizes_owning_property",
+      "upstream_ids": ["API-019", "API-023", "API-073", "SEC-019", "SEC-032", "SEC-038"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "A resource timeline resolves its owning Property, authorizes that exact scope, and returns a bounded immutable page."
+    },
+    {
+      "test_id": "test_postgres_scope_resolver_uses_authoritative_table_and_canonical_entity_type",
+      "upstream_ids": ["API-073", "SEC-019", "SEC-032", "SEC-038"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "The production scope resolver uses allowlisted authoritative relational joins constrained to already-authorized Properties and returns a canonical singular entity type."
+    },
+    {
+      "test_id": "test_resource_timeline_uses_resolver_canonical_irregular_entity_type",
+      "upstream_ids": ["API-073", "SEC-032"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "Irregular route-family plurals use the resolver's canonical entity type rather than string singularization."
+    },
+    {
+      "test_id": "test_resource_timeline_does_not_query_events_outside_property_scope",
+      "upstream_ids": ["API-073", "SEC-019", "SEC-032", "SEC-038"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "Authoritative resource resolution is constrained to the actor's already-authorized Property IDs, so out-of-scope and absent resources return the same not-found response before any event query."
+    },
+    {
+      "test_id": "test_unknown_resource_returns_canonical_not_found",
+      "upstream_ids": ["API-007", "API-073", "SEC-038", "SEC-039"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "An unknown resource produces a canonical not-found envelope without exposing repository details."
+    },
+    {
+      "test_id": "test_audit_routes_expose_no_mutation_api",
+      "upstream_ids": ["PR-AUDIT-010", "API-075", "DB-AUDIT-001", "SEC-031"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "The audit router exposes no update or delete operation and never invokes the query repository for mutation attempts."
+    },
+    {
+      "test_id": "test_append_accepts_classified_financial_and_operational_facts",
+      "upstream_ids": ["PR-AUDIT-001", "DB-AUDIT-001", "DB-DER-001", "SEC-030", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "Fail-closed text classification still preserves lossless numeric calculation, percentage, consumption, balance, exchange-rate, and settlement audit facts."
+    },
+    {
+      "test_id": "test_customer_scope_resolver_collects_all_authorized_related_properties",
+      "upstream_ids": ["API-073", "SEC-019", "SEC-032", "SEC-038"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "Customer scope comes only from authoritative Reservations, primary tenancy, Lease signers, and Occupancies inside the actor's Property grants; audit rows are queried only after authorization."
+    },
+    {
+      "test_id": "test_resource_timeline_includes_linked_lease_events_across_authorized_properties",
+      "upstream_ids": ["API-073", "DB-AUDIT-001", "SEC-019", "SEC-032", "SEC-038"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "A resource timeline includes events explicitly linked through the canonical Customer, Unit, or Lease audit reference column as well as directly targeted events."
+    },
+    {
+      "test_id": "test_cursor_rejects_naive_timestamp_and_normalizes_aware_timestamp",
+      "upstream_ids": ["API-019", "API-020", "API-073", "SEC-030", "SEC-033"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "Audit keyset cursors reject timestamps without an offset and normalize valid aware instants to UTC before querying."
+    },
+    {
+      "test_id": "test_loaded_historical_public_facts_are_classified_and_frozen",
+      "upstream_ids": ["PR-AUDIT-010", "DB-AUDIT-001", "SEC-030", "SEC-031", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "Previously persisted public audit JSON remains readable and recursively immutable only after passing the shared classified-value boundary; unclassified or secret-shaped fields and values fail closed."
+    },
+    {
+      "test_id": "test_loaded_camel_case_classified_key_uses_write_normalization",
+      "upstream_ids": ["PR-AUDIT-001", "PR-AUDIT-010", "API-073", "DB-AUDIT-001", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "Read and write share key normalization, so classified camelCase facts remain readable."
+    },
+    {
+      "test_id": "test_postgres_appender_rejects_direct_event_with_secret_before_insert",
+      "upstream_ids": ["PR-AUDIT-001", "DB-AUDIT-001", "DB-TXN-001", "SEC-030", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "The concrete PostgreSQL append boundary revalidates complete audit content and rejects secret material even when a caller bypasses the domain append service and constructs an event directly."
+    },
+    {
+      "test_id": "test_authoritative_reservation_resolves_without_audit_history",
+      "upstream_ids": ["PR-AUDIT-002", "API-073", "SEC-019", "SEC-032", "SEC-038"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "An authoritative Reservation resolves through its Unit ownership even when it has no audit events, so an existing resource returns an empty timeline rather than a false not-found result."
+    },
+    {
+      "test_id": "test_unimplemented_resource_families_never_use_audit_history_as_authority",
+      "upstream_ids": ["PR-AUDIT-002", "PR-AUDIT-003", "PR-AUDIT-004", "PR-AUDIT-005", "PR-AUDIT-006", "PR-AUDIT-007", "PR-AUDIT-008", "PR-AUDIT-009", "API-073", "SEC-019", "SEC-032", "SEC-038"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "Future resource timelines fail unavailable until authoritative repositories exist; audit rows never establish existence or Property ownership."
+    },
+    {
+      "test_id": "test_stored_top_level_secret_material_is_rejected_before_event_exposure",
+      "upstream_ids": ["PR-AUDIT-001", "API-073", "API-074", "DB-AUDIT-001", "SEC-030", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "Stored top-level action, entity, reason, authorization reference, source, and outcome text is scanned before an audit event can be reconstructed or exposed by the API."
+    },
+    {
+      "test_id": "test_append_rejects_numeric_secret_bearing_snapshot_fields",
+      "upstream_ids": ["PR-AUDIT-001", "SEC-030", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "Numeric OTP, PIN, MFA-code, password aliases including pwd, passcode, verification-code, security-code, CVC, and CVV fields and their prefixed or suffixed aliases are rejected by shared normalized key classification before persistence."
+    },
+    {
+      "test_id": "test_append_rejects_unclassified_numeric_authentication_secret",
+      "upstream_ids": ["PR-AUDIT-001", "SEC-030", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "Integer and numeric-string values require an explicit public business-value class, so an authentication secret under an unrecognized key such as one_time_code fails closed before persistence."
+    },
+    {
+      "test_id": "test_postgres_appender_enforces_time_invariants_and_normalizes_utc",
+      "upstream_ids": ["PR-AUDIT-001", "DB-AUDIT-001", "DB-TXN-001", "SEC-030", "SEC-033"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "The direct PostgreSQL boundary rejects naive instants and mismatched Property business dates, and normalizes valid offset-aware event instants to UTC before insertion."
+    },
+    {
+      "test_id": "test_stored_numeric_secret_fields_are_rejected_before_exposure",
+      "upstream_ids": ["PR-AUDIT-001", "API-073", "API-074", "SEC-030", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "Stored numeric OTP, PIN, password aliases including pwd, and verification-code fields and their prefixed or suffixed aliases fail closed through the same shared classifier before immutable snapshots are exposed to audit readers."
+    },
+    {
+      "test_id": "test_stored_unclassified_numeric_authentication_secret_is_not_exposed",
+      "upstream_ids": ["PR-AUDIT-001", "API-073", "API-074", "SEC-030", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "Historical integer and numeric-string values under an unclassified authentication field fail closed before API reconstruction, even when the field name is absent from the secret denylist."
+    },
+    {
+      "test_id": "test_stored_unclassified_text_authentication_secret_is_not_exposed",
+      "upstream_ids": ["PR-AUDIT-001", "API-073", "API-074", "SEC-030", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit_api.py",
+      "status": "implemented",
+      "notes": "Unclassified historical alphanumeric authentication values fail closed before API reconstruction."
+    },
+    {
+      "test_id": "test_postgres_appender_rejects_direct_blank_authorization_reference",
+      "upstream_ids": ["PR-AUDIT-001", "DB-AUDIT-001", "DB-TXN-001", "SEC-030"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "The concrete PostgreSQL append boundary rejects a directly constructed event whose non-null authorization reference is blank before issuing an insert."
+    },
+    {
+      "test_id": "test_database_rejects_blank_authorization_reference",
+      "upstream_ids": ["PR-AUDIT-001", "DB-AUDIT-001", "SEC-030"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_audit_migration.py",
+      "status": "implemented",
+      "notes": "The audit table permits a genuinely absent authorization reference but rejects a non-null blank value even when SQL bypasses application validation."
+    },
+    {
+      "test_id": "test_append_accepts_safe_business_identity_fields",
+      "upstream_ids": ["PR-AUDIT-001", "DB-AUDIT-002", "SEC-030", "SEC-032"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_audit.py",
+      "status": "implemented",
+      "notes": "Bounded non-control identity text preserves required Property, Unit, and Customer name, number, email, phone, address, label, and description changes while the shared secret-field classifier remains fail closed."
     }
   ]
 }

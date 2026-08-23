@@ -189,6 +189,6 @@
   reconcile V1-020 complete from its exact successful publication commit.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-021 approved and active; implementation has not started.
-- Automation exact next action: Implement the approved bounded candidate: Append-only audit-event persistence and query foundation
+- Automation candidate state: V1-021 independent-review findings are repaired. Read/write key normalization now matches, classified camelCase facts round-trip, unknown-field secrets fail closed, and audit rows never establish resource ownership. Review bounds are unchanged; fresh gates remain pending.
+- Automation exact next action: Rerun complete deterministic verification and a fresh independent review, then publish and reconcile V1-021 only on PASS.
 <!-- AUTOMATION_STATUS_END -->

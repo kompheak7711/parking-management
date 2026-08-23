@@ -3,8 +3,8 @@
   "approval": {
     "status": "approved_ready",
     "basis": "structured durable-v1 successor selection",
-    "implementation_started": false,
-    "implementation_completed": false,
+    "implementation_started": true,
+    "implementation_completed": true,
     "publication_completed": false
   },
   "authorities": [
@@ -680,7 +680,7 @@
     "tranche_id": "V1-018"
   },
   "idle_reason": null,
-  "next_action": "Implement the approved bounded candidate: Append-only audit-event persistence and query foundation",
+  "next_action": "Rerun complete deterministic verification and a fresh independent review, then publish and reconcile V1-021 only on PASS.",
   "next_candidate": {
     "acceptance_profile": "database",
     "authorities": [
@@ -781,7 +781,7 @@
   "task": "Implement the approved bounded candidate: Append-only audit-event persistence and query foundation",
   "tests": [],
   "tests_tranche_id": "V1-020",
-  "timestamp": "2026-08-23T00:17:36Z",
+  "timestamp": "2026-08-23T01:47:04Z",
   "touched_areas": [
     "immutable audit storage and authorized query"
   ],
