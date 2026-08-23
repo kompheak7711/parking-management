@@ -4226,12 +4226,12 @@ evidence.write_text(json.dumps({
             property_test.write_text(
                 property_test.read_text().replace(
                     "    expected_sqlstate = (\n"
-                    '        "0A000"\n'
+                    '        "42809"\n'
                     '        if statement.as_string() == "TRUNCATE app.property_configuration"\n'
                     '        else "55000"\n'
                     "    )\n",
                     "    expected_sqlstate = (\n"
-                    '        "0A000" if statement.as_string() == "TRUNCATE app.property_configuration" else "55000"\n'
+                    '        "42809" if statement.as_string() == "TRUNCATE app.property_configuration" else "55000"\n'
                     "    )\n",
                 )
             )

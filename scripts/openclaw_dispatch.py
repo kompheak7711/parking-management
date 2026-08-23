@@ -3879,7 +3879,7 @@ def sync_v1_023_traceability() -> None:
 
 
 def sync_v1_023_property_truncate_expectation() -> None:
-    """Record PostgreSQL's FK-first rejection after Units reference Property."""
+    """Record PostgreSQL's wrong-object rejection for the compatibility view."""
     test_path = REPO / "backend/tests/test_property_migration.py"
     try:
         source = test_path.read_text()
@@ -3906,7 +3906,7 @@ def sync_v1_023_property_truncate_expectation() -> None:
     prior = '    assert raised.value.sqlstate == "55000"'
     replacement = [
         "    expected_sqlstate = (",
-        '        "0A000"',
+        '        "42809"',
         '        if statement.as_string() == "TRUNCATE app.property_configuration"',
         '        else "55000"',
         "    )",
@@ -3918,7 +3918,7 @@ def sync_v1_023_property_truncate_expectation() -> None:
     if replacement_text in "\n".join(function_lines):
         return
     expected_value = ast.parse(
-        '"0A000" if statement.as_string() == "TRUNCATE app.property_configuration" else "55000"',
+        '"42809" if statement.as_string() == "TRUNCATE app.property_configuration" else "55000"',
         mode="eval",
     ).body
     expected_assertion = ast.parse(
@@ -3943,6 +3943,23 @@ def sync_v1_023_property_truncate_expectation() -> None:
         == ast.dump(expected_assertion.test, include_attributes=False)
     ]
     if len(matching_assignments) == 1 and len(matching_assertions) == 1:
+        return
+    legacy_expression = (
+        '"0A000" if statement.as_string() == '
+        '"TRUNCATE app.property_configuration" else "55000"'
+    )
+    if legacy_expression in "\n".join(function_lines) and source.count(
+        legacy_expression
+    ) == 1:
+        atomic_write_text(
+            test_path,
+            source.replace(
+                legacy_expression,
+                '"42809" if statement.as_string() == '
+                '"TRUNCATE app.property_configuration" else "55000"',
+                1,
+            ),
+        )
         return
     if function_lines.count(prior) != 1 or source.count(prior) < 1:
         raise AutomationError(
