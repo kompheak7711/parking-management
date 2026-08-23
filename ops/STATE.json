@@ -1,16 +1,18 @@
 {
-  "active_cycle": "v1-020-identity-and-security-end-to-end-hardening-gate",
+  "active_cycle": "v1-021-append-only-audit-event-persistence-and-query-foundation",
   "approval": {
     "status": "approved_ready",
     "basis": "structured durable-v1 successor selection",
-    "implementation_started": true,
+    "implementation_started": false,
     "implementation_completed": false,
-    "publication_completed": true
+    "publication_completed": false
   },
   "authorities": [
-    "TEST-108-111",
-    "TEST-128-135",
-    "SEC-068-075"
+    "PR-AUDIT-*",
+    "DB-AUDIT-*",
+    "API-023",
+    "API-073-075",
+    "SEC-030-034"
   ],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -677,33 +679,34 @@
     "prior_review_disposition": "Two FAIL rounds corrected: exact object, CSRF, concurrency, pagination, response, validation, result binding, pre-resolution authorization, immutable audit, and atomic session revocation findings; fresh exact-snapshot independent review pending",
     "tranche_id": "V1-018"
   },
-  "idle_reason": "published candidate awaits deterministic successor selection",
-  "next_action": "Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.",
+  "idle_reason": null,
+  "next_action": "Implement the approved bounded candidate: Append-only audit-event persistence and query foundation",
   "next_candidate": {
-    "acceptance_profile": "release",
+    "acceptance_profile": "database",
     "authorities": [
-      "TEST-108-111",
-      "TEST-128-135",
-      "SEC-068-075"
+      "PR-AUDIT-*",
+      "DB-AUDIT-*",
+      "API-023",
+      "API-073-075",
+      "SEC-030-034"
     ],
     "authorization": "durable_v1",
     "dependencies": [
-      "V1-017",
-      "V1-019"
+      "V1-007"
     ],
     "exclude": [
-      "production deployment"
+      "audit mutation"
     ],
-    "id": "V1-020",
+    "id": "V1-021",
     "include": [
-      "complete authentication abuse, lifecycle, recovery, session, and bootstrap tests"
+      "immutable audit storage and authorized query"
     ],
-    "order": 20,
-    "phase": "Identity",
+    "order": 21,
+    "phase": "Core",
     "risk_class": "high",
     "status": "approved_ready",
-    "task": "Identity and security end-to-end hardening gate",
-    "roadmap_id": "V1-020"
+    "task": "Append-only audit-event persistence and query foundation",
+    "roadmap_id": "V1-021"
   },
   "owner_action": "none",
   "owner_decisions": {
@@ -713,7 +716,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "Identity",
+  "phase": "Core",
   "publication": {
     "ci_completed": true,
     "ci_conclusion": "success",
@@ -733,12 +736,14 @@
     "tranche_id": "V1-018"
   },
   "relevant_docs": [
-    "TEST-108-111",
-    "TEST-128-135",
-    "SEC-068-075"
+    "PR-AUDIT-*",
+    "DB-AUDIT-*",
+    "API-023",
+    "API-073-075",
+    "SEC-030-034"
   ],
   "repair": {
-    "tranche_id": "V1-020",
+    "tranche_id": "V1-021",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -766,46 +771,19 @@
   "risk_class": "high",
   "roadmap": {
     "completed": 18,
-    "current_id": "V1-020",
+    "current_id": "V1-021",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Implement the approved bounded candidate: Identity and security end-to-end hardening gate",
-  "tests": [
-    "PASS: every V1-020 substage authority is in scope and every complete parallel read batch is at most 30000 bytes",
-    "PASS: 128 automation tests plus routing, compact-state, visibility-watchdog, syntax, JSON, publication, and diff checks",
-    "PASS: 44 focused authentication-core and traceability tests",
-    "PASS: complete verification profile 15/15; backend 347 passed; PostgreSQL 105 passed; frontend 32 passed; automation 128 passed",
-    "PASS: direct review of seven authentication-core paths; no material findings; candidate-wide independent review remains pending",
-    "PASS: 47 focused authentication API, error-envelope, and composition tests; authentication_api required no product change",
-    "PASS: 16 focused logging, leakage, deployment identity, and privilege checks; sensitive_data_and_privileges required no product change",
-    "PASS: 69 focused MFA, TOTP, API-schema, and traceability tests",
-    "PASS: V1-020 mfa_policy complete verification profile 15/15; backend 353 passed; PostgreSQL 105 passed; frontend 32 passed; automation 128 passed",
-    "PASS: direct review of seven mfa_policy paths; no material findings; candidate-wide independent review remains pending",
-    "PASS: 146 focused recovery-code, administrative/emergency recovery, session-revocation, and traceability tests; recovery required no product change",
-    "PASS: direct review of recovery authorities and implementation coverage; no material findings; candidate-wide independent review remains pending",
-    "PASS: 101 focused session, authentication-integration, authorization-scope, and traceability tests",
-    "PASS: V1-020 sessions_integration complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 128 passed",
-    "PASS: direct review of five sessions_integration paths; no material findings; candidate-wide independent review remains pending",
-    "PASS: 93 focused initial-Owner bootstrap, recovery issuance/backdoor, and traceability tests; bootstrap_release required no product change",
-    "PASS: 129 automation tests cover exact independent-review diff materialization, compact verification evidence, failure accounting, and invalid delivery",
-    "PASS: V1-020 independent-review routing repair complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 129 passed",
-    "PASS: focused dispatcher child-environment and contaminated-parent activation regressions prevent live automation controls from leaking into temporary test fixtures",
-    "PASS: 130 automation tests enforce exact finding objects, reject untracked candidate files before any model call, and keep malformed delivery recoverable until bounded exhaustion",
-    "PASS: V1-020 review-contract follow-up complete verification profile 15/15; backend 357 passed; PostgreSQL 105 passed; frontend 32 passed; automation 130 passed",
-    "PASS: 56 focused authentication, browser-session, and traceability tests replace the two non-probative review findings with production authorization evidence",
-    "PASS: 132 automation tests recover only a completed final assistant answer from the exact regular non-symlinked Hermes session and revalidate the unchanged strict review contract",
-    "PASS: V1-020 finding and transport repair complete verification profile 15/15; backend 361 passed with 105 expected local environment skips; PostgreSQL 105 passed; frontend 32 passed; automation 132 passed",
-    "PASS: fresh review transport recovery consumed zero replacement model calls and its two concrete findings are covered by global-final-message and exact-diff regressions",
-    "PASS: Owner action is false for ordinary review, test, CI, publication, and integrity repair categories and true only for protected categories or bounded exhaustion"
-  ],
+  "status": "active",
+  "task": "Implement the approved bounded candidate: Append-only audit-event persistence and query foundation",
+  "tests": [],
   "tests_tranche_id": "V1-020",
-  "timestamp": "2026-08-23T00:14:55Z",
+  "timestamp": "2026-08-23T00:17:36Z",
   "touched_areas": [
-    "complete authentication abuse, lifecycle, recovery, session, and bootstrap tests"
+    "immutable audit storage and authorized query"
   ],
-  "tranche": "Identity and security end-to-end hardening gate"
+  "tranche": "Append-only audit-event persistence and query foundation"
 }

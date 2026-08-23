@@ -189,6 +189,6 @@
   reconcile V1-020 complete from its exact successful publication commit.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation publication state: published on implementation/foundation at 43596f44ea4c4481c3480bbac0edf3be42685a8b.
-- Automation exact next action: Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.
+- Automation candidate state: V1-021 approved and active; implementation has not started.
+- Automation exact next action: Implement the approved bounded candidate: Append-only audit-event persistence and query foundation
 <!-- AUTOMATION_STATUS_END -->
