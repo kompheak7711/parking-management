@@ -189,6 +189,6 @@
   reconcile V1-020 complete from its exact successful publication commit.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
-- Automation candidate state: V1-022 approved and active; implementation has not started.
-- Automation exact next action: Implement the approved bounded candidate: Property configuration persistence and API
+- Automation publication state: published on implementation/foundation at 0105f4fa01a73e6f1fc03fec0d8b73a1df680f85.
+- Automation exact next action: Select the exact structured approved successor from ops/V1_ROADMAP.json without a model; do not reimplement the published candidate.
 <!-- AUTOMATION_STATUS_END -->
