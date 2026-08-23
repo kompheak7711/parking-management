@@ -1236,16 +1236,30 @@ class RepositoryEvidenceTests(unittest.TestCase):
         assert spec and spec.loader
         dispatcher = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(dispatcher)
-        future_property_path = ROOT / "backend/src/property_rental/property.py"
+        future_contents = {
+            ROOT
+            / "backend/migrations/versions/20260823_11_property_configuration.py": (
+                "revision = '20260823_11'\n"
+            ),
+            ROOT
+            / "backend/src/property_rental/property.py": (
+                "class PropertyConfiguration:\n    pass\n"
+            ),
+            ROOT / "backend/tests/test_property.py": "def test_property(): pass\n",
+            ROOT
+            / "backend/tests/test_property_migration.py": (
+                "def test_property_migration(): pass\n"
+            ),
+        }
         original_is_file = Path.is_file
         original_read_text = Path.read_text
 
         def staged_is_file(path: Path) -> bool:
-            return path == future_property_path or original_is_file(path)
+            return path in future_contents or original_is_file(path)
 
         def staged_read_text(path: Path, *args: Any, **kwargs: Any) -> str:
-            if path == future_property_path:
-                return "class PropertyConfiguration:\n    pass\n"
+            if path in future_contents:
+                return future_contents[path]
             return original_read_text(path, *args, **kwargs)
 
         for index, substage in enumerate(V1_022_SUBSTAGE_IDS, start=1):
@@ -1257,7 +1271,13 @@ class RepositoryEvidenceTests(unittest.TestCase):
                 self.assertNotIn("backend/tests/test_migrations.py", readable)
                 existing_readable = [path for path in readable if (ROOT / path).is_file()]
                 self.assertLessEqual(
-                    sum((ROOT / path).stat().st_size for path in existing_readable),
+                    sum((ROOT / path).stat().st_size for path in existing_readable)
+                    + sum(
+                        len(future_contents[ROOT / path].encode())
+                        for path in readable
+                        if ROOT / path in future_contents
+                        and path not in existing_readable
+                    ),
                     30_000,
                 )
                 patches = (
