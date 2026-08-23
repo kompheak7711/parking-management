@@ -3141,6 +3141,11 @@ def sync_v1_022_traceability(substage_id: str) -> None:
                         "frontend/src/propertyClient.test.tsx",
                         "The business-configuration client fails closed on capability denial.",
                     ),
+                    (
+                        "TEST-FE-020",
+                        "frontend/src/App.test.tsx",
+                        "The Property management screen remains hidden when authoritative capability authorization is denied.",
+                    ),
                 )
             ]
         )

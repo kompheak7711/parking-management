@@ -3726,7 +3726,7 @@ evidence.write_text(json.dumps({
             dispatcher.sync_v1_022_supervisor_artifacts("property_storage")
             dispatcher.sync_v1_022_supervisor_artifacts("property_api")
             traceability = json.loads((repo / "ops/traceability.json").read_text())
-            self.assertEqual(len(traceability["entries"]), 24)
+            self.assertEqual(len(traceability["entries"]), 25)
             rendered_traceability = (repo / "ops/traceability.json").read_text()
             self.assertTrue(rendered_traceability.startswith('{\n  "schema_version": 1,'))
             self.assertIn('"upstream_ids": ["BR-PROP-003", "PR-PROP-003"]', rendered_traceability)
@@ -3738,7 +3738,7 @@ evidence.write_text(json.dumps({
             dispatcher.sync_v1_022_supervisor_artifacts("property_api")
             self.assertEqual(
                 len(json.loads((repo / "ops/traceability.json").read_text())["entries"]),
-                24,
+                25,
             )
             traceability_path.write_text(
                 '{\n  "schema_version": 1,\n  "entries": [\n  ]\n}\n'
