@@ -201,7 +201,11 @@ V1_022_SUBSTAGES: tuple[dict[str, Any], ...] = (
         "order": 1,
         "total": 2,
         "task": "Single-Property configuration domain and persistence",
-        "include": ["Property identity", "Asia/Phnom_Penh business timezone", "constraints"],
+        "include": [
+            "Property identity",
+            "Asia/Phnom_Penh business timezone",
+            "constraints",
+        ],
     },
     {
         "id": "property_api",
@@ -458,7 +462,14 @@ V1_022_STORAGE_TRACEABILITY: tuple[dict[str, Any], ...] = (
     },
     {
         "test_id": "test_migration_rejects_mutation_of_property_configuration",
-        "upstream_ids": ["BR-PROP-001", "BR-PROP-002", "BR-PROP-003", "PR-PROP-001", "PR-PROP-002", "PR-PROP-003"],
+        "upstream_ids": [
+            "BR-PROP-001",
+            "BR-PROP-002",
+            "BR-PROP-003",
+            "PR-PROP-001",
+            "PR-PROP-002",
+            "PR-PROP-003",
+        ],
         "test_level": "migration",
         "test_path": "backend/tests/test_property_migration.py",
         "status": "implemented",
@@ -504,8 +515,7 @@ def activation_ci_repair_paths_allowed(paths: list[str]) -> bool:
     return bool(paths) and all(
         path in ACTIVATION_CI_REPAIR_EXACT_PATHS
         or any(
-            path.startswith(prefix)
-            for prefix in ACTIVATION_CI_REPAIR_SCRIPT_PREFIXES
+            path.startswith(prefix) for prefix in ACTIVATION_CI_REPAIR_SCRIPT_PREFIXES
         )
         for path in paths
     )
@@ -2125,41 +2135,53 @@ def preserved_final_assistant_output(usage_report: dict[str, Any]) -> str | None
                            ORDER BY id DESC
                            LIMIT 1"""
                     ).fetchone()
-                    if stable_identity(
-                        os.fstat(snapshot_directory_fd)
-                    ) != snapshot_directory_identity or stable_identity(
-                        os.stat(snapshot_root, follow_symlinks=False)
-                    ) != snapshot_directory_identity:
+                    if (
+                        stable_identity(os.fstat(snapshot_directory_fd))
+                        != snapshot_directory_identity
+                        or stable_identity(
+                            os.stat(snapshot_root, follow_symlinks=False)
+                        )
+                        != snapshot_directory_identity
+                    ):
                         raise OSError("private Hermes snapshot directory changed")
-                    if stable_identity(
-                        os.fstat(snapshot_database_fd)
-                    ) != snapshot_database_identity or stable_identity(
-                        os.stat(
-                            "state.db",
-                            dir_fd=snapshot_directory_fd,
-                            follow_symlinks=False,
+                    if (
+                        stable_identity(os.fstat(snapshot_database_fd))
+                        != snapshot_database_identity
+                        or stable_identity(
+                            os.stat(
+                                "state.db",
+                                dir_fd=snapshot_directory_fd,
+                                follow_symlinks=False,
+                            )
                         )
-                    ) != snapshot_database_identity:
+                        != snapshot_database_identity
+                    ):
                         raise OSError("private Hermes snapshot database changed")
-                    if stable_identity(
-                        os.fstat(snapshot_wal_fd)
-                    ) != snapshot_wal_identity or stable_identity(
-                        os.stat(
-                            "state.db-wal",
-                            dir_fd=snapshot_directory_fd,
-                            follow_symlinks=False,
+                    if (
+                        stable_identity(os.fstat(snapshot_wal_fd))
+                        != snapshot_wal_identity
+                        or stable_identity(
+                            os.stat(
+                                "state.db-wal",
+                                dir_fd=snapshot_directory_fd,
+                                follow_symlinks=False,
+                            )
                         )
-                    ) != snapshot_wal_identity:
+                        != snapshot_wal_identity
+                    ):
                         raise OSError("private Hermes snapshot WAL changed")
-                    if object_identity(
-                        os.fstat(snapshot_shm_fd)
-                    ) != snapshot_shm_identity or object_identity(
-                        os.stat(
-                            "state.db-shm",
-                            dir_fd=snapshot_directory_fd,
-                            follow_symlinks=False,
+                    if (
+                        object_identity(os.fstat(snapshot_shm_fd))
+                        != snapshot_shm_identity
+                        or object_identity(
+                            os.stat(
+                                "state.db-shm",
+                                dir_fd=snapshot_directory_fd,
+                                follow_symlinks=False,
+                            )
                         )
-                    ) != snapshot_shm_identity:
+                        != snapshot_shm_identity
+                    ):
                         raise OSError("private Hermes snapshot SHM changed")
                 finally:
                     connection.close()
@@ -2175,9 +2197,13 @@ def preserved_final_assistant_output(usage_report: dict[str, Any]) -> str | None
                 os.stat(component, dir_fd=chain_parent, follow_symlinks=False)
             ):
                 raise OSError("Hermes session path changed during recovery")
-        if stable_identity(os.fstat(database_fd)) != database_source_identity or stable_identity(
-            os.stat("state.db", dir_fd=session_fd, follow_symlinks=False)
-        ) != database_source_identity:
+        if (
+            stable_identity(os.fstat(database_fd)) != database_source_identity
+            or stable_identity(
+                os.stat("state.db", dir_fd=session_fd, follow_symlinks=False)
+            )
+            != database_source_identity
+        ):
             raise OSError("Hermes session database changed during recovery")
         for name, descriptor, require_stability in (
             ("state.db-wal", wal_fd, True),
@@ -2190,12 +2216,17 @@ def preserved_final_assistant_output(usage_report: dict[str, Any]) -> str | None
                     continue
                 raise OSError("Hermes SQLite evidence appeared during recovery")
             identity = stable_identity if require_stability else object_identity
-            expected = wal_source_identity if require_stability else object_identity(
-                os.fstat(descriptor)
+            expected = (
+                wal_source_identity
+                if require_stability
+                else object_identity(os.fstat(descriptor))
             )
-            if expected is None or identity(os.fstat(descriptor)) != expected or identity(
-                os.stat(name, dir_fd=session_fd, follow_symlinks=False)
-            ) != expected:
+            if (
+                expected is None
+                or identity(os.fstat(descriptor)) != expected
+                or identity(os.stat(name, dir_fd=session_fd, follow_symlinks=False))
+                != expected
+            ):
                 raise OSError("Hermes SQLite evidence changed during recovery")
     except (OSError, sqlite3.Error):
         return None
@@ -2341,9 +2372,7 @@ def sanitized_review_verdict(value: dict[str, Any]) -> dict[str, Any]:
                     finding.get("severity"), field="severity", maximum=20
                 ),
                 "path": safe_model_text(finding.get("path"), field="path", maximum=500),
-                "line": safe_model_text(
-                    finding.get("line"), field="line", maximum=200
-                ),
+                "line": safe_model_text(finding.get("line"), field="line", maximum=200),
                 "evidence": safe_model_text(finding.get("evidence"), field="evidence"),
             }
         )
@@ -2879,9 +2908,7 @@ def candidate_automation_rebase_allowed(record: dict[str, Any]) -> bool:
     return bool(
         record.get("recovery_pending") is True
         or v1_023_review_repair_rebase_allowed(record)
-        or v1_023_mutation_transport_incident(
-            record, repository_fingerprint(REPO)
-        )
+        or v1_023_mutation_transport_incident(record, repository_fingerprint(REPO))
         or (
             record.get("candidate") == "V1-023"
             and record.get("stage") == "implementation"
@@ -2938,9 +2965,7 @@ def v1_023_mutation_transport_incident(
     )
 
 
-def candidate_repository_fingerprint_at_base(
-    base: str, paths: list[str]
-) -> str:
+def candidate_repository_fingerprint_at_base(base: str, paths: list[str]) -> str:
     """Reproduce a saved candidate fingerprint at an automation-only base."""
     diff = subprocess.run(
         [
@@ -2959,12 +2984,15 @@ def candidate_repository_fingerprint_at_base(
     ).stdout
     untracked: list[dict[str, str]] = []
     for relative in sorted(paths):
-        tracked = subprocess.run(
-            ["git", "cat-file", "-e", f"{base}:{relative}"],
-            cwd=REPO,
-            capture_output=True,
-            check=False,
-        ).returncode == 0
+        tracked = (
+            subprocess.run(
+                ["git", "cat-file", "-e", f"{base}:{relative}"],
+                cwd=REPO,
+                capture_output=True,
+                check=False,
+            ).returncode
+            == 0
+        )
         if tracked:
             continue
         path = REPO / relative
@@ -3042,9 +3070,7 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
                 == record.get("repository_fingerprint")
             )
             mutation_transport_match = bool(
-                v1_023_mutation_transport_incident(
-                    record, repository_fingerprint(REPO)
-                )
+                v1_023_mutation_transport_incident(record, repository_fingerprint(REPO))
                 and current_paths == list(V1_023_STORAGE_VERIFIED_PATHS)
                 and v1_023_availability_contract_satisfied()
             )
@@ -3081,12 +3107,15 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
         return
     if not re.fullmatch(r"[0-9a-f]{40}", base):
         return
-    ancestor = subprocess.run(
-        ["git", "merge-base", "--is-ancestor", base, current],
-        cwd=REPO,
-        capture_output=True,
-        check=False,
-    ).returncode == 0
+    ancestor = (
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", base, current],
+            cwd=REPO,
+            capture_output=True,
+            check=False,
+        ).returncode
+        == 0
+    )
     repair_paths = git(REPO, "diff", "--name-only", base, current, "--").splitlines()
     if not ancestor or not activation_ci_repair_paths_allowed(repair_paths):
         return
@@ -3148,9 +3177,7 @@ def rebase_pending_automation_recovery(record: dict[str, Any]) -> None:
         preserved.update(
             {
                 "repository_fingerprint": record["repository_fingerprint"],
-                "path_fingerprint": preserved_paths_fingerprint(
-                    REPO, current_paths
-                ),
+                "path_fingerprint": preserved_paths_fingerprint(REPO, current_paths),
                 "automation_rebased_at": utc_now(),
             }
         )
@@ -3555,7 +3582,9 @@ def sync_v1_022_api_inventory() -> None:
             "repository_integrity_uncertainty",
             "the protected FastAPI route inventory is unavailable",
         ) from error
-    anchor = '        "/api/v1/{resource_family}/{resource_id}/audit-events": {"get"},\n'
+    anchor = (
+        '        "/api/v1/{resource_family}/{resource_id}/audit-events": {"get"},\n'
+    )
     addition = (
         anchor
         + '        "/properties/{property_id}": {"get", "patch"},\n'
@@ -3646,35 +3675,114 @@ def sync_v1_023_traceability() -> None:
             "repository_integrity_uncertainty",
             "V1-023 traceability manifest has no entries array",
         )
+    domain_mappings = {
+        "test_unit_accepts_each_supported_type": ["BR-UNIT-001"],
+        "test_unit_accepts_each_supported_status": ["BR-UNIT-002"],
+        "test_unit_rejects_invalid_identity_or_attributes": [
+            "BR-UNIT-001",
+            "BR-UNIT-002",
+        ],
+        "test_service_normalizes_and_persists_unit_with_stable_identity": [
+            "BR-UNIT-003",
+            "TEST-022",
+        ],
+        "test_service_rejects_unit_outside_authoritative_property_scope": [
+            "BR-UNIT-003"
+        ],
+        "test_service_rejects_duplicate_unit_number_within_property": ["BR-UNIT-003"],
+        "test_availability_rejects_active_reservation": [
+            "BR-UNIT-004",
+            "BR-UNIT-006",
+            "BR-UNIT-013",
+        ],
+        "test_availability_rejects_overlapping_signed_lease": [
+            "BR-UNIT-005",
+            "BR-UNIT-013",
+        ],
+        "test_availability_allows_non_overlapping_signed_lease": [
+            "BR-UNIT-005",
+            "BR-UNIT-013",
+        ],
+        "test_availability_rejects_invalid_requested_or_lease_period": [
+            "BR-UNIT-005",
+            "BR-UNIT-013",
+        ],
+        "test_availability_rejects_actual_occupancy": [
+            "BR-UNIT-007",
+            "BR-UNIT-013",
+        ],
+        "test_availability_rejects_operational_blockers": [
+            "BR-UNIT-008",
+            "BR-UNIT-009",
+            "BR-UNIT-013",
+        ],
+        "test_status_alone_never_authorizes_conflict": [
+            "BR-UNIT-004",
+            "BR-UNIT-013",
+        ],
+        "test_restoration_derives_status_from_authoritative_facts": [
+            "BR-UNIT-006",
+            "BR-UNIT-007",
+            "BR-UNIT-008",
+            "BR-UNIT-010",
+            "BR-UNIT-011",
+            "BR-UNIT-012",
+            "BR-UNIT-013",
+        ],
+        "test_protected_status_requires_authorized_restoration": [
+            "BR-UNIT-009",
+            "BR-UNIT-012",
+            "BR-UNIT-013",
+        ],
+        "test_authorized_restoration_uses_current_facts": [
+            "BR-UNIT-009",
+            "BR-UNIT-012",
+            "BR-UNIT-013",
+        ],
+        "test_missing_readiness_is_not_available": [
+            "BR-UNIT-008",
+            "BR-UNIT-011",
+            "BR-UNIT-013",
+        ],
+        "test_state_decisions_preserve_unit_identity": [
+            "BR-UNIT-013",
+            "TEST-022",
+        ],
+    }
+    migration_mappings = {
+        "test_migration_persists_unit_identity_type_status_and_provenance": [
+            "DB-UNIT-001",
+            "TEST-022",
+        ],
+        "test_migration_accepts_supported_unit_types": ["DB-UNIT-001"],
+        "test_migration_accepts_supported_unit_statuses": ["DB-UNIT-001"],
+        "test_migration_rejects_invalid_unit_values": ["DB-UNIT-001"],
+        "test_migration_rejects_duplicate_unit_number_within_property": ["DB-UNIT-001"],
+        "test_migration_rejects_unit_identity_mutation_and_history_loss": [
+            "DB-UNIT-001",
+            "TEST-022",
+        ],
+        "test_migration_allows_versioned_state_change_without_replacing_identity": [
+            "DB-UNIT-001",
+            "TEST-022",
+        ],
+        "test_runtime_creates_units_only_through_protected_function": ["DB-UNIT-001"],
+        "test_migration_is_forward_only": ["TEST-022"],
+        "test_units_reference_canonical_properties_table": ["DB-UNIT-001"],
+    }
     sources = (
-        (
-            "backend/tests/test_unit.py",
-            [
-                "BR-UNIT-001",
-                "BR-UNIT-002",
-                "BR-UNIT-003",
-                "BR-UNIT-004",
-                "BR-UNIT-005",
-                "BR-UNIT-006",
-                "BR-UNIT-007",
-                "BR-UNIT-008",
-                "BR-UNIT-009",
-                "BR-UNIT-010",
-                "BR-UNIT-011",
-                "BR-UNIT-012",
-                "BR-UNIT-013",
-                "TEST-022",
-            ],
-            "domain",
-        ),
-        (
-            "backend/tests/test_unit_migration.py",
-            ["DB-UNIT-001", "TEST-022"],
-            "DB",
-        ),
+        ("backend/tests/test_unit.py", domain_mappings, "domain"),
+        ("backend/tests/test_unit_migration.py", migration_mappings, "DB"),
     )
+    legacy_upstream = {
+        "backend/tests/test_unit.py": [
+            *(f"BR-UNIT-{index:03d}" for index in range(1, 14)),
+            "TEST-022",
+        ],
+        "backend/tests/test_unit_migration.py": ["DB-UNIT-001", "TEST-022"],
+    }
     desired: list[dict[str, Any]] = []
-    for relative, upstream_ids, test_level in sources:
+    for relative, mappings, test_level in sources:
         path = REPO / relative
         try:
             module = ast.parse(path.read_text(), filename=str(path))
@@ -3689,15 +3797,17 @@ def sync_v1_023_traceability() -> None:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
             and node.name.startswith("test_")
         )
-        if not test_ids:
+        unknown_test_ids = sorted(set(test_ids).difference(mappings))
+        if not test_ids or unknown_test_ids:
             raise AutomationError(
                 "repository_integrity_uncertainty",
-                f"V1-023 introduced no executable tests in {relative}",
+                f"V1-023 traceability mapping is incomplete for {relative}: "
+                f"{unknown_test_ids}",
             )
         desired.extend(
             {
                 "test_id": test_id,
-                "upstream_ids": upstream_ids,
+                "upstream_ids": mappings[test_id],
                 "test_level": test_level,
                 "test_path": relative,
                 "status": "implemented",
@@ -3712,15 +3822,38 @@ def sync_v1_023_traceability() -> None:
     }
     changed = False
     rewrite_candidate_additions_from_head = False
+    desired_ids = {str(entry["test_id"]) for entry in desired}
+    managed_paths = {relative for relative, _mappings, _level in sources}
+    stale_entries = [
+        entry
+        for entry in entries
+        if isinstance(entry, dict)
+        and entry.get("test_path") in managed_paths
+        and entry.get("test_id") not in desired_ids
+    ]
+    for stale in stale_entries:
+        entries.remove(stale)
+        existing.pop(str(stale.get("test_id")), None)
+        changed = True
+        rewrite_candidate_additions_from_head = True
     for entry in desired:
         prior = existing.get(str(entry["test_id"]))
         if prior is not None:
-            legacy = dict(entry)
-            legacy["test_level"] = {
+            old_level = {
                 "domain": "domain/service",
                 "DB": "database integration",
             }[str(entry["test_level"])]
-            if prior == legacy:
+            legacy_variants: list[dict[str, Any]] = []
+            for upstream_ids in (
+                entry["upstream_ids"],
+                legacy_upstream[str(entry["test_path"])],
+            ):
+                for test_level in (entry["test_level"], old_level):
+                    legacy = dict(entry)
+                    legacy["upstream_ids"] = upstream_ids
+                    legacy["test_level"] = test_level
+                    legacy_variants.append(legacy)
+            if prior in legacy_variants:
                 entries[entries.index(prior)] = entry
                 existing[str(entry["test_id"])] = entry
                 changed = True
@@ -3932,8 +4065,7 @@ def recover_verified_v1_023_storage(record: dict[str, Any]) -> bool:
                 "substage_complete": True,
                 "changed_paths": actual,
                 "verification": [
-                    f"{' '.join(command)}: passed"
-                    for command in verification_commands
+                    f"{' '.join(command)}: passed" for command in verification_commands
                 ],
                 "blockers": [],
                 "exact_next_action": (
@@ -3966,9 +4098,7 @@ def v1_023_availability_contract_satisfied() -> bool:
         test_module = ast.parse((REPO / "backend/tests/test_unit.py").read_text())
     except (OSError, SyntaxError):
         return False
-    classes = {
-        node.name for node in unit_module.body if isinstance(node, ast.ClassDef)
-    }
+    classes = {node.name for node in unit_module.body if isinstance(node, ast.ClassDef)}
     functions = {
         node.name
         for node in unit_module.body
@@ -3997,12 +4127,163 @@ def v1_023_availability_contract_satisfied() -> bool:
     }
     return bool(
         {"UnitAvailabilityFacts", "UnitAvailabilityDecision"}.issubset(classes)
-        and {"evaluate_unit_availability", "restored_unit_status"}.issubset(
-            functions
-        )
+        and {"evaluate_unit_availability", "restored_unit_status"}.issubset(functions)
         and required_tests.issubset(tests)
         and mutation_functions.isdisjoint(functions)
     )
+
+
+def v1_023_review_repair_contract_satisfied() -> bool:
+    """Prove the four exact V1-023 review findings are repaired."""
+    try:
+        migration = (REPO / V1_023_STORAGE_PRODUCT_PATHS[0]).read_text()
+        unit_module = ast.parse(
+            (REPO / "backend/src/property_rental/unit.py").read_text()
+        )
+        test_module = ast.parse((REPO / "backend/tests/test_unit.py").read_text())
+        migration_tests = ast.parse(
+            (REPO / "backend/tests/test_unit_migration.py").read_text()
+        )
+        traceability = json.loads((REPO / "ops/traceability.json").read_text())
+    except (OSError, SyntaxError, json.JSONDecodeError):
+        return False
+    unit_classes = {
+        node.name: node for node in unit_module.body if isinstance(node, ast.ClassDef)
+    }
+    fact_class = unit_classes.get("UnitAvailabilityFacts")
+    fact_fields = {
+        node.target.id
+        for node in (fact_class.body if fact_class is not None else [])
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name)
+    }
+    tests = {
+        node.name
+        for node in test_module.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    migration_test_ids = {
+        node.name
+        for node in migration_tests.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    entries = {
+        entry.get("test_id"): entry.get("upstream_ids")
+        for entry in traceability.get("entries") or []
+        if isinstance(entry, dict)
+        and entry.get("test_path")
+        in {"backend/tests/test_unit.py", "backend/tests/test_unit_migration.py"}
+    }
+    return bool(
+        "REFERENCES app.properties(id) ON DELETE RESTRICT" in migration
+        and "REFERENCES app.property_configuration" not in migration
+        and "SignedLeasePeriod" in unit_classes
+        and {
+            "requested_starts_on",
+            "requested_ends_on",
+            "is_ready_for_rental",
+            "signed_lease_periods",
+            "restoration_authorized",
+        }.issubset(fact_fields)
+        and {
+            "test_availability_rejects_overlapping_signed_lease",
+            "test_availability_allows_non_overlapping_signed_lease",
+            "test_protected_status_requires_authorized_restoration",
+            "test_authorized_restoration_uses_current_facts",
+            "test_missing_readiness_is_not_available",
+        }.issubset(tests)
+        and "test_units_reference_canonical_properties_table" in migration_test_ids
+        and entries.get("test_unit_accepts_each_supported_type") == ["BR-UNIT-001"]
+        and entries.get("test_availability_rejects_overlapping_signed_lease")
+        == ["BR-UNIT-005", "BR-UNIT-013"]
+        and entries.get("test_protected_status_requires_authorized_restoration")
+        == ["BR-UNIT-009", "BR-UNIT-012", "BR-UNIT-013"]
+    )
+
+
+def recover_verified_v1_023_review_findings(record: dict[str, Any]) -> bool:
+    """Resume V1-023 gates after its exact reviewed findings are repaired."""
+    verdict = record.get("review_verdict")
+    findings = verdict.get("findings") if isinstance(verdict, dict) else None
+    pending = record.get("pending_review_repair")
+    exact_paths = list(V1_023_STORAGE_VERIFIED_PATHS)
+    if (
+        record.get("candidate") != "V1-023"
+        or record.get("stage") != "implementation"
+        or record.get("completed_implementation_substages")
+        != ["unit_storage", "unit_availability"]
+        or record.get("repair_failure")
+        != "fresh independent review returned concrete in-scope findings"
+        or not isinstance(findings, list)
+        or len(findings) != 4
+        or any(
+            not isinstance(finding, dict)
+            or finding.get("severity") not in {"high", "medium"}
+            for finding in findings
+        )
+        or not isinstance(pending, dict)
+        or pending.get("verdict_fingerprint") != digest(verdict)
+        or pending.get("reviewed_repository_fingerprint")
+        != verdict.get("reviewed_repository_fingerprint")
+        or sorted(pending.get("reviewed_paths") or []) != exact_paths
+        or changed_paths(REPO) != exact_paths
+        or repository_fingerprint(REPO)
+        == verdict.get("reviewed_repository_fingerprint")
+    ):
+        return False
+    sync_v1_023_supervisor_artifacts("unit_availability")
+    if (
+        changed_paths(REPO) != exact_paths
+        or not v1_023_review_repair_contract_satisfied()
+    ):
+        return False
+    verification_commands = (
+        ("make", "automation-test"),
+        ("make", "test"),
+        ("make", "database-test"),
+    )
+    for command in verification_commands:
+        result = run(*command, check=False, capture=False)
+        if result.returncode:
+            rendered = " ".join(command)
+            record.update(
+                {
+                    "last_failure_category": "deterministic_test_failure",
+                    "failed_check": rendered,
+                    "repository_fingerprint": repository_fingerprint(REPO),
+                }
+            )
+            save_stage(record)
+            raise AutomationError(
+                "deterministic_test_failure",
+                f"V1-023 review repair failed {rendered}",
+            )
+    record.setdefault("review_history", []).append(verdict)
+    fingerprint = repository_fingerprint(REPO)
+    record.update(
+        {
+            "stage": "deterministic_verification",
+            "repository_fingerprint": fingerprint,
+            "scoped_changed_paths": exact_paths,
+            "expected_worktree_paths": exact_paths,
+            "deterministic_verification_passed": False,
+            "verified_repository_fingerprint": None,
+            "verified_paths": [],
+            "review_verdict": None,
+            "reviewed_paths": [],
+            "reviewed_repository_fingerprint": None,
+            "pending_review_repair": None,
+            "last_failure_category": None,
+            "repair_failure": None,
+            "failed_check": None,
+            "stop_reason": None,
+            "recovery_pending": False,
+            "recovery_generation": 0,
+            "bounded_recovery_exhausted": False,
+            "product_code_modification_permitted": False,
+        }
+    )
+    save_stage(record)
+    return True
 
 
 def recover_verified_v1_023_availability(record: dict[str, Any]) -> bool:
@@ -4107,8 +4388,7 @@ def recover_verified_v1_023_availability(record: dict[str, Any]) -> bool:
                 "substage_complete": True,
                 "changed_paths": actual,
                 "verification": [
-                    f"{' '.join(command)}: passed"
-                    for command in verification_commands
+                    f"{' '.join(command)}: passed" for command in verification_commands
                 ],
                 "blockers": [],
                 "exact_next_action": (
@@ -4182,8 +4462,7 @@ def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
     ):
         return False
     if any(
-        not (REPO / relative).is_file()
-        for relative in configuration["required_files"]
+        not (REPO / relative).is_file() for relative in configuration["required_files"]
     ):
         return False
     sync_v1_022_supervisor_artifacts(substage_id)
@@ -4253,8 +4532,7 @@ def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
                 "substage_complete": True,
                 "changed_paths": actual,
                 "verification": [
-                    f"{' '.join(command)}: passed"
-                    for command in verification_commands
+                    f"{' '.join(command)}: passed" for command in verification_commands
                 ],
                 "blockers": [],
                 "exact_next_action": next_action,
@@ -4552,8 +4830,7 @@ def recover_mechanical_format_failure(record: dict[str, Any]) -> bool:
         and isinstance(findings, list)
         and bool(findings)
         and all(
-            isinstance(finding, dict)
-            and finding.get("severity") in {"high", "medium"}
+            isinstance(finding, dict) and finding.get("severity") in {"high", "medium"}
             for finding in findings
         )
     )
@@ -4565,9 +4842,7 @@ def recover_mechanical_format_failure(record: dict[str, Any]) -> bool:
                 else "deterministic_verification"
             ),
             "last_failure_category": (
-                "independent_review_defect"
-                if pending_v1_021_review_repair
-                else None
+                "independent_review_defect" if pending_v1_021_review_repair else None
             ),
             "failed_check": None,
             "repair_failure": (
@@ -4619,8 +4894,7 @@ def recover_verified_v1_021_review_findings(record: dict[str, Any]) -> bool:
     if pending_repair is not None and (
         not isinstance(pending_repair, dict)
         or pending_repair.get("verdict_fingerprint") != verdict_fingerprint
-        or pending_repair.get("reviewed_repository_fingerprint")
-        != reviewed_fingerprint
+        or pending_repair.get("reviewed_repository_fingerprint") != reviewed_fingerprint
         or pending_repair.get("reviewed_paths") != verdict.get("reviewed_paths")
     ):
         return False
@@ -4739,6 +5013,8 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         )
     candidate = str(record.get("candidate") or "")
     rebase_pending_automation_recovery(record)
+    if recover_verified_v1_023_review_findings(record):
+        return
     if recover_verified_v1_023_availability(record):
         return
     if recover_verified_v1_023_storage(record):
@@ -4829,9 +5105,7 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         approval = state.get("approval") or {}
         completed = bool(approval.get("implementation_completed"))
         started = bool(approval.get("implementation_started"))
-        supervisor_owned_progress = (
-            candidate in SUPERVISOR_OWNED_PROGRESS_CANDIDATES
-        )
+        supervisor_owned_progress = candidate in SUPERVISOR_OWNED_PROGRESS_CANDIDATES
         final_substage = bool(
             substage and substage.get("order") == substage.get("total")
         )
@@ -5092,12 +5366,15 @@ def normalize_verified_v1_021_review_base(record: dict[str, Any]) -> None:
         and latest.get("url")
     )
     repair_paths = git(REPO, "diff", "--name-only", previous, target, "--").splitlines()
-    ancestor = subprocess.run(
-        ["git", "merge-base", "--is-ancestor", previous, target],
-        cwd=REPO,
-        capture_output=True,
-        check=False,
-    ).returncode == 0
+    ancestor = (
+        subprocess.run(
+            ["git", "merge-base", "--is-ancestor", previous, target],
+            cwd=REPO,
+            capture_output=True,
+            check=False,
+        ).returncode
+        == 0
+    )
     if not ancestor or not activation_ci_repair_paths_allowed(repair_paths):
         raise AutomationError(
             "repository_integrity_uncertainty",
@@ -5711,15 +5988,12 @@ def publication(record: dict[str, Any], preflight: dict[str, Any]) -> None:
             save_stage(record)
             expected = scoped
             substage = "pushed_waiting_ci"
-        if (
-            substage is None
-            and (
-                not reviewed
-                or reviewed != scoped
-                or not expected
-                or actual != expected
-                or reviewed_fingerprint != repository_fingerprint(REPO)
-            )
+        if substage is None and (
+            not reviewed
+            or reviewed != scoped
+            or not expected
+            or actual != expected
+            or reviewed_fingerprint != repository_fingerprint(REPO)
         ):
             raise AutomationError(
                 "repository_integrity_uncertainty",
@@ -5891,8 +6165,7 @@ def publication(record: dict[str, Any], preflight: dict[str, Any]) -> None:
     if record.get("publication_mode") == "reviewed_cumulative_already_published" and (
         changed_paths(REPO)
         or synchronized["local"] != published
-        or repository_fingerprint(REPO)
-        != record.get("reviewed_repository_fingerprint")
+        or repository_fingerprint(REPO) != record.get("reviewed_repository_fingerprint")
         or full_candidate_paths(record) != sorted(record.get("reviewed_paths") or [])
     ):
         raise AutomationError(
@@ -6362,9 +6635,7 @@ def activate_next(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         activation_paths = record.get("activation_paths")
         try:
             activation_state = json.loads(git_document(head, "ops/STATE.json"))
-            activation_roadmap = json.loads(
-                git_document(head, "ops/V1_ROADMAP.json")
-            )
+            activation_roadmap = json.loads(git_document(head, "ops/V1_ROADMAP.json"))
             activation_now = git_document(head, "ops/NOW.md")
             activation_boundary_exact = bool(
                 head
@@ -6398,12 +6669,15 @@ def activate_next(record: dict[str, Any], preflight: dict[str, Any]) -> None:
             )
         except (subprocess.CalledProcessError, json.JSONDecodeError):
             activation_boundary_exact = False
-        ancestor = subprocess.run(
-            ["git", "merge-base", "--is-ancestor", head, current],
-            cwd=REPO,
-            capture_output=True,
-            check=False,
-        ).returncode == 0
+        ancestor = (
+            subprocess.run(
+                ["git", "merge-base", "--is-ancestor", head, current],
+                cwd=REPO,
+                capture_output=True,
+                check=False,
+            ).returncode
+            == 0
+        )
         if (
             current == head
             or changed_paths(REPO)
@@ -6614,8 +6888,11 @@ def dispatch() -> int:
                 publish_state_contract_repair(record)
                 continue
             stage = record.get("stage")
-            if stage == "deterministic_verification" and v1_023_review_repair_rebase_allowed(
-                {**record, "stage": "implementation"}
+            if (
+                stage == "deterministic_verification"
+                and v1_023_review_repair_rebase_allowed(
+                    {**record, "stage": "implementation"}
+                )
             ):
                 record["stage"] = "implementation"
                 save_stage(record)

@@ -196,6 +196,8 @@
     {"clause": "an exact complete candidate diff above 180000 bytes is deterministically preclassified for the persisted scope-bound 120000-token exceptional review while smaller reviews and all implementation retain their lower ceilings", "test_id": "test_independent_review_preclassifies_exceptional_complete_diff"},
     {"clause": "automation Git fixtures disable auto-GC and background maintenance so temporary bare repositories cannot race deterministic cleanup after publication-path tests", "test_id": "test_git_fixtures_disable_background_maintenance"},
     {"clause": "bounded successful patch and write results retain success semantics when verbose mutation diagnostics are truncated", "test_id": "test_successful_mutation_output_truncation_preserves_success_semantics"},
-    {"clause": "the exact V1-023 availability edits recover model-free after successful mutation output truncation caused invalid final delivery", "test_id": "test_v1_023_truncated_successful_mutations_recover_without_model_retry"}
+    {"clause": "the exact V1-023 availability edits recover model-free after successful mutation output truncation caused invalid final delivery", "test_id": "test_v1_023_truncated_successful_mutations_recover_without_model_retry"},
+    {"clause": "V1-023 supervisor traceability assigns each Unit test only its directly proven authorities and removes stale managed entries after a test rename", "test_id": "test_v1_023_supervisor_sync_is_exact_and_idempotent"},
+    {"clause": "the exact four-finding V1-023 review repair resumes deterministic gates without another model call only after its bounded product and traceability contract is proven", "test_id": "test_v1_023_review_findings_recover_without_another_model"}
   ]
 }
