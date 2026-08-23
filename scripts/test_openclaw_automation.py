@@ -4163,6 +4163,9 @@ evidence.write_text(json.dumps({
                 dispatcher, "repository_fingerprint", return_value="e" * 64
             ),
             mock.patch.object(
+                dispatcher, "preserved_paths_fingerprint", return_value="f" * 64
+            ),
+            mock.patch.object(
                 dispatcher, "resolve_pending_routing_recovery"
             ) as resolve_mock,
             mock.patch.object(dispatcher, "save_stage") as save_mock,
@@ -4248,6 +4251,9 @@ evidence.write_text(json.dumps({
             ),
             mock.patch.object(dispatcher, "repository_fingerprint", return_value="b" * 64),
             mock.patch.object(dispatcher, "changed_paths", return_value=paths),
+            mock.patch.object(
+                dispatcher, "preserved_paths_fingerprint", return_value="c" * 64
+            ),
             mock.patch.object(
                 dispatcher, "v1_023_availability_contract_satisfied", return_value=True
             ),
