@@ -4059,6 +4059,14 @@ evidence.write_text(json.dumps({
             (repo / "backend/tests/test_unit_migration.py").write_text(
                 "def test_unit_schema_preserves_history(): pass\n"
             )
+            (repo / "backend/tests/test_property_migration.py").write_text(
+                "def test_migration_rejects_mutation_of_property_configuration(\n"
+                "    connection, statement,\n"
+                "):\n"
+                "    with raises_error() as raised:\n"
+                "        connection.execute(statement)\n"
+                '    assert raised.value.sqlstate == "55000"\n'
+            )
             traceability_path = repo / "ops/traceability.json"
             traceability_path.write_text(
                 '{\n  "schema_version": 1,\n  "entries": [\n  ]\n}\n'
@@ -4069,6 +4077,10 @@ evidence.write_text(json.dumps({
             self.assertIn(
                 '("20260823_13",)',
                 (repo / "backend/tests/test_migrations.py").read_text(),
+            )
+            self.assertIn(
+                'if statement.as_string() == "TRUNCATE app.property_configuration"',
+                (repo / "backend/tests/test_property_migration.py").read_text(),
             )
             self.assertEqual(
                 len(json.loads(first_traceability)["entries"]),
@@ -4081,6 +4093,66 @@ evidence.write_text(json.dumps({
 
             with self.assertRaises(dispatcher.AutomationError):
                 dispatcher.sync_v1_023_supervisor_artifacts("unknown")
+
+    def test_v1_023_ceiling_stopped_storage_recovers_without_another_model(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "v1_023_storage_recovery", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        record = {
+            "candidate": "V1-023",
+            "stage": "implementation",
+            "recovery_pending": True,
+            "recovery_generation": 2,
+            "model_usage": [
+                {
+                    "stage_result": "model_session_or_token_ceiling",
+                    "api_calls_completed": 1,
+                }
+            ],
+        }
+        product_paths = list(dispatcher.V1_023_STORAGE_PRODUCT_PATHS)
+        verified_paths = list(dispatcher.V1_023_STORAGE_VERIFIED_PATHS)
+        completed = subprocess.CompletedProcess([], 0, "", "")
+        with (
+            mock.patch.object(
+                dispatcher,
+                "current_bounded_substage",
+                return_value={"id": "unit_storage"},
+            ),
+            mock.patch.object(
+                dispatcher,
+                "changed_paths",
+                side_effect=[product_paths, verified_paths],
+            ),
+            mock.patch.object(Path, "is_file", return_value=True),
+            mock.patch.object(dispatcher, "sync_v1_023_supervisor_artifacts") as sync,
+            mock.patch.object(dispatcher, "run", return_value=completed) as run_mock,
+            mock.patch.object(
+                dispatcher, "repository_fingerprint", return_value="e" * 64
+            ),
+            mock.patch.object(
+                dispatcher, "resolve_pending_routing_recovery"
+            ) as resolve_mock,
+            mock.patch.object(dispatcher, "save_stage") as save_mock,
+        ):
+            self.assertTrue(dispatcher.recover_verified_v1_023_storage(record))
+        sync.assert_called_once_with("unit_storage")
+        self.assertEqual(
+            [call.args for call in run_mock.call_args_list],
+            [
+                ("make", "automation-test"),
+                ("make", "test"),
+                ("make", "database-test"),
+            ],
+        )
+        resolve_mock.assert_called_once_with(record, outcome="succeeded")
+        save_mock.assert_called_once_with(record)
+        self.assertEqual(record["completed_implementation_substages"], ["unit_storage"])
+        self.assertEqual(record["stage"], "implementation")
+        self.assertFalse(record["recovery_pending"])
 
     def test_database_gate_collects_v1_023_unit_migration(self) -> None:
         database_gate = (ROOT / "scripts/database-test.sh").read_text()

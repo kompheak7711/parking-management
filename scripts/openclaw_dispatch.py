@@ -331,6 +331,26 @@ V1_022_API_VERIFIED_PATHS: tuple[str, ...] = tuple(
         }
     )
 )
+V1_023_STORAGE_PRODUCT_PATHS: tuple[str, ...] = tuple(
+    sorted(
+        {
+            "backend/migrations/versions/20260823_13_units.py",
+            "backend/src/property_rental/unit.py",
+            "backend/tests/test_unit.py",
+            "backend/tests/test_unit_migration.py",
+        }
+    )
+)
+V1_023_STORAGE_VERIFIED_PATHS: tuple[str, ...] = tuple(
+    sorted(
+        set(V1_023_STORAGE_PRODUCT_PATHS)
+        | {
+            "backend/tests/test_migrations.py",
+            "backend/tests/test_property_migration.py",
+            "ops/traceability.json",
+        }
+    )
+)
 V1_022_STORAGE_TRACEABILITY: tuple[dict[str, Any], ...] = (
     {
         "test_id": "test_property_configuration_uses_authoritative_timezone",
@@ -3534,6 +3554,58 @@ def sync_v1_023_traceability() -> None:
         )
 
 
+def sync_v1_023_property_truncate_expectation() -> None:
+    """Record PostgreSQL's FK-first rejection after Units reference Property."""
+    test_path = REPO / "backend/tests/test_property_migration.py"
+    try:
+        source = test_path.read_text()
+        module = ast.parse(source, filename=str(test_path))
+    except (OSError, SyntaxError) as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the Property migration test is unavailable or invalid",
+        ) from error
+    target = next(
+        (
+            node
+            for node in module.body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name == "test_migration_rejects_mutation_of_property_configuration"
+        ),
+        None,
+    )
+    if target is None or target.end_lineno is None:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the Property mutation-rejection test is missing",
+        )
+    prior = '    assert raised.value.sqlstate == "55000"'
+    replacement = [
+        "    expected_sqlstate = (",
+        '        "0A000"',
+        '        if statement.as_string() == "TRUNCATE app.property_configuration"',
+        '        else "55000"',
+        "    )",
+        "    assert raised.value.sqlstate == expected_sqlstate",
+    ]
+    lines = source.splitlines()
+    function_lines = lines[target.lineno - 1 : target.end_lineno]
+    replacement_text = "\n".join(replacement)
+    if replacement_text in "\n".join(function_lines):
+        return
+    if function_lines.count(prior) != 1 or source.count(prior) < 1:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the Property mutation SQLSTATE assertion drifted from its V1-023 form",
+        )
+    updated_function: list[str] = []
+    for line in function_lines:
+        updated_function.extend(replacement if line == prior else [line])
+    lines[target.lineno - 1 : target.end_lineno] = updated_function
+    suffix = "\n" if source.endswith("\n") else ""
+    atomic_write_text(test_path, "\n".join(lines) + suffix)
+
+
 def sync_v1_023_supervisor_artifacts(substage_id: str) -> None:
     """Materialize deterministic supervisor-owned V1-023 acceptance artifacts."""
     if substage_id not in {"unit_storage", "unit_availability"}:
@@ -3542,7 +3614,117 @@ def sync_v1_023_supervisor_artifacts(substage_id: str) -> None:
             f"unknown V1-023 traceability substage {substage_id!r}",
         )
     sync_v1_023_migration_head_expectation()
+    sync_v1_023_property_truncate_expectation()
     sync_v1_023_traceability()
+
+
+def recover_verified_v1_023_storage(record: dict[str, Any]) -> bool:
+    """Advance exact ceiling-stopped Unit storage through deterministic gates."""
+    substage = current_bounded_substage(record)
+    usages = record.get("model_usage")
+    latest_usage = usages[-1] if isinstance(usages, list) and usages else None
+    if (
+        record.get("candidate") != "V1-023"
+        or record.get("stage") != "implementation"
+        or record.get("recovery_pending") is not True
+        or not substage
+        or substage.get("id") != "unit_storage"
+        or record.get("completed_implementation_substages") not in (None, [])
+        or not isinstance(latest_usage, dict)
+        or latest_usage.get("stage_result") != "model_session_or_token_ceiling"
+        or int(latest_usage.get("api_calls_completed") or 0) <= 0
+    ):
+        return False
+    before_artifacts = changed_paths(REPO)
+    if before_artifacts != list(V1_023_STORAGE_PRODUCT_PATHS):
+        return False
+    if any(
+        not (REPO / relative).is_file() for relative in V1_023_STORAGE_PRODUCT_PATHS
+    ):
+        return False
+    sync_v1_023_supervisor_artifacts("unit_storage")
+    actual = changed_paths(REPO)
+    if actual != list(V1_023_STORAGE_VERIFIED_PATHS):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "V1-023 supervisor artifact materialization changed an unexpected path",
+        )
+    verification_commands = (
+        ("make", "automation-test"),
+        ("make", "test"),
+        ("make", "database-test"),
+    )
+    for command in verification_commands:
+        verification = run(*command, check=False, capture=False)
+        if verification.returncode:
+            rendered = " ".join(command)
+            current = changed_paths(REPO)
+            current_fingerprint = repository_fingerprint(REPO)
+            record.update(
+                {
+                    "last_failure_category": "deterministic_test_failure",
+                    "failed_check": rendered,
+                    "scoped_changed_paths": current,
+                    "expected_worktree_paths": current,
+                    "repository_fingerprint": current_fingerprint,
+                    "preserved_partial_work": {
+                        "paths": current,
+                        "repository_fingerprint": current_fingerprint,
+                        "path_fingerprint": preserved_paths_fingerprint(REPO, current),
+                        "recovery_generation": int(
+                            record.get("recovery_generation") or 0
+                        ),
+                        "authorization": "dispatcher_exact_writable_scope",
+                    },
+                }
+            )
+            save_stage(record)
+            raise AutomationError(
+                "deterministic_test_failure",
+                f"verified V1-023 unit_storage recovery failed {rendered}",
+            )
+    resolve_pending_routing_recovery(record, outcome="succeeded")
+    record.setdefault("events", []).append(
+        {
+            "stage": "implementation",
+            "substage": "unit_storage",
+            "result": "recovered_after_ceiling_with_complete_local_gates",
+            "verification": [" ".join(command) for command in verification_commands],
+            "changed_paths": actual,
+        }
+    )
+    record.update(
+        {
+            "stage": "implementation",
+            "implementation_complete": False,
+            "implementation_result": {
+                "stage_result": "completed",
+                "substage_complete": True,
+                "changed_paths": actual,
+                "verification": [
+                    f"{' '.join(command)}: passed"
+                    for command in verification_commands
+                ],
+                "blockers": [],
+                "exact_next_action": (
+                    "Dispatch the fresh V1-023 unit_availability substage."
+                ),
+            },
+            "completed_implementation_substages": ["unit_storage"],
+            "scoped_changed_paths": actual,
+            "expected_worktree_paths": actual,
+            "repository_fingerprint": repository_fingerprint(REPO),
+            "last_failure_category": None,
+            "failed_check": None,
+            "stop_reason": None,
+            "recovery_pending": False,
+            "recovery_generation": 0,
+            "bounded_recovery_exhausted": False,
+            "product_code_modification_permitted": True,
+        }
+    )
+    save_stage(record)
+    return True
 
 
 def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
@@ -4149,6 +4331,8 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         )
     candidate = str(record.get("candidate") or "")
     rebase_pending_automation_recovery(record)
+    if recover_verified_v1_023_storage(record):
+        return
     if recover_verified_v1_022_substage(record):
         return
     if recover_verified_v1_021_storage(record):
