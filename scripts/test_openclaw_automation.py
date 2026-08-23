@@ -45,6 +45,10 @@ from openclaw_automation import (
     V1_022_SUBSTAGE_IDS,
     V1_022_SUBSTAGE_PATHS,
     V1_022_SUBSTAGE_WRITABLE_PATHS,
+    V1_023_SUBSTAGE_AUTHORITIES,
+    V1_023_SUBSTAGE_IDS,
+    V1_023_SUBSTAGE_PATHS,
+    V1_023_SUBSTAGE_WRITABLE_PATHS,
     AutomationError,
     actionable_fingerprint,
     atomic_write_json,
@@ -1330,6 +1334,95 @@ class RepositoryEvidenceTests(unittest.TestCase):
             "completed_implementation_substages": [],
         }
         for expected in V1_022_SUBSTAGE_IDS:
+            current = dispatcher.current_bounded_substage(record)
+            self.assertIsNotNone(current)
+            assert current is not None
+            self.assertEqual(current["id"], expected)
+            record["completed_implementation_substages"].append(expected)
+        self.assertIsNone(dispatcher.current_bounded_substage(record))
+
+    def test_v1_023_packets_split_storage_from_authoritative_availability(self) -> None:
+        roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())
+        candidate = next(item for item in roadmap["tranches"] if item["id"] == "V1-023")
+        expanded = set(expand_authorities(candidate["authorities"], repo=ROOT))
+        spec = importlib.util.spec_from_file_location(
+            "v1_023_substage_dispatch", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        future_contents = {
+            ROOT / "backend/migrations/versions/20260823_13_units.py": (
+                "revision = '20260823_13'\n"
+            ),
+            ROOT / "backend/src/property_rental/unit.py": (
+                "class UnitAvailability:\n    pass\n"
+            ),
+            ROOT / "backend/tests/test_unit.py": "def test_unit_identity(): pass\n",
+            ROOT / "backend/tests/test_unit_migration.py": (
+                "def test_unit_migration(): pass\n"
+            ),
+        }
+        original_is_file = Path.is_file
+        original_read_text = Path.read_text
+
+        def staged_is_file(path: Path) -> bool:
+            return path in future_contents or original_is_file(path)
+
+        def staged_read_text(path: Path, *args: Any, **kwargs: Any) -> str:
+            if path in future_contents:
+                return future_contents[path]
+            return original_read_text(path, *args, **kwargs)
+
+        for index, substage in enumerate(V1_023_SUBSTAGE_IDS, start=1):
+            with self.subTest(substage=substage):
+                self.assertTrue(
+                    set(V1_023_SUBSTAGE_AUTHORITIES[substage]).issubset(expanded)
+                )
+                self.assertNotIn(
+                    "backend/tests/test_migrations.py",
+                    V1_023_SUBSTAGE_PATHS[substage],
+                )
+                with (
+                    mock.patch.object(Path, "is_file", staged_is_file),
+                    mock.patch.object(Path, "read_text", staged_read_text),
+                ):
+                    packet = task_packet(
+                        ROOT,
+                        {"actionable": True},
+                        "implementation",
+                        candidate_id_override="V1-023",
+                        bounded_substage={"id": substage, "order": index, "total": 2},
+                    )
+                self.assertEqual(packet["directly_relevant_paths"], [])
+                context = packet["materialized_implementation_context"]
+                self.assertEqual(
+                    [item["path"] for item in context["repository_evidence"]],
+                    list(V1_023_SUBSTAGE_PATHS[substage]),
+                )
+                self.assertEqual(
+                    context["exact_writable_paths"],
+                    list(V1_023_SUBSTAGE_WRITABLE_PATHS[substage]),
+                )
+                self.assertEqual(packet["durable_state_write_paths"], [])
+                self.assertEqual(
+                    dispatcher.authorized_candidate_writes(
+                        {"candidate": "V1-023"}, packet, "implementation"
+                    ),
+                    sorted(context["exact_writable_paths"]),
+                )
+                self.assertLess(len(dispatcher.packet_prompt(packet).encode()), 45_000)
+
+        record: dict[str, Any] = {
+            "candidate": "V1-023",
+            "stage": "implementation",
+            "completed_implementation_substages": [],
+            "recovery_generation": 0,
+        }
+        first_identity = v1_019_routing_identity(record, "implementation")
+        self.assertEqual(first_identity["bounded_substage"], "unit_storage")
+        self.assertNotEqual(first_identity, {})
+        for expected in V1_023_SUBSTAGE_IDS:
             current = dispatcher.current_bounded_substage(record)
             self.assertIsNotNone(current)
             assert current is not None
@@ -3216,7 +3309,11 @@ evidence.write_text(json.dumps({
 
             self.assertTrue(
                 dispatcher.activation_ci_repair_paths_allowed(
-                    ["scripts/openclaw_automation.py", "scripts/test_openclaw_automation.py"]
+                    [
+                        "scripts/database-test.sh",
+                        "scripts/openclaw_automation.py",
+                        "scripts/test_openclaw_automation.py",
+                    ]
                 )
             )
             self.assertFalse(
@@ -3935,6 +4032,60 @@ evidence.write_text(json.dumps({
         self.assertIn("tests/test_migrations.py", database_gate)
         self.assertIn("tests/test_audit_migration.py", database_gate)
         self.assertIn("tests/test_property_migration.py", database_gate)
+
+    def test_v1_023_supervisor_sync_is_exact_and_idempotent(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory) / "repo"
+            spec = importlib.util.spec_from_file_location(
+                "v1_023_supervisor_sync", ROOT / "scripts/openclaw_dispatch.py"
+            )
+            assert spec and spec.loader
+            dispatcher = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(os.environ, {"PROPERTY_RENTAL_REPO": str(repo)}):
+                spec.loader.exec_module(dispatcher)
+            (repo / "backend/tests").mkdir(parents=True)
+            (repo / "ops").mkdir(parents=True)
+            (repo / "backend/tests/test_migrations.py").write_text(
+                "def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_authority():\n"
+                "    if True:\n"
+                "        if True:\n"
+                "            if True:\n"
+                '                assert cursor.fetchone() == ("20260823_12",)\n'
+            )
+            (repo / "backend/tests/test_unit.py").write_text(
+                "def test_unit_identity_is_stable(): pass\n"
+                "def test_status_does_not_override_availability(): pass\n"
+            )
+            (repo / "backend/tests/test_unit_migration.py").write_text(
+                "def test_unit_schema_preserves_history(): pass\n"
+            )
+            traceability_path = repo / "ops/traceability.json"
+            traceability_path.write_text(
+                '{\n  "schema_version": 1,\n  "entries": [\n  ]\n}\n'
+            )
+
+            dispatcher.sync_v1_023_supervisor_artifacts("unit_storage")
+            first_traceability = traceability_path.read_text()
+            self.assertIn(
+                '("20260823_13",)',
+                (repo / "backend/tests/test_migrations.py").read_text(),
+            )
+            self.assertEqual(
+                len(json.loads(first_traceability)["entries"]),
+                3,
+            )
+            dispatcher.sync_v1_023_supervisor_artifacts("unit_availability")
+            self.assertEqual(traceability_path.read_text(), first_traceability)
+            self.assertIn("DB-UNIT-001", first_traceability)
+            self.assertIn("BR-UNIT-013", first_traceability)
+
+            with self.assertRaises(dispatcher.AutomationError):
+                dispatcher.sync_v1_023_supervisor_artifacts("unknown")
+
+    def test_database_gate_collects_v1_023_unit_migration(self) -> None:
+        database_gate = (ROOT / "scripts/database-test.sh").read_text()
+
+        self.assertIn("tests/test_unit_migration.py", database_gate)
 
     def test_format_only_verification_failure_resumes_without_a_model(self) -> None:
         spec = importlib.util.spec_from_file_location(

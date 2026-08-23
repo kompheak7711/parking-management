@@ -105,4 +105,7 @@ set -- tests/test_migrations.py tests/test_audit_migration.py
 if [ -f tests/test_property_migration.py ]; then
   set -- "$@" tests/test_property_migration.py
 fi
+if [ -f tests/test_unit_migration.py ]; then
+  set -- "$@" tests/test_unit_migration.py
+fi
 REQUIRE_DATABASE_TESTS=1 uv run --extra dev pytest --tb=short --no-header "$@"

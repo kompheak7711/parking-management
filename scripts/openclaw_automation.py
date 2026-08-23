@@ -271,7 +271,6 @@ V1_021_SUBSTAGE_WRITABLE_PATHS: Final = {
 }
 V1_022_ROUTING_REVISION: Final = "v1-022-property-configuration-routing-v1"
 V1_022_SUBSTAGE_IDS: Final = ("property_storage", "property_api")
-SUPERVISOR_OWNED_PROGRESS_CANDIDATES: Final = frozenset({"V1-022"})
 V1_022_SUBSTAGE_AUTHORITIES: Final = {
     "property_storage": (
         "BR-PROP-001",
@@ -335,6 +334,75 @@ V1_022_SUBSTAGE_WRITABLE_PATHS: Final = {
         "frontend/src/propertyClient.test.tsx",
     ),
 }
+V1_023_ROUTING_REVISION: Final = "v1-023-unit-routing-v1"
+V1_023_SUBSTAGE_IDS: Final = ("unit_storage", "unit_availability")
+V1_023_SUBSTAGE_AUTHORITIES: Final = {
+    "unit_storage": (
+        "BR-UNIT-001",
+        "BR-UNIT-002",
+        "BR-UNIT-003",
+        "PR-UNIT-001",
+        "PR-UNIT-002",
+        "PR-UNIT-003",
+        "DB-UNIT-001",
+        "TEST-022",
+    ),
+    "unit_availability": (
+        "BR-UNIT-004",
+        "BR-UNIT-005",
+        "BR-UNIT-006",
+        "BR-UNIT-007",
+        "BR-UNIT-008",
+        "BR-UNIT-009",
+        "BR-UNIT-010",
+        "BR-UNIT-011",
+        "BR-UNIT-012",
+        "BR-UNIT-013",
+        "PR-UNIT-004",
+        "PR-UNIT-005",
+        "PR-UNIT-006",
+        "PR-UNIT-007",
+        "PR-UNIT-008",
+        "PR-UNIT-009",
+        "PR-UNIT-010",
+        "PR-UNIT-011",
+        "PR-UNIT-012",
+        "PR-UNIT-013",
+        "TEST-022",
+    ),
+}
+V1_023_SUBSTAGE_ACCEPTANCE: Final = {
+    substage: (
+        "forward-only migration and constraint tests on disposable real PostgreSQL",
+        "domain/service tests",
+        "full foundation gates",
+        "GitHub Actions success",
+    )
+    for substage in V1_023_SUBSTAGE_IDS
+}
+V1_023_SUBSTAGE_PATHS: Final = {
+    "unit_storage": (
+        "backend/src/property_rental/property.py",
+        "backend/src/property_rental/property_scope.py",
+        "backend/migrations/versions/20260823_12_property_business_configuration.py",
+        "backend/tests/test_property_migration.py",
+    ),
+    "unit_availability": (
+        "backend/src/property_rental/unit.py",
+        "backend/tests/test_unit.py",
+        "backend/tests/test_unit_migration.py",
+    ),
+}
+V1_023_SUBSTAGE_WRITABLE_PATHS: Final = {
+    substage: (
+        "backend/migrations/versions/20260823_13_units.py",
+        "backend/src/property_rental/unit.py",
+        "backend/tests/test_unit.py",
+        "backend/tests/test_unit_migration.py",
+    )
+    for substage in V1_023_SUBSTAGE_IDS
+}
+SUPERVISOR_OWNED_PROGRESS_CANDIDATES: Final = frozenset({"V1-022", "V1-023"})
 
 RECOVERABLE_ROUTING_FAILURES: Final = frozenset(
     {
@@ -1242,6 +1310,7 @@ def v1_019_routing_identity(
         "V1-019": (V1_019_ROUTING_REVISION, V1_019_SUBSTAGE_IDS),
         "V1-020": (V1_020_ROUTING_REVISION, V1_020_SUBSTAGE_IDS),
         "V1-022": (V1_022_ROUTING_REVISION, V1_022_SUBSTAGE_IDS),
+        "V1-023": (V1_023_ROUTING_REVISION, V1_023_SUBSTAGE_IDS),
     }
     route = routes.get(candidate)
     if route is None:
@@ -2177,6 +2246,7 @@ def task_packet(
         "V1-020": V1_020_SUBSTAGE_AUTHORITIES,
         "V1-021": V1_021_SUBSTAGE_AUTHORITIES,
         "V1-022": V1_022_SUBSTAGE_AUTHORITIES,
+        "V1-023": V1_023_SUBSTAGE_AUTHORITIES,
     }.get(str(candidate_id), {})
     authorities = list(
         substage_authorities.get(substage_id, tuple(candidate_authorities))
@@ -2204,6 +2274,7 @@ def task_packet(
         "V1-020": V1_020_SUBSTAGE_ACCEPTANCE,
         "V1-021": V1_021_SUBSTAGE_ACCEPTANCE,
         "V1-022": V1_022_SUBSTAGE_ACCEPTANCE,
+        "V1-023": V1_023_SUBSTAGE_ACCEPTANCE,
     }.get(str(candidate_id), {})
     substage_acceptance = list(
         substage_acceptance_map.get(substage_id, tuple(complete_acceptance))
@@ -2218,12 +2289,14 @@ def task_packet(
         "V1-020": V1_020_SUBSTAGE_PATHS,
         "V1-021": V1_021_SUBSTAGE_PATHS,
         "V1-022": V1_022_SUBSTAGE_PATHS,
+        "V1-023": V1_023_SUBSTAGE_PATHS,
     }.get(str(candidate_id), {})
     directly_relevant_paths = list(substage_paths.get(substage_id, ()))
     materialized_repository_evidence: list[dict[str, str]] = []
-    if str(candidate_id) in {"V1-021", "V1-022"} and substage_id in {
+    if str(candidate_id) in {"V1-021", "V1-022", "V1-023"} and substage_id in {
         *V1_021_SUBSTAGE_IDS,
         *V1_022_SUBSTAGE_IDS,
+        *V1_023_SUBSTAGE_IDS,
     }:
         for relative in directly_relevant_paths:
             path = repo / relative
@@ -2430,6 +2503,22 @@ def task_packet(
                 "Do not call any read, search, listing, terminal, Git, database, make, or verification tool.",
                 "Create or update only exact_writable_paths in one complete parallel tool batch and do not begin the next Property substage.",
                 "Do not edit ops files; the deterministic supervisor owns compact progress state.",
+                "Return the exact completed substage JSON contract with deferred supervisor verification and no blockers.",
+            ],
+        }
+    if str(candidate_id) == "V1-023" and substage_id in V1_023_SUBSTAGE_IDS:
+        packet["materialized_implementation_context"] = {
+            "routing_revision": V1_023_ROUTING_REVISION,
+            "repository_evidence": materialized_repository_evidence,
+            "exact_writable_paths": [
+                *V1_023_SUBSTAGE_WRITABLE_PATHS[substage_id],
+            ],
+            "shortest_execution_sequence": [
+                f"Implement only the {substage_id} Unit substage.",
+                "Use only the materialized repository evidence and authority excerpts already in this packet.",
+                "Do not call any read, search, listing, terminal, Git, database, make, or verification tool.",
+                "Create or update only exact_writable_paths in one complete parallel tool batch and do not begin the next Unit substage.",
+                "Do not implement Reservation or Lease mutations and do not edit ops files; the deterministic supervisor owns compact progress state.",
                 "Return the exact completed substage JSON contract with deferred supervisor verification and no blockers.",
             ],
         }

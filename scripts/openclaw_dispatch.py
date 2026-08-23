@@ -211,11 +211,32 @@ V1_022_SUBSTAGES: tuple[dict[str, Any], ...] = (
         "include": ["GET/PATCH Property", "version precondition", "property.manage"],
     },
 )
+V1_023_SUBSTAGES: tuple[dict[str, Any], ...] = (
+    {
+        "id": "unit_storage",
+        "order": 1,
+        "total": 2,
+        "task": "Unit identity, type, status, Property scope, and persistence",
+        "include": ["Unit constraints", "stable identity", "history-safe schema"],
+    },
+    {
+        "id": "unit_availability",
+        "order": 2,
+        "total": 2,
+        "task": "Authoritative Unit availability and non-destructive state rules",
+        "include": [
+            "Reservation and Lease availability facts",
+            "occupancy and operational blockers",
+            "history-preserving state decisions",
+        ],
+    },
+)
 CANDIDATE_SUBSTAGES: dict[str, tuple[dict[str, Any], ...]] = {
     "V1-019": V1_019_SUBSTAGES,
     "V1-020": V1_020_SUBSTAGES,
     "V1-021": V1_021_SUBSTAGES,
     "V1-022": V1_022_SUBSTAGES,
+    "V1-023": V1_023_SUBSTAGES,
 }
 ACTIVATION_CI_REPAIR_SCRIPT_PREFIXES: tuple[str, ...] = (
     "scripts/openclaw",
@@ -225,6 +246,7 @@ ACTIVATION_CI_REPAIR_SCRIPT_PREFIXES: tuple[str, ...] = (
 ACTIVATION_CI_REPAIR_EXACT_PATHS: frozenset[str] = frozenset(
     {
         "scripts/test-fixtures/fake-openclaw.sh",
+        "scripts/database-test.sh",
         "ops/AUTOMATION_REPAIR_EVIDENCE.json",
         "ops/AUTOMATION_TRACEABILITY.json",
         "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
@@ -3361,6 +3383,168 @@ def sync_v1_022_supervisor_artifacts(substage_id: str) -> None:
     sync_v1_022_traceability(substage_id)
 
 
+def sync_v1_023_migration_head_expectation() -> None:
+    """Advance the protected migration-head assertion for the Unit schema."""
+    test_path = REPO / "backend/tests/test_migrations.py"
+    try:
+        source = test_path.read_text()
+        module = ast.parse(source, filename=str(test_path))
+    except (OSError, SyntaxError) as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the protected migration test is unavailable or invalid",
+        ) from error
+    target = next(
+        (
+            node
+            for node in module.body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name
+            == "test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_authority"
+        ),
+        None,
+    )
+    if target is None or target.end_lineno is None:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the protected migration-head assertion function is missing",
+        )
+    prior = '                assert cursor.fetchone() == ("20260823_12",)'
+    new = '                assert cursor.fetchone() == ("20260823_13",)'
+    lines = source.splitlines()
+    function_lines = lines[target.lineno - 1 : target.end_lineno]
+    if function_lines.count(new) == 1 and source.count(new) == 1:
+        return
+    if (
+        function_lines.count(prior) != 1
+        or function_lines.count(new) != 0
+        or source.count(prior) != 1
+        or source.count(new) != 0
+    ):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "the protected migration-head assertion drifted from its exact V1-023 form",
+        )
+    lines[target.lineno - 1 : target.end_lineno] = [
+        new if line == prior else line for line in function_lines
+    ]
+    suffix = "\n" if source.endswith("\n") else ""
+    atomic_write_text(test_path, "\n".join(lines) + suffix)
+
+
+def sync_v1_023_traceability() -> None:
+    """Append exact Unit test mappings without exposing operational state to Hermes."""
+    traceability_path = REPO / "ops/traceability.json"
+    try:
+        original_text = traceability_path.read_text()
+        manifest = json.loads(original_text)
+    except (OSError, json.JSONDecodeError) as error:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "V1-023 traceability manifest is unavailable or invalid",
+        ) from error
+    entries = manifest.get("entries")
+    if not isinstance(entries, list):
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            "V1-023 traceability manifest has no entries array",
+        )
+    sources = (
+        (
+            "backend/tests/test_unit.py",
+            [
+                "BR-UNIT-001",
+                "BR-UNIT-002",
+                "BR-UNIT-003",
+                "BR-UNIT-004",
+                "BR-UNIT-005",
+                "BR-UNIT-006",
+                "BR-UNIT-007",
+                "BR-UNIT-008",
+                "BR-UNIT-009",
+                "BR-UNIT-010",
+                "BR-UNIT-011",
+                "BR-UNIT-012",
+                "BR-UNIT-013",
+                "TEST-022",
+            ],
+            "domain/service",
+        ),
+        (
+            "backend/tests/test_unit_migration.py",
+            ["DB-UNIT-001", "TEST-022"],
+            "database integration",
+        ),
+    )
+    desired: list[dict[str, Any]] = []
+    for relative, upstream_ids, test_level in sources:
+        path = REPO / relative
+        try:
+            module = ast.parse(path.read_text(), filename=str(path))
+        except (OSError, SyntaxError) as error:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                f"V1-023 tests cannot be materialized for traceability: {relative}",
+            ) from error
+        test_ids = sorted(
+            node.name
+            for node in module.body
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name.startswith("test_")
+        )
+        if not test_ids:
+            raise AutomationError(
+                "repository_integrity_uncertainty",
+                f"V1-023 introduced no executable tests in {relative}",
+            )
+        desired.extend(
+            {
+                "test_id": test_id,
+                "upstream_ids": upstream_ids,
+                "test_level": test_level,
+                "test_path": relative,
+                "status": "implemented",
+                "notes": f"V1-023 Unit identity, availability, and history coverage for {test_id}.",
+            }
+            for test_id in test_ids
+        )
+    existing = {
+        str(entry.get("test_id")): entry
+        for entry in entries
+        if isinstance(entry, dict) and isinstance(entry.get("test_id"), str)
+    }
+    changed = False
+    for entry in desired:
+        prior = existing.get(str(entry["test_id"]))
+        if prior is not None:
+            if prior != entry:
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    f"V1-023 traceability entry drifted: {entry['test_id']}",
+                )
+            continue
+        entries.append(entry)
+        existing[str(entry["test_id"])] = entry
+        changed = True
+    if changed:
+        atomic_write_v1_022_traceability(
+            traceability_path,
+            manifest,
+            baseline_text=original_text,
+        )
+
+
+def sync_v1_023_supervisor_artifacts(substage_id: str) -> None:
+    """Materialize deterministic supervisor-owned V1-023 acceptance artifacts."""
+    if substage_id not in {"unit_storage", "unit_availability"}:
+        raise AutomationError(
+            "repository_integrity_uncertainty",
+            f"unknown V1-023 traceability substage {substage_id!r}",
+        )
+    sync_v1_023_migration_head_expectation()
+    sync_v1_023_traceability()
+
+
 def recover_verified_v1_022_substage(record: dict[str, Any]) -> bool:
     """Advance exact ceiling-stopped Property work after execution-capable checks."""
     substage = current_bounded_substage(record)
@@ -4088,7 +4272,15 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
             expected_substage=str(substage["id"]) if substage else None,
         )
         if supervisor_owned_progress and substage:
-            sync_v1_022_supervisor_artifacts(str(substage["id"]))
+            if candidate == "V1-022":
+                sync_v1_022_supervisor_artifacts(str(substage["id"]))
+            elif candidate == "V1-023":
+                sync_v1_023_supervisor_artifacts(str(substage["id"]))
+            else:
+                raise AutomationError(
+                    "repository_integrity_uncertainty",
+                    f"no deterministic progress sync exists for {candidate}",
+                )
             after = changed_paths(REPO)
             result["changed_paths"] = after
         else:
