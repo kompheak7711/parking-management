@@ -1598,7 +1598,7 @@ def expand_authorities(
             matches = [
                 match.group(1)
                 for match in re.finditer(
-                    r"^## ([A-Z]+-[A-Z0-9][A-Z0-9-]*)(?:\s+—[^\n]*)?$",
+                    r"^#{2,6} ([A-Z]+-[A-Z0-9][A-Z0-9-]*)(?:\s+—[^\n]*)?$",
                     document,
                     re.MULTILINE,
                 )
@@ -1706,7 +1706,7 @@ def authoritative_excerpt(repo: Path, authority: str, relative: str) -> str:
     """Return exactly one canonical requirement section, never the full document."""
     document = (repo / relative).read_text()
     heading = re.compile(
-        rf"^## {re.escape(authority)}(?:\s+—[^\n]*)?\n(?:\n)?",
+        rf"^(?P<depth>\#{{2,6}}) {re.escape(authority)}(?:\s+—[^\n]*)?\n(?:\n)?",
         re.MULTILINE,
     )
     match = heading.search(document)
@@ -1715,7 +1715,10 @@ def authoritative_excerpt(repo: Path, authority: str, relative: str) -> str:
             "repository_integrity_uncertainty",
             f"authoritative requirement {authority} is missing from {relative}",
         )
-    next_heading = re.search(r"^##?\s", document[match.end() :], re.MULTILINE)
+    depth = len(match.group("depth"))
+    next_heading = re.search(
+        rf"^\#{{1,{depth}}}\s", document[match.end() :], re.MULTILINE
+    )
     end = match.end() + next_heading.start() if next_heading else len(document)
     return document[match.start() : end].strip()
 

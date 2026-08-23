@@ -40,6 +40,7 @@ from openclaw_automation import (
     AutomationError,
     actionable_fingerprint,
     atomic_write_json,
+    authoritative_excerpt,
     changed_paths,
     classify_compact_state,
     complete_small_frontend_evidence,
@@ -1085,6 +1086,28 @@ class RepositoryEvidenceTests(unittest.TestCase):
             self.assertEqual(current["id"], expected)
             record["completed_implementation_substages"].append(expected)
         self.assertIsNone(dispatcher.current_bounded_substage(record))
+
+    def test_v1_021_wildcards_expand_across_canonical_heading_depths(self) -> None:
+        roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())
+        candidate = next(item for item in roadmap["tranches"] if item["id"] == "V1-021")
+
+        expanded = set(expand_authorities(candidate["authorities"], repo=ROOT))
+
+        self.assertTrue({"PR-AUDIT-001", "PR-AUDIT-011"}.issubset(expanded))
+        self.assertTrue({"DB-AUDIT-001", "DB-AUDIT-003"}.issubset(expanded))
+        self.assertNotIn("*", "".join(expanded))
+
+        product_excerpt = authoritative_excerpt(
+            ROOT, "PR-AUDIT-001", "docs/003_PRODUCT_REQUIREMENTS.md"
+        )
+        self.assertTrue(product_excerpt.startswith("### PR-AUDIT-001"))
+        self.assertNotIn("PR-AUDIT-002", product_excerpt)
+
+        database_excerpt = authoritative_excerpt(
+            ROOT, "DB-AUDIT-001", "docs/004_DATABASE_MODEL.md"
+        )
+        self.assertTrue(database_excerpt.startswith("## DB-AUDIT-001"))
+        self.assertNotIn("DB-AUDIT-002", database_excerpt)
 
     def test_sign_in_contract_fails_closed_on_router_or_decorator_drift(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
