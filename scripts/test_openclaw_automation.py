@@ -4858,6 +4858,29 @@ evidence.write_text(json.dumps({
                 saved,
             )
 
+            indexed_base = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+            ).strip()
+            subprocess.run(
+                ["git", "add", "--intent-to-add", "new-candidate.txt"],
+                cwd=repo,
+                check=True,
+            )
+            indexed_saved = repository_fingerprint(repo)
+            (repo / "automation.py").write_text("revision = 3\n")
+            subprocess.run(["git", "add", "automation.py"], cwd=repo, check=True)
+            subprocess.run(
+                ["git", "commit", "-qm", "second automation repair"],
+                cwd=repo,
+                check=True,
+            )
+            self.assertEqual(
+                dispatcher.candidate_repository_fingerprint_at_base(
+                    indexed_base, ["candidate.txt", "new-candidate.txt"]
+                ),
+                indexed_saved,
+            )
+
     def test_database_gate_collects_v1_023_unit_migration(self) -> None:
         database_gate = (ROOT / "scripts/database-test.sh").read_text()
 

@@ -3015,6 +3015,17 @@ def candidate_repository_fingerprint_at_base(base: str, paths: list[str]) -> str
         )
         if tracked:
             continue
+        indexed = (
+            subprocess.run(
+                ["git", "ls-files", "--error-unmatch", "--", relative],
+                cwd=REPO,
+                capture_output=True,
+                check=False,
+            ).returncode
+            == 0
+        )
+        if indexed:
+            continue
         path = REPO / relative
         metadata = path.lstat()
         if stat.S_ISLNK(metadata.st_mode):
