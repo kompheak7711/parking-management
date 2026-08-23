@@ -37,6 +37,10 @@ from openclaw_automation import (
     V1_020_SUBSTAGE_AUTHORITIES,
     V1_020_SUBSTAGE_IDS,
     V1_020_SUBSTAGE_PATHS,
+    V1_021_SUBSTAGE_AUTHORITIES,
+    V1_021_SUBSTAGE_IDS,
+    V1_021_SUBSTAGE_PATHS,
+    V1_021_SUBSTAGE_WRITABLE_PATHS,
     AutomationError,
     actionable_fingerprint,
     atomic_write_json,
@@ -1108,6 +1112,67 @@ class RepositoryEvidenceTests(unittest.TestCase):
         )
         self.assertTrue(database_excerpt.startswith("## DB-AUDIT-001"))
         self.assertNotIn("DB-AUDIT-002", database_excerpt)
+
+    def test_v1_021_packets_are_split_into_exact_bounded_substages(self) -> None:
+        roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())
+        candidate = next(item for item in roadmap["tranches"] if item["id"] == "V1-021")
+        expanded = set(expand_authorities(candidate["authorities"], repo=ROOT))
+        spec = importlib.util.spec_from_file_location(
+            "v1_021_substage_dispatch", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+
+        for index, substage in enumerate(V1_021_SUBSTAGE_IDS, start=1):
+            with self.subTest(substage=substage):
+                self.assertTrue(set(V1_021_SUBSTAGE_AUTHORITIES[substage]).issubset(expanded))
+                readable = V1_021_SUBSTAGE_PATHS[substage]
+                self.assertLessEqual(
+                    sum((ROOT / path).stat().st_size for path in readable if (ROOT / path).is_file()),
+                    30_000,
+                )
+                packet = task_packet(
+                    ROOT,
+                    {"actionable": True},
+                    "implementation",
+                    bounded_substage={
+                        "id": substage,
+                        "order": index,
+                        "total": len(V1_021_SUBSTAGE_IDS),
+                    },
+                )
+                self.assertEqual(packet["directly_relevant_paths"], list(readable))
+                materialized = packet["materialized_implementation_context"]
+                expected_writable = sorted(
+                    {
+                        *V1_021_SUBSTAGE_WRITABLE_PATHS[substage],
+                        "ops/NOW.md",
+                        "ops/STATE.json",
+                        "ops/traceability.json",
+                    }
+                )
+                self.assertEqual(
+                    dispatcher.authorized_candidate_writes(
+                        {"candidate": "V1-021"}, packet, "implementation"
+                    ),
+                    expected_writable,
+                )
+                self.assertEqual(
+                    sorted(materialized["exact_writable_paths"]), expected_writable
+                )
+
+        record: dict[str, Any] = {
+            "candidate": "V1-021",
+            "completed_implementation_substages": [],
+        }
+        for expected in V1_021_SUBSTAGE_IDS:
+            current = dispatcher.current_bounded_substage(record)
+            self.assertIsNotNone(current)
+            assert current is not None
+            self.assertEqual(current["id"], expected)
+            record["completed_implementation_substages"].append(expected)
+        self.assertIsNone(dispatcher.current_bounded_substage(record))
 
     def test_sign_in_contract_fails_closed_on_router_or_decorator_drift(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -191,6 +191,86 @@ V1_020_SUBSTAGE_PATHS: Final = {
         "backend/tests/test_initial_owner_bootstrap.py",
     ),
 }
+V1_021_ROUTING_REVISION: Final = "v1-021-audit-foundation-routing-v1"
+V1_021_SUBSTAGE_IDS: Final = (
+    "audit_storage",
+    "append_service",
+    "authorized_query",
+)
+V1_021_SUBSTAGE_AUTHORITIES: Final = {
+    "audit_storage": (
+        "DB-AUDIT-001",
+        "DB-AUDIT-003",
+        "SEC-031",
+        "SEC-033",
+    ),
+    "append_service": (
+        "PR-AUDIT-001",
+        "PR-AUDIT-002",
+        "PR-AUDIT-003",
+        "PR-AUDIT-004",
+        "PR-AUDIT-005",
+        "PR-AUDIT-006",
+        "PR-AUDIT-007",
+        "PR-AUDIT-008",
+        "PR-AUDIT-009",
+        "PR-AUDIT-010",
+        "PR-AUDIT-011",
+        "DB-AUDIT-002",
+        "SEC-030",
+        "SEC-034",
+    ),
+    "authorized_query": (
+        "API-023",
+        "API-073",
+        "API-074",
+        "API-075",
+        "SEC-032",
+    ),
+}
+V1_021_SUBSTAGE_ACCEPTANCE: Final = {
+    substage: (
+        "forward-only migration and constraint tests on disposable real PostgreSQL",
+        "domain/service tests",
+        "full foundation gates",
+        "GitHub Actions success",
+    )
+    for substage in V1_021_SUBSTAGE_IDS
+}
+V1_021_SUBSTAGE_PATHS: Final = {
+    "audit_storage": (
+        "backend/migrations/env.py",
+        "backend/migrations/versions/20260820_09_protected_owner_bootstrap.py",
+    ),
+    "append_service": (
+        "backend/src/property_rental/business_time.py",
+        "backend/src/property_rental/identity.py",
+        "backend/src/property_rental/property_scope.py",
+        "backend/src/property_rental/local_authentication.py",
+        "backend/src/property_rental/browser_session.py",
+    ),
+    "authorized_query": (
+        "backend/src/property_rental/audit.py",
+        "backend/src/property_rental/api.py",
+        "backend/src/property_rental/app.py",
+        "backend/tests/test_auth_api.py",
+    ),
+}
+V1_021_SUBSTAGE_WRITABLE_PATHS: Final = {
+    "audit_storage": (
+        "backend/migrations/versions/20260823_10_audit_events.py",
+        "backend/tests/test_audit_migration.py",
+    ),
+    "append_service": (
+        "backend/src/property_rental/audit.py",
+        "backend/tests/test_audit.py",
+    ),
+    "authorized_query": (
+        "backend/src/property_rental/audit_api.py",
+        "backend/src/property_rental/app.py",
+        "backend/tests/test_audit_api.py",
+    ),
+}
 
 RECOVERABLE_ROUTING_FAILURES: Final = frozenset(
     {
@@ -1923,6 +2003,7 @@ def task_packet(
     substage_authorities = {
         "V1-019": V1_019_SUBSTAGE_AUTHORITIES,
         "V1-020": V1_020_SUBSTAGE_AUTHORITIES,
+        "V1-021": V1_021_SUBSTAGE_AUTHORITIES,
     }.get(str(candidate_id), {})
     authorities = list(
         substage_authorities.get(substage_id, tuple(candidate_authorities))
@@ -1948,6 +2029,7 @@ def task_packet(
     substage_acceptance_map = {
         "V1-019": V1_019_SUBSTAGE_ACCEPTANCE,
         "V1-020": V1_020_SUBSTAGE_ACCEPTANCE,
+        "V1-021": V1_021_SUBSTAGE_ACCEPTANCE,
     }.get(str(candidate_id), {})
     substage_acceptance = list(
         substage_acceptance_map.get(substage_id, tuple(complete_acceptance))
@@ -1960,6 +2042,7 @@ def task_packet(
     substage_paths = {
         "V1-019": V1_019_SUBSTAGE_PATHS,
         "V1-020": V1_020_SUBSTAGE_PATHS,
+        "V1-021": V1_021_SUBSTAGE_PATHS,
     }.get(str(candidate_id), {})
     directly_relevant_paths = list(substage_paths.get(substage_id, ()))
     if not directly_relevant_paths:
@@ -2108,6 +2191,24 @@ def task_packet(
                 "Do not invoke terminal, Git, npm, make, or any verification command; the execution-capable supervisor owns all tests and builds after this implementation result.",
                 "Patch ops/STATE.json without reading it so approval.implementation_started is true; for this non-final substage leave implementation_completed and publication_completed false.",
                 "Return stage_result set to completed, the exact changed paths, verification set to the one-item array [\"deferred_to_deterministic_supervisor\"], blockers set to [], and substage_complete true when the bounded code and tests are ready.",
+            ],
+        }
+    if str(candidate_id) == "V1-021" and substage_id in V1_021_SUBSTAGE_IDS:
+        packet["materialized_implementation_context"] = {
+            "routing_revision": V1_021_ROUTING_REVISION,
+            "exact_writable_paths": [
+                *V1_021_SUBSTAGE_WRITABLE_PATHS[substage_id],
+                "ops/NOW.md",
+                "ops/STATE.json",
+                "ops/traceability.json",
+            ],
+            "shortest_execution_sequence": [
+                f"Implement only the {substage_id} audit-foundation substage.",
+                "Use only the materialized authority excerpts and directly relevant paths; do not inspect broad migration, test, or source trees.",
+                "Create or update only exact_writable_paths and do not begin the next audit substage.",
+                "Do not invoke terminal, Git, database, make, or verification commands; the execution-capable supervisor owns all gates.",
+                "Patch the authorized compact evidence paths without rereading their full contents.",
+                "Return stage_result completed, substage_complete true, every exact changed path, deferred_to_deterministic_supervisor verification, no blockers, and one exact next action.",
             ],
         }
     if bounded_substage is not None:

@@ -170,9 +170,33 @@ V1_020_SUBSTAGES: tuple[dict[str, Any], ...] = (
         "include": ["TEST-133", "TEST-134", "SEC-073 through SEC-075"],
     },
 )
+V1_021_SUBSTAGES: tuple[dict[str, Any], ...] = (
+    {
+        "id": "audit_storage",
+        "order": 1,
+        "total": 3,
+        "task": "Append-only audit-event schema and database protections",
+        "include": ["audit_events migration", "append-only database controls"],
+    },
+    {
+        "id": "append_service",
+        "order": 2,
+        "total": 3,
+        "task": "Bounded audit-event append service and domain contract",
+        "include": ["minimum audit content", "immutable event recording contract"],
+    },
+    {
+        "id": "authorized_query",
+        "order": 3,
+        "total": 3,
+        "task": "Property-scoped authorized audit-event query API",
+        "include": ["resource timeline", "bounded global search", "no mutation API"],
+    },
+)
 CANDIDATE_SUBSTAGES: dict[str, tuple[dict[str, Any], ...]] = {
     "V1-019": V1_019_SUBSTAGES,
     "V1-020": V1_020_SUBSTAGES,
+    "V1-021": V1_021_SUBSTAGES,
 }
 ACTIVATION_CI_REPAIR_SCRIPT_PREFIXES: tuple[str, ...] = (
     "scripts/openclaw",
@@ -1137,7 +1161,8 @@ def authorized_candidate_writes(
         return exact_existing
     materialized = packet.get("materialized_implementation_context") or {}
     exact_materialized = materialized.get("exact_writable_paths") or []
-    if packet.get("bounded_substage", {}).get("id") == "sign_in":
+    bounded_substage_id = packet.get("bounded_substage", {}).get("id")
+    if bounded_substage_id == "sign_in" or record.get("candidate") == "V1-021":
         if (
             not isinstance(exact_materialized, list)
             or not exact_materialized
