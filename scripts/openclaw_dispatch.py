@@ -3293,6 +3293,7 @@ def implementation(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         REPO,
         preflight,
         model_stage,
+        candidate_id_override=str(record.get("candidate") or ""),
         bounded_substage=substage,
         recovery_generation=int(record.get("recovery_generation") or 0),
         recovery_state={
@@ -3743,7 +3744,12 @@ def independent_review(record: dict[str, Any], preflight: dict[str, Any]) -> Non
             "repository_integrity_uncertainty",
             "repository drifted after deterministic verification; complete gates must rerun",
         )
-    packet = task_packet(REPO, preflight, "independent_review")
+    packet = task_packet(
+        REPO,
+        preflight,
+        "independent_review",
+        candidate_id_override=str(record.get("candidate") or ""),
+    )
     expected_paths = sorted(record.get("scoped_changed_paths") or [])
     if expected_paths != current_paths:
         raise AutomationError(

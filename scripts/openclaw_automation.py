@@ -2074,6 +2074,7 @@ def task_packet(
     preflight: dict[str, Any],
     stage: str,
     *,
+    candidate_id_override: str | None = None,
     bounded_substage: dict[str, Any] | None = None,
     recovery_generation: int = 0,
     recovery_state: dict[str, Any] | None = None,
@@ -2081,7 +2082,7 @@ def task_packet(
     state = json.loads((repo / "ops/STATE.json").read_text())
     roadmap = json.loads((repo / "ops/V1_ROADMAP.json").read_text())
     candidate = state.get("next_candidate") or {}
-    candidate_id = (
+    candidate_id = candidate_id_override or (
         candidate.get("roadmap_id")
         or candidate.get("id")
         or (state.get("roadmap") or {}).get("current_id")

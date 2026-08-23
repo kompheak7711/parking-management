@@ -1145,6 +1145,7 @@ class RepositoryEvidenceTests(unittest.TestCase):
                     ROOT,
                     {"actionable": True},
                     "implementation",
+                    candidate_id_override="V1-021",
                     bounded_substage={
                         "id": substage,
                         "order": index,
