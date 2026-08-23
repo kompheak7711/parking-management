@@ -632,7 +632,8 @@
       ],
       "authorities": [
         "API-028-029",
-        "UI-UNIT-*",
+        "UI-025-027",
+        "UI-084",
         "TEST-087-095"
       ],
       "include": [

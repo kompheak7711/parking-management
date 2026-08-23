@@ -9,7 +9,8 @@
   },
   "authorities": [
     "API-028-029",
-    "UI-UNIT-*",
+    "UI-025-027",
+    "UI-084",
     "TEST-087-095"
   ],
   "automation_repair": {
@@ -683,7 +684,8 @@
     "acceptance_profile": "api_ui",
     "authorities": [
       "API-028-029",
-      "UI-UNIT-*",
+      "UI-025-027",
+      "UI-084",
       "TEST-087-095"
     ],
     "authorization": "durable_v1",
@@ -733,7 +735,8 @@
   },
   "relevant_docs": [
     "API-028-029",
-    "UI-UNIT-*",
+    "UI-025-027",
+    "UI-084",
     "TEST-087-095"
   ],
   "repair": {

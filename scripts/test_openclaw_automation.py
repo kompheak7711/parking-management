@@ -1124,6 +1124,68 @@ class RepositoryEvidenceTests(unittest.TestCase):
             record["completed_implementation_substages"].append(expected)
         self.assertIsNone(dispatcher.current_bounded_substage(record))
 
+    def test_v1_024_uses_exact_existing_unit_ui_authorities(self) -> None:
+        roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())
+        candidate = next(item for item in roadmap["tranches"] if item["id"] == "V1-024")
+
+        expanded = set(expand_authorities(candidate["authorities"], repo=ROOT))
+
+        self.assertEqual(
+            expanded,
+            {
+                "API-028",
+                "API-029",
+                "UI-025",
+                "UI-026",
+                "UI-027",
+                "UI-084",
+                "TEST-087",
+                "TEST-088",
+                "TEST-089",
+                "TEST-090",
+                "TEST-091",
+                "TEST-092",
+                "TEST-093",
+                "TEST-094",
+                "TEST-095",
+            },
+        )
+
+        spec = importlib.util.spec_from_file_location(
+            "v1_024_authority_repair", ROOT / "scripts/openclaw_dispatch.py"
+        )
+        assert spec and spec.loader
+        dispatcher = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dispatcher)
+        before_state = {"authorities": list(dispatcher.V1_024_INVALID_AUTHORITIES)}
+        before_roadmap = {
+            "tranches": [
+                {
+                    "id": "V1-024",
+                    "authorities": list(dispatcher.V1_024_INVALID_AUTHORITIES),
+                }
+            ]
+        }
+        after_state = dispatcher.replace_v1_024_invalid_authorities(before_state)
+        after_roadmap = dispatcher.replace_v1_024_invalid_authorities(before_roadmap)
+        self.assertTrue(
+            dispatcher.v1_024_authority_repair_documents_exact(
+                before_state,
+                after_state,
+                before_roadmap,
+                after_roadmap,
+            )
+        )
+        after_state["unrelated"] = True
+        self.assertFalse(
+            dispatcher.v1_024_authority_repair_documents_exact(
+                before_state,
+                after_state,
+                before_roadmap,
+                after_roadmap,
+            )
+        )
+
     def test_v1_021_wildcards_expand_across_canonical_heading_depths(self) -> None:
         roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())
         candidate = next(item for item in roadmap["tranches"] if item["id"] == "V1-021")

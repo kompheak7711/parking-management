@@ -256,6 +256,17 @@ ACTIVATION_CI_REPAIR_EXACT_PATHS: frozenset[str] = frozenset(
         "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     }
 )
+V1_024_INVALID_AUTHORITIES: tuple[str, ...] = (
+    "API-028-029",
+    "UI-UNIT-*",
+    "TEST-087-095",
+)
+V1_024_EXACT_AUTHORITIES: tuple[str, ...] = (
+    "API-028-029",
+    "UI-025-027",
+    "UI-084",
+    "TEST-087-095",
+)
 V1_021_STORAGE_VERIFIED_PATHS: tuple[str, ...] = tuple(
     sorted(
         {
@@ -518,6 +529,64 @@ def activation_ci_repair_paths_allowed(paths: list[str]) -> bool:
             path.startswith(prefix) for prefix in ACTIVATION_CI_REPAIR_SCRIPT_PREFIXES
         )
         for path in paths
+    )
+
+
+def replace_v1_024_invalid_authorities(value: Any) -> Any:
+    """Return the one exact semantic-wildcard correction for V1-024 metadata."""
+    if isinstance(value, dict):
+        return {
+            key: replace_v1_024_invalid_authorities(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        if value == list(V1_024_INVALID_AUTHORITIES):
+            return list(V1_024_EXACT_AUTHORITIES)
+        return [replace_v1_024_invalid_authorities(item) for item in value]
+    return value
+
+
+def v1_024_authority_repair_documents_exact(
+    activation_state: dict[str, Any],
+    current_state: dict[str, Any],
+    activation_roadmap: dict[str, Any],
+    current_roadmap: dict[str, Any],
+) -> bool:
+    """Accept only replacement of the nonexistent V1-024 UI authority token."""
+    expected_state = replace_v1_024_invalid_authorities(activation_state)
+    expected_roadmap = replace_v1_024_invalid_authorities(activation_roadmap)
+    return bool(
+        expected_state != activation_state
+        and expected_roadmap != activation_roadmap
+        and current_state == expected_state
+        and current_roadmap == expected_roadmap
+    )
+
+
+def v1_024_authority_activation_repair_allowed(
+    activation_head: str, current: str, paths: list[str]
+) -> bool:
+    """Validate the exact post-CI metadata repair for V1-024 activation."""
+    metadata_paths = {"ops/STATE.json", "ops/V1_ROADMAP.json"}
+    if not metadata_paths.issubset(paths):
+        return False
+    automation_paths = [path for path in paths if path not in metadata_paths]
+    if automation_paths and not activation_ci_repair_paths_allowed(automation_paths):
+        return False
+    try:
+        activation_state = json.loads(git_document(activation_head, "ops/STATE.json"))
+        current_state = json.loads(git_document(current, "ops/STATE.json"))
+        activation_roadmap = json.loads(
+            git_document(activation_head, "ops/V1_ROADMAP.json")
+        )
+        current_roadmap = json.loads(git_document(current, "ops/V1_ROADMAP.json"))
+    except (subprocess.CalledProcessError, json.JSONDecodeError):
+        return False
+    return v1_024_authority_repair_documents_exact(
+        activation_state,
+        current_state,
+        activation_roadmap,
+        current_roadmap,
     )
 
 
@@ -6706,7 +6775,11 @@ def activate_next(record: dict[str, Any], preflight: dict[str, Any]) -> None:
         repair_paths = git(
             REPO, "diff", "--name-only", head, current, "--"
         ).splitlines()
-        allowed_repair = activation_ci_repair_paths_allowed(repair_paths)
+        allowed_repair = activation_ci_repair_paths_allowed(
+            repair_paths
+        ) or v1_024_authority_activation_repair_allowed(
+            head, current, repair_paths
+        )
         activation_paths = record.get("activation_paths")
         try:
             activation_state = json.loads(git_document(head, "ops/STATE.json"))
