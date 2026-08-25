@@ -3625,7 +3625,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260824_16",)
+                assert cursor.fetchone() == ("20260825_17",)
 
 
 def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
@@ -4210,3 +4210,81 @@ def test_production_recovery_factory_persists_random_codes_with_independent_salt
         assert first.reason == "code_consumed"
         assert repeated.completed is False
         assert repeated.reason == "code_rejected"
+
+
+def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
+    """Upgrade revision 16 data without rewriting configured Payment Method identity."""
+    with _temporary_migration_database("prm_v1_027_upgrade") as migration_url:
+        assert _run_alembic("upgrade", "20260824_16").returncode == 0
+        actor_id = uuid.uuid4()
+        property_id = uuid.uuid4()
+        method_id = uuid.uuid4()
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, %s, 'V1-027 Upgrade Actor', 'V1-027 Upgrade Actor',
+                              'active', 'optional', 'migration-regression')
+                    """,
+                    (actor_id, f"v1-027-upgrade-{actor_id.hex}"),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO app.properties (id, name, created_by, updated_by)
+                    VALUES (%s, 'V1-027 Upgrade Property', %s, %s)
+                    """,
+                    (property_id, actor_id, actor_id),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO app.payment_methods (
+                        id, code, display_name, accepted, created_by, updated_by
+                    ) VALUES (%s, 'LEGACY_BANK', 'Legacy bank transfer', true, %s, %s)
+                    """,
+                    (method_id, actor_id, actor_id),
+                )
+            connection.commit()
+
+        result = _run_alembic("upgrade", "head")
+
+        assert result.returncode == 0, result.stderr
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT version_num FROM alembic_version")
+                assert cursor.fetchone() == ("20260825_17",)
+                cursor.execute(
+                    """
+                    SELECT id, code, display_name, accepted, created_by, updated_by
+                    FROM app.payment_methods
+                    WHERE id = %s
+                    """,
+                    (method_id,),
+                )
+                assert cursor.fetchone() == (
+                    method_id,
+                    "LEGACY_BANK",
+                    "Legacy bank transfer",
+                    True,
+                    actor_id,
+                    actor_id,
+                )
+                cursor.execute(
+                    """
+                    SELECT
+                        to_regclass('app.property_services'),
+                        to_regclass('app.service_rates'),
+                        to_regclass('app.property_service_approval_periods'),
+                        to_regclass('app.utility_rates'),
+                        to_regclass('app.exchange_rate_records')
+                    """
+                )
+                assert cursor.fetchone() == (
+                    "app.property_services",
+                    "app.service_rates",
+                    "app.property_service_approval_periods",
+                    "app.utility_rates",
+                    "app.exchange_rate_records",
+                )

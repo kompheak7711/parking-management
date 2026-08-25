@@ -706,8 +706,12 @@
       ],
       "authorities": [
         "BR-SVC-*",
-        "BR-UTIL-014-017",
-        "BR-PAY-006-007",
+        "BR-UTIL-014",
+        "BR-UTIL-015",
+        "BR-UTIL-016",
+        "BR-UTIL-017",
+        "BR-PAY-006",
+        "BR-PAY-007",
         "BR-MONEY-*"
       ],
       "include": [

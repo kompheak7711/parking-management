@@ -7386,6 +7386,78 @@
       "test_path": "backend/tests/test_deployment_scaffolding.py",
       "status": "implemented",
       "notes": "The local development server disables Uvicorn request-target access logging so Customer search terms in authorized query parameters are not copied into ordinary logs."
+    },
+    {
+      "test_id": "test_configuration_tables_are_history_safe_and_runtime_read_only",
+      "upstream_ids": ["DB-SVC-001", "DB-SVC-002", "DB-SVC-003", "DB-UTIL-005", "DB-PAY-002", "TEST-005", "TEST-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "V1-027 configuration tables preserve identity and effective-dated history, reject destructive mutation, and expose only SELECT to the ordinary runtime identity."
+    },
+    {
+      "test_id": "test_service_rates_and_approval_periods_preserve_effective_history",
+      "upstream_ids": ["BR-SVC-005", "BR-SVC-006", "BR-SVC-007", "DB-SVC-002", "DB-SVC-003", "TEST-045"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "Service-rate selection uses the latest effective row without rewriting prior rates, and an approval period may be closed once without losing its Owner-approved source."
+    },
+    {
+      "test_id": "test_service_approval_periods_reject_overlap",
+      "upstream_ids": ["BR-SVC-014", "DB-SVC-003", "TEST-006", "TEST-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "Inclusive Service approval periods reject overlaps at the PostgreSQL constraint boundary."
+    },
+    {
+      "test_id": "test_utility_rates_are_independent_effective_and_append_only",
+      "upstream_ids": ["BR-UTIL-014", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-017", "DB-UTIL-005", "TEST-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "Electricity and Water rates remain independent, require advance notice, select by effective date, and cannot be rewritten after insertion."
+    },
+    {
+      "test_id": "test_exchange_rate_formula_manual_source_and_channel_evidence",
+      "upstream_ids": ["BR-MONEY-004", "BR-MONEY-005", "BR-MONEY-006", "BR-MONEY-008", "BR-MONEY-010", "BR-MONEY-011", "DB-PAY-002"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "Exchange-rate records enforce the 0.5-percent markup, upward whole-KHR rounding, manual actor evidence, channel evidence grouping, and append-only history."
+    },
+    {
+      "test_id": "test_payment_method_retirement_preserves_identity",
+      "upstream_ids": ["BR-PAY-006", "BR-PAY-007", "DB-PAY-001"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "Retiring a configured Payment Method preserves its stable row identity and deletion remains prohibited."
+    },
+    {
+      "test_id": "test_concurrent_overlapping_service_approvals_commit_only_one",
+      "upstream_ids": ["DB-GEN-004", "DB-SVC-003", "TEST-006", "TEST-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "Two real PostgreSQL transactions racing to create overlapping Service approval periods can commit only one logical period."
+    },
+    {
+      "test_id": "test_v1_027_upgrade_preserves_v1_022_payment_configuration",
+      "upstream_ids": ["DB-SVC-001", "DB-UTIL-005", "DB-PAY-001", "DB-PAY-002", "TEST-100", "TEST-101", "TEST-103"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A disposable revision-16 database with representative V1-022 Property and Payment Method data upgrades to revision 17 without rewriting identity or provenance."
+    },
+    {
+      "test_id": "test_configuration_tables_reject_destructive_truncation",
+      "upstream_ids": ["DB-TYPE-008", "DB-SVC-001", "DB-SVC-002", "DB-SVC-003", "DB-UTIL-005", "DB-PAY-002", "TEST-005", "TEST-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "A cascading truncate cannot bypass append-preserved Service, Utility-rate, or Exchange-rate history protections."
     }
   ]
 }
