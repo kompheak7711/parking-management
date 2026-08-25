@@ -116,8 +116,12 @@ def create_reservation(
 ) -> tuple[tuple[object, ...], dict[str, UUID]]:
     """Execute the protected Reservation activation bundle."""
     effective_business_date = business_date or reservation_business_date(connection, property_id)
-    effective_accepted_at = accepted_at or datetime.now(UTC)
-    effective_received_at = received_at or datetime.now(UTC)
+    database_now_row = connection.execute("SELECT clock_timestamp()").fetchone()
+    assert database_now_row is not None
+    database_now = database_now_row[0]
+    assert isinstance(database_now, datetime)
+    effective_accepted_at = accepted_at or database_now
+    effective_received_at = received_at or database_now
     identities = {
         "idempotency_key": idempotency_key or uuid4(),
         "reservation_id": reservation_id or uuid4(),

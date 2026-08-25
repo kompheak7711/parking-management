@@ -613,6 +613,11 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/customers/{customer_id}/command-status": {"get"},
         "/api/v1/customers/{customer_id}": {"get", "patch"},
         "/api/v1/customers/{customer_id}/financial-summary": {"get"},
+        "/properties/{property_id}/reservations": {"get", "post"},
+        "/reservations/{reservation_id}": {"get"},
+        "/reservations/{reservation_id}/extend": {"post"},
+        "/reservations/{reservation_id}/cancel": {"post"},
+        "/reservations/{reservation_id}/complete-move-in": {"post"},
     }
     openapi_operations = {
         path: set(path_item) & http_methods for path, path_item in app.openapi()["paths"].items()

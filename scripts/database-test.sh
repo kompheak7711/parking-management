@@ -129,4 +129,7 @@ fi
 if [ -f tests/test_reservation_outcome_migration.py ]; then
   set -- "$@" tests/test_reservation_outcome_migration.py
 fi
+if [ -f tests/test_reservation_worker_migration.py ]; then
+  set -- "$@" tests/test_reservation_worker_migration.py
+fi
 REQUIRE_DATABASE_TESTS=1 uv run --extra dev pytest --tb=short --no-header "$@"

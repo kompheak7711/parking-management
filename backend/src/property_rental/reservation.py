@@ -628,15 +628,23 @@ class PostgresReservationService:
             )
         )
 
-    def list_due(self, *, limit: int = 100) -> tuple[DueReservation, ...]:
+    def list_due(
+        self, *, limit: int = 100, as_of: date | None = None
+    ) -> tuple[DueReservation, ...]:
         if not 1 <= limit <= 100:
             raise ValueError("limit must be between 1 and 100")
         try:
             with psycopg.connect(self.database_url) as connection:
-                rows = connection.execute(
-                    "SELECT * FROM app.list_due_reservations(%s,%s)",
-                    (self.property_id, limit),
-                ).fetchall()
+                if as_of is None:
+                    rows = connection.execute(
+                        "SELECT * FROM app.list_due_reservations(%s,%s)",
+                        (self.property_id, limit),
+                    ).fetchall()
+                else:
+                    rows = connection.execute(
+                        "SELECT * FROM app.list_due_reservations_as_of(%s,%s,%s)",
+                        (self.property_id, as_of, limit),
+                    ).fetchall()
         except psycopg.Error as exc:
             raise ReservationServiceUnavailableError(
                 "Reservation persistence is unavailable"

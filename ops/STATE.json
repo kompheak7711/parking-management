@@ -1,13 +1,13 @@
 {
-  "active_cycle": "v1-031-reservation-deposit-outcomes",
+  "active_cycle": "v1-032-reservation-workflow",
   "approval": {
-    "status": "complete",
-    "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-031 takeover",
+    "status": "active",
+    "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-032 through V1-036 takeover",
     "implementation_started": true,
-    "implementation_completed": true,
-    "publication_completed": true
+    "implementation_completed": false,
+    "publication_completed": false
   },
-  "authorities": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-*", "TEST-029"],
+  "authorities": ["API-032-034", "UI-RES-*", "TEST-024-029", "TEST-096-099"],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
     "branch": "implementation/foundation",

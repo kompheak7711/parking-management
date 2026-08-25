@@ -89,6 +89,8 @@ def active_reservation(
 
 def expired_reservation(
     connection: Connection[tuple[object, ...]],
+    *,
+    days_past: int = 1,
 ) -> tuple[UUID, UUID, UUID, UUID, UUID, UUID]:
     """Create a complete V1-029 activation bundle whose full expiration day passed."""
     actor_id, property_id, unit_id, customer_id = setup_reservation_sources(connection)
@@ -96,7 +98,7 @@ def expired_reservation(
     deposit_id = uuid4()
     business_date = reservation_business_date(connection, property_id)
     reservation_date = business_date - timedelta(days=4)
-    expiration_date = business_date - timedelta(days=1)
+    expiration_date = business_date - timedelta(days=days_past)
     occurred_at = datetime.now(UTC) - timedelta(days=4)
     connection.execute(
         """

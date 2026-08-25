@@ -68,6 +68,12 @@ from property_rental.property_api import (
     UnavailablePropertyResourceFlow,
     create_property_router,
 )
+from property_rental.reservation_api import (
+    PostgresReservationResourceFlow,
+    ReservationResourceFlow,
+    UnavailableReservationResourceFlow,
+    create_reservation_router,
+)
 from property_rental.settings import Settings
 from property_rental.unit_api import (
     PostgresUnitResourceFlow,
@@ -203,6 +209,7 @@ def create_app(
     customer_resource_flow: CustomerResourceFlow | None = None,
     configuration_flow: ConfigurationFlow | None = None,
     exchange_rate_provider: ExchangeRateProvider | None = None,
+    reservation_resource_flow: ReservationResourceFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -489,6 +496,25 @@ def create_app(
                 PostgresCustomerResourceFlow(resolved_settings.database_url.get_secret_value())
                 if resolved_settings.database_url is not None
                 else UnavailableCustomerResourceFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_reservation_router(
+            actor_resolver,
+            reservation_resource_flow
+            or (
+                PostgresReservationResourceFlow(
+                    resolved_settings.database_url.get_secret_value(),
+                    (
+                        resolved_settings.financial_database_url.get_secret_value()
+                        if resolved_settings.financial_database_url is not None
+                        else None
+                    ),
+                )
+                if resolved_settings.database_url is not None
+                else UnavailableReservationResourceFlow()
             ),
             resolved_settings,
         )

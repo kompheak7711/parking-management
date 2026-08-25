@@ -8082,6 +8082,142 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "The V1-031 manifest is bounded to Reservation cancellation Deposit outcomes and explicitly excludes general Customer credit, payment, settlement, multi-currency, and refund UI behavior held for later tranches."
+    },
+    {
+      "test_id": "test_list_is_bounded_status_filtered_private_and_capability_sensitive",
+      "upstream_ids": ["API-032", "UI-031", "SEC-019", "SEC-020", "SEC-040"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "The Property-scoped Reservation collection enforces authentication, explicit read/create capabilities, bounded status filtering, private no-store responses, and only the canonical status vocabulary."
+    },
+    {
+      "test_id": "test_object_scope_is_not_disclosed_to_an_actor_from_another_property",
+      "upstream_ids": ["API-032", "SEC-019", "SEC-038"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "A Reservation detail lookup is hidden when the authenticated actor lacks authorization for the record's exact Property."
+    },
+    {
+      "test_id": "test_create_requires_csrf_and_preserves_client_idempotent_identity_and_trace",
+      "upstream_ids": ["API-032", "BR-RES-001", "BR-RES-006", "BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "SEC-036", "TEST-024"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "Reservation creation requires browser CSRF protection, a client-stable idempotency identity, exact Customer and Unit links, accepted Security Deposit receipt evidence, and the preserved 20 percent calculation trace."
+    },
+    {
+      "test_id": "test_authorized_variance_requires_separate_capability",
+      "upstream_ids": ["API-032", "BR-DEP-002", "BR-DEP-003", "PR-AUTH-008", "SEC-020", "TEST-024"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "An accepted initial Security Deposit amount different from the normal suggestion requires a distinct Property-scoped override capability and is classified as an authorized variance."
+    },
+    {
+      "test_id": "test_extend_requires_version_and_records_one_notice_shape",
+      "upstream_ids": ["API-033", "BR-RES-007", "BR-RES-008", "BR-RES-010", "BR-RES-017", "TEST-027"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "Extension is an explicit idempotent version-checked command that records one immutable Notice rather than patching Reservation status or original dates."
+    },
+    {
+      "test_id": "test_cancel_derives_customer_deposit_disposition_without_free_form_outcome",
+      "upstream_ids": ["API-033", "BR-RES-020", "BR-RES-021", "BR-DEP-015", "TEST-029"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "Customer-caused cancellation derives the approved non-refundable linked Deposit disposition from responsibility and never accepts a client-selected free-form financial outcome."
+    },
+    {
+      "test_id": "test_no_generic_status_patch_and_move_in_stays_at_v1_035_boundary",
+      "upstream_ids": ["API-033", "API-034", "BR-RES-003", "BR-RES-013", "TEST-028"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "There is no generic Reservation status PATCH; the explicit move-in command fails closed until the separately bounded Lease and occupancy orchestration is published."
+    },
+    {
+      "test_id": "test_failure_concurrent_retry_and_replay_produce_one_logical_execution",
+      "upstream_ids": ["BR-RES-011", "BR-RES-015", "BR-RES-016", "DEPLOY-026", "DEPLOY-027", "DEPLOY-028", "DEPLOY-029", "DEPLOY-030", "TEST-026", "TEST-096", "TEST-097", "TEST-098", "TEST-099"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_worker_migration.py",
+      "status": "implemented",
+      "notes": "A real Property-local due Reservation survives a failed attempt, concurrent workers, and post-success replay with one logical run, one cancellation, one linked disposition, preserved evidence, and Unit release."
+    },
+    {
+      "test_id": "test_runtime_role_cannot_rewrite_or_delete_run_evidence",
+      "upstream_ids": ["DEPLOY-026", "DEPLOY-030", "SEC-020", "TEST-096", "TEST-097"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_reservation_worker_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role can invoke only bounded run-state functions and cannot rewrite or delete permanent scheduled-operation evidence directly."
+    },
+    {
+      "test_id": "test_run_identity_is_property_scoped_and_nonzero",
+      "upstream_ids": ["DEPLOY-026", "DEPLOY-027", "SEC-040", "TEST-096"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_reservation_worker_migration.py",
+      "status": "implemented",
+      "notes": "The worker rejects unbounded batches and derives stable nonzero run and command identities from the exact Property and logical business date."
+    },
+    {
+      "test_id": "test_downtime_catch_up_preserves_the_first_missed_logical_date",
+      "upstream_ids": ["DEPLOY-026", "DEPLOY-029", "TEST-098", "TEST-099"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_worker_migration.py",
+      "status": "implemented",
+      "notes": "Downtime catch-up binds the first missed Property-local logical date and processes only Reservations due through that preserved boundary."
+    },
+    {
+      "test_id": "test_http_detail_reads_real_postgres_receipt_lifecycle_and_outcome_evidence",
+      "upstream_ids": ["API-032", "UI-033", "UI-035", "TEST-029", "TEST-096"],
+      "test_level": "E2E",
+      "test_path": "backend/tests/test_reservation_worker_migration.py",
+      "status": "implemented",
+      "notes": "A real authenticated HTTP request reads the PostgreSQL-backed Reservation receipt, lifecycle, and linked Deposit outcome evidence used by the staff workflow."
+    },
+    {
+      "test_id": "test_http_mutations_reach_real_postgres_with_security_replay_and_rollback",
+      "upstream_ids": ["API-032", "API-033", "BR-RES-001", "BR-RES-003", "BR-RES-007", "BR-RES-020", "BR-DEP-001", "BR-DEP-015", "SEC-019", "SEC-020", "SEC-036", "TEST-024", "TEST-027", "TEST-029"],
+      "test_level": "E2E",
+      "test_path": "backend/tests/test_reservation_worker_migration.py",
+      "status": "implemented",
+      "notes": "Authenticated HTTP create, replay, exclusivity conflict, extend, stale-version rejection, cancel, and replay reach the real service and PostgreSQL transaction functions with CSRF, Property scope, rollback, lifecycle, and linked Deposit evidence assertions."
+    },
+    {
+      "test_id": "test_automatic_runner_repeats_until_stopped_and_once_runs_exactly_once",
+      "upstream_ids": ["DEPLOY-026", "DEPLOY-027", "TEST-096", "TEST-097"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_reservation_worker_migration.py",
+      "status": "implemented",
+      "notes": "The installed worker entry point supports a continuously scheduled cadence and an exact one-shot mode while database advisory locking preserves singleton execution."
+    },
+    {
+      "test_id": "TEST-FE-182",
+      "upstream_ids": ["UI-031", "UI-032", "API-032", "TEST-024"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ReservationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The staff list shows only approved Reservation statuses, Customer and Unit context, date range, Security Deposit progress, and capability-sensitive creation."
+    },
+    {
+      "test_id": "TEST-FE-183",
+      "upstream_ids": ["UI-033", "UI-034", "API-033", "TEST-027"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ReservationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The accessible detail and extension workflow preserves and displays original expiration history and submits one explicit Extension Notice."
+    },
+    {
+      "test_id": "TEST-FE-184",
+      "upstream_ids": ["UI-033", "UI-035", "API-033", "TEST-029"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ReservationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Cancellation previews the approved customer or Property Deposit consequence, requires confirmation, and never offers a free-form forfeiture outcome."
     }
   ]
 }

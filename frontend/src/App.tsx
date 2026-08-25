@@ -37,6 +37,11 @@ import {
   EffectiveConfigurationApi,
   effectiveConfigurationApi,
 } from "./configurationClient";
+import { ReservationManagement } from "./ReservationManagement";
+import {
+  ReservationApi,
+  reservationApi as reservationClient,
+} from "./reservationClient";
 
 export interface AppProps {
   environment: string;
@@ -48,6 +53,7 @@ export interface AppProps {
   unitApi?: UnitApi;
   customerApi?: CustomerApi;
   effectiveConfigApi?: EffectiveConfigurationApi;
+  reservationApi?: ReservationApi;
   now?: () => number;
 }
 
@@ -494,6 +500,7 @@ export function App({
   unitApi,
   customerApi,
   effectiveConfigApi = effectiveConfigurationApi,
+  reservationApi = reservationClient,
   now = Date.now,
 }: AppProps) {
   const client = useMemo<AuthenticationApi>(
@@ -1681,6 +1688,7 @@ export function App({
               propertyId={propertyConfiguration?.property_id ?? ""}
             />
             <UnitManagement api={unitApi} />
+            <ReservationManagement api={reservationApi} />
             {!logoutPending && (
               <CustomerManagement
                 actorId={session.actor_id}

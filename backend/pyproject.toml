@@ -17,6 +17,9 @@ dependencies = [
   "cryptography>=50,<51",
 ]
 
+[project.scripts]
+property-rental-reservation-expiration = "property_rental.reservation_worker:main"
+
 [project.optional-dependencies]
 dev = [
   "build>=1.3,<2",
