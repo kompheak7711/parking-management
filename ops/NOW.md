@@ -1,4 +1,4 @@
-# V1-030 Reservation lifecycle and availability services — verified, unpublished
+# V1-030 Reservation lifecycle and availability services — published
 
 - Candidate: `V1-030` — Reservation lifecycle and availability services.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -16,16 +16,23 @@
   canonical changes, unresolved policy invention, and every later tranche.
 - Canonical specifications: read-only.
 - Token ceiling and automation protections: unchanged.
-- Status: implementation complete; the complete deterministic profile passed 15/15,
-  including 221 disposable PostgreSQL tests. Fresh exact-diff review passed after
-  two material findings were corrected and regression-tested.
+- Verification: complete deterministic profile passed 15/15, including 587 backend
+  tests with 215 expected environment skips, 178 frontend tests, 221 real disposable
+  PostgreSQL tests, and 182 automation-routing tests.
+- Independent review: PASS after two material database-boundary findings were
+  corrected and regression-tested. Reviewed implementation fingerprint:
+  `280868704067d4b3fa43003aed801559ac711c2f719f7d6e723274fbc3468035`.
+- Publication: implementation commit `1f41c41a9426f88ff03ca957a08d82b50cd13fec`
+  is pushed and exact-SHA GitHub Actions run `32864460444` passed all four jobs.
+- Status: complete, verified, review-clean, published, and CI-green.
 - Blockers: none.
-- Exact next action: publish V1-030, require successful exact-SHA GitHub Actions,
-  then reconcile closure while keeping V1-031 and the supervisor held.
+- Exact next action: keep V1-031 at `approved_ready` and the Property Rental
+  supervisor disabled; await explicit Owner direction before starting V1-031 or
+  restoring autonomous execution.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-030 is independently reviewed and verified but unpublished.
-- Automation exact next action: Keep V1-031 and the supervisor held while V1-030 passes publication and exact-SHA CI gates.
+- Automation publication state: V1-030 is published and exact-SHA CI-green.
+- Automation exact next action: Keep V1-031 and the Property Rental supervisor held.
 
 <!-- AUTOMATION_STATUS_END -->

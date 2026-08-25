@@ -5,7 +5,7 @@
     "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-030 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": ["BR-RES-003-022", "PR-RES-*", "TEST-024-029"],
   "automation_repair": {
@@ -656,15 +656,15 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "f96e55c3ffb61263ec4b8e8d5e5a7f104af4546d",
+  "commit": "1f41c41a9426f88ff03ca957a08d82b50cd13fec",
   "evidence_applicability": {
     "basis": "V1-030 begins from the clean synchronized V1-029 closure; predecessor verification remains historical and V1-030 requires fresh evidence",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-029 is published, independently reviewed, and exact-SHA CI-green; that evidence is historical for V1-030",
+    "prior_review_disposition": "V1-030 independent review found two material database-boundary issues; both were corrected with real PostgreSQL regressions, follow-up review passed, and exact-SHA CI is green",
     "tranche_id": "V1-030"
   },
   "idle_reason": null,
-  "next_action": "Publish the independently reviewed V1-030 implementation, require successful exact-SHA GitHub Actions, and keep V1-031 and the supervisor held",
+  "next_action": "Keep V1-031 at approved_ready and the Property Rental supervisor disabled; await explicit Owner direction before starting V1-031 or restoring autonomous execution",
   "next_candidate": {
     "acceptance_profile": "foundation",
     "authorities": ["BR-RES-003-022", "PR-RES-*", "TEST-024-029"],
@@ -690,15 +690,15 @@
   },
   "phase": "Reservations",
   "publication": {
-    "ci_completed": false,
-    "ci_conclusion": null,
-    "ci_run_id": null,
-    "ci_run_url": null,
-    "commit_completed": false,
-    "implementation_commit": null,
-    "push_completed": false,
-    "sha_reconciled": false,
-    "status": "not_started",
+    "ci_completed": true,
+    "ci_conclusion": "success",
+    "ci_run_id": "32864460444",
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32864460444",
+    "commit_completed": true,
+    "implementation_commit": "1f41c41a9426f88ff03ca957a08d82b50cd13fec",
+    "push_completed": true,
+    "sha_reconciled": true,
+    "status": "published",
     "tranche_id": "V1-030"
   },
   "relevant_docs": ["BR-RES-003-022", "PR-RES-*", "TEST-024-029", "DL-003", "DL-004", "DL-005", "DL-009", "DL-034", "DL-037"],
@@ -881,14 +881,14 @@
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 29,
+    "completed": 30,
     "current_id": "V1-030",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "verified_unpublished",
+  "status": "published",
   "task": "Implement the approved bounded candidate: Reservation lifecycle and availability services",
   "tests": [
     "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-030-post-review.json",
@@ -899,7 +899,7 @@
     "PASS: focused V1-030 service and traceability tests 27/27"
   ],
   "tests_tranche_id": "V1-030",
-  "timestamp": "2026-08-25T15:11:15Z",
+  "timestamp": "2026-08-25T15:16:25Z",
   "touched_areas": [
     "reservation lifecycle commands",
     "transactional Unit availability transitions",
