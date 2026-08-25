@@ -1,21 +1,17 @@
 {
-  "active_cycle": "v1-032-reservation-workflow",
+  "active_cycle": "v1-033-lease-persistence",
   "approval": {
-    "status": "complete",
+    "status": "active",
     "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-032 through V1-036 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
   "authorities": [
-    "API-032-034",
-    "UI-031",
-    "UI-032",
-    "UI-033",
-    "UI-034",
-    "UI-035",
-    "TEST-024-029",
-    "TEST-096-099"
+    "BR-LEASE-*",
+    "BR-OCC-*",
+    "DB-LEASE-*",
+    "TEST-030-035"
   ],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -665,39 +661,43 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "8209e119db0f4d7e58f596df56524efebdab87a0",
+  "commit": "58120e839618cea4861372300487cb1a0d07c511",
   "evidence_applicability": {
-    "basis": "Fresh V1-032 complete-profile evidence covers the exact implementation after the real HTTP-to-PostgreSQL mutation gate and deterministic database-time fixture were completed",
+    "basis": "V1-032 is published and exact-SHA CI-green; V1-033 requires fresh tranche-specific evidence",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-031 is published, independently reviewed, and exact-SHA CI-green; that evidence is historical for V1-032",
-    "tranche_id": "V1-032"
+    "prior_review_disposition": "V1-032 is published, independently reviewed, and exact-SHA CI-green; that evidence is historical for V1-033",
+    "tranche_id": "V1-033"
   },
   "idle_reason": null,
-  "next_action": "Keep V1-033 at approved_ready and the Property Rental supervisor disabled; proceed only under the existing sequential takeover boundary",
+  "next_action": "Publish the reviewed V1-033 implementation and require successful exact-SHA GitHub Actions while V1-034 remains held",
   "next_candidate": {
-    "acceptance_profile": "api_ui",
+    "acceptance_profile": "database",
     "authorities": [
-      "API-032-034",
-      "UI-031",
-      "UI-032",
-      "UI-033",
-      "UI-034",
-      "UI-035",
-      "TEST-024-029",
-      "TEST-096-099"
+      "BR-LEASE-*",
+      "BR-OCC-*",
+      "DB-LEASE-*",
+      "TEST-030-035"
     ],
     "authorization": "durable_v1",
-    "dependencies": ["V1-030", "V1-031"],
-    "exclude": ["lease implementation"],
-    "id": "V1-032",
-    "include": ["complete staff reservation workflow and automatic expiry"],
-    "order": 32,
-    "phase": "Reservations",
+    "dependencies": ["V1-029"],
+    "exclude": ["billing"],
+    "id": "V1-033",
+    "include": ["lease/signature/occupancy constraints and history"],
+    "order": 33,
+    "phase": "Leases",
     "risk_class": "high",
-    "status": "complete",
-    "task": "Reservation API, UI, expiration worker, and end-to-end tests",
-    "roadmap_id": "V1-032"
+    "status": "verified_awaiting_publication",
+    "task": "Lease, signer, occupant, and occupancy persistence",
+    "roadmap_id": "V1-033"
   },
+  "operational_issues": [
+    {
+      "id": "installed-hermes-wrapper-drift",
+      "status": "deferred",
+      "scope": "operational infrastructure outside V1-033 through V1-036",
+      "action": "record only; do not inspect, repair, or mix into product tranches"
+    }
+  ],
   "owner_action": "none",
   "owner_decisions": {
     "bootstrap_protection": "prm_bootstrap has safe cluster-global attributes and no unsafe memberships, ownership, or authority in the target database; no runtime cross-database introspection; provisioning attests and verifies the dedicated role is unused in every other database; target checks fail closed; atomic closure/revocation and secret-free repeat audit remain mandatory",
@@ -706,31 +706,27 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "Reservations",
+  "phase": "Leases",
   "publication": {
-    "ci_completed": true,
-    "ci_conclusion": "success",
-    "ci_run_id": "32895759675",
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32895759675",
-    "commit_completed": true,
-    "implementation_commit": "8209e119db0f4d7e58f596df56524efebdab87a0",
-    "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published",
-    "tranche_id": "V1-032"
+    "ci_completed": false,
+    "ci_conclusion": null,
+    "ci_run_id": null,
+    "ci_run_url": null,
+    "commit_completed": false,
+    "implementation_commit": null,
+    "push_completed": false,
+    "sha_reconciled": false,
+    "status": "verified_awaiting_commit",
+    "tranche_id": "V1-033"
   },
   "relevant_docs": [
-    "API-032-034",
-    "UI-031",
-    "UI-032",
-    "UI-033",
-    "UI-034",
-    "UI-035",
-    "TEST-024-029",
-    "TEST-096-099"
+    "BR-LEASE-*",
+    "BR-OCC-*",
+    "DB-LEASE-*",
+    "TEST-030-035"
   ],
   "repair": {
-    "tranche_id": "V1-032",
+    "tranche_id": "V1-033",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -889,49 +885,53 @@
     "tranche_id": "V1-026"
   },
   "review": {
-    "complete_candidate_paths": 21,
-    "corrected_findings": 1,
+    "complete_candidate_paths": 7,
+    "corrected_findings": 10,
     "final_local_checks": [
-      "PASS: production-shaped authenticated HTTP create, extend, and cancel through the real service and PostgreSQL transaction boundary",
-      "PASS: real disposable PostgreSQL migration, upgrade-path, role, transactional, concurrency, and end-to-end suite (241/241)",
-      "PASS: complete deterministic verification profile (15/15); /private/tmp/property-rental-v1-032-http-e2e-final3.json",
-      "PASS: backend 601 passed with 232 expected environment skips; frontend 184 passed; automation routing 182 passed",
-      "PASS: canonical specifications unchanged; V1-033 held; token and automation limits unchanged",
+      "PASS: Lease, signer, occupant, occupancy, non-billing Lease evidence, and immutable revision persistence",
+      "PASS: real disposable PostgreSQL migration, upgrade-path, role, transactional, and concurrency suite (255/255)",
+      "PASS: complete deterministic verification profile (15/15); /private/tmp/property-rental-v1-033-complete-final4.json",
+      "PASS: backend 602 passed with 245 expected environment skips; frontend 184 passed; automation routing 182 passed",
+      "PASS: canonical specifications unchanged; V1-034 held; token and automation limits unchanged",
       "PASS: git diff --check"
     ],
     "final_verdict": "PASS",
-    "initial_findings": 1,
+    "initial_findings": 10,
     "review_kind": "fresh_read_only_exact_final_diff_required",
-    "reviewed_patch_sha256": "f25ae31a90e66e2661cf495af5b4db14464ecbc957f55a6c88631c158be3c26e",
+    "reviewed_patch_sha256": "21f2408af2fd650584e3a464090f28db439fa1809099a3164875b2a60d0317a2",
     "follow_up_findings": 0,
     "status": "PASS",
-    "tranche_id": "V1-032"
+    "tranche_id": "V1-033"
   },
   "risk_class": "high",
   "roadmap": {
     "completed": 32,
-    "current_id": "V1-032",
+    "current_id": "V1-033",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Implement the approved bounded candidate: Reservation API, UI, expiration worker, and end-to-end tests",
+  "status": "verified_unpublished",
+  "task": "Implement the approved bounded candidate: Lease, signer, occupant, and occupancy persistence",
   "tests": [
-    "complete verification 15/15",
-    "backend 601 passed; 232 expected environment skips",
-    "frontend 184 passed",
-    "PostgreSQL 241 passed",
-    "automation routing 182 passed"
+    "PASS: complete deterministic verification profile 15/15",
+    "PASS: disposable PostgreSQL suite 255/255",
+    "PASS: backend 602 passed with 245 expected environment skips",
+    "PASS: frontend 184/184",
+    "PASS: automation routing 182/182",
+    "PASS: independent read-only review with zero final findings"
   ],
-  "tests_tranche_id": "V1-032",
-  "timestamp": "2026-08-25T20:33:56Z",
+  "tests_tranche_id": "V1-033",
+  "timestamp": "2026-08-25T22:37:17Z",
   "touched_areas": [
-    "reservation HTTP API and staff administration UI",
-    "authenticated create, extend, cancel, and replay workflows",
-    "singleton-safe automatic expiration worker and durable evidence",
-    "real HTTP-to-PostgreSQL end-to-end verification"
+    "backend/migrations/versions/20260826_23_lease_persistence.py",
+    "backend/tests/test_lease_migration.py",
+    "backend/tests/test_migrations.py",
+    "scripts/database-test.sh",
+    "ops/traceability.json",
+    "ops/NOW.md",
+    "ops/STATE.json"
   ],
-  "tranche": "Reservation API, UI, expiration worker, and end-to-end tests"
+  "tranche": "Lease, signer, occupant, and occupancy persistence"
 }

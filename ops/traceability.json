@@ -8218,6 +8218,102 @@
       "test_path": "frontend/src/ReservationManagement.test.tsx",
       "status": "implemented",
       "notes": "Cancellation previews the approved customer or Property Deposit consequence, requires confirmation, and never offers a free-form forfeiture outcome."
+    },
+    {
+      "test_id": "test_lease_requires_signed_primary_tenant_and_preserves_revisions",
+      "upstream_ids": ["BR-LEASE-006", "BR-LEASE-007", "BR-LEASE-008", "DB-LEASE-001", "DB-LEASE-002", "TEST-030", "TEST-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_migration.py",
+      "status": "implemented",
+      "notes": "Deferred PostgreSQL validation requires the Primary Tenant to be a signed Lease Signer and immutable revisions preserve the DRAFTED and SIGNED states."
+    },
+    {
+      "test_id": "test_only_legal_lifecycle_transitions_are_persisted",
+      "upstream_ids": ["BR-LEASE-001", "BR-LEASE-003", "BR-LEASE-004", "BR-LEASE-005", "TEST-030"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_migration.py",
+      "status": "implemented",
+      "notes": "The database rejects an illegal SIGNED-to-CANCELLED transition and preserves the signed Lease state."
+    },
+    {
+      "test_id": "test_signer_history_is_append_preserved_after_signing",
+      "upstream_ids": ["BR-LEASE-006", "BR-LEASE-009", "BR-LEASE-010", "DB-LEASE-002", "TEST-032"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_migration.py",
+      "status": "implemented",
+      "notes": "Multiple signers remain append-preserved after signing without any per-signer debt percentage or removable contractual history."
+    },
+    {
+      "test_id": "test_occupancy_date_order_and_nonfinancial_shape_are_enforced",
+      "upstream_ids": ["BR-OCC-005", "BR-OCC-006", "BR-OCC-007", "DB-LEASE-003", "TEST-033"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_migration.py",
+      "status": "implemented",
+      "notes": "PostgreSQL rejects reversed actual occupancy dates and the Occupancy schema contains no debt or signer-responsibility fields."
+    },
+    {
+      "test_id": "test_signed_periods_are_exclusive_and_successor_lineage_is_constrained",
+      "upstream_ids": ["BR-LEASE-012", "BR-LEASE-013", "BR-LEASE-014", "DB-LEASE-001", "TEST-030", "TEST-031"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_migration.py",
+      "status": "implemented",
+      "notes": "A same-Unit successor must follow its predecessor while overlapping signed contractual periods are rejected without creating automatic month-to-month state."
+    },
+    {
+      "test_id": "test_signers_and_occupants_remain_distinct_with_complete_history",
+      "upstream_ids": ["BR-LEASE-011", "BR-OCC-001", "BR-OCC-002", "BR-OCC-003", "BR-OCC-007", "DB-LEASE-002", "DB-LEASE-003", "TEST-032", "TEST-033"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_migration.py",
+      "status": "implemented",
+      "notes": "A non-signing occupant remains distinct from contractual signers and both open and completed Occupancy revisions remain reconstructable."
+    },
+    {
+      "test_id": "test_history_cannot_be_deleted_or_rewritten",
+      "upstream_ids": ["DB-TYPE-008", "DB-LEASE-001", "DB-LEASE-002", "DB-LEASE-003", "TEST-030", "TEST-032", "TEST-033"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_migration.py",
+      "status": "implemented",
+      "notes": "Database triggers prevent physical deletion of Lease identity and its legal lifecycle history."
+    },
+    {
+      "test_id": "test_concurrent_signing_allows_only_one_overlapping_lease",
+      "upstream_ids": ["BR-LEASE-014", "DB-LEASE-001", "TEST-030"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_migration.py",
+      "status": "implemented",
+      "notes": "Two concurrent same-Unit signing transactions yield exactly one signed contractual period and one PostgreSQL exclusion failure."
+    },
+    {
+      "test_id": "test_runtime_role_can_read_but_not_mutate_lease_storage",
+      "upstream_ids": ["DB-LEASE-001", "DB-LEASE-002", "DB-LEASE-003", "SEC-020"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_lease_migration.py",
+      "status": "implemented",
+      "notes": "The least-privilege runtime role can read Lease persistence and revision evidence but cannot directly insert, update, or delete it."
+    },
+    {
+      "test_id": "test_reservation_resulting_lease_reference_is_real_and_restrictive",
+      "upstream_ids": ["DB-RES-001", "DB-LEASE-001", "TEST-035"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_migration.py",
+      "status": "implemented",
+      "notes": "The stable Reservation-to-Lease source identity is a real deferred restrictive foreign key, ready for the separately bounded move-in orchestration."
+    },
+    {
+      "test_id": "test_nonbilling_lease_event_term_and_pet_stores_are_append_only",
+      "upstream_ids": ["BR-LEASE-022", "BR-LEASE-024", "DB-LEASE-004", "DB-LEASE-005", "DB-LEASE-006", "DB-LEASE-007", "DB-LEASE-010", "DB-LEASE-011"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_lease_migration.py",
+      "status": "implemented",
+      "notes": "Non-billing Lease notices, warnings, approved pet facts, signed Service terms, departures, and future pet-Deposit review storage are relational, source-linked, and append-only; billing-dependent nonpayment stores remain explicitly deferred."
+    },
+    {
+      "test_id": "test_lease_persistence_migration_is_forward_only",
+      "upstream_ids": ["DB-TYPE-008", "DB-LEASE-001", "DB-LEASE-002", "DB-LEASE-003"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_lease_migration.py",
+      "status": "implemented",
+      "notes": "Revision 23 builds forward from the published Reservation worker boundary and refuses destructive rollback of Lease, signer, and occupancy history."
     }
   ]
 }
