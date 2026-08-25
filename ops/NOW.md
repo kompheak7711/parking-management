@@ -1,4 +1,4 @@
-# V1-028 Configuration API and administration UI — verified, unpublished
+# V1-028 Configuration API and administration UI — published
 
 - Candidate: `V1-028` — Configuration API and administration UI.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -24,18 +24,20 @@
   automation routing 182 passed plus compact-state routing and visibility watchdog.
 - Independent review: PASS with zero material findings across the exact 18-path candidate
   after all material findings were corrected. Reviewed-patch SHA-256:
-  `a0b8a85df54315f7239b3c1d4e91b3a5e07ec1133eaa95c244555fa5de5f2a15`.
+  `874c3d7df2aa9d0085f3afab5f264c47fb149e1c8c6a8ca9998cec043c2b4b07`.
 - Scheduler evidence: exact supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is
   disabled; it will not be restored automatically.
 - V1-029 remains held and unmodified.
-- Status: complete, verified, and review-clean; publication and exact-SHA CI remain.
+- Publication: implementation commit `6325820418bed5b7927cdfa91c12a350bbe1c6f3`
+  is pushed and exact-SHA GitHub Actions run `32847317093` passed all four jobs.
+- Status: complete, verified, review-clean, published, and CI-green.
 - Blockers: none.
-- Exact next action: commit, push, require exact-SHA GitHub Actions success, and reconcile
-  compact state without activating V1-029 or enabling the supervisor.
+- Exact next action: keep V1-029 held and the Property Rental supervisor disabled; await
+  explicit Owner direction before restoring autonomous execution or activating V1-029.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-028 is verified and awaiting direct publication.
-- Automation exact next action: Publish V1-028 and require exact-SHA CI while keeping V1-029 and the supervisor held.
+- Automation publication state: V1-028 is published and exact-SHA CI-green.
+- Automation exact next action: Keep V1-029 and the Property Rental supervisor held.
 
 <!-- AUTOMATION_STATUS_END -->
