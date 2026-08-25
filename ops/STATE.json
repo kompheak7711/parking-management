@@ -5,7 +5,7 @@
     "basis": "owner-approved direct takeover of V1-024 through V1-026 under durable V1 authorization",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": ["API-030-031", "UI-028-030", "SEC-041-044"],
   "automation_repair": {
@@ -656,15 +656,15 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "5a19290efa99db1401adafbc09df6c9c35d09c7b",
+  "commit": "33d42f2629b3a9bed03b432603f75e924609de98",
   "evidence_applicability": {
-    "basis": "the timing-only TEST-FE-135 correction passed all 15 complete-profile gates, ten exact Node 22 stress repetitions, and the full minimum-runtime frontend suite",
+    "basis": "the timing-only TEST-FE-135 correction passed all 15 complete-profile gates, ten exact Node 22 stress repetitions, the full minimum-runtime frontend suite, and exact-sha GitHub Actions run 32816359493",
     "complete_profile_remains_applicable": true,
     "prior_review_disposition": "Review 55's one canonical-state finding was corrected; Review 56 passed the exact follow-up diff with no actionable findings",
     "tranche_id": "V1-026"
   },
-  "idle_reason": null,
-  "next_action": "Publish the timing correction, require successful GitHub Actions, then restore the supervisor without activating V1-027",
+  "idle_reason": "V1-026 is published and V1-027 remains intentionally held outside the approved direct-takeover scope",
+  "next_action": "Keep V1-027 held; restore the supervisor only with a boundary that cannot activate V1-027, then await Owner direction for post-V1-026 scope",
   "next_candidate": {
     "acceptance_profile": "api_ui",
     "authorities": ["API-030-031", "UI-028-030", "SEC-041-044"],
@@ -676,7 +676,7 @@
     "order": 26,
     "phase": "Core",
     "risk_class": "high",
-    "status": "implemented_verified",
+    "status": "complete",
     "task": "Customer API and management UI",
     "roadmap_id": "V1-026"
   },
@@ -691,14 +691,14 @@
   "phase": "Core",
   "publication": {
     "ci_completed": true,
-    "ci_conclusion": "failure",
-    "ci_run_id": "32815184996",
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32815184996",
+    "ci_conclusion": "success",
+    "ci_run_id": "32816359493",
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32816359493",
     "commit_completed": true,
-    "implementation_commit": "5a19290efa99db1401adafbc09df6c9c35d09c7b",
+    "implementation_commit": "33d42f2629b3a9bed03b432603f75e924609de98",
     "push_completed": true,
     "sha_reconciled": true,
-    "status": "ci_timing_correction_verified_unpublished",
+    "status": "published",
     "tranche_id": "V1-026"
   },
   "relevant_docs": ["API-030-031", "UI-028-030", "SEC-041-044"],
@@ -869,14 +869,14 @@
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 25,
+    "completed": 26,
     "current_id": "V1-026",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "complete_uncommitted",
+  "status": "published",
   "task": "Implement the approved bounded candidate: Customer API and management UI",
   "tests": [
     "complete profile: 15/15 gates passed after Review 52 corrections",
@@ -886,7 +886,7 @@
     "automation routing: 181 passed"
   ],
   "tests_tranche_id": "V1-026",
-  "timestamp": "2026-08-25T06:16:07Z",
+  "timestamp": "2026-08-25T06:21:15Z",
   "touched_areas": [
     "customer create/read/update and history-safe deactivation"
   ],

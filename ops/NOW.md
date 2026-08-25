@@ -1,4 +1,4 @@
-# V1-026 Customer API and management UI — Review 56 passed
+# V1-026 Customer API and management UI — published and CI-green
 
 - Candidate: `V1-026` — Customer API and management UI.
 - Authorization: Owner-approved direct takeover of `V1-024` through `V1-026` under the
@@ -55,16 +55,20 @@
   181 automation tests plus state routing and visibility-watchdog tests pass.
 - Review 56: clean external Codex follow-up review passed with no actionable findings; reviewer
   session `01a0378e-6219-7360-a8b8-125235147941` made no edits.
+- Final publication: timing-stability commit `33d42f2` is pushed and exact-sha GitHub Actions run
+  `32816359493` passed backend, frontend, dependency-security, and PostgreSQL migration jobs.
+- Repository synchronization: local HEAD, upstream tracking, and the live remote all equal
+  `33d42f2629b3a9bed03b432603f75e924609de98` before this compact-state reconciliation.
 - Token ceiling: 60,000 unchanged.
 - Result: authenticated minimized Customer list, explicit detail/history navigation,
   capability-checked create/update/deactivation, stable identity preservation, and truthful
   financial-source unavailability with Customer credit separate from deposits.
 - Blockers: none.
-- Exact next action: publish the timing correction,
-  require successful GitHub Actions, finalize without activating V1-027, then restore the supervisor.
+- Exact next action: keep V1-027 held; restore the supervisor only with a boundary that cannot
+  activate V1-027, then await Owner direction for post-V1-026 scope.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation candidate state: V1-026 timing correction passed all gates and clean Review 56.
-- Automation exact next action: Publish without activating V1-027
+- Automation publication state: V1-026 is published and exact-sha CI is green at `33d42f2`.
+- Automation exact next action: Keep V1-027 held and restore only without successor activation
     <!-- AUTOMATION_STATUS_END -->
