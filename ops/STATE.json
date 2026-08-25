@@ -1,11 +1,11 @@
 {
   "active_cycle": "v1-032-reservation-workflow",
   "approval": {
-    "status": "active",
+    "status": "complete",
     "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-032 through V1-036 takeover",
     "implementation_started": true,
-    "implementation_completed": false,
-    "publication_completed": false
+    "implementation_completed": true,
+    "publication_completed": true
   },
   "authorities": ["API-032-034", "UI-RES-*", "TEST-024-029", "TEST-096-099"],
   "automation_repair": {
@@ -656,29 +656,29 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "93b06d0fa5dba1c129ec994cfb734942855f92a5",
+  "commit": "8209e119db0f4d7e58f596df56524efebdab87a0",
   "evidence_applicability": {
-    "basis": "Fresh V1-031 complete-profile evidence covers the exact current implementation after all material review findings were corrected",
+    "basis": "Fresh V1-032 complete-profile evidence covers the exact implementation after the real HTTP-to-PostgreSQL mutation gate and deterministic database-time fixture were completed",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-030 is published, independently reviewed, and exact-SHA CI-green; that evidence is historical for V1-031",
-    "tranche_id": "V1-031"
+    "prior_review_disposition": "V1-031 is published, independently reviewed, and exact-SHA CI-green; that evidence is historical for V1-032",
+    "tranche_id": "V1-032"
   },
   "idle_reason": null,
-  "next_action": "Keep V1-032 at approved_ready and the Property Rental supervisor disabled; await explicit Owner direction before starting V1-032 or restoring autonomous execution",
+  "next_action": "Keep V1-033 at approved_ready and the Property Rental supervisor disabled; proceed only under the existing sequential takeover boundary",
   "next_candidate": {
-    "acceptance_profile": "financial",
-    "authorities": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-*", "TEST-029"],
+    "acceptance_profile": "api_ui",
+    "authorities": ["API-032-034", "UI-RES-*", "TEST-024-029", "TEST-096-099"],
     "authorization": "durable_v1",
-    "dependencies": ["V1-030"],
-    "exclude": ["general refund UI"],
-    "id": "V1-031",
-    "include": ["customer/property-caused outcomes and reconstructable source links"],
-    "order": 31,
+    "dependencies": ["V1-030", "V1-031"],
+    "exclude": ["lease implementation"],
+    "id": "V1-032",
+    "include": ["complete staff reservation workflow and automatic expiry"],
+    "order": 32,
     "phase": "Reservations",
     "risk_class": "high",
     "status": "complete",
-    "task": "Reservation cancellation and deposit-outcome orchestration",
-    "roadmap_id": "V1-031"
+    "task": "Reservation API, UI, expiration worker, and end-to-end tests",
+    "roadmap_id": "V1-032"
   },
   "owner_action": "none",
   "owner_decisions": {
@@ -692,18 +692,18 @@
   "publication": {
     "ci_completed": true,
     "ci_conclusion": "success",
-    "ci_run_id": "32879805198",
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32879805198",
+    "ci_run_id": "32895759675",
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32895759675",
     "commit_completed": true,
-    "implementation_commit": "93b06d0fa5dba1c129ec994cfb734942855f92a5",
+    "implementation_commit": "8209e119db0f4d7e58f596df56524efebdab87a0",
     "push_completed": true,
     "sha_reconciled": true,
     "status": "published",
-    "tranche_id": "V1-031"
+    "tranche_id": "V1-032"
   },
-  "relevant_docs": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-*", "TEST-029"],
+  "relevant_docs": ["API-032-034", "UI-RES-*", "TEST-024-029", "TEST-096-099"],
   "repair": {
-    "tranche_id": "V1-031",
+    "tranche_id": "V1-032",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -862,49 +862,49 @@
     "tranche_id": "V1-026"
   },
   "review": {
-    "complete_candidate_paths": 24,
-    "corrected_findings": 5,
+    "complete_candidate_paths": 21,
+    "corrected_findings": 1,
     "final_local_checks": [
-      "PASS: focused authorization, traceability, deployment-contract, shell-syntax, and repository-consistency checks",
-      "PASS: real disposable PostgreSQL migration, upgrade-path, role, transactional, and concurrency suite (234/234)",
-      "PASS: complete deterministic verification profile (15/15); /private/tmp/property-rental-v1-031-verification-final2.json",
-      "PASS: backend 592 passed with 227 expected environment skips; frontend 178 passed; automation routing 182 passed",
-      "PASS: canonical specifications unchanged; V1-032 held; token and automation limits unchanged",
+      "PASS: production-shaped authenticated HTTP create, extend, and cancel through the real service and PostgreSQL transaction boundary",
+      "PASS: real disposable PostgreSQL migration, upgrade-path, role, transactional, concurrency, and end-to-end suite (241/241)",
+      "PASS: complete deterministic verification profile (15/15); /private/tmp/property-rental-v1-032-http-e2e-final3.json",
+      "PASS: backend 601 passed with 232 expected environment skips; frontend 184 passed; automation routing 182 passed",
+      "PASS: canonical specifications unchanged; V1-033 held; token and automation limits unchanged",
       "PASS: git diff --check"
     ],
     "final_verdict": "PASS",
     "initial_findings": 1,
     "review_kind": "fresh_read_only_exact_final_diff_required",
-    "reviewed_patch_sha256": "2ba9e441b8cde597b1bd2d664113d2ee013609b7a510af611e59c8177b2e6d8d",
-    "follow_up_findings": 4,
+    "reviewed_patch_sha256": "f25ae31a90e66e2661cf495af5b4db14464ecbc957f55a6c88631c158be3c26e",
+    "follow_up_findings": 0,
     "status": "PASS",
-    "tranche_id": "V1-031"
+    "tranche_id": "V1-032"
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 31,
-    "current_id": "V1-031",
+    "completed": 32,
+    "current_id": "V1-032",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
   "status": "published",
-  "task": "Implement the approved bounded candidate: Reservation cancellation and deposit-outcome orchestration",
+  "task": "Implement the approved bounded candidate: Reservation API, UI, expiration worker, and end-to-end tests",
   "tests": [
     "complete verification 15/15",
-    "backend 592 passed; 227 expected environment skips",
-    "frontend 178 passed",
-    "PostgreSQL 234 passed",
+    "backend 601 passed; 232 expected environment skips",
+    "frontend 184 passed",
+    "PostgreSQL 241 passed",
     "automation routing 182 passed"
   ],
-  "tests_tranche_id": "V1-031",
-  "timestamp": "2026-08-25T17:49:07Z",
+  "tests_tranche_id": "V1-032",
+  "timestamp": "2026-08-25T20:33:56Z",
   "touched_areas": [
-    "reservation cancellation financial outcomes",
-    "deposit disposition and source-link persistence",
-    "transactional idempotent money-event orchestration",
-    "permanent correction and reversal history"
+    "reservation HTTP API and staff administration UI",
+    "authenticated create, extend, cancel, and replay workflows",
+    "singleton-safe automatic expiration worker and durable evidence",
+    "real HTTP-to-PostgreSQL end-to-end verification"
   ],
-  "tranche": "Reservation cancellation and deposit-outcome orchestration"
+  "tranche": "Reservation API, UI, expiration worker, and end-to-end tests"
 }
