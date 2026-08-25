@@ -7,6 +7,7 @@ import argparse
 import fcntl
 import json
 import os
+import re
 import signal
 import sqlite3
 import stat
@@ -18,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from openclaw_automation import (
+    SECRET_PATTERN,
     atomic_write_json,
     changed_paths,
     digest,
@@ -91,6 +93,24 @@ FALSE_FAILURE_RUN_ID = 32511133185
 NOTIFICATION_SOURCE_JOB_ID = "8db8cc98-56a1-4687-9988-fd7e3750c51b"
 DEFAULT_NOTIFICATION_TIMEOUT = 30.0
 DEFAULT_TERMINALIZER_HANDOFF_TIMEOUT = 60.0
+TERMINAL_MESSAGE_MAX_BYTES = 3_500
+TERMINAL_GATE_MAX_BYTES = 480
+TERMINAL_BLOCKER_MAX_BYTES = 960
+TERMINAL_NEXT_ACTION_MAX_BYTES = 960
+TERMINAL_EVIDENCE_LOCATION_MAX_BYTES = 360
+PEM_SECRET_PATTERN = re.compile(
+    r"-----BEGIN (?:RSA |EC |OPENSSH |ENCRYPTED )?PRIVATE KEY-----.*?"
+    r"-----END (?:RSA |EC |OPENSSH |ENCRYPTED )?PRIVATE KEY-----",
+    re.DOTALL,
+)
+BEARER_SECRET_PATTERN = re.compile(r"(?i)\bBearer\s+\S+")
+TERMINAL_TOKEN_SECRET_PATTERN = re.compile(
+    r"\b(?:sk-(?:proj-)?[A-Za-z0-9_-]{16,}|github_pat_[A-Za-z0-9_]{16,})\b"
+)
+TERMINAL_KEY_VALUE_SECRET_PATTERN = re.compile(
+    r"(?i)\b(?:api[_-]?key|access[_-]?token|client[_-]?secret|password)"
+    r"\s*[:=]\s*\S+"
+)
 
 
 class RestorationError(RuntimeError):
@@ -165,6 +185,46 @@ def redact_sensitive_output(value: str) -> tuple[str, bool]:
             redacted = redacted.replace(secret, "[REDACTED]")
             changed = True
     return redacted, changed
+
+
+def redact_terminal_diagnostic(value: str) -> str:
+    """Redact credential-shaped terminal evidence before Telegram rendering."""
+    redacted, _ = redact_sensitive_output(value)
+    redacted = PEM_SECRET_PATTERN.sub("[REDACTED]", redacted)
+    redacted = BEARER_SECRET_PATTERN.sub("Bearer [REDACTED]", redacted)
+    redacted = TERMINAL_TOKEN_SECRET_PATTERN.sub("[REDACTED]", redacted)
+    redacted = TERMINAL_KEY_VALUE_SECRET_PATTERN.sub("[REDACTED]", redacted)
+    encoded = redacted.encode("utf-8", errors="replace")
+    redacted = SECRET_PATTERN.sub(b"[REDACTED]", encoded).decode(
+        "utf-8", errors="replace"
+    )
+    return " ".join(redacted.split())
+
+
+def bounded_terminal_diagnostic(value: object, *, max_bytes: int) -> str | None:
+    """Return one secret-safe diagnostic bounded without splitting UTF-8."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+    normalized = redact_terminal_diagnostic(value)
+    if not normalized:
+        return None
+    encoded = normalized.encode("utf-8")
+    if len(encoded) <= max_bytes:
+        return normalized
+    marker = "… [truncated]"
+    available = max_bytes - len(marker.encode("utf-8"))
+    prefix = encoded[: max(available, 0)].decode("utf-8", errors="ignore").rstrip()
+    return f"{prefix}{marker}"
+
+
+def terminal_evidence_value(
+    evidence: dict[str, Any], keys: tuple[str, ...], *, max_bytes: int
+) -> str | None:
+    for key in keys:
+        value = bounded_terminal_diagnostic(evidence.get(key), max_bytes=max_bytes)
+        if value is not None:
+            return value
+    return None
 
 
 def wait_for_ci(
@@ -1837,7 +1897,9 @@ def telegram_route(database: Path, source_job_id: str) -> tuple[str, str, str | 
     return channel, target, account or None
 
 
-def terminal_message(evidence: dict[str, Any]) -> str:
+def terminal_message(
+    evidence: dict[str, Any], *, evidence_location: str | None = None
+) -> str:
     if evidence.get("status") == "recovery_scheduled":
         recovery = evidence.get("bounded_recovery") or {}
         return (
@@ -1858,12 +1920,42 @@ def terminal_message(evidence: dict[str, Any]) -> str:
             "Scheduler enabled: true; zero overlap was confirmed; naturally scheduled "
             f"bounded V1-019 progress: {substage}; Owner action required: no."
         )
-    return (
-        "RESTORATION_FAILED_CLOSED — Property Rental supervisor restoration stopped. "
-        "Scheduler enabled: false; exact diagnostics are preserved in local restoration "
-        "evidence; Owner action required: "
-        f"{str(bool(evidence.get('owner_action_required'))).lower()}."
+    location = bounded_terminal_diagnostic(
+        evidence_location, max_bytes=TERMINAL_EVIDENCE_LOCATION_MAX_BYTES
     )
+    location = location or "unavailable"
+    unavailable = "unavailable in preserved evidence; see Evidence"
+    failing_gate = terminal_evidence_value(
+        evidence,
+        ("exact_failing_gate",),
+        max_bytes=TERMINAL_GATE_MAX_BYTES,
+    )
+    blocker = terminal_evidence_value(
+        evidence,
+        ("exact_blocker",),
+        max_bytes=TERMINAL_BLOCKER_MAX_BYTES,
+    )
+    next_action = terminal_evidence_value(
+        evidence,
+        ("exact_next_action",),
+        max_bytes=TERMINAL_NEXT_ACTION_MAX_BYTES,
+    )
+    owner_value = evidence.get("owner_action_required")
+    owner_required = (
+        str(owner_value).lower() if isinstance(owner_value, bool) else "unavailable"
+    )
+    message = (
+        "RESTORATION_FAILED_CLOSED — Property Rental supervisor restoration stopped.\n"
+        "Scheduler enabled: false.\n"
+        f"Exact failing gate: {failing_gate or unavailable}.\n"
+        f"Exact blocker: {blocker or unavailable}.\n"
+        f"Exact next action: {next_action or unavailable}.\n"
+        f"Evidence: {location}.\n"
+        f"Owner action required: {owner_required}."
+    )
+    if len(message.encode("utf-8")) > TERMINAL_MESSAGE_MAX_BYTES:
+        raise RestorationError("bounded terminal notification exceeded its size limit")
+    return message
 
 
 def notify_terminal_once(args: argparse.Namespace, evidence_path: Path) -> None:
@@ -1899,7 +1991,7 @@ def notify_terminal_once(args: argparse.Namespace, evidence_path: Path) -> None:
             "--target",
             target,
             "--message",
-            terminal_message(evidence),
+            terminal_message(evidence, evidence_location=str(evidence_path)),
             "--json",
         ]
         if account is not None:
@@ -1981,7 +2073,7 @@ def notify_recovery_scheduled_once(
             "--target",
             target,
             "--message",
-            terminal_message(evidence),
+            terminal_message(evidence, evidence_location=str(evidence_path)),
             "--json",
         ]
         if account is not None:
@@ -2077,6 +2169,8 @@ def finalize_terminal_direct(
             terminal["enabled"] = False
             terminal["failure"] = unload_failure
             terminal["failure_phase"] = "terminal_self_unload"
+            terminal["exact_failing_gate"] = "terminal_self_unload"
+            terminal["exact_blocker"] = unload_failure
             terminal["disable_failure"] = disable_supervisor(
                 args, Path(args.repo).resolve()
             )
@@ -2195,6 +2289,8 @@ def finalize_terminal(args: argparse.Namespace, evidence_path: Path) -> bool:
             terminal["enabled"] = False
             terminal["failure"] = "terminalizer handoff timed out"
             terminal["failure_phase"] = "terminalizer_handoff"
+            terminal["exact_failing_gate"] = "terminalizer_handoff"
+            terminal["exact_blocker"] = "terminalizer handoff timed out"
             terminal["disable_failure"] = disable_supervisor(
                 args, Path(args.repo).resolve()
             )
@@ -2226,6 +2322,8 @@ def finalize_terminal(args: argparse.Namespace, evidence_path: Path) -> bool:
             f"terminalizer launchctl submit failed with exit {result.returncode}"
         )
         terminal["failure_phase"] = "terminalizer_handoff"
+        terminal["exact_failing_gate"] = "terminalizer_handoff"
+        terminal["exact_blocker"] = terminal["failure"]
         terminal["disable_failure"] = disable_supervisor(
             args, Path(args.repo).resolve()
         )
@@ -2617,6 +2715,7 @@ def execute(args: argparse.Namespace) -> int:
                 "supervisor_id": SUPERVISOR_ID,
                 "enabled_before_failure": enabled,
                 "failure": str(error),
+                "exact_blocker": str(error),
                 "disable_failure": disable_error,
                 "owner_action_required": failure_boundary["owner_action_required"],
                 "dispatcher_failure_category": failure_boundary["category"],
@@ -2805,6 +2904,8 @@ def install(args: argparse.Namespace) -> int:
                 "timestamp": utc_now(),
                 "failure_phase": installation_phase,
                 "failure": str(error),
+                "exact_failing_gate": installation_phase,
+                "exact_blocker": str(error),
                 "expected_repair_head": args.expected_repair_head,
                 "expected_continuation_head": args.expected_continuation_head,
                 "restoration_label": restoration_label(args.expected_repair_head),

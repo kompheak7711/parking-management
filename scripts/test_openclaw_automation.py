@@ -8894,6 +8894,10 @@ print(json.dumps(job))
                     "status": "failed_closed",
                     "expected_repair_head": repair_head,
                     "failure": "synthetic terminal failure",
+                    "failure_phase": "terminal_notification_gate",
+                    "exact_failing_gate": "terminal_notification_gate",
+                    "exact_blocker": "synthetic terminal failure",
+                    "exact_next_action": "Preserve the exact repair and inspect evidence.",
                     "owner_action_required": False,
                 },
             )
@@ -8901,11 +8905,12 @@ print(json.dumps(job))
             fake_openclaw = root / "openclaw"
             fake_openclaw.write_text(
                 """#!/usr/bin/env python3
-import os, pathlib, sys, time
+import json, os, pathlib, sys, time
 if sys.argv[1:3] == ['message', 'send']:
     time.sleep(0.1)
+    message = sys.argv[sys.argv.index('--message') + 1]
     with pathlib.Path(os.environ['FAKE_NOTIFICATION_LOG']).open('a') as handle:
-        handle.write('sent\\n')
+        handle.write(json.dumps(message) + '\\n')
     print('{}')
     raise SystemExit(0)
 raise SystemExit(9)
@@ -8975,13 +8980,126 @@ raise SystemExit(9)
             ]
             results = [worker.communicate(timeout=5) for worker in workers]
             self.assertTrue(all(worker.returncode == 69 for worker in workers), results)
-            self.assertEqual(notification_log.read_text().splitlines(), ["sent"])
+            notifications = notification_log.read_text().splitlines()
+            self.assertEqual(len(notifications), 1)
+            message = json.loads(notifications[0])
+            self.assertIn("Exact failing gate: terminal_notification_gate.", message)
+            self.assertIn("Exact blocker: synthetic terminal failure.", message)
+            self.assertIn(
+                "Exact next action: Preserve the exact repair and inspect evidence.",
+                message,
+            )
+            self.assertIn("Owner action required: false.", message)
             terminal_text = evidence.read_text()
             terminal = json.loads(terminal_text)
             self.assertTrue(terminal["notification"]["attempted"])
             self.assertEqual(terminal["notification"]["delivery_status"], "delivered")
             self.assertNotIn("test-sensitive-target", terminal_text)
             self.assertNotIn("test-sensitive-account", terminal_text)
+
+    def test_terminal_failure_diagnostics_are_bounded_secret_safe_and_truthful(
+        self,
+    ) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "terminal_diagnostic_restoration",
+            ROOT / "scripts/openclaw-post-exit-restoration.py",
+        )
+        assert spec and spec.loader
+        restoration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(restoration)
+        location = "/private/tmp/property-rental-restoration.json"
+
+        populated = restoration.terminal_message(
+            {
+                "status": "failed_closed",
+                "exact_failing_gate": "post_publication_ci_gate",
+                "exact_blocker": "exact CI gate failed for the repair commit",
+                "exact_next_action": "Keep the supervisor disabled and inspect CI.",
+                "owner_action_required": True,
+            },
+            evidence_location=location,
+        )
+        self.assertIn("Exact failing gate: post_publication_ci_gate.", populated)
+        self.assertIn(
+            "Exact blocker: exact CI gate failed for the repair commit.", populated
+        )
+        self.assertIn(
+            "Exact next action: Keep the supervisor disabled and inspect CI.",
+            populated,
+        )
+        self.assertIn(f"Evidence: {location}.", populated)
+        self.assertIn("Owner action required: true.", populated)
+
+        unavailable = restoration.terminal_message(
+            {
+                "status": "failed_closed",
+                "failure_phase": "legacy_failure_phase_is_not_exact",
+                "failure": "legacy failure text is not an exact blocker",
+                "dispatcher_failure_category": "legacy_category_is_not_exact",
+            },
+            evidence_location=location,
+        )
+        self.assertEqual(
+            unavailable.count("unavailable in preserved evidence; see Evidence"), 3
+        )
+        self.assertIn(f"Evidence: {location}.", unavailable)
+        self.assertIn("Owner action required: unavailable.", unavailable)
+        self.assertNotIn("legacy_failure_phase_is_not_exact", unavailable)
+        self.assertNotIn("legacy failure text is not an exact blocker", unavailable)
+        self.assertNotIn("legacy_category_is_not_exact", unavailable)
+
+        oversized = restoration.terminal_message(
+            {
+                "status": "failed_closed",
+                "exact_failing_gate": "gate-" + "界" * 2_000,
+                "exact_blocker": "blocker-" + "界" * 4_000,
+                "exact_next_action": "action-" + "界" * 4_000,
+                "owner_action_required": False,
+            },
+            evidence_location="/private/tmp/" + "e" * 2_000,
+        )
+        self.assertLessEqual(
+            len(oversized.encode("utf-8")), restoration.TERMINAL_MESSAGE_MAX_BYTES
+        )
+        self.assertGreaterEqual(oversized.count("… [truncated]"), 4)
+        self.assertIn("Owner action required: false.", oversized)
+
+        token = "ghp_" + "A" * 32
+        openai_token = "sk-" + "proj-" + "B" * 32
+        github_token = "github_" + "pat_" + "C" * 32
+        database_secret = (
+            "postgresql" + "://owner:" + "do-not-send" + "@example.invalid/rental"
+        )
+        private_key = (
+            "-----BEGIN "
+            + "ENCRYPTED PRIVATE KEY-----\n"
+            + "private-key-material\n"
+            + "-----END "
+            + "ENCRYPTED PRIVATE KEY-----"
+        )
+        secret = restoration.terminal_message(
+            {
+                "status": "failed_closed",
+                "exact_failing_gate": (
+                    f"authorization gate {token} {openai_token} {github_token}"
+                ),
+                "exact_blocker": f"{database_secret} {private_key}",
+                "exact_next_action": (
+                    "Retry with Bearer secret-value-not-for-telegram "
+                    "password=another-secret"
+                ),
+                "owner_action_required": False,
+            },
+            evidence_location=location,
+        )
+        self.assertNotIn(token, secret)
+        self.assertNotIn(openai_token, secret)
+        self.assertNotIn(github_token, secret)
+        self.assertNotIn("do-not-send", secret)
+        self.assertNotIn("private-key-material", secret)
+        self.assertNotIn("secret-value-not-for-telegram", secret)
+        self.assertNotIn("another-secret", secret)
+        self.assertGreaterEqual(secret.count("[REDACTED]"), 7)
 
     def test_restoration_metadata_preserves_exact_dirty_product_paths(self) -> None:
         spec = importlib.util.spec_from_file_location(
