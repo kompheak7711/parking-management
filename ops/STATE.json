@@ -1,13 +1,13 @@
 {
-  "active_cycle": "v1-027-configuration-persistence",
+  "active_cycle": "v1-028-configuration-api-ui",
   "approval": {
-    "status": "complete",
-    "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-027 takeover",
+    "status": "verified_awaiting_publication",
+    "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-028 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
-  "authorities": ["BR-SVC-*", "BR-UTIL-014", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-017", "BR-PAY-006", "BR-PAY-007", "BR-MONEY-*"],
+  "authorities": ["API-043", "API-047", "API-058", "UI-091"],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
     "branch": "implementation/foundation",
@@ -656,29 +656,29 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "01b7a56652bf977189aaf83c627f744262a1c4c2",
+  "commit": "762d71c95cdb1b83a1d4303b116cd9ca6b37f119",
   "evidence_applicability": {
-    "basis": "The exact reviewed V1-027 implementation commit passed all 15 local verification gates and GitHub Actions run 32830071828",
+    "basis": "The exact V1-028 candidate passed the complete deterministic verification profile after implementation and review corrections",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "two fresh read-only exact-diff reviews passed with zero material findings; final reviewed-patch SHA-256 2a64c925b6796bb24594c476a35e87aafe5faf35cda0cbc6b7b2c73c29fd2262",
-    "tranche_id": "V1-027"
+    "prior_review_disposition": "fresh final read-only exact-diff review passed with zero material findings; reviewed patch SHA-256 a0b8a85df54315f7239b3c1d4e91b3a5e07ec1133eaa95c244555fa5de5f2a15",
+    "tranche_id": "V1-028"
   },
-  "idle_reason": "V1-027 is published and CI-green; V1-028 is intentionally held and the supervisor remains disabled under the direct-takeover boundary",
-  "next_action": "Keep V1-028 held and the Property Rental supervisor disabled; await explicit Owner direction before restoring autonomous execution or activating V1-028",
+  "idle_reason": null,
+  "next_action": "Commit and push the verified V1-028 candidate, require successful exact-SHA GitHub Actions, then reconcile compact state while keeping V1-029 and the supervisor held",
   "next_candidate": {
-    "acceptance_profile": "database",
-    "authorities": ["BR-SVC-*", "BR-UTIL-014", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-017", "BR-PAY-006", "BR-PAY-007", "BR-MONEY-*"],
+    "acceptance_profile": "api_ui",
+    "authorities": ["API-043", "API-047", "API-058", "UI-091"],
     "authorization": "durable_v1",
-    "dependencies": ["V1-022"],
-    "exclude": ["unresolved utility unit metadata"],
-    "id": "V1-027",
-    "include": ["effective-dated configuration and historical preservation"],
-    "order": 27,
+    "dependencies": ["V1-027"],
+    "exclude": ["production secrets"],
+    "id": "V1-028",
+    "include": ["authorized effective-dated configuration workflows"],
+    "order": 28,
     "phase": "Configuration",
     "risk_class": "high",
-    "status": "complete",
-    "task": "Service, utility, payment-method, and exchange-rate configuration persistence",
-    "roadmap_id": "V1-027"
+    "status": "approved_active",
+    "task": "Configuration API and administration UI",
+    "roadmap_id": "V1-028"
   },
   "owner_action": "none",
   "owner_decisions": {
@@ -690,20 +690,20 @@
   },
   "phase": "Configuration",
   "publication": {
-    "ci_completed": true,
-    "ci_conclusion": "success",
-    "ci_run_id": "32830071828",
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32830071828",
-    "commit_completed": true,
-    "implementation_commit": "01b7a56652bf977189aaf83c627f744262a1c4c2",
-    "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published",
-    "tranche_id": "V1-027"
+    "ci_completed": false,
+    "ci_conclusion": null,
+    "ci_run_id": null,
+    "ci_run_url": null,
+    "commit_completed": false,
+    "implementation_commit": null,
+    "push_completed": false,
+    "sha_reconciled": false,
+    "status": "not_started",
+    "tranche_id": "V1-028"
   },
-  "relevant_docs": ["BR-SVC-*", "BR-UTIL-014-017", "BR-PAY-006-007", "BR-MONEY-*", "DB-UTIL-005", "DB-SVC-001-003", "DB-PAY-001-002", "TEST-045", "TEST-100-104"],
+  "relevant_docs": ["API-043", "API-047", "API-058", "UI-091", "SEC-016", "SEC-019", "SEC-020", "SEC-027", "SEC-028", "SEC-029", "TEST-084-095", "TEST-100-104"],
   "repair": {
-    "tranche_id": "V1-027",
+    "tranche_id": "V1-028",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -862,47 +862,47 @@
     "tranche_id": "V1-026"
   },
   "review": {
-    "complete_candidate_paths": 8,
-    "corrected_findings": 0,
+    "complete_candidate_paths": 18,
+    "corrected_findings": 14,
     "final_local_checks": [
-      "PASS: exact eight-path diff reviewed against baseline 34755c77f007b504f83007972997ff868ae21dd7",
-      "PASS: PostgreSQL constraints, runtime privileges, upgrade path, and concurrency enforcement",
-      "PASS: canonical documents and product/API/UI paths unchanged",
-      "PASS: V1-028 remains unactivated and unimplemented"
+      "PASS: exact 18-path diff reviewed against baseline 762d71c95cdb1b83a1d4303b116cd9ca6b37f119",
+      "PASS: durable replay, PostgreSQL privileges, explicit revision 17 to 18 upgrade, effective dating, and pagination",
+      "PASS: capability, CSRF, privacy, idempotency, concurrency, and accessible bounded failure diagnostics",
+      "PASS: canonical documents and V1_ROADMAP unchanged; V1-029 remains held"
     ],
     "final_verdict": "PASS",
-    "initial_findings": 0,
-    "review_kind": "fresh_read_only_exact_final_diff_required",
+    "initial_findings": 14,
+    "review_kind": "fresh_read_only_exact_final_diff",
+    "reviewed_patch_sha256": "a0b8a85df54315f7239b3c1d4e91b3a5e07ec1133eaa95c244555fa5de5f2a15",
     "status": "PASS",
-    "tranche_id": "V1-027"
+    "tranche_id": "V1-028"
   },
   "risk_class": "high",
   "roadmap": {
     "completed": 27,
-    "current_id": "V1-027",
+    "current_id": "V1-028",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Implement the approved bounded candidate: Service, utility, payment-method, and exchange-rate configuration persistence",
+  "status": "complete_uncommitted",
+  "task": "Implement the approved bounded candidate: Configuration API and administration UI",
   "tests": [
-    "PASS: complete deterministic verification profile 15/15",
-    "PASS: backend 564 passed with 189 expected environment skips",
-    "PASS: frontend 160 passed",
-    "PASS: disposable PostgreSQL 193 passed, including V1-022 upgrade and concurrent exclusion enforcement",
+    "PASS: final complete deterministic verification profile 15/15",
+    "PASS: backend 577 passed with 196 expected environment skips",
+    "PASS: frontend 178 passed",
+    "PASS: disposable PostgreSQL 200 passed, including explicit V1-027 to V1-028 upgrade and durable replay",
     "PASS: automation routing 182 passed plus compact-state routing and visibility watchdog",
     "PASS: formatting, linting, typing, builds, dependency audit, traceability, JSON, roadmap, shell syntax, publication guard, and git diff checks"
   ],
-  "tests_tranche_id": "V1-027",
-  "timestamp": "2026-08-25T09:08:21Z",
+  "tests_tranche_id": "V1-028",
+  "timestamp": "2026-08-25T12:14:40Z",
   "touched_areas": [
-    "effective-dated Property Service rates and approval history",
-    "independent effective-dated Electricity and Water rates without Utility unit metadata",
-    "append-preserved exchange-rate evidence",
-    "V1-022 Payment Method upgrade-path preservation",
-    "real PostgreSQL migration, concurrency, and destructive-mutation regression coverage"
+    "effective-dated Service and Utility configuration APIs",
+    "exchange-rate confirmation and history API",
+    "capability-checked administration UI",
+    "CSRF, idempotency, concurrency, pagination, privacy, and accessible failure handling"
   ],
-  "tranche": "Service, utility, payment-method, and exchange-rate configuration persistence"
+  "tranche": "Configuration API and administration UI"
 }

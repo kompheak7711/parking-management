@@ -1,46 +1,41 @@
-# V1-027 Configuration persistence — published and CI-green
+# V1-028 Configuration API and administration UI — verified, unpublished
 
-- Candidate: `V1-027` — Service, utility, payment-method, and exchange-rate
-  configuration persistence.
-- Authorization: existing durable V1 roadmap authorization; no renewed routine
-  authorization is required.
-- Baseline: clean, synchronized `implementation/foundation` at `34755c7`.
-- Scheduler: exact supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is disabled
-  throughout direct work; no overlapping repository worker was present at takeover.
-- Existing partial work: none. The scheduled supervisor did not run after activation and
-  did not materialize or modify V1-027.
-- Scope: effective-dated Property Service and Utility rates, append-preserved Service
-  approval periods, configured Payment Method preservation, and append-only USD/KHR
-  exchange-rate evidence.
-- Dependency: V1-022 Property configuration persistence and Payment Method identity.
-- Excluded: unresolved Utility unit metadata, configuration API/UI, production operations,
-  canonical changes, and every V1-028 action.
-- Canonical authorities: `BR-SVC-*`, `BR-UTIL-014-017`, `BR-PAY-006-007`, and
-  `BR-MONEY-*`; canonical documents remain read-only.
+- Candidate: `V1-028` — Configuration API and administration UI.
+- Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
+  no renewed routine authorization is required.
+- Baseline: clean, synchronized `implementation/foundation` at V1-027 closure
+  `762d71c95cdb1b83a1d4303b116cd9ca6b37f119`.
+- Scheduler: exact Property Rental supervisor remains disabled throughout direct work.
+- Overlap: no repository worker or automation process overlaps this cycle.
+- Scope: authorized effective-dated Service and Utility configuration APIs, exchange-rate
+  confirmation/history API, and accessible administration UI built on V1-027.
+- Authorities: `API-043`, `API-047`, `API-058`, and `UI-091` with the existing API,
+  security, privacy, concurrency, idempotency, pagination, and accessibility contracts.
+- Dependency: published V1-027 configuration persistence.
+- Excluded: production secrets, canonical changes, and every V1-029 action.
+- Canonical specifications: read-only.
 - Token ceiling and automation protections: unchanged.
-- Implementation: complete. Added effective-dated Property Service rates and approval
-  periods, independent Electricity and Water rates, append-preserved exchange-rate
-  evidence, and preservation checks for existing V1-022 Payment Methods.
-- Verification: complete profile passed 15/15; backend 564 passed with 189 expected
-  environment skips; frontend 160 passed; disposable PostgreSQL 193 passed; automation
-  routing 182 passed plus compact-state routing and visibility watchdog.
-- Independent review: PASS with zero material findings across the exact eight-path
-  candidate. PostgreSQL constraints, privileges, upgrade behavior, concurrency coverage,
-  canonical read-only scope, and the V1-028 hold were all confirmed.
-- Final verification: PASS, complete profile 15/15 on the reviewed candidate. Evidence:
-  `/private/tmp/property-rental-v1-027-final.json`.
-- Final exact-diff review: PASS with zero material findings; reviewed-patch SHA-256
-  `2a64c925b6796bb24594c476a35e87aafe5faf35cda0cbc6b7b2c73c29fd2262`.
-- Publication: implementation commit `01b7a56652bf977189aaf83c627f744262a1c4c2`
-  is pushed and exact-SHA GitHub Actions run `32830071828` passed all four jobs.
-- Status: published and CI-green.
+- Implementation: complete. Added capability-scoped, CSRF-protected Service-rate,
+  Utility-rate, and exchange-rate workflows over V1-027; preserved effective-dated
+  history; added stable command replay, bounded cursors, safe correlation diagnostics,
+  and accessible administration flows.
+- Verification: final complete profile passed 15/15; backend 577 passed with 196 expected
+  environment skips, frontend 178 passed, disposable PostgreSQL 200 passed, and
+  automation routing 182 passed plus compact-state routing and visibility watchdog.
+- Independent review: PASS with zero material findings across the exact 18-path candidate
+  after all material findings were corrected. Reviewed-patch SHA-256:
+  `a0b8a85df54315f7239b3c1d4e91b3a5e07ec1133eaa95c244555fa5de5f2a15`.
+- Scheduler evidence: exact supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` is
+  disabled; it will not be restored automatically.
+- V1-029 remains held and unmodified.
+- Status: complete, verified, and review-clean; publication and exact-SHA CI remain.
 - Blockers: none.
-- Exact next action: keep V1-028 held and the Property Rental supervisor disabled; await
-  explicit Owner direction before restoring autonomous execution or activating V1-028.
+- Exact next action: commit, push, require exact-SHA GitHub Actions success, and reconcile
+  compact state without activating V1-029 or enabling the supervisor.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-027 is published and exact-SHA CI is green at `01b7a56`.
-- Automation exact next action: Keep V1-028 held and keep the supervisor disabled.
+- Automation publication state: V1-028 is verified and awaiting direct publication.
+- Automation exact next action: Publish V1-028 and require exact-SHA CI while keeping V1-029 and the supervisor held.
 
 <!-- AUTOMATION_STATUS_END -->

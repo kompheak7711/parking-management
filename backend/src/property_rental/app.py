@@ -5,7 +5,7 @@ from collections.abc import AsyncIterator, Awaitable, Callable, Iterable
 from contextlib import AbstractAsyncContextManager, AsyncExitStack, asynccontextmanager
 from logging import Logger
 from time import perf_counter
-from typing import Final
+from typing import Final, cast
 from uuid import uuid4
 
 import psycopg
@@ -39,6 +39,13 @@ from property_rental.auth_api import (
     AuthenticationUnavailable,
     UnavailableAuthenticationFlow,
     create_auth_router,
+)
+from property_rental.configuration_api import (
+    ConfigurationFlow,
+    ExchangeRateProvider,
+    PostgresConfigurationFlow,
+    UnavailableConfigurationFlow,
+    create_configuration_router,
 )
 from property_rental.customer import CustomerVersionConflict
 from property_rental.customer_api import (
@@ -74,6 +81,11 @@ REQUEST_ID_HEADER: Final = "X-Request-ID"
 REQUEST_ID_PATTERN: Final = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
 CUSTOMER_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:customers(?:/|$)|properties/[^/]+/customers(?:/|$))"
+)
+CONFIGURATION_API_PATH_PATTERN: Final = re.compile(
+    r"^(?:/properties/[^/]+/configuration(?:/|$)|"
+    r"/api/v1/(?:properties/[^/]+/(?:configuration-capabilities|configured-services|service-rates|"
+    r"utility-rates|exchange-rates(?::confirm)?)|service-rates/|utility-rates/))"
 )
 DATABASE_TIMEOUT_SECONDS: Final = 2
 ERROR_STATUS_DETAILS: Final = {
@@ -189,6 +201,8 @@ def create_app(
     property_resource_flow: PropertyResourceFlow | None = None,
     unit_resource_flow: UnitResourceFlow | None = None,
     customer_resource_flow: CustomerResourceFlow | None = None,
+    configuration_flow: ConfigurationFlow | None = None,
+    exchange_rate_provider: ExchangeRateProvider | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -382,7 +396,9 @@ def create_app(
             )
             response = error_response(status.HTTP_500_INTERNAL_SERVER_ERROR, request_id)
         response.headers[REQUEST_ID_HEADER] = request_id
-        if CUSTOMER_API_PATH_PATTERN.match(request.url.path):
+        if CUSTOMER_API_PATH_PATTERN.match(
+            request.url.path
+        ) or CONFIGURATION_API_PATH_PATTERN.match(request.url.path):
             response.headers["Cache-Control"] = "private, no-store"
             response.headers["Vary"] = "Cookie"
         logger.info(
@@ -437,6 +453,21 @@ def create_app(
                 if resolved_settings.database_url is not None
                 else UnavailablePropertyResourceFlow()
             ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_configuration_router(
+            actor_resolver,
+            configuration_flow
+            or cast(
+                ConfigurationFlow,
+                PostgresConfigurationFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableConfigurationFlow(),
+            ),
+            resolved_settings,
+            exchange_rate_provider,
         )
     )
     app.include_router(

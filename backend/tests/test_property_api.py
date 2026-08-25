@@ -102,6 +102,17 @@ def actor_with_property_manage(property_id: UUID) -> AuthenticatedActor:
     )
 
 
+def browser_headers(if_match: str | None = None) -> dict[str, str]:
+    headers = {
+        "Origin": "https://localhost",
+        "Cookie": "__Host-prm_csrf=csrf-test-token",
+        "X-CSRF-Token": "csrf-test-token",
+    }
+    if if_match is not None:
+        headers["If-Match"] = if_match
+    return headers
+
+
 def test_get_property_returns_identity_timezone_version_and_etag() -> None:
     property_id = uuid4()
     flow = InMemoryPropertyResourceFlow(property_resource(property_id, version=3))
@@ -221,7 +232,7 @@ def test_patch_property_applies_matching_version_precondition() -> None:
 
     response = client.patch(
         f"/properties/{property_id}",
-        headers={"If-Match": '"4"'},
+        headers=browser_headers('"4"'),
         json={"name": "Riverside Apartments", "address_text": "New address"},
     )
 
@@ -244,6 +255,7 @@ def test_patch_property_reports_current_version_for_missing_precondition() -> No
 
     response = client.patch(
         f"/properties/{property_id}",
+        headers=browser_headers(),
         json={"name": "Riverside", "address_text": None},
     )
 
@@ -267,7 +279,7 @@ def test_patch_property_rejects_mismatched_or_out_of_range_precondition(
 
     response = client.patch(
         f"/properties/{property_id}",
-        headers={"If-Match": if_match},
+        headers=browser_headers(if_match),
         json={"name": "Riverside", "address_text": None},
     )
 
@@ -289,7 +301,7 @@ def test_property_configuration_routes_share_authorization_and_versioning() -> N
     get_response = client.get(f"/properties/{property_id}/configuration")
     patch_response = client.patch(
         f"/properties/{property_id}/configuration",
-        headers={"If-Match": "2"},
+        headers=browser_headers("2"),
         json={
             "timezone_name": "Asia/Phnom_Penh",
             "payment_methods": [
@@ -314,3 +326,24 @@ def test_property_configuration_routes_share_authorization_and_versioning() -> N
         {"code": "BANK", "display_name": "Bank transfer", "accepted": False},
         {"code": "CASH", "display_name": "Cash", "accepted": True},
     ]
+
+
+def test_property_mutations_require_browser_origin_and_csrf() -> None:
+    property_id = uuid4()
+    flow = InMemoryPropertyResourceFlow(property_resource(property_id, version=2))
+    client = TestClient(
+        create_app(
+            actor_resolver=lambda _: actor_with_property_manage(property_id),
+            property_resource_flow=flow,
+        )
+    )
+    response = client.patch(
+        f"/properties/{property_id}/configuration",
+        headers={"If-Match": "2"},
+        json={
+            "timezone_name": "Asia/Phnom_Penh",
+            "payment_methods": [],
+        },
+    )
+    assert response.status_code == 403
+    assert flow.patch_calls == 0

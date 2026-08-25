@@ -14,6 +14,7 @@ from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
 from typing import cast
@@ -25,6 +26,7 @@ import pytest
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 from psycopg import sql
+from psycopg.types.json import Jsonb
 
 import property_rental.bootstrap_cli as bootstrap_cli
 from property_rental.account_recovery import (
@@ -3625,7 +3627,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260825_17",)
+                assert cursor.fetchone() == ("20260825_18",)
 
 
 def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
@@ -4254,7 +4256,7 @@ def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260825_17",)
+                assert cursor.fetchone() == ("20260825_18",)
                 cursor.execute(
                     """
                     SELECT id, code, display_name, accepted, created_by, updated_by
@@ -4288,3 +4290,68 @@ def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
                     "app.utility_rates",
                     "app.exchange_rate_records",
                 )
+
+
+def test_v1_028_upgrade_preserves_v1_027_exchange_rate_history() -> None:
+    """Upgrade revision 17 history into the Property-scoped API without rewriting it."""
+    with _temporary_migration_database("prm_v1_028_upgrade") as migration_url:
+        assert _run_alembic("upgrade", "20260825_17").returncode == 0
+        actor_id = uuid.uuid4()
+        property_id = uuid.uuid4()
+        rate_id = uuid.uuid4()
+        applicable_at = datetime(2026, 8, 24, 3, 0, tzinfo=UTC)
+        trace = {
+            "usd_amount_cents": 10001,
+            "unrounded_payable_khr": "408340.83",
+            "payable_khr": 408341,
+            "markup_basis_points": 50,
+            "rounding": "CEILING_WHOLE_KHR",
+        }
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, %s, 'V1-028 Upgrade Actor', 'V1-028 Upgrade Actor',
+                              'active', 'optional', 'migration-regression')
+                    """,
+                    (actor_id, f"v1-028-upgrade-{actor_id.hex}"),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO app.properties (id, name, created_by, updated_by)
+                    VALUES (%s, 'V1-028 Upgrade Property', %s, %s)
+                    """,
+                    (property_id, actor_id, actor_id),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO app.exchange_rate_records (
+                        id, reference_rate_khr_per_usd, markup_basis_points,
+                        system_rate_khr_per_usd, rate_source, source_reference,
+                        applicable_at, calculation_trace
+                    ) VALUES (%s, 4062.500000, 50, 4083, 'ABA_AUTOMATIC',
+                              'Preserved V1-027 quote', %s, %s)
+                    """,
+                    (rate_id, applicable_at, Jsonb(trace)),
+                )
+            connection.commit()
+
+        result = _run_alembic("upgrade", "head")
+
+        assert result.returncode == 0, result.stderr
+        with psycopg.connect(migration_url) as connection:
+            row = connection.execute(
+                "SELECT * FROM app.list_exchange_rates_for_property(%s, 25, NULL, NULL)",
+                (property_id,),
+            ).fetchone()
+            assert row is not None
+            assert row[0] == rate_id
+            assert row[1] == Decimal("4062.500000")
+            assert row[2] == 4083
+            assert row[3] == "ABA_AUTOMATIC"
+            assert row[4] == "Preserved V1-027 quote"
+            assert row[5] == applicable_at
+            assert row[6] == trace

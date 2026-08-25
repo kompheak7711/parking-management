@@ -11,6 +11,7 @@ from fastapi import APIRouter, Header, HTTPException, Request, Response, status
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field
 
+from property_rental.browser_security import require_browser_mutation
 from property_rental.identity import (
     ActorResolver,
     AuthenticatedActor,
@@ -18,6 +19,7 @@ from property_rental.identity import (
     is_authorized,
 )
 from property_rental.property import PropertyConfiguration
+from property_rental.settings import Settings
 
 PROPERTY_MANAGE_CAPABILITY = "property.manage"
 INITIAL_PROPERTY_VERSION = 1
@@ -505,6 +507,7 @@ def _patch_configuration(
 def create_property_router(
     actor_resolver: ActorResolver,
     flow: PropertyResourceFlow,
+    settings: Settings,
 ) -> APIRouter:
     """Create authenticated Property and Property-configuration routes."""
     router = APIRouter(prefix="/properties", tags=["properties"])
@@ -530,6 +533,7 @@ def create_property_router(
     ) -> dict[str, object]:
         actor = _require_actor(request, actor_resolver)
         _require_property_manager(actor, property_id)
+        require_browser_mutation(request, settings)
         resource = _patch_resource(flow, property_id, patch, if_match, actor)
         response.headers["ETag"] = f'"{resource.version}"'
         return _resource_body(resource, request)
@@ -556,6 +560,7 @@ def create_property_router(
     ) -> dict[str, object]:
         actor = _require_actor(request, actor_resolver)
         _require_property_manager(actor, property_id)
+        require_browser_mutation(request, settings)
         resource = _patch_configuration(flow, property_id, patch, if_match, actor)
         response.headers["ETag"] = f'"{resource.version}"'
         return _configuration_body(resource, request)

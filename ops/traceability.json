@@ -7458,6 +7458,262 @@
       "test_path": "backend/tests/test_configuration_migration.py",
       "status": "implemented",
       "notes": "A cascading truncate cannot bypass append-preserved Service, Utility-rate, or Exchange-rate history protections."
+    },
+    {
+      "test_id": "test_service_rate_requires_scoped_read_and_manage_capabilities",
+      "upstream_ids": ["API-008", "API-043", "SEC-019", "SEC-020", "SEC-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_configuration_api.py",
+      "status": "implemented",
+      "notes": "Property-scoped configuration read and Service-rate management capabilities are evaluated independently and history responses are private and non-cacheable."
+    },
+    {
+      "test_id": "test_service_rate_creation_requires_origin_csrf_and_idempotency",
+      "upstream_ids": ["API-043", "API-015", "SEC-016", "SEC-028"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_configuration_api.py",
+      "status": "implemented",
+      "notes": "A Service-rate append requires an idempotency key, exact browser Origin, and matching double-submit CSRF token before persistence is called."
+    },
+    {
+      "test_id": "test_service_rate_replay_is_stable_and_changed_input_conflicts",
+      "upstream_ids": ["API-015", "API-016", "API-018", "API-043", "SEC-028", "SEC-029"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_configuration_api.py",
+      "status": "implemented",
+      "notes": "An identical Service-rate command replays one stable result while different input under the same command identity returns a conflict without another append."
+    },
+    {
+      "test_id": "test_utility_rate_preserves_notice_and_effective_date",
+      "upstream_ids": ["API-047", "BR-UTIL-014", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-017"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_configuration_api.py",
+      "status": "implemented",
+      "notes": "The Utility API returns stored unit code, notice evidence, and immutable effective-date history without inventing unresolved Utility unit metadata."
+    },
+    {
+      "test_id": "test_exchange_confirmation_applies_markup_and_both_ceilings",
+      "upstream_ids": ["API-058", "BR-MONEY-004", "BR-MONEY-005", "BR-MONEY-006", "BR-MONEY-008", "SEC-027"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_configuration_api.py",
+      "status": "implemented",
+      "notes": "Payment confirmation records the authorized reference and applies the mandatory 0.5-percent markup, system-rate ceiling, and final payable-KHR ceiling."
+    },
+    {
+      "test_id": "test_lists_are_bounded_and_reject_invalid_cursor_or_limit",
+      "upstream_ids": ["API-019", "API-020", "API-021", "API-043", "API-047", "SEC-040"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_configuration_api.py",
+      "status": "implemented",
+      "notes": "Configuration history enforces a maximum page size and stable bounded list contract."
+    },
+    {
+      "test_id": "test_detail_routes_do_not_disclose_record_existence_without_scope",
+      "upstream_ids": ["API-008", "API-043", "API-047", "SEC-019", "SEC-038"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_configuration_api.py",
+      "status": "implemented",
+      "notes": "Detail routes return the same not-found result for existing and absent records when the actor lacks the exact Property scope."
+    },
+    {
+      "test_id": "test_utility_notice_and_manual_exchange_evidence_fail_before_flow",
+      "upstream_ids": ["API-047", "API-058", "BR-UTIL-016", "SEC-027", "SEC-035"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_configuration_api.py",
+      "status": "implemented",
+      "notes": "Late Utility notice and manual exchange fallback without evidence are rejected before any application-flow mutation."
+    },
+    {
+      "test_id": "test_property_mutations_require_browser_origin_and_csrf",
+      "upstream_ids": ["UI-091", "API-027", "SEC-016", "SEC-023"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_property_api.py",
+      "status": "implemented",
+      "notes": "Property timezone/source and Payment Method administration now enforce the browser Origin and CSRF contract already used by the UI."
+    },
+    {
+      "test_id": "test_runtime_configuration_commands_are_idempotent_and_audited",
+      "upstream_ids": ["API-015", "API-016", "API-043", "SEC-028", "TEST-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "The real runtime role can append through the protected Service command, identical replay creates one row, changed reuse fails, and the authorization evidence is audited."
+    },
+    {
+      "test_id": "test_runtime_utility_and_exchange_commands_preserve_effective_evidence",
+      "upstream_ids": ["API-047", "API-058", "BR-UTIL-014", "BR-MONEY-004", "BR-MONEY-008", "TEST-010"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "Disposable PostgreSQL verifies Utility notice/effective evidence and exact exchange-rate calculation evidence through least-privilege runtime functions."
+    },
+    {
+      "test_id": "test_concurrent_configuration_replay_creates_one_rate",
+      "upstream_ids": ["API-015", "API-017", "API-018", "API-043", "SEC-028", "SEC-029", "TEST-006"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "Two concurrent runtime transactions using one exact Service command serialize to one append and return the same durable result."
+    },
+    {
+      "test_id": "TEST-FE-161",
+      "upstream_ids": ["UI-001", "UI-007", "UI-018", "UI-091", "API-019"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ConfigurationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The administration panel renders protected bounded history and hides management controls that the server capability snapshot did not authorize."
+    },
+    {
+      "test_id": "TEST-FE-162",
+      "upstream_ids": ["UI-091", "UI-094", "API-043", "SEC-023"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ConfigurationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An authorized Service-rate form submits an effective-dated append and reloads authoritative protected history."
+    },
+    {
+      "test_id": "TEST-FE-163",
+      "upstream_ids": ["UI-007", "UI-060", "UI-064", "UI-091", "API-047", "API-058"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ConfigurationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Utility and exchange management workflows appear only for their exact capabilities and explain the mandatory exchange calculation as server-authoritative read-only output."
+    },
+    {
+      "test_id": "TEST-FE-164",
+      "upstream_ids": ["UI-013", "UI-014", "UI-016", "UI-091", "API-018"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ConfigurationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Concurrency and idempotency conflicts are announced as accessible failures while already-loaded immutable history remains visible."
+    },
+    {
+      "test_id": "test_automatic_exchange_evidence_is_server_owned",
+      "upstream_ids": ["API-058", "BR-MONEY-004", "BR-MONEY-008", "SEC-027"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_configuration_api.py",
+      "status": "implemented",
+      "notes": "Automatic ABA-equivalent evidence comes only from the injected server provider; caller-supplied automatic rates are rejected and manual fallback is rejected while that provider is available."
+    },
+    {
+      "test_id": "test_automatic_exchange_fails_closed_when_provider_is_unavailable",
+      "upstream_ids": ["API-058", "SEC-027", "SEC-035"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_configuration_api.py",
+      "status": "implemented",
+      "notes": "The automatic route fails closed without persisting evidence when the server-owned source is unavailable."
+    },
+    {
+      "test_id": "test_configured_services_are_bounded_and_request_meta_is_canonical",
+      "upstream_ids": ["API-019", "API-043", "SEC-040", "UI-091"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_configuration_api.py",
+      "status": "implemented",
+      "notes": "The administration API discovers only bounded configured-Service choices and emits canonical request and page metadata."
+    },
+    {
+      "test_id": "test_runtime_flow_maps_missing_configuration_to_not_found",
+      "upstream_ids": ["API-008", "API-043", "API-047", "SEC-038"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL P0002 outcomes are mapped to privacy-safe not-found results instead of availability failures."
+    },
+    {
+      "test_id": "test_runtime_flow_discovers_only_configured_services",
+      "upstream_ids": ["API-019", "API-043", "UI-091", "SEC-040"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role discovers a bounded list of configured Service identities without receiving generic Service-creation authority."
+    },
+    {
+      "test_id": "test_runtime_exchange_history_is_scoped_to_the_exact_property",
+      "upstream_ids": ["API-008", "API-058", "SEC-019", "SEC-038"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_configuration_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL exchange history is joined to the exact Property command and a mismatched Property identifier returns a privacy-safe not-found result."
+    },
+    {
+      "test_id": "TEST-FE-170",
+      "upstream_ids": ["UI-007", "UI-091", "SEC-019"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ConfigurationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The effective configuration screen can be reached through its own Property identifier and exact server configuration capabilities without property.manage UI access."
+    },
+    {
+      "test_id": "TEST-FE-171",
+      "upstream_ids": ["API-015", "API-016", "UI-014", "SEC-028"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ConfigurationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An unchanged command retry after a lost response preserves the exact idempotency key until authoritative success."
+    },
+    {
+      "test_id": "TEST-FE-172",
+      "upstream_ids": ["API-047", "UI-091", "BR-DATE-001"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ConfigurationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Cambodia browser-local configuration timestamps are serialized with an explicit +07:00 offset before API submission."
+    },
+    {
+      "test_id": "TEST-FE-173",
+      "upstream_ids": ["API-058", "UI-091", "SEC-027"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ConfigurationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Manual exchange fallback requires bounded source evidence, an explicit automatic-source failure reason, and an offset-aware applicable timestamp."
+    },
+    {
+      "test_id": "TEST-FE-174",
+      "upstream_ids": ["API-019", "API-020", "UI-091", "SEC-040"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ConfigurationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Older immutable Service-rate history remains reachable by following the server's opaque bounded cursor."
+    },
+    {
+      "test_id": "test_manual_exchange_replay_is_stable_after_provider_recovers",
+      "upstream_ids": ["API-015", "API-016", "API-058", "SEC-028"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_configuration_api.py",
+      "status": "implemented",
+      "notes": "A completed manual exchange command replays its exact durable result before consulting a recovered automatic provider, so provider-state transitions cannot invalidate an authoritative command outcome."
+    },
+    {
+      "test_id": "test_v1_028_upgrade_preserves_v1_027_exchange_rate_history",
+      "upstream_ids": ["API-058", "DB-PAY-002", "TEST-100", "TEST-101", "TEST-103"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "An explicit revision 17 to 18 upgrade preserves pre-API exchange-rate history and exposes it through the bounded Property-scoped history function without rewriting the record."
+    },
+    {
+      "test_id": "TEST-FE-176",
+      "upstream_ids": ["API-015", "API-016", "UI-014", "UI-091"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ConfigurationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An authoritative successful append remains visibly successful and retained when the subsequent history refresh fails, with bounded diagnostics announced accessibly."
+    },
+    {
+      "test_id": "TEST-FE-177",
+      "upstream_ids": ["API-019", "API-020", "API-043", "SEC-040", "UI-091"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ConfigurationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Configured-Service discovery follows the server's opaque bounded cursor, appends unique choices, and preserves the already loaded options."
+    },
+    {
+      "test_id": "TEST-FE-178",
+      "upstream_ids": ["API-004", "API-008", "UI-014", "UI-091", "SEC-038"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ConfigurationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An authorization failure remains privacy-safe while announcing only the bounded canonical request reference and safe field identifier for support correlation."
     }
   ]
 }

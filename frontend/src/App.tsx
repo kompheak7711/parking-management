@@ -32,6 +32,11 @@ import {
   CustomerReconciliationRequirement,
 } from "./CustomerManagement";
 import { CustomerApi } from "./customerClient";
+import { ConfigurationManagement } from "./ConfigurationManagement";
+import {
+  EffectiveConfigurationApi,
+  effectiveConfigurationApi,
+} from "./configurationClient";
 
 export interface AppProps {
   environment: string;
@@ -42,6 +47,7 @@ export interface AppProps {
   propertyApi?: PropertyConfigurationApi;
   unitApi?: UnitApi;
   customerApi?: CustomerApi;
+  effectiveConfigApi?: EffectiveConfigurationApi;
   now?: () => number;
 }
 
@@ -487,6 +493,7 @@ export function App({
   propertyApi = propertyConfigurationApi,
   unitApi,
   customerApi,
+  effectiveConfigApi = effectiveConfigurationApi,
   now = Date.now,
 }: AppProps) {
   const client = useMemo<AuthenticationApi>(
@@ -1669,6 +1676,10 @@ export function App({
                 </div>
               )}
             </section>
+            <ConfigurationManagement
+              api={effectiveConfigApi}
+              propertyId={propertyConfiguration?.property_id ?? ""}
+            />
             <UnitManagement api={unitApi} />
             {!logoutPending && (
               <CustomerManagement
