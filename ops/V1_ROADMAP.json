@@ -919,9 +919,24 @@
         "V1-033"
       ],
       "authorities": [
-        "BR-LEASE-001-014",
+        "BR-LEASE-001",
+        "BR-LEASE-002",
+        "BR-LEASE-003",
+        "BR-LEASE-004",
+        "BR-LEASE-005",
+        "BR-LEASE-006",
+        "BR-LEASE-007",
+        "BR-LEASE-008",
+        "BR-LEASE-009",
+        "BR-LEASE-010",
+        "BR-LEASE-011",
+        "BR-LEASE-012",
+        "BR-LEASE-013",
+        "BR-LEASE-014",
         "PR-LEASE-*",
-        "TEST-030-032"
+        "TEST-030",
+        "TEST-031",
+        "TEST-032"
       ],
       "include": [
         "draft/sign/cancel/terminate transitions and signer rules"
