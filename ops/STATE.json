@@ -1,11 +1,11 @@
 {
   "active_cycle": "v1-029-reservation-deposit-persistence",
   "approval": {
-    "status": "approved_active",
+    "status": "complete",
     "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-029 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": ["BR-RES-*", "BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "BR-DEP-004", "BR-DEP-005", "BR-DEP-006", "DB-RES-*", "TEST-024", "TEST-025", "TEST-026", "TEST-027", "TEST-028", "TEST-029"],
   "automation_repair": {
@@ -656,7 +656,7 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "def558530fd3feb7a2a773c9d84576b3f14b7e51",
+  "commit": "232c4da45fed4f2f17019773f83559f089352ce9",
   "evidence_applicability": {
     "basis": "V1-029 begins from the clean synchronized V1-028 closure; predecessor verification remains historical and V1-029 requires fresh evidence",
     "complete_profile_remains_applicable": true,
@@ -664,7 +664,7 @@
     "tranche_id": "V1-029"
   },
   "idle_reason": null,
-  "next_action": "Publish the reviewed V1-029 candidate, require successful exact-SHA GitHub Actions, then reconcile closure while keeping V1-030 and the supervisor held",
+  "next_action": "Keep V1-030 held and the Property Rental supervisor disabled; await explicit Owner direction before restoring autonomous execution or activating V1-030",
   "next_candidate": {
     "acceptance_profile": "database",
     "authorities": ["BR-RES-*", "BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "BR-DEP-004", "BR-DEP-005", "BR-DEP-006", "DB-RES-*", "TEST-024", "TEST-025", "TEST-026", "TEST-027", "TEST-028", "TEST-029"],
@@ -676,7 +676,7 @@
     "order": 29,
     "phase": "Reservations",
     "risk_class": "high",
-    "status": "approved_active",
+    "status": "complete",
     "task": "Reservation and reservation-deposit persistence",
     "roadmap_id": "V1-029"
   },
@@ -690,15 +690,15 @@
   },
   "phase": "Reservations",
   "publication": {
-    "ci_completed": false,
-    "ci_conclusion": null,
-    "ci_run_id": null,
-    "ci_run_url": null,
-    "commit_completed": false,
-    "implementation_commit": null,
-    "push_completed": false,
-    "sha_reconciled": false,
-    "status": "not_started",
+    "ci_completed": true,
+    "ci_conclusion": "success",
+    "ci_run_id": "32857259164",
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32857259164",
+    "commit_completed": true,
+    "implementation_commit": "232c4da45fed4f2f17019773f83559f089352ce9",
+    "push_completed": true,
+    "sha_reconciled": true,
+    "status": "published",
     "tranche_id": "V1-029"
   },
   "relevant_docs": ["BR-RES-*", "BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "BR-DEP-004", "BR-DEP-005", "BR-DEP-006", "DB-RES-*", "TEST-024", "TEST-025", "TEST-026", "TEST-027", "TEST-028", "TEST-029"],
@@ -872,21 +872,21 @@
     "final_verdict": "PASS",
     "initial_findings": 4,
     "review_kind": "fresh_read_only_exact_final_diff_required",
-    "reviewed_patch_sha256": "9a3ec8fd589ed16decf20d2c4c8eefe5abd222fe0f6ead9c26361162b4225249",
+    "reviewed_patch_sha256": "833a292fe30c73efcee4a72670c9f39880670f2cff80a66d23ba98655af2ec49",
     "follow_up_findings": 1,
     "status": "PASS",
     "tranche_id": "V1-029"
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 28,
+    "completed": 29,
     "current_id": "V1-029",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "verified_unpublished",
+  "status": "published",
   "task": "Implement the approved bounded candidate: Reservation and reservation-deposit persistence",
   "tests": [
     "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-029-pre-review.json",
@@ -898,7 +898,7 @@
     "PASS: 182 automation routing tests plus compact-state and visibility-watchdog suites"
   ],
   "tests_tranche_id": "V1-029",
-  "timestamp": "2026-08-25T14:03:03Z",
+  "timestamp": "2026-08-25T14:08:06Z",
   "touched_areas": [
     "reservation lifecycle persistence",
     "unit exclusivity and concurrent reservation protection",

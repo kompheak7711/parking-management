@@ -1,4 +1,4 @@
-# V1-029 Reservation and reservation-deposit persistence — active
+# V1-029 Reservation and reservation-deposit persistence — published
 
 - Candidate: `V1-029` — Reservation and reservation-deposit persistence.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -16,17 +16,23 @@
   V1-030 action.
 - Canonical specifications: read-only.
 - Token ceiling and automation protections: unchanged.
-- Status: implementation complete; four initial independent-review findings and one
-  follow-up traceability finding are corrected; final post-correction 15/15
-  verification and fresh exact-diff review passed; publication is pending.
+- Verification: complete deterministic profile passed 15/15, including 579 backend
+  tests with 207 expected environment skips, 178 frontend tests, 212 real disposable
+  PostgreSQL tests, and 182 automation-routing tests.
+- Independent review: PASS with zero material findings on the final 11-path candidate
+  after five material findings were corrected. Reviewed-patch SHA-256:
+  `833a292fe30c73efcee4a72670c9f39880670f2cff80a66d23ba98655af2ec49`.
+- Publication: implementation commit `232c4da45fed4f2f17019773f83559f089352ce9`
+  is pushed and exact-SHA GitHub Actions run `32857259164` passed all four jobs.
+- Status: complete, verified, review-clean, published, and CI-green.
 - Blockers: none.
-- Exact next action: publish the reviewed V1-029 candidate, require successful
-  exact-SHA GitHub Actions, then reconcile closure while keeping V1-030 and the
-  supervisor held.
+- Exact next action: keep V1-030 held and the Property Rental supervisor disabled;
+  await explicit Owner direction before restoring autonomous execution or activating
+  V1-030.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-029 is active under direct takeover.
-- Automation exact next action: Review and publish V1-029 without activating V1-030 or enabling the supervisor.
+- Automation publication state: V1-029 is published and exact-SHA CI-green.
+- Automation exact next action: Keep V1-030 and the Property Rental supervisor held.
 
 <!-- AUTOMATION_STATUS_END -->
