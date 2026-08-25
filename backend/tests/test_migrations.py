@@ -3627,7 +3627,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260825_19",)
+                assert cursor.fetchone() == ("20260825_20",)
 
 
 def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
@@ -4256,7 +4256,7 @@ def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260825_19",)
+                assert cursor.fetchone() == ("20260825_20",)
                 cursor.execute(
                     """
                     SELECT id, code, display_name, accepted, created_by, updated_by
@@ -4410,7 +4410,7 @@ def test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data() -> No
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260825_19",)
+                assert cursor.fetchone() == ("20260825_20",)
                 cursor.execute(
                     """
                     SELECT unit.id, unit.property_id, unit.status, customer.id
@@ -4434,3 +4434,130 @@ def test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data() -> No
                     """
                 )
                 assert cursor.fetchone() == (0, 0, True, False, False)
+
+
+def test_v1_030_upgrade_preserves_active_v1_029_reservation_and_deposit() -> None:
+    """Upgrade revision 19 without rewriting an active Reservation or its Deposit."""
+    with _temporary_migration_database("prm_v1_030_upgrade") as migration_url:
+        assert _run_alembic("upgrade", "20260825_19").returncode == 0
+        actor_id = uuid.uuid4()
+        property_id = uuid.uuid4()
+        unit_id = uuid.uuid4()
+        customer_id = uuid.uuid4()
+        reservation_id = uuid.uuid4()
+        deposit_id = uuid.uuid4()
+        with psycopg.connect(migration_url) as connection:
+            connection.execute(
+                """
+                INSERT INTO app.user_accounts (
+                    actor_id, normalized_username, display_name, audit_name,
+                    lifecycle_state, mfa_policy_class, provenance
+                ) VALUES (%s,%s,'V1-030 Upgrade Actor','V1-030 Upgrade Actor',
+                          'active','optional','migration-regression')
+                """,
+                (actor_id, f"v1-030-upgrade-{actor_id.hex}"),
+            )
+            connection.execute(
+                """
+                INSERT INTO app.properties (id, name, created_by, updated_by)
+                VALUES (%s,'V1-030 Upgrade Property',%s,%s)
+                """,
+                (property_id, actor_id, actor_id),
+            )
+            connection.execute(
+                """
+                INSERT INTO app.units (
+                    id, property_id, unit_number, floor, unit_type, status,
+                    created_by, updated_by
+                ) VALUES (%s,%s,'UPGRADE-030','1','ONE_BEDROOM','VACANT',%s,%s)
+                """,
+                (unit_id, property_id, actor_id, actor_id),
+            )
+            connection.execute(
+                """
+                INSERT INTO app.customers (id, legal_name, created_by, updated_by)
+                VALUES (%s,'V1-030 Upgrade Customer',%s,%s)
+                """,
+                (customer_id, actor_id, actor_id),
+            )
+            business_date_row = connection.execute(
+                """
+                SELECT timezone(timezone_name, clock_timestamp())::date
+                FROM app.properties WHERE id = %s
+                """,
+                (property_id,),
+            ).fetchone()
+            assert business_date_row is not None
+            business_date = business_date_row[0]
+            occurred_at = datetime.now(UTC)
+            result = connection.execute(
+                """
+                SELECT * FROM app.create_reservation(
+                    %s,%s,%s,%s,%s,%s,%s,50000,%s,
+                    %s,10000,'NORMAL_SUGGESTION',%s,%s,%s,%s,
+                    %s,50000,%s,%s,%s,%s
+                )
+                """,
+                (
+                    property_id,
+                    uuid.uuid4(),
+                    "3" * 64,
+                    reservation_id,
+                    unit_id,
+                    customer_id,
+                    business_date,
+                    business_date + timedelta(days=10),
+                    uuid.uuid4(),
+                    occurred_at,
+                    "Explicitly accepted initial Security Deposit",
+                    "reservations.manage",
+                    Jsonb(
+                        {
+                            "agreed_monthly_rent_usd_cents": 50_000,
+                            "suggested_rate_basis_points": 2000,
+                            "suggested_amount_usd_cents": 10_000,
+                        }
+                    ),
+                    deposit_id,
+                    uuid.uuid4(),
+                    uuid.uuid4(),
+                    occurred_at,
+                    actor_id,
+                ),
+            ).fetchone()
+            assert result is not None
+            connection.commit()
+
+        upgraded = _run_alembic("upgrade", "head")
+
+        assert upgraded.returncode == 0, upgraded.stderr
+        with psycopg.connect(migration_url) as connection:
+            row = connection.execute(
+                """
+                SELECT reservation.id, reservation.status, reservation.version,
+                       unit.status, deposit.id, deposit.required_usd_cents,
+                       (SELECT count(*) FROM app.reservation_lifecycle_events)
+                FROM app.reservations AS reservation
+                JOIN app.units AS unit ON unit.id = reservation.unit_id
+                JOIN app.deposits AS deposit ON deposit.reservation_id = reservation.id
+                WHERE reservation.id = %s
+                """,
+                (reservation_id,),
+            ).fetchone()
+            assert row == (reservation_id, "ACTIVE", 1, "RESERVED", deposit_id, 50_000, 0)
+            assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
+                "20260825_20",
+            )
+            assert connection.execute(
+                """
+                SELECT
+                    has_function_privilege(
+                        'prm_runtime',
+                        'app.cancel_reservation(uuid,uuid,text,uuid,uuid,integer,text,text,boolean,text,text,text,uuid)',
+                        'EXECUTE'
+                    ),
+                    has_table_privilege(
+                        'prm_runtime', 'app.reservation_lifecycle_events', 'INSERT'
+                    )
+                """
+            ).fetchone() == (True, False)

@@ -1,13 +1,13 @@
 {
-  "active_cycle": "v1-029-reservation-deposit-persistence",
+  "active_cycle": "v1-030-reservation-lifecycle-services",
   "approval": {
     "status": "complete",
-    "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-029 takeover",
+    "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-030 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
-  "authorities": ["BR-RES-*", "BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "BR-DEP-004", "BR-DEP-005", "BR-DEP-006", "DB-RES-*", "TEST-024", "TEST-025", "TEST-026", "TEST-027", "TEST-028", "TEST-029"],
+  "authorities": ["BR-RES-003-022", "PR-RES-*", "TEST-024-029"],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
     "branch": "implementation/foundation",
@@ -656,29 +656,29 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "232c4da45fed4f2f17019773f83559f089352ce9",
+  "commit": "f96e55c3ffb61263ec4b8e8d5e5a7f104af4546d",
   "evidence_applicability": {
-    "basis": "V1-029 begins from the clean synchronized V1-028 closure; predecessor verification remains historical and V1-029 requires fresh evidence",
+    "basis": "V1-030 begins from the clean synchronized V1-029 closure; predecessor verification remains historical and V1-030 requires fresh evidence",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-029 initial exact-diff review found four P2 findings and the first follow-up found one traceability overclaim; all five are corrected with focused regression evidence and fresh complete 15/15 verification",
-    "tranche_id": "V1-029"
+    "prior_review_disposition": "V1-029 is published, independently reviewed, and exact-SHA CI-green; that evidence is historical for V1-030",
+    "tranche_id": "V1-030"
   },
   "idle_reason": null,
-  "next_action": "Keep V1-030 held and the Property Rental supervisor disabled; await explicit Owner direction before restoring autonomous execution or activating V1-030",
+  "next_action": "Publish the independently reviewed V1-030 implementation, require successful exact-SHA GitHub Actions, and keep V1-031 and the supervisor held",
   "next_candidate": {
-    "acceptance_profile": "database",
-    "authorities": ["BR-RES-*", "BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "BR-DEP-004", "BR-DEP-005", "BR-DEP-006", "DB-RES-*", "TEST-024", "TEST-025", "TEST-026", "TEST-027", "TEST-028", "TEST-029"],
+    "acceptance_profile": "foundation",
+    "authorities": ["BR-RES-003-022", "PR-RES-*", "TEST-024-029"],
     "authorization": "durable_v1",
-    "dependencies": ["V1-023", "V1-025"],
-    "exclude": ["lease creation"],
-    "id": "V1-029",
-    "include": ["reservation lifecycle, exclusivity, expiry, extension, deposit continuity"],
-    "order": 29,
+    "dependencies": ["V1-029"],
+    "exclude": ["move-in completion"],
+    "id": "V1-030",
+    "include": ["create, extend, expire, cancel and availability transitions"],
+    "order": 30,
     "phase": "Reservations",
     "risk_class": "high",
     "status": "complete",
-    "task": "Reservation and reservation-deposit persistence",
-    "roadmap_id": "V1-029"
+    "task": "Reservation lifecycle and availability services",
+    "roadmap_id": "V1-030"
   },
   "owner_action": "none",
   "owner_decisions": {
@@ -690,20 +690,20 @@
   },
   "phase": "Reservations",
   "publication": {
-    "ci_completed": true,
-    "ci_conclusion": "success",
-    "ci_run_id": "32857259164",
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32857259164",
-    "commit_completed": true,
-    "implementation_commit": "232c4da45fed4f2f17019773f83559f089352ce9",
-    "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published",
-    "tranche_id": "V1-029"
+    "ci_completed": false,
+    "ci_conclusion": null,
+    "ci_run_id": null,
+    "ci_run_url": null,
+    "commit_completed": false,
+    "implementation_commit": null,
+    "push_completed": false,
+    "sha_reconciled": false,
+    "status": "not_started",
+    "tranche_id": "V1-030"
   },
-  "relevant_docs": ["BR-RES-*", "BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "BR-DEP-004", "BR-DEP-005", "BR-DEP-006", "DB-RES-*", "TEST-024", "TEST-025", "TEST-026", "TEST-027", "TEST-028", "TEST-029"],
+  "relevant_docs": ["BR-RES-003-022", "PR-RES-*", "TEST-024-029", "DL-003", "DL-004", "DL-005", "DL-009", "DL-034", "DL-037"],
   "repair": {
-    "tranche_id": "V1-029",
+    "tranche_id": "V1-030",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -862,48 +862,49 @@
     "tranche_id": "V1-026"
   },
   "review": {
-    "complete_candidate_paths": 11,
-    "corrected_findings": 5,
+    "complete_candidate_paths": 13,
+    "corrected_findings": 2,
     "final_local_checks": [
-      "PASS: final complete deterministic verification profile 15/15",
-      "PASS: git diff --check",
-      "PASS: publication guard"
+      "PASS: omitted Unit-release cancellation is rejected by a deferred PostgreSQL invariant",
+      "PASS: runtime NULL due-list limit is rejected as invalid",
+      "PASS: disposable PostgreSQL migration, upgrade, runtime-role, and concurrency suite 221/221",
+      "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-030-post-review.json",
+      "PASS: git diff --check"
     ],
     "final_verdict": "PASS",
-    "initial_findings": 4,
+    "initial_findings": 2,
     "review_kind": "fresh_read_only_exact_final_diff_required",
-    "reviewed_patch_sha256": "833a292fe30c73efcee4a72670c9f39880670f2cff80a66d23ba98655af2ec49",
-    "follow_up_findings": 1,
+    "reviewed_patch_sha256": "280868704067d4b3fa43003aed801559ac711c2f719f7d6e723274fbc3468035",
+    "follow_up_findings": 0,
     "status": "PASS",
-    "tranche_id": "V1-029"
+    "tranche_id": "V1-030"
   },
   "risk_class": "high",
   "roadmap": {
     "completed": 29,
-    "current_id": "V1-029",
+    "current_id": "V1-030",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Implement the approved bounded candidate: Reservation and reservation-deposit persistence",
+  "status": "verified_unpublished",
+  "task": "Implement the approved bounded candidate: Reservation lifecycle and availability services",
   "tests": [
-    "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-029-pre-review.json",
-    "PASS: fresh complete deterministic verification profile 15/15 after four independent-review corrections; /private/tmp/property-rental-v1-029-post-review-fixes.json",
-    "PASS: final complete deterministic verification profile 15/15 after correcting the follow-up traceability finding; /private/tmp/property-rental-v1-029-final-verification.json",
-    "PASS: 579 backend tests; 207 expected environment skips",
-    "PASS: 178 frontend tests",
-    "PASS: 212 real disposable PostgreSQL migration, upgrade, runtime-role, and concurrency tests after four independent-review corrections",
-    "PASS: 182 automation routing tests plus compact-state and visibility-watchdog suites"
+    "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-030-post-review.json",
+    "PASS: backend 587 passed with 215 expected environment skips",
+    "PASS: disposable PostgreSQL migration, upgrade, runtime-role, and concurrency suite 221/221",
+    "PASS: frontend 178/178",
+    "PASS: automation routing and safety suite 182/182",
+    "PASS: focused V1-030 service and traceability tests 27/27"
   ],
-  "tests_tranche_id": "V1-029",
-  "timestamp": "2026-08-25T14:08:06Z",
+  "tests_tranche_id": "V1-030",
+  "timestamp": "2026-08-25T15:11:15Z",
   "touched_areas": [
-    "reservation lifecycle persistence",
-    "unit exclusivity and concurrent reservation protection",
-    "expiry and extension history",
-    "reservation-deposit continuity and source linkage"
+    "reservation lifecycle commands",
+    "transactional Unit availability transitions",
+    "idempotent expiry and cancellation",
+    "optimistic concurrency and exclusivity"
   ],
-  "tranche": "Reservation and reservation-deposit persistence"
+  "tranche": "Reservation lifecycle and availability services"
 }

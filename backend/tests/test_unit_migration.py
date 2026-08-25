@@ -217,7 +217,6 @@ def test_migration_accepts_supported_unit_types(
     "status",
     [
         "VACANT",
-        "RESERVED",
         "OCCUPIED",
         "UNDER_MAINTENANCE",
         "CLEANING",

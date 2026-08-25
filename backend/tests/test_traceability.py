@@ -940,3 +940,52 @@ def test_reservation_and_deposit_persistence_has_bounded_traceability() -> None:
     assert required_authorities <= {
         authority for entry in scoped_entries for authority in entry["upstream_ids"]
     }
+
+
+def test_reservation_lifecycle_services_have_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    expected_test_ids = {
+        "test_postgres_service_creates_extends_and_cancels_one_stable_reservation",
+        "test_customer_cancellation_is_atomic_idempotent_and_preserves_deposit",
+        "test_property_cancellation_requires_coordination_without_creating_refund",
+        "test_expiration_uses_end_of_date_is_bounded_and_preserves_classification",
+        "test_version_checked_extension_replays_then_rejects_stale_new_command",
+        "test_concurrent_extension_and_cancellation_have_one_version_winner",
+        "test_database_prevents_summary_drift_illegal_transition_and_history_loss",
+        "test_runtime_role_has_only_bounded_lifecycle_authority",
+        "test_reservation_lifecycle_migration_is_forward_only",
+        "test_v1_030_upgrade_preserves_active_v1_029_reservation_and_deposit",
+        "test_reservation_lifecycle_services_have_bounded_traceability",
+    }
+    implemented_authorities = {
+        *(f"BR-RES-{index:03d}" for index in range(3, 13)),
+        *(f"BR-RES-{index:03d}" for index in range(15, 21)),
+        *(f"PR-RES-{index:03d}" for index in range(3, 13)),
+        *(f"PR-RES-{index:03d}" for index in range(15, 21)),
+        "TEST-024",
+        "TEST-025",
+        "TEST-027",
+        "DL-034",
+        "DL-037",
+    }
+    held_whole_clause_claims = {
+        "BR-RES-013",
+        "BR-RES-014",
+        "BR-RES-021",
+        "BR-RES-022",
+        "PR-RES-013",
+        "PR-RES-014",
+        "PR-RES-021",
+        "PR-RES-022",
+        "TEST-026",
+        "TEST-028",
+        "TEST-029",
+    }
+
+    scoped_entries = [entries_by_id[test_id] for test_id in expected_test_ids]
+    routed = {authority for entry in scoped_entries for authority in entry["upstream_ids"]}
+    assert all(entry["status"] == "implemented" for entry in scoped_entries)
+    assert implemented_authorities <= routed
+    assert held_whole_clause_claims.isdisjoint(routed)

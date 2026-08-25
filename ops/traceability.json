@@ -7818,6 +7818,142 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "The bounded V1-029 manifest covers the implemented Reservation and initial Security Deposit persistence boundary without claiming the held expiration, cancellation-disposition, Lease, Occupancy, or move-in workflows."
+    },
+    {
+      "test_id": "test_reservation_status_vocabulary_has_no_expired_or_moved_in_state",
+      "upstream_ids": ["BR-RES-003", "PR-RES-003"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_reservation.py",
+      "status": "implemented",
+      "notes": "The service exposes only ACTIVE, CANCELLED, and COMPLETED and does not invent EXPIRED or MOVED_IN states."
+    },
+    {
+      "test_id": "test_request_digest_is_stable_and_binds_every_command_input",
+      "upstream_ids": ["DL-037"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_reservation.py",
+      "status": "implemented",
+      "notes": "Canonical command serialization produces a stable SHA-256 retry identity and changes when any bound business input changes."
+    },
+    {
+      "test_id": "test_customer_cancellation_requires_property_availability_and_no_coordination",
+      "upstream_ids": ["BR-RES-012", "BR-RES-020", "PR-RES-012", "PR-RES-020"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_reservation.py",
+      "status": "implemented",
+      "notes": "Customer responsibility is accepted only when the Property could provide the Unit and no contradictory Property coordination evidence is supplied."
+    },
+    {
+      "test_id": "test_property_cancellation_requires_coordination_and_preserves_v1_031_boundary",
+      "upstream_ids": ["BR-RES-012", "BR-RES-020", "PR-RES-012", "PR-RES-020"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_reservation.py",
+      "status": "implemented",
+      "notes": "Property responsibility requires coordination evidence while Refund and disposition identities remain absent from the V1-030 command contract."
+    },
+    {
+      "test_id": "test_expiration_refuses_property_inability_instead_of_misclassification",
+      "upstream_ids": ["BR-RES-016", "BR-RES-020", "PR-RES-016", "PR-RES-020", "DL-037"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_reservation.py",
+      "status": "implemented",
+      "notes": "Automatic expiration refuses Property-side inability rather than misclassifying the cause as a Customer expiration."
+    },
+    {
+      "test_id": "test_due_query_is_strictly_bounded_before_database_access",
+      "upstream_ids": ["BR-RES-011", "BR-RES-015", "BR-RES-016", "PR-RES-011", "PR-RES-015", "PR-RES-016", "DL-037"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_reservation.py",
+      "status": "implemented",
+      "notes": "Scheduled due-Reservation discovery rejects limits outside one through one hundred before database access."
+    },
+    {
+      "test_id": "test_postgres_service_creates_extends_and_cancels_one_stable_reservation",
+      "upstream_ids": ["BR-RES-003", "BR-RES-004", "BR-RES-005", "BR-RES-006", "BR-RES-007", "BR-RES-008", "BR-RES-009", "BR-RES-010", "BR-RES-012", "BR-RES-015", "BR-RES-017", "BR-RES-018", "BR-RES-019", "BR-RES-020", "PR-RES-003", "PR-RES-004", "PR-RES-005", "PR-RES-006", "PR-RES-007", "PR-RES-008", "PR-RES-009", "PR-RES-010", "PR-RES-012", "PR-RES-015", "PR-RES-017", "PR-RES-018", "PR-RES-019", "PR-RES-020", "TEST-024", "TEST-025", "TEST-027", "DL-034", "DL-037"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_reservation_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "The production PostgreSQL service creates one stable Reservation and continuing Security Deposit, grants one version-checked extension, then classifies and cancels it without creating the held financial outcome."
+    },
+    {
+      "test_id": "test_customer_cancellation_is_atomic_idempotent_and_preserves_deposit",
+      "upstream_ids": ["BR-RES-003", "BR-RES-012", "BR-RES-020", "PR-RES-003", "PR-RES-012", "PR-RES-020", "DL-034", "DL-037"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "A customer-attributable cancellation atomically records the terminal Reservation event, releases the Unit, replays exactly, and preserves the same Deposit and receipt while marking financial orchestration pending V1-031."
+    },
+    {
+      "test_id": "test_property_cancellation_requires_coordination_without_creating_refund",
+      "upstream_ids": ["BR-RES-012", "BR-RES-020", "PR-RES-012", "PR-RES-020", "DL-034"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "Property responsibility requires preserved coordination evidence and cannot silently create a Refund or Deposit disposition before V1-031."
+    },
+    {
+      "test_id": "test_expiration_uses_end_of_date_is_bounded_and_preserves_classification",
+      "upstream_ids": ["BR-RES-003", "BR-RES-005", "BR-RES-011", "BR-RES-015", "BR-RES-016", "BR-RES-020", "PR-RES-003", "PR-RES-005", "PR-RES-011", "PR-RES-015", "PR-RES-016", "PR-RES-020", "DL-034", "DL-037"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "A bounded deterministic due query waits until after the complete Property-local expiration date; expiration records RESERVATION_EXPIRED, releases the Unit, rejects Property-side misclassification, and leaves the financial outcome pending V1-031."
+    },
+    {
+      "test_id": "test_version_checked_extension_replays_then_rejects_stale_new_command",
+      "upstream_ids": ["BR-RES-007", "BR-RES-008", "BR-RES-009", "BR-RES-010", "BR-RES-015", "BR-RES-017", "BR-RES-018", "BR-RES-019", "PR-RES-007", "PR-RES-008", "PR-RES-009", "PR-RES-010", "PR-RES-015", "PR-RES-017", "PR-RES-018", "PR-RES-019", "TEST-027", "DL-037"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "The V1-030 extension boundary replays one exact command result while rejecting a distinct stale-version command without changing extension history."
+    },
+    {
+      "test_id": "test_concurrent_extension_and_cancellation_have_one_version_winner",
+      "upstream_ids": ["BR-RES-003", "BR-RES-007", "BR-RES-009", "BR-RES-012", "BR-RES-017", "BR-RES-019", "PR-RES-003", "PR-RES-007", "PR-RES-009", "PR-RES-012", "PR-RES-017", "PR-RES-019", "TEST-025", "TEST-027", "DL-034", "DL-037"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent extension and cancellation commands serialize on one Reservation version; exactly one wins and Unit availability remains consistent with the committed Reservation state."
+    },
+    {
+      "test_id": "test_database_prevents_summary_drift_illegal_transition_and_history_loss",
+      "upstream_ids": ["BR-RES-003", "BR-RES-011", "BR-RES-012", "BR-RES-015", "BR-RES-016", "PR-RES-003", "PR-RES-011", "PR-RES-012", "PR-RES-015", "PR-RES-016", "DL-034"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "PostgreSQL rejects Unit/Reservation summary drift, direct move-in completion, unsupported standalone RESERVED state, and physical Reservation history deletion."
+    },
+    {
+      "test_id": "test_runtime_role_has_only_bounded_lifecycle_authority",
+      "upstream_ids": ["DL-034", "DL-037"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_reservation_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role can read lifecycle evidence and execute only the bounded versioned functions; it cannot mutate event rows or call the superseded extension function."
+    },
+    {
+      "test_id": "test_reservation_lifecycle_migration_is_forward_only",
+      "upstream_ids": ["DL-034", "DL-037"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_reservation_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "Revision 20 builds forward from published Reservation persistence and refuses destructive lifecycle-history rollback."
+    },
+    {
+      "test_id": "test_v1_030_upgrade_preserves_active_v1_029_reservation_and_deposit",
+      "upstream_ids": ["BR-RES-003", "BR-RES-004", "BR-RES-005", "BR-RES-009", "PR-RES-003", "PR-RES-004", "PR-RES-005", "PR-RES-009", "DL-034"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The explicit revision 19 to 20 upgrade preserves an ACTIVE Reservation, RESERVED Unit, stable continuing Security Deposit, and least-privilege runtime boundary without synthesizing lifecycle history."
+    },
+    {
+      "test_id": "test_reservation_lifecycle_services_have_bounded_traceability",
+      "upstream_ids": ["BR-RES-003", "BR-RES-004", "BR-RES-005", "BR-RES-006", "BR-RES-007", "BR-RES-008", "BR-RES-009", "BR-RES-010", "BR-RES-011", "BR-RES-012", "BR-RES-015", "BR-RES-016", "BR-RES-017", "BR-RES-018", "BR-RES-019", "BR-RES-020", "PR-RES-003", "PR-RES-004", "PR-RES-005", "PR-RES-006", "PR-RES-007", "PR-RES-008", "PR-RES-009", "PR-RES-010", "PR-RES-011", "PR-RES-012", "PR-RES-015", "PR-RES-016", "PR-RES-017", "PR-RES-018", "PR-RES-019", "PR-RES-020", "TEST-024", "TEST-025", "TEST-027", "DL-034", "DL-037"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "The V1-030 manifest covers only implemented creation, extension, expiration, cancellation-classification, concurrency, and availability behavior; complete move-in and cancellation financial-outcome clauses remain explicitly unclaimed for V1-031 and later tranches."
     }
   ]
 }

@@ -593,19 +593,20 @@ def test_database_rejects_invalid_dates_statuses_and_history_rewrite(
         unit_id=unit_id,
         customer_id=customer_id,
     )
+    connection.execute(
+        """
+        UPDATE app.reservations
+        SET status = 'CANCELLED', cancellation_reason_code = 'CUSTOMER_CANCELLED',
+            cancellation_responsibility = 'CUSTOMER',
+            cancelled_at = statement_timestamp(), version = version + 1,
+            updated_at = statement_timestamp(), updated_by = %s
+        WHERE id = %s
+        """,
+        (actor_id, identities["reservation_id"]),
+    )
     with pytest.raises(Error) as uncoordinated_cancellation:
-        connection.execute(
-            """
-            UPDATE app.reservations
-            SET status = 'CANCELLED', cancellation_reason_code = 'CUSTOMER_CANCELLED',
-                cancellation_responsibility = 'CUSTOMER',
-                cancelled_at = statement_timestamp(), version = version + 1,
-                updated_at = statement_timestamp(), updated_by = %s
-            WHERE id = %s
-            """,
-            (actor_id, identities["reservation_id"]),
-        )
-    assert uncoordinated_cancellation.value.sqlstate == "55000"
+        connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+    assert uncoordinated_cancellation.value.sqlstate == "23514"
     connection.rollback()
 
     actor_id, property_id, unit_id, customer_id = setup_reservation_sources(connection)
