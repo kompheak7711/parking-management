@@ -761,9 +761,19 @@
       ],
       "authorities": [
         "BR-RES-*",
-        "BR-DEP-001-006",
+        "BR-DEP-001",
+        "BR-DEP-002",
+        "BR-DEP-003",
+        "BR-DEP-004",
+        "BR-DEP-005",
+        "BR-DEP-006",
         "DB-RES-*",
-        "TEST-024-029"
+        "TEST-024",
+        "TEST-025",
+        "TEST-026",
+        "TEST-027",
+        "TEST-028",
+        "TEST-029"
       ],
       "include": [
         "reservation lifecycle, exclusivity, expiry, extension, deposit continuity"

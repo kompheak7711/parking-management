@@ -898,3 +898,45 @@ def test_account_recovery_orchestration_has_bounded_traceability() -> None:
         entry = entries_by_id[test_id]
         assert entry["status"] == "implemented"
         assert routed_authorities == set(entry["upstream_ids"])
+
+
+def test_reservation_and_deposit_persistence_has_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    expected_test_ids = {
+        "test_activation_persists_one_reservation_and_continuing_security_deposit",
+        "test_authorized_variance_is_preserved_and_replay_is_idempotent",
+        "test_extension_is_single_bounded_and_preserves_original_history",
+        "test_expired_reservation_cannot_be_retroactively_extended",
+        "test_extension_notice_requires_atomic_reservation_update",
+        "test_database_rejects_invalid_dates_statuses_and_history_rewrite",
+        "test_received_deposit_cannot_exceed_required_liability",
+        "test_activation_bundle_requires_exact_accepted_receipt",
+        "test_concurrent_attempts_hold_one_unit_exactly_once",
+        "test_runtime_is_read_only_except_for_bounded_commands",
+        "test_reservation_migration_is_forward_only",
+        "test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data",
+        "test_reservation_and_deposit_persistence_has_bounded_traceability",
+    }
+    required_authorities = {
+        *(f"BR-RES-{index:03d}" for index in range(1, 11)),
+        "BR-RES-014",
+        "BR-RES-015",
+        "BR-RES-017",
+        "BR-RES-018",
+        "BR-RES-019",
+        *(f"BR-DEP-{index:03d}" for index in range(1, 7)),
+        *(f"DB-RES-{index:03d}" for index in range(1, 4)),
+        "DB-DEP-001",
+        "DB-DEP-002",
+        "TEST-024",
+        "TEST-025",
+        "TEST-027",
+    }
+
+    scoped_entries = [entries_by_id[test_id] for test_id in expected_test_ids]
+    assert all(entry["status"] == "implemented" for entry in scoped_entries)
+    assert required_authorities <= {
+        authority for entry in scoped_entries for authority in entry["upstream_ids"]
+    }

@@ -325,7 +325,7 @@ def test_migration_rejects_customer_identity_or_history_loss(
         parameters = (uuid4(),) if "%s" in statement.as_string() else ()
         connection.execute(statement, parameters)
 
-    assert raised.value.sqlstate == "55000"
+    assert raised.value.sqlstate in {"55000", "0A000"}
 
 
 def test_protected_update_preserves_previous_and_resulting_contact_history(

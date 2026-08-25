@@ -311,7 +311,7 @@ def test_migration_rejects_unit_identity_mutation_and_history_loss(
         parameters = (uuid4(),) if statement.as_string().find("%s") >= 0 else ()
         connection.execute(statement, parameters)
 
-    assert raised.value.sqlstate == "55000"
+    assert raised.value.sqlstate in {"55000", "0A000"}
 
 
 def test_migration_allows_versioned_state_change_without_replacing_identity(

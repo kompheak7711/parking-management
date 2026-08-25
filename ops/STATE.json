@@ -1,13 +1,13 @@
 {
-  "active_cycle": "v1-028-configuration-api-ui",
+  "active_cycle": "v1-029-reservation-deposit-persistence",
   "approval": {
-    "status": "complete",
-    "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-028 takeover",
+    "status": "approved_active",
+    "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-029 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
-  "authorities": ["API-043", "API-047", "API-058", "UI-091"],
+  "authorities": ["BR-RES-*", "BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "BR-DEP-004", "BR-DEP-005", "BR-DEP-006", "DB-RES-*", "TEST-024", "TEST-025", "TEST-026", "TEST-027", "TEST-028", "TEST-029"],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
     "branch": "implementation/foundation",
@@ -656,29 +656,29 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "6325820418bed5b7927cdfa91c12a350bbe1c6f3",
+  "commit": "def558530fd3feb7a2a773c9d84576b3f14b7e51",
   "evidence_applicability": {
-    "basis": "The exact V1-028 candidate passed the complete deterministic verification profile after implementation and review corrections",
+    "basis": "V1-029 begins from the clean synchronized V1-028 closure; predecessor verification remains historical and V1-029 requires fresh evidence",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "fresh final read-only exact-diff review passed with zero material findings; reviewed patch SHA-256 874c3d7df2aa9d0085f3afab5f264c47fb149e1c8c6a8ca9998cec043c2b4b07",
-    "tranche_id": "V1-028"
+    "prior_review_disposition": "V1-029 initial exact-diff review found four P2 findings and the first follow-up found one traceability overclaim; all five are corrected with focused regression evidence and fresh complete 15/15 verification",
+    "tranche_id": "V1-029"
   },
   "idle_reason": null,
-  "next_action": "Keep V1-029 held and the Property Rental supervisor disabled; await explicit Owner direction before restoring autonomous execution or activating V1-029",
+  "next_action": "Publish the reviewed V1-029 candidate, require successful exact-SHA GitHub Actions, then reconcile closure while keeping V1-030 and the supervisor held",
   "next_candidate": {
-    "acceptance_profile": "api_ui",
-    "authorities": ["API-043", "API-047", "API-058", "UI-091"],
+    "acceptance_profile": "database",
+    "authorities": ["BR-RES-*", "BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "BR-DEP-004", "BR-DEP-005", "BR-DEP-006", "DB-RES-*", "TEST-024", "TEST-025", "TEST-026", "TEST-027", "TEST-028", "TEST-029"],
     "authorization": "durable_v1",
-    "dependencies": ["V1-027"],
-    "exclude": ["production secrets"],
-    "id": "V1-028",
-    "include": ["authorized effective-dated configuration workflows"],
-    "order": 28,
-    "phase": "Configuration",
+    "dependencies": ["V1-023", "V1-025"],
+    "exclude": ["lease creation"],
+    "id": "V1-029",
+    "include": ["reservation lifecycle, exclusivity, expiry, extension, deposit continuity"],
+    "order": 29,
+    "phase": "Reservations",
     "risk_class": "high",
-    "status": "complete",
-    "task": "Configuration API and administration UI",
-    "roadmap_id": "V1-028"
+    "status": "approved_active",
+    "task": "Reservation and reservation-deposit persistence",
+    "roadmap_id": "V1-029"
   },
   "owner_action": "none",
   "owner_decisions": {
@@ -688,22 +688,22 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "Configuration",
+  "phase": "Reservations",
   "publication": {
-    "ci_completed": true,
-    "ci_conclusion": "success",
-    "ci_run_id": "32847317093",
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32847317093",
-    "commit_completed": true,
-    "implementation_commit": "6325820418bed5b7927cdfa91c12a350bbe1c6f3",
-    "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published",
-    "tranche_id": "V1-028"
+    "ci_completed": false,
+    "ci_conclusion": null,
+    "ci_run_id": null,
+    "ci_run_url": null,
+    "commit_completed": false,
+    "implementation_commit": null,
+    "push_completed": false,
+    "sha_reconciled": false,
+    "status": "not_started",
+    "tranche_id": "V1-029"
   },
-  "relevant_docs": ["API-043", "API-047", "API-058", "UI-091", "SEC-016", "SEC-019", "SEC-020", "SEC-027", "SEC-028", "SEC-029", "TEST-084-095", "TEST-100-104"],
+  "relevant_docs": ["BR-RES-*", "BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "BR-DEP-004", "BR-DEP-005", "BR-DEP-006", "DB-RES-*", "TEST-024", "TEST-025", "TEST-026", "TEST-027", "TEST-028", "TEST-029"],
   "repair": {
-    "tranche_id": "V1-028",
+    "tranche_id": "V1-029",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -862,47 +862,48 @@
     "tranche_id": "V1-026"
   },
   "review": {
-    "complete_candidate_paths": 18,
-    "corrected_findings": 14,
+    "complete_candidate_paths": 11,
+    "corrected_findings": 5,
     "final_local_checks": [
-      "PASS: exact 18-path diff reviewed against baseline 762d71c95cdb1b83a1d4303b116cd9ca6b37f119",
-      "PASS: durable replay, PostgreSQL privileges, explicit revision 17 to 18 upgrade, effective dating, and pagination",
-      "PASS: capability, CSRF, privacy, idempotency, concurrency, and accessible bounded failure diagnostics",
-      "PASS: canonical documents and V1_ROADMAP unchanged; V1-029 remains held"
+      "PASS: final complete deterministic verification profile 15/15",
+      "PASS: git diff --check",
+      "PASS: publication guard"
     ],
     "final_verdict": "PASS",
-    "initial_findings": 14,
-    "review_kind": "fresh_read_only_exact_final_diff",
-    "reviewed_patch_sha256": "874c3d7df2aa9d0085f3afab5f264c47fb149e1c8c6a8ca9998cec043c2b4b07",
+    "initial_findings": 4,
+    "review_kind": "fresh_read_only_exact_final_diff_required",
+    "reviewed_patch_sha256": "9a3ec8fd589ed16decf20d2c4c8eefe5abd222fe0f6ead9c26361162b4225249",
+    "follow_up_findings": 1,
     "status": "PASS",
-    "tranche_id": "V1-028"
+    "tranche_id": "V1-029"
   },
   "risk_class": "high",
   "roadmap": {
     "completed": 28,
-    "current_id": "V1-028",
+    "current_id": "V1-029",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Implement the approved bounded candidate: Configuration API and administration UI",
+  "status": "verified_unpublished",
+  "task": "Implement the approved bounded candidate: Reservation and reservation-deposit persistence",
   "tests": [
-    "PASS: final complete deterministic verification profile 15/15",
-    "PASS: backend 577 passed with 196 expected environment skips",
-    "PASS: frontend 178 passed",
-    "PASS: disposable PostgreSQL 200 passed, including explicit V1-027 to V1-028 upgrade and durable replay",
-    "PASS: automation routing 182 passed plus compact-state routing and visibility watchdog",
-    "PASS: formatting, linting, typing, builds, dependency audit, traceability, JSON, roadmap, shell syntax, publication guard, and git diff checks"
+    "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-029-pre-review.json",
+    "PASS: fresh complete deterministic verification profile 15/15 after four independent-review corrections; /private/tmp/property-rental-v1-029-post-review-fixes.json",
+    "PASS: final complete deterministic verification profile 15/15 after correcting the follow-up traceability finding; /private/tmp/property-rental-v1-029-final-verification.json",
+    "PASS: 579 backend tests; 207 expected environment skips",
+    "PASS: 178 frontend tests",
+    "PASS: 212 real disposable PostgreSQL migration, upgrade, runtime-role, and concurrency tests after four independent-review corrections",
+    "PASS: 182 automation routing tests plus compact-state and visibility-watchdog suites"
   ],
-  "tests_tranche_id": "V1-028",
-  "timestamp": "2026-08-25T12:28:00Z",
+  "tests_tranche_id": "V1-029",
+  "timestamp": "2026-08-25T14:03:03Z",
   "touched_areas": [
-    "effective-dated Service and Utility configuration APIs",
-    "exchange-rate confirmation and history API",
-    "capability-checked administration UI",
-    "CSRF, idempotency, concurrency, pagination, privacy, and accessible failure handling"
+    "reservation lifecycle persistence",
+    "unit exclusivity and concurrent reservation protection",
+    "expiry and extension history",
+    "reservation-deposit continuity and source linkage"
   ],
-  "tranche": "Configuration API and administration UI"
+  "tranche": "Reservation and reservation-deposit persistence"
 }

@@ -3627,7 +3627,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260825_18",)
+                assert cursor.fetchone() == ("20260825_19",)
 
 
 def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
@@ -4256,7 +4256,7 @@ def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260825_18",)
+                assert cursor.fetchone() == ("20260825_19",)
                 cursor.execute(
                     """
                     SELECT id, code, display_name, accepted, created_by, updated_by
@@ -4355,3 +4355,82 @@ def test_v1_028_upgrade_preserves_v1_027_exchange_rate_history() -> None:
             assert row[4] == "Preserved V1-027 quote"
             assert row[5] == applicable_at
             assert row[6] == trace
+
+
+def test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data() -> None:
+    """Upgrade revision 18 without rewriting predecessor identities or granting DML."""
+    with _temporary_migration_database("prm_v1_029_upgrade") as migration_url:
+        assert _run_alembic("upgrade", "20260825_18").returncode == 0
+        actor_id = uuid.uuid4()
+        property_id = uuid.uuid4()
+        unit_id = uuid.uuid4()
+        customer_id = uuid.uuid4()
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, %s, 'V1-029 Upgrade Actor', 'V1-029 Upgrade Actor',
+                              'active', 'optional', 'migration-regression')
+                    """,
+                    (actor_id, f"v1-029-upgrade-{actor_id.hex}"),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO app.properties (id, name, created_by, updated_by)
+                    VALUES (%s, 'V1-029 Upgrade Property', %s, %s)
+                    """,
+                    (property_id, actor_id, actor_id),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO app.units (
+                        id, property_id, unit_number, floor, unit_type, status,
+                        created_by, updated_by
+                    ) VALUES (%s, %s, 'UPGRADE-029', '1', 'ONE_BEDROOM',
+                              'VACANT', %s, %s)
+                    """,
+                    (unit_id, property_id, actor_id, actor_id),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO app.customers (
+                        id, legal_name, created_by, updated_by
+                    ) VALUES (%s, 'V1-029 Upgrade Customer', %s, %s)
+                    """,
+                    (customer_id, actor_id, actor_id),
+                )
+            connection.commit()
+
+        result = _run_alembic("upgrade", "head")
+
+        assert result.returncode == 0, result.stderr
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT version_num FROM alembic_version")
+                assert cursor.fetchone() == ("20260825_19",)
+                cursor.execute(
+                    """
+                    SELECT unit.id, unit.property_id, unit.status, customer.id
+                    FROM app.units AS unit
+                    CROSS JOIN app.customers AS customer
+                    WHERE unit.id = %s AND customer.id = %s
+                    """,
+                    (unit_id, customer_id),
+                )
+                assert cursor.fetchone() == (unit_id, property_id, "VACANT", customer_id)
+                cursor.execute(
+                    """
+                    SELECT
+                        (SELECT count(*) FROM app.reservations),
+                        (SELECT count(*) FROM app.deposits),
+                        has_table_privilege('prm_runtime', 'app.reservations', 'SELECT'),
+                        has_table_privilege('prm_runtime', 'app.reservations', 'INSERT'),
+                        has_table_privilege(
+                            'prm_runtime', 'app.reservation_commands', 'SELECT'
+                        )
+                    """
+                )
+                assert cursor.fetchone() == (0, 0, True, False, False)

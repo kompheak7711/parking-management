@@ -7714,6 +7714,110 @@
       "test_path": "frontend/src/ConfigurationManagement.test.tsx",
       "status": "implemented",
       "notes": "An authorization failure remains privacy-safe while announcing only the bounded canonical request reference and safe field identifier for support correlation."
+    },
+    {
+      "test_id": "test_activation_persists_one_reservation_and_continuing_security_deposit",
+      "upstream_ids": ["BR-RES-001", "BR-RES-002", "BR-RES-003", "BR-RES-004", "BR-RES-005", "BR-RES-006", "BR-RES-014", "BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "BR-DEP-004", "BR-DEP-005", "BR-DEP-006", "DB-RES-001", "DB-RES-003", "DB-DEP-001", "DB-DEP-002", "TEST-024"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_migration.py",
+      "status": "implemented",
+      "notes": "One protected PostgreSQL command atomically creates the ACTIVE Reservation, accepted initial amount evidence, continuing Security Deposit, source-linked receipt, Unit state, and immutable audit evidence without a separate Reservation Deposit type."
+    },
+    {
+      "test_id": "test_authorized_variance_is_preserved_and_replay_is_idempotent",
+      "upstream_ids": ["BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "BR-DEP-004", "DB-RES-003", "TEST-024"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_migration.py",
+      "status": "implemented",
+      "notes": "The database preserves the 20 percent suggestion, an explicitly authorized accepted variance and calculation trace, while replaying an identical command exactly and rejecting digest reuse."
+    },
+    {
+      "test_id": "test_extension_is_single_bounded_and_preserves_original_history",
+      "upstream_ids": ["BR-RES-007", "BR-RES-008", "BR-RES-009", "BR-RES-010", "BR-RES-015", "BR-RES-017", "BR-RES-018", "BR-RES-019", "DB-RES-001", "DB-RES-002", "TEST-027"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_migration.py",
+      "status": "implemented",
+      "notes": "A protected extension command enforces the eligibility window, one bounded extension, immutable original and prior expirations, authorization evidence, idempotent replay, and rejection of a second extension."
+    },
+    {
+      "test_id": "test_expired_reservation_cannot_be_retroactively_extended",
+      "upstream_ids": ["BR-RES-007", "BR-RES-015", "DB-RES-001", "DB-RES-002", "TEST-027"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_migration.py",
+      "status": "implemented",
+      "notes": "Extension eligibility uses the actual current Property-local business date, so a caller cannot backdate approval evidence to extend an already expired Reservation."
+    },
+    {
+      "test_id": "test_extension_notice_requires_atomic_reservation_update",
+      "upstream_ids": ["BR-RES-009", "BR-RES-010", "DB-RES-001", "DB-RES-002", "TEST-027"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_migration.py",
+      "status": "implemented",
+      "notes": "A deferred cross-table invariant rejects an Extension Notice unless the same transaction applies its exact new effective expiration to the ACTIVE Reservation."
+    },
+    {
+      "test_id": "test_database_rejects_invalid_dates_statuses_and_history_rewrite",
+      "upstream_ids": ["BR-RES-003", "DB-RES-001", "DB-RES-002", "DB-RES-003"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_migration.py",
+      "status": "implemented",
+      "notes": "Persistence rejects invented Reservation statuses and destructive history rewrites and holds completion and cancellation outcome orchestration behind their later Lease and approved disposition boundaries; it does not claim those later workflows."
+    },
+    {
+      "test_id": "test_received_deposit_cannot_exceed_required_liability",
+      "upstream_ids": ["BR-DEP-001", "BR-DEP-002", "BR-DEP-004", "BR-DEP-005", "BR-DEP-006", "DB-DEP-001", "DB-DEP-002", "TEST-024"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_migration.py",
+      "status": "implemented",
+      "notes": "Additional source-linked receipts may continue the same Security Deposit only up to its preserved required liability; the initial accepted amount and original receipt remain immutable."
+    },
+    {
+      "test_id": "test_activation_bundle_requires_exact_accepted_receipt",
+      "upstream_ids": ["BR-RES-004", "BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "DB-RES-001", "DB-RES-003", "DB-DEP-001", "DB-DEP-002", "TEST-024"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_migration.py",
+      "status": "implemented",
+      "notes": "The deferred activation invariant rejects a transaction whose receipt total exceeds the exact explicitly accepted initial Security Deposit amount, even when it remains below the full liability."
+    },
+    {
+      "test_id": "test_concurrent_attempts_hold_one_unit_exactly_once",
+      "upstream_ids": ["BR-RES-001", "BR-RES-002", "BR-RES-004", "DB-RES-001", "TEST-025"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_migration.py",
+      "status": "implemented",
+      "notes": "Two real concurrent PostgreSQL transactions contend for one Unit and exactly one can commit an ACTIVE Reservation and its activation bundle."
+    },
+    {
+      "test_id": "test_runtime_is_read_only_except_for_bounded_commands",
+      "upstream_ids": ["DB-RES-001", "DB-RES-002", "DB-RES-003", "DB-DEP-001", "DB-DEP-002", "TEST-024", "TEST-025", "TEST-027"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_reservation_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role has bounded read access and protected command execution but no direct table mutation or command-ledger access, and an actual runtime activation succeeds through that boundary."
+    },
+    {
+      "test_id": "test_reservation_migration_is_forward_only",
+      "upstream_ids": ["DB-RES-001", "DB-RES-002", "DB-RES-003", "DB-DEP-001", "DB-DEP-002"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_reservation_migration.py",
+      "status": "implemented",
+      "notes": "The Reservation and Security Deposit history migration declares revision 19 over revision 18 and refuses destructive downgrade."
+    },
+    {
+      "test_id": "test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data",
+      "upstream_ids": ["DB-RES-001", "DB-RES-002", "DB-RES-003", "DB-DEP-001", "DB-DEP-002", "TEST-024", "TEST-025"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "An explicit revision 18 to 19 upgrade preserves published Property, Unit, and Customer identities, creates empty Reservation history, and grants only bounded runtime read and command authority."
+    },
+    {
+      "test_id": "test_reservation_and_deposit_persistence_has_bounded_traceability",
+      "upstream_ids": ["BR-RES-001", "BR-RES-002", "BR-RES-003", "BR-RES-004", "BR-RES-005", "BR-RES-006", "BR-RES-007", "BR-RES-008", "BR-RES-009", "BR-RES-010", "BR-RES-014", "BR-RES-015", "BR-RES-017", "BR-RES-018", "BR-RES-019", "BR-DEP-001", "BR-DEP-002", "BR-DEP-003", "BR-DEP-004", "BR-DEP-005", "BR-DEP-006", "DB-RES-001", "DB-RES-002", "DB-RES-003", "DB-DEP-001", "DB-DEP-002", "TEST-024", "TEST-025", "TEST-027"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "The bounded V1-029 manifest covers the implemented Reservation and initial Security Deposit persistence boundary without claiming the held expiration, cancellation-disposition, Lease, Occupancy, or move-in workflows."
     }
   ]
 }
