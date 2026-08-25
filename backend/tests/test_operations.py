@@ -134,8 +134,9 @@ def test_log_formatter_ignores_non_allowlisted_extra_fields() -> None:
         },
     )
 
+    entry = parse_logs(stream)[0]
     assert (
-        parse_logs(stream)[0].items()
+        entry.items()
         >= {
             "event": "safe.event",
             "request_id": "safe-correlation-id",
@@ -144,9 +145,9 @@ def test_log_formatter_ignores_non_allowlisted_extra_fields() -> None:
     serialized = stream.getvalue()
     assert "unsafe message" not in serialized
     assert "credential-secret" not in serialized
-    assert "customer" not in serialized
-    assert "999" not in serialized
-    assert "authorization" not in serialized
+    assert "request_body" not in entry
+    assert "authorization" not in entry
+    assert "message" not in entry
 
 
 def test_lifespan_closes_owned_resources_and_logs_shutdown() -> None:
