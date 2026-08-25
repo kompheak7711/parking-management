@@ -1,4 +1,4 @@
-# V1-026 Customer API and management UI — Node 22 CI correction review passed
+# V1-026 Customer API and management UI — Review 56 passed
 
 - Candidate: `V1-026` — Customer API and management UI.
 - Authorization: Owner-approved direct takeover of `V1-024` through `V1-026` under the
@@ -39,16 +39,32 @@
   publication remains held only for the corrective commit and exact-sha GitHub Actions.
 - Review 54: fresh external Codex review of the exact three-file correction passed with no
   actionable regressions; reviewer session `01a0377e-f320-7893-802e-635e753e27c4` made no edits.
+- Second publication attempt: commit `5a19290` fixed the Node 22 BufferSource failure. Exact-sha
+  run `32815184996` passed backend, dependency-security, and PostgreSQL jobs, but its loaded runner
+  needed 1.159 seconds for TEST-FE-135's async crypto/API/React path and exceeded the test's
+  default one-second query deadline.
+- Timing correction: TEST-FE-135 now uses a bounded five-second asynchronous query deadline.
+  The exact Node 22 test passes ten consecutive stress repetitions and the full 160-test suite.
+- Correction verification: the timing-only diff passes all 15/15 complete-profile gates, including
+  564 backend, 160 frontend, 184 PostgreSQL, and 181 automation tests. Evidence:
+  `/private/tmp/property-rental-v1-026-final-ci-timing-correction.json`. Publication remains held
+  for independent review and exact-sha GitHub Actions.
+- Review 55: the test timeout correction passed review, but the compact state used a descriptive
+  uncommitted status outside the monitoring contract. It now uses canonical `complete_uncommitted`;
+  the real classifier reports a known review/publication lifecycle with no Owner action, and all
+  181 automation tests plus state routing and visibility-watchdog tests pass.
+- Review 56: clean external Codex follow-up review passed with no actionable findings; reviewer
+  session `01a0378e-6219-7360-a8b8-125235147941` made no edits.
 - Token ceiling: 60,000 unchanged.
 - Result: authenticated minimized Customer list, explicit detail/history navigation,
   capability-checked create/update/deactivation, stable identity preservation, and truthful
   financial-source unavailability with Customer credit separate from deposits.
 - Blockers: none.
-- Exact next action: publish the bounded Node 22 correction,
+- Exact next action: publish the timing correction,
   require successful GitHub Actions, finalize without activating V1-027, then restore the supervisor.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation candidate state: V1-026 implementation is pushed; its bounded Node 22 CI correction passed 15/15 gates and Review 54.
-- Automation exact next action: Publish the correction without activating V1-027
+- Automation candidate state: V1-026 timing correction passed all gates and clean Review 56.
+- Automation exact next action: Publish without activating V1-027
     <!-- AUTOMATION_STATUS_END -->

@@ -1974,9 +1974,11 @@ describe("local sign-in", () => {
         name: "Check the prior Customer command status",
       }),
     );
-    const reconcile = await screen.findByRole("button", {
-      name: "I verified the prior Customer command result",
-    });
+    const reconcile = await screen.findByRole(
+      "button",
+      { name: "I verified the prior Customer command result" },
+      { timeout: 5000 },
+    );
     window.localStorage.removeItem(customerReconciliationKey);
     fireEvent.click(reconcile);
 
