@@ -91,7 +91,14 @@
     },
     {
       "test_id": "TEST-FE-012",
-      "upstream_ids": ["UI-092", "UI-111", "UI-112", "TEST-094", "TEST-095", "TEST-135"],
+      "upstream_ids": [
+        "UI-092",
+        "UI-111",
+        "UI-112",
+        "TEST-094",
+        "TEST-095",
+        "TEST-135"
+      ],
       "test_level": "UI component",
       "test_path": "frontend/src/App.test.tsx",
       "status": "implemented",
@@ -339,7 +346,13 @@
     },
     {
       "test_id": "test_request_log_is_structured_correlated_and_omits_sensitive_input",
-      "upstream_ids": ["DEPLOY-009", "DEPLOY-048", "SEC-043", "SEC-064", "TEST-110"],
+      "upstream_ids": [
+        "DEPLOY-009",
+        "DEPLOY-048",
+        "SEC-043",
+        "SEC-064",
+        "TEST-110"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_operations.py",
       "status": "implemented",
@@ -347,7 +360,14 @@
     },
     {
       "test_id": "test_unexpected_exception_log_uses_safe_type_without_exception_diagnostic",
-      "upstream_ids": ["DEPLOY-009", "DEPLOY-048", "SEC-039", "SEC-043", "SEC-064", "TEST-110"],
+      "upstream_ids": [
+        "DEPLOY-009",
+        "DEPLOY-048",
+        "SEC-039",
+        "SEC-043",
+        "SEC-064",
+        "TEST-110"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_operations.py",
       "status": "implemented",
@@ -463,13 +483,7 @@
     },
     {
       "test_id": "test_identity_endpoint_denies_the_wrong_exact_actor_object_scope",
-      "upstream_ids": [
-        "API-009",
-        "SEC-023",
-        "SEC-068",
-        "TEST-011",
-        "TEST-084"
-      ],
+      "upstream_ids": ["API-009", "SEC-023", "SEC-068", "TEST-011", "TEST-084"],
       "test_level": "security",
       "test_path": "backend/tests/test_auth_api.py",
       "status": "implemented",
@@ -538,7 +552,16 @@
     },
     {
       "test_id": "test_missing_capability_and_inactive_sessions_fail_closed",
-      "upstream_ids": ["API-008", "API-009", "API-079", "API-080", "SEC-014", "SEC-017", "SEC-023", "TEST-084"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-079",
+        "API-080",
+        "SEC-014",
+        "SEC-017",
+        "SEC-023",
+        "TEST-084"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
@@ -546,7 +569,15 @@
     },
     {
       "test_id": "test_every_browser_mutation_requires_exact_origin_and_csrf_proof",
-      "upstream_ids": ["API-008", "API-079", "API-080", "SEC-016", "SEC-023", "TEST-085", "TEST-128"],
+      "upstream_ids": [
+        "API-008",
+        "API-079",
+        "API-080",
+        "SEC-016",
+        "SEC-023",
+        "TEST-085",
+        "TEST-128"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
@@ -554,7 +585,14 @@
     },
     {
       "test_id": "test_identifier_mutations_require_exact_object_grants",
-      "upstream_ids": ["API-009", "API-079", "API-080", "SEC-019", "SEC-023", "TEST-084"],
+      "upstream_ids": [
+        "API-009",
+        "API-079",
+        "API-080",
+        "SEC-019",
+        "SEC-023",
+        "TEST-084"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
@@ -562,7 +600,15 @@
     },
     {
       "test_id": "test_account_list_and_creation_are_scoped_audited_and_never_return_credentials",
-      "upstream_ids": ["API-011", "API-012", "API-079", "PR-AUTH-001", "SEC-019", "SEC-020", "SEC-023"],
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-079",
+        "PR-AUTH-001",
+        "SEC-019",
+        "SEC-020",
+        "SEC-023"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
@@ -570,7 +616,14 @@
     },
     {
       "test_id": "test_account_disable_and_explicit_session_revocation_use_authoritative_resource_scope",
-      "upstream_ids": ["API-006", "API-009", "API-079", "PR-AUTH-001", "SEC-019", "SEC-023"],
+      "upstream_ids": [
+        "API-006",
+        "API-009",
+        "API-079",
+        "PR-AUTH-001",
+        "SEC-019",
+        "SEC-023"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
@@ -578,7 +631,14 @@
     },
     {
       "test_id": "test_mutable_resources_expose_versions_and_reject_missing_invalid_or_stale_preconditions",
-      "upstream_ids": ["API-006", "API-014", "API-079", "API-080", "TEST-088", "TEST-090"],
+      "upstream_ids": [
+        "API-006",
+        "API-014",
+        "API-079",
+        "API-080",
+        "TEST-088",
+        "TEST-090"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
@@ -586,7 +646,14 @@
     },
     {
       "test_id": "test_disable_and_privilege_reduction_bind_audit_and_session_revocation_atomically",
-      "upstream_ids": ["API-079", "API-080", "SEC-014", "SEC-017", "SEC-023", "TEST-084"],
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "SEC-014",
+        "SEC-017",
+        "SEC-023",
+        "TEST-084"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
@@ -594,7 +661,14 @@
     },
     {
       "test_id": "test_capabilities_and_role_bundles_are_data_not_role_title_authority",
-      "upstream_ids": ["API-011", "API-080", "SEC-020", "SEC-021", "SEC-022", "SEC-023"],
+      "upstream_ids": [
+        "API-011",
+        "API-080",
+        "SEC-020",
+        "SEC-021",
+        "SEC-022",
+        "SEC-023"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
@@ -618,7 +692,15 @@
     },
     {
       "test_id": "test_role_assignment_validates_both_resource_properties_before_mutation",
-      "upstream_ids": ["API-009", "API-011", "API-080", "SEC-019", "SEC-021", "SEC-023", "TEST-087"],
+      "upstream_ids": [
+        "API-009",
+        "API-011",
+        "API-080",
+        "SEC-019",
+        "SEC-021",
+        "SEC-023",
+        "TEST-087"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
@@ -626,7 +708,15 @@
     },
     {
       "test_id": "test_mutation_results_must_match_every_requested_identifier",
-      "upstream_ids": ["API-009", "API-079", "API-080", "SEC-019", "SEC-023", "TEST-087", "TEST-088"],
+      "upstream_ids": [
+        "API-009",
+        "API-079",
+        "API-080",
+        "SEC-019",
+        "SEC-023",
+        "TEST-087",
+        "TEST-088"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
@@ -666,7 +756,14 @@
     },
     {
       "test_id": "test_client_role_capability_and_property_headers_never_create_authority",
-      "upstream_ids": ["API-079", "API-080", "PR-AUTH-001", "SEC-019", "SEC-021", "SEC-023"],
+      "upstream_ids": [
+        "API-079",
+        "API-080",
+        "PR-AUTH-001",
+        "SEC-019",
+        "SEC-021",
+        "SEC-023"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_access_admin_api.py",
       "status": "implemented",
@@ -928,7 +1025,14 @@
     },
     {
       "test_id": "test_repository_normalizes_username_through_local_account_persistence",
-      "upstream_ids": ["DB-AUTH-001", "TEST-108", "SEC-009", "SEC-013", "DL-055", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "TEST-108",
+        "SEC-009",
+        "SEC-013",
+        "DL-055",
+        "DL-056"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_local_authentication.py",
       "status": "implemented",
@@ -936,7 +1040,16 @@
     },
     {
       "test_id": "test_authenticates_active_local_account_with_phase_2e_verifier",
-      "upstream_ids": ["PR-CAP-009", "DB-AUTH-002", "API-096", "TEST-108", "SEC-010", "SEC-013", "DL-055", "DL-056"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "DB-AUTH-002",
+        "API-096",
+        "TEST-108",
+        "SEC-010",
+        "SEC-013",
+        "DL-055",
+        "DL-056"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_local_authentication.py",
       "status": "implemented",
@@ -944,7 +1057,15 @@
     },
     {
       "test_id": "test_rejections_are_generic_and_perform_one_argon2id_verification",
-      "upstream_ids": ["PR-CAP-009", "DB-AUTH-001", "DB-AUTH-002", "API-096", "TEST-108", "SEC-010", "DL-055"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "DB-AUTH-001",
+        "DB-AUTH-002",
+        "API-096",
+        "TEST-108",
+        "SEC-010",
+        "DL-055"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_local_authentication.py",
       "status": "implemented",
@@ -968,7 +1089,13 @@
     },
     {
       "test_id": "test_authentication_throttles_normalized_username_variants_before_lookup",
-      "upstream_ids": ["DB-AUTH-001", "API-096", "TEST-108", "SEC-012", "DL-055"],
+      "upstream_ids": [
+        "DB-AUTH-001",
+        "API-096",
+        "TEST-108",
+        "SEC-012",
+        "DL-055"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_local_authentication.py",
       "status": "implemented",
@@ -984,7 +1111,14 @@
     },
     {
       "test_id": "test_local_login_security_requirements_have_implemented_traceability",
-      "upstream_ids": ["TEST-002", "TEST-108", "SEC-009", "SEC-010", "SEC-012", "DL-055"],
+      "upstream_ids": [
+        "TEST-002",
+        "TEST-108",
+        "SEC-009",
+        "SEC-010",
+        "SEC-012",
+        "DL-055"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -992,7 +1126,13 @@
     },
     {
       "test_id": "test_mfa_policy_matrix_controls_normal_actor_establishment",
-      "upstream_ids": ["PR-CAP-009", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_mfa_policy.py",
       "status": "implemented",
@@ -1008,7 +1148,13 @@
     },
     {
       "test_id": "test_mfa_policy_audit_evidence_is_immutable",
-      "upstream_ids": ["PR-CAP-009", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_mfa_policy.py",
       "status": "implemented",
@@ -1040,7 +1186,13 @@
     },
     {
       "test_id": "test_session_expires_at_fixed_thirty_minute_inactivity_boundary",
-      "upstream_ids": ["PR-CAP-009", "API-097", "TEST-131", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-097",
+        "TEST-131",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_browser_session.py",
       "status": "implemented",
@@ -1048,7 +1200,13 @@
     },
     {
       "test_id": "test_recent_activity_never_extends_fixed_twenty_four_hour_absolute_expiry",
-      "upstream_ids": ["PR-CAP-009", "API-097", "TEST-131", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-097",
+        "TEST-131",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_browser_session.py",
       "status": "implemented",
@@ -1120,7 +1278,14 @@
     },
     {
       "test_id": "test_administrative_recovery_authorization_matrix_grants_only_owner_to_manager_or_staff",
-      "upstream_ids": ["PR-CAP-009", "API-099", "TEST-130", "SEC-072", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-099",
+        "TEST-130",
+        "SEC-072",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_administrative_recovery.py",
       "status": "implemented",
@@ -1128,7 +1293,14 @@
     },
     {
       "test_id": "test_self_recovery_is_not_granted_for_any_account_class",
-      "upstream_ids": ["PR-CAP-009", "API-099", "TEST-130", "SEC-072", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-099",
+        "TEST-130",
+        "SEC-072",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_administrative_recovery.py",
       "status": "implemented",
@@ -1136,7 +1308,14 @@
     },
     {
       "test_id": "test_unknown_actor_or_target_class_fails_closed",
-      "upstream_ids": ["PR-CAP-009", "API-099", "TEST-130", "SEC-072", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-099",
+        "TEST-130",
+        "SEC-072",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_administrative_recovery.py",
       "status": "implemented",
@@ -1144,7 +1323,14 @@
     },
     {
       "test_id": "test_recovery_authorization_audit_evidence_is_bounded_and_secret_free",
-      "upstream_ids": ["PR-CAP-009", "API-099", "TEST-130", "SEC-072", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-099",
+        "TEST-130",
+        "SEC-072",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_administrative_recovery.py",
       "status": "implemented",
@@ -1152,7 +1338,14 @@
     },
     {
       "test_id": "test_administrative_recovery_requirements_have_implemented_traceability",
-      "upstream_ids": ["PR-CAP-009", "API-099", "TEST-130", "SEC-072", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-099",
+        "TEST-130",
+        "SEC-072",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -1160,7 +1353,15 @@
     },
     {
       "test_id": "test_recovery_code_storage_has_bounded_set_and_code_columns",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "migration",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1168,7 +1369,15 @@
     },
     {
       "test_id": "test_recovery_codes_have_independent_immutable_identities_and_consumption",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1176,7 +1385,15 @@
     },
     {
       "test_id": "test_recovery_code_set_identity_and_completed_invalidation_are_immutable",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1184,7 +1401,15 @@
     },
     {
       "test_id": "test_recovery_codes_reject_unprotected_or_incomplete_verifier_material",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1192,7 +1417,15 @@
     },
     {
       "test_id": "test_recovery_code_lifecycle_timestamps_require_complete_provenance",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1200,7 +1433,15 @@
     },
     {
       "test_id": "test_runtime_has_only_bounded_recovery_code_lifecycle_privileges",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1208,7 +1449,15 @@
     },
     {
       "test_id": "test_runtime_can_insert_bounded_recovery_code_verifier_rows",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1216,7 +1465,15 @@
     },
     {
       "test_id": "test_recovery_code_migration_refuses_destructive_downgrade",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "migration",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1224,7 +1481,15 @@
     },
     {
       "test_id": "test_recovery_code_persistence_foundation_has_bounded_traceability",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -1232,7 +1497,14 @@
     },
     {
       "test_id": "test_protected_presentation_is_recorded_only_once_without_returning_code_material",
-      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_lifecycle.py",
       "status": "implemented",
@@ -1240,7 +1512,14 @@
     },
     {
       "test_id": "test_unprotected_presentation_fails_closed_without_changing_state",
-      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_lifecycle.py",
       "status": "implemented",
@@ -1248,7 +1527,14 @@
     },
     {
       "test_id": "test_successful_use_consumes_only_the_matching_code",
-      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_lifecycle.py",
       "status": "implemented",
@@ -1256,7 +1542,14 @@
     },
     {
       "test_id": "test_consumed_code_reuse_is_rejected_without_state_change",
-      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_lifecycle.py",
       "status": "implemented",
@@ -1264,7 +1557,14 @@
     },
     {
       "test_id": "test_regeneration_invalidates_every_old_verifier_and_rejects_old_code",
-      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_lifecycle.py",
       "status": "implemented",
@@ -1272,7 +1572,14 @@
     },
     {
       "test_id": "test_unprotected_regeneration_is_rejected_without_invalidating_codes",
-      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_lifecycle.py",
       "status": "implemented",
@@ -1280,7 +1587,14 @@
     },
     {
       "test_id": "test_invalid_lifecycle_state_fails_closed_before_verification",
-      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_lifecycle.py",
       "status": "implemented",
@@ -1288,7 +1602,14 @@
     },
     {
       "test_id": "test_unmatched_or_ambiguous_verification_is_generically_rejected",
-      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_lifecycle.py",
       "status": "implemented",
@@ -1296,7 +1617,14 @@
     },
     {
       "test_id": "test_code_cannot_be_consumed_before_protected_presentation_is_recorded",
-      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_lifecycle.py",
       "status": "implemented",
@@ -1304,7 +1632,14 @@
     },
     {
       "test_id": "test_presentation_and_regeneration_fail_closed_on_invalid_state",
-      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_lifecycle.py",
       "status": "implemented",
@@ -1312,7 +1647,14 @@
     },
     {
       "test_id": "test_verification_provider_failure_is_a_secret_free_closed_rejection",
-      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_lifecycle.py",
       "status": "implemented",
@@ -1320,7 +1662,14 @@
     },
     {
       "test_id": "test_lifecycle_audit_evidence_is_fixed_bounded_and_excludes_secret_material",
-      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_lifecycle.py",
       "status": "implemented",
@@ -1328,7 +1677,14 @@
     },
     {
       "test_id": "test_recovery_code_lifecycle_foundation_has_bounded_traceability",
-      "upstream_ids": ["PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -1336,7 +1692,15 @@
     },
     {
       "test_id": "test_secure_generator_requests_independent_high_entropy_material",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_security.py",
       "status": "implemented",
@@ -1344,7 +1708,15 @@
     },
     {
       "test_id": "test_verifier_provider_contract_encodes_and_verifies_independently_salted_codes",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_security.py",
       "status": "implemented",
@@ -1352,7 +1724,15 @@
     },
     {
       "test_id": "test_verifier_provider_rejects_malformed_code_input",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_security.py",
       "status": "implemented",
@@ -1360,7 +1740,15 @@
     },
     {
       "test_id": "test_verifier_provider_fails_closed_for_malformed_verification_input",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_security.py",
       "status": "implemented",
@@ -1368,7 +1756,15 @@
     },
     {
       "test_id": "test_verifier_output_is_non_plaintext_and_has_no_reversible_material",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_security.py",
       "status": "implemented",
@@ -1376,7 +1772,15 @@
     },
     {
       "test_id": "test_code_and_verifier_operations_do_not_emit_or_represent_secret_material",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_security.py",
       "status": "implemented",
@@ -1384,7 +1788,15 @@
     },
     {
       "test_id": "test_recovery_code_cryptographic_provider_foundation_has_bounded_traceability",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -1400,7 +1812,13 @@
     },
     {
       "test_id": "test_deployment_examples_define_six_distinct_database_identities",
-      "upstream_ids": ["SEC-045", "SEC-047", "DEPLOY-065", "DEPLOY-066", "TEST-111"],
+      "upstream_ids": [
+        "SEC-045",
+        "SEC-047",
+        "DEPLOY-065",
+        "DEPLOY-066",
+        "TEST-111"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_deployment_scaffolding.py",
       "status": "implemented",
@@ -1408,7 +1826,14 @@
     },
     {
       "test_id": "test_readme_password_file_inventory_matches_env_compose_and_postgres_init",
-      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "DEPLOY-070", "DEPLOY-072", "DL-059"],
+      "upstream_ids": [
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "DEPLOY-070",
+        "DEPLOY-072",
+        "DL-059"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_deployment_scaffolding.py",
       "status": "implemented",
@@ -1416,7 +1841,13 @@
     },
     {
       "test_id": "test_deployment_examples_use_separate_environment_bound_protected_sources",
-      "upstream_ids": ["SEC-049", "SEC-050", "DEPLOY-017", "DEPLOY-018", "DEPLOY-019"],
+      "upstream_ids": [
+        "SEC-049",
+        "SEC-050",
+        "DEPLOY-017",
+        "DEPLOY-018",
+        "DEPLOY-019"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_deployment_scaffolding.py",
       "status": "implemented",
@@ -1424,7 +1855,13 @@
     },
     {
       "test_id": "test_production_profile_fails_closed_without_resolved_secret_sources",
-      "upstream_ids": ["SEC-049", "SEC-050", "DEPLOY-017", "DEPLOY-019", "DEPLOY-065"],
+      "upstream_ids": [
+        "SEC-049",
+        "SEC-050",
+        "DEPLOY-017",
+        "DEPLOY-019",
+        "DEPLOY-065"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_deployment_scaffolding.py",
       "status": "implemented",
@@ -1464,7 +1901,20 @@
     },
     {
       "test_id": "test_postgres_bootstrap_avoids_secret_command_arguments_and_limits_admin_roles",
-      "upstream_ids": ["SEC-045", "SEC-047", "SEC-049", "SEC-075", "DEPLOY-062", "DEPLOY-065", "DEPLOY-066", "DEPLOY-070", "DEPLOY-072", "TEST-111", "TEST-134", "DL-059"],
+      "upstream_ids": [
+        "SEC-045",
+        "SEC-047",
+        "SEC-049",
+        "SEC-075",
+        "DEPLOY-062",
+        "DEPLOY-065",
+        "DEPLOY-066",
+        "DEPLOY-070",
+        "DEPLOY-072",
+        "TEST-111",
+        "TEST-134",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_deployment_scaffolding.py",
       "status": "implemented",
@@ -1472,7 +1922,14 @@
     },
     {
       "test_id": "test_protected_bootstrap_migration_requires_preprovisioned_bounded_role",
-      "upstream_ids": ["TEST-134", "SEC-075", "DEPLOY-070", "DEPLOY-071", "DEPLOY-072", "DL-059"],
+      "upstream_ids": [
+        "TEST-134",
+        "SEC-075",
+        "DEPLOY-070",
+        "DEPLOY-071",
+        "DEPLOY-072",
+        "DL-059"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_deployment_scaffolding.py",
       "status": "implemented",
@@ -1480,7 +1937,13 @@
     },
     {
       "test_id": "test_database_test_secret_files_are_readable_by_native_linux_container_user",
-      "upstream_ids": ["SEC-049", "SEC-050", "DEPLOY-017", "DEPLOY-018", "TEST-110"],
+      "upstream_ids": [
+        "SEC-049",
+        "SEC-050",
+        "DEPLOY-017",
+        "DEPLOY-018",
+        "TEST-110"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_deployment_scaffolding.py",
       "status": "implemented",
@@ -1496,7 +1959,19 @@
     },
     {
       "test_id": "test_operational_database_identities_have_separate_least_privilege",
-      "upstream_ids": ["SEC-045", "SEC-047", "SEC-073", "DEPLOY-062", "DEPLOY-065", "DEPLOY-066", "DEPLOY-070", "TEST-111", "TEST-133", "TEST-134", "DL-059"],
+      "upstream_ids": [
+        "SEC-045",
+        "SEC-047",
+        "SEC-073",
+        "DEPLOY-062",
+        "DEPLOY-065",
+        "DEPLOY-066",
+        "DEPLOY-070",
+        "TEST-111",
+        "TEST-133",
+        "TEST-134",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1504,7 +1979,15 @@
     },
     {
       "test_id": "test_authorized_issuance_persists_independent_verifiers_before_one_time_return",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_issuance.py",
       "status": "implemented",
@@ -1512,7 +1995,15 @@
     },
     {
       "test_id": "test_unauthorized_caller_is_rejected_before_secret_generation_or_persistence",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_issuance.py",
       "status": "implemented",
@@ -1520,7 +2011,15 @@
     },
     {
       "test_id": "test_authorization_provider_failure_is_a_generic_pre_generation_rejection",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_issuance.py",
       "status": "implemented",
@@ -1528,7 +2027,15 @@
     },
     {
       "test_id": "test_provider_failure_is_generic_and_never_persists_partial_set",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_issuance.py",
       "status": "implemented",
@@ -1536,7 +2043,15 @@
     },
     {
       "test_id": "test_persistence_failure_records_secret_free_generic_failure_evidence",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_issuance.py",
       "status": "implemented",
@@ -1544,7 +2059,15 @@
     },
     {
       "test_id": "test_duplicate_generated_material_fails_before_persisting_a_non_independent_set",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_issuance.py",
       "status": "implemented",
@@ -1552,7 +2075,15 @@
     },
     {
       "test_id": "test_issuance_contract_rejects_empty_set_configuration",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_recovery_code_issuance.py",
       "status": "implemented",
@@ -1560,7 +2091,15 @@
     },
     {
       "test_id": "test_issuance_request_rejects_invalid_nonsecret_context",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_issuance.py",
       "status": "implemented",
@@ -1568,7 +2107,15 @@
     },
     {
       "test_id": "test_postgres_repository_commits_complete_set_and_verifiers_as_one_transaction",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_recovery_code_issuance.py",
       "status": "implemented",
@@ -1576,7 +2123,15 @@
     },
     {
       "test_id": "test_postgres_repository_rolls_back_deterministically_on_partial_insert_failure",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_recovery_code_issuance.py",
       "status": "implemented",
@@ -1584,7 +2139,15 @@
     },
     {
       "test_id": "test_issuance_does_not_represent_log_or_retain_plaintext_in_service_state",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_issuance.py",
       "status": "implemented",
@@ -1592,7 +2155,15 @@
     },
     {
       "test_id": "test_caller_owned_presentation_releases_plaintext_only_once",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_issuance.py",
       "status": "implemented",
@@ -1600,7 +2171,15 @@
     },
     {
       "test_id": "test_published_generator_and_verifier_satisfy_issuance_provider_contracts",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "integration",
       "test_path": "backend/tests/test_recovery_code_issuance.py",
       "status": "implemented",
@@ -1608,7 +2187,15 @@
     },
     {
       "test_id": "test_recovery_code_set_issuance_foundation_has_bounded_traceability",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -1616,7 +2203,15 @@
     },
     {
       "test_id": "test_consumption_composes_lifecycle_verifier_and_atomic_repository_once",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_consumption.py",
       "status": "implemented",
@@ -1624,7 +2219,15 @@
     },
     {
       "test_id": "test_non_active_matching_code_has_one_generic_outcome_without_persistence",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_consumption.py",
       "status": "implemented",
@@ -1632,7 +2235,15 @@
     },
     {
       "test_id": "test_persistence_failure_fails_closed_with_secret_free_immutable_evidence",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_consumption.py",
       "status": "implemented",
@@ -1640,7 +2251,15 @@
     },
     {
       "test_id": "test_postgres_repository_locks_exact_set_and_conditionally_consumes_one_row",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_recovery_code_consumption.py",
       "status": "implemented",
@@ -1648,7 +2267,15 @@
     },
     {
       "test_id": "test_postgres_repository_rolls_back_when_conditional_consumption_loses_race",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_recovery_code_consumption.py",
       "status": "implemented",
@@ -1656,7 +2283,15 @@
     },
     {
       "test_id": "test_committed_postgres_evidence_keeps_success_truthful_when_audit_sink_fails",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_consumption.py",
       "status": "implemented",
@@ -1664,7 +2299,15 @@
     },
     {
       "test_id": "test_recovery_code_consumption_adapter_is_atomic_and_single_use_on_postgresql",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1672,7 +2315,15 @@
     },
     {
       "test_id": "test_recovery_code_consumption_orchestration_has_bounded_traceability",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -1680,7 +2331,15 @@
     },
     {
       "test_id": "test_authorized_regeneration_atomically_replaces_prior_set_before_one_time_return",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1688,7 +2347,15 @@
     },
     {
       "test_id": "test_unauthorized_regeneration_is_rejected_before_secret_generation",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1696,7 +2363,15 @@
     },
     {
       "test_id": "test_authorization_failure_is_a_generic_pre_generation_rejection",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1704,7 +2379,15 @@
     },
     {
       "test_id": "test_rejection_audit_failure_remains_generic_and_pre_generation",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1712,7 +2395,15 @@
     },
     {
       "test_id": "test_replacement_persistence_failure_is_generic_and_preserves_prior_set",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1720,7 +2411,15 @@
     },
     {
       "test_id": "test_failure_audit_unavailability_preserves_one_generic_closed_failure",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1728,7 +2427,15 @@
     },
     {
       "test_id": "test_verifier_failure_does_not_chain_generated_plaintext",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1736,7 +2443,15 @@
     },
     {
       "test_id": "test_identifier_failure_is_generic_and_audited_without_active_exception",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1744,7 +2459,15 @@
     },
     {
       "test_id": "test_duplicate_replacement_material_fails_before_prior_set_invalidation",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1752,7 +2475,15 @@
     },
     {
       "test_id": "test_published_providers_create_independently_salted_replacement_verifiers",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "integration",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1760,7 +2491,15 @@
     },
     {
       "test_id": "test_regeneration_request_rejects_invalid_nonsecret_context",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1768,7 +2507,15 @@
     },
     {
       "test_id": "test_persisted_regeneration_remains_truthful_when_secondary_audit_sink_fails",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1776,7 +2523,15 @@
     },
     {
       "test_id": "test_postgres_repository_locks_invalidates_and_inserts_replacement_in_one_transaction",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1784,7 +2539,15 @@
     },
     {
       "test_id": "test_postgres_repository_rolls_back_when_replacement_insert_fails",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1792,7 +2555,15 @@
     },
     {
       "test_id": "test_postgres_repository_rejects_missing_or_invalidated_prior_set_without_replacement",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_recovery_code_regeneration.py",
       "status": "implemented",
@@ -1800,7 +2571,15 @@
     },
     {
       "test_id": "test_recovery_code_regeneration_is_atomic_and_invalidates_prior_set_on_postgresql",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1808,7 +2587,15 @@
     },
     {
       "test_id": "test_recovery_code_regeneration_orchestration_has_bounded_traceability",
-      "upstream_ids": ["DB-AUTH-003", "PR-CAP-009", "API-098", "TEST-129", "SEC-071", "SEC-075", "DL-058"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "PR-CAP-009",
+        "API-098",
+        "TEST-129",
+        "SEC-071",
+        "SEC-075",
+        "DL-058"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -1816,7 +2603,16 @@
     },
     {
       "test_id": "test_password_reset_revokes_every_applicable_session_through_browser_boundary",
-      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "PR-CAP-009",
+        "API-097",
+        "TEST-131",
+        "TEST-132",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_session_revocation.py",
       "status": "implemented",
@@ -1824,7 +2620,16 @@
     },
     {
       "test_id": "test_revocation_request_rejects_invalid_nonsecret_context",
-      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "PR-CAP-009",
+        "API-097",
+        "TEST-131",
+        "TEST-132",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_session_revocation.py",
       "status": "implemented",
@@ -1832,7 +2637,16 @@
     },
     {
       "test_id": "test_revocation_request_rejects_unapproved_trigger",
-      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "PR-CAP-009",
+        "API-097",
+        "TEST-131",
+        "TEST-132",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_session_revocation.py",
       "status": "implemented",
@@ -1840,7 +2654,16 @@
     },
     {
       "test_id": "test_audit_failure_fails_closed_without_exposing_internal_exception",
-      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "PR-CAP-009",
+        "API-097",
+        "TEST-131",
+        "TEST-132",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_session_revocation.py",
       "status": "implemented",
@@ -1848,7 +2671,16 @@
     },
     {
       "test_id": "test_clock_failure_fails_closed_without_exposing_provider_detail",
-      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "PR-CAP-009",
+        "API-097",
+        "TEST-131",
+        "TEST-132",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_session_revocation.py",
       "status": "implemented",
@@ -1856,7 +2688,16 @@
     },
     {
       "test_id": "test_browser_boundary_failure_is_generic_and_has_no_partial_result",
-      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "PR-CAP-009",
+        "API-097",
+        "TEST-131",
+        "TEST-132",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_session_revocation.py",
       "status": "implemented",
@@ -1864,7 +2705,16 @@
     },
     {
       "test_id": "test_each_approved_trigger_records_the_exact_revocation_reason",
-      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "PR-CAP-009",
+        "API-097",
+        "TEST-131",
+        "TEST-132",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_session_revocation.py",
       "status": "implemented",
@@ -1872,7 +2722,16 @@
     },
     {
       "test_id": "test_revocation_audit_evidence_is_fixed_bounded_and_secret_free",
-      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "PR-CAP-009",
+        "API-097",
+        "TEST-131",
+        "TEST-132",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_session_revocation.py",
       "status": "implemented",
@@ -1880,7 +2739,16 @@
     },
     {
       "test_id": "test_session_revocation_orchestration_has_bounded_traceability",
-      "upstream_ids": ["DB-AUTH-004", "PR-CAP-009", "API-097", "TEST-131", "TEST-132", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "PR-CAP-009",
+        "API-097",
+        "TEST-131",
+        "TEST-132",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -1888,7 +2756,16 @@
     },
     {
       "test_id": "test_guard_returns_established_result_from_transactional_repository",
-      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_initial_owner_bootstrap.py",
       "status": "implemented",
@@ -1896,7 +2773,16 @@
     },
     {
       "test_id": "test_postgres_repository_uses_only_the_guard_in_the_caller_transaction",
-      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_initial_owner_bootstrap.py",
       "status": "implemented",
@@ -1904,7 +2790,16 @@
     },
     {
       "test_id": "test_postgres_repository_returns_generic_failure_to_transaction_owner",
-      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap.py",
       "status": "implemented",
@@ -1912,7 +2807,16 @@
     },
     {
       "test_id": "test_postgres_repository_rejects_missing_or_malformed_database_result",
-      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_initial_owner_bootstrap.py",
       "status": "implemented",
@@ -1920,7 +2824,16 @@
     },
     {
       "test_id": "test_request_requires_uuid_target_and_correlation_identifiers",
-      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap.py",
       "status": "implemented",
@@ -1928,7 +2841,16 @@
     },
     {
       "test_id": "test_initial_owner_bootstrap_closure_storage_is_bounded_and_secret_free",
-      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1936,7 +2858,16 @@
     },
     {
       "test_id": "test_initial_owner_bootstrap_closes_once_and_audits_repeated_attempt",
-      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1944,7 +2875,16 @@
     },
     {
       "test_id": "test_initial_owner_bootstrap_closure_does_not_infer_role_from_mfa_policy",
-      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1952,7 +2892,16 @@
     },
     {
       "test_id": "test_initial_owner_bootstrap_history_rejects_update_delete_and_truncate",
-      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1960,7 +2909,16 @@
     },
     {
       "test_id": "test_runtime_cannot_observe_or_invoke_initial_owner_bootstrap_guard",
-      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1968,7 +2926,16 @@
     },
     {
       "test_id": "test_concurrent_initial_owner_bootstrap_attempts_establish_exactly_one_owner",
-      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1976,7 +2943,16 @@
     },
     {
       "test_id": "test_initial_owner_bootstrap_closure_migration_refuses_destructive_downgrade",
-      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
       "test_level": "migration",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -1984,7 +2960,16 @@
     },
     {
       "test_id": "test_initial_owner_bootstrap_closure_has_bounded_traceability",
-      "upstream_ids": ["DB-AUTH-005", "API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-005",
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DL-059"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -1992,7 +2977,13 @@
     },
     {
       "test_id": "test_totp_matches_rfc_6238_sha1_vectors",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_totp_security.py",
       "status": "implemented",
@@ -2000,7 +2991,13 @@
     },
     {
       "test_id": "test_totp_matches_rfc_6238_algorithm_vectors",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_totp_security.py",
       "status": "implemented",
@@ -2008,7 +3005,13 @@
     },
     {
       "test_id": "test_totp_verification_accepts_exact_counter_and_rejects_wrong_or_malformed_codes",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_totp_security.py",
       "status": "implemented",
@@ -2016,7 +3019,13 @@
     },
     {
       "test_id": "test_secret_generator_requests_fixed_os_entropy_and_returns_base32_material",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_totp_security.py",
       "status": "implemented",
@@ -2024,7 +3033,13 @@
     },
     {
       "test_id": "test_aes_gcm_protection_round_trips_only_with_bound_enrollment_context",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_totp_security.py",
       "status": "implemented",
@@ -2032,7 +3047,13 @@
     },
     {
       "test_id": "test_aes_gcm_protection_rejects_wrong_key_tampering_and_invalid_material",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_totp_security.py",
       "status": "implemented",
@@ -2040,7 +3061,13 @@
     },
     {
       "test_id": "test_aes_gcm_unprotect_rejects_non_byte_material",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_totp_security.py",
       "status": "implemented",
@@ -2048,7 +3075,13 @@
     },
     {
       "test_id": "test_totp_operations_do_not_emit_or_represent_secret_material",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_totp_security.py",
       "status": "implemented",
@@ -2056,7 +3089,13 @@
     },
     {
       "test_id": "test_totp_enrollments_store_only_protected_material_separate_from_account_authority",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2064,7 +3103,13 @@
     },
     {
       "test_id": "test_totp_enrollments_reject_unprotected_or_malformed_verifier_material",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2072,7 +3117,13 @@
     },
     {
       "test_id": "test_totp_enrollment_lifecycle_preserves_secret_and_single_live_enrollment",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2080,7 +3131,13 @@
     },
     {
       "test_id": "test_runtime_has_only_bounded_totp_enrollment_privileges",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2088,7 +3145,13 @@
     },
     {
       "test_id": "test_totp_enrollment_migration_refuses_destructive_downgrade",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "migration",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2096,7 +3159,13 @@
     },
     {
       "test_id": "test_totp_mfa_foundation_has_bounded_traceability",
-      "upstream_ids": ["DB-AUTH-003", "API-096", "TEST-128", "SEC-013", "DL-056"],
+      "upstream_ids": [
+        "DB-AUTH-003",
+        "API-096",
+        "TEST-128",
+        "SEC-013",
+        "DL-056"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -2104,7 +3173,14 @@
     },
     {
       "test_id": "test_browser_sessions_store_only_bounded_protected_lifetime_and_revocation_state",
-      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "API-097",
+        "TEST-131",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2112,7 +3188,14 @@
     },
     {
       "test_id": "test_browser_sessions_reject_unprotected_or_incomplete_token_verifiers",
-      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "API-097",
+        "TEST-131",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2120,7 +3203,14 @@
     },
     {
       "test_id": "test_browser_session_creation_rejects_invalid_fixed_lifetime_state",
-      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "API-097",
+        "TEST-131",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2128,7 +3218,14 @@
     },
     {
       "test_id": "test_browser_session_creation_rejects_revocation_before_creation",
-      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "API-097",
+        "TEST-131",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2136,7 +3233,14 @@
     },
     {
       "test_id": "test_browser_session_activity_and_revocation_are_forward_only_and_retain_history",
-      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "API-097",
+        "TEST-131",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2144,7 +3248,14 @@
     },
     {
       "test_id": "test_browser_session_activity_cannot_revive_an_expired_session",
-      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "API-097",
+        "TEST-131",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2152,7 +3263,14 @@
     },
     {
       "test_id": "test_runtime_has_only_bounded_browser_session_lifecycle_privileges",
-      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "API-097",
+        "TEST-131",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2160,7 +3278,14 @@
     },
     {
       "test_id": "test_runtime_can_persist_and_advance_bounded_browser_session_lifecycle",
-      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "API-097",
+        "TEST-131",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2168,7 +3293,14 @@
     },
     {
       "test_id": "test_browser_session_migration_refuses_destructive_downgrade",
-      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "API-097",
+        "TEST-131",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "migration",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -2176,7 +3308,14 @@
     },
     {
       "test_id": "test_browser_session_persistence_foundation_has_bounded_traceability",
-      "upstream_ids": ["DB-AUTH-004", "API-097", "TEST-131", "SEC-015", "SEC-017", "DL-057"],
+      "upstream_ids": [
+        "DB-AUTH-004",
+        "API-097",
+        "TEST-131",
+        "SEC-015",
+        "SEC-017",
+        "DL-057"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -2184,7 +3323,24 @@
     },
     {
       "test_id": "test_successful_local_login_sets_protected_session_and_csrf_cookies",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2192,7 +3348,24 @@
     },
     {
       "test_id": "test_valid_password_requiring_mfa_sets_only_short_lived_preauthentication_cookie",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2200,7 +3373,24 @@
     },
     {
       "test_id": "test_mfa_required_login_expires_any_existing_authenticated_session",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2208,7 +3398,24 @@
     },
     {
       "test_id": "test_authenticated_login_expires_any_stale_preauthentication_capability",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2216,7 +3423,24 @@
     },
     {
       "test_id": "test_login_rejection_is_generic_and_sets_no_authentication_cookie",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2224,7 +3448,24 @@
     },
     {
       "test_id": "test_totp_challenge_requires_preauthentication_and_csrf_then_establishes_session",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2232,7 +3473,24 @@
     },
     {
       "test_id": "test_recovery_code_challenge_is_transported_exactly_and_establishes_session",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2240,7 +3498,24 @@
     },
     {
       "test_id": "test_rejected_mfa_challenge_returns_generic_unauthorized",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2248,7 +3523,24 @@
     },
     {
       "test_id": "test_required_mfa_enrollment_returns_one_time_totp_provisioning_material",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2256,7 +3548,24 @@
     },
     {
       "test_id": "test_confirmed_mfa_enrollment_activates_totp_and_establishes_session",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2264,7 +3573,24 @@
     },
     {
       "test_id": "test_authenticated_session_inspection_returns_only_bounded_non_secret_state",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2272,7 +3598,24 @@
     },
     {
       "test_id": "test_logout_requires_csrf_revokes_current_session_and_clears_browser_material",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2280,7 +3623,24 @@
     },
     {
       "test_id": "test_reauthentication_records_additional_evidence_without_granting_authority",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2288,7 +3648,24 @@
     },
     {
       "test_id": "test_authentication_routes_fail_closed_when_no_runtime_flow_is_configured",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2296,7 +3673,24 @@
     },
     {
       "test_id": "test_rate_limited_login_returns_generic_429_without_account_disclosure",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2304,7 +3698,24 @@
     },
     {
       "test_id": "test_authentication_mutations_reject_missing_origin_and_csrf_evidence",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2312,7 +3723,24 @@
     },
     {
       "test_id": "test_authentication_mutations_reject_wrong_origin_and_mismatched_csrf_evidence",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2320,7 +3748,24 @@
     },
     {
       "test_id": "test_sms_mfa_is_not_an_accepted_authentication_method",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_authentication_api.py",
       "status": "implemented",
@@ -2328,7 +3773,24 @@
     },
     {
       "test_id": "test_authentication_api_has_bounded_traceability",
-      "upstream_ids": ["API-008", "API-009", "API-010", "API-096", "API-097", "SEC-012", "SEC-013", "SEC-014", "SEC-015", "SEC-016", "SEC-017", "SEC-018", "TEST-108", "TEST-128", "TEST-131", "TEST-132"],
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "API-010",
+        "API-096",
+        "API-097",
+        "SEC-012",
+        "SEC-013",
+        "SEC-014",
+        "SEC-015",
+        "SEC-016",
+        "SEC-017",
+        "SEC-018",
+        "TEST-108",
+        "TEST-128",
+        "TEST-131",
+        "TEST-132"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -2954,7 +4416,15 @@
     },
     {
       "test_id": "test_success_persists_then_presents_exactly_ten_codes_and_acknowledges_before_commit",
-      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "SEC-074", "SEC-075", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
@@ -2962,7 +4432,15 @@
     },
     {
       "test_id": "test_presentation_acknowledgement_timeout_or_totp_failure_rolls_back_completely",
-      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
@@ -2970,7 +4448,15 @@
     },
     {
       "test_id": "test_establishment_or_commit_failure_rolls_back_without_secret_detail",
-      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
@@ -2978,7 +4464,14 @@
     },
     {
       "test_id": "test_closed_bootstrap_audits_through_preflight_without_reading_or_generating_secrets",
-      "upstream_ids": ["API-100", "TEST-134", "SEC-074", "SEC-075", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-134",
+        "SEC-074",
+        "SEC-075",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
@@ -2994,7 +4487,13 @@
     },
     {
       "test_id": "test_recovery_codes_are_written_to_the_dedicated_tty_descriptor_not_stdout",
-      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "SEC-073",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
@@ -3002,7 +4501,14 @@
     },
     {
       "test_id": "test_totp_key_reader_requires_root_owned_private_regular_descriptor",
-      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "DEPLOY-070", "DEPLOY-072", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "SEC-073",
+        "DEPLOY-070",
+        "DEPLOY-072",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
@@ -3010,7 +4516,14 @@
     },
     {
       "test_id": "test_totp_key_reader_rejects_nonroot_or_group_readable_descriptor",
-      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "DEPLOY-070", "DEPLOY-072", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "SEC-073",
+        "DEPLOY-070",
+        "DEPLOY-072",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
@@ -3018,7 +4531,16 @@
     },
     {
       "test_id": "test_tty_timeout_is_an_absolute_deadline_after_partial_input",
-      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "SEC-074", "DEPLOY-070", "DEPLOY-071", "DEPLOY-072", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DEPLOY-071",
+        "DEPLOY-072",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
@@ -3026,7 +4548,16 @@
     },
     {
       "test_id": "test_tty_timeout_is_not_extended_by_trickled_input",
-      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "SEC-074", "DEPLOY-070", "DEPLOY-071", "DEPLOY-072", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DEPLOY-071",
+        "DEPLOY-072",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
@@ -3034,7 +4565,13 @@
     },
     {
       "test_id": "test_controlling_tty_write_completes_short_writes",
-      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "SEC-073",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
@@ -3042,7 +4579,16 @@
     },
     {
       "test_id": "test_main_uses_protected_descriptors_and_dedicated_identity_without_process_output",
-      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DEPLOY-072", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DEPLOY-072",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
@@ -3050,7 +4596,13 @@
     },
     {
       "test_id": "test_password_hashing_normalizes_unicode_to_nfc_before_hashing_and_verification",
-      "upstream_ids": ["DB-AUTH-002", "API-100", "TEST-133", "SEC-073", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-002",
+        "API-100",
+        "TEST-133",
+        "SEC-073",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_password_security.py",
       "status": "implemented",
@@ -3058,7 +4610,13 @@
     },
     {
       "test_id": "test_password_verification_uses_the_complete_value_without_truncation",
-      "upstream_ids": ["DB-AUTH-002", "API-100", "TEST-133", "SEC-073", "DL-059"],
+      "upstream_ids": [
+        "DB-AUTH-002",
+        "API-100",
+        "TEST-133",
+        "SEC-073",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_password_security.py",
       "status": "implemented",
@@ -3066,7 +4624,18 @@
     },
     {
       "test_id": "test_bootstrap_identity_atomically_persists_complete_owner_and_permanently_loses_mutation",
-      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DEPLOY-070", "DEPLOY-071", "DEPLOY-072", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DEPLOY-070",
+        "DEPLOY-071",
+        "DEPLOY-072",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3074,7 +4643,14 @@
     },
     {
       "test_id": "test_protected_bootstrap_migration_rejects_overprivileged_existing_cluster_role",
-      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3082,7 +4658,14 @@
     },
     {
       "test_id": "test_protected_bootstrap_migration_requires_existing_cluster_role_before_schema_change",
-      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3090,7 +4673,14 @@
     },
     {
       "test_id": "test_protected_bootstrap_migration_rejects_preexisting_object_privilege",
-      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3098,7 +4688,14 @@
     },
     {
       "test_id": "test_protected_bootstrap_migration_rejects_public_table_authority",
-      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3106,7 +4703,15 @@
     },
     {
       "test_id": "test_bootstrap_acknowledgement_rollback_removes_every_effect_and_preserves_one_time_grant",
-      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3114,7 +4719,18 @@
     },
     {
       "test_id": "test_protected_initial_owner_bootstrap_has_complete_v1_017_traceability",
-      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DEPLOY-070", "DEPLOY-071", "DEPLOY-072", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DEPLOY-070",
+        "DEPLOY-071",
+        "DEPLOY-072",
+        "DL-059"
+      ],
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
@@ -3130,7 +4746,15 @@
     },
     {
       "test_id": "test_ceremony_deadline_never_resets_and_timeout_before_commit_rolls_back",
-      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "security",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
@@ -3138,7 +4762,14 @@
     },
     {
       "test_id": "test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_reset_route",
-      "upstream_ids": ["API-100", "TEST-134", "SEC-074", "DEPLOY-070", "DEPLOY-071", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-134",
+        "SEC-074",
+        "DEPLOY-070",
+        "DEPLOY-071",
+        "DL-059"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_initial_owner_bootstrap_cli.py",
       "status": "implemented",
@@ -3146,7 +4777,14 @@
     },
     {
       "test_id": "test_protected_bootstrap_migration_rejects_unsafe_role_membership",
-      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3154,7 +4792,14 @@
     },
     {
       "test_id": "test_protected_bootstrap_migration_rejects_target_database_ownership",
-      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3162,7 +4807,16 @@
     },
     {
       "test_id": "test_real_postgresql_production_service_pseudo_tty_failure_rolls_back_every_effect",
-      "upstream_ids": ["API-100", "TEST-133", "TEST-134", "SEC-073", "SEC-074", "SEC-075", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "SEC-075",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "integration",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3170,7 +4824,15 @@
     },
     {
       "test_id": "test_production_recovery_factory_persists_random_codes_with_independent_salts",
-      "upstream_ids": ["API-100", "TEST-133", "SEC-073", "SEC-075", "DEPLOY-070", "DEPLOY-072", "DL-059"],
+      "upstream_ids": [
+        "API-100",
+        "TEST-133",
+        "SEC-073",
+        "SEC-075",
+        "DEPLOY-070",
+        "DEPLOY-072",
+        "DL-059"
+      ],
       "test_level": "integration",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3178,7 +4840,14 @@
     },
     {
       "test_id": "test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_authority",
-      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3186,7 +4855,14 @@
     },
     {
       "test_id": "test_protected_bootstrap_migration_rejects_large_object_ownership",
-      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3194,7 +4870,14 @@
     },
     {
       "test_id": "test_protected_bootstrap_migration_rejects_direct_large_object_acl_authority",
-      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3202,7 +4885,14 @@
     },
     {
       "test_id": "test_protected_bootstrap_migration_rejects_effective_large_object_role_authority",
-      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3210,7 +4900,14 @@
     },
     {
       "test_id": "test_protected_bootstrap_migration_rejects_public_large_object_authority",
-      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3218,7 +4915,14 @@
     },
     {
       "test_id": "test_protected_bootstrap_migration_fails_closed_when_large_object_state_is_unprovable",
-      "upstream_ids": ["TEST-133", "TEST-134", "SEC-073", "SEC-074", "DEPLOY-070", "DL-059"],
+      "upstream_ids": [
+        "TEST-133",
+        "TEST-134",
+        "SEC-073",
+        "SEC-074",
+        "DEPLOY-070",
+        "DL-059"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
@@ -3250,7 +4954,14 @@
     },
     {
       "test_id": "test_postgres_append_and_authorized_query_round_trip_is_lossless",
-      "upstream_ids": ["PR-AUDIT-001", "DB-AUDIT-001", "API-073", "API-074", "SEC-030", "SEC-032"],
+      "upstream_ids": [
+        "PR-AUDIT-001",
+        "DB-AUDIT-001",
+        "API-073",
+        "API-074",
+        "SEC-030",
+        "SEC-032"
+      ],
       "test_level": "integration",
       "test_path": "backend/tests/test_audit_migration.py",
       "status": "implemented",
@@ -3410,7 +5121,14 @@
     },
     {
       "test_id": "test_resource_timeline_resolves_and_authorizes_owning_property",
-      "upstream_ids": ["API-019", "API-023", "API-073", "SEC-019", "SEC-032", "SEC-038"],
+      "upstream_ids": [
+        "API-019",
+        "API-023",
+        "API-073",
+        "SEC-019",
+        "SEC-032",
+        "SEC-038"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_audit_api.py",
       "status": "implemented",
@@ -3458,7 +5176,13 @@
     },
     {
       "test_id": "test_append_accepts_classified_financial_and_operational_facts",
-      "upstream_ids": ["PR-AUDIT-001", "DB-AUDIT-001", "DB-DER-001", "SEC-030", "SEC-032"],
+      "upstream_ids": [
+        "PR-AUDIT-001",
+        "DB-AUDIT-001",
+        "DB-DER-001",
+        "SEC-030",
+        "SEC-032"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_audit.py",
       "status": "implemented",
@@ -3474,7 +5198,13 @@
     },
     {
       "test_id": "test_resource_timeline_includes_linked_lease_events_across_authorized_properties",
-      "upstream_ids": ["API-073", "DB-AUDIT-001", "SEC-019", "SEC-032", "SEC-038"],
+      "upstream_ids": [
+        "API-073",
+        "DB-AUDIT-001",
+        "SEC-019",
+        "SEC-032",
+        "SEC-038"
+      ],
       "test_level": "integration",
       "test_path": "backend/tests/test_audit_api.py",
       "status": "implemented",
@@ -3490,7 +5220,13 @@
     },
     {
       "test_id": "test_loaded_historical_public_facts_are_classified_and_frozen",
-      "upstream_ids": ["PR-AUDIT-010", "DB-AUDIT-001", "SEC-030", "SEC-031", "SEC-032"],
+      "upstream_ids": [
+        "PR-AUDIT-010",
+        "DB-AUDIT-001",
+        "SEC-030",
+        "SEC-031",
+        "SEC-032"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_audit_api.py",
       "status": "implemented",
@@ -3498,7 +5234,13 @@
     },
     {
       "test_id": "test_loaded_camel_case_classified_key_uses_write_normalization",
-      "upstream_ids": ["PR-AUDIT-001", "PR-AUDIT-010", "API-073", "DB-AUDIT-001", "SEC-032"],
+      "upstream_ids": [
+        "PR-AUDIT-001",
+        "PR-AUDIT-010",
+        "API-073",
+        "DB-AUDIT-001",
+        "SEC-032"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_audit_api.py",
       "status": "implemented",
@@ -3506,7 +5248,13 @@
     },
     {
       "test_id": "test_postgres_appender_rejects_direct_event_with_secret_before_insert",
-      "upstream_ids": ["PR-AUDIT-001", "DB-AUDIT-001", "DB-TXN-001", "SEC-030", "SEC-032"],
+      "upstream_ids": [
+        "PR-AUDIT-001",
+        "DB-AUDIT-001",
+        "DB-TXN-001",
+        "SEC-030",
+        "SEC-032"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_audit.py",
       "status": "implemented",
@@ -3514,7 +5262,13 @@
     },
     {
       "test_id": "test_authoritative_reservation_resolves_without_audit_history",
-      "upstream_ids": ["PR-AUDIT-002", "API-073", "SEC-019", "SEC-032", "SEC-038"],
+      "upstream_ids": [
+        "PR-AUDIT-002",
+        "API-073",
+        "SEC-019",
+        "SEC-032",
+        "SEC-038"
+      ],
       "test_level": "integration",
       "test_path": "backend/tests/test_audit_api.py",
       "status": "implemented",
@@ -3522,7 +5276,20 @@
     },
     {
       "test_id": "test_unimplemented_resource_families_never_use_audit_history_as_authority",
-      "upstream_ids": ["PR-AUDIT-002", "PR-AUDIT-003", "PR-AUDIT-004", "PR-AUDIT-005", "PR-AUDIT-006", "PR-AUDIT-007", "PR-AUDIT-008", "PR-AUDIT-009", "API-073", "SEC-019", "SEC-032", "SEC-038"],
+      "upstream_ids": [
+        "PR-AUDIT-002",
+        "PR-AUDIT-003",
+        "PR-AUDIT-004",
+        "PR-AUDIT-005",
+        "PR-AUDIT-006",
+        "PR-AUDIT-007",
+        "PR-AUDIT-008",
+        "PR-AUDIT-009",
+        "API-073",
+        "SEC-019",
+        "SEC-032",
+        "SEC-038"
+      ],
       "test_level": "integration",
       "test_path": "backend/tests/test_audit_api.py",
       "status": "implemented",
@@ -3530,7 +5297,14 @@
     },
     {
       "test_id": "test_stored_top_level_secret_material_is_rejected_before_event_exposure",
-      "upstream_ids": ["PR-AUDIT-001", "API-073", "API-074", "DB-AUDIT-001", "SEC-030", "SEC-032"],
+      "upstream_ids": [
+        "PR-AUDIT-001",
+        "API-073",
+        "API-074",
+        "DB-AUDIT-001",
+        "SEC-030",
+        "SEC-032"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_audit_api.py",
       "status": "implemented",
@@ -3554,7 +5328,13 @@
     },
     {
       "test_id": "test_postgres_appender_enforces_time_invariants_and_normalizes_utc",
-      "upstream_ids": ["PR-AUDIT-001", "DB-AUDIT-001", "DB-TXN-001", "SEC-030", "SEC-033"],
+      "upstream_ids": [
+        "PR-AUDIT-001",
+        "DB-AUDIT-001",
+        "DB-TXN-001",
+        "SEC-030",
+        "SEC-033"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_audit.py",
       "status": "implemented",
@@ -3562,7 +5342,13 @@
     },
     {
       "test_id": "test_stored_numeric_secret_fields_are_rejected_before_exposure",
-      "upstream_ids": ["PR-AUDIT-001", "API-073", "API-074", "SEC-030", "SEC-032"],
+      "upstream_ids": [
+        "PR-AUDIT-001",
+        "API-073",
+        "API-074",
+        "SEC-030",
+        "SEC-032"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_audit_api.py",
       "status": "implemented",
@@ -3570,7 +5356,13 @@
     },
     {
       "test_id": "test_stored_unclassified_numeric_authentication_secret_is_not_exposed",
-      "upstream_ids": ["PR-AUDIT-001", "API-073", "API-074", "SEC-030", "SEC-032"],
+      "upstream_ids": [
+        "PR-AUDIT-001",
+        "API-073",
+        "API-074",
+        "SEC-030",
+        "SEC-032"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_audit_api.py",
       "status": "implemented",
@@ -3578,7 +5370,13 @@
     },
     {
       "test_id": "test_stored_unclassified_text_authentication_secret_is_not_exposed",
-      "upstream_ids": ["PR-AUDIT-001", "API-073", "API-074", "SEC-030", "SEC-032"],
+      "upstream_ids": [
+        "PR-AUDIT-001",
+        "API-073",
+        "API-074",
+        "SEC-030",
+        "SEC-032"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_audit_api.py",
       "status": "implemented",
@@ -3666,7 +5464,12 @@
     },
     {
       "test_id": "test_migration_persists_property_identity_and_timezone",
-      "upstream_ids": ["BR-PROP-001", "BR-PROP-003", "PR-PROP-001", "PR-PROP-003"],
+      "upstream_ids": [
+        "BR-PROP-001",
+        "BR-PROP-003",
+        "PR-PROP-001",
+        "PR-PROP-003"
+      ],
       "test_level": "migration",
       "test_path": "backend/tests/test_property_migration.py",
       "status": "implemented",
@@ -3706,7 +5509,14 @@
     },
     {
       "test_id": "test_migration_rejects_mutation_of_property_configuration",
-      "upstream_ids": ["BR-PROP-001", "BR-PROP-002", "BR-PROP-003", "PR-PROP-001", "PR-PROP-002", "PR-PROP-003"],
+      "upstream_ids": [
+        "BR-PROP-001",
+        "BR-PROP-002",
+        "BR-PROP-003",
+        "PR-PROP-001",
+        "PR-PROP-002",
+        "PR-PROP-003"
+      ],
       "test_level": "migration",
       "test_path": "backend/tests/test_property_migration.py",
       "status": "implemented",
@@ -3714,7 +5524,13 @@
     },
     {
       "test_id": "test_get_property_requires_an_authenticated_actor",
-      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "upstream_ids": [
+        "PR-PROP-001",
+        "PR-PROP-003",
+        "API-026",
+        "API-027",
+        "UI-091"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_property_api.py",
       "status": "implemented",
@@ -3722,7 +5538,13 @@
     },
     {
       "test_id": "test_get_property_returns_identity_timezone_version_and_etag",
-      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "upstream_ids": [
+        "PR-PROP-001",
+        "PR-PROP-003",
+        "API-026",
+        "API-027",
+        "UI-091"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_property_api.py",
       "status": "implemented",
@@ -3730,7 +5552,13 @@
     },
     {
       "test_id": "test_patch_property_applies_matching_version_precondition",
-      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "upstream_ids": [
+        "PR-PROP-001",
+        "PR-PROP-003",
+        "API-026",
+        "API-027",
+        "UI-091"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_property_api.py",
       "status": "implemented",
@@ -3738,7 +5566,13 @@
     },
     {
       "test_id": "test_patch_property_reports_current_version_for_missing_precondition",
-      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "upstream_ids": [
+        "PR-PROP-001",
+        "PR-PROP-003",
+        "API-026",
+        "API-027",
+        "UI-091"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_property_api.py",
       "status": "implemented",
@@ -3746,7 +5580,13 @@
     },
     {
       "test_id": "test_patch_property_requires_scoped_property_manage",
-      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "upstream_ids": [
+        "PR-PROP-001",
+        "PR-PROP-003",
+        "API-026",
+        "API-027",
+        "UI-091"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_property_api.py",
       "status": "implemented",
@@ -3754,7 +5594,13 @@
     },
     {
       "test_id": "test_property_configuration_routes_share_authorization_and_versioning",
-      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "upstream_ids": [
+        "PR-PROP-001",
+        "PR-PROP-003",
+        "API-026",
+        "API-027",
+        "UI-091"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_property_api.py",
       "status": "implemented",
@@ -3834,7 +5680,13 @@
     },
     {
       "test_id": "test_get_property_configuration_requires_scoped_property_manage",
-      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "upstream_ids": [
+        "PR-PROP-001",
+        "PR-PROP-003",
+        "API-026",
+        "API-027",
+        "UI-091"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_property_api.py",
       "status": "implemented",
@@ -3842,7 +5694,13 @@
     },
     {
       "test_id": "test_postgres_property_read_uses_one_snapshot_statement",
-      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "upstream_ids": [
+        "PR-PROP-001",
+        "PR-PROP-003",
+        "API-026",
+        "API-027",
+        "UI-091"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_property_api.py",
       "status": "implemented",
@@ -3874,7 +5732,13 @@
     },
     {
       "test_id": "test_patch_property_rejects_mismatched_or_out_of_range_precondition",
-      "upstream_ids": ["PR-PROP-001", "PR-PROP-003", "API-026", "API-027", "UI-091"],
+      "upstream_ids": [
+        "PR-PROP-001",
+        "PR-PROP-003",
+        "API-026",
+        "API-027",
+        "UI-091"
+      ],
       "test_level": "API",
       "test_path": "backend/tests/test_property_api.py",
       "status": "implemented",
@@ -4058,7 +5922,15 @@
     },
     {
       "test_id": "test_restoration_derives_status_from_authoritative_facts",
-      "upstream_ids": ["BR-UNIT-006", "BR-UNIT-007", "BR-UNIT-008", "BR-UNIT-010", "BR-UNIT-011", "BR-UNIT-012", "BR-UNIT-013"],
+      "upstream_ids": [
+        "BR-UNIT-006",
+        "BR-UNIT-007",
+        "BR-UNIT-008",
+        "BR-UNIT-010",
+        "BR-UNIT-011",
+        "BR-UNIT-012",
+        "BR-UNIT-013"
+      ],
       "test_level": "domain",
       "test_path": "backend/tests/test_unit.py",
       "status": "implemented",
@@ -4202,7 +6074,13 @@
     },
     {
       "test_id": "TEST-FE-030",
-      "upstream_ids": ["TEST-088", "TEST-090", "TEST-091", "TEST-094", "TEST-095"],
+      "upstream_ids": [
+        "TEST-088",
+        "TEST-090",
+        "TEST-091",
+        "TEST-094",
+        "TEST-095"
+      ],
       "test_level": "UI component",
       "test_path": "frontend/src/UnitManagement.test.tsx",
       "status": "implemented",
@@ -4254,7 +6132,7 @@
       "test_level": "domain",
       "test_path": "backend/tests/test_customer.py",
       "status": "implemented",
-      "notes": "V1-025 changes current contact values through the same stable Customer identity and a new version."
+      "notes": "V1-025 changes current contact values through the same stable Customer identity and a new version; normalized no-op updates are rejected without persistence or audit mutation."
     },
     {
       "test_id": "test_phone_matching_is_conservative_and_never_merges_automatically",
@@ -4310,7 +6188,1204 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_customer_migration.py",
       "status": "implemented",
-      "notes": "V1-025 proves the least-privilege runtime route surfaces reuse candidates, keeps stable identity, and writes immutable update history."
+      "notes": "V1-026 proves the least-privilege runtime route matches pre-upgrade IDN domains to their ASCII forms, surfaces reuse candidates, keeps stable identity, and writes immutable update history."
+    },
+    {
+      "test_id": "test_customer_list_is_authenticated_minimized_and_capability_sensitive",
+      "upstream_ids": ["API-030", "UI-028", "SEC-041", "TEST-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "V1-026 requires authentication, bounded results, server-derived capability, and a minimized Customer list without contact details."
+    },
+    {
+      "test_id": "test_customer_create_requires_scope_and_an_explicit_reuse_decision",
+      "upstream_ids": ["API-030", "BR-CUST-002", "SEC-041", "TEST-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "V1-026 capability-checks creation, rejects fixed Customer types, coerced boolean decisions, NULs, unpaired Unicode surrogates, and email local parts outside the supported browser-compatible ASCII grammar, requires an explicit reuse-or-distinct decision, normalizes before applying canonical length bounds so maximum-length equivalent input remains replay-safe, returns API-016 IDEMPOTENCY_KEY_REUSED for a key reused with different canonical input, and keeps an ordinary Customer-ID collision classified as a generic conflict."
+    },
+    {
+      "test_id": "test_customer_detail_update_and_deactivation_preserve_identity_and_history",
+      "upstream_ids": ["API-030", "UI-029", "BR-CUST-003", "TEST-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "V1-026 exposes non-cacheable Customer relationships and audit history only on explicit detail navigation, requires a signed-32-bit positive If-Match version with a 412 response for missing, malformed, or out-of-range preconditions, returns canonical conflicts for stale or inactive mutations, preserves property-level management capability on inactive detail, and deactivates without deletion."
+    },
+    {
+      "test_id": "test_customer_financial_summary_is_truthful_and_exposes_no_export_or_ledger_route",
+      "upstream_ids": ["API-031", "UI-030", "SEC-042", "TEST-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "V1-026 reports unavailable financial sources without invented zeroes, keeps credit and deposit separate, and exposes neither export nor account-ledger routes."
+    },
+    {
+      "test_id": "test_runtime_deactivation_preserves_customer_and_records_history",
+      "upstream_ids": ["API-030", "BR-CUST-003", "DB-CUST-001", "TEST-023"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "V1-026 proves least-privilege deactivation rejects a NULL expected version, every whitespace-only reason, and repeated lifecycle commands, preserves stable Customer identity, and writes exactly one immutable before/after event."
+    },
+    {
+      "test_id": "TEST-FE-031",
+      "upstream_ids": ["UI-028", "UI-029", "UI-030", "SEC-041", "TEST-023"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The Customer list is minimized until explicit detail navigation, where relationship, audit, and truthful financial-source status become visible."
+    },
+    {
+      "test_id": "TEST-FE-032",
+      "upstream_ids": ["UI-028", "BR-CUST-002", "SEC-041", "TEST-023"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The authorized create surface has no permanent Customer type and makes the distinct-person decision explicit."
+    },
+    {
+      "test_id": "TEST-FE-033",
+      "upstream_ids": ["UI-029", "BR-CUST-003", "SEC-044", "TEST-023"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Customer edits use the loaded version and deactivation preserves identity and history without storing sensitive state locally."
+    },
+    {
+      "test_id": "TEST-FE-034",
+      "upstream_ids": ["UI-028", "SEC-041", "SEC-043", "SEC-044", "TEST-023"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The Customer surface fails closed and does not expose management controls when the server denies or cannot establish access."
+    },
+    {
+      "test_id": "test_customer_reads_require_exact_scope_and_audit_history_requires_audit_view",
+      "upstream_ids": [
+        "API-030",
+        "SEC-019",
+        "SEC-020",
+        "SEC-032",
+        "SEC-038",
+        "SEC-041"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "Customer reads require an exact property-scoped Customer capability, while audit history remains empty unless the actor separately holds audit-view access."
+    },
+    {
+      "test_id": "test_committed_customer_mutation_remains_successful_when_history_read_is_unavailable",
+      "upstream_ids": ["API-030", "BR-CUST-003", "SEC-034", "TEST-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "A committed Customer mutation remains a successful response when its follow-up audit-history read is unavailable, and the response marks history availability truthfully."
+    },
+    {
+      "test_id": "test_postgres_flow_reports_new_version_before_inactive_state",
+      "upstream_ids": ["API-006", "API-018", "API-030", "BR-CUST-003"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "A concurrent Customer deactivation reports the newer version conflict before lifecycle validation, preserving the optimistic-concurrency contract."
+    },
+    {
+      "test_id": "TEST-FE-035",
+      "upstream_ids": ["API-019", "API-030", "UI-028", "SEC-040"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The Customer list preserves and follows opaque continuation cursors so every bounded page remains reachable."
+    },
+    {
+      "test_id": "TEST-FE-036",
+      "upstream_ids": ["API-030", "UI-028", "BR-CUST-002", "TEST-023"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A duplicate-match conflict exposes only minimized candidates, preserves the submitted create draft, and offers explicit navigation to reuse the existing Customer before creating a distinct identity."
+    },
+    {
+      "test_id": "TEST-FE-037",
+      "upstream_ids": ["API-019", "API-030", "UI-028", "SEC-040"],
+      "test_level": "UI",
+      "test_path": "frontend/src/customerClient.test.tsx",
+      "status": "implemented",
+      "notes": "The Customer client parses the canonical data/page/meta envelope and retains its opaque continuation cursor."
+    },
+    {
+      "test_id": "TEST-FE-038",
+      "upstream_ids": ["API-030", "BR-CUST-002", "SEC-030", "SEC-041"],
+      "test_level": "UI",
+      "test_path": "frontend/src/customerClient.test.tsx",
+      "status": "implemented",
+      "notes": "Customer creation sends CSRF proof plus a client-generated command identity and preserves only minimized duplicate candidates from the canonical conflict envelope."
+    },
+    {
+      "test_id": "TEST-FE-039",
+      "upstream_ids": ["API-030", "BR-CUST-003", "SEC-030"],
+      "test_level": "UI",
+      "test_path": "frontend/src/customerClient.test.tsx",
+      "status": "implemented",
+      "notes": "Customer updates send both CSRF proof and the exact optimistic version precondition."
+    },
+    {
+      "test_id": "TEST-FE-040",
+      "upstream_ids": ["UI-029", "SEC-038", "SEC-041", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A mutation-time authorization denial immediately clears loaded Customer contact data, rows, cursors, and management controls."
+    },
+    {
+      "test_id": "TEST-FE-041",
+      "upstream_ids": ["UI-028", "UI-029", "BR-CUST-002", "TEST-023"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Customer update conflicts retain minimized reuse candidates for explicit review before a distinct-identity decision."
+    },
+    {
+      "test_id": "TEST-FE-042",
+      "upstream_ids": ["API-019", "API-020", "UI-028", "SEC-040"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Changing Customer search text invalidates stale rows, in-flight sequence identity, and the prior opaque cursor."
+    },
+    {
+      "test_id": "TEST-FE-043",
+      "upstream_ids": ["API-019", "API-030", "UI-028", "BR-CUST-002"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Successful Customer creation resets the paginated list so a later cursor page cannot duplicate the new identity."
+    },
+    {
+      "test_id": "TEST-FE-044",
+      "upstream_ids": ["UI-028", "UI-029", "SEC-040", "TEST-023"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Property and filter inputs remain locked while a Customer mutation is pending, so UI invalidation cannot orphan a write that may commit."
+    },
+    {
+      "test_id": "TEST-FE-045",
+      "upstream_ids": ["UI-028", "SEC-038", "SEC-041", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A read-time authorization denial clears every loaded Customer row, detail field, cursor, and management control."
+    },
+    {
+      "test_id": "TEST-FE-046",
+      "upstream_ids": ["API-019", "API-030", "UI-028", "UI-029"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A successful Customer update invalidates the prior sorted page and continuation cursor before any later page can be appended."
+    },
+    {
+      "test_id": "TEST-FE-047",
+      "upstream_ids": ["UI-029", "BR-CUST-003", "SEC-040", "TEST-023"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Read-only Customer detail renders memo plus the preserved deactivation timestamp and reason."
+    },
+    {
+      "test_id": "TEST-FE-048",
+      "upstream_ids": ["API-019", "API-030", "UI-029", "SEC-040"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Customer detail exposes and follows an opaque continuation cursor so older audit history is never silently truncated."
+    },
+    {
+      "test_id": "test_runtime_reuse_decision_serializes_concurrent_create_and_update",
+      "upstream_ids": ["BR-CUST-002", "DB-CUST-001", "SEC-038", "TEST-023"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent create and update requests sharing a normalized contact key serialize the complete reuse check and write, so exactly one proceeds without an explicit distinct-person decision."
+    },
+    {
+      "test_id": "TEST-FE-049",
+      "upstream_ids": ["API-030", "UI-029", "SEC-038", "SEC-041", "SEC-044"],
+      "test_level": "UI",
+      "test_path": "frontend/src/customerClient.test.tsx",
+      "status": "implemented",
+      "notes": "A concealed exact-Customer 404 is classified as access loss so the management surface clears previously loaded confidential details and controls."
+    },
+    {
+      "test_id": "test_postgres_detail_reads_customer_and_history_from_one_snapshot",
+      "upstream_ids": ["API-030", "UI-029", "SEC-038", "TEST-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "Customer detail and its bounded audit page are read from one repeatable-read PostgreSQL snapshot, preventing a response assembled from different database states."
+    },
+    {
+      "test_id": "test_customer_history_cursor_requires_an_explicit_timezone",
+      "upstream_ids": ["API-019", "API-030", "BR-AUDIT-006", "TEST-023"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "Customer audit-history cursors reject timezone-naive instants and normalize explicit offsets to UTC so pagination cannot change with database or session timezone."
+    },
+    {
+      "test_id": "TEST-FE-050",
+      "upstream_ids": ["API-006", "API-018", "API-030", "UI-029"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A stale Customer update reloads the current server record while preserving the operator's unsaved draft for an explicit retry decision."
+    },
+    {
+      "test_id": "TEST-FE-051",
+      "upstream_ids": ["API-006", "API-018", "API-030", "BR-CUST-003"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A stale deactivation reloads the current Customer version while preserving the entered reason for an explicit retry decision."
+    },
+    {
+      "test_id": "TEST-FE-052",
+      "upstream_ids": ["API-030", "UI-029", "SEC-019", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Customer history renders the action, outcome, actor, reason, correlation identifier, and previous and resulting states needed for an accountable audit view."
+    },
+    {
+      "test_id": "TEST-FE-053",
+      "upstream_ids": ["API-001", "API-030", "SEC-034", "SEC-040"],
+      "test_level": "UI",
+      "test_path": "frontend/src/customerClient.test.tsx",
+      "status": "implemented",
+      "notes": "The versioned Customer client retains only safe canonical validation fields and the request correlation identifier from an error envelope."
+    },
+    {
+      "test_id": "TEST-FE-054",
+      "upstream_ids": ["API-001", "API-030", "UI-028", "SEC-034"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The management surface presents safe field-level validation context and correlation evidence without exposing raw server details."
+    },
+    {
+      "test_id": "TEST-FE-055",
+      "upstream_ids": ["API-018", "API-030", "UI-029", "SEC-038", "SEC-041"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Paging Customer history adopts the complete fresh server record and removes cached audit evidence and mutation controls when access or lifecycle state changes."
+    },
+    {
+      "test_id": "TEST-FE-056",
+      "upstream_ids": ["API-006", "API-018", "API-030", "UI-029"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A stale-write reload preserves intentionally cleared optional Customer fields instead of silently restoring server values."
+    },
+    {
+      "test_id": "TEST-FE-057",
+      "upstream_ids": ["API-018", "API-030", "UI-029", "BR-CUST-003"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "If Customer state changes between audit pages, the UI discards the incompatible continuation and reloads the newest bounded history page."
+    },
+    {
+      "test_id": "TEST-FE-058",
+      "upstream_ids": ["API-030", "API-031", "UI-029", "UI-030"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An independent financial-summary failure is reported truthfully without hiding available Customer detail or authorized management actions."
+    },
+    {
+      "test_id": "TEST-FE-059",
+      "upstream_ids": ["API-030", "SEC-038", "SEC-041", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A financial-summary access-loss response clears concurrently loaded Customer detail, audit evidence, rows, and management controls."
+    },
+    {
+      "test_id": "TEST-FE-060",
+      "upstream_ids": ["BR-CUST-002", "API-030", "UI-028", "UI-029"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Reviewing a possible reuse candidate keeps the hidden pending update marked dirty, provides an explicit return path that restores it, and requires confirmation before unrelated drafts can be discarded."
+    },
+    {
+      "test_id": "TEST-FE-061",
+      "upstream_ids": ["API-019", "API-020", "UI-019", "UI-028"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The All/Active/Deactivated filter is sent to the Customer API and remains stable across opaque continuation pages."
+    },
+    {
+      "test_id": "test_postgres_list_uses_immutable_cursor_and_literal_search_pattern",
+      "upstream_ids": ["API-019", "API-020", "API-030", "SEC-040"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "Customer keyset pagination uses the immutable stable identifier; the list-specific database projection excludes contact, address, and memo source data and bounds legacy legal-name output to 255 Unicode characters (at most 1020 UTF-8 bytes); search uses complete escaped PostgreSQL patterns against bounded Unicode-safe index expressions without truncating an escape pair, under a transaction-local execution timeout."
+    },
+    {
+      "test_id": "test_postgres_update_returns_a_concurrently_committed_idempotent_result",
+      "upstream_ids": ["API-015", "API-016", "API-018", "API-030"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "An equivalent concurrent update retry that initially sees no command but then observes the committed version rechecks the atomically persisted command identity and returns its original result instead of a stale-version conflict."
+    },
+    {
+      "test_id": "TEST-FE-062",
+      "upstream_ids": ["API-030", "UI-015", "UI-028", "UI-029"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A successful Customer creation clears prior selection-specific drafts and reuse-review state only after explicit confirmation, so unsaved values are neither silently lost nor applied to another identity."
+    },
+    {
+      "test_id": "TEST-FE-063",
+      "upstream_ids": ["API-020", "API-030", "UI-019", "UI-028"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Successful deactivation immediately removes the Customer from an active-only result set while preserving the selected deactivated detail."
+    },
+    {
+      "test_id": "TEST-FE-064",
+      "upstream_ids": ["UI-012", "UI-015", "UI-029", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Every Customer update field is locked while its command is in flight so post-submit input cannot be silently discarded by the resulting version remount."
+    },
+    {
+      "test_id": "TEST-FE-065",
+      "upstream_ids": ["UI-012", "UI-029", "BR-CUST-003", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The Customer deactivation reason is locked while its command is in flight; create-field locking remains covered by TEST-FE-044."
+    },
+    {
+      "test_id": "TEST-FE-066",
+      "upstream_ids": ["UI-028", "UI-102", "BR-CUST-003"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Changing Customer list scope warns before discarding dirty create, update, or deactivation values and preserves the current view when the operator declines."
+    },
+    {
+      "test_id": "TEST-FE-067",
+      "upstream_ids": ["API-018", "API-030", "UI-015", "UI-029"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A stale update whose fresh server record is deactivated keeps the unsent source values visibly recoverable without offering an invalid retry."
+    },
+    {
+      "test_id": "TEST-FE-068",
+      "upstream_ids": ["API-018", "API-030", "UI-015", "UI-029"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A deactivation conflict caused by an already-deactivated Customer keeps the unsubmitted reason visible and does not claim it was applied."
+    },
+    {
+      "test_id": "test_customer_audit_history_has_bounded_pagination_index",
+      "upstream_ids": ["API-019", "API-030", "SEC-040"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "Permanent Customer audit history has a partial composite pagination index, and Customer name/email/phone searches have matching text-pattern prefix indexes."
+    },
+    {
+      "test_id": "test_runtime_reuse_lock_wait_is_bounded_and_reported_unavailable",
+      "upstream_ids": ["API-018", "API-030", "SEC-040", "TEST-006"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "A contended same-contact advisory lock times out within the bounded database budget and is translated to the existing Customer-unavailable boundary."
+    },
+    {
+      "test_id": "TEST-FE-069",
+      "upstream_ids": ["UI-012", "UI-015", "UI-029", "UI-102"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Successful submission of one Customer form clears only that form's dirty state while preserving and continuing to protect drafts in the other forms."
+    },
+    {
+      "test_id": "test_runtime_customer_write_wait_is_bounded_on_the_work_connection",
+      "upstream_ids": ["API-018", "API-030", "SEC-040", "TEST-006"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "A real row-lock contention proves the Customer repository's actual write connection stops at its transaction-local statement budget while the reuse guard remains held."
+    },
+    {
+      "test_id": "TEST-FE-070",
+      "upstream_ids": ["UI-028", "UI-102", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Confirming Customer-view navigation clears and remounts the create form so supposedly discarded values cannot later be submitted."
+    },
+    {
+      "test_id": "TEST-FE-071",
+      "upstream_ids": ["UI-016", "UI-102", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "In-app sign-out consults Customer dirty state, preserves unsent values when declined, and does not invoke logout without an explicit discard decision."
+    },
+    {
+      "test_id": "TEST-FE-072",
+      "upstream_ids": ["UI-012", "UI-016", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "In-app sign-out immediately hides Customer data during an in-flight command, records the outcome as unknown, and requires an explicit list reload before any retry."
+    },
+    {
+      "test_id": "test_normalized_noop_still_detects_a_concurrent_version_change",
+      "upstream_ids": ["API-018", "API-030", "SEC-040"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "A source-normalized no-op remains ordered behind a fresh flow-level version check, so concurrent changes return the current version rather than a misleading validation result."
+    },
+    {
+      "test_id": "test_customer_search_rate_guard_is_scoped_and_bounded",
+      "upstream_ids": ["API-019", "API-030", "SEC-040"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "Customer search pressure is bounded independently per actor, network source, and Property before any persistence query is made."
+    },
+    {
+      "test_id": "test_phone_matching_uses_only_supported_ascii_digits",
+      "upstream_ids": ["BR-CUST-002", "API-030"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "Customer phone matching and validation consistently use the explicitly supported ASCII telephone format and reject ambiguous Unicode-digit input."
+    },
+    {
+      "test_id": "test_persisted_legacy_phone_remains_readable_but_new_input_is_strict",
+      "upstream_ids": ["API-018", "API-030", "DB-CUST-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "Rows written before strict phone validation remain readable and may update other source fields while retaining the unchanged legacy phone; actual phone replacements and new Customers retain the supported ASCII invariant."
+    },
+    {
+      "test_id": "test_api_hydration_preserves_a_legacy_phone_for_correction",
+      "upstream_ids": ["API-030", "DB-CUST-001"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "Customer API hydration safely exposes a previously accepted phone representation so an authorized operator can correct it without a server error."
+    },
+    {
+      "test_id": "test_normalized_noop_rechecks_the_persisted_version",
+      "upstream_ids": ["API-006", "API-018", "API-030"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "A normalized no-op performs a fresh repository version assertion before returning validation, preserving the optimistic-concurrency contract."
+    },
+    {
+      "test_id": "TEST-FE-073",
+      "upstream_ids": ["UI-012", "UI-016", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "The Customer command surface unmounts as soon as an accepted logout begins, preventing a mutation from racing session revocation."
+    },
+    {
+      "test_id": "TEST-FE-074",
+      "upstream_ids": ["UI-012", "UI-016", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Unmount invalidates pending Customer operations and prevents a stale completion from changing the parent command-busy state after reauthentication."
+    },
+    {
+      "test_id": "test_customer_search_rate_guard_bounds_and_expires_identity_keys",
+      "upstream_ids": ["API-019", "API-030", "SEC-040"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "Customer search rate state has a hard identity-key bound, rejects new keys while active capacity is full, and reclaims expired keys before admitting later traffic."
+    },
+    {
+      "test_id": "TEST-FE-076",
+      "upstream_ids": ["UI-016", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Session expiry during an in-flight Customer command reports an unknown outcome and requires explicit post-authentication reconciliation rather than suggesting a blind retry."
+    },
+    {
+      "test_id": "TEST-FE-077",
+      "upstream_ids": ["BR-CUST-002", "API-017", "UI-103"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/customerClient.test.tsx",
+      "status": "implemented",
+      "notes": "Network loss, server failure, and malformed success data after Customer creation are classified as unknown mutation outcomes rather than safe retry failures."
+    },
+    {
+      "test_id": "TEST-FE-078",
+      "upstream_ids": ["UI-012", "UI-102", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Submitting the simultaneously visible create form cannot clear another Customer's update or deactivation draft without an explicit discard confirmation."
+    },
+    {
+      "test_id": "TEST-FE-079",
+      "upstream_ids": ["BR-CUST-002", "UI-016", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "An ambiguous Customer create disables Customer mutations until an exact read of its client-generated Customer identity succeeds and the operator explicitly confirms the reviewed outcome."
+    },
+    {
+      "test_id": "test_customer_patch_preserves_an_unchanged_legacy_phone",
+      "upstream_ids": ["API-018", "API-030", "DB-CUST-001"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "PATCH accepts an unchanged legacy phone while updating another source field, but still rejects a new phone using unsupported characters."
+    },
+    {
+      "test_id": "TEST-FE-080",
+      "upstream_ids": ["BR-CUST-002", "UI-016", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "A sealed Customer command requirement survives full tab closure under a persistent non-extractable browser key; local storage exposes only an opaque handle and ciphertext while reauthentication keeps mutations gated."
+    },
+    {
+      "test_id": "TEST-FE-081",
+      "upstream_ids": ["API-018", "UI-016", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An ambiguous update records its exact Customer target and requires reconciliation instead of leaving stale data with mutation controls enabled; confirming the recorded result clears only the matching committed update draft."
+    },
+    {
+      "test_id": "TEST-FE-082",
+      "upstream_ids": ["API-018", "UI-016", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Update and deactivation reconciliation can be explicitly completed only after the exact affected Customer detail is successfully loaded, and the exact Property identity is restored before mutations become available."
+    },
+    {
+      "test_id": "TEST-FE-083",
+      "upstream_ids": ["API-018", "UI-016", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An ambiguous deactivation records its exact Customer target and keeps the command gate active rather than trusting stale active-state data; confirming the recorded result clears only the matching committed reason draft."
+    },
+    {
+      "test_id": "TEST-FE-084",
+      "upstream_ids": ["BR-CUST-002", "API-019", "UI-016", "UI-103"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Unknown creation cannot be reconciled from a list page; the exact client-generated Customer identity must load successfully before explicit operator confirmation is offered."
+    },
+    {
+      "test_id": "TEST-FE-085",
+      "upstream_ids": ["BR-CUST-002", "UI-016", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "An unresolved Customer command marker is keyed and validated against the authenticated actor so another actor never inherits its command gate or reconciliation details."
+    },
+    {
+      "test_id": "TEST-FE-086",
+      "upstream_ids": ["API-018", "BR-CUST-002", "UI-103"],
+      "test_level": "UI",
+      "test_path": "frontend/src/customerClient.test.tsx",
+      "status": "implemented",
+      "notes": "Malformed, scalar, null, or unreadable successful update and deactivation responses remain unknown outcomes and require exact reconciliation rather than a blind retry."
+    },
+    {
+      "test_id": "test_customer_create_command_status_authoritatively_reports_present_or_absent",
+      "upstream_ids": ["BR-CUST-002", "API-019", "SEC-041", "SEC-044"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "A Property-scoped manager can authoritatively distinguish one exact actor-bound durable Customer command from an absent command without weakening capability checks or concealed ordinary detail reads."
+    },
+    {
+      "test_id": "TEST-FE-087",
+      "upstream_ids": ["BR-CUST-002", "API-019", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "An authoritatively absent ambiguous creation can be reconciled without deadlocking the UI, while its preserved draft retries with the same exact command identity to remain safe against a late commit."
+    },
+    {
+      "test_id": "TEST-FE-088",
+      "upstream_ids": ["BR-CUST-002", "UI-016", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "An actor-bound unresolved Customer command gate is synchronized across browser tabs and is removed across tabs only after explicit reconciliation; a create draft auto-restored from that gate is cleared when another tab closes it so already-created values cannot be submitted under a fresh identity."
+    },
+    {
+      "test_id": "TEST-FE-089",
+      "upstream_ids": ["API-019", "UI-103", "SEC-041"],
+      "test_level": "UI",
+      "test_path": "frontend/src/customerClient.test.tsx",
+      "status": "implemented",
+      "notes": "The Customer client parses both present and absent authoritative command-status envelopes from the exact Property and client-generated Customer identity route."
+    },
+    {
+      "test_id": "TEST-FE-090",
+      "upstream_ids": ["BR-CUST-002", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A Customer mutation is not sent when another tab already atomically reserved the authenticated actor's unresolved-command gate."
+    },
+    {
+      "test_id": "TEST-FE-091",
+      "upstream_ids": ["API-018", "UI-016", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Reconciliation proof is bound to the complete checked command identity; a late result for a superseded command cannot authorize confirmation of the current command."
+    },
+    {
+      "test_id": "TEST-FE-092",
+      "upstream_ids": ["BR-CUST-002", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Two concurrent actor-bound reservations execute through one browser-wide exclusive lock, so exactly one stores the durable command gate and the other receives that exact existing command."
+    },
+    {
+      "test_id": "TEST-FE-093",
+      "upstream_ids": ["BR-CUST-002", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "A Customer command is not sent when durable reconciliation storage cannot persist the actor-bound reservation."
+    },
+    {
+      "test_id": "TEST-FE-094",
+      "upstream_ids": ["API-018", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Every durable Customer command gate carries a unique nonce and is compare-and-removed under the same browser-wide lock, so a late completion cannot clear a newer command for the same actor and Customer."
+    },
+    {
+      "test_id": "TEST-FE-095",
+      "upstream_ids": ["UI-015", "UI-102", "BR-CUST-002"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Updating a possible reuse candidate does not discard the original Customer's pending source draft; the operator can explicitly return to that preserved decision."
+    },
+    {
+      "test_id": "TEST-FE-096",
+      "upstream_ids": ["API-018", "UI-016", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Update and deactivation reconciliation uses the server's durable original command result, so a later authorized Customer mutation cannot make an earlier ambiguous command permanently unreconcilable."
+    },
+    {
+      "test_id": "test_runtime_customer_search_accepts_maximum_escaped_prefix",
+      "upstream_ids": ["API-019", "API-030", "DB-CUST-001", "SEC-040"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "A maximum-length all-wildcard Customer query remains a complete escaped PostgreSQL pattern and finds its literal stored value through the production runtime role."
+    },
+    {
+      "test_id": "test_bounded_search_index_accepts_legacy_unbounded_customer_name",
+      "upstream_ids": ["API-019", "API-030", "DB-CUST-001", "DEPLOY-033"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "Bounded prefix expressions keep the V1-026 search indexes safe when a revision-15 database already contains a legacy Customer name larger than current API input limits."
+    },
+    {
+      "test_id": "test_runtime_customer_commands_replay_original_results_after_later_changes",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "API-018",
+        "DB-CUST-001",
+        "SEC-044"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "Create, update, and deactivation commands atomically persist their canonical digest, audit event, and original result under the runtime role; exact live or archived replays return that original result after later authorized mutation, archived payload mismatches remain API-016 idempotency-key reuse conflicts, archived active lifecycle state is not borrowed from the current row, deactivation timestamps are reconstructed as timezone-aware values, and expired full-result records are boundedly purged after the 24-hour retention window."
+    },
+    {
+      "test_id": "test_customer_search_rate_budget_is_shared_across_guard_instances",
+      "upstream_ids": ["API-019", "API-030", "SEC-040", "DEPLOY-033"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "Independent API-worker guard instances consume one database-backed actor, source, and Property search budget, proving the production multi-worker deployment cannot multiply the configured limit."
+    },
+    {
+      "test_id": "test_customer_search_rate_buckets_are_persistently_bounded_and_expire",
+      "upstream_ids": ["API-019", "API-030", "SEC-040", "DEPLOY-033"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "The shared PostgreSQL Customer-search limiter rejects new identities at its 10,000-bucket cap and atomically removes expired buckets before admitting later traffic."
+    },
+    {
+      "test_id": "TEST-FE-098",
+      "upstream_ids": ["API-017", "UI-015", "UI-102", "SEC-040"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A Customer update sends only fields changed by the operator, so an oversized legacy value that is not edited is not echoed into a newly bounded request."
+    },
+    {
+      "test_id": "TEST-FE-100",
+      "upstream_ids": ["API-018", "UI-016", "UI-103"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An authoritatively absent update uses update-specific reconciliation wording and never falsely claims that Customer creation failed."
+    },
+    {
+      "test_id": "TEST-FE-101",
+      "upstream_ids": ["UI-103", "SEC-044", "TEST-095"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "A previously unresolved Customer command remains gated when the authenticated browser session later expires, preserving exact reconciliation instead of permitting a duplicate command."
+    },
+    {
+      "test_id": "TEST-FE-102",
+      "upstream_ids": ["API-016", "API-018", "BR-CUST-002", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An authoritatively absent create may reuse its command identity only with the exact original normalized payload; altered Customer values remain blocked."
+    },
+    {
+      "test_id": "TEST-FE-103",
+      "upstream_ids": ["API-018", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Cross-tab Customer gate reads are generation-bound, so a delayed decrypt from an older reserve event cannot restore a command gate after a newer clear event has resolved it."
+    },
+    {
+      "test_id": "TEST-FE-104",
+      "upstream_ids": ["API-017", "API-018", "BR-CUST-002", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An authoritatively absent update may reuse its command identity only with the exact normalized changed fields and duplicate-review decision; changing only that decision remains blocked."
+    },
+    {
+      "test_id": "TEST-FE-105",
+      "upstream_ids": ["UI-102", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A dirty Customer-create draft survives a cross-tab unresolved-command gate and is restored exactly after that other gate clears."
+    },
+    {
+      "test_id": "TEST-FE-106",
+      "upstream_ids": ["API-018", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Confirming that a prior Customer command is absent permits only its exact retry and does not clear the durable actor gate before that retry reaches a deterministic result."
+    },
+    {
+      "test_id": "TEST-FE-107",
+      "upstream_ids": ["API-017", "API-018", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Browser-side Customer command normalization matches the server's Unicode boundary stripping exactly, so a lost mutation response remains reconcilable for non-ASCII whitespace input."
+    },
+    {
+      "test_id": "TEST-FE-108",
+      "upstream_ids": ["API-006", "API-018", "UI-016", "UI-103"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An authoritatively absent update or deactivation whose original optimistic version is stale clears only its exact durable gate and reloads current Customer detail for a fresh decision."
+    },
+    {
+      "test_id": "TEST-FE-109",
+      "upstream_ids": ["API-009", "UI-028", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Unavailable durable mutation coordination hides Customer commands but preserves capability-checked list, detail, history, and financial-summary reads."
+    },
+    {
+      "test_id": "TEST-FE-110",
+      "upstream_ids": ["API-008", "UI-092", "SEC-016", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "A delayed session inspection and reconciliation-store read is generation-bound and cannot replace a newer interactive sign-in session."
+    },
+    {
+      "test_id": "TEST-FE-111",
+      "upstream_ids": ["API-018", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "A Customer command gate is not reported durable and no mutation proceeds when its non-extractable IndexedDB encryption-key transaction aborts after the put request succeeds."
+    },
+    {
+      "test_id": "TEST-FE-112",
+      "upstream_ids": ["API-017", "UI-029", "BR-CUST-002"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Checking only the duplicate-review confirmation without changing a Customer source field remains a local no-op and sends no invalid update command."
+    },
+    {
+      "test_id": "test_service_canonicalizes_idn_domains_before_reuse_matching",
+      "upstream_ids": ["BR-CUST-002", "DB-CUST-001", "SEC-041"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "Accepted internationalized email domains are canonicalized identically for storage and reuse matching so Unicode and ASCII-IDNA-equivalent addresses cannot bypass the explicit reuse decision."
+    },
+    {
+      "test_id": "test_update_preserves_an_omitted_legacy_email_verbatim",
+      "upstream_ids": ["API-017", "BR-CUST-002", "DB-CUST-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "A partial Customer update preserves an omitted pre-upgrade email value byte-for-byte instead of silently rewriting source data while changing an unrelated field."
+    },
+    {
+      "test_id": "TEST-FE-113",
+      "upstream_ids": ["API-016", "API-018", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The encrypted durable reconciliation record retains only the exact submitted update patch and restores it over freshly loaded current source after an authoritative absent result, so a page or session reload cannot make the required exact retry unreconstructable or persist unrelated contact data."
+    },
+    {
+      "test_id": "test_customer_migration_accepts_a_malformed_revision_15_email_domain",
+      "upstream_ids": ["DB-CUST-001", "DEPLOY-033", "SEC-041"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The forward-only Customer migration preserves and deterministically indexes malformed legacy email source accepted by revision 15 instead of allowing one historic row to block deployment."
+    },
+    {
+      "test_id": "test_migration_backfill_tolerates_a_malformed_legacy_email_domain",
+      "upstream_ids": ["DB-CUST-001", "DEPLOY-033", "SEC-041"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "The revision-16 backfill helper deterministically falls back to the raw case-folded legacy key when an old domain cannot be IDNA-encoded."
+    },
+    {
+      "test_id": "test_migration_streams_and_batches_legacy_email_match_keys",
+      "upstream_ids": ["DB-CUST-001", "DEPLOY-033", "SEC-041"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "The revision-16 upgrade reads legacy Customer email source through a bounded server cursor, restores normal connection execution before later statements, and persists match keys in fixed-size batches."
+    },
+    {
+      "test_id": "test_customer_command_paths_archive_the_exact_target_before_global_cleanup",
+      "upstream_ids": ["API-016", "API-017", "DB-CUST-001", "SEC-029"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_migration.py",
+      "status": "implemented",
+      "notes": "Every Customer command lookup and execution path archives its exact expired idempotency target before opportunistic global cleanup, preventing concurrent workers from retaining cross-target locks in opposite order."
+    },
+    {
+      "test_id": "TEST-FE-114",
+      "upstream_ids": ["API-018", "UI-029", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Reconciling Customer B cannot reassign Customer A's unsaved update or deactivation values to B; A remains selected and its exact draft is restored after the gate clears."
+    },
+    {
+      "test_id": "TEST-FE-115",
+      "upstream_ids": ["API-018", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Clearing a reconciled Customer command removes the active opaque handle before best-effort sealed-payload cleanup, so a browser interruption cannot leave a permanent dangling gate."
+    },
+    {
+      "test_id": "TEST-FE-116",
+      "upstream_ids": ["API-016", "API-017", "UI-028", "UI-029"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Customer create, update, and deactivation forms expose the API's exact text limits and a phone pattern that compiles under the browser-required Unicode Sets regular-expression mode before submission."
+    },
+    {
+      "test_id": "test_api_hydration_accepts_revision_15_boundary_whitespace",
+      "upstream_ids": ["API-030", "DB-CUST-001", "DEPLOY-033"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "Customer hydration accepts every boundary-whitespace form permitted by revision 15, preserving historic source bytes instead of making an upgraded list or detail request fail."
+    },
+    {
+      "test_id": "test_update_preserves_unmodified_revision_15_whitespace_fields",
+      "upstream_ids": ["API-017", "BR-CUST-002", "DB-CUST-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "An unrelated Customer update preserves revision-15-valid boundary whitespace byte-for-byte while continuing to validate every newly changed source field."
+    },
+    {
+      "test_id": "test_update_preserves_a_malformed_legacy_email_during_unrelated_work",
+      "upstream_ids": ["API-017", "API-030", "BR-CUST-002", "DB-CUST-001"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_customer.py",
+      "status": "implemented",
+      "notes": "The runtime reuse key uses the same deterministic fallback as the revision-16 migration, so malformed revision-15 email source remains byte-preserved during a memo-only update."
+    },
+    {
+      "test_id": "TEST-FE-117",
+      "upstream_ids": ["API-016", "API-018", "UI-102", "UI-103"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Confirming another tab's recorded Customer creation clears only a draft with the exact pending request fingerprint and preserves any unrelated local create draft."
+    },
+    {
+      "test_id": "TEST-FE-118",
+      "upstream_ids": ["API-016", "API-018", "UI-102", "UI-103"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An absent create command cannot bind its preserved identity to a blank or unrelated local draft; the UI retains that draft and requires an explicit action to restore the sealed original source before exact retry preparation."
+    },
+    {
+      "test_id": "TEST-FE-119",
+      "upstream_ids": ["API-018", "API-030", "UI-029", "DB-CUST-001"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A memo-only update of a legacy Customer preserves untouched invalid phone, email, name, and address source values byte-for-byte and sends only the operator-edited field."
+    },
+    {
+      "test_id": "TEST-FE-120",
+      "upstream_ids": ["API-030", "UI-029", "DB-CUST-001"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Legacy invalid phone and email values do not block unrelated edits, while editing either contact field immediately restores the strict native browser constraint for the replacement value."
+    },
+    {
+      "test_id": "TEST-FE-121",
+      "upstream_ids": ["API-015", "API-016", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "After the full replay result expires, the exact command remains bound to non-PII tombstone evidence and its permanent audit event; the browser verifies the archived original result before explicitly clearing the durable gate."
+    },
+    {
+      "test_id": "TEST-FE-122",
+      "upstream_ids": ["API-017", "UI-029", "SEC-041", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A stable mutation response that intentionally omits the newly committed audit event marks cached history unavailable and removes its stale cursor instead of presenting an incomplete history page as current."
+    },
+    {
+      "test_id": "TEST-FE-123",
+      "upstream_ids": ["API-016", "API-018", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Recorded-command reconciliation compares the exact submitted update patch before clearing a same-Customer draft, preserving different unsaved work from the current tab."
+    },
+    {
+      "test_id": "TEST-FE-124",
+      "upstream_ids": ["API-016", "API-018", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An absent command from another tab cannot replace different unsaved same-Customer values with its sealed retry payload; the gate remains active until the local draft is resolved."
+    },
+    {
+      "test_id": "TEST-FE-125",
+      "upstream_ids": ["API-009", "UI-004", "UI-029", "SEC-038"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A later bounded Customer page that reports lost management capability immediately removes stale update/deactivation controls and their unsent drafts while preserving read access."
+    },
+    {
+      "test_id": "TEST-FE-126",
+      "upstream_ids": ["API-030", "UI-003", "UI-029", "TEST-023"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Create/update legal names and deactivation reasons that normalize to blank are rejected in the browser before fingerprinting, gate reservation, or any Customer command."
+    },
+    {
+      "test_id": "TEST-FE-127",
+      "upstream_ids": ["API-016", "API-018", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A recorded Customer command result that does not match the pending result fingerprint leaves the durable command gate active and cannot be falsely reconciled."
+    },
+    {
+      "test_id": "TEST-FE-128",
+      "upstream_ids": ["API-016", "API-018", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An authoritatively absent command retains its exact Customer identity and command nonce for the one explicitly prepared retry."
+    },
+    {
+      "test_id": "TEST-FE-129",
+      "upstream_ids": ["API-016", "API-018", "UI-103", "SEC-044"],
+      "test_level": "UI",
+      "test_path": "frontend/src/customerClient.test.tsx",
+      "status": "implemented",
+      "notes": "An API-016 idempotency-key reuse response remains an unresolved command outcome, preserving the durable replay gate until the exact prior command is reconciled."
+    },
+    {
+      "test_id": "TEST-FE-130",
+      "upstream_ids": ["API-016", "API-018", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "When another tab clears the durable reconciliation gate, the local exact-retry command nonce and Customer identity are discarded so a later creation receives fresh identity."
+    },
+    {
+      "test_id": "TEST-FE-131",
+      "upstream_ids": ["API-009", "UI-004", "UI-029", "SEC-038"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A Customer detail response that reports downgraded management capability immediately removes creation controls and their local draft even when the earlier list allowed management."
+    },
+    {
+      "test_id": "TEST-FE-132",
+      "upstream_ids": ["API-016", "API-018", "UI-103", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "When an absent stale-version command cannot clear its durable gate, the UI reports that commands remain blocked instead of claiming successful reconciliation."
+    },
+    {
+      "test_id": "TEST-FE-133",
+      "upstream_ids": ["API-008", "API-018", "UI-029", "SEC-002"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Loss of command-status access purges loaded Customer detail, minimized list state, privileged controls, and unsent drafts while retaining the durable reconciliation gate."
+    },
+    {
+      "test_id": "TEST-FE-134",
+      "upstream_ids": ["API-008", "API-018", "UI-029", "SEC-002"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Loss of Customer access during an authoritative absent-result reload purges previously loaded Customer state and drafts without releasing the unresolved command gate."
+    },
+    {
+      "test_id": "TEST-FE-135",
+      "upstream_ids": ["API-016", "API-018", "UI-103", "SEC-044"],
+      "test_level": "UI",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "When another tab already cleared the matching durable Customer gate, reconciliation succeeds locally and does not falsely report a newer blocking command."
+    },
+    {
+      "test_id": "TEST-FE-136",
+      "upstream_ids": ["API-008", "API-018", "UI-029", "SEC-002"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A successful update conflict reload that reports read-only Customer access purges collection and record management drafts instead of preserving privileged state."
+    },
+    {
+      "test_id": "TEST-FE-137",
+      "upstream_ids": ["API-008", "API-018", "UI-029", "SEC-002"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A successful read-only reload during absent-command reconciliation purges management drafts while retaining the unresolved durable command gate."
+    },
+    {
+      "test_id": "TEST-FE-138",
+      "upstream_ids": ["API-008", "API-018", "UI-029", "SEC-002"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A successful deactivation conflict reload that reports read-only Customer access purges collection and record management drafts instead of preserving privileged state."
+    },
+    {
+      "test_id": "TEST-FE-139",
+      "upstream_ids": ["API-008", "API-016", "UI-029", "SEC-002"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A recorded-command reconciliation whose follow-up detail reload reports read-only Customer access purges privileged drafts and controls while retaining the unresolved durable command gate for explicit confirmation."
+    },
+    {
+      "test_id": "TEST-FE-140",
+      "upstream_ids": ["API-030", "BR-CUST-003", "UI-029", "SEC-044"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An unrelated Customer update preserves the exact untouched multiline contact address instead of treating browser control normalization as an authorized edit."
+    },
+    {
+      "test_id": "TEST-FE-141",
+      "upstream_ids": ["API-016", "UI-103", "SEC-034", "SEC-044"],
+      "test_level": "UI",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "A browser IndexedDB version change clears the closed cached Customer-coordination connection so the next bounded command reservation opens a usable database without requiring a page reload."
+    },
+    {
+      "test_id": "test_development_server_disables_access_logs_that_can_capture_customer_queries",
+      "upstream_ids": ["API-030", "SEC-041", "SEC-043", "DEPLOY-024"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "The local development server disables Uvicorn request-target access logging so Customer search terms in authorized query parameters are not copied into ordinary logs."
     }
   ]
 }

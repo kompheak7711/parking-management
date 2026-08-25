@@ -873,13 +873,15 @@ class RepositoryEvidenceTests(unittest.TestCase):
                 "docs/006_UI_SPECIFICATION.md",
                 "docs/007_TESTING_STRATEGY.md",
                 "backend/src/property_rental/auth_api.py",
-                "frontend/src/App.tsx",
-                "frontend/src/App.test.tsx",
-                "frontend/src/styles.css",
             ):
                 target = repo / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(ROOT / relative, target)
+            frontend = repo / "frontend/src"
+            frontend.mkdir(parents=True)
+            (frontend / "App.tsx").write_text("export function App() { return <main />; }\n")
+            (frontend / "App.test.tsx").write_text("// bounded V1-019 sign-in test fixture\n")
+            (frontend / "styles.css").write_text("main { display: block; }\n")
             (repo / "ops").mkdir()
             (repo / "ops/NOW.md").write_text("# V1-019 fixture\n")
             (repo / "ops/QUEUE.md").write_text("durable V1 fixture\n")
@@ -1364,6 +1366,9 @@ class RepositoryEvidenceTests(unittest.TestCase):
             ROOT / "backend/tests/test_property_migration.py": (
                 "def test_property_migration(): pass\n"
             ),
+            ROOT / "backend/src/property_rental/app.py": (
+                "from fastapi import FastAPI\napp = FastAPI()\n"
+            ),
         }
         original_is_file = Path.is_file
         original_read_text = Path.read_text
@@ -1383,16 +1388,13 @@ class RepositoryEvidenceTests(unittest.TestCase):
                 )
                 readable = V1_022_SUBSTAGE_PATHS[substage]
                 self.assertNotIn("backend/tests/test_migrations.py", readable)
-                existing_readable = [
-                    path for path in readable if (ROOT / path).is_file()
-                ]
                 self.assertLessEqual(
-                    sum((ROOT / path).stat().st_size for path in existing_readable)
-                    + sum(
+                    sum(
                         len(future_contents[ROOT / path].encode())
-                        for path in readable
                         if ROOT / path in future_contents
-                        and path not in existing_readable
+                        else (ROOT / path).stat().st_size
+                        for path in readable
+                        if ROOT / path in future_contents or (ROOT / path).is_file()
                     ),
                     30_000,
                 )
@@ -1776,11 +1778,34 @@ class RepositoryEvidenceTests(unittest.TestCase):
             self.assertEqual(evidence[0]["complete_content"], "x" * 12_000)
 
             (source / "styles.css").write_text("x" * V1_019_FRONTEND_CONTEXT_MAX_BYTES)
-            with self.assertRaises(AutomationError) as raised:
-                complete_small_frontend_evidence(repo)
-            self.assertEqual(
-                raised.exception.category, "context_materialization_required"
+            compact = complete_small_frontend_evidence(repo)
+            self.assertTrue(
+                all(item["complete_content"] is None for item in compact)
             )
+            self.assertTrue(
+                all(item["materialization"] == "line_bounded_excerpts" for item in compact)
+            )
+            self.assertLessEqual(
+                len(json.dumps(compact, separators=(",", ":")).encode()),
+                V1_019_FRONTEND_CONTEXT_MAX_BYTES,
+            )
+
+    def test_v1_019_frontend_context_compacts_the_current_growing_files(self) -> None:
+        evidence = complete_small_frontend_evidence(ROOT)
+
+        self.assertEqual(
+            {item["materialization"] for item in evidence},
+            {"line_bounded_excerpts"},
+        )
+        self.assertTrue(all(item["complete_content"] is None for item in evidence))
+        self.assertLessEqual(
+            len(json.dumps(evidence, separators=(",", ":")).encode()),
+            V1_019_FRONTEND_CONTEXT_MAX_BYTES,
+        )
+        app = next(item for item in evidence if item["path"] == "frontend/src/App.tsx")
+        self.assertTrue(
+            any("function handleSignIn" in excerpt["content"] for excerpt in app["excerpts"])
+        )
 
     def test_v1_019_frontend_context_represents_authorized_deletion(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1944,8 +1969,13 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
                 repo / "backend/src/property_rental/auth_api.py",
             )
             (repo / "frontend/src").mkdir(parents=True)
-            for name in ("App.tsx", "App.test.tsx", "styles.css"):
-                shutil.copy(ROOT / "frontend/src" / name, repo / "frontend/src" / name)
+            (repo / "frontend/src/App.tsx").write_text(
+                "export function App() { return <main />; }\n"
+            )
+            (repo / "frontend/src/App.test.tsx").write_text(
+                "// bounded V1-019 sign-in test fixture\n"
+            )
+            (repo / "frontend/src/styles.css").write_text("main { display: block; }\n")
             state = json.loads((repo / "ops/STATE.json").read_text())
             state.update(
                 {
@@ -9422,7 +9452,7 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                         "--expected-repair-head",
                         repair_head,
                         "--notification-timeout",
-                        "0.05",
+                        "0.05" if notification_hang else "1",
                         "--poll",
                         "0.01",
                         "--overlap-timeout",
@@ -9567,7 +9597,7 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                             "--expected-repair-head",
                             repair_head,
                             "--notification-timeout",
-                            "0.05",
+                            "0.05" if notification_hang else "1",
                         ],
                         cwd=repo,
                         env={

@@ -71,7 +71,7 @@ backend-install:
 	cd $(BACKEND_DIR) && $(UV) sync --extra dev
 
 backend-dev:
-	cd $(BACKEND_DIR) && $(UV) run uvicorn property_rental.app:app --reload --host 127.0.0.1 --port 8000
+	cd $(BACKEND_DIR) && $(UV) run uvicorn property_rental.app:app --reload --host 127.0.0.1 --port 8000 --no-access-log
 
 backend-test:
 	$(BACKEND_RUN) pytest

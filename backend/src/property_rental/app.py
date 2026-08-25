@@ -40,6 +40,18 @@ from property_rental.auth_api import (
     UnavailableAuthenticationFlow,
     create_auth_router,
 )
+from property_rental.customer import CustomerVersionConflict
+from property_rental.customer_api import (
+    CustomerIdempotencyKeyReused,
+    CustomerLifecycleConflict,
+    CustomerResourceFlow,
+    CustomerReuseConflict,
+    PostgresCustomerResourceFlow,
+    UnavailableCustomerResourceFlow,
+    create_customer_router,
+    customer_idempotency_key_reused_response,
+    customer_reuse_conflict_response,
+)
 from property_rental.identity import ActorResolver, deny_unauthenticated_actor
 from property_rental.logging import create_application_logger
 from property_rental.property_api import (
@@ -60,6 +72,9 @@ from property_rental.unit_api import (
 
 REQUEST_ID_HEADER: Final = "X-Request-ID"
 REQUEST_ID_PATTERN: Final = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+CUSTOMER_API_PATH_PATTERN: Final = re.compile(
+    r"^/api/v1/(?:customers(?:/|$)|properties/[^/]+/customers(?:/|$))"
+)
 DATABASE_TIMEOUT_SECONDS: Final = 2
 ERROR_STATUS_DETAILS: Final = {
     status.HTTP_400_BAD_REQUEST: ("BAD_REQUEST", "The request could not be processed."),
@@ -173,6 +188,7 @@ def create_app(
     audit_query_flow: AuditEventQueryFlow | None = None,
     property_resource_flow: PropertyResourceFlow | None = None,
     unit_resource_flow: UnitResourceFlow | None = None,
+    customer_resource_flow: CustomerResourceFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -307,6 +323,42 @@ def create_app(
             current_version=exc.current_version,
         )
 
+    @app.exception_handler(CustomerVersionConflict)
+    async def customer_version_conflict(
+        request: Request,
+        exc: CustomerVersionConflict,
+    ) -> JSONResponse:
+        return error_response(
+            status.HTTP_412_PRECONDITION_FAILED,
+            request.state.request_id,
+            current_version=exc.current_version,
+        )
+
+    @app.exception_handler(CustomerReuseConflict)
+    async def customer_reuse_conflict(
+        request: Request,
+        exc: CustomerReuseConflict,
+    ) -> JSONResponse:
+        return customer_reuse_conflict_response(request, exc)
+
+    @app.exception_handler(CustomerIdempotencyKeyReused)
+    async def customer_idempotency_key_reused(
+        request: Request,
+        _: CustomerIdempotencyKeyReused,
+    ) -> JSONResponse:
+        return customer_idempotency_key_reused_response(request)
+
+    @app.exception_handler(CustomerLifecycleConflict)
+    async def customer_lifecycle_conflict(
+        request: Request,
+        exc: CustomerLifecycleConflict,
+    ) -> JSONResponse:
+        return error_response(
+            status.HTTP_409_CONFLICT,
+            request.state.request_id,
+            current_version=exc.current_version,
+        )
+
     @app.middleware("http")
     async def add_request_id(
         request: Request,
@@ -330,6 +382,9 @@ def create_app(
             )
             response = error_response(status.HTTP_500_INTERNAL_SERVER_ERROR, request_id)
         response.headers[REQUEST_ID_HEADER] = request_id
+        if CUSTOMER_API_PATH_PATTERN.match(request.url.path):
+            response.headers["Cache-Control"] = "private, no-store"
+            response.headers["Vary"] = "Cookie"
         logger.info(
             "request completed",
             extra={
@@ -393,6 +448,18 @@ def create_app(
                 if resolved_settings.database_url is not None
                 else UnavailableUnitResourceFlow()
             ),
+        )
+    )
+    app.include_router(
+        create_customer_router(
+            actor_resolver,
+            customer_resource_flow
+            or (
+                PostgresCustomerResourceFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableCustomerResourceFlow()
+            ),
+            resolved_settings,
         )
     )
     return app

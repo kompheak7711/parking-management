@@ -3625,7 +3625,55 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260824_15",)
+                assert cursor.fetchone() == ("20260824_16",)
+
+
+def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
+    with _temporary_migration_database("prm_customer_legacy_email") as migration_url:
+        assert _run_alembic("upgrade", "20260824_15").returncode == 0
+        actor_id = uuid.uuid4()
+        customer_id = uuid.uuid4()
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO app.user_accounts (
+                        actor_id, normalized_username, display_name, audit_name,
+                        lifecycle_state, mfa_policy_class, provenance
+                    ) VALUES (%s, %s, 'Legacy Customer Import', 'legacy-import',
+                              'active', 'optional', 'migration-regression')
+                    """,
+                    (actor_id, f"legacy-customer-{actor_id.hex}"),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO app.customers (
+                        id, legal_name, email_address, created_by, updated_by
+                    ) VALUES (%s, 'Legacy Email Customer', 'user@a..com', %s, %s)
+                    """,
+                    (customer_id, actor_id, actor_id),
+                )
+            connection.commit()
+
+        result = _run_alembic("upgrade", "head")
+
+        assert result.returncode == 0, result.stderr
+        with psycopg.connect(migration_url) as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT customer.email_address, match_key.match_digest
+                    FROM app.customers AS customer
+                    JOIN app.customer_email_match_keys AS match_key
+                      ON match_key.customer_id = customer.id
+                    WHERE customer.id = %s
+                    """,
+                    (customer_id,),
+                )
+                row = cursor.fetchone()
+        assert row is not None
+        assert row[0] == "user@a..com"
+        assert isinstance(row[1], str) and len(row[1]) == 32
 
 
 def test_protected_bootstrap_migration_rejects_large_object_ownership() -> None:

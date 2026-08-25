@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Protocol
+from collections.abc import Iterator
+from contextlib import AbstractContextManager, contextmanager, nullcontext
+from dataclasses import InitVar, dataclass
+from hashlib import md5
+from typing import Protocol, cast, runtime_checkable
 from uuid import UUID, uuid4
 
 import psycopg
+
+CUSTOMER_LOCK_TIMEOUT_MS = 1_000
+CUSTOMER_STATEMENT_TIMEOUT_MS = 3_000
+CUSTOMER_CONNECT_TIMEOUT_SECONDS = 3
 
 NIL_UUID = UUID(int=0)
 
@@ -20,9 +27,31 @@ def normalize_optional(value: str | None) -> str | None:
 
 
 def normalized_email(value: str | None) -> str | None:
-    """Return the technical email match key while preserving the entered value."""
+    """Return the migration-equivalent technical email match key."""
     normalized = normalize_optional(value)
-    return None if normalized is None else normalized.casefold()
+    if normalized is None:
+        return None
+    try:
+        canonical = canonical_email(normalized)
+    except ValueError:
+        # Revision 15 intentionally accepted arbitrary source text. Revision 16
+        # backfills the same deterministic raw key when an historic domain cannot
+        # be IDNA-canonicalized, so unrelated updates must use that key too.
+        return normalized.casefold()
+    return None if canonical is None else canonical.casefold()
+
+
+def canonical_email(value: str | None) -> str | None:
+    """Canonicalize an optional IDN domain for identical storage and reuse matching."""
+    normalized = normalize_optional(value)
+    if normalized is None or normalized.count("@") != 1:
+        return normalized
+    local, domain = normalized.rsplit("@", 1)
+    try:
+        ascii_domain = domain.encode("idna").decode("ascii").lower()
+    except UnicodeError as exc:
+        raise ValueError("email_address must use a valid domain") from exc
+    return f"{local}@{ascii_domain}"
 
 
 def normalized_phone(value: str | None) -> str | None:
@@ -30,7 +59,7 @@ def normalized_phone(value: str | None) -> str | None:
     normalized = normalize_optional(value)
     if normalized is None:
         return None
-    digits = "".join(character for character in normalized if character.isdigit())
+    digits = "".join(character for character in normalized if character in "0123456789")
     return digits or None
 
 
@@ -45,14 +74,21 @@ class Customer:
     contact_address: str | None = None
     memo: str | None = None
     version: int = 1
+    _allow_legacy_phone: InitVar[bool] = False
+    _allow_legacy_fields: InitVar[frozenset[str]] = frozenset()
 
-    def __post_init__(self) -> None:
+    def __post_init__(
+        self,
+        _allow_legacy_phone: bool,
+        _allow_legacy_fields: frozenset[str],
+    ) -> None:
         if self.customer_id == NIL_UUID:
             raise ValueError("customer_id must not be the nil UUID")
-        if not self.legal_name.strip():
-            raise ValueError("legal_name must not be blank")
-        if self.legal_name != self.legal_name.strip():
-            raise ValueError("legal_name must not have surrounding whitespace")
+        if "legal_name" not in _allow_legacy_fields:
+            if not self.legal_name.strip():
+                raise ValueError("legal_name must not be blank")
+            if self.legal_name != self.legal_name.strip():
+                raise ValueError("legal_name must not have surrounding whitespace")
         for field_name in (
             "phone_number",
             "email_address",
@@ -60,8 +96,22 @@ class Customer:
             "memo",
         ):
             value = getattr(self, field_name)
-            if value is not None and (not value.strip() or value != value.strip()):
+            if (
+                field_name not in _allow_legacy_fields
+                and value is not None
+                and (not value.strip() or value != value.strip())
+            ):
                 raise ValueError(f"{field_name} must be null or normalized nonblank text")
+        if (
+            not _allow_legacy_phone
+            and "phone_number" not in _allow_legacy_fields
+            and self.phone_number is not None
+            and (
+                not any(character in "0123456789" for character in self.phone_number)
+                or any(character not in "0123456789+-.() " for character in self.phone_number)
+            )
+        ):
+            raise ValueError("phone_number must use supported ASCII phone characters")
         if self.version < 1:
             raise ValueError("version must be positive")
 
@@ -101,14 +151,94 @@ class CustomerRepository(Protocol):
     def update(self, customer: Customer, *, expected_version: int) -> Customer: ...
 
 
+@runtime_checkable
+class SerializedCustomerRepository(Protocol):
+    """Repository extension that serializes reuse decisions for contact keys."""
+
+    def serialize_reuse_keys(
+        self,
+        *,
+        email_key: str | None,
+        phone_key: str | None,
+    ) -> AbstractContextManager[None]: ...
+
+
+@runtime_checkable
+class VersionedCustomerRepository(Protocol):
+    """Repository extension for an atomic optimistic-version assertion."""
+
+    def assert_version(self, customer_id: UUID, expected_version: int) -> None: ...
+
+
+@dataclass(frozen=True, slots=True)
+class CustomerCommandContext:
+    """Durable identity and canonical input for one Customer API command."""
+
+    property_id: UUID
+    action: str
+    idempotency_key: UUID
+    request_digest: str
+
+
 @dataclass(frozen=True, slots=True)
 class PostgresCustomerRepository:
     """Read and mutate Customers only through protected PostgreSQL functions."""
 
     database_url: str
     actor_id: UUID
+    command: CustomerCommandContext | None = None
 
     _columns = "id, legal_name, phone_number, email_address, contact_address, memo, version"
+    _qualified_columns = ", ".join(f"customer.{column.strip()}" for column in _columns.split(","))
+
+    @staticmethod
+    def _bound_work(connection: psycopg.Connection[tuple[object, ...]]) -> None:
+        """Bound every statement executed while the serialized reuse lock is held."""
+        connection.execute(
+            "SELECT pg_catalog.set_config('lock_timeout', %s, true)",
+            (str(CUSTOMER_LOCK_TIMEOUT_MS),),
+        )
+        connection.execute(
+            "SELECT pg_catalog.set_config('statement_timeout', %s, true)",
+            (str(CUSTOMER_STATEMENT_TIMEOUT_MS),),
+        )
+
+    @contextmanager
+    def serialize_reuse_keys(
+        self,
+        *,
+        email_key: str | None,
+        phone_key: str | None,
+    ) -> Iterator[None]:
+        """Hold deterministic transaction locks across each reuse check and write."""
+        keys = sorted(
+            key
+            for key in (
+                None if email_key is None else f"customer-email:{email_key}",
+                None if phone_key is None else f"customer-phone:{phone_key}",
+            )
+            if key is not None
+        )
+        if not keys:
+            yield
+            return
+        with psycopg.connect(
+            self.database_url, connect_timeout=CUSTOMER_CONNECT_TIMEOUT_SECONDS
+        ) as lock_connection:
+            lock_connection.execute(
+                "SELECT pg_catalog.set_config('lock_timeout', %s, true)",
+                (str(CUSTOMER_LOCK_TIMEOUT_MS),),
+            )
+            lock_connection.execute(
+                "SELECT pg_catalog.set_config('statement_timeout', %s, true)",
+                (str(CUSTOMER_STATEMENT_TIMEOUT_MS),),
+            )
+            for key in keys:
+                lock_connection.execute(
+                    "SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+                    (key,),
+                )
+            yield
 
     def find_reuse_candidates(
         self,
@@ -121,26 +251,88 @@ class PostgresCustomerRepository:
         clauses: list[str] = []
         parameters: list[object] = []
         if email_key is not None:
-            clauses.append("lower(email_address) = %s")
-            parameters.append(email_key)
+            clauses.append("email_match.match_digest = %s")
+            parameters.append(md5(email_key.encode(), usedforsecurity=False).hexdigest())
         if phone_key is not None:
             clauses.append("regexp_replace(phone_number, '[^0-9]', '', 'g') = %s")
             parameters.append(phone_key)
-        with psycopg.connect(self.database_url) as connection:
+        with psycopg.connect(
+            self.database_url, connect_timeout=CUSTOMER_CONNECT_TIMEOUT_SECONDS
+        ) as connection:
+            self._bound_work(connection)
             rows = connection.execute(
-                f"SELECT {self._columns} FROM app.customers "
-                f"WHERE {' OR '.join(clauses)} ORDER BY legal_name, id LIMIT 20",
+                "SELECT customer.id, left(customer.legal_name, 255), "
+                "NULL::text, NULL::text, NULL::text, NULL::text, customer.version "
+                "FROM app.customers AS customer "
+                "LEFT JOIN app.customer_email_match_keys AS email_match "
+                "ON email_match.customer_id = customer.id "
+                f"WHERE {' OR '.join(clauses)} "
+                "ORDER BY customer.legal_name, customer.id LIMIT 20",
                 tuple(parameters),
             ).fetchall()
         return tuple(_customer_from_row(row) for row in rows)
 
     def add(self, customer: Customer) -> None:
         try:
-            with psycopg.connect(self.database_url) as connection:
+            with psycopg.connect(
+                self.database_url, connect_timeout=CUSTOMER_CONNECT_TIMEOUT_SECONDS
+            ) as connection:
+                self._bound_work(connection)
+                if self.command is None:
+                    row = connection.execute(
+                        """
+                        SELECT * FROM app.create_customer(
+                            %s, %s, %s, %s, %s, %s, %s, %s
+                        )
+                        """,
+                        (
+                            customer.customer_id,
+                            customer.legal_name,
+                            customer.phone_number,
+                            customer.email_address,
+                            customer.contact_address,
+                            customer.memo,
+                            self.actor_id,
+                            uuid4(),
+                        ),
+                    ).fetchone()
+                else:
+                    row = connection.execute(
+                        """
+                        SELECT * FROM app.execute_customer_create(
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                        )
+                        """,
+                        (
+                            self.command.property_id,
+                            self.command.idempotency_key,
+                            self.command.request_digest,
+                            customer.customer_id,
+                            customer.legal_name,
+                            customer.phone_number,
+                            customer.email_address,
+                            customer.contact_address,
+                            customer.memo,
+                            self.actor_id,
+                        ),
+                    ).fetchone()
+        except psycopg.errors.UniqueViolation as error:
+            raise CustomerIdentityAlreadyExistsError(
+                f"Customer identity {customer.customer_id} already exists"
+            ) from error
+        if row is None or _customer_from_row(row) != customer:
+            raise RuntimeError("Customer creation returned an invalid result")
+
+    def update(self, customer: Customer, *, expected_version: int) -> Customer:
+        with psycopg.connect(
+            self.database_url, connect_timeout=CUSTOMER_CONNECT_TIMEOUT_SECONDS
+        ) as connection:
+            self._bound_work(connection)
+            if self.command is None:
                 row = connection.execute(
                     """
-                    SELECT * FROM app.create_customer(
-                        %s, %s, %s, %s, %s, %s, %s, %s
+                    SELECT * FROM app.update_customer(
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s
                     )
                     """,
                     (
@@ -150,37 +342,32 @@ class PostgresCustomerRepository:
                         customer.email_address,
                         customer.contact_address,
                         customer.memo,
+                        expected_version,
                         self.actor_id,
                         uuid4(),
                     ),
                 ).fetchone()
-        except psycopg.errors.UniqueViolation as error:
-            raise CustomerIdentityAlreadyExistsError(
-                f"Customer identity {customer.customer_id} already exists"
-            ) from error
-        if row is None or _customer_from_row(row) != customer:
-            raise RuntimeError("Customer creation returned an invalid result")
-
-    def update(self, customer: Customer, *, expected_version: int) -> Customer:
-        with psycopg.connect(self.database_url) as connection:
-            row = connection.execute(
-                """
-                SELECT * FROM app.update_customer(
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s
-                )
-                """,
-                (
-                    customer.customer_id,
-                    customer.legal_name,
-                    customer.phone_number,
-                    customer.email_address,
-                    customer.contact_address,
-                    customer.memo,
-                    expected_version,
-                    self.actor_id,
-                    uuid4(),
-                ),
-            ).fetchone()
+            else:
+                row = connection.execute(
+                    """
+                    SELECT * FROM app.execute_customer_update(
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+                    )
+                    """,
+                    (
+                        self.command.property_id,
+                        self.command.idempotency_key,
+                        self.command.request_digest,
+                        customer.customer_id,
+                        customer.legal_name,
+                        customer.phone_number,
+                        customer.email_address,
+                        customer.contact_address,
+                        customer.memo,
+                        expected_version,
+                        self.actor_id,
+                    ),
+                ).fetchone()
             if row is None:
                 current = connection.execute(
                     "SELECT version FROM app.customers WHERE id = %s",
@@ -190,6 +377,22 @@ class PostgresCustomerRepository:
                     raise LookupError("Customer was not found")
                 raise CustomerVersionConflict(int(str(current[0])))
         return _customer_from_row(row)
+
+    def assert_version(self, customer_id: UUID, expected_version: int) -> None:
+        """Linearize a no-op decision against the currently committed version."""
+        with psycopg.connect(
+            self.database_url, connect_timeout=CUSTOMER_CONNECT_TIMEOUT_SECONDS
+        ) as connection:
+            self._bound_work(connection)
+            row = connection.execute(
+                "SELECT version FROM app.customers WHERE id = %s",
+                (customer_id,),
+            ).fetchone()
+        if row is None:
+            raise LookupError("Customer was not found")
+        current_version = int(str(row[0]))
+        if current_version != expected_version:
+            raise CustomerVersionConflict(current_version)
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,14 +416,15 @@ class CustomerService:
             customer_id=customer_id,
             legal_name=legal_name.strip(),
             phone_number=normalize_optional(phone_number),
-            email_address=normalize_optional(email_address),
+            email_address=canonical_email(email_address),
             contact_address=normalize_optional(contact_address),
             memo=normalize_optional(memo),
         )
-        candidates = self._other_candidates(customer)
-        if candidates and not confirmed_distinct:
-            raise CustomerReuseRequired(candidates)
-        self.repository.add(customer)
+        with self._reuse_guard(customer):
+            candidates = self._other_candidates(customer)
+            if candidates and not confirmed_distinct:
+                raise CustomerReuseRequired(candidates)
+            self.repository.add(customer)
         return customer
 
     def update(
@@ -234,19 +438,79 @@ class CustomerService:
         memo: str | None,
         confirmed_distinct: bool = False,
     ) -> Customer:
+        normalized_legal_name = legal_name.strip()
+        normalized_phone_number = normalize_optional(phone_number)
+        normalized_email_address = normalize_optional(email_address)
+        normalized_contact_address = normalize_optional(contact_address)
+        normalized_memo = normalize_optional(memo)
+        candidate_values = {
+            "legal_name": (
+                current.legal_name if legal_name == current.legal_name else normalized_legal_name
+            ),
+            "phone_number": (
+                current.phone_number
+                if phone_number == current.phone_number
+                else normalized_phone_number
+            ),
+            "email_address": (
+                current.email_address
+                if email_address == current.email_address
+                else canonical_email(normalized_email_address)
+            ),
+            "contact_address": (
+                current.contact_address
+                if contact_address == current.contact_address
+                else normalized_contact_address
+            ),
+            "memo": current.memo if memo == current.memo else normalized_memo,
+        }
+        preserved_legacy_fields = frozenset(
+            field_name
+            for field_name, candidate_value in candidate_values.items()
+            if candidate_value == getattr(current, field_name)
+        )
         candidate = Customer(
             customer_id=current.customer_id,
-            legal_name=legal_name.strip(),
-            phone_number=normalize_optional(phone_number),
-            email_address=normalize_optional(email_address),
-            contact_address=normalize_optional(contact_address),
-            memo=normalize_optional(memo),
+            legal_name=cast(str, candidate_values["legal_name"]),
+            phone_number=candidate_values["phone_number"],
+            email_address=candidate_values["email_address"],
+            contact_address=candidate_values["contact_address"],
+            memo=candidate_values["memo"],
             version=current.version + 1,
+            _allow_legacy_phone=normalized_phone_number == current.phone_number,
+            _allow_legacy_fields=preserved_legacy_fields,
         )
-        matches = self._other_candidates(candidate)
-        if matches and not confirmed_distinct:
-            raise CustomerReuseRequired(matches)
-        return self.repository.update(candidate, expected_version=current.version)
+        if (
+            candidate.legal_name,
+            candidate.phone_number,
+            candidate.email_address,
+            candidate.contact_address,
+            candidate.memo,
+        ) == (
+            current.legal_name,
+            current.phone_number,
+            current.email_address,
+            current.contact_address,
+            current.memo,
+        ):
+            if isinstance(self.repository, VersionedCustomerRepository):
+                repository = cast(VersionedCustomerRepository, self.repository)
+                repository.assert_version(current.customer_id, current.version)
+            raise ValueError("Customer update must change source data")
+        with self._reuse_guard(candidate):
+            matches = self._other_candidates(candidate)
+            if matches and not confirmed_distinct:
+                raise CustomerReuseRequired(matches)
+            return self.repository.update(candidate, expected_version=current.version)
+
+    def _reuse_guard(self, customer: Customer) -> AbstractContextManager[None]:
+        if not isinstance(self.repository, SerializedCustomerRepository):
+            return nullcontext()
+        repository = cast(SerializedCustomerRepository, self.repository)
+        return repository.serialize_reuse_keys(
+            email_key=normalized_email(customer.email_address),
+            phone_key=normalized_phone(customer.phone_number),
+        )
 
     def _other_candidates(self, customer: Customer) -> tuple[Customer, ...]:
         matches = self.repository.find_reuse_candidates(
@@ -265,4 +529,8 @@ def _customer_from_row(row: tuple[object, ...]) -> Customer:
         contact_address=None if row[4] is None else str(row[4]),
         memo=None if row[5] is None else str(row[5]),
         version=int(str(row[6])),
+        _allow_legacy_phone=True,
+        _allow_legacy_fields=frozenset(
+            {"legal_name", "phone_number", "email_address", "contact_address", "memo"}
+        ),
     )

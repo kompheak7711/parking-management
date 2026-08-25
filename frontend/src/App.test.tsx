@@ -6,9 +6,14 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { App } from "./App";
+import {
+  App,
+  clearCustomerReconciliation,
+  reserveCustomerReconciliation,
+} from "./App";
+import type { CustomerReconciliationRequirement } from "./CustomerManagement";
 import { AccessAdministrationApi, UserAccount } from "./adminClient";
 import {
   AUTHENTICATION_ERROR_MESSAGE,
@@ -20,11 +25,165 @@ import {
   PropertyConfigurationApi,
   PropertyConfigurationUnavailableError,
 } from "./propertyClient";
+import {
+  CustomerApi,
+  CustomerDetail,
+  CustomerRequestError,
+} from "./customerClient";
+
+function memoryStorage(): Storage {
+  const values = new Map<string, string>();
+  return {
+    clear: () => {
+      values.clear();
+    },
+    getItem: (key) => values.get(key) ?? null,
+    key: (index) => [...values.keys()][index] ?? null,
+    get length() {
+      return values.size;
+    },
+    removeItem: (key) => {
+      values.delete(key);
+    },
+    setItem: (key, value) => {
+      values.set(key, value);
+    },
+  };
+}
+
+let indexedDatabaseReadGate: Promise<void> | null = null;
+let indexedDatabaseWriteAborts = false;
+let indexedDatabaseOpenCount = 0;
+let indexedDatabaseVersionChange: (() => void) | null = null;
+
+function memoryIndexedDatabase(): IDBFactory {
+  const values = new Map<IDBValidKey, unknown>();
+  let initialized = false;
+  function request<T>(
+    result: T,
+    gate: Promise<void> | null = null,
+  ): IDBRequest<T> {
+    const pending = { result, error: null } as unknown as IDBRequest<T>;
+    void (gate ?? Promise.resolve()).then(() => {
+      queueMicrotask(() => {
+        pending.onsuccess?.(new Event("success"));
+      });
+    });
+    return pending;
+  }
+  function databaseConnection(): IDBDatabase {
+    const database = {
+      close: () => undefined,
+      createObjectStore: () => {
+        initialized = true;
+        return {};
+      },
+      objectStoreNames: { contains: () => initialized },
+      onversionchange: null,
+      transaction: (_store: string, mode?: IDBTransactionMode) => {
+        const transaction = {
+          error: null,
+          onabort: null,
+          oncomplete: null,
+          onerror: null,
+          objectStore: () => ({
+            get: (key: IDBValidKey) => {
+              const gate = indexedDatabaseReadGate;
+              indexedDatabaseReadGate = null;
+              return request(values.get(key), gate);
+            },
+            put: (value: unknown, key: IDBValidKey) => {
+              const pending = request(key);
+              void Promise.resolve().then(() => {
+                queueMicrotask(() => {
+                  queueMicrotask(() => {
+                    if (indexedDatabaseWriteAborts) {
+                      transaction.onabort?.(new Event("abort"));
+                    } else {
+                      values.set(key, value);
+                      transaction.oncomplete?.(new Event("complete"));
+                    }
+                  });
+                });
+              });
+              return pending;
+            },
+          }),
+        } as unknown as IDBTransaction;
+        if (mode !== "readwrite") {
+          queueMicrotask(() => {
+            transaction.oncomplete?.(new Event("complete"));
+          });
+        }
+        return transaction;
+      },
+    } as unknown as IDBDatabase;
+    return database;
+  }
+  return {
+    open: () => {
+      indexedDatabaseOpenCount += 1;
+      const database = databaseConnection();
+      const pending = {
+        error: null,
+        result: database,
+      } as unknown as IDBOpenDBRequest;
+      queueMicrotask(() => {
+        if (!initialized) {
+          pending.onupgradeneeded?.(
+            Object.assign(new Event("upgradeneeded"), {
+              newVersion: 1,
+              oldVersion: 0,
+            }),
+          );
+        }
+        pending.onsuccess?.(new Event("success"));
+        indexedDatabaseVersionChange = () => {
+          database.onversionchange?.(
+            Object.assign(new Event("versionchange"), {
+              newVersion: 2,
+              oldVersion: 1,
+            }),
+          );
+        };
+      });
+      return pending;
+    },
+  } as unknown as IDBFactory;
+}
+
+beforeEach(() => {
+  indexedDatabaseVersionChange?.();
+  indexedDatabaseReadGate = null;
+  indexedDatabaseWriteAborts = false;
+  indexedDatabaseOpenCount = 0;
+  indexedDatabaseVersionChange = null;
+  Object.defineProperty(window, "localStorage", {
+    configurable: true,
+    value: memoryStorage(),
+  });
+  Object.defineProperty(window, "indexedDB", {
+    configurable: true,
+    value: memoryIndexedDatabase(),
+  });
+  Object.defineProperty(navigator, "locks", {
+    configurable: true,
+    value: {
+      request: (
+        _name: string,
+        _options: LockOptions,
+        callback: (lock: unknown) => unknown,
+      ) => Promise.resolve(callback(null)),
+    },
+  });
+});
 
 afterEach(() => {
   cleanup();
   vi.useRealTimers();
   vi.unstubAllGlobals();
+  window.sessionStorage.clear();
+  window.localStorage.clear();
 });
 
 const session: SessionData = {
@@ -36,6 +195,16 @@ const session: SessionData = {
   mfa_assurance: "totp",
   reauthenticated_at: "2026-08-22T10:05:00Z",
 };
+
+const customerReconciliationKey = "property-rental.customer-reconciliation.v2";
+
+async function storeCustomerReconciliation(
+  requirement: CustomerReconciliationRequirement,
+) {
+  expect(await reserveCustomerReconciliation(requirement)).toMatchObject({
+    reserved: true,
+  });
+}
 
 function mockAuthenticationApi(
   overrides: Partial<AuthenticationApi> = {},
@@ -85,6 +254,57 @@ function propertyApiDouble(
   };
 }
 
+function customerApiDouble(overrides: Partial<CustomerApi> = {}): CustomerApi {
+  return {
+    list: vi.fn().mockResolvedValue({
+      items: [],
+      next_cursor: null,
+      can_manage: true,
+    }),
+    get: vi.fn().mockRejectedValue(new Error("not used")),
+    commandStatus: vi.fn().mockRejectedValue(new Error("not used")),
+    create: vi.fn().mockRejectedValue(new Error("not used")),
+    update: vi.fn().mockRejectedValue(new Error("not used")),
+    deactivate: vi.fn().mockRejectedValue(new Error("not used")),
+    financialSummary: vi.fn().mockRejectedValue(new Error("not used")),
+    ...overrides,
+  };
+}
+
+function reconciledCustomer(
+  customerId: string,
+  legalName = "Reconciled Customer",
+): CustomerDetail {
+  return {
+    customer_id: customerId,
+    legal_name: legalName,
+    phone_number: null,
+    email_address: null,
+    contact_address: null,
+    memo: null,
+    version: 1,
+    active: true,
+    deactivated_at: null,
+    deactivation_reason: null,
+    relationships: {
+      reservations: [],
+      primary_tenant_leases: [],
+      signer_leases: [],
+      occupancies: [],
+      invoices: [],
+      payments: [],
+      customer_credit: [],
+      refunds: [],
+    },
+    audit_history: [],
+    audit_history_next_cursor: null,
+    can_manage: true,
+    can_deactivate: true,
+    can_view_audit: false,
+    audit_history_available: false,
+  };
+}
+
 function renderPropertyConfigurationApp(propertyApi: PropertyConfigurationApi) {
   render(
     <App
@@ -123,6 +343,63 @@ function expectPropertyManagementHidden() {
 }
 
 describe("local sign-in", () => {
+  it("TEST-FE-111 sends no Customer command when the encryption-key transaction aborts", async () => {
+    indexedDatabaseWriteAborts = true;
+    const requirement = {
+      actorId: "actor-1",
+      commandNonce: "12121212-1212-4212-8212-121212121212",
+      kind: "create" as const,
+      customerId: "customer-aborted-key",
+      propertyId: "property-1",
+      resultFingerprint: "b".repeat(64),
+      requestFingerprint: "a".repeat(64),
+      createSource: { legal_name: "Already created elsewhere" },
+    };
+
+    expect(await reserveCustomerReconciliation(requirement)).toEqual({
+      existing: null,
+      reserved: false,
+      storageAvailable: false,
+    });
+    expect(window.localStorage.length).toBe(0);
+  });
+
+  it("TEST-FE-141 reopens Customer coordination storage after an IndexedDB version change", async () => {
+    const first = {
+      actorId: "actor-version-1",
+      commandNonce: "14114114-1141-4141-8141-141141141141",
+      kind: "create" as const,
+      customerId: "customer-version-1",
+      propertyId: "property-1",
+      resultFingerprint: "b".repeat(64),
+      requestFingerprint: "a".repeat(64),
+      createSource: { legal_name: "First version" },
+    };
+    expect(await reserveCustomerReconciliation(first)).toMatchObject({
+      reserved: true,
+      storageAvailable: true,
+    });
+    expect(indexedDatabaseOpenCount).toBe(1);
+
+    indexedDatabaseVersionChange?.();
+    expect(await clearCustomerReconciliation(first)).toEqual({
+      status: "cleared",
+    });
+    expect(indexedDatabaseOpenCount).toBe(2);
+    const second = {
+      ...first,
+      actorId: "actor-version-2",
+      commandNonce: "14114114-1141-4141-8141-141141141142",
+      customerId: "customer-version-2",
+      createSource: { legal_name: "Second version" },
+    };
+    expect(await reserveCustomerReconciliation(second)).toMatchObject({
+      reserved: true,
+      storageAvailable: true,
+    });
+    expect(indexedDatabaseOpenCount).toBe(2);
+  });
+
   it("TEST-FE-001 renders an accessible local username and password form", () => {
     render(<App environment="development" buildId="test-build" />);
 
@@ -161,7 +438,7 @@ describe("local sign-in", () => {
   it("TEST-FE-004 submits the labeled controls through the semantic form", async () => {
     const authenticate = vi.fn().mockResolvedValue({
       phase: "authenticated",
-      session: null,
+      session,
     });
     render(
       <App
@@ -275,7 +552,7 @@ describe("local sign-in", () => {
     const authenticate = vi
       .fn()
       .mockRejectedValueOnce(new Error("unknown account"))
-      .mockResolvedValueOnce({ phase: "authenticated", session: null });
+      .mockResolvedValueOnce({ phase: "authenticated", session });
     render(
       <App
         environment="development"
@@ -737,6 +1014,1203 @@ describe("local sign-in", () => {
       screen.queryByRole("heading", { name: "Business configuration" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Property name")).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-071 protects dirty Customer forms from in-app sign-out", async () => {
+    const authentication = mockAuthenticationApi();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(
+      <App
+        api={authentication}
+        buildId="test-build"
+        customerApi={customerApiDouble()}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.change(
+      await screen.findByLabelText("Customer Property identifier"),
+      { target: { value: "property-1" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
+    fireEvent.change(
+      await screen.findByLabelText("Legal name", {
+        selector: "#customer-legal-name",
+      }),
+      { target: { value: "Unsent Customer" } },
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(authentication.logout).not.toHaveBeenCalled();
+    expect(
+      screen.getByLabelText("Legal name", { selector: "#customer-legal-name" }),
+    ).toHaveValue("Unsent Customer");
+    expect(
+      screen.getByText(
+        "Sign out was cancelled; unsaved Customer values were preserved.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-072 hides a pending command and requires reconciliation after sign-out", async () => {
+    let finishCreate!: (value: Parameters<CustomerApi["update"]>[0]) => void;
+    const pendingCreate = new Promise<Parameters<CustomerApi["update"]>[0]>(
+      (resolve) => {
+        finishCreate = resolve;
+      },
+    );
+    const authentication = mockAuthenticationApi();
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const customers = customerApiDouble({
+      get: vi
+        .fn()
+        .mockImplementation((customerId: string) =>
+          Promise.resolve(reconciledCustomer(customerId, "Pending Customer")),
+        ),
+      commandStatus: vi
+        .fn()
+        .mockImplementation((_: string, customerId: string) =>
+          Promise.resolve({
+            recorded: true,
+            customer: reconciledCustomer(customerId, "Pending Customer"),
+          }),
+        ),
+      create: vi.fn().mockReturnValue(pendingCreate),
+      financialSummary: vi.fn().mockResolvedValue({
+        source_status: "UNAVAILABLE_UNTIL_FINANCIAL_SOURCES_ARE_IMPLEMENTED",
+        currency_summaries: [],
+        deposit_liabilities: [],
+        customer_credit_is_separate_from_deposit: true,
+      }),
+    });
+    render(
+      <App
+        api={authentication}
+        buildId="test-build"
+        customerApi={customers}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.change(
+      await screen.findByLabelText("Customer Property identifier"),
+      { target: { value: "property-1" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
+    fireEvent.change(
+      await screen.findByLabelText("Legal name", {
+        selector: "#customer-legal-name",
+      }),
+      { target: { value: "Pending Customer" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
+    await waitFor(() => {
+      expect(customers.create).toHaveBeenCalledOnce();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(authentication.logout).toHaveBeenCalledOnce();
+    expect(
+      screen.queryByLabelText("Customer Property identifier"),
+    ).not.toBeInTheDocument();
+    await screen.findByLabelText("Username");
+
+    await act(async () => {
+      finishCreate({
+        customer_id: "customer-created",
+        legal_name: "Pending Customer",
+        phone_number: null,
+        email_address: null,
+        contact_address: null,
+        memo: null,
+        version: 1,
+        active: true,
+        deactivated_at: null,
+        deactivation_reason: null,
+        relationships: {
+          reservations: [],
+          primary_tenant_leases: [],
+          signer_leases: [],
+          occupancies: [],
+          invoices: [],
+          payments: [],
+          customer_credit: [],
+          refunds: [],
+        },
+        audit_history: [],
+        audit_history_next_cursor: null,
+        can_manage: true,
+        can_deactivate: true,
+        can_view_audit: false,
+        audit_history_available: false,
+      });
+      await Promise.resolve();
+    });
+
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(
+      await screen.findByText(/A Customer command outcome is unknown/),
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Check the prior Customer command status",
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "I verified the prior Customer command result",
+      }),
+    );
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/A prior Customer command may have completed/),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("TEST-FE-076 marks an in-flight Customer outcome unknown on session expiry", async () => {
+    vi.useFakeTimers();
+    let finishCreate!: (value: Parameters<CustomerApi["update"]>[0]) => void;
+    const pendingCreate = new Promise<Parameters<CustomerApi["update"]>[0]>(
+      (resolve) => {
+        finishCreate = resolve;
+      },
+    );
+    const expiringSession = {
+      ...session,
+      idle_expires_at: "2026-08-22T10:10:01Z",
+    };
+    const authentication = mockAuthenticationApi({
+      signIn: vi.fn().mockResolvedValue({
+        phase: "authenticated",
+        session: expiringSession,
+      }),
+    });
+    const customers = customerApiDouble({
+      create: vi.fn().mockReturnValue(pendingCreate),
+    });
+    render(
+      <App
+        api={authentication}
+        buildId="test-build"
+        customerApi={customers}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.change(screen.getByLabelText("Customer Property identifier"), {
+      target: { value: "property-1" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Load Customers",
+      }),
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.change(
+      screen.getByLabelText("Legal name", {
+        selector: "#customer-legal-name",
+      }),
+      { target: { value: "Pending Customer" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
+
+    await vi.waitFor(() => {
+      expect(customers.create).toHaveBeenCalledOnce();
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(screen.getByLabelText("Username")).toBeInTheDocument();
+    expect(
+      screen.getByText(/session expired while a Customer command was pending/),
+    ).toBeInTheDocument();
+    await act(async () => {
+      finishCreate({
+        customer_id: "customer-created",
+        legal_name: "Pending Customer",
+        phone_number: null,
+        email_address: null,
+        contact_address: null,
+        memo: null,
+        version: 1,
+        active: true,
+        deactivated_at: null,
+        deactivation_reason: null,
+        relationships: {
+          reservations: [],
+          primary_tenant_leases: [],
+          signer_leases: [],
+          occupancies: [],
+          invoices: [],
+          payments: [],
+          customer_credit: [],
+          refunds: [],
+        },
+        audit_history: [],
+        audit_history_next_cursor: null,
+        can_manage: true,
+        can_deactivate: true,
+        can_view_audit: false,
+        audit_history_available: false,
+      });
+      await Promise.resolve();
+    });
+    vi.useRealTimers();
+  });
+
+  it("TEST-FE-101 keeps an unresolved Customer command pending at later session expiry", async () => {
+    vi.useFakeTimers();
+    const expiringSession = {
+      ...session,
+      idle_expires_at: "2026-08-22T10:10:01Z",
+    };
+    const authentication = mockAuthenticationApi({
+      signIn: vi.fn().mockResolvedValue({
+        phase: "authenticated",
+        session: expiringSession,
+      }),
+    });
+    const customers = customerApiDouble({
+      create: vi
+        .fn()
+        .mockRejectedValue(
+          new CustomerRequestError("Outcome unknown", [], null, true),
+        ),
+    });
+    render(
+      <App
+        api={authentication}
+        buildId="test-build"
+        customerApi={customers}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.change(screen.getByLabelText("Customer Property identifier"), {
+      target: { value: "property-1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    fireEvent.change(
+      screen.getByLabelText("Legal name", {
+        selector: "#customer-legal-name",
+      }),
+      { target: { value: "Possibly Created" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
+    await vi.waitFor(() => {
+      expect(customers.create).toHaveBeenCalledOnce();
+    });
+    expect(
+      screen.getByText(/Customer creation outcome is unknown/),
+    ).toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1000);
+    });
+    expect(screen.getByLabelText("Username")).toBeInTheDocument();
+    expect(
+      screen.getByText(/session expired while a Customer command was pending/),
+    ).toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it("TEST-FE-079 requires list reconciliation after an ambiguous Customer create", async () => {
+    const customers = customerApiDouble({
+      get: vi
+        .fn()
+        .mockImplementation((customerId: string) =>
+          Promise.resolve(reconciledCustomer(customerId, "Possibly Created")),
+        ),
+      commandStatus: vi
+        .fn()
+        .mockImplementation((_: string, customerId: string) =>
+          Promise.resolve({
+            recorded: true,
+            customer: reconciledCustomer(customerId, "Possibly Created"),
+          }),
+        ),
+      create: vi
+        .fn()
+        .mockRejectedValue(
+          new CustomerRequestError(
+            "The Customer creation outcome is unknown.",
+            [],
+            null,
+            true,
+          ),
+        ),
+    });
+    render(
+      <App
+        api={mockAuthenticationApi()}
+        buildId="test-build"
+        customerApi={customers}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.change(
+      await screen.findByLabelText("Customer Property identifier"),
+      { target: { value: "property-1" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
+    fireEvent.change(
+      await screen.findByLabelText("Legal name", {
+        selector: "#customer-legal-name",
+      }),
+      { target: { value: "Possibly Created" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
+
+    expect(
+      await screen.findByText(/Customer creation outcome is unknown/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Create Customer" }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Check the prior Customer command status",
+      }),
+    );
+    expect(
+      await screen.findByRole("button", {
+        name: "I verified the prior Customer command result",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Create Customer" }),
+    ).not.toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "I verified the prior Customer command result",
+      }),
+    );
+    expect(
+      await screen.findByRole("button", { name: "Create Customer" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Legal name", {
+        selector: "#customer-legal-name",
+      }),
+    ).toHaveValue("");
+  });
+
+  it("TEST-FE-087 safely retries an authoritatively absent creation with the same identity", async () => {
+    const commandId = "11111111-1111-4111-8111-111111111111";
+    vi.spyOn(crypto, "randomUUID").mockReturnValue(commandId);
+    const customers = customerApiDouble({
+      commandStatus: vi
+        .fn()
+        .mockResolvedValue({ recorded: false, customer: null }),
+      create: vi
+        .fn()
+        .mockRejectedValueOnce(
+          new CustomerRequestError(
+            "The Customer creation outcome is unknown.",
+            [],
+            null,
+            true,
+          ),
+        )
+        .mockResolvedValueOnce(reconciledCustomer(commandId)),
+    });
+    render(
+      <App
+        api={mockAuthenticationApi()}
+        buildId="test-build"
+        customerApi={customers}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.change(
+      await screen.findByLabelText("Customer Property identifier"),
+      { target: { value: "property-1" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
+    fireEvent.change(
+      await screen.findByLabelText("Legal name", {
+        selector: "#customer-legal-name",
+      }),
+      { target: { value: "Possibly Created" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
+    await screen.findByText(/Customer creation outcome is unknown/);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Check the prior Customer command status",
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "I verified the Customer was not created",
+      }),
+    );
+    expect(
+      await screen.findByLabelText("Legal name", {
+        selector: "#customer-legal-name",
+      }),
+    ).toHaveValue("Possibly Created");
+    fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
+    await waitFor(() => {
+      expect(customers.create).toHaveBeenCalledTimes(2);
+    });
+    expect(customers.create).toHaveBeenNthCalledWith(
+      1,
+      "property-1",
+      commandId,
+      expect.objectContaining({ legal_name: "Possibly Created" }),
+      commandId,
+    );
+    expect(customers.create).toHaveBeenNthCalledWith(
+      2,
+      "property-1",
+      commandId,
+      expect.objectContaining({ legal_name: "Possibly Created" }),
+      commandId,
+    );
+  });
+
+  it("TEST-FE-080 restores an unresolved Customer command gate after reload", async () => {
+    const customers = customerApiDouble({
+      create: vi
+        .fn()
+        .mockRejectedValue(
+          new CustomerRequestError(
+            "The Customer creation outcome is unknown.",
+            [],
+            null,
+            true,
+          ),
+        ),
+    });
+    const authentication = mockAuthenticationApi();
+    const first = render(
+      <App
+        api={authentication}
+        buildId="test-build"
+        customerApi={customers}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.change(
+      await screen.findByLabelText("Customer Property identifier"),
+      { target: { value: "property-1" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
+    fireEvent.change(
+      await screen.findByLabelText("Legal name", {
+        selector: "#customer-legal-name",
+      }),
+      { target: { value: "Possibly Created" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
+    await screen.findByText(/Customer creation outcome is unknown/);
+    expect(window.localStorage.length).toBe(2);
+    const opaqueHandle = window.localStorage.getItem(customerReconciliationKey);
+    expect(opaqueHandle).toMatch(/^[0-9a-f-]{36}$/i);
+    expect(opaqueHandle).not.toContain("actor-1");
+    expect(opaqueHandle).not.toContain("property-1");
+    expect(opaqueHandle).not.toContain("Possibly Created");
+    expect(window.sessionStorage.length).toBe(0);
+    const sealed = window.localStorage.getItem(
+      `${customerReconciliationKey}.sealed.${opaqueHandle ?? ""}`,
+    );
+    expect(sealed).not.toContain("actor-1");
+    expect(sealed).not.toContain("property-1");
+    expect(sealed).not.toContain("Possibly Created");
+    first.unmount();
+
+    render(
+      <App
+        api={mockAuthenticationApi()}
+        buildId="test-build"
+        customerApi={customerApiDouble()}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(
+      await screen.findByText(/A prior Customer command may have completed/),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Create Customer" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-085 does not expose one actor's unresolved command to another actor", async () => {
+    await storeCustomerReconciliation({
+      actorId: "actor-1",
+      commandNonce: "66666666-6666-4666-8666-666666666666",
+      kind: "create",
+      customerId: "customer-command-1",
+      propertyId: "property-1",
+      resultFingerprint: "b".repeat(64),
+      requestFingerprint: "a".repeat(64),
+    });
+    const otherActor = { ...session, actor_id: "actor-2" };
+    render(
+      <App
+        api={mockAuthenticationApi({
+          signIn: vi.fn().mockResolvedValue({
+            phase: "authenticated",
+            session: otherActor,
+          }),
+        })}
+        buildId="test-build"
+        customerApi={customerApiDouble()}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "other-manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "coordination is unavailable",
+    );
+    expect(
+      screen.queryByText(/A prior Customer command may have completed/),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Create Customer" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-088 synchronizes an actor's unresolved command gate across tabs", async () => {
+    render(
+      <App
+        api={mockAuthenticationApi()}
+        buildId="test-build"
+        customerApi={customerApiDouble()}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await screen.findByLabelText("Customer Property identifier");
+    const key = customerReconciliationKey;
+    const requirement: CustomerReconciliationRequirement = {
+      actorId: "actor-1",
+      commandNonce: "77777777-7777-4777-8777-777777777777",
+      kind: "create",
+      customerId: "customer-command-cross-tab",
+      propertyId: "property-1",
+      resultFingerprint: "b".repeat(64),
+      requestFingerprint: "a".repeat(64),
+    };
+    await storeCustomerReconciliation(requirement);
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key,
+        newValue: requirement.commandNonce,
+      }),
+    );
+    expect(
+      await screen.findByText(/A prior Customer command may have completed/),
+    ).toBeInTheDocument();
+
+    window.localStorage.removeItem(key);
+    window.dispatchEvent(new StorageEvent("storage", { key, newValue: null }));
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/A prior Customer command may have completed/),
+      ).not.toBeInTheDocument();
+    });
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "resolved in another tab",
+    );
+    fireEvent.change(screen.getByLabelText("Customer Property identifier"), {
+      target: { value: "property-1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
+    expect(
+      await screen.findByLabelText("Legal name", {
+        selector: "#customer-legal-name",
+      }),
+    ).toHaveValue("");
+  });
+
+  it("TEST-FE-103 ignores a stale encrypted gate read after a newer clear event", async () => {
+    render(
+      <App
+        api={mockAuthenticationApi()}
+        buildId="test-build"
+        customerApi={customerApiDouble()}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await screen.findByLabelText("Customer Property identifier");
+    const requirement: CustomerReconciliationRequirement = {
+      actorId: "actor-1",
+      commandNonce: "99999999-9999-4999-8999-999999999999",
+      kind: "create",
+      customerId: "customer-command-stale-read",
+      propertyId: "property-1",
+      resultFingerprint: "b".repeat(64),
+      requestFingerprint: "a".repeat(64),
+    };
+    await storeCustomerReconciliation(requirement);
+    let releaseRead!: () => void;
+    indexedDatabaseReadGate = new Promise((resolve) => {
+      releaseRead = resolve;
+    });
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: customerReconciliationKey,
+        newValue: requirement.commandNonce,
+      }),
+    );
+    await waitFor(() => {
+      expect(indexedDatabaseReadGate).toBeNull();
+    });
+
+    window.localStorage.removeItem(customerReconciliationKey);
+    window.dispatchEvent(
+      new StorageEvent("storage", {
+        key: customerReconciliationKey,
+        newValue: null,
+      }),
+    );
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "resolved in another tab",
+    );
+    releaseRead();
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "resolved in another tab",
+    );
+    expect(
+      screen.queryByText(/A prior Customer command may have completed/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-092 serializes simultaneous Customer reservations before either command is sent", async () => {
+    let lockQueue = Promise.resolve<unknown>(undefined);
+    Object.defineProperty(navigator, "locks", {
+      configurable: true,
+      value: {
+        request: vi.fn(
+          (
+            _name: string,
+            _options: LockOptions,
+            callback: (lock: unknown) => unknown,
+          ) => {
+            const result = lockQueue.then(() => callback(null));
+            lockQueue = result.then(
+              () => undefined,
+              () => undefined,
+            );
+            return result;
+          },
+        ),
+      },
+    });
+    const firstRequirement = {
+      actorId: "actor-1",
+      commandNonce: "22222222-2222-4222-8222-222222222222",
+      kind: "create" as const,
+      customerId: "customer-command-first",
+      propertyId: "property-1",
+      resultFingerprint: "b".repeat(64),
+      requestFingerprint: "a".repeat(64),
+    };
+    const secondRequirement = {
+      ...firstRequirement,
+      commandNonce: "33333333-3333-4333-8333-333333333333",
+      customerId: "customer-command-second",
+    };
+
+    const [first, second] = await Promise.all([
+      reserveCustomerReconciliation(firstRequirement),
+      reserveCustomerReconciliation(secondRequirement),
+    ]);
+
+    expect(first).toEqual({
+      existing: null,
+      reserved: true,
+      storageAvailable: true,
+    });
+    expect(second).toEqual({
+      existing: firstRequirement,
+      reserved: false,
+      storageAvailable: true,
+    });
+    expect(window.localStorage.length).toBe(2);
+  });
+
+  it("TEST-FE-094 never lets a late command completion clear a newer durable gate", async () => {
+    const firstRequirement = {
+      actorId: "actor-1",
+      commandNonce: "44444444-4444-4444-8444-444444444444",
+      kind: "update" as const,
+      customerId: "customer-same",
+      propertyId: "property-1",
+      resultFingerprint: "a".repeat(64),
+      requestFingerprint: "a".repeat(64),
+    };
+    const newerRequirement = {
+      ...firstRequirement,
+      commandNonce: "55555555-5555-4555-8555-555555555555",
+      resultFingerprint: "b".repeat(64),
+      requestFingerprint: "b".repeat(64),
+    };
+
+    expect(await reserveCustomerReconciliation(firstRequirement)).toMatchObject(
+      {
+        reserved: true,
+      },
+    );
+    expect(await clearCustomerReconciliation(firstRequirement)).toEqual({
+      status: "cleared",
+    });
+    expect(await reserveCustomerReconciliation(newerRequirement)).toMatchObject(
+      {
+        reserved: true,
+      },
+    );
+
+    expect(await clearCustomerReconciliation(firstRequirement)).toEqual({
+      status: "superseded",
+      requirement: newerRequirement,
+    });
+    expect(window.localStorage.getItem(customerReconciliationKey)).toBe(
+      newerRequirement.commandNonce,
+    );
+  });
+
+  it("TEST-FE-115 clears the active gate before best-effort sealed cleanup", async () => {
+    const requirement = {
+      actorId: "actor-1",
+      commandNonce: "66666666-6666-4666-8666-666666666666",
+      kind: "update" as const,
+      customerId: "customer-clear-order",
+      propertyId: "property-1",
+      resultFingerprint: "c".repeat(64),
+      requestFingerprint: "d".repeat(64),
+    };
+    expect(await reserveCustomerReconciliation(requirement)).toMatchObject({
+      reserved: true,
+    });
+    const sealedKey = `${customerReconciliationKey}.sealed.${requirement.commandNonce}`;
+    const removeItem = window.localStorage.removeItem.bind(window.localStorage);
+    vi.spyOn(window.localStorage, "removeItem").mockImplementation((key) => {
+      if (key === sealedKey) throw new Error("browser closed during cleanup");
+      removeItem(key);
+    });
+
+    expect(await clearCustomerReconciliation(requirement)).toEqual({
+      status: "cleared",
+    });
+    expect(window.localStorage.getItem(customerReconciliationKey)).toBeNull();
+    expect(window.localStorage.getItem(sealedKey)).not.toBeNull();
+  });
+
+  it("TEST-FE-135 treats a matching gate cleared by another tab as reconciled", async () => {
+    const commandId = "77777777-7777-4777-8777-777777777777";
+    vi.spyOn(crypto, "randomUUID").mockReturnValue(commandId);
+    const customers = customerApiDouble({
+      get: vi
+        .fn()
+        .mockImplementation((customerId: string) =>
+          Promise.resolve(reconciledCustomer(customerId, "Cross-tab Customer")),
+        ),
+      commandStatus: vi
+        .fn()
+        .mockImplementation((_: string, customerId: string) =>
+          Promise.resolve({
+            recorded: true,
+            customer: reconciledCustomer(customerId, "Cross-tab Customer"),
+          }),
+        ),
+      create: vi
+        .fn()
+        .mockRejectedValue(
+          new CustomerRequestError(
+            "The Customer creation outcome is unknown.",
+            [],
+            null,
+            true,
+          ),
+        ),
+    });
+    render(
+      <App
+        api={mockAuthenticationApi()}
+        buildId="test-build"
+        customerApi={customers}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.change(
+      await screen.findByLabelText("Customer Property identifier"),
+      { target: { value: "property-1" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
+    fireEvent.change(
+      await screen.findByLabelText("Legal name", {
+        selector: "#customer-legal-name",
+      }),
+      { target: { value: "Cross-tab Customer" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
+    await screen.findByText(/Customer creation outcome is unknown/);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Check the prior Customer command status",
+      }),
+    );
+    const reconcile = await screen.findByRole("button", {
+      name: "I verified the prior Customer command result",
+    });
+    window.localStorage.removeItem(customerReconciliationKey);
+    fireEvent.click(reconcile);
+
+    expect(
+      await screen.findByRole("button", { name: "Create Customer" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "The Customer reconciliation gate was already resolved in another tab.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/A newer Customer command gate remains active/),
+    ).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-093 sends no Customer command when durable coordination is unavailable", async () => {
+    vi.spyOn(window.localStorage, "setItem").mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+    const customers = customerApiDouble();
+    render(
+      <App
+        api={mockAuthenticationApi()}
+        buildId="test-build"
+        customerApi={customers}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    fireEvent.change(
+      await screen.findByLabelText("Customer Property identifier"),
+      { target: { value: "property-1" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
+    fireEvent.change(
+      await screen.findByLabelText("Legal name", {
+        selector: "#customer-legal-name",
+      }),
+      { target: { value: "Blocked command" } },
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Create Customer" }));
+
+    expect(
+      await screen.findByText(
+        "Customer command coordination is unavailable. No command was sent; restore durable browser coordination before retrying.",
+      ),
+    ).toBeInTheDocument();
+    expect(customers.create).not.toHaveBeenCalled();
+  });
+
+  it("TEST-FE-109 keeps Customer reads available when durable mutation coordination is unavailable", async () => {
+    vi.spyOn(window.localStorage, "getItem").mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+    const detail = reconciledCustomer("customer-readable", "Readable Customer");
+    const customers = customerApiDouble({
+      list: vi.fn().mockResolvedValue({
+        items: [
+          {
+            customer_id: detail.customer_id,
+            legal_name: detail.legal_name,
+            active: true,
+            relationship_indicators: [],
+          },
+        ],
+        next_cursor: null,
+        can_manage: true,
+      }),
+      get: vi.fn().mockResolvedValue(detail),
+      financialSummary: vi.fn().mockResolvedValue({
+        source_status: "UNAVAILABLE_UNTIL_FINANCIAL_SOURCES_ARE_IMPLEMENTED",
+        currency_summaries: [],
+        deposit_liabilities: [],
+        customer_credit_is_separate_from_deposit: true,
+      }),
+    });
+    render(
+      <App
+        api={mockAuthenticationApi()}
+        buildId="test-build"
+        customerApi={customers}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    fireEvent.change(
+      await screen.findByLabelText("Customer Property identifier"),
+      { target: { value: "property-1" } },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Open Readable Customer" }),
+    );
+
+    expect(await screen.findByText("Readable Customer")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", {
+        name: "Customer command coordination unavailable",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Create Customer" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Update Customer" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-110 prevents delayed session restoration from replacing a newer sign-in", async () => {
+    const oldRequirement: CustomerReconciliationRequirement = {
+      actorId: "actor-1",
+      commandNonce: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      kind: "create",
+      customerId: "customer-old-session",
+      propertyId: "property-1",
+      resultFingerprint: "b".repeat(64),
+      requestFingerprint: "a".repeat(64),
+    };
+    await storeCustomerReconciliation(oldRequirement);
+    let releaseStoredGate!: () => void;
+    indexedDatabaseReadGate = new Promise<void>((resolve) => {
+      releaseStoredGate = resolve;
+    });
+    const newerSession: SessionData = {
+      ...session,
+      actor_id: "actor-2",
+      idle_expires_at: "2026-08-22T11:30:00Z",
+      absolute_expires_at: "2026-08-24T10:00:00Z",
+    };
+    const fetchMock = vi.fn((input: RequestInfo | URL) => {
+      const path =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.href
+            : input.url;
+      const data = path.endsWith("/auth/session")
+        ? session
+        : { phase: "authenticated", session: newerSession };
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({ data, meta: { request_id: "request-1" } }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    render(
+      <App
+        buildId="test-build"
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/api/v1/auth/session",
+        expect.objectContaining({ method: "GET" }),
+      );
+    });
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(
+      await screen.findByText("2026-08-24T10:00:00.000Z"),
+    ).toBeInTheDocument();
+
+    releaseStoredGate();
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText("2026-08-24T10:00:00.000Z")).toBeInTheDocument();
+    expect(
+      screen.queryByText("2026-08-23T10:00:00.000Z"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-073 removes Customer commands while logout is pending", async () => {
+    let finishLogout!: () => void;
+    const pendingLogout = new Promise<void>((resolve) => {
+      finishLogout = resolve;
+    });
+    const authentication = mockAuthenticationApi({
+      logout: vi.fn().mockReturnValue(pendingLogout),
+    });
+    render(
+      <App
+        api={authentication}
+        buildId="test-build"
+        customerApi={customerApiDouble()}
+        environment="development"
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "manager" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    await screen.findByLabelText("Customer Property identifier");
+
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+
+    expect(authentication.logout).toHaveBeenCalledOnce();
+    expect(
+      screen.queryByLabelText("Customer Property identifier"),
+    ).not.toBeInTheDocument();
+    finishLogout();
+    await screen.findByLabelText("Username");
   });
 
   it("TEST-FE-024 ignores an older successful Property load after a newer authorization denial", async () => {

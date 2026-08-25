@@ -2097,11 +2097,81 @@ def complete_small_frontend_evidence(repo: Path) -> list[dict[str, Any]]:
             }
         )
     if total_bytes > V1_019_FRONTEND_CONTEXT_MAX_BYTES:
-        raise AutomationError(
-            "context_materialization_required",
-            "the complete current frontend evidence exceeded the aggregate "
-            f"{V1_019_FRONTEND_CONTEXT_MAX_BYTES}-byte packet bound",
-        )
+        anchors = {
+            "frontend/src/App.tsx": (
+                "export interface AppProps",
+                "function acceptAuthentication",
+                "function handleSignIn",
+                'screen === "sign_in"',
+            ),
+            "frontend/src/App.test.tsx": (
+                'describe("local sign-in"',
+                'it("TEST-FE-001',
+                'it("TEST-FE-004',
+                'it("TEST-FE-005',
+                'it("TEST-FE-006',
+                'it("TEST-FE-007',
+                'it("TEST-FE-008',
+            ),
+            "frontend/src/styles.css": (
+                ".auth-panel",
+                ".form-stack",
+                ".authentication-error",
+            ),
+        }
+        compact: list[dict[str, Any]] = []
+        for item in evidence:
+            content = item["complete_content"]
+            if not item["present"] or not isinstance(content, str):
+                compact.append(item)
+                continue
+            lines = content.splitlines(keepends=True)
+            selected: set[int] = set()
+            for index, line in enumerate(lines):
+                if any(anchor in line for anchor in anchors[str(item["path"])]):
+                    selected.update(
+                        range(max(0, index - 24), min(len(lines), index + 49))
+                    )
+            if not selected:
+                selected.update(range(min(len(lines), 80)))
+            intervals: list[tuple[int, int]] = []
+            for index in sorted(selected):
+                if not intervals or index > intervals[-1][1]:
+                    intervals.append((index, index + 1))
+                else:
+                    intervals[-1] = (intervals[-1][0], index + 1)
+            excerpts: list[dict[str, Any]] = []
+            remaining = 20_000
+            for start, end in intervals:
+                if remaining <= 0:
+                    break
+                excerpt = "".join(lines[start:end])
+                encoded = excerpt.encode()
+                if len(encoded) > remaining:
+                    excerpt = encoded[:remaining].decode(errors="ignore")
+                remaining -= len(excerpt.encode())
+                excerpts.append(
+                    {
+                        "start_line": start + 1,
+                        "end_line": end,
+                        "content": excerpt,
+                    }
+                )
+            compact.append(
+                {
+                    **item,
+                    "complete_content": None,
+                    "materialization": "line_bounded_excerpts",
+                    "excerpts": excerpts,
+                }
+            )
+        serialized_bytes = len(json.dumps(compact, separators=(",", ":")).encode())
+        if serialized_bytes > V1_019_FRONTEND_CONTEXT_MAX_BYTES:
+            raise AutomationError(
+                "context_materialization_required",
+                "the compact frontend evidence exceeded the existing packet bound",
+            )
+        return compact
     return evidence
 
 

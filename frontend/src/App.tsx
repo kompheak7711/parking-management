@@ -27,6 +27,11 @@ import {
 } from "./propertyClient";
 import { UnitManagement } from "./UnitManagement";
 import { UnitApi } from "./unitClient";
+import {
+  CustomerManagement,
+  CustomerReconciliationRequirement,
+} from "./CustomerManagement";
+import { CustomerApi } from "./customerClient";
 
 export interface AppProps {
   environment: string;
@@ -36,6 +41,7 @@ export interface AppProps {
   administrationApi?: AccessAdministrationApi;
   propertyApi?: PropertyConfigurationApi;
   unitApi?: UnitApi;
+  customerApi?: CustomerApi;
   now?: () => number;
 }
 
@@ -55,6 +61,423 @@ function phaseScreen(result: AuthenticationData): Screen {
   return result.phase;
 }
 
+const CUSTOMER_RECONCILIATION_STORAGE_KEY =
+  "property-rental.customer-reconciliation.v2";
+const CUSTOMER_RECONCILIATION_DATABASE =
+  "property-rental.customer-reconciliation.v1";
+const CUSTOMER_RECONCILIATION_KEY_STORE = "non-extractable-keys";
+const CUSTOMER_RECONCILIATION_KEY_ID = "customer-command-gate-v1";
+const CUSTOMER_RECONCILIATION_SEALED_PREFIX = `${CUSTOMER_RECONCILIATION_STORAGE_KEY}.sealed.`;
+
+interface SealedCustomerReconciliation {
+  ciphertext: string;
+  iv: string;
+  version: 1;
+}
+
+let customerReconciliationDatabase: Promise<IDBDatabase> | null = null;
+
+function openCustomerReconciliationDatabase(): Promise<IDBDatabase> {
+  if (customerReconciliationDatabase !== null) {
+    return customerReconciliationDatabase;
+  }
+  customerReconciliationDatabase = new Promise((resolve, reject) => {
+    const request = window.indexedDB.open(CUSTOMER_RECONCILIATION_DATABASE, 1);
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      if (
+        !database.objectStoreNames.contains(CUSTOMER_RECONCILIATION_KEY_STORE)
+      ) {
+        database.createObjectStore(CUSTOMER_RECONCILIATION_KEY_STORE);
+      }
+    };
+    request.onerror = () => {
+      customerReconciliationDatabase = null;
+      reject(
+        request.error ??
+          new Error("Customer coordination database unavailable"),
+      );
+    };
+    request.onsuccess = () => {
+      request.result.onversionchange = () => {
+        request.result.close();
+        customerReconciliationDatabase = null;
+      };
+      resolve(request.result);
+    };
+  });
+  return customerReconciliationDatabase;
+}
+
+function databaseRequest<T>(request: IDBRequest<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    request.onerror = () => {
+      reject(request.error ?? new Error("Browser storage failed"));
+    };
+    request.onsuccess = () => {
+      resolve(request.result);
+    };
+  });
+}
+
+function databaseTransactionCommitted(
+  transaction: IDBTransaction,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    transaction.onabort = () => {
+      reject(
+        transaction.error ?? new Error("Browser storage transaction aborted"),
+      );
+    };
+    transaction.onerror = () => {
+      reject(
+        transaction.error ?? new Error("Browser storage transaction failed"),
+      );
+    };
+    transaction.oncomplete = () => {
+      resolve();
+    };
+  });
+}
+
+async function customerReconciliationKey(): Promise<CryptoKey> {
+  const database = await openCustomerReconciliationDatabase();
+  const read = database.transaction(
+    CUSTOMER_RECONCILIATION_KEY_STORE,
+    "readonly",
+  );
+  const existing = await databaseRequest<unknown>(
+    read
+      .objectStore(CUSTOMER_RECONCILIATION_KEY_STORE)
+      .get(CUSTOMER_RECONCILIATION_KEY_ID),
+  );
+  if (existing !== undefined) return existing as CryptoKey;
+  const created = await crypto.subtle.generateKey(
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"],
+  );
+  const write = database.transaction(
+    CUSTOMER_RECONCILIATION_KEY_STORE,
+    "readwrite",
+  );
+  const committed = databaseTransactionCommitted(write);
+  await databaseRequest(
+    write
+      .objectStore(CUSTOMER_RECONCILIATION_KEY_STORE)
+      .put(created, CUSTOMER_RECONCILIATION_KEY_ID),
+  );
+  await committed;
+  return created;
+}
+
+function encodeBytes(value: ArrayBuffer | Uint8Array): string {
+  const bytes = value instanceof Uint8Array ? value : new Uint8Array(value);
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return window.btoa(binary);
+}
+
+function decodeBytes(value: string): ArrayBuffer {
+  const binary = window.atob(value);
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0)).buffer;
+}
+
+async function sealCustomerReconciliation(
+  requirement: CustomerReconciliationRequirement,
+): Promise<string> {
+  const key = await customerReconciliationKey();
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    new TextEncoder().encode(JSON.stringify(requirement)),
+  );
+  return JSON.stringify({
+    ciphertext: encodeBytes(ciphertext),
+    iv: encodeBytes(iv),
+    version: 1,
+  } satisfies SealedCustomerReconciliation);
+}
+
+async function unsealCustomerReconciliation(value: string): Promise<unknown> {
+  const sealed: unknown = JSON.parse(value);
+  if (
+    typeof sealed !== "object" ||
+    sealed === null ||
+    !("version" in sealed) ||
+    sealed.version !== 1 ||
+    !("iv" in sealed) ||
+    typeof sealed.iv !== "string" ||
+    !("ciphertext" in sealed) ||
+    typeof sealed.ciphertext !== "string"
+  ) {
+    throw new Error("Invalid Customer coordination envelope");
+  }
+  const plaintext = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: decodeBytes(sealed.iv) },
+    await customerReconciliationKey(),
+    decodeBytes(sealed.ciphertext),
+  );
+  return JSON.parse(new TextDecoder().decode(plaintext)) as unknown;
+}
+
+function isStoredCustomerSource(
+  value: unknown,
+  requireLegalName = true,
+): boolean {
+  if (typeof value !== "object" || value === null) return false;
+  const source = value as Record<string, unknown>;
+  if (
+    (requireLegalName && typeof source.legal_name !== "string") ||
+    (!requireLegalName &&
+      "legal_name" in source &&
+      typeof source.legal_name !== "string")
+  )
+    return false;
+  for (const field of [
+    "phone_number",
+    "email_address",
+    "contact_address",
+    "memo",
+  ]) {
+    if (
+      field in source &&
+      source[field] !== null &&
+      typeof source[field] !== "string"
+    ) {
+      return false;
+    }
+  }
+  return (
+    !("confirmed_distinct" in source) ||
+    typeof source.confirmed_distinct === "boolean"
+  );
+}
+
+type StoredCustomerReconciliation =
+  | { status: "empty"; requirement: null }
+  | { status: "valid"; requirement: CustomerReconciliationRequirement }
+  | { status: "invalid" | "unavailable"; requirement: null };
+
+async function readStoredCustomerReconciliation(
+  actorId: string,
+): Promise<StoredCustomerReconciliation> {
+  let value: string | null;
+  try {
+    const opaqueHandle = window.localStorage.getItem(
+      CUSTOMER_RECONCILIATION_STORAGE_KEY,
+    );
+    if (opaqueHandle === null) return { status: "empty", requirement: null };
+    if (!/^[0-9a-f-]{36}$/i.test(opaqueHandle)) {
+      return { status: "invalid", requirement: null };
+    }
+    value = window.localStorage.getItem(
+      `${CUSTOMER_RECONCILIATION_SEALED_PREFIX}${opaqueHandle}`,
+    );
+  } catch {
+    return { status: "unavailable", requirement: null };
+  }
+  if (value === null) return { status: "unavailable", requirement: null };
+  try {
+    const parsed = await unsealCustomerReconciliation(value);
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      !("actorId" in parsed) ||
+      !("commandNonce" in parsed) ||
+      !("kind" in parsed) ||
+      !("customerId" in parsed) ||
+      !("propertyId" in parsed) ||
+      !("resultFingerprint" in parsed) ||
+      !("requestFingerprint" in parsed) ||
+      !["create", "update", "deactivate"].includes(String(parsed.kind)) ||
+      parsed.actorId !== actorId ||
+      typeof parsed.commandNonce !== "string" ||
+      parsed.commandNonce.length === 0 ||
+      typeof parsed.customerId !== "string" ||
+      parsed.customerId.length === 0 ||
+      typeof parsed.propertyId !== "string" ||
+      parsed.propertyId.length === 0 ||
+      typeof parsed.requestFingerprint !== "string" ||
+      !/^[0-9a-f]{64}$/.test(parsed.requestFingerprint) ||
+      typeof parsed.resultFingerprint !== "string" ||
+      !/^[0-9a-f]{64}$/.test(parsed.resultFingerprint) ||
+      ("expectedVersion" in parsed &&
+        (typeof parsed.expectedVersion !== "number" ||
+          !Number.isInteger(parsed.expectedVersion) ||
+          parsed.expectedVersion < 1)) ||
+      ("createSource" in parsed &&
+        !isStoredCustomerSource(parsed.createSource)) ||
+      ("updateSource" in parsed &&
+        !isStoredCustomerSource(parsed.updateSource, false)) ||
+      ("deactivationReason" in parsed &&
+        typeof parsed.deactivationReason !== "string")
+    ) {
+      return { status: "invalid", requirement: null };
+    }
+    return {
+      status: "valid",
+      requirement: parsed as CustomerReconciliationRequirement,
+    };
+  } catch {
+    return { status: "invalid", requirement: null };
+  }
+}
+
+async function persistCustomerReconciliation(
+  requirement: CustomerReconciliationRequirement | null,
+): Promise<boolean> {
+  try {
+    if (requirement === null) {
+      const opaqueHandle = window.localStorage.getItem(
+        CUSTOMER_RECONCILIATION_STORAGE_KEY,
+      );
+      window.localStorage.removeItem(CUSTOMER_RECONCILIATION_STORAGE_KEY);
+      if (opaqueHandle !== null) {
+        try {
+          window.localStorage.removeItem(
+            `${CUSTOMER_RECONCILIATION_SEALED_PREFIX}${opaqueHandle}`,
+          );
+        } catch {
+          // The active gate is already cleared. An unreachable sealed orphan is
+          // preferable to restoring a dangling handle that blocks all commands.
+        }
+      }
+    } else {
+      const sealed = await sealCustomerReconciliation(requirement);
+      window.localStorage.setItem(
+        `${CUSTOMER_RECONCILIATION_SEALED_PREFIX}${requirement.commandNonce}`,
+        sealed,
+      );
+      window.localStorage.setItem(
+        CUSTOMER_RECONCILIATION_STORAGE_KEY,
+        requirement.commandNonce,
+      );
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+interface CustomerReconciliationReservation {
+  existing: CustomerReconciliationRequirement | null;
+  reserved: boolean;
+  storageAvailable: boolean;
+}
+
+function sameCustomerReconciliation(
+  left: CustomerReconciliationRequirement | null,
+  right: CustomerReconciliationRequirement | null,
+): boolean {
+  return (
+    left !== null &&
+    right !== null &&
+    left.actorId === right.actorId &&
+    left.commandNonce === right.commandNonce &&
+    left.kind === right.kind &&
+    left.customerId === right.customerId &&
+    left.propertyId === right.propertyId &&
+    left.resultFingerprint === right.resultFingerprint &&
+    left.requestFingerprint === right.requestFingerprint &&
+    left.expectedVersion === right.expectedVersion
+  );
+}
+
+export async function reserveCustomerReconciliation(
+  requirement: CustomerReconciliationRequirement,
+): Promise<CustomerReconciliationReservation> {
+  const lockManager = Reflect.get(navigator, "locks") as
+    | LockManager
+    | undefined;
+  if (lockManager === undefined) {
+    return { existing: null, reserved: false, storageAvailable: false };
+  }
+  try {
+    return await lockManager.request(
+      `${CUSTOMER_RECONCILIATION_STORAGE_KEY}.lock`,
+      { mode: "exclusive" },
+      async () => {
+        const stored = await readStoredCustomerReconciliation(
+          requirement.actorId,
+        );
+        if (stored.status === "unavailable" || stored.status === "invalid") {
+          return {
+            existing: null,
+            reserved: false,
+            storageAvailable: false,
+          };
+        }
+        if (stored.requirement !== null) {
+          if (sameCustomerReconciliation(stored.requirement, requirement)) {
+            return {
+              existing: null,
+              reserved: true,
+              storageAvailable: true,
+            };
+          }
+          return {
+            existing: stored.requirement,
+            reserved: false,
+            storageAvailable: true,
+          };
+        }
+        const reserved = await persistCustomerReconciliation(requirement);
+        return {
+          existing: null,
+          reserved,
+          storageAvailable: reserved,
+        };
+      },
+    );
+  } catch {
+    return { existing: null, reserved: false, storageAvailable: false };
+  }
+}
+
+type CustomerReconciliationClearance =
+  | { status: "cleared" }
+  | {
+      status: "superseded";
+      requirement: CustomerReconciliationRequirement | null;
+    }
+  | { status: "unavailable" };
+
+export async function clearCustomerReconciliation(
+  requirement: CustomerReconciliationRequirement,
+): Promise<CustomerReconciliationClearance> {
+  const lockManager = Reflect.get(navigator, "locks") as
+    | LockManager
+    | undefined;
+  if (lockManager === undefined) return { status: "unavailable" };
+  try {
+    return await lockManager.request(
+      `${CUSTOMER_RECONCILIATION_STORAGE_KEY}.lock`,
+      { mode: "exclusive" },
+      async () => {
+        const stored = await readStoredCustomerReconciliation(
+          requirement.actorId,
+        );
+        if (stored.status === "unavailable" || stored.status === "invalid") {
+          return { status: "unavailable" } as const;
+        }
+        if (!sameCustomerReconciliation(stored.requirement, requirement)) {
+          return {
+            status: "superseded",
+            requirement: stored.requirement,
+          } as const;
+        }
+        return (await persistCustomerReconciliation(null))
+          ? ({ status: "cleared" } as const)
+          : ({ status: "unavailable" } as const);
+      },
+    );
+  } catch {
+    return { status: "unavailable" };
+  }
+}
+
 export function App({
   environment,
   buildId,
@@ -63,6 +486,7 @@ export function App({
   administrationApi = accessAdministrationApi,
   propertyApi = propertyConfigurationApi,
   unitApi,
+  customerApi,
   now = Date.now,
 }: AppProps) {
   const client = useMemo<AuthenticationApi>(
@@ -92,12 +516,59 @@ export function App({
     useState<string | null>(null);
   const [propertyConfigurationAuthorized, setPropertyConfigurationAuthorized] =
     useState(false);
+  const [customerDraftsDirty, setCustomerDraftsDirty] = useState(false);
+  const [customerCommandBusy, setCustomerCommandBusy] = useState(false);
+  const [customerCoordinationAvailable, setCustomerCoordinationAvailable] =
+    useState(true);
+  const [logoutPending, setLogoutPending] = useState(false);
+  const [
+    customerReconciliationRequirement,
+    setCustomerReconciliationRequirement,
+  ] = useState<CustomerReconciliationRequirement | null>(null);
   const propertyOperationSequence = useRef(0);
+  const authenticationOperationSequence = useRef(0);
+  const customerStorageEventSequence = useRef(0);
   const [pendingCommand, setPendingCommand] = useState<{
     kind: "disable" | "revoke" | "recover";
     user: UserAccount;
     recovery?: { new_password: string; reset_mfa: boolean; reason: string };
   } | null>(null);
+
+  useEffect(() => {
+    if (session === null) return;
+    const actorId = session.actor_id;
+    function synchronizeCustomerGate(event: StorageEvent) {
+      if (event.key !== CUSTOMER_RECONCILIATION_STORAGE_KEY) return;
+      const eventSequence = ++customerStorageEventSequence.current;
+      void readStoredCustomerReconciliation(actorId).then((stored) => {
+        if (eventSequence !== customerStorageEventSequence.current) return;
+        if (stored.status === "unavailable" || stored.status === "invalid") {
+          setCustomerCoordinationAvailable(false);
+          setNotice(
+            "Customer command coordination is unavailable. Commands remain blocked until durable reconciliation storage is restored.",
+          );
+          return;
+        }
+        const reconciliation = stored.requirement;
+        setCustomerCoordinationAvailable(true);
+        setCustomerReconciliationRequirement(reconciliation);
+        if (reconciliation !== null) {
+          setNotice(
+            "A Customer command outcome is unknown in another tab. Verify its exact result before retrying.",
+          );
+        } else {
+          setNotice(
+            "The Customer reconciliation gate was resolved in another tab.",
+          );
+        }
+      });
+    }
+    window.addEventListener("storage", synchronizeCustomerGate);
+    return () => {
+      customerStorageEventSequence.current += 1;
+      window.removeEventListener("storage", synchronizeCustomerGate);
+    };
+  }, [session]);
 
   function invalidatePropertyConfiguration() {
     propertyOperationSequence.current += 1;
@@ -105,18 +576,41 @@ export function App({
     setPropertyConfigurationAuthorized(false);
   }
 
-  function acceptAuthentication(result: AuthenticationData) {
+  async function acceptAuthentication(
+    result: AuthenticationData,
+    operation = ++authenticationOperationSequence.current,
+  ) {
+    const stored =
+      result.phase === "authenticated" && result.session !== null
+        ? await readStoredCustomerReconciliation(result.session.actor_id)
+        : ({ status: "empty", requirement: null } as const);
+    if (operation !== authenticationOperationSequence.current) return;
+    const reconciliation = stored.requirement;
     invalidatePropertyConfiguration();
     setPropertyConfigurationStatus(null);
     setSession(result.session);
+    setCustomerCoordinationAvailable(
+      stored.status !== "unavailable" && stored.status !== "invalid",
+    );
+    setCustomerReconciliationRequirement(reconciliation);
     setScreen(phaseScreen(result));
     setSubmissionState("succeeded");
     setNotice(
-      result.phase === "authenticated" ? "Your sign-in was accepted." : null,
+      result.phase !== "authenticated"
+        ? null
+        : stored.status === "unavailable" || stored.status === "invalid"
+          ? "Customer command coordination is unavailable. Customer commands remain blocked without exposing another actor's reconciliation metadata."
+          : reconciliation !== null
+            ? "A Customer command outcome is unknown. Reload the applicable Customer list and verify the result before retrying."
+            : "Your sign-in was accepted.",
     );
   }
 
   function returnToSignIn(message: string | null) {
+    setCustomerDraftsDirty(false);
+    setCustomerCommandBusy(false);
+    setCustomerReconciliationRequirement(null);
+    setLogoutPending(false);
     setScreen("sign_in");
     setSession(null);
     setEnrollment(null);
@@ -131,11 +625,21 @@ export function App({
   useEffect(() => {
     if (api !== undefined || authenticate !== signIn) return;
     let active = true;
+    const operation = ++authenticationOperationSequence.current;
     void client
       .inspectSession()
-      .then((restored) => {
-        if (!active) return;
+      .then(async (restored) => {
+        const stored = await readStoredCustomerReconciliation(
+          restored.actor_id,
+        );
+        if (!active || operation !== authenticationOperationSequence.current) {
+          return;
+        }
         setSession(restored);
+        setCustomerCoordinationAvailable(
+          stored.status !== "unavailable" && stored.status !== "invalid",
+        );
+        setCustomerReconciliationRequirement(stored.requirement);
         setScreen("authenticated");
       })
       .catch(() => {
@@ -157,13 +661,21 @@ export function App({
     const delay = Math.min(2_147_483_647, Math.max(0, expiresAt - now()));
     const timer = window.setTimeout(() => {
       returnToSignIn(
-        "Your session expired. Any unsaved command was not submitted. Sign in again to continue.",
+        customerCommandBusy || customerReconciliationRequirement !== null
+          ? "Your session expired while a Customer command was pending. Its outcome is unknown; sign in, reload Customers, and reconcile before retrying."
+          : "Your session expired. Any unsaved command was not submitted. Sign in again to continue.",
       );
     }, delay);
     return () => {
       window.clearTimeout(timer);
     };
-  }, [now, screen, session]);
+  }, [
+    customerCommandBusy,
+    customerReconciliationRequirement,
+    now,
+    screen,
+    session,
+  ]);
 
   function handleSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -174,6 +686,7 @@ export function App({
 
     setNotice(null);
     setSubmissionState("submitting");
+    const operation = ++authenticationOperationSequence.current;
     void client
       .signIn({
         username: typeof username === "string" ? username : "",
@@ -183,7 +696,7 @@ export function App({
         if (result.phase === "authenticated") {
           form.reset();
         }
-        acceptAuthentication(result);
+        void acceptAuthentication(result, operation);
       })
       .catch(() => {
         setSubmissionState("failed");
@@ -200,7 +713,7 @@ export function App({
         method: mfaMethod,
         code: typeof code === "string" ? code : "",
       })
-      .then(acceptAuthentication)
+      .then((result) => acceptAuthentication(result))
       .catch(() => {
         setSubmissionState("failed");
       });
@@ -228,7 +741,7 @@ export function App({
       .confirmMfaEnrollment(typeof code === "string" ? code : "")
       .then((result) => {
         setEnrollment(null);
-        acceptAuthentication(result);
+        void acceptAuthentication(result);
       })
       .catch(() => {
         setSubmissionState("failed");
@@ -264,6 +777,21 @@ export function App({
   }
 
   function handleLogout() {
+    if (
+      customerDraftsDirty &&
+      !window.confirm(
+        customerCommandBusy
+          ? "A Customer command is still pending and its outcome will be unknown. Discard other unsaved Customer values and sign out?"
+          : "Discard unsaved Customer form values and sign out?",
+      )
+    ) {
+      setNotice(
+        "Sign out was cancelled; unsaved Customer values were preserved.",
+      );
+      return;
+    }
+    setCustomerDraftsDirty(false);
+    setLogoutPending(true);
     setSubmissionState("submitting");
     void client
       .logout()
@@ -1142,6 +1670,79 @@ export function App({
               )}
             </section>
             <UnitManagement api={unitApi} />
+            {!logoutPending && (
+              <CustomerManagement
+                actorId={session.actor_id}
+                api={customerApi}
+                mutationCoordinationAvailable={customerCoordinationAvailable}
+                onCommandBusyChange={setCustomerCommandBusy}
+                onDirtyStateChange={setCustomerDraftsDirty}
+                onReconciled={async (requirement) => {
+                  const clearance =
+                    await clearCustomerReconciliation(requirement);
+                  if (clearance.status === "cleared") {
+                    setCustomerCoordinationAvailable(true);
+                    setCustomerReconciliationRequirement((current) =>
+                      sameCustomerReconciliation(current, requirement)
+                        ? null
+                        : current,
+                    );
+                    return true;
+                  } else if (clearance.status === "superseded") {
+                    if (clearance.requirement === null) {
+                      setCustomerCoordinationAvailable(true);
+                      setCustomerReconciliationRequirement(null);
+                      setNotice(
+                        "The Customer reconciliation gate was already resolved in another tab.",
+                      );
+                      return true;
+                    }
+                    setCustomerReconciliationRequirement(clearance.requirement);
+                    setNotice(
+                      "A newer Customer command gate remains active. Reconcile that exact command before retrying.",
+                    );
+                    return false;
+                  } else {
+                    setNotice(
+                      "The Customer result is known, but its durable command gate could not be cleared. Customer commands remain blocked.",
+                    );
+                    return false;
+                  }
+                }}
+                onReconciliationRequired={async (requirement) => {
+                  const reservation =
+                    await reserveCustomerReconciliation(requirement);
+                  if (reservation.existing !== null) {
+                    setCustomerCoordinationAvailable(true);
+                    setCustomerReconciliationRequirement(reservation.existing);
+                    return false;
+                  }
+                  if (!reservation.reserved) {
+                    setNotice(
+                      reservation.storageAvailable
+                        ? "Another tab already reserved the Customer command gate. Reconcile it before retrying."
+                        : "Customer command coordination is unavailable. No command was sent; restore durable browser coordination before retrying.",
+                    );
+                    return false;
+                  }
+                  setCustomerCoordinationAvailable(true);
+                  setCustomerReconciliationRequirement(requirement);
+                  return true;
+                }}
+                reconciliationRequirement={customerReconciliationRequirement}
+              />
+            )}
+            {!logoutPending && !customerCoordinationAvailable && (
+              <section className="information-card">
+                <h3>Customer command coordination unavailable</h3>
+                <p>
+                  Customer commands are blocked because the opaque
+                  reconciliation handle cannot be matched to this authenticated
+                  browser session. No confidential Customer or actor metadata
+                  was read from local storage.
+                </p>
+              </section>
+            )}
             <section
               aria-labelledby="administration-heading"
               className="information-card"

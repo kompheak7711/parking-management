@@ -58,6 +58,15 @@ def _run_validator(*arguments: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def test_development_server_disables_access_logs_that_can_capture_customer_queries() -> None:
+    makefile = (REPOSITORY_ROOT / "Makefile").read_text(encoding="utf-8")
+    backend_dev = re.search(r"^backend-dev:\n\t([^\n]+)$", makefile, re.MULTILINE)
+
+    assert backend_dev is not None
+    assert "uvicorn property_rental.app:app" in backend_dev.group(1)
+    assert "--no-access-log" in backend_dev.group(1)
+
+
 def test_deployment_examples_define_six_distinct_database_identities() -> None:
     contract = json.loads((CONFIG_ROOT / "identity-secret-contract.json").read_text())
     identities = contract["database_identities"]
