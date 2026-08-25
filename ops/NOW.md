@@ -8,7 +8,8 @@
 - Scheduler: exact Property Rental supervisor remained disabled throughout direct work.
 - Scope: authenticated Reservation create/read/extend/cancel workflows, accessible
   staff UI, and singleton-safe retry-safe automatic expiration.
-- Authorities: `API-032-034`, `UI-RES-*`, `TEST-024-029`, and `TEST-096-099`.
+- Authorities: `API-032-034`, `UI-031` through `UI-035`, `TEST-024-029`, and
+  `TEST-096-099`.
 - Dependencies: published V1-029 persistence, V1-030 lifecycle services, and
   V1-031 cancellation/deposit outcomes.
 - Excluded: Lease implementation, V1-033 work, canonical changes, Hermes-wrapper
