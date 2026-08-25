@@ -1,11 +1,11 @@
 {
   "active_cycle": "v1-027-configuration-persistence",
   "approval": {
-    "status": "verified_awaiting_publication",
+    "status": "complete",
     "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-027 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": ["BR-SVC-*", "BR-UTIL-014", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-017", "BR-PAY-006", "BR-PAY-007", "BR-MONEY-*"],
   "automation_repair": {
@@ -656,15 +656,15 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "34755c77f007b504f83007972997ff868ae21dd7",
+  "commit": "01b7a56652bf977189aaf83c627f744262a1c4c2",
   "evidence_applicability": {
-    "basis": "The exact V1-027 candidate passed the complete deterministic verification profile after all implementation and traceability changes",
+    "basis": "The exact reviewed V1-027 implementation commit passed all 15 local verification gates and GitHub Actions run 32830071828",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "fresh exact-diff review required after complete verification",
+    "prior_review_disposition": "two fresh read-only exact-diff reviews passed with zero material findings; final reviewed-patch SHA-256 2a64c925b6796bb24594c476a35e87aafe5faf35cda0cbc6b7b2c73c29fd2262",
     "tranche_id": "V1-027"
   },
-  "idle_reason": null,
-  "next_action": "Run final complete verification on the reviewed V1-027 candidate, confirm the exact diff remains review-clean, then publish and require successful exact-SHA GitHub Actions",
+  "idle_reason": "V1-027 is published and CI-green; V1-028 is intentionally held and the supervisor remains disabled under the direct-takeover boundary",
+  "next_action": "Keep V1-028 held and the Property Rental supervisor disabled; await explicit Owner direction before restoring autonomous execution or activating V1-028",
   "next_candidate": {
     "acceptance_profile": "database",
     "authorities": ["BR-SVC-*", "BR-UTIL-014", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-017", "BR-PAY-006", "BR-PAY-007", "BR-MONEY-*"],
@@ -676,7 +676,7 @@
     "order": 27,
     "phase": "Configuration",
     "risk_class": "high",
-    "status": "approved_active",
+    "status": "complete",
     "task": "Service, utility, payment-method, and exchange-rate configuration persistence",
     "roadmap_id": "V1-027"
   },
@@ -690,15 +690,15 @@
   },
   "phase": "Configuration",
   "publication": {
-    "ci_completed": false,
-    "ci_conclusion": null,
-    "ci_run_id": null,
-    "ci_run_url": null,
-    "commit_completed": false,
-    "implementation_commit": null,
-    "push_completed": false,
-    "sha_reconciled": false,
-    "status": "not_started",
+    "ci_completed": true,
+    "ci_conclusion": "success",
+    "ci_run_id": "32830071828",
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32830071828",
+    "commit_completed": true,
+    "implementation_commit": "01b7a56652bf977189aaf83c627f744262a1c4c2",
+    "push_completed": true,
+    "sha_reconciled": true,
+    "status": "published",
     "tranche_id": "V1-027"
   },
   "relevant_docs": ["BR-SVC-*", "BR-UTIL-014-017", "BR-PAY-006-007", "BR-MONEY-*", "DB-UTIL-005", "DB-SVC-001-003", "DB-PAY-001-002", "TEST-045", "TEST-100-104"],
@@ -878,14 +878,14 @@
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 26,
+    "completed": 27,
     "current_id": "V1-027",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "complete_uncommitted",
+  "status": "published",
   "task": "Implement the approved bounded candidate: Service, utility, payment-method, and exchange-rate configuration persistence",
   "tests": [
     "PASS: complete deterministic verification profile 15/15",
@@ -896,7 +896,7 @@
     "PASS: formatting, linting, typing, builds, dependency audit, traceability, JSON, roadmap, shell syntax, publication guard, and git diff checks"
   ],
   "tests_tranche_id": "V1-027",
-  "timestamp": "2026-08-25T08:52:07Z",
+  "timestamp": "2026-08-25T09:08:21Z",
   "touched_areas": [
     "effective-dated Property Service rates and approval history",
     "independent effective-dated Electricity and Water rates without Utility unit metadata",
