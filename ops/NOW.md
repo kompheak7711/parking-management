@@ -1,4 +1,4 @@
-# V1-033 Lease, signer, occupant, and occupancy persistence — verified, awaiting publication
+# V1-033 Lease, signer, occupant, and occupancy persistence — complete
 
 - Candidate: `V1-033` — Lease, signer, occupant, and occupancy persistence.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -17,18 +17,19 @@
 - Verification: PASS — complete profile 15/15, including 255 disposable PostgreSQL
   tests, 602 backend tests, 184 frontend tests, and 182 automation tests.
 - Independent review: PASS — zero final findings across the exact seven-path patch;
-  reviewed fingerprint `21f2408af2fd650584e3a464090f28db439fa1809099a3164875b2a60d0317a2`.
-- Publication: pending separate implementation commit, exact-SHA CI, and closure commit.
-- Status: verified under the existing sequential direct-takeover authorization.
+  reviewed fingerprint `f885ffd3c890c044ab9dfcb7f635cd2564c8997703a57ce151ab84569c363151`.
+- Publication: implementation commit `f3173a2b64204563fb7dec2b7d8ca81e388a6276`;
+  exact-SHA GitHub Actions run `32907415482` passed all four jobs.
+- Status: complete under the existing sequential direct-takeover authorization.
 - Blockers: none.
-- Exact next action: publish the reviewed V1-033 implementation and require successful
-  exact-SHA GitHub Actions while V1-034 remains held.
+- Exact next action: require successful exact-SHA CI for this closure, then perform the
+  authorized V1-034 predecessor/synchronization/no-overlap preflight before editing.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-032 is published and exact-SHA CI-green; V1-033
-  is verified and awaiting its separate publication gates.
+- Automation publication state: V1-033 is published and its implementation exact-SHA
+  CI is green; V1-034 remains held pending this closure commit's CI gate.
 - Automation exact next action: keep the Property Rental supervisor disabled and
-  V1-034 held until V1-033 passes every publication gate.
+  V1-034 held until this separate closure commit is exact-SHA CI-green.
 
 <!-- AUTOMATION_STATUS_END -->
