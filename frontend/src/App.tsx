@@ -178,9 +178,9 @@ function encodeBytes(value: ArrayBuffer | Uint8Array): string {
   return window.btoa(binary);
 }
 
-function decodeBytes(value: string): ArrayBuffer {
+function decodeBytes(value: string): Uint8Array<ArrayBuffer> {
   const binary = window.atob(value);
-  return Uint8Array.from(binary, (character) => character.charCodeAt(0)).buffer;
+  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
 }
 
 async function sealCustomerReconciliation(

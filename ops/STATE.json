@@ -656,15 +656,15 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "461745ebb2c5b3a56bbc7af1e09a8e2203564442",
+  "commit": "5a468c039b77792dea7845da7554eda7fed80f74",
   "evidence_applicability": {
-    "basis": "the fresh complete deterministic profile passed after both Review 52 corrections",
+    "basis": "the exact Node 22 WebCrypto BufferSource correction passed all 15 complete-profile gates and the minimum-runtime frontend suite",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "Fifty-two fresh reviews corrected 205 findings; Review 53 found no actionable regression and the exact corrected candidate passed all 15 complete-profile gates",
+    "prior_review_disposition": "Review 53 passed the implementation diff; Review 54 found no actionable regression in the exact Node 22 correction after fresh complete verification",
     "tranche_id": "V1-026"
   },
   "idle_reason": null,
-  "next_action": "Publish V1-026, require successful GitHub Actions, then restore the supervisor without activating V1-027",
+  "next_action": "Publish the bounded Node 22 correction, require successful GitHub Actions, then restore the supervisor without activating V1-027",
   "next_candidate": {
     "acceptance_profile": "api_ui",
     "authorities": ["API-030-031", "UI-028-030", "SEC-041-044"],
@@ -690,15 +690,15 @@
   },
   "phase": "Core",
   "publication": {
-    "ci_completed": false,
-    "ci_conclusion": null,
-    "ci_run_id": null,
-    "ci_run_url": null,
-    "commit_completed": false,
-    "implementation_commit": null,
-    "push_completed": false,
-    "sha_reconciled": false,
-    "status": "verified_unpublished",
+    "ci_completed": true,
+    "ci_conclusion": "failure",
+    "ci_run_id": "32813957600",
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32813957600",
+    "commit_completed": true,
+    "implementation_commit": "5a468c039b77792dea7845da7554eda7fed80f74",
+    "push_completed": true,
+    "sha_reconciled": true,
+    "status": "ci_correction_verified_unpublished",
     "tranche_id": "V1-026"
   },
   "relevant_docs": ["API-030-031", "UI-028-030", "SEC-041-044"],
@@ -740,6 +740,8 @@
       "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-026-final-review50.json",
       "PASS: fresh complete deterministic verification profile 15/15 after Review 51; /private/tmp/property-rental-v1-026-final-review51.json",
       "PASS: fresh complete deterministic verification profile 15/15 after Review 52; /private/tmp/property-rental-v1-026-final-review52.json",
+      "PASS: exact Node 22.12 frontend suite (160/160)",
+      "PASS: fresh complete deterministic verification profile 15/15 after the Node 22 CI correction; /private/tmp/property-rental-v1-026-final-ci-correction.json",
       "PASS: git diff --check"
     ],
     "corrected_findings": 205,
@@ -850,6 +852,8 @@
     "fifty_second_review_session_id": "01a0374b-eefa-75d2-8f9e-204147d3cc2b",
     "fifty_third_review_findings": 0,
     "fifty_third_review_session_id": "01a03763-bfca-7f41-b1da-369fbe2bbbce",
+    "fifty_fourth_review_findings": 0,
+    "fifty_fourth_review_session_id": "01a0377e-f320-7893-802e-635e753e27c4",
     "review_kind": "fresh_external_codex_exact_uncommitted_diff",
     "final_verdict": "PASS",
     "status": "PASS",
@@ -874,7 +878,7 @@
     "automation routing: 181 passed"
   ],
   "tests_tranche_id": "V1-026",
-  "timestamp": "2026-08-25T05:42:02Z",
+  "timestamp": "2026-08-25T06:00:16Z",
   "touched_areas": [
     "customer create/read/update and history-safe deactivation"
   ],

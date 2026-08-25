@@ -1,4 +1,4 @@
-# V1-026 Customer API and management UI — fifty-third review passed
+# V1-026 Customer API and management UI — Node 22 CI correction review passed
 
 - Candidate: `V1-026` — Customer API and management UI.
 - Authorization: Owner-approved direct takeover of `V1-024` through `V1-026` under the
@@ -27,18 +27,28 @@
   regressions pass (127/127).
 - Review 53: fresh external Codex exact-diff review passed with no actionable correctness
   regressions; its focused backend/frontend, lint, type, format, and production-build checks pass.
-- Verification applicability: the fresh post-correction 15-gate profile and clean Review 53 apply
-  to the exact current candidate.
+- Publication attempt: implementation commit `5a468c0` was pushed, but exact-sha GitHub Actions
+  run `32813957600` failed only its Node 22 frontend test job. The remaining jobs were not the
+  source of the failure.
+- CI correction: WebCrypto byte decoding now supplies a standards-compatible typed-array view
+  instead of its backing buffer. The exact Node 22.12 runtime now passes all 160 frontend tests.
+- Fresh correction verification: all 15/15 complete-profile gates pass, including 564 backend
+  tests, 160 frontend tests, 184 PostgreSQL tests, and 181 automation tests. Evidence:
+  `/private/tmp/property-rental-v1-026-final-ci-correction.json`.
+- Verification applicability: the fresh correction profile applies to the exact current candidate;
+  publication remains held only for the corrective commit and exact-sha GitHub Actions.
+- Review 54: fresh external Codex review of the exact three-file correction passed with no
+  actionable regressions; reviewer session `01a0377e-f320-7893-802e-635e753e27c4` made no edits.
 - Token ceiling: 60,000 unchanged.
 - Result: authenticated minimized Customer list, explicit detail/history navigation,
   capability-checked create/update/deactivation, stable identity preservation, and truthful
   financial-source unavailability with Customer credit separate from deposits.
 - Blockers: none.
-- Exact next action: publish V1-026,
+- Exact next action: publish the bounded Node 22 correction,
   require successful GitHub Actions, finalize without activating V1-027, then restore the supervisor.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation candidate state: V1-026 passed the fresh complete profile and Review 53; publication remains held.
-- Automation exact next action: Publish V1-026 and restore the supervisor without activating V1-027
+- Automation candidate state: V1-026 implementation is pushed; its bounded Node 22 CI correction passed 15/15 gates and Review 54.
+- Automation exact next action: Publish the correction without activating V1-027
     <!-- AUTOMATION_STATUS_END -->
