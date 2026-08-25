@@ -6,12 +6,15 @@ from uuid import uuid4
 
 import pytest
 
+from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.reservation import (
     CancellationResponsibility,
     PostgresReservationService,
+    ReservationAuthorizationError,
     ReservationCancelCommand,
     ReservationCreateCommand,
     ReservationExpireCommand,
+    ReservationOutcomeCorrectionCommand,
     ReservationStatus,
     reservation_request_digest,
 )
@@ -78,6 +81,7 @@ def test_customer_cancellation_requires_property_availability_and_no_coordinatio
         return ReservationCancelCommand(
             idempotency_key=uuid4(),
             event_id=uuid4(),
+            outcome_id=uuid4(),
             reservation_id=uuid4(),
             expected_version=1,
             reason_code="CUSTOMER_WITHDREW",
@@ -86,6 +90,8 @@ def test_customer_cancellation_requires_property_availability_and_no_coordinatio
             reason_memo="Customer requested cancellation",
             coordination_reference=coordination_reference,
             authorization_reference="reservations.cancel",
+            outcome_authorization_reference="reservation_deposits.dispose",
+            refund_number=None,
         )
 
     valid = command()
@@ -101,6 +107,7 @@ def test_property_cancellation_requires_coordination_and_preserves_v1_031_bounda
     command = ReservationCancelCommand(
         idempotency_key=uuid4(),
         event_id=uuid4(),
+        outcome_id=uuid4(),
         reservation_id=uuid4(),
         expected_version=2,
         reason_code="PROPERTY_UNABLE_TO_PROVIDE_UNIT",
@@ -109,11 +116,12 @@ def test_property_cancellation_requires_coordination_and_preserves_v1_031_bounda
         reason_memo="Customer rejected the coordinated alternative",
         coordination_reference="CASE-2026-001",
         authorization_reference="reservations.cancel",
+        outcome_authorization_reference="reservation_deposits.refund",
+        refund_number="RF-2026-0001",
     )
 
     assert command.coordination_reference == "CASE-2026-001"
-    assert not hasattr(command, "refund_id")
-    assert not hasattr(command, "disposition_id")
+    assert command.refund_number == "RF-2026-0001"
 
 
 def test_expiration_refuses_property_inability_instead_of_misclassification() -> None:
@@ -121,10 +129,94 @@ def test_expiration_refuses_property_inability_instead_of_misclassification() ->
         ReservationExpireCommand(
             idempotency_key=uuid4(),
             event_id=uuid4(),
+            outcome_id=uuid4(),
             reservation_id=uuid4(),
             expected_version=1,
             property_could_provide_unit=False,
             authorization_reference="reservation-expiry-job",
+            outcome_authorization_reference="reservation_deposits.dispose",
+        )
+
+
+def test_outcome_correction_digest_binds_replacement_and_evidence() -> None:
+    command = ReservationOutcomeCorrectionCommand(
+        idempotency_key=uuid4(),
+        correction_id=uuid4(),
+        expected_outcome_id=uuid4(),
+        replacement_outcome_id=uuid4(),
+        reservation_id=uuid4(),
+        expected_version=2,
+        reason="Correct external Refund reference",
+        evidence_reference="CASE-2026-004",
+        authorization_reference="reservation_deposits.correct",
+        replacement_authorization_reference="reservation_deposits.refund",
+        replacement_refund_number="RF-2026-004-R1",
+    )
+
+    digest = reservation_request_digest("reservation.outcome.correct", command)
+
+    assert len(digest) == 64
+    assert digest != reservation_request_digest(
+        "reservation.outcome.correct",
+        replace(command, replacement_refund_number="RF-2026-004-R2"),
+    )
+
+
+def test_financial_commands_require_trusted_separate_capabilities() -> None:
+    property_id = uuid4()
+    actor_id = uuid4()
+    service = PostgresReservationService(
+        "postgresql://ordinary-connection-must-not-be-used",
+        property_id=property_id,
+        actor_id=actor_id,
+        financial_database_url="postgresql://financial-connection-must-not-be-used",
+    )
+    command = ReservationCancelCommand(
+        idempotency_key=uuid4(),
+        event_id=uuid4(),
+        outcome_id=uuid4(),
+        reservation_id=uuid4(),
+        expected_version=1,
+        reason_code="CUSTOMER_WITHDREW",
+        responsibility=CancellationResponsibility.CUSTOMER,
+        property_could_provide_unit=True,
+        reason_memo="Customer requested cancellation",
+        coordination_reference=None,
+        authorization_reference="reservations.cancel",
+        outcome_authorization_reference="reservation_deposits.dispose",
+        refund_number=None,
+    )
+    property_scope = frozenset({str(property_id)})
+    cancel_only = AuthenticatedActor(
+        actor_id=str(actor_id),
+        capability_grants=frozenset({CapabilityGrant("reservations.cancel", property_scope)}),
+    )
+    wrong_actor = AuthenticatedActor(
+        actor_id=str(uuid4()),
+        capability_grants=frozenset(
+            {
+                CapabilityGrant("reservations.cancel", property_scope),
+                CapabilityGrant("reservation_deposits.dispose", property_scope),
+            }
+        ),
+    )
+
+    with pytest.raises(ReservationAuthorizationError, match="not authorized"):
+        service.cancel(command, actor=cancel_only)
+    with pytest.raises(ReservationAuthorizationError, match="does not match"):
+        service.cancel(command, actor=wrong_actor)
+    with pytest.raises(ReservationAuthorizationError, match="not authoritative"):
+        service.cancel(
+            replace(command, outcome_authorization_reference="untrusted.claim"),
+            actor=AuthenticatedActor(
+                actor_id=str(actor_id),
+                capability_grants=frozenset(
+                    {
+                        CapabilityGrant("reservations.cancel", property_scope),
+                        CapabilityGrant("reservation_deposits.dispose", property_scope),
+                    }
+                ),
+            ),
         )
 
 

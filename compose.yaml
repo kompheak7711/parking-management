@@ -10,6 +10,7 @@ services:
       POSTGRES_PASSWORD_FILE: /run/secrets/postgres_admin_password
       POSTGRES_MIGRATION_PASSWORD_FILE: /run/secrets/postgres_migration_password
       POSTGRES_RUNTIME_PASSWORD_FILE: /run/secrets/postgres_runtime_password
+      POSTGRES_FINANCIAL_PASSWORD_FILE: /run/secrets/postgres_financial_password
       POSTGRES_BACKUP_PASSWORD_FILE: /run/secrets/postgres_backup_password
       POSTGRES_RESTORE_PASSWORD_FILE: /run/secrets/postgres_restore_password
       POSTGRES_HUMAN_ADMIN_PASSWORD_FILE: /run/secrets/postgres_human_admin_password
@@ -19,6 +20,7 @@ services:
       - postgres_admin_password
       - postgres_migration_password
       - postgres_runtime_password
+      - postgres_financial_password
       - postgres_backup_password
       - postgres_restore_password
       - postgres_human_admin_password
@@ -47,6 +49,8 @@ secrets:
     file: ${POSTGRES_MIGRATION_PASSWORD_FILE:?set POSTGRES_MIGRATION_PASSWORD_FILE}
   postgres_runtime_password:
     file: ${POSTGRES_RUNTIME_PASSWORD_FILE:?set POSTGRES_RUNTIME_PASSWORD_FILE}
+  postgres_financial_password:
+    file: ${POSTGRES_FINANCIAL_PASSWORD_FILE:?set POSTGRES_FINANCIAL_PASSWORD_FILE}
   postgres_backup_password:
     file: ${POSTGRES_BACKUP_PASSWORD_FILE:?set POSTGRES_BACKUP_PASSWORD_FILE}
   postgres_restore_password:

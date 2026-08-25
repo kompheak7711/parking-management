@@ -118,9 +118,10 @@ project dependencies continue to install only from `backend/uv.lock` and
 
 Alembic is the reviewed, versioned schema tool; psycopg is the PostgreSQL driver used
 by migrations and integration tests. These are the only Phase 1C dependencies. Create
-seven distinct local-only password files at the ignored `.local/secrets/` paths named by
+eight distinct local-only password files at the ignored `.local/secrets/` paths named by
 `.env.example`: `postgres_admin_password`, `postgres_migration_password`,
-`postgres_runtime_password`, `postgres_backup_password`, `postgres_restore_password`,
+`postgres_runtime_password`, `postgres_financial_password`, `postgres_backup_password`,
+`postgres_restore_password`,
 `postgres_human_admin_password`, and `postgres_bootstrap_password`. Use an external protected
 input method and restrictive permissions;
 never put their values in Git, logs, or command arguments. Export only the corresponding
@@ -133,11 +134,14 @@ reinitializing it through project automation.
 
 `MIGRATION_DATABASE_URL` uses `prm_migrator`, which owns schema changes.
 `APP_DATABASE_URL` uses the non-owning `prm_runtime` identity. The application never
-falls back to migration credentials. `TEST_ADMIN_DATABASE_URL` is test-only and must
+falls back to migration credentials. `FINANCIAL_DATABASE_URL` uses the separately protected
+`prm_financial` identity only for capability-authorized Reservation financial orchestration.
+`TEST_ADMIN_DATABASE_URL` is test-only and must
 name the local `prm_admin` bootstrap identity when tests are run directly.
 
-The seven PostgreSQL identity password sources are `postgres_admin_password`,
-`postgres_migration_password`, `postgres_runtime_password`, `postgres_backup_password`,
+The eight PostgreSQL identity password sources are `postgres_admin_password`,
+`postgres_migration_password`, `postgres_runtime_password`, `postgres_financial_password`,
+`postgres_backup_password`,
 `postgres_restore_password`, `postgres_human_admin_password`, and
 `postgres_bootstrap_password`. The managed identity and protected source contract is defined
 in `config/deployment/identity-secret-contract.json`; environment-specific files in the same
@@ -172,6 +176,22 @@ Fresh data directories create the same bounded identity through `scripts/postgre
 That initialization also removes `PUBLIC` database authority from the stock `postgres` and
 `template1` databases while preserving explicit `prm_admin` maintenance access, so the new
 bootstrap identity has no effective cross-database `CONNECT` or `TEMP` authority.
+
+For an existing cluster created before V1-031, a cluster administrator must also provision
+`prm_financial` before running `make migrate`. It must be a dedicated `LOGIN` with
+`NOINHERIT`, `NOSUPERUSER`, `NOCREATEDB`, `NOCREATEROLE`, `NOREPLICATION`, and
+`NOBYPASSRLS`; it must have no role memberships, owned objects, default ACLs, large-object
+authority, or direct schema/object grants, and only `CONNECT` (never `CREATE` or `TEMP`) on
+the target deployment database. It must also inherit no application relation, callable
+function, schema-creation, default-ACL, or large-object authority through `PUBLIC`;
+PostgreSQL system catalogs, extension-owned support objects, and trigger-only functions that
+the role cannot attach or invoke are not application authority. Its distinct credential
+must come from the protected `FINANCIAL_DATABASE_URL_FILE` source and must never appear in a
+command argument or log. The operator must inventory every other connectable database and
+stop if this identity has any authority outside the target. Migration 21 validates the
+cluster-global attributes and complete target-database state, then fails before creating any V1-031 schema
+when the role is absent or unsafe. It intentionally does not create or repair a cluster role
+and does not claim cross-database inspection; never reset an existing volume to obtain it.
 
 After the migration succeeds and before any account exists, run the packaged protected
 command from `backend/` with the database URL, root-owned TOTP key, and local password

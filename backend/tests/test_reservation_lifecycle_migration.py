@@ -16,6 +16,7 @@ from alembic.config import Config
 from psycopg import Connection, Error
 from psycopg.types.json import Jsonb
 
+from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.reservation import (
     CancellationResponsibility,
     DepositOutcomeState,
@@ -46,6 +47,27 @@ def runtime_database_url() -> str:
     value = os.environ.get("APP_DATABASE_URL")
     assert value is not None
     return value.replace("postgresql+psycopg://", "postgresql://", 1)
+
+
+def financial_database_url() -> str:
+    value = os.environ.get("FINANCIAL_DATABASE_URL")
+    assert value is not None
+    return value.replace("postgresql+psycopg://", "postgresql://", 1)
+
+
+def financial_actor(
+    actor_id: UUID, property_id: UUID, outcome_capability: str
+) -> AuthenticatedActor:
+    property_scope = frozenset({str(property_id)})
+    return AuthenticatedActor(
+        actor_id=str(actor_id),
+        capability_grants=frozenset(
+            {
+                CapabilityGrant("reservations.cancel", property_scope),
+                CapabilityGrant(outcome_capability, property_scope),
+            }
+        ),
+    )
 
 
 def active_reservation(
@@ -162,19 +184,26 @@ def cancel(
     reservation_id: UUID,
     idempotency_key: UUID,
     event_id: UUID,
+    outcome_id: UUID | None = None,
     digest: str = "c" * 64,
     expected_version: int = 1,
     responsibility: str = "CUSTOMER",
     property_could_provide_unit: bool = True,
     coordination_reference: str | None = None,
+    refund_number: str | None = None,
 ) -> tuple[object, ...]:
+    outcome_id = outcome_id or uuid4()
+    if responsibility == "PROPERTY" and refund_number is None:
+        refund_number = f"RF-{outcome_id}"
     row = connection.execute(
-        "SELECT * FROM app.cancel_reservation(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+        "SELECT * FROM app.cancel_reservation_v2(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
         (
             property_id,
             idempotency_key,
             digest,
             event_id,
+            outcome_id,
+            refund_number,
             reservation_id,
             expected_version,
             "CUSTOMER_WITHDREW"
@@ -185,6 +214,9 @@ def cancel(
             "Approved cancellation reason",
             coordination_reference,
             "reservations.cancel",
+            "reservation_deposits.dispose"
+            if responsibility == "CUSTOMER"
+            else "reservation_deposits.refund",
             actor_id,
         ),
     ).fetchone()
@@ -200,7 +232,12 @@ def test_postgres_service_creates_extends_and_cancels_one_stable_reservation(
         business_date = reservation_business_date(setup, property_id)
         setup.commit()
     occurred_at = datetime.now(UTC)
-    service = PostgresReservationService(runtime_database_url(), property_id, actor_id)
+    service = PostgresReservationService(
+        runtime_database_url(),
+        property_id,
+        actor_id,
+        financial_database_url=financial_database_url(),
+    )
     create_command = ReservationCreateCommand(
         idempotency_key=uuid4(),
         reservation_id=uuid4(),
@@ -244,6 +281,7 @@ def test_postgres_service_creates_extends_and_cancels_one_stable_reservation(
         ReservationCancelCommand(
             idempotency_key=uuid4(),
             event_id=uuid4(),
+            outcome_id=uuid4(),
             reservation_id=created.reservation_id,
             expected_version=extended.version,
             reason_code="CUSTOMER_WITHDREW",
@@ -252,7 +290,10 @@ def test_postgres_service_creates_extends_and_cancels_one_stable_reservation(
             reason_memo="Customer requested cancellation",
             coordination_reference=None,
             authorization_reference="reservations.cancel",
-        )
+            outcome_authorization_reference="reservation_deposits.dispose",
+            refund_number=None,
+        ),
+        actor=financial_actor(actor_id, property_id, "reservation_deposits.dispose"),
     )
 
     assert created.status is ReservationStatus.ACTIVE
@@ -262,7 +303,7 @@ def test_postgres_service_creates_extends_and_cancels_one_stable_reservation(
     assert cancelled.status is ReservationStatus.CANCELLED
     assert cancelled.version == 3
     assert cancelled.deposit_id == created.deposit_id
-    assert cancelled.deposit_outcome_state is DepositOutcomeState.PENDING_V1_031
+    assert cancelled.deposit_outcome_state is DepositOutcomeState.NON_REFUNDABLE_DISPOSITION
 
 
 def test_customer_cancellation_is_atomic_idempotent_and_preserves_deposit(
@@ -287,7 +328,7 @@ def test_customer_cancellation_is_atomic_idempotent_and_preserves_deposit(
 
     key = uuid4()
     event_id = uuid4()
-    with psycopg.connect(runtime_database_url()) as runtime:
+    with psycopg.connect(financial_database_url()) as runtime:
         first = cancel(
             runtime,
             actor_id=actor_id,
@@ -297,7 +338,7 @@ def test_customer_cancellation_is_atomic_idempotent_and_preserves_deposit(
             event_id=event_id,
         )
         runtime.commit()
-    with psycopg.connect(runtime_database_url()) as runtime:
+    with psycopg.connect(financial_database_url()) as runtime:
         replay = cancel(
             runtime,
             actor_id=actor_id,
@@ -311,7 +352,7 @@ def test_customer_cancellation_is_atomic_idempotent_and_preserves_deposit(
     assert first == replay
     assert first[2:5] == ("CANCELLED", "CUSTOMER_WITHDREW", "CUSTOMER")
     assert first[7] == "VACANT"
-    assert first[11] == "PENDING_V1_031"
+    assert first[11] == "NON_REFUNDABLE_DISPOSITION"
     with psycopg.connect(migrated_database_url) as verify:
         assert verify.execute(
             "SELECT status FROM app.units WHERE id = %s", (unit_id,)
@@ -347,13 +388,13 @@ def test_customer_cancellation_is_atomic_idempotent_and_preserves_deposit(
         )
 
 
-def test_property_cancellation_requires_coordination_without_creating_refund(
+def test_property_cancellation_requires_coordination_and_creates_refund(
     migrated_database_url: str,
 ) -> None:
     with psycopg.connect(migrated_database_url) as setup:
         actor_id, property_id, _, _, reservation_id = active_reservation(setup)
         setup.commit()
-    with psycopg.connect(runtime_database_url()) as runtime:
+    with psycopg.connect(financial_database_url()) as runtime:
         with pytest.raises(Error) as missing_coordination:
             cancel(
                 runtime,
@@ -380,11 +421,12 @@ def test_property_cancellation_requires_coordination_without_creating_refund(
         )
         runtime.commit()
     assert row[4] == "PROPERTY"
-    assert row[11] == "PENDING_V1_031"
+    assert row[11] == "REFUND"
     with psycopg.connect(migrated_database_url) as verify:
         assert verify.execute(
-            "SELECT to_regclass('app.refunds'), to_regclass('app.deposit_dispositions')"
-        ).fetchone() == (None, None)
+            "SELECT usd_accounting_value_cents, refund_currency FROM app.refunds WHERE id = %s",
+            (row[12],),
+        ).fetchone() == (10_000, "USD")
 
 
 def test_expiration_uses_end_of_date_is_bounded_and_preserves_classification(
@@ -400,16 +442,19 @@ def test_expiration_uses_end_of_date_is_bounded_and_preserves_classification(
         ).fetchall()
         assert due == [(reservation_id, due[0][1], 1)]
         assert all(row[0] != current_id for row in due)
+    with psycopg.connect(financial_database_url()) as runtime:
         with pytest.raises(Error) as misclassified:
             runtime.execute(
-                "SELECT * FROM app.expire_reservation(%s,%s,%s,%s,%s,1,false,%s,%s)",
+                "SELECT * FROM app.expire_reservation_v2(%s,%s,%s,%s,%s,%s,1,false,%s,%s,%s)",
                 (
                     property_id,
                     uuid4(),
                     "e" * 64,
                     uuid4(),
+                    uuid4(),
                     reservation_id,
-                    "reservation-expiry-job",
+                    "reservations.cancel",
+                    "reservation_deposits.dispose",
                     actor_id,
                 ),
             ).fetchone()
@@ -418,14 +463,16 @@ def test_expiration_uses_end_of_date_is_bounded_and_preserves_classification(
         key = uuid4()
         event_id = uuid4()
         row = runtime.execute(
-            "SELECT * FROM app.expire_reservation(%s,%s,%s,%s,%s,1,true,%s,%s)",
+            "SELECT * FROM app.expire_reservation_v2(%s,%s,%s,%s,%s,%s,1,true,%s,%s,%s)",
             (
                 property_id,
                 key,
                 "f" * 64,
                 event_id,
+                uuid4(),
                 reservation_id,
-                "reservation-expiry-job",
+                "reservations.cancel",
+                "reservation_deposits.dispose",
                 actor_id,
             ),
         ).fetchone()
@@ -518,7 +565,8 @@ def test_concurrent_extension_and_cancellation_have_one_version_winner(
     barrier = Barrier(2)
 
     def attempt(action: str) -> str:
-        with psycopg.connect(runtime_database_url()) as runtime:
+        database_url = financial_database_url() if action == "cancel" else runtime_database_url()
+        with psycopg.connect(database_url) as runtime:
             barrier.wait()
             try:
                 if action == "cancel":
@@ -669,6 +717,16 @@ def test_runtime_role_has_only_bounded_lifecycle_authority(
                     current_user,
                     'app.expire_reservation(uuid,uuid,text,uuid,uuid,integer,boolean,text,uuid)',
                     'EXECUTE'
+                ),
+                has_function_privilege(
+                    current_user,
+                    'app.cancel_reservation_v2(uuid,uuid,text,uuid,uuid,text,uuid,integer,text,text,boolean,text,text,text,text,uuid)',
+                    'EXECUTE'
+                ),
+                has_function_privilege(
+                    current_user,
+                    'app.expire_reservation_v2(uuid,uuid,text,uuid,uuid,uuid,integer,boolean,text,text,uuid)',
+                    'EXECUTE'
                 )
             """
         ).fetchone()
@@ -679,7 +737,7 @@ def test_runtime_role_has_only_bounded_lifecycle_authority(
             ).fetchall()
         assert unbounded_due_query.value.sqlstate == "22023"
         runtime.rollback()
-    assert privileges == (True, False, False, True, True, True)
+    assert privileges == (True, False, False, True, False, False, False, False)
 
 
 def test_reservation_lifecycle_migration_is_forward_only() -> None:

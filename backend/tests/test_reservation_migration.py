@@ -247,7 +247,7 @@ def test_authorized_variance_is_preserved_and_replay_is_idempotent(
         """
         INSERT INTO app.deposit_receipts (
             id, deposit_id, payment_id, amount_usd_cents, occurred_at, actor_id
-        ) VALUES (%s, %s, %s, 1000, statement_timestamp(), %s)
+        ) VALUES (%s, %s, %s, 1000, clock_timestamp(), %s)
         """,
         (uuid4(), identities["deposit_id"], uuid4(), actor_id),
     )
@@ -341,7 +341,7 @@ def test_extension_is_single_bounded_and_preserves_original_history(
         """
         INSERT INTO app.deposit_receipts (
             id, deposit_id, payment_id, amount_usd_cents, occurred_at, actor_id
-        ) VALUES (%s, %s, %s, 1000, statement_timestamp(), %s)
+        ) VALUES (%s, %s, %s, 1000, clock_timestamp(), %s)
         """,
         (uuid4(), identities["deposit_id"], uuid4(), actor_id),
     )
@@ -699,7 +699,7 @@ def test_activation_bundle_requires_exact_accepted_receipt(
         """
         INSERT INTO app.deposit_receipts (
             id, deposit_id, payment_id, amount_usd_cents, occurred_at, actor_id
-        ) VALUES (%s, %s, %s, 1, statement_timestamp(), %s)
+        ) VALUES (%s, %s, %s, 1, clock_timestamp(), %s)
         """,
         (uuid4(), identities["deposit_id"], uuid4(), actor_id),
     )
@@ -723,7 +723,7 @@ def test_received_deposit_cannot_exceed_required_liability(
         """
         INSERT INTO app.deposit_receipts (
             id, deposit_id, payment_id, amount_usd_cents, occurred_at, actor_id
-        ) VALUES (%s, %s, %s, 40000, statement_timestamp(), %s)
+        ) VALUES (%s, %s, %s, 40000, clock_timestamp(), %s)
         """,
         (uuid4(), identities["deposit_id"], uuid4(), actor_id),
     )
@@ -732,7 +732,7 @@ def test_received_deposit_cannot_exceed_required_liability(
             """
             INSERT INTO app.deposit_receipts (
                 id, deposit_id, payment_id, amount_usd_cents, occurred_at, actor_id
-            ) VALUES (%s, %s, %s, 1, statement_timestamp(), %s)
+            ) VALUES (%s, %s, %s, 1, clock_timestamp(), %s)
             """,
             (uuid4(), identities["deposit_id"], uuid4(), actor_id),
         )

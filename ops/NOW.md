@@ -1,38 +1,37 @@
-# V1-030 Reservation lifecycle and availability services — published
+# V1-031 Reservation cancellation and deposit-outcome orchestration — verified, unpublished
 
-- Candidate: `V1-030` — Reservation lifecycle and availability services.
+- Candidate: `V1-031` — Reservation cancellation and deposit-outcome orchestration.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
   no renewed routine authorization is required.
-- Baseline: clean, synchronized `implementation/foundation` at V1-029 closure
-  `f96e55c3ffb61263ec4b8e8d5e5a7f104af4546d`.
+- Baseline: clean, synchronized `implementation/foundation` at V1-030 closure
+  `af2be8da75dddc4c4069bb694b6e222e1d92c70d`.
 - Scheduler: exact Property Rental supervisor remains disabled throughout direct work.
 - Overlap: no repository worker or automation process overlaps this cycle.
-- Scope: create, extend, expire, and cancel Reservations with transactional Unit
-  availability, legal transitions, optimistic concurrency, and idempotent retries.
-- Authorities: `BR-RES-003` through `BR-RES-022`, `PR-RES-*`, and `TEST-024`
-  through `TEST-029` within the explicit V1-030 boundaries.
-- Dependency: published V1-029 Reservation and Security Deposit persistence.
-- Excluded: move-in completion, V1-031 Security Deposit outcome orchestration,
-  canonical changes, unresolved policy invention, and every later tranche.
+- Scope: explicit customer-caused and Property-caused cancellation outcomes,
+  transactional deposit disposition, reconstructable source links, idempotency,
+  concurrency protection, audit, and permanent correction/reversal history.
+- Authorities: `BR-RES-020` through `BR-RES-022`, `BR-REFUND-*`, and `TEST-029`.
+- Dependencies: published V1-029 persistence and V1-030 lifecycle services.
+- Excluded: general refund UI, V1-032 API/UI work, canonical changes, discretionary
+  policy invention, and every later tranche.
 - Canonical specifications: read-only.
 - Token ceiling and automation protections: unchanged.
-- Verification: complete deterministic profile passed 15/15, including 587 backend
-  tests with 215 expected environment skips, 178 frontend tests, 221 real disposable
-  PostgreSQL tests, and 182 automation-routing tests.
-- Independent review: PASS after two material database-boundary findings were
-  corrected and regression-tested. Reviewed implementation fingerprint:
-  `280868704067d4b3fa43003aed801559ac711c2f719f7d6e723274fbc3468035`.
-- Publication: implementation commit `1f41c41a9426f88ff03ca957a08d82b50cd13fec`
-  is pushed and exact-SHA GitHub Actions run `32864460444` passed all four jobs.
-- Status: complete, verified, review-clean, published, and CI-green.
+- Verification: complete profile PASS (15/15), including 234 real PostgreSQL tests,
+  592 backend tests, 178 frontend tests, and 182 automation-routing tests.
+- Review corrections: stale outcome preconditions, dedicated financial authorization,
+  real concurrent correction coverage, and safe existing-cluster financial-role
+  preprovisioning—including authority inherited through PostgreSQL `PUBLIC`—are
+  implemented and verified.
+- Independent review: PASS with zero material findings on exact patch fingerprint
+  `2ba9e441b8cde597b1bd2d664113d2ee013609b7a510af611e59c8177b2e6d8d`.
+- Status: implementation is complete, verified, and independently reviewed; publication is pending.
 - Blockers: none.
-- Exact next action: keep V1-031 at `approved_ready` and the Property Rental
-  supervisor disabled; await explicit Owner direction before starting V1-031 or
-  restoring autonomous execution.
+- Exact next action: publish V1-031, require successful exact-SHA GitHub Actions,
+  then reconcile compact state while keeping V1-032 held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-030 is published and exact-SHA CI-green.
-- Automation exact next action: Keep V1-031 and the Property Rental supervisor held.
+- Automation publication state: V1-031 is verified and unpublished under direct takeover.
+- Automation exact next action: Keep V1-032 and the supervisor held during publication.
 
 <!-- AUTOMATION_STATUS_END -->

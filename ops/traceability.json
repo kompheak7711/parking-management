@@ -1811,7 +1811,7 @@
       "notes": "The TEST-117 manifest structure and executable test coverage are validated automatically."
     },
     {
-      "test_id": "test_deployment_examples_define_six_distinct_database_identities",
+      "test_id": "test_deployment_examples_define_seven_distinct_database_identities",
       "upstream_ids": [
         "SEC-045",
         "SEC-047",
@@ -1822,7 +1822,7 @@
       "test_level": "security",
       "test_path": "backend/tests/test_deployment_scaffolding.py",
       "status": "implemented",
-      "notes": "The machine-readable contract names distinct runtime, migration, backup, restore, and exceptional human-administration roles with bounded standing access."
+      "notes": "The machine-readable contract names seven distinct runtime, financial, migration, backup, restore, human-administration, and bootstrap roles with bounded standing access."
     },
     {
       "test_id": "test_readme_password_file_inventory_matches_env_compose_and_postgres_init",
@@ -1837,7 +1837,7 @@
       "test_level": "operational",
       "test_path": "backend/tests/test_deployment_scaffolding.py",
       "status": "implemented",
-      "notes": "The documented seven PostgreSQL password-file names must exactly equal the inventories in .env.example, Compose, and the PostgreSQL initialization script."
+      "notes": "The documented eight PostgreSQL password-file names must exactly equal the inventories in .env.example, Compose, and the PostgreSQL initialization script."
     },
     {
       "test_id": "test_deployment_examples_use_separate_environment_bound_protected_sources",
@@ -1934,6 +1934,14 @@
       "test_path": "backend/tests/test_deployment_scaffolding.py",
       "status": "implemented",
       "notes": "Static deployment scaffolding requires the migration's first operation to validate a pre-provisioned bounded bootstrap role; disposable PostgreSQL tests separately execute missing, elevated, and pre-existing-ACL rejection paths."
+    },
+    {
+      "test_id": "test_v1_031_migration_requires_preprovisioned_bounded_financial_role",
+      "upstream_ids": ["SEC-045", "SEC-047", "DEPLOY-065", "DEPLOY-066", "DL-044"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deployment_scaffolding.py",
+      "status": "implemented",
+      "notes": "Static deployment coverage binds fresh initialization and documented existing-cluster provisioning to migration 21's first-operation validation of the dedicated financial role's attributes, memberships, ownership, ACL, and target access."
     },
     {
       "test_id": "test_database_test_secret_files_are_readable_by_native_linux_container_user",
@@ -7849,7 +7857,7 @@
       "test_level": "domain",
       "test_path": "backend/tests/test_reservation.py",
       "status": "implemented",
-      "notes": "Property responsibility requires coordination evidence while Refund and disposition identities remain absent from the V1-030 command contract."
+      "notes": "Property responsibility requires coordination evidence plus an explicit stable Refund identity; Customer responsibility carries an explicit stable disposition identity."
     },
     {
       "test_id": "test_expiration_refuses_property_inability_instead_of_misclassification",
@@ -7873,7 +7881,7 @@
       "test_level": "integration",
       "test_path": "backend/tests/test_reservation_lifecycle_migration.py",
       "status": "implemented",
-      "notes": "The production PostgreSQL service creates one stable Reservation and continuing Security Deposit, grants one version-checked extension, then classifies and cancels it without creating the held financial outcome."
+      "notes": "The production PostgreSQL service creates one stable Reservation and continuing Security Deposit, grants one version-checked extension, then atomically classifies cancellation and its nonrefundable Deposit outcome."
     },
     {
       "test_id": "test_customer_cancellation_is_atomic_idempotent_and_preserves_deposit",
@@ -7881,15 +7889,15 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_reservation_lifecycle_migration.py",
       "status": "implemented",
-      "notes": "A customer-attributable cancellation atomically records the terminal Reservation event, releases the Unit, replays exactly, and preserves the same Deposit and receipt while marking financial orchestration pending V1-031."
+      "notes": "A customer-attributable cancellation atomically records the terminal Reservation event, releases the Unit, replays exactly, preserves the same Deposit receipt, and records the full nonrefundable disposition."
     },
     {
-      "test_id": "test_property_cancellation_requires_coordination_without_creating_refund",
+      "test_id": "test_property_cancellation_requires_coordination_and_creates_refund",
       "upstream_ids": ["BR-RES-012", "BR-RES-020", "PR-RES-012", "PR-RES-020", "DL-034"],
       "test_level": "DB",
       "test_path": "backend/tests/test_reservation_lifecycle_migration.py",
       "status": "implemented",
-      "notes": "Property responsibility requires preserved coordination evidence and cannot silently create a Refund or Deposit disposition before V1-031."
+      "notes": "Property responsibility requires preserved coordination evidence and creates one explicit full USD Refund linked to the continuing Deposit and cancellation event."
     },
     {
       "test_id": "test_expiration_uses_end_of_date_is_bounded_and_preserves_classification",
@@ -7897,7 +7905,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_reservation_lifecycle_migration.py",
       "status": "implemented",
-      "notes": "A bounded deterministic due query waits until after the complete Property-local expiration date; expiration records RESERVATION_EXPIRED, releases the Unit, rejects Property-side misclassification, and leaves the financial outcome pending V1-031."
+      "notes": "A bounded deterministic due query waits until after the complete Property-local expiration date; expiration records RESERVATION_EXPIRED, releases the Unit, rejects Property-side misclassification, and records the full nonrefundable Deposit disposition."
     },
     {
       "test_id": "test_version_checked_extension_replays_then_rejects_stale_new_command",
@@ -7940,12 +7948,52 @@
       "notes": "Revision 20 builds forward from published Reservation persistence and refuses destructive lifecycle-history rollback."
     },
     {
-      "test_id": "test_v1_030_upgrade_preserves_active_v1_029_reservation_and_deposit",
-      "upstream_ids": ["BR-RES-003", "BR-RES-004", "BR-RES-005", "BR-RES-009", "PR-RES-003", "PR-RES-004", "PR-RES-005", "PR-RES-009", "DL-034"],
+      "test_id": "test_v1_031_upgrade_preserves_and_completes_v1_030_pending_outcome",
+      "upstream_ids": ["BR-RES-003", "BR-RES-004", "BR-RES-005", "BR-RES-009", "BR-RES-020", "BR-RES-021", "BR-RES-022", "PR-RES-003", "PR-RES-004", "PR-RES-005", "PR-RES-009", "PR-RES-020", "PR-RES-021", "PR-RES-022", "TEST-029", "DL-034", "DL-044"],
       "test_level": "migration",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
-      "notes": "The explicit revision 19 to 20 upgrade preserves an ACTIVE Reservation, RESERVED Unit, stable continuing Security Deposit, and least-privilege runtime boundary without synthesizing lifecycle history."
+      "notes": "The explicit revision 19 to 20 to 21 path preserves a V1-030 cancellation, Unit release, stable Security Deposit and receipt, then records one explicit linked nonrefundable outcome without rewriting prior lifecycle history."
+    },
+    {
+      "test_id": "test_v1_031_migration_requires_preprovisioned_financial_role_before_schema_change",
+      "upstream_ids": ["BR-REFUND-009", "TEST-029", "DL-044"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "An existing V1-030 database without the separately provisioned financial role fails before any V1-031 table or revision marker is created."
+    },
+    {
+      "test_id": "test_v1_031_migration_rejects_overprivileged_financial_role_before_schema_change",
+      "upstream_ids": ["BR-REFUND-009", "TEST-029", "DL-044"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "An overprivileged financial role is rejected before V1-031 schema changes, preventing SECURITY DEFINER grants from being attached to an unsafe cluster identity."
+    },
+    {
+      "test_id": "test_v1_031_migration_rejects_effective_public_relation_authority",
+      "upstream_ids": ["BR-REFUND-009", "TEST-029", "DL-044"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Effective non-system relation authority inherited through PUBLIC is rejected before any V1-031 schema or revision change."
+    },
+    {
+      "test_id": "test_v1_031_migration_rejects_effective_public_default_authority",
+      "upstream_ids": ["BR-REFUND-009", "TEST-029", "DL-044"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A PUBLIC default privilege that would give the financial identity future object authority is rejected before any V1-031 schema or revision change."
+    },
+    {
+      "test_id": "test_v1_031_migration_rejects_effective_public_large_object_authority",
+      "upstream_ids": ["BR-REFUND-009", "TEST-029", "DL-044"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "Effective large-object authority inherited through PUBLIC is rejected before any V1-031 schema or revision change."
     },
     {
       "test_id": "test_reservation_lifecycle_services_have_bounded_traceability",
@@ -7953,7 +8001,87 @@
       "test_level": "operational",
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
-      "notes": "The V1-030 manifest covers only implemented creation, extension, expiration, cancellation-classification, concurrency, and availability behavior; complete move-in and cancellation financial-outcome clauses remain explicitly unclaimed for V1-031 and later tranches."
+      "notes": "The lifecycle manifest covers creation, extension, expiration, cancellation classification, concurrency, and availability behavior; V1-031 separately claims the completed cancellation financial outcomes."
+    },
+    {
+      "test_id": "test_outcome_correction_digest_binds_replacement_and_evidence",
+      "upstream_ids": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-010", "BR-REFUND-011", "BR-REFUND-012", "DL-035"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_reservation.py",
+      "status": "implemented",
+      "notes": "A correction command binds its replacement identity, external evidence, authorization references, and Refund number into the stable idempotency digest."
+    },
+    {
+      "test_id": "test_financial_commands_require_trusted_separate_capabilities",
+      "upstream_ids": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-009", "BR-REFUND-010", "BR-REFUND-011", "BR-REFUND-012", "DL-044"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_reservation.py",
+      "status": "implemented",
+      "notes": "Financial orchestration fails before persistence unless the authenticated actor identity, exact Property scope, lifecycle capability, outcome capability, and audit references all agree."
+    },
+    {
+      "test_id": "test_customer_and_property_outcomes_preserve_exact_source_links_and_audit",
+      "upstream_ids": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "PR-RES-020", "PR-RES-021", "PR-RES-022", "BR-REFUND-001", "BR-REFUND-002", "BR-REFUND-003", "BR-REFUND-004", "BR-REFUND-009", "BR-REFUND-010", "BR-REFUND-011", "BR-REFUND-012", "TEST-029", "DL-028", "DL-034", "DL-036", "DL-044"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_outcome_migration.py",
+      "status": "implemented",
+      "notes": "Customer-caused cancellation creates one full nonrefundable Deposit disposition; Property-caused cancellation creates one explicit full USD Refund, with stable Reservation, Deposit, lifecycle-event, Customer, and audit source links."
+    },
+    {
+      "test_id": "test_identical_concurrent_cancellation_creates_one_outcome",
+      "upstream_ids": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-009", "TEST-029", "DL-034"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_outcome_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent identical cancellation retries serialize on the exact command key and create one lifecycle transition and one financial outcome."
+    },
+    {
+      "test_id": "test_duplicate_refund_number_rolls_back_cancellation_and_availability",
+      "upstream_ids": ["BR-RES-021", "BR-RES-022", "BR-REFUND-001", "BR-REFUND-002", "BR-REFUND-003", "TEST-029", "DL-034"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_outcome_migration.py",
+      "status": "implemented",
+      "notes": "A duplicate Refund identity fails the complete command and rolls back Reservation cancellation, Unit availability, lifecycle history, and financial history atomically."
+    },
+    {
+      "test_id": "test_correction_replaces_outcome_without_erasing_financial_history",
+      "upstream_ids": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-009", "BR-REFUND-010", "BR-REFUND-011", "BR-REFUND-012", "TEST-029", "DL-035", "DL-036", "DL-044"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_outcome_migration.py",
+      "status": "implemented",
+      "notes": "Customer disposition and Property Refund corrections append an explicit reversal or value correction plus a complete replacement, preserving every original money event and its audit evidence."
+    },
+    {
+      "test_id": "test_concurrent_stale_outcome_correction_has_one_exact_winner",
+      "upstream_ids": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-009", "BR-REFUND-010", "BR-REFUND-011", "BR-REFUND-012", "TEST-029", "DL-035", "DL-036", "DL-044"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_reservation_outcome_migration.py",
+      "status": "implemented",
+      "notes": "Two real concurrent corrections against the same expected outcome serialize to one exact winner; the stale attempt returns a version conflict and creates no reversal, replacement, command, or audit evidence."
+    },
+    {
+      "test_id": "test_financial_history_is_append_only_and_runtime_is_least_privilege",
+      "upstream_ids": ["BR-REFUND-009", "BR-REFUND-010", "BR-REFUND-011", "BR-REFUND-012", "DL-035", "DL-044"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_reservation_outcome_migration.py",
+      "status": "implemented",
+      "notes": "The ordinary runtime role can only read immutable outcome history, while the separate financial role can invoke the exact bounded orchestration functions; both roles are denied direct financial writes and history mutation."
+    },
+    {
+      "test_id": "test_reservation_outcome_migration_is_forward_only",
+      "upstream_ids": ["DL-035", "DL-044"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_reservation_outcome_migration.py",
+      "status": "implemented",
+      "notes": "Revision 21 builds forward from the V1-030 lifecycle boundary and refuses destructive financial-history rollback."
+    },
+    {
+      "test_id": "test_reservation_deposit_outcomes_have_bounded_traceability",
+      "upstream_ids": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "PR-RES-020", "PR-RES-021", "PR-RES-022", "BR-REFUND-001", "BR-REFUND-002", "BR-REFUND-003", "BR-REFUND-004", "BR-REFUND-009", "BR-REFUND-010", "BR-REFUND-011", "BR-REFUND-012", "TEST-029", "DL-028", "DL-034", "DL-035", "DL-036", "DL-044"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "The V1-031 manifest is bounded to Reservation cancellation Deposit outcomes and explicitly excludes general Customer credit, payment, settlement, multi-currency, and refund UI behavior held for later tranches."
     }
   ]
 }

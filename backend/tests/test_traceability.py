@@ -949,14 +949,13 @@ def test_reservation_lifecycle_services_have_bounded_traceability() -> None:
     expected_test_ids = {
         "test_postgres_service_creates_extends_and_cancels_one_stable_reservation",
         "test_customer_cancellation_is_atomic_idempotent_and_preserves_deposit",
-        "test_property_cancellation_requires_coordination_without_creating_refund",
+        "test_property_cancellation_requires_coordination_and_creates_refund",
         "test_expiration_uses_end_of_date_is_bounded_and_preserves_classification",
         "test_version_checked_extension_replays_then_rejects_stale_new_command",
         "test_concurrent_extension_and_cancellation_have_one_version_winner",
         "test_database_prevents_summary_drift_illegal_transition_and_history_loss",
         "test_runtime_role_has_only_bounded_lifecycle_authority",
         "test_reservation_lifecycle_migration_is_forward_only",
-        "test_v1_030_upgrade_preserves_active_v1_029_reservation_and_deposit",
         "test_reservation_lifecycle_services_have_bounded_traceability",
     }
     implemented_authorities = {
@@ -989,3 +988,64 @@ def test_reservation_lifecycle_services_have_bounded_traceability() -> None:
     assert all(entry["status"] == "implemented" for entry in scoped_entries)
     assert implemented_authorities <= routed
     assert held_whole_clause_claims.isdisjoint(routed)
+
+
+def test_reservation_deposit_outcomes_have_bounded_traceability() -> None:
+    raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
+    entries = cast(list[TraceabilityEntry], raw_manifest["entries"])
+    entries_by_id = {entry["test_id"]: entry for entry in entries}
+    expected_test_ids = {
+        "test_outcome_correction_digest_binds_replacement_and_evidence",
+        "test_financial_commands_require_trusted_separate_capabilities",
+        "test_customer_and_property_outcomes_preserve_exact_source_links_and_audit",
+        "test_identical_concurrent_cancellation_creates_one_outcome",
+        "test_duplicate_refund_number_rolls_back_cancellation_and_availability",
+        "test_correction_replaces_outcome_without_erasing_financial_history",
+        "test_concurrent_stale_outcome_correction_has_one_exact_winner",
+        "test_financial_history_is_append_only_and_runtime_is_least_privilege",
+        "test_reservation_outcome_migration_is_forward_only",
+        "test_v1_031_migration_requires_preprovisioned_bounded_financial_role",
+        "test_v1_031_migration_requires_preprovisioned_financial_role_before_schema_change",
+        "test_v1_031_migration_rejects_overprivileged_financial_role_before_schema_change",
+        "test_v1_031_migration_rejects_effective_public_relation_authority",
+        "test_v1_031_migration_rejects_effective_public_default_authority",
+        "test_v1_031_migration_rejects_effective_public_large_object_authority",
+        "test_v1_031_upgrade_preserves_and_completes_v1_030_pending_outcome",
+        "test_reservation_deposit_outcomes_have_bounded_traceability",
+    }
+    required_authorities = {
+        "BR-RES-020",
+        "BR-RES-021",
+        "BR-RES-022",
+        "PR-RES-020",
+        "PR-RES-021",
+        "PR-RES-022",
+        "BR-REFUND-001",
+        "BR-REFUND-002",
+        "BR-REFUND-003",
+        "BR-REFUND-004",
+        "BR-REFUND-009",
+        "BR-REFUND-010",
+        "BR-REFUND-011",
+        "BR-REFUND-012",
+        "TEST-029",
+        "DL-028",
+        "DL-034",
+        "DL-035",
+        "DL-036",
+        "DL-044",
+    }
+    held_authorities = {
+        "BR-REFUND-005",
+        "BR-REFUND-006",
+        "BR-REFUND-007",
+        "BR-REFUND-008",
+        "BR-REFUND-013",
+        "TEST-030",
+    }
+
+    scoped_entries = [entries_by_id[test_id] for test_id in expected_test_ids]
+    routed = {authority for entry in scoped_entries for authority in entry["upstream_ids"]}
+    assert all(entry["status"] == "implemented" for entry in scoped_entries)
+    assert required_authorities <= routed
+    assert held_authorities.isdisjoint(routed)

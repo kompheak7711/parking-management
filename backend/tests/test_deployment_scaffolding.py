@@ -67,20 +67,22 @@ def test_development_server_disables_access_logs_that_can_capture_customer_queri
     assert "--no-access-log" in backend_dev.group(1)
 
 
-def test_deployment_examples_define_six_distinct_database_identities() -> None:
+def test_deployment_examples_define_seven_distinct_database_identities() -> None:
     contract = json.loads((CONFIG_ROOT / "identity-secret-contract.json").read_text())
     identities = contract["database_identities"]
 
     assert set(identities) == {
         "runtime",
+        "financial",
         "migration",
         "backup",
         "restore",
         "human_admin",
         "bootstrap",
     }
-    assert len({identity["database_role"] for identity in identities.values()}) == 6
-    assert len({identity["source_key"] for identity in identities.values()}) == 6
+    assert len({identity["database_role"] for identity in identities.values()}) == 7
+    assert len({identity["source_key"] for identity in identities.values()}) == 7
+    assert "financial orchestration only" in identities["financial"]["standing_access"]
     assert "no standing table mutation" in identities["human_admin"]["standing_access"]
     assert "Connect only by default" in identities["restore"]["standing_access"]
     assert "one-time" in identities["bootstrap"]["standing_access"]
@@ -91,6 +93,7 @@ def test_readme_password_file_inventory_matches_env_compose_and_postgres_init() 
         "postgres_admin_password",
         "postgres_migration_password",
         "postgres_runtime_password",
+        "postgres_financial_password",
         "postgres_backup_password",
         "postgres_restore_password",
         "postgres_human_admin_password",
@@ -213,6 +216,10 @@ def test_postgres_bootstrap_avoids_secret_command_arguments_and_limits_admin_rol
         "CREATE ROLE prm_bootstrap LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT "
         "NOREPLICATION" in init_script
     )
+    assert (
+        "CREATE ROLE prm_financial LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE "
+        "NOREPLICATION" in init_script
+    )
     assert "NOBYPASSRLS CONNECTION LIMIT 1" in init_script
     assert "GRANT CONNECT ON DATABASE prm TO prm_bootstrap" in init_script
     assert "REVOKE ALL ON DATABASE postgres FROM PUBLIC" in init_script
@@ -246,6 +253,28 @@ def test_protected_bootstrap_migration_requires_preprovisioned_bounded_role() ->
     assert "reset an existing volume" in readme
 
 
+def test_v1_031_migration_requires_preprovisioned_bounded_financial_role() -> None:
+    migration = (
+        REPOSITORY_ROOT / "backend/migrations/versions/20260825_21_reservation_deposit_outcomes.py"
+    ).read_text(encoding="utf-8")
+    init_script = (REPOSITORY_ROOT / "scripts/postgres-init.sh").read_text(encoding="utf-8")
+    readme = (REPOSITORY_ROOT / "README.md").read_text(encoding="utf-8")
+
+    assert migration.index("prm_financial role must exist before V1-031 migration") < (
+        migration.index("CREATE TABLE app.deposit_dispositions")
+    )
+    assert "financial_role.rolsuper" in migration
+    assert "financial_role.rolbypassrls" in migration
+    assert "pg_catalog.pg_auth_members" in migration
+    assert "pg_catalog.pg_shdepend" in migration
+    assert "large_object.lomowner = financial_role.oid" in migration
+    assert "safe attributes and only bounded CONNECT authority" in migration
+    assert "CREATE ROLE prm_financial" not in migration
+    assert "CREATE ROLE prm_financial LOGIN NOINHERIT" in init_script
+    assert "existing cluster created before V1-031" in readme
+    assert "fails before creating any V1-031 schema" in readme
+
+
 def test_database_test_secret_files_are_readable_by_native_linux_container_user(
     tmp_path: Path,
 ) -> None:
@@ -262,6 +291,7 @@ def test_database_test_secret_files_are_readable_by_native_linux_container_user(
                 "POSTGRES_ADMIN_PASSWORD_FILE",
                 "POSTGRES_MIGRATION_PASSWORD_FILE",
                 "POSTGRES_RUNTIME_PASSWORD_FILE",
+                "POSTGRES_FINANCIAL_PASSWORD_FILE",
                 "POSTGRES_BACKUP_PASSWORD_FILE",
                 "POSTGRES_RESTORE_PASSWORD_FILE",
                 "POSTGRES_HUMAN_ADMIN_PASSWORD_FILE",

@@ -1,13 +1,13 @@
 {
-  "active_cycle": "v1-030-reservation-lifecycle-services",
+  "active_cycle": "v1-031-reservation-deposit-outcomes",
   "approval": {
     "status": "complete",
-    "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-030 takeover",
+    "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-031 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
-  "authorities": ["BR-RES-003-022", "PR-RES-*", "TEST-024-029"],
+  "authorities": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-*", "TEST-029"],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
     "branch": "implementation/foundation",
@@ -656,29 +656,29 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "1f41c41a9426f88ff03ca957a08d82b50cd13fec",
+  "commit": "af2be8da75dddc4c4069bb694b6e222e1d92c70d",
   "evidence_applicability": {
-    "basis": "V1-030 begins from the clean synchronized V1-029 closure; predecessor verification remains historical and V1-030 requires fresh evidence",
+    "basis": "Fresh V1-031 complete-profile evidence covers the exact current implementation after all material review findings were corrected",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-030 independent review found two material database-boundary issues; both were corrected with real PostgreSQL regressions, follow-up review passed, and exact-SHA CI is green",
-    "tranche_id": "V1-030"
+    "prior_review_disposition": "V1-030 is published, independently reviewed, and exact-SHA CI-green; that evidence is historical for V1-031",
+    "tranche_id": "V1-031"
   },
   "idle_reason": null,
-  "next_action": "Keep V1-031 at approved_ready and the Property Rental supervisor disabled; await explicit Owner direction before starting V1-031 or restoring autonomous execution",
+  "next_action": "Publish the independently reviewed V1-031 implementation, require successful exact-SHA GitHub Actions, then reconcile compact state without activating V1-032",
   "next_candidate": {
-    "acceptance_profile": "foundation",
-    "authorities": ["BR-RES-003-022", "PR-RES-*", "TEST-024-029"],
+    "acceptance_profile": "financial",
+    "authorities": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-*", "TEST-029"],
     "authorization": "durable_v1",
-    "dependencies": ["V1-029"],
-    "exclude": ["move-in completion"],
-    "id": "V1-030",
-    "include": ["create, extend, expire, cancel and availability transitions"],
-    "order": 30,
+    "dependencies": ["V1-030"],
+    "exclude": ["general refund UI"],
+    "id": "V1-031",
+    "include": ["customer/property-caused outcomes and reconstructable source links"],
+    "order": 31,
     "phase": "Reservations",
     "risk_class": "high",
     "status": "complete",
-    "task": "Reservation lifecycle and availability services",
-    "roadmap_id": "V1-030"
+    "task": "Reservation cancellation and deposit-outcome orchestration",
+    "roadmap_id": "V1-031"
   },
   "owner_action": "none",
   "owner_decisions": {
@@ -690,20 +690,20 @@
   },
   "phase": "Reservations",
   "publication": {
-    "ci_completed": true,
-    "ci_conclusion": "success",
-    "ci_run_id": "32864460444",
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32864460444",
-    "commit_completed": true,
-    "implementation_commit": "1f41c41a9426f88ff03ca957a08d82b50cd13fec",
-    "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published",
-    "tranche_id": "V1-030"
+    "ci_completed": false,
+    "ci_conclusion": null,
+    "ci_run_id": null,
+    "ci_run_url": null,
+    "commit_completed": false,
+    "implementation_commit": null,
+    "push_completed": false,
+    "sha_reconciled": false,
+    "status": "not_started",
+    "tranche_id": "V1-031"
   },
-  "relevant_docs": ["BR-RES-003-022", "PR-RES-*", "TEST-024-029", "DL-003", "DL-004", "DL-005", "DL-009", "DL-034", "DL-037"],
+  "relevant_docs": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-*", "TEST-029"],
   "repair": {
-    "tranche_id": "V1-030",
+    "tranche_id": "V1-031",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -862,49 +862,49 @@
     "tranche_id": "V1-026"
   },
   "review": {
-    "complete_candidate_paths": 13,
-    "corrected_findings": 2,
+    "complete_candidate_paths": 24,
+    "corrected_findings": 5,
     "final_local_checks": [
-      "PASS: omitted Unit-release cancellation is rejected by a deferred PostgreSQL invariant",
-      "PASS: runtime NULL due-list limit is rejected as invalid",
-      "PASS: disposable PostgreSQL migration, upgrade, runtime-role, and concurrency suite 221/221",
-      "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-030-post-review.json",
+      "PASS: focused authorization, traceability, deployment-contract, shell-syntax, and repository-consistency checks",
+      "PASS: real disposable PostgreSQL migration, upgrade-path, role, transactional, and concurrency suite (234/234)",
+      "PASS: complete deterministic verification profile (15/15); /private/tmp/property-rental-v1-031-verification-final2.json",
+      "PASS: backend 592 passed with 227 expected environment skips; frontend 178 passed; automation routing 182 passed",
+      "PASS: canonical specifications unchanged; V1-032 held; token and automation limits unchanged",
       "PASS: git diff --check"
     ],
     "final_verdict": "PASS",
-    "initial_findings": 2,
+    "initial_findings": 1,
     "review_kind": "fresh_read_only_exact_final_diff_required",
-    "reviewed_patch_sha256": "280868704067d4b3fa43003aed801559ac711c2f719f7d6e723274fbc3468035",
-    "follow_up_findings": 0,
+    "reviewed_patch_sha256": "2ba9e441b8cde597b1bd2d664113d2ee013609b7a510af611e59c8177b2e6d8d",
+    "follow_up_findings": 4,
     "status": "PASS",
-    "tranche_id": "V1-030"
+    "tranche_id": "V1-031"
   },
   "risk_class": "high",
   "roadmap": {
     "completed": 30,
-    "current_id": "V1-030",
+    "current_id": "V1-031",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Implement the approved bounded candidate: Reservation lifecycle and availability services",
+  "status": "verified_unpublished",
+  "task": "Implement the approved bounded candidate: Reservation cancellation and deposit-outcome orchestration",
   "tests": [
-    "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-030-post-review.json",
-    "PASS: backend 587 passed with 215 expected environment skips",
-    "PASS: disposable PostgreSQL migration, upgrade, runtime-role, and concurrency suite 221/221",
-    "PASS: frontend 178/178",
-    "PASS: automation routing and safety suite 182/182",
-    "PASS: focused V1-030 service and traceability tests 27/27"
+    "complete verification 15/15",
+    "backend 592 passed; 227 expected environment skips",
+    "frontend 178 passed",
+    "PostgreSQL 234 passed",
+    "automation routing 182 passed"
   ],
-  "tests_tranche_id": "V1-030",
-  "timestamp": "2026-08-25T15:16:25Z",
+  "tests_tranche_id": "V1-031",
+  "timestamp": "2026-08-25T17:42:52Z",
   "touched_areas": [
-    "reservation lifecycle commands",
-    "transactional Unit availability transitions",
-    "idempotent expiry and cancellation",
-    "optimistic concurrency and exclusivity"
+    "reservation cancellation financial outcomes",
+    "deposit disposition and source-link persistence",
+    "transactional idempotent money-event orchestration",
+    "permanent correction and reversal history"
   ],
-  "tranche": "Reservation lifecycle and availability services"
+  "tranche": "Reservation cancellation and deposit-outcome orchestration"
 }

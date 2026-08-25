@@ -3,6 +3,7 @@
   "environment": "staging",
   "sources": {
     "APP_DATABASE_URL_FILE": "/run/secrets/prm_staging_runtime_database_url",
+    "FINANCIAL_DATABASE_URL_FILE": "/run/secrets/prm_staging_financial_database_url",
     "MIGRATION_DATABASE_URL_FILE": "/run/secrets/prm_staging_migration_database_url",
     "BACKUP_DATABASE_URL_FILE": "/run/secrets/prm_staging_backup_database_url",
     "RESTORE_DATABASE_URL_FILE": "/run/secrets/prm_staging_restore_database_url",

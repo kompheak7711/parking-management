@@ -838,7 +838,9 @@
         "V1-030"
       ],
       "authorities": [
-        "BR-RES-020-022",
+        "BR-RES-020",
+        "BR-RES-021",
+        "BR-RES-022",
         "BR-REFUND-*",
         "TEST-029"
       ],

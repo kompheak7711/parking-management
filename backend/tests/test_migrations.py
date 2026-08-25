@@ -69,6 +69,7 @@ from property_rental.totp_security import TotpSecret, TotpService
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 MIGRATION_URL_ENV = "MIGRATION_DATABASE_URL"
 RUNTIME_URL_ENV = "APP_DATABASE_URL"
+FINANCIAL_URL_ENV = "FINANCIAL_DATABASE_URL"
 ADMIN_URL_ENV = "TEST_ADMIN_DATABASE_URL"
 BACKUP_URL_ENV = "BACKUP_DATABASE_URL"
 RESTORE_URL_ENV = "RESTORE_DATABASE_URL"
@@ -111,6 +112,7 @@ def _validate_local_test_urls(admin_url: str, migration_url: str, runtime_url: s
         ADMIN_URL_ENV: "prm_admin",
         MIGRATION_URL_ENV: "prm_migrator",
         RUNTIME_URL_ENV: "prm_runtime",
+        FINANCIAL_URL_ENV: "prm_financial",
         BACKUP_URL_ENV: "prm_backup",
         RESTORE_URL_ENV: "prm_restore",
         HUMAN_ADMIN_URL_ENV: "prm_human_admin",
@@ -120,6 +122,7 @@ def _validate_local_test_urls(admin_url: str, migration_url: str, runtime_url: s
         ADMIN_URL_ENV: urlsplit(admin_url),
         MIGRATION_URL_ENV: urlsplit(migration_url),
         RUNTIME_URL_ENV: urlsplit(runtime_url),
+        FINANCIAL_URL_ENV: urlsplit(_required_url(FINANCIAL_URL_ENV)),
         BACKUP_URL_ENV: urlsplit(_required_url(BACKUP_URL_ENV)),
         RESTORE_URL_ENV: urlsplit(_required_url(RESTORE_URL_ENV)),
         HUMAN_ADMIN_URL_ENV: urlsplit(_required_url(HUMAN_ADMIN_URL_ENV)),
@@ -158,7 +161,8 @@ def _temporary_migration_database(prefix: str) -> Iterator[str]:
             )
             cursor.execute(
                 sql.SQL(
-                    "GRANT CONNECT ON DATABASE {} TO prm_runtime, prm_backup, prm_restore, "
+                    "GRANT CONNECT ON DATABASE {} TO prm_runtime, prm_financial, prm_backup, "
+                    "prm_restore, "
                     "prm_human_admin, prm_bootstrap"
                 ).format(sql.Identifier(database))
             )
@@ -182,6 +186,7 @@ def empty_application_database() -> Iterator[None]:
     admin_url = _required_url(ADMIN_URL_ENV)
     original_migration_url = _required_url(MIGRATION_URL_ENV)
     original_runtime_url = _required_url(RUNTIME_URL_ENV)
+    original_financial_url = _required_url(FINANCIAL_URL_ENV)
     original_backup_url = _required_url(BACKUP_URL_ENV)
     original_restore_url = _required_url(RESTORE_URL_ENV)
     original_human_admin_url = _required_url(HUMAN_ADMIN_URL_ENV)
@@ -197,12 +202,14 @@ def empty_application_database() -> Iterator[None]:
             )
             cursor.execute(
                 sql.SQL(
-                    "GRANT CONNECT ON DATABASE {} TO prm_runtime, prm_backup, prm_restore, "
+                    "GRANT CONNECT ON DATABASE {} TO prm_runtime, prm_financial, prm_backup, "
+                    "prm_restore, "
                     "prm_human_admin, prm_bootstrap"
                 ).format(sql.Identifier(database))
             )
     os.environ[MIGRATION_URL_ENV] = _url_with_database(original_migration_url, database)
     os.environ[RUNTIME_URL_ENV] = _url_with_database(original_runtime_url, database)
+    os.environ[FINANCIAL_URL_ENV] = _url_with_database(original_financial_url, database)
     os.environ[BACKUP_URL_ENV] = _url_with_database(original_backup_url, database)
     os.environ[RESTORE_URL_ENV] = _url_with_database(original_restore_url, database)
     os.environ[HUMAN_ADMIN_URL_ENV] = _url_with_database(original_human_admin_url, database)
@@ -210,6 +217,7 @@ def empty_application_database() -> Iterator[None]:
     yield
     os.environ[MIGRATION_URL_ENV] = original_migration_url
     os.environ[RUNTIME_URL_ENV] = original_runtime_url
+    os.environ[FINANCIAL_URL_ENV] = original_financial_url
     os.environ[BACKUP_URL_ENV] = original_backup_url
     os.environ[RESTORE_URL_ENV] = original_restore_url
     os.environ[HUMAN_ADMIN_URL_ENV] = original_human_admin_url
@@ -424,7 +432,7 @@ def test_operational_database_identities_have_separate_least_privilege() -> None
                 SELECT rolname, rolsuper, rolcreatedb, rolcreaterole, rolreplication
                 FROM pg_roles
                 WHERE rolname IN (
-                    'prm_runtime', 'prm_migrator', 'prm_backup',
+                    'prm_runtime', 'prm_financial', 'prm_migrator', 'prm_backup',
                     'prm_restore', 'prm_human_admin', 'prm_bootstrap'
                 )
                 ORDER BY rolname
@@ -434,6 +442,7 @@ def test_operational_database_identities_have_separate_least_privilege() -> None
             assert [row[0] for row in rows] == [
                 "prm_backup",
                 "prm_bootstrap",
+                "prm_financial",
                 "prm_human_admin",
                 "prm_migrator",
                 "prm_restore",
@@ -1710,7 +1719,7 @@ def test_user_accounts_migration_advances_the_previous_revision_without_data_los
                 sql.SQL("REVOKE ALL ON DATABASE {} FROM PUBLIC").format(sql.Identifier(database))
             )
             cursor.execute(
-                sql.SQL("GRANT CONNECT ON DATABASE {} TO prm_bootstrap").format(
+                sql.SQL("GRANT CONNECT ON DATABASE {} TO prm_bootstrap, prm_financial").format(
                     sql.Identifier(database)
                 )
             )
@@ -3627,7 +3636,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260825_20",)
+                assert cursor.fetchone() == ("20260825_21",)
 
 
 def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
@@ -4256,7 +4265,7 @@ def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260825_20",)
+                assert cursor.fetchone() == ("20260825_21",)
                 cursor.execute(
                     """
                     SELECT id, code, display_name, accepted, created_by, updated_by
@@ -4410,7 +4419,7 @@ def test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data() -> No
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260825_20",)
+                assert cursor.fetchone() == ("20260825_21",)
                 cursor.execute(
                     """
                     SELECT unit.id, unit.property_id, unit.status, customer.id
@@ -4436,8 +4445,117 @@ def test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data() -> No
                 assert cursor.fetchone() == (0, 0, True, False, False)
 
 
-def test_v1_030_upgrade_preserves_active_v1_029_reservation_and_deposit() -> None:
-    """Upgrade revision 19 without rewriting an active Reservation or its Deposit."""
+def test_v1_031_migration_requires_preprovisioned_financial_role_before_schema_change() -> None:
+    admin_url = _required_url(ADMIN_URL_ENV)
+    with _temporary_migration_database("prm_v1_031_missing_financial") as migration_url:
+        assert _run_alembic("upgrade", "20260825_20").returncode == 0
+        try:
+            with psycopg.connect(admin_url, autocommit=True) as connection:
+                connection.execute(
+                    "ALTER ROLE prm_financial RENAME TO prm_financial_temporarily_absent"
+                )
+
+            result = _run_alembic("upgrade", "head")
+
+            assert result.returncode != 0
+            assert "prm_financial role must exist before V1-031 migration" in result.stderr
+            with psycopg.connect(migration_url) as connection:
+                assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
+                    "20260825_20",
+                )
+                assert connection.execute(
+                    "SELECT to_regclass('app.deposit_dispositions')"
+                ).fetchone() == (None,)
+        finally:
+            with psycopg.connect(admin_url, autocommit=True) as connection:
+                connection.execute(
+                    "ALTER ROLE prm_financial_temporarily_absent RENAME TO prm_financial"
+                )
+
+
+def test_v1_031_migration_rejects_overprivileged_financial_role_before_schema_change() -> None:
+    admin_url = _required_url(ADMIN_URL_ENV)
+    with _temporary_migration_database("prm_v1_031_unsafe_financial") as migration_url:
+        assert _run_alembic("upgrade", "20260825_20").returncode == 0
+        try:
+            with psycopg.connect(admin_url, autocommit=True) as connection:
+                connection.execute("ALTER ROLE prm_financial SUPERUSER")
+
+            result = _run_alembic("upgrade", "head")
+
+            assert result.returncode != 0
+            assert "safe attributes and only bounded CONNECT authority" in result.stderr
+            with psycopg.connect(migration_url) as connection:
+                assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
+                    "20260825_20",
+                )
+                assert connection.execute(
+                    "SELECT to_regclass('app.deposit_dispositions')"
+                ).fetchone() == (None,)
+        finally:
+            with psycopg.connect(admin_url, autocommit=True) as connection:
+                connection.execute("ALTER ROLE prm_financial NOSUPERUSER")
+
+
+def _assert_v1_031_financial_preflight_failed_before_schema_change(
+    migration_url: str, result: subprocess.CompletedProcess[str]
+) -> None:
+    assert result.returncode != 0
+    assert "safe attributes and only bounded CONNECT authority" in result.stderr
+    with psycopg.connect(migration_url) as connection:
+        assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
+            "20260825_20",
+        )
+        assert connection.execute("SELECT to_regclass('app.deposit_dispositions')").fetchone() == (
+            None,
+        )
+
+
+def test_v1_031_migration_rejects_effective_public_relation_authority() -> None:
+    with _temporary_migration_database("prm_v1_031_public_relation") as migration_url:
+        assert _run_alembic("upgrade", "20260825_20").returncode == 0
+        with psycopg.connect(migration_url) as connection:
+            connection.execute("GRANT SELECT ON app.user_accounts TO PUBLIC")
+            connection.commit()
+
+        result = _run_alembic("upgrade", "head")
+
+        _assert_v1_031_financial_preflight_failed_before_schema_change(migration_url, result)
+
+
+def test_v1_031_migration_rejects_effective_public_default_authority() -> None:
+    with _temporary_migration_database("prm_v1_031_public_default") as migration_url:
+        assert _run_alembic("upgrade", "20260825_20").returncode == 0
+        with psycopg.connect(migration_url) as connection:
+            connection.execute(
+                "ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT SELECT ON TABLES TO PUBLIC"
+            )
+            connection.commit()
+
+        result = _run_alembic("upgrade", "head")
+
+        _assert_v1_031_financial_preflight_failed_before_schema_change(migration_url, result)
+
+
+def test_v1_031_migration_rejects_effective_public_large_object_authority() -> None:
+    with _temporary_migration_database("prm_v1_031_public_large_object") as migration_url:
+        assert _run_alembic("upgrade", "20260825_20").returncode == 0
+        with psycopg.connect(migration_url) as connection:
+            large_object_oid = _create_large_object(connection)
+            connection.execute(
+                sql.SQL("GRANT UPDATE ON LARGE OBJECT {} TO PUBLIC").format(
+                    sql.Literal(large_object_oid)
+                )
+            )
+            connection.commit()
+
+        result = _run_alembic("upgrade", "head")
+
+        _assert_v1_031_financial_preflight_failed_before_schema_change(migration_url, result)
+
+
+def test_v1_031_upgrade_preserves_and_completes_v1_030_pending_outcome() -> None:
+    """Upgrade a V1-030 cancellation and explicitly complete its Deposit outcome."""
     with _temporary_migration_database("prm_v1_030_upgrade") as migration_url:
         assert _run_alembic("upgrade", "20260825_19").returncode == 0
         actor_id = uuid.uuid4()
@@ -4528,9 +4646,35 @@ def test_v1_030_upgrade_preserves_active_v1_029_reservation_and_deposit() -> Non
             assert result is not None
             connection.commit()
 
-        upgraded = _run_alembic("upgrade", "head")
+        upgraded = _run_alembic("upgrade", "20260825_20")
 
         assert upgraded.returncode == 0, upgraded.stderr
+        event_id = uuid.uuid4()
+        with psycopg.connect(migration_url) as connection:
+            row = connection.execute(
+                """
+                SELECT * FROM app.cancel_reservation(
+                    %s,%s,%s,%s,%s,1,'CUSTOMER_WITHDREW','CUSTOMER',true,
+                    'Customer cancellation before V1-031',NULL,
+                    'reservations.cancel',%s
+                )
+                """,
+                (
+                    property_id,
+                    uuid.uuid4(),
+                    "4" * 64,
+                    event_id,
+                    reservation_id,
+                    actor_id,
+                ),
+            ).fetchone()
+            assert row is not None
+            assert row[11] == "PENDING_V1_031"
+            connection.commit()
+
+        upgraded = _run_alembic("upgrade", "head")
+        assert upgraded.returncode == 0, upgraded.stderr
+        outcome_id = uuid.uuid4()
         with psycopg.connect(migration_url) as connection:
             row = connection.execute(
                 """
@@ -4544,10 +4688,44 @@ def test_v1_030_upgrade_preserves_active_v1_029_reservation_and_deposit() -> Non
                 """,
                 (reservation_id,),
             ).fetchone()
-            assert row == (reservation_id, "ACTIVE", 1, "RESERVED", deposit_id, 50_000, 0)
-            assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260825_20",
+            assert row == (reservation_id, "CANCELLED", 2, "VACANT", deposit_id, 50_000, 1)
+            completed = connection.execute(
+                """
+                SELECT * FROM app.complete_reservation_deposit_outcome(
+                    %s,%s,%s,%s,NULL,%s,2,%s,%s,%s
+                )
+                """,
+                (
+                    property_id,
+                    uuid.uuid4(),
+                    "5" * 64,
+                    outcome_id,
+                    reservation_id,
+                    "Complete preserved V1-030 cancellation outcome",
+                    "reservation_deposits.dispose",
+                    actor_id,
+                ),
+            ).fetchone()
+            assert completed is not None
+            assert completed[11:] == (
+                "NON_REFUNDABLE_DISPOSITION",
+                outcome_id,
+                None,
             )
+            connection.commit()
+            assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
+                "20260825_21",
+            )
+            assert connection.execute(
+                """
+                SELECT disposition.governing_reservation_id,
+                       disposition.source_lifecycle_event_id,
+                       disposition.amount_usd_cents
+                FROM app.deposit_dispositions AS disposition
+                WHERE disposition.id = %s
+                """,
+                (outcome_id,),
+            ).fetchone() == (reservation_id, event_id, 10_000)
             assert connection.execute(
                 """
                 SELECT
@@ -4556,8 +4734,13 @@ def test_v1_030_upgrade_preserves_active_v1_029_reservation_and_deposit() -> Non
                         'app.cancel_reservation(uuid,uuid,text,uuid,uuid,integer,text,text,boolean,text,text,text,uuid)',
                         'EXECUTE'
                     ),
+                    has_function_privilege(
+                        'prm_runtime',
+                        'app.cancel_reservation_v2(uuid,uuid,text,uuid,uuid,text,uuid,integer,text,text,boolean,text,text,text,text,uuid)',
+                        'EXECUTE'
+                    ),
                     has_table_privilege(
                         'prm_runtime', 'app.reservation_lifecycle_events', 'INSERT'
                     )
                 """
-            ).fetchone() == (True, False)
+            ).fetchone() == (False, False, False)

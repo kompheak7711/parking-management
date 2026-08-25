@@ -3,6 +3,7 @@
   "environment": "production",
   "sources": {
     "APP_DATABASE_URL_FILE": "/run/secrets/prm_production_runtime_database_url",
+    "FINANCIAL_DATABASE_URL_FILE": "/run/secrets/prm_production_financial_database_url",
     "MIGRATION_DATABASE_URL_FILE": "/run/secrets/prm_production_migration_database_url",
     "BACKUP_DATABASE_URL_FILE": "/run/secrets/prm_production_backup_database_url",
     "RESTORE_DATABASE_URL_FILE": "/run/secrets/prm_production_restore_database_url",

@@ -13,7 +13,17 @@ from uuid import UUID
 import psycopg
 from psycopg.types.json import Jsonb
 
+from property_rental.identity import (
+    AuthenticatedActor,
+    AuthorizationRequirement,
+    is_authorized,
+)
+
 NIL_UUID: Final = UUID(int=0)
+RESERVATION_CANCEL_CAPABILITY: Final = "reservations.cancel"
+DEPOSIT_DISPOSITION_CAPABILITY: Final = "reservation_deposits.dispose"
+DEPOSIT_REFUND_CAPABILITY: Final = "reservation_deposits.refund"
+DEPOSIT_OUTCOME_CORRECT_CAPABILITY: Final = "reservation_deposits.correct"
 
 
 class ReservationStatus(StrEnum):
@@ -32,9 +42,11 @@ class CancellationResponsibility(StrEnum):
 
 
 class DepositOutcomeState(StrEnum):
-    """The sole V1-030 handoff state for later V1-031 orchestration."""
+    """The immutable classified outcome of received Reservation Deposit value."""
 
     PENDING_V1_031 = "PENDING_V1_031"
+    NON_REFUNDABLE_DISPOSITION = "NON_REFUNDABLE_DISPOSITION"
+    REFUND = "REFUND"
 
 
 class ReservationNotFoundError(LookupError):
@@ -51,6 +63,10 @@ class ReservationCommandConflictError(RuntimeError):
 
 class ReservationCommandInvalidError(ValueError):
     """Raised when a command violates a Reservation lifecycle invariant."""
+
+
+class ReservationAuthorizationError(PermissionError):
+    """Raised before persistence when trusted capability evidence is absent."""
 
 
 class ReservationServiceUnavailableError(RuntimeError):
@@ -74,6 +90,7 @@ def reservation_request_digest(
         | ReservationExtendCommand
         | ReservationCancelCommand
         | ReservationExpireCommand
+        | ReservationOutcomeCorrectionCommand
     ),
 ) -> str:
     """Return a stable digest binding one idempotent command to all inputs."""
@@ -168,10 +185,11 @@ class ReservationExtendCommand:
 
 @dataclass(frozen=True, slots=True)
 class ReservationCancelCommand:
-    """One classified cancellation without a financial disposition command."""
+    """One classified cancellation and its atomic Deposit outcome."""
 
     idempotency_key: UUID
     event_id: UUID
+    outcome_id: UUID
     reservation_id: UUID
     expected_version: int
     reason_code: str
@@ -180,20 +198,27 @@ class ReservationCancelCommand:
     reason_memo: str
     coordination_reference: str | None
     authorization_reference: str
+    outcome_authorization_reference: str
+    refund_number: str | None
 
     def __post_init__(self) -> None:
-        for field in ("idempotency_key", "event_id", "reservation_id"):
+        for field in ("idempotency_key", "event_id", "outcome_id", "reservation_id"):
             _require_identity(getattr(self, field), field)
         if self.expected_version < 1:
             raise ValueError("expected_version must be positive")
         _require_nonblank(self.reason_code, "reason_code")
         _require_nonblank(self.authorization_reference, "authorization_reference")
+        _require_nonblank(self.outcome_authorization_reference, "outcome_authorization_reference")
         if self.reason_code == "RESERVATION_EXPIRED":
             raise ValueError("RESERVATION_EXPIRED is reserved for automatic expiration")
         if self.reason_memo and self.reason_memo != self.reason_memo.strip():
             raise ValueError("reason_memo must be normalized")
         if self.responsibility is CancellationResponsibility.CUSTOMER:
-            if not self.property_could_provide_unit or self.coordination_reference is not None:
+            if (
+                not self.property_could_provide_unit
+                or self.coordination_reference is not None
+                or self.refund_number is not None
+            ):
                 raise ValueError("Customer cancellation classification is inconsistent")
         elif self.property_could_provide_unit:
             raise ValueError("Property cancellation classification is inconsistent")
@@ -201,27 +226,71 @@ class ReservationCancelCommand:
             raise ValueError("Property cancellation requires coordination evidence")
         else:
             _require_nonblank(self.coordination_reference, "coordination_reference")
+            if self.refund_number is None:
+                raise ValueError("Property cancellation requires a Refund number")
+            _require_nonblank(self.refund_number, "refund_number")
 
 
 @dataclass(frozen=True, slots=True)
 class ReservationExpireCommand:
-    """One deterministic end-of-date expiration command."""
+    """One deterministic end-of-date expiration and Deposit disposition command."""
 
     idempotency_key: UUID
     event_id: UUID
+    outcome_id: UUID
     reservation_id: UUID
     expected_version: int
     property_could_provide_unit: bool
     authorization_reference: str
+    outcome_authorization_reference: str
 
     def __post_init__(self) -> None:
-        for field in ("idempotency_key", "event_id", "reservation_id"):
+        for field in ("idempotency_key", "event_id", "outcome_id", "reservation_id"):
             _require_identity(getattr(self, field), field)
         if self.expected_version < 1:
             raise ValueError("expected_version must be positive")
         if not self.property_could_provide_unit:
             raise ValueError("Property inability requires coordinated cancellation")
         _require_nonblank(self.authorization_reference, "authorization_reference")
+        _require_nonblank(self.outcome_authorization_reference, "outcome_authorization_reference")
+
+
+@dataclass(frozen=True, slots=True)
+class ReservationOutcomeCorrectionCommand:
+    """Replace one classified cancellation outcome without erasing its history."""
+
+    idempotency_key: UUID
+    correction_id: UUID
+    expected_outcome_id: UUID
+    replacement_outcome_id: UUID
+    reservation_id: UUID
+    expected_version: int
+    reason: str
+    evidence_reference: str
+    authorization_reference: str
+    replacement_authorization_reference: str
+    replacement_refund_number: str | None
+
+    def __post_init__(self) -> None:
+        for field in (
+            "idempotency_key",
+            "correction_id",
+            "expected_outcome_id",
+            "replacement_outcome_id",
+            "reservation_id",
+        ):
+            _require_identity(getattr(self, field), field)
+        if self.expected_version < 1:
+            raise ValueError("expected_version must be positive")
+        for field in (
+            "reason",
+            "evidence_reference",
+            "authorization_reference",
+            "replacement_authorization_reference",
+        ):
+            _require_nonblank(getattr(self, field), field)
+        if self.replacement_refund_number is not None:
+            _require_nonblank(self.replacement_refund_number, "replacement_refund_number")
 
 
 @dataclass(frozen=True, slots=True)
@@ -260,6 +329,8 @@ class ReservationLifecycleResult:
     deposit_id: UUID
     deposit_received_usd_cents: int
     deposit_outcome_state: DepositOutcomeState
+    outcome_id: UUID
+    refund_number: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -307,6 +378,8 @@ def _lifecycle(row: tuple[object, ...]) -> ReservationLifecycleResult:
         UUID(str(row[9])),
         int(str(row[10])),
         DepositOutcomeState(str(row[11])),
+        UUID(str(row[12])),
+        None if row[13] is None else str(row[13]),
     )
 
 
@@ -317,14 +390,47 @@ class PostgresReservationService:
     database_url: str
     property_id: UUID
     actor_id: UUID
+    financial_database_url: str | None = None
 
     def __post_init__(self) -> None:
         _require_identity(self.property_id, "property_id")
         _require_identity(self.actor_id, "actor_id")
 
-    def _execute(self, query: str, parameters: tuple[object, ...]) -> tuple[object, ...]:
+    def _require_authorized_actor(self, actor: AuthenticatedActor, *capabilities: str) -> None:
         try:
-            with psycopg.connect(self.database_url) as connection:
+            authenticated_actor_id = UUID(actor.actor_id)
+        except ValueError as exc:
+            raise ReservationAuthorizationError("Reservation actor is invalid") from exc
+        if authenticated_actor_id != self.actor_id:
+            raise ReservationAuthorizationError("Reservation actor does not match the command")
+        for capability in capabilities:
+            if not is_authorized(
+                actor,
+                AuthorizationRequirement(
+                    capability=capability,
+                    property_id=str(self.property_id),
+                ),
+            ):
+                raise ReservationAuthorizationError(
+                    "Reservation financial capability is not authorized"
+                )
+
+    def _financial_url(self) -> str:
+        if self.financial_database_url is None:
+            raise ReservationAuthorizationError(
+                "Dedicated Reservation financial persistence is unavailable"
+            )
+        return self.financial_database_url
+
+    def _execute(
+        self,
+        query: str,
+        parameters: tuple[object, ...],
+        *,
+        database_url: str | None = None,
+    ) -> tuple[object, ...]:
+        try:
+            with psycopg.connect(database_url or self.database_url) as connection:
                 row = connection.execute(query, parameters).fetchone()
         except psycopg.Error as exc:
             if exc.sqlstate == "P0002":
@@ -401,16 +507,34 @@ class PostgresReservationService:
             )
         )
 
-    def cancel(self, command: ReservationCancelCommand) -> ReservationLifecycleResult:
+    def cancel(
+        self,
+        command: ReservationCancelCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> ReservationLifecycleResult:
+        outcome_capability = (
+            DEPOSIT_DISPOSITION_CAPABILITY
+            if command.responsibility is CancellationResponsibility.CUSTOMER
+            else DEPOSIT_REFUND_CAPABILITY
+        )
+        self._require_authorized_actor(actor, RESERVATION_CANCEL_CAPABILITY, outcome_capability)
+        if command.authorization_reference != RESERVATION_CANCEL_CAPABILITY:
+            raise ReservationAuthorizationError("Cancellation evidence is not authoritative")
+        if command.outcome_authorization_reference != outcome_capability:
+            raise ReservationAuthorizationError("Deposit outcome evidence is not authoritative")
         digest = reservation_request_digest("reservation.cancel", command)
         return _lifecycle(
             self._execute(
-                "SELECT * FROM app.cancel_reservation(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                "SELECT * FROM app.cancel_reservation_v2("
+                "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (
                     self.property_id,
                     command.idempotency_key,
                     digest,
                     command.event_id,
+                    command.outcome_id,
+                    command.refund_number,
                     command.reservation_id,
                     command.expected_version,
                     command.reason_code,
@@ -419,27 +543,88 @@ class PostgresReservationService:
                     command.reason_memo,
                     command.coordination_reference,
                     command.authorization_reference,
+                    command.outcome_authorization_reference,
                     self.actor_id,
                 ),
+                database_url=self._financial_url(),
             )
         )
 
-    def expire(self, command: ReservationExpireCommand) -> ReservationLifecycleResult:
+    def expire(
+        self,
+        command: ReservationExpireCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> ReservationLifecycleResult:
+        self._require_authorized_actor(
+            actor, RESERVATION_CANCEL_CAPABILITY, DEPOSIT_DISPOSITION_CAPABILITY
+        )
+        if command.authorization_reference != RESERVATION_CANCEL_CAPABILITY:
+            raise ReservationAuthorizationError("Expiration evidence is not authoritative")
+        if command.outcome_authorization_reference != DEPOSIT_DISPOSITION_CAPABILITY:
+            raise ReservationAuthorizationError("Deposit outcome evidence is not authoritative")
         digest = reservation_request_digest("reservation.expire", command)
         return _lifecycle(
             self._execute(
-                "SELECT * FROM app.expire_reservation(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                "SELECT * FROM app.expire_reservation_v2(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                 (
                     self.property_id,
                     command.idempotency_key,
                     digest,
                     command.event_id,
+                    command.outcome_id,
                     command.reservation_id,
                     command.expected_version,
                     command.property_could_provide_unit,
                     command.authorization_reference,
+                    command.outcome_authorization_reference,
                     self.actor_id,
                 ),
+                database_url=self._financial_url(),
+            )
+        )
+
+    def correct_outcome(
+        self,
+        command: ReservationOutcomeCorrectionCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> ReservationLifecycleResult:
+        """Replace a financial outcome while preserving its immutable source history."""
+        replacement_capability = (
+            DEPOSIT_REFUND_CAPABILITY
+            if command.replacement_refund_number is not None
+            else DEPOSIT_DISPOSITION_CAPABILITY
+        )
+        self._require_authorized_actor(
+            actor, DEPOSIT_OUTCOME_CORRECT_CAPABILITY, replacement_capability
+        )
+        if command.authorization_reference != DEPOSIT_OUTCOME_CORRECT_CAPABILITY:
+            raise ReservationAuthorizationError("Correction evidence is not authoritative")
+        if command.replacement_authorization_reference != replacement_capability:
+            raise ReservationAuthorizationError("Replacement evidence is not authoritative")
+        digest = reservation_request_digest("reservation.outcome.correct", command)
+        return _lifecycle(
+            self._execute(
+                "SELECT * FROM app.correct_reservation_deposit_outcome("
+                "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    self.property_id,
+                    command.idempotency_key,
+                    digest,
+                    command.correction_id,
+                    command.expected_outcome_id,
+                    command.replacement_outcome_id,
+                    command.replacement_refund_number,
+                    command.reservation_id,
+                    command.expected_version,
+                    command.reason,
+                    command.evidence_reference,
+                    command.authorization_reference,
+                    command.replacement_authorization_reference,
+                    self.actor_id,
+                ),
+                database_url=self._financial_url(),
             )
         )
 

@@ -14,6 +14,7 @@ CONFIG_ROOT: Final = REPOSITORY_ROOT / "config" / "deployment"
 CONTRACT_PATH: Final = CONFIG_ROOT / "identity-secret-contract.json"
 IDENTITY_KINDS: Final = {
     "runtime",
+    "financial",
     "migration",
     "backup",
     "restore",
@@ -41,7 +42,7 @@ def _required_source_keys(contract: dict[str, Any]) -> set[str]:
     identities = contract.get("database_identities")
     secret_inputs = contract.get("secret_inputs")
     if not isinstance(identities, dict) or set(identities) != IDENTITY_KINDS:
-        raise ValidationError("contract must define the six required database identities")
+        raise ValidationError("contract must define the seven required database identities")
     if not isinstance(secret_inputs, dict) or set(secret_inputs) != {
         "ordinary_application",
         "backup_encryption",
