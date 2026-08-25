@@ -5,7 +5,7 @@
     "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-031 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-*", "TEST-029"],
   "automation_repair": {
@@ -656,7 +656,7 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "af2be8da75dddc4c4069bb694b6e222e1d92c70d",
+  "commit": "93b06d0fa5dba1c129ec994cfb734942855f92a5",
   "evidence_applicability": {
     "basis": "Fresh V1-031 complete-profile evidence covers the exact current implementation after all material review findings were corrected",
     "complete_profile_remains_applicable": true,
@@ -664,7 +664,7 @@
     "tranche_id": "V1-031"
   },
   "idle_reason": null,
-  "next_action": "Publish the independently reviewed V1-031 implementation, require successful exact-SHA GitHub Actions, then reconcile compact state without activating V1-032",
+  "next_action": "Keep V1-032 at approved_ready and the Property Rental supervisor disabled; await explicit Owner direction before starting V1-032 or restoring autonomous execution",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-*", "TEST-029"],
@@ -690,15 +690,15 @@
   },
   "phase": "Reservations",
   "publication": {
-    "ci_completed": false,
-    "ci_conclusion": null,
-    "ci_run_id": null,
-    "ci_run_url": null,
-    "commit_completed": false,
-    "implementation_commit": null,
-    "push_completed": false,
-    "sha_reconciled": false,
-    "status": "not_started",
+    "ci_completed": true,
+    "ci_conclusion": "success",
+    "ci_run_id": "32879805198",
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32879805198",
+    "commit_completed": true,
+    "implementation_commit": "93b06d0fa5dba1c129ec994cfb734942855f92a5",
+    "push_completed": true,
+    "sha_reconciled": true,
+    "status": "published",
     "tranche_id": "V1-031"
   },
   "relevant_docs": ["BR-RES-020", "BR-RES-021", "BR-RES-022", "BR-REFUND-*", "TEST-029"],
@@ -882,14 +882,14 @@
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 30,
+    "completed": 31,
     "current_id": "V1-031",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "verified_unpublished",
+  "status": "published",
   "task": "Implement the approved bounded candidate: Reservation cancellation and deposit-outcome orchestration",
   "tests": [
     "complete verification 15/15",
@@ -899,7 +899,7 @@
     "automation routing 182 passed"
   ],
   "tests_tranche_id": "V1-031",
-  "timestamp": "2026-08-25T17:42:52Z",
+  "timestamp": "2026-08-25T17:49:07Z",
   "touched_areas": [
     "reservation cancellation financial outcomes",
     "deposit disposition and source-link persistence",

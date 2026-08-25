@@ -1,4 +1,4 @@
-# V1-031 Reservation cancellation and deposit-outcome orchestration — verified, unpublished
+# V1-031 Reservation cancellation and deposit-outcome orchestration — published
 
 - Candidate: `V1-031` — Reservation cancellation and deposit-outcome orchestration.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -24,14 +24,17 @@
   implemented and verified.
 - Independent review: PASS with zero material findings on exact patch fingerprint
   `2ba9e441b8cde597b1bd2d664113d2ee013609b7a510af611e59c8177b2e6d8d`.
-- Status: implementation is complete, verified, and independently reviewed; publication is pending.
+- Publication: implementation commit `93b06d0fa5dba1c129ec994cfb734942855f92a5`
+  is pushed and exact-SHA GitHub Actions run `32879805198` passed all four jobs.
+- Status: complete, verified, review-clean, published, and CI-green.
 - Blockers: none.
-- Exact next action: publish V1-031, require successful exact-SHA GitHub Actions,
-  then reconcile compact state while keeping V1-032 held.
+- Exact next action: keep V1-032 at `approved_ready` and the Property Rental
+  supervisor disabled; await explicit Owner direction before starting V1-032 or
+  restoring autonomous execution.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-031 is verified and unpublished under direct takeover.
-- Automation exact next action: Keep V1-032 and the supervisor held during publication.
+- Automation publication state: V1-031 is published and exact-SHA CI-green.
+- Automation exact next action: Keep V1-032 and the Property Rental supervisor held.
 
 <!-- AUTOMATION_STATUS_END -->
