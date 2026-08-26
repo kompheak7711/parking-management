@@ -1,4 +1,4 @@
-# V1-036 Lease, signer, occupancy, and move-in API/UI — verified unpublished
+# V1-036 Lease, signer, occupancy, and move-in API/UI — implementation published; closure pending
 
 - Candidate: `V1-036` — Lease, signer, occupancy, and move-in API/UI.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -32,18 +32,24 @@
   disposable PostgreSQL `272/272`, and corrected complete deterministic
   verification profile `15/15` (`614` backend, `196` frontend, and `185`
   automation tests).
-- Status: verified and unpublished; fresh corrected exact-diff review is pending.
+- Independent review: PASS; a fresh read-only review covered the exact final
+  21-path diff, found zero material issues, and made no edits.
+- Implementation publication: commit
+  `b8013879399cd3c7c598ee1f85974e2f042b794a`; exact-SHA GitHub Actions run
+  `32952625712` passed all four jobs.
+- Status: implementation published; the separate V1-036 closure commit and its
+  own exact-SHA CI result remain pending under the existing authorization.
 - Blockers: none.
-- Exact next action: obtain a fresh read-only independent review of the exact
-  corrected final diff, then publish and require exact-SHA GitHub Actions before
-  the separate V1-036 closure commit.
+- Exact next action: create and push only the V1-036 closure commit, require
+  successful exact-SHA GitHub Actions, then reconcile closure-valid compact
+  state while V1-037 remains held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-035 is published and exact-SHA CI-green;
-  V1-036 is verified unpublished under direct takeover and V1-037 remains held.
+- Automation publication state: V1-036's implementation is published and
+  exact-SHA CI-green but its closure remains pending; V1-037 remains held.
 - Automation exact next action: keep the Property Rental supervisor disabled and
-  review and publish only V1-036 without activating V1-037 or inspecting
-  Hermes-wrapper drift.
+  publish and validate only the V1-036 closure without activating V1-037 or
+  inspecting Hermes-wrapper drift.
 
 <!-- AUTOMATION_STATUS_END -->

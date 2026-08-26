@@ -718,7 +718,7 @@
     "tranche_id": "V1-035"
   },
   "idle_reason": null,
-  "next_action": "Obtain a fresh read-only independent review of the exact corrected V1-036 final diff, then publish and require exact-SHA GitHub Actions while V1-037 remains held",
+  "next_action": "Create and push only the V1-036 closure commit, require successful exact-SHA GitHub Actions, then reconcile closure-valid compact state while V1-037 remains held",
   "next_candidate": {
     "acceptance_profile": "api_ui",
     "authorities": [
@@ -765,13 +765,17 @@
   },
   "phase": "Leases",
   "publication": {
-    "ci_completed": false,
-    "commit_completed": false,
+    "ci_completed": true,
+    "ci_conclusion": "success",
+    "ci_run_id": 32952625712,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32952625712",
+    "commit_completed": true,
+    "implementation_commit": "b8013879399cd3c7c598ee1f85974e2f042b794a",
     "predecessor_closure_commit": "45b3a7af4ab7ff83996bcba3dc441a4d7592bbdd",
     "predecessor_reconciliation_commit": "3d172bcb4a220dfbce75defc3a329389a5201daf",
-    "push_completed": false,
+    "push_completed": true,
     "sha_reconciled": false,
-    "status": "verified_unpublished_review_pending",
+    "status": "implementation_published_closure_pending",
     "tranche_id": "V1-036"
   },
   "relevant_docs": [
@@ -940,11 +944,11 @@
     "tranche_id": "V1-026"
   },
   "review": {
-    "findings": null,
+    "findings": 0,
     "review_kind": "fresh_read_only_exact_final_diff",
-    "reviewed_paths": null,
+    "reviewed_paths": 21,
     "reviewer_edits": false,
-    "status": "PENDING_AFTER_CORRECTIONS",
+    "status": "PASS",
     "tranche_id": "V1-036"
   },
   "risk_class": "high",
@@ -963,10 +967,11 @@
     "PASS: frontend Lease client and accessible staff workflow tests 12/12; complete frontend suite 196/196",
     "PASS: disposable PostgreSQL migration, upgrade, runtime-role, transaction, replay, rollback, and HTTP-to-PostgreSQL suite 272/272",
     "PASS: final corrected complete deterministic verification profile 15/15; backend 614 passed with 261 expected environment skips; frontend 196 passed; automation routing 185 passed; /private/tmp/property-rental-v1-036-final-review-round.json",
-    "PENDING: fresh independent read-only exact-final-diff re-review and publication"
+    "PASS: fresh independent read-only exact-final-diff review; zero material findings; reviewer made no edits",
+    "PASS: implementation commit b8013879399cd3c7c598ee1f85974e2f042b794a exact-SHA GitHub Actions run 32952625712; all four jobs"
   ],
   "tests_tranche_id": "V1-036",
-  "timestamp": "2026-08-26T10:16:00Z",
+  "timestamp": "2026-08-26T10:20:00Z",
   "touched_areas": [
     "backend/migrations/versions/20260826_26_lease_api_services.py",
     "backend/src/property_rental/app.py",
