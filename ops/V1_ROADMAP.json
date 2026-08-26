@@ -1044,7 +1044,10 @@
         "V1-037"
       ],
       "authorities": [
-        "API-039-042",
+        "API-039",
+        "API-040",
+        "API-041",
+        "API-042",
         "API-094",
         "UI-030",
         "UI-033",
@@ -1056,14 +1059,19 @@
         "UI-074",
         "UI-076",
         "UI-107",
-        "TEST-036-039",
+        "TEST-036",
+        "TEST-037",
+        "TEST-038",
+        "TEST-039",
         "TEST-126"
       ],
       "include": [
-        "authorized deposit workflows with source history"
+        "authorized deposit resources, existing receipt source history and reversal, supported disposition correction, pet qualification, departure, and refund-review workflows"
       ],
       "exclude": [
-        "ordinary active-lease security-deposit refund"
+        "ordinary active-lease security-deposit refund",
+        "new Payment-backed Deposit receipt creation until V1-048/V1-052",
+        "Final Settlement Deposit disposition until V1-056"
       ],
       "risk_class": "high",
       "acceptance_profile": "api_ui",

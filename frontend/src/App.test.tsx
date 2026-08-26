@@ -1087,8 +1087,23 @@ describe("local sign-in", () => {
       create: vi.fn().mockReturnValue(pendingCreate),
       financialSummary: vi.fn().mockResolvedValue({
         source_status: "UNAVAILABLE_UNTIL_FINANCIAL_SOURCES_ARE_IMPLEMENTED",
+        source_availability: {
+          deposits: "UNAVAILABLE_NOT_IMPLEMENTED",
+          invoices: "UNAVAILABLE_NOT_IMPLEMENTED",
+          late_charges: "UNAVAILABLE_NOT_IMPLEMENTED",
+          payments: "UNAVAILABLE_NOT_IMPLEMENTED",
+          customer_credit: "UNAVAILABLE_NOT_IMPLEMENTED",
+        },
         currency_summaries: [],
         deposit_liabilities: [],
+        deposit_liabilities_page: { next_cursor: null, limit: 50 },
+        deposit_aggregate: {
+          count: 0,
+          required_usd_cents: 0,
+          received_usd_cents: 0,
+          held_refundable_usd_cents: 0,
+          outstanding_required_usd_cents: 0,
+        },
         customer_credit_is_separate_from_deposit: true,
       }),
     });
@@ -2061,8 +2076,23 @@ describe("local sign-in", () => {
       get: vi.fn().mockResolvedValue(detail),
       financialSummary: vi.fn().mockResolvedValue({
         source_status: "UNAVAILABLE_UNTIL_FINANCIAL_SOURCES_ARE_IMPLEMENTED",
+        source_availability: {
+          deposits: "UNAVAILABLE_NOT_IMPLEMENTED",
+          invoices: "UNAVAILABLE_NOT_IMPLEMENTED",
+          late_charges: "UNAVAILABLE_NOT_IMPLEMENTED",
+          payments: "UNAVAILABLE_NOT_IMPLEMENTED",
+          customer_credit: "UNAVAILABLE_NOT_IMPLEMENTED",
+        },
         currency_summaries: [],
         deposit_liabilities: [],
+        deposit_liabilities_page: { next_cursor: null, limit: 50 },
+        deposit_aggregate: {
+          count: 0,
+          required_usd_cents: 0,
+          received_usd_cents: 0,
+          held_refundable_usd_cents: 0,
+          outstanding_required_usd_cents: 0,
+        },
         customer_credit_is_separate_from_deposit: true,
       }),
     });

@@ -14,6 +14,12 @@ from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, 
 from pydantic import BaseModel, ConfigDict, Field
 
 from property_rental.browser_security import require_browser_mutation
+from property_rental.deposit import (
+    DEPOSIT_CONNECT_TIMEOUT_SECONDS,
+    DEPOSIT_LOCK_TIMEOUT_MS,
+    DEPOSIT_QUERY_TIMEOUT_MS,
+    DepositIdempotencyKeyReused,
+)
 from property_rental.identity import (
     ActorResolver,
     AuthenticatedActor,
@@ -30,9 +36,11 @@ from property_rental.reservation import (
     ReservationCommandInvalidError,
     ReservationCreateCommand,
     ReservationExtendCommand,
+    ReservationLifecycleResult,
     ReservationNotFoundError,
     ReservationStatus,
     ReservationVersionConflictError,
+    reservation_request_digest,
 )
 from property_rental.settings import Settings
 
@@ -170,6 +178,15 @@ class ReservationResourceFlow(Protocol):
         actor: AuthenticatedActor,
     ) -> ReservationResource: ...
 
+    def property_for_security_deposit_disposition(self, reservation_id: UUID) -> UUID: ...
+
+    def create_security_deposit_disposition(
+        self,
+        command: ReservationCancelCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> ReservationLifecycleResult: ...
+
 
 class UnavailableReservationResourceFlow:
     def _raise(self) -> None:
@@ -219,6 +236,21 @@ class UnavailableReservationResourceFlow:
         *,
         actor: AuthenticatedActor,
     ) -> ReservationResource:
+        del command, actor
+        self._raise()
+        raise AssertionError
+
+    def property_for_security_deposit_disposition(self, reservation_id: UUID) -> UUID:
+        del reservation_id
+        self._raise()
+        raise AssertionError
+
+    def create_security_deposit_disposition(
+        self,
+        command: ReservationCancelCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> ReservationLifecycleResult:
         del command, actor
         self._raise()
         raise AssertionError
@@ -479,6 +511,116 @@ class PostgresReservationResourceFlow:
             self._financial_database_url,
         )
 
+    @staticmethod
+    def _bound_disposition_query(connection: psycopg.Connection[tuple[object, ...]]) -> None:
+        connection.execute(
+            "SELECT pg_catalog.set_config('lock_timeout', %s, true)",
+            (str(DEPOSIT_LOCK_TIMEOUT_MS),),
+        )
+        connection.execute(
+            "SELECT pg_catalog.set_config('statement_timeout', %s, true)",
+            (str(DEPOSIT_QUERY_TIMEOUT_MS),),
+        )
+
+    def property_for_security_deposit_disposition(self, reservation_id: UUID) -> UUID:
+        try:
+            with psycopg.connect(
+                self._database_url, connect_timeout=DEPOSIT_CONNECT_TIMEOUT_SECONDS
+            ) as connection:
+                self._bound_disposition_query(connection)
+                row = connection.execute(
+                    "SELECT unit.property_id FROM app.reservations AS reservation "
+                    "JOIN app.units AS unit ON unit.id=reservation.unit_id "
+                    "WHERE reservation.id=%s",
+                    (reservation_id,),
+                ).fetchone()
+        except psycopg.Error as exc:
+            raise ReservationResourceUnavailable from exc
+        if row is None:
+            raise ReservationResourceNotFound
+        return UUID(str(row[0]))
+
+    def create_security_deposit_disposition(
+        self,
+        command: ReservationCancelCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> ReservationLifecycleResult:
+        property_id = self.property_for_security_deposit_disposition(command.reservation_id)
+        try:
+            actor_id = UUID(actor.actor_id)
+        except ValueError as exc:
+            raise ReservationAuthorizationError("Reservation actor is invalid") from exc
+        if not (
+            _can(actor, property_id, RESERVATION_CANCEL_CAPABILITY)
+            and _can(actor, property_id, "reservation_deposits.dispose")
+        ):
+            raise ReservationAuthorizationError("Reservation disposition is not authorized")
+        if self._financial_database_url is None:
+            raise ReservationAuthorizationError(
+                "Dedicated Reservation financial persistence is unavailable"
+            )
+        try:
+            with psycopg.connect(
+                self._financial_database_url,
+                connect_timeout=DEPOSIT_CONNECT_TIMEOUT_SECONDS,
+            ) as connection:
+                self._bound_disposition_query(connection)
+                row = connection.execute(
+                    "SELECT * FROM app.cancel_reservation_v2("
+                    "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        property_id,
+                        command.idempotency_key,
+                        reservation_request_digest("reservation.cancel", command),
+                        command.event_id,
+                        command.outcome_id,
+                        command.refund_number,
+                        command.reservation_id,
+                        command.expected_version,
+                        command.reason_code,
+                        command.responsibility.value,
+                        command.property_could_provide_unit,
+                        command.reason_memo,
+                        command.coordination_reference,
+                        command.authorization_reference,
+                        command.outcome_authorization_reference,
+                        actor_id,
+                    ),
+                ).fetchone()
+        except psycopg.Error as exc:
+            if exc.sqlstate == "P0002":
+                raise ReservationNotFoundError("Reservation resource was not found") from exc
+            if exc.sqlstate == "40001":
+                raise ReservationVersionConflictError(
+                    "Reservation version precondition was not met"
+                ) from exc
+            if exc.sqlstate == "P0001" and "idempotency key was reused" in str(exc).lower():
+                raise DepositIdempotencyKeyReused("Reservation idempotency key was reused") from exc
+            if exc.sqlstate in {"P0001", "23505"}:
+                raise ReservationCommandConflictError("Reservation command conflicted") from exc
+            if exc.sqlstate in {"22023", "23514", "55000"}:
+                raise ReservationCommandInvalidError("Reservation command is invalid") from exc
+            raise ReservationResourceUnavailable from exc
+        if row is None:
+            raise ReservationResourceUnavailable
+        return ReservationLifecycleResult(
+            UUID(str(row[0])),
+            UUID(str(row[1])),
+            ReservationStatus(str(row[2])),
+            str(row[3]),
+            CancellationResponsibility(str(row[4])),
+            cast(date, row[5]),
+            int(str(row[6])),
+            str(row[7]),
+            int(str(row[8])),
+            UUID(str(row[9])),
+            int(str(row[10])),
+            DepositOutcomeState(str(row[11])),
+            UUID(str(row[12])),
+            None if row[13] is None else str(row[13]),
+        )
+
     def create(
         self,
         property_id: UUID,
@@ -610,7 +752,29 @@ def _body(resource: ReservationResource, actor: AuthenticatedActor) -> dict[str,
     return result
 
 
+def _lifecycle_body(result: ReservationLifecycleResult) -> dict[str, object]:
+    """Render only the transaction-persisted result so API-016 replay stays exact."""
+    return {
+        "reservation_id": str(result.reservation_id),
+        "unit_id": str(result.unit_id),
+        "status": result.status.value,
+        "cancellation_reason_code": result.cancellation_reason_code,
+        "cancellation_responsibility": result.cancellation_responsibility.value,
+        "effective_expiration_date": result.effective_expiration_date.isoformat(),
+        "version": result.version,
+        "unit_status": result.unit_status,
+        "unit_version": result.unit_version,
+        "deposit_id": str(result.deposit_id),
+        "deposit_received_usd_cents": result.deposit_received_usd_cents,
+        "deposit_outcome_state": result.deposit_outcome_state.value,
+        "outcome_id": str(result.outcome_id),
+        "refund_number": result.refund_number,
+    }
+
+
 def _translate(exc: Exception) -> HTTPException:
+    if isinstance(exc, DepositIdempotencyKeyReused):
+        return exc  # type: ignore[return-value]
     if isinstance(exc, HTTPException):
         return exc
     if isinstance(exc, (ReservationResourceNotFound, ReservationNotFoundError)):
@@ -808,5 +972,54 @@ def create_reservation_router(
             raise _translate(exc) from exc
         response.headers["ETag"] = f'"{resource.version}"'
         return {"data": _body(resource, actor), "meta": {"request_id": request.state.request_id}}
+
+    @router.post("/api/v1/reservations/{reservation_id}/security-deposit-dispositions")
+    def create_reservation_security_deposit_disposition(
+        reservation_id: UUID,
+        source: ReservationCancel,
+        request: Request,
+        response: Response,
+        idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
+        if_match: Annotated[str | None, Header(alias="If-Match")] = None,
+    ) -> dict[str, object]:
+        """Atomically classify customer cancellation and its Security Deposit outcome."""
+        actor = _require_actor(request, resolver)
+        try:
+            property_id = flow.property_for_security_deposit_disposition(reservation_id)
+            _require(actor, property_id, RESERVATION_CANCEL_CAPABILITY)
+            _require(actor, property_id, "reservation_deposits.dispose")
+            require_browser_mutation(request, settings)
+            if source.responsibility is not CancellationResponsibility.CUSTOMER:
+                raise ReservationResourceInvalid(
+                    "The disposition endpoint accepts only customer-caused outcomes"
+                )
+            if if_match is None:
+                raise HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED)
+            result = flow.create_security_deposit_disposition(
+                ReservationCancelCommand(
+                    idempotency_key=idempotency_key,
+                    event_id=source.event_id,
+                    outcome_id=source.outcome_id,
+                    reservation_id=reservation_id,
+                    expected_version=_version(if_match),
+                    reason_code=source.reason_code,
+                    responsibility=source.responsibility,
+                    property_could_provide_unit=source.property_could_provide_unit,
+                    reason_memo=source.reason_memo,
+                    coordination_reference=source.coordination_reference,
+                    authorization_reference=RESERVATION_CANCEL_CAPABILITY,
+                    outcome_authorization_reference="reservation_deposits.dispose",
+                    refund_number=source.refund_number,
+                ),
+                actor=actor,
+            )
+        except Exception as exc:
+            raise _translate(exc) from exc
+        response.headers["ETag"] = f'"{result.version}"'
+        response.headers["Cache-Control"] = "private, no-store"
+        return {
+            "data": _lifecycle_body(result),
+            "meta": {"request_id": request.state.request_id},
+        }
 
     return router

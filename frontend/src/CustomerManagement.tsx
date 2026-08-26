@@ -118,6 +118,15 @@ function optionalFormString(data: FormData, name: string): string | null {
   return value === "" ? null : value;
 }
 
+function usd(cents: number): string {
+  if (!Number.isSafeInteger(cents)) return "Unsupported amount";
+  const negative = cents < 0;
+  const minor = BigInt(Math.abs(cents));
+  const whole = (minor / 100n).toLocaleString("en-US");
+  const fraction = (minor % 100n).toString().padStart(2, "0");
+  return `${negative ? "-" : ""}$${whole}.${fraction}`;
+}
+
 const UPDATE_FORM_FIELDS: readonly (readonly [CustomerSourceField, string])[] =
   [
     ["legal_name", "edit-customer-legal-name"],
@@ -1876,6 +1885,42 @@ export function CustomerManagement({
       });
   }
 
+  function loadMoreDepositLiabilities() {
+    const cursor = financial?.deposit_liabilities_page.next_cursor;
+    if (selected === null || cursor === null || cursor === undefined) return;
+    const operation = sequence.current;
+    const customerId = selected.customer_id;
+    setLoading(true);
+    setStatus("Loading the next bounded Deposit liability page…");
+    void api
+      .financialSummary(customerId, cursor)
+      .then((next) => {
+        if (
+          operation !== sequence.current ||
+          selected.customer_id !== customerId
+        )
+          return;
+        setFinancial((current) =>
+          current === null
+            ? next
+            : {
+                ...next,
+                deposit_liabilities: [
+                  ...current.deposit_liabilities,
+                  ...next.deposit_liabilities,
+                ],
+              },
+        );
+        setStatus("The next Deposit liability page was loaded.");
+      })
+      .catch((error: unknown) => {
+        if (operation === sequence.current) setStatus(message(error));
+      })
+      .finally(() => {
+        if (operation === sequence.current) setLoading(false);
+      });
+  }
+
   return (
     <section
       aria-labelledby="customer-management-heading"
@@ -2247,15 +2292,60 @@ export function CustomerManagement({
             </p>
           ) : financial === null ? (
             <p>Financial summary has not been loaded.</p>
-          ) : financial.source_status !== "AVAILABLE" ? (
+          ) : financial.source_availability.deposits !== "AVAILABLE" ? (
             <p>
-              Financial sources are not available yet; no zero balance is
-              implied.
+              Deposit liabilities are not available yet; no zero balance is
+              implied. Other financial sources are also unavailable.
             </p>
           ) : (
-            <p>
-              {financial.currency_summaries.length} currency summary record(s).
-            </p>
+            <>
+              <p>
+                Deposit aggregate: {financial.deposit_aggregate.count}{" "}
+                record(s), required{" "}
+                {usd(financial.deposit_aggregate.required_usd_cents)}, received{" "}
+                {usd(financial.deposit_aggregate.received_usd_cents)}, held{" "}
+                {usd(financial.deposit_aggregate.held_refundable_usd_cents)},
+                outstanding{" "}
+                {usd(
+                  financial.deposit_aggregate.outstanding_required_usd_cents,
+                )}
+                .
+              </p>
+              <h6>Separate Deposit liabilities</h6>
+              {financial.deposit_liabilities.length === 0 ? (
+                <p>No Deposit liabilities are recorded for this Customer.</p>
+              ) : (
+                <ul>
+                  {financial.deposit_liabilities.map((deposit) => (
+                    <li key={deposit.deposit_id}>
+                      {deposit.deposit_type} Deposit {deposit.deposit_id}:
+                      required {usd(deposit.required_usd_cents)}, received{" "}
+                      {usd(deposit.received_usd_cents)}, held{" "}
+                      {usd(deposit.held_refundable_usd_cents)}, outstanding{" "}
+                      {usd(deposit.outstanding_required_usd_cents)}; source{" "}
+                      {deposit.reservation_id !== null
+                        ? `Reservation ${deposit.reservation_id}`
+                        : deposit.lease_id !== null
+                          ? `Lease ${deposit.lease_id}`
+                          : "unavailable"}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {financial.deposit_liabilities_page.next_cursor !== null && (
+                <button
+                  disabled={loading}
+                  onClick={loadMoreDepositLiabilities}
+                  type="button"
+                >
+                  Load more Deposit liabilities
+                </button>
+              )}
+              <p>
+                Invoice, late-charge, unallocated-Payment, and Customer Credit
+                summaries are not available yet; no zero balances are implied.
+              </p>
+            </>
           )}
           <p>Customer credit and deposit liability remain separate balances.</p>
 

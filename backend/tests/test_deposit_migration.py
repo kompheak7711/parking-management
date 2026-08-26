@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import date, timedelta
@@ -28,8 +29,9 @@ from property_rental.deposit import (
     DepositNotFoundError,
     DepositSnapshot,
     PostgresDepositService,
-    QualifyPetDepositRefundCommand,
+    QualifyPetDepositRefundReviewCommand,
     RecordDepositDispositionCommand,
+    RecordPetDepartureCommand,
     ReverseDepositDispositionCommand,
     ReverseDepositReceiptCommand,
 )
@@ -235,17 +237,27 @@ def test_pet_refund_qualification_keeps_signed_lease_and_creates_no_refund_or_ap
         actor_id=service.actor_id,
         amount_usd_cents=20_000,
     )
-    qualified = service.qualify_pet_refund(
-        QualifyPetDepositRefundCommand(
+    departure_id = uuid4()
+    service.record_pet_departure(
+        RecordPetDepartureCommand(
             uuid4(),
-            uuid4(),
-            uuid4(),
+            departure_id,
             deposit_id,
             date.today(),
+            "Pet permanently left",
+        ),
+        actor=actor,
+    )
+    qualified = service.qualify_pet_refund_review(
+        QualifyPetDepositRefundReviewCommand(
+            uuid4(),
+            uuid4(),
+            departure_id,
+            deposit_id,
             0,
             "No unresolved pet-caused obligations",
             "review-2027-08",
-            "Pet permanently left",
+            "Pet obligations reviewed",
         ),
         actor=actor,
     )
@@ -279,16 +291,12 @@ def test_pet_refund_qualification_rejects_impossible_departure_chronology(
     )
     invalid_day = approved_day + timedelta(days=departure_offset)
     with pytest.raises(DepositInvalidError):
-        service.qualify_pet_refund(
-            QualifyPetDepositRefundCommand(
-                uuid4(),
+        service.record_pet_departure(
+            RecordPetDepartureCommand(
                 uuid4(),
                 uuid4(),
                 deposit_id,
                 invalid_day,
-                0,
-                "No unresolved pet-caused obligations",
-                "chronology-review",
                 "Chronology must be real",
             ),
             actor=actor,
@@ -330,16 +338,12 @@ def test_property_scope_and_security_deposit_cannot_use_pet_refund_exception(
         financial_database_url(), property_id, security_actor_id
     )
     with pytest.raises(DepositNotFoundError):
-        security_service.qualify_pet_refund(
-            QualifyPetDepositRefundCommand(
-                uuid4(),
+        security_service.record_pet_departure(
+            RecordPetDepartureCommand(
                 uuid4(),
                 uuid4(),
                 identities["deposit_id"],
                 date.today(),
-                0,
-                "No unresolved pet obligations",
-                "security-deposit-rejected",
                 "Security Deposit cannot use Pet exception",
             ),
             actor=deposit_actor(security_actor_id, property_id),
@@ -368,6 +372,81 @@ def test_concurrent_pet_deposit_creation_preserves_one_liability(
             "SELECT count(*) FROM app.deposits WHERE lease_id=%s AND deposit_type='PET'",
             (lease_id,),
         ).fetchone() == (1,)
+
+
+def test_same_key_replays_are_concurrency_safe_for_exposed_deposit_commands(
+    migrated_database_url: str,
+) -> None:
+    service, actor, lease_id, approval_id, day = setup_signed_pet_lease(migrated_database_url)
+    create = CreatePetDepositCommand(
+        uuid4(), uuid4(), lease_id, approval_id, 20_000, day, "Approved signed Lease terms"
+    )
+
+    def concurrent(call: Callable[[], DepositSnapshot]) -> list[DepositSnapshot]:
+        barrier = Barrier(2)
+
+        def attempt(_: int) -> DepositSnapshot:
+            barrier.wait()
+            return call()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            return list(executor.map(attempt, range(2)))
+
+    created = concurrent(lambda: service.create_pet_deposit(create, actor=actor))
+    assert created[0] == created[1]
+
+    receipt_id = seed_historical_deposit_receipt(
+        migrated_database_url,
+        deposit_id=create.deposit_id,
+        actor_id=service.actor_id,
+        amount_usd_cents=20_000,
+    )
+    receipt_reversal = ReverseDepositReceiptCommand(
+        uuid4(), uuid4(), receipt_id, "Verified duplicate receipt"
+    )
+    reversed_receipts = concurrent(lambda: service.reverse_receipt(receipt_reversal, actor=actor))
+    assert reversed_receipts[0] == reversed_receipts[1]
+
+    service2, actor2, lease2, approval2, day2 = setup_signed_pet_lease(migrated_database_url)
+    deposit2, _ = create_pet(service2, actor2, lease2, approval2, day2)
+    seed_historical_deposit_receipt(
+        migrated_database_url,
+        deposit_id=deposit2,
+        actor_id=service2.actor_id,
+        amount_usd_cents=20_000,
+    )
+    with psycopg.connect(migrated_database_url) as owner:
+        owner.execute(
+            "UPDATE app.leases SET status='TERMINATED',terminated_at=clock_timestamp(),"
+            "actual_termination_date=%s,termination_reason='Approved policy termination',"
+            "version=version+1,updated_at=clock_timestamp(),updated_by=%s WHERE id=%s",
+            (date.today(), service2.actor_id, lease2),
+        )
+        owner.commit()
+    disposition = RecordDepositDispositionCommand(
+        uuid4(), uuid4(), deposit2, lease2, 5_000, date.today(), "Approved Lease outcome"
+    )
+    service2.record_disposition(disposition, actor=actor2)
+    disposition_reversal = ReverseDepositDispositionCommand(
+        uuid4(), uuid4(), disposition.disposition_id, "Correct evidence", "CASE-038"
+    )
+    reversed_dispositions = concurrent(
+        lambda: service2.reverse_disposition(disposition_reversal, actor=actor2)
+    )
+    assert reversed_dispositions[0] == reversed_dispositions[1]
+    with psycopg.connect(migrated_database_url) as evidence:
+        assert evidence.execute(
+            "SELECT id,action FROM app.audit_events WHERE id IN (%s,%s,%s) ORDER BY action",
+            (
+                create.deposit_id,
+                receipt_reversal.reversal_id,
+                disposition_reversal.reversal_id,
+            ),
+        ).fetchall() == [
+            (disposition_reversal.reversal_id, "deposit.disposition.reversed"),
+            (create.deposit_id, "deposit.pet.created"),
+            (receipt_reversal.reversal_id, "deposit.receipt.reversed"),
+        ]
 
 
 def test_security_and_pet_deposits_for_one_lease_keep_separate_balances_and_history(
@@ -588,8 +667,11 @@ def test_deposit_acl_uses_only_financial_command_role_and_withholds_receipt_reco
     migrated_database_url: str,
 ) -> None:
     del migrated_database_url
-    mutation_signature = (
+    superseded_signature = (
         "app.create_pet_deposit(uuid,uuid,uuid,text,uuid,uuid,uuid,bigint,date,text,text)"
+    )
+    mutation_signature = (
+        "app.create_pet_deposit_v2(uuid,uuid,uuid,text,uuid,uuid,uuid,bigint,date,text,text)"
     )
     with psycopg.connect(runtime_database_url()) as runtime:
         assert runtime.execute(
@@ -599,15 +681,16 @@ def test_deposit_acl_uses_only_financial_command_role_and_withholds_receipt_reco
             "to_regprocedure("
             "'app.record_deposit_receipt(uuid,uuid,uuid,text,uuid,uuid,uuid,bigint,"
             "timestamptz,text,text)') IS NULL",
-            (mutation_signature,),
+            (superseded_signature,),
         ).fetchone() == (False, True, False, True)
     with psycopg.connect(financial_database_url()) as financial:
         assert financial.execute(
             "SELECT has_function_privilege(current_user,%s,'EXECUTE'),"
+            "has_function_privilege(current_user,%s,'EXECUTE'),"
             "has_table_privilege(current_user,'app.deposit_commands','INSERT'),"
             "has_table_privilege(current_user,'app.deposit_receipts','INSERT')",
-            (mutation_signature,),
-        ).fetchone() == (True, False, False)
+            (superseded_signature, mutation_signature),
+        ).fetchone() == (False, True, False, False)
 
 
 def test_undisclosed_pet_warning_does_not_create_deposit_or_terminate_lease(

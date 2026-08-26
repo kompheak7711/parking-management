@@ -19,6 +19,9 @@ DEPOSIT_MANAGE_CAPABILITY: Final = "deposits.manage"
 DEPOSIT_CORRECT_CAPABILITY: Final = "deposits.correct"
 DEPOSIT_DISPOSE_CAPABILITY: Final = "deposits.dispose"
 DEPOSIT_REFUND_QUALIFY_CAPABILITY: Final = "deposits.refund.qualify"
+DEPOSIT_CONNECT_TIMEOUT_SECONDS: Final = 3
+DEPOSIT_LOCK_TIMEOUT_MS: Final = 3_000
+DEPOSIT_QUERY_TIMEOUT_MS: Final = 3_000
 
 
 class DepositType(StrEnum):
@@ -36,6 +39,10 @@ class DepositNotFoundError(LookupError):
 
 
 class DepositConflictError(RuntimeError):
+    pass
+
+
+class DepositIdempotencyKeyReused(DepositConflictError):
     pass
 
 
@@ -135,6 +142,42 @@ class ReverseDepositReceiptCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class RecordPetDepartureCommand:
+    idempotency_key: UUID
+    departure_id: UUID
+    deposit_id: UUID
+    permanently_left_date: date
+    reason: str
+    authorization_reference: str = DEPOSIT_REFUND_QUALIFY_CAPABILITY
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "departure_id", "deposit_id"):
+            _identity(getattr(self, field), field)
+        _text(self.reason, "reason")
+
+
+@dataclass(frozen=True, slots=True)
+class QualifyPetDepositRefundReviewCommand:
+    idempotency_key: UUID
+    review_id: UUID
+    departure_id: UUID
+    deposit_id: UUID
+    obligations_reviewed_usd_cents: int
+    review_findings: str
+    resolution_reference: str
+    reason: str
+    authorization_reference: str = DEPOSIT_REFUND_QUALIFY_CAPABILITY
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "review_id", "departure_id", "deposit_id"):
+            _identity(getattr(self, field), field)
+        if self.obligations_reviewed_usd_cents < 0:
+            raise ValueError("obligations_reviewed_usd_cents must not be negative")
+        for field in ("review_findings", "resolution_reference", "reason"):
+            _text(getattr(self, field), field)
+
+
+@dataclass(frozen=True, slots=True)
 class RecordDepositDispositionCommand:
     idempotency_key: UUID
     disposition_id: UUID
@@ -169,35 +212,14 @@ class ReverseDepositDispositionCommand:
         _text(self.evidence_reference, "evidence_reference")
 
 
-@dataclass(frozen=True, slots=True)
-class QualifyPetDepositRefundCommand:
-    idempotency_key: UUID
-    departure_id: UUID
-    review_id: UUID
-    deposit_id: UUID
-    permanently_left_date: date
-    obligations_reviewed_usd_cents: int
-    review_findings: str
-    resolution_reference: str
-    reason: str
-    authorization_reference: str = DEPOSIT_REFUND_QUALIFY_CAPABILITY
-
-    def __post_init__(self) -> None:
-        for field in ("idempotency_key", "departure_id", "review_id", "deposit_id"):
-            _identity(getattr(self, field), field)
-        if self.obligations_reviewed_usd_cents < 0:
-            raise ValueError("obligations_reviewed_usd_cents must not be negative")
-        for field in ("review_findings", "resolution_reference", "reason"):
-            _text(getattr(self, field), field)
-
-
 DepositCommand: TypeAlias = (
     CreatePetDepositCommand
     | AdjustDepositRequiredAmountCommand
     | ReverseDepositReceiptCommand
+    | RecordPetDepartureCommand
+    | QualifyPetDepositRefundReviewCommand
     | RecordDepositDispositionCommand
     | ReverseDepositDispositionCommand
-    | QualifyPetDepositRefundCommand
 )
 
 
@@ -231,6 +253,7 @@ class DepositSnapshot:
     deposit_disposition_id: UUID | None = None
     deposit_disposition_reversal_id: UUID | None = None
     refund_qualified: bool = False
+    reservation_version: int | None = None
 
 
 def _snapshot(row: tuple[object, ...]) -> DepositSnapshot:
@@ -258,6 +281,11 @@ def _snapshot(row: tuple[object, ...]) -> DepositSnapshot:
         deposit_disposition_id=optional_uuid("deposit_disposition_id"),
         deposit_disposition_reversal_id=optional_uuid("deposit_disposition_reversal_id"),
         refund_qualified=bool(value.get("refund_qualified", False)),
+        reservation_version=(
+            None
+            if value.get("reservation_version") is None
+            else int(str(value["reservation_version"]))
+        ),
     )
 
 
@@ -288,11 +316,25 @@ class PostgresDepositService:
 
     def _execute(self, query: str, parameters: tuple[object, ...]) -> DepositSnapshot:
         try:
-            with psycopg.connect(self.financial_database_url) as connection:
+            with psycopg.connect(
+                self.financial_database_url, connect_timeout=DEPOSIT_CONNECT_TIMEOUT_SECONDS
+            ) as connection:
+                connection.execute(
+                    "SELECT pg_catalog.set_config('lock_timeout', %s, true)",
+                    (str(DEPOSIT_LOCK_TIMEOUT_MS),),
+                )
+                connection.execute(
+                    "SELECT pg_catalog.set_config('statement_timeout', %s, true)",
+                    (str(DEPOSIT_QUERY_TIMEOUT_MS),),
+                )
                 row = connection.execute(query, parameters).fetchone()
         except psycopg.Error as exc:
             if exc.sqlstate == "P0002":
                 raise DepositNotFoundError("Deposit resource was not found") from exc
+            if exc.sqlstate == "23505" and (
+                "Deposit idempotency key conflicts with another request" in str(exc)
+            ):
+                raise DepositIdempotencyKeyReused("Deposit idempotency key was reused") from exc
             if exc.sqlstate in {"23505", "23P01"}:
                 raise DepositConflictError("Deposit command conflicted") from exc
             if exc.sqlstate in {"22023", "23514", "55000"}:
@@ -307,7 +349,7 @@ class PostgresDepositService:
     ) -> DepositSnapshot:
         self._authorize(actor, DEPOSIT_MANAGE_CAPABILITY, command.authorization_reference)
         return self._execute(
-            "SELECT app.create_pet_deposit(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.create_pet_deposit_v2(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (
                 self.property_id,
                 self.actor_id,
@@ -349,7 +391,7 @@ class PostgresDepositService:
     ) -> DepositSnapshot:
         self._authorize(actor, DEPOSIT_CORRECT_CAPABILITY, command.authorization_reference)
         return self._execute(
-            "SELECT app.reverse_deposit_receipt(%s,%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.reverse_deposit_receipt_v2(%s,%s,%s,%s,%s,%s,%s,%s)",
             (
                 self.property_id,
                 self.actor_id,
@@ -357,6 +399,48 @@ class PostgresDepositService:
                 deposit_request_digest("deposit.receipt.reverse", command),
                 command.reversal_id,
                 command.receipt_id,
+                command.reason,
+                command.authorization_reference,
+            ),
+        )
+
+    def record_pet_departure(
+        self, command: RecordPetDepartureCommand, *, actor: AuthenticatedActor
+    ) -> DepositSnapshot:
+        self._authorize(actor, DEPOSIT_REFUND_QUALIFY_CAPABILITY, command.authorization_reference)
+        return self._execute(
+            "SELECT app.record_active_lease_pet_departure(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                self.property_id,
+                self.actor_id,
+                command.idempotency_key,
+                deposit_request_digest("deposit.pet_departure.record", command),
+                command.departure_id,
+                command.deposit_id,
+                command.permanently_left_date,
+                command.reason,
+                command.authorization_reference,
+            ),
+        )
+
+    def qualify_pet_refund_review(
+        self, command: QualifyPetDepositRefundReviewCommand, *, actor: AuthenticatedActor
+    ) -> DepositSnapshot:
+        self._authorize(actor, DEPOSIT_REFUND_QUALIFY_CAPABILITY, command.authorization_reference)
+        return self._execute(
+            "SELECT app.qualify_active_lease_pet_refund_review("
+            "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                self.property_id,
+                self.actor_id,
+                command.idempotency_key,
+                deposit_request_digest("deposit.pet_refund.review", command),
+                command.review_id,
+                command.departure_id,
+                command.deposit_id,
+                command.obligations_reviewed_usd_cents,
+                command.review_findings,
+                command.resolution_reference,
                 command.reason,
                 command.authorization_reference,
             ),
@@ -388,7 +472,7 @@ class PostgresDepositService:
     ) -> DepositSnapshot:
         self._authorize(actor, DEPOSIT_CORRECT_CAPABILITY, command.authorization_reference)
         return self._execute(
-            "SELECT app.reverse_deposit_disposition(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.reverse_deposit_disposition_v2(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (
                 self.property_id,
                 self.actor_id,
@@ -398,29 +482,6 @@ class PostgresDepositService:
                 command.disposition_id,
                 command.reason,
                 command.evidence_reference,
-                command.authorization_reference,
-            ),
-        )
-
-    def qualify_pet_refund(
-        self, command: QualifyPetDepositRefundCommand, *, actor: AuthenticatedActor
-    ) -> DepositSnapshot:
-        self._authorize(actor, DEPOSIT_REFUND_QUALIFY_CAPABILITY, command.authorization_reference)
-        return self._execute(
-            "SELECT app.qualify_active_lease_pet_refund(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-            (
-                self.property_id,
-                self.actor_id,
-                command.idempotency_key,
-                deposit_request_digest("deposit.pet_refund.qualify", command),
-                command.departure_id,
-                command.review_id,
-                command.deposit_id,
-                command.permanently_left_date,
-                command.obligations_reviewed_usd_cents,
-                command.review_findings,
-                command.resolution_reference,
-                command.reason,
                 command.authorization_reference,
             ),
         )

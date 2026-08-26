@@ -107,8 +107,23 @@ function client(overrides: Partial<CustomerApi> = {}): CustomerApi {
     }),
     financialSummary: vi.fn().mockResolvedValue({
       source_status: "UNAVAILABLE_UNTIL_FINANCIAL_SOURCES_ARE_IMPLEMENTED",
+      source_availability: {
+        deposits: "UNAVAILABLE_NOT_IMPLEMENTED",
+        invoices: "UNAVAILABLE_NOT_IMPLEMENTED",
+        late_charges: "UNAVAILABLE_NOT_IMPLEMENTED",
+        payments: "UNAVAILABLE_NOT_IMPLEMENTED",
+        customer_credit: "UNAVAILABLE_NOT_IMPLEMENTED",
+      },
       currency_summaries: [],
       deposit_liabilities: [],
+      deposit_liabilities_page: { next_cursor: null, limit: 50 },
+      deposit_aggregate: {
+        count: 0,
+        required_usd_cents: 0,
+        received_usd_cents: 0,
+        held_refundable_usd_cents: 0,
+        outstanding_required_usd_cents: 0,
+      },
       customer_credit_is_separate_from_deposit: true,
     }),
     ...overrides,
@@ -862,7 +877,7 @@ describe("CustomerManagement", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Financial sources are not available yet; no zero balance is implied.",
+        "Deposit liabilities are not available yet; no zero balance is implied. Other financial sources are also unavailable.",
       ),
     ).toBeInTheDocument();
   });
@@ -1760,6 +1775,63 @@ describe("CustomerManagement", () => {
     expect(
       screen.queryByRole("button", { name: "Create Customer" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("TEST-FE-208 renders separate authoritative Customer Deposit liabilities", async () => {
+    const api = client({
+      financialSummary: vi.fn().mockResolvedValue({
+        source_status: "PARTIALLY_AVAILABLE",
+        source_availability: {
+          deposits: "AVAILABLE",
+          invoices: "UNAVAILABLE_NOT_IMPLEMENTED",
+          late_charges: "UNAVAILABLE_NOT_IMPLEMENTED",
+          payments: "UNAVAILABLE_NOT_IMPLEMENTED",
+          customer_credit: "UNAVAILABLE_NOT_IMPLEMENTED",
+        },
+        currency_summaries: [],
+        deposit_liabilities: [
+          {
+            deposit_id: "deposit-1",
+            deposit_type: "SECURITY",
+            reservation_id: "reservation-1",
+            lease_id: "lease-1",
+            pet_approval_id: null,
+            required_usd_cents: Number.MAX_SAFE_INTEGER,
+            received_usd_cents: 50000,
+            held_refundable_usd_cents: 45000,
+            outstanding_required_usd_cents: 0,
+          },
+        ],
+        deposit_liabilities_page: { next_cursor: null, limit: 50 },
+        deposit_aggregate: {
+          count: 1,
+          required_usd_cents: 50000,
+          received_usd_cents: 50000,
+          held_refundable_usd_cents: 45000,
+          outstanding_required_usd_cents: 0,
+        },
+        customer_credit_is_separate_from_deposit: true,
+      }),
+    });
+    await loadCustomers(api);
+    fireEvent.click(screen.getByRole("button", { name: "Open Dara Sok" }));
+
+    expect(
+      await screen.findByText(/SECURITY Deposit deposit-1/),
+    ).toHaveTextContent(
+      "required $90,071,992,547,409.91, received $500.00, held $450.00, outstanding $0.00; source Reservation reservation-1",
+    );
+    expect(
+      screen.getByText(
+        "Customer credit and deposit liability remain separate balances.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Invoice, late-charge, unallocated-Payment, and Customer Credit summaries are not available yet/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/0 currency summary/)).not.toBeInTheDocument();
   });
 
   it("TEST-FE-060 restores an update draft after reviewing a reuse candidate", async () => {

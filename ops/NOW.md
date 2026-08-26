@@ -1,55 +1,49 @@
-# V1-037 Security and Pet Deposit persistence/domain services — complete
+# V1-038 Deposit receipt, qualification, disposition API/UI — active
 
-- Candidate: `V1-037` — Security and pet deposit persistence and domain services.
+- Candidate: `V1-038` — Deposit receipt, qualification, disposition API/UI.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
   no renewed routine authorization is required.
-- Baseline: clean synchronized `implementation/foundation` at V1-036 reconciliation
-  correction `ab3f4b349688d4e897eca5640165e98502ef7c52`.
+- Baseline: clean synchronized `implementation/foundation` at V1-037 reconciliation
+  commit `11efdf2036e308d62735362ace275739658e049a`.
 - Preflight: PASS; no repository worker, mutation process, lock, or restoration
   continuation overlapped this direct cycle.
 - Scheduler: the Property Rental supervisor remains disabled and not running.
-- Scope: separate Security and Pet Deposit liabilities; approved-pet/signed-term
-  qualification; required-amount history; receipt-reversal history; Lease-governed
-  disposition/reversal history; derived balances; and active-Lease Pet Deposit Refund
-  qualification without creating the Refund.
-- Authorities: `BR-DEP-*`, `PR-DEP-*`, `DB-DEP-*`, `TEST-036` through `TEST-039`,
-  and `TEST-126`.
-- Dependency: published V1-035 move-in orchestration and its Security Deposit continuity.
-- Excluded: Final Settlement, Deposit API/UI, actual active-Lease Refund execution,
-  V1-038 implementation, canonical changes, and Hermes-wrapper changes.
+- Scope: authorized Deposit resource, receipt, qualification, disposition, correction,
+  and active-Lease Pet Deposit Refund qualification API/UI with permanent source history.
+- Authorities: `API-039` through `API-042`, `API-094`, `UI-030`, `UI-033`,
+  `UI-035`, `UI-043`, `UI-044`, `UI-071`, `UI-073`, `UI-074`, `UI-076`,
+  `UI-107`, `TEST-036` through `TEST-039`, and `TEST-126`.
+- Dependency: published V1-037 Deposit persistence/domain services.
+- Excluded: ordinary active-Lease Security Deposit Refund, Final Settlement
+  implementation, actual Refund execution, V1-039, canonical changes, and
+  Hermes-wrapper changes.
 - Canonical specifications: read-only.
-- Implementation: protected forward-only migration, separate Deposit identities,
-  PostgreSQL source/uniqueness/balance constraints, append-only corrections and
-  reversals, idempotent Property-scoped financial-role commands, stable derived
-  balances, and permanent pet-departure/refund-review evidence. General Deposit
-  receipt creation is deliberately withheld until authoritative Payment persistence.
-- Verification: PASS; focused Deposit/domain checks, disposable PostgreSQL `285/285`,
-  and complete deterministic verification profile `15/15` (`618` backend, `196`
-  frontend, and `185` automation tests).
-- Review: PASS. The first external review found six material issues; all six were
-  corrected. A fresh external Codex read-only review of the corrected final diff
-  reported zero material findings and made no edits.
-- Implementation publication: commit
-  `67de8cbaff6a26a4c1cc7ee9d9f80b7c98e97656`; exact-SHA GitHub Actions run
-  `32965578375` passed all four jobs on attempt 2 after one unrelated pre-existing
-  frontend timing test passed its focused rerun and the exact-SHA job rerun.
-- Closure: commit `ff89c5148f90fa10b49a6c8d2f562a6dd6269387`;
-  exact-SHA GitHub Actions run `32966323183` passed all four jobs.
-- Status: complete, published, independently reviewed, and closure-valid.
-- V1-038: remains held at `approved_ready`; no product work or activation occurred.
-- Held-successor routing: the invalid noncanonical `UI-DEP-*` placeholder was
-  materialized to the existing exact Deposit-related UI requirements `UI-030`,
-  `UI-033`, `UI-035`, `UI-043`, `UI-044`, `UI-071`, `UI-073`, `UI-074`,
-  `UI-076`, and `UI-107`; no V1-038 product work or activation occurred.
+- Scope correction: Owner-approved. New Payment-backed receipt creation is deferred
+  to V1-048/V1-052, and Final Settlement disposition is deferred to V1-056. Existing
+  receipt history remains readable and reversible; no provisional Payment is invented.
+- Implementation: complete for bounded Deposit resources, existing receipt/source
+  history and reversals, supported disposition correction, approved conditional Pet
+  Deposit creation, and split pet-departure/refund-review qualification.
+- Verification: PASS; focused API/UI checks, disposable PostgreSQL `300/300`, and
+  complete deterministic verification `15/15` (`629` backend with `289` expected
+  environment skips, `213` frontend, and `185` automation-routing tests); evidence:
+  `/private/tmp/property-rental-v1-038-final-verification-6.json`.
+- Review: PASS; fresh external Codex read-only review of the exact final diff found no
+  material issues and made no edits; session
+  `01a0406f-c4e8-7e82-9419-c77d93a4bba5`; evidence:
+  `/private/tmp/property-rental-v1-038-final-independent-review-7.txt`.
+- Publication: pending.
+- Status: verified unpublished implementation awaiting publication and exact-SHA CI.
+- V1-039: held at `approved_ready`; no activation or implementation is permitted.
 - Blockers: none.
-- Exact next action: keep V1-038 held at `approved_ready` and keep the Property
-  Rental supervisor disabled; do not activate the successor automatically.
+- Exact next action: publish the independently reviewed V1-038 implementation, require
+  successful exact-SHA CI, then reconcile closure while keeping V1-039 held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-037 implementation and closure are published
-  and exact-SHA CI-green; V1-038 remains the held approved successor.
-- Automation exact next action: keep the supervisor disabled and V1-038 held while
-  awaiting explicit direct-takeover or activation direction.
+- Automation publication state: V1-038 passes complete 15/15 verification and fresh
+  exact-final-diff independent review; V1-039 remains the held approved successor.
+- Automation exact next action: keep the supervisor disabled and V1-039 held until
+  corrected V1-038 publication and exact-SHA CI succeed.
 
 <!-- AUTOMATION_STATUS_END -->

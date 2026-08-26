@@ -15,6 +15,8 @@ from alembic.config import Config
 from fastapi.testclient import TestClient
 
 from property_rental.app import create_app
+from property_rental.deposit import ReverseDepositDispositionCommand
+from property_rental.deposit_api import PostgresDepositResourceFlow
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.reservation import ReservationServiceUnavailableError
 from property_rental.reservation_api import PostgresReservationResourceFlow
@@ -368,10 +370,19 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
         "If-Match": '"2"',
     }
     cancelled = api.post(
-        f"/reservations/{reservation_id}/cancel", json=cancel_payload, headers=cancel_headers
+        f"/api/v1/reservations/{reservation_id}/security-deposit-dispositions",
+        json=cancel_payload,
+        headers=cancel_headers,
     )
     cancel_replay = api.post(
-        f"/reservations/{reservation_id}/cancel", json=cancel_payload, headers=cancel_headers
+        f"/api/v1/reservations/{reservation_id}/security-deposit-dispositions",
+        json=cancel_payload,
+        headers=cancel_headers,
+    )
+    changed_cancel_replay = api.post(
+        f"/api/v1/reservations/{reservation_id}/security-deposit-dispositions",
+        json={**cancel_payload, "reason_memo": "Changed customer evidence"},
+        headers=cancel_headers,
     )
 
     assert missing_csrf.status_code == 403
@@ -407,8 +418,18 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
     }
     assert stale_extend.status_code == 412
     assert cancelled.status_code == cancel_replay.status_code == 200
-    cancelled_resource = cancelled.json()["data"]
-    assert cancelled_resource == cancel_replay.json()["data"]
+    assert cancelled.headers["cache-control"] == "private, no-store"
+    cancelled_result = cancelled.json()["data"]
+    assert cancelled_result == cancel_replay.json()["data"]
+    assert changed_cancel_replay.status_code == 409
+    assert changed_cancel_replay.json()["error"] == {
+        "code": "IDEMPOTENCY_KEY_REUSED",
+        "message": "The idempotency key was already used for different input.",
+        "fields": [],
+        "rule_ids": ["API-016"],
+        "current_version": None,
+    }
+    cancelled_resource = api.get(f"/reservations/{reservation_id}").json()["data"]
     assert cancelled_resource["version"] == 3
     assert cancelled_resource["deposit_outcome_state"] == "NON_REFUNDABLE_DISPOSITION"
     assert cancelled_resource["lifecycle_events"] == [
@@ -532,6 +553,39 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
     ]
     assert all(len(row[3]) == 64 and isinstance(row[4], dict) for row in command_evidence)
     assert [row[4]["version"] for row in command_evidence] == [3, 3, 1, 2]
+
+    correction_actor = AuthenticatedActor(
+        actor_id=str(actor_id),
+        capability_grants=frozenset(
+            {
+                CapabilityGrant("reservation_deposits.correct", scope),
+                CapabilityGrant("reservation_deposits.dispose", scope),
+            }
+        ),
+    )
+    correction = ReverseDepositDispositionCommand(
+        uuid4(),
+        uuid4(),
+        cancel_outcome_id,
+        "Correct cancellation evidence",
+        "case-v1-038-replay",
+    )
+    PostgresDepositResourceFlow(
+        runtime_database_url(), financial_database_url()
+    ).reverse_disposition(
+        cancel_outcome_id,
+        correction,
+        replacement_disposition_id=uuid4(),
+        expected_reservation_version=3,
+        actor=correction_actor,
+    )
+    replay_after_correction = api.post(
+        f"/api/v1/reservations/{reservation_id}/security-deposit-dispositions",
+        json=cancel_payload,
+        headers=cancel_headers,
+    )
+    assert replay_after_correction.status_code == 200
+    assert replay_after_correction.json()["data"] == cancelled_result
 
 
 def test_run_identity_is_property_scoped_and_nonzero() -> None:

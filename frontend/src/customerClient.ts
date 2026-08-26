@@ -56,9 +56,36 @@ export interface CustomerListPage {
 
 export interface CustomerFinancialSummary {
   source_status: string;
+  source_availability: {
+    deposits: string;
+    invoices: string;
+    late_charges: string;
+    payments: string;
+    customer_credit: string;
+  };
   currency_summaries: unknown[];
-  deposit_liabilities: unknown[];
+  deposit_liabilities: CustomerDepositLiability[];
+  deposit_liabilities_page: { next_cursor: string | null; limit: number };
+  deposit_aggregate: {
+    count: number;
+    required_usd_cents: number;
+    received_usd_cents: number;
+    held_refundable_usd_cents: number;
+    outstanding_required_usd_cents: number;
+  };
   customer_credit_is_separate_from_deposit: boolean;
+}
+
+export interface CustomerDepositLiability {
+  deposit_id: string;
+  deposit_type: "SECURITY" | "PET";
+  reservation_id: string | null;
+  lease_id: string | null;
+  pet_approval_id: string | null;
+  required_usd_cents: number;
+  received_usd_cents: number;
+  held_refundable_usd_cents: number;
+  outstanding_required_usd_cents: number;
 }
 
 export interface CustomerCommandStatus {
@@ -104,7 +131,10 @@ export interface CustomerApi {
     reason: string,
     idempotencyKey: string,
   ) => Promise<CustomerDetail>;
-  financialSummary: (customerId: string) => Promise<CustomerFinancialSummary>;
+  financialSummary: (
+    customerId: string,
+    depositCursor?: string,
+  ) => Promise<CustomerFinancialSummary>;
 }
 
 export class CustomerUnavailableError extends Error {
@@ -584,10 +614,14 @@ async function deactivate(
 
 async function financialSummary(
   customerId: string,
+  depositCursor?: string,
 ): Promise<CustomerFinancialSummary> {
+  const parameters = new URLSearchParams({ deposit_limit: "50" });
+  if (depositCursor !== undefined)
+    parameters.set("deposit_cursor", depositCursor);
   const value = resourceData(
     await request(
-      `/api/v1/customers/${encodeURIComponent(customerId)}/financial-summary`,
+      `/api/v1/customers/${encodeURIComponent(customerId)}/financial-summary?${parameters.toString()}`,
       {
         method: "GET",
       },
@@ -595,14 +629,99 @@ async function financialSummary(
   );
   if (
     typeof value.source_status !== "string" ||
+    typeof value.source_availability !== "object" ||
+    value.source_availability === null ||
+    typeof value.deposit_liabilities_page !== "object" ||
+    value.deposit_liabilities_page === null ||
+    typeof value.deposit_aggregate !== "object" ||
+    value.deposit_aggregate === null ||
     typeof value.customer_credit_is_separate_from_deposit !== "boolean"
   ) {
     throw new CustomerRequestError();
   }
+  const availability = value.source_availability as Record<string, unknown>;
+  if (
+    typeof availability.deposits !== "string" ||
+    typeof availability.invoices !== "string" ||
+    typeof availability.late_charges !== "string" ||
+    typeof availability.payments !== "string" ||
+    typeof availability.customer_credit !== "string"
+  )
+    throw new CustomerRequestError();
+  const page = value.deposit_liabilities_page as Record<string, unknown>;
+  if (
+    (page.next_cursor !== null && typeof page.next_cursor !== "string") ||
+    !Number.isSafeInteger(page.limit)
+  )
+    throw new CustomerRequestError();
+  const aggregate = value.deposit_aggregate as Record<string, unknown>;
+  for (const field of [
+    "count",
+    "required_usd_cents",
+    "received_usd_cents",
+    "held_refundable_usd_cents",
+    "outstanding_required_usd_cents",
+  ]) {
+    if (!Number.isSafeInteger(aggregate[field]))
+      throw new CustomerRequestError();
+  }
+  const liabilities = unknownArray(value.deposit_liabilities).map((entry) => {
+    if (typeof entry !== "object" || entry === null)
+      throw new CustomerRequestError();
+    const item = entry as Record<string, unknown>;
+    if (
+      typeof item.deposit_id !== "string" ||
+      (item.deposit_type !== "SECURITY" && item.deposit_type !== "PET") ||
+      !Number.isSafeInteger(item.required_usd_cents) ||
+      !Number.isSafeInteger(item.received_usd_cents) ||
+      !Number.isSafeInteger(item.held_refundable_usd_cents) ||
+      !Number.isSafeInteger(item.outstanding_required_usd_cents)
+    ) {
+      throw new CustomerRequestError();
+    }
+    const optionalIdentity = (field: string): string | null => {
+      const candidate = item[field];
+      if (candidate !== null && typeof candidate !== "string")
+        throw new CustomerRequestError();
+      return candidate;
+    };
+    return {
+      deposit_id: item.deposit_id,
+      deposit_type: item.deposit_type,
+      reservation_id: optionalIdentity("reservation_id"),
+      lease_id: optionalIdentity("lease_id"),
+      pet_approval_id: optionalIdentity("pet_approval_id"),
+      required_usd_cents: item.required_usd_cents as number,
+      received_usd_cents: item.received_usd_cents as number,
+      held_refundable_usd_cents: item.held_refundable_usd_cents as number,
+      outstanding_required_usd_cents:
+        item.outstanding_required_usd_cents as number,
+    } satisfies CustomerDepositLiability;
+  });
   return {
     source_status: value.source_status,
+    source_availability: {
+      deposits: availability.deposits,
+      invoices: availability.invoices,
+      late_charges: availability.late_charges,
+      payments: availability.payments,
+      customer_credit: availability.customer_credit,
+    },
     currency_summaries: unknownArray(value.currency_summaries),
-    deposit_liabilities: unknownArray(value.deposit_liabilities),
+    deposit_liabilities: liabilities,
+    deposit_liabilities_page: {
+      next_cursor:
+        typeof page.next_cursor === "string" ? page.next_cursor : null,
+      limit: page.limit as number,
+    },
+    deposit_aggregate: {
+      count: aggregate.count as number,
+      required_usd_cents: aggregate.required_usd_cents as number,
+      received_usd_cents: aggregate.received_usd_cents as number,
+      held_refundable_usd_cents: aggregate.held_refundable_usd_cents as number,
+      outstanding_required_usd_cents:
+        aggregate.outstanding_required_usd_cents as number,
+    },
     customer_credit_is_separate_from_deposit:
       value.customer_credit_is_separate_from_deposit,
   };

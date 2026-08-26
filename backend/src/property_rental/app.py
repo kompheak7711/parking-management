@@ -59,6 +59,14 @@ from property_rental.customer_api import (
     customer_idempotency_key_reused_response,
     customer_reuse_conflict_response,
 )
+from property_rental.deposit import DepositIdempotencyKeyReused
+from property_rental.deposit_api import (
+    DepositResourceFlow,
+    PostgresDepositResourceFlow,
+    UnavailableDepositResourceFlow,
+    create_deposit_router,
+    deposit_idempotency_key_reused_response,
+)
 from property_rental.identity import ActorResolver, deny_unauthenticated_actor
 from property_rental.lease_api import (
     LeaseResourceFlow,
@@ -103,6 +111,13 @@ LEASE_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:properties/[^/]+/leases(?:/|$)|leases(?:/|$)|"
     r"lease-signers(?:/|$)|occupancies(?:/|$)|"
     r"reservations/[^/]+/complete-move-in$)"
+)
+RESERVATION_API_PATH_PATTERN: Final = re.compile(r"^(?:/api/v1)?/reservations(?:/|$)")
+DEPOSIT_API_PATH_PATTERN: Final = re.compile(
+    r"^/api/v1/(?:deposits(?:/|$)|deposit-receipts(?:/|$)|"
+    r"deposit-dispositions(?:/|$)|pet-departures(?:/|$)|"
+    r"pet-deposit-refund-reviews(?:/|$)|reservations/[^/]+/(?:deposits|security-deposit-dispositions)$|"
+    r"leases/[^/]+/(?:deposits|pet-deposits|pet-departures)(?:/|$))"
 )
 DATABASE_TIMEOUT_SECONDS: Final = 2
 ERROR_STATUS_DETAILS: Final = {
@@ -222,6 +237,7 @@ def create_app(
     exchange_rate_provider: ExchangeRateProvider | None = None,
     reservation_resource_flow: ReservationResourceFlow | None = None,
     lease_resource_flow: LeaseResourceFlow | None = None,
+    deposit_resource_flow: DepositResourceFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -381,6 +397,13 @@ def create_app(
     ) -> JSONResponse:
         return customer_idempotency_key_reused_response(request)
 
+    @app.exception_handler(DepositIdempotencyKeyReused)
+    async def deposit_idempotency_key_reused(
+        request: Request,
+        _: DepositIdempotencyKeyReused,
+    ) -> JSONResponse:
+        return deposit_idempotency_key_reused_response(request)
+
     @app.exception_handler(CustomerLifecycleConflict)
     async def customer_lifecycle_conflict(
         request: Request,
@@ -419,6 +442,8 @@ def create_app(
             CUSTOMER_API_PATH_PATTERN.match(request.url.path)
             or CONFIGURATION_API_PATH_PATTERN.match(request.url.path)
             or LEASE_API_PATH_PATTERN.match(request.url.path)
+            or RESERVATION_API_PATH_PATTERN.match(request.url.path)
+            or DEPOSIT_API_PATH_PATTERN.match(request.url.path)
         ):
             response.headers["Cache-Control"] = "private, no-store"
             response.headers["Vary"] = "Cookie"
@@ -541,6 +566,28 @@ def create_app(
                 PostgresLeaseResourceFlow(resolved_settings.database_url.get_secret_value())
                 if resolved_settings.database_url is not None
                 else UnavailableLeaseResourceFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_deposit_router(
+            actor_resolver,
+            deposit_resource_flow
+            or cast(
+                DepositResourceFlow,
+                (
+                    PostgresDepositResourceFlow(
+                        resolved_settings.database_url.get_secret_value(),
+                        (
+                            resolved_settings.financial_database_url.get_secret_value()
+                            if resolved_settings.financial_database_url is not None
+                            else None
+                        ),
+                    )
+                    if resolved_settings.database_url is not None
+                    else UnavailableDepositResourceFlow()
+                ),
             ),
             resolved_settings,
         )

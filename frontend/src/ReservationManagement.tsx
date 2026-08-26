@@ -14,6 +14,13 @@ export interface ReservationManagementProps {
   api?: ReservationApi;
 }
 
+interface PendingCancellation {
+  fingerprint: string;
+  eventId: string;
+  outcomeId: string;
+  idempotencyKey: string;
+}
+
 function formString(data: FormData, name: string): string {
   const value = data.get(name);
   return typeof value === "string" ? value.trim() : "";
@@ -49,6 +56,7 @@ export function ReservationManagement({
   const [notice, setNotice] = useState<string | null>(null);
   const [extensionResult, setExtensionResult] = useState("");
   const sequence = useRef(0);
+  const pendingCancellation = useRef<PendingCancellation | null>(null);
 
   function update(resource: ReservationResource) {
     setSelected(resource);
@@ -212,6 +220,35 @@ export function ReservationManagement({
       data,
       "responsibility",
     ) as CancellationResponsibility;
+    const sourceValues = {
+      reason_code: formString(data, "cancellation-reason-code"),
+      responsibility,
+      property_could_provide_unit: responsibility === "CUSTOMER",
+      reason_memo: formString(data, "cancellation-reason"),
+      coordination_reference:
+        responsibility === "PROPERTY"
+          ? formString(data, "coordination-reference")
+          : null,
+      refund_number:
+        responsibility === "PROPERTY"
+          ? formString(data, "refund-number")
+          : null,
+    };
+    const fingerprint = JSON.stringify({
+      reservationId: selected.reservation_id,
+      version: selected.version,
+      ...sourceValues,
+    });
+    const identity =
+      pendingCancellation.current?.fingerprint === fingerprint
+        ? pendingCancellation.current
+        : {
+            fingerprint,
+            eventId: crypto.randomUUID(),
+            outcomeId: crypto.randomUUID(),
+            idempotencyKey: crypto.randomUUID(),
+          };
+    pendingCancellation.current = identity;
     if (
       !window.confirm(
         "Cancel this ACTIVE Reservation and apply the displayed Deposit outcome?",
@@ -229,25 +266,17 @@ export function ReservationManagement({
       .cancel(
         selected,
         {
-          event_id: crypto.randomUUID(),
-          outcome_id: crypto.randomUUID(),
-          reason_code: formString(data, "cancellation-reason-code"),
-          responsibility,
-          property_could_provide_unit: responsibility === "CUSTOMER",
-          reason_memo: formString(data, "cancellation-reason"),
-          coordination_reference:
-            responsibility === "PROPERTY"
-              ? formString(data, "coordination-reference")
-              : null,
-          refund_number:
-            responsibility === "PROPERTY"
-              ? formString(data, "refund-number")
-              : null,
+          event_id: identity.eventId,
+          outcome_id: identity.outcomeId,
+          ...sourceValues,
         },
-        crypto.randomUUID(),
+        identity.idempotencyKey,
       )
       .then((value) => {
         if (operation !== sequence.current) return;
+        if (pendingCancellation.current === identity) {
+          pendingCancellation.current = null;
+        }
         update(value);
         setNotice(
           responsibility === "PROPERTY"

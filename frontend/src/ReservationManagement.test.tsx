@@ -147,4 +147,42 @@ describe("Reservation staff workflow", () => {
       "non-refundable Deposit disposition",
     );
   });
+
+  it("TEST-FE-212 reuses exact cancellation identities after an ambiguous failure", async () => {
+    const client = api();
+    vi.mocked(client.cancel)
+      .mockRejectedValueOnce(new Error("ambiguous"))
+      .mockResolvedValueOnce({
+        ...active,
+        version: 2,
+        status: "CANCELLED",
+        deposit_outcome_state: "NON_REFUNDABLE_DISPOSITION",
+        can_extend: false,
+        can_cancel: false,
+      });
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    render(<ReservationManagement api={client} />);
+    fireEvent.change(screen.getByLabelText("Reservation Property identifier"), {
+      target: { value: "property-1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Load Reservations" }));
+    fireEvent.click(await screen.findByRole("button", { name: "View" }));
+    await screen.findByRole("heading", { name: "Cancel Reservation" });
+    fireEvent.change(screen.getByLabelText("Approved reason code"), {
+      target: { value: "CUSTOMER_WITHDREW" },
+    });
+    const submit = screen.getByRole("button", {
+      name: "Review and confirm cancellation",
+    });
+    fireEvent.click(submit);
+    await screen.findByText(
+      "The Reservation request was not completed. Review the fields and retry.",
+    );
+    const firstCall = vi.mocked(client.cancel).mock.calls[0];
+    fireEvent.click(submit);
+    await waitFor(() => {
+      expect(client.cancel).toHaveBeenCalledTimes(2);
+    });
+    expect(vi.mocked(client.cancel).mock.calls[1]).toEqual(firstCall);
+  });
 });

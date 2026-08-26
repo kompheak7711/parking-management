@@ -262,17 +262,31 @@ export const reservationApi: ReservationApi = {
         ),
       ),
     ),
-  cancel: async (reservation, source, idempotencyKey) =>
-    resource(
+  cancel: async (reservation, source, idempotencyKey) => {
+    const disposition = source.responsibility === "CUSTOMER";
+    const result = data(
+      await request(
+        disposition
+          ? `/api/v1/reservations/${encodeURIComponent(reservation.reservation_id)}/security-deposit-dispositions`
+          : `/reservations/${encodeURIComponent(reservation.reservation_id)}/cancel`,
+        {
+          method: "POST",
+          headers: commandHeaders(idempotencyKey, reservation.version),
+          body: JSON.stringify(source),
+        },
+      ),
+    );
+    if (!disposition) return resource(result);
+    if (result.reservation_id !== reservation.reservation_id) {
+      throw new ReservationRequestError();
+    }
+    return resource(
       data(
         await request(
-          `/reservations/${encodeURIComponent(reservation.reservation_id)}/cancel`,
-          {
-            method: "POST",
-            headers: commandHeaders(idempotencyKey, reservation.version),
-            body: JSON.stringify(source),
-          },
+          `/reservations/${encodeURIComponent(reservation.reservation_id)}`,
+          { method: "GET" },
         ),
       ),
-    ),
+    );
+  },
 };

@@ -10,7 +10,7 @@ import re
 from collections import OrderedDict, deque
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from threading import Lock
 from time import monotonic
 from typing import Annotated, Final, Protocol, cast
@@ -50,6 +50,7 @@ CUSTOMER_MANAGE_CAPABILITY: Final = "customers.manage"
 AUDIT_VIEW_CAPABILITY: Final = "audit.view"
 DEFAULT_PAGE_SIZE: Final = 50
 MAX_PAGE_SIZE: Final = 100
+DEFAULT_DEPOSIT_PAGE_SIZE: Final = 50
 CUSTOMER_QUERY_TIMEOUT_MS: Final = 3_000
 CUSTOMER_SEARCH_WINDOW_SECONDS: Final = 1.0
 CUSTOMER_SEARCH_MAX_REQUESTS: Final = 20
@@ -368,7 +369,13 @@ class CustomerResourceFlow(Protocol):
         cursor: str | None,
     ) -> CustomerHistoryPage: ...
 
-    def financial_summary(self, customer_id: UUID) -> dict[str, object]: ...
+    def financial_summary(
+        self,
+        customer_id: UUID,
+        *,
+        deposit_limit: int,
+        deposit_cursor: str | None,
+    ) -> dict[str, object]: ...
 
 
 class UnavailableCustomerResourceFlow:
@@ -519,8 +526,14 @@ class UnavailableCustomerResourceFlow:
         self._fail()
         raise AssertionError
 
-    def financial_summary(self, customer_id: UUID) -> dict[str, object]:
-        del customer_id
+    def financial_summary(
+        self,
+        customer_id: UUID,
+        *,
+        deposit_limit: int,
+        deposit_cursor: str | None,
+    ) -> dict[str, object]:
+        del customer_id, deposit_limit, deposit_cursor
         self._fail()
         raise AssertionError
 
@@ -541,6 +554,26 @@ def _decode_cursor(cursor: str | None) -> UUID | None:
         return UUID(value)
     except (ValueError, TypeError, json.JSONDecodeError) as exc:
         raise CustomerResourceInvalid("cursor is invalid") from exc
+
+
+def _encode_deposit_cursor(required_effective_date: date, deposit_id: UUID) -> str:
+    raw = json.dumps(
+        [required_effective_date.isoformat(), str(deposit_id)], separators=(",", ":")
+    ).encode()
+    return base64.urlsafe_b64encode(raw).decode().rstrip("=")
+
+
+def _decode_deposit_cursor(cursor: str | None) -> tuple[date, UUID] | None:
+    if cursor is None:
+        return None
+    try:
+        raw = base64.urlsafe_b64decode(cursor + "=" * (-len(cursor) % 4))
+        value = json.loads(raw)
+        if not isinstance(value, list) or len(value) != 2:
+            raise ValueError
+        return date.fromisoformat(str(value[0])), UUID(str(value[1]))
+    except (ValueError, TypeError, json.JSONDecodeError) as exc:
+        raise CustomerResourceInvalid("Deposit cursor is invalid") from exc
 
 
 def _encode_history_cursor(occurred_at: datetime, event_id: UUID) -> str:
@@ -1192,12 +1225,113 @@ class PostgresCustomerResourceFlow:
             next_cursor = _encode_history_cursor(last.occurred_at, last.event_id)
         return CustomerHistoryPage(events, next_cursor)
 
-    def financial_summary(self, customer_id: UUID) -> dict[str, object]:
-        self.get(customer_id)
+    def financial_summary(
+        self,
+        customer_id: UUID,
+        *,
+        deposit_limit: int,
+        deposit_cursor: str | None,
+    ) -> dict[str, object]:
+        current = self.get(customer_id)
+        decoded_cursor = _decode_deposit_cursor(deposit_cursor)
+        try:
+            with psycopg.connect(
+                self._database_url, connect_timeout=CUSTOMER_CONNECT_TIMEOUT_SECONDS
+            ) as connection:
+                connection.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+                self._bound_query(connection)
+                totals = connection.execute(
+                    "SELECT count(*),"
+                    "COALESCE(sum((snapshot.value->>'required_usd_cents')::bigint),0),"
+                    "COALESCE(sum((snapshot.value->>'received_usd_cents')::bigint),0),"
+                    "COALESCE(sum((snapshot.value->>'held_refundable_usd_cents')::bigint),0),"
+                    "COALESCE(sum((snapshot.value->>'outstanding_required_usd_cents')::bigint),0) "
+                    "FROM app.deposits AS deposit "
+                    "LEFT JOIN app.reservations AS reservation "
+                    "ON reservation.id=deposit.reservation_id "
+                    "LEFT JOIN app.leases AS lease ON lease.id=deposit.lease_id "
+                    "JOIN app.units AS unit "
+                    "ON unit.id=COALESCE(reservation.unit_id,lease.unit_id) "
+                    "CROSS JOIN LATERAL (SELECT app.deposit_snapshot(deposit.id) AS value) "
+                    "AS snapshot "
+                    "WHERE deposit.customer_id=%s AND unit.property_id=%s",
+                    (customer_id, current.property_id),
+                ).fetchone()
+                if totals is None:
+                    raise CustomerResourceUnavailable(
+                        "Customer Deposit aggregate evidence is unavailable"
+                    )
+                cursor_clause = ""
+                parameters: list[object] = [customer_id, current.property_id]
+                if decoded_cursor is not None:
+                    cursor_clause = "AND (deposit.required_effective_date,deposit.id)<(%s,%s) "
+                    parameters.extend(decoded_cursor)
+                parameters.append(deposit_limit + 1)
+                rows = connection.execute(
+                    "SELECT app.deposit_resource_snapshot(deposit.id) "
+                    ",deposit.required_effective_date,deposit.id "
+                    "FROM app.deposits AS deposit "
+                    "LEFT JOIN app.reservations AS reservation "
+                    "ON reservation.id=deposit.reservation_id "
+                    "LEFT JOIN app.leases AS lease ON lease.id=deposit.lease_id "
+                    "JOIN app.units AS unit "
+                    "ON unit.id=COALESCE(reservation.unit_id,lease.unit_id) "
+                    "WHERE deposit.customer_id=%s "
+                    "AND unit.property_id=%s "
+                    + cursor_clause
+                    + "ORDER BY deposit.required_effective_date DESC,deposit.id DESC LIMIT %s",
+                    tuple(parameters),
+                ).fetchall()
+        except psycopg.Error as exc:
+            raise CustomerResourceUnavailable(
+                "Customer Deposit liabilities are unavailable"
+            ) from exc
+        liabilities: list[dict[str, object]] = []
+        for row in rows[:deposit_limit]:
+            snapshot = row[0]
+            if not isinstance(snapshot, dict):
+                raise CustomerResourceUnavailable(
+                    "Customer Deposit liability evidence is unavailable"
+                )
+            liabilities.append(
+                {
+                    "deposit_id": snapshot["deposit_id"],
+                    "deposit_type": snapshot["deposit_type"],
+                    "reservation_id": snapshot.get("reservation_id"),
+                    "lease_id": snapshot.get("lease_id"),
+                    "pet_approval_id": snapshot.get("pet_approval_id"),
+                    "required_usd_cents": snapshot["required_usd_cents"],
+                    "received_usd_cents": snapshot["received_usd_cents"],
+                    "held_refundable_usd_cents": snapshot["held_refundable_usd_cents"],
+                    "outstanding_required_usd_cents": snapshot["outstanding_required_usd_cents"],
+                }
+            )
+        next_cursor = None
+        if len(rows) > deposit_limit and liabilities:
+            last = rows[deposit_limit - 1]
+            next_cursor = _encode_deposit_cursor(cast(date, last[1]), UUID(str(last[2])))
         return {
-            "source_status": "UNAVAILABLE_UNTIL_FINANCIAL_SOURCES_ARE_IMPLEMENTED",
+            "source_status": "PARTIALLY_AVAILABLE",
+            "source_availability": {
+                "deposits": "AVAILABLE",
+                "invoices": "UNAVAILABLE_NOT_IMPLEMENTED",
+                "late_charges": "UNAVAILABLE_NOT_IMPLEMENTED",
+                "payments": "UNAVAILABLE_NOT_IMPLEMENTED",
+                "customer_credit": "UNAVAILABLE_NOT_IMPLEMENTED",
+            },
             "currency_summaries": [],
-            "deposit_liabilities": [],
+            "deposit_liabilities": liabilities,
+            "deposit_liabilities_page": {
+                "next_cursor": next_cursor,
+                "limit": deposit_limit,
+            },
+            "deposit_aggregate": {
+                "count": int(str(totals[0])),
+                "required_usd_cents": int(str(totals[1])),
+                "received_usd_cents": int(str(totals[2])),
+                "held_refundable_usd_cents": int(str(totals[3])),
+                "outstanding_required_usd_cents": int(str(totals[4])),
+            },
             "customer_credit_is_separate_from_deposit": True,
         }
 
@@ -1930,17 +2064,25 @@ def create_customer_router(
         customer_id: UUID,
         request: Request,
         response: Response,
+        deposit_limit: Annotated[int, Query(ge=1, le=MAX_PAGE_SIZE)] = DEFAULT_DEPOSIT_PAGE_SIZE,
+        deposit_cursor: Annotated[str | None, Query(max_length=512)] = None,
     ) -> dict[str, object]:
         actor = _require_actor(request, resolver)
-        if request.query_params:
+        if set(request.query_params) - {"deposit_limit", "deposit_cursor"}:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
         record = get_record(customer_id)
         if not _can_read(actor, record.property_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
         try:
-            summary = flow.financial_summary(customer_id)
+            summary = flow.financial_summary(
+                customer_id,
+                deposit_limit=deposit_limit,
+                deposit_cursor=deposit_cursor,
+            )
         except CustomerResourceNotFound as exc:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND) from exc
+        except CustomerResourceInvalid as exc:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST) from exc
         except CustomerResourceUnavailable as exc:
             raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE) from exc
         protect_customer_response(response)

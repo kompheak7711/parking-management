@@ -2,7 +2,7 @@
 
 import json
 from dataclasses import dataclass, field, replace
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
 import psycopg
@@ -320,12 +320,34 @@ class InMemoryCustomerFlow:
         next_cursor = str(offset + limit) if offset + limit < len(events) else None
         return CustomerHistoryPage(page, next_cursor)
 
-    def financial_summary(self, customer_id: UUID) -> dict[str, object]:
+    def financial_summary(
+        self,
+        customer_id: UUID,
+        *,
+        deposit_limit: int,
+        deposit_cursor: str | None,
+    ) -> dict[str, object]:
+        del deposit_limit, deposit_cursor
         self.get(customer_id)
         return {
             "source_status": "UNAVAILABLE_UNTIL_FINANCIAL_SOURCES_ARE_IMPLEMENTED",
+            "source_availability": {
+                "deposits": "UNAVAILABLE_NOT_IMPLEMENTED",
+                "invoices": "UNAVAILABLE_NOT_IMPLEMENTED",
+                "late_charges": "UNAVAILABLE_NOT_IMPLEMENTED",
+                "payments": "UNAVAILABLE_NOT_IMPLEMENTED",
+                "customer_credit": "UNAVAILABLE_NOT_IMPLEMENTED",
+            },
             "currency_summaries": [],
             "deposit_liabilities": [],
+            "deposit_liabilities_page": {"next_cursor": None, "limit": 50},
+            "deposit_aggregate": {
+                "count": 0,
+                "required_usd_cents": 0,
+                "received_usd_cents": 0,
+                "held_refundable_usd_cents": 0,
+                "outstanding_required_usd_cents": 0,
+            },
             "customer_credit_is_separate_from_deposit": True,
         }
 
@@ -1364,6 +1386,95 @@ def test_postgres_detail_reads_customer_and_history_from_one_snapshot(
     assert history.items[0].resulting_state == {"version": 1}
 
 
+def test_postgres_financial_summary_reads_totals_and_page_from_one_snapshot(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    property_id = uuid4()
+    customer_id = uuid4()
+    deposit_id = uuid4()
+    statements: list[str] = []
+
+    class Result:
+        def __init__(self, rows: list[tuple[object, ...]]) -> None:
+            self.rows = rows
+
+        def fetchone(self) -> tuple[object, ...] | None:
+            return None if not self.rows else self.rows[0]
+
+        def fetchall(self) -> list[tuple[object, ...]]:
+            return self.rows
+
+    class SnapshotConnection:
+        def __enter__(self) -> "SnapshotConnection":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            del args
+
+        def execute(self, statement: str, parameters: object = None) -> Result:
+            del parameters
+            normalized = " ".join(statement.split())
+            statements.append(normalized)
+            if normalized.startswith("SET TRANSACTION") or "set_config(" in normalized:
+                return Result([])
+            if normalized.startswith("SELECT count(*)"):
+                return Result([(1, 20_000, 20_000, 20_000, 0)])
+            if normalized.startswith("SELECT app.deposit_resource_snapshot"):
+                return Result(
+                    [
+                        (
+                            {
+                                "deposit_id": str(deposit_id),
+                                "deposit_type": "PET",
+                                "reservation_id": None,
+                                "lease_id": str(uuid4()),
+                                "pet_approval_id": str(uuid4()),
+                                "required_usd_cents": 20_000,
+                                "received_usd_cents": 20_000,
+                                "held_refundable_usd_cents": 20_000,
+                                "outstanding_required_usd_cents": 0,
+                            },
+                            date(2026, 8, 26),
+                            deposit_id,
+                        )
+                    ]
+                )
+            raise AssertionError(normalized)
+
+    monkeypatch.setattr(
+        PostgresCustomerResourceFlow,
+        "get",
+        lambda _self, _customer_id: sample_record(property_id),
+    )
+    monkeypatch.setattr(psycopg, "connect", lambda *_args, **_kwargs: SnapshotConnection())
+
+    summary = PostgresCustomerResourceFlow("postgresql://snapshot").financial_summary(
+        customer_id,
+        deposit_limit=50,
+        deposit_cursor=None,
+    )
+
+    assert statements[0] == "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"
+    assert statements.index(
+        next(value for value in statements if value.startswith("SELECT count"))
+    ) < (
+        statements.index(
+            next(
+                value
+                for value in statements
+                if value.startswith("SELECT app.deposit_resource_snapshot")
+            )
+        )
+    )
+    assert summary["deposit_aggregate"] == {
+        "count": 1,
+        "required_usd_cents": 20_000,
+        "received_usd_cents": 20_000,
+        "held_refundable_usd_cents": 20_000,
+        "outstanding_required_usd_cents": 0,
+    }
+
+
 def test_customer_history_cursor_requires_an_explicit_timezone() -> None:
     event_id = uuid4()
     naive_cursor = _encode_history_cursor(datetime(2026, 8, 24, 12, 30), event_id)
@@ -1509,8 +1620,23 @@ def test_customer_financial_summary_is_truthful_and_exposes_no_export_or_ledger_
     assert response.status_code == 200
     assert response.json()["data"] == {
         "source_status": "UNAVAILABLE_UNTIL_FINANCIAL_SOURCES_ARE_IMPLEMENTED",
+        "source_availability": {
+            "deposits": "UNAVAILABLE_NOT_IMPLEMENTED",
+            "invoices": "UNAVAILABLE_NOT_IMPLEMENTED",
+            "late_charges": "UNAVAILABLE_NOT_IMPLEMENTED",
+            "payments": "UNAVAILABLE_NOT_IMPLEMENTED",
+            "customer_credit": "UNAVAILABLE_NOT_IMPLEMENTED",
+        },
         "currency_summaries": [],
         "deposit_liabilities": [],
+        "deposit_liabilities_page": {"next_cursor": None, "limit": 50},
+        "deposit_aggregate": {
+            "count": 0,
+            "required_usd_cents": 0,
+            "received_usd_cents": 0,
+            "held_refundable_usd_cents": 0,
+            "outstanding_required_usd_cents": 0,
+        },
         "customer_credit_is_separate_from_deposit": True,
     }
     assert (

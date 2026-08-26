@@ -3636,7 +3636,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260826_27",)
+                assert cursor.fetchone() == ("20260826_28",)
 
 
 def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
@@ -4265,7 +4265,7 @@ def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260826_27",)
+                assert cursor.fetchone() == ("20260826_28",)
                 cursor.execute(
                     """
                     SELECT id, code, display_name, accepted, created_by, updated_by
@@ -4419,7 +4419,7 @@ def test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data() -> No
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260826_27",)
+                assert cursor.fetchone() == ("20260826_28",)
                 cursor.execute(
                     """
                     SELECT unit.id, unit.property_id, unit.status, customer.id
@@ -4714,7 +4714,7 @@ def test_v1_031_upgrade_preserves_and_completes_v1_030_pending_outcome() -> None
             )
             connection.commit()
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260826_27",
+                "20260826_28",
             )
             assert connection.execute(
                 """
@@ -4814,7 +4814,7 @@ def test_v1_034_upgrade_preserves_v1_033_lease_and_replaces_unbounded_runtime_he
         assert result.returncode == 0, result.stderr
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260826_27",
+                "20260826_28",
             )
             assert connection.execute(
                 "SELECT id,status,version,start_date,end_date FROM app.leases WHERE id=%s",
@@ -4842,3 +4842,74 @@ def test_v1_034_upgrade_preserves_v1_033_lease_and_replaces_unbounded_runtime_he
                     )
                 """
             ).fetchone() == (True, False)
+
+
+def test_v1_038_upgrade_projects_legacy_pet_departure_authorization() -> None:
+    """Upgrade V1-037 combined qualification without losing immutable authority."""
+    from property_rental.deposit_api import PostgresDepositResourceFlow
+    from test_deposit_migration import setup_signed_pet_lease
+
+    with _temporary_migration_database("prm_v1_038_upgrade") as migration_url:
+        assert _run_alembic("upgrade", "20260826_27").returncode == 0
+        service, _, lease_id, approval_id, approval_date = setup_signed_pet_lease(migration_url)
+        deposit_id = uuid.uuid4()
+        departure_id = uuid.uuid4()
+        review_id = uuid.uuid4()
+        with psycopg.connect(migration_url) as connection:
+            customer_row = connection.execute(
+                "SELECT primary_tenant_id FROM app.leases WHERE id=%s", (lease_id,)
+            ).fetchone()
+            assert customer_row is not None
+            connection.execute(
+                "INSERT INTO app.deposits(id,deposit_type,customer_id,reservation_id,lease_id,"
+                "pet_approval_id,required_usd_cents,required_effective_date,created_by,updated_by) "
+                "VALUES (%s,'PET',%s,NULL,%s,%s,20000,%s,%s,%s)",
+                (
+                    deposit_id,
+                    customer_row[0],
+                    lease_id,
+                    approval_id,
+                    approval_date,
+                    service.actor_id,
+                    service.actor_id,
+                ),
+            )
+            connection.execute(
+                "INSERT INTO app.deposit_receipts(id,deposit_id,payment_id,amount_usd_cents,"
+                "occurred_at,actor_id) VALUES (%s,%s,%s,20000,clock_timestamp(),%s)",
+                (uuid.uuid4(), deposit_id, uuid.uuid4(), service.actor_id),
+            )
+            result = connection.execute(
+                "SELECT app.qualify_active_lease_pet_refund("
+                "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    service.property_id,
+                    service.actor_id,
+                    uuid.uuid4(),
+                    "a" * 64,
+                    departure_id,
+                    review_id,
+                    deposit_id,
+                    date.today(),
+                    0,
+                    "No unresolved pet obligations",
+                    "V1-037-UPGRADE-EVIDENCE",
+                    "Authorized legacy review",
+                    "deposits.refund.qualify",
+                ),
+            ).fetchone()
+            assert result is not None
+            connection.commit()
+
+        upgrade = _run_alembic("upgrade", "head")
+        assert upgrade.returncode == 0, upgrade.stderr
+        flow = PostgresDepositResourceFlow(migration_url)
+        departure = next(
+            event
+            for event in flow.ledger(deposit_id, limit=100, cursor=None).items
+            if event.event_id == departure_id
+        )
+        assert departure.authorization_reference == "deposits.refund.qualify"
+        historical_review = flow.review(review_id)
+        assert historical_review.refundable_usd_cents == 20_000
+        assert historical_review.current_refundable_usd_cents == 20_000

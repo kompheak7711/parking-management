@@ -8185,7 +8185,7 @@
       "test_level": "E2E",
       "test_path": "backend/tests/test_reservation_worker_migration.py",
       "status": "implemented",
-      "notes": "Authenticated HTTP create, replay, exclusivity conflict, extend, stale-version rejection, cancel, and replay reach the real service and PostgreSQL transaction functions with CSRF, Property scope, rollback, lifecycle, and linked Deposit evidence assertions."
+      "notes": "Authenticated HTTP create, replay, exclusivity conflict, extend, stale-version rejection, cancel, and replay reach the real service and PostgreSQL transaction functions with CSRF, Property scope, rollback, lifecycle, linked Deposit evidence, exact API-016 key-reuse rejection, and an unchanged original disposition response after a later correction."
     },
     {
       "test_id": "test_automatic_runner_repeats_until_stopped_and_once_runs_exactly_once",
@@ -8738,6 +8738,342 @@
       "test_path": "backend/tests/test_deposit_migration.py",
       "status": "implemented",
       "notes": "Undisclosed-pet discovery records a warning while the Lease stays SIGNED and no Pet Deposit or automatic penalty is created."
+    },
+    {
+      "test_id": "test_deposit_reads_are_property_scoped_bounded_and_private",
+      "upstream_ids": ["API-039", "UI-030", "UI-033", "UI-043", "TEST-036", "TEST-039"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_api.py",
+      "status": "implemented",
+      "notes": "Deposit resources expose separate Property-scoped liabilities and bounded permanent source history with private no-store responses and concealed unauthorized resources."
+    },
+    {
+      "test_id": "test_scope_correction_exposes_no_provisional_receipt_or_final_settlement_command",
+      "upstream_ids": ["API-040", "API-042", "TEST-036", "TEST-039"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_api.py",
+      "status": "implemented",
+      "notes": "The corrected bounded surface exposes neither a provisional Payment-backed receipt command nor a premature Final Settlement disposition command."
+    },
+    {
+      "test_id": "test_pet_liability_requires_csrf_and_exact_management_capability",
+      "upstream_ids": ["API-041", "UI-044", "TEST-037"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_api.py",
+      "status": "implemented",
+      "notes": "Conditional Pet Deposit creation requires the exact Property-scoped capability, browser mutation proof, and an idempotency key."
+    },
+    {
+      "test_id": "test_linked_reversals_and_split_pet_refund_qualification_preserve_sources",
+      "upstream_ids": ["API-040", "API-042", "API-094", "UI-071", "UI-073", "UI-074", "UI-107", "TEST-036", "TEST-126"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_deposit_api.py",
+      "status": "implemented",
+      "notes": "Receipt and supported disposition reversals retain source identity, while permanent pet departure remains a separate auditable command from Refund qualification."
+    },
+    {
+      "test_id": "test_reservation_disposition_correction_requires_replacement_and_exact_capabilities",
+      "upstream_ids": ["API-042", "UI-073", "UI-074", "TEST-036"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_api.py",
+      "status": "implemented",
+      "notes": "Reservation Deposit correction requires both cancellation-disposition capabilities plus an exact replacement identity and Reservation version before invoking the coordinated command."
+    },
+    {
+      "test_id": "test_mutations_conceal_cross_property_targets_before_command_execution",
+      "upstream_ids": ["API-039", "API-042", "API-094", "TEST-036", "TEST-126"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_api.py",
+      "status": "implemented",
+      "notes": "Every Deposit correction and pet-refund mutation resolves Property scope and returns concealed not-found behavior before any command can execute."
+    },
+    {
+      "test_id": "test_split_departure_and_review_are_idempotent_and_create_no_refund",
+      "upstream_ids": ["API-094", "UI-107", "TEST-039", "TEST-126"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_api_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL preserves exact replay for split departure and review facts without creating a Refund or Final Settlement."
+    },
+    {
+      "test_id": "test_concurrent_departures_preserve_one_append_only_fact",
+      "upstream_ids": ["API-094", "TEST-036", "TEST-126"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_api_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent permanent-departure commands serialize so one append-only departure fact survives and the competing command conflicts."
+    },
+    {
+      "test_id": "test_real_http_reads_history_and_splits_departure_from_review",
+      "upstream_ids": ["API-039", "API-040", "API-094", "UI-107", "TEST-036", "TEST-126"],
+      "test_level": "E2E",
+      "test_path": "backend/tests/test_deposit_api_migration.py",
+      "status": "implemented",
+      "notes": "Authenticated HTTP requests traverse the API, service, financial-role transaction boundary, and disposable PostgreSQL while keeping departure and review distinct; an exact Receipt-reversal replay remains stable after later Deposit activity."
+    },
+    {
+      "test_id": "test_runtime_role_can_read_but_only_financial_role_can_execute_split_commands",
+      "upstream_ids": ["API-039", "API-094", "TEST-036", "TEST-126"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_api_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role retains bounded read functions while only the protected financial role can execute split Deposit commands and neither role writes tables directly."
+    },
+    {
+      "test_id": "test_future_deposit_application_dependency_is_fail_closed_and_reversal_aware",
+      "upstream_ids": ["API-042", "DB-DEP-005", "DB-DEP-006", "DB-DEP-007", "SEC-028", "TEST-036"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_api_migration.py",
+      "status": "implemented",
+      "notes": "The Receipt-reversal dependency guard remains fail-closed when future Final Settlement Deposit Application storage appears and recognizes only an explicit linked application reversal."
+    },
+    {
+      "test_id": "test_postgres_deposit_reads_and_financial_commands_are_time_bounded",
+      "upstream_ids": ["API-039", "API-042", "SEC-040", "TEST-036"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_api.py",
+      "status": "implemented",
+      "notes": "Deposit runtime reads and protected financial commands configure bounded connection, lock, and statement timeouts before querying PostgreSQL."
+    },
+    {
+      "test_id": "test_departure_without_received_balance_persists_independently",
+      "upstream_ids": ["API-094", "UI-107", "TEST-126"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_api_migration.py",
+      "status": "implemented",
+      "notes": "A permanent pet-departure fact remains independently recordable when no refundable balance is held; the later qualification review retains the balance precondition."
+    },
+    {
+      "test_id": "test_concurrent_identical_departure_replays_original_result",
+      "upstream_ids": ["API-094", "UI-107", "TEST-126"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_api_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent identical permanent-departure commands serialize and replay one stable append-only result rather than reporting an ambiguous conflict."
+    },
+    {
+      "test_id": "test_ledger_includes_refund_and_refund_correction_history",
+      "upstream_ids": ["API-039", "API-042", "TEST-036"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_api_migration.py",
+      "status": "implemented",
+      "notes": "The bounded Deposit ledger reconstructs Refund and Refund-correction evidence alongside receipt and disposition history without rewriting original events."
+    },
+    {
+      "test_id": "test_reservation_disposition_correction_is_atomic_replay_safe_and_reconstructable",
+      "upstream_ids": ["API-042", "UI-073", "UI-074", "TEST-036"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_api_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL atomically reverses and replaces a Reservation disposition, safely replays the exact command, rejects changed HTTP input with the API-016 envelope, and preserves both events in reconstructed Deposit history."
+    },
+    {
+      "test_id": "test_explicit_security_deposit_disposition_route_reuses_atomic_cancellation",
+      "upstream_ids": ["API-042", "UI-035", "TEST-036"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "The explicit Reservation Security Deposit disposition endpoint enforces customer responsibility and reuses the transactional cancellation-and-disposition command."
+    },
+    {
+      "test_id": "test_explicit_security_deposit_disposition_requires_precondition_without_caching",
+      "upstream_ids": ["API-042", "UI-035", "TEST-036"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "The explicit disposition route returns the canonical 412 envelope for a missing optimistic precondition, performs no mutation, and remains private and non-cacheable."
+    },
+    {
+      "test_id": "TEST-FE-196",
+      "upstream_ids": ["API-039", "UI-030", "UI-033", "UI-043", "TEST-036"],
+      "test_level": "UI",
+      "test_path": "frontend/src/depositClient.test.tsx",
+      "status": "implemented",
+      "notes": "The client requests bounded Deposit ledger history and retains its exact continuation cursor."
+    },
+    {
+      "test_id": "TEST-FE-197",
+      "upstream_ids": ["API-094", "UI-107", "TEST-126"],
+      "test_level": "UI",
+      "test_path": "frontend/src/depositClient.test.tsx",
+      "status": "implemented",
+      "notes": "Split permanent-departure commands carry browser CSRF and exact idempotency evidence."
+    },
+    {
+      "test_id": "TEST-FE-198",
+      "upstream_ids": ["API-039", "API-040", "UI-030", "UI-033", "UI-043", "UI-044", "TEST-036", "TEST-037"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The accessible workspace keeps Security and Pet liabilities separate, renders permanent source history, and states the approved Payment and Settlement deferrals."
+    },
+    {
+      "test_id": "TEST-FE-199",
+      "upstream_ids": ["API-094", "UI-107", "TEST-126"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The active-Lease Pet Deposit workflow records permanent departure before presenting a distinct qualifying review."
+    },
+    {
+      "test_id": "TEST-FE-200",
+      "upstream_ids": ["API-041", "UI-044", "TEST-037"],
+      "test_level": "security",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Pet Deposit management controls remain hidden without the exact server-calculated Property capability."
+    },
+    {
+      "test_id": "TEST-FE-201",
+      "upstream_ids": ["API-094", "UI-107", "TEST-126"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The active-Lease Pet Deposit qualification requires explicit confirmation and renders the authoritative persisted review evidence."
+    },
+    {
+      "test_id": "TEST-FE-202",
+      "upstream_ids": ["API-041", "UI-044", "TEST-037"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The Deposit workspace rejects fractional-cent and otherwise imprecise USD input before it can submit a financial command."
+    },
+    {
+      "test_id": "TEST-FE-203",
+      "upstream_ids": ["API-042", "UI-073", "UI-074", "TEST-036"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The correction UI confirms the action and submits a new replacement disposition identity with the exact Reservation version so classification remains continuous."
+    },
+    {
+      "test_id": "TEST-FE-204",
+      "upstream_ids": ["API-041", "UI-044", "TEST-037"],
+      "test_level": "UI",
+      "test_path": "frontend/src/depositClient.test.tsx",
+      "status": "implemented",
+      "notes": "An empty Deposit collection still carries the server-calculated management capability required to create the first approved Pet Deposit liability."
+    },
+    {
+      "test_id": "TEST-FE-205",
+      "upstream_ids": ["API-094", "UI-107", "TEST-126"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Reloading a qualified Pet Deposit restores persisted departure and authoritative review state and suppresses duplicate workflow forms."
+    },
+    {
+      "test_id": "test_same_key_replays_are_concurrency_safe_for_exposed_deposit_commands",
+      "upstream_ids": ["API-041", "API-042", "DB-DEP-001", "DB-DEP-007", "DB-DEP-008", "SEC-036", "TEST-036", "TEST-037"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL serializes identical same-key Pet creation, Receipt reversal, and Lease disposition reversal commands and preserves one exact replay result plus same-transaction audit evidence."
+    },
+    {
+      "test_id": "test_customer_financial_summary_reads_bounded_separate_deposit_liabilities",
+      "upstream_ids": ["API-039", "UI-030", "DB-DEP-001", "TEST-036"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_api_migration.py",
+      "status": "implemented",
+      "notes": "The production Customer summary reads a bounded Property-scoped page of authoritative Deposit liabilities with stable Reservation or Lease source links."
+    },
+    {
+      "test_id": "test_postgres_financial_summary_reads_totals_and_page_from_one_snapshot",
+      "upstream_ids": ["API-039", "SEC-029", "SEC-040", "TEST-036"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_customer_api.py",
+      "status": "implemented",
+      "notes": "Customer Deposit aggregate totals and the bounded liability page are read in order from one PostgreSQL repeatable-read transaction snapshot."
+    },
+    {
+      "test_id": "TEST-FE-206",
+      "upstream_ids": ["API-039", "UI-033", "UI-043", "TEST-036"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Changing the selected Deposit immediately removes stale financial controls and ignores late source-history completions."
+    },
+    {
+      "test_id": "TEST-FE-207",
+      "upstream_ids": ["API-042", "UI-073", "UI-074", "TEST-036"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A continued Security Deposit shapes correction evidence from the selected disposition's authoritative Reservation-or-Lease provenance rather than the aggregate Deposit links."
+    },
+    {
+      "test_id": "TEST-FE-208",
+      "upstream_ids": ["API-039", "UI-030", "TEST-036"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Customer detail renders each separate authoritative Deposit balance and its stable Reservation or Lease source without merging Customer Credit."
+    },
+    {
+      "test_id": "test_customer_deposit_summary_aggregates_all_rows_and_pages_newest_first",
+      "upstream_ids": ["API-039", "UI-030", "DB-DEP-001", "TEST-036"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_api_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL returns complete server-side Deposit aggregates while paging newest-first liability detail with an explicit continuation cursor."
+    },
+    {
+      "test_id": "test_conflicting_deposit_audit_identity_rolls_back_financial_mutation",
+      "upstream_ids": ["API-094", "DB-DEP-008", "SEC-036", "TEST-126"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_api_migration.py",
+      "status": "implemented",
+      "notes": "A caller-supplied audit identity collision fails the same transaction and preserves the unrelated permanent audit event without committing Deposit mutation state."
+    },
+    {
+      "test_id": "TEST-FE-209",
+      "upstream_ids": ["API-039", "UI-033", "UI-043", "TEST-036"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Opening history reloads the authoritative Deposit resource and binds it to the same selection generation as the ledger before rendering correction state."
+    },
+    {
+      "test_id": "TEST-FE-210",
+      "upstream_ids": ["API-015", "API-016", "SEC-028", "TEST-068"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/DepositManagement.test.tsx",
+      "status": "implemented",
+      "notes": "After an ambiguous client failure, an unchanged Deposit command reuses its exact event identity and idempotency key so the server can return the original result safely."
+    },
+    {
+      "test_id": "TEST-FE-212",
+      "upstream_ids": ["API-015", "API-016", "API-042", "UI-035", "TEST-036"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/ReservationManagement.test.tsx",
+      "status": "implemented",
+      "notes": "An unchanged Reservation cancellation retry preserves its exact lifecycle event, disposition outcome, and idempotency identities after an ambiguous client failure."
+    },
+    {
+      "test_id": "test_postgres_security_disposition_route_is_time_bounded",
+      "upstream_ids": ["API-042", "SEC-029", "SEC-040", "TEST-036"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_reservation_api.py",
+      "status": "implemented",
+      "notes": "The explicit Reservation Security Deposit disposition path bounds both Property resolution and the protected financial command with connection, lock, and statement timeouts."
+    },
+    {
+      "test_id": "test_ledger_preserves_backdated_required_adjustment_effective_date",
+      "upstream_ids": ["API-039", "DB-DEP-003", "TEST-036"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_api_migration.py",
+      "status": "implemented",
+      "notes": "The permanent Deposit ledger exposes a persisted backdated required-amount effective date separately from its later recording timestamp."
+    },
+    {
+      "test_id": "test_v1_038_upgrade_projects_legacy_pet_departure_authorization",
+      "upstream_ids": ["API-039", "API-094", "DB-DEP-001", "TEST-126"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A seeded V1-037 combined Pet Refund qualification upgrades without losing the departure authorization or immutable review-time refundable balance."
     }
   ]
 }

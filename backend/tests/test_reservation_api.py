@@ -4,6 +4,8 @@ from dataclasses import dataclass, field, replace
 from datetime import date
 from uuid import UUID, uuid4
 
+import psycopg
+import pytest
 from fastapi.testclient import TestClient
 
 from property_rental.app import create_app
@@ -14,9 +16,11 @@ from property_rental.reservation import (
     ReservationCancelCommand,
     ReservationCreateCommand,
     ReservationExtendCommand,
+    ReservationLifecycleResult,
     ReservationStatus,
 )
 from property_rental.reservation_api import (
+    PostgresReservationResourceFlow,
     ReservationExtensionNotice,
     ReservationPage,
     ReservationResource,
@@ -174,6 +178,33 @@ class InMemoryReservationFlow:
         )
         self.resources[updated.reservation_id] = updated
         return updated
+
+    def property_for_security_deposit_disposition(self, reservation_id: UUID) -> UUID:
+        return self.get(reservation_id).property_id
+
+    def create_security_deposit_disposition(
+        self,
+        command: ReservationCancelCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> ReservationLifecycleResult:
+        updated = self.cancel(command, actor=actor)
+        return ReservationLifecycleResult(
+            updated.reservation_id,
+            updated.unit_id,
+            updated.status,
+            command.reason_code,
+            command.responsibility,
+            updated.effective_expiration_date,
+            updated.version,
+            "VACANT",
+            1,
+            updated.deposit_id,
+            updated.deposit_received_usd_cents,
+            updated.deposit_outcome_state,
+            command.outcome_id,
+            command.refund_number,
+        )
 
 
 def headers(*, version: int | None = None) -> dict[str, str]:
@@ -353,9 +384,180 @@ def test_cancel_derives_customer_deposit_disposition_without_free_form_outcome()
     )
 
     assert response.status_code == 200
+    assert response.headers["cache-control"] == "private, no-store"
+    assert "Cookie" in response.headers["vary"]
     assert flow.cancel_command is not None
     assert flow.cancel_command.outcome_authorization_reference == "reservation_deposits.dispose"
     assert response.json()["data"]["deposit_outcome_state"] == "NON_REFUNDABLE_DISPOSITION"
+
+
+def test_explicit_security_deposit_disposition_route_reuses_atomic_cancellation() -> None:
+    property_id = uuid4()
+    current = resource(property_id)
+    flow = InMemoryReservationFlow({current.reservation_id: current})
+    api = client(
+        flow,
+        actor(property_id, "reservations.cancel", "reservation_deposits.dispose"),
+    )
+    response = api.post(
+        f"/api/v1/reservations/{current.reservation_id}/security-deposit-dispositions",
+        headers=headers(version=1),
+        json={
+            "event_id": str(uuid4()),
+            "outcome_id": str(uuid4()),
+            "reason_code": "CUSTOMER_WITHDREW",
+            "responsibility": "CUSTOMER",
+            "property_could_provide_unit": True,
+            "reason_memo": "Customer request",
+            "coordination_reference": None,
+            "refund_number": None,
+        },
+    )
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "private, no-store"
+    assert flow.cancel_command is not None
+    assert flow.cancel_command.outcome_authorization_reference == "reservation_deposits.dispose"
+    assert response.json()["data"] == {
+        "reservation_id": str(current.reservation_id),
+        "unit_id": str(current.unit_id),
+        "status": "CANCELLED",
+        "cancellation_reason_code": "CUSTOMER_WITHDREW",
+        "cancellation_responsibility": "CUSTOMER",
+        "effective_expiration_date": current.effective_expiration_date.isoformat(),
+        "version": 2,
+        "unit_status": "VACANT",
+        "unit_version": 1,
+        "deposit_id": str(current.deposit_id),
+        "deposit_received_usd_cents": current.deposit_received_usd_cents,
+        "deposit_outcome_state": "NON_REFUNDABLE_DISPOSITION",
+        "outcome_id": response.json()["data"]["outcome_id"],
+        "refund_number": None,
+    }
+
+
+def test_postgres_security_disposition_route_is_time_bounded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    property_id = uuid4()
+    actor_id = uuid4()
+    reservation_id = uuid4()
+    unit_id = uuid4()
+    deposit_id = uuid4()
+    outcome_id = uuid4()
+    connect_options: list[dict[str, object]] = []
+    statements: list[tuple[str, tuple[object, ...]]] = []
+
+    class Result:
+        def __init__(self, row: tuple[object, ...]) -> None:
+            self.row = row
+
+        def fetchone(self) -> tuple[object, ...]:
+            return self.row
+
+    class Connection:
+        def __enter__(self) -> "Connection":
+            return self
+
+        def __exit__(self, *args: object) -> None:
+            del args
+
+        def execute(self, statement: str, parameters: tuple[object, ...] = ()) -> Result:
+            normalized = " ".join(statement.split())
+            statements.append((normalized, parameters))
+            if "cancel_reservation_v2" in normalized:
+                return Result(
+                    (
+                        reservation_id,
+                        unit_id,
+                        "CANCELLED",
+                        "CUSTOMER_WITHDREW",
+                        "CUSTOMER",
+                        date(2026, 9, 5),
+                        2,
+                        "VACANT",
+                        1,
+                        deposit_id,
+                        10_000,
+                        "NON_REFUNDABLE_DISPOSITION",
+                        outcome_id,
+                        None,
+                    )
+                )
+            return Result((property_id,))
+
+    def connect(_: str, **options: object) -> Connection:
+        connect_options.append(options)
+        return Connection()
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    flow = PostgresReservationResourceFlow("postgresql://runtime", "postgresql://financial")
+    authenticated = AuthenticatedActor(
+        actor_id=str(actor_id),
+        capability_grants=frozenset(
+            {
+                CapabilityGrant("reservations.cancel", frozenset({str(property_id)})),
+                CapabilityGrant("reservation_deposits.dispose", frozenset({str(property_id)})),
+            }
+        ),
+    )
+    result = flow.create_security_deposit_disposition(
+        ReservationCancelCommand(
+            uuid4(),
+            uuid4(),
+            outcome_id,
+            reservation_id,
+            1,
+            "CUSTOMER_WITHDREW",
+            CancellationResponsibility.CUSTOMER,
+            True,
+            "Customer request",
+            None,
+            "reservations.cancel",
+            "reservation_deposits.dispose",
+            None,
+        ),
+        actor=authenticated,
+    )
+
+    assert result.outcome_id == outcome_id
+    assert connect_options == [{"connect_timeout": 3}, {"connect_timeout": 3}]
+    assert [parameters for statement, parameters in statements if "lock_timeout" in statement] == [
+        ("3000",),
+        ("3000",),
+    ]
+    assert [
+        parameters for statement, parameters in statements if "statement_timeout" in statement
+    ] == [("3000",), ("3000",)]
+
+
+def test_explicit_security_deposit_disposition_requires_precondition_without_caching() -> None:
+    property_id = uuid4()
+    current = resource(property_id)
+    flow = InMemoryReservationFlow({current.reservation_id: current})
+    api = client(
+        flow,
+        actor(property_id, "reservations.cancel", "reservation_deposits.dispose"),
+    )
+    response = api.post(
+        f"/api/v1/reservations/{current.reservation_id}/security-deposit-dispositions",
+        headers=headers(),
+        json={
+            "event_id": str(uuid4()),
+            "outcome_id": str(uuid4()),
+            "reason_code": "CUSTOMER_WITHDREW",
+            "responsibility": "CUSTOMER",
+            "property_could_provide_unit": True,
+            "reason_memo": "Customer request",
+            "coordination_reference": None,
+            "refund_number": None,
+        },
+    )
+
+    assert response.status_code == 412
+    assert response.json()["error"]["code"] == "PRECONDITION_FAILED"
+    assert response.headers["cache-control"] == "private, no-store"
+    assert "Cookie" in response.headers["vary"]
+    assert flow.cancel_command is None
 
 
 def test_no_generic_status_patch_and_move_in_requires_v1_036_command_schema() -> None:

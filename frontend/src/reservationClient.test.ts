@@ -91,9 +91,9 @@ describe("Reservation API client", () => {
   });
 
   it("TEST-FE-181 classifies concurrency conflicts without exposing server details", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      new Response(null, { status: 412 }),
-    );
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response(null, { status: 412 }));
 
     await expect(
       reservationApi.cancel(
@@ -111,5 +111,59 @@ describe("Reservation API client", () => {
         "command-1",
       ),
     ).rejects.toBeInstanceOf(ReservationConflictError);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "/api/v1/reservations/reservation-1/security-deposit-dispositions",
+    );
+  });
+
+  it("TEST-FE-211 reloads detail after the replay-stable disposition result", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: {
+              reservation_id: reservation.reservation_id,
+              version: 3,
+              deposit_outcome_state: "NON_REFUNDABLE_DISPOSITION",
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            data: {
+              ...reservation,
+              status: "CANCELLED",
+              version: 3,
+              deposit_outcome_state: "NON_REFUNDABLE_DISPOSITION",
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+
+    const result = await reservationApi.cancel(
+      reservation,
+      {
+        event_id: "event-1",
+        outcome_id: "outcome-1",
+        reason_code: "CUSTOMER_WITHDREW",
+        responsibility: "CUSTOMER",
+        property_could_provide_unit: true,
+        reason_memo: "Customer request",
+        coordination_reference: null,
+        refund_number: null,
+      },
+      "command-1",
+    );
+
+    expect(result.status).toBe("CANCELLED");
+    expect(fetchMock.mock.calls.map(([path]) => path)).toEqual([
+      "/api/v1/reservations/reservation-1/security-deposit-dispositions",
+      "/reservations/reservation-1",
+    ]);
   });
 });
