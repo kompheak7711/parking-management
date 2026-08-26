@@ -1,4 +1,4 @@
-# V1-037 Security and Pet Deposit persistence/domain services — verified
+# V1-037 Security and Pet Deposit persistence/domain services — implementation published; closure pending
 
 - Candidate: `V1-037` — Security and pet deposit persistence and domain services.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -29,16 +29,23 @@
 - Review: PASS. The first external review found six material issues; all six were
   corrected. A fresh external Codex read-only review of the corrected final diff
   reported zero material findings and made no edits.
-- Publication: not started.
+- Implementation publication: commit
+  `67de8cbaff6a26a4c1cc7ee9d9f80b7c98e97656`; exact-SHA GitHub Actions run
+  `32965578375` passed all four jobs on attempt 2 after one unrelated pre-existing
+  frontend timing test passed its focused rerun and the exact-SHA job rerun.
+- Status: implementation published; the separate V1-037 closure commit and its
+  own exact-SHA CI result remain pending.
 - V1-038: remains held at `approved_ready` and untouched.
 - Blockers: none.
-- Exact next action: publish separate V1-037 implementation and closure commits with
-  successful exact-SHA GitHub Actions while the supervisor remains disabled.
+- Exact next action: create and push only the V1-037 closure commit, require
+  successful exact-SHA GitHub Actions, then reconcile closure-valid compact state
+  while V1-038 remains held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-037 is verified locally but unpublished.
+- Automation publication state: V1-037's implementation is published and
+  exact-SHA CI-green but its closure remains pending.
 - Automation exact next action: keep the supervisor disabled and V1-038 held while
-  V1-037 completes publication.
+  V1-037 completes closure publication and reconciliation.
 
 <!-- AUTOMATION_STATUS_END -->
