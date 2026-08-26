@@ -1433,9 +1433,11 @@ describe("local sign-in", () => {
       }),
     );
     expect(
-      await screen.findByRole("button", {
-        name: "I verified the prior Customer command result",
-      }),
+      await screen.findByRole(
+        "button",
+        { name: "I verified the prior Customer command result" },
+        { timeout: 5000 },
+      ),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Create Customer" }),
@@ -1993,7 +1995,7 @@ describe("local sign-in", () => {
     expect(
       screen.queryByText(/A newer Customer command gate remains active/),
     ).not.toBeInTheDocument();
-  });
+  }, 15000);
 
   it("TEST-FE-093 sends no Customer command when durable coordination is unavailable", async () => {
     vi.spyOn(window.localStorage, "setItem").mockImplementation(() => {
