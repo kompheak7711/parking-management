@@ -8610,6 +8610,134 @@
       "test_path": "frontend/src/leaseClient.test.tsx",
       "status": "implemented",
       "notes": "The Lease client requests an exact bounded timeline continuation cursor and preserves the canonical data/page response contract."
+    },
+    {
+      "test_id": "test_pet_deposit_assessment_requires_both_approved_conditions",
+      "upstream_ids": ["BR-DEP-007", "BR-DEP-008", "BR-DEP-020", "BR-DEP-021", "PR-DEP-007", "PR-DEP-008", "TEST-037", "TEST-038"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_deposit.py",
+      "status": "implemented",
+      "notes": "The complete approved-pet and signed-term matrix creates no unconditional Pet Deposit, and permanent departure removes the continuing requirement without inventing a penalty."
+    },
+    {
+      "test_id": "test_deposit_commands_validate_money_time_and_identity",
+      "upstream_ids": ["BR-DEP-004", "BR-DEP-009", "DB-DEP-001", "DB-DEP-002"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_deposit.py",
+      "status": "implemented",
+      "notes": "Deposit commands reject nil identities and non-positive required, adjustment, and disposition amounts before persistence."
+    },
+    {
+      "test_id": "test_deposit_digest_binds_every_normalized_command_field",
+      "upstream_ids": ["BR-DEP-019", "PR-DEP-019", "TEST-036"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_deposit.py",
+      "status": "implemented",
+      "notes": "The deterministic request digest binds every normalized financial command field so retry keys cannot silently change a Deposit obligation."
+    },
+    {
+      "test_id": "test_service_rejects_actor_or_property_capability_mismatch_before_database",
+      "upstream_ids": ["BR-DEP-019", "PR-DEP-019", "TEST-036"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit.py",
+      "status": "implemented",
+      "notes": "Deposit commands reject actor, capability, Property scope, and untrusted authorization evidence before opening PostgreSQL."
+    },
+    {
+      "test_id": "test_pet_deposit_requires_matching_approved_signed_terms_and_is_idempotent",
+      "upstream_ids": ["BR-DEP-007", "BR-DEP-008", "BR-DEP-009", "DB-DEP-001", "TEST-036", "TEST-037"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_migration.py",
+      "status": "implemented",
+      "notes": "A Pet Deposit is a stable separate liability only for matching approved signed Lease terms, with exact idempotent replay and conflicting-request rejection."
+    },
+    {
+      "test_id": "test_adjustments_and_receipt_reversals_preserve_history",
+      "upstream_ids": ["BR-DEP-004", "BR-DEP-009", "BR-DEP-011", "DB-DEP-001", "DB-DEP-003", "DB-DEP-007", "TEST-036"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Required, received, held, and outstanding values are derived independently from append-only corrections and receipt reversals while original money evidence remains permanent."
+    },
+    {
+      "test_id": "test_pet_refund_qualification_keeps_signed_lease_and_creates_no_refund_or_application",
+      "upstream_ids": ["BR-DEP-011", "BR-DEP-012", "BR-DEP-013", "BR-DEP-014", "DB-DEP-001", "TEST-039", "TEST-126"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_migration.py",
+      "status": "implemented",
+      "notes": "The active-Lease exception records permanent departure and a matching resolved-obligation review but creates neither Refund, Invoice application, Final Settlement, nor Lease termination."
+    },
+    {
+      "test_id": "test_pet_refund_qualification_rejects_impossible_departure_chronology",
+      "upstream_ids": ["BR-DEP-012", "PR-DEP-012", "TEST-039", "TEST-126"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Active-Lease qualification rejects a departure before the approval/Lease applicability boundary and after the current Property-local business date."
+    },
+    {
+      "test_id": "test_property_scope_and_security_deposit_cannot_use_pet_refund_exception",
+      "upstream_ids": ["BR-DEP-011", "BR-DEP-012", "TEST-036", "TEST-126"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Property-scoped functions conceal deposits outside the authorized Property and the qualification function selects only a Pet Deposit on a SIGNED Lease."
+    },
+    {
+      "test_id": "test_concurrent_pet_deposit_creation_preserves_one_liability",
+      "upstream_ids": ["BR-DEP-007", "BR-DEP-009", "DB-DEP-001", "TEST-036", "TEST-037"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent commands for one approved Lease serialize through PostgreSQL uniqueness so exactly one Pet Deposit liability exists."
+    },
+    {
+      "test_id": "test_security_and_pet_deposits_for_one_lease_keep_separate_balances_and_history",
+      "upstream_ids": ["BR-DEP-005", "BR-DEP-009", "BR-DEP-011", "DB-DEP-001", "DB-DEP-003", "TEST-036", "TEST-037"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_migration.py",
+      "status": "implemented",
+      "notes": "One moved-in Lease retains its continuing Security Deposit and a distinct Pet Deposit with independent identities, balances, receipts, and required-amount history."
+    },
+    {
+      "test_id": "test_lease_disposition_and_reversal_are_bounded_idempotent_and_auditable",
+      "upstream_ids": ["BR-DEP-018", "BR-DEP-019", "BR-DEP-022", "BR-DEP-023", "BR-DEP-024", "DB-DEP-004", "DB-DEP-008", "TEST-036", "TEST-038"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_migration.py",
+      "status": "implemented",
+      "notes": "A terminated Lease can govern one explicit authorized non-refundable Deposit event, exact retries replay safely, and a separate audited reversal restores held balance without rewriting history."
+    },
+    {
+      "test_id": "test_storage_triggers_reject_negative_required_amount_and_dependent_receipt_reversal",
+      "upstream_ids": ["DB-DEP-003", "DB-DEP-007", "DB-IMM-001", "TEST-036"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_migration.py",
+      "status": "implemented",
+      "notes": "PostgreSQL storage triggers independently reject a negative resulting requirement and receipt reversal while active dependent disposition history exists."
+    },
+    {
+      "test_id": "test_concurrent_lease_dispositions_cannot_exceed_one_held_balance",
+      "upstream_ids": ["BR-DEP-018", "BR-DEP-019", "DB-DEP-004", "TEST-036"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent Lease-governed disposition commands serialize on the Deposit aggregate; exactly one succeeds and active dispositions never exceed held refundable balance."
+    },
+    {
+      "test_id": "test_deposit_acl_uses_only_financial_command_role_and_withholds_receipt_recording",
+      "upstream_ids": ["DB-DEP-002", "DB-DEP-003", "DB-DEP-004", "DB-DEP-007", "DB-DEP-008", "TEST-036"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Only the protected financial role can execute Deposit mutation functions; neither database role can write tables directly, and general receipt recording remains unavailable until authoritative Payment persistence exists."
+    },
+    {
+      "test_id": "test_undisclosed_pet_warning_does_not_create_deposit_or_terminate_lease",
+      "upstream_ids": ["BR-DEP-020", "BR-DEP-021", "BR-DEP-022", "PR-DEP-020", "PR-DEP-021", "PR-DEP-022", "TEST-038"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_deposit_migration.py",
+      "status": "implemented",
+      "notes": "Undisclosed-pet discovery records a warning while the Lease stays SIGNED and no Pet Deposit or automatic penalty is created."
     }
   ]
 }

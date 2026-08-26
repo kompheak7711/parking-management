@@ -1,33 +1,18 @@
 {
-  "active_cycle": "v1-036-lease-api-ui",
+  "active_cycle": "v1-037-deposit-persistence-domain",
   "approval": {
-    "status": "complete",
-    "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-032 through V1-036 takeover",
+    "status": "active",
+    "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-037 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
   "authorities": [
-    "API-035",
-    "API-036",
-    "API-037",
-    "API-038",
-    "UI-036",
-    "UI-037",
-    "UI-038",
-    "UI-039",
-    "UI-040",
-    "UI-041",
-    "UI-042",
-    "UI-043",
-    "UI-044",
-    "UI-045",
-    "TEST-030",
-    "TEST-031",
-    "TEST-032",
-    "TEST-033",
-    "TEST-034",
-    "TEST-035"
+    "BR-DEP-*",
+    "PR-DEP-*",
+    "DB-DEP-*",
+    "TEST-036-039",
+    "TEST-126"
   ],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -710,15 +695,15 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "9653fd2cb4afa06b250e4b7a7f5ad1e7de4265ef",
+  "commit": "ab3f4b349688d4e897eca5640165e98502ef7c52",
   "evidence_applicability": {
-    "basis": "V1-036 implementation commit b8013879399cd3c7c598ee1f85974e2f042b794a and closure commit 9653fd2cb4afa06b250e4b7a7f5ad1e7de4265ef are independently reviewed, published, and exact-SHA CI-green in runs 32952625712 and 32953192588",
+    "basis": "V1-037 exact uncommitted diff passed the complete 15-gate profile against synchronized V1-036 baseline ab3f4b349688d4e897eca5640165e98502ef7c52",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-035 product and closure are published, independently reviewed, closure-valid, and exact-SHA CI-green; their evidence is historical for V1-036",
-    "tranche_id": "V1-036"
+    "prior_review_disposition": "V1-036 product, closure, reconciliation, and CI correction are published and exact-SHA CI-green; their evidence is the predecessor baseline for V1-037",
+    "tranche_id": "V1-037"
   },
   "idle_reason": null,
-  "next_action": "Keep V1-037 held at approved_ready and keep the Property Rental supervisor disabled; do not activate the successor automatically",
+    "next_action": "Publish V1-037 in separate implementation and closure commits with successful exact-SHA GitHub Actions, and keep V1-038 held",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -756,32 +741,27 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "Leases",
+  "phase": "Deposits",
   "publication": {
-    "ci_completed": true,
-    "ci_conclusion": "success",
-    "ci_run_id": 32952625712,
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32952625712",
-    "closure_commit": "9653fd2cb4afa06b250e4b7a7f5ad1e7de4265ef",
-    "closure_ci_run_id": 32953192588,
-    "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32953192588",
-    "commit_completed": true,
-    "implementation_commit": "b8013879399cd3c7c598ee1f85974e2f042b794a",
-    "predecessor_closure_commit": "45b3a7af4ab7ff83996bcba3dc441a4d7592bbdd",
-    "predecessor_reconciliation_commit": "3d172bcb4a220dfbce75defc3a329389a5201daf",
-    "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published_and_exact_sha_ci_green_closure_valid",
-    "tranche_id": "V1-036"
+    "ci_completed": false,
+    "commit_completed": false,
+    "implementation_commit": null,
+    "closure_commit": null,
+    "predecessor_reconciliation_commit": "ab3f4b349688d4e897eca5640165e98502ef7c52",
+    "push_completed": false,
+    "sha_reconciled": false,
+    "status": "verified_awaiting_implementation_commit",
+    "tranche_id": "V1-037"
   },
   "relevant_docs": [
-    "docs/005_API_SPECIFICATION.md: API-035 through API-038",
-    "docs/006_UI_SPECIFICATION.md: UI-036 through UI-045",
-    "docs/007_TESTING_STRATEGY.md: TEST-030 through TEST-035",
-    "docs/008_SECURITY_MODEL.md: Property-scoped capability, privacy, and CSRF requirements"
+    "docs/001_DOMAIN_MODEL.md: Deposit aggregate and Security/Pet Deposit domains",
+    "docs/002_BUSINESS_RULES.md: BR-DEP-001 through BR-DEP-025",
+    "docs/003_PRODUCT_REQUIREMENTS.md: PR-DEP-001 through PR-DEP-025",
+    "docs/004_DATABASE_MODEL.md: DB-DEP-001 through DB-DEP-008 and DB-DER-004",
+    "docs/007_TESTING_STRATEGY.md: TEST-036 through TEST-039 and TEST-126"
   ],
   "repair": {
-    "tranche_id": "V1-036",
+    "tranche_id": "V1-037",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -940,12 +920,29 @@
     "tranche_id": "V1-026"
   },
   "review": {
+    "evidence_path": "/private/tmp/property-rental-v1-037-final-independent-review.txt",
+    "evidence_sha256": "81871a4ec370a6b313c61edfeea7a2bc76ed8403e6a39da3a5e618e206eee7b3",
     "findings": 0,
+    "initial_findings": 6,
+    "material_findings_corrected": 6,
     "review_kind": "fresh_read_only_exact_final_diff",
-    "reviewed_paths": 21,
+    "reviewed_paths": [
+      "backend/migrations/versions/20260826_27_deposit_domain.py",
+      "backend/src/property_rental/deposit.py",
+      "backend/tests/test_deposit.py",
+      "backend/tests/test_deposit_migration.py",
+      "backend/tests/test_lease_api_migration.py",
+      "backend/tests/test_lease_migration.py",
+      "backend/tests/test_migrations.py",
+      "ops/NOW.md",
+      "ops/STATE.json",
+      "ops/traceability.json",
+      "scripts/database-test.sh"
+    ],
     "reviewer_edits": false,
+    "session_id": "01a03ddc-98e9-7f92-a5b3-e0fd83016aab",
     "status": "PASS",
-    "tranche_id": "V1-036"
+    "tranche_id": "V1-037"
   },
   "risk_class": "high",
   "roadmap": {
@@ -956,41 +953,27 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Completed the approved bounded candidate: Lease, signer, occupancy, and move-in API/UI",
+  "status": "verified_unpublished",
+  "task": "Verified the approved bounded candidate: Security and pet deposit persistence and domain services",
   "tests": [
-    "PASS: focused Lease API/domain/routing/traceability tests 54/54",
-    "PASS: frontend Lease client and accessible staff workflow tests 12/12; complete frontend suite 196/196",
-    "PASS: disposable PostgreSQL migration, upgrade, runtime-role, transaction, replay, rollback, and HTTP-to-PostgreSQL suite 272/272",
-    "PASS: final corrected complete deterministic verification profile 15/15; backend 614 passed with 261 expected environment skips; frontend 196 passed; automation routing 185 passed; /private/tmp/property-rental-v1-036-final-review-round.json",
-    "PASS: fresh independent read-only exact-final-diff review; zero material findings; reviewer made no edits",
-    "PASS: implementation commit b8013879399cd3c7c598ee1f85974e2f042b794a exact-SHA GitHub Actions run 32952625712; all four jobs",
-    "PASS: closure commit 9653fd2cb4afa06b250e4b7a7f5ad1e7de4265ef exact-SHA GitHub Actions run 32953192588; all four jobs"
+    "PASS: focused Deposit domain, financial-role ACL, traceability, and correction regressions",
+    "PASS: disposable PostgreSQL migration, upgrade, runtime-role, idempotency, concurrency, history, separation, disposition, and qualification suite 285/285",
+    "PASS: complete deterministic verification profile 15/15; backend 618 passed with 274 expected environment skips; frontend 196 passed; automation routing 185 passed; /private/tmp/property-rental-v1-037-verification.json"
   ],
-  "tests_tranche_id": "V1-036",
-  "timestamp": "2026-08-26T10:26:00Z",
+  "tests_tranche_id": "V1-037",
+  "timestamp": "2026-08-26T11:47:21Z",
   "touched_areas": [
-    "backend/migrations/versions/20260826_26_lease_api_services.py",
-    "backend/src/property_rental/app.py",
-    "backend/src/property_rental/lease.py",
-    "backend/src/property_rental/lease_api.py",
-    "backend/src/property_rental/reservation_api.py",
-    "backend/tests/test_lease_api.py",
+    "backend/migrations/versions/20260826_27_deposit_domain.py",
+    "backend/src/property_rental/deposit.py",
+    "backend/tests/test_deposit.py",
+    "backend/tests/test_deposit_migration.py",
     "backend/tests/test_lease_api_migration.py",
-    "backend/tests/test_initial_owner_bootstrap_cli.py",
     "backend/tests/test_lease_migration.py",
     "backend/tests/test_migrations.py",
-    "backend/tests/test_reservation_api.py",
-    "frontend/src/App.tsx",
-    "frontend/src/LeaseManagement.tsx",
-    "frontend/src/LeaseManagement.test.tsx",
-    "frontend/src/leaseClient.ts",
-    "frontend/src/leaseClient.test.tsx",
     "ops/NOW.md",
     "ops/STATE.json",
     "ops/traceability.json",
-    "scripts/database-test.sh",
-    "scripts/test_openclaw_automation.py"
+    "scripts/database-test.sh"
   ],
-  "tranche": "Lease, signer, occupancy, and move-in API/UI"
+  "tranche": "Security and pet deposit persistence and domain services"
 }

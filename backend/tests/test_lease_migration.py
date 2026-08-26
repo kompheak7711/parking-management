@@ -709,14 +709,13 @@ def test_nonbilling_lease_event_term_and_pet_stores_are_append_only(
             )
     assert invalid_approval_closure.value.sqlstate == "23514"
 
+    connection.execute("ALTER TABLE app.deposits DISABLE TRIGGER deposits_validate_source")
     connection.execute(
-        "ALTER TABLE app.deposits DISABLE TRIGGER deposits_validate_reservation_security"
+        "ALTER TABLE app.deposits DROP CONSTRAINT deposits_type_check, "
+        "DROP CONSTRAINT deposits_source_shape, DROP CONSTRAINT deposits_pet_approval_fkey"
     )
-    connection.execute(
-        "ALTER TABLE app.deposits DROP CONSTRAINT deposits_deposit_type_check, "
-        "DROP CONSTRAINT deposits_reservation_security_shape, "
-        "ALTER COLUMN reservation_id DROP NOT NULL"
-    )
+    connection.execute("DROP INDEX app.deposits_pet_lease_unique")
+    connection.execute("DROP INDEX app.deposits_pet_approval_unique")
     matching_pet_deposit_id = uuid4()
     mismatched_pet_deposit_id = uuid4()
     for deposit_id, approval_reference in (
