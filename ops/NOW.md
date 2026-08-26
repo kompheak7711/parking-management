@@ -1,4 +1,4 @@
-# V1-034 Lease lifecycle, signing, termination boundary, and exclusivity services — closure correction active
+# V1-034 Lease lifecycle, signing, termination boundary, and exclusivity services — complete
 
 - Candidate: `V1-034` — Lease lifecycle, signing, termination boundary, and exclusivity services.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -35,16 +35,18 @@
   traceability, publication, JSON, syntax, and diff guards passed.
 - Independent review: PASS with zero findings and no reviewer edits across the exact
   five-path correction.
-- Status: correction reviewed and unpublished; V1-034 is not closure-valid yet.
-- Blocker: corrective closure publication and exact-SHA CI remain pending.
-- Exact next action: publish the immutable corrective closure commit and require
-  successful exact-SHA CI before marking V1-034 closure-valid.
+- Corrective closure: commit `c2e28a0c877931463cbf05136daa0b64ef513031`;
+  exact-SHA GitHub Actions run `32930202676` passed all four jobs.
+- Status: complete and closure-valid under the existing sequential authorization.
+- Blockers: none.
+- Exact next action: perform the authorized V1-035 predecessor, synchronization,
+  supervisor-disabled, and no-overlap preflight before editing.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-034 product implementation remains published and
-  CI-green, but closure is invalid pending the bounded authority correction.
+- Automation publication state: V1-034 implementation and corrected closure are
+  published and exact-SHA CI-green; V1-035 is the next approved successor.
 - Automation exact next action: keep the Property Rental supervisor disabled and
-  V1-035 held until the corrective closure SHA is CI-green.
+  preflight V1-035 without activating V1-036 or later tranches.
 
 <!-- AUTOMATION_STATUS_END -->

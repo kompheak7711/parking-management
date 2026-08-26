@@ -1,11 +1,11 @@
 {
   "active_cycle": "v1-034-lease-lifecycle-services",
   "approval": {
-    "status": "closure_correction_active",
+    "status": "complete",
     "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-032 through V1-036 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": [
     "BR-LEASE-001",
@@ -673,9 +673,7 @@
       "production_shaped_v1_019_context_route": "PASS"
     }
   },
-  "blockers": [
-    "V1-034 closure run 32926275793 failed deterministic supervisor routing because BR-LEASE-015-016 was not an exact canonical authority"
-  ],
+  "blockers": [],
   "branch": "implementation/foundation",
   "closure_correction": {
     "canonical_documents_changed": false,
@@ -699,7 +697,10 @@
       "reviewer_edits": false,
       "verdict": "PASS"
     },
-    "status": "reviewed_unpublished",
+    "corrective_closure_commit": "c2e28a0c877931463cbf05136daa0b64ef513031",
+    "corrective_closure_ci_run_id": 32930202676,
+    "corrective_closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32930202676",
+    "status": "published_exact_sha_ci_green_closure_valid",
     "verification": [
       "PASS: canonical BR-LEASE-015 and BR-LEASE-016 exist as separate requirements",
       "PASS: focused exact-authority expansion and V1-035 packet regressions 2/2",
@@ -707,15 +708,15 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "d56c08756407218a1971b2db527a2a6ce207da2c",
+  "commit": "c2e28a0c877931463cbf05136daa0b64ef513031",
   "evidence_applicability": {
-    "basis": "V1-034 implementation commit d56c08756407218a1971b2db527a2a6ce207da2c is independently reviewed, published, and exact-SHA CI-green in run 32923555603",
+    "basis": "V1-034 implementation commit d56c08756407218a1971b2db527a2a6ce207da2c and corrective closure commit c2e28a0c877931463cbf05136daa0b64ef513031 are independently reviewed, published, and exact-SHA CI-green in runs 32923555603 and 32930202676",
     "complete_profile_remains_applicable": true,
     "prior_review_disposition": "V1-033 closure 4b4092f1b621816a152c91895bc9cdd4f380550c is published and exact-SHA CI-green; its evidence is historical for V1-034",
     "tranche_id": "V1-034"
   },
   "idle_reason": null,
-  "next_action": "Correct only the V1-034 closure authority routing, publish an immutable corrective closure commit, and require exact-SHA CI while V1-035 remains held",
+  "next_action": "Preflight V1-035 while the supervisor remains disabled; do not activate V1-036",
   "next_candidate": {
     "acceptance_profile": "database",
     "authorities": [
@@ -766,11 +767,14 @@
     "failed_closure_ci_run_id": 32926275793,
     "failed_closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32926275793",
     "failed_closure_gate": "Backend quality, tests, build, and traceability / Test deterministic supervisor routing",
+    "corrective_closure_commit": "c2e28a0c877931463cbf05136daa0b64ef513031",
+    "corrective_closure_ci_run_id": 32930202676,
+    "corrective_closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32930202676",
     "commit_completed": true,
     "implementation_commit": "d56c08756407218a1971b2db527a2a6ce207da2c",
     "push_completed": true,
     "sha_reconciled": true,
-    "status": "corrective_closure_active",
+    "status": "published_and_exact_sha_ci_green_closure_valid",
     "tranche_id": "V1-034"
   },
   "relevant_docs": [
@@ -975,15 +979,15 @@
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 33,
-    "current_id": "V1-034",
+    "completed": 34,
+    "current_id": "V1-035",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "closure_correction_active",
-  "task": "Correct only the V1-034 closure traceability failure without beginning V1-035",
+  "status": "complete",
+  "task": "Completed the approved bounded candidate: Lease lifecycle, signing, termination boundary, and exclusivity services",
   "tests": [
     "PASS: complete deterministic verification profile 15/15",
     "PASS: backend 607 passed with 251 expected environment skips",
@@ -993,7 +997,7 @@
     "PASS: independent read-only review with zero final findings; 5/5 findings corrected"
   ],
   "tests_tranche_id": "V1-034",
-  "timestamp": "2026-08-26T04:23:43Z",
+  "timestamp": "2026-08-26T04:29:22Z",
   "touched_areas": [
     "backend/migrations/versions/20260826_24_lease_lifecycle_services.py",
     "backend/src/property_rental/lease.py",
