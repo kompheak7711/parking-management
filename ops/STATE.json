@@ -1,11 +1,11 @@
 {
   "active_cycle": "v1-034-lease-lifecycle-services",
   "approval": {
-    "status": "verified_unpublished",
+    "status": "published_pending_closure",
     "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-032 through V1-036 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": [
     "BR-LEASE-001",
@@ -675,15 +675,15 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "4b4092f1b621816a152c91895bc9cdd4f380550c",
+  "commit": "d56c08756407218a1971b2db527a2a6ce207da2c",
   "evidence_applicability": {
-    "basis": "V1-034 exact dirty worktree passed the complete 15/15 profile at /private/tmp/property-rental-v1-034-final-v2.json; four product/database review findings are corrected and confirmed closed",
+    "basis": "V1-034 implementation commit d56c08756407218a1971b2db527a2a6ce207da2c is independently reviewed, published, and exact-SHA CI-green in run 32923555603",
     "complete_profile_remains_applicable": true,
     "prior_review_disposition": "V1-033 closure 4b4092f1b621816a152c91895bc9cdd4f380550c is published and exact-SHA CI-green; its evidence is historical for V1-034",
     "tranche_id": "V1-034"
   },
   "idle_reason": null,
-  "next_action": "Commit, push, and require successful exact-SHA CI for V1-034 while V1-035 remains held",
+  "next_action": "Publish the V1-034 closure-pending evidence commit and require successful exact-SHA CI before marking V1-034 complete",
   "next_candidate": {
     "acceptance_profile": "foundation",
     "authorities": [
@@ -736,15 +736,15 @@
   },
   "phase": "Leases",
   "publication": {
-    "ci_completed": false,
-    "ci_conclusion": null,
-    "ci_run_id": null,
-    "ci_run_url": null,
-    "commit_completed": false,
-    "implementation_commit": null,
-    "push_completed": false,
-    "sha_reconciled": false,
-    "status": "not_started",
+    "ci_completed": true,
+    "ci_conclusion": "success",
+    "ci_run_id": 32923555603,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32923555603",
+    "commit_completed": true,
+    "implementation_commit": "d56c08756407218a1971b2db527a2a6ce207da2c",
+    "push_completed": true,
+    "sha_reconciled": true,
+    "status": "published_and_exact_sha_ci_green_closure_pending",
     "tranche_id": "V1-034"
   },
   "relevant_docs": [
@@ -956,8 +956,8 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "verified_unpublished",
-  "task": "Publish the verified bounded candidate: Lease lifecycle, signing, termination boundary, and exclusivity services",
+  "status": "published_pending_closure",
+  "task": "Publish the truthful V1-034 closure-pending record before final compact-state reconciliation",
   "tests": [
     "PASS: complete deterministic verification profile 15/15",
     "PASS: backend 607 passed with 251 expected environment skips",
@@ -967,7 +967,7 @@
     "PASS: independent read-only review with zero final findings; 5/5 findings corrected"
   ],
   "tests_tranche_id": "V1-034",
-  "timestamp": "2026-08-26T02:31:44Z",
+  "timestamp": "2026-08-26T03:08:00Z",
   "touched_areas": [
     "backend/migrations/versions/20260826_24_lease_lifecycle_services.py",
     "backend/src/property_rental/lease.py",
