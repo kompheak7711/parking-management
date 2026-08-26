@@ -1,4 +1,4 @@
-# V1-035 Move-in, occupancy, and reservation-to-lease orchestration — implementation published; closure pending
+# V1-035 Move-in, occupancy, and reservation-to-lease orchestration — complete
 
 - Candidate: `V1-035` — Move-in, occupancy, and reservation-to-lease orchestration.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -25,20 +25,20 @@
 - Implementation publication: commit
   `bf77d714a932b83bfe1bbbf54b5ded003a1291de`; exact-SHA GitHub Actions run
   `32933925926` passed all four jobs.
-- Status: implementation published; the V1-035 closure commit and its own
-  exact-SHA CI result remain pending under the existing authorization.
+- Closure: commit `45b3a7af4ab7ff83996bcba3dc441a4d7592bbdd`;
+  exact-SHA GitHub Actions run `32934543309` passed all four jobs.
+- Status: complete, published, independently reviewed, and closure-valid under
+  the existing sequential authorization.
 - Blockers: none.
-- Exact next action: create and push only the V1-035 closure commit, require
-  successful exact-SHA GitHub Actions, then reconcile closure-valid compact
-  state before activating V1-036.
+- Exact next action: complete the authorized V1-036 predecessor,
+  synchronization, supervisor-disabled, and no-overlap preflight before editing.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-034 is published and closure-valid; V1-035's
-  implementation is published and CI-green but its closure remains pending;
-  V1-036 and later tranches remain held.
-- Automation exact next action: keep the Property Rental supervisor disabled,
-  publish and validate only the V1-035 closure, and do not inspect or repair
-  Hermes-wrapper drift.
+- Automation publication state: V1-035 implementation and closure are published
+  and exact-SHA CI-green; V1-036 is the next approved successor and V1-037
+  remains held.
+- Automation exact next action: keep the Property Rental supervisor disabled and
+  preflight V1-036 without activating V1-037 or inspecting Hermes-wrapper drift.
 
 <!-- AUTOMATION_STATUS_END -->

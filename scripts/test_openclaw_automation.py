@@ -1141,7 +1141,8 @@ class RepositoryEvidenceTests(unittest.TestCase):
 
         for authorities in (
             candidate["authorities"],
-            state["next_candidate"]["authorities"],
+            state["authorities"],
+            state["relevant_docs"],
         ):
             self.assertNotIn("BR-LEASE-015-016", authorities)
             self.assertTrue(
@@ -1172,6 +1173,31 @@ class RepositoryEvidenceTests(unittest.TestCase):
                 for evidence in packet["requirement_evidence"]
             )
         )
+
+    def test_v1_036_uses_exact_lease_ui_authorities(self) -> None:
+        roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())
+        candidate = next(item for item in roadmap["tranches"] if item["id"] == "V1-036")
+        state = json.loads((ROOT / "ops/STATE.json").read_text())
+        expected = {f"UI-{number:03d}" for number in range(36, 46)}
+
+        for authorities in (
+            candidate["authorities"],
+            state["next_candidate"]["authorities"],
+        ):
+            self.assertNotIn("UI-LEASE-*", authorities)
+            self.assertTrue(expected.issubset(authorities))
+            self.assertTrue(
+                expected.issubset(expand_authorities(authorities, repo=ROOT))
+            )
+
+        packet = task_packet(
+            ROOT,
+            {"actionable": True},
+            "implementation",
+            candidate_id_override="V1-036",
+        )
+        self.assertNotIn("UI-LEASE-*", packet["controlling_authorities"])
+        self.assertTrue(expected.issubset(packet["controlling_authorities"]))
 
     def test_v1_024_uses_exact_existing_unit_ui_authorities(self) -> None:
         roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())

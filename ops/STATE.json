@@ -1,11 +1,11 @@
 {
   "active_cycle": "v1-035-move-in-orchestration",
   "approval": {
-    "status": "approved_active",
+    "status": "complete",
     "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-032 through V1-036 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": [
     "BR-LEASE-015",
@@ -695,35 +695,42 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "de5a2823bb10d2905bc876bed1bc694a478a82e9",
+  "commit": "45b3a7af4ab7ff83996bcba3dc441a4d7592bbdd",
   "evidence_applicability": {
-    "basis": "V1-035 activated from clean synchronized V1-034 closure reconciliation de5a2823bb10d2905bc876bed1bc694a478a82e9 after exact-SHA CI run 32930511076 passed all four jobs",
+    "basis": "V1-035 implementation commit bf77d714a932b83bfe1bbbf54b5ded003a1291de and closure commit 45b3a7af4ab7ff83996bcba3dc441a4d7592bbdd are independently reviewed, published, and exact-SHA CI-green in runs 32933925926 and 32934543309",
     "complete_profile_remains_applicable": true,
     "prior_review_disposition": "V1-034 product and corrected closure are published, independently reviewed, closure-valid, and exact-SHA CI-green; their evidence is historical for V1-035",
     "tranche_id": "V1-035"
   },
   "idle_reason": null,
-  "next_action": "Create and push only the V1-035 closure commit, require successful exact-SHA GitHub Actions, then reconcile closure-valid compact state before activating V1-036",
+  "next_action": "Preflight V1-036 while the supervisor remains disabled; do not activate V1-037",
   "next_candidate": {
-    "acceptance_profile": "database",
+    "acceptance_profile": "api_ui",
     "authorities": [
-      "BR-LEASE-015",
-      "BR-LEASE-016",
-      "BR-OCC-*",
-      "TEST-028",
-      "TEST-033-035"
+      "API-035-038",
+      "UI-036",
+      "UI-037",
+      "UI-038",
+      "UI-039",
+      "UI-040",
+      "UI-041",
+      "UI-042",
+      "UI-043",
+      "UI-044",
+      "UI-045",
+      "TEST-030-035"
     ],
     "authorization": "durable_v1",
-    "dependencies": ["V1-032", "V1-034"],
-    "exclude": ["move-out"],
-    "id": "V1-035",
-    "include": ["move-in prerequisites, deposit continuity, unit occupancy"],
-    "order": 35,
+    "dependencies": ["V1-035"],
+    "exclude": ["billing and move-out"],
+    "id": "V1-036",
+    "include": ["complete staff lease and move-in workflow"],
+    "order": 36,
     "phase": "Leases",
     "risk_class": "high",
-    "status": "approved_active",
-    "task": "Move-in, occupancy, and reservation-to-lease orchestration",
-    "roadmap_id": "V1-035"
+    "status": "approved_ready",
+    "task": "Lease, signer, occupancy, and move-in API/UI",
+    "roadmap_id": "V1-036"
   },
   "operational_issues": [
     {
@@ -747,11 +754,14 @@
     "ci_conclusion": "success",
     "ci_run_id": 32933925926,
     "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32933925926",
+    "closure_commit": "45b3a7af4ab7ff83996bcba3dc441a4d7592bbdd",
+    "closure_ci_run_id": 32934543309,
+    "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32934543309",
     "commit_completed": true,
     "implementation_commit": "bf77d714a932b83bfe1bbbf54b5ded003a1291de",
     "push_completed": true,
-    "sha_reconciled": false,
-    "status": "implementation_published_closure_pending",
+    "sha_reconciled": true,
+    "status": "published_and_exact_sha_ci_green_closure_valid",
     "tranche_id": "V1-035"
   },
   "relevant_docs": [
@@ -930,23 +940,24 @@
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 34,
+    "completed": 35,
     "current_id": "V1-035",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "verified_unpublished",
-  "task": "Implement the approved bounded candidate: Move-in, occupancy, and reservation-to-lease orchestration",
+  "status": "published",
+  "task": "Completed the approved bounded candidate: Move-in, occupancy, and reservation-to-lease orchestration",
   "tests": [
     "PASS: focused V1-035 domain and real PostgreSQL migration, chronology, rollback, idempotency, concurrency, authorization, and history coverage; 269 PostgreSQL tests",
     "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-035-review-corrections.json",
     "PASS: fresh independent read-only exact-final-diff review; zero findings; reviewer made no edits",
-    "PASS: implementation commit bf77d714a932b83bfe1bbbf54b5ded003a1291de exact-SHA GitHub Actions run 32933925926; all four jobs"
+    "PASS: implementation commit bf77d714a932b83bfe1bbbf54b5ded003a1291de exact-SHA GitHub Actions run 32933925926; all four jobs",
+    "PASS: closure commit 45b3a7af4ab7ff83996bcba3dc441a4d7592bbdd exact-SHA GitHub Actions run 32934543309; all four jobs"
   ],
   "tests_tranche_id": "V1-035",
-  "timestamp": "2026-08-26T05:28:00Z",
+  "timestamp": "2026-08-26T05:34:00Z",
   "touched_areas": [
     "backend/migrations/versions/20260826_25_move_in_orchestration.py",
     "backend/src/property_rental/move_in.py",

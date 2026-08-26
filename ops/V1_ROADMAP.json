@@ -974,7 +974,7 @@
       "risk_class": "high",
       "acceptance_profile": "database",
       "authorization": "durable_v1",
-      "status": "approved_ready"
+      "status": "complete"
     },
     {
       "id": "V1-036",
@@ -986,7 +986,16 @@
       ],
       "authorities": [
         "API-035-038",
-        "UI-LEASE-*",
+        "UI-036",
+        "UI-037",
+        "UI-038",
+        "UI-039",
+        "UI-040",
+        "UI-041",
+        "UI-042",
+        "UI-043",
+        "UI-044",
+        "UI-045",
         "TEST-030-035"
       ],
       "include": [
