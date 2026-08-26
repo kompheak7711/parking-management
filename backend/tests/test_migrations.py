@@ -13,7 +13,7 @@ import uuid
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from textwrap import dedent
@@ -3636,7 +3636,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260826_23",)
+                assert cursor.fetchone() == ("20260826_24",)
 
 
 def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
@@ -4265,7 +4265,7 @@ def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260826_23",)
+                assert cursor.fetchone() == ("20260826_24",)
                 cursor.execute(
                     """
                     SELECT id, code, display_name, accepted, created_by, updated_by
@@ -4419,7 +4419,7 @@ def test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data() -> No
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260826_23",)
+                assert cursor.fetchone() == ("20260826_24",)
                 cursor.execute(
                     """
                     SELECT unit.id, unit.property_id, unit.status, customer.id
@@ -4714,7 +4714,7 @@ def test_v1_031_upgrade_preserves_and_completes_v1_030_pending_outcome() -> None
             )
             connection.commit()
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260826_23",
+                "20260826_24",
             )
             assert connection.execute(
                 """
@@ -4744,3 +4744,101 @@ def test_v1_031_upgrade_preserves_and_completes_v1_030_pending_outcome() -> None
                     )
                 """
             ).fetchone() == (False, False, False)
+
+
+def test_v1_034_upgrade_preserves_v1_033_lease_and_replaces_unbounded_runtime_helpers() -> None:
+    """Upgrade published Lease persistence without rewriting legal history."""
+    with _temporary_migration_database("prm_v1_034_upgrade") as migration_url:
+        assert _run_alembic("upgrade", "20260826_23").returncode == 0
+        actor_id = uuid.uuid4()
+        property_id = uuid.uuid4()
+        unit_id = uuid.uuid4()
+        customer_id = uuid.uuid4()
+        lease_id = uuid.uuid4()
+        signer_id = uuid.uuid4()
+        with psycopg.connect(migration_url) as connection:
+            connection.execute(
+                """
+                INSERT INTO app.user_accounts(
+                    actor_id,normalized_username,display_name,audit_name,
+                    lifecycle_state,mfa_policy_class,provenance
+                ) VALUES (%s,%s,'V1-034 Upgrade Actor','V1-034 Upgrade Actor',
+                          'active','optional','migration-regression')
+                """,
+                (actor_id, f"v1-034-upgrade-{actor_id.hex}"),
+            )
+            connection.execute(
+                "INSERT INTO app.properties(id,name,created_by,updated_by) "
+                "VALUES (%s,'V1-034 Upgrade Property',%s,%s)",
+                (property_id, actor_id, actor_id),
+            )
+            connection.execute(
+                """
+                INSERT INTO app.units(
+                    id,property_id,unit_number,floor,unit_type,status,created_by,updated_by
+                ) VALUES (%s,%s,'UPGRADE-034','1','ONE_BEDROOM','VACANT',%s,%s)
+                """,
+                (unit_id, property_id, actor_id, actor_id),
+            )
+            connection.execute(
+                "INSERT INTO app.customers(id,legal_name,created_by,updated_by) "
+                "VALUES (%s,'V1-034 Upgrade Customer',%s,%s)",
+                (customer_id, actor_id, actor_id),
+            )
+            connection.execute(
+                """
+                INSERT INTO app.leases(
+                    id,unit_id,primary_tenant_id,start_date,end_date,
+                    monthly_rent_usd_cents,created_by,updated_by
+                ) VALUES (%s,%s,%s,%s,%s,80000,%s,%s)
+                """,
+                (
+                    lease_id,
+                    unit_id,
+                    customer_id,
+                    date(2027, 1, 1),
+                    date(2027, 12, 31),
+                    actor_id,
+                    actor_id,
+                ),
+            )
+            connection.execute(
+                "INSERT INTO app.lease_signers(id,lease_id,customer_id,added_by) "
+                "VALUES (%s,%s,%s,%s)",
+                (signer_id, lease_id, customer_id, actor_id),
+            )
+            connection.commit()
+
+        result = _run_alembic("upgrade", "head")
+
+        assert result.returncode == 0, result.stderr
+        with psycopg.connect(migration_url) as connection:
+            assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
+                "20260826_24",
+            )
+            assert connection.execute(
+                "SELECT id,status,version,start_date,end_date FROM app.leases WHERE id=%s",
+                (lease_id,),
+            ).fetchone() == (
+                lease_id,
+                "DRAFTED",
+                1,
+                date(2027, 1, 1),
+                date(2027, 12, 31),
+            )
+            assert connection.execute("SELECT count(*) FROM app.lease_commands").fetchone() == (0,)
+            assert connection.execute(
+                """
+                SELECT
+                    has_function_privilege(
+                        'prm_runtime',
+                        'app.sign_lease(uuid,uuid,text,uuid,uuid,integer,timestamptz,text,uuid)',
+                        'EXECUTE'
+                    ),
+                    has_function_privilege(
+                        'prm_runtime',
+                        'app.sign_draft_lease_signer(uuid,timestamptz,uuid)',
+                        'EXECUTE'
+                    )
+                """
+            ).fetchone() == (True, False)

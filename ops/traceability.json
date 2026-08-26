@@ -8314,6 +8314,86 @@
       "test_path": "backend/tests/test_lease_migration.py",
       "status": "implemented",
       "notes": "Revision 23 builds forward from the published Reservation worker boundary and refuses destructive rollback of Lease, signer, and occupancy history."
+    },
+    {
+      "test_id": "test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules",
+      "upstream_ids": ["BR-LEASE-001", "BR-LEASE-002", "BR-LEASE-003", "BR-LEASE-005", "BR-LEASE-006", "BR-LEASE-007", "BR-LEASE-008", "BR-LEASE-009", "BR-LEASE-010", "BR-LEASE-011", "BR-LEASE-012", "BR-LEASE-013", "BR-LEASE-023", "PR-LEASE-001", "PR-LEASE-003", "PR-LEASE-005", "PR-LEASE-006", "PR-LEASE-007", "PR-LEASE-008", "PR-LEASE-009", "PR-LEASE-010", "PR-LEASE-011", "PR-LEASE-012", "PR-LEASE-013", "PR-LEASE-023", "SEC-019", "SEC-020", "TEST-030", "TEST-032"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "Property-scoped runtime services create a stable draft, attribute every signer, reject future or out-of-order signature evidence, require all listed signers including the Primary Tenant to sign before final signing, preserve full-liability signer semantics without percentages, enforce optimistic versions and idempotent replay, reject future-dated termination, and record explicit permanent command evidence for actual-date authorized termination without mutating Occupancy."
+    },
+    {
+      "test_id": "test_draft_cancellation_signer_removal_scope_and_end_date_boundaries",
+      "upstream_ids": ["BR-LEASE-003", "BR-LEASE-004", "BR-LEASE-006", "BR-LEASE-007", "BR-LEASE-013", "PR-LEASE-003", "PR-LEASE-004", "PR-LEASE-013", "SEC-019", "SEC-020", "TEST-030", "TEST-031", "TEST-032"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "Only an unsigned non-primary signer may be removed, only DRAFTED Leases may be cancelled, Property scope is non-disclosing, and a contractual End Date alone performs no automatic transition or month-to-month mutation."
+    },
+    {
+      "test_id": "test_concurrent_overlapping_signing_allows_exactly_one_lease",
+      "upstream_ids": ["BR-LEASE-014", "PR-LEASE-014", "SEC-019", "TEST-030"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "Two real concurrent service commands for overlapping same-Unit contractual periods serialize on the Unit and PostgreSQL permits exactly one SIGNED Lease while preserving the losing draft."
+    },
+    {
+      "test_id": "test_open_occupancy_blocks_unrelated_signing_but_allows_exact_renewal",
+      "upstream_ids": ["BR-LEASE-014", "BR-LEASE-023", "PR-LEASE-014", "PR-LEASE-023", "SEC-019", "TEST-030", "TEST-031"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "At the current Lease's contractual boundary, a still-open physical Occupancy blocks unrelated Unit reuse while the exact future non-overlapping predecessor renewal remains signable with permanent lineage."
+    },
+    {
+      "test_id": "test_runtime_role_uses_only_bounded_functions_and_command_history_is_permanent",
+      "upstream_ids": ["BR-LEASE-003", "BR-LEASE-005", "SEC-020", "SEC-023", "TEST-030"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_lease_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "The runtime identity can read permanent Lease command evidence and execute only the bounded lifecycle functions; direct signer helpers and command-table mutation remain unavailable."
+    },
+    {
+      "test_id": "test_v1_034_upgrade_preserves_v1_033_lease_and_replaces_unbounded_runtime_helpers",
+      "upstream_ids": ["BR-LEASE-001", "BR-LEASE-003", "DB-LEASE-001", "DB-LEASE-002", "SEC-020", "TEST-030", "TEST-032"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A real revision-23 database upgrades forward to revision 24 without rewriting Lease or signer history, starts with no fabricated command events, and replaces the predecessor's direct signer-helper grants with bounded lifecycle entry points."
+    },
+    {
+      "test_id": "test_lease_status_vocabulary_is_closed_and_has_no_month_to_month_state",
+      "upstream_ids": ["BR-LEASE-003", "BR-LEASE-013", "PR-LEASE-003", "PR-LEASE-013", "TEST-030", "TEST-032"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_lease.py",
+      "status": "implemented",
+      "notes": "The lifecycle vocabulary is closed to DRAFTED, SIGNED, CANCELLED, and TERMINATED; an End Date does not create a month-to-month or automatic terminal state."
+    },
+    {
+      "test_id": "test_draft_rejects_partial_or_reversed_contractual_periods",
+      "upstream_ids": ["BR-LEASE-001", "BR-LEASE-002", "PR-LEASE-001", "PR-LEASE-002", "TEST-030"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_lease.py",
+      "status": "implemented",
+      "notes": "Draft validation requires a complete, ordered contractual period and a positive monthly rent without inventing a partial fixed-term Lease."
+    },
+    {
+      "test_id": "test_service_rejects_wrong_actor_scope_capability_and_authorization_evidence",
+      "upstream_ids": ["BR-LEASE-003", "PR-LEASE-003", "SEC-019", "SEC-020", "TEST-030"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_lease.py",
+      "status": "implemented",
+      "notes": "The service rejects actor mismatch, missing Property scope, absent capabilities, and incorrect authorization evidence before opening a database connection."
+    },
+    {
+      "test_id": "test_lease_lifecycle_migration_is_forward_only",
+      "upstream_ids": ["DB-LEASE-001", "DB-LEASE-002", "DB-LEASE-003", "TEST-030", "TEST-032"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_lease_lifecycle_migration.py",
+      "status": "implemented",
+      "notes": "Revision 24 advances only from the published V1-033 Lease persistence boundary and refuses destructive rollback of permanent lifecycle evidence."
     }
   ]
 }

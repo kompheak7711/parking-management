@@ -135,4 +135,7 @@ fi
 if [ -f tests/test_lease_migration.py ]; then
   set -- "$@" tests/test_lease_migration.py
 fi
+if [ -f tests/test_lease_lifecycle_migration.py ]; then
+  set -- "$@" tests/test_lease_lifecycle_migration.py
+fi
 REQUIRE_DATABASE_TESTS=1 uv run --extra dev pytest --tb=short --no-header "$@"

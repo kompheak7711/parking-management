@@ -1,35 +1,38 @@
-# V1-033 Lease, signer, occupant, and occupancy persistence — complete
+# V1-034 Lease lifecycle, signing, termination boundary, and exclusivity services — verified unpublished
 
-- Candidate: `V1-033` — Lease, signer, occupant, and occupancy persistence.
+- Candidate: `V1-034` — Lease lifecycle, signing, termination boundary, and exclusivity services.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
   no renewed routine authorization was required.
-- Baseline: clean, synchronized `implementation/foundation` at V1-032 closure
-  `58120e839618cea4861372300487cb1a0d07c511`.
-- Scheduler: exact Property Rental supervisor remained disabled throughout direct work.
-- Scope: durable Lease, signer, occupant, and occupancy persistence with database
-  constraints, exclusivity, concurrency protection, and historical preservation.
-- Authorities: `BR-LEASE-*`, `BR-OCC-*`, `DB-LEASE-*`, and `TEST-030-035`.
-- Dependency: published V1-029 Reservation persistence.
-- Excluded: billing, V1-034 service behavior, later tranches, canonical changes,
-  and Hermes-wrapper changes.
+- Baseline: clean, synchronized `implementation/foundation` at V1-033 closure
+  `4b4092f1b621816a152c91895bc9cdd4f380550c`.
+- Scheduler: exact Property Rental supervisor remains disabled; no repository worker,
+  mutation process, lock, or restoration continuation overlapped activation.
+- Scope: draft, signing, cancellation, and authorized termination transitions;
+  signer requirements; Unit and occupancy exclusivity.
+- Authorities: `BR-LEASE-001` through `BR-LEASE-014`, `PR-LEASE-*`, and
+  `TEST-030` through `TEST-032`.
+- Dependency: published V1-033 Lease persistence.
+- Excluded: automatic termination, V1-035 work, canonical changes, and
+  Hermes-wrapper changes.
 - Canonical specifications: read-only.
 - Token ceiling and automation protections: unchanged.
-- Verification: PASS — complete profile 15/15, including 255 disposable PostgreSQL
-  tests, 602 backend tests, 184 frontend tests, and 182 automation tests.
-- Independent review: PASS — zero final findings across the exact seven-path patch;
-  reviewed fingerprint `f885ffd3c890c044ab9dfcb7f635cd2564c8997703a57ce151ab84569c363151`.
-- Publication: implementation commit `f3173a2b64204563fb7dec2b7d8ca81e388a6276`;
-  exact-SHA GitHub Actions run `32907415482` passed all four jobs.
-- Status: complete under the existing sequential direct-takeover authorization.
+- Verification: complete deterministic profile passed `15/15`; backend `607` passed
+  with `251` expected environment skips, frontend `184/184`, disposable PostgreSQL
+  `262/262`, and automation routing `182/182`.
+- Independent review: PASS with zero final findings; four product/database findings
+  and one compact-state finding were corrected without reviewer edits.
+- Publication: not started; the verified implementation remains uncommitted.
+- Status: `verified_unpublished` under the existing sequential direct-takeover
+  authorization.
 - Blockers: none.
-- Exact next action: require successful exact-SHA CI for this closure, then perform the
-  authorized V1-034 predecessor/synchronization/no-overlap preflight before editing.
+- Exact next action: commit, push, and require successful exact-SHA GitHub Actions
+  while V1-035 and later tranches remain held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-033 is published and its implementation exact-SHA
-  CI is green; V1-034 remains held pending this closure commit's CI gate.
+- Automation publication state: V1-033 is published and exact-SHA CI-green; V1-034
+  is verified unpublished through direct Codex takeover.
 - Automation exact next action: keep the Property Rental supervisor disabled and
-  V1-034 held until this separate closure commit is exact-SHA CI-green.
+  V1-035 held while V1-034 completes publication gates.
 
 <!-- AUTOMATION_STATUS_END -->

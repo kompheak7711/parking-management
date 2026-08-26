@@ -1,17 +1,31 @@
 {
-  "active_cycle": "v1-033-lease-persistence",
+  "active_cycle": "v1-034-lease-lifecycle-services",
   "approval": {
-    "status": "complete",
+    "status": "verified_unpublished",
     "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-032 through V1-036 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
   "authorities": [
-    "BR-LEASE-*",
-    "BR-OCC-*",
-    "DB-LEASE-*",
-    "TEST-030-035"
+    "BR-LEASE-001",
+    "BR-LEASE-002",
+    "BR-LEASE-003",
+    "BR-LEASE-004",
+    "BR-LEASE-005",
+    "BR-LEASE-006",
+    "BR-LEASE-007",
+    "BR-LEASE-008",
+    "BR-LEASE-009",
+    "BR-LEASE-010",
+    "BR-LEASE-011",
+    "BR-LEASE-012",
+    "BR-LEASE-013",
+    "BR-LEASE-014",
+    "PR-LEASE-*",
+    "TEST-030",
+    "TEST-031",
+    "TEST-032"
   ],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -661,15 +675,15 @@
   },
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "f3173a2b64204563fb7dec2b7d8ca81e388a6276",
+  "commit": "4b4092f1b621816a152c91895bc9cdd4f380550c",
   "evidence_applicability": {
-    "basis": "V1-033 implementation commit f3173a2b64204563fb7dec2b7d8ca81e388a6276 is independently reviewed, published, and exact-SHA CI-green",
+    "basis": "V1-034 exact dirty worktree passed the complete 15/15 profile at /private/tmp/property-rental-v1-034-final-v2.json; four product/database review findings are corrected and confirmed closed",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-032 is published, independently reviewed, and exact-SHA CI-green; that evidence is historical for V1-033",
-    "tranche_id": "V1-033"
+    "prior_review_disposition": "V1-033 closure 4b4092f1b621816a152c91895bc9cdd4f380550c is published and exact-SHA CI-green; its evidence is historical for V1-034",
+    "tranche_id": "V1-034"
   },
   "idle_reason": null,
-  "next_action": "Require successful exact-SHA CI for the V1-033 closure commit, then preflight V1-034 while the supervisor remains disabled",
+  "next_action": "Commit, push, and require successful exact-SHA CI for V1-034 while V1-035 remains held",
   "next_candidate": {
     "acceptance_profile": "foundation",
     "authorities": [
@@ -700,7 +714,7 @@
     "order": 34,
     "phase": "Leases",
     "risk_class": "high",
-    "status": "approved_ready",
+    "status": "verified_unpublished",
     "task": "Lease lifecycle, signing, termination boundary, and exclusivity services",
     "roadmap_id": "V1-034"
   },
@@ -722,25 +736,39 @@
   },
   "phase": "Leases",
   "publication": {
-    "ci_completed": true,
-    "ci_conclusion": "success",
-    "ci_run_id": 32907415482,
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32907415482",
-    "commit_completed": true,
-    "implementation_commit": "f3173a2b64204563fb7dec2b7d8ca81e388a6276",
-    "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published_and_exact_sha_ci_green",
-    "tranche_id": "V1-033"
+    "ci_completed": false,
+    "ci_conclusion": null,
+    "ci_run_id": null,
+    "ci_run_url": null,
+    "commit_completed": false,
+    "implementation_commit": null,
+    "push_completed": false,
+    "sha_reconciled": false,
+    "status": "not_started",
+    "tranche_id": "V1-034"
   },
   "relevant_docs": [
-    "BR-LEASE-*",
-    "BR-OCC-*",
-    "DB-LEASE-*",
-    "TEST-030-035"
+    "BR-LEASE-001",
+    "BR-LEASE-002",
+    "BR-LEASE-003",
+    "BR-LEASE-004",
+    "BR-LEASE-005",
+    "BR-LEASE-006",
+    "BR-LEASE-007",
+    "BR-LEASE-008",
+    "BR-LEASE-009",
+    "BR-LEASE-010",
+    "BR-LEASE-011",
+    "BR-LEASE-012",
+    "BR-LEASE-013",
+    "BR-LEASE-014",
+    "PR-LEASE-*",
+    "TEST-030",
+    "TEST-031",
+    "TEST-032"
   ],
   "repair": {
-    "tranche_id": "V1-033",
+    "tranche_id": "V1-034",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -899,23 +927,25 @@
     "tranche_id": "V1-026"
   },
   "review": {
-    "complete_candidate_paths": 7,
-    "corrected_findings": 10,
+    "complete_candidate_paths": 9,
+    "corrected_findings": 5,
+    "corrected_product_findings": 4,
     "final_local_checks": [
-      "PASS: Lease, signer, occupant, occupancy, non-billing Lease evidence, and immutable revision persistence",
-      "PASS: real disposable PostgreSQL migration, upgrade-path, role, transactional, and concurrency suite (255/255)",
-      "PASS: complete deterministic verification profile (15/15); /private/tmp/property-rental-v1-033-complete-final5.json",
-      "PASS: backend 602 passed with 245 expected environment skips; frontend 184 passed; automation routing 182 passed",
-      "PASS: canonical specifications unchanged; V1-034 held; token and automation limits unchanged",
+      "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-034-final-v2.json",
+      "PASS: backend 607 passed with 251 expected environment skips",
+      "PASS: frontend 184/184",
+      "PASS: disposable PostgreSQL migration, upgrade, runtime-role, transaction, and concurrency suite 262/262",
+      "PASS: automation routing 182/182",
+      "PASS: canonical specifications unchanged; V1-035 held; token and automation limits unchanged",
       "PASS: git diff --check"
     ],
     "final_verdict": "PASS",
-    "initial_findings": 10,
-    "review_kind": "fresh_read_only_exact_final_diff_required",
-    "reviewed_patch_sha256": "f885ffd3c890c044ab9dfcb7f635cd2564c8997703a57ce151ab84569c363151",
     "follow_up_findings": 0,
+    "product_review_verdict": "PASS",
+    "review_kind": "fresh_read_only_exact_final_diff_required",
+    "reviewer_edits": false,
     "status": "PASS",
-    "tranche_id": "V1-033"
+    "tranche_id": "V1-034"
   },
   "risk_class": "high",
   "roadmap": {
@@ -926,26 +956,28 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "complete",
-  "task": "Completed the approved bounded candidate: Lease, signer, occupant, and occupancy persistence",
+  "status": "verified_unpublished",
+  "task": "Publish the verified bounded candidate: Lease lifecycle, signing, termination boundary, and exclusivity services",
   "tests": [
     "PASS: complete deterministic verification profile 15/15",
-    "PASS: disposable PostgreSQL suite 255/255",
-    "PASS: backend 602 passed with 245 expected environment skips",
+    "PASS: backend 607 passed with 251 expected environment skips",
     "PASS: frontend 184/184",
+    "PASS: disposable PostgreSQL suite 262/262",
     "PASS: automation routing 182/182",
-    "PASS: independent read-only review with zero final findings"
+    "PASS: independent read-only review with zero final findings; 5/5 findings corrected"
   ],
-  "tests_tranche_id": "V1-033",
-  "timestamp": "2026-08-25T22:45:57Z",
+  "tests_tranche_id": "V1-034",
+  "timestamp": "2026-08-26T02:31:44Z",
   "touched_areas": [
-    "backend/migrations/versions/20260826_23_lease_persistence.py",
-    "backend/tests/test_lease_migration.py",
+    "backend/migrations/versions/20260826_24_lease_lifecycle_services.py",
+    "backend/src/property_rental/lease.py",
+    "backend/tests/test_lease.py",
+    "backend/tests/test_lease_lifecycle_migration.py",
     "backend/tests/test_migrations.py",
     "scripts/database-test.sh",
     "ops/traceability.json",
     "ops/NOW.md",
     "ops/STATE.json"
   ],
-  "tranche": "Lease, signer, occupant, and occupancy persistence"
+  "tranche": "Lease lifecycle, signing, termination boundary, and exclusivity services"
 }

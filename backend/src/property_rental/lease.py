@@ -1,0 +1,550 @@
+"""Authorized Lease lifecycle services over the protected PostgreSQL boundary."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import asdict, dataclass
+from datetime import date, datetime
+from enum import StrEnum
+from typing import Final, TypeAlias, cast
+from uuid import UUID
+
+import psycopg
+
+from property_rental.identity import (
+    AuthenticatedActor,
+    AuthorizationRequirement,
+    is_authorized,
+)
+
+NIL_UUID: Final = UUID(int=0)
+LEASE_DRAFT_CAPABILITY: Final = "leases.draft"
+LEASE_SIGN_CAPABILITY: Final = "leases.sign"
+LEASE_TERMINATE_CAPABILITY: Final = "leases.terminate"
+LEASE_SIGNER_MANAGE_CAPABILITY: Final = "lease_signers.manage"
+
+
+class LeaseStatus(StrEnum):
+    """The complete approved Lease status vocabulary."""
+
+    DRAFTED = "DRAFTED"
+    SIGNED = "SIGNED"
+    CANCELLED = "CANCELLED"
+    TERMINATED = "TERMINATED"
+
+
+class LeaseNotFoundError(LookupError):
+    """Raised when a Lease is absent or outside the exact Property scope."""
+
+
+class LeaseVersionConflictError(RuntimeError):
+    """Raised when a lifecycle command uses a stale optimistic version."""
+
+
+class LeaseCommandConflictError(RuntimeError):
+    """Raised for idempotency, signer identity, or Unit exclusivity conflicts."""
+
+
+class LeaseCommandInvalidError(ValueError):
+    """Raised when a command violates a Lease lifecycle invariant."""
+
+
+class LeaseAuthorizationError(PermissionError):
+    """Raised before persistence when trusted capability evidence is absent."""
+
+
+class LeaseServiceUnavailableError(RuntimeError):
+    """Raised when Lease persistence cannot be reached safely."""
+
+
+def _require_identity(value: UUID, field: str) -> None:
+    if value == NIL_UUID:
+        raise ValueError(f"{field} must not be the nil UUID")
+
+
+def _require_nonblank(value: str, field: str) -> None:
+    if not value.strip() or value != value.strip():
+        raise ValueError(f"{field} must be normalized and nonblank")
+
+
+def _require_optional_period(starts_on: date | None, ends_on: date | None) -> None:
+    if (starts_on is None) != (ends_on is None):
+        raise ValueError("Lease start and end dates must be supplied together")
+    if starts_on is not None and ends_on is not None and ends_on <= starts_on:
+        raise ValueError("Lease end date must be later than its start date")
+
+
+def _json_value(value: object) -> object:
+    if isinstance(value, (date, datetime, UUID, StrEnum)):
+        return str(value)
+    if isinstance(value, dict):
+        return {str(key): _json_value(item) for key, item in value.items()}
+    if isinstance(value, (tuple, list)):
+        return [_json_value(item) for item in value]
+    return value
+
+
+@dataclass(frozen=True, slots=True)
+class LeaseDraftCommand:
+    """Create one stable DRAFTED Lease and its unsigned Primary Tenant signer."""
+
+    idempotency_key: UUID
+    event_id: UUID
+    lease_id: UUID
+    unit_id: UUID
+    primary_tenant_id: UUID
+    primary_signer_id: UUID
+    start_date: date | None
+    end_date: date | None
+    monthly_rent_usd_cents: int | None
+    predecessor_lease_id: UUID | None
+    reason: str
+    authorization_reference: str
+
+    def __post_init__(self) -> None:
+        for field in (
+            "idempotency_key",
+            "event_id",
+            "lease_id",
+            "unit_id",
+            "primary_tenant_id",
+            "primary_signer_id",
+        ):
+            _require_identity(getattr(self, field), field)
+        if self.predecessor_lease_id is not None:
+            _require_identity(self.predecessor_lease_id, "predecessor_lease_id")
+            if self.predecessor_lease_id == self.lease_id:
+                raise ValueError("A Lease cannot be its own predecessor")
+        _require_optional_period(self.start_date, self.end_date)
+        if self.monthly_rent_usd_cents is not None and self.monthly_rent_usd_cents <= 0:
+            raise ValueError("monthly_rent_usd_cents must be positive")
+        _require_nonblank(self.reason, "reason")
+        _require_nonblank(self.authorization_reference, "authorization_reference")
+
+
+@dataclass(frozen=True, slots=True)
+class LeaseAddSignerCommand:
+    """Add one Customer as a pending signer to a DRAFTED Lease."""
+
+    idempotency_key: UUID
+    event_id: UUID
+    lease_id: UUID
+    signer_id: UUID
+    customer_id: UUID
+    expected_version: int
+    reason: str
+    authorization_reference: str
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "event_id", "lease_id", "signer_id", "customer_id"):
+            _require_identity(getattr(self, field), field)
+        if self.expected_version < 1:
+            raise ValueError("expected_version must be positive")
+        _require_nonblank(self.reason, "reason")
+        _require_nonblank(self.authorization_reference, "authorization_reference")
+
+
+@dataclass(frozen=True, slots=True)
+class LeaseRecordSignatureCommand:
+    """Record one attributed signature while the Lease remains DRAFTED."""
+
+    idempotency_key: UUID
+    event_id: UUID
+    lease_id: UUID
+    signer_id: UUID
+    expected_version: int
+    signed_at: datetime
+    reason: str
+    authorization_reference: str
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "event_id", "lease_id", "signer_id"):
+            _require_identity(getattr(self, field), field)
+        if self.expected_version < 1:
+            raise ValueError("expected_version must be positive")
+        if self.signed_at.tzinfo is None or self.signed_at.utcoffset() is None:
+            raise ValueError("signed_at must include a timezone")
+        _require_nonblank(self.reason, "reason")
+        _require_nonblank(self.authorization_reference, "authorization_reference")
+
+
+@dataclass(frozen=True, slots=True)
+class LeaseRemoveSignerCommand:
+    """Remove one unsigned non-primary signer from a DRAFTED Lease."""
+
+    idempotency_key: UUID
+    event_id: UUID
+    lease_id: UUID
+    signer_id: UUID
+    expected_version: int
+    reason: str
+    authorization_reference: str
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "event_id", "lease_id", "signer_id"):
+            _require_identity(getattr(self, field), field)
+        if self.expected_version < 1:
+            raise ValueError("expected_version must be positive")
+        _require_nonblank(self.reason, "reason")
+        _require_nonblank(self.authorization_reference, "authorization_reference")
+
+
+@dataclass(frozen=True, slots=True)
+class LeaseSignCommand:
+    """Move one complete, fully signed DRAFTED Lease to SIGNED."""
+
+    idempotency_key: UUID
+    event_id: UUID
+    lease_id: UUID
+    expected_version: int
+    signed_at: datetime
+    reason: str
+    authorization_reference: str
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "event_id", "lease_id"):
+            _require_identity(getattr(self, field), field)
+        if self.expected_version < 1:
+            raise ValueError("expected_version must be positive")
+        if self.signed_at.tzinfo is None or self.signed_at.utcoffset() is None:
+            raise ValueError("signed_at must include a timezone")
+        _require_nonblank(self.reason, "reason")
+        _require_nonblank(self.authorization_reference, "authorization_reference")
+
+
+@dataclass(frozen=True, slots=True)
+class LeaseCancelCommand:
+    """Cancel only a DRAFTED Lease without creating termination policy."""
+
+    idempotency_key: UUID
+    event_id: UUID
+    lease_id: UUID
+    expected_version: int
+    reason: str
+    authorization_reference: str
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "event_id", "lease_id"):
+            _require_identity(getattr(self, field), field)
+        if self.expected_version < 1:
+            raise ValueError("expected_version must be positive")
+        _require_nonblank(self.reason, "reason")
+        _require_nonblank(self.authorization_reference, "authorization_reference")
+
+
+@dataclass(frozen=True, slots=True)
+class LeaseTerminateCommand:
+    """Terminate one SIGNED Lease through an explicit authorized business event."""
+
+    idempotency_key: UUID
+    event_id: UUID
+    lease_id: UUID
+    expected_version: int
+    actual_termination_date: date
+    occurred_at: datetime
+    governing_event_reference: str
+    reason: str
+    authorization_reference: str
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "event_id", "lease_id"):
+            _require_identity(getattr(self, field), field)
+        if self.expected_version < 1:
+            raise ValueError("expected_version must be positive")
+        if self.occurred_at.tzinfo is None or self.occurred_at.utcoffset() is None:
+            raise ValueError("occurred_at must include a timezone")
+        _require_nonblank(self.governing_event_reference, "governing_event_reference")
+        _require_nonblank(self.reason, "reason")
+        _require_nonblank(self.authorization_reference, "authorization_reference")
+
+
+LeaseCommand: TypeAlias = (
+    LeaseDraftCommand
+    | LeaseAddSignerCommand
+    | LeaseRecordSignatureCommand
+    | LeaseRemoveSignerCommand
+    | LeaseSignCommand
+    | LeaseCancelCommand
+    | LeaseTerminateCommand
+)
+
+
+def lease_request_digest(action: str, command: LeaseCommand) -> str:
+    """Bind one idempotent Lease command to every normalized input."""
+    if not action.startswith("lease."):
+        raise ValueError("Lease action is invalid")
+    serialized = json.dumps(
+        {"action": action, "command": _json_value(asdict(command))},
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    return hashlib.sha256(serialized.encode()).hexdigest()
+
+
+@dataclass(frozen=True, slots=True)
+class LeaseSnapshot:
+    """Bounded result for every successful Lease command."""
+
+    lease_id: UUID
+    property_id: UUID
+    unit_id: UUID
+    primary_tenant_id: UUID
+    status: LeaseStatus
+    start_date: date | None
+    end_date: date | None
+    monthly_rent_usd_cents: int | None
+    predecessor_lease_id: UUID | None
+    signed_at: str | None
+    terminated_at: str | None
+    actual_termination_date: date | None
+    version: int
+    signer_count: int
+    signed_signer_count: int
+    occupant_count: int
+
+
+def _optional_date(value: object) -> date | None:
+    return None if value is None else date.fromisoformat(str(value))
+
+
+def _snapshot(row: tuple[object, ...]) -> LeaseSnapshot:
+    payload = cast(dict[str, object], row[0])
+    return LeaseSnapshot(
+        lease_id=UUID(str(payload["lease_id"])),
+        property_id=UUID(str(payload["property_id"])),
+        unit_id=UUID(str(payload["unit_id"])),
+        primary_tenant_id=UUID(str(payload["primary_tenant_id"])),
+        status=LeaseStatus(str(payload["status"])),
+        start_date=_optional_date(payload.get("start_date")),
+        end_date=_optional_date(payload.get("end_date")),
+        monthly_rent_usd_cents=(
+            None
+            if payload.get("monthly_rent_usd_cents") is None
+            else int(str(payload["monthly_rent_usd_cents"]))
+        ),
+        predecessor_lease_id=(
+            None
+            if payload.get("predecessor_lease_id") is None
+            else UUID(str(payload["predecessor_lease_id"]))
+        ),
+        signed_at=None if payload.get("signed_at") is None else str(payload["signed_at"]),
+        terminated_at=(
+            None if payload.get("terminated_at") is None else str(payload["terminated_at"])
+        ),
+        actual_termination_date=_optional_date(payload.get("actual_termination_date")),
+        version=int(str(payload["version"])),
+        signer_count=int(str(payload["signer_count"])),
+        signed_signer_count=int(str(payload["signed_signer_count"])),
+        occupant_count=int(str(payload["occupant_count"])),
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class PostgresLeaseService:
+    """Execute exact Property-scoped Lease commands with stable retry semantics."""
+
+    database_url: str
+    property_id: UUID
+    actor_id: UUID
+
+    def __post_init__(self) -> None:
+        _require_identity(self.property_id, "property_id")
+        _require_identity(self.actor_id, "actor_id")
+
+    def _require_authorized_actor(
+        self,
+        actor: AuthenticatedActor,
+        capability: str,
+        authorization_reference: str,
+    ) -> None:
+        try:
+            authenticated_actor_id = UUID(actor.actor_id)
+        except ValueError as exc:
+            raise LeaseAuthorizationError("Lease actor is invalid") from exc
+        if authenticated_actor_id != self.actor_id:
+            raise LeaseAuthorizationError("Lease actor does not match the command")
+        if authorization_reference != capability:
+            raise LeaseAuthorizationError("Lease authorization evidence is not authoritative")
+        if not is_authorized(
+            actor,
+            AuthorizationRequirement(capability=capability, property_id=str(self.property_id)),
+        ):
+            raise LeaseAuthorizationError("Lease capability is not authorized")
+
+    def _execute(self, query: str, parameters: tuple[object, ...]) -> LeaseSnapshot:
+        try:
+            with psycopg.connect(self.database_url) as connection:
+                row = connection.execute(query, parameters).fetchone()
+        except psycopg.Error as exc:
+            if exc.sqlstate == "P0002":
+                raise LeaseNotFoundError("Lease resource was not found") from exc
+            if exc.sqlstate == "40001":
+                raise LeaseVersionConflictError("Lease version precondition was not met") from exc
+            if exc.sqlstate in {"23505", "23P01"}:
+                raise LeaseCommandConflictError("Lease command conflicted") from exc
+            if exc.sqlstate in {"22023", "23514", "55000"}:
+                raise LeaseCommandInvalidError("Lease command is invalid") from exc
+            raise LeaseServiceUnavailableError("Lease persistence is unavailable") from exc
+        if row is None:
+            raise LeaseServiceUnavailableError("Lease command returned no result")
+        return _snapshot(row)
+
+    def draft(self, command: LeaseDraftCommand, *, actor: AuthenticatedActor) -> LeaseSnapshot:
+        self._require_authorized_actor(
+            actor, LEASE_DRAFT_CAPABILITY, command.authorization_reference
+        )
+        digest = lease_request_digest("lease.draft", command)
+        return self._execute(
+            "SELECT app.create_lease_draft(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                self.property_id,
+                command.idempotency_key,
+                digest,
+                command.event_id,
+                command.lease_id,
+                command.unit_id,
+                command.primary_tenant_id,
+                command.primary_signer_id,
+                command.start_date,
+                command.end_date,
+                command.monthly_rent_usd_cents,
+                command.predecessor_lease_id,
+                command.reason,
+                self.actor_id,
+            ),
+        )
+
+    def add_signer(
+        self, command: LeaseAddSignerCommand, *, actor: AuthenticatedActor
+    ) -> LeaseSnapshot:
+        self._require_authorized_actor(
+            actor, LEASE_SIGNER_MANAGE_CAPABILITY, command.authorization_reference
+        )
+        digest = lease_request_digest("lease.signer.add", command)
+        return self._execute(
+            "SELECT app.add_lease_signer(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                self.property_id,
+                command.idempotency_key,
+                digest,
+                command.event_id,
+                command.lease_id,
+                command.signer_id,
+                command.customer_id,
+                command.expected_version,
+                command.reason,
+                command.authorization_reference,
+                self.actor_id,
+            ),
+        )
+
+    def record_signature(
+        self, command: LeaseRecordSignatureCommand, *, actor: AuthenticatedActor
+    ) -> LeaseSnapshot:
+        self._require_authorized_actor(
+            actor, LEASE_SIGN_CAPABILITY, command.authorization_reference
+        )
+        digest = lease_request_digest("lease.signer.sign", command)
+        return self._execute(
+            "SELECT app.record_lease_signature(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                self.property_id,
+                command.idempotency_key,
+                digest,
+                command.event_id,
+                command.lease_id,
+                command.signer_id,
+                command.expected_version,
+                command.signed_at,
+                command.reason,
+                self.actor_id,
+            ),
+        )
+
+    def remove_signer(
+        self, command: LeaseRemoveSignerCommand, *, actor: AuthenticatedActor
+    ) -> LeaseSnapshot:
+        self._require_authorized_actor(
+            actor, LEASE_SIGNER_MANAGE_CAPABILITY, command.authorization_reference
+        )
+        digest = lease_request_digest("lease.signer.remove", command)
+        return self._execute(
+            "SELECT app.remove_lease_signer(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                self.property_id,
+                command.idempotency_key,
+                digest,
+                command.event_id,
+                command.lease_id,
+                command.signer_id,
+                command.expected_version,
+                command.reason,
+                command.authorization_reference,
+                self.actor_id,
+            ),
+        )
+
+    def sign(self, command: LeaseSignCommand, *, actor: AuthenticatedActor) -> LeaseSnapshot:
+        self._require_authorized_actor(
+            actor, LEASE_SIGN_CAPABILITY, command.authorization_reference
+        )
+        digest = lease_request_digest("lease.sign", command)
+        return self._execute(
+            "SELECT app.sign_lease(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                self.property_id,
+                command.idempotency_key,
+                digest,
+                command.event_id,
+                command.lease_id,
+                command.expected_version,
+                command.signed_at,
+                command.reason,
+                self.actor_id,
+            ),
+        )
+
+    def cancel(self, command: LeaseCancelCommand, *, actor: AuthenticatedActor) -> LeaseSnapshot:
+        self._require_authorized_actor(
+            actor, LEASE_DRAFT_CAPABILITY, command.authorization_reference
+        )
+        digest = lease_request_digest("lease.cancel", command)
+        return self._execute(
+            "SELECT app.cancel_draft_lease(%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                self.property_id,
+                command.idempotency_key,
+                digest,
+                command.event_id,
+                command.lease_id,
+                command.expected_version,
+                command.reason,
+                self.actor_id,
+            ),
+        )
+
+    def terminate(
+        self, command: LeaseTerminateCommand, *, actor: AuthenticatedActor
+    ) -> LeaseSnapshot:
+        self._require_authorized_actor(
+            actor, LEASE_TERMINATE_CAPABILITY, command.authorization_reference
+        )
+        digest = lease_request_digest("lease.terminate", command)
+        return self._execute(
+            "SELECT app.terminate_lease(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                self.property_id,
+                command.idempotency_key,
+                digest,
+                command.event_id,
+                command.lease_id,
+                command.expected_version,
+                command.actual_termination_date,
+                command.occurred_at,
+                command.governing_event_reference,
+                command.reason,
+                self.actor_id,
+            ),
+        )
