@@ -86,6 +86,52 @@ def _json_value(value: object) -> object:
 
 
 @dataclass(frozen=True, slots=True)
+class LeaseDraftSigner:
+    """One additional, explicitly identified Lease signer."""
+
+    signer_id: UUID
+    customer_id: UUID
+
+    def __post_init__(self) -> None:
+        _require_identity(self.signer_id, "signer_id")
+        _require_identity(self.customer_id, "customer_id")
+
+
+@dataclass(frozen=True, slots=True)
+class LeaseServiceTerm:
+    """One approved configured Service term captured with a Lease draft."""
+
+    term_id: UUID
+    property_service_id: UUID
+    applicable_from: date
+    applicable_through: date | None
+    service_approval_period_id: UUID
+    terms_reference: str
+
+    def __post_init__(self) -> None:
+        for field in ("term_id", "property_service_id", "service_approval_period_id"):
+            _require_identity(getattr(self, field), field)
+        if self.applicable_through is not None and self.applicable_through < self.applicable_from:
+            raise ValueError("Service term period is reversed")
+        _require_nonblank(self.terms_reference, "terms_reference")
+
+
+@dataclass(frozen=True, slots=True)
+class LeasePetTerm:
+    """Approved pet terms captured without inventing a Pet Deposit policy."""
+
+    approval_id: UUID
+    approved_date: date
+    deposit_required_by_signed_terms: bool
+    pet_description: str | None
+
+    def __post_init__(self) -> None:
+        _require_identity(self.approval_id, "approval_id")
+        if self.pet_description is not None:
+            _require_nonblank(self.pet_description, "pet_description")
+
+
+@dataclass(frozen=True, slots=True)
 class LeaseDraftCommand:
     """Create one stable DRAFTED Lease and its unsigned Primary Tenant signer."""
 
@@ -101,6 +147,11 @@ class LeaseDraftCommand:
     predecessor_lease_id: UUID | None
     reason: str
     authorization_reference: str
+    additional_signers: tuple[LeaseDraftSigner, ...] = ()
+    planned_occupant_customer_ids: tuple[UUID, ...] = ()
+    service_terms: tuple[LeaseServiceTerm, ...] = ()
+    pet_term: LeasePetTerm | None = None
+    security_deposit_id: UUID | None = None
 
     def __post_init__(self) -> None:
         for field in (
@@ -121,6 +172,25 @@ class LeaseDraftCommand:
             raise ValueError("monthly_rent_usd_cents must be positive")
         _require_nonblank(self.reason, "reason")
         _require_nonblank(self.authorization_reference, "authorization_reference")
+        if len(self.additional_signers) > 19 or len(self.planned_occupant_customer_ids) > 20:
+            raise ValueError("Lease parties exceed the bounded draft limit")
+        if len(self.service_terms) > 20:
+            raise ValueError("Lease Service terms exceed the bounded draft limit")
+        signer_customers = [
+            self.primary_tenant_id,
+            *(item.customer_id for item in self.additional_signers),
+        ]
+        signer_ids = [self.primary_signer_id, *(item.signer_id for item in self.additional_signers)]
+        if len(set(signer_customers)) != len(signer_customers) or len(set(signer_ids)) != len(
+            signer_ids
+        ):
+            raise ValueError("Lease signers must be unique")
+        if len(set(self.planned_occupant_customer_ids)) != len(self.planned_occupant_customer_ids):
+            raise ValueError("Planned Occupants must be unique")
+        for customer_id in self.planned_occupant_customer_ids:
+            _require_identity(customer_id, "planned_occupant_customer_id")
+        if self.security_deposit_id is not None:
+            _require_identity(self.security_deposit_id, "security_deposit_id")
 
 
 @dataclass(frozen=True, slots=True)
@@ -141,6 +211,32 @@ class LeaseAddSignerCommand:
             _require_identity(getattr(self, field), field)
         if self.expected_version < 1:
             raise ValueError("expected_version must be positive")
+        _require_nonblank(self.reason, "reason")
+        _require_nonblank(self.authorization_reference, "authorization_reference")
+
+
+@dataclass(frozen=True, slots=True)
+class LeaseUpdateDraftCommand:
+    """Update mutable source terms while a Lease remains DRAFTED."""
+
+    idempotency_key: UUID
+    event_id: UUID
+    lease_id: UUID
+    expected_version: int
+    start_date: date | None
+    end_date: date | None
+    monthly_rent_usd_cents: int | None
+    reason: str
+    authorization_reference: str
+
+    def __post_init__(self) -> None:
+        for field in ("idempotency_key", "event_id", "lease_id"):
+            _require_identity(getattr(self, field), field)
+        if self.expected_version < 1:
+            raise ValueError("expected_version must be positive")
+        _require_optional_period(self.start_date, self.end_date)
+        if self.monthly_rent_usd_cents is not None and self.monthly_rent_usd_cents <= 0:
+            raise ValueError("monthly_rent_usd_cents must be positive")
         _require_nonblank(self.reason, "reason")
         _require_nonblank(self.authorization_reference, "authorization_reference")
 
@@ -261,6 +357,7 @@ class LeaseTerminateCommand:
 
 LeaseCommand: TypeAlias = (
     LeaseDraftCommand
+    | LeaseUpdateDraftCommand
     | LeaseAddSignerCommand
     | LeaseRecordSignatureCommand
     | LeaseRemoveSignerCommand
@@ -416,6 +513,49 @@ class PostgresLeaseService:
             ),
         )
 
+    def draft_with_terms(
+        self, command: LeaseDraftCommand, *, actor: AuthenticatedActor
+    ) -> LeaseSnapshot:
+        """Atomically create a draft and its approved party/term source evidence."""
+        self._require_authorized_actor(
+            actor, LEASE_DRAFT_CAPABILITY, command.authorization_reference
+        )
+        digest = lease_request_digest("lease.draft", command)
+        additional_signers = json.dumps(
+            _json_value([asdict(value) for value in command.additional_signers])
+        )
+        planned_occupants = json.dumps(_json_value(command.planned_occupant_customer_ids))
+        service_terms = json.dumps(_json_value([asdict(value) for value in command.service_terms]))
+        pet_term = (
+            None if command.pet_term is None else json.dumps(_json_value(asdict(command.pet_term)))
+        )
+        return self._execute(
+            "SELECT app.create_lease_draft_with_terms("
+            "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s::jsonb,%s::jsonb,"
+            "%s::jsonb,%s,%s,%s)",
+            (
+                self.property_id,
+                command.idempotency_key,
+                digest,
+                command.event_id,
+                command.lease_id,
+                command.unit_id,
+                command.primary_tenant_id,
+                command.primary_signer_id,
+                command.start_date,
+                command.end_date,
+                command.monthly_rent_usd_cents,
+                command.predecessor_lease_id,
+                additional_signers,
+                planned_occupants,
+                service_terms,
+                pet_term,
+                command.security_deposit_id,
+                command.reason,
+                self.actor_id,
+            ),
+        )
+
     def add_signer(
         self, command: LeaseAddSignerCommand, *, actor: AuthenticatedActor
     ) -> LeaseSnapshot:
@@ -434,6 +574,31 @@ class PostgresLeaseService:
                 command.signer_id,
                 command.customer_id,
                 command.expected_version,
+                command.reason,
+                command.authorization_reference,
+                self.actor_id,
+            ),
+        )
+
+    def update_draft(
+        self, command: LeaseUpdateDraftCommand, *, actor: AuthenticatedActor
+    ) -> LeaseSnapshot:
+        self._require_authorized_actor(
+            actor, LEASE_DRAFT_CAPABILITY, command.authorization_reference
+        )
+        digest = lease_request_digest("lease.draft.update", command)
+        return self._execute(
+            "SELECT app.update_lease_draft(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                self.property_id,
+                command.idempotency_key,
+                digest,
+                command.event_id,
+                command.lease_id,
+                command.expected_version,
+                command.start_date,
+                command.end_date,
+                command.monthly_rent_usd_cents,
                 command.reason,
                 command.authorization_reference,
                 self.actor_id,

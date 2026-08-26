@@ -809,15 +809,4 @@ def create_reservation_router(
         response.headers["ETag"] = f'"{resource.version}"'
         return {"data": _body(resource, actor), "meta": {"request_id": request.state.request_id}}
 
-    @router.post("/reservations/{reservation_id}/complete-move-in")
-    def complete_move_in(reservation_id: UUID, request: Request) -> None:
-        """Keep API-033 explicit while V1-035's atomic Lease boundary remains held."""
-        actor = _require_actor(request, resolver)
-        try:
-            current = flow.get(reservation_id)
-        except Exception as exc:
-            raise _translate(exc) from exc
-        _require(actor, current.property_id, "reservations.complete")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT)
-
     return router

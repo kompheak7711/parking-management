@@ -1137,17 +1137,11 @@ class RepositoryEvidenceTests(unittest.TestCase):
     def test_v1_035_uses_exact_move_in_authorities(self) -> None:
         roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())
         candidate = next(item for item in roadmap["tranches"] if item["id"] == "V1-035")
-        state = json.loads((ROOT / "ops/STATE.json").read_text())
 
-        for authorities in (
-            candidate["authorities"],
-            state["authorities"],
-            state["relevant_docs"],
-        ):
-            self.assertNotIn("BR-LEASE-015-016", authorities)
-            self.assertTrue(
-                {"BR-LEASE-015", "BR-LEASE-016"}.issubset(authorities)
-            )
+        self.assertNotIn("BR-LEASE-015-016", candidate["authorities"])
+        self.assertTrue(
+            {"BR-LEASE-015", "BR-LEASE-016"}.issubset(candidate["authorities"])
+        )
 
         packet = task_packet(
             ROOT,

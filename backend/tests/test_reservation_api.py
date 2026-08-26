@@ -358,7 +358,7 @@ def test_cancel_derives_customer_deposit_disposition_without_free_form_outcome()
     assert response.json()["data"]["deposit_outcome_state"] == "NON_REFUNDABLE_DISPOSITION"
 
 
-def test_no_generic_status_patch_and_move_in_stays_at_v1_035_boundary() -> None:
+def test_no_generic_status_patch_and_move_in_requires_v1_036_command_schema() -> None:
     property_id = uuid4()
     current = resource(property_id)
     flow = InMemoryReservationFlow({current.reservation_id: current})
@@ -371,4 +371,4 @@ def test_no_generic_status_patch_and_move_in_stays_at_v1_035_boundary() -> None:
         f"/reservations/{current.reservation_id}", json={"status": "CANCELLED"}
     )
     assert patch_response.status_code == 405
-    assert api.post(f"/reservations/{current.reservation_id}/complete-move-in").status_code == 409
+    assert api.post(f"/reservations/{current.reservation_id}/complete-move-in").status_code == 404

@@ -1,18 +1,33 @@
 {
-  "active_cycle": "v1-035-move-in-orchestration",
+  "active_cycle": "v1-036-lease-api-ui",
   "approval": {
-    "status": "complete",
+    "status": "verified_unpublished",
     "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-032 through V1-036 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
   "authorities": [
-    "BR-LEASE-015",
-    "BR-LEASE-016",
-    "BR-OCC-*",
-    "TEST-028",
-    "TEST-033-035"
+    "API-035",
+    "API-036",
+    "API-037",
+    "API-038",
+    "UI-036",
+    "UI-037",
+    "UI-038",
+    "UI-039",
+    "UI-040",
+    "UI-041",
+    "UI-042",
+    "UI-043",
+    "UI-044",
+    "UI-045",
+    "TEST-030",
+    "TEST-031",
+    "TEST-032",
+    "TEST-033",
+    "TEST-034",
+    "TEST-035"
   ],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -695,7 +710,7 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "45b3a7af4ab7ff83996bcba3dc441a4d7592bbdd",
+  "commit": "3d172bcb4a220dfbce75defc3a329389a5201daf",
   "evidence_applicability": {
     "basis": "V1-035 implementation commit bf77d714a932b83bfe1bbbf54b5ded003a1291de and closure commit 45b3a7af4ab7ff83996bcba3dc441a4d7592bbdd are independently reviewed, published, and exact-SHA CI-green in runs 32933925926 and 32934543309",
     "complete_profile_remains_applicable": true,
@@ -703,7 +718,7 @@
     "tranche_id": "V1-035"
   },
   "idle_reason": null,
-  "next_action": "Preflight V1-036 while the supervisor remains disabled; do not activate V1-037",
+  "next_action": "Obtain a fresh read-only independent review of the exact corrected V1-036 final diff, then publish and require exact-SHA GitHub Actions while V1-037 remains held",
   "next_candidate": {
     "acceptance_profile": "api_ui",
     "authorities": [
@@ -750,29 +765,23 @@
   },
   "phase": "Leases",
   "publication": {
-    "ci_completed": true,
-    "ci_conclusion": "success",
-    "ci_run_id": 32933925926,
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32933925926",
-    "closure_commit": "45b3a7af4ab7ff83996bcba3dc441a4d7592bbdd",
-    "closure_ci_run_id": 32934543309,
-    "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32934543309",
-    "commit_completed": true,
-    "implementation_commit": "bf77d714a932b83bfe1bbbf54b5ded003a1291de",
-    "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published_and_exact_sha_ci_green_closure_valid",
-    "tranche_id": "V1-035"
+    "ci_completed": false,
+    "commit_completed": false,
+    "predecessor_closure_commit": "45b3a7af4ab7ff83996bcba3dc441a4d7592bbdd",
+    "predecessor_reconciliation_commit": "3d172bcb4a220dfbce75defc3a329389a5201daf",
+    "push_completed": false,
+    "sha_reconciled": false,
+    "status": "verified_unpublished_review_pending",
+    "tranche_id": "V1-036"
   },
   "relevant_docs": [
-    "BR-LEASE-015",
-    "BR-LEASE-016",
-    "BR-OCC-*",
-    "TEST-028",
-    "TEST-033-035"
+    "docs/005_API_SPECIFICATION.md: API-035 through API-038",
+    "docs/006_UI_SPECIFICATION.md: UI-036 through UI-045",
+    "docs/007_TESTING_STRATEGY.md: TEST-030 through TEST-035",
+    "docs/008_SECURITY_MODEL.md: Property-scoped capability, privacy, and CSRF requirements"
   ],
   "repair": {
-    "tranche_id": "V1-035",
+    "tranche_id": "V1-036",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -931,43 +940,55 @@
     "tranche_id": "V1-026"
   },
   "review": {
-    "findings": 0,
+    "findings": null,
     "review_kind": "fresh_read_only_exact_final_diff",
-    "reviewed_paths": 9,
+    "reviewed_paths": null,
     "reviewer_edits": false,
-    "status": "PASS",
-    "tranche_id": "V1-035"
+    "status": "PENDING_AFTER_CORRECTIONS",
+    "tranche_id": "V1-036"
   },
   "risk_class": "high",
   "roadmap": {
     "completed": 35,
-    "current_id": "V1-035",
+    "current_id": "V1-036",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Completed the approved bounded candidate: Move-in, occupancy, and reservation-to-lease orchestration",
+  "status": "verified_unpublished",
+  "task": "Review and publish the approved bounded candidate: Lease, signer, occupancy, and move-in API/UI",
   "tests": [
-    "PASS: focused V1-035 domain and real PostgreSQL migration, chronology, rollback, idempotency, concurrency, authorization, and history coverage; 269 PostgreSQL tests",
-    "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-035-review-corrections.json",
-    "PASS: fresh independent read-only exact-final-diff review; zero findings; reviewer made no edits",
-    "PASS: implementation commit bf77d714a932b83bfe1bbbf54b5ded003a1291de exact-SHA GitHub Actions run 32933925926; all four jobs",
-    "PASS: closure commit 45b3a7af4ab7ff83996bcba3dc441a4d7592bbdd exact-SHA GitHub Actions run 32934543309; all four jobs"
+    "PASS: focused Lease API/domain/routing/traceability tests 54/54",
+    "PASS: frontend Lease client and accessible staff workflow tests 12/12; complete frontend suite 196/196",
+    "PASS: disposable PostgreSQL migration, upgrade, runtime-role, transaction, replay, rollback, and HTTP-to-PostgreSQL suite 272/272",
+    "PASS: final corrected complete deterministic verification profile 15/15; backend 614 passed with 261 expected environment skips; frontend 196 passed; automation routing 185 passed; /private/tmp/property-rental-v1-036-final-review-round.json",
+    "PENDING: fresh independent read-only exact-final-diff re-review and publication"
   ],
-  "tests_tranche_id": "V1-035",
-  "timestamp": "2026-08-26T05:34:00Z",
+  "tests_tranche_id": "V1-036",
+  "timestamp": "2026-08-26T10:16:00Z",
   "touched_areas": [
-    "backend/migrations/versions/20260826_25_move_in_orchestration.py",
-    "backend/src/property_rental/move_in.py",
+    "backend/migrations/versions/20260826_26_lease_api_services.py",
+    "backend/src/property_rental/app.py",
+    "backend/src/property_rental/lease.py",
+    "backend/src/property_rental/lease_api.py",
+    "backend/src/property_rental/reservation_api.py",
+    "backend/tests/test_lease_api.py",
+    "backend/tests/test_lease_api_migration.py",
+    "backend/tests/test_initial_owner_bootstrap_cli.py",
+    "backend/tests/test_lease_migration.py",
     "backend/tests/test_migrations.py",
-    "backend/tests/test_move_in.py",
-    "backend/tests/test_move_in_migration.py",
+    "backend/tests/test_reservation_api.py",
+    "frontend/src/App.tsx",
+    "frontend/src/LeaseManagement.tsx",
+    "frontend/src/LeaseManagement.test.tsx",
+    "frontend/src/leaseClient.ts",
+    "frontend/src/leaseClient.test.tsx",
     "ops/NOW.md",
     "ops/STATE.json",
     "ops/traceability.json",
-    "scripts/database-test.sh"
+    "scripts/database-test.sh",
+    "scripts/test_openclaw_automation.py"
   ],
-  "tranche": "Move-in, occupancy, and reservation-to-lease orchestration"
+  "tranche": "Lease, signer, occupancy, and move-in API/UI"
 }

@@ -650,27 +650,29 @@ def test_nonbilling_lease_event_term_and_pet_stores_are_append_only(
     draft_lease_id = create_draft(
         connection, actor_id=actor_id, unit_id=unit_id, primary_tenant_id=tenant_id
     )
-    with pytest.raises(Error) as draft_service_term:
-        with connection.transaction():
-            connection.execute(
-                """
-                INSERT INTO app.lease_service_terms(
-                    id, lease_id, property_service_id, applicable_from, applicable_through,
-                    service_approval_period_id, terms_reference, recorded_at, recorded_by
-                ) VALUES (%s,%s,%s,%s,%s,%s,'draft-term',clock_timestamp(),%s)
-                """,
-                (
-                    uuid4(),
-                    draft_lease_id,
-                    service_id,
-                    date(2027, 1, 1),
-                    date(2027, 12, 31),
-                    approval_id,
-                    actor_id,
-                ),
-            )
-            connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
-    assert draft_service_term.value.sqlstate == "23514"
+    draft_term_id = uuid4()
+    connection.execute(
+        """
+        INSERT INTO app.lease_service_terms(
+            id, lease_id, property_service_id, applicable_from, applicable_through,
+            service_approval_period_id, terms_reference, recorded_at, recorded_by
+        ) VALUES (%s,%s,%s,%s,%s,%s,'draft-term',clock_timestamp(),%s)
+        """,
+        (
+            draft_term_id,
+            draft_lease_id,
+            service_id,
+            date(2027, 1, 1),
+            date(2027, 12, 31),
+            approval_id,
+            actor_id,
+        ),
+    )
+    connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+    assert connection.execute(
+        "SELECT terms_reference FROM app.lease_service_terms WHERE id=%s",
+        (draft_term_id,),
+    ).fetchone() == ("draft-term",)
     departure_id = uuid4()
     connection.execute(
         """

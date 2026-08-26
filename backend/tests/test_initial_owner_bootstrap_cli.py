@@ -617,7 +617,17 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/reservations/{reservation_id}": {"get"},
         "/reservations/{reservation_id}/extend": {"post"},
         "/reservations/{reservation_id}/cancel": {"post"},
-        "/reservations/{reservation_id}/complete-move-in": {"post"},
+        "/api/v1/reservations/{reservation_id}/complete-move-in": {"post"},
+        "/api/v1/properties/{property_id}/leases": {"get", "post"},
+        "/api/v1/leases/{lease_id}": {"get", "patch"},
+        "/api/v1/leases/{lease_id}/timeline": {"get"},
+        "/api/v1/leases/{lease_id}/signers": {"get", "post"},
+        "/api/v1/lease-signers/{signer_id}": {"patch"},
+        "/api/v1/leases/{lease_id}/occupancies": {"get", "post"},
+        "/api/v1/occupancies/{occupancy_id}/end": {"post"},
+        "/api/v1/leases/{lease_id}/sign": {"post"},
+        "/api/v1/leases/{lease_id}/renew": {"post"},
+        "/api/v1/leases/{lease_id}/terminate": {"post"},
     }
     openapi_operations = {
         path: set(path_item) & http_methods for path, path_item in app.openapi()["paths"].items()

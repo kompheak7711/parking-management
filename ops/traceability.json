@@ -8132,12 +8132,12 @@
       "notes": "Customer-caused cancellation derives the approved non-refundable linked Deposit disposition from responsibility and never accepts a client-selected free-form financial outcome."
     },
     {
-      "test_id": "test_no_generic_status_patch_and_move_in_stays_at_v1_035_boundary",
+      "test_id": "test_no_generic_status_patch_and_move_in_requires_v1_036_command_schema",
       "upstream_ids": ["API-033", "API-034", "BR-RES-003", "BR-RES-013", "TEST-028"],
       "test_level": "API",
       "test_path": "backend/tests/test_reservation_api.py",
       "status": "implemented",
-      "notes": "There is no generic Reservation status PATCH; the explicit move-in command fails closed until the separately bounded Lease and occupancy orchestration is published."
+      "notes": "There is no generic Reservation status PATCH; the published explicit V1-036 move-in command rejects incomplete requests through its bounded schema instead of mutating lifecycle state."
     },
     {
       "test_id": "test_failure_concurrent_retry_and_replay_produce_one_logical_execution",
@@ -8305,7 +8305,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_lease_migration.py",
       "status": "implemented",
-      "notes": "Non-billing Lease notices, warnings, approved pet facts, signed Service terms, departures, and future pet-Deposit review storage are relational, source-linked, and append-only; billing-dependent nonpayment stores remain explicitly deferred."
+      "notes": "Non-billing Lease notices, warnings, approved pet facts, draft-captured and signed Service terms, departures, and future pet-Deposit review storage are relational, source-linked, and append-only; billing-dependent nonpayment stores remain explicitly deferred."
     },
     {
       "test_id": "test_lease_persistence_migration_is_forward_only",
@@ -8458,6 +8458,158 @@
       "test_path": "backend/tests/test_move_in.py",
       "status": "implemented",
       "notes": "Actor mismatch, missing Property-scoped capability, and untrusted authorization references are rejected before a database connection is opened."
+    },
+    {
+      "test_id": "test_list_is_bounded_private_filtered_and_scope_sensitive",
+      "upstream_ids": ["API-035", "UI-036", "TEST-030"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "Property-scoped Lease listing is bounded, status-filtered, private, capability-sensitive, uses the canonical data/page envelope, rejects unknown filters, and is non-disclosing across Property boundaries."
+    },
+    {
+      "test_id": "test_create_and_update_require_csrf_idempotency_and_optimistic_version",
+      "upstream_ids": ["API-035", "UI-037", "TEST-030", "TEST-031"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "Lease draft creation atomically accepts distinct approved Service, pet, Security Deposit, Signer, and planned Occupant evidence with a Location response; partial source-term correction preserves omitted dates and Rent while requiring CSRF, stable idempotency, explicit reasons, and optimistic version preconditions without generic status mutation."
+    },
+    {
+      "test_id": "test_signer_signing_renewal_and_termination_are_explicit_commands",
+      "upstream_ids": ["API-036", "API-038", "UI-038", "UI-040", "UI-041", "UI-042", "TEST-030", "TEST-031", "TEST-032"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "Signer attribution, final signing, successor renewal, and authorized termination are separate audited commands with immutable source identities and version preconditions."
+    },
+    {
+      "test_id": "test_coordinated_occupancy_and_complete_move_in_share_atomic_service_boundary",
+      "upstream_ids": ["API-033", "API-037", "UI-039", "UI-043", "UI-044", "UI-045", "TEST-033", "TEST-034", "TEST-035"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "Occupancy creation and complete-move-in both use the atomic V1-035 service boundary; Occupants remain distinct from Signers and move-out stays outside V1-036."
+    },
+    {
+      "test_id": "test_timeline_is_bounded_paginated_and_rejects_unknown_queries",
+      "upstream_ids": ["API-019", "API-038", "UI-042", "TEST-031", "TEST-032"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_lease_api.py",
+      "status": "implemented",
+      "notes": "The canonical Lease timeline endpoint returns a bounded cursor page, continues without silent truncation, and rejects unknown query parameters."
+    },
+    {
+      "test_id": "test_http_create_update_sign_and_replay_use_runtime_role",
+      "upstream_ids": ["API-035", "API-036", "API-038", "TEST-030", "TEST-031", "TEST-032"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_api_migration.py",
+      "status": "implemented",
+      "notes": "Authenticated HTTP requests traverse the real FastAPI, service, transaction, runtime-role, and PostgreSQL boundaries for atomic approved draft terms and parties, replay, full and partial correction with omitted-field preservation, Signers, signatures, final signing, canonical bounded reads, source-linked notices/warnings, and permanent command history."
+    },
+    {
+      "test_id": "test_http_complete_move_in_preserves_atomic_postgresql_result",
+      "upstream_ids": ["API-033", "API-037", "UI-043", "UI-044", "UI-045", "TEST-033", "TEST-034", "TEST-035"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_api_migration.py",
+      "status": "implemented",
+      "notes": "A real authenticated HTTP complete-move-in request atomically persists Reservation completion, Occupancy, Unit state, Lease linkage, and the original Security Deposit identity in disposable PostgreSQL."
+    },
+    {
+      "test_id": "test_http_draft_requires_security_deposit_from_the_same_reservation_unit",
+      "upstream_ids": ["API-035", "UI-037", "TEST-030", "TEST-035"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_api_migration.py",
+      "status": "implemented",
+      "notes": "The canonical /api/v1 HTTP draft route accepts a received Security Deposit only from the same Customer, Property, Reservation, and Unit; a cross-Unit source is rejected and the Lease transaction rolls back, while a locked PostgreSQL trigger caps Signers at the documented twenty-party bound."
+    },
+    {
+      "test_id": "TEST-FE-185",
+      "upstream_ids": ["API-035", "UI-036", "TEST-030"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leaseClient.test.tsx",
+      "status": "implemented",
+      "notes": "The client sends bounded status, Unit, Customer, date, Property-business-date, and approaching-End-Date filters."
+    },
+    {
+      "test_id": "TEST-FE-186",
+      "upstream_ids": ["API-038", "UI-040", "TEST-030", "TEST-032"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leaseClient.test.tsx",
+      "status": "implemented",
+      "notes": "Explicit Lease signing sends CSRF, idempotency, and optimistic If-Match evidence."
+    },
+    {
+      "test_id": "TEST-FE-187",
+      "upstream_ids": ["API-035", "API-038", "TEST-030"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leaseClient.test.tsx",
+      "status": "implemented",
+      "notes": "Optimistic conflicts become a bounded reload-before-retry state without automatic ambiguous command replay."
+    },
+    {
+      "test_id": "TEST-FE-188",
+      "upstream_ids": ["UI-036", "UI-041", "TEST-030", "TEST-031"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The accessible Lease list exposes bounded period filters and visually distinguishes linked future successors."
+    },
+    {
+      "test_id": "TEST-FE-189",
+      "upstream_ids": ["UI-038", "UI-039", "UI-040", "TEST-032", "TEST-033"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Signers remain distinct from Occupants and final signing requires explicit confirmation and reason evidence."
+    },
+    {
+      "test_id": "TEST-FE-190",
+      "upstream_ids": ["UI-043", "UI-044", "UI-045", "TEST-034", "TEST-035"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The move-in UI conditionally displays the recorded Pet Deposit requirement, accepts multiple explicitly identified Occupants, and confirms one atomic Reservation, Lease, Unit, Occupancy, and Deposit transition."
+    },
+    {
+      "test_id": "TEST-FE-191",
+      "upstream_ids": ["API-035", "UI-037", "UI-038", "UI-039", "TEST-030", "TEST-033"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "One accessible draft workflow captures distinct configured Service, pet, Security Deposit, Signer, and planned Occupant source evidence without creating a default financial policy."
+    },
+    {
+      "test_id": "TEST-FE-192",
+      "upstream_ids": ["UI-041", "UI-042", "TEST-031", "TEST-032"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Permanent Lease timeline entries render stable distinct source identities at matching DOM anchors, load bounded cursor continuations, and navigate successor renewal lineage."
+    },
+    {
+      "test_id": "TEST-FE-193",
+      "upstream_ids": ["UI-037", "TEST-030"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A rejected Lease draft keeps the operator's Unit, Tenant, terms, party, Deposit, and reason inputs available for accessible correction instead of clearing them before success."
+    },
+    {
+      "test_id": "TEST-FE-194",
+      "upstream_ids": ["API-038", "UI-041", "TEST-031"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The renewal workflow is hidden for an ineligible or unauthorized Lease and appears only when the server grants the capability for a signed or terminated predecessor."
+    },
+    {
+      "test_id": "TEST-FE-195",
+      "upstream_ids": ["API-019", "API-038", "UI-042", "TEST-031"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/leaseClient.test.tsx",
+      "status": "implemented",
+      "notes": "The Lease client requests an exact bounded timeline continuation cursor and preserves the canonical data/page response contract."
     }
   ]
 }

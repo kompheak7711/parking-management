@@ -60,6 +60,12 @@ from property_rental.customer_api import (
     customer_reuse_conflict_response,
 )
 from property_rental.identity import ActorResolver, deny_unauthenticated_actor
+from property_rental.lease_api import (
+    LeaseResourceFlow,
+    PostgresLeaseResourceFlow,
+    UnavailableLeaseResourceFlow,
+    create_lease_router,
+)
 from property_rental.logging import create_application_logger
 from property_rental.property_api import (
     PostgresPropertyResourceFlow,
@@ -92,6 +98,11 @@ CONFIGURATION_API_PATH_PATTERN: Final = re.compile(
     r"^(?:/properties/[^/]+/configuration(?:/|$)|"
     r"/api/v1/(?:properties/[^/]+/(?:configuration-capabilities|configured-services|service-rates|"
     r"utility-rates|exchange-rates(?::confirm)?)|service-rates/|utility-rates/))"
+)
+LEASE_API_PATH_PATTERN: Final = re.compile(
+    r"^/api/v1/(?:properties/[^/]+/leases(?:/|$)|leases(?:/|$)|"
+    r"lease-signers(?:/|$)|occupancies(?:/|$)|"
+    r"reservations/[^/]+/complete-move-in$)"
 )
 DATABASE_TIMEOUT_SECONDS: Final = 2
 ERROR_STATUS_DETAILS: Final = {
@@ -210,6 +221,7 @@ def create_app(
     configuration_flow: ConfigurationFlow | None = None,
     exchange_rate_provider: ExchangeRateProvider | None = None,
     reservation_resource_flow: ReservationResourceFlow | None = None,
+    lease_resource_flow: LeaseResourceFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -403,9 +415,11 @@ def create_app(
             )
             response = error_response(status.HTTP_500_INTERNAL_SERVER_ERROR, request_id)
         response.headers[REQUEST_ID_HEADER] = request_id
-        if CUSTOMER_API_PATH_PATTERN.match(
-            request.url.path
-        ) or CONFIGURATION_API_PATH_PATTERN.match(request.url.path):
+        if (
+            CUSTOMER_API_PATH_PATTERN.match(request.url.path)
+            or CONFIGURATION_API_PATH_PATTERN.match(request.url.path)
+            or LEASE_API_PATH_PATTERN.match(request.url.path)
+        ):
             response.headers["Cache-Control"] = "private, no-store"
             response.headers["Vary"] = "Cookie"
         logger.info(
@@ -515,6 +529,18 @@ def create_app(
                 )
                 if resolved_settings.database_url is not None
                 else UnavailableReservationResourceFlow()
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_lease_router(
+            actor_resolver,
+            lease_resource_flow
+            or (
+                PostgresLeaseResourceFlow(resolved_settings.database_url.get_secret_value())
+                if resolved_settings.database_url is not None
+                else UnavailableLeaseResourceFlow()
             ),
             resolved_settings,
         )
