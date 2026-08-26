@@ -1126,6 +1126,53 @@ class RepositoryEvidenceTests(unittest.TestCase):
             record["completed_implementation_substages"].append(expected)
         self.assertIsNone(dispatcher.current_bounded_substage(record))
 
+    def test_compact_numeric_ranges_never_reach_exact_authority_fields(self) -> None:
+        expanded = expand_authorities(["BR-LEASE-015-016"], repo=ROOT)
+        self.assertEqual(
+            expanded,
+            ["BR-LEASE-015", "BR-LEASE-016"],
+        )
+        self.assertNotIn("BR-LEASE-015-016", expanded)
+
+    def test_v1_035_uses_exact_move_in_authorities(self) -> None:
+        roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())
+        candidate = next(item for item in roadmap["tranches"] if item["id"] == "V1-035")
+        state = json.loads((ROOT / "ops/STATE.json").read_text())
+
+        for authorities in (
+            candidate["authorities"],
+            state["next_candidate"]["authorities"],
+        ):
+            self.assertNotIn("BR-LEASE-015-016", authorities)
+            self.assertTrue(
+                {"BR-LEASE-015", "BR-LEASE-016"}.issubset(authorities)
+            )
+
+        packet = task_packet(
+            ROOT,
+            {"actionable": True},
+            "implementation",
+            candidate_id_override="V1-035",
+        )
+        self.assertNotIn("BR-LEASE-015-016", packet["controlling_authorities"])
+        self.assertTrue(
+            {"BR-LEASE-015", "BR-LEASE-016"}.issubset(
+                packet["controlling_authorities"]
+            )
+        )
+        self.assertTrue(
+            any(
+                evidence["authority"] == "BR-LEASE-015"
+                for evidence in packet["requirement_evidence"]
+            )
+        )
+        self.assertTrue(
+            any(
+                evidence["authority"] == "BR-LEASE-016"
+                for evidence in packet["requirement_evidence"]
+            )
+        )
+
     def test_v1_024_uses_exact_existing_unit_ui_authorities(self) -> None:
         roadmap = json.loads((ROOT / "ops/V1_ROADMAP.json").read_text())
         candidate = next(item for item in roadmap["tranches"] if item["id"] == "V1-024")

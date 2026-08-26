@@ -1828,7 +1828,9 @@ def expand_authorities(
                 )
             expanded.extend(matches)
             continue
-        match = re.fullmatch(r"([A-Z]+)-(\d+)(?:-(\d+))?", authority)
+        match = re.fullmatch(
+            r"([A-Z]+(?:-[A-Z][A-Z0-9]*)*)-(\d+)(?:-(\d+))?", authority
+        )
         if not match:
             expanded.append(authority)
             continue

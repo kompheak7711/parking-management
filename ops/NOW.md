@@ -1,4 +1,4 @@
-# V1-034 Lease lifecycle, signing, termination boundary, and exclusivity services — complete
+# V1-034 Lease lifecycle, signing, termination boundary, and exclusivity services — closure correction active
 
 - Candidate: `V1-034` — Lease lifecycle, signing, termination boundary, and exclusivity services.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -25,16 +25,26 @@
   exact-SHA GitHub Actions run `32923555603` passed all four jobs.
 - Closure evidence: commit `ef9e9eb62495e017cddebed5c124254750d88684`;
   exact-SHA GitHub Actions run `32924150496` passed all four jobs.
-- Status: complete under the existing sequential direct-takeover authorization.
-- Blockers: none.
-- Exact next action: require successful exact-SHA CI for this final closure commit,
-  then preflight V1-035 without activating V1-036 or later tranches.
+- Failed closure: commit `7f57fad0374a9766958ed4d3a2da07ed45b53050`,
+  run `32926275793`; deterministic supervisor routing rejected the noncanonical
+  compact authority `BR-LEASE-015-016`.
+- Correction: use the existing exact canonical identifiers `BR-LEASE-015` and
+  `BR-LEASE-016`, and prevent compound numeric ranges from reaching exact packets.
+- Verification: focused authority/packet regressions passed `2/2`; deterministic
+  automation routing passed `184/184`; state-routing, visibility-watchdog, roadmap,
+  traceability, publication, JSON, syntax, and diff guards passed.
+- Independent review: PASS with zero findings and no reviewer edits across the exact
+  five-path correction.
+- Status: correction reviewed and unpublished; V1-034 is not closure-valid yet.
+- Blocker: corrective closure publication and exact-SHA CI remain pending.
+- Exact next action: publish the immutable corrective closure commit and require
+  successful exact-SHA CI before marking V1-034 closure-valid.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-034 implementation and publication evidence are
-  exact-SHA CI-green; V1-035 remains held pending this final closure commit's CI.
+- Automation publication state: V1-034 product implementation remains published and
+  CI-green, but closure is invalid pending the bounded authority correction.
 - Automation exact next action: keep the Property Rental supervisor disabled and
-  V1-035 held until this final closure commit is exact-SHA CI-green.
+  V1-035 held until the corrective closure SHA is CI-green.
 
 <!-- AUTOMATION_STATUS_END -->

@@ -947,7 +947,7 @@
       "risk_class": "high",
       "acceptance_profile": "foundation",
       "authorization": "durable_v1",
-      "status": "complete"
+      "status": "approved_ready"
     },
     {
       "id": "V1-035",
@@ -959,7 +959,8 @@
         "V1-034"
       ],
       "authorities": [
-        "BR-LEASE-015-016",
+        "BR-LEASE-015",
+        "BR-LEASE-016",
         "BR-OCC-*",
         "TEST-028",
         "TEST-033-035"
