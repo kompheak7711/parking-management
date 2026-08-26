@@ -1,31 +1,18 @@
 {
-  "active_cycle": "v1-034-lease-lifecycle-services",
+  "active_cycle": "v1-035-move-in-orchestration",
   "approval": {
-    "status": "complete",
+    "status": "approved_active",
     "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-032 through V1-036 takeover",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
   "authorities": [
-    "BR-LEASE-001",
-    "BR-LEASE-002",
-    "BR-LEASE-003",
-    "BR-LEASE-004",
-    "BR-LEASE-005",
-    "BR-LEASE-006",
-    "BR-LEASE-007",
-    "BR-LEASE-008",
-    "BR-LEASE-009",
-    "BR-LEASE-010",
-    "BR-LEASE-011",
-    "BR-LEASE-012",
-    "BR-LEASE-013",
-    "BR-LEASE-014",
-    "PR-LEASE-*",
-    "TEST-030",
-    "TEST-031",
-    "TEST-032"
+    "BR-LEASE-015",
+    "BR-LEASE-016",
+    "BR-OCC-*",
+    "TEST-028",
+    "TEST-033-035"
   ],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -708,15 +695,15 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "c2e28a0c877931463cbf05136daa0b64ef513031",
+  "commit": "de5a2823bb10d2905bc876bed1bc694a478a82e9",
   "evidence_applicability": {
-    "basis": "V1-034 implementation commit d56c08756407218a1971b2db527a2a6ce207da2c and corrective closure commit c2e28a0c877931463cbf05136daa0b64ef513031 are independently reviewed, published, and exact-SHA CI-green in runs 32923555603 and 32930202676",
+    "basis": "V1-035 activated from clean synchronized V1-034 closure reconciliation de5a2823bb10d2905bc876bed1bc694a478a82e9 after exact-SHA CI run 32930511076 passed all four jobs",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-033 closure 4b4092f1b621816a152c91895bc9cdd4f380550c is published and exact-SHA CI-green; its evidence is historical for V1-034",
-    "tranche_id": "V1-034"
+    "prior_review_disposition": "V1-034 product and corrected closure are published, independently reviewed, closure-valid, and exact-SHA CI-green; their evidence is historical for V1-035",
+    "tranche_id": "V1-035"
   },
   "idle_reason": null,
-  "next_action": "Preflight V1-035 while the supervisor remains disabled; do not activate V1-036",
+  "next_action": "Obtain a fresh read-only review of the exact verified V1-035 diff, then publish the implementation and require exact-SHA GitHub Actions while V1-036 remains held",
   "next_candidate": {
     "acceptance_profile": "database",
     "authorities": [
@@ -734,7 +721,7 @@
     "order": 35,
     "phase": "Leases",
     "risk_class": "high",
-    "status": "approved_ready",
+    "status": "approved_active",
     "task": "Move-in, occupancy, and reservation-to-lease orchestration",
     "roadmap_id": "V1-035"
   },
@@ -756,49 +743,26 @@
   },
   "phase": "Leases",
   "publication": {
-    "ci_completed": true,
-    "ci_conclusion": "success",
-    "ci_run_id": 32923555603,
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32923555603",
-    "closure_evidence_commit": "ef9e9eb62495e017cddebed5c124254750d88684",
-    "closure_evidence_ci_run_id": 32924150496,
-    "closure_evidence_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32924150496",
-    "failed_closure_commit": "7f57fad0374a9766958ed4d3a2da07ed45b53050",
-    "failed_closure_ci_run_id": 32926275793,
-    "failed_closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32926275793",
-    "failed_closure_gate": "Backend quality, tests, build, and traceability / Test deterministic supervisor routing",
-    "corrective_closure_commit": "c2e28a0c877931463cbf05136daa0b64ef513031",
-    "corrective_closure_ci_run_id": 32930202676,
-    "corrective_closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32930202676",
-    "commit_completed": true,
-    "implementation_commit": "d56c08756407218a1971b2db527a2a6ce207da2c",
-    "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published_and_exact_sha_ci_green_closure_valid",
-    "tranche_id": "V1-034"
+    "ci_completed": false,
+    "ci_conclusion": null,
+    "ci_run_id": null,
+    "ci_run_url": null,
+    "commit_completed": false,
+    "implementation_commit": null,
+    "push_completed": false,
+    "sha_reconciled": false,
+    "status": "not_started",
+    "tranche_id": "V1-035"
   },
   "relevant_docs": [
-    "BR-LEASE-001",
-    "BR-LEASE-002",
-    "BR-LEASE-003",
-    "BR-LEASE-004",
-    "BR-LEASE-005",
-    "BR-LEASE-006",
-    "BR-LEASE-007",
-    "BR-LEASE-008",
-    "BR-LEASE-009",
-    "BR-LEASE-010",
-    "BR-LEASE-011",
-    "BR-LEASE-012",
-    "BR-LEASE-013",
-    "BR-LEASE-014",
-    "PR-LEASE-*",
-    "TEST-030",
-    "TEST-031",
-    "TEST-032"
+    "BR-LEASE-015",
+    "BR-LEASE-016",
+    "BR-OCC-*",
+    "TEST-028",
+    "TEST-033-035"
   ],
   "repair": {
-    "tranche_id": "V1-034",
+    "tranche_id": "V1-035",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -957,25 +921,9 @@
     "tranche_id": "V1-026"
   },
   "review": {
-    "complete_candidate_paths": 9,
-    "corrected_findings": 5,
-    "corrected_product_findings": 4,
-    "final_local_checks": [
-      "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-034-final-v2.json",
-      "PASS: backend 607 passed with 251 expected environment skips",
-      "PASS: frontend 184/184",
-      "PASS: disposable PostgreSQL migration, upgrade, runtime-role, transaction, and concurrency suite 262/262",
-      "PASS: automation routing 182/182",
-      "PASS: canonical specifications unchanged; V1-035 held; token and automation limits unchanged",
-      "PASS: git diff --check"
-    ],
-    "final_verdict": "PASS",
-    "follow_up_findings": 0,
-    "product_review_verdict": "PASS",
     "review_kind": "fresh_read_only_exact_final_diff_required",
-    "reviewer_edits": false,
-    "status": "PASS",
-    "tranche_id": "V1-034"
+    "status": "pending",
+    "tranche_id": "V1-035"
   },
   "risk_class": "high",
   "roadmap": {
@@ -986,28 +934,25 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "complete",
-  "task": "Completed the approved bounded candidate: Lease lifecycle, signing, termination boundary, and exclusivity services",
+  "status": "verified_unpublished",
+  "task": "Implement the approved bounded candidate: Move-in, occupancy, and reservation-to-lease orchestration",
   "tests": [
-    "PASS: complete deterministic verification profile 15/15",
-    "PASS: backend 607 passed with 251 expected environment skips",
-    "PASS: frontend 184/184",
-    "PASS: disposable PostgreSQL suite 262/262",
-    "PASS: automation routing 182/182",
-    "PASS: independent read-only review with zero final findings; 5/5 findings corrected"
+    "PASS: focused V1-035 domain and real PostgreSQL migration, chronology, rollback, idempotency, concurrency, authorization, and history coverage; 269 PostgreSQL tests",
+    "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-035-review-corrections.json",
+    "PENDING: fresh independent read-only review"
   ],
-  "tests_tranche_id": "V1-034",
-  "timestamp": "2026-08-26T04:29:22Z",
+  "tests_tranche_id": "V1-035",
+  "timestamp": "2026-08-26T05:19:31Z",
   "touched_areas": [
-    "backend/migrations/versions/20260826_24_lease_lifecycle_services.py",
-    "backend/src/property_rental/lease.py",
-    "backend/tests/test_lease.py",
-    "backend/tests/test_lease_lifecycle_migration.py",
+    "backend/migrations/versions/20260826_25_move_in_orchestration.py",
+    "backend/src/property_rental/move_in.py",
     "backend/tests/test_migrations.py",
-    "scripts/database-test.sh",
-    "ops/traceability.json",
+    "backend/tests/test_move_in.py",
+    "backend/tests/test_move_in_migration.py",
     "ops/NOW.md",
-    "ops/STATE.json"
+    "ops/STATE.json",
+    "ops/traceability.json",
+    "scripts/database-test.sh"
   ],
-  "tranche": "Lease lifecycle, signing, termination boundary, and exclusivity services"
+  "tranche": "Move-in, occupancy, and reservation-to-lease orchestration"
 }

@@ -8394,6 +8394,70 @@
       "test_path": "backend/tests/test_lease_lifecycle_migration.py",
       "status": "implemented",
       "notes": "Revision 24 advances only from the published V1-033 Lease persistence boundary and refuses destructive rollback of permanent lifecycle evidence."
+    },
+    {
+      "test_id": "test_complete_move_in_is_atomic_replay_safe_and_preserves_source_history",
+      "upstream_ids": ["BR-LEASE-015", "BR-LEASE-016", "BR-OCC-001", "BR-OCC-002", "BR-OCC-003", "BR-OCC-006", "TEST-028", "TEST-033", "TEST-034", "TEST-035"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_in_migration.py",
+      "status": "implemented",
+      "notes": "One authorized runtime command atomically completes the ACTIVE Reservation, preserves its stable resulting-Lease source, changes the Unit from RESERVED to OCCUPIED, begins explicitly identified Occupancies, links the fully paid Security Deposit to the Lease without losing its Reservation source, records immutable version history, replays without duplicate identities or money evidence, and rejects reuse of the same idempotency key for a different payload."
+    },
+    {
+      "test_id": "test_unpaid_deposit_rolls_back_every_move_in_effect",
+      "upstream_ids": ["BR-LEASE-015", "BR-LEASE-016", "TEST-028", "TEST-034", "TEST-035"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_in_migration.py",
+      "status": "implemented",
+      "notes": "An incompletely paid required Security Deposit rejects move-in and preserves the exact Reservation, Unit, Lease, Deposit, Occupancy, and event versions and states."
+    },
+    {
+      "test_id": "test_required_pet_deposit_prerequisite_fails_closed",
+      "upstream_ids": ["BR-LEASE-015", "TEST-034"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_in_migration.py",
+      "status": "implemented",
+      "notes": "A signed-Lease pet approval that requires a Pet Deposit blocks move-in unless the separately identifiable Pet Deposit is fully paid; because Pet Deposit persistence is held for V1-037, V1-035 fails closed and preserves exact Reservation, Unit, Lease, Deposit, Occupancy, and event state instead of bypassing the canonical prerequisite."
+    },
+    {
+      "test_id": "test_backdated_move_in_requires_signing_and_full_payment_by_actual_date",
+      "upstream_ids": ["BR-LEASE-015", "BR-LEASE-016", "TEST-034", "TEST-035"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_in_migration.py",
+      "status": "implemented",
+      "notes": "Real historical PostgreSQL fixtures reject a recorded move-in date that precedes Lease signing or completion of the required Security Deposit, preserving the ACTIVE Reservation and empty move-in history."
+    },
+    {
+      "test_id": "test_concurrent_completion_has_one_winner_and_one_permanent_event",
+      "upstream_ids": ["BR-LEASE-016", "BR-OCC-003", "BR-OCC-006", "TEST-028", "TEST-034"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_move_in_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent completion commands serialize on the same Reservation, Lease, and Unit so exactly one creates the permanent move-in event and Occupancy while the loser observes the completed lifecycle boundary."
+    },
+    {
+      "test_id": "test_history_runtime_role_and_forward_only_boundary",
+      "upstream_ids": ["BR-LEASE-016", "BR-OCC-006", "TEST-028", "TEST-033", "TEST-035"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_move_in_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role can execute only the bounded move-in function and read permanent evidence, cannot mutate that evidence directly, and revision 25 refuses destructive rollback."
+    },
+    {
+      "test_id": "test_move_in_command_is_bounded_unique_and_digest_stable",
+      "upstream_ids": ["BR-OCC-001", "BR-OCC-002", "BR-OCC-003", "TEST-033", "TEST-034"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_move_in.py",
+      "status": "implemented",
+      "notes": "The service contract binds every command input to a stable digest, requires at least one explicitly identified Occupant, rejects duplicate Occupant identities, and bounds one move-in to twenty Occupants."
+    },
+    {
+      "test_id": "test_service_rejects_actor_scope_and_untrusted_authorization_before_database",
+      "upstream_ids": ["BR-LEASE-015", "TEST-034"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_move_in.py",
+      "status": "implemented",
+      "notes": "Actor mismatch, missing Property-scoped capability, and untrusted authorization references are rejected before a database connection is opened."
     }
   ]
 }
