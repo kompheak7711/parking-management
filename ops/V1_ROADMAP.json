@@ -1033,7 +1033,7 @@
       "risk_class": "high",
       "acceptance_profile": "financial",
       "authorization": "durable_v1",
-      "status": "approved_ready"
+      "status": "complete"
     },
     {
       "id": "V1-038",
@@ -1046,7 +1046,16 @@
       "authorities": [
         "API-039-042",
         "API-094",
-        "UI-DEP-*",
+        "UI-030",
+        "UI-033",
+        "UI-035",
+        "UI-043",
+        "UI-044",
+        "UI-071",
+        "UI-073",
+        "UI-074",
+        "UI-076",
+        "UI-107",
         "TEST-036-039",
         "TEST-126"
       ],

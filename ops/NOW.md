@@ -1,4 +1,4 @@
-# V1-037 Security and Pet Deposit persistence/domain services — implementation published; closure pending
+# V1-037 Security and Pet Deposit persistence/domain services — complete
 
 - Candidate: `V1-037` — Security and pet deposit persistence and domain services.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -33,19 +33,23 @@
   `67de8cbaff6a26a4c1cc7ee9d9f80b7c98e97656`; exact-SHA GitHub Actions run
   `32965578375` passed all four jobs on attempt 2 after one unrelated pre-existing
   frontend timing test passed its focused rerun and the exact-SHA job rerun.
-- Status: implementation published; the separate V1-037 closure commit and its
-  own exact-SHA CI result remain pending.
-- V1-038: remains held at `approved_ready` and untouched.
+- Closure: commit `ff89c5148f90fa10b49a6c8d2f562a6dd6269387`;
+  exact-SHA GitHub Actions run `32966323183` passed all four jobs.
+- Status: complete, published, independently reviewed, and closure-valid.
+- V1-038: remains held at `approved_ready`; no product work or activation occurred.
+- Held-successor routing: the invalid noncanonical `UI-DEP-*` placeholder was
+  materialized to the existing exact Deposit-related UI requirements `UI-030`,
+  `UI-033`, `UI-035`, `UI-043`, `UI-044`, `UI-071`, `UI-073`, `UI-074`,
+  `UI-076`, and `UI-107`; no V1-038 product work or activation occurred.
 - Blockers: none.
-- Exact next action: create and push only the V1-037 closure commit, require
-  successful exact-SHA GitHub Actions, then reconcile closure-valid compact state
-  while V1-038 remains held.
+- Exact next action: keep V1-038 held at `approved_ready` and keep the Property
+  Rental supervisor disabled; do not activate the successor automatically.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-037's implementation is published and
-  exact-SHA CI-green but its closure remains pending.
+- Automation publication state: V1-037 implementation and closure are published
+  and exact-SHA CI-green; V1-038 remains the held approved successor.
 - Automation exact next action: keep the supervisor disabled and V1-038 held while
-  V1-037 completes closure publication and reconciliation.
+  awaiting explicit direct-takeover or activation direction.
 
 <!-- AUTOMATION_STATUS_END -->
