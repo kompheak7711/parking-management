@@ -1,4 +1,4 @@
-# V1-035 Move-in, occupancy, and reservation-to-lease orchestration — verified unpublished
+# V1-035 Move-in, occupancy, and reservation-to-lease orchestration — implementation published; closure pending
 
 - Candidate: `V1-035` — Move-in, occupancy, and reservation-to-lease orchestration.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -19,22 +19,26 @@
   Hermes-wrapper changes.
 - Canonical specifications: read-only.
 - Token ceiling and automation protections: unchanged.
-- Verification: PASS; focused real PostgreSQL suite `269/269` and complete
-  deterministic verification profile `15/15`.
-- Status: implementation complete and verified; fresh exact-diff review and
-  publication remain pending under the existing authorization.
+- Verification: PASS; focused real PostgreSQL suite `269/269`, complete
+  deterministic verification profile `15/15`, and fresh exact-diff independent
+  review with zero findings.
+- Implementation publication: commit
+  `bf77d714a932b83bfe1bbbf54b5ded003a1291de`; exact-SHA GitHub Actions run
+  `32933925926` passed all four jobs.
+- Status: implementation published; the V1-035 closure commit and its own
+  exact-SHA CI result remain pending under the existing authorization.
 - Blockers: none.
-- Exact next action: obtain a fresh read-only review of the exact verified V1-035
-  diff, then create and push its implementation commit and require successful
-  exact-SHA GitHub Actions.
+- Exact next action: create and push only the V1-035 closure commit, require
+  successful exact-SHA GitHub Actions, then reconcile closure-valid compact
+  state before activating V1-036.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-034 is published and closure-valid; V1-035 is
-  verified unpublished through direct Codex takeover; V1-036 and later tranches
-  remain held.
+- Automation publication state: V1-034 is published and closure-valid; V1-035's
+  implementation is published and CI-green but its closure remains pending;
+  V1-036 and later tranches remain held.
 - Automation exact next action: keep the Property Rental supervisor disabled,
-  independently review and publish only V1-035, and do not inspect or repair
+  publish and validate only the V1-035 closure, and do not inspect or repair
   Hermes-wrapper drift.
 
 <!-- AUTOMATION_STATUS_END -->

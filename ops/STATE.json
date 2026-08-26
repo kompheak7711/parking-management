@@ -703,7 +703,7 @@
     "tranche_id": "V1-035"
   },
   "idle_reason": null,
-  "next_action": "Obtain a fresh read-only review of the exact verified V1-035 diff, then publish the implementation and require exact-SHA GitHub Actions while V1-036 remains held",
+  "next_action": "Create and push only the V1-035 closure commit, require successful exact-SHA GitHub Actions, then reconcile closure-valid compact state before activating V1-036",
   "next_candidate": {
     "acceptance_profile": "database",
     "authorities": [
@@ -743,15 +743,15 @@
   },
   "phase": "Leases",
   "publication": {
-    "ci_completed": false,
-    "ci_conclusion": null,
-    "ci_run_id": null,
-    "ci_run_url": null,
-    "commit_completed": false,
-    "implementation_commit": null,
-    "push_completed": false,
+    "ci_completed": true,
+    "ci_conclusion": "success",
+    "ci_run_id": 32933925926,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/32933925926",
+    "commit_completed": true,
+    "implementation_commit": "bf77d714a932b83bfe1bbbf54b5ded003a1291de",
+    "push_completed": true,
     "sha_reconciled": false,
-    "status": "not_started",
+    "status": "implementation_published_closure_pending",
     "tranche_id": "V1-035"
   },
   "relevant_docs": [
@@ -921,8 +921,11 @@
     "tranche_id": "V1-026"
   },
   "review": {
-    "review_kind": "fresh_read_only_exact_final_diff_required",
-    "status": "pending",
+    "findings": 0,
+    "review_kind": "fresh_read_only_exact_final_diff",
+    "reviewed_paths": 9,
+    "reviewer_edits": false,
+    "status": "PASS",
     "tranche_id": "V1-035"
   },
   "risk_class": "high",
@@ -939,10 +942,11 @@
   "tests": [
     "PASS: focused V1-035 domain and real PostgreSQL migration, chronology, rollback, idempotency, concurrency, authorization, and history coverage; 269 PostgreSQL tests",
     "PASS: complete deterministic verification profile 15/15; /private/tmp/property-rental-v1-035-review-corrections.json",
-    "PENDING: fresh independent read-only review"
+    "PASS: fresh independent read-only exact-final-diff review; zero findings; reviewer made no edits",
+    "PASS: implementation commit bf77d714a932b83bfe1bbbf54b5ded003a1291de exact-SHA GitHub Actions run 32933925926; all four jobs"
   ],
   "tests_tranche_id": "V1-035",
-  "timestamp": "2026-08-26T05:19:31Z",
+  "timestamp": "2026-08-26T05:28:00Z",
   "touched_areas": [
     "backend/migrations/versions/20260826_25_move_in_orchestration.py",
     "backend/src/property_rental/move_in.py",
