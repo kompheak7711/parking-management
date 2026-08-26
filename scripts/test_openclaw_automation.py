@@ -1174,10 +1174,14 @@ class RepositoryEvidenceTests(unittest.TestCase):
         state = json.loads((ROOT / "ops/STATE.json").read_text())
         expected = {f"UI-{number:03d}" for number in range(36, 46)}
 
-        for authorities in (
-            candidate["authorities"],
-            state["next_candidate"]["authorities"],
-        ):
+        authority_sets = [candidate["authorities"]]
+        state_candidate = state.get("next_candidate") or {}
+        if state_candidate.get("id") == "V1-036":
+            authority_sets.append(state_candidate["authorities"])
+        else:
+            self.assertEqual(candidate["status"], "complete")
+
+        for authorities in authority_sets:
             self.assertNotIn("UI-LEASE-*", authorities)
             self.assertTrue(expected.issubset(authorities))
             self.assertTrue(

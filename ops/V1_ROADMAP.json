@@ -1007,7 +1007,7 @@
       "risk_class": "high",
       "acceptance_profile": "api_ui",
       "authorization": "durable_v1",
-      "status": "approved_ready"
+      "status": "complete"
     },
     {
       "id": "V1-037",

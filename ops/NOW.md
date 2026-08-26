@@ -1,4 +1,4 @@
-# V1-036 Lease, signer, occupancy, and move-in API/UI — implementation published; closure pending
+# V1-036 Lease, signer, occupancy, and move-in API/UI — complete
 
 - Candidate: `V1-036` — Lease, signer, occupancy, and move-in API/UI.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -37,19 +37,19 @@
 - Implementation publication: commit
   `b8013879399cd3c7c598ee1f85974e2f042b794a`; exact-SHA GitHub Actions run
   `32952625712` passed all four jobs.
-- Status: implementation published; the separate V1-036 closure commit and its
-  own exact-SHA CI result remain pending under the existing authorization.
+- Closure: commit `9653fd2cb4afa06b250e4b7a7f5ad1e7de4265ef`;
+  exact-SHA GitHub Actions run `32953192588` passed all four jobs.
+- Status: complete, published, independently reviewed, and closure-valid under
+  the existing sequential authorization.
 - Blockers: none.
-- Exact next action: create and push only the V1-036 closure commit, require
-  successful exact-SHA GitHub Actions, then reconcile closure-valid compact
-  state while V1-037 remains held.
+- Exact next action: keep V1-037 held at `approved_ready` and keep the Property
+  Rental supervisor disabled; do not activate the successor automatically.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-036's implementation is published and
-  exact-SHA CI-green but its closure remains pending; V1-037 remains held.
+- Automation publication state: V1-036 implementation and closure are published
+  and exact-SHA CI-green; V1-037 remains the held approved successor.
 - Automation exact next action: keep the Property Rental supervisor disabled and
-  publish and validate only the V1-036 closure without activating V1-037 or
-  inspecting Hermes-wrapper drift.
+  do not activate V1-037 or inspect Hermes-wrapper drift.
 
 <!-- AUTOMATION_STATUS_END -->
