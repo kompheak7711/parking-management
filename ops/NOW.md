@@ -1,4 +1,4 @@
-# V1-038 Deposit receipt, qualification, disposition API/UI — active
+# V1-038 Deposit receipt, qualification, disposition API/UI — implementation published; closure pending
 
 - Candidate: `V1-038` — Deposit receipt, qualification, disposition API/UI.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -32,18 +32,22 @@
   material issues and made no edits; session
   `01a0406f-c4e8-7e82-9419-c77d93a4bba5`; evidence:
   `/private/tmp/property-rental-v1-038-final-independent-review-7.txt`.
-- Publication: pending.
-- Status: verified unpublished implementation awaiting publication and exact-SHA CI.
+- Implementation publication: commit
+  `de033c5d402e18bb6e3109b9c24fcb9609207a9e`; exact-SHA GitHub Actions run
+  `33025241226` passed all four jobs.
+- Status: implementation published; the separate V1-038 closure commit and its own
+  exact-SHA CI result remain pending.
 - V1-039: held at `approved_ready`; no activation or implementation is permitted.
 - Blockers: none.
-- Exact next action: publish the independently reviewed V1-038 implementation, require
-  successful exact-SHA CI, then reconcile closure while keeping V1-039 held.
+- Exact next action: create and push only the V1-038 closure commit, require successful
+  exact-SHA GitHub Actions, then reconcile closure-valid compact state while V1-039
+  remains held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-038 passes complete 15/15 verification and fresh
-  exact-final-diff independent review; V1-039 remains the held approved successor.
+- Automation publication state: V1-038's implementation is published and exact-SHA
+  CI-green but its closure remains pending; V1-039 remains held.
 - Automation exact next action: keep the supervisor disabled and V1-039 held until
-  corrected V1-038 publication and exact-SHA CI succeed.
+  V1-038 completes closure publication and reconciliation.
 
 <!-- AUTOMATION_STATUS_END -->
