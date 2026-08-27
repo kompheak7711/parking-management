@@ -1,4 +1,4 @@
-# V1-038 Deposit receipt, qualification, disposition API/UI — implementation published; closure pending
+# V1-038 Deposit receipt, qualification, disposition API/UI — complete
 
 - Candidate: `V1-038` — Deposit receipt, qualification, disposition API/UI.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -35,19 +35,19 @@
 - Implementation publication: commit
   `de033c5d402e18bb6e3109b9c24fcb9609207a9e`; exact-SHA GitHub Actions run
   `33025241226` passed all four jobs.
-- Status: implementation published; the separate V1-038 closure commit and its own
-  exact-SHA CI result remain pending.
-- V1-039: held at `approved_ready`; no activation or implementation is permitted.
+- Closure: commit `77f0010a73dcb4234e963bf58d47836d278b40a4`;
+  exact-SHA GitHub Actions run `33025719591` passed all four jobs.
+- Status: complete, published, independently reviewed, and closure-valid.
+- V1-039: held at `approved_ready`; no activation or implementation occurred.
 - Blockers: none.
-- Exact next action: create and push only the V1-038 closure commit, require successful
-  exact-SHA GitHub Actions, then reconcile closure-valid compact state while V1-039
-  remains held.
+- Exact next action: keep V1-039 held at `approved_ready` and keep the Property Rental
+  supervisor disabled; do not activate the successor automatically.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-038's implementation is published and exact-SHA
-  CI-green but its closure remains pending; V1-039 remains held.
-- Automation exact next action: keep the supervisor disabled and V1-039 held until
-  V1-038 completes closure publication and reconciliation.
+- Automation publication state: V1-038 implementation and closure are published and
+  exact-SHA CI-green; V1-039 remains the held approved successor.
+- Automation exact next action: keep the supervisor disabled and V1-039 held while
+  awaiting explicit direct-takeover or activation direction.
 
 <!-- AUTOMATION_STATUS_END -->
