@@ -49,13 +49,18 @@
   `/private/tmp/property-rental-v1-041-second-review-corrections-verification.json`.
 - V1-042 and later: held; no activation or implementation is permitted.
 - Blockers: none.
-- Exact next action: create and push the reviewed V1-041 implementation commit, then
-  require successful exact-SHA GitHub Actions before closure.
+- Status: implementation commit `a6c18e524faadd3d80b13fd21e0d0cf623bb7e11`
+  is published and exact-SHA GitHub Actions run `33172741306` passed all four jobs;
+  the separate V1-041 closure commit and its own CI result remain pending.
+- Exact next action: create and push only the V1-041 closure commit, require successful
+  exact-SHA GitHub Actions, then reconcile closure-valid compact state while V1-042
+  remains held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-041 is active under direct Codex takeover;
-  V1-042 and later remain held.
-- Automation exact next action: keep the supervisor disabled and complete only V1-041.
+- Automation publication state: V1-041's implementation is published and exact-SHA
+  CI-green but its closure remains pending; V1-042 and later remain held.
+- Automation exact next action: keep the supervisor disabled and V1-042 held until
+  V1-041 completes closure publication and reconciliation.
 
 <!-- AUTOMATION_STATUS_END -->

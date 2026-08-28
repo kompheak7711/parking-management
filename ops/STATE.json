@@ -697,7 +697,7 @@
     "tranche_id": "V1-041"
   },
   "idle_reason": null,
-  "next_action": "Create and push the reviewed V1-041 implementation commit, then require successful exact-SHA GitHub Actions before closure",
+  "next_action": "Create and push only the V1-041 closure commit, require successful exact-SHA GitHub Actions, then reconcile closure-valid compact state while keeping the supervisor disabled and V1-042 held",
   "next_candidate": {
     "acceptance_profile": "database",
     "authorities": [
@@ -737,13 +737,17 @@
   },
   "phase": "Utilities",
   "publication": {
-    "ci_completed": false,
-    "commit_completed": false,
-    "implementation_commit": null,
+    "ci_completed": true,
+    "ci_conclusion": "success",
+    "ci_run_attempt": 1,
+    "ci_run_id": 33172741306,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33172741306",
+    "commit_completed": true,
+    "implementation_commit": "a6c18e524faadd3d80b13fd21e0d0cf623bb7e11",
     "closure_commit": null,
-    "push_completed": false,
+    "push_completed": true,
     "sha_reconciled": false,
-    "status": "independently_reviewed_awaiting_publication",
+    "status": "implementation_published_closure_pending",
     "tranche_id": "V1-041",
     "predecessor_closure_commit": "c4293ea98ff4e4a3d2c5d890b437655e0bad1e10",
     "predecessor_reconciliation_commit": "770e615d24e8f0167d12106657e5db416e0596bd"
@@ -1062,7 +1066,7 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "independently_reviewed_awaiting_publication",
+  "status": "implementation_published_closure_pending",
   "task": "Implement the approved bounded candidate: Utility meter, replacement, reading, and correction persistence",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
@@ -1125,10 +1129,11 @@
     ,
     "FAIL: third external Codex exact-diff review found one low durable next-action inconsistency; session 01a04856-c322-7c53-8da9-56ed61fb2b5a; /private/tmp/property-rental-v1-041-independent-review-pass.txt",
     "PASS: third-review metadata finding corrected by aligning the durable next action with the current final-review/publication step",
-    "PASS: fourth fresh external Codex exact-diff review found no material findings and judged the corrected exact V1-041 diff ready for publication; session 01a0485e-8980-7983-8f18-2b5259018a03; /private/tmp/property-rental-v1-041-independent-review-fourth.txt"
+    "PASS: fourth fresh external Codex exact-diff review found no material findings and judged the corrected exact V1-041 diff ready for publication; session 01a0485e-8980-7983-8f18-2b5259018a03; /private/tmp/property-rental-v1-041-independent-review-fourth.txt",
+    "PASS: V1-041 implementation commit a6c18e524faadd3d80b13fd21e0d0cf623bb7e11 exact-SHA GitHub Actions run 33172741306; all four jobs"
   ],
   "tests_tranche_id": "V1-041",
-  "timestamp": "2026-08-28T12:49:11Z",
+  "timestamp": "2026-08-28T12:53:21Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
