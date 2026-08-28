@@ -1,4 +1,4 @@
-# V1-039 Invoice, line, adjustment, and billing-run persistence — implementation published; closure pending
+# V1-039 Invoice, line, adjustment, and billing-run persistence — complete
 
 - Candidate: `V1-039` — Invoice, line, adjustment, and billing-run persistence.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -39,19 +39,19 @@
 - Implementation publication: commit
   `069495af56e098eda08f16f12ae6db07607ab1ab`; exact-SHA GitHub Actions run
   `33138732828` passed all four jobs.
-- Status: implementation published; the separate V1-039 closure commit and its own
-  exact-SHA CI result remain pending.
-- V1-040: held at `approved_ready`; no activation or implementation is permitted.
+- Closure: commit `70d32fe3d460d91aeb7f4117d1c2746e92b1672e`;
+  exact-SHA GitHub Actions run `33139121099` passed all four jobs.
+- Status: complete, published, independently reviewed, and closure-valid.
+- V1-040: held at `approved_ready`; no activation or implementation occurred.
 - Blockers: none.
-- Exact next action: create and push only the V1-039 closure commit, require successful
-  exact-SHA GitHub Actions, then reconcile closure-valid compact state while V1-040
-  remains held.
+- Exact next action: keep V1-040 held at `approved_ready` and keep the Property Rental
+  supervisor disabled; do not activate the successor automatically.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-039's implementation is published and exact-SHA
-  CI-green but its closure remains pending; V1-040 remains held.
-- Automation exact next action: keep the supervisor disabled and V1-040 held until
-  V1-039 completes closure publication and reconciliation.
+- Automation publication state: V1-039 implementation and closure are published and
+  exact-SHA CI-green; V1-040 remains the held approved successor.
+- Automation exact next action: keep the supervisor disabled and V1-040 held while
+  awaiting explicit direct-takeover or activation direction.
 
 <!-- AUTOMATION_STATUS_END -->
