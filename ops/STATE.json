@@ -1,13 +1,13 @@
 {
-  "active_cycle": "v1-040-rent-service-billing",
+  "active_cycle": "v1-041-utility-meter-reading-persistence",
   "approval": {
-    "status": "complete",
-    "basis": "owner standing direct-Codex authorization for sequential V1-040 through V1-060 execution",
+    "status": "active",
+    "basis": "owner standing direct-Codex authorization for sequential V1-041 through V1-060 execution",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
-  "authorities": ["BR-RENT-*", "BR-SVC-*", "TEST-040-045"],
+  "authorities": ["BR-UTIL-001-017", "API-044-047", "TEST-046-049"],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
     "branch": "implementation/foundation",
@@ -689,15 +689,15 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "c4293ea98ff4e4a3d2c5d890b437655e0bad1e10",
+  "commit": "770e615d24e8f0167d12106657e5db416e0596bd",
   "evidence_applicability": {
-    "basis": "V1-040 implementation commit 4651b9f71d9f58f0dbc8abd736e868a6b437c0b9 and closure commit c4293ea98ff4e4a3d2c5d890b437655e0bad1e10 are independently reviewed, published, and exact-SHA CI-green in runs 33160649278 and 33160919700",
+    "basis": "V1-041 starts from clean synchronized V1-040 reconciliation commit 770e615d24e8f0167d12106657e5db416e0596bd after implementation, closure, and reconciliation exact-SHA CI success",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-039 implementation, closure, and reconciliation are published and exact-SHA CI-green; their evidence is the predecessor baseline for V1-040",
-    "tranche_id": "V1-040"
+    "prior_review_disposition": "V1-040 implementation, closure, and reconciliation are published, independently reviewed, and exact-SHA CI-green; their evidence is the predecessor baseline for V1-041",
+    "tranche_id": "V1-041"
   },
   "idle_reason": null,
-  "next_action": "Keep V1-041 held at approved_ready and keep the Property Rental supervisor disabled; do not activate the successor automatically",
+  "next_action": "Create and push the reviewed V1-041 implementation commit, then require successful exact-SHA GitHub Actions before closure",
   "next_candidate": {
     "acceptance_profile": "database",
     "authorities": [
@@ -735,36 +735,31 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "Billing",
+  "phase": "Utilities",
   "publication": {
-    "ci_completed": true,
-    "ci_conclusion": "success",
-    "ci_run_attempt": 1,
-    "ci_run_id": 33160649278,
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33160649278",
-    "commit_completed": true,
-    "implementation_commit": "4651b9f71d9f58f0dbc8abd736e868a6b437c0b9",
-    "closure_commit": "c4293ea98ff4e4a3d2c5d890b437655e0bad1e10",
-    "closure_ci_run_attempt": 1,
-    "closure_ci_run_id": 33160919700,
-    "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33160919700",
-    "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published_and_exact_sha_ci_green_closure_valid",
-    "tranche_id": "V1-040",
-    "predecessor_closure_commit": "70d32fe3d460d91aeb7f4117d1c2746e92b1672e",
-    "predecessor_reconciliation_commit": "d1994fb703fd6e34b50e919cfc98898949caa8ca"
+    "ci_completed": false,
+    "commit_completed": false,
+    "implementation_commit": null,
+    "closure_commit": null,
+    "push_completed": false,
+    "sha_reconciled": false,
+    "status": "independently_reviewed_awaiting_publication",
+    "tranche_id": "V1-041",
+    "predecessor_closure_commit": "c4293ea98ff4e4a3d2c5d890b437655e0bad1e10",
+    "predecessor_reconciliation_commit": "770e615d24e8f0167d12106657e5db416e0596bd"
   },
   "relevant_docs": [
-    "docs/001_DOMAIN_MODEL.md: Rent and configured fixed-Service billing behavior",
-    "docs/002_BUSINESS_RULES.md: BR-RENT-001 through BR-RENT-029 and BR-SVC-001 through BR-SVC-015",
-    "docs/003_PRODUCT_REQUIREMENTS.md: Rent and recurring-Service calculation requirements",
-    "docs/004_DATABASE_MODEL.md: Invoice line and calculation-component persistence",
-    "docs/007_TESTING_STRATEGY.md: TEST-040 through TEST-045",
-    "docs/010_DECISION_LOG.md: DL-018 and DL-020"
+    "docs/001_DOMAIN_MODEL.md: Utility Meter and Utility Reading identity, lifecycle, and history",
+    "docs/002_BUSINESS_RULES.md: BR-UTIL-001 through BR-UTIL-017",
+    "docs/003_PRODUCT_REQUIREMENTS.md: PR-UTIL-001 through PR-UTIL-017",
+    "docs/004_DATABASE_MODEL.md: DB-UTIL-001 through DB-UTIL-005",
+    "docs/005_API_SPECIFICATION.md: API-044 through API-047 persistence contracts",
+    "docs/007_TESTING_STRATEGY.md: TEST-046 through TEST-049",
+    "docs/008_SECURITY_MODEL.md: authorized Utility administration and parameterized database access",
+    "docs/010_DECISION_LOG.md: DL-023 through DL-025"
   ],
   "repair": {
-    "tranche_id": "V1-040",
+    "tranche_id": "V1-041",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -922,7 +917,7 @@
     "status": "PASS",
     "tranche_id": "V1-026"
   },
-  "review": {
+  "prior_v1_040_review": {
     "evidence_path": "/private/tmp/property-rental-v1-040-independent-review-twelfth.txt",
     "evidence_paths": [
       "/private/tmp/property-rental-v1-040-independent-review.txt",
@@ -990,6 +985,74 @@
     "status": "PASS",
     "tranche_id": "V1-040"
   },
+  "review": {
+    "evidence_path": "/private/tmp/property-rental-v1-041-independent-review-fourth.txt",
+    "evidence_paths": [
+      "/private/tmp/property-rental-v1-041-independent-review.txt",
+      "/private/tmp/property-rental-v1-041-independent-review-final.txt",
+      "/private/tmp/property-rental-v1-041-independent-review-pass.txt",
+      "/private/tmp/property-rental-v1-041-independent-review-fourth.txt"
+    ],
+    "findings": 6,
+    "high_findings": 3,
+    "medium_findings": 2,
+    "low_findings": 1,
+    "material_findings_corrected": 6,
+    "review_kind": "fresh_read_only_exact_uncommitted_diff",
+    "reviewed_paths": [
+      "backend/migrations/versions/20260828_31_utility_meter_persistence.py",
+      "backend/tests/test_utility_meter_migration.py",
+      "backend/tests/test_billing_service_migration.py",
+      "backend/tests/test_invoice_migration.py",
+      "backend/tests/test_lease_api_migration.py",
+      "backend/tests/test_migrations.py",
+      "scripts/database-test.sh",
+      "ops/traceability.json",
+      "ops/NOW.md",
+      "ops/STATE.json"
+    ],
+    "reviewer_edits": false,
+    "session_id": "01a0485e-8980-7983-8f18-2b5259018a03",
+    "session_ids": [
+      "01a04834-6497-70d0-8943-3baac6655d45",
+      "01a04844-53a3-76f0-8e22-064328d9450a",
+      "01a04856-c322-7c53-8da9-56ed61fb2b5a",
+      "01a0485e-8980-7983-8f18-2b5259018a03"
+    ],
+    "session_records": [
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-041-independent-review.txt",
+        "session_id": "01a04834-6497-70d0-8943-3baac6655d45",
+        "verdict": "FAIL",
+        "findings": 3,
+        "material_findings_corrected": 3
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-041-independent-review-final.txt",
+        "session_id": "01a04844-53a3-76f0-8e22-064328d9450a",
+        "verdict": "FAIL",
+        "findings": 2,
+        "material_findings_corrected": 2
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-041-independent-review-pass.txt",
+        "session_id": "01a04856-c322-7c53-8da9-56ed61fb2b5a",
+        "verdict": "FAIL",
+        "findings": 1,
+        "material_findings_corrected": 1
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-041-independent-review-fourth.txt",
+        "session_id": "01a0485e-8980-7983-8f18-2b5259018a03",
+        "verdict": "PASS",
+        "findings": 0,
+        "material_findings_corrected": 0
+      }
+    ],
+    "final_verdict": "PASS",
+    "status": "PASS",
+    "tranche_id": "V1-041"
+  },
   "risk_class": "high",
   "roadmap": {
     "completed": 40,
@@ -999,9 +1062,9 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Completed the approved bounded candidate: Rent proration and fixed-service billing services",
-  "tests": [
+  "status": "independently_reviewed_awaiting_publication",
+  "task": "Implement the approved bounded candidate: Utility meter, replacement, reading, and correction persistence",
+  "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
     "PASS: initial complete deterministic verification profile 15/15 before independent review; /private/tmp/property-rental-v1-040-pre-review-verification.json",
@@ -1043,9 +1106,30 @@
     "PASS: implementation commit 4651b9f71d9f58f0dbc8abd736e868a6b437c0b9 exact-SHA GitHub Actions run 33160649278; all four jobs",
     "PASS: closure commit c4293ea98ff4e4a3d2c5d890b437655e0bad1e10 exact-SHA GitHub Actions run 33160919700; all four jobs"
   ],
-  "tests_tranche_id": "V1-040",
-  "timestamp": "2026-08-28T09:52:12Z",
-  "touched_areas": [
+  "tests": [
+    "PASS: V1-041 preflight confirmed clean synchronized V1-040 baseline 770e615d24e8f0167d12106657e5db416e0596bd, disabled supervisor, no overlapping repository worker or lock, exact approved successor, and V1-042 held",
+    "PASS: no legitimate uncommitted V1-041 partial work existed before activation",
+    "PASS: V1-041 migration formatting, Ruff lint, Python compilation, Alembic single-head, JSON, roadmap, traceability, publication guard, and diff checks",
+    "PASS: disposable PostgreSQL migration, upgrade-path, role-permission, Meter replacement, Reading validation/correction, history, and concurrency suite 360/360",
+    "PASS: complete deterministic verification profile 15/15; backend 641 passed with 348 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 360 passed; automation routing 185 passed; /private/tmp/property-rental-v1-041-pre-review-verification.json",
+    "PASS: Owner explicitly authorized the exact uncommitted V1-041 diff for external Codex read-only independent review",
+    "FAIL: first external Codex exact-diff review found two high and one medium finding; session 01a04834-6497-70d0-8943-3baac6655d45; /private/tmp/property-rental-v1-041-independent-review.txt",
+    "PASS: all three first-review findings corrected with strict equal-timestamp correction ordering, post-failure Reading enforcement, and deterministic observed-lock Meter, correction, Rate, and replacement concurrency regressions",
+    "PASS: corrected disposable PostgreSQL migration, role, history, failure-boundary, total-order, and deterministic concurrency suite 363/363",
+    "PASS: review-corrected complete deterministic verification profile 15/15; backend 641 passed with 351 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 363 passed; automation routing 185 passed; /private/tmp/property-rental-v1-041-review-corrections-verification.json"
+    ,
+    "FAIL: second external Codex exact-diff review found one high reverse failure-history finding and one medium replacement-cycle finding; session 01a04844-53a3-76f0-8e22-064328d9450a; /private/tmp/property-rental-v1-041-independent-review-final.txt",
+    "PASS: both second-review findings corrected with reverse Reading/failure validation, concurrent in-gap regression, and deferred recursive acyclic replacement-chain enforcement",
+    "PASS: one complete-profile disposable PostgreSQL gate encountered a transient unchanged Lease signature host/container clock-skew failure; immediate clean disposable rerun passed 364/364 without code changes",
+    "PASS: second-review corrected complete deterministic verification profile 15/15; backend 641 passed with 352 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 364 passed; automation routing 185 passed; /private/tmp/property-rental-v1-041-second-review-corrections-verification.json"
+    ,
+    "FAIL: third external Codex exact-diff review found one low durable next-action inconsistency; session 01a04856-c322-7c53-8da9-56ed61fb2b5a; /private/tmp/property-rental-v1-041-independent-review-pass.txt",
+    "PASS: third-review metadata finding corrected by aligning the durable next action with the current final-review/publication step",
+    "PASS: fourth fresh external Codex exact-diff review found no material findings and judged the corrected exact V1-041 diff ready for publication; session 01a0485e-8980-7983-8f18-2b5259018a03; /private/tmp/property-rental-v1-041-independent-review-fourth.txt"
+  ],
+  "tests_tranche_id": "V1-041",
+  "timestamp": "2026-08-28T12:49:11Z",
+  "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
     "backend/tests/test_billing.py",
@@ -1058,5 +1142,17 @@
     "ops/NOW.md",
     "ops/STATE.json"
   ],
-  "tranche": "Rent proration and fixed-service billing services"
+  "touched_areas": [
+    "backend/migrations/versions/20260828_31_utility_meter_persistence.py",
+    "backend/tests/test_utility_meter_migration.py",
+    "backend/tests/test_billing_service_migration.py",
+    "backend/tests/test_invoice_migration.py",
+    "backend/tests/test_lease_api_migration.py",
+    "backend/tests/test_migrations.py",
+    "scripts/database-test.sh",
+    "ops/traceability.json",
+    "ops/NOW.md",
+    "ops/STATE.json"
+  ],
+  "tranche": "Utility meter, replacement, reading, and correction persistence"
 }

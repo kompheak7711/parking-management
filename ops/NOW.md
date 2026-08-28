@@ -1,59 +1,61 @@
-# V1-040 Rent proration and fixed-service billing services — complete
+# V1-041 Utility meter, replacement, reading, and correction persistence — active
 
-- Candidate: `V1-040` — Rent proration and fixed-service billing services.
-- Authorization: Owner standing direct-Codex authorization for V1-040 through V1-060;
+- Candidate: `V1-041` — Utility meter, replacement, reading, and correction persistence.
+- Authorization: Owner standing direct-Codex authorization for V1-041 through V1-060;
   this tranche is executed alone and requires no renewed routine approval.
-- Baseline: clean synchronized `implementation/foundation` at V1-039 reconciliation
-  commit `d1994fb703fd6e34b50e919cfc98898949caa8ca`.
-- Preflight: PASS; V1-039 is complete and exact-SHA CI-green, V1-040 is the exact
+- Baseline: clean synchronized `implementation/foundation` at V1-040 reconciliation
+  commit `770e615d24e8f0167d12106657e5db416e0596bd`.
+- Preflight: PASS; V1-040 is complete and exact-SHA CI-green, V1-041 is the exact
   `approved_ready` successor, no other repository worker overlaps, and the Property
   Rental supervisor is disabled.
 - Scheduler: the Property Rental supervisor remains disabled and not running.
-- Scope: initial, recurring, and approved final Rent calculations plus approved,
-  configured fixed-Service calculations built on V1-039 Invoice persistence.
-- Authorities: `BR-RENT-*`, `BR-SVC-*`, and `TEST-040` through `TEST-045`.
-- Dependency: published V1-039 Invoice persistence.
-- Excluded: Utility billing, V1-041 and later product work, canonical changes,
+- Partial-work recovery: no uncommitted V1-041 work exists; nothing requires preservation.
+- Scope: forward-only PostgreSQL persistence for Utility Meters, replacement history,
+  validated Utility Readings, append-only Reading corrections, and effective-dated
+  Utility Rates, building on published V1-023 and V1-027 persistence.
+- Authorities: `BR-UTIL-001` through `BR-UTIL-017`, `API-044` through `API-047`,
+  and `TEST-046` through `TEST-049`.
+- Excluded: consumption/estimation services, utility billing generation, API/UI delivery,
+  V1-042 and later work, canonical changes,
   production data/access, and installed Hermes-wrapper repair.
 - Canonical specifications: read-only.
-- Implementation: complete and published at
-  `4651b9f71d9f58f0dbc8abd736e868a6b437c0b9`; exact-SHA GitHub Actions run
-  `33160649278` passed all four jobs.
-- Verification: eleventh-review correction complete profile PASS 15/15; backend
-  641 passed with 339 expected environment skips, disposable PostgreSQL 351/351,
-  frontend 213 passed, and automation routing 185/185.
-- Independent review: the first exact-diff review found two high and four medium
-  issues; the second found one high and one medium issue; the third found two high
-  and three medium issues; the fourth found one high and one medium issue; the fifth
-  found one high and one low issue; the sixth found one high and one low issue. All
-  nineteen are corrected and regression-tested. The seventh found one high issue,
-  now corrected with a real concurrent Lease/Occupancy regression. The eighth found
-  one high Service-source late-commit issue, now corrected with Property-wide source
-  serialization and two concurrency regressions. The ninth found two high issues: a
-  cross-source lock inversion and calculation-component chronology that was not bound to
-  the durable cutoff. Both are corrected with one Property-first source lock order,
-  explicit cutoff timestamps, and real concurrency/chronology regressions. The tenth
-  found one high reverse tuple-lock/Property-lock deadlock issue, now corrected by using
-  the Property boundary as the stable READ COMMITTED serialization point without
-  conflicting Lease/Occupancy tuple locks; the reverse interleaving is regression-tested.
-  The eleventh found one high direct-call stale-snapshot issue, now corrected by
-  enforcing READ COMMITTED inside the database function and rejecting REPEATABLE READ
-  and SERIALIZABLE before any write. The corrected exact diff passed the complete
-  verification profile. The twelfth fresh exact-diff review returned PASS with no
-  material findings and explicitly judged the diff safe to publish.
-- Closure: commit `c4293ea98ff4e4a3d2c5d890b437655e0bad1e10`; exact-SHA
-  GitHub Actions run `33160919700` passed all four jobs.
-- Status: complete, published, independently reviewed, and closure-valid.
-- V1-041: held at `approved_ready`; no activation or implementation occurred.
+- Required invariants: Electricity/Water only; one active Meter per Unit/Utility Type;
+  stable Meter/Reading identity; permanent replacement and correction history;
+  chronological nonnegative validated Readings; exact Meter ownership; effective-dated
+  immutable Rate history; authorization/audit provenance; real PostgreSQL concurrency.
+- Implementation: the forward-only `20260828_31` migration now preserves Meter,
+  replacement, validated Reading, correction, and Utility Rate unit-consistency history;
+  focused disposable PostgreSQL verification passes 360/360, including concurrent
+  active-Meter creation and current-evidence correction races.
+- Complete verification: PASS, 15/15; backend 641 passed with 348 expected
+  database-environment skips, frontend 213 passed, disposable PostgreSQL 360 passed,
+  and automation routing 185 passed. Evidence:
+  `/private/tmp/property-rental-v1-041-pre-review-verification.json`.
+- Independent review: the first fresh external Codex review found two high and one
+  medium finding. All three were corrected with a strict equal-timestamp correction
+  order, post-failure Reading boundary, and deterministic observed-lock concurrency
+  regressions. The canonical approved failure-to-replacement gap remains supported.
+- Second independent review: one high reverse-history finding and one medium
+  replacement-cycle finding were corrected by rejecting failure dates behind existing
+  Readings and enforcing deferred recursive acyclic replacement history.
+- Third independent review: one low operational-state finding was corrected by aligning
+  the durable next action with the current final-review/publication step; no product or
+  database behavior changed.
+- Final independent review: PASS with no material findings and no reviewer edits.
+  Evidence: `/private/tmp/property-rental-v1-041-independent-review-fourth.txt`.
+- Corrected verification: PASS, 15/15; backend 641 passed with 352 expected
+  database-environment skips, frontend 213 passed, disposable PostgreSQL 364 passed,
+  and automation routing 185 passed. Evidence:
+  `/private/tmp/property-rental-v1-041-second-review-corrections-verification.json`.
+- V1-042 and later: held; no activation or implementation is permitted.
 - Blockers: none.
-- Exact next action: keep V1-041 held at `approved_ready` and keep the Property Rental
-  supervisor disabled; do not activate the successor automatically.
+- Exact next action: create and push the reviewed V1-041 implementation commit, then
+  require successful exact-SHA GitHub Actions before closure.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-040 implementation and closure are published and
-  exact-SHA CI-green; V1-041 remains the held approved successor.
-- Automation exact next action: keep the supervisor disabled and V1-041 held; do not
-  restore autonomous execution or activate the successor automatically.
+- Automation publication state: V1-041 is active under direct Codex takeover;
+  V1-042 and later remain held.
+- Automation exact next action: keep the supervisor disabled and complete only V1-041.
 
 <!-- AUTOMATION_STATUS_END -->

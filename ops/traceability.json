@@ -9539,6 +9539,110 @@
       "test_path": "backend/tests/test_billing_service_migration.py",
       "status": "implemented",
       "notes": "The complete migration chain reaches V1-040 and refuses rollback that could erase issued financial or billing-command history."
+    },
+    {
+      "test_id": "test_v1_041_is_forward_only_and_is_migration_head",
+      "upstream_ids": ["BR-UTIL-008", "BR-UTIL-013", "TEST-046", "TEST-047"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_utility_meter_migration.py",
+      "status": "implemented",
+      "notes": "The complete migration chain reaches V1-041 and refuses rollback that could erase Meter, replacement, Reading, or correction history."
+    },
+    {
+      "test_id": "test_meter_identity_active_uniqueness_and_rate_unit_consistency",
+      "upstream_ids": ["BR-UTIL-001", "BR-UTIL-003", "BR-UTIL-004", "BR-UTIL-005", "BR-UTIL-014", "API-044", "API-047", "TEST-046", "TEST-049"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_meter_migration.py",
+      "status": "implemented",
+      "notes": "PostgreSQL preserves Meter identity, permits exactly one active Meter per Unit and Utility Type, and rejects measurement-unit disagreement with Property Utility Rate history."
+    },
+    {
+      "test_id": "test_replacement_preserves_meter_and_reading_boundaries",
+      "upstream_ids": ["BR-UTIL-005", "BR-UTIL-006", "BR-UTIL-007", "BR-UTIL-008", "BR-UTIL-013", "API-044", "TEST-046", "TEST-047"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_meter_migration.py",
+      "status": "implemented",
+      "notes": "A replacement retains the same Unit and Utility Type, preserves both Meter identities, permits the approved gap between confirmed failure and replacement, rejects new post-failure Readings, and rejects a failure date that would strand an existing later Reading."
+    },
+    {
+      "test_id": "test_validated_readings_are_chronological_nonnegative_and_immutable",
+      "upstream_ids": ["BR-UTIL-002", "BR-UTIL-003", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-013", "API-045", "API-046", "TEST-047"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_meter_migration.py",
+      "status": "implemented",
+      "notes": "Validated Readings retain actor evidence, one chronological date per Meter, non-negative non-decreasing values, stable identity, and explicit pending-to-validated version progression."
+    },
+    {
+      "test_id": "test_corrections_preserve_source_chain_and_adjacent_sequence",
+      "upstream_ids": ["BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-011", "BR-UTIL-012", "BR-UTIL-013", "API-045", "TEST-047", "TEST-048"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_meter_migration.py",
+      "status": "implemented",
+      "notes": "Authorized append-only corrections retain the original Reading, require exact current-value evidence, and cannot break the adjacent validated Reading sequence."
+    },
+    {
+      "test_id": "test_replacement_history_rejects_a_reciprocal_cycle",
+      "upstream_ids": ["BR-UTIL-006", "BR-UTIL-007", "BR-UTIL-008", "BR-UTIL-013", "API-044", "TEST-046"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_meter_migration.py",
+      "status": "implemented",
+      "notes": "Deferred recursive reachability rejects a same-date reciprocal replacement cycle, preserving one permanent directed acyclic Meter history even when each individual link satisfies identity and date constraints."
+    },
+    {
+      "test_id": "test_utility_history_rejects_update_delete_and_truncate",
+      "upstream_ids": ["BR-UTIL-006", "BR-UTIL-008", "BR-UTIL-011", "BR-UTIL-013", "API-044", "API-045", "TEST-046", "TEST-047"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_utility_meter_migration.py",
+      "status": "implemented",
+      "notes": "Meter, Reading, and correction evidence rejects destructive update, delete, and coordinated truncate paths rather than silently losing operational history."
+    },
+    {
+      "test_id": "test_runtime_and_financial_roles_are_read_only",
+      "upstream_ids": ["BR-UTIL-008", "BR-UTIL-011", "BR-UTIL-013", "API-044", "API-045", "API-047", "TEST-046", "TEST-047"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_utility_meter_migration.py",
+      "status": "implemented",
+      "notes": "Runtime and financial roles can inspect Utility history but cannot insert Meter or Reading evidence directly; mutation remains behind a later authorized command boundary."
+    },
+    {
+      "test_id": "test_concurrent_active_meter_creation_allows_exactly_one",
+      "upstream_ids": ["BR-UTIL-003", "BR-UTIL-004", "BR-UTIL-005", "API-044", "API-046", "TEST-046"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_meter_migration.py",
+      "status": "implemented",
+      "notes": "Two installation transactions are held concurrently behind the Unit/Utility-Type boundary; both lock waits are observed before release, then exactly one active Meter commits and the competitor is rejected."
+    },
+    {
+      "test_id": "test_concurrent_corrections_use_exact_current_evidence",
+      "upstream_ids": ["BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-011", "BR-UTIL-012", "BR-UTIL-013", "API-045", "API-046", "TEST-047", "TEST-048"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_meter_migration.py",
+      "status": "implemented",
+      "notes": "Two correction transactions are held concurrently behind the Meter sequence; both lock waits are observed before release, then exactly one current-value claim succeeds and the stale competitor records no duplicate correction."
+    },
+    {
+      "test_id": "test_correction_order_is_total_when_database_timestamps_are_equal",
+      "upstream_ids": ["BR-UTIL-010", "BR-UTIL-011", "BR-UTIL-012", "BR-UTIL-013", "API-045", "TEST-047", "TEST-048"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_meter_migration.py",
+      "status": "implemented",
+      "notes": "Corrections sharing one database timestamp form one strict `(occurred_at,id)` chain: a later key advances the effective value, while an accepted-value claim with a lower key is rejected without forking history."
+    },
+    {
+      "test_id": "test_meter_and_rate_unit_writes_serialize_at_the_property_boundary",
+      "upstream_ids": ["BR-UTIL-003", "BR-UTIL-004", "BR-UTIL-005", "BR-UTIL-014", "API-044", "API-047", "TEST-046", "TEST-049"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_meter_migration.py",
+      "status": "implemented",
+      "notes": "Conflicting Meter and Rate measurement-unit writers are both observed waiting on the same Property/Utility-Type boundary; release commits one exact source identity and rejects the incompatible competitor without partial state."
+    },
+    {
+      "test_id": "test_reading_and_replacement_race_cannot_cross_the_failure_boundary",
+      "upstream_ids": ["BR-UTIL-003", "BR-UTIL-006", "BR-UTIL-007", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-013", "API-044", "API-045", "TEST-046", "TEST-047"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_meter_migration.py",
+      "status": "implemented",
+      "notes": "A Reading inside the approved failure-to-replacement gap and the replacement transaction are both observed waiting on the failed Meter sequence; release commits exactly one outcome, so a prior Reading cannot be stranded after a newly recorded earlier failure date."
     }
   ]
 }
