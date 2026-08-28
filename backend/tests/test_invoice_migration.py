@@ -572,7 +572,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
     obligation_id = uuid4()
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20260827_29",
+            "20260828_30",
         )
         expected = {
             "actor_identities",
@@ -654,7 +654,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "20260826_28")
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20260827_29",
+            "20260828_30",
         )
         assert owner.execute(
             "SELECT description FROM app.authorized_nonrecurring_obligations WHERE id=%s",
@@ -7582,6 +7582,7 @@ def test_lease_and_occupancy_writers_share_one_advisory_lock_order(
                 "FROM app.v1_039_lock_order_probe GROUP BY probe ORDER BY probe"
             ).fetchall()
         expected_order = [
+            f"invoice-property-service:{property_id}",
             f"billing-run-eligibility:{property_id}",
             f"invoice-lease:{lease_id}",
         ]

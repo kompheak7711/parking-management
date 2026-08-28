@@ -9291,6 +9291,254 @@
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
       "notes": "The forward V1-039 upgrade holds a write-conflicting lock on user_accounts across actor-identity backfill and trigger installation. A real concurrent account writer remains blocked until migration commit, then passes through the installed synchronization trigger and receives exactly one HUMAN actor identity."
+    },
+    {
+      "test_id": "test_proration_uses_actual_calendar_days_and_one_half_up_rounding",
+      "upstream_ids": ["BR-RENT-006", "BR-RENT-007", "BR-RENT-026", "BR-SVC-004", "BR-SVC-012", "BR-MONEY-012", "TEST-042"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_billing.py",
+      "status": "implemented",
+      "notes": "Actual calendar-day divisors, inclusive billable days, leap February, one final half-up USD-cent rounding, and cross-month rejection are deterministic for Rent and configured fixed-Service calculations."
+    },
+    {
+      "test_id": "test_initial_period_and_due_date_boundaries",
+      "upstream_ids": ["BR-RENT-005", "BR-RENT-008", "BR-RENT-015", "BR-SVC-011", "BR-SVC-012", "TEST-043"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_billing.py",
+      "status": "implemented",
+      "notes": "Move-in days 10, 20, 21, and 27 select the exact one- or two-component Initial coverage and seven-calendar-day Due Dates required by the canonical examples."
+    },
+    {
+      "test_id": "test_recurring_period_uses_prior_month_twenty_fifth_and_current_month_fifth",
+      "upstream_ids": ["BR-RENT-017", "BR-RENT-018", "BR-SVC-011", "TEST-040", "TEST-043"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_billing.py",
+      "status": "implemented",
+      "notes": "Recurring periods are full calendar months, generated on the preceding month's 25th and due on the billed month's 5th, including February-to-March boundaries."
+    },
+    {
+      "test_id": "test_final_rent_distinguishes_approved_partial_from_voluntary_full_month",
+      "upstream_ids": ["BR-RENT-021", "BR-RENT-022", "BR-RENT-023", "BR-RENT-024", "BR-RENT-025", "BR-SVC-013", "TEST-042"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_billing.py",
+      "status": "implemented",
+      "notes": "The policy-neutral final calculation boundary distinguishes an explicitly approved partial-month proration from the canonical full voluntary final month without fabricating a final-Invoice issuance workflow reserved to a later tranche."
+    },
+    {
+      "test_id": "test_final_service_uses_approved_partial_or_full_month_coverage",
+      "upstream_ids": ["BR-SVC-004", "BR-SVC-013", "BR-SVC-015", "BR-MONEY-012", "TEST-042"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_billing.py",
+      "status": "implemented",
+      "notes": "The bounded final fixed-Service calculation applies the approved partial-month coverage with actual-day half-up proration or preserves the complete configured monthly rate for an approved full-month treatment."
+    },
+    {
+      "test_id": "test_initial_invoice_preserves_rent_service_components_and_excludes_unapproved_type",
+      "upstream_ids": ["BR-RENT-005", "BR-RENT-006", "BR-RENT-007", "BR-RENT-008", "BR-RENT-015", "BR-SVC-001", "BR-SVC-003", "BR-SVC-004", "BR-SVC-009", "BR-SVC-010", "BR-SVC-012", "BR-SVC-014", "BR-SVC-015", "TEST-042", "TEST-043", "TEST-044", "TEST-045"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "A real authenticated financial-role call creates one issued Initial Rent Invoice with reconstructable July proration and August full-month components for Rent and Trash Collection. Distinct effective Service rates remain linked at component level, while equally configured Internet is not billed."
+    },
+    {
+      "test_id": "test_initial_invoice_bills_service_that_becomes_eligible_only_in_second_month",
+      "upstream_ids": ["BR-SVC-001", "BR-SVC-003", "BR-SVC-004", "BR-SVC-005", "BR-SVC-011", "BR-SVC-012", "TEST-044", "TEST-045"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "An Initial Invoice whose configured Trash Collection term and approval begin on the following-month boundary omits the ineligible move-in component but bills the complete eligible following month with exact rate, term, and approval provenance."
+    },
+    {
+      "test_id": "test_initial_invoice_preserves_adjacent_service_approval_provenance",
+      "upstream_ids": ["BR-SVC-005", "BR-SVC-006", "BR-SVC-007", "BR-SVC-008", "BR-SVC-011", "BR-SVC-012", "TEST-044", "TEST-045"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "Adjacent July and August Service approval and Lease-term periods produce separate calendar-component lines whose permanent source links reconstruct each governing approval and term without omitting either charge."
+    },
+    {
+      "test_id": "test_replay_is_stable_and_changed_digest_is_rejected",
+      "upstream_ids": ["BR-RENT-016", "BR-RENT-019", "BR-SVC-011", "TEST-041"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "The Property- and actor-scoped command ledger returns the original bounded snapshot for an identical replay and rejects reuse of the same idempotency identity with any changed request evidence."
+    },
+    {
+      "test_id": "test_direct_financial_replay_requires_digest_and_every_request_field",
+      "upstream_ids": ["BR-INV-020", "BR-INV-022", "BR-INV-025", "BR-RENT-011", "BR-RENT-027", "DB-TXN-003", "TEST-041"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "A direct financial-role caller cannot omit the request digest or pair a stored digest with changed Invoice evidence: PostgreSQL rejects NULL and compares every accepted request field against the permanent command row before returning a replay snapshot."
+    },
+    {
+      "test_id": "test_concurrent_recurring_generation_produces_one_invoice_and_historical_rate",
+      "upstream_ids": ["BR-RENT-010", "BR-RENT-011", "BR-RENT-012", "BR-RENT-017", "BR-RENT-018", "BR-RENT-019", "BR-SVC-005", "BR-SVC-006", "BR-SVC-007", "BR-SVC-011", "TEST-040", "TEST-041", "TEST-045"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "Two concurrent commands for the same Lease and September period serialize to one issued Invoice. Both command identities preserve the same result, and the future-effective August Trash rate applies without changing the issued Initial Invoice."
+    },
+    {
+      "test_id": "test_blocked_earlier_command_completes_after_the_adopted_invoice_chronology",
+      "upstream_ids": ["BR-RENT-011", "BR-RENT-017", "BR-RENT-018", "BR-RENT-021", "BR-RENT-027", "DB-TXN-003", "TEST-041"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "A command whose SQL statement starts first but blocks on its idempotency lock can later adopt the Invoice created by a distinct command only with a fresh database completion timestamp at or after the Invoice issuance and winning command completion chronology."
+    },
+    {
+      "test_id": "test_concurrent_service_rate_cannot_cross_the_durable_selection_cutoff",
+      "upstream_ids": ["BR-RENT-011", "BR-RENT-019", "BR-RENT-021", "BR-SVC-005", "BR-SVC-006", "BR-SVC-007", "BR-SVC-011", "DB-TXN-003", "TEST-041", "TEST-045"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "A Service rate writer that starts while billing holds the Property Service source boundary cannot cross the permanent issuance/selection cutoff; it waits, then is rejected as retroactive while the Invoice retains the previously selected rate."
+    },
+    {
+      "test_id": "test_service_source_late_commit_is_serialized_before_cutoff_and_reread",
+      "upstream_ids": ["BR-RENT-011", "BR-RENT-019", "BR-RENT-021", "BR-SVC-005", "BR-SVC-006", "BR-SVC-007", "BR-SVC-011", "DB-TXN-003", "TEST-041", "TEST-045"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "A Service rate transaction that records its source before billing but commits afterward holds the Property-wide source lock; billing waits, re-reads the committed rate, captures its one durable cutoff only after that source chronology, and stamps every immutable calculation component at that cutoff."
+    },
+    {
+      "test_id": "test_combined_lease_and_service_writer_serializes_at_property_boundary",
+      "upstream_ids": ["BR-RENT-004", "BR-RENT-011", "BR-RENT-019", "BR-RENT-021", "BR-SVC-005", "BR-SVC-011", "DB-TXN-003", "TEST-041", "TEST-045"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "A single transaction that updates Lease evidence and then writes a Service rate retains the Property source boundary across both source types; concurrent billing waits without deadlock, re-reads both committed sources, and generates once."
+    },
+    {
+      "test_id": "test_billing_avoids_reverse_tuple_to_property_lock_deadlock",
+      "upstream_ids": ["BR-RENT-004", "BR-RENT-011", "BR-RENT-019", "BR-RENT-021", "DB-TXN-003", "TEST-041"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "A Lease writer is deterministically paused after PostgreSQL acquires its tuple lock but before its source trigger can reach the Property boundary. Billing owns that boundary without requesting the conflicting tuple lock, completes from the last committed source state, and the writer then finishes without a deadlock."
+    },
+    {
+      "test_id": "test_cutoff_is_captured_after_concurrent_lease_signing_and_occupancy_commit",
+      "upstream_ids": ["BR-RENT-004", "BR-RENT-005", "BR-RENT-011", "BR-RENT-015", "BR-RENT-019", "BR-RENT-021", "DB-TXN-003", "TEST-040", "TEST-041"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "A billing command blocked by the shared Property source boundary captures its permanent issuance/source-selection cutoff only after a concurrent Lease signing and Occupancy creation commit, so every observed source timestamp is at or before the Invoice chronology."
+    },
+    {
+      "test_id": "test_service_pins_read_committed_for_stable_concurrent_replay",
+      "upstream_ids": ["BR-RENT-010", "BR-RENT-011", "BR-RENT-012", "BR-RENT-016", "BR-RENT-019", "DB-TXN-003", "TEST-041"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "Even when the caller DSN defaults to REPEATABLE READ or SERIALIZABLE, the billing adapter pins its transaction to READ COMMITTED before the first statement; concurrent identical and distinct commands return one stable Invoice without stale-snapshot conflicts."
+    },
+    {
+      "test_id": "test_direct_financial_function_rejects_stale_snapshot_isolation",
+      "upstream_ids": ["BR-RENT-011", "BR-RENT-016", "BR-RENT-019", "BR-RENT-021", "DB-TXN-003", "TEST-041"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "The directly executable financial-role billing function rejects REPEATABLE READ and SERIALIZABLE before any financial write, preventing a caller-established stale snapshot from bypassing the READ COMMITTED Property serialization boundary."
+    },
+    {
+      "test_id": "test_runtime_role_cannot_generate_or_mutate_financial_history",
+      "upstream_ids": ["BR-INV-020", "BR-INV-022", "BR-INV-025", "BR-RENT-029", "TEST-041"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "The runtime role cannot execute Invoice generation or insert into its permanent command ledger; only the financial role receives the bounded SECURITY DEFINER command while both roles retain read-only historical visibility."
+    },
+    {
+      "test_id": "test_command_validates_shape_and_digest_binds_every_input",
+      "upstream_ids": ["BR-RENT-016", "BR-RENT-019", "BR-RENT-029", "TEST-041"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_billing.py",
+      "status": "implemented",
+      "notes": "The application command rejects missing source identity, non-normalized Invoice identity, non-enum billing kinds, invalid recurring periods, and naive timestamps; its SHA-256 request digest binds every stable input used by database replay protection."
+    },
+    {
+      "test_id": "test_digest_canonicalizes_equivalent_issuance_instants",
+      "upstream_ids": ["BR-RENT-016", "BR-RENT-019", "TEST-041"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_billing.py",
+      "status": "implemented",
+      "notes": "Equivalent timezone-aware representations of one issuance instant produce one canonical UTC request digest, preserving stable replay semantics across clients."
+    },
+    {
+      "test_id": "test_replay_rechecks_current_actor_lifecycle",
+      "upstream_ids": ["BR-INV-020", "BR-INV-022", "BR-INV-025", "BR-RENT-029", "TEST-041"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "An issued command cannot be replayed after its human financial actor is disabled; the database rechecks current authorization before returning permanent replay evidence."
+    },
+    {
+      "test_id": "test_future_initial_and_recurring_business_dates_are_rejected_without_writes",
+      "upstream_ids": ["BR-RENT-015", "BR-RENT-017", "BR-RENT-018", "BR-RENT-019", "TEST-040", "TEST-041", "TEST-043"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "Future caller-supplied Initial and Recurring business issuance times are rejected before any Invoice or command write, while audit chronology is derived from the database clock."
+    },
+    {
+      "test_id": "test_initial_period_cannot_cross_contractual_or_processed_termination_boundary",
+      "upstream_ids": ["BR-RENT-005", "BR-RENT-010", "BR-RENT-022", "BR-RENT-024", "BR-RENT-025", "TEST-040", "TEST-043"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "Initial billing fails atomically when its canonical two-month coverage would cross either the contractual Lease End Date or a processed actual termination boundary; neither an Invoice nor command evidence is written without an explicit approved final-treatment path."
+    },
+    {
+      "test_id": "test_partial_month_service_configuration_fails_explicitly_without_underbilling",
+      "upstream_ids": ["BR-SVC-003", "BR-SVC-004", "BR-SVC-012", "BR-SVC-014", "BR-SVC-015", "TEST-042", "TEST-044", "TEST-045"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "Service approval or Lease-term coverage beginning or ending inside an Initial calendar component is rejected before financial writes instead of being silently omitted; both partial-boundary directions retain zero Invoice and command rows."
+    },
+    {
+      "test_id": "test_exact_unproven_existing_invoice_is_never_adopted_as_generated",
+      "upstream_ids": ["BR-RENT-004", "BR-RENT-011", "BR-RENT-019", "BR-RENT-021", "BR-RENT-027", "TEST-041"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "An otherwise exact issued Rent Invoice without a compatible V1-040 command provenance row is treated as a conflict and never adopted as a successful generation result."
+    },
+    {
+      "test_id": "test_existing_invoice_adoption_rejects_out_of_scope_billing_run_attempt",
+      "upstream_ids": ["BR-INV-020", "BR-INV-025", "BR-INV-050", "BR-RENT-008", "BR-RENT-027", "DB-TXN-003", "DB-TXN-005", "DB-TXN-006", "TEST-040", "TEST-041"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "A new command cannot attach an existing generated Invoice to a RUNNING Billing Run attempt whose immutable Property, kind, business date, billing period, service actor, or eligible Lease-period snapshot is outside the command scope."
+    },
+    {
+      "test_id": "test_nonidentical_overlap_conflicts_instead_of_returning_partial_coverage",
+      "upstream_ids": ["BR-RENT-010", "BR-RENT-011", "BR-RENT-012", "BR-RENT-019", "TEST-041"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "A non-identical Rent period overlap raises a conflict and records no second command or Invoice, preventing a partial-coverage Invoice from being misreported as an exact retry result."
+    },
+    {
+      "test_id": "test_service_rejects_actor_and_property_scope_before_database",
+      "upstream_ids": ["BR-INV-020", "BR-INV-022", "BR-INV-025", "BR-RENT-029", "TEST-041"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_billing.py",
+      "status": "implemented",
+      "notes": "The application boundary rejects an actor mismatch or a billing.generate grant for another Property before opening a database connection."
+    },
+    {
+      "test_id": "test_v1_040_is_forward_only_and_is_the_migration_head",
+      "upstream_ids": ["BR-SVC-006", "BR-SVC-008", "BR-RENT-026", "TEST-042", "TEST-045"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "The complete migration chain reaches V1-040 and refuses rollback that could erase issued financial or billing-command history."
     }
   ]
 }
