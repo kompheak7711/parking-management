@@ -3636,7 +3636,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260826_28",)
+                assert cursor.fetchone() == ("20260827_29",)
 
 
 def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
@@ -4265,7 +4265,7 @@ def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260826_28",)
+                assert cursor.fetchone() == ("20260827_29",)
                 cursor.execute(
                     """
                     SELECT id, code, display_name, accepted, created_by, updated_by
@@ -4419,7 +4419,7 @@ def test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data() -> No
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260826_28",)
+                assert cursor.fetchone() == ("20260827_29",)
                 cursor.execute(
                     """
                     SELECT unit.id, unit.property_id, unit.status, customer.id
@@ -4714,7 +4714,7 @@ def test_v1_031_upgrade_preserves_and_completes_v1_030_pending_outcome() -> None
             )
             connection.commit()
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260826_28",
+                "20260827_29",
             )
             assert connection.execute(
                 """
@@ -4814,7 +4814,7 @@ def test_v1_034_upgrade_preserves_v1_033_lease_and_replaces_unbounded_runtime_he
         assert result.returncode == 0, result.stderr
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260826_28",
+                "20260827_29",
             )
             assert connection.execute(
                 "SELECT id,status,version,start_date,end_date FROM app.leases WHERE id=%s",
@@ -4913,3 +4913,85 @@ def test_v1_038_upgrade_projects_legacy_pet_departure_authorization() -> None:
         historical_review = flow.review(review_id)
         assert historical_review.refundable_usd_cents == 20_000
         assert historical_review.current_refundable_usd_cents == 20_000
+
+
+def test_v1_039_upgrade_serializes_user_creation_across_actor_identity_backfill() -> None:
+    """A concurrent account insert cannot escape the actor-registry backfill and trigger."""
+    with _temporary_migration_database("prm_v1_039_actor_backfill") as migration_url:
+        assert _run_alembic("upgrade", "20260826_28").returncode == 0
+        actor_id = uuid.uuid4()
+        migration_environment = os.environ.copy()
+        migration_environment[MIGRATION_URL_ENV] = migration_url
+        migration: subprocess.Popen[str] | None = None
+        with psycopg.connect(migration_url) as downstream_blocker:
+            downstream_blocker.execute("LOCK TABLE app.properties IN ACCESS EXCLUSIVE MODE")
+            try:
+                migration = subprocess.Popen(
+                    ["alembic", "upgrade", "head"],
+                    cwd=BACKEND_ROOT,
+                    env=migration_environment,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                )
+                deadline = time.monotonic() + 15
+                actor_backfill_lock_observed = False
+                while time.monotonic() < deadline:
+                    with psycopg.connect(migration_url) as probe:
+                        lock_row = probe.execute(
+                            """
+                            SELECT EXISTS (
+                                SELECT 1
+                                FROM pg_locks AS lock
+                                JOIN pg_class AS relation ON relation.oid=lock.relation
+                                JOIN pg_namespace AS namespace
+                                  ON namespace.oid=relation.relnamespace
+                                WHERE namespace.nspname='app'
+                                  AND relation.relname='user_accounts'
+                                  AND lock.mode='ShareRowExclusiveLock'
+                                  AND lock.granted
+                            )
+                            """
+                        ).fetchone()
+                    assert lock_row is not None
+                    actor_backfill_lock_observed = bool(lock_row[0])
+                    if actor_backfill_lock_observed:
+                        break
+                    if migration.poll() is not None:
+                        break
+                    time.sleep(0.05)
+                assert actor_backfill_lock_observed
+
+                def create_user_during_upgrade() -> str:
+                    with psycopg.connect(migration_url) as writer:
+                        writer.execute(
+                            "INSERT INTO app.user_accounts(actor_id,normalized_username,"
+                            "display_name,audit_name,lifecycle_state,mfa_policy_class,provenance) "
+                            "VALUES (%s,%s,'Concurrent Upgrade Actor','Concurrent Upgrade Actor',"
+                            "'active','optional','v1-039-concurrent-upgrade')",
+                            (actor_id, f"v1-039-upgrade-{actor_id.hex}"),
+                        )
+                    return "committed"
+
+                with ThreadPoolExecutor(max_workers=1) as pool:
+                    writer_future = pool.submit(create_user_during_upgrade)
+                    time.sleep(0.2)
+                    assert not writer_future.done()
+                    downstream_blocker.commit()
+                    assert writer_future.result(timeout=30) == "committed"
+                stdout, stderr = migration.communicate(timeout=60)
+                assert migration.returncode == 0, f"{stdout}\n{stderr}"
+            finally:
+                downstream_blocker.rollback()
+                if migration is not None and migration.poll() is None:
+                    migration.terminate()
+                    migration.communicate(timeout=10)
+
+        with psycopg.connect(migration_url) as verify:
+            assert verify.execute(
+                "SELECT identity_kind FROM app.actor_identities WHERE actor_id=%s",
+                (actor_id,),
+            ).fetchone() == ("HUMAN",)
+            assert verify.execute("SELECT version_num FROM alembic_version").fetchone() == (
+                "20260827_29",
+            )

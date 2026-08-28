@@ -1,53 +1,53 @@
-# V1-038 Deposit receipt, qualification, disposition API/UI — complete
+# V1-039 Invoice, line, adjustment, and billing-run persistence — active
 
-- Candidate: `V1-038` — Deposit receipt, qualification, disposition API/UI.
+- Candidate: `V1-039` — Invoice, line, adjustment, and billing-run persistence.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
   no renewed routine authorization is required.
-- Baseline: clean synchronized `implementation/foundation` at V1-037 reconciliation
-  commit `11efdf2036e308d62735362ace275739658e049a`.
+- Baseline: clean synchronized `implementation/foundation` at V1-038 reconciliation
+  commit `99f1008842390a090261f68a94e7e8717bb26608`.
 - Preflight: PASS; no repository worker, mutation process, lock, or restoration
   continuation overlapped this direct cycle.
 - Scheduler: the Property Rental supervisor remains disabled and not running.
-- Scope: authorized Deposit resource, receipt, qualification, disposition, correction,
-  and active-Lease Pet Deposit Refund qualification API/UI with permanent source history.
-- Authorities: `API-039` through `API-042`, `API-094`, `UI-030`, `UI-033`,
-  `UI-035`, `UI-043`, `UI-044`, `UI-071`, `UI-073`, `UI-074`, `UI-076`,
-  `UI-107`, `TEST-036` through `TEST-039`, and `TEST-126`.
-- Dependency: published V1-037 Deposit persistence/domain services.
-- Excluded: ordinary active-Lease Security Deposit Refund, Final Settlement
-  implementation, actual Refund execution, V1-039, canonical changes, and
-  Hermes-wrapper changes.
+- Scope: immutable Invoice headers and lines, authorized non-recurring obligation
+  sources, append-only Adjustments and reversals, exceptional VOID evidence,
+  late-payment decision/charge persistence, durable billing-run identity, and
+  PostgreSQL duplicate/overlap guards.
+- Authorities: `BR-INV-*`, `DB-INV-*`, and `TEST-053` through `TEST-058`.
+- Dependencies: published V1-027 configuration persistence and V1-035 move-in and
+  Reservation-to-Lease orchestration.
+- Excluded: Payment persistence, billing calculation/services, worker execution,
+  Invoice API/UI, V1-040, canonical changes, and Hermes-wrapper changes.
 - Canonical specifications: read-only.
-- Scope correction: Owner-approved. New Payment-backed receipt creation is deferred
-  to V1-048/V1-052, and Final Settlement disposition is deferred to V1-056. Existing
-  receipt history remains readable and reversible; no provisional Payment is invented.
-- Implementation: complete for bounded Deposit resources, existing receipt/source
-  history and reversals, supported disposition correction, approved conditional Pet
-  Deposit creation, and split pet-departure/refund-review qualification.
-- Verification: PASS; focused API/UI checks, disposable PostgreSQL `300/300`, and
-  complete deterministic verification `15/15` (`629` backend with `289` expected
-  environment skips, `213` frontend, and `185` automation-routing tests); evidence:
-  `/private/tmp/property-rental-v1-038-final-verification-6.json`.
-- Review: PASS; fresh external Codex read-only review of the exact final diff found no
-  material issues and made no edits; session
-  `01a0406f-c4e8-7e82-9419-c77d93a4bba5`; evidence:
-  `/private/tmp/property-rental-v1-038-final-independent-review-7.txt`.
-- Implementation publication: commit
-  `de033c5d402e18bb6e3109b9c24fcb9609207a9e`; exact-SHA GitHub Actions run
-  `33025241226` passed all four jobs.
-- Closure: commit `77f0010a73dcb4234e963bf58d47836d278b40a4`;
-  exact-SHA GitHub Actions run `33025719591` passed all four jobs.
-- Status: complete, published, independently reviewed, and closure-valid.
-- V1-039: held at `approved_ready`; no activation or implementation occurred.
+- Implementation: complete for the bounded forward-only Invoice, line, calculation
+  component, Adjustment/reversal, VOID, authorized-obligation, late-payment
+  decision/Charge/correction, and billing-run persistence boundary.
+- Independent review history: thirty-three fresh external read-only reviews found 139 material
+  issues; all 139 were corrected with deterministic PostgreSQL regressions. Session and
+  evidence paths are preserved in `ops/STATE.json`.
+- Latest correction: Billing Run retries now serialize every Invoice selected by their
+  cumulative latest source evidence and VOID chronology follows the latest successful attempt;
+  two-component Service lines preserve one common rate snapshot or correctly retain distinct
+  component rates. Evidence:
+  `/private/tmp/property-rental-v1-039-independent-review-final-after-thirty-first.txt`.
+- Final independent review: PASS with no material findings and no reviewer edits. Evidence:
+  `/private/tmp/property-rental-v1-039-independent-review-final-after-thirty-second.txt`.
+- Focused verification: PASS `325/325` real disposable PostgreSQL tests.
+- Complete verification: PASS `15/15`; backend `629` passed with `314` expected environment
+  skips, frontend `213` passed, disposable PostgreSQL `325` passed, and automation routing
+  `185` passed. Evidence:
+  `/private/tmp/property-rental-v1-039-thirty-second-review-corrections-final-verification.json`.
+- Status: implementation, complete verification, and final exact-diff review all PASS;
+  V1-039 is ready for bounded publication.
+- V1-040: held at `approved_ready`; no activation or implementation is permitted.
 - Blockers: none.
-- Exact next action: keep V1-039 held at `approved_ready` and keep the Property Rental
-  supervisor disabled; do not activate the successor automatically.
+- Exact next action: create and push the V1-039 implementation commit, require successful
+  exact-SHA GitHub Actions, then reconcile and publish the closure commit.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-038 implementation and closure are published and
-  exact-SHA CI-green; V1-039 remains the held approved successor.
-- Automation exact next action: keep the supervisor disabled and V1-039 held while
-  awaiting explicit direct-takeover or activation direction.
+- Automation publication state: V1-039 is active under direct Codex takeover;
+  V1-040 remains the held approved successor.
+- Automation exact next action: keep the supervisor disabled and V1-040 held until
+  V1-039 is independently reviewed, published, and exact-SHA CI-green.
 
 <!-- AUTOMATION_STATUS_END -->

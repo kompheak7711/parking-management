@@ -9074,6 +9074,223 @@
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
       "notes": "A seeded V1-037 combined Pet Refund qualification upgrades without losing the departure authorization or immutable review-time refundable balance."
+    },
+    {
+      "test_id": "test_invoice_tables_are_current_forward_only_and_read_only_to_runtime",
+      "upstream_ids": ["DB-INV-001", "DB-INV-010", "TEST-053", "TEST-058"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "The complete V1-039 relation set reaches the reviewed migration head, refuses destructive downgrade without changing the head or seeded evidence, and proves the complete per-table SELECT and mutation privilege matrix for runtime, financial, and bootstrap roles."
+    },
+    {
+      "test_id": "test_initial_rent_component_kinds_are_bound_to_calendar_position",
+      "upstream_ids": [
+        "BR-RENT-005",
+        "BR-RENT-006",
+        "BR-RENT-007",
+        "BR-INV-020",
+        "TEST-053",
+        "TEST-054"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Initial Rent pins the exact Occupancy identity that supplies its move-in date, serializes issuance against Occupancy writers, and rejects a later backdated Occupancy that would invalidate issued evidence. It preserves one exact move-in-month component and, only when the governed period crosses a month boundary, one exact following-month component; first-day move-ins cannot be mislabeled as following-month Rent. A one-component line exactly matches its component day snapshots, while the two-component form leaves ambiguous aggregate day fields null. A two-component Service line preserves its common line-level rate snapshot when both components select one rate and leaves only those common rate fields null when the effective component rates differ."
+    },
+    {
+      "test_id": "test_terminated_lease_can_preserve_full_voluntary_final_month_rent",
+      "upstream_ids": [
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-LEASE-021",
+        "BR-SVC-013",
+        "DB-INV-001",
+        "DB-INV-002",
+        "DB-INV-006",
+        "TEST-053",
+        "TEST-054"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "A processed voluntary early termination still permits the canonical complete final calendar-month Rent and fixed-Service obligations, while an involuntary termination cannot fabricate post-termination full-month billing."
+    },
+    {
+      "test_id": "test_issued_invoice_can_be_voided_after_later_involuntary_lease_termination",
+      "upstream_ids": ["BR-INV-015", "BR-INV-024", "DB-INV-001", "DB-INV-004", "TEST-056", "TEST-058"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Immutable issuance-source evidence is validated as of the transition out of DRAFT, including when a later involuntary Lease termination occurs before deferred constraints run; the later termination cannot strand the issued receivable and exceptional VOID remains reconstructable."
+    },
+    {
+      "test_id": "test_invoice_ownership_sources_issuance_and_permanent_history",
+      "upstream_ids": ["BR-INV-002", "BR-INV-011", "BR-INV-020", "DB-INV-001", "TEST-053", "TEST-056"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL requires exact Customer ownership and reconciled relational lines before issuance, permits explicit DRAFT detail correction with database-maintained line/component timestamp and last-editor provenance bound to the Invoice updater, requires DELETE attribution to match that same active updater, and rejects mismatched or inactive deletion actors before preserving the revision. It then rejects changes to permanent issued facts and line history."
+    },
+    {
+      "test_id": "test_lease_customer_and_authorized_nonrecurring_source_are_enforced",
+      "upstream_ids": ["BR-INV-036", "BR-INV-038", "BR-INV-049", "DB-INV-005", "TEST-053", "TEST-054", "TEST-055"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Lease-associated ownership must resolve to a signed Lease Customer. A non-recurring obligation binds the exact Customer, optional Lease, category, amount, description, governed Due Date, and Due-Date source; only a prior exceptional VOID permits a chronological replacement, while concurrent active reuse is rejected."
+    },
+    {
+      "test_id": "test_rent_service_sources_preserve_evidence_and_utility_defers_without_source_fk",
+      "upstream_ids": ["BR-INV-026", "BR-INV-027", "BR-INV-028", "BR-INV-039", "BR-INV-040", "BR-INV-041", "BR-INV-042", "DB-INV-002", "DB-INV-006", "TEST-054", "TEST-055"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Rent and configured Service lines preserve exact typed sources, periods, linked approvals, category-specific snapshots, and calculation components without contradictory duplicated fields. Utility Invoice lines remain explicitly deferred and fail closed in V1-039 until V1-041/V1-042 provide the canonical consumption-period persistence and foreign key; no unbound Utility identity is accepted."
+    },
+    {
+      "test_id": "test_service_invoice_ignores_rate_recorded_after_issuance_snapshot",
+      "upstream_ids": ["BR-INV-039", "BR-INV-040", "BR-INV-042", "DB-INV-002", "DB-INV-006", "TEST-054", "TEST-055"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "The latest effective Service rate is selected from evidence recorded no later than Invoice issuance; a later-recorded configuration row cannot retroactively supersede the immutable issuance snapshot."
+    },
+    {
+      "test_id": "test_adjustment_reversal_and_exceptional_void_preserve_source_history",
+      "upstream_ids": ["BR-INV-015", "BR-INV-021", "BR-INV-022", "BR-INV-024", "DB-INV-003", "DB-INV-004", "DB-INV-010", "TEST-056", "TEST-057", "TEST-058"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Linked credit Adjustment effects are reconstructable, source/reversal chronology and causal Invoice updated timestamps are enforced, both directions of an intermediate zero-balance crossing require lifecycle history, active corrections block exceptional VOID, and the VOID transition follows retained draft detail plus all resolved financial evidence. DRAFT abandonment cannot fabricate issuance provenance, issued VOID cannot erase it, explicit reversal preserves the source event, and owner-level UPDATE, DELETE, and coordinated TRUNCATE attempts prove Adjustment, reversal, and VOID evidence remains permanent and queryable."
+    },
+    {
+      "test_id": "test_final_late_payment_waiver_and_charge_corrections_are_reconstructable",
+      "upstream_ids": ["BR-INV-051", "BR-INV-052", "BR-INV-053", "BR-INV-054", "BR-INV-055", "DB-INV-007", "DB-INV-008", "DB-INV-009"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL verifies the Asia/Phnom_Penh overdue boundary, one final Invoice-wide 10% decision, waiver without a receivable, positive decision/Charge pairing, chronological corrections, mandatory complete Charge reversal, and VOID dependency preservation."
+    },
+    {
+      "test_id": "test_concurrent_duplicate_rent_period_and_billing_run_are_rejected",
+      "upstream_ids": ["BR-INV-026", "BR-INV-029", "DB-TXN-003", "DB-TXN-005", "TEST-055"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Constraint-backed active-source claims preserve Rent, Service, and authorized-obligation uniqueness even after a concurrent transaction establishes a REPEATABLE READ snapshot; VOID atomically releases only the derived active claim while retaining permanent Invoice evidence. Persisted internal revision guards force stale REPEATABLE READ Adjustment/VOID and late-Charge correction writers to abort with a retryable serialization failure before aggregate validation, while stable Invoice, attempt, and run locks preserve issuance/detail mutation, generated-Invoice completion, replay, Rent-period exclusion, and logical billing-run history. The generated-Invoice race uses a PostgreSQL-derived future chronology boundary rather than host-clock timing."
+    },
+    {
+      "test_id": "test_concurrent_invoice_issuance_serializes_lease_and_service_sources",
+      "upstream_ids": ["BR-INV-020", "BR-INV-026", "BR-INV-039", "BR-INV-040", "DB-INV-001", "DB-INV-002", "DB-INV-006", "DB-TXN-003", "TEST-053", "TEST-054", "TEST-055"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Shared persisted revision guards supplement stable Lease, Property, and Property Service advisory keys so a stale REPEATABLE READ Invoice issuer or billing-run snapshot transaction aborts and retries after concurrent Occupancy, termination, Service-rate, or Lease-signing evidence changes. Occupancy-only insertion on an already-signed Lease advances the Property billing-eligibility guard, and the clean retry captures the newly eligible source. Lease and Occupancy writers acquire their shared Property and Lease keys in one deterministic global order. Initial Rent requires the source Occupancy to match both Lease and Customer and protects that provenance after issuance; later backdated Occupancy, cross-row changes, retroactive Service rates, and involuntary termination that contradict issued Rent or Service evidence are rejected."
+    },
+    {
+      "test_id": "test_nonrecurring_obligation_issue_and_void_are_repeatable_read_serialized",
+      "upstream_ids": ["BR-INV-036", "BR-INV-038", "BR-INV-049", "DB-INV-005", "DB-TXN-003", "TEST-055", "TEST-058"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "A transaction that established a REPEATABLE READ snapshot before another transaction created, issued, and exceptionally VOIDed an Invoice for the same authorized non-recurring obligation must abort with a retryable serialization failure. The obligation-scoped persisted guard prevents an invisible create-to-VOID cycle from permitting ambiguous replacement chronology while all permanent Invoice and VOID evidence remains intact."
+    },
+    {
+      "test_id": "test_billing_service_identity_schedule_skip_and_failed_run_successor",
+      "upstream_ids": ["BR-INV-050", "DB-TXN-003", "DB-TXN-005", "DB-TXN-006", "TEST-055"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Billing runs require an active Property-scoped service principal at run, attempt, item, and generated-Invoice boundaries; human, disabled, and cross-scope identities fail closed. Rent runs are fixed to the Property-local 25th and the complete next calendar month, generated Invoice dates equal the durable business date, SKIPPED evidence requires a matching active Invoice and typed reason, and exactly one linked successor can continue a terminal FAILED run with an identical sealed source snapshot."
+    },
+    {
+      "test_id": "test_recurring_rent_and_billing_snapshot_follow_initial_and_termination_boundaries",
+      "upstream_ids": ["BR-RENT-005", "BR-RENT-008", "BR-RENT-010", "BR-RENT-012", "BR-INV-026", "BR-INV-050", "DB-TXN-005", "DB-TXN-006", "TEST-055"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Recurring Rent and scheduled eligible-source snapshots begin only after the complete Initial Rent period established by the earliest durable Occupancy. A failed run whose copied source later becomes ineligible through Lease termination can complete one linked successor only with typed, invoice-free SOURCE_NO_LONGER_ELIGIBLE evidence validated against current source state. Involuntary mid-period termination is classified consistently with the issuable full-month Rent rules so a sealed source has one terminal typed resolution instead of becoming permanently unresolvable."
+    },
+    {
+      "test_id": "test_billing_service_principal_revocation_is_repeatable_read_serialized",
+      "upstream_ids": ["BR-INV-020", "BR-INV-025", "BR-INV-050", "DB-TXN-003", "DB-TXN-005", "DB-TXN-006", "TEST-055"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Active Property-scoped billing service identity is locked before every new run, attempt, item, and generated financial transition. Concurrent revocation forces a stale REPEATABLE READ worker to abort, revocation cannot strand a RUNNING run, and the run can be terminalized under its preserved original actor before the principal is disabled."
+    },
+    {
+      "test_id": "test_financial_event_actors_must_be_active_and_property_scoped",
+      "upstream_ids": ["BR-INV-020", "BR-INV-022", "BR-INV-025", "DB-INV-003", "DB-INV-004", "DB-INV-005", "DB-TXN-003", "TEST-056", "TEST-057", "TEST-058"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Invoice headers, detail, VOID evidence, authorized obligations, Adjustments and reversals, and late-payment events require an active human actor or an active service principal exactly scoped to the final Invoice Property. Every service-authored Invoice requires matching active Billing Run provenance; origin-less scoped service creation and cross-Property issuance fail closed while disabled human or service actors and retained historical actor identities remain immutable."
+    },
+    {
+      "test_id": "test_billing_run_retry_void_chronology_requires_post_void_resolution",
+      "upstream_ids": ["BR-INV-050", "DB-TXN-005", "DB-TXN-006", "TEST-055"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL proves that an Invoice generated by a failed attempt can be VOIDed only after a later successful retry's parent run is durably terminal. A successful retry that uses the earlier Invoice as SKIPPED evidence blocks a pre-terminal VOID and avoids a permanently RUNNING dead end. The same completion chronology applies to a manual or externally originated Invoice referenced by successful SKIPPED evidence. SKIPPED evidence must be recorded at or after the referenced Invoice was issued, and stale evidence recorded before a later VOID cannot complete an attempt or run until a post-VOID retry records fresh resolution evidence."
+    },
+    {
+      "test_id": "test_billing_run_completion_and_evidence_are_terminal_and_append_preserved",
+      "upstream_ids": ["BR-INV-050", "DB-TXN-005", "DB-TXN-006"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "A durable Property-local billing run starts RUNNING, takes the same Property lock as Lease signing, persists and seals the exact eligible-Lease snapshot, enforces sequential attempts and non-overlapping durable run history, binds every generated DRAFT header, immutable line, and calculation component to the run actor, and preserves typed source and generated-Invoice provenance in attempt-linked retry history. Success requires the latest evidence for every snapshotted Lease to be SKIPPED or a still-non-VOID GENERATED Invoice, while every earlier ERROR/CONFLICT or VOIDed GENERATED source requires a later resolution; generated headers and Rent items must name a snapshotted source. Empty or directly terminal attempts, snapshot expansion, VOID ordering violations, and post-terminal mutation are rejected. Worker execution remains excluded."
+    },
+    {
+      "test_id": "test_involuntary_midperiod_termination_has_terminal_billing_resolution",
+      "upstream_ids": ["BR-RENT-024", "BR-RENT-025", "BR-INV-050", "DB-TXN-005", "DB-TXN-006", "TEST-055"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "A Lease that was eligible when a run sealed its source snapshot, then became involuntarily terminated in the middle of that billing period, is no longer classified as capable of a full recurring Rent Invoice and can be resolved exactly once with typed SOURCE_NO_LONGER_ELIGIBLE evidence."
+    },
+    {
+      "test_id": "test_external_skipped_invoice_void_must_follow_successful_run_completion",
+      "upstream_ids": ["BR-INV-024", "BR-INV-050", "DB-INV-004", "DB-TXN-005", "DB-TXN-006", "TEST-055", "TEST-058"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "A manual or externally originated Invoice used as successful SKIPPED evidence cannot be VOIDed at a timestamp before the referencing run's durable completion, while a post-completion exceptional VOID remains valid and reconstructable."
+    },
+    {
+      "test_id": "test_external_skipped_invoice_void_and_success_are_serialized",
+      "upstream_ids": ["BR-INV-024", "BR-INV-050", "DB-INV-004", "DB-TXN-003", "DB-TXN-005", "DB-TXN-006", "TEST-055", "TEST-058"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "A shared per-Invoice serialization guard orders a concurrent exceptional VOID against Billing Run success when an external Invoice is referenced by SKIPPED evidence. Exactly one outcome commits: either the VOID remains permanent and the attempt/run stay RUNNING, or the attempt/run succeed and the premature VOID is rejected."
+    },
+    {
+      "test_id": "test_cumulative_retry_invoice_void_and_success_are_serialized",
+      "upstream_ids": ["BR-INV-024", "BR-INV-050", "DB-INV-004", "DB-TXN-003", "DB-TXN-005", "DB-TXN-006", "TEST-055", "TEST-058"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "A retry that resolves only a previously failed source still locks every Invoice selected by the latest cumulative source evidence across all attempts. Concurrent VOID of an Invoice retained from the earlier failed attempt and retry success permit exactly one coherent durable outcome, and post-success VOID chronology is evaluated against the latest successful attempt and its parent run."
+    },
+    {
+      "test_id": "test_lease_and_occupancy_writers_share_one_advisory_lock_order",
+      "upstream_ids": ["BR-INV-026", "DB-TXN-003", "DB-TXN-005", "TEST-055"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Barrier-coordinated Lease and Occupancy writers both commit while a transaction-local probe proves they acquire the shared Property eligibility and Lease evidence advisory keys in the same deterministic order."
+    },
+    {
+      "test_id": "test_v1_039_upgrade_serializes_user_creation_across_actor_identity_backfill",
+      "upstream_ids": ["BR-INV-020", "DB-INV-001", "DB-TXN-003", "TEST-053"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The forward V1-039 upgrade holds a write-conflicting lock on user_accounts across actor-identity backfill and trigger installation. A real concurrent account writer remains blocked until migration commit, then passes through the installed synchronization trigger and receives exactly one HUMAN actor identity."
     }
   ]
 }
