@@ -1,4 +1,4 @@
-# V1-039 Invoice, line, adjustment, and billing-run persistence — active
+# V1-039 Invoice, line, adjustment, and billing-run persistence — implementation published; closure pending
 
 - Candidate: `V1-039` — Invoice, line, adjustment, and billing-run persistence.
 - Authorization: existing durable V1 roadmap authorization plus direct Owner takeover;
@@ -36,18 +36,22 @@
   skips, frontend `213` passed, disposable PostgreSQL `325` passed, and automation routing
   `185` passed. Evidence:
   `/private/tmp/property-rental-v1-039-thirty-second-review-corrections-final-verification.json`.
-- Status: implementation, complete verification, and final exact-diff review all PASS;
-  V1-039 is ready for bounded publication.
+- Implementation publication: commit
+  `069495af56e098eda08f16f12ae6db07607ab1ab`; exact-SHA GitHub Actions run
+  `33138732828` passed all four jobs.
+- Status: implementation published; the separate V1-039 closure commit and its own
+  exact-SHA CI result remain pending.
 - V1-040: held at `approved_ready`; no activation or implementation is permitted.
 - Blockers: none.
-- Exact next action: create and push the V1-039 implementation commit, require successful
-  exact-SHA GitHub Actions, then reconcile and publish the closure commit.
+- Exact next action: create and push only the V1-039 closure commit, require successful
+  exact-SHA GitHub Actions, then reconcile closure-valid compact state while V1-040
+  remains held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-039 is active under direct Codex takeover;
-  V1-040 remains the held approved successor.
+- Automation publication state: V1-039's implementation is published and exact-SHA
+  CI-green but its closure remains pending; V1-040 remains held.
 - Automation exact next action: keep the supervisor disabled and V1-040 held until
-  V1-039 is independently reviewed, published, and exact-SHA CI-green.
+  V1-039 completes closure publication and reconciliation.
 
 <!-- AUTOMATION_STATUS_END -->

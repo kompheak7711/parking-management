@@ -1,7 +1,7 @@
 {
   "active_cycle": "v1-039-invoice-persistence",
   "approval": {
-    "status": "active",
+    "status": "verified_unpublished",
     "basis": "existing durable V1 roadmap authorization plus owner-approved direct V1-039 takeover",
     "implementation_started": true,
     "implementation_completed": true,
@@ -697,7 +697,7 @@
     "tranche_id": "V1-039"
   },
   "idle_reason": null,
-  "next_action": "Create and push the reviewed V1-039 implementation commit, require successful exact-SHA GitHub Actions, then reconcile and publish the closure commit while keeping the supervisor disabled and V1-040 held",
+  "next_action": "Create and push only the V1-039 closure commit, require successful exact-SHA GitHub Actions, then reconcile closure-valid compact state while keeping the supervisor disabled and V1-040 held",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -737,13 +737,17 @@
   },
   "phase": "Billing",
   "publication": {
-    "ci_completed": false,
-    "commit_completed": false,
-    "implementation_commit": null,
+    "ci_completed": true,
+    "ci_conclusion": "success",
+    "ci_run_attempt": 1,
+    "ci_run_id": 33138732828,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33138732828",
+    "commit_completed": true,
+    "implementation_commit": "069495af56e098eda08f16f12ae6db07607ab1ab",
     "closure_commit": null,
-    "push_completed": false,
+    "push_completed": true,
     "sha_reconciled": false,
-    "status": "implementation",
+    "status": "implementation_published_closure_pending",
     "tranche_id": "V1-039",
     "predecessor_closure_commit": "77f0010a73dcb4234e963bf58d47836d278b40a4",
     "predecessor_reconciliation_commit": "99f1008842390a090261f68a94e7e8717bb26608"
@@ -1012,7 +1016,7 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "verified_reviewed_ready_for_publication",
+  "status": "verified_unpublished",
   "task": "Implement the approved bounded candidate: Invoice, line, adjustment, and billing-run persistence",
   "tests": [
     "PASS: V1-039 preflight found clean synchronized baseline 99f1008842390a090261f68a94e7e8717bb26608, no overlapping repository worker or lock, and disabled Property Rental supervisor",
@@ -1113,10 +1117,11 @@
     "PASS: thirty-second external Codex review found one P1 and one P2 issue; both corrected with cumulative retry Invoice serialization/latest-success chronology and exact common-versus-distinct two-component Service rate snapshots; /private/tmp/property-rental-v1-039-independent-review-final-after-thirty-first.txt",
     "PASS: thirty-second-round focused disposable PostgreSQL cumulative-retry race and Service snapshot regressions 325/325",
     "PASS: thirty-second-round complete deterministic verification profile 15/15; backend 629 passed with 314 expected environment skips; frontend 213 passed; disposable PostgreSQL 325 passed; automation routing 185 passed; /private/tmp/property-rental-v1-039-thirty-second-review-corrections-final-verification.json",
-    "PASS: thirty-third fresh external Codex exact-diff review found no material issues and made no edits; /private/tmp/property-rental-v1-039-independent-review-final-after-thirty-second.txt"
+    "PASS: thirty-third fresh external Codex exact-diff review found no material issues and made no edits; /private/tmp/property-rental-v1-039-independent-review-final-after-thirty-second.txt",
+    "PASS: implementation commit 069495af56e098eda08f16f12ae6db07607ab1ab exact-SHA GitHub Actions run 33138732828; all four jobs"
   ],
   "tests_tranche_id": "V1-039",
-  "timestamp": "2026-08-28T03:18:09Z",
+  "timestamp": "2026-08-28T03:27:25Z",
   "touched_areas": [
     "backend/migrations/versions/20260827_29_invoice_persistence.py",
     "backend/tests/test_invoice_migration.py",
