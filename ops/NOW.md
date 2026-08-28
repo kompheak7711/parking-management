@@ -1,4 +1,4 @@
-# V1-041 Utility meter, replacement, reading, and correction persistence — active
+# V1-041 Utility meter, replacement, reading, and correction persistence — complete
 
 - Candidate: `V1-041` — Utility meter, replacement, reading, and correction persistence.
 - Authorization: Owner standing direct-Codex authorization for V1-041 through V1-060;
@@ -47,20 +47,20 @@
   database-environment skips, frontend 213 passed, disposable PostgreSQL 364 passed,
   and automation routing 185 passed. Evidence:
   `/private/tmp/property-rental-v1-041-second-review-corrections-verification.json`.
-- V1-042 and later: held; no activation or implementation is permitted.
+- Closure: commit `d6c05690d06ea06a9ce904c2ed7d976bf816fb6c`; exact-SHA
+  GitHub Actions run `33173041349` passed all four jobs.
+- Status: complete, published, independently reviewed, and closure-valid.
+- V1-042: held at `approved_ready`; no activation or implementation occurred.
 - Blockers: none.
-- Status: implementation commit `a6c18e524faadd3d80b13fd21e0d0cf623bb7e11`
-  is published and exact-SHA GitHub Actions run `33172741306` passed all four jobs;
-  the separate V1-041 closure commit and its own CI result remain pending.
-- Exact next action: create and push only the V1-041 closure commit, require successful
-  exact-SHA GitHub Actions, then reconcile closure-valid compact state while V1-042
-  remains held.
+- Exact next action: keep V1-042 held at `approved_ready` and keep the Property Rental
+  supervisor disabled until this V1-041 reconciliation commit is exact-SHA CI-green;
+  do not activate the successor automatically.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-041's implementation is published and exact-SHA
-  CI-green but its closure remains pending; V1-042 and later remain held.
-- Automation exact next action: keep the supervisor disabled and V1-042 held until
-  V1-041 completes closure publication and reconciliation.
+- Automation publication state: V1-041 implementation and closure are published and
+  exact-SHA CI-green; V1-042 remains the held approved successor.
+- Automation exact next action: keep the supervisor disabled and V1-042 held; do not
+  restore autonomous execution or activate the successor automatically.
 
 <!-- AUTOMATION_STATUS_END -->
