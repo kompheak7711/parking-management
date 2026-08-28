@@ -1,4 +1,4 @@
-# V1-040 Rent proration and fixed-service billing services — active
+# V1-040 Rent proration and fixed-service billing services — implementation published; closure pending
 
 - Candidate: `V1-040` — Rent proration and fixed-service billing services.
 - Authorization: Owner standing direct-Codex authorization for V1-040 through V1-060;
@@ -16,7 +16,9 @@
 - Excluded: Utility billing, V1-041 and later product work, canonical changes,
   production data/access, and installed Hermes-wrapper repair.
 - Canonical specifications: read-only.
-- Implementation: complete and preserved in the uncommitted V1-040 worktree.
+- Implementation: complete and published at
+  `4651b9f71d9f58f0dbc8abd736e868a6b437c0b9`; exact-SHA GitHub Actions run
+  `33160649278` passed all four jobs.
 - Verification: eleventh-review correction complete profile PASS 15/15; backend
   641 passed with 339 expected environment skips, disposable PostgreSQL 351/351,
   frontend 213 passed, and automation routing 185/185.
@@ -41,14 +43,17 @@
   material findings and explicitly judged the diff safe to publish.
 - V1-041 and later: held; no activation or implementation is permitted.
 - Blockers: none.
-- Exact next action: publish the independently reviewed V1-040 implementation, require
-  successful exact-SHA GitHub Actions, and then reconcile the V1-040 closure state.
+- Status: implementation published; the separate V1-040 closure commit and its own
+  exact-SHA CI result remain pending.
+- Exact next action: create and push only the V1-040 closure commit, require successful
+  exact-SHA GitHub Actions, then reconcile closure-valid compact state while V1-041
+  remains held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-040 is active under direct Codex takeover;
-  V1-041 and later remain held.
-- Automation exact next action: keep the supervisor disabled, V1-041 held, and complete
-  V1-040 verification, independent review, and publication gates.
+- Automation publication state: V1-040's implementation is published and exact-SHA
+  CI-green but its closure remains pending; V1-041 and later remain held.
+- Automation exact next action: keep the supervisor disabled and V1-041 held until
+  V1-040 completes closure publication and reconciliation.
 
 <!-- AUTOMATION_STATUS_END -->

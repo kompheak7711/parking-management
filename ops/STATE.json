@@ -1,7 +1,7 @@
 {
   "active_cycle": "v1-040-rent-service-billing",
   "approval": {
-    "status": "active",
+    "status": "verified_unpublished",
     "basis": "owner standing direct-Codex authorization for sequential V1-040 through V1-060 execution",
     "implementation_started": true,
     "implementation_completed": true,
@@ -697,7 +697,7 @@
     "tranche_id": "V1-040"
   },
   "idle_reason": null,
-  "next_action": "Publish the independently reviewed V1-040 implementation, require successful exact-SHA GitHub Actions, and then reconcile the V1-040 closure state",
+  "next_action": "Create and push only the V1-040 closure commit, require successful exact-SHA GitHub Actions, then reconcile closure-valid compact state while keeping the supervisor disabled and V1-041 held",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -737,13 +737,17 @@
   },
   "phase": "Billing",
   "publication": {
-    "ci_completed": false,
-    "commit_completed": false,
-    "implementation_commit": null,
+    "ci_completed": true,
+    "ci_conclusion": "success",
+    "ci_run_attempt": 1,
+    "ci_run_id": 33160649278,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33160649278",
+    "commit_completed": true,
+    "implementation_commit": "4651b9f71d9f58f0dbc8abd736e868a6b437c0b9",
     "closure_commit": null,
-    "push_completed": false,
+    "push_completed": true,
     "sha_reconciled": false,
-    "status": "implementation",
+    "status": "implementation_published_closure_pending",
     "tranche_id": "V1-040",
     "predecessor_closure_commit": "70d32fe3d460d91aeb7f4117d1c2746e92b1672e",
     "predecessor_reconciliation_commit": "d1994fb703fd6e34b50e919cfc98898949caa8ca"
@@ -1032,10 +1036,11 @@
     "PASS: eleventh external Codex exact-diff review found one high direct-call stale-snapshot finding; corrected by enforcing READ COMMITTED inside the database function and rejecting unsupported isolation levels before any write; /private/tmp/property-rental-v1-040-independent-review-eleventh.txt",
     "PASS: eleventh-review focused formatting, linting, traceability, and disposable PostgreSQL 351/351",
     "PASS: eleventh-review corrected complete deterministic verification profile 15/15; backend 641 passed with 339 expected environment skips; frontend 213 passed; disposable PostgreSQL 351 passed; automation routing 185 passed; /private/tmp/property-rental-v1-040-eleventh-review-corrections-verification.json",
-    "PASS: twelfth fresh external Codex exact-diff review found no material findings and judged the exact V1-040 diff safe to publish; /private/tmp/property-rental-v1-040-independent-review-twelfth.txt"
+    "PASS: twelfth fresh external Codex exact-diff review found no material findings and judged the exact V1-040 diff safe to publish; /private/tmp/property-rental-v1-040-independent-review-twelfth.txt",
+    "PASS: implementation commit 4651b9f71d9f58f0dbc8abd736e868a6b437c0b9 exact-SHA GitHub Actions run 33160649278; all four jobs"
   ],
   "tests_tranche_id": "V1-040",
-  "timestamp": "2026-08-28T09:44:05Z",
+  "timestamp": "2026-08-28T09:48:24Z",
   "touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
