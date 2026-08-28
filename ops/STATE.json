@@ -1,11 +1,11 @@
 {
   "active_cycle": "v1-040-rent-service-billing",
   "approval": {
-    "status": "verified_unpublished",
+    "status": "complete",
     "basis": "owner standing direct-Codex authorization for sequential V1-040 through V1-060 execution",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": ["BR-RENT-*", "BR-SVC-*", "TEST-040-045"],
   "automation_repair": {
@@ -689,35 +689,35 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "d1994fb703fd6e34b50e919cfc98898949caa8ca",
+  "commit": "c4293ea98ff4e4a3d2c5d890b437655e0bad1e10",
   "evidence_applicability": {
-    "basis": "V1-040 starts from clean synchronized V1-039 reconciliation commit d1994fb703fd6e34b50e919cfc98898949caa8ca after implementation, closure, and reconciliation exact-SHA CI success",
+    "basis": "V1-040 implementation commit 4651b9f71d9f58f0dbc8abd736e868a6b437c0b9 and closure commit c4293ea98ff4e4a3d2c5d890b437655e0bad1e10 are independently reviewed, published, and exact-SHA CI-green in runs 33160649278 and 33160919700",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-039 implementation, closure, and reconciliation are published, independently reviewed, and exact-SHA CI-green; their evidence is the predecessor baseline for V1-040",
+    "prior_review_disposition": "V1-039 implementation, closure, and reconciliation are published and exact-SHA CI-green; their evidence is the predecessor baseline for V1-040",
     "tranche_id": "V1-040"
   },
   "idle_reason": null,
-  "next_action": "Create and push only the V1-040 closure commit, require successful exact-SHA GitHub Actions, then reconcile closure-valid compact state while keeping the supervisor disabled and V1-041 held",
+  "next_action": "Keep V1-041 held at approved_ready and keep the Property Rental supervisor disabled; do not activate the successor automatically",
   "next_candidate": {
-    "acceptance_profile": "financial",
+    "acceptance_profile": "database",
     "authorities": [
-      "BR-RENT-*",
-      "BR-SVC-*",
-      "TEST-040-045"
+      "BR-UTIL-001-017",
+      "API-044-047",
+      "TEST-046-049"
     ],
     "authorization": "durable_v1",
-    "dependencies": ["V1-039"],
-    "exclude": ["utility billing"],
-    "id": "V1-040",
+    "dependencies": ["V1-023", "V1-027"],
+    "exclude": ["billing generation"],
+    "id": "V1-041",
     "include": [
-      "initial, recurring, final rent and configured service calculations"
+      "meter history and validated readings"
     ],
-    "order": 40,
-    "phase": "Billing",
+    "order": 41,
+    "phase": "Utilities",
     "risk_class": "high",
     "status": "approved_ready",
-    "task": "Rent proration and fixed-service billing services",
-    "roadmap_id": "V1-040"
+    "task": "Utility meter, replacement, reading, and correction persistence",
+    "roadmap_id": "V1-041"
   },
   "operational_issues": [
     {
@@ -744,10 +744,13 @@
     "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33160649278",
     "commit_completed": true,
     "implementation_commit": "4651b9f71d9f58f0dbc8abd736e868a6b437c0b9",
-    "closure_commit": null,
+    "closure_commit": "c4293ea98ff4e4a3d2c5d890b437655e0bad1e10",
+    "closure_ci_run_attempt": 1,
+    "closure_ci_run_id": 33160919700,
+    "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33160919700",
     "push_completed": true,
-    "sha_reconciled": false,
-    "status": "implementation_published_closure_pending",
+    "sha_reconciled": true,
+    "status": "published_and_exact_sha_ci_green_closure_valid",
     "tranche_id": "V1-040",
     "predecessor_closure_commit": "70d32fe3d460d91aeb7f4117d1c2746e92b1672e",
     "predecessor_reconciliation_commit": "d1994fb703fd6e34b50e919cfc98898949caa8ca"
@@ -989,15 +992,15 @@
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 39,
-    "current_id": "V1-039",
+    "completed": 40,
+    "current_id": "V1-040",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "verified_unpublished",
-  "task": "Implement the approved bounded candidate: Rent proration and fixed-service billing services",
+  "status": "published",
+  "task": "Completed the approved bounded candidate: Rent proration and fixed-service billing services",
   "tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -1037,10 +1040,11 @@
     "PASS: eleventh-review focused formatting, linting, traceability, and disposable PostgreSQL 351/351",
     "PASS: eleventh-review corrected complete deterministic verification profile 15/15; backend 641 passed with 339 expected environment skips; frontend 213 passed; disposable PostgreSQL 351 passed; automation routing 185 passed; /private/tmp/property-rental-v1-040-eleventh-review-corrections-verification.json",
     "PASS: twelfth fresh external Codex exact-diff review found no material findings and judged the exact V1-040 diff safe to publish; /private/tmp/property-rental-v1-040-independent-review-twelfth.txt",
-    "PASS: implementation commit 4651b9f71d9f58f0dbc8abd736e868a6b437c0b9 exact-SHA GitHub Actions run 33160649278; all four jobs"
+    "PASS: implementation commit 4651b9f71d9f58f0dbc8abd736e868a6b437c0b9 exact-SHA GitHub Actions run 33160649278; all four jobs",
+    "PASS: closure commit c4293ea98ff4e4a3d2c5d890b437655e0bad1e10 exact-SHA GitHub Actions run 33160919700; all four jobs"
   ],
   "tests_tranche_id": "V1-040",
-  "timestamp": "2026-08-28T09:48:24Z",
+  "timestamp": "2026-08-28T09:52:12Z",
   "touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

@@ -1,4 +1,4 @@
-# V1-040 Rent proration and fixed-service billing services — implementation published; closure pending
+# V1-040 Rent proration and fixed-service billing services — complete
 
 - Candidate: `V1-040` — Rent proration and fixed-service billing services.
 - Authorization: Owner standing direct-Codex authorization for V1-040 through V1-060;
@@ -41,19 +41,19 @@
   and SERIALIZABLE before any write. The corrected exact diff passed the complete
   verification profile. The twelfth fresh exact-diff review returned PASS with no
   material findings and explicitly judged the diff safe to publish.
-- V1-041 and later: held; no activation or implementation is permitted.
+- Closure: commit `c4293ea98ff4e4a3d2c5d890b437655e0bad1e10`; exact-SHA
+  GitHub Actions run `33160919700` passed all four jobs.
+- Status: complete, published, independently reviewed, and closure-valid.
+- V1-041: held at `approved_ready`; no activation or implementation occurred.
 - Blockers: none.
-- Status: implementation published; the separate V1-040 closure commit and its own
-  exact-SHA CI result remain pending.
-- Exact next action: create and push only the V1-040 closure commit, require successful
-  exact-SHA GitHub Actions, then reconcile closure-valid compact state while V1-041
-  remains held.
+- Exact next action: keep V1-041 held at `approved_ready` and keep the Property Rental
+  supervisor disabled; do not activate the successor automatically.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-040's implementation is published and exact-SHA
-  CI-green but its closure remains pending; V1-041 and later remain held.
-- Automation exact next action: keep the supervisor disabled and V1-041 held until
-  V1-040 completes closure publication and reconciliation.
+- Automation publication state: V1-040 implementation and closure are published and
+  exact-SHA CI-green; V1-041 remains the held approved successor.
+- Automation exact next action: keep the supervisor disabled and V1-041 held; do not
+  restore autonomous execution or activate the successor automatically.
 
 <!-- AUTOMATION_STATUS_END -->
