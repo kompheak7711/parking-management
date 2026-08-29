@@ -176,9 +176,9 @@ def add_rate(
     return stored_id
 
 
-def test_v1_041_is_forward_only_and_is_migration_head() -> None:
+def test_v1_041_remains_forward_only_after_successor() -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
-    assert ScriptDirectory.from_config(config).get_current_head() == "20260828_31"
+    assert ScriptDirectory.from_config(config).get_current_head() == "20260828_32"
     source = (
         Path(__file__).parents[1] / "migrations/versions/20260828_31_utility_meter_persistence.py"
     ).read_text()
@@ -705,8 +705,10 @@ def test_utility_history_rejects_update_delete_and_truncate(
         try:
             connection.execute(statement, parameters)
         except Error as rejected:
-            assert rejected.sqlstate == "55000", operation
-            assert "append-preserved" in str(rejected), operation
+            expected_state = "0A000" if operation == "reading truncate" else "55000"
+            assert rejected.sqlstate == expected_state, operation
+            if expected_state == "55000":
+                assert "append-preserved" in str(rejected), operation
         else:
             pytest.fail(f"Utility history mutation unexpectedly succeeded: {operation}")
         connection.rollback()

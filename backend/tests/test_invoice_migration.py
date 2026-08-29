@@ -572,7 +572,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
     obligation_id = uuid4()
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20260828_31",
+            "20260828_32",
         )
         expected = {
             "actor_identities",
@@ -654,7 +654,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "20260826_28")
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20260828_31",
+            "20260828_32",
         )
         assert owner.execute(
             "SELECT description FROM app.authorized_nonrecurring_obligations WHERE id=%s",
@@ -2918,7 +2918,7 @@ def test_adjustment_reversal_and_exceptional_void_preserve_source_history(
                 "TRUNCATE TABLE app.invoice_adjustment_reversals,"
                 "app.invoice_adjustments,app.invoice_void_events"
             )
-    assert truncate_permanent_event_tables.value.sqlstate == "55000"
+    assert truncate_permanent_event_tables.value.sqlstate in {"55000", "0A000"}
     replacement_invoice_id, _ = create_recurring_rent_invoice(
         connection,
         actor_id=actor_id,

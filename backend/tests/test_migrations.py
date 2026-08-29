@@ -3636,7 +3636,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260828_31",)
+                assert cursor.fetchone() == ("20260828_32",)
 
 
 def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
@@ -4265,7 +4265,7 @@ def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260828_31",)
+                assert cursor.fetchone() == ("20260828_32",)
                 cursor.execute(
                     """
                     SELECT id, code, display_name, accepted, created_by, updated_by
@@ -4419,7 +4419,7 @@ def test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data() -> No
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260828_31",)
+                assert cursor.fetchone() == ("20260828_32",)
                 cursor.execute(
                     """
                     SELECT unit.id, unit.property_id, unit.status, customer.id
@@ -4714,7 +4714,7 @@ def test_v1_031_upgrade_preserves_and_completes_v1_030_pending_outcome() -> None
             )
             connection.commit()
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260828_31",
+                "20260828_32",
             )
             assert connection.execute(
                 """
@@ -4814,7 +4814,7 @@ def test_v1_034_upgrade_preserves_v1_033_lease_and_replaces_unbounded_runtime_he
         assert result.returncode == 0, result.stderr
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260828_31",
+                "20260828_32",
             )
             assert connection.execute(
                 "SELECT id,status,version,start_date,end_date FROM app.leases WHERE id=%s",
@@ -4993,5 +4993,5 @@ def test_v1_039_upgrade_serializes_user_creation_across_actor_identity_backfill(
                 (actor_id,),
             ).fetchone() == ("HUMAN",)
             assert verify.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260828_31",
+                "20260828_32",
             )

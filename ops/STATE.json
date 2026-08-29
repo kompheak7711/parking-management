@@ -1,13 +1,13 @@
 {
-  "active_cycle": "v1-041-utility-meter-reading-persistence",
+  "active_cycle": "v1-042-utility-consumption-estimation-services",
   "approval": {
-    "status": "complete",
-    "basis": "owner standing direct-Codex authorization for sequential V1-041 through V1-060 execution",
-    "implementation_started": true,
-    "implementation_completed": true,
-    "publication_completed": true
+    "status": "active",
+    "basis": "owner standing direct-Codex authorization for sequential V1-042 through V1-060 execution",
+        "implementation_started": true,
+        "implementation_completed": true,
+    "publication_completed": false
   },
-  "authorities": ["BR-UTIL-001-017", "API-044-047", "TEST-046-049"],
+  "authorities": ["BR-UTIL-018-032", "API-048-049", "TEST-048-052", "TEST-122"],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
     "branch": "implementation/foundation",
@@ -689,15 +689,15 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "d6c05690d06ea06a9ce904c2ed7d976bf816fb6c",
+  "commit": "f8fe2547a6996c538fef0c3218cc52ac31c72979",
   "evidence_applicability": {
-    "basis": "V1-041 implementation commit a6c18e524faadd3d80b13fd21e0d0cf623bb7e11 and closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c are independently reviewed, published, and exact-SHA CI-green in runs 33172741306 and 33173041349",
+    "basis": "V1-042 starts from clean synchronized V1-041 reconciliation commit f8fe2547a6996c538fef0c3218cc52ac31c72979 after implementation, closure, and reconciliation exact-SHA CI success",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-040 implementation, closure, and reconciliation are published, independently reviewed, and exact-SHA CI-green; their evidence is the predecessor baseline for V1-041",
-    "tranche_id": "V1-041"
+    "prior_review_disposition": "V1-041 implementation, closure, and reconciliation are published, independently reviewed, and exact-SHA CI-green; their evidence is the predecessor baseline for V1-042",
+    "tranche_id": "V1-042"
   },
   "idle_reason": null,
-  "next_action": "Keep V1-042 held at approved_ready and keep the Property Rental supervisor disabled until this V1-041 reconciliation commit is exact-SHA CI-green; do not activate the successor automatically",
+  "next_action": "Create and push the separate V1-042 implementation commit and require successful GitHub Actions for its exact SHA before closure",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -738,36 +738,29 @@
   },
   "phase": "Utilities",
   "publication": {
-    "ci_completed": true,
-    "ci_conclusion": "success",
-    "ci_run_attempt": 1,
-    "ci_run_id": 33172741306,
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33172741306",
-    "commit_completed": true,
-    "implementation_commit": "a6c18e524faadd3d80b13fd21e0d0cf623bb7e11",
-    "closure_commit": "d6c05690d06ea06a9ce904c2ed7d976bf816fb6c",
-    "closure_ci_run_attempt": 1,
-    "closure_ci_run_id": 33173041349,
-    "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33173041349",
-    "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published_and_exact_sha_ci_green_closure_valid",
-    "tranche_id": "V1-041",
-    "predecessor_closure_commit": "c4293ea98ff4e4a3d2c5d890b437655e0bad1e10",
-    "predecessor_reconciliation_commit": "770e615d24e8f0167d12106657e5db416e0596bd"
+    "ci_completed": false,
+    "commit_completed": false,
+    "implementation_commit": null,
+    "closure_commit": null,
+    "push_completed": false,
+    "sha_reconciled": false,
+    "status": "active",
+    "tranche_id": "V1-042",
+    "predecessor_closure_commit": "d6c05690d06ea06a9ce904c2ed7d976bf816fb6c",
+    "predecessor_reconciliation_commit": "f8fe2547a6996c538fef0c3218cc52ac31c72979"
   },
   "relevant_docs": [
-    "docs/001_DOMAIN_MODEL.md: Utility Meter and Utility Reading identity, lifecycle, and history",
-    "docs/002_BUSINESS_RULES.md: BR-UTIL-001 through BR-UTIL-017",
-    "docs/003_PRODUCT_REQUIREMENTS.md: PR-UTIL-001 through PR-UTIL-017",
-    "docs/004_DATABASE_MODEL.md: DB-UTIL-001 through DB-UTIL-005",
-    "docs/005_API_SPECIFICATION.md: API-044 through API-047 persistence contracts",
-    "docs/007_TESTING_STRATEGY.md: TEST-046 through TEST-049",
-    "docs/008_SECURITY_MODEL.md: authorized Utility administration and parameterized database access",
+    "docs/001_DOMAIN_MODEL.md: Utility Consumption, generation-date Utility Rate, and confirmed broken-Meter basis hierarchy",
+    "docs/002_BUSINESS_RULES.md: BR-UTIL-018 through BR-UTIL-032",
+    "docs/003_PRODUCT_REQUIREMENTS.md: PR-UTIL-018 through PR-UTIL-032",
+    "docs/004_DATABASE_MODEL.md: DB-UTIL-006 through DB-UTIL-010 and DB-DER-006",
+    "docs/005_API_SPECIFICATION.md: API-048 and API-049 service contracts",
+    "docs/007_TESTING_STRATEGY.md: TEST-048 through TEST-052 and TEST-122",
+    "docs/008_SECURITY_MODEL.md: authorized Utility calculation and parameterized database access",
     "docs/010_DECISION_LOG.md: DL-023 through DL-025"
   ],
   "repair": {
-    "tranche_id": "V1-041",
+    "tranche_id": "V1-042",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -993,7 +986,7 @@
     "status": "PASS",
     "tranche_id": "V1-040"
   },
-  "review": {
+  "prior_v1_041_review": {
     "evidence_path": "/private/tmp/property-rental-v1-041-independent-review-fourth.txt",
     "evidence_paths": [
       "/private/tmp/property-rental-v1-041-independent-review.txt",
@@ -1061,6 +1054,230 @@
     "status": "PASS",
     "tranche_id": "V1-041"
   },
+  "review": {
+    "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-pass-21.txt",
+    "evidence_paths": [
+      "/private/tmp/property-rental-v1-042-independent-review.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-corrected.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-final.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-4.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-5.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-final-pass-candidate.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-final-fresh.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-8.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-9.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-10.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-11.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-12.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-13.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-14.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-15.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-16.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-17.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-18.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-19.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-findings-20.txt",
+      "/private/tmp/property-rental-v1-042-independent-review-pass-21.txt"
+    ],
+    "findings": 45,
+    "high_findings": 25,
+    "medium_findings": 20,
+    "low_findings": 0,
+    "material_findings_corrected": 45,
+    "review_kind": "fresh_read_only_exact_uncommitted_diff",
+    "reviewed_paths": [
+      "backend/migrations/versions/20260828_32_utility_consumption_services.py",
+      "backend/src/property_rental/utility.py",
+      "backend/tests/test_utility.py",
+      "backend/tests/test_utility_consumption_migration.py",
+      "backend/tests/test_billing_service_migration.py",
+      "backend/tests/test_invoice_migration.py",
+      "backend/tests/test_lease_api_migration.py",
+      "backend/tests/test_migrations.py",
+      "backend/tests/test_utility_meter_migration.py",
+      "scripts/database-test.sh",
+      "ops/traceability.json",
+      "ops/NOW.md",
+      "ops/STATE.json"
+    ],
+    "reviewer_edits": false,
+    "session_id": "01a04c13-4135-7c80-980b-0583b8d5e17c",
+    "session_ids": [
+      "01a048cf-3a1b-7482-b385-0db06e10f72a",
+      "01a048ea-05ff-7bc3-b98d-86e35d1106ab",
+      "01a04943-7588-7771-b70c-9c77499198ac",
+      "01a0495a-4821-7842-8658-b659e10259b0",
+      "01a04971-6392-77c3-81a6-2335c2167c3e",
+      "01a04989-4792-77e2-98da-3c4d416f426b",
+      "01a049bd-73f7-7680-98da-f91636dbb00a",
+      "01a049e2-4532-78f1-b106-1fa79dffbf4b",
+      "01a049f8-85a6-7dc2-806d-f5f912898a82",
+      "01a04a0f-a9b6-7692-8e0b-83aa67a3ada9",
+      "01a04a20-c3df-72d3-b71a-52f028cca8ee",
+      "01a04a37-57d5-7e73-a610-2b50c02c1435",
+      "01a04b0f-ef50-7fb0-abaa-97d24067d7ff",
+      "01a04b93-c727-7d13-b23f-4a7179c790d6",
+      "01a04baf-dc0b-76c1-83da-415a9ca96b15",
+      "01a04bc2-1cfa-7a61-892e-f7000e69e8a2",
+      "01a04bd9-9bd9-72f1-b6b0-975fa050f618",
+      "01a04be9-9959-7eb3-9d3e-8a9c01a851bd",
+      "01a04bf8-7752-7a20-a1c3-4565a711b823",
+      "01a04c05-c409-7c51-8637-ca9c5fea2555",
+      "01a04c13-4135-7c80-980b-0583b8d5e17c"
+    ],
+    "session_records": [
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review.txt",
+        "session_id": "01a048cf-3a1b-7482-b385-0db06e10f72a",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 5,
+        "material_findings_corrected": 5
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-corrected.txt",
+        "session_id": "01a048ea-05ff-7bc3-b98d-86e35d1106ab",
+      "verdict": "MATERIAL_FINDINGS",
+      "findings": 2,
+      "material_findings_corrected": 2
+    },
+    {
+      "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-final.txt",
+      "session_id": "01a04943-7588-7771-b70c-9c77499198ac",
+      "verdict": "MATERIAL_FINDINGS",
+      "findings": 4,
+      "material_findings_corrected": 4
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-4.txt",
+        "session_id": "01a0495a-4821-7842-8658-b659e10259b0",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 2,
+        "material_findings_corrected": 2
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-5.txt",
+        "session_id": "01a04971-6392-77c3-81a6-2335c2167c3e",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 3,
+        "material_findings_corrected": 3
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-final-pass-candidate.txt",
+        "session_id": "01a04989-4792-77e2-98da-3c4d416f426b",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 3,
+        "material_findings_corrected": 3
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-final-fresh.txt",
+        "session_id": "01a049bd-73f7-7680-98da-f91636dbb00a",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 2,
+        "material_findings_corrected": 2
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-8.txt",
+        "session_id": "01a049e2-4532-78f1-b106-1fa79dffbf4b",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 3,
+        "material_findings_corrected": 3
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-9.txt",
+        "session_id": "01a049f8-85a6-7dc2-806d-f5f912898a82",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 3,
+        "material_findings_corrected": 3
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-10.txt",
+        "session_id": "01a04a0f-a9b6-7692-8e0b-83aa67a3ada9",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 1,
+        "material_findings_corrected": 1
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-11.txt",
+        "session_id": "01a04a20-c3df-72d3-b71a-52f028cca8ee",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 3,
+        "material_findings_corrected": 3
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-12.txt",
+        "session_id": "01a04a37-57d5-7e73-a610-2b50c02c1435",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 2,
+        "material_findings_corrected": 2
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-13.txt",
+        "session_id": "01a04b0f-ef50-7fb0-abaa-97d24067d7ff",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 1,
+        "material_findings_corrected": 1
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-14.txt",
+        "session_id": "01a04b93-c727-7d13-b23f-4a7179c790d6",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 1,
+        "material_findings_corrected": 1
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-15.txt",
+        "session_id": "01a04baf-dc0b-76c1-83da-415a9ca96b15",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 1,
+        "material_findings_corrected": 1
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-16.txt",
+        "session_id": "01a04bc2-1cfa-7a61-892e-f7000e69e8a2",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 4,
+        "material_findings_corrected": 4
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-17.txt",
+        "session_id": "01a04bd9-9bd9-72f1-b6b0-975fa050f618",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 1,
+        "material_findings_corrected": 1
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-18.txt",
+        "session_id": "01a04be9-9959-7eb3-9d3e-8a9c01a851bd",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 1,
+        "material_findings_corrected": 1
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-19.txt",
+        "session_id": "01a04bf8-7752-7a20-a1c3-4565a711b823",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 2,
+        "material_findings_corrected": 2
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-20.txt",
+        "session_id": "01a04c05-c409-7c51-8637-ca9c5fea2555",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 1,
+        "material_findings_corrected": 1
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-pass-21.txt",
+        "session_id": "01a04c13-4135-7c80-980b-0583b8d5e17c",
+        "verdict": "PASS",
+        "findings": 0,
+        "material_findings_corrected": 0
+      }
+    ],
+    "final_verdict": "PASS",
+    "status": "PASS",
+    "tranche_id": "V1-042"
+  },
   "risk_class": "high",
   "roadmap": {
     "completed": 41,
@@ -1070,8 +1287,8 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Completed the approved bounded candidate: Utility meter, replacement, reading, and correction persistence",
+  "status": "active",
+  "task": "Implement the approved bounded candidate: Utility consumption and broken-meter estimation services",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -1114,7 +1331,7 @@
     "PASS: implementation commit 4651b9f71d9f58f0dbc8abd736e868a6b437c0b9 exact-SHA GitHub Actions run 33160649278; all four jobs",
     "PASS: closure commit c4293ea98ff4e4a3d2c5d890b437655e0bad1e10 exact-SHA GitHub Actions run 33160919700; all four jobs"
   ],
-  "tests": [
+  "prior_v1_041_tests": [
     "PASS: V1-041 preflight confirmed clean synchronized V1-040 baseline 770e615d24e8f0167d12106657e5db416e0596bd, disabled supervisor, no overlapping repository worker or lock, exact approved successor, and V1-042 held",
     "PASS: no legitimate uncommitted V1-041 partial work existed before activation",
     "PASS: V1-041 migration formatting, Ruff lint, Python compilation, Alembic single-head, JSON, roadmap, traceability, publication guard, and diff checks",
@@ -1137,8 +1354,98 @@
     "PASS: V1-041 implementation commit a6c18e524faadd3d80b13fd21e0d0cf623bb7e11 exact-SHA GitHub Actions run 33172741306; all four jobs",
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
-  "tests_tranche_id": "V1-041",
-  "timestamp": "2026-08-28T12:57:43Z",
+  "tests": [
+    "PASS: V1-042 preflight confirmed clean synchronized V1-041 reconciliation baseline f8fe2547a6996c538fef0c3218cc52ac31c72979, disabled and non-running supervisor, no overlapping repository worker or lock, exact approved successor, and V1-043 held",
+    "PASS: V1-041 implementation, closure, and reconciliation exact-SHA GitHub Actions runs 33172741306, 33173041349, and 33173354579 passed all four jobs",
+    "PASS: no legitimate uncommitted V1-042 partial work existed before activation",
+    "PASS: focused Utility calculation unit tests 4/4",
+    "PASS: disposable PostgreSQL migration, upgrade-path, role, actual-consumption, broken-Meter basis, generation-date Rate, correction-impact, idempotency, and concurrency suite 372/372",
+    "PASS: complete deterministic verification profile 15/15; backend 645 passed with 360 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 372 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-pre-review-verification.json",
+    "FAIL: first external Codex exact-diff review found four high and one medium material findings; session 01a048cf-3a1b-7482-b385-0db06e10f72a; /private/tmp/property-rental-v1-042-independent-review.txt",
+    "PASS: all five first-review findings corrected with first-valid-replacement-Reading boundaries, frozen case bases, dependent-estimate correction impacts, pending-case preview, and complete Meter/Reading source evidence",
+    "PASS: corrected focused Utility calculation tests 4/4 and disposable PostgreSQL migration, role, source-evidence, boundary, basis-freeze, correction-propagation, idempotency, and concurrency suite 375/375",
+    "PASS: first-review corrected complete deterministic verification profile 15/15; backend 645 passed with 363 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 375 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-first-review-corrections-verification.json",
+    "FAIL: second external Codex exact-diff review found two high material findings; session 01a048ea-05ff-7bc3-b98d-86e35d1106ab; /private/tmp/property-rental-v1-042-independent-review-corrected.txt",
+    "PASS: both second-review findings corrected by starting estimation after a valid failure-date Reading and rechecking current actor lifecycle before all Utility command replays",
+    "PASS: second-review corrected disposable PostgreSQL migration, role, failure-date boundary, replay-revocation, idempotency, and concurrency suite 377/377",
+    "PASS: second-review corrected complete deterministic verification profile 15/15; backend 645 passed with 365 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 377 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-second-review-corrections-verification.json",
+    "FAIL: third external Codex exact-diff review found four high material findings; session 01a04943-7588-7771-b70c-9c77499198ac; /private/tmp/property-rental-v1-042-independent-review-final.txt",
+    "PASS: all four third-review findings corrected with period-wide correction chronology, immutable late failure-date Reading boundaries, first-future-basis backfill prevention, and source-evidence timestamp ordering",
+    "PASS: third-review corrected focused Utility calculation tests 4/4 and disposable PostgreSQL migration, role, boundary, first-future freeze, correction chronology, source-timestamp, idempotency, and concurrency suite 383/383",
+    "PASS: third-review corrected complete deterministic verification profile 15/15; backend 645 passed with 371 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 383 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-third-review-corrections-verification.json",
+    "FAIL: fourth external Codex exact-diff review found one high and one medium material finding; session 01a0495a-4821-7842-8658-b659e10259b0; /private/tmp/property-rental-v1-042-independent-review-findings-4.txt",
+    "PASS: both fourth-review findings corrected with case-opening source chronology and accurate ready-state detection when the first future basis already exists; the new real PostgreSQL path also corrected missing future-basis preview aliases",
+    "PASS: fourth-review corrected disposable PostgreSQL migration, role, chronology, ready-state, future-basis preview, idempotency, and concurrency suite 386/386",
+    "PASS: fourth-review corrected complete deterministic verification profile 15/15; backend 645 passed with 374 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 386 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-fourth-review-corrections-verification.json",
+    "FAIL: fifth external Codex exact-diff review found three medium material findings; session 01a04971-6392-77c3-81a6-2335c2167c3e; /private/tmp/property-rental-v1-042-independent-review-findings-5.txt",
+    "PASS: all three fifth-review findings corrected with exact Decimal JSONB decoding, action-scoped Utility command idempotency, and explicit preview source-kind disambiguation",
+    "PASS: fifth-review corrected focused Utility calculation tests 4/4 and disposable PostgreSQL migration, role, precision, action-idempotency, typed-preview, boundary, source-evidence, and concurrency suite 389/389",
+    "PASS: fifth-review corrected complete deterministic verification profile 15/15; backend 645 passed with 377 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 389 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-fifth-review-corrections-verification.json",
+    "FAIL: sixth external Codex exact-diff review found three high material findings; session 01a04989-4792-77e2-98da-3c4d416f426b; /private/tmp/property-rental-v1-042-independent-review-final-pass-candidate.txt",
+    "PASS: all three sixth-review findings corrected with serialized actual-period and broken-Meter responsibility windows, bidirectional Lease and Occupancy mutation guards, and atomic central estimate-basis audit evidence",
+    "PASS: sixth-review corrected focused Utility calculation tests 4/4 and disposable PostgreSQL migration, role, responsibility-boundary, bidirectional mutation, estimate-audit, idempotency, rollback, and concurrency suite 393/393",
+    "PASS: sixth-review corrected complete deterministic verification profile 15/15; backend 645 passed with 381 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 393 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-sixth-review-corrections-verification.json",
+    "FAIL: seventh external Codex exact-diff review found one high and one medium material finding; session 01a049bd-73f7-7680-98da-f91636dbb00a; /private/tmp/property-rental-v1-042-independent-review-final-fresh.txt",
+    "PASS: both seventh-review findings corrected with an atomic prerequisite for eligible historical actual finalization before case opening and unbounded exact numeric whole-cent preview output",
+    "PASS: seventh-review corrected focused Utility calculation tests 4/4 and disposable PostgreSQL migration, role, historical-prerequisite rollback, basis selection, large-cent precision, idempotency, and concurrency suite 393/393",
+    "PASS: seventh-review corrected complete deterministic verification profile 15/15; backend 645 passed with 381 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 393 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-seventh-review-corrections-verification.json",
+    "FAIL: eighth external Codex exact-diff review found one high and two medium material findings; session 01a049e2-4532-78f1-b106-1fa79dffbf4b; /private/tmp/property-rental-v1-042-independent-review-findings-8.txt",
+    "PASS: all three eighth-review findings corrected with chronological first-future actual enforcement, widened and scale-promoted weighted-average persistence, and isolated high-precision Decimal whole-cent rounding",
+    "PASS: eighth-review corrected focused Utility calculation tests 4/4 and disposable PostgreSQL migration, role, earliest-future ordering, maximum-range estimate, exact whole-cent precision, idempotency, rollback, and concurrency suite 394/394",
+    "PASS: eighth-review corrected complete deterministic verification profile 15/15; backend 645 passed with 382 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 394 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-eighth-review-corrections-verification.json",
+    "FAIL: ninth external Codex exact-diff review found three medium material findings; session 01a049f8-85a6-7dc2-806d-f5f912898a82; /private/tmp/property-rental-v1-042-independent-review-findings-9.txt",
+    "PASS: all three ninth-review findings corrected with signer-only financial-responsibility boundaries, widened derived-quantity persistence and arithmetic, and isolated high-precision Decimal calculation contexts",
+    "PASS: ninth-review corrected focused Utility calculation tests 5/5 and disposable PostgreSQL migration, role, non-signer Occupant boundary, maximum-range estimate, idempotency, rollback, and concurrency suite 396/396",
+    "PASS: ninth-review corrected complete deterministic verification profile 15/15; backend 646 passed with 384 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 396 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-ninth-review-corrections-verification.json",
+    "FAIL: tenth external Codex exact-diff review found one high material finding; session 01a04a0f-a9b6-7692-8e0b-83aa67a3ada9; /private/tmp/property-rental-v1-042-independent-review-findings-10.txt",
+    "PASS: the tenth-review finding was corrected by allowing same-day confirmed failure and physical replacement while retaining the first-valid-Reading and nonempty-unmeasured-interval rejection gates",
+    "PASS: tenth-review focused formatting, linting, traceability, diff, and complete disposable PostgreSQL suite 397/397",
+    "PASS: tenth-review corrected complete deterministic verification profile 15/15; backend 647 passed with 384 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 397 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-tenth-review-corrections-verification.json",
+    "FAIL: eleventh external Codex exact-diff review found two high and one medium material findings; session 01a04a20-c3df-72d3-b71a-52f028cca8ee; /private/tmp/property-rental-v1-042-independent-review-findings-11.txt",
+    "PASS: all three eleventh-review findings corrected with complete pre-case Reading freeze, actual-and-estimate correction chronology, and existing future-basis opening chronology",
+    "PASS: eleventh-review focused real PostgreSQL chronology and frozen-evidence regressions 5/5",
+    "PASS: eleventh-review corrected complete deterministic verification profile 15/15; backend 651 passed with 384 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 401 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-eleventh-review-corrections-verification.json",
+    "FAIL: twelfth external Codex exact-diff review found one high and one medium material finding; session 01a04a37-57d5-7e73-a610-2b50c02c1435; /private/tmp/property-rental-v1-042-independent-review-findings-12.txt",
+    "PASS: both twelfth-review findings corrected with a complete same-Unit and same-Utility-Type physical Meter-chain freeze and an 80-digit Decimal whole-cent calculation context",
+    "PASS: twelfth-review focused Utility calculation tests 5/5 and disposable PostgreSQL migration, role, full Meter-chain freeze, maximum-range exact-cent, idempotency, rollback, and concurrency suite 402/402",
+    "PASS: twelfth-review corrected complete deterministic verification profile 15/15; backend 646 passed with 390 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 402 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-twelfth-review-corrections-verification.json",
+    "FAIL: thirteenth fresh external Codex exact-diff review found one high material finding; session 01a04b0f-ef50-7fb0-abaa-97d24067d7ff; /private/tmp/property-rental-v1-042-independent-review-findings-13.txt",
+    "PASS: the thirteenth-review finding was corrected by requiring the exact earliest eligible future Reading pair to be finalized before a delayed zero-history case may open",
+    "PASS: thirteenth-review production-shaped PostgreSQL regression and complete disposable migration, role, idempotency, rollback, and concurrency suite 403/403",
+    "PASS: thirteenth-review corrected complete deterministic verification profile 15/15; backend 646 passed with 391 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 403 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-thirteenth-review-corrections-verification.json",
+    "FAIL: fourteenth fresh external Codex exact-diff review found one high material mixed-measurement-unit finding; session 01a04b93-c727-7d13-b23f-4a7179c790d6; /private/tmp/property-rental-v1-042-independent-review-findings-14.txt",
+    "PASS: the fourteenth-review finding was corrected by requiring one measurement unit across the failed/replacement pair and every historical or future actual basis period at case opening, finalization, and deferred database validation",
+    "PASS: fourteenth-review rate-free replacement, historical-basis, and future-basis regressions plus complete disposable PostgreSQL migration, role, idempotency, rollback, and concurrency suite 406/406",
+    "PASS: fourteenth-review corrected complete deterministic verification profile 15/15; backend 646 passed with 394 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 406 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-fourteenth-review-corrections-verification.json",
+    "FAIL: fifteenth fresh external Codex exact-diff review found one high material Meter-unit freeze race; session 01a04baf-dc0b-76c1-83da-415a9ca96b15; /private/tmp/property-rental-v1-042-independent-review-findings-15.txt",
+    "PASS: the fifteenth-review finding was corrected by re-reading failed/replacement Meters under the shared Utility locks and freezing both referenced units after case opening",
+    "PASS: fifteenth-review direct unit-freeze and forced concurrent case-opening/unit-change regressions plus complete disposable PostgreSQL migration, role, idempotency, rollback, and concurrency suite 408/408",
+    "PASS: fifteenth-review corrected complete deterministic verification profile 15/15; backend 646 passed with 396 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 408 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-fifteenth-review-corrections-verification.json",
+    "FAIL: sixteenth fresh external Codex exact-diff review found one high and three medium material findings; session 01a04bc2-1cfa-7a61-892e-f7000e69e8a2; /private/tmp/property-rental-v1-042-independent-review-findings-16.txt",
+    "PASS: all four sixteenth-review findings corrected with pre-persistence first-future unit enforcement, durable pending command replay, explicit NULL expected-basis rejection, and duplicate-finalization conflict classification",
+    "PASS: sixteenth-review production-shaped PostgreSQL unit-integrity, pending idempotency, deferred exact-basis, and duplicate-conflict regressions plus complete disposable migration, role, rollback, and concurrency suite 410/410",
+    "FAIL: first sixteenth-review complete-profile attempt stopped at backend typecheck because the new PostgreSQL regression required explicit runtime date, Decimal, and integer narrowing; corrected test-only without product changes",
+    "PASS: sixteenth-review corrected complete deterministic verification profile 15/15; backend 646 passed with 398 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 410 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-sixteenth-review-corrections-verification.json",
+    "FAIL: seventeenth fresh external Codex exact-diff review found one medium material latest-three measurement-unit selection finding; session 01a04bd9-9bd9-72f1-b6b0-975fa050f618; /private/tmp/property-rental-v1-042-independent-review-findings-17.txt",
+    "PASS: the seventeenth-review finding was corrected by applying measurement-unit compatibility to the exact latest-three selected historical periods while preserving older unselected legacy-unit evidence",
+    "PASS: seventeenth-review production-shaped four-period PostgreSQL regression plus complete disposable migration, role, idempotency, rollback, and concurrency suite 411/411",
+    "PASS: seventeenth-review corrected complete deterministic verification profile 15/15; backend 646 passed with 399 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 411 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-seventeenth-review-corrections-verification.json",
+    "FAIL: eighteenth fresh external Codex exact-diff review found one high material trusted-preview-operand finding; session 01a04be9-9959-7eb3-9d3e-8a9c01a851bd; /private/tmp/property-rental-v1-042-independent-review-findings-18.txt",
+    "PASS: the eighteenth-review finding was corrected by exposing exact total basis consumption, total basis days, and weighted daily average in READY broken-Meter previews and finalized snapshots while keeping those operands null for actual and pending snapshots",
+    "PASS: eighteenth-review production-shaped PostgreSQL preview, finalized-snapshot, generation-date, and pending zero-history regressions plus complete disposable migration, role, idempotency, rollback, and concurrency suite 411/411",
+    "PASS: eighteenth-review corrected complete deterministic verification profile 15/15; backend 646 passed with 399 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 411 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-eighteenth-review-corrections-verification.json",
+    "FAIL: nineteenth fresh external Codex exact-diff review found two medium material findings covering stale post-correction basis operands and missing deferred broken-Meter case identity validation; session 01a04bf8-7752-7a20-a1c3-4565a711b823; /private/tmp/property-rental-v1-042-independent-review-findings-19.txt",
+    "PASS: both nineteenth-review findings were corrected by recomputing effective basis operands from immutable selected-period links and correction impacts and by independently validating registered Meter identity, derived interval, chronology, and historical count in a deferred case trigger",
+    "PASS: nineteenth-review production-shaped PostgreSQL corrected-operand and fabricated-or-misderived direct-case regressions plus complete disposable migration, role, idempotency, rollback, and concurrency suite 412/412",
+    "PASS: nineteenth-review corrected complete deterministic verification profile 15/15; backend 646 passed with 400 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 412 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-nineteenth-review-corrections-verification.json",
+    "FAIL: twentieth fresh external Codex exact-diff review found one medium material deterministic Decimal-context finding; session 01a04c05-c409-7c51-8637-ca9c5fea2555; /private/tmp/property-rental-v1-042-independent-review-findings-20.txt",
+    "PASS: the twentieth-review finding was corrected by isolating all pure Utility calculations in an explicit precision, half-up-rounding, and trap policy independent of ambient process Decimal state; hostile-context regression 5/5",
+    "FAIL: the first twentieth-review corrected complete-profile attempt stopped at the backend traceability guard because the renamed hostile-context regression retained its old test ID in ops/traceability.json; corrected metadata only and restarted from gate one",
+    "PASS: twentieth-review corrected complete deterministic verification profile 15/15; backend 646 passed with 400 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 412 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-twentieth-review-correction-verification.json",
+    "PASS: twenty-first fresh external Codex exact-diff review found no actionable correctness defects and made no edits; focused Utility tests, Ruff, and mypy independently passed; session 01a04c13-4135-7c80-980b-0583b8d5e17c; /private/tmp/property-rental-v1-042-independent-review-pass-21.txt"
+  ],
+  "tests_tranche_id": "V1-042",
+  "timestamp": "2026-08-29T05:59:30Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -1152,7 +1459,7 @@
     "ops/NOW.md",
     "ops/STATE.json"
   ],
-  "touched_areas": [
+  "prior_v1_041_touched_areas": [
     "backend/migrations/versions/20260828_31_utility_meter_persistence.py",
     "backend/tests/test_utility_meter_migration.py",
     "backend/tests/test_billing_service_migration.py",
@@ -1164,5 +1471,20 @@
     "ops/NOW.md",
     "ops/STATE.json"
   ],
-  "tranche": "Utility meter, replacement, reading, and correction persistence"
+  "touched_areas": [
+    "backend/migrations/versions/20260828_32_utility_consumption_services.py",
+    "backend/src/property_rental/utility.py",
+    "backend/tests/test_utility.py",
+    "backend/tests/test_utility_consumption_migration.py",
+    "backend/tests/test_billing_service_migration.py",
+    "backend/tests/test_invoice_migration.py",
+    "backend/tests/test_lease_api_migration.py",
+    "backend/tests/test_migrations.py",
+    "backend/tests/test_utility_meter_migration.py",
+    "scripts/database-test.sh",
+    "ops/traceability.json",
+    "ops/NOW.md",
+    "ops/STATE.json"
+  ],
+  "tranche": "Utility consumption and broken-meter estimation services"
 }

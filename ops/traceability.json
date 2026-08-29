@@ -9541,12 +9541,12 @@
       "notes": "The complete migration chain reaches V1-040 and refuses rollback that could erase issued financial or billing-command history."
     },
     {
-      "test_id": "test_v1_041_is_forward_only_and_is_migration_head",
+      "test_id": "test_v1_041_remains_forward_only_after_successor",
       "upstream_ids": ["BR-UTIL-008", "BR-UTIL-013", "TEST-046", "TEST-047"],
       "test_level": "migration",
       "test_path": "backend/tests/test_utility_meter_migration.py",
       "status": "implemented",
-      "notes": "The complete migration chain reaches V1-041 and refuses rollback that could erase Meter, replacement, Reading, or correction history."
+      "notes": "The complete migration chain reaches the V1-042 successor while V1-041 still refuses rollback that could erase Meter, replacement, Reading, or correction history."
     },
     {
       "test_id": "test_meter_identity_active_uniqueness_and_rate_unit_consistency",
@@ -9643,6 +9643,406 @@
       "test_path": "backend/tests/test_utility_meter_migration.py",
       "status": "implemented",
       "notes": "A Reading inside the approved failure-to-replacement gap and the replacement transaction are both observed waiting on the failed Meter sequence; release commits exactly one outcome, so a prior Reading cannot be stranded after a newly recorded earlier failure date."
+    },
+    {
+      "test_id": "test_weighted_basis_never_averages_separately_rounded_periods",
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-024", "BR-UTIL-025", "BR-UTIL-026", "TEST-050", "TEST-051"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility.py",
+      "status": "implemented",
+      "notes": "The pure calculation boundary totals exact source quantities and represented days before one final six-place estimate rounding; it never averages separately rounded period averages."
+    },
+    {
+      "test_id": "test_utility_calculations_ignore_ambient_decimal_context",
+      "upstream_ids": ["BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-028", "TEST-050", "TEST-051"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility.py",
+      "status": "implemented",
+      "notes": "Weighted-average and final estimated-consumption calculations use an isolated high-precision Decimal context, producing the same explicit result even when the caller has reduced ambient precision."
+    },
+    {
+      "test_id": "test_utility_charge_applies_one_rate_then_rounds_half_up_cents",
+      "upstream_ids": ["BR-UTIL-028", "BR-UTIL-029", "BR-UTIL-030", "API-049", "TEST-052"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility.py",
+      "status": "implemented",
+      "notes": "One positive generation-date Utility Rate applies to the complete period quantity and money is rounded half-up only at the final cent boundary; an isolated high-precision Decimal context prevents accepted large operands from being rounded before that boundary."
+    },
+    {
+      "test_id": "test_commands_validate_shapes_and_digests_bind_every_input",
+      "upstream_ids": ["BR-UTIL-018", "BR-UTIL-019", "BR-UTIL-021", "BR-UTIL-027", "API-048", "API-049", "TEST-048", "TEST-050"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility.py",
+      "status": "implemented",
+      "notes": "Actual, broken-Meter case, and estimate commands reject malformed identities and chronology while deterministic digests bind every accepted request field."
+    },
+    {
+      "test_id": "test_service_rejects_actor_property_and_capability_before_database",
+      "upstream_ids": ["BR-UTIL-018", "BR-UTIL-020", "BR-UTIL-027", "API-048", "API-049", "TEST-048", "TEST-122"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_utility.py",
+      "status": "implemented",
+      "notes": "The application service rejects actor, Property-scope, and capability mismatches before opening a database connection."
+    },
+    {
+      "test_id": "test_v1_042_is_forward_only_head_with_least_privilege",
+      "upstream_ids": ["BR-UTIL-018", "BR-UTIL-020", "BR-UTIL-027", "API-048", "API-049", "TEST-048", "TEST-122"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "The migration chain reaches V1-042, rollback refuses to erase permanent calculation history, direct restricted-role writes are denied, and only bounded service functions are executable."
+    },
+    {
+      "test_id": "test_broken_meter_case_rejects_mixed_failed_and_replacement_units",
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "DB-UTIL-001", "DB-UTIL-002", "DB-UTIL-007", "DB-UTIL-010", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A rate-free historical configuration may contain a physical Meter replacement whose measurement unit changed, but V1-042 rejects that failed/replacement pair before opening a broken-Meter case or recording command evidence."
+    },
+    {
+      "test_id": "test_broken_meter_case_deferred_assertion_rejects_fabricated_or_misderived_rows",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "DB-UTIL-001", "DB-UTIL-002", "DB-UTIL-010", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A deferred database assertion independently rejects a foreign-key-valid but unregistered failed/replacement pair and rejects directly inserted boundaries or historical counts that do not match the immutable Meter, Reading, and finalized-period evidence."
+    },
+    {
+      "test_id": "test_broken_meter_case_rejects_mixed_historical_basis_units",
+      "upstream_ids": ["BR-UTIL-022", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "DB-UTIL-006", "DB-UTIL-007", "DB-UTIL-008", "DB-UTIL-010", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Case opening rejects otherwise eligible historical actual periods when their source Meter unit differs from the current failed/replacement pair, preventing raw quantities with incompatible dimensions from entering a weighted basis."
+    },
+    {
+      "test_id": "test_broken_meter_case_ignores_an_unselected_legacy_unit_period",
+      "upstream_ids": ["BR-UTIL-022", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "DB-UTIL-006", "DB-UTIL-007", "DB-UTIL-008", "DB-UTIL-010", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Case opening applies measurement-unit compatibility to the exact latest-three historical periods selected by the approved estimator, so an older unselected legacy-unit period remains preserved without blocking a valid basis."
+    },
+    {
+      "test_id": "test_broken_meter_rejects_mixed_first_future_basis_before_period_persistence",
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "DB-UTIL-006", "DB-UTIL-007", "DB-UTIL-008", "DB-UTIL-010", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A zero-history case rejects its chronologically first future actual period before persistence when a later Meter expresses that evidence in a different unit, preventing an append-only mixed-unit dead end."
+    },
+    {
+      "test_id": "test_deferred_zero_history_basis_requires_an_exact_future_period",
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-026", "BR-UTIL-027", "DB-UTIL-006", "DB-UTIL-007", "DB-UTIL-008", "DB-UTIL-010", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Deferred PostgreSQL validation explicitly rejects a zero-history estimate when no exact first future actual period exists, even if privileged repair code supplies a shape-compatible basis period from another Unit."
+    },
+    {
+      "test_id": "test_actual_service_is_exact_idempotent_and_append_preserved",
+      "upstream_ids": ["BR-UTIL-018", "BR-UTIL-019", "BR-UTIL-020", "BR-UTIL-021", "API-048", "TEST-048", "TEST-049", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Two same-Meter consecutive validated Readings produce one immutable inclusive actual period; exact replay returns one result while a changed request under the same key is rejected."
+    },
+    {
+      "test_id": "test_json_snapshots_preserve_maximum_consumption_and_rate_precision",
+      "upstream_ids": ["BR-UTIL-026", "BR-UTIL-032", "API-048", "API-049", "TEST-052", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Maximum valid six-place Utility quantity and an eight-place Rate remain exact Decimals through persisted JSONB command replay and calculation preview; a derived whole-cent amount beyond PostgreSQL bigint remains deterministic without binary float or overflow."
+    },
+    {
+      "test_id": "test_broken_meter_derived_values_exceed_source_quantity_range_safely",
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "API-048", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Two maximum valid source quantities from successive physical Meters aggregate into a basis total and projected estimate larger than one Reading-difference range; widened derived storage and promoted PostgreSQL scale preserve the exact result."
+    },
+    {
+      "test_id": "test_idempotency_key_scope_includes_utility_action",
+      "upstream_ids": ["API-015", "API-016", "SEC-028", "TEST-006", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "The same actor and Property may reuse one idempotency-key value for different Utility actions while each action retains its own exact replay and request-conflict boundary."
+    },
+    {
+      "test_id": "test_replay_rechecks_current_actor_lifecycle_for_every_utility_command",
+      "upstream_ids": ["BR-UTIL-018", "BR-UTIL-027", "API-048", "API-049", "SEC-017", "SEC-019", "TEST-048", "TEST-122"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Actual finalization, broken-Meter case opening, and estimate finalization recheck the actor's current database lifecycle before returning an exact idempotent replay, so account disablement promptly blocks a stale session without duplicating command evidence."
+    },
+    {
+      "test_id": "test_concurrent_actual_commands_preserve_unit_exclusivity",
+      "upstream_ids": ["BR-UTIL-018", "BR-UTIL-019", "BR-UTIL-020", "BR-UTIL-021", "API-048", "TEST-048", "TEST-049", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent actual-finalization commands serialize at the Property and Unit Utility boundary, commit exactly one period, and reject the overlapping competitor without duplicate evidence."
+    },
+    {
+      "test_id": "test_actual_period_rejects_customer_responsibility_boundary_in_both_directions",
+      "upstream_ids": ["BR-UTIL-018", "BR-UTIL-019", "API-048", "TEST-048", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "An actual Utility period cannot cross a signed-Lease Customer responsibility boundary, and an immutable period prevents a later Lease transition from introducing such a boundary retroactively."
+    },
+    {
+      "test_id": "test_non_signer_occupants_do_not_create_utility_responsibility_boundaries",
+      "upstream_ids": ["BR-OCC-001", "BR-OCC-006", "BR-UTIL-018", "API-048", "TEST-048", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Non-signing Occupants remain separate from contractual financial responsibility: their move-in/out dates neither reject a valid Utility period nor become prohibited after that period is finalized."
+    },
+    {
+      "test_id": "test_concurrent_actual_period_and_responsibility_change_serialize",
+      "upstream_ids": ["BR-UTIL-018", "API-048", "TEST-048", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent actual finalization and Lease responsibility activation share one ordered Utility lock boundary, so exactly one commits and the crossing competitor is rejected."
+    },
+    {
+      "test_id": "test_broken_meter_uses_all_one_or_two_historical_periods",
+      "upstream_ids": ["BR-UTIL-022", "BR-UTIL-023", "BR-UTIL-024", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "API-048", "TEST-050", "TEST-051"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A confirmed broken Meter with exactly one or two prior actual periods uses every available historical period in deterministic newest-first order."
+    },
+    {
+      "test_id": "test_broken_meter_case_rejects_move_in_responsibility_boundary",
+      "upstream_ids": ["BR-UTIL-018", "BR-UTIL-023", "BR-UTIL-026", "API-049", "TEST-050", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "One indivisible broken-Meter interval cannot cross a Move-in or Customer responsibility boundary; rejection leaves neither case nor command evidence."
+    },
+    {
+      "test_id": "test_broken_meter_case_ignores_non_signer_occupancy_boundaries",
+      "upstream_ids": ["BR-OCC-001", "BR-OCC-006", "BR-UTIL-018", "BR-UTIL-023", "BR-UTIL-026", "API-049", "TEST-050", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A non-signing Occupant inside the unmeasured interval does not create a financial-responsibility boundary or block the otherwise valid pending broken-Meter case."
+    },
+    {
+      "test_id": "test_estimate_basis_is_atomically_audited_and_replayed_once",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-025", "BR-UTIL-027", "DB-AUDIT-002", "API-049", "TEST-050", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Estimate finalization atomically appends one central audit event containing the exact case, basis, authorization, before/result snapshots, Property-local business date, and correlation identity; replay creates no duplicate event."
+    },
+    {
+      "test_id": "test_distinct_key_duplicate_estimate_finalization_is_a_state_conflict",
+      "upstream_ids": ["BR-UTIL-027", "API-015", "API-016", "API-049", "SEC-028", "TEST-006", "TEST-050", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A second idempotency key targeting an already-finalized broken-Meter case is reported through the public service as a state conflict and cannot append another estimate or command result."
+    },
+    {
+      "test_id": "test_latest_three_weighted_basis_and_generation_date_rate",
+      "upstream_ids": ["BR-UTIL-022", "BR-UTIL-023", "BR-UTIL-024", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-028", "BR-UTIL-029", "BR-UTIL-030", "API-048", "API-049", "TEST-050", "TEST-051", "TEST-052"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Four historical periods select only the latest three and compute one weighted result; pre-finalization, finalized, and generation-date previews return the authoritative total basis consumption, total basis days, weighted daily average, and reconstructable Meter/Reading/period evidence without client-side recalculation."
+    },
+    {
+      "test_id": "test_zero_history_stays_pending_until_first_complete_future_actual",
+      "upstream_ids": ["BR-UTIL-022", "BR-UTIL-023", "BR-UTIL-024", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "API-048", "TEST-050", "TEST-051"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A zero-history broken-Meter case is directly previewable as PENDING_FUTURE_ACTUAL_BASIS with unavailable basis operands represented explicitly as null; finalization persists one exact pending command response for stable replay and conflicting-key detection without creating estimate rows, while a fresh key may finalize after the first complete future actual period becomes available."
+    },
+    {
+      "test_id": "test_zero_history_case_opens_ready_when_future_basis_already_exists",
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-026", "BR-UTIL-028", "API-048", "API-049", "TEST-051"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A delayed zero-history case may return and replay READY only when its opening timestamp follows finalization of the exact first complete future actual period; a timestamp predating that evidence is rejected atomically, and a valid preview selects the exact persisted period."
+    },
+    {
+      "test_id": "test_zero_history_case_rejects_a_later_future_period_when_the_first_is_unfinalized",
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-026", "BR-UTIL-028", "API-048", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Opening a delayed zero-history case rejects a later finalized replacement-Meter period while the earliest eligible Reading pair remains unfinalized; after that first pair is finalized, the case selects it as the exact future basis and preserves the later period independently."
+    },
+    {
+      "test_id": "test_preview_source_kind_disambiguates_equal_period_and_case_ids",
+      "upstream_ids": ["API-003", "API-048", "API-049", "SEC-019", "TEST-050", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "An explicit preview source kind deterministically selects either the actual Consumption Period or broken-Meter case when their independent tables contain the same opaque UUID."
+    },
+    {
+      "test_id": "test_reading_correction_preserves_original_and_records_exact_impact",
+      "upstream_ids": ["BR-UTIL-031", "BR-UTIL-032", "API-048", "API-049", "TEST-048", "TEST-052", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "An authorized Reading correction leaves the finalized source period immutable, updates the effective quantity, and records exact before/after pre-issuance impact evidence without physical deletion."
+    },
+    {
+      "test_id": "test_case_boundary_uses_first_valid_replacement_reading",
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-026", "API-048", "API-049", "TEST-050", "TEST-051"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A replacement installed before its first validated Reading keeps the complete unmeasured interval inside the broken-Meter case; the immutable end boundary is the day before that exact Reading rather than the installation date."
+    },
+    {
+      "test_id": "test_same_day_failure_and_replacement_preserves_later_unmeasured_interval",
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-026", "DB-UTIL-001", "DB-UTIL-002", "API-049", "TEST-050", "TEST-051"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A valid same-day confirmed failure and physical Meter replacement remains eligible when the replacement's first validated Reading occurs later; the preserved broken-Meter interval begins on the failure date and ends the day before that Reading."
+    },
+    {
+      "test_id": "test_failure_date_reading_is_historical_and_estimation_starts_next_day",
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "API-048", "API-049", "TEST-050", "TEST-051"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A validated Reading on the failed Meter's failure date remains an eligible complete historical actual boundary, so the estimate starts on the following day and cannot overlap or double-count that actual period."
+    },
+    {
+      "test_id": "test_case_opening_requires_finalized_eligible_history",
+      "upstream_ids": ["BR-UTIL-025", "BR-UTIL-027", "BR-UTIL-028", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A broken-Meter case cannot freeze its basis while an eligible validated historical Reading pair remains unfinalized; rejection is atomic, then finalizing that actual period permits case opening and selects the preserved source."
+    },
+    {
+      "test_id": "test_basis_reading_correction_propagates_to_dependent_estimate",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-031", "BR-UTIL-032", "API-048", "TEST-048", "TEST-051", "TEST-052", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A corrected basis Reading records one direct ACTUAL impact and one dependent-estimate impact; the original evidence remains immutable while subsequent preview uses the corrected effective quantity, recomputed trusted basis operands, and complete basis source chain."
+    },
+    {
+      "test_id": "test_period_wide_correction_chronology_rejects_backdated_boundary_effect",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-031", "BR-UTIL-032", "API-048", "TEST-048", "TEST-052", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A correction on either boundary Reading must advance the strict chronology of every directly affected actual period and dependent estimate, so a later-inserted backdated correction cannot leave the newest effective impact stale."
+    },
+    {
+      "test_id": "test_correction_cannot_claim_to_predate_affected_actual_finalization",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-031", "BR-UTIL-032", "BR-AUDIT-004", "API-048", "TEST-048", "TEST-052", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A Reading correction inserted after an ACTUAL period cannot carry an occurred_at before that period's finalization; rejection preserves the original effective quantity and creates no impact evidence."
+    },
+    {
+      "test_id": "test_correction_cannot_claim_to_predate_dependent_estimate_authorization",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-031", "BR-UTIL-032", "BR-AUDIT-004", "API-048", "API-049", "TEST-050", "TEST-052", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A correction to a selected basis Reading cannot claim an occurred_at before authorization of its dependent broken-Meter estimate; the historical actual and estimate quantities remain reconstructable and no impacts are appended."
+    },
+    {
+      "test_id": "test_case_freezes_late_failure_date_reading_validation",
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-026", "BR-UTIL-027", "API-048", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Once a case preserves failure_date as unmeasured, both validating an existing pending Reading and inserting a new validated Reading on that date fail under the same serialized boundary instead of changing the case retroactively."
+    },
+    {
+      "test_id": "test_case_freezes_all_late_prefailure_reading_candidates",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-027", "BR-UTIL-028", "BR-AUDIT-004", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "After a broken-Meter case freezes zero historical periods, neither validation of a pending pre-failure Reading nor insertion of a validated pre-failure Reading may create a newly eligible historical pair behind the preserved basis snapshot."
+    },
+    {
+      "test_id": "test_case_freezes_late_history_from_an_older_same_utility_meter",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-027", "BR-UTIL-028", "BR-AUDIT-004", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A broken-Meter case freezes all same-Unit and same-Utility-Type historical candidates across the complete physical Meter chain; a late validated Reading on an older Meter cannot create omitted historical basis evidence after case opening."
+    },
+    {
+      "test_id": "test_case_opening_must_follow_failure_date_reading_validation",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-023", "BR-UTIL-026", "API-048", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A broken-Meter case cannot claim an opening timestamp before the validated failure-date Reading that determines whether the unmeasured interval begins on the failure date or the following day."
+    },
+    {
+      "test_id": "test_case_opening_must_follow_historical_period_finalization",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-027", "API-048", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A broken-Meter case cannot freeze a historical-period count under an opening timestamp that predates finalization of any actual period included in that count."
+    },
+    {
+      "test_id": "test_zero_history_requires_earliest_eligible_future_period_first",
+      "upstream_ids": ["BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-028", "API-048", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A zero-history case rejects finalization of a later replacement-Meter interval while an earlier eligible Reading pair remains unfinalized; after chronological finalization, the immutable estimate selects the exact first future period and later actual history remains valid."
+    },
+    {
+      "test_id": "test_actual_finalization_must_follow_reading_corrections",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-021", "BR-UTIL-031", "BR-UTIL-032", "API-048", "TEST-048", "TEST-052"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Actual finalization cannot carry a timestamp before either selected Reading validation or any correction used by its effective quantity; a fresh post-evidence timestamp records the exact corrected source."
+    },
+    {
+      "test_id": "test_open_case_freezes_failed_and_replacement_meter_units",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "DB-UTIL-001", "DB-UTIL-002", "DB-UTIL-007", "DB-UTIL-010", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "After a broken-Meter case opens, the failed and replacement Meter measurement units are frozen even when no Reading or Rate previously made the failed Meter unit immutable, preserving permanent dimensionally consistent case evidence."
+    },
+    {
+      "test_id": "test_case_opening_and_meter_unit_change_serialize_without_mixed_evidence",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "DB-UTIL-001", "DB-UTIL-002", "DB-UTIL-007", "DB-UTIL-010", "API-049", "SEC-029", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent rate-free Meter-unit change and broken-Meter case opening share one Property/Unit Utility lock: either the unit change wins and the post-lock case re-read rejects mixed units, or case opening wins and permanently freezes both Meter units."
+    },
+    {
+      "test_id": "test_estimate_authorization_must_follow_basis_corrections",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-031", "BR-UTIL-032", "API-048", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "Broken-Meter authorization must follow the finalization and latest correction evidence of every selected basis period, preventing financial history from claiming a calculation existed before its sources."
     }
   ]
 }
