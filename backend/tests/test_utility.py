@@ -1,7 +1,15 @@
 """Deterministic coverage for V1-042 trusted Utility calculations."""
 
 from datetime import UTC, datetime
-from decimal import ROUND_HALF_UP, ROUND_UP, Decimal, Inexact, Rounded, localcontext
+from decimal import (
+    ROUND_HALF_UP,
+    ROUND_UP,
+    Decimal,
+    Inexact,
+    InvalidOperation,
+    Rounded,
+    localcontext,
+)
 from uuid import UUID, uuid4
 
 import pytest
@@ -59,18 +67,32 @@ def test_utility_charge_applies_one_rate_then_rounds_half_up_cents() -> None:
     assert utility_charge_usd_cents(Decimal("10"), Decimal("0.255")) == 255
     assert utility_charge_usd_cents(Decimal("1"), Decimal("0.005")) == 1
     assert (
-        utility_charge_usd_cents(Decimal("14328352083373.933062"), Decimal("107452569086.37083189"))
-        == 153_961_824_213_258_298_419_975_751
+        utility_charge_usd_cents(Decimal("99999999999999.999999"), Decimal("900.00000001"))
+        == 9_000_000_000_100_000_000
     )
-    assert (
-        utility_charge_usd_cents(
-            Decimal("99999999999999999999999999999999.563179"),
-            Decimal("999999999999.27888148"),
-        )
-        == 9_999_999_999_992_788_814_799_999_999_999_956_317_900_000_031
-    )
+    with pytest.raises(ValueError, match="whole-cent range"):
+        utility_charge_usd_cents(Decimal("99999999999999.999999"), Decimal("1000.00000001"))
     with pytest.raises(ValueError, match="positive"):
         utility_charge_usd_cents(Decimal("1"), Decimal("0"))
+
+
+@pytest.mark.parametrize("nonfinite", ["NaN", "sNaN", "Infinity", "-Infinity"])
+@pytest.mark.parametrize("trap_invalid", [False, True])
+def test_utility_calculations_reject_nonfinite_operands(
+    nonfinite: str,
+    trap_invalid: bool,
+) -> None:
+    value = Decimal(nonfinite)
+    with localcontext() as ambient_context:
+        ambient_context.traps[InvalidOperation] = trap_invalid
+        with pytest.raises(ValueError, match="finite"):
+            weighted_daily_average(value, 30)
+        with pytest.raises(ValueError, match="finite"):
+            estimated_consumption(value, 30, 10)
+        with pytest.raises(ValueError, match="finite"):
+            utility_charge_usd_cents(value, Decimal("1"))
+        with pytest.raises(ValueError, match="finite"):
+            utility_charge_usd_cents(Decimal("1"), value)
 
 
 def actual_command(**changes: object) -> FinalizeActualConsumptionCommand:
@@ -136,6 +158,16 @@ def test_commands_validate_shapes_and_digests_bind_every_input() -> None:
             opened_reason="Different authorized reason",
         )
     )
+    assert open_broken_meter_request_digest(opened) != open_broken_meter_request_digest(
+        open_case_command(
+            idempotency_key=opened.idempotency_key,
+            estimation_case_id=opened.estimation_case_id,
+            failed_meter_id=opened.failed_meter_id,
+            replacement_meter_id=opened.replacement_meter_id,
+            unmeasured_start_date=datetime(2026, 8, 1, tzinfo=UTC).date(),
+            unmeasured_end_date=datetime(2026, 8, 15, tzinfo=UTC).date(),
+        )
+    )
     estimate = estimate_command()
     assert broken_meter_estimate_request_digest(estimate) != broken_meter_estimate_request_digest(
         estimate_command(
@@ -152,6 +184,8 @@ def test_commands_validate_shapes_and_digests_bind_every_input() -> None:
         actual_command(start_reading_id=actual.end_reading_id, end_reading_id=actual.end_reading_id)
     with pytest.raises(ValueError, match="timezone-aware"):
         open_case_command(opened_at=datetime(2026, 8, 28))
+    with pytest.raises(ValueError, match="supplied together"):
+        open_case_command(unmeasured_start_date=datetime(2026, 8, 1, tzinfo=UTC).date())
 
 
 def actor(actor_id: UUID, property_id: UUID, capability: str) -> AuthenticatedActor:

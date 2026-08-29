@@ -1188,7 +1188,7 @@
       ],
       "authorities": [
         "API-044-049",
-        "UI-UTIL-*",
+        "UI-056-062",
         "TEST-046-052"
       ],
       "include": [

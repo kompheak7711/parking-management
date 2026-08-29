@@ -31,6 +31,7 @@ UTILITY_CONNECT_TIMEOUT_SECONDS: Final = 3
 UTILITY_LOCK_TIMEOUT_MS: Final = 3_000
 UTILITY_QUERY_TIMEOUT_MS: Final = 5_000
 NIL_UUID: Final = UUID(int=0)
+POSTGRES_BIGINT_MAX: Final = 9_223_372_036_854_775_807
 
 
 def _financial_context(precision: int) -> Context:
@@ -108,6 +109,8 @@ def _aware(value: datetime, field: str) -> None:
 def weighted_daily_average(total_consumption: Decimal, represented_days: int) -> Decimal:
     """Return the exact weighted average without rounding separate periods."""
 
+    if not total_consumption.is_finite():
+        raise ValueError("total_consumption must be finite")
     if total_consumption < 0:
         raise ValueError("total_consumption must be nonnegative")
     if represented_days <= 0:
@@ -123,6 +126,8 @@ def estimated_consumption(
 ) -> Decimal:
     """Calculate one weighted estimate and round only the final quantity to six places."""
 
+    if not total_basis_consumption.is_finite():
+        raise ValueError("total_basis_consumption must be finite")
     if unmeasured_days <= 0:
         raise ValueError("unmeasured_days must be positive")
     with localcontext(_financial_context(50)):
@@ -135,6 +140,10 @@ def estimated_consumption(
 def utility_charge_usd_cents(quantity: Decimal, rate_usd_per_unit: Decimal) -> int:
     """Apply one generation-date rate to the whole quantity and half-up round cents."""
 
+    if not quantity.is_finite():
+        raise ValueError("quantity must be finite")
+    if not rate_usd_per_unit.is_finite():
+        raise ValueError("rate_usd_per_unit must be finite")
     if quantity < 0:
         raise ValueError("quantity must be nonnegative")
     if rate_usd_per_unit <= 0:
@@ -143,6 +152,8 @@ def utility_charge_usd_cents(quantity: Decimal, rate_usd_per_unit: Decimal) -> i
         amount_cents = (quantity * rate_usd_per_unit * Decimal(100)).quantize(
             Decimal("1"), rounding=ROUND_HALF_UP
         )
+    if amount_cents > POSTGRES_BIGINT_MAX:
+        raise ValueError("Utility charge exceeds the supported whole-cent range")
     return int(amount_cents)
 
 
@@ -208,6 +219,8 @@ class OpenBrokenMeterCaseCommand:
     replacement_meter_id: UUID
     opened_reason: str
     opened_at: datetime
+    unmeasured_start_date: date | None = None
+    unmeasured_end_date: date | None = None
     authorization_reference: str = UTILITY_ESTIMATE_CAPABILITY
 
     def __post_init__(self) -> None:
@@ -222,21 +235,37 @@ class OpenBrokenMeterCaseCommand:
             raise ValueError("broken-Meter case requires a distinct replacement Meter")
         _normalized(self.opened_reason, "opened_reason")
         _aware(self.opened_at, "opened_at")
+        if (self.unmeasured_start_date is None) != (self.unmeasured_end_date is None):
+            raise ValueError("both unmeasured boundaries must be supplied together")
+        if (
+            self.unmeasured_start_date is not None
+            and self.unmeasured_end_date is not None
+            and self.unmeasured_end_date < self.unmeasured_start_date
+        ):
+            raise ValueError("unmeasured_end_date must not precede unmeasured_start_date")
         _normalized(self.authorization_reference, "authorization_reference", maximum=200)
 
 
 def open_broken_meter_request_digest(command: OpenBrokenMeterCaseCommand) -> str:
+    evidence: dict[str, object] = {
+        "authorization_reference": command.authorization_reference,
+        "estimation_case_id": str(command.estimation_case_id),
+        "failed_meter_id": str(command.failed_meter_id),
+        "idempotency_key": str(command.idempotency_key),
+        "opened_at": command.opened_at.astimezone(UTC).isoformat(),
+        "opened_reason": command.opened_reason,
+        "replacement_meter_id": str(command.replacement_meter_id),
+    }
+    if command.unmeasured_start_date is not None:
+        evidence.update(
+            {
+                "unmeasured_end_date": cast(date, command.unmeasured_end_date).isoformat(),
+                "unmeasured_start_date": command.unmeasured_start_date.isoformat(),
+            }
+        )
     return _digest(
         "OPEN_BROKEN_METER_CASE",
-        {
-            "authorization_reference": command.authorization_reference,
-            "estimation_case_id": str(command.estimation_case_id),
-            "failed_meter_id": str(command.failed_meter_id),
-            "idempotency_key": str(command.idempotency_key),
-            "opened_at": command.opened_at.astimezone(UTC).isoformat(),
-            "opened_reason": command.opened_reason,
-            "replacement_meter_id": str(command.replacement_meter_id),
-        },
+        evidence,
     )
 
 
@@ -429,7 +458,7 @@ class PostgresUtilityService:
                 raise UtilityIdempotencyKeyReused("Utility idempotency key was reused") from exc
             if exc.sqlstate in {"23505", "23P01", "40001", "55P03"}:
                 raise UtilityConflictError("Utility command conflicted") from exc
-            if exc.sqlstate in {"22023", "23514", "25001", "55000"}:
+            if exc.sqlstate in {"22003", "22023", "23514", "25001", "55000"}:
                 raise UtilityInvalidError("Utility command is invalid") from exc
             raise UtilityServiceUnavailableError("Utility persistence is unavailable") from exc
         if row is None:
@@ -471,7 +500,7 @@ class PostgresUtilityService:
         if command.authorization_reference != UTILITY_ESTIMATE_CAPABILITY:
             raise UtilityAuthorizationError("Broken-Meter authorization is invalid")
         return self._execute(
-            "SELECT app.open_broken_meter_estimation_case(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            "SELECT app.open_broken_meter_estimation_case(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (
                 self.property_id,
                 command.idempotency_key,
@@ -479,6 +508,8 @@ class PostgresUtilityService:
                 command.estimation_case_id,
                 command.failed_meter_id,
                 command.replacement_meter_id,
+                command.unmeasured_start_date,
+                command.unmeasured_end_date,
                 command.opened_reason,
                 command.opened_at.astimezone(UTC),
                 self.actor_id,

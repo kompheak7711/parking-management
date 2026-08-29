@@ -328,7 +328,7 @@ def direct_open_case(
     case_id = uuid4()
     connection.execute(
         "SELECT app.open_broken_meter_estimation_case("
-        "%s,%s,%s,%s,%s,%s,%s,clock_timestamp(),%s,'utility.estimate')",
+        "%s,%s,%s,%s,%s,%s,NULL,NULL,%s,clock_timestamp(),%s,'utility.estimate')",
         (
             property_id,
             uuid4(),
@@ -374,6 +374,9 @@ def open_case(
     actor: AuthenticatedActor,
     failed_meter_id: UUID,
     replacement_meter_id: UUID,
+    *,
+    unmeasured_start_date: date | None = None,
+    unmeasured_end_date: date | None = None,
 ) -> tuple[UUID, OpenBrokenMeterCaseCommand]:
     case_id = uuid4()
     command_value = OpenBrokenMeterCaseCommand(
@@ -381,6 +384,8 @@ def open_case(
         estimation_case_id=case_id,
         failed_meter_id=failed_meter_id,
         replacement_meter_id=replacement_meter_id,
+        unmeasured_start_date=unmeasured_start_date,
+        unmeasured_end_date=unmeasured_end_date,
         opened_reason="Confirmed physical Meter failure",
         opened_at=database_now(),
     )
@@ -412,15 +417,14 @@ def test_v1_042_is_forward_only_head_with_least_privilege(
     connection: Connection[tuple[object, ...]],
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
-    assert ScriptDirectory.from_config(config).get_current_head() == "20260828_32"
+    assert ScriptDirectory.from_config(config).get_current_head() == "20260829_33"
     assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-        "20260828_32",
+        "20260829_33",
     )
     source = (
-        Path(__file__).parents[1]
-        / "migrations/versions/20260828_32_utility_consumption_services.py"
+        Path(__file__).parents[1] / "migrations/versions/20260829_33_v1_042_utility_corrections.py"
     ).read_text()
-    assert 'raise RuntimeError("V1-042 Utility calculation persistence is forward-only")' in source
+    assert 'raise RuntimeError("V1-042 Utility corrections are forward-only")' in source
     expected_tables = {
         "utility_consumption_periods",
         "broken_meter_estimation_cases",
@@ -460,6 +464,58 @@ def test_v1_042_is_forward_only_head_with_least_privilege(
                 (uuid4(), uuid4(), uuid4()),
             )
         assert direct_write.value.sqlstate == "42501"
+
+
+def test_postgresql_rejects_nonfinite_utility_inputs(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    actor_id, property_id, unit_id = utility_source(connection)
+    meter_id = add_meter(connection, actor_id=actor_id, unit_id=unit_id)
+    reading_id = add_reading(
+        connection,
+        actor_id=actor_id,
+        meter_id=meter_id,
+        reading_date=date(2026, 1, 1),
+        reading_value="10",
+    )
+
+    assert connection.execute(
+        "SELECT 'NaN'::numeric>=0,'NaN'::numeric<'Infinity'::numeric"
+    ).fetchone() == (True, False)
+
+    with pytest.raises(Error) as nonfinite_reading:
+        with connection.transaction():
+            add_reading(
+                connection,
+                actor_id=actor_id,
+                meter_id=meter_id,
+                reading_date=date(2026, 1, 2),
+                reading_value="NaN",
+            )
+    assert nonfinite_reading.value.sqlstate == "23514"
+
+    with pytest.raises(Error) as nonfinite_correction:
+        with connection.transaction():
+            connection.execute(
+                "INSERT INTO app.utility_reading_corrections("
+                "id,reading_id,previous_value,corrected_value,reason,actor_id,"
+                "authorization_reference) VALUES (%s,%s,10,'NaN',"
+                "'Reject non-finite correction',%s,'utility.reading.correct')",
+                (uuid4(), reading_id, actor_id),
+            )
+    assert nonfinite_correction.value.sqlstate == "23514"
+
+    with pytest.raises(Error) as nonfinite_rate:
+        with connection.transaction():
+            connection.execute(
+                "INSERT INTO app.utility_rates("
+                "id,property_id,utility_type,measurement_unit_code,rate_usd_per_unit,"
+                "effective_date,notice_at,notice_evidence,actor_id) VALUES "
+                "(%s,%s,'ELECTRICITY','KWH','NaN',DATE '2027-01-01',"
+                "TIMESTAMPTZ '2026-12-01 00:00:00+07','NONFINITE-REJECTION',%s)",
+                (uuid4(), property_id, actor_id),
+            )
+    assert nonfinite_rate.value.sqlstate == "23514"
 
 
 def test_broken_meter_case_rejects_mixed_failed_and_replacement_units(
@@ -1121,7 +1177,7 @@ def test_json_snapshots_preserve_maximum_consumption_and_rate_precision(
             "INSERT INTO app.utility_rates("
             "id,property_id,utility_type,measurement_unit_code,rate_usd_per_unit,"
             "effective_date,notice_at,notice_evidence,actor_id) VALUES "
-            "(%s,%s,'ELECTRICITY','KWH',1000.00000001,DATE '2025-01-01',"
+            "(%s,%s,'ELECTRICITY','KWH',900.00000001,DATE '2025-01-01',"
             "TIMESTAMPTZ '2024-12-31 00:00:00+07','PRECISION',%s)",
             (rate_id, property_id, actor_id),
         )
@@ -1134,11 +1190,28 @@ def test_json_snapshots_preserve_maximum_consumption_and_rate_precision(
     )
     assert replay.consumption_quantity == maximum_quantity
     assert preview.consumption_quantity == maximum_quantity
-    assert preview.rate_usd_per_unit == Decimal("1000.00000001")
-    assert preview.amount_usd_cents == 10_000_000_000_100_000_000
+    assert preview.rate_usd_per_unit == Decimal("900.00000001")
+    assert preview.amount_usd_cents == 9_000_000_000_100_000_000
+    with psycopg.connect(migrated_database_url) as owner:
+        owner.execute(
+            "INSERT INTO app.utility_rates("
+            "id,property_id,utility_type,measurement_unit_code,rate_usd_per_unit,"
+            "effective_date,notice_at,notice_evidence,actor_id) VALUES "
+            "(%s,%s,'ELECTRICITY','KWH',1000.00000001,DATE '2026-08-01',"
+            "TIMESTAMPTZ '2026-07-31 00:00:00+07','OVERFLOW BOUNDARY',%s)",
+            (uuid4(), property_id, actor_id),
+        )
+        owner.commit()
+    with pytest.raises(UtilityInvalidError):
+        utility_service.preview(
+            period_id,
+            database_now(),
+            source_kind=UtilityPreviewSourceKind.CONSUMPTION_PERIOD,
+            actor=actor,
+        )
 
 
-def test_broken_meter_derived_values_exceed_source_quantity_range_safely(
+def test_broken_meter_rejects_derived_values_beyond_canonical_precision(
     migrated_database_url: str,
 ) -> None:
     maximum_quantity = Decimal("99999999999999.999999")
@@ -1186,21 +1259,36 @@ def test_broken_meter_derived_values_exceed_source_quantity_range_safely(
         replacement_date=date(2026, 2, 12),
     )
     case_id, _ = open_case(utility_service, actor, second_meter_id, third_meter_id)
-    _, estimate_command = finalize_estimate(utility_service, actor, case_id)
-    snapshot = utility_service.finalize_broken_meter_estimate(estimate_command, actor=actor)
-    expected_derived_quantity = maximum_quantity * 2
-    assert snapshot.basis_period_ids == (second_basis_period_id, first_basis_period_id)
-    assert snapshot.consumption_quantity == expected_derived_quantity
+    estimate_command = FinalizeBrokenMeterEstimateCommand(
+        idempotency_key=uuid4(),
+        estimation_case_id=case_id,
+        estimate_id=uuid4(),
+        consumption_period_id=uuid4(),
+        authorization_reason="Approved precision-boundary estimate",
+        authorized_at=database_now(),
+    )
+    with pytest.raises(UtilityInvalidError):
+        utility_service.finalize_broken_meter_estimate(estimate_command, actor=actor)
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute(
-            "SELECT total_basis_consumption,weighted_daily_average,estimated_consumption "
-            "FROM app.broken_meter_estimates WHERE id=%s",
+            "SELECT count(*) FROM app.broken_meter_estimates WHERE id=%s",
             (estimate_command.estimate_id,),
-        ).fetchone() == (
-            expected_derived_quantity,
-            Decimal("9999999999999.9999999000"),
-            expected_derived_quantity,
-        )
+        ).fetchone() == (0,)
+        assert owner.execute(
+            "SELECT count(*) FROM app.utility_consumption_periods WHERE id=%s",
+            (estimate_command.consumption_period_id,),
+        ).fetchone() == (0,)
+        assert owner.execute(
+            "SELECT count(*) FROM app.utility_service_commands WHERE idempotency_key=%s",
+            (estimate_command.idempotency_key,),
+        ).fetchone() == (0,)
+        assert {
+            row[0]
+            for row in owner.execute(
+                "SELECT id FROM app.utility_consumption_periods WHERE id IN (%s,%s)",
+                (first_basis_period_id, second_basis_period_id),
+            ).fetchall()
+        } == {first_basis_period_id, second_basis_period_id}
 
 
 def test_idempotency_key_scope_includes_utility_action(
@@ -1541,7 +1629,7 @@ def test_broken_meter_uses_all_one_or_two_historical_periods(
     assert snapshot.consumption_quantity == expected_quantity
 
 
-def test_broken_meter_case_rejects_move_in_responsibility_boundary(
+def test_broken_meter_case_splits_at_move_in_responsibility_boundary(
     migrated_database_url: str,
 ) -> None:
     actor_id, property_id, unit_id, failed_id, _ = committed_source(migrated_database_url, ())
@@ -1573,25 +1661,49 @@ def test_broken_meter_case_rejects_move_in_responsibility_boundary(
     )
     utility_service = service(property_id, actor_id)
     actor = authorized_actor(actor_id, property_id, UTILITY_ESTIMATE_CAPABILITY)
-    case_command = OpenBrokenMeterCaseCommand(
+    first_case_id, first_command = open_case(
+        utility_service,
+        actor,
+        failed_id,
+        replacement_id,
+        unmeasured_start_date=date(2026, 2, 1),
+        unmeasured_end_date=date(2026, 2, 4),
+    )
+    second_case_id, second_command = open_case(
+        utility_service,
+        actor,
+        failed_id,
+        replacement_id,
+        unmeasured_start_date=date(2026, 2, 5),
+        unmeasured_end_date=date(2026, 2, 10),
+    )
+    with psycopg.connect(migrated_database_url) as owner:
+        assert owner.execute(
+            "SELECT id,unmeasured_start_date,unmeasured_end_date "
+            "FROM app.broken_meter_estimation_cases WHERE id IN (%s,%s) "
+            "ORDER BY unmeasured_start_date",
+            (first_case_id, second_case_id),
+        ).fetchall() == [
+            (first_case_id, date(2026, 2, 1), date(2026, 2, 4)),
+            (second_case_id, date(2026, 2, 5), date(2026, 2, 10)),
+        ]
+        assert owner.execute(
+            "SELECT count(*) FROM app.utility_service_commands WHERE idempotency_key IN (%s,%s)",
+            (first_command.idempotency_key, second_command.idempotency_key),
+        ).fetchone() == (2,)
+
+    invalid_command = OpenBrokenMeterCaseCommand(
         idempotency_key=uuid4(),
         estimation_case_id=uuid4(),
         failed_meter_id=failed_id,
         replacement_meter_id=replacement_id,
-        opened_reason="Confirmed failure crossing a move-in boundary",
+        unmeasured_start_date=date(2026, 2, 2),
+        unmeasured_end_date=date(2026, 2, 4),
+        opened_reason="Unapproved partial Customer period",
         opened_at=database_now(),
     )
     with pytest.raises(UtilityInvalidError):
-        utility_service.open_broken_meter_case(case_command, actor=actor)
-    with psycopg.connect(migrated_database_url) as owner:
-        assert owner.execute(
-            "SELECT count(*) FROM app.broken_meter_estimation_cases WHERE id=%s",
-            (case_command.estimation_case_id,),
-        ).fetchone() == (0,)
-        assert owner.execute(
-            "SELECT count(*) FROM app.utility_service_commands WHERE idempotency_key=%s",
-            (case_command.idempotency_key,),
-        ).fetchone() == (0,)
+        utility_service.open_broken_meter_case(invalid_command, actor=actor)
 
 
 def test_broken_meter_case_ignores_non_signer_occupancy_boundaries(
@@ -2433,6 +2545,72 @@ def test_basis_reading_correction_propagates_to_dependent_estimate(
     assert corrected.total_basis_days == 10
     assert corrected.weighted_daily_average == Decimal("2.0000000000")
     assert corrected.basis_sources[0].consumption_period_id == basis_period_id
+
+
+def test_basis_reading_correction_rejects_unrepresentable_dependent_estimate(
+    migrated_database_url: str,
+) -> None:
+    actor_id, property_id, unit_id, failed_id, readings = committed_source(
+        migrated_database_url,
+        ((date(2026, 1, 1), "0"), (date(2026, 1, 11), "10")),
+    )
+    utility_service = service(property_id, actor_id)
+    actor = authorized_actor(
+        actor_id, property_id, UTILITY_CALCULATE_CAPABILITY, UTILITY_ESTIMATE_CAPABILITY
+    )
+    basis_period_id, _ = finalize_actual(utility_service, actor, unit_id, readings[0], readings[1])
+    replacement_id, _ = replace_failed_meter(
+        migrated_database_url,
+        actor_id=actor_id,
+        unit_id=unit_id,
+        failed_meter_id=failed_id,
+        failure_date=date(2026, 2, 1),
+        replacement_date=date(2026, 2, 11),
+    )
+    case_id, _ = open_case(utility_service, actor, failed_id, replacement_id)
+    estimate_period_id, estimate_command = finalize_estimate(utility_service, actor, case_id)
+    initial = utility_service.finalize_broken_meter_estimate(estimate_command, actor=actor)
+    assert initial.weighted_daily_average == Decimal("1.0000000000")
+
+    correction_id = uuid4()
+    with psycopg.connect(migrated_database_url) as owner:
+        with pytest.raises(psycopg.errors.NumericValueOutOfRange):
+            owner.execute(
+                "INSERT INTO app.utility_reading_corrections("
+                "id,reading_id,previous_value,corrected_value,reason,actor_id,"
+                "authorization_reference) VALUES "
+                "(%s,%s,10,99999999999999.999999,"
+                "'Rejected precision-boundary correction',%s,%s)",
+                (correction_id, readings[1], actor_id, f"AUTH-{correction_id}"),
+            )
+        owner.rollback()
+        assert owner.execute(
+            "SELECT count(*) FROM app.utility_reading_corrections WHERE id=%s",
+            (correction_id,),
+        ).fetchone() == (0,)
+        assert owner.execute(
+            "SELECT count(*) FROM app.utility_reading_correction_impacts "
+            "WHERE reading_correction_id=%s",
+            (correction_id,),
+        ).fetchone() == (0,)
+        assert owner.execute(
+            "SELECT app.utility_consumption_effective_quantity(%s),"
+            "basis.total_basis_consumption,basis.weighted_daily_average "
+            "FROM app.utility_estimate_effective_basis(%s) AS basis",
+            (basis_period_id, estimate_command.estimate_id),
+        ).fetchone() == (
+            Decimal("10.000000"),
+            Decimal("10.000000"),
+            Decimal("1.0000000000"),
+        )
+    preserved = utility_service.preview(
+        estimate_period_id,
+        datetime(2026, 2, 12, tzinfo=UTC),
+        source_kind=UtilityPreviewSourceKind.CONSUMPTION_PERIOD,
+        actor=actor,
+    )
+    assert preserved.consumption_quantity == Decimal("10.000000")
+    assert preserved.weighted_daily_average == Decimal("1.0000000000")
 
 
 def test_period_wide_correction_chronology_rejects_backdated_boundary_effect(

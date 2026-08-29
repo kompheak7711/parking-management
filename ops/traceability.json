@@ -7421,7 +7421,7 @@
     },
     {
       "test_id": "test_utility_rates_are_independent_effective_and_append_only",
-      "upstream_ids": ["BR-UTIL-014", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-017", "DB-UTIL-005", "TEST-010"],
+      "upstream_ids": ["BR-UTIL-014", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-017", "BR-UTIL-031", "DB-UTIL-005", "TEST-010"],
       "test_level": "DB",
       "test_path": "backend/tests/test_configuration_migration.py",
       "status": "implemented",
@@ -9646,7 +9646,7 @@
     },
     {
       "test_id": "test_weighted_basis_never_averages_separately_rounded_periods",
-      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-024", "BR-UTIL-025", "BR-UTIL-026", "TEST-050", "TEST-051"],
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "TEST-050", "TEST-051"],
       "test_level": "unit",
       "test_path": "backend/tests/test_utility.py",
       "status": "implemented",
@@ -9661,8 +9661,16 @@
       "notes": "Weighted-average and final estimated-consumption calculations use an isolated high-precision Decimal context, producing the same explicit result even when the caller has reduced ambient precision."
     },
     {
+      "test_id": "test_utility_calculations_reject_nonfinite_operands",
+      "upstream_ids": ["BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-029", "BR-UTIL-032", "TEST-050", "TEST-051", "TEST-052"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility.py",
+      "status": "implemented",
+      "notes": "Every pure Utility arithmetic boundary rejects NaN, signaling NaN, and positive or negative infinity before comparison or calculation, independently of the caller's Decimal trap configuration."
+    },
+    {
       "test_id": "test_utility_charge_applies_one_rate_then_rounds_half_up_cents",
-      "upstream_ids": ["BR-UTIL-028", "BR-UTIL-029", "BR-UTIL-030", "API-049", "TEST-052"],
+      "upstream_ids": ["BR-UTIL-029", "BR-UTIL-030", "BR-UTIL-032", "API-048", "TEST-052"],
       "test_level": "unit",
       "test_path": "backend/tests/test_utility.py",
       "status": "implemented",
@@ -9693,6 +9701,38 @@
       "notes": "The migration chain reaches V1-042, rollback refuses to erase permanent calculation history, direct restricted-role writes are denied, and only bounded service functions are executable."
     },
     {
+      "test_id": "test_v1_042_published_schema_upgrades_to_corrected_runtime_contract",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-032", "DB-UTIL-006", "DB-UTIL-007", "API-048", "API-049", "TEST-048", "TEST-050", "TEST-051", "TEST-100", "TEST-101", "TEST-103", "TEST-122"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A database already stamped at the published V1-042 revision upgrades through the forward-only correction revision, preserves finalized Utility evidence, installs canonical numeric persistence and the bounded twelve-argument case-opening contract, removes the obsolete overload, and idempotently replays an exact boundary-free case-opening command created before the upgrade without duplicating command or case evidence."
+    },
+    {
+      "test_id": "test_v1_042_upgrade_front_door_gate_prevents_service_writer_deadlock",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-021", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-032", "DB-UTIL-006", "DB-UTIL-007", "DB-UTIL-008", "DB-UTIL-009", "DB-UTIL-010", "API-048", "API-049", "TEST-048", "TEST-050", "TEST-051", "TEST-100", "TEST-101", "TEST-103", "TEST-122"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A revision-32 service writer starting while the correction migration is paused inside effective-basis validation waits at the command-table front door without holding a Utility source-table lock; release lets the migration and writer complete without deadlock or lost history."
+    },
+    {
+      "test_id": "test_v1_042_upgrade_serializes_unrepresentable_effective_basis_correction",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-032", "DB-UTIL-006", "DB-UTIL-007", "DB-UTIL-008", "DB-UTIL-009", "API-048", "API-049", "TEST-048", "TEST-050", "TEST-051", "TEST-100", "TEST-101", "TEST-103", "TEST-122"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "The forward-only upgrade acquires write-excluding source-table locks before validation, waits for an in-flight published-schema Reading correction, then recomputes its finalized estimate basis; unrepresentable totals, average, or estimate reject the upgrade atomically and leave the published schema active."
+    },
+    {
+      "test_id": "test_postgresql_rejects_nonfinite_utility_inputs",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-032", "DB-UTIL-005", "DB-UTIL-006", "DB-UTIL-007", "API-048", "TEST-048", "TEST-052", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "PostgreSQL rejects NaN at every persisted Utility input boundary used by trusted consumption and charge calculations: Meter Readings, Reading corrections, and effective Utility Rates."
+    },
+    {
       "test_id": "test_broken_meter_case_rejects_mixed_failed_and_replacement_units",
       "upstream_ids": ["BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "DB-UTIL-001", "DB-UTIL-002", "DB-UTIL-007", "DB-UTIL-010", "API-049", "TEST-050", "TEST-051", "TEST-122"],
       "test_level": "integration",
@@ -9710,7 +9750,7 @@
     },
     {
       "test_id": "test_broken_meter_case_rejects_mixed_historical_basis_units",
-      "upstream_ids": ["BR-UTIL-022", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "DB-UTIL-006", "DB-UTIL-007", "DB-UTIL-008", "DB-UTIL-010", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "DB-UTIL-006", "DB-UTIL-007", "DB-UTIL-008", "DB-UTIL-010", "API-049", "TEST-050", "TEST-051", "TEST-122"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
@@ -9718,7 +9758,7 @@
     },
     {
       "test_id": "test_broken_meter_case_ignores_an_unselected_legacy_unit_period",
-      "upstream_ids": ["BR-UTIL-022", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "DB-UTIL-006", "DB-UTIL-007", "DB-UTIL-008", "DB-UTIL-010", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "DB-UTIL-006", "DB-UTIL-007", "DB-UTIL-008", "DB-UTIL-010", "API-049", "TEST-050", "TEST-051", "TEST-122"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
@@ -9754,15 +9794,15 @@
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
-      "notes": "Maximum valid six-place Utility quantity and an eight-place Rate remain exact Decimals through persisted JSONB command replay and calculation preview; a derived whole-cent amount beyond PostgreSQL bigint remains deterministic without binary float or overflow."
+      "notes": "Maximum canonical six-place Utility quantity and an eight-place Rate remain exact through JSONB replay and a representable preview; a later Rate that would exceed Invoice bigint cents is rejected before READY is returned."
     },
     {
-      "test_id": "test_broken_meter_derived_values_exceed_source_quantity_range_safely",
+      "test_id": "test_broken_meter_rejects_derived_values_beyond_canonical_precision",
       "upstream_ids": ["BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "API-048", "API-049", "TEST-050", "TEST-051", "TEST-122"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
-      "notes": "Two maximum valid source quantities from successive physical Meters aggregate into a basis total and projected estimate larger than one Reading-difference range; widened derived storage and promoted PostgreSQL scale preserve the exact result."
+      "notes": "Two individually valid maximum source quantities whose selected basis total exceeds canonical DB-UTIL-007 precision are rejected atomically; source periods remain preserved while no estimate, consumption period, or command result is written."
     },
     {
       "test_id": "test_idempotency_key_scope_includes_utility_action",
@@ -9814,19 +9854,19 @@
     },
     {
       "test_id": "test_broken_meter_uses_all_one_or_two_historical_periods",
-      "upstream_ids": ["BR-UTIL-022", "BR-UTIL-023", "BR-UTIL-024", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "API-048", "TEST-050", "TEST-051"],
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "API-048", "TEST-050", "TEST-051"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
       "notes": "A confirmed broken Meter with exactly one or two prior actual periods uses every available historical period in deterministic newest-first order."
     },
     {
-      "test_id": "test_broken_meter_case_rejects_move_in_responsibility_boundary",
+      "test_id": "test_broken_meter_case_splits_at_move_in_responsibility_boundary",
       "upstream_ids": ["BR-UTIL-018", "BR-UTIL-023", "BR-UTIL-026", "API-049", "TEST-050", "TEST-122"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
-      "notes": "One indivisible broken-Meter interval cannot cross a Move-in or Customer responsibility boundary; rejection leaves neither case nor command evidence."
+      "notes": "One physical broken-Meter interval is split into exact immutable estimate cases at a signed Customer move-in boundary, so each financially responsible Customer receives only the applicable segment; arbitrary partial boundaries remain rejected."
     },
     {
       "test_id": "test_broken_meter_case_ignores_non_signer_occupancy_boundaries",
@@ -9854,7 +9894,7 @@
     },
     {
       "test_id": "test_latest_three_weighted_basis_and_generation_date_rate",
-      "upstream_ids": ["BR-UTIL-022", "BR-UTIL-023", "BR-UTIL-024", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-028", "BR-UTIL-029", "BR-UTIL-030", "API-048", "API-049", "TEST-050", "TEST-051", "TEST-052"],
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-029", "BR-UTIL-030", "BR-UTIL-032", "API-048", "API-049", "TEST-050", "TEST-051", "TEST-052"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
@@ -9862,7 +9902,7 @@
     },
     {
       "test_id": "test_zero_history_stays_pending_until_first_complete_future_actual",
-      "upstream_ids": ["BR-UTIL-022", "BR-UTIL-023", "BR-UTIL-024", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "API-048", "TEST-050", "TEST-051"],
+      "upstream_ids": ["BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-028", "API-048", "TEST-050", "TEST-051"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
@@ -9894,7 +9934,7 @@
     },
     {
       "test_id": "test_reading_correction_preserves_original_and_records_exact_impact",
-      "upstream_ids": ["BR-UTIL-031", "BR-UTIL-032", "API-048", "API-049", "TEST-048", "TEST-052", "TEST-122"],
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-032", "API-048", "TEST-048", "TEST-052", "TEST-122"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
@@ -9934,15 +9974,23 @@
     },
     {
       "test_id": "test_basis_reading_correction_propagates_to_dependent_estimate",
-      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-031", "BR-UTIL-032", "API-048", "TEST-048", "TEST-051", "TEST-052", "TEST-122"],
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-032", "API-048", "TEST-048", "TEST-051", "TEST-052", "TEST-122"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
       "notes": "A corrected basis Reading records one direct ACTUAL impact and one dependent-estimate impact; the original evidence remains immutable while subsequent preview uses the corrected effective quantity, recomputed trusted basis operands, and complete basis source chain."
     },
     {
+      "test_id": "test_basis_reading_correction_rejects_unrepresentable_dependent_estimate",
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-032", "API-048", "TEST-048", "TEST-051", "TEST-052", "TEST-122"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_utility_consumption_migration.py",
+      "status": "implemented",
+      "notes": "A post-finalization basis Reading correction is rejected atomically when its recomputed broken-Meter total, weighted average, or estimate would exceed canonical persistence precision; no correction or impact survives and the trusted preview remains available."
+    },
+    {
       "test_id": "test_period_wide_correction_chronology_rejects_backdated_boundary_effect",
-      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-031", "BR-UTIL-032", "API-048", "TEST-048", "TEST-052", "TEST-122"],
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-032", "API-048", "TEST-048", "TEST-052", "TEST-122"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
@@ -9950,7 +9998,7 @@
     },
     {
       "test_id": "test_correction_cannot_claim_to_predate_affected_actual_finalization",
-      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-031", "BR-UTIL-032", "BR-AUDIT-004", "API-048", "TEST-048", "TEST-052", "TEST-122"],
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-032", "BR-AUDIT-004", "API-048", "TEST-048", "TEST-052", "TEST-122"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
@@ -9958,7 +10006,7 @@
     },
     {
       "test_id": "test_correction_cannot_claim_to_predate_dependent_estimate_authorization",
-      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-031", "BR-UTIL-032", "BR-AUDIT-004", "API-048", "API-049", "TEST-050", "TEST-052", "TEST-122"],
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-032", "BR-AUDIT-004", "API-048", "API-049", "TEST-050", "TEST-052", "TEST-122"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
@@ -10014,7 +10062,7 @@
     },
     {
       "test_id": "test_actual_finalization_must_follow_reading_corrections",
-      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-021", "BR-UTIL-031", "BR-UTIL-032", "API-048", "TEST-048", "TEST-052"],
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-021", "BR-UTIL-032", "API-048", "TEST-048", "TEST-052"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
@@ -10038,7 +10086,7 @@
     },
     {
       "test_id": "test_estimate_authorization_must_follow_basis_corrections",
-      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-031", "BR-UTIL-032", "API-048", "API-049", "TEST-050", "TEST-051", "TEST-122"],
+      "upstream_ids": ["BR-UTIL-019", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-032", "API-048", "API-049", "TEST-050", "TEST-051", "TEST-122"],
       "test_level": "integration",
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",

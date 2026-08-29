@@ -30,24 +30,39 @@
   GitHub Actions run `33237639691` passed all four jobs.
 - Status: complete, published, independently reviewed, and closure-valid.
 - V1-043: held at `approved_ready`; no activation or implementation occurred.
+- Corrective reconciliation: first reconciliation commit
+  `d42a7497549152103ab58b0fed682ade216fe230` failed exact-SHA GitHub Actions run
+  `33237892730` only because the held V1-043 authority `UI-UTIL-*` matched no canonical
+  identifier. Read-only inspection confirmed exact requirements `UI-056` through
+  `UI-062`; V1-043 remains unactivated. Subsequent external review found and the
+  preserved V1-042 worktree corrected exact broken-Meter responsibility segmentation,
+  canonical numeric/whole-cent bounds, deterministic non-finite rejection in Python and
+  PostgreSQL, and exact Utility traceability.
 - Scheduler: the Property Rental supervisor remains disabled and not running.
 - Blockers: none.
-- Independent review: twenty-one fresh external exact-diff rounds found 45 material findings
-  (25 high, 20 medium); all are corrected within V1-042 with deterministic and real
-  PostgreSQL regression coverage; round 21 reviewed the resulting exact diff and returned
-  PASS with no actionable correctness defects and no reviewer edits. Complete per-session
-  evidence is in `ops/STATE.json`; the clean verdict is preserved at
-  `/private/tmp/property-rental-v1-042-independent-review-pass-21.txt`.
-- Focused correction verification: PASS; all five pure Utility tests and the traceability
-  guard pass. The initial complete-profile attempt truthfully stopped on the renamed test's
-  stale traceability ID; that metadata reference was corrected before the full profile was
-  restarted from gate one.
-- Current complete verification: PASS, 15/15; backend 646 passed with 400 expected
-  database-environment skips, frontend 213 passed, disposable PostgreSQL 412 passed,
-  and automation routing 185 passed. Evidence:
-  `/private/tmp/property-rental-v1-042-twentieth-review-correction-verification.json`.
-- Exact next action: keep V1-043 held at `approved_ready` and keep the Property Rental
-  supervisor disabled until this V1-042 reconciliation commit is exact-SHA CI-green;
+- Independent review: thirty fresh external exact-diff rounds found 59 material
+  findings (34 high, 25 medium). All are corrected within V1-042. Round 29 made no edits
+  and identified that the round-28 source locks could still form a lock-upgrade cycle with
+  a revision-32 service writer admitted during validation; its finding is preserved at
+  `/private/tmp/property-rental-v1-042-independent-review-29.txt`. The upgrade now drains
+  replaced function entry points and takes final-mode locks at supported write front doors
+  before any source scan.
+  Round 30 made no edits and returned `PASS` with no material findings after checking
+  the exact 14-path diff, revision-32 fingerprint, migration front doors, rollback,
+  history, traceability, the disabled supervisor, and the held V1-043 successor.
+  Evidence: `/private/tmp/property-rental-v1-042-independent-review-30.txt`.
+  Complete per-session
+  evidence is recorded in `ops/STATE.json`.
+- Focused correction verification: PASS; all 417 disposable PostgreSQL tests pass. The
+  new production-shaped regression pauses the upgrade inside validation, starts a real
+  revision-32 service writer, proves it waits at the command front door without holding
+  source locks, and then verifies both transactions complete without deadlock.
+- Current complete verification: PASS, 15/15; backend 654 passed with 405 expected
+  database-environment skips, frontend 213 passed, disposable PostgreSQL 417 passed, and
+  automation routing 186 passed. Evidence:
+  `/private/tmp/property-rental-v1-042-round-29-correction-verification.json`.
+- Exact next action: publish separate corrective implementation and closure commits with
+  successful exact-SHA GitHub Actions, reconcile compact state, and leave V1-043 held;
   do not activate the successor automatically.
 
 <!-- AUTOMATION_STATUS_BEGIN -->

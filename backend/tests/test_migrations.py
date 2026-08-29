@@ -3636,7 +3636,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260828_32",)
+                assert cursor.fetchone() == ("20260829_33",)
 
 
 def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
@@ -4265,7 +4265,7 @@ def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260828_32",)
+                assert cursor.fetchone() == ("20260829_33",)
                 cursor.execute(
                     """
                     SELECT id, code, display_name, accepted, created_by, updated_by
@@ -4419,7 +4419,7 @@ def test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data() -> No
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260828_32",)
+                assert cursor.fetchone() == ("20260829_33",)
                 cursor.execute(
                     """
                     SELECT unit.id, unit.property_id, unit.status, customer.id
@@ -4714,7 +4714,7 @@ def test_v1_031_upgrade_preserves_and_completes_v1_030_pending_outcome() -> None
             )
             connection.commit()
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260828_32",
+                "20260829_33",
             )
             assert connection.execute(
                 """
@@ -4814,7 +4814,7 @@ def test_v1_034_upgrade_preserves_v1_033_lease_and_replaces_unbounded_runtime_he
         assert result.returncode == 0, result.stderr
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260828_32",
+                "20260829_33",
             )
             assert connection.execute(
                 "SELECT id,status,version,start_date,end_date FROM app.leases WHERE id=%s",
@@ -4993,5 +4993,492 @@ def test_v1_039_upgrade_serializes_user_creation_across_actor_identity_backfill(
                 (actor_id,),
             ).fetchone() == ("HUMAN",)
             assert verify.execute("SELECT version_num FROM alembic_version").fetchone() == (
+                "20260829_33",
+            )
+
+
+def test_v1_042_published_schema_upgrades_to_corrected_runtime_contract() -> None:
+    """Databases already stamped at published V1-042 converge without losing evidence."""
+    from property_rental.utility import (
+        OpenBrokenMeterCaseCommand,
+        open_broken_meter_request_digest,
+    )
+    from test_utility_consumption_migration import (
+        committed_source,
+        direct_finalize_actual,
+        replace_failed_meter,
+    )
+
+    with _temporary_migration_database("prm_v1_042_published_upgrade") as migration_url:
+        published = _run_alembic("upgrade", "20260828_32")
+        assert published.returncode == 0, published.stderr
+        actor_id, property_id, unit_id, failed_meter_id, readings = committed_source(
+            migration_url,
+            ((date(2026, 1, 1), "0"), (date(2026, 1, 11), "10")),
+        )
+        with psycopg.connect(migration_url) as connection:
+            actual_period_id = direct_finalize_actual(
+                connection,
+                actor_id=actor_id,
+                property_id=property_id,
+                unit_id=unit_id,
+                start_reading_id=readings[0],
+                end_reading_id=readings[1],
+            )
+            assert connection.execute(
+                "SELECT to_regprocedure("
+                "'app.open_broken_meter_estimation_case(uuid,uuid,text,uuid,uuid,uuid,text,"
+                "timestamp with time zone,uuid,text)'),"
+                "to_regprocedure("
+                "'app.open_broken_meter_estimation_case(uuid,uuid,text,uuid,uuid,uuid,date,date,"
+                "text,timestamp with time zone,uuid,text)')"
+            ).fetchone() == (
+                "app.open_broken_meter_estimation_case(uuid,uuid,text,uuid,uuid,uuid,text,"
+                "timestamp with time zone,uuid,text)",
+                None,
+            )
+            connection.commit()
+        replacement_meter_id, _ = replace_failed_meter(
+            migration_url,
+            actor_id=actor_id,
+            unit_id=unit_id,
+            failed_meter_id=failed_meter_id,
+            failure_date=date(2026, 2, 1),
+            replacement_date=date(2026, 2, 11),
+        )
+        with psycopg.connect(migration_url) as connection:
+            opened_at_row = connection.execute("SELECT clock_timestamp()").fetchone()
+            assert opened_at_row is not None
+            assert isinstance(opened_at_row[0], datetime)
+            legacy_command = OpenBrokenMeterCaseCommand(
+                idempotency_key=uuid.uuid4(),
+                estimation_case_id=uuid.uuid4(),
+                failed_meter_id=failed_meter_id,
+                replacement_meter_id=replacement_meter_id,
+                opened_reason="Confirmed physical Meter failure",
+                opened_at=opened_at_row[0],
+            )
+            legacy_digest = open_broken_meter_request_digest(legacy_command)
+            legacy_result = connection.execute(
+                "SELECT app.open_broken_meter_estimation_case(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    property_id,
+                    legacy_command.idempotency_key,
+                    legacy_digest,
+                    legacy_command.estimation_case_id,
+                    legacy_command.failed_meter_id,
+                    legacy_command.replacement_meter_id,
+                    legacy_command.opened_reason,
+                    legacy_command.opened_at,
+                    actor_id,
+                    legacy_command.authorization_reference,
+                ),
+            ).fetchone()
+            assert legacy_result is not None
+            connection.commit()
+
+        corrected = _run_alembic("upgrade", "head")
+        assert corrected.returncode == 0, corrected.stderr
+        with psycopg.connect(migration_url) as connection:
+            assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
+                "20260829_33",
+            )
+            assert connection.execute(
+                "SELECT format_type(attribute.atttypid,attribute.atttypmod) "
+                "FROM pg_attribute AS attribute "
+                "WHERE attribute.attrelid='app.utility_consumption_periods'::regclass "
+                "AND attribute.attname='consumption_quantity'"
+            ).fetchone() == ("numeric(20,6)",)
+            assert connection.execute(
+                "SELECT to_regprocedure("
+                "'app.open_broken_meter_estimation_case(uuid,uuid,text,uuid,uuid,uuid,text,"
+                "timestamp with time zone,uuid,text)'),"
+                "to_regprocedure("
+                "'app.open_broken_meter_estimation_case(uuid,uuid,text,uuid,uuid,uuid,date,date,"
+                "text,timestamp with time zone,uuid,text)')"
+            ).fetchone() == (
+                None,
+                "app.open_broken_meter_estimation_case(uuid,uuid,text,uuid,uuid,uuid,date,date,"
+                "text,timestamp with time zone,uuid,text)",
+            )
+            replay_result = connection.execute(
+                "SELECT app.open_broken_meter_estimation_case("
+                "%s,%s,%s,%s,%s,%s,NULL,NULL,%s,%s,%s,%s)",
+                (
+                    property_id,
+                    legacy_command.idempotency_key,
+                    open_broken_meter_request_digest(legacy_command),
+                    legacy_command.estimation_case_id,
+                    legacy_command.failed_meter_id,
+                    legacy_command.replacement_meter_id,
+                    legacy_command.opened_reason,
+                    legacy_command.opened_at,
+                    actor_id,
+                    legacy_command.authorization_reference,
+                ),
+            ).fetchone()
+            assert replay_result == legacy_result
+            assert connection.execute(
+                "SELECT count(*) FROM app.utility_service_commands WHERE idempotency_key=%s",
+                (legacy_command.idempotency_key,),
+            ).fetchone() == (1,)
+            assert connection.execute(
+                "SELECT consumption_quantity FROM app.utility_consumption_periods WHERE id=%s",
+                (actual_period_id,),
+            ).fetchone() == (Decimal("10.000000"),)
+            assert connection.execute(
+                "SELECT unmeasured_start_date,unmeasured_end_date "
+                "FROM app.broken_meter_estimation_cases WHERE id=%s",
+                (legacy_command.estimation_case_id,),
+            ).fetchone() == (date(2026, 2, 1), date(2026, 2, 10))
+
+
+def test_v1_042_upgrade_front_door_gate_prevents_service_writer_deadlock() -> None:
+    """A service writer starting during validation waits outside every source table."""
+    from test_utility_consumption_migration import (
+        committed_source,
+        direct_finalize_actual,
+        direct_finalize_estimate,
+        replace_failed_meter,
+    )
+
+    with _temporary_migration_database("prm_v1_042_writer_upgrade") as migration_url:
+        published = _run_alembic("upgrade", "20260828_32")
+        assert published.returncode == 0, published.stderr
+        actor_id, property_id, unit_id, failed_meter_id, readings = committed_source(
+            migration_url,
+            ((date(2026, 1, 1), "0"), (date(2026, 1, 3), "10")),
+        )
+        with psycopg.connect(migration_url) as connection:
+            direct_finalize_actual(
+                connection,
+                actor_id=actor_id,
+                property_id=property_id,
+                unit_id=unit_id,
+                start_reading_id=readings[0],
+                end_reading_id=readings[1],
+            )
+            connection.commit()
+        writer_actor_id, writer_property_id, writer_unit_id, _, writer_readings = committed_source(
+            migration_url,
+            ((date(2026, 3, 1), "0"), (date(2026, 3, 3), "10")),
+        )
+        replacement_meter_id, _ = replace_failed_meter(
+            migration_url,
+            actor_id=actor_id,
+            unit_id=unit_id,
+            failed_meter_id=failed_meter_id,
+            failure_date=date(2026, 2, 1),
+            replacement_date=date(2026, 2, 2),
+        )
+        with psycopg.connect(migration_url) as connection:
+            case_id = uuid.uuid4()
+            connection.execute(
+                "SELECT app.open_broken_meter_estimation_case("
+                "%s,%s,%s,%s,%s,%s,%s,clock_timestamp(),%s,'utility.estimate')",
+                (
+                    property_id,
+                    uuid.uuid4(),
+                    "b" * 64,
+                    case_id,
+                    failed_meter_id,
+                    replacement_meter_id,
+                    "Published validation-gate regression",
+                    actor_id,
+                ),
+            )
+            direct_finalize_estimate(
+                connection,
+                actor_id=actor_id,
+                property_id=property_id,
+                case_id=case_id,
+            )
+            connection.execute(
+                """
+                CREATE OR REPLACE FUNCTION app.utility_consumption_effective_quantity(
+                    p_period_id uuid
+                ) RETURNS numeric(38,6)
+                LANGUAGE plpgsql SET search_path=pg_catalog AS $pause$
+                DECLARE v_quantity numeric(38,6);
+                BEGIN
+                    PERFORM pg_catalog.pg_advisory_xact_lock(10420033);
+                    SELECT COALESCE(
+                        (
+                            SELECT impact.corrected_consumption_quantity
+                            FROM app.utility_reading_correction_impacts AS impact
+                            JOIN app.utility_reading_corrections AS correction
+                              ON correction.id=impact.reading_correction_id
+                            WHERE impact.consumption_period_id=p_period_id
+                            ORDER BY correction.occurred_at DESC,correction.id DESC
+                            LIMIT 1
+                        ),
+                        period.consumption_quantity
+                    ) INTO v_quantity
+                    FROM app.utility_consumption_periods AS period
+                    WHERE period.id=p_period_id;
+                    RETURN v_quantity;
+                END $pause$;
+                """
+            )
+            connection.commit()
+
+        migration_environment = os.environ.copy()
+        migration_environment[MIGRATION_URL_ENV] = migration_url
+        migration: subprocess.Popen[str] | None = None
+        with psycopg.connect(migration_url) as validation_blocker:
+            validation_blocker.execute("SELECT pg_advisory_xact_lock(10420033)")
+            try:
+                migration = subprocess.Popen(
+                    ["alembic", "upgrade", "head"],
+                    cwd=BACKEND_ROOT,
+                    env=migration_environment,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                )
+                deadline = time.monotonic() + 15
+                validation_wait_observed = False
+                while time.monotonic() < deadline:
+                    with psycopg.connect(migration_url) as probe:
+                        state_row = probe.execute(
+                            """
+                            SELECT
+                                EXISTS (
+                                    SELECT 1
+                                    FROM pg_locks AS lock
+                                    JOIN pg_class AS relation ON relation.oid=lock.relation
+                                    JOIN pg_namespace AS namespace
+                                      ON namespace.oid=relation.relnamespace
+                                    WHERE namespace.nspname='app'
+                                      AND relation.relname='utility_service_commands'
+                                      AND lock.mode='AccessExclusiveLock'
+                                      AND lock.granted
+                                ),
+                                EXISTS (
+                                    SELECT 1 FROM pg_locks AS lock
+                                    WHERE lock.locktype='advisory' AND NOT lock.granted
+                                )
+                            """
+                        ).fetchone()
+                    assert state_row is not None
+                    validation_wait_observed = state_row == (True, True)
+                    if validation_wait_observed:
+                        break
+                    if migration.poll() is not None:
+                        break
+                    time.sleep(0.05)
+                assert validation_wait_observed
+
+                def finalize_during_validation() -> uuid.UUID:
+                    with psycopg.connect(migration_url) as writer:
+                        period_id = direct_finalize_actual(
+                            writer,
+                            actor_id=writer_actor_id,
+                            property_id=writer_property_id,
+                            unit_id=writer_unit_id,
+                            start_reading_id=writer_readings[0],
+                            end_reading_id=writer_readings[1],
+                        )
+                    return period_id
+
+                with ThreadPoolExecutor(max_workers=1) as pool:
+                    writer_future = pool.submit(finalize_during_validation)
+                    deadline = time.monotonic() + 15
+                    writer_gate_wait_observed = False
+                    while time.monotonic() < deadline:
+                        with psycopg.connect(migration_url) as probe:
+                            wait_row = probe.execute(
+                                """
+                                SELECT EXISTS (
+                                    SELECT 1
+                                    FROM pg_locks AS lock
+                                    JOIN pg_class AS relation ON relation.oid=lock.relation
+                                    JOIN pg_namespace AS namespace
+                                      ON namespace.oid=relation.relnamespace
+                                    WHERE namespace.nspname='app'
+                                      AND relation.relname='utility_service_commands'
+                                      AND lock.mode='AccessShareLock'
+                                      AND NOT lock.granted
+                                )
+                                """
+                            ).fetchone()
+                        assert wait_row is not None
+                        writer_gate_wait_observed = bool(wait_row[0])
+                        if writer_gate_wait_observed:
+                            break
+                        if writer_future.done():
+                            break
+                        time.sleep(0.05)
+                    assert writer_gate_wait_observed
+                    validation_blocker.commit()
+                    stdout, stderr = migration.communicate(timeout=60)
+                    assert migration.returncode == 0, f"{stdout}\n{stderr}"
+                    writer_period_id = writer_future.result(timeout=30)
+            finally:
+                validation_blocker.rollback()
+                if migration is not None and migration.poll() is None:
+                    migration.terminate()
+                    migration.communicate(timeout=10)
+
+        with psycopg.connect(migration_url) as connection:
+            assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
+                "20260829_33",
+            )
+            assert connection.execute(
+                "SELECT consumption_quantity FROM app.utility_consumption_periods WHERE id=%s",
+                (writer_period_id,),
+            ).fetchone() == (Decimal("10.000000"),)
+
+
+def test_v1_042_upgrade_serializes_unrepresentable_effective_basis_correction() -> None:
+    """An in-flight published correction cannot pass behind upgrade validation."""
+    from property_rental.utility import (
+        OpenBrokenMeterCaseCommand,
+        open_broken_meter_request_digest,
+    )
+    from test_utility_consumption_migration import (
+        committed_source,
+        direct_finalize_actual,
+        direct_finalize_estimate,
+        replace_failed_meter,
+    )
+
+    with _temporary_migration_database("prm_v1_042_effective_basis_upgrade") as migration_url:
+        published = _run_alembic("upgrade", "20260828_32")
+        assert published.returncode == 0, published.stderr
+        actor_id, property_id, unit_id, failed_meter_id, readings = committed_source(
+            migration_url,
+            ((date(2026, 1, 1), "0"), (date(2026, 1, 3), "10")),
+        )
+        with psycopg.connect(migration_url) as connection:
+            actual_period_id = direct_finalize_actual(
+                connection,
+                actor_id=actor_id,
+                property_id=property_id,
+                unit_id=unit_id,
+                start_reading_id=readings[0],
+                end_reading_id=readings[1],
+            )
+            connection.commit()
+        replacement_meter_id, _ = replace_failed_meter(
+            migration_url,
+            actor_id=actor_id,
+            unit_id=unit_id,
+            failed_meter_id=failed_meter_id,
+            failure_date=date(2026, 2, 1),
+            replacement_date=date(2026, 2, 2),
+        )
+        with psycopg.connect(migration_url) as correction_writer:
+            opened_at_row = correction_writer.execute("SELECT clock_timestamp()").fetchone()
+            assert opened_at_row is not None
+            assert isinstance(opened_at_row[0], datetime)
+            legacy_command = OpenBrokenMeterCaseCommand(
+                idempotency_key=uuid.uuid4(),
+                estimation_case_id=uuid.uuid4(),
+                failed_meter_id=failed_meter_id,
+                replacement_meter_id=replacement_meter_id,
+                opened_reason="Published effective-basis upgrade regression",
+                opened_at=opened_at_row[0],
+            )
+            assert (
+                correction_writer.execute(
+                    "SELECT app.open_broken_meter_estimation_case(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        property_id,
+                        legacy_command.idempotency_key,
+                        open_broken_meter_request_digest(legacy_command),
+                        legacy_command.estimation_case_id,
+                        legacy_command.failed_meter_id,
+                        legacy_command.replacement_meter_id,
+                        legacy_command.opened_reason,
+                        legacy_command.opened_at,
+                        actor_id,
+                        legacy_command.authorization_reference,
+                    ),
+                ).fetchone()
+                is not None
+            )
+            _, estimated_period_id = direct_finalize_estimate(
+                correction_writer,
+                actor_id=actor_id,
+                property_id=property_id,
+                case_id=legacy_command.estimation_case_id,
+            )
+            correction_writer.commit()
+            correction_writer.execute(
+                "INSERT INTO app.utility_reading_corrections("
+                "id,reading_id,previous_value,corrected_value,reason,actor_id,"
+                "authorization_reference) VALUES ("
+                "%s,%s,10,20000000000,'Published basis correction',%s,%s)",
+                (uuid.uuid4(), readings[1], actor_id, "utility.reading.correct"),
+            )
+            assert correction_writer.execute(
+                "SELECT app.utility_consumption_effective_quantity(%s),"
+                "app.utility_consumption_effective_quantity(%s)",
+                (actual_period_id, estimated_period_id),
+            ).fetchone() == (Decimal("20000000000.000000"), Decimal("10000000000.000000"))
+            migration_environment = os.environ.copy()
+            migration_environment[MIGRATION_URL_ENV] = migration_url
+            migration: subprocess.Popen[str] | None = None
+            try:
+                migration = subprocess.Popen(
+                    ["alembic", "upgrade", "head"],
+                    cwd=BACKEND_ROOT,
+                    env=migration_environment,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                )
+                deadline = time.monotonic() + 15
+                correction_lock_wait_observed = False
+                while time.monotonic() < deadline:
+                    with psycopg.connect(migration_url) as probe:
+                        lock_row = probe.execute(
+                            """
+                            SELECT EXISTS (
+                                SELECT 1
+                                FROM pg_locks AS lock
+                                JOIN pg_class AS relation ON relation.oid=lock.relation
+                                JOIN pg_namespace AS namespace
+                                  ON namespace.oid=relation.relnamespace
+                                WHERE namespace.nspname='app'
+                                  AND relation.relname='utility_reading_corrections'
+                                  AND lock.mode='AccessExclusiveLock'
+                                  AND NOT lock.granted
+                            )
+                            """
+                        ).fetchone()
+                    assert lock_row is not None
+                    correction_lock_wait_observed = bool(lock_row[0])
+                    if correction_lock_wait_observed:
+                        break
+                    if migration.poll() is not None:
+                        break
+                    time.sleep(0.05)
+                assert correction_lock_wait_observed
+                correction_writer.commit()
+                stdout, stderr = migration.communicate(timeout=60)
+                assert migration.returncode != 0, stdout
+                assert "effective basis exceeds corrected canonical precision" in stderr
+            finally:
+                correction_writer.rollback()
+                if migration is not None and migration.poll() is None:
+                    migration.terminate()
+                    migration.communicate(timeout=10)
+
+        with psycopg.connect(migration_url) as connection:
+            assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
                 "20260828_32",
+            )
+            assert connection.execute(
+                "SELECT to_regprocedure("
+                "'app.open_broken_meter_estimation_case(uuid,uuid,text,uuid,uuid,uuid,text,"
+                "timestamp with time zone,uuid,text)'),"
+                "to_regprocedure("
+                "'app.open_broken_meter_estimation_case(uuid,uuid,text,uuid,uuid,uuid,date,date,"
+                "text,timestamp with time zone,uuid,text)')"
+            ).fetchone() == (
+                "app.open_broken_meter_estimation_case(uuid,uuid,text,uuid,uuid,uuid,text,"
+                "timestamp with time zone,uuid,text)",
+                None,
             )
