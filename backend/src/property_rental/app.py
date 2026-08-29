@@ -96,6 +96,13 @@ from property_rental.unit_api import (
     UnitVersionConflict,
     create_unit_router,
 )
+from property_rental.utility_api import (
+    PostgresUtilityResourceFlow,
+    UnavailableUtilityResourceFlow,
+    UtilityResourceFlow,
+    UtilityResourceVersionConflict,
+    create_utility_router,
+)
 
 REQUEST_ID_HEADER: Final = "X-Request-ID"
 REQUEST_ID_PATTERN: Final = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
@@ -118,6 +125,11 @@ DEPOSIT_API_PATH_PATTERN: Final = re.compile(
     r"deposit-dispositions(?:/|$)|pet-departures(?:/|$)|"
     r"pet-deposit-refund-reviews(?:/|$)|reservations/[^/]+/(?:deposits|security-deposit-dispositions)$|"
     r"leases/[^/]+/(?:deposits|pet-deposits|pet-departures)(?:/|$))"
+)
+UTILITY_API_PATH_PATTERN: Final = re.compile(
+    r"^/api/v1/(?:units/[^/]+/meters(?:/|$)|meters(?:/|$)|"
+    r"utility-readings(?:/|$)|properties/[^/]+/utility-readings:batch$|"
+    r"utility-billing/preview$)"
 )
 DATABASE_TIMEOUT_SECONDS: Final = 2
 ERROR_STATUS_DETAILS: Final = {
@@ -238,6 +250,7 @@ def create_app(
     reservation_resource_flow: ReservationResourceFlow | None = None,
     lease_resource_flow: LeaseResourceFlow | None = None,
     deposit_resource_flow: DepositResourceFlow | None = None,
+    utility_resource_flow: UtilityResourceFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -372,6 +385,17 @@ def create_app(
             current_version=exc.current_version,
         )
 
+    @app.exception_handler(UtilityResourceVersionConflict)
+    async def utility_resource_version_conflict(
+        request: Request,
+        exc: UtilityResourceVersionConflict,
+    ) -> JSONResponse:
+        return error_response(
+            status.HTTP_412_PRECONDITION_FAILED,
+            request.state.request_id,
+            current_version=exc.current_version,
+        )
+
     @app.exception_handler(CustomerVersionConflict)
     async def customer_version_conflict(
         request: Request,
@@ -444,6 +468,7 @@ def create_app(
             or LEASE_API_PATH_PATTERN.match(request.url.path)
             or RESERVATION_API_PATH_PATTERN.match(request.url.path)
             or DEPOSIT_API_PATH_PATTERN.match(request.url.path)
+            or UTILITY_API_PATH_PATTERN.match(request.url.path)
         ):
             response.headers["Cache-Control"] = "private, no-store"
             response.headers["Vary"] = "Cookie"
@@ -587,6 +612,28 @@ def create_app(
                     )
                     if resolved_settings.database_url is not None
                     else UnavailableDepositResourceFlow()
+                ),
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_utility_router(
+            actor_resolver,
+            utility_resource_flow
+            or cast(
+                UtilityResourceFlow,
+                (
+                    PostgresUtilityResourceFlow(
+                        resolved_settings.database_url.get_secret_value(),
+                        (
+                            resolved_settings.financial_database_url.get_secret_value()
+                            if resolved_settings.financial_database_url is not None
+                            else None
+                        ),
+                    )
+                    if resolved_settings.database_url is not None
+                    else UnavailableUtilityResourceFlow()
                 ),
             ),
             resolved_settings,

@@ -46,6 +46,8 @@ import { LeaseManagement } from "./LeaseManagement";
 import { LeaseApi, leaseApi as leaseClient } from "./leaseClient";
 import { DepositManagement } from "./DepositManagement";
 import { DepositApi, depositApi as depositClient } from "./depositClient";
+import { UtilityManagement } from "./UtilityManagement";
+import { UtilityApi, utilityApi as utilityClient } from "./utilityClient";
 
 export interface AppProps {
   environment: string;
@@ -60,6 +62,7 @@ export interface AppProps {
   reservationApi?: ReservationApi;
   leaseApi?: LeaseApi;
   depositApi?: DepositApi;
+  utilityApi?: UtilityApi;
   now?: () => number;
 }
 
@@ -509,6 +512,7 @@ export function App({
   reservationApi = reservationClient,
   leaseApi = leaseClient,
   depositApi = depositClient,
+  utilityApi = utilityClient,
   now = Date.now,
 }: AppProps) {
   const client = useMemo<AuthenticationApi>(
@@ -1693,6 +1697,10 @@ export function App({
             </section>
             <ConfigurationManagement
               api={effectiveConfigApi}
+              propertyId={propertyConfiguration?.property_id ?? ""}
+            />
+            <UtilityManagement
+              api={utilityApi}
               propertyId={propertyConfiguration?.property_id ?? ""}
             />
             <UnitManagement api={unitApi} />

@@ -10091,6 +10091,166 @@
       "test_path": "backend/tests/test_utility_consumption_migration.py",
       "status": "implemented",
       "notes": "Broken-Meter authorization must follow the finalization and latest correction evidence of every selected basis period, preventing financial history from claiming a calculation existed before its sources."
+    },
+    {
+      "test_id": "test_meter_routes_are_property_scoped_paginated_and_no_store",
+      "upstream_ids": ["API-004", "API-008", "API-019", "API-020", "API-044", "API-045", "SEC-019", "SEC-038", "SEC-040", "TEST-046", "TEST-047"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_api.py",
+      "status": "implemented",
+      "notes": "Meter discovery is Property-authorized, bounded by a deterministic cursor, rejects unsupported query parameters, emits safe envelopes, and is marked private no-store."
+    },
+    {
+      "test_id": "test_install_requires_capability_csrf_idempotency_and_boundary_evidence",
+      "upstream_ids": ["API-015", "API-016", "API-044", "API-046", "BR-UTIL-001", "BR-UTIL-002", "BR-UTIL-003", "BR-UTIL-004", "BR-UTIL-005", "BR-UTIL-009", "BR-UTIL-010", "SEC-028", "SEC-035", "TEST-046", "TEST-047"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_utility_api.py",
+      "status": "implemented",
+      "notes": "Installation requires the exact Meter-management capability, browser CSRF evidence, a UUID idempotency key, supported utility dimensions, and an initial Reading on the installation boundary."
+    },
+    {
+      "test_id": "test_reading_concurrency_and_correction_history_use_safe_envelopes",
+      "upstream_ids": ["API-015", "API-016", "API-045", "API-046", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-011", "BR-UTIL-012", "BR-UTIL-013", "BR-UTIL-021", "BR-UTIL-032", "SEC-028", "TEST-047", "TEST-048", "TEST-052"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_api.py",
+      "status": "implemented",
+      "notes": "Reading writes fail with an authoritative current version on stale evidence; correction responses preserve original and corrected values, authorization evidence, and affected-calculation references."
+    },
+    {
+      "test_id": "test_batch_partial_has_item_results_and_atomic_all_has_no_success_envelope",
+      "upstream_ids": ["API-015", "API-016", "API-046", "SEC-028", "SEC-040", "TEST-047", "TEST-052"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_api.py",
+      "status": "implemented",
+      "notes": "PARTIAL batch entry returns ordered per-item outcomes while ATOMIC_ALL failure returns only a safe error envelope and never claims partial success."
+    },
+    {
+      "test_id": "test_preview_is_non_persisted_pending_and_requires_calculate_capability",
+      "upstream_ids": ["API-048", "API-049", "BR-UTIL-018", "BR-UTIL-019", "BR-UTIL-020", "BR-UTIL-021", "BR-UTIL-022", "BR-UTIL-023", "BR-UTIL-024", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-028", "BR-UTIL-029", "BR-UTIL-030", "BR-UTIL-031", "BR-UTIL-032", "SEC-019", "TEST-049", "TEST-050", "TEST-051", "TEST-052"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_api.py",
+      "status": "implemented",
+      "notes": "Preview requires scoped calculation authority, returns the server's complete authoritative calculation snapshot, explicitly identifies the pending future-basis state, and marks the result non-persisted and non-issued."
+    },
+    {
+      "test_id": "test_unsupported_utility_and_unbounded_batch_are_rejected",
+      "upstream_ids": ["API-044", "API-045", "API-046", "SEC-035", "SEC-040", "TEST-046", "TEST-047"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_api.py",
+      "status": "implemented",
+      "notes": "The frozen electricity/water vocabulary is closed and batch input is rejected above the 100-item contract bound."
+    },
+    {
+      "test_id": "test_idempotency_digest_binds_action_and_target_resource",
+      "upstream_ids": ["API-015", "API-016", "API-044", "API-045", "API-046", "SEC-028"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_api.py",
+      "status": "implemented",
+      "notes": "The durable request digest binds the action, path resource identity, and normalized body so a UUID cannot replay a same-shaped command against another Meter, Reading, or Unit."
+    },
+    {
+      "test_id": "test_v1_043_is_forward_only_head_and_runtime_has_only_command_execute",
+      "upstream_ids": ["API-044", "API-045", "API-046", "SEC-019", "SEC-028", "TEST-046", "TEST-047"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_utility_api_migration.py",
+      "status": "implemented",
+      "notes": "Revision 34 is the forward-only head and grants runtime only the specific utility command functions, without direct Meter, Reading, correction, or command-journal writes."
+    },
+    {
+      "test_id": "test_runtime_install_reading_replay_and_version_conflict",
+      "upstream_ids": ["API-015", "API-016", "API-044", "API-045", "API-046", "BR-UTIL-001", "BR-UTIL-002", "BR-UTIL-003", "BR-UTIL-004", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-013", "SEC-028", "TEST-046", "TEST-047"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_utility_api_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL commands atomically install a Meter and boundary Reading, replay identical UUID commands exactly, reject digest reuse, and serialize Reading version checks."
+    },
+    {
+      "test_id": "test_runtime_replacement_and_correction_preserve_original_history",
+      "upstream_ids": ["API-044", "API-045", "API-046", "BR-UTIL-005", "BR-UTIL-006", "BR-UTIL-007", "BR-UTIL-008", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-011", "BR-UTIL-012", "BR-UTIL-013", "BR-UTIL-021", "BR-UTIL-032", "TEST-046", "TEST-047", "TEST-048", "TEST-052"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_utility_api_migration.py",
+      "status": "implemented",
+      "notes": "Replacement retains the failed physical Meter and exact boundary readings, while corrections append authorization history and leave original Reading evidence unchanged."
+    },
+    {
+      "test_id": "test_runtime_batch_partial_and_atomic_all_transactions",
+      "upstream_ids": ["API-015", "API-016", "API-046", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-013", "SEC-028", "TEST-047", "TEST-052"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_utility_api_migration.py",
+      "status": "implemented",
+      "notes": "Disposable PostgreSQL proves per-item PARTIAL commits and complete ATOMIC_ALL rollback, with independent UUID replay identities and no hidden successful first item after a later failure."
+    },
+    {
+      "test_id": "TEST-FE-213",
+      "upstream_ids": ["API-019", "API-020", "API-044", "API-045", "UI-056", "UI-057", "SEC-040", "TEST-046", "TEST-047"],
+      "test_level": "UI",
+      "test_path": "frontend/src/utilityClient.test.tsx",
+      "status": "implemented",
+      "notes": "The utility client preserves opaque server pagination cursors without interpreting or recalculating them."
+    },
+    {
+      "test_id": "TEST-FE-214",
+      "upstream_ids": ["API-015", "API-016", "API-044", "API-045", "API-046", "UI-058", "UI-059", "SEC-028"],
+      "test_level": "UI",
+      "test_path": "frontend/src/utilityClient.test.tsx",
+      "status": "implemented",
+      "notes": "Browser utility mutations send CSRF and UUID idempotency evidence while leaving all consumption and financial calculation to the server."
+    },
+    {
+      "test_id": "TEST-FE-215",
+      "upstream_ids": ["API-048", "API-049", "UI-061", "BR-UTIL-023", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-028", "TEST-050", "TEST-051"],
+      "test_level": "UI",
+      "test_path": "frontend/src/utilityClient.test.tsx",
+      "status": "implemented",
+      "notes": "The client preserves the authoritative pending broken-Meter snapshot and nullable basis and amount fields instead of inventing fallback values."
+    },
+    {
+      "test_id": "TEST-FE-216",
+      "upstream_ids": ["API-004", "API-008", "API-016", "UI-062", "SEC-038"],
+      "test_level": "UI",
+      "test_path": "frontend/src/utilityClient.test.tsx",
+      "status": "implemented",
+      "notes": "Conflict and malformed server envelopes are reduced to safe bounded UI errors without disclosing raw response content."
+    },
+    {
+      "test_id": "TEST-FE-217",
+      "upstream_ids": ["API-044", "API-045", "API-047", "UI-056", "UI-057", "UI-060", "BR-UTIL-001", "BR-UTIL-002", "BR-UTIL-005", "BR-UTIL-006", "BR-UTIL-007", "BR-UTIL-008", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-011", "BR-UTIL-012", "BR-UTIL-013", "BR-UTIL-014", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-017", "TEST-046", "TEST-047", "TEST-048", "TEST-049"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityManagement.test.tsx",
+      "status": "implemented",
+      "notes": "One Utilities workflow renders physical Meter history, original and corrected Reading evidence, and existing effective Rate history from server responses."
+    },
+    {
+      "test_id": "TEST-FE-218",
+      "upstream_ids": ["API-046", "UI-059", "UI-062", "SEC-040", "TEST-047", "TEST-052"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Bulk Reading entry is visibly bounded, submits the selected ATOMIC_ALL or PARTIAL mode, and announces each authoritative server row outcome."
+    },
+    {
+      "test_id": "TEST-FE-219",
+      "upstream_ids": ["API-048", "API-049", "UI-061", "UI-062", "BR-UTIL-018", "BR-UTIL-019", "BR-UTIL-020", "BR-UTIL-021", "BR-UTIL-022", "BR-UTIL-023", "BR-UTIL-024", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-028", "BR-UTIL-029", "BR-UTIL-030", "BR-UTIL-031", "BR-UTIL-032", "TEST-049", "TEST-050", "TEST-051", "TEST-052"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Preview renders the explicit future-actual-basis pending state and server basis metadata accessibly, with no client-side quantity, rate, or money arithmetic."
+    },
+    {
+      "test_id": "TEST-FE-220",
+      "upstream_ids": ["API-044", "API-045", "API-047", "UI-056", "UI-057", "UI-058", "UI-060", "UI-062", "TEST-046", "TEST-047", "TEST-048", "TEST-049"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Install, replacement, single Reading, correction, bulk entry, preview, and Rate-history controls are labeled and expose accessible loading, empty, success, and error announcements."
+    },
+    {
+      "test_id": "TEST-FE-221",
+      "upstream_ids": ["UI-056", "UI-057", "UI-058", "UI-059", "UI-060", "UI-061", "UI-062", "SEC-019"],
+      "test_level": "UI",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "The complete Utilities workflow is mounted in the authenticated Property workspace and is absent before an authenticated session exists."
     }
   ]
 }

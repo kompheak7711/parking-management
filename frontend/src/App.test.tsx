@@ -474,6 +474,33 @@ describe("local sign-in", () => {
     );
   });
 
+  it("TEST-FE-221 mounts the Utilities workflow only in the authenticated workspace", async () => {
+    const authenticate = vi.fn().mockResolvedValue({
+      phase: "authenticated",
+      session,
+    });
+    render(
+      <App
+        environment="development"
+        buildId="utility-integration"
+        authenticate={authenticate}
+      />,
+    );
+    expect(
+      screen.queryByRole("heading", { name: "Utilities" }),
+    ).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Username"), {
+      target: { value: "utility-user" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "protected-password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+    expect(
+      await screen.findByRole("heading", { name: "Utilities" }),
+    ).toBeInTheDocument();
+  });
+
   it("TEST-FE-005 announces one generic, associated authentication failure", async () => {
     const authenticate = vi
       .fn()

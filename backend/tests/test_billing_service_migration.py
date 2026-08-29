@@ -1422,7 +1422,7 @@ def test_v1_040_is_forward_only_and_is_the_migration_head(
     connection: Connection[tuple[object, ...]],
 ) -> None:
     assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-        "20260829_33",
+        "20260829_34",
     )
     with pytest.raises(RuntimeError, match="forward-only"):
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "-1")
