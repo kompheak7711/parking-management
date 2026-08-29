@@ -30,8 +30,9 @@
   GitHub Actions run `33237639691` passed all four jobs.
 - Corrective implementation: commit `dde389b724a2bfddb52a945958e34064b14b2e1f`;
   exact-SHA GitHub Actions run `33245835436` passed all four jobs.
-- Status: corrective implementation published and CI-green; separate corrective closure
-  commit pending.
+- Corrective closure: commit `1a7514a13d65fcffdc876e61f6d0e2f82f2f3983`;
+  exact-SHA GitHub Actions run `33246001132` passed all four jobs.
+- Status: complete, published, independently reviewed, and corrective closure-valid.
 - V1-043: held at `approved_ready`; no activation or implementation occurred.
 - Corrective reconciliation: first reconciliation commit
   `d42a7497549152103ab58b0fed682ade216fe230` failed exact-SHA GitHub Actions run
@@ -64,15 +65,13 @@
   database-environment skips, frontend 213 passed, disposable PostgreSQL 417 passed, and
   automation routing 186 passed. Evidence:
   `/private/tmp/property-rental-v1-042-round-29-correction-verification.json`.
-- Exact next action: create and push the separate corrective closure commit, require
-  successful exact-SHA GitHub Actions, reconcile compact state, and leave V1-043 held;
-  do not activate the successor automatically.
+- Exact next action: keep the Property Rental supervisor disabled and V1-043 held for a
+  separate direct-takeover turn; do not activate the successor automatically.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: original V1-042 implementation and closure plus the
-  corrective implementation are exact-SHA CI-green; corrective closure is pending and
-  V1-043 remains the held approved successor.
+- Automation publication state: original and corrective V1-042 implementation and
+  closure commits are exact-SHA CI-green; V1-043 remains the held approved successor.
 - Automation exact next action: keep the supervisor disabled and V1-043 held; do not
   restore autonomous execution or activate the successor automatically.
 
