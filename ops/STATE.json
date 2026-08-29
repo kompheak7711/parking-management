@@ -697,7 +697,7 @@
     "tranche_id": "V1-042"
   },
   "idle_reason": null,
-  "next_action": "Create and push the separate V1-042 implementation commit and require successful GitHub Actions for its exact SHA before closure",
+  "next_action": "Create and push only the V1-042 closure commit, require successful exact-SHA GitHub Actions, then reconcile closure-valid compact state while keeping the supervisor disabled and V1-043 held",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -738,13 +738,17 @@
   },
   "phase": "Utilities",
   "publication": {
-    "ci_completed": false,
-    "commit_completed": false,
-    "implementation_commit": null,
+    "ci_completed": true,
+    "ci_conclusion": "success",
+    "ci_run_attempt": 1,
+    "ci_run_id": 33237449033,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33237449033",
+    "commit_completed": true,
+    "implementation_commit": "5938d5d9142b3c4be6fcda1566736efd7a50396d",
     "closure_commit": null,
-    "push_completed": false,
+    "push_completed": true,
     "sha_reconciled": false,
-    "status": "active",
+    "status": "implementation_published_closure_pending",
     "tranche_id": "V1-042",
     "predecessor_closure_commit": "d6c05690d06ea06a9ce904c2ed7d976bf816fb6c",
     "predecessor_reconciliation_commit": "f8fe2547a6996c538fef0c3218cc52ac31c72979"
@@ -1287,7 +1291,7 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "active",
+  "status": "implementation_published_closure_pending",
   "task": "Implement the approved bounded candidate: Utility consumption and broken-meter estimation services",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
@@ -1442,10 +1446,11 @@
     "PASS: the twentieth-review finding was corrected by isolating all pure Utility calculations in an explicit precision, half-up-rounding, and trap policy independent of ambient process Decimal state; hostile-context regression 5/5",
     "FAIL: the first twentieth-review corrected complete-profile attempt stopped at the backend traceability guard because the renamed hostile-context regression retained its old test ID in ops/traceability.json; corrected metadata only and restarted from gate one",
     "PASS: twentieth-review corrected complete deterministic verification profile 15/15; backend 646 passed with 400 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 412 passed; automation routing 185 passed; /private/tmp/property-rental-v1-042-twentieth-review-correction-verification.json",
-    "PASS: twenty-first fresh external Codex exact-diff review found no actionable correctness defects and made no edits; focused Utility tests, Ruff, and mypy independently passed; session 01a04c13-4135-7c80-980b-0583b8d5e17c; /private/tmp/property-rental-v1-042-independent-review-pass-21.txt"
+    "PASS: twenty-first fresh external Codex exact-diff review found no actionable correctness defects and made no edits; focused Utility tests, Ruff, and mypy independently passed; session 01a04c13-4135-7c80-980b-0583b8d5e17c; /private/tmp/property-rental-v1-042-independent-review-pass-21.txt",
+    "PASS: V1-042 implementation commit 5938d5d9142b3c4be6fcda1566736efd7a50396d exact-SHA GitHub Actions run 33237449033; all four jobs"
   ],
   "tests_tranche_id": "V1-042",
-  "timestamp": "2026-08-29T05:59:30Z",
+  "timestamp": "2026-08-29T06:03:50Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

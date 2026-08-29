@@ -43,13 +43,18 @@
   database-environment skips, frontend 213 passed, disposable PostgreSQL 412 passed,
   and automation routing 185 passed. Evidence:
   `/private/tmp/property-rental-v1-042-twentieth-review-correction-verification.json`.
-- Exact next action: create and push the separate V1-042 implementation commit, then
-  require successful GitHub Actions for that exact SHA before creating closure metadata.
+- Status: implementation commit `5938d5d9142b3c4be6fcda1566736efd7a50396d`
+  is published and exact-SHA GitHub Actions run `33237449033` passed all four jobs;
+  the separate V1-042 closure commit and its own CI result remain pending.
+- Exact next action: create and push only the V1-042 closure commit, require successful
+  exact-SHA GitHub Actions, then reconcile closure-valid compact state while V1-043
+  remains held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-042 is active under direct Codex takeover;
-  V1-043 and later remain held.
-- Automation exact next action: keep the supervisor disabled and complete only V1-042.
+- Automation publication state: V1-042's implementation is published and exact-SHA
+  CI-green but its closure remains pending; V1-043 and later remain held.
+- Automation exact next action: keep the supervisor disabled and V1-043 held until
+  V1-042 completes closure publication and reconciliation.
 
 <!-- AUTOMATION_STATUS_END -->
