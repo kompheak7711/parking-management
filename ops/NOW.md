@@ -1,4 +1,4 @@
-# V1-044 Idempotent scheduled billing worker — closure pending
+# V1-044 Idempotent scheduled billing worker — complete
 
 - Candidate: `V1-044` — Idempotent scheduled rent, service, and utility billing
   worker.
@@ -31,23 +31,26 @@
   gates passed.
 - Implementation publication: GitHub Actions run `33341391640` passed all four jobs
   for exact SHA `4a6891a5eab3ab1a9d00189f65194a0fafc5294a`.
-- Status: V1-044 is functionally complete and the exact reviewed implementation is
-  published and exact-SHA CI-green; this ops-only closure and final reconciliation
-  remain pending.
+- Closure publication: ops-only commit
+  `986aa588d33d0497a0635fdb1342638dca5c7c19` changed only `ops/NOW.md` and
+  `ops/STATE.json`; GitHub Actions run `33341797580` passed for that exact SHA.
+- Status: V1-044 is complete, published, independently reviewed, exact-SHA
+  CI-green, and closure-valid; only this final ops-only reconciliation publication,
+  exact-SHA CI, synchronization proof, and manager verification remain.
 - V1-045: remains held at `approved_ready`; no activation, implementation, or
   dispatch has occurred.
 - Scheduler: no production deployment, scheduler activation, or scheduler weakening
   occurred.
 - Blockers: none.
-- Exact next action: publish this ops-only closure commit, require successful
-  exact-SHA GitHub Actions, then create only one bounded ops-only reconciliation
-  commit, require its exact-SHA CI, prove final source/local/upstream/live-remote
-  synchronization, and release only to REVIEW.
+- Exact next action: publish only this final ops-only reconciliation commit, require
+  its exact-SHA GitHub Actions, prove final source/local/upstream/live-remote
+  synchronization, and release only to REVIEW; property-manager alone may mark DONE
+  and activate V1-045.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: exact V1-044 target `4a6891a` is published and
-  exact-SHA CI-green; closure and final reconciliation are pending.
+- Automation publication state: exact V1-044 target `4a6891a` and closure
+  `986aa588` are published and exact-SHA CI-green; final reconciliation is pending.
 - Automation exact next action: keep V1-045 held and undispatched while V1-044
   closure, reconciliation CI, and final synchronization complete.
 

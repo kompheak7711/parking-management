@@ -1,11 +1,11 @@
 {
   "active_cycle": "v1-044-idempotent-scheduled-billing-worker",
   "approval": {
-    "status": "active",
+    "status": "complete",
     "basis": "owner standing direct-Codex authorization for sequential V1-042 through V1-060 execution",
         "implementation_started": true,
         "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": [
     "API-054-056",
@@ -693,7 +693,7 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "4a6891a5eab3ab1a9d00189f65194a0fafc5294a",
+  "commit": "986aa588d33d0497a0635fdb1342638dca5c7c19",
   "evidence_applicability": {
     "basis": "Exact V1-044 cumulative implementation 4a6891a5eab3ab1a9d00189f65194a0fafc5294a remains byte-for-byte identical to the independently reviewed PASS target; focused non-database billing 6/6, focused PostgreSQL 10/10 plus 2/2 semantic nodes, TEST-119 semantic 5/5, traceability 22/22, complete profile 15/15, and real PostgreSQL 444/444 passed before publication",
     "complete_profile_remains_applicable": true,
@@ -701,7 +701,7 @@
     "tranche_id": "V1-044"
   },
   "idle_reason": null,
-  "next_action": "Publish only this separate V1-044 closure commit, require successful exact-SHA GitHub Actions, then create one bounded ops-only reconciliation commit, require its exact-SHA CI, prove final source/local/upstream/live-remote synchronization, and release only to REVIEW; keep V1-045 held",
+  "next_action": "Publish only this final V1-044 ops-only reconciliation commit, require successful exact-SHA GitHub Actions, prove final source/local/upstream/live-remote synchronization, and release only to REVIEW for property-manager verification; keep V1-045 held",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -748,10 +748,14 @@
     "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33341391640",
     "commit_completed": true,
     "implementation_commit": "4a6891a5eab3ab1a9d00189f65194a0fafc5294a",
-    "closure_commit": null,
+    "closure_commit": "986aa588d33d0497a0635fdb1342638dca5c7c19",
+    "closure_ci_run_attempt": 1,
+    "closure_ci_run_id": 33341797580,
+    "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33341797580",
+    "closure_ci_conclusion": "success",
     "push_completed": true,
-    "sha_reconciled": false,
-    "status": "implementation_published_closure_pending",
+    "sha_reconciled": true,
+    "status": "published_and_exact_sha_ci_green_closure_valid",
     "tranche_id": "V1-044",
     "predecessor_closure_commit": "a225a379bea121c8bad9218bab0441f4b306d559",
     "predecessor_reconciliation_commit": "5ad5b8061113ab903c23b4a6d576acda8e477177"
@@ -1384,8 +1388,8 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "implementation_published_closure_pending",
-  "task": "Close the approved bounded candidate: Idempotent scheduled rent, service, and utility billing worker",
+  "status": "published",
+  "task": "Completed the approved bounded candidate: Idempotent scheduled rent, service, and utility billing worker",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -1602,10 +1606,11 @@
     "PASS: locked Python runtime and development dependency audits each resolved 50 packages with no known vulnerabilities; npm audit found zero vulnerabilities",
     "PASS: Alembic exactly one head 20260831_35 and 35 linear revisions; fresh install, supported upgrades, ordering, idempotency, transaction, singleton, retry, catch-up, and Property-local gates covered by PostgreSQL 444/444",
     "PASS: V1-044 fresh independent review card ddce0359-df7c-4013-bfcd-15bef2086a57 returned explicit zero-finding PASS at exact SHA 4a6891a5eab3ab1a9d00189f65194a0fafc5294a and made no edits",
-    "PASS: V1-044 implementation commit 4a6891a5eab3ab1a9d00189f65194a0fafc5294a exact-SHA GitHub Actions run 33341391640; all four jobs"
+    "PASS: V1-044 implementation commit 4a6891a5eab3ab1a9d00189f65194a0fafc5294a exact-SHA GitHub Actions run 33341391640; all four jobs",
+    "PASS: V1-044 ops-only closure commit 986aa588d33d0497a0635fdb1342638dca5c7c19 exact-SHA GitHub Actions run 33341797580; all four jobs"
   ],
   "tests_tranche_id": "V1-044",
-  "timestamp": "2026-08-30T23:21:49Z",
+  "timestamp": "2026-08-30T23:29:49Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
