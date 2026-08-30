@@ -1,13 +1,18 @@
 {
-  "active_cycle": "v1-042-utility-consumption-estimation-services",
+  "active_cycle": "v1-043-utility-meter-reading-preview-ui-api",
   "approval": {
-    "status": "complete",
+    "status": "active",
     "basis": "owner standing direct-Codex authorization for sequential V1-042 through V1-060 execution",
         "implementation_started": true,
         "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
-  "authorities": ["BR-UTIL-018-032", "API-048-049", "TEST-048-052", "TEST-122"],
+  "authorities": [
+    "API-044-049",
+    "UI-056-062",
+    "TEST-046-052",
+    "TEST-117-119"
+  ],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
     "branch": "implementation/foundation",
@@ -689,15 +694,15 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "1a7514a13d65fcffdc876e61f6d0e2f82f2f3983",
+  "commit": "a7a7b9d3d63da0d9c24c55c2a4a8e1fa94c81af9",
   "evidence_applicability": {
-    "basis": "The published V1-042 revision remains byte-for-byte unchanged; the deadlock-safe front-door correction and real revision-32 writer-during-validation regression pass the complete 15/15 profile with evidence at /private/tmp/property-rental-v1-042-round-29-correction-verification.json",
+    "basis": "Exact V1-043 cumulative implementation 4bf6c75d2709ddf8e989892364038795df7040b1 remains byte-for-byte identical to the independently reviewed PASS target; focused backend 30/30, frontend 64/64, complete profile 15/15, and real PostgreSQL 432/432 passed before publication",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-041 implementation, closure, and reconciliation are published, independently reviewed, and exact-SHA CI-green; their evidence is the predecessor baseline for V1-042",
-    "tranche_id": "V1-042"
+    "prior_review_disposition": "V1-042 implementation, corrective closure, and reconciliation are published and exact-SHA CI-green at baseline a7a7b9d3d63da0d9c24c55c2a4a8e1fa94c81af9; independent V1-043 review card 4a066693-93ef-4b77-8137-76b27dd7e084 passed exact SHA 4bf6c75 with zero findings",
+    "tranche_id": "V1-043"
   },
   "idle_reason": null,
-  "next_action": "Keep the Property Rental supervisor disabled and V1-043 held for a separate direct-takeover turn; do not activate the successor automatically",
+  "next_action": "Publish only the separate V1-043 closure commit, require successful exact-SHA GitHub Actions, then reconcile closure-valid state and promote V1-044 to equivalent ready without implementation or dispatch",
   "next_candidate": {
     "acceptance_profile": "api_ui",
     "authorities": [
@@ -740,50 +745,38 @@
     "ci_completed": true,
     "ci_conclusion": "success",
     "ci_run_attempt": 1,
-    "ci_run_id": 33237449033,
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33237449033",
+    "ci_run_id": 33323322907,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33323322907",
     "commit_completed": true,
-    "implementation_commit": "5938d5d9142b3c4be6fcda1566736efd7a50396d",
-    "closure_commit": "9d7f1a7a03eb75e81877caa61916ec618cf3ce31",
-    "closure_ci_run_attempt": 1,
-    "closure_ci_run_id": 33237639691,
-    "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33237639691",
+    "implementation_commit": "4bf6c75d2709ddf8e989892364038795df7040b1",
+    "closure_commit": null,
     "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published_and_exact_sha_ci_green_closure_valid",
-    "tranche_id": "V1-042",
-    "predecessor_closure_commit": "d6c05690d06ea06a9ce904c2ed7d976bf816fb6c",
-    "predecessor_reconciliation_commit": "f8fe2547a6996c538fef0c3218cc52ac31c72979",
-    "failed_reconciliation_commit": "d42a7497549152103ab58b0fed682ade216fe230",
-    "failed_reconciliation_ci_run_id": 33237892730,
-    "failed_reconciliation_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33237892730",
-    "failed_reconciliation_gate": "deterministic supervisor routing rejected V1-043 authority wildcard UI-UTIL-* because it matched no canonical requirement",
-    "reconciliation_correction": "replace only the invalid held-successor wildcard with exact canonical UI-056 through UI-062 and regression-test packet expansion",
-    "corrective_implementation_commit": "dde389b724a2bfddb52a945958e34064b14b2e1f",
-    "corrective_implementation_ci_run_attempt": 1,
-    "corrective_implementation_ci_run_id": 33245835436,
-    "corrective_implementation_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33245835436",
-    "corrective_implementation_ci_conclusion": "success",
-    "corrective_closure_commit": "1a7514a13d65fcffdc876e61f6d0e2f82f2f3983",
-    "corrective_closure_ci_run_attempt": 1,
-    "corrective_closure_ci_run_id": 33246001132,
-    "corrective_closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33246001132",
-    "corrective_closure_ci_conclusion": "success",
-    "corrective_sha_reconciled": true,
-    "corrective_publication_status": "published_and_exact_sha_ci_green_closure_valid"
+    "sha_reconciled": false,
+    "status": "implementation_published_closure_pending",
+    "tranche_id": "V1-043",
+    "predecessor_closure_commit": "1a7514a13d65fcffdc876e61f6d0e2f82f2f3983",
+    "predecessor_reconciliation_commit": "a7a7b9d3d63da0d9c24c55c2a4a8e1fa94c81af9"
+  },
+  "release_review": {
+    "card_id": "4a066693-93ef-4b77-8137-76b27dd7e084",
+    "exact_sha": "4bf6c75d2709ddf8e989892364038795df7040b1",
+    "direct_parent": "43091931e2b575c0860899bb539f43a0df8a0d80",
+    "findings": 0,
+    "reviewed_path_count": 22,
+    "reviewer_edits": false,
+    "status": "PASS"
   },
   "relevant_docs": [
-    "docs/001_DOMAIN_MODEL.md: Utility Consumption, generation-date Utility Rate, and confirmed broken-Meter basis hierarchy",
-    "docs/002_BUSINESS_RULES.md: BR-UTIL-018 through BR-UTIL-032",
-    "docs/003_PRODUCT_REQUIREMENTS.md: PR-UTIL-018 through PR-UTIL-032",
-    "docs/004_DATABASE_MODEL.md: DB-UTIL-006 through DB-UTIL-010 and DB-DER-006",
-    "docs/005_API_SPECIFICATION.md: API-048 and API-049 service contracts",
-    "docs/007_TESTING_STRATEGY.md: TEST-048 through TEST-052 and TEST-122",
-    "docs/008_SECURITY_MODEL.md: authorized Utility calculation and parameterized database access",
-    "docs/010_DECISION_LOG.md: DL-023 through DL-025"
+    "docs/001_DOMAIN_MODEL.md: Utility Meter, Reading, correction, replacement, Rate, and preview vocabulary",
+    "docs/002_BUSINESS_RULES.md: BR-UTIL-001 through BR-UTIL-032",
+    "docs/004_DATABASE_MODEL.md: DB-UTIL-003 and Utility command persistence",
+    "docs/005_API_SPECIFICATION.md: API-044 through API-049",
+    "docs/006_UI_SPECIFICATION.md: UI-056 through UI-062",
+    "docs/007_TESTING_STRATEGY.md: TEST-046 through TEST-052 and TEST-117 through TEST-119",
+    "docs/008_SECURITY_MODEL.md: authorized Property-scoped Utility workflows"
   ],
   "repair": {
-    "tranche_id": "V1-042",
+    "tranche_id": "V1-043",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -1384,15 +1377,15 @@
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 42,
-    "current_id": "V1-042",
+    "completed": 43,
+    "current_id": "V1-043",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Completed the approved bounded candidate: Utility consumption and broken-meter estimation services",
+  "status": "implementation_published_closure_pending",
+  "task": "Close the approved bounded candidate: Utility meter, reading, preview, and billing UI/API",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -1590,10 +1583,15 @@
     "PASS: twenty-ninth-review corrected complete deterministic verification profile 15/15; backend 654 passed with 405 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 417 passed; automation routing 186 passed; /private/tmp/property-rental-v1-042-round-29-correction-verification.json",
     "PASS: thirtieth fresh external Codex exact-diff review found no material findings and made no edits; session 01a04cd1-0d5d-77e0-b7da-2471e67d5548; /private/tmp/property-rental-v1-042-independent-review-30.txt",
     "PASS: corrective V1-042 implementation commit dde389b724a2bfddb52a945958e34064b14b2e1f exact-SHA GitHub Actions run 33245835436; all four jobs",
-    "PASS: corrective V1-042 closure commit 1a7514a13d65fcffdc876e61f6d0e2f82f2f3983 exact-SHA GitHub Actions run 33246001132; all four jobs"
+    "PASS: corrective V1-042 closure commit 1a7514a13d65fcffdc876e61f6d0e2f82f2f3983 exact-SHA GitHub Actions run 33246001132; all four jobs",
+    "PASS: V1-043 exact 9-commit ancestry from a7a7b9d3d63da0d9c24c55c2a4a8e1fa94c81af9 to 4bf6c75d2709ddf8e989892364038795df7040b1 and reviewed 22-path scope",
+    "PASS: V1-043 focused backend 30/30 and frontend 64/64",
+    "PASS: V1-043 complete deterministic verification profile 15/15 with real PostgreSQL 432/432, zero failures, zero skips; /tmp/v1-043-release-verification.json",
+    "PASS: V1-043 fresh independent review card 4a066693-93ef-4b77-8137-76b27dd7e084 found zero findings at exact SHA 4bf6c75d2709ddf8e989892364038795df7040b1 and made no edits",
+    "PASS: V1-043 implementation commit 4bf6c75d2709ddf8e989892364038795df7040b1 exact-SHA GitHub Actions run 33323322907; all four jobs"
   ],
-  "tests_tranche_id": "V1-042",
-  "timestamp": "2026-08-29T09:43:00Z",
+  "tests_tranche_id": "V1-043",
+  "timestamp": "2026-08-30T16:49:23Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -1620,22 +1618,31 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
-    "backend/migrations/versions/20260828_32_utility_consumption_services.py",
-    "backend/migrations/versions/20260829_33_v1_042_utility_corrections.py",
-    "backend/src/property_rental/utility.py",
-    "backend/tests/test_utility.py",
-    "backend/tests/test_utility_consumption_migration.py",
+    "backend/migrations/versions/20260829_34_v1_043_utility_api.py",
+    "backend/src/property_rental/app.py",
+    "backend/src/property_rental/utility_api.py",
+    "backend/tests/test_utility_api.py",
+    "backend/tests/test_utility_api_migration.py",
     "backend/tests/test_billing_service_migration.py",
+    "backend/tests/test_deployment_scaffolding.py",
+    "backend/tests/test_initial_owner_bootstrap_cli.py",
     "backend/tests/test_invoice_migration.py",
     "backend/tests/test_lease_api_migration.py",
     "backend/tests/test_migrations.py",
+    "backend/tests/test_utility_consumption_migration.py",
     "backend/tests/test_utility_meter_migration.py",
+    "frontend/src/App.test.tsx",
+    "frontend/src/App.tsx",
+    "frontend/src/UtilityManagement.test.tsx",
+    "frontend/src/UtilityManagement.tsx",
+    "frontend/src/styles.css",
+    "frontend/src/utilityClient.test.tsx",
+    "frontend/src/utilityClient.ts",
     "scripts/database-test.sh",
-    "scripts/test_openclaw_automation.py",
     "ops/traceability.json",
     "ops/NOW.md",
     "ops/STATE.json",
     "ops/V1_ROADMAP.json"
   ],
-  "tranche": "Utility consumption and broken-meter estimation services"
+  "tranche": "Utility meter, reading, preview, and billing UI/API"
 }
