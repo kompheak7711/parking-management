@@ -9,7 +9,7 @@ import re
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import Context, Decimal, localcontext
 from typing import Annotated, Literal, Protocol, cast
 from uuid import UUID, uuid4
 
@@ -48,6 +48,7 @@ MAX_PAGE_SIZE = 100
 DEFAULT_PAGE_SIZE = 25
 MAX_BATCH_SIZE = 100
 _READING_VALUE_QUANTUM = Decimal("0.000001")
+_READING_VALUE_CONTEXT = Context(prec=20)
 _READING_VALUE_ADAPTER: TypeAdapter[Decimal] = TypeAdapter(
     Annotated[
         Decimal,
@@ -88,13 +89,14 @@ def _canonical_reading_value(value: object) -> str:
         raise UtilityResourceInvalid("Utility reading value is invalid")
     if isinstance(value, str) and _CANONICAL_NUMERIC_STRING.fullmatch(value) is None:
         raise UtilityResourceInvalid("Utility reading value is invalid")
-    try:
-        normalized = _READING_VALUE_ADAPTER.validate_python(value)
-    except ValidationError as exc:
-        raise UtilityResourceInvalid("Utility reading value is invalid") from exc
-    if normalized == 0:
-        normalized = abs(normalized)
-    return format(normalized.quantize(_READING_VALUE_QUANTUM), "f")
+    with localcontext(_READING_VALUE_CONTEXT):
+        try:
+            normalized = _READING_VALUE_ADAPTER.validate_python(value)
+        except ValidationError as exc:
+            raise UtilityResourceInvalid("Utility reading value is invalid") from exc
+        if normalized == 0:
+            normalized = abs(normalized)
+        return format(normalized.quantize(_READING_VALUE_QUANTUM), "f")
 
 
 @dataclass(frozen=True, slots=True)

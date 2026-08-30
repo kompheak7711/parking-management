@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, getcontext, localcontext
 from pathlib import Path
 from typing import cast
 from uuid import UUID, uuid4
@@ -66,19 +66,30 @@ def _direct_reading_payload(reading_value: object) -> dict[str, object]:
 
 def test_postgres_reading_boundary_canonicalizes_decimal_and_numeric_string() -> None:
     connection = _ConnectionProbe()
-    for value in (Decimal("20"), "20.000000"):
-        PostgresUtilityResourceFlow._record_on_connection(
-            cast(psycopg.Connection[object], connection),
-            uuid4(),
-            _direct_reading_payload(value),
-            uuid4(),
-            uuid4(),
-            "a" * 64,
-        )
+    with localcontext() as ambient_context:
+        ambient_context.prec = 19
+        original_context = repr(ambient_context)
+        for value in (
+            Decimal("20"),
+            "20.000000",
+            Decimal("99999999999999.999999"),
+            "99999999999999.999999",
+        ):
+            PostgresUtilityResourceFlow._record_on_connection(
+                cast(psycopg.Connection[object], connection),
+                uuid4(),
+                _direct_reading_payload(value),
+                uuid4(),
+                uuid4(),
+                "a" * 64,
+            )
+        assert repr(getcontext()) == original_context
 
     assert [parameters[4] for parameters in connection.parameters] == [
         "20.000000",
         "20.000000",
+        "99999999999999.999999",
+        "99999999999999.999999",
     ]
 
 
@@ -92,6 +103,7 @@ def test_postgres_reading_boundary_canonicalizes_decimal_and_numeric_string() ->
         "Infinity",
         "-0.000001",
         "123456789012345.123456",
+        "100000000000000.000000",
         "1.0000001",
         "2E+1",
     ],
