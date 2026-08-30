@@ -86,7 +86,14 @@ def setup_signed_pet_lease(
 ) -> tuple[PostgresDepositService, AuthenticatedActor, UUID, UUID, date]:
     with psycopg.connect(database_url) as connection:
         actor_id, property_id, unit_id, tenant_id, _ = setup_sources(connection)
-        business_day = date.today()
+        property_clock = connection.execute(
+            "SELECT timezone(property.timezone_name, statement_timestamp())::date "
+            "FROM app.properties AS property WHERE property.id=%s",
+            (property_id,),
+        ).fetchone()
+        assert property_clock is not None
+        business_day = property_clock[0]
+        assert isinstance(business_day, date)
         lease_id = create_draft(
             connection,
             actor_id=actor_id,
