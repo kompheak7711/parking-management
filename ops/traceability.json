@@ -10347,6 +10347,14 @@
       "test_path": "frontend/src/UtilityManagement.test.tsx",
       "status": "implemented",
       "notes": "After ordered ATOMIC_ALL item success, a failed history refresh preserves the authoritative results and reports only the refresh failure; an independent history retry neither resubmits the completed command nor falls back to PARTIAL."
+    },
+    {
+      "test_id": "TEST-FE-234",
+      "upstream_ids": ["API-015", "API-017", "API-046", "UI-058", "TEST-117", "TEST-119"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityManagement.test.tsx",
+      "status": "implemented",
+      "notes": "After a resolved ATOMIC_ALL rollback and a failed history refresh, ordered failed item results remain visible, the alert reports rollback plus refresh failure, and an independent history retry neither resubmits nor changes mode; a mixed resolved outcome is classified conservatively as failure."
     }
   ]
 }

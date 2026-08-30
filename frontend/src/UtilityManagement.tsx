@@ -453,6 +453,12 @@ export function UtilityManagement({
             "No detail",
         })),
       );
+      const allItemsSucceeded =
+        results.length === items.length &&
+        results.every((result) => result.status === "SUCCEEDED");
+      const hasFailedItems = results.some(
+        (result) => result.status === "FAILED",
+      );
       pendingKeys.current["batch-envelope"] = undefined;
       for (const row of batchRows)
         pendingKeys.current[`batch-${row.rowId}`] = undefined;
@@ -462,7 +468,11 @@ export function UtilityManagement({
       } catch (error: unknown) {
         setFailed(true);
         setStatus(
-          `The ${batchMode} batch completed successfully, but Utility history could not be refreshed.${diagnostics(error)}`,
+          allItemsSucceeded
+            ? `The ${batchMode} batch completed successfully, but Utility history could not be refreshed.${diagnostics(error)}`
+            : batchMode === "ATOMIC_ALL" && hasFailedItems
+              ? `The ATOMIC_ALL batch failed and was rolled back, and Utility history also could not be refreshed.${diagnostics(error)}`
+              : `The ${batchMode} batch did not return a complete successful result set, and Utility history also could not be refreshed.${diagnostics(error)}`,
         );
       } finally {
         setBusy(false);
