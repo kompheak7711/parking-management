@@ -1,4 +1,4 @@
-# V1-043 Utility meter, reading, preview, and billing UI/API — corrective closure pending
+# V1-043 Utility meter, reading, preview, and billing UI/API — complete
 
 - Candidate: `V1-043` — Utility meter, reading, preview, and billing UI/API.
 - Authorization: Owner standing direct-Codex authorization for V1-042 through V1-060;
@@ -39,22 +39,26 @@
   deployment, publication, automation, and diff gates passed.
 - Corrected target publication: GitHub Actions run `33326888594` passed all four
   jobs for exact SHA `01f6be3350590f1882e8056ad214df9ebc22c002`.
-- Status: V1-043 is functionally complete and the corrected implementation is
-  published and exact-SHA CI-green; this corrective closure and final
-  reconciliation remain pending.
+- Corrective closure: operational-only commit
+  `a225a379bea121c8bad9218bab0441f4b306d559`; exact-SHA GitHub Actions run
+  `33327271176` passed all four jobs.
+- Status: complete, published, independently reviewed, corrected, and
+  corrective-closure-valid.
 - V1-044: remains held at `approved_ready`; no activation, implementation, or dispatch
   has occurred.
 - Scheduler: no scheduler weakening or activation occurred.
 - Blockers: none.
-- Exact next action: publish this corrective closure commit, require successful
-  exact-SHA GitHub Actions, then create at most one ops-only reconciliation commit,
-  require its exact-SHA CI, prove final synchronization, and release only to REVIEW.
+- Exact next action: publish this single ops-only reconciliation commit, require
+  successful exact-SHA GitHub Actions, prove final source/local/upstream/remote
+  synchronization, and release only to REVIEW; the property manager alone may mark
+  DONE and activate V1-044.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: corrected V1-043 target `01f6be3` is published and
-  exact-SHA CI-green; corrective closure and final reconciliation are pending.
-- Automation exact next action: keep V1-044 held and undispatched while corrective
-  closure, reconciliation CI, and final synchronization complete.
+- Automation publication state: corrected V1-043 target and corrective closure are
+  published and exact-SHA CI-green; final reconciliation CI and synchronization
+  remain pending.
+- Automation exact next action: keep V1-044 held and undispatched while this final
+  reconciliation completes exact-SHA CI and synchronization.
 
 <!-- AUTOMATION_STATUS_END -->

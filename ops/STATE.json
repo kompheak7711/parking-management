@@ -694,7 +694,7 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "81d981a7fd8eb3abb681bd7be94762b4add82f15",
+  "commit": "a225a379bea121c8bad9218bab0441f4b306d559",
   "evidence_applicability": {
     "basis": "Corrected exact V1-043 target 01f6be3350590f1882e8056ad214df9ebc22c002 remains byte-for-byte identical to the independently reviewed PASS target; chronology passed in default and UTC, focused backend 19/19, frontend 20/20, Decimal probe 8 valid/25 rejected, complete profile 15/15, and real UTC PostgreSQL 432/432 passed before publication",
     "complete_profile_remains_applicable": true,
@@ -702,7 +702,7 @@
     "tranche_id": "V1-043"
   },
   "idle_reason": null,
-  "next_action": "Publish this corrective V1-043 closure commit, require successful exact-SHA GitHub Actions, then create at most one ops-only reconciliation commit, require exact-SHA CI, prove final synchronization, and release only to REVIEW",
+  "next_action": "Publish this single ops-only V1-043 reconciliation commit, require successful exact-SHA GitHub Actions, prove final source/local/upstream/remote synchronization, and release only to REVIEW; the property manager alone may mark DONE and activate V1-044",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -754,7 +754,7 @@
     "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33323808705",
     "closure_ci_conclusion": "success",
     "push_completed": true,
-    "sha_reconciled": false,
+    "sha_reconciled": true,
     "status": "published_and_exact_sha_ci_green_closure_valid",
     "tranche_id": "V1-043",
     "predecessor_closure_commit": "1a7514a13d65fcffdc876e61f6d0e2f82f2f3983",
@@ -769,10 +769,13 @@
     "corrective_implementation_ci_run_id": 33326888594,
     "corrective_implementation_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33326888594",
     "corrective_implementation_ci_conclusion": "success",
-    "corrective_closure_commit": null,
-    "corrective_closure_ci_run_id": null,
-    "corrective_closure_ci_run_url": null,
-    "corrective_publication_status": "implementation_exact_sha_ci_green_closure_pending"
+    "corrective_closure_commit": "a225a379bea121c8bad9218bab0441f4b306d559",
+    "corrective_closure_ci_run_attempt": 1,
+    "corrective_closure_ci_run_id": 33327271176,
+    "corrective_closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33327271176",
+    "corrective_closure_ci_conclusion": "success",
+    "corrective_sha_reconciled": true,
+    "corrective_publication_status": "published_and_exact_sha_ci_green_closure_valid"
   },
   "release_review": {
     "card_id": "4545b9fe-505c-4117-905e-6587eb4d2903",
@@ -1612,10 +1615,11 @@
     "PASS: V1-043 corrected chronology exact SHA 01f6be3350590f1882e8056ad214df9ebc22c002 independently reviewed with zero findings on card 4545b9fe-505c-4117-905e-6587eb4d2903",
     "PASS: final release chronology default 2/2 and UTC 2/2; focused backend 19/19; frontend 20/20; Decimal precision-19 probe 8 valid/25 rejected/context unchanged",
     "PASS: final release complete deterministic profile 15/15 and real UTC PostgreSQL 432/432 with zero failures and zero skips; /tmp/v1-043-final-verification.json",
-    "PASS: corrected V1-043 target 01f6be3350590f1882e8056ad214df9ebc22c002 exact-SHA GitHub Actions run 33326888594; all four jobs"
+    "PASS: corrected V1-043 target 01f6be3350590f1882e8056ad214df9ebc22c002 exact-SHA GitHub Actions run 33326888594; all four jobs",
+    "PASS: corrective V1-043 closure commit a225a379bea121c8bad9218bab0441f4b306d559 exact-SHA GitHub Actions run 33327271176; all four jobs"
   ],
   "tests_tranche_id": "V1-043",
-  "timestamp": "2026-08-30T18:06:28Z",
+  "timestamp": "2026-08-30T18:13:41Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
