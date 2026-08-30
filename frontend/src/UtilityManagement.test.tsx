@@ -390,6 +390,90 @@ describe("UtilityManagement", () => {
     expect(client.load).toHaveBeenCalledTimes(1);
   });
 
+  it("TEST-FE-233 preserves ATOMIC_ALL success when history refresh fails", async () => {
+    const client = api();
+    const original = snapshot();
+    const validated = original.readings[meterId]?.[0];
+    if (validated === undefined) throw new Error("Reading fixture missing");
+    vi.mocked(client.load)
+      .mockResolvedValueOnce(original)
+      .mockRejectedValueOnce(new UtilityClientError())
+      .mockResolvedValueOnce(original);
+    vi.mocked(client.recordBatch).mockImplementation(
+      (_targetPropertyId, _mode, items) =>
+        Promise.resolve(
+          items.map((item, index) => ({
+            index,
+            idempotency_key: item.idempotency_key,
+            status: "SUCCEEDED",
+            reading: {
+              ...validated,
+              id: `10000000-0000-4000-8000-00000000004${String(index)}`,
+              reading_date: item.reading.reading_date,
+              effective_value: item.reading.reading_value,
+            },
+            error: null,
+          })),
+        ),
+    );
+    await loadWorkspace(client);
+    const batch = batchSection();
+    fireEvent.change(screen.getByLabelText("Batch behavior"), {
+      target: { value: "ATOMIC_ALL" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add Reading row" }));
+    fillBatchRow(batch, 0, {
+      meterId,
+      version: "2",
+      readingDate: "2026-08-31",
+      readingValue: "151",
+      evidence: "Photo 8",
+    });
+    fillBatchRow(batch, 1, {
+      meterId,
+      version: "3",
+      readingDate: "2026-09-30",
+      readingValue: "205",
+      evidence: "Photo 9",
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Submit Reading batch" }),
+    );
+
+    const refreshAlert = await screen.findByRole("alert");
+    expect(refreshAlert).toHaveTextContent(
+      "The ATOMIC_ALL batch completed successfully, but Utility history could not be refreshed.",
+    );
+    expect(refreshAlert).not.toHaveTextContent(
+      /not completed|no row is retained|roll(?:ed)? back|rollback|PARTIAL/i,
+    );
+    const results = screen.getByRole("table", {
+      name: "Reading batch item results",
+    });
+    const rows = results.querySelectorAll("tbody tr");
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveTextContent("1SUCCEEDED151");
+    expect(rows[1]).toHaveTextContent("2SUCCEEDED205");
+    expect(client.recordBatch).toHaveBeenCalledTimes(1);
+    const atomicCall = vi.mocked(client.recordBatch).mock.calls[0];
+    expect(atomicCall?.[1]).toBe("ATOMIC_ALL");
+    expect(atomicCall?.[3]).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+    expect(client.load).toHaveBeenCalledTimes(2);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Load Utility workspace" }),
+    );
+    await screen.findByText("Complete Utility history loaded.");
+
+    expect(client.load).toHaveBeenCalledTimes(3);
+    expect(client.recordBatch).toHaveBeenCalledTimes(1);
+    expect(rows[0]).toHaveTextContent("1SUCCEEDED151");
+    expect(rows[1]).toHaveTextContent("2SUCCEEDED205");
+  });
+
   it("TEST-FE-230 renders mixed pending and validated history without pending correction", async () => {
     const client = api();
     const mixed = snapshot();

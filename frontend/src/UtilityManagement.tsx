@@ -425,33 +425,49 @@ export function UtilityManagement({
     setStatus(
       `Submitting ${String(items.length)} Reading rows in ${batchMode} mode…`,
     );
-    void api
-      .recordBatch(targetPropertyId, batchMode, items, envelopeIdempotencyKey)
-      .then((results) => {
-        setBatchResults(
-          results.map((result) => ({
-            row: result.index + 1,
-            status: result.status,
-            detail:
-              result.reading?.effective_value ??
-              result.error?.code ??
-              "No detail",
-          })),
+    void (async () => {
+      let results: Awaited<ReturnType<UtilityApi["recordBatch"]>>;
+      try {
+        results = await api.recordBatch(
+          targetPropertyId,
+          batchMode,
+          items,
+          envelopeIdempotencyKey,
         );
-        pendingKeys.current["batch-envelope"] = undefined;
-        for (const row of batchRows)
-          pendingKeys.current[`batch-${row.rowId}`] = undefined;
-        return reload("Bulk Reading results are shown per row.");
-      })
-      .catch((error: unknown) => {
+      } catch (error: unknown) {
         setFailed(true);
         setStatus(
           `The ${batchMode} batch was not completed. In ATOMIC_ALL mode no row is retained after a failure.${diagnostics(error)}`,
         );
-      })
-      .finally(() => {
         setBusy(false);
-      });
+        return;
+      }
+
+      setBatchResults(
+        results.map((result) => ({
+          row: result.index + 1,
+          status: result.status,
+          detail:
+            result.reading?.effective_value ??
+            result.error?.code ??
+            "No detail",
+        })),
+      );
+      pendingKeys.current["batch-envelope"] = undefined;
+      for (const row of batchRows)
+        pendingKeys.current[`batch-${row.rowId}`] = undefined;
+
+      try {
+        await reload("Bulk Reading results are shown per row.");
+      } catch (error: unknown) {
+        setFailed(true);
+        setStatus(
+          `The ${batchMode} batch completed successfully, but Utility history could not be refreshed.${diagnostics(error)}`,
+        );
+      } finally {
+        setBusy(false);
+      }
+    })();
   }
 
   return (
