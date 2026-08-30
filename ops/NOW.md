@@ -1,64 +1,54 @@
-# V1-043 Utility meter, reading, preview, and billing UI/API — complete
+# V1-044 Idempotent scheduled billing worker — closure pending
 
-- Candidate: `V1-043` — Utility meter, reading, preview, and billing UI/API.
+- Candidate: `V1-044` — Idempotent scheduled rent, service, and utility billing
+  worker.
 - Authorization: Owner standing direct-Codex authorization for V1-042 through V1-060;
-  this release card is limited to the exact independently reviewed V1-043 SHA.
-- Baseline: clean synchronized `implementation/foundation` at V1-042 corrective
-  reconciliation commit `a7a7b9d3d63da0d9c24c55c2a4a8e1fa94c81af9`.
-- Original implementation: exact cumulative commit
-  `4bf6c75d2709ddf8e989892364038795df7040b1`, published and exact-SHA
-  CI-green in run `33323322907`.
-- Original closure: operational-only commit
-  `81d981a7fd8eb3abb681bd7be94762b4add82f15`, exact-SHA CI-green in run
-  `33323808705`.
-- Superseded reconciliation: commit
-  `fc461aed518d4ca49d68f8b5479c22787ec1cfdc`; GitHub Actions run
-  `33324280423` failed its PostgreSQL job twice at 431/432 because the deposit
-  chronology fixture mixed runner-local and Property-local business dates.
-- Corrected release target: exact commit
-  `01f6be3350590f1882e8056ad214df9ebc22c002`, direct parent
-  `fc461aed518d4ca49d68f8b5479c22787ec1cfdc`; commit 12 and 26 cumulative
-  paths from baseline. Its sole child diff is
-  `backend/tests/test_deposit_migration.py` (8 insertions, 1 deletion).
-- Scope: Property-scoped Meter lifecycle and history, validated and pending Reading
-  history, replacement and correction evidence, bounded single and bulk Reading entry,
-  authoritative preview, Rate history, and accessible authenticated Utility UI/API.
-- Authorities: `API-044` through `API-049`, `UI-056` through `UI-062`,
-  `TEST-046` through `TEST-052`, `TEST-117`, `TEST-118`, and `TEST-119`.
-- Excluded: silent estimation, product corrections during release, canonical changes,
-  Invoice issuance, scheduled billing, deployment, production data, and V1-044 work.
-- Corrected independent review: Workboard card
-  `4545b9fe-505c-4117-905e-6587eb4d2903` returned PASS with zero findings for
-  exact SHA `01f6be3`; reviewer made no edits and property-manager acceptance is
-  recorded.
-- Corrected local release verification: chronology 2/2 in default +07 and 2/2 in
-  `TZ=UTC`; focused backend 19/19 and frontend 20/20; Decimal precision-19
-  probe 8 valid/25 rejected with caller context unchanged; complete profile 15/15;
-  real `TZ=UTC` PostgreSQL 432/432 with zero failures and zero skips; all full
-  format, lint, strict type, build/import, test, dependency, traceability, Alembic,
-  deployment, publication, automation, and diff gates passed.
-- Corrected target publication: GitHub Actions run `33326888594` passed all four
-  jobs for exact SHA `01f6be3350590f1882e8056ad214df9ebc22c002`.
-- Corrective closure: operational-only commit
-  `a225a379bea121c8bad9218bab0441f4b306d559`; exact-SHA GitHub Actions run
-  `33327271176` passed all four jobs.
-- Status: complete, published, independently reviewed, corrected, and
-  corrective-closure-valid.
-- V1-044: remains held at `approved_ready`; no activation, implementation, or dispatch
-  has occurred.
-- Scheduler: no scheduler weakening or activation occurred.
+  this release card is limited to the exact independently reviewed V1-044 SHA.
+- Baseline: clean synchronized `implementation/foundation` at V1-043 corrective
+  reconciliation commit `5ad5b8061113ab903c23b4a6d576acda8e477177`.
+- Implementation: exact cumulative commit
+  `4a6891a5eab3ab1a9d00189f65194a0fafc5294a`, direct parent
+  `b710c541afefc59596d00d02ae67e95eb4f78385`; exactly four commits and 19
+  reviewed paths from the baseline, published by non-force fast-forward.
+- Scope: singleton, retry-safe, catch-up-aware Property-local Rent, Service, and
+  Utility generation runs; immutable attempts and eligible-source evidence; scoped
+  human API commands and bounded service worker execution.
+- Authorities: `API-054` through `API-056`, `TEST-096` through `TEST-100`,
+  `TEST-117` through `TEST-119`, and the bounded worker deployment contracts.
+- Excluded: product corrections during release, production deployment or scheduler
+  activation, production data or credentials, Parking Management, and V1-045 work.
+- Independent review: Workboard card
+  `ddce0359-df7c-4013-bfcd-15bef2086a57` returned an explicit PASS with zero
+  findings for exact SHA `4a6891a`; reviewer made no edits and property-manager
+  acceptance is recorded.
+- Local release verification: focused non-database billing 6/6; focused real
+  PostgreSQL adversarial 10/10 plus corrected semantic nodes 2/2; semantic TEST-119
+  5/5 and structural traceability 22/22; complete deterministic profile 15/15;
+  backend 679 passed with 421 expected database-only skips covered by real PostgreSQL
+  444/444; frontend 234/234; automation 186/186. Format, lint, strict type,
+  build/import, dependency, Alembic one-head/35-revision fresh-install and supported
+  upgrade, deployment, publication, security, secret, JSON, traceability, and diff
+  gates passed.
+- Implementation publication: GitHub Actions run `33341391640` passed all four jobs
+  for exact SHA `4a6891a5eab3ab1a9d00189f65194a0fafc5294a`.
+- Status: V1-044 is functionally complete and the exact reviewed implementation is
+  published and exact-SHA CI-green; this ops-only closure and final reconciliation
+  remain pending.
+- V1-045: remains held at `approved_ready`; no activation, implementation, or
+  dispatch has occurred.
+- Scheduler: no production deployment, scheduler activation, or scheduler weakening
+  occurred.
 - Blockers: none.
-- Exact next action: publish this single ops-only reconciliation commit, require
-  successful exact-SHA GitHub Actions, prove final source/local/upstream/remote
-  synchronization, and release only to REVIEW; the property manager alone may mark
-  DONE and activate V1-044.
+- Exact next action: publish this ops-only closure commit, require successful
+  exact-SHA GitHub Actions, then create only one bounded ops-only reconciliation
+  commit, require its exact-SHA CI, prove final source/local/upstream/live-remote
+  synchronization, and release only to REVIEW.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: corrected V1-043 target and corrective closure are
-  published and exact-SHA CI-green; final reconciliation CI and synchronization
-  remain pending.
-- Automation exact next action: keep V1-044 held and undispatched while this final
-  reconciliation completes exact-SHA CI and synchronization.
+- Automation publication state: exact V1-044 target `4a6891a` is published and
+  exact-SHA CI-green; closure and final reconciliation are pending.
+- Automation exact next action: keep V1-045 held and undispatched while V1-044
+  closure, reconciliation CI, and final synchronization complete.
 
 <!-- AUTOMATION_STATUS_END -->

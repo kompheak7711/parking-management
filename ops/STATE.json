@@ -1,16 +1,15 @@
 {
-  "active_cycle": "v1-043-utility-meter-reading-preview-ui-api",
+  "active_cycle": "v1-044-idempotent-scheduled-billing-worker",
   "approval": {
-    "status": "complete",
+    "status": "active",
     "basis": "owner standing direct-Codex authorization for sequential V1-042 through V1-060 execution",
         "implementation_started": true,
         "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
   "authorities": [
-    "API-044-049",
-    "UI-056-062",
-    "TEST-046-052",
+    "API-054-056",
+    "TEST-096-100",
     "TEST-117-119"
   ],
   "automation_repair": {
@@ -694,34 +693,35 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "a225a379bea121c8bad9218bab0441f4b306d559",
+  "commit": "4a6891a5eab3ab1a9d00189f65194a0fafc5294a",
   "evidence_applicability": {
-    "basis": "Corrected exact V1-043 target 01f6be3350590f1882e8056ad214df9ebc22c002 remains byte-for-byte identical to the independently reviewed PASS target; chronology passed in default and UTC, focused backend 19/19, frontend 20/20, Decimal probe 8 valid/25 rejected, complete profile 15/15, and real UTC PostgreSQL 432/432 passed before publication",
+    "basis": "Exact V1-044 cumulative implementation 4a6891a5eab3ab1a9d00189f65194a0fafc5294a remains byte-for-byte identical to the independently reviewed PASS target; focused non-database billing 6/6, focused PostgreSQL 10/10 plus 2/2 semantic nodes, TEST-119 semantic 5/5, traceability 22/22, complete profile 15/15, and real PostgreSQL 444/444 passed before publication",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "Original V1-043 implementation 4bf6c75 and closure 81d981a are exact-SHA CI-green; reconciliation fc461aed failed PostgreSQL CI twice and is superseded by corrected target 01f6be3, which independent review card 4545b9fe-505c-4117-905e-6587eb4d2903 passed with zero findings",
-    "tranche_id": "V1-043"
+    "prior_review_disposition": "V1-043 corrected target, corrective closure, and reconciliation are published and exact-SHA CI-green at baseline 5ad5b8061113ab903c23b4a6d576acda8e477177; independent V1-044 review card ddce0359-df7c-4013-bfcd-15bef2086a57 passed exact SHA 4a6891a with zero findings",
+    "tranche_id": "V1-044"
   },
   "idle_reason": null,
-  "next_action": "Publish this single ops-only V1-043 reconciliation commit, require successful exact-SHA GitHub Actions, prove final source/local/upstream/remote synchronization, and release only to REVIEW; the property manager alone may mark DONE and activate V1-044",
+  "next_action": "Publish only this separate V1-044 closure commit, require successful exact-SHA GitHub Actions, then create one bounded ops-only reconciliation commit, require its exact-SHA CI, prove final source/local/upstream/live-remote synchronization, and release only to REVIEW; keep V1-045 held",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
-      "API-054-056",
-      "TEST-096-099"
+      "BR-INV-*",
+      "API-050-053",
+      "TEST-053-058"
     ],
     "authorization": "durable_v1",
-    "dependencies": ["V1-040", "V1-042"],
-    "exclude": ["production scheduler deployment"],
-    "id": "V1-044",
+    "dependencies": ["V1-039", "V1-044"],
+    "exclude": ["physical deletion"],
+    "id": "V1-045",
     "include": [
-      "singleton runs, retry, catch-up, property-local scheduling"
+      "draft/issue/paid/void transitions and linked corrections"
     ],
-    "order": 44,
+    "order": 45,
     "phase": "Billing",
     "risk_class": "high",
     "status": "approved_ready",
-    "task": "Idempotent scheduled rent, service, and utility billing worker",
-    "roadmap_id": "V1-044"
+    "task": "Invoice lifecycle, issuance, adjustments, and void services",
+    "roadmap_id": "V1-045"
   },
   "operational_issues": [
     {
@@ -739,65 +739,44 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "Utilities",
+  "phase": "Billing",
   "publication": {
     "ci_completed": true,
     "ci_conclusion": "success",
     "ci_run_attempt": 1,
-    "ci_run_id": 33323322907,
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33323322907",
+    "ci_run_id": 33341391640,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33341391640",
     "commit_completed": true,
-    "implementation_commit": "4bf6c75d2709ddf8e989892364038795df7040b1",
-    "closure_commit": "81d981a7fd8eb3abb681bd7be94762b4add82f15",
-    "closure_ci_run_attempt": 1,
-    "closure_ci_run_id": 33323808705,
-    "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33323808705",
-    "closure_ci_conclusion": "success",
+    "implementation_commit": "4a6891a5eab3ab1a9d00189f65194a0fafc5294a",
+    "closure_commit": null,
     "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published_and_exact_sha_ci_green_closure_valid",
-    "tranche_id": "V1-043",
-    "predecessor_closure_commit": "1a7514a13d65fcffdc876e61f6d0e2f82f2f3983",
-    "predecessor_reconciliation_commit": "a7a7b9d3d63da0d9c24c55c2a4a8e1fa94c81af9",
-    "failed_reconciliation_commit": "fc461aed518d4ca49d68f8b5479c22787ec1cfdc",
-    "failed_reconciliation_ci_run_id": 33324280423,
-    "failed_reconciliation_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33324280423",
-    "failed_reconciliation_ci_attempts": 2,
-    "failed_reconciliation_gate": "PostgreSQL deposit chronology fixture mixed runner-local date.today() with Property-local business date and failed the +2 chronology case at the Phnom Penh midnight boundary",
-    "corrective_implementation_commit": "01f6be3350590f1882e8056ad214df9ebc22c002",
-    "corrective_implementation_ci_run_attempt": 1,
-    "corrective_implementation_ci_run_id": 33326888594,
-    "corrective_implementation_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33326888594",
-    "corrective_implementation_ci_conclusion": "success",
-    "corrective_closure_commit": "a225a379bea121c8bad9218bab0441f4b306d559",
-    "corrective_closure_ci_run_attempt": 1,
-    "corrective_closure_ci_run_id": 33327271176,
-    "corrective_closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33327271176",
-    "corrective_closure_ci_conclusion": "success",
-    "corrective_sha_reconciled": true,
-    "corrective_publication_status": "published_and_exact_sha_ci_green_closure_valid"
+    "sha_reconciled": false,
+    "status": "implementation_published_closure_pending",
+    "tranche_id": "V1-044",
+    "predecessor_closure_commit": "a225a379bea121c8bad9218bab0441f4b306d559",
+    "predecessor_reconciliation_commit": "5ad5b8061113ab903c23b4a6d576acda8e477177"
   },
   "release_review": {
-    "card_id": "4545b9fe-505c-4117-905e-6587eb4d2903",
-    "exact_sha": "01f6be3350590f1882e8056ad214df9ebc22c002",
-    "direct_parent": "fc461aed518d4ca49d68f8b5479c22787ec1cfdc",
+    "card_id": "ddce0359-df7c-4013-bfcd-15bef2086a57",
+    "exact_sha": "4a6891a5eab3ab1a9d00189f65194a0fafc5294a",
+    "direct_parent": "b710c541afefc59596d00d02ae67e95eb4f78385",
     "findings": 0,
-    "cumulative_path_count": 26,
-    "reviewed_path_count": 1,
+    "cumulative_path_count": 19,
+    "reviewed_path_count": 19,
     "reviewer_edits": false,
     "status": "PASS"
   },
   "relevant_docs": [
-    "docs/001_DOMAIN_MODEL.md: Utility Meter, Reading, correction, replacement, Rate, and preview vocabulary",
-    "docs/002_BUSINESS_RULES.md: BR-UTIL-001 through BR-UTIL-032",
-    "docs/004_DATABASE_MODEL.md: DB-UTIL-003 and Utility command persistence",
-    "docs/005_API_SPECIFICATION.md: API-044 through API-049",
-    "docs/006_UI_SPECIFICATION.md: UI-056 through UI-062",
-    "docs/007_TESTING_STRATEGY.md: TEST-046 through TEST-052 and TEST-117 through TEST-119",
-    "docs/008_SECURITY_MODEL.md: authorized Property-scoped Utility workflows"
+    "docs/001_DOMAIN_MODEL.md: Billing Run, attempt, eligible-source, requester, and service-principal vocabulary",
+    "docs/002_BUSINESS_RULES.md: scheduled Rent, Service, and Utility generation invariants",
+    "docs/004_DATABASE_MODEL.md: immutable Billing Run, attempt, source evidence, transaction, and ordering contracts",
+    "docs/005_API_SPECIFICATION.md: API-054 through API-056",
+    "docs/007_TESTING_STRATEGY.md: TEST-096 through TEST-100 and TEST-117 through TEST-119",
+    "docs/008_SECURITY_MODEL.md: scoped HUMAN requester and Property SERVICE execution",
+    "docs/009_DEPLOYMENT_ARCHITECTURE.md: bounded singleton, retry, catch-up, failure, and unavailable-worker contracts"
   ],
   "repair": {
-    "tranche_id": "V1-043",
+    "tranche_id": "V1-044",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -1398,15 +1377,15 @@
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 43,
-    "current_id": "V1-043",
+    "completed": 44,
+    "current_id": "V1-044",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Completed the approved bounded candidate: Utility meter, reading, preview, and billing UI/API",
+  "status": "implementation_published_closure_pending",
+  "task": "Close the approved bounded candidate: Idempotent scheduled rent, service, and utility billing worker",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -1616,10 +1595,17 @@
     "PASS: final release chronology default 2/2 and UTC 2/2; focused backend 19/19; frontend 20/20; Decimal precision-19 probe 8 valid/25 rejected/context unchanged",
     "PASS: final release complete deterministic profile 15/15 and real UTC PostgreSQL 432/432 with zero failures and zero skips; /tmp/v1-043-final-verification.json",
     "PASS: corrected V1-043 target 01f6be3350590f1882e8056ad214df9ebc22c002 exact-SHA GitHub Actions run 33326888594; all four jobs",
-    "PASS: corrective V1-043 closure commit a225a379bea121c8bad9218bab0441f4b306d559 exact-SHA GitHub Actions run 33327271176; all four jobs"
+    "PASS: corrective V1-043 closure commit a225a379bea121c8bad9218bab0441f4b306d559 exact-SHA GitHub Actions run 33327271176; all four jobs",
+    "PASS: V1-044 exact four-commit ancestry from 5ad5b8061113ab903c23b4a6d576acda8e477177 to 4a6891a5eab3ab1a9d00189f65194a0fafc5294a and reviewed 19-path scope",
+    "PASS: V1-044 focused non-database billing 6/6; focused real-PostgreSQL adversarial 10/10 plus corrected semantic nodes 2/2; semantic TEST-119 5/5; structural traceability 22/22",
+    "PASS: V1-044 complete deterministic verification profile 15/15; backend 679 passed with 421 expected database-only skips; frontend 234/234; real PostgreSQL 444/444; automation routing 186/186; /tmp/v1-044-release-8324ab32/deterministic-target.json",
+    "PASS: locked Python runtime and development dependency audits each resolved 50 packages with no known vulnerabilities; npm audit found zero vulnerabilities",
+    "PASS: Alembic exactly one head 20260831_35 and 35 linear revisions; fresh install, supported upgrades, ordering, idempotency, transaction, singleton, retry, catch-up, and Property-local gates covered by PostgreSQL 444/444",
+    "PASS: V1-044 fresh independent review card ddce0359-df7c-4013-bfcd-15bef2086a57 returned explicit zero-finding PASS at exact SHA 4a6891a5eab3ab1a9d00189f65194a0fafc5294a and made no edits",
+    "PASS: V1-044 implementation commit 4a6891a5eab3ab1a9d00189f65194a0fafc5294a exact-SHA GitHub Actions run 33341391640; all four jobs"
   ],
-  "tests_tranche_id": "V1-043",
-  "timestamp": "2026-08-30T18:13:41Z",
+  "tests_tranche_id": "V1-044",
+  "timestamp": "2026-08-30T23:21:49Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -1646,32 +1632,27 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
-    "backend/migrations/versions/20260829_34_v1_043_utility_api.py",
+    "backend/migrations/versions/20260831_35_scheduled_billing.py",
+    "backend/pyproject.toml",
     "backend/src/property_rental/app.py",
-    "backend/src/property_rental/utility_api.py",
-    "backend/tests/test_deposit_migration.py",
-    "backend/tests/test_utility_api.py",
-    "backend/tests/test_utility_api_migration.py",
+    "backend/src/property_rental/billing_run.py",
+    "backend/src/property_rental/billing_run_api.py",
+    "backend/src/property_rental/billing_worker.py",
+    "backend/src/property_rental/settings.py",
+    "backend/tests/test_billing_run.py",
+    "backend/tests/test_billing_run_migration.py",
     "backend/tests/test_billing_service_migration.py",
-    "backend/tests/test_deployment_scaffolding.py",
     "backend/tests/test_initial_owner_bootstrap_cli.py",
     "backend/tests/test_invoice_migration.py",
     "backend/tests/test_lease_api_migration.py",
     "backend/tests/test_migrations.py",
+    "backend/tests/test_utility_api_migration.py",
     "backend/tests/test_utility_consumption_migration.py",
     "backend/tests/test_utility_meter_migration.py",
-    "frontend/src/App.test.tsx",
-    "frontend/src/App.tsx",
-    "frontend/src/UtilityManagement.test.tsx",
-    "frontend/src/UtilityManagement.tsx",
-    "frontend/src/styles.css",
-    "frontend/src/utilityClient.test.tsx",
-    "frontend/src/utilityClient.ts",
     "scripts/database-test.sh",
     "ops/traceability.json",
     "ops/NOW.md",
-    "ops/STATE.json",
-    "ops/V1_ROADMAP.json"
+    "ops/STATE.json"
   ],
-  "tranche": "Utility meter, reading, preview, and billing UI/API"
+  "tranche": "Idempotent scheduled rent, service, and utility billing worker"
 }
