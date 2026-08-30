@@ -572,7 +572,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
     obligation_id = uuid4()
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20260829_34",
+            "20260831_35",
         )
         expected = {
             "actor_identities",
@@ -654,7 +654,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "20260826_28")
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20260829_34",
+            "20260831_35",
         )
         assert owner.execute(
             "SELECT description FROM app.authorized_nonrecurring_obligations WHERE id=%s",
@@ -2306,7 +2306,7 @@ def test_rent_service_sources_preserve_evidence_and_utility_defers_without_sourc
                 ),
             )
             connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
-    assert superseded_utility_rate.value.sqlstate == "23514"
+    assert superseded_utility_rate.value.sqlstate == "23503"
     with pytest.raises(Error) as unbound_utility_source:
         with connection.transaction():
             connection.execute(
@@ -2325,7 +2325,7 @@ def test_rent_service_sources_preserve_evidence_and_utility_defers_without_sourc
                     actor_id,
                 ),
             )
-    assert unbound_utility_source.value.sqlstate == "23514"
+    assert unbound_utility_source.value.sqlstate == "23503"
     assert connection.execute(
         "SELECT count(*) FROM app.invoice_lines WHERE utility_consumption_period_id=%s",
         (utility_period_id,),

@@ -40,6 +40,12 @@ from property_rental.auth_api import (
     UnavailableAuthenticationFlow,
     create_auth_router,
 )
+from property_rental.billing_run import PostgresBillingRunService
+from property_rental.billing_run_api import (
+    BillingRunFlow,
+    UnavailableBillingRunFlow,
+    create_billing_run_router,
+)
 from property_rental.configuration_api import (
     ConfigurationFlow,
     ExchangeRateProvider,
@@ -130,6 +136,9 @@ UTILITY_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:units/[^/]+/meters(?:/|$)|meters(?:/|$)|"
     r"utility-readings(?:/|$)|properties/[^/]+/utility-readings:batch$|"
     r"utility-billing/preview$)"
+)
+BILLING_RUN_API_PATH_PATTERN: Final = re.compile(
+    r"^/api/v1/(?:properties/[^/]+/billing-runs/(?:rent|utilities)$|billing-runs/[^/]+$)"
 )
 DATABASE_TIMEOUT_SECONDS: Final = 2
 ERROR_STATUS_DETAILS: Final = {
@@ -251,6 +260,7 @@ def create_app(
     lease_resource_flow: LeaseResourceFlow | None = None,
     deposit_resource_flow: DepositResourceFlow | None = None,
     utility_resource_flow: UtilityResourceFlow | None = None,
+    billing_run_flow: BillingRunFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -469,6 +479,7 @@ def create_app(
             or RESERVATION_API_PATH_PATTERN.match(request.url.path)
             or DEPOSIT_API_PATH_PATTERN.match(request.url.path)
             or UTILITY_API_PATH_PATTERN.match(request.url.path)
+            or BILLING_RUN_API_PATH_PATTERN.match(request.url.path)
         ):
             response.headers["Cache-Control"] = "private, no-store"
             response.headers["Vary"] = "Cookie"
@@ -634,6 +645,23 @@ def create_app(
                     )
                     if resolved_settings.database_url is not None
                     else UnavailableUtilityResourceFlow()
+                ),
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_billing_run_router(
+            actor_resolver,
+            billing_run_flow
+            or cast(
+                BillingRunFlow,
+                (
+                    PostgresBillingRunService(
+                        resolved_settings.financial_database_url.get_secret_value()
+                    )
+                    if resolved_settings.financial_database_url is not None
+                    else UnavailableBillingRunFlow()
                 ),
             ),
             resolved_settings,

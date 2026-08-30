@@ -10371,6 +10371,102 @@
       "test_path": "frontend/src/UtilityManagement.test.tsx",
       "status": "implemented",
       "notes": "After a resolved ATOMIC_ALL rollback and a failed history refresh, ordered failed item results remain visible, the alert reports rollback plus refresh failure, and an independent history retry neither resubmits nor changes mode; a mixed resolved outcome is classified conservatively as failure."
+    },
+    {
+      "test_id": "test_canonical_digest_binds_idempotency_period_and_invocation_source",
+      "upstream_ids": ["API-054", "API-055", "API-056", "DB-TXN-005"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_billing_run.py",
+      "status": "implemented",
+      "notes": "The canonical digest is stable and changes with the UUID idempotency identity or API-versus-scheduled invocation provenance."
+    },
+    {
+      "test_id": "test_rent_command_requires_property_local_day_25_and_next_complete_month",
+      "upstream_ids": ["API-054", "BR-RENT-008", "BR-RENT-009", "DB-TXN-006"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_billing_run.py",
+      "status": "implemented",
+      "notes": "Rent commands accept only Property-local day 25 and the complete next calendar month."
+    },
+    {
+      "test_id": "test_failure_before_transaction_is_visible_without_a_blind_retry",
+      "upstream_ids": ["TEST-097", "DEPLOY-024", "DEPLOY-030", "DEPLOY-057"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_billing_run.py",
+      "status": "implemented",
+      "notes": "A connection failure before transaction start is surfaced as an unavailable command and no in-process blind financial retry is attempted."
+    },
+    {
+      "test_id": "test_property_local_midnight_is_exact_and_independent_of_host_timezone",
+      "upstream_ids": ["API-056", "TEST-098", "DB-TXN-006", "DEPLOY-029"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_billing_run.py",
+      "status": "implemented",
+      "notes": "Microsecond-before, exact, and microsecond-after Property-local midnight use the configured IANA timezone and do not inherit a different host date."
+    },
+    {
+      "test_id": "test_api_enforces_scope_csrf_replay_and_different_input_conflict",
+      "upstream_ids": ["API-001", "API-015", "API-016", "API-017", "API-018", "API-054", "API-055", "SEC-019", "DB-TXN-005"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_billing_run.py",
+      "status": "implemented",
+      "notes": "The Rent and Utility run APIs enforce Property scope and browser mutation protection; Rent replays equivalent input, conflicts changed same-key input, and returns the canonical no-store detail resource."
+    },
+    {
+      "test_id": "test_bounded_worker_loop_uses_capped_backoff_and_stops",
+      "upstream_ids": ["API-056", "DEPLOY-024", "DEPLOY-025", "DEPLOY-030"],
+      "test_level": "operational",
+      "test_path": "backend/tests/test_billing_run.py",
+      "status": "implemented",
+      "notes": "The worker loop is finite and applies bounded exponential backoff without entering an uncontrolled failure loop."
+    },
+    {
+      "test_id": "test_two_concurrent_workers_replay_one_rent_service_invoice",
+      "upstream_ids": ["API-054", "API-056", "TEST-096", "TEST-099", "BR-RENT-008", "BR-RENT-011", "BR-SVC-003", "BR-INV-050", "DB-TXN-005", "DEPLOY-027", "DEPLOY-028", "DEPLOY-029", "DEPLOY-058"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_run_migration.py",
+      "status": "implemented",
+      "notes": "Two concurrent SERVICE invocations on August 31 catch up the missed August 25 business date, converge on one immutable logical run, and preserve exactly one target Rent Invoice, configured Service line, and matching audit event on replay."
+    },
+    {
+      "test_id": "test_principal_recheck_and_after_commit_replay_are_idempotent",
+      "upstream_ids": ["API-056", "TEST-097", "DB-TXN-005", "SEC-020", "DEPLOY-028", "DEPLOY-030"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_billing_run_migration.py",
+      "status": "implemented",
+      "notes": "A disabled SERVICE principal is rechecked inside the protected transaction with no run persisted; a fresh active principal commits the target Invoice, and replay after a simulated lost response preserves the immutable prior attempt and exactly one target Invoice while any retry evidence remains append-only."
+    },
+    {
+      "test_id": "test_audit_failure_rolls_back_invoice_and_retry_uses_new_attempt",
+      "upstream_ids": ["API-054", "API-056", "TEST-097", "DB-TXN-005", "DEPLOY-028", "DEPLOY-030"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_billing_run_migration.py",
+      "status": "implemented",
+      "notes": "An injected audit-key collision atomically rolls back the Rent Invoice, records a retryable failed item, and a later append-only attempt recovers exactly once."
+    },
+    {
+      "test_id": "test_finalized_utility_issues_exact_rate_and_responsibility_evidence",
+      "upstream_ids": ["API-055", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-018", "BR-UTIL-021", "BR-UTIL-022", "BR-UTIL-029", "BR-UTIL-030", "BR-UTIL-032", "BR-INV-041", "DB-TXN-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_billing_run_migration.py",
+      "status": "implemented",
+      "notes": "Only a finalized validated-actual period is issued, with exact Decimal-derived cents and preserved Rate, Lease, Customer responsibility, period, and source evidence."
+    },
+    {
+      "test_id": "test_completed_approved_estimate_issues_once_with_preserved_basis",
+      "upstream_ids": ["API-055", "BR-UTIL-019", "BR-UTIL-020", "BR-UTIL-024", "BR-UTIL-028", "BR-UTIL-029", "BR-UTIL-030", "BR-UTIL-032", "BR-INV-041", "DB-TXN-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_billing_run_migration.py",
+      "status": "implemented",
+      "notes": "A completed authorized broken-Meter estimate issues exactly one Utility Invoice and preserves its historical actual basis, generation-date Rate, and responsible Lease evidence."
+    },
+    {
+      "test_id": "test_pending_future_basis_is_preserved_without_utility_invoice",
+      "upstream_ids": ["API-055", "TEST-099", "BR-UTIL-019", "BR-UTIL-025", "BR-UTIL-026", "BR-UTIL-027", "BR-INV-042", "DB-TXN-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_billing_run_migration.py",
+      "status": "implemented",
+      "notes": "A broken-Meter case awaiting its authorized future actual basis is recorded deterministically as pending, completes without an Invoice, and preserves the immutable skipped outcome."
     }
   ]
 }

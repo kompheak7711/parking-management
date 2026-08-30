@@ -129,6 +129,7 @@ database_test_suites='
   tests/test_utility_meter_migration.py
   tests/test_utility_consumption_migration.py
   tests/test_utility_api_migration.py
+  tests/test_billing_run_migration.py
 '
 
 for database_test_file in $database_test_suites; do
