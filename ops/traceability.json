@@ -10382,7 +10382,7 @@
     },
     {
       "test_id": "test_rent_command_requires_property_local_day_25_and_next_complete_month",
-      "upstream_ids": ["API-054", "BR-RENT-008", "BR-RENT-009", "DB-TXN-006"],
+      "upstream_ids": ["API-054", "BR-RENT-008", "DB-TXN-006"],
       "test_level": "domain",
       "test_path": "backend/tests/test_billing_run.py",
       "status": "implemented",
@@ -10446,27 +10446,27 @@
     },
     {
       "test_id": "test_finalized_utility_issues_exact_rate_and_responsibility_evidence",
-      "upstream_ids": ["API-055", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-018", "BR-UTIL-021", "BR-UTIL-022", "BR-UTIL-029", "BR-UTIL-030", "BR-UTIL-032", "BR-INV-041", "DB-TXN-005"],
+      "upstream_ids": ["API-055", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-021", "BR-UTIL-029", "BR-UTIL-030", "BR-UTIL-032", "BR-INV-041"],
       "test_level": "DB",
       "test_path": "backend/tests/test_billing_run_migration.py",
       "status": "implemented",
-      "notes": "Only a finalized validated-actual period is issued, with exact Decimal-derived cents and preserved Rate, Lease, Customer responsibility, period, and source evidence."
+      "notes": "A finalized validated-actual period is issued; the generated item and persisted Utility line assert ACTUAL source evidence, 3086 USD cents, quantity 123.456789, the selected Rate, responsible Lease, and period/source linkage."
     },
     {
       "test_id": "test_completed_approved_estimate_issues_once_with_preserved_basis",
-      "upstream_ids": ["API-055", "BR-UTIL-019", "BR-UTIL-021", "BR-UTIL-023", "BR-UTIL-026", "BR-UTIL-027", "BR-UTIL-029", "BR-UTIL-030", "BR-UTIL-032", "BR-INV-041", "DB-TXN-005"],
+      "upstream_ids": ["API-055", "BR-UTIL-019", "BR-UTIL-021", "BR-UTIL-023", "BR-UTIL-027", "BR-UTIL-029", "BR-UTIL-030", "BR-INV-041"],
       "test_level": "DB",
       "test_path": "backend/tests/test_billing_run_migration.py",
       "status": "implemented",
-      "notes": "A completed authorized broken-Meter estimate issues exactly one Utility Invoice and preserves its historical actual basis, generation-date Rate, and responsible Lease evidence."
+      "notes": "A completed authorized broken-Meter estimate is issued, and the persisted Utility line preserves its historical actual basis-period ID, generation-date Rate, and responsible Lease evidence."
     },
     {
       "test_id": "test_pending_future_basis_is_preserved_without_utility_invoice",
-      "upstream_ids": ["API-055", "TEST-096", "BR-UTIL-019", "BR-UTIL-026", "BR-UTIL-028", "BR-UTIL-029", "BR-UTIL-030", "BR-INV-041", "DB-TXN-005"],
+      "upstream_ids": ["API-055", "TEST-096", "BR-UTIL-019", "BR-UTIL-028", "DB-TXN-005"],
       "test_level": "DB",
       "test_path": "backend/tests/test_billing_run_migration.py",
       "status": "implemented",
-      "notes": "A zero-history broken-Meter case remains visibly pending and unissued, then a finalized future actual basis is used by concurrent direct retries to issue exactly once while the immutable pending attempt and basis evidence remain visible."
+      "notes": "A zero-history broken-Meter case remains pending with no Invoice; after a complete future actual basis exists, concurrent direct retries converge on success with one persisted Utility line while the original pending attempt and selected basis-period evidence remain preserved."
     },
     {
       "test_id": "test_v1_044_populated_v1_043_upgrade_restores_billing_history_guards",
@@ -10478,11 +10478,11 @@
     },
     {
       "test_id": "test_live_api_uses_human_requester_and_one_property_service_for_rent_and_utility",
-      "upstream_ids": ["API-015", "API-016", "API-017", "API-018", "API-054", "API-055", "SEC-016", "SEC-019", "SEC-020", "DB-TXN-005"],
+      "upstream_ids": ["API-015", "API-016", "API-017", "API-054", "API-055", "SEC-016", "SEC-019", "SEC-020"],
       "test_level": "API",
       "test_path": "backend/tests/test_billing_run_migration.py",
       "status": "implemented",
-      "notes": "Against live PostgreSQL, a scoped HUMAN requester passes browser CSRF and billing.generate authorization while one configured active Property SERVICE executes both Rent and Utility financial commands; POST replay/conflict, GET, and audit identity evidence are asserted."
+      "notes": "Sequential live-PostgreSQL requests assert browser CSRF, scoped HUMAN billing.generate authorization, one configured active Property SERVICE for Rent and Utility commands, POST replay/conflict, GET, and HUMAN/SERVICE audit identity evidence."
     },
     {
       "test_id": "test_api_service_resolution_fails_closed_when_missing_or_ambiguous",
