@@ -10181,6 +10181,22 @@
       "notes": "Replacement retains the failed physical Meter and exact boundary readings, while corrections append authorization history and leave original Reading evidence unchanged."
     },
     {
+      "test_id": "test_postgres_reading_boundary_canonicalizes_decimal_and_numeric_string",
+      "upstream_ids": ["DB-UTIL-003", "API-015", "API-046", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-013", "TEST-047", "TEST-117", "TEST-119"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_utility_api_migration.py",
+      "status": "implemented",
+      "notes": "The PostgreSQL adapter boundary converts validated Decimal and canonical numeric-string Reading values to the same six-place, non-exponent fixed-point representation before persistence."
+    },
+    {
+      "test_id": "test_postgres_reading_boundary_rejects_invalid_values_before_execute",
+      "upstream_ids": ["DB-UTIL-003", "API-015", "API-046", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-013", "SEC-028", "TEST-047", "TEST-052", "TEST-117", "TEST-119"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_utility_api_migration.py",
+      "status": "implemented",
+      "notes": "The direct PostgreSQL adapter rejects Boolean, unsupported-type, malformed, nonfinite, negative, excess-precision, excess-scale, and noncanonical Reading values through the safe invalid-resource mapping before any execute call."
+    },
+    {
       "test_id": "test_runtime_batch_partial_and_atomic_all_transactions",
       "upstream_ids": ["API-015", "API-016", "API-017", "API-018", "API-046", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-013", "SEC-028", "TEST-047", "TEST-052", "TEST-117", "TEST-119"],
       "test_level": "DB",

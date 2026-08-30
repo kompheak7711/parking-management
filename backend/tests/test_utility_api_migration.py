@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import os
 from datetime import date
+from decimal import Decimal
 from pathlib import Path
+from typing import cast
 from uuid import UUID, uuid4
 
 import psycopg
@@ -37,6 +39,77 @@ def runtime_database_url() -> str:
     if value is None:
         pytest.skip("APP_DATABASE_URL is required")
     return value.replace("postgresql+psycopg://", "postgresql://", 1)
+
+
+class _ConnectionProbe:
+    def __init__(self) -> None:
+        self.parameters: list[tuple[object, ...]] = []
+
+    def execute(self, query: str, parameters: tuple[object, ...]) -> _ConnectionProbe:
+        del query
+        self.parameters.append(parameters)
+        return self
+
+    def fetchone(self) -> tuple[UUID]:
+        return (uuid4(),)
+
+
+def _direct_reading_payload(reading_value: object) -> dict[str, object]:
+    return {
+        "expected_meter_version": 1,
+        "reading_date": date(2026, 1, 31),
+        "reading_value": reading_value,
+        "source_kind": "MANUAL",
+        "source_evidence": "Boundary photograph",
+    }
+
+
+def test_postgres_reading_boundary_canonicalizes_decimal_and_numeric_string() -> None:
+    connection = _ConnectionProbe()
+    for value in (Decimal("20"), "20.000000"):
+        PostgresUtilityResourceFlow._record_on_connection(
+            cast(psycopg.Connection[object], connection),
+            uuid4(),
+            _direct_reading_payload(value),
+            uuid4(),
+            uuid4(),
+            "a" * 64,
+        )
+
+    assert [parameters[4] for parameters in connection.parameters] == [
+        "20.000000",
+        "20.000000",
+    ]
+
+
+@pytest.mark.parametrize(
+    "reading_value",
+    [
+        True,
+        20,
+        "not-a-number",
+        Decimal("NaN"),
+        "Infinity",
+        "-0.000001",
+        "123456789012345.123456",
+        "1.0000001",
+        "2E+1",
+    ],
+)
+def test_postgres_reading_boundary_rejects_invalid_values_before_execute(
+    reading_value: object,
+) -> None:
+    connection = _ConnectionProbe()
+    with pytest.raises(UtilityResourceInvalid, match="Utility reading value is invalid"):
+        PostgresUtilityResourceFlow._record_on_connection(
+            cast(psycopg.Connection[object], connection),
+            uuid4(),
+            _direct_reading_payload(reading_value),
+            uuid4(),
+            uuid4(),
+            "a" * 64,
+        )
+    assert connection.parameters == []
 
 
 def committed_sources(database_url: str) -> tuple[UUID, UUID, UUID]:
@@ -491,7 +564,9 @@ def test_runtime_batch_partial_and_atomic_all_transactions(
         request_digest="3" * 64,
     )
 
-    def item(reading_date: date, version: int, digest: str) -> dict[str, object]:
+    def item(
+        reading_date: date, version: int, digest: str, reading_value: object = "20.000000"
+    ) -> dict[str, object]:
         return {
             "idempotency_key": uuid4(),
             "meter_id": meter.id,
@@ -499,7 +574,7 @@ def test_runtime_batch_partial_and_atomic_all_transactions(
             "reading": {
                 "expected_meter_version": version,
                 "reading_date": reading_date,
-                "reading_value": "20.000000",
+                "reading_value": reading_value,
                 "source_kind": "MANUAL",
                 "source_evidence": f"Photograph {reading_date.isoformat()}",
             },
@@ -508,7 +583,10 @@ def test_runtime_batch_partial_and_atomic_all_transactions(
     partial = flow.record_batch(
         property_id,
         mode="PARTIAL",
-        items=[item(date(2026, 1, 31), 1, "4"), item(date(2026, 2, 28), 1, "5")],
+        items=[
+            item(date(2026, 1, 31), 1, "4", Decimal("20")),
+            item(date(2026, 2, 28), 1, "5"),
+        ],
         actor_id=actor_id,
         idempotency_key=None,
         request_digest=None,
@@ -518,7 +596,10 @@ def test_runtime_batch_partial_and_atomic_all_transactions(
 
     success_key = uuid4()
     success_digest = "6" * 64
-    success_items = [item(date(2026, 2, 28), 2, "6"), item(date(2026, 3, 31), 3, "7")]
+    success_items = [
+        item(date(2026, 2, 28), 2, "6"),
+        item(date(2026, 3, 31), 3, "7", Decimal("20")),
+    ]
     success = flow.record_batch(
         property_id,
         mode="ATOMIC_ALL",

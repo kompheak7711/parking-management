@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import re
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import date, datetime
@@ -14,7 +15,15 @@ from uuid import UUID, uuid4
 
 import psycopg
 from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, status
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    TypeAdapter,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 from property_rental.browser_security import require_browser_mutation
 from property_rental.identity import (
@@ -38,6 +47,14 @@ UTILITY_CALCULATE_CAPABILITY = "utility.calculate"
 MAX_PAGE_SIZE = 100
 DEFAULT_PAGE_SIZE = 25
 MAX_BATCH_SIZE = 100
+_READING_VALUE_QUANTUM = Decimal("0.000001")
+_READING_VALUE_ADAPTER: TypeAdapter[Decimal] = TypeAdapter(
+    Annotated[
+        Decimal,
+        Field(ge=0, max_digits=20, decimal_places=6, allow_inf_nan=False),
+    ]
+)
+_CANONICAL_NUMERIC_STRING = re.compile(r"(?:0|[1-9][0-9]*)(?:\.[0-9]+)?\Z")
 
 
 class UtilityResourceNotFound(LookupError):
@@ -64,6 +81,20 @@ class UtilityResourceInvalid(ValueError):
 
 class UtilityResourceUnavailable(RuntimeError):
     pass
+
+
+def _canonical_reading_value(value: object) -> str:
+    if isinstance(value, bool) or not isinstance(value, (Decimal, str)):
+        raise UtilityResourceInvalid("Utility reading value is invalid")
+    if isinstance(value, str) and _CANONICAL_NUMERIC_STRING.fullmatch(value) is None:
+        raise UtilityResourceInvalid("Utility reading value is invalid")
+    try:
+        normalized = _READING_VALUE_ADAPTER.validate_python(value)
+    except ValidationError as exc:
+        raise UtilityResourceInvalid("Utility reading value is invalid") from exc
+    if normalized == 0:
+        normalized = abs(normalized)
+    return format(normalized.quantize(_READING_VALUE_QUANTUM), "f")
 
 
 @dataclass(frozen=True, slots=True)
@@ -640,7 +671,7 @@ class PostgresUtilityResourceFlow:
                 reading_id,
                 payload["expected_meter_version"],
                 payload["reading_date"],
-                payload["reading_value"],
+                _canonical_reading_value(payload["reading_value"]),
                 payload.get("source_kind", "MANUAL"),
                 payload["source_evidence"],
                 actor_id,
@@ -750,7 +781,7 @@ class PostgresUtilityResourceFlow:
                         "reading_id": str(uuid4()),
                         "expected_meter_version": reading["expected_meter_version"],
                         "reading_date": cast(date, reading["reading_date"]).isoformat(),
-                        "reading_value": format(cast(Decimal, reading["reading_value"]), "f"),
+                        "reading_value": _canonical_reading_value(reading["reading_value"]),
                         "source_kind": reading.get("source_kind", "MANUAL"),
                         "source_evidence": reading["source_evidence"],
                     }
