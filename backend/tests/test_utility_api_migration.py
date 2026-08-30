@@ -529,6 +529,9 @@ def test_runtime_batch_partial_and_atomic_all_transactions(
     )
     assert [result.status for result in success] == ["SUCCEEDED", "SUCCEEDED"]
     assert [result.index for result in success] == [0, 1]
+    assert [result.idempotency_key for result in success] == [
+        item["idempotency_key"] for item in success_items
+    ]
     success_reading_ids = [result.reading.id for result in success if result.reading]
     assert len(success_reading_ids) == 2
     after_success = len(flow.list_readings(meter.id, limit=25, cursor=None).items)
@@ -564,6 +567,10 @@ def test_runtime_batch_partial_and_atomic_all_transactions(
         request_digest="c" * 64,
     )
     assert [result.status for result in failure] == ["FAILED", "FAILED"]
+    assert [result.index for result in failure] == [0, 1]
+    assert [result.idempotency_key for result in failure] == [
+        item["idempotency_key"] for item in failure_items
+    ]
     assert [result.error_code for result in failure] == ["ATOMIC_ROLLBACK", "CONFLICT"]
     assert all(result.reading is None for result in failure)
     assert len(flow.list_readings(meter.id, limit=25, cursor=None).items) == before_failure

@@ -32,7 +32,7 @@ export interface ReadingCorrection {
   authorization_reference: string;
 }
 
-export interface UtilityReading {
+interface UtilityReadingEvidence {
   id: string;
   property_id: string;
   meter_id: string;
@@ -42,13 +42,24 @@ export interface UtilityReading {
   reading_date: string;
   original_value: string;
   effective_value: string;
-  validated: true;
-  validated_at: string;
-  validated_by: string;
   source: { kind: string; evidence: string };
   version: number;
   corrections: ReadingCorrection[];
 }
+
+export type UtilityReading = UtilityReadingEvidence &
+  (
+    | {
+        validated: false;
+        validated_at: null;
+        validated_by: null;
+      }
+    | {
+        validated: true;
+        validated_at: string;
+        validated_by: string;
+      }
+  );
 
 export interface UtilityRate {
   id: string;
@@ -180,6 +191,7 @@ export interface UtilityApi {
     propertyId: string,
     mode: "ATOMIC_ALL" | "PARTIAL",
     items: BatchReadingInput[],
+    envelopeIdempotencyKey: string | undefined,
   ) => Promise<BatchReadingResult[]>;
   createRate: (
     propertyId: string,
@@ -465,10 +477,12 @@ function meter(value: unknown): UtilityMeter {
 function reading(value: unknown): UtilityReading {
   const item = object(value);
   const source = object(item.source);
-  if (item.validated !== true || !Array.isArray(item.corrections)) {
+  if (typeof item.validated !== "boolean" || !Array.isArray(item.corrections)) {
     throw new UtilityClientError();
   }
-  return {
+  const validatedAt = nullableString(item.validated_at);
+  const validatedBy = nullableString(item.validated_by);
+  const evidence = {
     id: string(item.id),
     property_id: string(item.property_id),
     meter_id: string(item.meter_id),
@@ -478,12 +492,29 @@ function reading(value: unknown): UtilityReading {
     reading_date: string(item.reading_date),
     original_value: string(item.original_value),
     effective_value: string(item.effective_value),
-    validated: true,
-    validated_at: string(item.validated_at),
-    validated_by: string(item.validated_by),
     source: { kind: string(source.kind), evidence: string(source.evidence) },
     version: number(item.version),
     corrections: item.corrections.map(correction),
+  };
+  if (item.validated) {
+    if (validatedAt === null || validatedBy === null) {
+      throw new UtilityClientError();
+    }
+    return {
+      ...evidence,
+      validated: true,
+      validated_at: validatedAt,
+      validated_by: validatedBy,
+    };
+  }
+  if (validatedAt !== null || validatedBy !== null) {
+    throw new UtilityClientError();
+  }
+  return {
+    ...evidence,
+    validated: false,
+    validated_at: null,
+    validated_by: null,
   };
 }
 
@@ -712,12 +743,12 @@ export const utilityApi: UtilityApi = {
         data.affected_calculations.map(affectedCalculation),
     };
   },
-  async recordBatch(propertyId, mode, items) {
+  async recordBatch(propertyId, mode, items, envelopeIdempotencyKey) {
     const data = object(
       (
         await response(
           `/api/v1/properties/${encodeURIComponent(propertyId)}/utility-readings:batch`,
-          mutation({ mode, items }),
+          mutation({ mode, items }, envelopeIdempotencyKey),
         )
       ).data,
     );

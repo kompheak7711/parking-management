@@ -475,6 +475,35 @@ def test_meter_routes_are_property_scoped_paginated_and_no_store() -> None:
     assert pending_body["validated_by"] is None
 
 
+def test_reading_history_preserves_mixed_pending_and_validated_shapes() -> None:
+    flow = InMemoryUtilityFlow(uuid4())
+    validated = flow.readings[0]
+    pending = replace(
+        validated,
+        id=uuid4(),
+        reading_date=date(2026, 7, 31),
+        original_value=Decimal("25.000000"),
+        effective_value=Decimal("25.000000"),
+        validated_at=None,
+        validated_by=None,
+    )
+    flow.readings = [pending, validated]
+
+    response = client_for(flow, "utility.read").get(f"/api/v1/meters/{flow.meter.id}/readings")
+
+    assert response.status_code == 200
+    history = response.json()["data"]
+    assert len(history) == 2
+    assert history[0]["id"] == str(pending.id)
+    assert history[0]["validated"] is False
+    assert history[0]["validated_at"] is None
+    assert history[0]["validated_by"] is None
+    assert history[1]["id"] == str(validated.id)
+    assert history[1]["validated"] is True
+    assert history[1]["validated_at"] == "2026-08-29T12:00:00+00:00"
+    assert history[1]["validated_by"] == str(flow.actor_id)
+
+
 def test_install_requires_capability_csrf_idempotency_and_boundary_evidence() -> None:
     flow = InMemoryUtilityFlow(uuid4())
     client = client_for(flow, "utility_meters.manage")
@@ -578,7 +607,7 @@ def test_reading_concurrency_and_correction_history_use_safe_envelopes() -> None
     assert data["affected_calculations"] == []
 
 
-def test_batch_partial_has_item_results_and_atomic_all_has_no_success_envelope() -> None:
+def test_batch_modes_preserve_order_and_atomic_all_replay_conflict_rollback() -> None:
     partial_flow = InMemoryUtilityFlow(uuid4())
     partial_client = client_for(partial_flow, "utility_readings.record")
     partial_items = [
@@ -591,9 +620,15 @@ def test_batch_partial_has_item_results_and_atomic_all_has_no_success_envelope()
         headers=browser_headers(),
     )
     assert partial.status_code == 200
-    assert [item["status"] for item in partial.json()["data"]["items"]] == [
+    partial_data = partial.json()["data"]
+    assert partial_data["mode"] == "PARTIAL"
+    assert [item["status"] for item in partial_data["items"]] == [
         "SUCCEEDED",
         "FAILED",
+    ]
+    assert [item["index"] for item in partial_data["items"]] == [0, 1]
+    assert [item["idempotency_key"] for item in partial_data["items"]] == [
+        item["idempotency_key"] for item in partial_items
     ]
     assert partial_flow.batch_idempotency_key is None
     assert partial_flow.batch_request_digest is None
@@ -637,8 +672,13 @@ def test_batch_partial_has_item_results_and_atomic_all_has_no_success_envelope()
         headers=browser_headers(envelope_key),
     )
     assert atomic.status_code == 200
-    outcomes = atomic.json()["data"]["items"]
+    atomic_data = atomic.json()["data"]
+    assert atomic_data["mode"] == "ATOMIC_ALL"
+    outcomes = atomic_data["items"]
     assert [item["index"] for item in outcomes] == [0, 1]
+    assert [item["idempotency_key"] for item in outcomes] == [
+        item["idempotency_key"] for item in items
+    ]
     assert [item["status"] for item in outcomes] == ["FAILED", "FAILED"]
     assert [item["error"]["code"] for item in outcomes] == [
         "ATOMIC_ROLLBACK",
@@ -687,8 +727,13 @@ def test_batch_partial_has_item_results_and_atomic_all_has_no_success_envelope()
         headers=browser_headers(success_key),
     )
     assert success.status_code == 200
-    success_outcomes = success.json()["data"]["items"]
+    success_data = success.json()["data"]
+    assert success_data["mode"] == "ATOMIC_ALL"
+    success_outcomes = success_data["items"]
     assert [item["index"] for item in success_outcomes] == [0, 1]
+    assert [item["idempotency_key"] for item in success_outcomes] == [
+        item["idempotency_key"] for item in success_items
+    ]
     assert [item["status"] for item in success_outcomes] == ["SUCCEEDED", "SUCCEEDED"]
     assert [item["error"] for item in success_outcomes] == [None, None]
     reading_ids = [item["reading"]["id"] for item in success_outcomes]

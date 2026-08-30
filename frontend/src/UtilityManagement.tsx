@@ -399,17 +399,26 @@ export function UtilityManagement({
 
   function submitBatch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const items: BatchReadingInput[] = batchRows.map((row) => ({
-      idempotency_key: commandKey(`batch-${row.rowId}`, row),
-      meter_id: row.meterId.trim(),
-      reading: {
-        expected_meter_version: Number(row.expectedVersion),
-        reading_date: row.readingDate,
-        reading_value: row.readingValue.trim(),
-        source_kind: "MANUAL",
-        source_evidence: row.evidence.trim(),
-      },
-    }));
+    const items: BatchReadingInput[] = batchRows.map((row) => {
+      const canonicalItem = {
+        meter_id: row.meterId.trim(),
+        reading: {
+          expected_meter_version: Number(row.expectedVersion),
+          reading_date: row.readingDate,
+          reading_value: row.readingValue.trim(),
+          source_kind: "MANUAL" as const,
+          source_evidence: row.evidence.trim(),
+        },
+      };
+      return {
+        idempotency_key: commandKey(`batch-${row.rowId}`, canonicalItem),
+        ...canonicalItem,
+      };
+    });
+    const envelopeIdempotencyKey =
+      batchMode === "ATOMIC_ALL"
+        ? commandKey("batch-envelope", { mode: batchMode, items })
+        : undefined;
     setBusy(true);
     setFailed(false);
     setBatchResults([]);
@@ -417,7 +426,7 @@ export function UtilityManagement({
       `Submitting ${String(items.length)} Reading rows in ${batchMode} mode…`,
     );
     void api
-      .recordBatch(targetPropertyId, batchMode, items)
+      .recordBatch(targetPropertyId, batchMode, items, envelopeIdempotencyKey)
       .then((results) => {
         setBatchResults(
           results.map((result) => ({
@@ -429,6 +438,7 @@ export function UtilityManagement({
               "No detail",
           })),
         );
+        pendingKeys.current["batch-envelope"] = undefined;
         for (const row of batchRows)
           pendingKeys.current[`batch-${row.rowId}`] = undefined;
         return reload("Bulk Reading results are shown per row.");
@@ -551,6 +561,7 @@ export function UtilityManagement({
                             <th>Date</th>
                             <th>Original</th>
                             <th>Effective</th>
+                            <th>Validation</th>
                             <th>Evidence</th>
                             <th>Corrections</th>
                             <th>Action</th>
@@ -566,6 +577,11 @@ export function UtilityManagement({
                                   {reading.effective_value}{" "}
                                   {reading.measurement_unit_code}
                                 </td>
+                                <td>
+                                  {reading.validated
+                                    ? `Validated by ${reading.validated_by} at ${reading.validated_at}`
+                                    : "Pending validation"}
+                                </td>
                                 <td>{reading.source.evidence}</td>
                                 <td>
                                   {reading.corrections.length === 0
@@ -578,16 +594,20 @@ export function UtilityManagement({
                                         .join("; ")}
                                 </td>
                                 <td>
-                                  <button
-                                    aria-label={`Correct Reading from ${reading.reading_date} for Meter ${meter.serial_number}`}
-                                    disabled={busy}
-                                    onClick={() => {
-                                      selectCorrection(reading);
-                                    }}
-                                    type="button"
-                                  >
-                                    Correct this Reading
-                                  </button>
+                                  {reading.validated ? (
+                                    <button
+                                      aria-label={`Correct Reading from ${reading.reading_date} for Meter ${meter.serial_number}`}
+                                      disabled={busy}
+                                      onClick={() => {
+                                        selectCorrection(reading);
+                                      }}
+                                      type="button"
+                                    >
+                                      Correct this Reading
+                                    </button>
+                                  ) : (
+                                    "Correction unavailable while pending"
+                                  )}
                                 </td>
                               </tr>
                             ),

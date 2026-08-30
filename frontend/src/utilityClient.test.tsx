@@ -91,7 +91,7 @@ describe("Utility client", () => {
     );
   });
 
-  it("correction C exhausts more than 25 Meters, Rates, and Readings", async () => {
+  it("TEST-FE-222 preserves complete paginated mixed pending and validated history", async () => {
     const meters = Array.from({ length: 26 }, (_, index) => ({
       ...meter,
       id: `meter-${String(index + 1)}`,
@@ -105,12 +105,24 @@ describe("Utility client", () => {
     }));
     const firstMeter = meters[0];
     if (firstMeter === undefined) throw new Error("Meter fixture missing");
-    const readings = Array.from({ length: 26 }, (_, index) => ({
-      ...reading,
-      id: `reading-${String(index + 1)}`,
-      meter_id: firstMeter.id,
-      reading_date: `2026-08-${String((index % 28) + 1).padStart(2, "0")}`,
-    }));
+    const readings = Array.from({ length: 26 }, (_, index) =>
+      index === 25
+        ? {
+            ...reading,
+            id: `reading-${String(index + 1)}`,
+            meter_id: firstMeter.id,
+            reading_date: "2026-08-26",
+            validated: false,
+            validated_at: null,
+            validated_by: null,
+          }
+        : {
+            ...reading,
+            id: `reading-${String(index + 1)}`,
+            meter_id: firstMeter.id,
+            reading_date: `2026-08-${String(index + 1).padStart(2, "0")}`,
+          },
+    );
     const fetchMock = vi.fn<typeof fetch>((input) => {
       const url = new URL(requestUrl(input), "http://localhost");
       const cursor = url.searchParams.get("cursor");
@@ -164,6 +176,17 @@ describe("Utility client", () => {
     expect(result.meters).toHaveLength(26);
     expect(result.rates).toHaveLength(26);
     expect(result.readings[firstMeter.id]).toHaveLength(26);
+    expect(result.readings[firstMeter.id]?.[0]).toMatchObject({
+      validated: true,
+      validated_at: "2026-08-01T12:00:00Z",
+      validated_by: "10000000-0000-4000-8000-000000000011",
+    });
+    expect(result.readings[firstMeter.id]?.[25]).toMatchObject({
+      id: "reading-26",
+      validated: false,
+      validated_at: null,
+      validated_by: null,
+    });
     const requestedUrls = fetchMock.mock.calls.map(([input]) =>
       requestUrl(input),
     );
@@ -178,7 +201,7 @@ describe("Utility client", () => {
     );
   });
 
-  it("correction C rejects a repeated cursor without returning partial history", async () => {
+  it("TEST-FE-223 rejects a repeated cursor without returning partial history", async () => {
     const fetchMock = vi.fn<typeof fetch>((input) => {
       const url = requestUrl(input);
       if (url.includes("/utility-rates")) {
@@ -198,6 +221,40 @@ describe("Utility client", () => {
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(fetchMock.mock.calls[2]?.[0]).toBe(
       `/api/v1/units/${meter.unit_id}/meters?limit=25&cursor=repeated`,
+    );
+  });
+
+  it("TEST-FE-227 rejects inconsistent Reading validation provenance", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        response(
+          [
+            {
+              ...reading,
+              validated: false,
+              validated_at: reading.validated_at,
+              validated_by: reading.validated_by,
+            },
+          ],
+          200,
+          { limit: 25, next_cursor: null },
+        ),
+      )
+      .mockResolvedValueOnce(
+        response(
+          [{ ...reading, validated_at: null, validated_by: null }],
+          200,
+          { limit: 25, next_cursor: null },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(utilityApi.loadReadings(meter.id)).rejects.toBeInstanceOf(
+      UtilityClientError,
+    );
+    await expect(utilityApi.loadReadings(meter.id)).rejects.toBeInstanceOf(
+      UtilityClientError,
     );
   });
 
@@ -234,7 +291,7 @@ describe("Utility client", () => {
     expect(init?.body).toContain('"reading_value":"10.000000"');
   });
 
-  it("correction C parses server-authoritative correction impacts", async () => {
+  it("TEST-FE-224 parses server-authoritative correction impacts", async () => {
     Object.defineProperty(document, "cookie", {
       configurable: true,
       value: "__Host-prm_csrf=utility-token",
@@ -300,6 +357,113 @@ describe("Utility client", () => {
         },
       ],
     });
+  });
+
+  it("TEST-FE-228 sends ATOMIC_ALL envelope identity and preserves ordered replay-safe results", async () => {
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=utility-token",
+    });
+    const envelopeKey = "10000000-0000-4000-8000-000000000030";
+    const itemKeys = [
+      "10000000-0000-4000-8000-000000000031",
+      "10000000-0000-4000-8000-000000000032",
+    ];
+    const items = itemKeys.map((idempotencyKey, index) => ({
+      idempotency_key: idempotencyKey,
+      meter_id: meter.id,
+      reading: {
+        expected_meter_version: index + 2,
+        reading_date: index === 0 ? "2026-08-31" : "2026-09-30",
+        reading_value: index === 0 ? "20.000000" : "30.000000",
+        source_kind: "MANUAL" as const,
+        source_evidence: `Photograph ${String(index + 1)}`,
+      },
+    }));
+    const atomicResponse = {
+      mode: "ATOMIC_ALL",
+      items: items.map((item, index) => ({
+        index,
+        idempotency_key: item.idempotency_key,
+        status: "SUCCEEDED",
+        reading: {
+          ...reading,
+          id: `10000000-0000-4000-8000-00000000004${String(index)}`,
+          reading_date: item.reading.reading_date,
+          effective_value: item.reading.reading_value,
+        },
+        error: null,
+      })),
+    };
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(atomicResponse))
+      .mockResolvedValueOnce(response(atomicResponse))
+      .mockResolvedValueOnce(response({}, 409))
+      .mockResolvedValueOnce(response({}, 422));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const success = await utilityApi.recordBatch(
+      meter.property_id,
+      "ATOMIC_ALL",
+      items,
+      envelopeKey,
+    );
+    await expect(
+      utilityApi.recordBatch(
+        meter.property_id,
+        "ATOMIC_ALL",
+        items,
+        envelopeKey,
+      ),
+    ).resolves.toEqual(success);
+    const firstItem = items[0];
+    const secondItem = items[1];
+    if (firstItem === undefined || secondItem === undefined) {
+      throw new Error("Atomic item fixtures missing");
+    }
+    await expect(
+      utilityApi.recordBatch(
+        meter.property_id,
+        "ATOMIC_ALL",
+        [
+          {
+            ...firstItem,
+            reading: { ...firstItem.reading, reading_value: "21.000000" },
+          },
+          secondItem,
+        ],
+        envelopeKey,
+      ),
+    ).rejects.toBeInstanceOf(UtilityConflictError);
+    await expect(
+      utilityApi.recordBatch(
+        meter.property_id,
+        "ATOMIC_ALL",
+        items,
+        "10000000-0000-4000-8000-000000000033",
+      ),
+    ).rejects.toBeInstanceOf(UtilityClientError);
+
+    expect(success.map((item) => item.index)).toEqual([0, 1]);
+    expect(success.map((item) => item.idempotency_key)).toEqual(itemKeys);
+    expect(success.map((item) => item.reading?.effective_value)).toEqual([
+      "20.000000",
+      "30.000000",
+    ]);
+    for (const [, init] of fetchMock.mock.calls) {
+      if (typeof init?.body !== "string") {
+        throw new Error("Atomic request body missing");
+      }
+      const body = JSON.parse(init.body) as { mode: string };
+      expect(body.mode).toBe("ATOMIC_ALL");
+      expect(body.mode).not.toBe("PARTIAL");
+    }
+    expect(
+      fetchMock.mock.calls
+        .slice(0, 3)
+        .map(([, init]) => new Headers(init?.headers).get("Idempotency-Key")),
+    ).toEqual([envelopeKey, envelopeKey, envelopeKey]);
   });
 
   it("TEST-FE-215 parses the authoritative pending broken-Meter state", async () => {

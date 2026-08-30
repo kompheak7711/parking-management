@@ -11,6 +11,7 @@ import { UtilityManagement } from "./UtilityManagement";
 import {
   UtilityApi,
   UtilityCalculation,
+  UtilityClientError,
   UtilityConflictError,
   UtilitySnapshot,
 } from "./utilityClient";
@@ -132,11 +133,55 @@ async function loadWorkspace(client: UtilityApi) {
   await screen.findByText("Complete Utility history loaded.");
 }
 
+function batchSection(): HTMLElement {
+  const section = screen.getByRole("heading", {
+    name: "Bounded bulk Reading entry",
+  }).parentElement;
+  if (section === null) throw new Error("Batch section missing");
+  return section;
+}
+
+function fillBatchRow(
+  section: HTMLElement,
+  index: number,
+  values: {
+    meterId: string;
+    version: string;
+    readingDate: string;
+    readingValue: string;
+    evidence: string;
+  },
+) {
+  const fieldset = section.querySelectorAll("fieldset")[index];
+  if (fieldset === undefined) throw new Error("Batch row missing");
+  const [meter, version, readingDate, readingValue, evidence] =
+    fieldset.querySelectorAll("input");
+  if (
+    meter === undefined ||
+    version === undefined ||
+    readingDate === undefined ||
+    readingValue === undefined ||
+    evidence === undefined
+  ) {
+    throw new Error("Batch controls missing");
+  }
+  fireEvent.change(meter, { target: { value: values.meterId } });
+  fireEvent.change(version, { target: { value: values.version } });
+  fireEvent.change(readingDate, { target: { value: values.readingDate } });
+  fireEvent.change(readingValue, { target: { value: values.readingValue } });
+  fireEvent.change(evidence, { target: { value: values.evidence } });
+}
+
 describe("UtilityManagement", () => {
   it("TEST-FE-217 renders Meter, corrected Reading, and Rate evidence", async () => {
     const client = api();
     await loadWorkspace(client);
     expect(screen.getByText("105.000000 KWH")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Validated by 10000000-0000-4000-8000-000000000015 at 2026-07-31T12:00:00Z",
+      ),
+    ).toBeInTheDocument();
     expect(
       screen.getByText("105.000000: Transcription correction"),
     ).toBeInTheDocument();
@@ -173,9 +218,220 @@ describe("UtilityManagement", () => {
     await waitFor(() => {
       expect(client.recordBatch).toHaveBeenCalled();
     });
+    const partialCall = vi.mocked(client.recordBatch).mock.calls[0];
+    expect(partialCall?.[1]).toBe("PARTIAL");
+    expect(partialCall?.[2]).toHaveLength(1);
+    expect(partialCall?.[2][0]?.meter_id).toBe(meterId);
+    expect(partialCall?.[2][0]?.idempotency_key).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+    expect(partialCall?.[3]).toBeUndefined();
     expect(
       await screen.findByRole("cell", { name: "SUCCEEDED" }),
     ).toBeInTheDocument();
+  });
+
+  it("TEST-FE-231 submits ATOMIC_ALL with one envelope UUID and ordered item results", async () => {
+    const client = api();
+    const validated = snapshot().readings[meterId]?.[0];
+    if (validated === undefined) throw new Error("Reading fixture missing");
+    vi.mocked(client.recordBatch).mockImplementation(
+      (_targetPropertyId, _mode, items) =>
+        Promise.resolve(
+          items.map((item, index) => ({
+            index,
+            idempotency_key: item.idempotency_key,
+            status: "SUCCEEDED",
+            reading: {
+              ...validated,
+              id: `10000000-0000-4000-8000-00000000003${String(index)}`,
+              reading_date: item.reading.reading_date,
+              effective_value: item.reading.reading_value,
+            },
+            error: null,
+          })),
+        ),
+    );
+    await loadWorkspace(client);
+    const batch = batchSection();
+    fireEvent.change(screen.getByLabelText("Batch behavior"), {
+      target: { value: "ATOMIC_ALL" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add Reading row" }));
+    fillBatchRow(batch, 0, {
+      meterId,
+      version: "2",
+      readingDate: "2026-08-31",
+      readingValue: "151",
+      evidence: "Photo 8",
+    });
+    fillBatchRow(batch, 1, {
+      meterId,
+      version: "3",
+      readingDate: "2026-09-30",
+      readingValue: "205",
+      evidence: "Photo 9",
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Submit Reading batch" }),
+    );
+
+    await waitFor(() => {
+      expect(client.recordBatch).toHaveBeenCalledTimes(1);
+    });
+    const atomicCall = vi.mocked(client.recordBatch).mock.calls[0];
+    expect(atomicCall?.[0]).toBe(propertyId);
+    expect(atomicCall?.[1]).toBe("ATOMIC_ALL");
+    expect(atomicCall?.[2].map((item) => item.reading.reading_value)).toEqual([
+      "151",
+      "205",
+    ]);
+    expect(atomicCall?.[2].map((item) => item.idempotency_key)).toEqual([
+      expect.stringMatching(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      ),
+      expect.stringMatching(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+      ),
+    ]);
+    expect(atomicCall?.[2][0]?.idempotency_key).not.toBe(
+      atomicCall?.[2][1]?.idempotency_key,
+    );
+    expect(atomicCall?.[3]).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+    const results = await screen.findByRole("table", {
+      name: "Reading batch item results",
+    });
+    const rows = results.querySelectorAll("tbody tr");
+    expect(rows[0]).toHaveTextContent("1SUCCEEDED151");
+    expect(rows[1]).toHaveTextContent("2SUCCEEDED205");
+  });
+
+  it("TEST-FE-232 retains equivalent ATOMIC_ALL replay identity and changes it with input", async () => {
+    const client = api();
+    vi.mocked(client.recordBatch)
+      .mockRejectedValueOnce(new UtilityClientError())
+      .mockRejectedValueOnce(
+        new UtilityConflictError(["items[0].reading_value"], "atomic-conflict"),
+      )
+      .mockRejectedValueOnce(new UtilityClientError());
+    await loadWorkspace(client);
+    const batch = batchSection();
+    fireEvent.change(screen.getByLabelText("Batch behavior"), {
+      target: { value: "ATOMIC_ALL" },
+    });
+    fillBatchRow(batch, 0, {
+      meterId,
+      version: "2",
+      readingDate: "2026-08-31",
+      readingValue: "150",
+      evidence: "Photo 8",
+    });
+    const submit = screen.getByRole("button", { name: "Submit Reading batch" });
+
+    fireEvent.click(submit);
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "The ATOMIC_ALL batch was not completed",
+    );
+    await waitFor(() => {
+      expect(submit).not.toBeDisabled();
+    });
+
+    const evidence = batch
+      .querySelectorAll("fieldset")[0]
+      ?.querySelectorAll("input")[4];
+    if (evidence === undefined)
+      throw new Error("Batch evidence control missing");
+    fireEvent.change(evidence, { target: { value: "  Photo 8  " } });
+    fireEvent.click(submit);
+    await waitFor(() => {
+      expect(client.recordBatch).toHaveBeenCalledTimes(2);
+    });
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "atomic-conflict",
+    );
+    await waitFor(() => {
+      expect(submit).not.toBeDisabled();
+    });
+
+    const readingValue = batch
+      .querySelectorAll("fieldset")[0]
+      ?.querySelectorAll("input")[3];
+    if (readingValue === undefined)
+      throw new Error("Batch value control missing");
+    fireEvent.change(readingValue, { target: { value: "151" } });
+    fireEvent.click(submit);
+    await waitFor(() => {
+      expect(client.recordBatch).toHaveBeenCalledTimes(3);
+    });
+
+    const calls = vi.mocked(client.recordBatch).mock.calls;
+    const firstEnvelopeKey = calls[0]?.[3];
+    const equivalentEnvelopeKey = calls[1]?.[3];
+    const changedEnvelopeKey = calls[2]?.[3];
+    const firstItemKey = calls[0]?.[2][0]?.idempotency_key;
+    const equivalentItemKey = calls[1]?.[2][0]?.idempotency_key;
+    const changedItemKey = calls[2]?.[2][0]?.idempotency_key;
+    expect(firstEnvelopeKey).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+    );
+    expect(equivalentEnvelopeKey).toBe(firstEnvelopeKey);
+    expect(equivalentItemKey).toBe(firstItemKey);
+    expect(changedEnvelopeKey).not.toBe(firstEnvelopeKey);
+    expect(changedItemKey).not.toBe(firstItemKey);
+    expect(calls.map((call) => call[1])).toEqual([
+      "ATOMIC_ALL",
+      "ATOMIC_ALL",
+      "ATOMIC_ALL",
+    ]);
+    expect(calls.every((call) => call[1] !== "PARTIAL")).toBe(true);
+    expect(client.load).toHaveBeenCalledTimes(1);
+  });
+
+  it("TEST-FE-230 renders mixed pending and validated history without pending correction", async () => {
+    const client = api();
+    const mixed = snapshot();
+    const validated = mixed.readings[meterId]?.[0];
+    if (validated === undefined)
+      throw new Error("Validated Reading fixture missing");
+    mixed.readings[meterId] = [
+      {
+        ...validated,
+        id: "10000000-0000-4000-8000-000000000025",
+        reading_date: "2026-08-31",
+        original_value: "150.000000",
+        effective_value: "150.000000",
+        validated: false,
+        validated_at: null,
+        validated_by: null,
+        version: 1,
+        corrections: [],
+      },
+      validated,
+    ];
+    vi.mocked(client.load).mockResolvedValue(mixed);
+
+    await loadWorkspace(client);
+
+    expect(screen.getByText("Pending validation")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Validated by 10000000-0000-4000-8000-000000000015 at 2026-07-31T12:00:00Z",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Correction unavailable while pending"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: "Correct Reading from 2026-08-31 for Meter ELEC-301",
+      }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: /Correct Reading from/ }),
+    ).toHaveLength(1);
   });
 
   it("TEST-FE-219 displays the explicit pending future-basis state without client arithmetic", async () => {
@@ -251,7 +507,7 @@ describe("UtilityManagement", () => {
     expect(screen.getByLabelText("Advance-notice evidence")).toBeRequired();
   });
 
-  it("correction C binds per-row review and renders server impact evidence", async () => {
+  it("TEST-FE-225 binds per-row correction review and renders server impact evidence", async () => {
     const client = api();
     const source = snapshot().readings[meterId]?.[0];
     if (source === undefined) throw new Error("Reading fixture missing");
@@ -352,7 +608,7 @@ describe("UtilityManagement", () => {
     expect(result).toHaveTextContent("10000000-0000-4000-8000-000000000024");
   });
 
-  it("correction C preserves correction input and idempotency after conflict", async () => {
+  it("TEST-FE-226 preserves correction input and idempotency after conflict", async () => {
     const client = api();
     vi.mocked(client.correctReading).mockRejectedValue(
       new UtilityConflictError(["expected_version"], "conflict-ref"),

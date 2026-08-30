@@ -10101,6 +10101,14 @@
       "notes": "Meter discovery is Property-authorized, bounded by a deterministic cursor, rejects unsupported query parameters, emits safe envelopes, and is marked private no-store."
     },
     {
+      "test_id": "test_reading_history_preserves_mixed_pending_and_validated_shapes",
+      "upstream_ids": ["DB-UTIL-003", "API-019", "API-045", "UI-056", "TEST-047", "TEST-052", "TEST-117", "TEST-119"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_utility_api.py",
+      "status": "implemented",
+      "notes": "One authorized history response preserves both the valid pending false/null/null Reading shape and the validated true/non-null provenance shape without omitting either row."
+    },
+    {
       "test_id": "test_install_requires_capability_csrf_idempotency_and_boundary_evidence",
       "upstream_ids": ["API-015", "API-016", "API-044", "API-046", "BR-UTIL-001", "BR-UTIL-002", "BR-UTIL-003", "BR-UTIL-004", "BR-UTIL-005", "BR-UTIL-009", "BR-UTIL-010", "SEC-028", "SEC-035", "TEST-046", "TEST-047"],
       "test_level": "security",
@@ -10117,12 +10125,12 @@
       "notes": "Reading writes fail with an authoritative current version on stale evidence; correction responses preserve original and corrected values, authorization evidence, and affected-calculation references."
     },
     {
-      "test_id": "test_batch_partial_has_item_results_and_atomic_all_has_no_success_envelope",
-      "upstream_ids": ["API-015", "API-016", "API-046", "SEC-028", "SEC-040", "TEST-047", "TEST-052"],
+      "test_id": "test_batch_modes_preserve_order_and_atomic_all_replay_conflict_rollback",
+      "upstream_ids": ["API-015", "API-016", "API-017", "API-018", "API-046", "SEC-028", "SEC-040", "TEST-047", "TEST-052", "TEST-117", "TEST-119"],
       "test_level": "API",
       "test_path": "backend/tests/test_utility_api.py",
       "status": "implemented",
-      "notes": "PARTIAL batch entry returns ordered per-item outcomes while ATOMIC_ALL failure returns only a safe error envelope and never claims partial success."
+      "notes": "PARTIAL preserves ordered item identities and outcomes without an envelope identity; ATOMIC_ALL requires one envelope UUID, returns ordered success or complete rollback results, replays equivalent input, and rejects changed input under the reused key."
     },
     {
       "test_id": "test_preview_is_non_persisted_pending_and_requires_calculate_capability",
@@ -10174,11 +10182,11 @@
     },
     {
       "test_id": "test_runtime_batch_partial_and_atomic_all_transactions",
-      "upstream_ids": ["API-015", "API-016", "API-046", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-013", "SEC-028", "TEST-047", "TEST-052"],
+      "upstream_ids": ["API-015", "API-016", "API-017", "API-018", "API-046", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-013", "SEC-028", "TEST-047", "TEST-052", "TEST-117", "TEST-119"],
       "test_level": "DB",
       "test_path": "backend/tests/test_utility_api_migration.py",
       "status": "implemented",
-      "notes": "Disposable PostgreSQL proves per-item PARTIAL commits and complete ATOMIC_ALL rollback, with independent UUID replay identities and no hidden successful first item after a later failure."
+      "notes": "Disposable PostgreSQL proves ordered per-item PARTIAL commits plus ATOMIC_ALL success, equivalent replay, changed-digest conflict, complete rollback, failure replay, and preserved item UUID results without a hidden write."
     },
     {
       "test_id": "TEST-FE-213",
@@ -10214,19 +10222,19 @@
     },
     {
       "test_id": "TEST-FE-217",
-      "upstream_ids": ["API-044", "API-045", "API-047", "UI-056", "UI-057", "UI-060", "BR-UTIL-001", "BR-UTIL-002", "BR-UTIL-005", "BR-UTIL-006", "BR-UTIL-007", "BR-UTIL-008", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-011", "BR-UTIL-012", "BR-UTIL-013", "BR-UTIL-014", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-017", "TEST-046", "TEST-047", "TEST-048", "TEST-049"],
+      "upstream_ids": ["DB-UTIL-003", "API-044", "API-045", "API-047", "UI-056", "UI-057", "UI-060", "BR-UTIL-001", "BR-UTIL-002", "BR-UTIL-005", "BR-UTIL-006", "BR-UTIL-007", "BR-UTIL-008", "BR-UTIL-009", "BR-UTIL-010", "BR-UTIL-011", "BR-UTIL-012", "BR-UTIL-013", "BR-UTIL-014", "BR-UTIL-015", "BR-UTIL-016", "BR-UTIL-017", "TEST-046", "TEST-047", "TEST-048", "TEST-049", "TEST-117", "TEST-119"],
       "test_level": "UI component",
       "test_path": "frontend/src/UtilityManagement.test.tsx",
       "status": "implemented",
-      "notes": "One Utilities workflow renders physical Meter history, original and corrected Reading evidence, and existing effective Rate history from server responses."
+      "notes": "One Utilities workflow renders physical Meter history, validated Reading provenance, original and corrected Reading evidence, and existing effective Rate history from server responses."
     },
     {
       "test_id": "TEST-FE-218",
-      "upstream_ids": ["API-046", "UI-059", "UI-062", "SEC-040", "TEST-047", "TEST-052"],
+      "upstream_ids": ["API-046", "UI-058", "UI-062", "SEC-040", "TEST-047", "TEST-052", "TEST-117", "TEST-119"],
       "test_level": "UI component",
       "test_path": "frontend/src/UtilityManagement.test.tsx",
       "status": "implemented",
-      "notes": "Bulk Reading entry is visibly bounded, submits the selected ATOMIC_ALL or PARTIAL mode, and announces each authoritative server row outcome."
+      "notes": "PARTIAL bulk Reading entry is visibly bounded, sends ordered per-item UUID identities without an envelope identity, and announces each authoritative server row outcome."
     },
     {
       "test_id": "TEST-FE-219",
@@ -10243,6 +10251,86 @@
       "test_path": "frontend/src/UtilityManagement.test.tsx",
       "status": "implemented",
       "notes": "Install, replacement, single Reading, correction, bulk entry, preview, and Rate-history controls are labeled and expose accessible loading, empty, success, and error announcements."
+    },
+    {
+      "test_id": "TEST-FE-222",
+      "upstream_ids": ["DB-UTIL-003", "API-019", "API-045", "UI-056", "TEST-047", "TEST-052", "TEST-117", "TEST-119"],
+      "test_level": "UI",
+      "test_path": "frontend/src/utilityClient.test.tsx",
+      "status": "implemented",
+      "notes": "The client exhausts every Meter, Rate, and Reading cursor and preserves all rows when later pages contain a valid pending Reading alongside validated Readings with non-null provenance."
+    },
+    {
+      "test_id": "TEST-FE-223",
+      "upstream_ids": ["API-019", "UI-056", "SEC-040", "TEST-047", "TEST-117", "TEST-119"],
+      "test_level": "UI",
+      "test_path": "frontend/src/utilityClient.test.tsx",
+      "status": "implemented",
+      "notes": "A repeated opaque cursor fails closed instead of presenting an incomplete Utility history as complete."
+    },
+    {
+      "test_id": "TEST-FE-224",
+      "upstream_ids": ["API-015", "API-016", "API-017", "API-018", "API-045", "UI-059", "UI-062", "TEST-052", "TEST-117", "TEST-119"],
+      "test_level": "UI",
+      "test_path": "frontend/src/utilityClient.test.tsx",
+      "status": "implemented",
+      "notes": "The correction client preserves original and corrected Reading evidence plus the server-authoritative affected-calculation and adjustment references."
+    },
+    {
+      "test_id": "TEST-FE-225",
+      "upstream_ids": ["API-015", "API-016", "API-017", "API-018", "API-045", "UI-059", "UI-062", "TEST-052", "TEST-117", "TEST-119"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The browser binds correction review to the selected validated Reading and renders the exact server correction and affected-calculation result."
+    },
+    {
+      "test_id": "TEST-FE-226",
+      "upstream_ids": ["API-016", "API-018", "API-045", "UI-059", "UI-062", "TEST-052", "TEST-117", "TEST-119"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A correction conflict keeps the reviewed input and retained UUID identity visible for a deliberate equivalent replay rather than mutating or discarding evidence."
+    },
+    {
+      "test_id": "TEST-FE-227",
+      "upstream_ids": ["DB-UTIL-003", "API-045", "UI-056", "UI-062", "TEST-047", "TEST-117", "TEST-119"],
+      "test_level": "UI",
+      "test_path": "frontend/src/utilityClient.test.tsx",
+      "status": "implemented",
+      "notes": "The Reading decoder accepts only the coupled pending false/null/null or validated true/non-null provenance states and rejects inconsistent server shapes safely."
+    },
+    {
+      "test_id": "TEST-FE-228",
+      "upstream_ids": ["API-015", "API-016", "API-017", "API-018", "API-046", "UI-058", "UI-062", "SEC-040", "TEST-047", "TEST-052", "TEST-117", "TEST-119"],
+      "test_level": "UI",
+      "test_path": "frontend/src/utilityClient.test.tsx",
+      "status": "implemented",
+      "notes": "ATOMIC_ALL sends one envelope UUID header, preserves ordered item UUIDs and results across equivalent replay, classifies changed-input conflict and validation errors safely, and never changes the request to PARTIAL."
+    },
+    {
+      "test_id": "TEST-FE-230",
+      "upstream_ids": ["DB-UTIL-003", "API-045", "UI-056", "UI-059", "UI-062", "TEST-047", "TEST-052", "TEST-117", "TEST-119"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Mixed pending and validated history renders both states and validated provenance truthfully, while the pending row exposes no correction action."
+    },
+    {
+      "test_id": "TEST-FE-231",
+      "upstream_ids": ["API-015", "API-016", "API-017", "API-046", "UI-058", "UI-062", "TEST-047", "TEST-052", "TEST-117", "TEST-119"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityManagement.test.tsx",
+      "status": "implemented",
+      "notes": "The browser submits ordered ATOMIC_ALL canonical items with distinct item UUIDs and one envelope UUID, then renders the ordered authoritative success results."
+    },
+    {
+      "test_id": "TEST-FE-232",
+      "upstream_ids": ["API-015", "API-016", "API-018", "API-046", "UI-058", "UI-062", "TEST-047", "TEST-052", "TEST-117", "TEST-119"],
+      "test_level": "UI component",
+      "test_path": "frontend/src/UtilityManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Equivalent ordered canonical ATOMIC_ALL input retains item and envelope UUIDs across an ambiguous failure and conflict, while changed input receives new identities and no retry falls back to PARTIAL."
     },
     {
       "test_id": "TEST-FE-221",
