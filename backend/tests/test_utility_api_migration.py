@@ -17,6 +17,7 @@ from property_rental.utility_api import (
     PostgresUtilityResourceFlow,
     ReadingRecord,
     UtilityResourceIdempotencyConflict,
+    UtilityResourceInvalid,
     UtilityResourceVersionConflict,
 )
 from test_lease_migration import setup_sources
@@ -61,6 +62,32 @@ def install_payload() -> dict[str, object]:
     }
 
 
+def replacement_payload(
+    boundary_reading_id: UUID,
+    *,
+    expected_version: int,
+    failure_date: date = date(2026, 1, 31),
+    replacement_date: date = date(2026, 2, 1),
+) -> dict[str, object]:
+    return {
+        "expected_version": expected_version,
+        "failed_boundary_reading_id": boundary_reading_id,
+        "failure_date": failure_date,
+        "replacement_date": replacement_date,
+        "reason": "Confirmed mechanical failure",
+        "replacement_meter": {
+            "serial_number": f"ELEC-API-{uuid4().hex[:12]}",
+            "description": None,
+            "memo": "Replacement work order",
+        },
+        "replacement_initial_reading": {
+            "reading_date": replacement_date,
+            "reading_value": "0.000000",
+            "source_evidence": "Replacement photograph",
+        },
+    }
+
+
 def test_v1_043_is_forward_only_head_and_runtime_has_only_command_execute(
     migrated_database_url: str,
 ) -> None:
@@ -70,7 +97,12 @@ def test_v1_043_is_forward_only_head_and_runtime_has_only_command_execute(
         Path(__file__).parents[1] / "migrations/versions/20260829_34_v1_043_utility_api.py"
     ).read_text()
     assert 'raise RuntimeError("V1-043 Utility API migration is forward-only")' in source
+    with pytest.raises(RuntimeError, match="forward-only"):
+        command.downgrade(config, "20260829_33")
     with psycopg.connect(migrated_database_url) as owner:
+        assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
+            "20260829_34",
+        )
         for table in (
             "utility_meters",
             "utility_readings",
@@ -194,10 +226,23 @@ def test_runtime_replacement_and_correction_preserve_original_history(
         idempotency_key=uuid4(),
         request_digest="e" * 64,
     )
-    boundary = flow.record_reading(
+    stale_boundary = flow.record_reading(
         meter.id,
         payload={
             "expected_meter_version": 1,
+            "reading_date": date(2026, 1, 15),
+            "reading_value": "20.000000",
+            "source_kind": "MANUAL",
+            "source_evidence": "Earlier monthly photograph",
+        },
+        actor_id=actor_id,
+        idempotency_key=uuid4(),
+        request_digest="f" * 64,
+    )
+    boundary = flow.record_reading(
+        meter.id,
+        payload={
+            "expected_meter_version": 2,
             "reading_date": date(2026, 1, 31),
             "reading_value": "30.000000",
             "source_kind": "MANUAL",
@@ -205,35 +250,79 @@ def test_runtime_replacement_and_correction_preserve_original_history(
         },
         actor_id=actor_id,
         idempotency_key=uuid4(),
-        request_digest="f" * 64,
+        request_digest="0" * 64,
     )
+    replacement_key = uuid4()
+    replacement_digest = "1" * 64
+    payload = replacement_payload(boundary.id, expected_version=3)
     replacement = flow.replace_meter(
         meter.id,
-        payload={
-            "expected_version": 2,
-            "failed_boundary_reading_id": boundary.id,
-            "failure_date": date(2026, 1, 31),
-            "replacement_date": date(2026, 2, 1),
-            "reason": "Confirmed mechanical failure",
-            "replacement_meter": {
-                "serial_number": "ELEC-API-302",
-                "description": None,
-                "memo": "Replacement work order",
-            },
-            "replacement_initial_reading": {
-                "reading_date": date(2026, 2, 1),
-                "reading_value": "0.000000",
-                "source_evidence": "Replacement photograph",
-            },
-        },
+        payload=payload,
         actor_id=actor_id,
-        idempotency_key=uuid4(),
-        request_digest="1" * 64,
+        idempotency_key=replacement_key,
+        request_digest=replacement_digest,
     )
     failed = flow.get_meter(meter.id)
     assert failed.deactivated_date == date(2026, 2, 1)
     assert failed.replacement_meter_id == replacement.id
     assert replacement.replaced_meter_id == meter.id
+    assert failed.replacement_events == replacement.replacement_events
+    assert len(failed.replacement_events) == 1
+    event = failed.replacement_events[0]
+    assert event.failed_boundary_reading_id == boundary.id
+    assert event.failed_boundary_reading_id != stale_boundary.id
+    assert (
+        event.replacement_initial_reading_id
+        == flow.list_readings(replacement.id, limit=1, cursor=None).items[0].id
+    )
+    assert event.failure_date == date(2026, 1, 31)
+    assert event.replacement_date == date(2026, 2, 1)
+    assert event.expected_failed_meter_version == 3
+    assert event.reason == "Confirmed mechanical failure"
+    assert event.actor_id == actor_id
+    assert event.idempotency_key == replacement_key
+    assert event.request_digest == replacement_digest
+    assert event.request_evidence is not None
+    assert event.request_evidence["failed_boundary_reading_id"] == str(boundary.id)
+    assert event.request_evidence["reason"] == "Confirmed mechanical failure"
+    initial_evidence = event.request_evidence["replacement_initial_reading"]
+    assert isinstance(initial_evidence, dict)
+    assert initial_evidence["source_evidence"] == "Replacement photograph"
+    replay = flow.replace_meter(
+        meter.id,
+        payload=payload,
+        actor_id=actor_id,
+        idempotency_key=replacement_key,
+        request_digest=replacement_digest,
+    )
+    assert replay.id == replacement.id
+    assert replay.replacement_events == (event,)
+    with psycopg.connect(migrated_database_url) as owner:
+        stored = owner.execute(
+            """SELECT failed_boundary_reading_id,replacement_initial_reading_id,
+               failure_date,expected_failed_meter_version,request_idempotency_key,
+               request_digest,request_evidence
+               FROM app.utility_meter_replacements WHERE id=%s""",
+            (event.id,),
+        ).fetchone()
+        assert stored is not None
+        assert stored[:6] == (
+            boundary.id,
+            event.replacement_initial_reading_id,
+            date(2026, 1, 31),
+            3,
+            replacement_key,
+            replacement_digest,
+        )
+        assert stored[6] == event.request_evidence
+        with pytest.raises(psycopg.Error) as immutable:
+            owner.execute(
+                """UPDATE app.utility_meter_replacements
+                SET request_evidence=request_evidence WHERE id=%s""",
+                (event.id,),
+            )
+        assert immutable.value.sqlstate == "55000"
+        owner.rollback()
     correction = flow.correct_reading(
         boundary.id,
         payload={
@@ -250,6 +339,143 @@ def test_runtime_replacement_and_correction_preserve_original_history(
     assert correction.reading.effective_value == 31
     assert correction.reading.version == 2
     assert correction.correction.previous_value == 30
+    _assert_runtime_replacement_rejects_non_authoritative_boundaries(migrated_database_url)
+
+
+def _assert_runtime_replacement_rejects_non_authoritative_boundaries(
+    migrated_database_url: str,
+) -> None:
+    flow = PostgresUtilityResourceFlow(runtime_database_url())
+
+    actor_id, _, unit_id = committed_sources(migrated_database_url)
+    stale_meter = flow.install_meter(
+        unit_id,
+        payload=install_payload(),
+        actor_id=actor_id,
+        idempotency_key=uuid4(),
+        request_digest="3" * 64,
+    )
+    stale = flow.record_reading(
+        stale_meter.id,
+        payload={
+            "expected_meter_version": 1,
+            "reading_date": date(2026, 1, 15),
+            "reading_value": "20.000000",
+            "source_kind": "MANUAL",
+            "source_evidence": "Earlier boundary photograph",
+        },
+        actor_id=actor_id,
+        idempotency_key=uuid4(),
+        request_digest="4" * 64,
+    )
+    flow.record_reading(
+        stale_meter.id,
+        payload={
+            "expected_meter_version": 2,
+            "reading_date": date(2026, 1, 31),
+            "reading_value": "30.000000",
+            "source_kind": "MANUAL",
+            "source_evidence": "Latest boundary photograph",
+        },
+        actor_id=actor_id,
+        idempotency_key=uuid4(),
+        request_digest="5" * 64,
+    )
+    with pytest.raises(UtilityResourceInvalid):
+        flow.replace_meter(
+            stale_meter.id,
+            payload=replacement_payload(stale.id, expected_version=3),
+            actor_id=actor_id,
+            idempotency_key=uuid4(),
+            request_digest="6" * 64,
+        )
+
+    wrong_actor_id, _, wrong_unit_id = committed_sources(migrated_database_url)
+    wrong_meter = flow.install_meter(
+        wrong_unit_id,
+        payload=install_payload(),
+        actor_id=wrong_actor_id,
+        idempotency_key=uuid4(),
+        request_digest="7" * 64,
+    )
+    wrong_boundary = flow.list_readings(wrong_meter.id, limit=1, cursor=None).items[0]
+    with pytest.raises(UtilityResourceInvalid):
+        flow.replace_meter(
+            stale_meter.id,
+            payload=replacement_payload(wrong_boundary.id, expected_version=3),
+            actor_id=actor_id,
+            idempotency_key=uuid4(),
+            request_digest="8" * 64,
+        )
+
+    pending_actor_id, _, pending_unit_id = committed_sources(migrated_database_url)
+    pending_meter = flow.install_meter(
+        pending_unit_id,
+        payload=install_payload(),
+        actor_id=pending_actor_id,
+        idempotency_key=uuid4(),
+        request_digest="9" * 64,
+    )
+    pending_boundary_id = uuid4()
+    with psycopg.connect(migrated_database_url) as owner:
+        owner.execute(
+            """INSERT INTO app.utility_readings(
+                id,meter_id,reading_date,reading_value,validated_at,validated_by,
+                created_by,updated_by,source_kind,source_evidence
+            ) VALUES(%s,%s,DATE '2026-01-31',20,NULL,NULL,%s,%s,'MIGRATED',%s)""",
+            (
+                pending_boundary_id,
+                pending_meter.id,
+                pending_actor_id,
+                pending_actor_id,
+                "Unvalidated boundary source",
+            ),
+        )
+    with pytest.raises(UtilityResourceInvalid):
+        flow.replace_meter(
+            pending_meter.id,
+            payload=replacement_payload(pending_boundary_id, expected_version=1),
+            actor_id=pending_actor_id,
+            idempotency_key=uuid4(),
+            request_digest="a" * 64,
+        )
+
+    future_actor_id, _, future_unit_id = committed_sources(migrated_database_url)
+    future_meter = flow.install_meter(
+        future_unit_id,
+        payload=install_payload(),
+        actor_id=future_actor_id,
+        idempotency_key=uuid4(),
+        request_digest="b" * 64,
+    )
+    future_boundary = flow.record_reading(
+        future_meter.id,
+        payload={
+            "expected_meter_version": 1,
+            "reading_date": date(2026, 2, 1),
+            "reading_value": "20.000000",
+            "source_kind": "MANUAL",
+            "source_evidence": "Future boundary photograph",
+        },
+        actor_id=future_actor_id,
+        idempotency_key=uuid4(),
+        request_digest="c" * 64,
+    )
+    with pytest.raises(UtilityResourceInvalid):
+        flow.replace_meter(
+            future_meter.id,
+            payload=replacement_payload(future_boundary.id, expected_version=2),
+            actor_id=future_actor_id,
+            idempotency_key=uuid4(),
+            request_digest="d" * 64,
+        )
+
+    with psycopg.connect(migrated_database_url) as owner:
+        assert owner.execute(
+            """SELECT count(*) FROM app.utility_meter_replacements
+            WHERE failed_meter_id=ANY(%s)""",
+            ([stale_meter.id, pending_meter.id, future_meter.id],),
+        ).fetchone() == (0,)
 
 
 def test_runtime_batch_partial_and_atomic_all_transactions(

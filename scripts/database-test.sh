@@ -107,59 +107,49 @@ export HUMAN_ADMIN_DATABASE_URL
 export BOOTSTRAP_DATABASE_URL
 
 cd backend
-set -- tests/test_migrations.py tests/test_audit_migration.py
-if [ -f tests/test_property_migration.py ]; then
-  set -- "$@" tests/test_property_migration.py
-fi
-if [ -f tests/test_unit_migration.py ]; then
-  set -- "$@" tests/test_unit_migration.py
-fi
-if [ -f tests/test_customer_migration.py ]; then
-  set -- "$@" tests/test_customer_migration.py
-fi
-if [ -f tests/test_configuration_migration.py ]; then
-  set -- "$@" tests/test_configuration_migration.py
-fi
-if [ -f tests/test_reservation_migration.py ]; then
-  set -- "$@" tests/test_reservation_migration.py
-fi
-if [ -f tests/test_reservation_lifecycle_migration.py ]; then
-  set -- "$@" tests/test_reservation_lifecycle_migration.py
-fi
-if [ -f tests/test_reservation_outcome_migration.py ]; then
-  set -- "$@" tests/test_reservation_outcome_migration.py
-fi
-if [ -f tests/test_reservation_worker_migration.py ]; then
-  set -- "$@" tests/test_reservation_worker_migration.py
-fi
-if [ -f tests/test_lease_migration.py ]; then
-  set -- "$@" tests/test_lease_migration.py
-fi
-if [ -f tests/test_lease_lifecycle_migration.py ]; then
-  set -- "$@" tests/test_lease_lifecycle_migration.py
-fi
-if [ -f tests/test_move_in_migration.py ]; then
-  set -- "$@" tests/test_move_in_migration.py
-fi
-if [ -f tests/test_lease_api_migration.py ]; then
-  set -- "$@" tests/test_lease_api_migration.py
-fi
-if [ -f tests/test_deposit_migration.py ]; then
-  set -- "$@" tests/test_deposit_migration.py
-fi
-if [ -f tests/test_deposit_api_migration.py ]; then
-  set -- "$@" tests/test_deposit_api_migration.py
-fi
-if [ -f tests/test_invoice_migration.py ]; then
-  set -- "$@" tests/test_invoice_migration.py
-fi
-if [ -f tests/test_billing_service_migration.py ]; then
-  set -- "$@" tests/test_billing_service_migration.py
-fi
-if [ -f tests/test_utility_meter_migration.py ]; then
-  set -- "$@" tests/test_utility_meter_migration.py
-fi
-if [ -f tests/test_utility_consumption_migration.py ]; then
-  set -- "$@" tests/test_utility_consumption_migration.py
-fi
+database_test_suites='
+  tests/test_migrations.py
+  tests/test_audit_migration.py
+  tests/test_property_migration.py
+  tests/test_unit_migration.py
+  tests/test_customer_migration.py
+  tests/test_configuration_migration.py
+  tests/test_reservation_migration.py
+  tests/test_reservation_lifecycle_migration.py
+  tests/test_reservation_outcome_migration.py
+  tests/test_reservation_worker_migration.py
+  tests/test_lease_migration.py
+  tests/test_lease_lifecycle_migration.py
+  tests/test_move_in_migration.py
+  tests/test_lease_api_migration.py
+  tests/test_deposit_migration.py
+  tests/test_deposit_api_migration.py
+  tests/test_invoice_migration.py
+  tests/test_billing_service_migration.py
+  tests/test_utility_meter_migration.py
+  tests/test_utility_consumption_migration.py
+  tests/test_utility_api_migration.py
+'
+
+for database_test_file in $database_test_suites; do
+  if [ ! -f "$database_test_file" ]; then
+    printf 'Required PostgreSQL suite is missing: %s\n' "$database_test_file" >&2
+    exit 1
+  fi
+done
+for database_test_file in tests/test_*_migration.py; do
+  database_test_listed=0
+  for required_database_test_file in $database_test_suites; do
+    if [ "$required_database_test_file" = "$database_test_file" ]; then
+      database_test_listed=1
+      break
+    fi
+  done
+  if [ "$database_test_listed" -ne 1 ]; then
+    printf 'PostgreSQL suite is omitted from database-test: %s\n' "$database_test_file" >&2
+    exit 1
+  fi
+done
+
+set -- $database_test_suites
 REQUIRE_DATABASE_TESTS=1 uv run --extra dev pytest --tb=short --no-header "$@"

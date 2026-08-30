@@ -67,6 +67,24 @@ class UtilityResourceUnavailable(RuntimeError):
 
 
 @dataclass(frozen=True, slots=True)
+class MeterReplacementEvidenceRecord:
+    id: UUID
+    failed_meter_id: UUID
+    replacement_meter_id: UUID
+    failed_boundary_reading_id: UUID | None
+    replacement_initial_reading_id: UUID | None
+    failure_date: date | None
+    replacement_date: date
+    expected_failed_meter_version: int | None
+    reason: str
+    occurred_at: datetime
+    actor_id: UUID
+    idempotency_key: UUID | None
+    request_digest: str | None
+    request_evidence: dict[str, object] | None
+
+
+@dataclass(frozen=True, slots=True)
 class MeterRecord:
     id: UUID
     property_id: UUID
@@ -87,6 +105,7 @@ class MeterRecord:
     replaced_meter_id: UUID | None
     replacement_meter_id: UUID | None
     replacement_date: date | None
+    replacement_events: tuple[MeterReplacementEvidenceRecord, ...]
 
 
 @dataclass(frozen=True, slots=True)
@@ -273,11 +292,59 @@ meter.id,unit.property_id,meter.unit_id,meter.utility_type,meter.serial_number,
 meter.measurement_unit_code,meter.description,meter.installed_date,meter.failure_date,
 meter.deactivated_date,meter.memo,meter.version,meter.created_at,meter.created_by,
 meter.updated_at,meter.updated_by,prior.failed_meter_id,next_event.replacement_meter_id,
-COALESCE(prior.replacement_date,next_event.replacement_date)
+COALESCE(prior.replacement_date,next_event.replacement_date),
+COALESCE((
+  SELECT jsonb_agg(jsonb_build_object(
+    'id',replacement_event.id,'failed_meter_id',replacement_event.failed_meter_id,
+    'replacement_meter_id',replacement_event.replacement_meter_id,
+    'failed_boundary_reading_id',replacement_event.failed_boundary_reading_id,
+    'replacement_initial_reading_id',replacement_event.replacement_initial_reading_id,
+    'failure_date',replacement_event.failure_date,
+    'replacement_date',replacement_event.replacement_date,
+    'expected_failed_meter_version',replacement_event.expected_failed_meter_version,
+    'reason',replacement_event.reason,'occurred_at',replacement_event.occurred_at,
+    'actor_id',replacement_event.actor_id,
+    'idempotency_key',replacement_event.request_idempotency_key,
+    'request_digest',replacement_event.request_digest,
+    'request_evidence',replacement_event.request_evidence
+  ) ORDER BY replacement_event.replacement_date,replacement_event.id)
+  FROM app.utility_meter_replacements AS replacement_event
+  WHERE replacement_event.failed_meter_id=meter.id
+     OR replacement_event.replacement_meter_id=meter.id
+),'[]'::jsonb)
 """
 
 
+def _replacement_evidence(value: dict[str, object]) -> MeterReplacementEvidenceRecord:
+    raw_request = value["request_evidence"]
+    return MeterReplacementEvidenceRecord(
+        id=UUID(str(value["id"])),
+        failed_meter_id=UUID(str(value["failed_meter_id"])),
+        replacement_meter_id=UUID(str(value["replacement_meter_id"])),
+        failed_boundary_reading_id=_optional_uuid(value["failed_boundary_reading_id"]),
+        replacement_initial_reading_id=_optional_uuid(value["replacement_initial_reading_id"]),
+        failure_date=(
+            None
+            if value["failure_date"] is None
+            else date.fromisoformat(str(value["failure_date"]))
+        ),
+        replacement_date=date.fromisoformat(str(value["replacement_date"])),
+        expected_failed_meter_version=(
+            None
+            if value["expected_failed_meter_version"] is None
+            else int(str(value["expected_failed_meter_version"]))
+        ),
+        reason=str(value["reason"]),
+        occurred_at=datetime.fromisoformat(str(value["occurred_at"])),
+        actor_id=UUID(str(value["actor_id"])),
+        idempotency_key=_optional_uuid(value["idempotency_key"]),
+        request_digest=None if value["request_digest"] is None else str(value["request_digest"]),
+        request_evidence=(None if raw_request is None else cast(dict[str, object], raw_request)),
+    )
+
+
 def _meter(row: tuple[object, ...]) -> MeterRecord:
+    raw_events = cast(list[dict[str, object]], row[19])
     return MeterRecord(
         id=UUID(str(row[0])),
         property_id=UUID(str(row[1])),
@@ -298,6 +365,7 @@ def _meter(row: tuple[object, ...]) -> MeterRecord:
         replaced_meter_id=_optional_uuid(row[16]),
         replacement_meter_id=_optional_uuid(row[17]),
         replacement_date=cast(date | None, row[18]),
+        replacement_events=tuple(_replacement_evidence(value) for value in raw_events),
     )
 
 
@@ -1029,6 +1097,31 @@ def _meter_body(record: MeterRecord) -> dict[str, object]:
             "replacement_date": record.replacement_date.isoformat()
             if record.replacement_date
             else None,
+            "events": [
+                {
+                    "id": str(event.id),
+                    "failed_meter_id": str(event.failed_meter_id),
+                    "replacement_meter_id": str(event.replacement_meter_id),
+                    "failed_boundary_reading_id": str(event.failed_boundary_reading_id)
+                    if event.failed_boundary_reading_id
+                    else None,
+                    "replacement_initial_reading_id": str(event.replacement_initial_reading_id)
+                    if event.replacement_initial_reading_id
+                    else None,
+                    "failure_date": event.failure_date.isoformat() if event.failure_date else None,
+                    "replacement_date": event.replacement_date.isoformat(),
+                    "expected_failed_meter_version": event.expected_failed_meter_version,
+                    "reason": event.reason,
+                    "occurred_at": event.occurred_at.isoformat(),
+                    "actor_id": str(event.actor_id),
+                    "idempotency_key": str(event.idempotency_key)
+                    if event.idempotency_key
+                    else None,
+                    "request_digest": event.request_digest,
+                    "request_evidence": event.request_evidence,
+                }
+                for event in record.replacement_events
+            ],
         },
         "readings_url": f"/api/v1/meters/{record.id}/readings",
     }

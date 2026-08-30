@@ -307,6 +307,7 @@ def test_database_test_secret_files_are_readable_by_native_linux_container_user(
     )
 
     assert result.returncode == 0, result.stderr
+    _assert_database_test_explicitly_runs_every_postgresql_migration_suite()
 
 
 def test_database_test_reports_redacted_container_logs_before_cleanup(tmp_path: Path) -> None:
@@ -335,3 +336,24 @@ def test_database_test_reports_redacted_container_logs_before_cleanup(tmp_path: 
     assert "container-init-failure" in result.stderr
     assert "[REDACTED]" in result.stderr
     assert re.search(r"\b[0-9a-f]{64}\b", result.stderr) is None
+
+
+def _assert_database_test_explicitly_runs_every_postgresql_migration_suite() -> None:
+    source = DATABASE_TEST_SCRIPT.read_text(encoding="utf-8")
+    listed = set(
+        re.findall(
+            r"^  (tests/test_(?:migrations|[a-z0-9_]+_migration)\.py)$",
+            source,
+            re.MULTILINE,
+        )
+    )
+    backend_root = REPOSITORY_ROOT / "backend"
+    expected = {"tests/test_migrations.py"} | {
+        path.relative_to(backend_root).as_posix()
+        for path in (backend_root / "tests").glob("test_*_migration.py")
+    }
+
+    assert listed == expected
+    assert "for database_test_file in tests/test_*_migration.py" in source
+    assert "PostgreSQL suite is omitted from database-test" in source
+    assert "if [ -f tests/test_" not in source

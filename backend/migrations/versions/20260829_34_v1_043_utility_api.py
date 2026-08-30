@@ -33,7 +33,8 @@ def upgrade() -> None:
             ),
             completed_at timestamptz NOT NULL DEFAULT statement_timestamp(),
             PRIMARY KEY(actor_id,idempotency_key),
-            UNIQUE(actor_id,idempotency_key,resource_id)
+            UNIQUE(actor_id,idempotency_key,resource_id),
+            UNIQUE(actor_id,idempotency_key,resource_id,request_digest)
         );
         CREATE INDEX utility_api_commands_completed_idx
             ON app.utility_api_commands(completed_at,idempotency_key);
@@ -43,6 +44,100 @@ def upgrade() -> None:
         CREATE TRIGGER utility_api_commands_reject_truncate
             BEFORE TRUNCATE ON app.utility_api_commands
             FOR EACH STATEMENT EXECUTE FUNCTION app.reject_utility_history_mutation();
+
+        ALTER TABLE app.utility_meter_replacements
+            ADD COLUMN failed_boundary_reading_id uuid,
+            ADD COLUMN replacement_initial_reading_id uuid,
+            ADD COLUMN failure_date date,
+            ADD COLUMN expected_failed_meter_version integer,
+            ADD COLUMN request_idempotency_key uuid,
+            ADD COLUMN request_digest text,
+            ADD COLUMN request_evidence jsonb,
+            ADD CONSTRAINT utility_meter_replacements_api_evidence_shape CHECK (
+                (
+                    failed_boundary_reading_id IS NULL
+                    AND replacement_initial_reading_id IS NULL
+                    AND failure_date IS NULL
+                    AND expected_failed_meter_version IS NULL
+                    AND request_idempotency_key IS NULL
+                    AND request_digest IS NULL
+                    AND request_evidence IS NULL
+                ) OR (
+                    failed_boundary_reading_id IS NOT NULL
+                    AND replacement_initial_reading_id IS NOT NULL
+                    AND failure_date IS NOT NULL
+                    AND failure_date<replacement_date
+                    AND expected_failed_meter_version IS NOT NULL
+                    AND expected_failed_meter_version>0
+                    AND request_idempotency_key IS NOT NULL
+                    AND request_idempotency_key<>'00000000-0000-0000-0000-000000000000'::uuid
+                    AND request_digest IS NOT NULL
+                    AND request_digest~'^[0-9a-f]{64}$'
+                    AND request_evidence IS NOT NULL
+                    AND jsonb_typeof(request_evidence)='object'
+                )
+            ),
+            ADD CONSTRAINT utility_meter_replacements_failed_boundary_fk
+                FOREIGN KEY(failed_boundary_reading_id,failed_meter_id)
+                REFERENCES app.utility_readings(id,meter_id) ON DELETE RESTRICT,
+            ADD CONSTRAINT utility_meter_replacements_initial_boundary_fk
+                FOREIGN KEY(replacement_initial_reading_id,replacement_meter_id)
+                REFERENCES app.utility_readings(id,meter_id) ON DELETE RESTRICT,
+            ADD CONSTRAINT utility_meter_replacements_api_command_fk
+                FOREIGN KEY(actor_id,request_idempotency_key,replacement_meter_id,request_digest)
+                REFERENCES app.utility_api_commands(
+                    actor_id,idempotency_key,resource_id,request_digest
+                ) ON DELETE RESTRICT;
+
+        CREATE FUNCTION app.guard_utility_meter_replacement_api_evidence()
+        RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS $$
+        DECLARE
+            v_latest_boundary_id uuid;
+            v_failed_version integer;
+            v_failed_failure_date date;
+            v_initial app.utility_readings%ROWTYPE;
+        BEGIN
+            IF NEW.failed_boundary_reading_id IS NULL THEN RETURN NEW; END IF;
+            SELECT reading.id INTO v_latest_boundary_id
+            FROM app.utility_readings AS reading
+            WHERE reading.meter_id=NEW.failed_meter_id
+              AND reading.validated_at IS NOT NULL
+              AND reading.reading_date<=NEW.failure_date
+            ORDER BY reading.reading_date DESC,reading.id DESC
+            LIMIT 1;
+            IF v_latest_boundary_id IS DISTINCT FROM NEW.failed_boundary_reading_id THEN
+                RAISE EXCEPTION 'Failed Meter boundary Reading is not authoritative'
+                    USING ERRCODE='23514';
+            END IF;
+            SELECT meter.version,meter.failure_date
+            INTO STRICT v_failed_version,v_failed_failure_date
+            FROM app.utility_meters AS meter WHERE meter.id=NEW.failed_meter_id;
+            SELECT * INTO STRICT v_initial FROM app.utility_readings
+            WHERE id=NEW.replacement_initial_reading_id;
+            IF v_failed_failure_date IS DISTINCT FROM NEW.failure_date
+                OR v_failed_version<>NEW.expected_failed_meter_version+1
+                OR v_initial.meter_id<>NEW.replacement_meter_id
+                OR v_initial.reading_date<>NEW.replacement_date
+                OR v_initial.validated_at IS NULL
+                OR v_initial.source_kind<>'METER_REPLACEMENT'
+                OR NOT EXISTS (
+                    SELECT 1 FROM app.utility_api_commands AS api_command
+                    WHERE api_command.actor_id=NEW.actor_id
+                      AND api_command.idempotency_key=NEW.request_idempotency_key
+                      AND api_command.action='REPLACE_METER'
+                      AND api_command.resource_id=NEW.replacement_meter_id
+                      AND api_command.request_digest=NEW.request_digest
+                )
+            THEN
+                RAISE EXCEPTION 'Meter replacement request evidence is inconsistent'
+                    USING ERRCODE='23514';
+            END IF;
+            RETURN NEW;
+        END $$;
+        CREATE TRIGGER utility_meter_replacements_zz_api_evidence_guard
+            BEFORE INSERT ON app.utility_meter_replacements
+            FOR EACH ROW EXECUTE FUNCTION app.guard_utility_meter_replacement_api_evidence();
+
         CREATE TABLE app.utility_api_batch_items (
             actor_id uuid NOT NULL,
             batch_idempotency_key uuid NOT NULL,
@@ -392,9 +487,11 @@ def upgrade() -> None:
             IF v_failed.deactivated_date IS NOT NULL THEN
                 RAISE EXCEPTION 'Utility Meter is already replaced' USING ERRCODE='55000';
             END IF;
-            SELECT * INTO v_boundary FROM app.utility_readings WHERE id=p_boundary_reading_id;
-            IF NOT FOUND OR v_boundary.meter_id<>p_failed_meter_id
-                OR v_boundary.validated_at IS NULL OR v_boundary.reading_date>p_failure_date
+            SELECT * INTO v_boundary FROM app.utility_readings
+            WHERE meter_id=p_failed_meter_id AND validated_at IS NOT NULL
+              AND reading_date<=p_failure_date
+            ORDER BY reading_date DESC,id DESC LIMIT 1;
+            IF NOT FOUND OR v_boundary.id<>p_boundary_reading_id
             THEN RAISE EXCEPTION 'Failed Meter boundary Reading is invalid' USING ERRCODE='23514'; END IF;
             UPDATE app.utility_meters SET failure_date=p_failure_date,deactivated_date=p_replacement_date,
                 version=version+1,updated_at=statement_timestamp(),updated_by=p_actor_id
@@ -409,11 +506,32 @@ def upgrade() -> None:
                 created_by,updated_by,source_kind,source_evidence
             ) VALUES(p_reading_id,p_replacement_meter_id,p_reading_date,p_reading_value,
                 statement_timestamp(),p_actor_id,p_actor_id,p_actor_id,'METER_REPLACEMENT',p_source_evidence);
-            INSERT INTO app.utility_meter_replacements(
-                id,failed_meter_id,replacement_meter_id,replacement_date,reason,actor_id
-            ) VALUES(p_event_id,p_failed_meter_id,p_replacement_meter_id,p_replacement_date,p_reason,p_actor_id);
             INSERT INTO app.utility_api_commands(actor_id,idempotency_key,action,request_digest,resource_id)
             VALUES(p_actor_id,p_idempotency_key,'REPLACE_METER',p_request_digest,p_replacement_meter_id);
+            INSERT INTO app.utility_meter_replacements(
+                id,failed_meter_id,replacement_meter_id,replacement_date,reason,actor_id,
+                failed_boundary_reading_id,replacement_initial_reading_id,failure_date,
+                expected_failed_meter_version,request_idempotency_key,request_digest,
+                request_evidence
+            ) VALUES(
+                p_event_id,p_failed_meter_id,p_replacement_meter_id,p_replacement_date,p_reason,
+                p_actor_id,p_boundary_reading_id,p_reading_id,p_failure_date,p_expected_version,
+                p_idempotency_key,p_request_digest,
+                jsonb_build_object(
+                    'action','REPLACE_METER','target_meter_id',p_failed_meter_id,
+                    'expected_version',p_expected_version,
+                    'failed_boundary_reading_id',p_boundary_reading_id,
+                    'failure_date',p_failure_date,'replacement_date',p_replacement_date,
+                    'reason',p_reason,
+                    'replacement_meter',jsonb_build_object(
+                        'serial_number',p_serial_number,'description',p_description,'memo',p_memo
+                    ),
+                    'replacement_initial_reading',jsonb_build_object(
+                        'reading_date',p_reading_date,'reading_value',p_reading_value,
+                        'source_evidence',p_source_evidence
+                    )
+                )
+            );
             RETURN p_replacement_meter_id;
         END $$;
 

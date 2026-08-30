@@ -21,6 +21,7 @@ from property_rental.utility_api import (
     BatchItemResult,
     CorrectionResult,
     MeterRecord,
+    MeterReplacementEvidenceRecord,
     ReadingCorrectionRecord,
     ReadingCreateInput,
     ReadingRecord,
@@ -111,6 +112,7 @@ class InMemoryUtilityFlow:
             None,
             None,
             None,
+            (),
         )
         self.readings.append(self._reading(date(2026, 7, 1), Decimal("10")))
 
@@ -390,6 +392,48 @@ def test_meter_routes_are_property_scoped_paginated_and_no_store() -> None:
     assert response.headers["Cache-Control"] == "private, no-store"
     assert response.json()["page"] == {"limit": 1, "next_cursor": "next-meter"}
     assert response.json()["data"][0]["readings_url"].endswith("/readings")
+    event_id = uuid4()
+    boundary_id = uuid4()
+    initial_id = uuid4()
+    idempotency_key = uuid4()
+    event = MeterReplacementEvidenceRecord(
+        event_id,
+        flow.meter.id,
+        uuid4(),
+        boundary_id,
+        initial_id,
+        date(2026, 8, 1),
+        date(2026, 8, 2),
+        3,
+        "Confirmed failure",
+        datetime(2026, 8, 2, 12, tzinfo=UTC),
+        flow.actor_id,
+        idempotency_key,
+        "a" * 64,
+        {"failed_boundary_reading_id": str(boundary_id)},
+    )
+    flow.meter = replace(flow.meter, replacement_events=(event,))
+    replacement_body = read_client.get(f"/api/v1/meters/{flow.meter.id}").json()["data"][
+        "replacement"
+    ]
+    assert replacement_body["events"] == [
+        {
+            "id": str(event_id),
+            "failed_meter_id": str(flow.meter.id),
+            "replacement_meter_id": str(event.replacement_meter_id),
+            "failed_boundary_reading_id": str(boundary_id),
+            "replacement_initial_reading_id": str(initial_id),
+            "failure_date": "2026-08-01",
+            "replacement_date": "2026-08-02",
+            "expected_failed_meter_version": 3,
+            "reason": "Confirmed failure",
+            "occurred_at": "2026-08-02T12:00:00+00:00",
+            "actor_id": str(flow.actor_id),
+            "idempotency_key": str(idempotency_key),
+            "request_digest": "a" * 64,
+            "request_evidence": {"failed_boundary_reading_id": str(boundary_id)},
+        }
+    ]
     assert (
         read_client.get(f"/api/v1/units/{flow.unit_id}/meters?unexpected=true").status_code == 400
     )
