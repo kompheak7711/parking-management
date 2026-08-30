@@ -10462,7 +10462,7 @@
     },
     {
       "test_id": "test_pending_future_basis_is_preserved_without_utility_invoice",
-      "upstream_ids": ["API-055", "TEST-096", "TEST-097", "BR-UTIL-019", "BR-UTIL-026", "BR-UTIL-028", "BR-UTIL-029", "BR-UTIL-030", "BR-INV-041", "DB-TXN-005"],
+      "upstream_ids": ["API-055", "TEST-096", "BR-UTIL-019", "BR-UTIL-026", "BR-UTIL-028", "BR-UTIL-029", "BR-UTIL-030", "BR-INV-041", "DB-TXN-005"],
       "test_level": "DB",
       "test_path": "backend/tests/test_billing_run_migration.py",
       "status": "implemented",
