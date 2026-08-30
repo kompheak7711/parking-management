@@ -11,12 +11,14 @@ import { UtilityManagement } from "./UtilityManagement";
 import {
   UtilityApi,
   UtilityCalculation,
+  UtilityConflictError,
   UtilitySnapshot,
 } from "./utilityClient";
 
 const propertyId = "10000000-0000-4000-8000-000000000011";
 const unitId = "10000000-0000-4000-8000-000000000012";
 const meterId = "10000000-0000-4000-8000-000000000013";
+const readingId = "10000000-0000-4000-8000-000000000014";
 
 afterEach(() => {
   cleanup();
@@ -51,7 +53,7 @@ function snapshot(): UtilitySnapshot {
     readings: {
       [meterId]: [
         {
-          id: "10000000-0000-4000-8000-000000000014",
+          id: readingId,
           property_id: propertyId,
           meter_id: meterId,
           unit_id: unitId,
@@ -127,7 +129,7 @@ async function loadWorkspace(client: UtilityApi) {
   fireEvent.click(
     screen.getByRole("button", { name: "Load Utility workspace" }),
   );
-  await screen.findByText("Utility history loaded.");
+  await screen.findByText("Complete Utility history loaded.");
 }
 
 describe("UtilityManagement", () => {
@@ -239,8 +241,161 @@ describe("UtilityManagement", () => {
     expect(
       screen.getByLabelText("Failed boundary Reading identifier"),
     ).toBeRequired();
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Correct Reading from 2026-07-31 for Meter ELEC-301",
+      }),
+    );
     expect(screen.getByLabelText("Correction reason")).toBeRequired();
     expect(screen.getByLabelText("Authorization reference")).toBeRequired();
     expect(screen.getByLabelText("Advance-notice evidence")).toBeRequired();
+  });
+
+  it("correction C binds per-row review and renders server impact evidence", async () => {
+    const client = api();
+    const source = snapshot().readings[meterId]?.[0];
+    if (source === undefined) throw new Error("Reading fixture missing");
+    vi.mocked(client.correctReading).mockResolvedValue({
+      reading: {
+        ...source,
+        effective_value: "110.000000",
+        version: 3,
+      },
+      correction: {
+        id: "10000000-0000-4000-8000-000000000020",
+        previous_value: "105.000000",
+        corrected_value: "110.000000",
+        reason: "Verified photograph",
+        occurred_at: "2026-08-02T12:00:00Z",
+        actor_id: "10000000-0000-4000-8000-000000000015",
+        authorization_reference: "approval-2",
+      },
+      affected_calculations: [
+        {
+          consumption_period_id: "10000000-0000-4000-8000-000000000021",
+          previous_consumption_quantity: "20.000000",
+          corrected_consumption_quantity: "25.000000",
+          billing_effect_kind: "POST_ISSUANCE_ADJUSTMENT",
+          issued_line: {
+            invoice_line_id: "10000000-0000-4000-8000-000000000022",
+            source_invoice_id: "10000000-0000-4000-8000-000000000023",
+            calculated_difference_usd_cents: 125,
+            invoice_adjustment_id: "10000000-0000-4000-8000-000000000024",
+          },
+        },
+      ],
+    });
+    await loadWorkspace(client);
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Correct Reading from 2026-07-31 for Meter ELEC-301",
+      }),
+    );
+    const sourceRegion = screen.getByRole("region", {
+      name: "Selected Reading correction source",
+    });
+    expect(sourceRegion).toHaveTextContent(readingId);
+    expect(sourceRegion).toHaveTextContent("100.000000 KWH");
+    expect(sourceRegion).toHaveTextContent("105.000000 KWH");
+    expect(sourceRegion).toHaveTextContent(/Expected Reading version\s*2/);
+    expect(
+      screen.queryByLabelText("Reading identifier"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText("Expected Reading version"),
+    ).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("Corrected value"), {
+      target: { value: "110" },
+    });
+    fireEvent.change(screen.getByLabelText("Correction reason"), {
+      target: { value: "Verified photograph" },
+    });
+    fireEvent.change(screen.getByLabelText("Authorization reference"), {
+      target: { value: "approval-2" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review Reading correction" }),
+    );
+    expect(client.correctReading).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole("region", { name: "Confirm Reading correction" }),
+    ).toHaveTextContent("105.000000 KWH to 110 KWH");
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Confirm and append correction" }),
+    );
+    await waitFor(() => {
+      expect(client.correctReading).toHaveBeenCalledWith(
+        readingId,
+        {
+          expected_version: 2,
+          corrected_value: "110",
+          reason: "Verified photograph",
+          authorization_reference: "approval-2",
+        },
+        expect.any(String),
+      );
+    });
+    const result = await screen.findByRole("region", {
+      name: "Reading correction recorded",
+    });
+    expect(result).toHaveTextContent(/Original value\s*100\.000000/);
+    expect(result).toHaveTextContent(/Previous effective value\s*105\.000000/);
+    expect(result).toHaveTextContent(/Corrected effective value\s*110\.000000/);
+    expect(
+      screen.getByText("Server-authoritative affected calculations"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("POST_ISSUANCE_ADJUSTMENT")).toBeInTheDocument();
+    expect(result).toHaveTextContent("125 USD cents");
+    expect(result).toHaveTextContent("10000000-0000-4000-8000-000000000024");
+  });
+
+  it("correction C preserves correction input and idempotency after conflict", async () => {
+    const client = api();
+    vi.mocked(client.correctReading).mockRejectedValue(
+      new UtilityConflictError(["expected_version"], "conflict-ref"),
+    );
+    await loadWorkspace(client);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Correct Reading from 2026-07-31 for Meter ELEC-301",
+      }),
+    );
+    fireEvent.change(screen.getByLabelText("Corrected value"), {
+      target: { value: "110" },
+    });
+    fireEvent.change(screen.getByLabelText("Correction reason"), {
+      target: { value: "Verified photograph" },
+    });
+    fireEvent.change(screen.getByLabelText("Authorization reference"), {
+      target: { value: "approval-2" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review Reading correction" }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Confirm and append correction" }),
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Reload before retrying",
+    );
+    expect(screen.getByLabelText("Corrected value")).toHaveValue(110);
+    expect(screen.getByLabelText("Correction reason")).toHaveValue(
+      "Verified photograph",
+    );
+    expect(screen.getByLabelText("Authorization reference")).toHaveValue(
+      "approval-2",
+    );
+    const firstKey = vi.mocked(client.correctReading).mock.calls[0]?.[2];
+    fireEvent.click(
+      screen.getByRole("button", { name: "Confirm and append correction" }),
+    );
+    await waitFor(() => {
+      expect(client.correctReading).toHaveBeenCalledTimes(2);
+    });
+    expect(vi.mocked(client.correctReading).mock.calls[1]?.[2]).toBe(firstKey);
   });
 });

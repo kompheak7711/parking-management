@@ -72,6 +72,30 @@ export interface UtilitySnapshot {
   rates: UtilityRate[];
 }
 
+export type UtilityBillingEffectKind =
+  | "PRE_ISSUANCE_INPUT"
+  | "POST_ISSUANCE_NO_AMOUNT_CHANGE"
+  | "POST_ISSUANCE_ADJUSTMENT";
+
+export interface AffectedCalculation {
+  consumption_period_id: string;
+  previous_consumption_quantity: string;
+  corrected_consumption_quantity: string;
+  billing_effect_kind: UtilityBillingEffectKind;
+  issued_line: {
+    invoice_line_id: string | null;
+    source_invoice_id: string | null;
+    calculated_difference_usd_cents: number | null;
+    invoice_adjustment_id: string | null;
+  };
+}
+
+export interface ReadingCorrectionResult {
+  reading: UtilityReading;
+  correction: ReadingCorrection;
+  affected_calculations: AffectedCalculation[];
+}
+
 export interface UtilityCalculation {
   status: "READY" | "PENDING_FUTURE_ACTUAL_BASIS";
   property_id: string;
@@ -151,11 +175,7 @@ export interface UtilityApi {
     readingId: string,
     input: CorrectionInput,
     idempotencyKey: string,
-  ) => Promise<{
-    reading: UtilityReading;
-    correction: ReadingCorrection;
-    affected_calculations: unknown[];
-  }>;
+  ) => Promise<ReadingCorrectionResult>;
   recordBatch: (
     propertyId: string,
     mode: "ATOMIC_ALL" | "PARTIAL",
@@ -481,6 +501,34 @@ function rate(value: unknown): UtilityRate {
   };
 }
 
+function affectedCalculation(value: unknown): AffectedCalculation {
+  const item = object(value);
+  const issuedLine = object(item.issued_line);
+  const billingEffectKind = item.billing_effect_kind;
+  if (
+    billingEffectKind !== "PRE_ISSUANCE_INPUT" &&
+    billingEffectKind !== "POST_ISSUANCE_NO_AMOUNT_CHANGE" &&
+    billingEffectKind !== "POST_ISSUANCE_ADJUSTMENT"
+  ) {
+    throw new UtilityClientError();
+  }
+  return {
+    consumption_period_id: string(item.consumption_period_id),
+    previous_consumption_quantity: string(item.previous_consumption_quantity),
+    corrected_consumption_quantity: string(item.corrected_consumption_quantity),
+    billing_effect_kind: billingEffectKind,
+    issued_line: {
+      invoice_line_id: nullableString(issuedLine.invoice_line_id),
+      source_invoice_id: nullableString(issuedLine.source_invoice_id),
+      calculated_difference_usd_cents:
+        issuedLine.calculated_difference_usd_cents === null
+          ? null
+          : number(issuedLine.calculated_difference_usd_cents),
+      invoice_adjustment_id: nullableString(issuedLine.invoice_adjustment_id),
+    },
+  };
+}
+
 function calculation(value: unknown): UtilityCalculation {
   const item = object(value);
   if (
@@ -555,6 +603,22 @@ function query(cursor?: string): string {
     : `?limit=25&cursor=${encodeURIComponent(cursor)}`;
 }
 
+async function exhaustCursor<T>(
+  loadPage: (cursor?: string) => Promise<UtilityPage<T>>,
+): Promise<T[]> {
+  const items: T[] = [];
+  const nextCursors = new Set<string>();
+  let cursor: string | undefined;
+  for (;;) {
+    const current = await loadPage(cursor);
+    items.push(...current.items);
+    if (current.nextCursor === null) return items;
+    if (nextCursors.has(current.nextCursor)) throw new UtilityClientError();
+    nextCursors.add(current.nextCursor);
+    cursor = current.nextCursor;
+  }
+}
+
 export const utilityApi: UtilityApi = {
   async loadMeters(unitId, cursor) {
     return page(
@@ -582,20 +646,22 @@ export const utilityApi: UtilityApi = {
   },
   async load(propertyId, unitId) {
     const [meters, rates] = await Promise.all([
-      this.loadMeters(unitId),
-      this.loadRates(propertyId),
+      exhaustCursor((cursor) => this.loadMeters(unitId, cursor)),
+      exhaustCursor((cursor) => this.loadRates(propertyId, cursor)),
     ]);
     const readingPages = await Promise.all(
-      meters.items.map(
-        async (item) => [item.id, await this.loadReadings(item.id)] as const,
+      meters.map(
+        async (item) =>
+          [
+            item.id,
+            await exhaustCursor((cursor) => this.loadReadings(item.id, cursor)),
+          ] as const,
       ),
     );
     return {
-      meters: meters.items,
-      readings: Object.fromEntries(
-        readingPages.map(([id, item]) => [id, item.items]),
-      ),
-      rates: rates.items,
+      meters,
+      readings: Object.fromEntries(readingPages),
+      rates,
     };
   },
   async installMeter(unitId, input, idempotencyKey) {
@@ -642,7 +708,8 @@ export const utilityApi: UtilityApi = {
     return {
       reading: reading(data.reading),
       correction: correction(data.correction),
-      affected_calculations: data.affected_calculations,
+      affected_calculations:
+        data.affected_calculations.map(affectedCalculation),
     };
   },
   async recordBatch(propertyId, mode, items) {

@@ -365,6 +365,32 @@ h1 {
   gap: 0.625rem;
 }
 
+.correction-source {
+  padding: 1rem;
+  border: 1px solid #7890aa;
+  border-radius: 0.375rem;
+  background: #f4f8fc;
+}
+
+.correction-source h5 {
+  margin-top: 0;
+}
+
+.compact-evidence {
+  display: grid;
+  gap: 0.375rem;
+  margin: 0;
+}
+
+.compact-evidence div {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.compact-evidence dd {
+  margin: 0;
+}
+
 .calculation-detail,
 .pending-calculation {
   margin-top: 1rem;

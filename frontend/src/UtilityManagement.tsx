@@ -2,10 +2,12 @@ import { FormEvent, useRef, useState } from "react";
 
 import {
   BatchReadingInput,
+  ReadingCorrectionResult,
   UtilityApi,
   UtilityCalculation,
   UtilityClientError,
   UtilityConflictError,
+  UtilityReading,
   UtilitySnapshot,
   UtilityType,
 } from "./utilityClient";
@@ -22,6 +24,13 @@ interface BatchRow {
   readingDate: string;
   readingValue: string;
   evidence: string;
+}
+
+interface CorrectionDraft {
+  reading: UtilityReading;
+  correctedValue: string;
+  reason: string;
+  authorizationReference: string;
 }
 
 function emptyBatchRow(): BatchRow {
@@ -55,6 +64,11 @@ export function UtilityManagement({
   const [batchResults, setBatchResults] = useState<
     { row: number; status: string; detail: string }[]
   >([]);
+  const [correctionDraft, setCorrectionDraft] =
+    useState<CorrectionDraft | null>(null);
+  const [correctionReview, setCorrectionReview] = useState(false);
+  const [correctionResult, setCorrectionResult] =
+    useState<ReadingCorrectionResult | null>(null);
   const pendingKeys = useRef<
     Record<string, { payload: string; key: string } | undefined>
   >({});
@@ -102,12 +116,15 @@ export function UtilityManagement({
     setBusy(true);
     setFailed(false);
     setCalculation(null);
+    setCorrectionDraft(null);
+    setCorrectionReview(false);
+    setCorrectionResult(null);
     setStatus("Loading authorized Utility history…");
     void api
       .load(targetPropertyId, unitId)
       .then((value) => {
         setSnapshot(value);
-        setStatus("Utility history loaded.");
+        setStatus("Complete Utility history loaded.");
       })
       .catch((error: unknown) => {
         setSnapshot(null);
@@ -230,24 +247,84 @@ export function UtilityManagement({
     );
   }
 
-  function correct(event: FormEvent<HTMLFormElement>) {
+  function reviewCorrection(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const readingId = text(data, "correction-reading-id");
-    const payload = {
-      expected_version: Number(data.get("correction-version")),
-      corrected_value: text(data, "correction-value"),
-      reason: text(data, "correction-reason"),
-      authorization_reference: text(data, "correction-authorization"),
-    };
-    complete(
-      "correction",
-      { readingId, ...payload },
-      (key) => api.correctReading(readingId, payload, key),
-      "Reading correction and affected-calculation evidence appended; issued lines were not rewritten.",
-      form,
+    setCorrectionReview(true);
+    setFailed(false);
+    setStatus(
+      "Review the selected Reading correction, then confirm the append-only command.",
     );
+  }
+
+  function selectCorrection(reading: UtilityReading) {
+    setCorrectionDraft({
+      reading,
+      correctedValue: reading.effective_value,
+      reason: "",
+      authorizationReference: "",
+    });
+    setCorrectionReview(false);
+    setCorrectionResult(null);
+    setFailed(false);
+    setStatus(
+      `Reading from ${reading.reading_date} selected for correction review.`,
+    );
+  }
+
+  function updateCorrection(
+    field: "correctedValue" | "reason" | "authorizationReference",
+    value: string,
+  ) {
+    setCorrectionDraft((current) =>
+      current === null ? null : { ...current, [field]: value },
+    );
+    setCorrectionReview(false);
+  }
+
+  async function confirmCorrection() {
+    if (correctionDraft === null) return;
+    const readingId = correctionDraft.reading.id;
+    const payload = {
+      expected_version: correctionDraft.reading.version,
+      corrected_value: correctionDraft.correctedValue.trim(),
+      reason: correctionDraft.reason.trim(),
+      authorization_reference: correctionDraft.authorizationReference.trim(),
+    };
+    setBusy(true);
+    setFailed(false);
+    setStatus("Submitting the confirmed append-only Reading correction…");
+    try {
+      const result = await api.correctReading(
+        readingId,
+        payload,
+        commandKey("correction", { readingId, ...payload }),
+      );
+      pendingKeys.current.correction = undefined;
+      setCorrectionResult(result);
+      setCorrectionDraft(null);
+      setCorrectionReview(false);
+      try {
+        const next = await api.load(targetPropertyId, unitId);
+        setSnapshot(next);
+        setStatus(
+          "Reading correction and server-authoritative affected-calculation evidence appended; issued lines were not rewritten.",
+        );
+      } catch (error: unknown) {
+        setFailed(true);
+        setStatus(
+          `The correction completed, but refreshed Utility history could not be loaded. The server correction evidence remains below.${diagnostics(error)}`,
+        );
+      }
+    } catch (error: unknown) {
+      setFailed(true);
+      setStatus(
+        error instanceof UtilityConflictError
+          ? `Utility history changed or the command conflicts. Reload before retrying.${diagnostics(error)}`
+          : `The Utility command was not completed.${diagnostics(error)}`,
+      );
+    } finally {
+      setBusy(false);
+    }
   }
 
   function rate(event: FormEvent<HTMLFormElement>) {
@@ -467,8 +544,7 @@ export function UtilityManagement({
                     ) : (
                       <table>
                         <caption>
-                          Complete loaded Reading history for{" "}
-                          {meter.serial_number}
+                          Complete Reading history for {meter.serial_number}
                         </caption>
                         <thead>
                           <tr>
@@ -477,6 +553,7 @@ export function UtilityManagement({
                             <th>Effective</th>
                             <th>Evidence</th>
                             <th>Corrections</th>
+                            <th>Action</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -499,6 +576,18 @@ export function UtilityManagement({
                                             `${item.corrected_value}: ${item.reason}`,
                                         )
                                         .join("; ")}
+                                </td>
+                                <td>
+                                  <button
+                                    aria-label={`Correct Reading from ${reading.reading_date} for Meter ${meter.serial_number}`}
+                                    disabled={busy}
+                                    onClick={() => {
+                                      selectCorrection(reading);
+                                    }}
+                                    type="button"
+                                  >
+                                    Correct this Reading
+                                  </button>
                                 </td>
                               </tr>
                             ),
@@ -819,46 +908,240 @@ export function UtilityManagement({
           <section aria-labelledby="correction-heading">
             <h4 id="correction-heading">Correct a Reading</h4>
             <p>
-              Review the original and effective values above before correcting.
-              The server records calculation impacts and never silently rewrites
-              an issued Utility Invoice.
+              Choose a Reading from its history row. The correction is bound to
+              that server Reading and version, then requires review and explicit
+              confirmation. The server records calculation impacts and never
+              silently rewrites an issued Utility Invoice.
             </p>
-            <form className="form-stack" onSubmit={correct}>
-              <label>
-                Reading identifier
-                <input name="correction-reading-id" required />
-              </label>
-              <label>
-                Expected Reading version
-                <input
-                  min="1"
-                  name="correction-version"
-                  required
-                  type="number"
-                />
-              </label>
-              <label>
-                Corrected value
-                <input
-                  min="0"
-                  name="correction-value"
-                  required
-                  step="0.000001"
-                  type="number"
-                />
-              </label>
-              <label>
-                Correction reason
-                <textarea name="correction-reason" required />
-              </label>
-              <label>
-                Authorization reference
-                <input name="correction-authorization" required />
-              </label>
-              <button disabled={busy} type="submit">
-                Append Reading correction
-              </button>
-            </form>
+            {correctionDraft === null ? (
+              <p>
+                Select “Correct this Reading” in the complete history above.
+              </p>
+            ) : (
+              <form className="form-stack" onSubmit={reviewCorrection}>
+                <div
+                  aria-label="Selected Reading correction source"
+                  className="correction-source"
+                  role="region"
+                >
+                  <h5>Selected Reading</h5>
+                  <dl className="detail-list compact-details">
+                    <div>
+                      <dt>Reading</dt>
+                      <dd>
+                        <code>{correctionDraft.reading.id}</code>
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Date</dt>
+                      <dd>{correctionDraft.reading.reading_date}</dd>
+                    </div>
+                    <div>
+                      <dt>Original value</dt>
+                      <dd>
+                        {correctionDraft.reading.original_value}{" "}
+                        {correctionDraft.reading.measurement_unit_code}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Current effective value</dt>
+                      <dd>
+                        {correctionDraft.reading.effective_value}{" "}
+                        {correctionDraft.reading.measurement_unit_code}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Expected Reading version</dt>
+                      <dd>{correctionDraft.reading.version}</dd>
+                    </div>
+                  </dl>
+                </div>
+                <label>
+                  Corrected value
+                  <input
+                    min="0"
+                    onChange={(event) => {
+                      updateCorrection(
+                        "correctedValue",
+                        event.currentTarget.value,
+                      );
+                    }}
+                    required
+                    step="0.000001"
+                    type="number"
+                    value={correctionDraft.correctedValue}
+                  />
+                </label>
+                <label>
+                  Correction reason
+                  <textarea
+                    onChange={(event) => {
+                      updateCorrection("reason", event.currentTarget.value);
+                    }}
+                    required
+                    value={correctionDraft.reason}
+                  />
+                </label>
+                <label>
+                  Authorization reference
+                  <input
+                    onChange={(event) => {
+                      updateCorrection(
+                        "authorizationReference",
+                        event.currentTarget.value,
+                      );
+                    }}
+                    required
+                    value={correctionDraft.authorizationReference}
+                  />
+                </label>
+                <button disabled={busy} type="submit">
+                  Review Reading correction
+                </button>
+                {correctionReview && (
+                  <div
+                    aria-labelledby="correction-confirmation-heading"
+                    className="confirmation-panel"
+                    role="region"
+                  >
+                    <h5 id="correction-confirmation-heading">
+                      Confirm Reading correction
+                    </h5>
+                    <p>
+                      Append a correction from{" "}
+                      <strong>
+                        {correctionDraft.reading.effective_value}{" "}
+                        {correctionDraft.reading.measurement_unit_code}
+                      </strong>{" "}
+                      to{" "}
+                      <strong>
+                        {correctionDraft.correctedValue}{" "}
+                        {correctionDraft.reading.measurement_unit_code}
+                      </strong>{" "}
+                      for “{correctionDraft.reason}” under authorization “
+                      {correctionDraft.authorizationReference}”.
+                    </p>
+                    <p>
+                      This records append-only history. Any issued Invoice
+                      remains unchanged; the server returns its
+                      affected-calculation evidence separately.
+                    </p>
+                    <button
+                      disabled={busy}
+                      onClick={() => {
+                        void confirmCorrection();
+                      }}
+                      type="button"
+                    >
+                      Confirm and append correction
+                    </button>
+                  </div>
+                )}
+              </form>
+            )}
+            {correctionResult !== null && (
+              <div
+                aria-labelledby="correction-result-heading"
+                className="calculation-detail"
+                role="region"
+              >
+                <h5 id="correction-result-heading">
+                  Reading correction recorded
+                </h5>
+                <dl className="detail-list compact-details">
+                  <div>
+                    <dt>Reading</dt>
+                    <dd>
+                      <code>{correctionResult.reading.id}</code>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Original value</dt>
+                    <dd>{correctionResult.reading.original_value}</dd>
+                  </div>
+                  <div>
+                    <dt>Previous effective value</dt>
+                    <dd>{correctionResult.correction.previous_value}</dd>
+                  </div>
+                  <div>
+                    <dt>Corrected effective value</dt>
+                    <dd>{correctionResult.reading.effective_value}</dd>
+                  </div>
+                  <div>
+                    <dt>Authorization</dt>
+                    <dd>
+                      {correctionResult.correction.authorization_reference}
+                    </dd>
+                  </div>
+                </dl>
+                {correctionResult.affected_calculations.length === 0 ? (
+                  <p>
+                    The server reported no affected calculations for this
+                    correction.
+                  </p>
+                ) : (
+                  <table>
+                    <caption>
+                      Server-authoritative affected calculations
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th>Consumption period</th>
+                        <th>Previous / corrected consumption</th>
+                        <th>Billing effect</th>
+                        <th>Issued Invoice evidence</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {correctionResult.affected_calculations.map((item) => (
+                        <tr key={item.consumption_period_id}>
+                          <td>
+                            <code>{item.consumption_period_id}</code>
+                          </td>
+                          <td>
+                            {item.previous_consumption_quantity} /{" "}
+                            {item.corrected_consumption_quantity}
+                          </td>
+                          <td>{item.billing_effect_kind}</td>
+                          <td>
+                            {item.issued_line.invoice_line_id === null ? (
+                              "No issued Invoice line"
+                            ) : (
+                              <dl className="compact-evidence">
+                                <div>
+                                  <dt>Invoice line</dt>
+                                  <dd>{item.issued_line.invoice_line_id}</dd>
+                                </div>
+                                <div>
+                                  <dt>Source Invoice</dt>
+                                  <dd>{item.issued_line.source_invoice_id}</dd>
+                                </div>
+                                <div>
+                                  <dt>Calculated difference</dt>
+                                  <dd>
+                                    {item.issued_line
+                                      .calculated_difference_usd_cents === null
+                                      ? "None"
+                                      : `${String(item.issued_line.calculated_difference_usd_cents)} USD cents`}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt>Adjustment</dt>
+                                  <dd>
+                                    {item.issued_line.invoice_adjustment_id ??
+                                      "None; issued line not rewritten"}
+                                  </dd>
+                                </div>
+                              </dl>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
           </section>
 
           <section aria-labelledby="utility-rates-heading">
@@ -867,7 +1150,9 @@ export function UtilityManagement({
               <p>No Utility Rates are recorded.</p>
             ) : (
               <table>
-                <caption>Immutable effective-dated Utility Rates</caption>
+                <caption>
+                  Complete immutable effective-dated Utility Rate history
+                </caption>
                 <thead>
                   <tr>
                     <th>Utility</th>

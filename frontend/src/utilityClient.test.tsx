@@ -19,6 +19,11 @@ function response(data: unknown, status = 200, page?: object): Response {
   );
 }
 
+function requestUrl(input: RequestInfo | URL): string {
+  if (typeof input === "string") return input;
+  return input instanceof URL ? input.href : input.url;
+}
+
 const meter = {
   id: "10000000-0000-4000-8000-000000000001",
   property_id: "10000000-0000-4000-8000-000000000002",
@@ -41,6 +46,35 @@ const meter = {
   readings_url: "/api/v1/meters/10000000-0000-4000-8000-000000000001/readings",
 };
 
+const reading = {
+  id: "10000000-0000-4000-8000-000000000010",
+  property_id: meter.property_id,
+  meter_id: meter.id,
+  unit_id: meter.unit_id,
+  utility_type: "ELECTRICITY",
+  measurement_unit_code: "KWH",
+  reading_date: "2026-08-01",
+  original_value: "10.000000",
+  effective_value: "10.000000",
+  validated: true,
+  validated_at: "2026-08-01T12:00:00Z",
+  validated_by: "10000000-0000-4000-8000-000000000011",
+  source: { kind: "MANUAL", evidence: "Meter photograph" },
+  version: 1,
+  corrections: [],
+};
+
+const rate = {
+  id: "10000000-0000-4000-8000-000000000012",
+  utility_type: "ELECTRICITY",
+  measurement_unit_code: "KWH",
+  rate_usd_per_unit: "0.250000",
+  effective_date: "2026-08-01",
+  notice_at: "2026-07-01T12:00:00+07:00",
+  notice_evidence: "Customer notice batch 7",
+  source_memo: null,
+};
+
 describe("Utility client", () => {
   it("TEST-FE-213 preserves deterministic pagination cursors", async () => {
     const fetchMock = vi
@@ -54,6 +88,116 @@ describe("Utility client", () => {
     ).resolves.toMatchObject({ nextCursor: "next meter", items: [meter] });
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
       "/api/v1/units/unit%2Fid/meters?limit=25&cursor=current%20cursor",
+    );
+  });
+
+  it("correction C exhausts more than 25 Meters, Rates, and Readings", async () => {
+    const meters = Array.from({ length: 26 }, (_, index) => ({
+      ...meter,
+      id: `meter-${String(index + 1)}`,
+      serial_number: `ELEC-${String(index + 1)}`,
+      readings_url: `/api/v1/meters/meter-${String(index + 1)}/readings`,
+    }));
+    const rates = Array.from({ length: 26 }, (_, index) => ({
+      ...rate,
+      id: `rate-${String(index + 1)}`,
+      effective_date: `2026-${String((index % 12) + 1).padStart(2, "0")}-01`,
+    }));
+    const firstMeter = meters[0];
+    if (firstMeter === undefined) throw new Error("Meter fixture missing");
+    const readings = Array.from({ length: 26 }, (_, index) => ({
+      ...reading,
+      id: `reading-${String(index + 1)}`,
+      meter_id: firstMeter.id,
+      reading_date: `2026-08-${String((index % 28) + 1).padStart(2, "0")}`,
+    }));
+    const fetchMock = vi.fn<typeof fetch>((input) => {
+      const url = new URL(requestUrl(input), "http://localhost");
+      const cursor = url.searchParams.get("cursor");
+      if (url.pathname.includes("/utility-rates")) {
+        return Promise.resolve(
+          cursor === null
+            ? response(rates.slice(0, 25), 200, {
+                limit: 25,
+                next_cursor: "rates-2",
+              })
+            : response(rates.slice(25), 200, {
+                limit: 25,
+                next_cursor: null,
+              }),
+        );
+      }
+      if (url.pathname.includes("/units/")) {
+        return Promise.resolve(
+          cursor === null
+            ? response(meters.slice(0, 25), 200, {
+                limit: 25,
+                next_cursor: "meters-2",
+              })
+            : response(meters.slice(25), 200, {
+                limit: 25,
+                next_cursor: null,
+              }),
+        );
+      }
+      if (url.pathname.includes(`/meters/${firstMeter.id}/readings`)) {
+        return Promise.resolve(
+          cursor === null
+            ? response(readings.slice(0, 25), 200, {
+                limit: 25,
+                next_cursor: "readings-2",
+              })
+            : response(readings.slice(25), 200, {
+                limit: 25,
+                next_cursor: null,
+              }),
+        );
+      }
+      return Promise.resolve(
+        response([], 200, { limit: 25, next_cursor: null }),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await utilityApi.load(meter.property_id, meter.unit_id);
+
+    expect(result.meters).toHaveLength(26);
+    expect(result.rates).toHaveLength(26);
+    expect(result.readings[firstMeter.id]).toHaveLength(26);
+    const requestedUrls = fetchMock.mock.calls.map(([input]) =>
+      requestUrl(input),
+    );
+    expect(requestedUrls).toContain(
+      `/api/v1/units/${meter.unit_id}/meters?limit=25&cursor=meters-2`,
+    );
+    expect(requestedUrls).toContain(
+      `/api/v1/properties/${meter.property_id}/utility-rates?limit=25&cursor=rates-2`,
+    );
+    expect(requestedUrls).toContain(
+      `/api/v1/meters/${firstMeter.id}/readings?limit=25&cursor=readings-2`,
+    );
+  });
+
+  it("correction C rejects a repeated cursor without returning partial history", async () => {
+    const fetchMock = vi.fn<typeof fetch>((input) => {
+      const url = requestUrl(input);
+      if (url.includes("/utility-rates")) {
+        return Promise.resolve(
+          response([], 200, { limit: 25, next_cursor: null }),
+        );
+      }
+      return Promise.resolve(
+        response([meter], 200, { limit: 25, next_cursor: "repeated" }),
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      utilityApi.load(meter.property_id, meter.unit_id),
+    ).rejects.toBeInstanceOf(UtilityClientError);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock.mock.calls[2]?.[0]).toBe(
+      `/api/v1/units/${meter.unit_id}/meters?limit=25&cursor=repeated`,
     );
   });
 
@@ -88,6 +232,74 @@ describe("Utility client", () => {
       "10000000-0000-4000-8000-000000000004",
     );
     expect(init?.body).toContain('"reading_value":"10.000000"');
+  });
+
+  it("correction C parses server-authoritative correction impacts", async () => {
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=utility-token",
+    });
+    const correction = {
+      id: "10000000-0000-4000-8000-000000000020",
+      previous_value: "10.000000",
+      corrected_value: "12.000000",
+      reason: "Verified photograph",
+      occurred_at: "2026-08-02T12:00:00Z",
+      actor_id: "10000000-0000-4000-8000-000000000011",
+      authorization_reference: "approval-2",
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        response({
+          reading: {
+            ...reading,
+            effective_value: "12.000000",
+            version: 2,
+            corrections: [correction],
+          },
+          correction,
+          affected_calculations: [
+            {
+              consumption_period_id: "10000000-0000-4000-8000-000000000021",
+              previous_consumption_quantity: "20.000000",
+              corrected_consumption_quantity: "22.000000",
+              billing_effect_kind: "POST_ISSUANCE_ADJUSTMENT",
+              issued_line: {
+                invoice_line_id: "10000000-0000-4000-8000-000000000022",
+                source_invoice_id: "10000000-0000-4000-8000-000000000023",
+                calculated_difference_usd_cents: 50,
+                invoice_adjustment_id: "10000000-0000-4000-8000-000000000024",
+              },
+            },
+          ],
+        }),
+      ),
+    );
+
+    await expect(
+      utilityApi.correctReading(
+        reading.id,
+        {
+          expected_version: 1,
+          corrected_value: "12.000000",
+          reason: "Verified photograph",
+          authorization_reference: "approval-2",
+        },
+        "10000000-0000-4000-8000-000000000025",
+      ),
+    ).resolves.toMatchObject({
+      reading: { original_value: "10.000000", effective_value: "12.000000" },
+      affected_calculations: [
+        {
+          billing_effect_kind: "POST_ISSUANCE_ADJUSTMENT",
+          issued_line: {
+            calculated_difference_usd_cents: 50,
+            invoice_adjustment_id: "10000000-0000-4000-8000-000000000024",
+          },
+        },
+      ],
+    });
   });
 
   it("TEST-FE-215 parses the authoritative pending broken-Meter state", async () => {
