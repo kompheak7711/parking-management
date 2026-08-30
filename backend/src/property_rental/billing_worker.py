@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -144,19 +145,21 @@ def run_bounded_loop(
     max_iterations: int,
     poll_interval_seconds: int,
     sleep: Callable[[float], None] = time.sleep,
-) -> None:
+) -> bool:
     """Run a finite loop with bounded exponential failure backoff."""
     if max_iterations < 1:
         raise ValueError("max_iterations must be positive")
     if poll_interval_seconds < 1:
         raise ValueError("poll_interval_seconds must be positive")
     consecutive_failures = 0
+    all_succeeded = True
     for iteration in range(max_iterations):
         try:
             result = worker.run_once()
         except Exception as exc:
+            all_succeeded = False
             consecutive_failures = min(consecutive_failures + 1, 6)
-            print(f"failed:{type(exc).__name__}", flush=True)
+            print(f"failed:{type(exc).__name__}", file=sys.stderr, flush=True)
             if iteration + 1 < max_iterations:
                 sleep(min(poll_interval_seconds, 2**consecutive_failures))
             continue
@@ -164,6 +167,7 @@ def run_bounded_loop(
         print(f"succeeded:{len(result.runs)}", flush=True)
         if iteration + 1 < max_iterations:
             sleep(poll_interval_seconds)
+    return all_succeeded
 
 
 def main() -> int:
@@ -186,7 +190,7 @@ def main() -> int:
         max_catchup_runs=args.max_catchup_runs,
     )
     try:
-        run_bounded_loop(
+        succeeded = run_bounded_loop(
             worker,
             max_iterations=1 if args.once else args.max_iterations,
             poll_interval_seconds=args.poll_interval_seconds,
@@ -195,7 +199,7 @@ def main() -> int:
         if isinstance(exc, ValueError):
             parser.error(str(exc))
         return 130
-    return 0
+    return 0 if succeeded else 1
 
 
 if __name__ == "__main__":

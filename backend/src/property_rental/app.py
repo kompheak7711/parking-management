@@ -658,7 +658,8 @@ def create_app(
                 BillingRunFlow,
                 (
                     PostgresBillingRunService(
-                        resolved_settings.financial_database_url.get_secret_value()
+                        resolved_settings.financial_database_url.get_secret_value(),
+                        api_service_actor_id=resolved_settings.billing_service_actor_id,
                     )
                     if resolved_settings.financial_database_url is not None
                     else UnavailableBillingRunFlow()

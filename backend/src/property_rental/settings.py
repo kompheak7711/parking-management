@@ -1,6 +1,7 @@
 """Environment-backed application settings."""
 
 from typing import Literal
+from uuid import UUID
 
 from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -26,6 +27,7 @@ class Settings(BaseSettings):
         default=None,
         validation_alias="APP_FINANCIAL_DATABASE_URL",
     )
+    billing_service_actor_id: UUID | None = None
     allowed_browser_origin: str = Field(
         default="https://localhost",
         pattern=r"^https://[^/]+$",

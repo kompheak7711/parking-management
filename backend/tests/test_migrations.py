@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import os
 import shutil
@@ -5131,6 +5132,77 @@ def test_v1_042_published_schema_upgrades_to_corrected_runtime_contract() -> Non
                 "FROM app.broken_meter_estimation_cases WHERE id=%s",
                 (legacy_command.estimation_case_id,),
             ).fetchone() == (date(2026, 2, 1), date(2026, 2, 10))
+
+
+def test_v1_044_populated_v1_043_upgrade_restores_billing_history_guards() -> None:
+    """Revision 35 backfills protected revision-34 history, then reseals it."""
+    from test_invoice_migration import (
+        register_billing_service_principal,
+        setup_signed_lease,
+    )
+
+    with _temporary_migration_database("prm_v1_044_populated_upgrade") as migration_url:
+        prior = _run_alembic("upgrade", "20260829_34")
+        assert prior.returncode == 0, prior.stderr
+        run_id = uuid.uuid4()
+        with psycopg.connect(migration_url) as connection:
+            human_actor_id, property_id, _, _ = setup_signed_lease(
+                connection,
+                start_date=date(2049, 12, 1),
+                end_date=date(2050, 12, 31),
+            )
+            service_actor_id = register_billing_service_principal(
+                connection,
+                property_id=property_id,
+                created_by=human_actor_id,
+            )
+            connection.execute(
+                "INSERT INTO app.billing_runs(id,property_id,run_kind,logical_run_key,"
+                "business_date,period_start,period_end,idempotency_key,system_actor_id,status,"
+                "started_at) VALUES (%s,%s,'RENT','rent/2050-02',DATE '2050-01-25',"
+                "DATE '2050-02-01',DATE '2050-02-28',%s,%s,'RUNNING',"
+                "TIMESTAMPTZ '2050-01-25 01:00:00+00')",
+                (run_id, property_id, uuid.uuid4(), service_actor_id),
+            )
+            assert (
+                connection.execute(
+                    "SELECT source_id FROM app.billing_run_eligible_sources "
+                    "WHERE billing_run_id=%s ORDER BY source_id LIMIT 1",
+                    (run_id,),
+                ).fetchone()
+                is not None
+            )
+            connection.commit()
+
+        corrected = _run_alembic("upgrade", "head")
+        assert corrected.returncode == 0, corrected.stderr
+        with psycopg.connect(migration_url) as connection:
+            assert connection.execute(
+                "SELECT request_digest,correlation_id,invocation_source,requester_actor_id,"
+                "system_actor_id FROM app.billing_runs WHERE id=%s",
+                (run_id,),
+            ).fetchone() == (
+                hashlib.md5(str(run_id).encode(), usedforsecurity=False).hexdigest() * 2,
+                run_id,
+                "SCHEDULED",
+                service_actor_id,
+                service_actor_id,
+            )
+            with pytest.raises(psycopg.Error) as run_mutation:
+                with connection.transaction():
+                    connection.execute(
+                        "UPDATE app.billing_runs SET correlation_id=%s WHERE id=%s",
+                        (uuid.uuid4(), run_id),
+                    )
+            assert run_mutation.value.sqlstate == "55000"
+            with pytest.raises(psycopg.Error) as snapshot_mutation:
+                with connection.transaction():
+                    connection.execute(
+                        "UPDATE app.billing_run_eligible_sources "
+                        "SET source_evidence='{}'::jsonb WHERE billing_run_id=%s",
+                        (run_id,),
+                    )
+            assert snapshot_mutation.value.sqlstate == "55000"
 
 
 def test_v1_042_upgrade_front_door_gate_prevents_service_writer_deadlock() -> None:

@@ -116,6 +116,8 @@ class BillingRunDetail:
     request_digest: str
     correlation_id: UUID
     invocation_source: str
+    requester_actor_id: UUID
+    system_actor_id: UUID
     status: str
     started_at: datetime
     completed_at: datetime | None
@@ -160,8 +162,14 @@ def stable_billing_id(run_id: UUID, value: str) -> UUID:
 class PostgresBillingRunService:
     """Execute a run through protected SQL wrappers around existing billing services."""
 
-    def __init__(self, financial_database_url: str) -> None:
+    def __init__(
+        self,
+        financial_database_url: str,
+        *,
+        api_service_actor_id: UUID | None = None,
+    ) -> None:
         self._financial_database_url = financial_database_url
+        self._api_service_actor_id = api_service_actor_id
 
     @staticmethod
     def _authorize(actor: AuthenticatedActor, property_id: UUID, *, hide: bool = False) -> UUID:
@@ -209,6 +217,45 @@ class PostgresBillingRunService:
         )
         connection.commit()
 
+    def _resolve_system_actor(
+        self,
+        connection: psycopg.Connection[tuple[object, ...]],
+        *,
+        requester_actor_id: UUID,
+        property_id: UUID,
+        invocation_source: str,
+    ) -> UUID:
+        identity_row = connection.execute(
+            "SELECT identity_kind FROM app.actor_identities WHERE actor_id=%s",
+            (requester_actor_id,),
+        ).fetchone()
+        if identity_row is None:
+            raise BillingRunAuthorizationError("Billing requester identity is not active")
+        identity_kind = str(identity_row[0])
+        service_rows = connection.execute(
+            "SELECT principal.actor_id FROM app.billing_service_principals AS principal "
+            "JOIN app.actor_identities AS identity ON identity.actor_id=principal.actor_id "
+            "WHERE principal.property_id=%s AND principal.capability=%s "
+            "AND principal.lifecycle_state='active' AND identity.identity_kind='SERVICE'",
+            (property_id, BILLING_GENERATE_CAPABILITY),
+        ).fetchall()
+        service_actor_ids = tuple(UUID(str(row[0])) for row in service_rows)
+        if invocation_source == "SCHEDULED":
+            if identity_kind != "SERVICE" or requester_actor_id not in service_actor_ids:
+                raise BillingRunAuthorizationError(
+                    "Scheduled Billing service principal is not active"
+                )
+            return requester_actor_id
+        if invocation_source != "API" or identity_kind != "HUMAN":
+            raise BillingRunAuthorizationError("Billing requester identity is invalid")
+        if self._api_service_actor_id is None:
+            raise BillingRunAuthorizationError(
+                "Property Billing service principal configuration is missing or ambiguous"
+            )
+        if self._api_service_actor_id not in service_actor_ids:
+            raise BillingRunAuthorizationError("Configured Billing service principal is not active")
+        return self._api_service_actor_id
+
     def execute(
         self,
         command: BillingRunCommand,
@@ -216,7 +263,7 @@ class PostgresBillingRunService:
         actor: AuthenticatedActor,
         invocation_source: str,
     ) -> BillingRunDetail:
-        actor_id = self._authorize(actor, command.property_id)
+        requester_actor_id = self._authorize(actor, command.property_id)
         digest = billing_run_request_digest(command, invocation_source)
         run_id = stable_billing_id(
             command.property_id,
@@ -236,9 +283,15 @@ class PostgresBillingRunService:
                 connect_timeout=BILLING_RUN_CONNECT_TIMEOUT_SECONDS,
             ) as connection:
                 self._configure(connection)
+                system_actor_id = self._resolve_system_actor(
+                    connection,
+                    requester_actor_id=requester_actor_id,
+                    property_id=command.property_id,
+                    invocation_source=invocation_source,
+                )
                 started = connection.execute(
                     "SELECT * FROM app.start_scheduled_billing_run("
-                    "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                     (
                         run_id,
                         command.property_id,
@@ -249,7 +302,8 @@ class PostgresBillingRunService:
                         command.period_end,
                         command.idempotency_key,
                         digest,
-                        actor_id,
+                        requester_actor_id,
+                        system_actor_id,
                         correlation_id,
                         invocation_source,
                     ),
@@ -284,7 +338,7 @@ class PostgresBillingRunService:
                     )
                     if command.run_kind == "RENT":
                         command_key = stable_billing_id(
-                            UUID(str(attempt_id)), f"rent-command/{source_id}"
+                            persisted_run_id, f"rent-command/{source_id}"
                         )
                         compact_source_id = str(source_id).replace("-", "")[:12]
                         invoice_number = f"RENT-{command.period_start:%Y%m}-{compact_source_id}"
@@ -369,6 +423,7 @@ class PostgresBillingRunService:
         run = connection.execute(
             "SELECT id,property_id,run_kind,logical_run_key,business_date,period_start,"
             "period_end,idempotency_key,request_digest,correlation_id,invocation_source,"
+            "requester_actor_id,system_actor_id,"
             "status,started_at,completed_at,failure_code FROM app.billing_runs WHERE id=%s",
             (run_id,),
         ).fetchone()
@@ -427,7 +482,7 @@ class PostgresBillingRunService:
             )
             for attempt in attempt_rows
         )
-        status = str(run[11])
+        status = str(run[13])
         if status == "RUNNING" and attempts and attempts[-1].outcome == "FAILED":
             status = "RETRYABLE"
         return BillingRunDetail(
@@ -442,9 +497,11 @@ class PostgresBillingRunService:
             request_digest=str(run[8]),
             correlation_id=UUID(str(run[9])),
             invocation_source=str(run[10]),
+            requester_actor_id=UUID(str(run[11])),
+            system_actor_id=UUID(str(run[12])),
             status=status,
-            started_at=cast(datetime, run[12]),
-            completed_at=cast(datetime | None, run[13]),
-            failure_code=None if run[14] is None else str(run[14]),
+            started_at=cast(datetime, run[14]),
+            completed_at=cast(datetime | None, run[15]),
+            failure_code=None if run[16] is None else str(run[16]),
             attempts=attempts,
         )

@@ -141,6 +141,8 @@ def billing_run_body(run: BillingRunDetail) -> dict[str, object]:
         "request_digest": run.request_digest,
         "correlation_id": str(run.correlation_id),
         "invocation_source": run.invocation_source,
+        "requester_actor_id": str(run.requester_actor_id),
+        "system_actor_id": str(run.system_actor_id),
         "status": run.status,
         "started_at": run.started_at.isoformat(),
         "completed_at": run.completed_at.isoformat() if run.completed_at is not None else None,

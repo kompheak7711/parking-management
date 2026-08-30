@@ -13,18 +13,25 @@ def upgrade() -> None:
     """Install the V1-044 command ledger and atomic issuance boundary."""
     op.execute(
         r"""
+        DROP TRIGGER billing_runs_protect_history ON app.billing_runs;
+        DROP TRIGGER billing_run_eligible_sources_protect_history
+            ON app.billing_run_eligible_sources;
+
         ALTER TABLE app.billing_runs
             ADD COLUMN request_digest text DEFAULT repeat('0',64),
             ADD COLUMN correlation_id uuid DEFAULT gen_random_uuid(),
-            ADD COLUMN invocation_source text DEFAULT 'SCHEDULED';
+            ADD COLUMN invocation_source text DEFAULT 'SCHEDULED',
+            ADD COLUMN requester_actor_id uuid;
         UPDATE app.billing_runs SET
             request_digest=md5(id::text)||md5(id::text),
             correlation_id=id,
-            invocation_source='SCHEDULED';
+            invocation_source='SCHEDULED',
+            requester_actor_id=system_actor_id;
         ALTER TABLE app.billing_runs
             ALTER COLUMN request_digest SET NOT NULL,
             ALTER COLUMN correlation_id SET NOT NULL,
             ALTER COLUMN invocation_source SET NOT NULL,
+            ALTER COLUMN requester_actor_id SET NOT NULL,
             ADD CONSTRAINT billing_runs_request_digest_shape
                 CHECK (request_digest~'^[0-9a-f]{64}$'),
             ADD CONSTRAINT billing_runs_correlation_non_nil
@@ -32,7 +39,10 @@ def upgrade() -> None:
             ADD CONSTRAINT billing_runs_invocation_source_allowed
                 CHECK (invocation_source IN ('API','SCHEDULED')),
             ADD CONSTRAINT billing_runs_logical_key_bounded
-                CHECK (length(logical_run_key)<=200);
+                CHECK (length(logical_run_key)<=200),
+            ADD CONSTRAINT billing_runs_requester_actor_fkey
+                FOREIGN KEY(requester_actor_id)
+                REFERENCES app.actor_identities(actor_id) ON DELETE RESTRICT;
 
         ALTER TABLE app.billing_runs
             DROP CONSTRAINT billing_runs_utility_source_deferred;
@@ -50,6 +60,9 @@ def upgrade() -> None:
                 CHECK (source_kind IN ('LEASE_PERIOD','UTILITY_PERIOD','UTILITY_CASE')),
             ADD CONSTRAINT billing_run_eligible_sources_evidence_shape
                 CHECK (jsonb_typeof(source_evidence)='object');
+        CREATE TRIGGER billing_run_eligible_sources_protect_history
+            BEFORE INSERT OR UPDATE OR DELETE ON app.billing_run_eligible_sources
+            FOR EACH ROW EXECUTE FUNCTION app.protect_billing_run_eligible_source_history();
 
         ALTER TABLE app.billing_run_items
             DROP CONSTRAINT billing_run_items_source_kind_check,
@@ -166,6 +179,9 @@ def upgrade() -> None:
         DECLARE v_predecessor app.billing_runs%ROWTYPE;
         BEGIN
             IF TG_OP='INSERT' THEN
+                IF NEW.requester_actor_id IS NULL AND NEW.invocation_source='SCHEDULED' THEN
+                    NEW.requester_actor_id:=NEW.system_actor_id;
+                END IF;
                 IF NOT EXISTS (
                     SELECT 1 FROM app.actor_identities AS identity
                     WHERE identity.actor_id=NEW.system_actor_id
@@ -228,6 +244,7 @@ def upgrade() -> None:
                 OR NEW.request_digest<>OLD.request_digest
                 OR NEW.correlation_id<>OLD.correlation_id
                 OR NEW.invocation_source<>OLD.invocation_source
+                OR NEW.requester_actor_id<>OLD.requester_actor_id
                 OR NEW.predecessor_run_id IS DISTINCT FROM OLD.predecessor_run_id
                 OR NEW.system_actor_id<>OLD.system_actor_id OR NEW.started_at<>OLD.started_at
                 OR NEW.created_at<>OLD.created_at OR NEW.status='RUNNING'
@@ -261,6 +278,10 @@ def upgrade() -> None:
                 USING ERRCODE='23514'; END IF;
             RETURN NEW;
         END $$;
+
+        CREATE TRIGGER billing_runs_protect_history
+            BEFORE INSERT OR UPDATE OR DELETE ON app.billing_runs
+            FOR EACH ROW EXECUTE FUNCTION app.protect_billing_run_history();
         """
     )
     op.execute(
@@ -423,9 +444,17 @@ def upgrade() -> None:
                               ON source_attempt.billing_run_id=eligible.billing_run_id
                             JOIN app.invoice_lines AS line
                               ON line.invoice_id=NEW.id
-                             AND line.utility_consumption_period_id=eligible.source_id
                             WHERE source_attempt.id=NEW.originating_billing_run_attempt_id
-                              AND eligible.source_kind='UTILITY_PERIOD'
+                              AND (
+                                (eligible.source_kind='UTILITY_PERIOD'
+                                  AND line.utility_consumption_period_id=eligible.source_id)
+                                OR (eligible.source_kind='UTILITY_CASE' AND EXISTS (
+                                    SELECT 1 FROM app.broken_meter_estimates AS estimate
+                                    WHERE estimate.estimation_case_id=eligible.source_id
+                                      AND estimate.consumption_period_id
+                                          =line.utility_consumption_period_id
+                                ))
+                              )
                               AND eligible.source_period_start=NEW.billing_period_start
                               AND eligible.source_period_end=NEW.billing_period_end
                           ))
@@ -546,7 +575,16 @@ def upgrade() -> None:
                         OR (v_run_kind='UTILITIES' AND invoice.primary_category='UTILITIES'
                           AND EXISTS (SELECT 1 FROM app.invoice_lines AS line
                             WHERE line.invoice_id=invoice.id
-                              AND line.utility_consumption_period_id=NEW.source_id
+                              AND (
+                                (NEW.source_kind='UTILITY_PERIOD'
+                                  AND line.utility_consumption_period_id=NEW.source_id)
+                                OR (NEW.source_kind='UTILITY_CASE' AND EXISTS (
+                                    SELECT 1 FROM app.broken_meter_estimates AS estimate
+                                    WHERE estimate.estimation_case_id=NEW.source_id
+                                      AND estimate.consumption_period_id
+                                          =line.utility_consumption_period_id
+                                ))
+                              )
                               AND line.period_start=NEW.source_period_start
                               AND line.period_end=NEW.source_period_end))
                       )
@@ -591,7 +629,16 @@ def upgrade() -> None:
                     JOIN app.utility_rates AS rate ON rate.id=line.utility_rate_id
                     WHERE invoice.id=NEW.invoice_id AND invoice.status='UNPAID'
                       AND invoice.primary_category='UTILITIES'
-                      AND line.utility_consumption_period_id=NEW.source_id
+                      AND (
+                        (NEW.source_kind='UTILITY_PERIOD'
+                          AND line.utility_consumption_period_id=NEW.source_id)
+                        OR (NEW.source_kind='UTILITY_CASE' AND EXISTS (
+                            SELECT 1 FROM app.broken_meter_estimates AS estimate
+                            WHERE estimate.estimation_case_id=NEW.source_id
+                              AND estimate.consumption_period_id
+                                  =line.utility_consumption_period_id
+                        ))
+                      )
                       AND line.period_start=NEW.source_period_start
                       AND line.period_end=NEW.source_period_end
                       AND rate.property_id=v_property_id))
@@ -623,8 +670,7 @@ def upgrade() -> None:
                     WHERE latest.outcome IN ('GENERATED','SKIPPED')
                       AND (
                         (latest.invoice_id IS NULL AND latest.diagnostic_code IN (
-                            'SOURCE_NO_LONGER_ELIGIBLE','PENDING_FUTURE_ACTUAL_BASIS',
-                            'ZERO_AMOUNT_NO_OBLIGATION'
+                            'SOURCE_NO_LONGER_ELIGIBLE','ZERO_AMOUNT_NO_OBLIGATION'
                         ))
                         OR EXISTS (SELECT 1 FROM app.invoices AS invoice
                             WHERE invoice.id=latest.invoice_id AND invoice.status<>'VOID')
@@ -639,14 +685,15 @@ def upgrade() -> None:
         CREATE FUNCTION app.start_scheduled_billing_run(
             p_run_id uuid,p_property_id uuid,p_run_kind text,p_logical_run_key text,
             p_business_date date,p_period_start date,p_period_end date,
-            p_idempotency_key uuid,p_request_digest text,p_actor_id uuid,
-            p_correlation_id uuid,p_invocation_source text
+            p_idempotency_key uuid,p_request_digest text,p_requester_actor_id uuid,
+            p_system_actor_id uuid,p_correlation_id uuid,p_invocation_source text
         ) RETURNS TABLE(run_id uuid,attempt_id uuid,should_execute boolean)
         LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
         DECLARE v_run app.billing_runs%ROWTYPE; v_attempt app.billing_run_attempts%ROWTYPE;
         DECLARE v_attempt_number integer; v_started_at timestamptz:=clock_timestamp();
         BEGIN
-            IF p_run_id IS NULL OR p_property_id IS NULL OR p_actor_id IS NULL
+            IF p_run_id IS NULL OR p_property_id IS NULL OR p_requester_actor_id IS NULL
+                OR p_system_actor_id IS NULL
                 OR p_idempotency_key IS NULL OR p_correlation_id IS NULL
                 OR p_run_kind NOT IN ('RENT','UTILITIES')
                 OR p_logical_run_key IS NULL OR p_logical_run_key<>btrim(p_logical_run_key)
@@ -656,7 +703,13 @@ def upgrade() -> None:
                 OR p_invocation_source NOT IN ('API','SCHEDULED')
             THEN RAISE EXCEPTION 'Scheduled Billing command evidence is invalid'
                 USING ERRCODE='22023'; END IF;
-            PERFORM app.assert_active_financial_actor(p_actor_id,p_property_id);
+            PERFORM app.assert_active_financial_actor(p_requester_actor_id,p_property_id);
+            IF NOT EXISTS (
+                SELECT 1 FROM app.actor_identities AS identity
+                WHERE identity.actor_id=p_system_actor_id AND identity.identity_kind='SERVICE'
+            ) THEN RAISE EXCEPTION 'Scheduled Billing requires a service principal'
+                USING ERRCODE='55000'; END IF;
+            PERFORM app.assert_active_financial_actor(p_system_actor_id,p_property_id);
             PERFORM pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(
                 'scheduled-billing/' || p_property_id::text || '/' || p_run_kind || '/'
                     || p_period_start::text || '/' || p_period_end::text,0
@@ -675,7 +728,8 @@ def upgrade() -> None:
                     OR v_run.period_start<>p_period_start OR v_run.period_end<>p_period_end
                     OR v_run.idempotency_key<>p_idempotency_key
                     OR v_run.request_digest<>p_request_digest
-                    OR v_run.system_actor_id<>p_actor_id
+                    OR v_run.requester_actor_id<>p_requester_actor_id
+                    OR v_run.system_actor_id<>p_system_actor_id
                     OR v_run.correlation_id<>p_correlation_id
                     OR v_run.invocation_source<>p_invocation_source
                 THEN RAISE EXCEPTION 'Scheduled Billing idempotency key conflicts with another input'
@@ -702,11 +756,12 @@ def upgrade() -> None:
             ELSE
                 INSERT INTO app.billing_runs(
                     id,property_id,run_kind,logical_run_key,business_date,period_start,period_end,
-                    idempotency_key,request_digest,system_actor_id,correlation_id,
+                    idempotency_key,request_digest,requester_actor_id,system_actor_id,correlation_id,
                     invocation_source,status,started_at
                 ) VALUES (
                     p_run_id,p_property_id,p_run_kind,p_logical_run_key,p_business_date,
-                    p_period_start,p_period_end,p_idempotency_key,p_request_digest,p_actor_id,
+                    p_period_start,p_period_end,p_idempotency_key,p_request_digest,
+                    p_requester_actor_id,p_system_actor_id,
                     p_correlation_id,p_invocation_source,'RUNNING',v_started_at
                 ) RETURNING * INTO v_run;
                 v_attempt_number:=1;
@@ -727,7 +782,8 @@ def upgrade() -> None:
         ) RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
         DECLARE v_run app.billing_runs%ROWTYPE; v_attempt app.billing_run_attempts%ROWTYPE;
         DECLARE v_result jsonb; v_item_id uuid; v_recorded_at timestamptz;
-        DECLARE v_existing app.billing_run_items%ROWTYPE; v_sqlstate text;
+        DECLARE v_existing app.billing_run_items%ROWTYPE; v_existing_invoice_id uuid;
+        DECLARE v_sqlstate text;
         BEGIN
             SELECT * INTO STRICT v_run FROM app.billing_runs WHERE id=p_run_id FOR UPDATE;
             SELECT * INTO STRICT v_attempt FROM app.billing_run_attempts
@@ -738,6 +794,27 @@ def upgrade() -> None:
               AND source_period_end=v_run.period_end;
             IF FOUND THEN RETURN v_existing.outcome; END IF;
             v_item_id:=md5(p_attempt_id::text || '/rent/' || p_source_id::text)::uuid;
+            SELECT invoice.id INTO v_existing_invoice_id
+            FROM app.invoices AS invoice
+            JOIN app.billing_run_attempts AS prior_attempt
+              ON prior_attempt.id=invoice.originating_billing_run_attempt_id
+            WHERE invoice.id=p_invoice_id AND invoice.status<>'VOID'
+              AND invoice.primary_category='RENT' AND invoice.lease_id=p_source_id
+              AND invoice.billing_period_start=v_run.period_start
+              AND invoice.billing_period_end=v_run.period_end
+              AND prior_attempt.billing_run_id=p_run_id
+              AND prior_attempt.id<>p_attempt_id
+            FOR UPDATE OF invoice;
+            IF FOUND THEN
+                INSERT INTO app.billing_run_items(
+                    id,billing_run_id,billing_run_attempt_id,source_kind,source_id,
+                    source_period_start,source_period_end,outcome,invoice_id,
+                    diagnostic_code,recorded_at
+                ) VALUES (v_item_id,p_run_id,p_attempt_id,'LEASE_PERIOD',p_source_id,
+                    v_run.period_start,v_run.period_end,'SKIPPED',v_existing_invoice_id,
+                    'ACTIVE_INVOICE_ALREADY_EXISTS',clock_timestamp());
+                RETURN 'SKIPPED';
+            END IF;
             IF NOT app.lease_is_billable_for_recurring_period(
                 p_source_id,v_run.period_start,v_run.period_end,clock_timestamp()
             ) THEN
@@ -767,7 +844,9 @@ def upgrade() -> None:
                     v_run.property_id,'{}'::jsonb,v_result,v_run.correlation_id,
                     v_run.invocation_source,'SUCCEEDED',
                     pg_catalog.jsonb_build_object('billing_run_id',p_run_id,
-                        'billing_run_attempt_id',p_attempt_id,'source_lease_id',p_source_id),
+                        'billing_run_attempt_id',p_attempt_id,'source_lease_id',p_source_id,
+                        'requester_actor_id',v_run.requester_actor_id,
+                        'system_actor_id',v_run.system_actor_id),
                     p_source_id
                 );
                 INSERT INTO app.billing_run_items(
@@ -867,8 +946,14 @@ def upgrade() -> None:
                       AND run.business_date=candidate::date AND run.status='SUCCEEDED'
                   )
             ), utility_candidates AS (
-                SELECT greatest(period.end_date,
-                           timezone(v_timezone,period.finalized_at)::date),
+                SELECT COALESCE((
+                           SELECT run.business_date FROM app.billing_runs AS run
+                           WHERE run.property_id=p_property_id AND run.run_kind='UTILITIES'
+                             AND run.period_start=period.start_date
+                             AND run.period_end=period.end_date AND run.status='RUNNING'
+                           ORDER BY run.created_at,run.id LIMIT 1
+                       ),greatest(period.end_date,
+                           timezone(v_timezone,period.finalized_at)::date)),
                        period.start_date,period.end_date,'UTILITIES'::text
                 FROM app.utility_consumption_periods AS period
                 JOIN app.units AS unit ON unit.id=period.unit_id
@@ -882,8 +967,15 @@ def upgrade() -> None:
                       AND run.status='SUCCEEDED'
                   )
                 UNION
-                SELECT greatest(case_record.unmeasured_end_date,
-                           timezone(v_timezone,case_record.opened_at)::date),
+                SELECT COALESCE((
+                           SELECT run.business_date FROM app.billing_runs AS run
+                           WHERE run.property_id=p_property_id AND run.run_kind='UTILITIES'
+                             AND run.period_start=case_record.unmeasured_start_date
+                             AND run.period_end=case_record.unmeasured_end_date
+                             AND run.status='RUNNING'
+                           ORDER BY run.created_at,run.id LIMIT 1
+                       ),greatest(case_record.unmeasured_end_date,
+                           timezone(v_timezone,case_record.opened_at)::date)),
                        case_record.unmeasured_start_date,case_record.unmeasured_end_date,
                        'UTILITIES'::text
                 FROM app.broken_meter_estimation_cases AS case_record
@@ -926,6 +1018,7 @@ def upgrade() -> None:
         DECLARE v_existing_invoice_id uuid; v_existing_attempt_id uuid;
         DECLARE v_preview jsonb; v_lease_id uuid; v_customer_id uuid; v_unit_id uuid;
         DECLARE v_item_id uuid; v_line_id uuid; v_now timestamptz; v_due_date date;
+        DECLARE v_consumption_period_id uuid:=p_source_id;
         DECLARE v_amount bigint; v_quantity numeric(38,6); v_rate numeric(20,8);
         DECLARE v_rate_id uuid; v_rate_effective_date date; v_sqlstate text;
         BEGIN
@@ -940,25 +1033,37 @@ def upgrade() -> None:
             v_item_id:=md5(p_attempt_id::text || '/' || p_source_kind || '/'
                 || p_source_id::text)::uuid;
             IF p_source_kind='UTILITY_CASE' THEN
-                INSERT INTO app.billing_run_items(
-                    id,billing_run_id,billing_run_attempt_id,source_kind,source_id,
-                    source_period_start,source_period_end,outcome,diagnostic_code,recorded_at
-                ) VALUES (v_item_id,p_run_id,p_attempt_id,p_source_kind,p_source_id,
-                    v_run.period_start,v_run.period_end,'SKIPPED',
-                    'PENDING_FUTURE_ACTUAL_BASIS',clock_timestamp());
-                RETURN 'SKIPPED';
+                SELECT estimate.consumption_period_id INTO v_consumption_period_id
+                FROM app.broken_meter_estimates AS estimate
+                JOIN app.utility_consumption_periods AS period
+                  ON period.id=estimate.consumption_period_id
+                JOIN app.units AS unit ON unit.id=period.unit_id
+                WHERE estimate.estimation_case_id=p_source_id
+                  AND unit.property_id=v_run.property_id
+                  AND period.start_date=v_run.period_start
+                  AND period.end_date=v_run.period_end
+                  AND period.finalized_at<=clock_timestamp();
+                IF NOT FOUND THEN
+                    INSERT INTO app.billing_run_items(
+                        id,billing_run_id,billing_run_attempt_id,source_kind,source_id,
+                        source_period_start,source_period_end,outcome,diagnostic_code,recorded_at
+                    ) VALUES (v_item_id,p_run_id,p_attempt_id,p_source_kind,p_source_id,
+                        v_run.period_start,v_run.period_end,'SKIPPED',
+                        'PENDING_FUTURE_ACTUAL_BASIS',clock_timestamp());
+                    RETURN 'SKIPPED';
+                END IF;
             END IF;
             BEGIN
                 SELECT period.* INTO STRICT v_period
                 FROM app.utility_consumption_periods AS period
                 JOIN app.units AS unit ON unit.id=period.unit_id
-                WHERE period.id=p_source_id AND unit.property_id=v_run.property_id
+                WHERE period.id=v_consumption_period_id AND unit.property_id=v_run.property_id
                   AND period.start_date=v_run.period_start AND period.end_date=v_run.period_end;
                 SELECT invoice.id,invoice.originating_billing_run_attempt_id
                     INTO v_existing_invoice_id,v_existing_attempt_id
                 FROM app.invoices AS invoice
                 JOIN app.invoice_lines AS line ON line.invoice_id=invoice.id
-                WHERE line.utility_consumption_period_id=p_source_id
+                WHERE line.utility_consumption_period_id=v_consumption_period_id
                   AND invoice.status<>'VOID'
                 ORDER BY invoice.id LIMIT 1 FOR UPDATE OF invoice;
                 IF FOUND THEN
@@ -977,7 +1082,7 @@ def upgrade() -> None:
                         THEN 'GENERATED' ELSE 'SKIPPED' END;
                 END IF;
                 v_preview:=app.preview_utility_calculation(
-                    v_run.property_id,'CONSUMPTION_PERIOD',p_source_id,
+                    v_run.property_id,'CONSUMPTION_PERIOD',v_consumption_period_id,
                     p_generation_at,v_run.system_actor_id
                 );
                 v_amount:=(v_preview->>'amount_usd_cents')::bigint;
@@ -1036,7 +1141,8 @@ def upgrade() -> None:
                 ) VALUES (
                     v_line_id,p_invoice_id,1,'UTILITIES',
                     CASE v_period.utility_type WHEN 'ELECTRICITY' THEN 'Electricity' ELSE 'Water' END,
-                    v_amount,v_period.start_date,v_period.end_date,v_lease_id,p_source_id,
+                    v_amount,v_period.start_date,v_period.end_date,v_lease_id,
+                    v_consumption_period_id,
                     v_rate_id,v_quantity,v_rate,
                     v_preview || pg_catalog.jsonb_build_object(
                         'responsible_customer_id',v_customer_id,
@@ -1067,7 +1173,11 @@ def upgrade() -> None:
                     v_run.correlation_id,v_run.invocation_source,'SUCCEEDED',
                     pg_catalog.jsonb_build_object('billing_run_id',p_run_id,
                         'billing_run_attempt_id',p_attempt_id,
-                        'utility_consumption_period_id',p_source_id,
+                        'requester_actor_id',v_run.requester_actor_id,
+                        'system_actor_id',v_run.system_actor_id,
+                        'utility_consumption_period_id',v_consumption_period_id,
+                        'estimation_case_id',CASE WHEN p_source_kind='UTILITY_CASE'
+                            THEN p_source_id ELSE NULL END,
                         'responsible_customer_id',v_customer_id,
                         'responsible_lease_id',v_lease_id),
                     v_customer_id,v_unit_id,v_lease_id
@@ -1120,7 +1230,7 @@ def upgrade() -> None:
         """
     )
     for function in (
-        "app.start_scheduled_billing_run(uuid,uuid,text,text,date,date,date,uuid,text,uuid,uuid,text)",
+        "app.start_scheduled_billing_run(uuid,uuid,text,text,date,date,date,uuid,text,uuid,uuid,uuid,text)",
         "app.billing_run_generation_at(uuid)",
         "app.try_scheduled_billing_worker_lock(uuid,uuid)",
         "app.billing_worker_property_date(uuid,uuid,timestamp with time zone)",
