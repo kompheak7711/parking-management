@@ -25,10 +25,11 @@ from property_rental.utility_api import (
     ReadingCreateInput,
     ReadingRecord,
     ResourcePage,
-    UtilityResourceConflict,
+    UtilityResourceIdempotencyConflict,
     UtilityResourceNotFound,
     UtilityResourceVersionConflict,
     _digest,
+    _reading,
 )
 
 
@@ -52,6 +53,26 @@ def browser_headers(key: UUID | None = None) -> dict[str, str]:
     return result
 
 
+def batch_item(
+    meter_id: UUID,
+    reading_date: str,
+    *,
+    expected_meter_version: int = 1,
+    reading_value: str = "20",
+) -> dict[str, object]:
+    return {
+        "idempotency_key": str(uuid4()),
+        "meter_id": str(meter_id),
+        "reading": {
+            "expected_meter_version": expected_meter_version,
+            "reading_date": reading_date,
+            "reading_value": reading_value,
+            "source_kind": "MANUAL",
+            "source_evidence": f"Photograph {reading_date}",
+        },
+    }
+
+
 @dataclass(slots=True)
 class InMemoryUtilityFlow:
     property_id: UUID
@@ -61,6 +82,11 @@ class InMemoryUtilityFlow:
     readings: list[ReadingRecord] = field(default_factory=list)
     last_payload: dict[str, object] | None = None
     batch_mode: str | None = None
+    batch_idempotency_key: UUID | None = None
+    batch_request_digest: str | None = None
+    atomic_replays: dict[UUID, tuple[str, tuple[BatchItemResult, ...]]] = field(
+        default_factory=dict
+    )
     version_conflict: int | None = None
 
     def __post_init__(self) -> None:
@@ -240,17 +266,63 @@ class InMemoryUtilityFlow:
         mode: str,
         items: list[dict[str, object]],
         actor_id: UUID,
+        idempotency_key: UUID | None,
+        request_digest: str | None,
     ) -> tuple[BatchItemResult, ...]:
         del actor_id
         if property_id != self.property_id:
             raise UtilityResourceNotFound
         self.batch_mode = mode
+        self.batch_idempotency_key = idempotency_key
+        self.batch_request_digest = request_digest
+        if mode == "ATOMIC_ALL":
+            if idempotency_key is None or request_digest is None:
+                raise ValueError("atomic batch idempotency is required")
+            replay = self.atomic_replays.get(idempotency_key)
+            if replay is not None:
+                if replay[0] != request_digest:
+                    raise UtilityResourceIdempotencyConflict
+                return replay[1]
+            failed_index = next(
+                (index for index, item in enumerate(items) if item["meter_id"] != self.meter.id),
+                None,
+            )
+            if failed_index is not None:
+                outcomes = tuple(
+                    BatchItemResult(
+                        index,
+                        cast(UUID, item["idempotency_key"]),
+                        "FAILED",
+                        error_code="NOT_FOUND" if index == failed_index else "ATOMIC_ROLLBACK",
+                    )
+                    for index, item in enumerate(items)
+                )
+                self.atomic_replays[idempotency_key] = (request_digest, outcomes)
+                return outcomes
+            readings = tuple(
+                self._reading(
+                    cast(date, cast(dict[str, object], item["reading"])["reading_date"]),
+                    cast(Decimal, cast(dict[str, object], item["reading"])["reading_value"]),
+                )
+                for item in items
+            )
+            outcomes = tuple(
+                BatchItemResult(
+                    index,
+                    cast(UUID, item["idempotency_key"]),
+                    "SUCCEEDED",
+                    readings[index],
+                )
+                for index, item in enumerate(items)
+            )
+            self.readings[0:0] = readings
+            self.atomic_replays[idempotency_key] = (request_digest, outcomes)
+            return outcomes
+
         results: list[BatchItemResult] = []
         for index, item in enumerate(items):
             key = cast(UUID, item["idempotency_key"])
             if item["meter_id"] != self.meter.id:
-                if mode == "ATOMIC_ALL":
-                    raise UtilityResourceConflict
                 results.append(BatchItemResult(index, key, "FAILED", error_code="NOT_FOUND"))
             else:
                 results.append(BatchItemResult(index, key, "SUCCEEDED", self.readings[0]))
@@ -312,17 +384,51 @@ def test_meter_routes_are_property_scoped_paginated_and_no_store() -> None:
     denied = client_for(flow)
     assert denied.get(f"/api/v1/units/{flow.unit_id}/meters").status_code == 403
     assert denied.get(f"/api/v1/meters/{flow.meter.id}").status_code == 404
-    response = client_for(flow, "utility.read").get(f"/api/v1/units/{flow.unit_id}/meters?limit=1")
+    read_client = client_for(flow, "utility.read")
+    response = read_client.get(f"/api/v1/units/{flow.unit_id}/meters?limit=1")
     assert response.status_code == 200
     assert response.headers["Cache-Control"] == "private, no-store"
     assert response.json()["page"] == {"limit": 1, "next_cursor": "next-meter"}
     assert response.json()["data"][0]["readings_url"].endswith("/readings")
     assert (
-        client_for(flow, "utility.read")
-        .get(f"/api/v1/units/{flow.unit_id}/meters?unexpected=true")
-        .status_code
-        == 400
+        read_client.get(f"/api/v1/units/{flow.unit_id}/meters?unexpected=true").status_code == 400
     )
+    validated = read_client.get(f"/api/v1/meters/{flow.meter.id}/readings").json()["data"][0]
+    assert validated["validated"] is True
+    assert validated["validated_at"] == "2026-08-29T12:00:00+00:00"
+    assert validated["validated_by"] == str(flow.actor_id)
+
+    created_at = datetime(2026, 7, 2, 12, tzinfo=UTC)
+    pending = _reading(
+        (
+            uuid4(),
+            flow.property_id,
+            flow.meter.id,
+            flow.unit_id,
+            "ELECTRICITY",
+            "KWH",
+            date(2026, 7, 31),
+            Decimal("25.000000"),
+            Decimal("25.000000"),
+            "MIGRATED",
+            "Published historical Utility Reading",
+            None,
+            None,
+            1,
+            created_at,
+            flow.actor_id,
+            [],
+        )
+    )
+    assert pending.validated_at is None
+    assert pending.validated_by is None
+    flow.readings[0] = pending
+    response = read_client.get(f"/api/v1/meters/{flow.meter.id}/readings")
+    assert response.status_code == 200
+    pending_body = response.json()["data"][0]
+    assert pending_body["validated"] is False
+    assert pending_body["validated_at"] is None
+    assert pending_body["validated_by"] is None
 
 
 def test_install_requires_capability_csrf_idempotency_and_boundary_evidence() -> None:
@@ -429,35 +535,15 @@ def test_reading_concurrency_and_correction_history_use_safe_envelopes() -> None
 
 
 def test_batch_partial_has_item_results_and_atomic_all_has_no_success_envelope() -> None:
-    flow = InMemoryUtilityFlow(uuid4())
-    client = client_for(flow, "utility_readings.record")
-    items = [
-        {
-            "idempotency_key": str(uuid4()),
-            "meter_id": str(flow.meter.id),
-            "reading": {
-                "expected_meter_version": 1,
-                "reading_date": "2026-08-01",
-                "reading_value": "20",
-                "source_kind": "MANUAL",
-                "source_evidence": "Photo",
-            },
-        },
-        {
-            "idempotency_key": str(uuid4()),
-            "meter_id": str(uuid4()),
-            "reading": {
-                "expected_meter_version": 1,
-                "reading_date": "2026-08-01",
-                "reading_value": "20",
-                "source_kind": "MANUAL",
-                "source_evidence": "Photo",
-            },
-        },
+    partial_flow = InMemoryUtilityFlow(uuid4())
+    partial_client = client_for(partial_flow, "utility_readings.record")
+    partial_items = [
+        batch_item(partial_flow.meter.id, "2026-08-01"),
+        batch_item(uuid4(), "2026-08-01"),
     ]
-    partial = client.post(
-        f"/api/v1/properties/{flow.property_id}/utility-readings:batch",
-        json={"mode": "PARTIAL", "items": items},
+    partial = partial_client.post(
+        f"/api/v1/properties/{partial_flow.property_id}/utility-readings:batch",
+        json={"mode": "PARTIAL", "items": partial_items},
         headers=browser_headers(),
     )
     assert partial.status_code == 200
@@ -465,13 +551,113 @@ def test_batch_partial_has_item_results_and_atomic_all_has_no_success_envelope()
         "SUCCEEDED",
         "FAILED",
     ]
-    atomic = client.post(
-        f"/api/v1/properties/{flow.property_id}/utility-readings:batch",
-        json={"mode": "ATOMIC_ALL", "items": items},
-        headers=browser_headers(),
+    assert partial_flow.batch_idempotency_key is None
+    assert partial_flow.batch_request_digest is None
+
+    flow = InMemoryUtilityFlow(uuid4())
+    client = client_for(flow, "utility_readings.record")
+    items = [
+        batch_item(flow.meter.id, "2026-08-01"),
+        batch_item(uuid4(), "2026-09-01", expected_meter_version=2),
+    ]
+    url = f"/api/v1/properties/{flow.property_id}/utility-readings:batch"
+    assert (
+        client.post(
+            f"/api/v1/properties/{uuid4()}/utility-readings:batch",
+            json={"mode": "ATOMIC_ALL", "items": items},
+            headers=browser_headers(uuid4()),
+        ).status_code
+        == 403
     )
-    assert atomic.status_code == 409
-    assert "data" not in atomic.json()
+    assert (
+        client.post(
+            url,
+            json={"mode": "ATOMIC_ALL", "items": items},
+            headers={"Idempotency-Key": str(uuid4()), "Origin": "https://localhost"},
+        ).status_code
+        == 403
+    )
+    assert (
+        client.post(
+            url,
+            json={"mode": "ATOMIC_ALL", "items": items},
+            headers=browser_headers(),
+        ).status_code
+        == 422
+    )
+    before = tuple(flow.readings)
+    envelope_key = uuid4()
+    atomic = client.post(
+        url,
+        json={"mode": "ATOMIC_ALL", "items": items},
+        headers=browser_headers(envelope_key),
+    )
+    assert atomic.status_code == 200
+    outcomes = atomic.json()["data"]["items"]
+    assert [item["index"] for item in outcomes] == [0, 1]
+    assert [item["status"] for item in outcomes] == ["FAILED", "FAILED"]
+    assert [item["error"]["code"] for item in outcomes] == [
+        "ATOMIC_ROLLBACK",
+        "NOT_FOUND",
+    ]
+    assert all(item["reading"] is None for item in outcomes)
+    assert tuple(flow.readings) == before
+    assert flow.batch_idempotency_key == envelope_key
+    assert flow.batch_request_digest is not None
+    assert len(flow.batch_request_digest) == 64
+
+    replay = client.post(
+        url,
+        json={"mode": "ATOMIC_ALL", "items": items},
+        headers=browser_headers(envelope_key),
+    )
+    assert replay.status_code == 200
+    assert replay.json()["data"] == atomic.json()["data"]
+
+    changed_items = [*items]
+    changed_items[0] = {
+        **changed_items[0],
+        "reading": {
+            **cast(dict[str, object], changed_items[0]["reading"]),
+            "reading_value": "21",
+        },
+    }
+    conflict = client.post(
+        url,
+        json={"mode": "ATOMIC_ALL", "items": changed_items},
+        headers=browser_headers(envelope_key),
+    )
+    assert conflict.status_code == 409
+
+    success_flow = InMemoryUtilityFlow(uuid4())
+    success_client = client_for(success_flow, "utility_readings.record")
+    success_items = [
+        batch_item(success_flow.meter.id, "2026-08-01"),
+        batch_item(success_flow.meter.id, "2026-09-01", expected_meter_version=2),
+    ]
+    success_url = f"/api/v1/properties/{success_flow.property_id}/utility-readings:batch"
+    success_key = uuid4()
+    success = success_client.post(
+        success_url,
+        json={"mode": "ATOMIC_ALL", "items": success_items},
+        headers=browser_headers(success_key),
+    )
+    assert success.status_code == 200
+    success_outcomes = success.json()["data"]["items"]
+    assert [item["index"] for item in success_outcomes] == [0, 1]
+    assert [item["status"] for item in success_outcomes] == ["SUCCEEDED", "SUCCEEDED"]
+    assert [item["error"] for item in success_outcomes] == [None, None]
+    reading_ids = [item["reading"]["id"] for item in success_outcomes]
+    assert len(set(reading_ids)) == 2
+    reading_count = len(success_flow.readings)
+    success_replay = success_client.post(
+        success_url,
+        json={"mode": "ATOMIC_ALL", "items": success_items},
+        headers=browser_headers(success_key),
+    )
+    assert success_replay.status_code == 200
+    assert [item["reading"]["id"] for item in success_replay.json()["data"]["items"]] == reading_ids
+    assert len(success_flow.readings) == reading_count
 
 
 def test_preview_is_non_persisted_pending_and_requires_calculate_capability() -> None:

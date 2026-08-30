@@ -113,8 +113,8 @@ class ReadingRecord:
     effective_value: Decimal
     source_kind: str
     source_evidence: str
-    validated_at: datetime
-    validated_by: UUID
+    validated_at: datetime | None
+    validated_by: UUID | None
     version: int
     created_at: datetime
     created_by: UUID
@@ -209,7 +209,14 @@ class UtilityResourceFlow(Protocol):
     ) -> CorrectionResult: ...
 
     def record_batch(
-        self, property_id: UUID, *, mode: str, items: list[dict[str, object]], actor_id: UUID
+        self,
+        property_id: UUID,
+        *,
+        mode: str,
+        items: list[dict[str, object]],
+        actor_id: UUID,
+        idempotency_key: UUID | None,
+        request_digest: str | None,
     ) -> tuple[BatchItemResult, ...]: ...
 
     def preview(
@@ -331,8 +338,8 @@ def _reading(row: tuple[object, ...]) -> ReadingRecord:
         effective_value=Decimal(str(row[8])),
         source_kind=str(row[9]),
         source_evidence=str(row[10]),
-        validated_at=cast(datetime, row[11]),
-        validated_by=UUID(str(row[12])),
+        validated_at=cast(datetime | None, row[11]),
+        validated_by=_optional_uuid(row[12]),
         version=int(str(row[13])),
         created_at=cast(datetime, row[14]),
         created_by=UUID(str(row[15])),
@@ -651,8 +658,70 @@ class PostgresUtilityResourceFlow:
         return CorrectionResult(reading, correction, impacts)
 
     def record_batch(
-        self, property_id: UUID, *, mode: str, items: list[dict[str, object]], actor_id: UUID
+        self,
+        property_id: UUID,
+        *,
+        mode: str,
+        items: list[dict[str, object]],
+        actor_id: UUID,
+        idempotency_key: UUID | None,
+        request_digest: str | None,
     ) -> tuple[BatchItemResult, ...]:
+        if mode == "ATOMIC_ALL":
+            if idempotency_key is None or request_digest is None:
+                raise UtilityResourceInvalid("Atomic batch idempotency evidence is required")
+            batch_id = uuid4()
+            command_items = []
+            for index, item in enumerate(items):
+                reading = cast(dict[str, object], item["reading"])
+                command_items.append(
+                    {
+                        "index": index,
+                        "idempotency_key": str(cast(UUID, item["idempotency_key"])),
+                        "meter_id": str(cast(UUID, item["meter_id"])),
+                        "reading_id": str(uuid4()),
+                        "expected_meter_version": reading["expected_meter_version"],
+                        "reading_date": cast(date, reading["reading_date"]).isoformat(),
+                        "reading_value": format(cast(Decimal, reading["reading_value"]), "f"),
+                        "source_kind": reading.get("source_kind", "MANUAL"),
+                        "source_evidence": reading["source_evidence"],
+                    }
+                )
+            try:
+                with psycopg.connect(self.database_url) as connection:
+                    row = connection.execute(
+                        "SELECT app.record_utility_reading_batch_api(%s,%s,%s::jsonb,%s,%s,%s)",
+                        (
+                            property_id,
+                            batch_id,
+                            json.dumps(command_items, separators=(",", ":")),
+                            actor_id,
+                            idempotency_key,
+                            request_digest,
+                        ),
+                    ).fetchone()
+            except psycopg.Error as exc:
+                raise self._map_error(exc) from exc
+            if row is None:
+                raise UtilityResourceUnavailable("Atomic Reading batch returned no result")
+            raw = cast(list[dict[str, object]], cast(tuple[object, ...], row)[0])
+            return tuple(
+                BatchItemResult(
+                    index=int(str(item["index"])),
+                    idempotency_key=UUID(str(item["idempotency_key"])),
+                    status=cast(Literal["SUCCEEDED", "FAILED"], str(item["status"])),
+                    reading=(
+                        None
+                        if item.get("reading_id") is None
+                        else self._get_reading(UUID(str(item["reading_id"])))
+                    ),
+                    error_code=(
+                        None if item.get("error_code") is None else str(item["error_code"])
+                    ),
+                )
+                for item in raw
+            )
+
         raw_results: list[tuple[int, UUID, str, UUID | None, str | None]] = []
 
         def record_item(connection: psycopg.Connection[object], item: dict[str, object]) -> UUID:
@@ -678,37 +747,24 @@ class PostgresUtilityResourceFlow:
 
         try:
             with psycopg.connect(self.database_url) as connection:
-                if mode == "ATOMIC_ALL":
-                    with connection.transaction():
-                        for index, item in enumerate(items):
-                            key = cast(UUID, item["idempotency_key"])
-                            try:
-                                reading_id = record_item(connection, item)
-                            except (psycopg.Error, UtilityResourceNotFound) as exc:
-                                mapped = (
-                                    self._map_error(exc) if isinstance(exc, psycopg.Error) else exc
-                                )
-                                raise mapped from exc
-                            raw_results.append((index, key, "SUCCEEDED", reading_id, None))
-                else:
-                    for index, item in enumerate(items):
-                        key = cast(UUID, item["idempotency_key"])
-                        try:
-                            with connection.transaction():
-                                reading_id = record_item(connection, item)
-                            raw_results.append((index, key, "SUCCEEDED", reading_id, None))
-                        except (psycopg.Error, UtilityResourceNotFound) as exc:
-                            mapped = self._map_error(exc) if isinstance(exc, psycopg.Error) else exc
-                            code = (
-                                "NOT_FOUND"
-                                if isinstance(mapped, UtilityResourceNotFound)
-                                else "CONFLICT"
-                                if isinstance(mapped, UtilityResourceConflict)
-                                else "VALIDATION_ERROR"
-                                if isinstance(mapped, UtilityResourceInvalid)
-                                else "SERVICE_UNAVAILABLE"
-                            )
-                            raw_results.append((index, key, "FAILED", None, code))
+                for index, item in enumerate(items):
+                    key = cast(UUID, item["idempotency_key"])
+                    try:
+                        with connection.transaction():
+                            reading_id = record_item(connection, item)
+                        raw_results.append((index, key, "SUCCEEDED", reading_id, None))
+                    except (psycopg.Error, UtilityResourceNotFound) as exc:
+                        mapped = self._map_error(exc) if isinstance(exc, psycopg.Error) else exc
+                        code = (
+                            "NOT_FOUND"
+                            if isinstance(mapped, UtilityResourceNotFound)
+                            else "CONFLICT"
+                            if isinstance(mapped, UtilityResourceConflict)
+                            else "VALIDATION_ERROR"
+                            if isinstance(mapped, UtilityResourceInvalid)
+                            else "SERVICE_UNAVAILABLE"
+                        )
+                        raw_results.append((index, key, "FAILED", None, code))
         except (
             UtilityResourceNotFound,
             UtilityResourceConflict,
@@ -1002,9 +1058,9 @@ def _reading_body(record: ReadingRecord) -> dict[str, object]:
         "period": {"boundary_date": record.reading_date.isoformat()},
         "original_value": _value(record.original_value),
         "effective_value": _value(record.effective_value),
-        "validated": True,
-        "validated_at": record.validated_at.isoformat(),
-        "validated_by": str(record.validated_by),
+        "validated": record.validated_at is not None,
+        "validated_at": record.validated_at.isoformat() if record.validated_at else None,
+        "validated_by": str(record.validated_by) if record.validated_by else None,
         "source": {"kind": record.source_kind, "evidence": record.source_evidence},
         "version": record.version,
         "provenance": {
@@ -1248,12 +1304,20 @@ def create_utility_router(
 
     @router.post("/properties/{property_id}/utility-readings:batch")
     def record_batch(
-        property_id: UUID, body: ReadingBatchInput, request: Request
+        property_id: UUID,
+        body: ReadingBatchInput,
+        request: Request,
+        idempotency_key: Annotated[UUID | None, Header(alias="Idempotency-Key")] = None,
     ) -> dict[str, object]:
         _allow_query(request, set())
         actor = _actor(request, resolver)
         _authorized(actor, UTILITY_READING_RECORD_CAPABILITY, property_id)
         require_browser_mutation(request, settings)
+        if body.mode == "ATOMIC_ALL" and idempotency_key is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail="Idempotency-Key is required for ATOMIC_ALL",
+            )
         items = [
             {
                 "idempotency_key": item.idempotency_key,
@@ -1267,7 +1331,16 @@ def create_utility_router(
             tuple[BatchItemResult, ...],
             _invoke(
                 lambda: flow.record_batch(
-                    property_id, mode=body.mode, items=items, actor_id=_actor_id(actor)
+                    property_id,
+                    mode=body.mode,
+                    items=items,
+                    actor_id=_actor_id(actor),
+                    idempotency_key=idempotency_key,
+                    request_digest=(
+                        _digest(body, "RECORD_READING_BATCH", property_id)
+                        if body.mode == "ATOMIC_ALL"
+                        else None
+                    ),
                 )
             ),
         )

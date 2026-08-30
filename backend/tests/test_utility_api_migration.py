@@ -15,6 +15,7 @@ from alembic.script import ScriptDirectory
 
 from property_rental.utility_api import (
     PostgresUtilityResourceFlow,
+    ReadingRecord,
     UtilityResourceIdempotencyConflict,
     UtilityResourceVersionConflict,
 )
@@ -70,7 +71,12 @@ def test_v1_043_is_forward_only_head_and_runtime_has_only_command_execute(
     ).read_text()
     assert 'raise RuntimeError("V1-043 Utility API migration is forward-only")' in source
     with psycopg.connect(migrated_database_url) as owner:
-        for table in ("utility_meters", "utility_readings", "utility_api_commands"):
+        for table in (
+            "utility_meters",
+            "utility_readings",
+            "utility_api_commands",
+            "utility_api_batch_items",
+        ):
             for privilege in ("INSERT", "UPDATE", "DELETE", "TRUNCATE"):
                 assert owner.execute(
                     "SELECT has_table_privilege('prm_runtime',%s,%s)",
@@ -79,6 +85,11 @@ def test_v1_043_is_forward_only_head_and_runtime_has_only_command_execute(
         assert owner.execute(
             "SELECT has_function_privilege('prm_runtime',"
             "'app.record_utility_reading_api(uuid,uuid,integer,date,numeric,text,text,uuid,uuid,text)',"
+            "'EXECUTE')"
+        ).fetchone() == (True,)
+        assert owner.execute(
+            "SELECT has_function_privilege('prm_runtime',"
+            "'app.record_utility_reading_batch_api(uuid,uuid,jsonb,uuid,uuid,text)',"
             "'EXECUTE')"
         ).fetchone() == (True,)
 
@@ -143,6 +154,32 @@ def test_runtime_install_reading_replay_and_version_conflict(
     )
     assert reading.effective_value == 20
     assert flow.get_meter(meter.id).version == 2
+    pending_id = uuid4()
+    with psycopg.connect(migrated_database_url) as owner:
+        owner.execute(
+            """INSERT INTO app.utility_readings(
+                id,meter_id,reading_date,reading_value,validated_at,validated_by,
+                created_by,updated_by,source_kind,source_evidence
+            ) VALUES(%s,%s,%s,%s,NULL,NULL,%s,%s,'MIGRATED',%s)""",
+            (
+                pending_id,
+                meter.id,
+                date(2026, 2, 28),
+                "25.000000",
+                actor_id,
+                actor_id,
+                "Published historical Utility Reading",
+            ),
+        )
+    readings = flow.list_readings(meter.id, limit=25, cursor=None).items
+    pending = next(reading for reading in readings if reading.id == pending_id)
+    validated = next(item for item in readings if item.id == reading.id)
+    assert isinstance(pending, ReadingRecord)
+    assert isinstance(validated, ReadingRecord)
+    assert pending.validated_at is None
+    assert pending.validated_by is None
+    assert validated.validated_at is not None
+    assert validated.validated_by == actor_id
 
 
 def test_runtime_replacement_and_correction_preserve_original_history(
@@ -247,14 +284,91 @@ def test_runtime_batch_partial_and_atomic_all_transactions(
         mode="PARTIAL",
         items=[item(date(2026, 1, 31), 1, "4"), item(date(2026, 2, 28), 1, "5")],
         actor_id=actor_id,
+        idempotency_key=None,
+        request_digest=None,
     )
     assert [result.status for result in partial] == ["SUCCEEDED", "FAILED"]
-    before_atomic = len(flow.list_readings(meter.id, limit=25, cursor=None).items)
-    with pytest.raises(UtilityResourceVersionConflict):
+    assert [result.error_code for result in partial] == [None, "CONFLICT"]
+
+    success_key = uuid4()
+    success_digest = "6" * 64
+    success_items = [item(date(2026, 2, 28), 2, "6"), item(date(2026, 3, 31), 3, "7")]
+    success = flow.record_batch(
+        property_id,
+        mode="ATOMIC_ALL",
+        items=success_items,
+        actor_id=actor_id,
+        idempotency_key=success_key,
+        request_digest=success_digest,
+    )
+    assert [result.status for result in success] == ["SUCCEEDED", "SUCCEEDED"]
+    assert [result.index for result in success] == [0, 1]
+    success_reading_ids = [result.reading.id for result in success if result.reading]
+    assert len(success_reading_ids) == 2
+    after_success = len(flow.list_readings(meter.id, limit=25, cursor=None).items)
+    replay = flow.record_batch(
+        property_id,
+        mode="ATOMIC_ALL",
+        items=success_items,
+        actor_id=actor_id,
+        idempotency_key=success_key,
+        request_digest=success_digest,
+    )
+    assert [result.reading.id for result in replay if result.reading] == success_reading_ids
+    assert len(flow.list_readings(meter.id, limit=25, cursor=None).items) == after_success
+    with pytest.raises(UtilityResourceIdempotencyConflict):
         flow.record_batch(
             property_id,
             mode="ATOMIC_ALL",
-            items=[item(date(2026, 2, 28), 2, "6"), item(date(2026, 3, 31), 2, "7")],
+            items=success_items,
             actor_id=actor_id,
+            idempotency_key=success_key,
+            request_digest="8" * 64,
         )
-    assert len(flow.list_readings(meter.id, limit=25, cursor=None).items) == before_atomic
+
+    failure_key = uuid4()
+    failure_items = [item(date(2026, 4, 30), 4, "a"), item(date(2026, 5, 31), 4, "b")]
+    before_failure = len(flow.list_readings(meter.id, limit=25, cursor=None).items)
+    failure = flow.record_batch(
+        property_id,
+        mode="ATOMIC_ALL",
+        items=failure_items,
+        actor_id=actor_id,
+        idempotency_key=failure_key,
+        request_digest="c" * 64,
+    )
+    assert [result.status for result in failure] == ["FAILED", "FAILED"]
+    assert [result.error_code for result in failure] == ["ATOMIC_ROLLBACK", "CONFLICT"]
+    assert all(result.reading is None for result in failure)
+    assert len(flow.list_readings(meter.id, limit=25, cursor=None).items) == before_failure
+    failure_replay = flow.record_batch(
+        property_id,
+        mode="ATOMIC_ALL",
+        items=failure_items,
+        actor_id=actor_id,
+        idempotency_key=failure_key,
+        request_digest="c" * 64,
+    )
+    assert failure_replay == failure
+
+    with psycopg.connect(migrated_database_url) as owner:
+        commands = owner.execute(
+            """SELECT idempotency_key,action,request_digest
+            FROM app.utility_api_commands
+            WHERE actor_id=%s AND idempotency_key IN (%s,%s)
+            ORDER BY idempotency_key""",
+            (actor_id, success_key, failure_key),
+        ).fetchall()
+        assert len(commands) == 2
+        assert {row[1] for row in commands} == {"RECORD_READING_BATCH"}
+        assert {row[2] for row in commands} == {success_digest, "c" * 64}
+        assert owner.execute(
+            """SELECT count(*) FROM app.utility_api_commands
+            WHERE actor_id=%s AND idempotency_key=ANY(%s)""",
+            (actor_id, [entry["idempotency_key"] for entry in success_items + failure_items]),
+        ).fetchone() == (0,)
+        assert owner.execute(
+            """SELECT count(*) FROM app.utility_api_batch_items
+            WHERE actor_id=%s AND batch_idempotency_key IN (%s,%s)""",
+            (actor_id, success_key, failure_key),
+        ).fetchone() == (4,)
