@@ -1213,8 +1213,7 @@
       ],
       "authorities": [
         "API-054-056",
-        "TEST-096-099",
-        "DEPLOY-WORKER-*"
+        "TEST-096-099"
       ],
       "include": [
         "singleton runs, retry, catch-up, property-local scheduling"

@@ -1,4 +1,4 @@
-# V1-043 Utility meter, reading, preview, and billing UI/API — closure pending
+# V1-043 Utility meter, reading, preview, and billing UI/API — complete
 
 - Candidate: `V1-043` — Utility meter, reading, preview, and billing UI/API.
 - Authorization: Owner standing direct-Codex authorization for V1-042 through V1-060;
@@ -25,21 +25,22 @@
   traceability, Alembic, deployment, publication, automation, and diff gates passed.
 - Implementation publication: GitHub Actions run `33323322907` passed all four jobs for
   exact SHA `4bf6c75d2709ddf8e989892364038795df7040b1`.
-- Status: implementation published and exact-SHA CI-green; this separate closure commit
-  and its exact-SHA CI remain pending.
+- Closure: operational-only commit `81d981a7fd8eb3abb681bd7be94762b4add82f15`;
+  exact-SHA GitHub Actions run `33323808705` passed all four jobs.
+- Status: complete, published, independently reviewed, and closure-valid.
 - V1-044: remains held at `approved_ready`; no activation, implementation, or dispatch
   has occurred.
 - Scheduler: no scheduler weakening or activation occurred.
 - Blockers: none.
-- Exact next action: publish this operational-only V1-043 closure commit, require its
-  exact-SHA GitHub Actions success, then reconcile final closure-valid compact state and
-  only then promote V1-044 to equivalent ready without implementing or dispatching it.
+- Exact next action: publish this reconciliation commit, require successful exact-SHA
+  GitHub Actions, prove final branch synchronization, and release the V1-043 card only
+  to REVIEW; the property manager alone may mark it DONE and activate V1-044.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-043 implementation is published and exact-SHA
-  CI-green; separate closure commit and reconciliation are pending.
-- Automation exact next action: keep V1-044 held until V1-043 closure CI succeeds and
-  final synchronization is proven.
+- Automation publication state: V1-043 implementation and closure commits are published
+  and exact-SHA CI-green; reconciliation and final synchronization are pending.
+- Automation exact next action: keep V1-044 held and undispatched while this
+  reconciliation commit completes exact-SHA CI and final synchronization.
 
 <!-- AUTOMATION_STATUS_END -->
