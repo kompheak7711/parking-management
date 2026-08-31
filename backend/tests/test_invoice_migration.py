@@ -617,6 +617,23 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
             ).fetchall()
         }
         assert expected <= actual
+        application_roles = ("prm_runtime", "prm_financial", "prm_bootstrap")
+        schema_owner = owner.execute(
+            "SELECT pg_get_userbyid(nspowner) FROM pg_namespace WHERE nspname='app'"
+        ).fetchone()
+        assert schema_owner is not None
+        assert schema_owner[0] not in application_roles
+        for role in application_roles:
+            assert owner.execute(
+                "SELECT has_schema_privilege(%s,'app','CREATE')", (role,)
+            ).fetchone() == (False,)
+        for table in expected:
+            relation_owner = owner.execute(
+                "SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid=%s::regclass",
+                (f"app.{table}",),
+            ).fetchone()
+            assert relation_owner is not None
+            assert relation_owner[0] not in application_roles
         trigger_names = [
             row[0]
             for row in owner.execute(
@@ -664,16 +681,40 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
                         "SELECT has_table_privilege(%s,%s,%s)",
                         (role, relation, privilege),
                     ).fetchone() == (False,)
-        command_function = (
+        public_command_functions = (
+            "app.create_invoice_draft(uuid,uuid,uuid,uuid,text,uuid,uuid,uuid,uuid)",
+            "app.correct_invoice_draft(uuid,uuid,uuid,uuid,uuid,text,integer,text,uuid)",
+            "app.issue_invoice(uuid,uuid,uuid,uuid,text,integer,uuid,uuid)",
             "app.adjust_invoice(uuid,uuid,uuid,uuid,uuid,text,integer,text,bigint,"
-            "text,text,uuid,uuid)"
+            "text,text,uuid,uuid)",
+            "app.void_invoice(uuid,uuid,uuid,uuid,text,integer,text,uuid,uuid)",
         )
-        assert owner.execute(
-            "SELECT has_function_privilege('prm_runtime',%s,'EXECUTE')", (command_function,)
-        ).fetchone() == (False,)
-        assert owner.execute(
-            "SELECT has_function_privilege('prm_financial',%s,'EXECUTE')", (command_function,)
-        ).fetchone() == (True,)
+        internal_command_helpers = (
+            "app.require_invoice_command_actor(uuid,uuid)",
+            "app.invoice_command_replay(uuid,uuid,text,uuid,text)",
+            "app.record_invoice_command(uuid,uuid,text,uuid,text,uuid,smallint,jsonb,"
+            "timestamp with time zone)",
+        )
+        for function in public_command_functions:
+            function_owner = owner.execute(
+                "SELECT pg_get_userbyid(proowner) FROM pg_proc WHERE oid=to_regprocedure(%s)",
+                (function,),
+            ).fetchone()
+            assert function_owner is not None
+            assert function_owner[0] not in application_roles
+            for role, allowed in (
+                ("prm_runtime", False),
+                ("prm_financial", True),
+                ("prm_bootstrap", False),
+            ):
+                assert owner.execute(
+                    "SELECT has_function_privilege(%s,%s,'EXECUTE')", (role, function)
+                ).fetchone() == (allowed,)
+        for function in internal_command_helpers:
+            for role in application_roles:
+                assert owner.execute(
+                    "SELECT has_function_privilege(%s,%s,'EXECUTE')", (role, function)
+                ).fetchone() == (False,)
 
     with pytest.raises(RuntimeError, match="forward-only"):
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "20260826_28")
@@ -7854,7 +7895,8 @@ def test_v1_045_draft_source_correction_and_database_cursor_are_derived(
                 (source_id, customer_id, reference, amount, reference, reference, actor_id),
             )
         unit_row = setup.execute(
-            "SELECT id FROM app.units WHERE property_id=%s ORDER BY id LIMIT 1", (property_id,)
+            "SELECT id FROM app.units WHERE property_id=%s AND created_by=%s ORDER BY id LIMIT 1",
+            (property_id, actor_id),
         ).fetchone()
         assert unit_row is not None
         lease_id = create_draft(

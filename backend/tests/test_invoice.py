@@ -40,12 +40,15 @@ def invoice_resource(
     version: int = 1,
 ) -> dict[str, object]:
     resolved_id = invoice_id or uuid4()
-    line_id = uuid4()
+    customer_id = uuid4()
+    created_by = uuid4()
+    first_line_id = uuid4()
+    second_line_id = uuid4()
     return {
         "id": str(resolved_id),
         "invoice_number": f"INV-20260831-{resolved_id.hex[:12].upper()}",
         "property_id": str(property_id),
-        "customer_id": str(uuid4()),
+        "customer_id": str(customer_id),
         "lease_id": None,
         "category": "MISCELLANEOUS_CHARGES",
         "status": status,
@@ -64,17 +67,60 @@ def invoice_resource(
         },
         "lines": [
             {
-                "id": str(line_id),
+                "id": str(first_line_id),
                 "sequence": 1,
                 "category": "MISCELLANEOUS_CHARGES",
+                "description": "Authorized locksmith charge",
+                "original_amount": {"currency": "USD", "minor_units": 10_000},
+                "adjusted_amount": {"currency": "USD", "minor_units": 10_000},
+                "outstanding_balance": {
+                    "currency": "USD",
+                    "minor_units": 0 if status in {"DRAFT", "VOID"} else 10_000,
+                },
+                "period": None,
                 "source": {
                     "type": "AUTHORIZED_NONRECURRING_OBLIGATION",
                     "id": str(uuid4()),
                 },
-            }
+                "calculation_evidence": {
+                    "formula": "authorized_source_exact_amount",
+                    "authorized_amount_usd_cents": 10_000,
+                },
+                "created_at": "2026-08-31T01:02:03Z",
+                "created_by": str(created_by),
+            },
+            {
+                "id": str(second_line_id),
+                "sequence": 2,
+                "category": "MISCELLANEOUS_CHARGES",
+                "description": "Authorized replacement key charge",
+                "original_amount": {"currency": "USD", "minor_units": 2_500},
+                "adjusted_amount": {"currency": "USD", "minor_units": 2_500},
+                "outstanding_balance": {
+                    "currency": "USD",
+                    "minor_units": 0 if status in {"DRAFT", "VOID"} else 2_500,
+                },
+                "period": None,
+                "source": {
+                    "type": "AUTHORIZED_NONRECURRING_OBLIGATION",
+                    "id": str(uuid4()),
+                },
+                "calculation_evidence": {
+                    "formula": "authorized_source_exact_amount",
+                    "authorized_amount_usd_cents": 2_500,
+                },
+                "created_at": "2026-08-31T01:02:03Z",
+                "created_by": str(created_by),
+            },
         ],
         "adjustments": [],
         "void_event": None,
+        "issued_at": None,
+        "issued_by": None,
+        "created_at": "2026-08-31T01:02:03Z",
+        "created_by": str(created_by),
+        "updated_at": "2026-08-31T01:02:03Z",
+        "updated_by": str(created_by),
         "version": version,
     }
 
@@ -265,32 +311,41 @@ def test_create_accepts_only_authorized_source_and_enforces_scope_csrf_and_capab
 
     missing_csrf = allowed.post(
         f"/api/v1/properties/{property_id}/invoices",
-        json={"authorized_obligation_id": str(source_id)},
+        json={"authorized_nonrecurring_obligation_id": str(source_id)},
         headers={"Idempotency-Key": str(uuid4())},
     )
     arbitrary_money = allowed.post(
         f"/api/v1/properties/{property_id}/invoices",
-        json={"authorized_obligation_id": str(source_id), "amount_usd_cents": 1},
+        json={
+            "authorized_nonrecurring_obligation_id": str(source_id),
+            "amount_usd_cents": 1,
+        },
+        headers=mutation_headers(),
+    )
+    shortened_legacy_field = allowed.post(
+        f"/api/v1/properties/{property_id}/invoices",
+        json={"authorized_obligation_id": str(source_id)},
         headers=mutation_headers(),
     )
     created = allowed.post(
         f"/api/v1/properties/{property_id}/invoices",
-        json={"authorized_obligation_id": str(source_id)},
+        json={"authorized_nonrecurring_obligation_id": str(source_id)},
         headers=mutation_headers(),
     )
     forbidden = api(flow, actor(property_id, "invoices.read")).post(
         f"/api/v1/properties/{property_id}/invoices",
-        json={"authorized_obligation_id": str(source_id)},
+        json={"authorized_nonrecurring_obligation_id": str(source_id)},
         headers=mutation_headers(),
     )
     wrong_scope = api(flow, actor(uuid4(), "invoices.create")).post(
         f"/api/v1/properties/{property_id}/invoices",
-        json={"authorized_obligation_id": str(source_id)},
+        json={"authorized_nonrecurring_obligation_id": str(source_id)},
         headers=mutation_headers(),
     )
 
     assert missing_csrf.status_code == 403
     assert arbitrary_money.status_code == 422
+    assert shortened_legacy_field.status_code == 422
     assert created.status_code == 201
     assert created.headers["location"].endswith(str(flow.value["id"]))
     assert created.headers["etag"] == '"1"'
@@ -299,10 +354,116 @@ def test_create_accepts_only_authorized_source_and_enforces_scope_csrf_and_capab
 
     nil_source = allowed.post(
         f"/api/v1/properties/{property_id}/invoices",
-        json={"authorized_obligation_id": str(UUID(int=0))},
+        json={"authorized_nonrecurring_obligation_id": str(UUID(int=0))},
         headers=mutation_headers(),
     )
     assert nil_source.status_code == 422
+
+
+def test_invoice_response_schema_is_complete_and_consistent_across_command_list_and_detail() -> (
+    None
+):
+    property_id = uuid4()
+    flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id))
+    client = api(flow, actor(property_id, "invoices.create", "invoices.read"))
+    created = client.post(
+        f"/api/v1/properties/{property_id}/invoices",
+        json={"authorized_nonrecurring_obligation_id": str(uuid4())},
+        headers=mutation_headers(),
+    )
+    detail = client.get(f"/api/v1/invoices/{flow.value['id']}")
+    listed = client.get(f"/api/v1/properties/{property_id}/invoices")
+
+    assert created.status_code == 201
+    assert detail.status_code == 200
+    assert listed.status_code == 200
+    assert set(created.json()) == {"data", "meta"}
+    assert set(detail.json()) == {"data", "meta"}
+    assert set(listed.json()) == {"data", "page", "meta"}
+    assert created.json()["data"] == detail.json()["data"] == listed.json()["data"][0]
+    assert listed.json()["page"] == {"next_cursor": "stable-cursor", "limit": 50}
+    for response in (created, detail, listed):
+        assert set(response.json()["meta"]) == {"request_id"}
+        UUID(response.json()["meta"]["request_id"])
+
+    resource = created.json()["data"]
+    assert set(resource) == {
+        "id",
+        "invoice_number",
+        "property_id",
+        "customer_id",
+        "lease_id",
+        "category",
+        "status",
+        "invoice_date",
+        "due_date",
+        "due_date_rule",
+        "due_date_source",
+        "property_timezone",
+        "billing_period",
+        "original_total",
+        "adjusted_total",
+        "active_application_total",
+        "outstanding_balance",
+        "lines",
+        "adjustments",
+        "void_event",
+        "issued_at",
+        "issued_by",
+        "created_at",
+        "created_by",
+        "updated_at",
+        "updated_by",
+        "version",
+    }
+    UUID(resource["customer_id"])
+    assert resource["lease_id"] is None
+    assert resource["category"] == "MISCELLANEOUS_CHARGES"
+    assert resource["invoice_date"] == "2026-08-31"
+    assert resource["due_date"] == "2026-09-15"
+    assert resource["billing_period"] is None
+    assert resource["status"] == "DRAFT"
+    assert resource["version"] == 1
+    assert resource["issued_at"] is None
+    assert resource["issued_by"] is None
+    for audit_key in ("created_at", "created_by", "updated_at", "updated_by"):
+        assert resource[audit_key] is not None
+
+    money_fields = (
+        "original_total",
+        "adjusted_total",
+        "active_application_total",
+        "outstanding_balance",
+    )
+    assert all(
+        set(resource[field]) == {"currency", "minor_units"} and resource[field]["currency"] == "USD"
+        for field in money_fields
+    )
+    lines = resource["lines"]
+    assert [line["sequence"] for line in lines] == [1, 2]
+    for line in lines:
+        assert set(line) == {
+            "id",
+            "sequence",
+            "category",
+            "description",
+            "original_amount",
+            "adjusted_amount",
+            "outstanding_balance",
+            "period",
+            "source",
+            "calculation_evidence",
+            "created_at",
+            "created_by",
+        }
+        assert set(line["source"]) == {"type", "id"}
+        assert line["source"]["type"] == "AUTHORIZED_NONRECURRING_OBLIGATION"
+        UUID(line["source"]["id"])
+        assert line["calculation_evidence"]["formula"] == "authorized_source_exact_amount"
+        assert line["period"] is None
+        for amount_field in ("original_amount", "adjusted_amount", "outstanding_balance"):
+            assert set(line[amount_field]) == {"currency", "minor_units"}
+            assert line[amount_field]["currency"] == "USD"
 
 
 def test_detail_hides_invoice_without_exact_read_scope() -> None:
@@ -348,7 +509,16 @@ def test_draft_correction_requires_if_match_and_replays_exact_same_key() -> None
     invoice_id = flow.value["id"]
     source_id = uuid4()
     key = uuid4()
-    payload = {"authorized_obligation_id": str(source_id), "reason": "Correct source"}
+    payload = {
+        "authorized_nonrecurring_obligation_id": str(source_id),
+        "reason": "Correct source",
+    }
+
+    shortened_legacy_field = client.patch(
+        f"/api/v1/invoices/{invoice_id}",
+        json={"authorized_obligation_id": str(source_id), "reason": "Correct source"},
+        headers=mutation_headers(version=1),
+    )
 
     missing = client.patch(
         f"/api/v1/invoices/{invoice_id}", json=payload, headers=mutation_headers(key=key)
@@ -364,6 +534,7 @@ def test_draft_correction_requires_if_match_and_replays_exact_same_key() -> None
         headers=mutation_headers(key=key, version=1),
     )
 
+    assert shortened_legacy_field.status_code == 422
     assert missing.status_code == 412
     assert corrected.status_code == 200
     assert replay.status_code == 200

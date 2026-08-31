@@ -9081,7 +9081,7 @@
       "test_level": "migration",
       "test_path": "backend/tests/test_invoice_migration.py",
       "status": "implemented",
-      "notes": "The complete Invoice relation set reaches the reviewed migration head, refuses destructive downgrade without changing the head or seeded evidence, and proves the complete per-table SELECT/mutation matrix plus runtime-denied and financial-only Invoice command execution."
+      "notes": "The complete Invoice relation set reaches the reviewed migration head and refuses destructive downgrade without changing the head or seeded evidence. Every application role lacks app schema/table/function ownership and table mutation privileges; runtime and bootstrap cannot execute any of the five public Invoice commands, financial can execute all five, and no application role can execute the three internal command helpers."
     },
     {
       "test_id": "test_initial_rent_component_kinds_are_bound_to_calendar_position",
@@ -10526,7 +10526,7 @@
     },
     {
       "test_id": "test_invoice_commands_reject_nil_ids_nonpositive_money_and_unnormalized_evidence",
-      "upstream_ids": ["API-003", "API-005", "SEC-036", "TEST-057", "TEST-119"],
+      "upstream_ids": ["API-005", "SEC-036", "TEST-057", "TEST-119"],
       "test_level": "domain",
       "test_path": "backend/tests/test_invoice.py",
       "status": "implemented",
@@ -10534,11 +10534,19 @@
     },
     {
       "test_id": "test_create_accepts_only_authorized_source_and_enforces_scope_csrf_and_capability",
-      "upstream_ids": ["API-050", "API-051", "API-053", "BR-INV-016", "DB-INV-005", "SEC-016", "SEC-019", "SEC-020", "TEST-055", "TEST-119"],
+      "upstream_ids": ["API-050", "API-053", "BR-INV-016", "DB-INV-005", "SEC-016", "SEC-019", "SEC-020", "TEST-055", "TEST-119"],
       "test_level": "API",
       "test_path": "backend/tests/test_invoice.py",
       "status": "implemented",
-      "notes": "The create route accepts only one relational authorized-obligation ID, rejects caller money, requires browser CSRF, and enforces the separate Property-scoped invoices.create capability."
+      "notes": "The create route accepts the frozen authorized_nonrecurring_obligation_id field for one relational approved source, rejects the shortened legacy name and unknown caller money, requires browser CSRF, and enforces the separate Property-scoped invoices.create capability."
+    },
+    {
+      "test_id": "test_invoice_response_schema_is_complete_and_consistent_across_command_list_and_detail",
+      "upstream_ids": ["API-050", "API-051", "API-053", "TEST-119"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "Create-command, list, and detail envelopes return the same complete Invoice resource: one Customer, nullable scalar Lease, category and dates, optional periods, ordered lines with typed sources and calculation evidence, USD original/adjusted/application/outstanding amounts, status, and complete issuance/create/update/version metadata."
     },
     {
       "test_id": "test_detail_hides_invoice_without_exact_read_scope",
@@ -10562,7 +10570,7 @@
       "test_level": "API",
       "test_path": "backend/tests/test_invoice.py",
       "status": "implemented",
-      "notes": "DRAFT source correction requires If-Match and a UUID idempotency key, then returns the same authoritative resource for equivalent replay."
+      "notes": "DRAFT source correction accepts only the frozen authorized_nonrecurring_obligation_id field, rejects the shortened legacy name, requires If-Match and a UUID idempotency key, then returns the same authoritative resource for equivalent replay."
     },
     {
       "test_id": "test_issue_uses_separate_capability_and_only_client_version_changes",
@@ -10594,7 +10602,7 @@
       "test_level": "integration",
       "test_path": "backend/tests/test_invoice_migration.py",
       "status": "implemented",
-      "notes": "A relational Lease-associated authorized source creates one owned DRAFT, issues to UNPAID, applies exact CREDIT/DEBIT/CREDIT events to PAID, preserves the original USD integer total, and rejects event mutation or invalid VOID."
+      "notes": "Within the application-free V1-045 subset, a relational Lease-associated source creates one DRAFT excluded from receivables, issue derives UNPAID, exact CREDIT/DEBIT/CREDIT events recompute the adjusted obligation, and adjusted zero derives PAID while preserving the original USD integer total. This mapping does not claim active-application or PARTIALLY_PAID coverage, which remains with later application ownership."
     },
     {
       "test_id": "test_v1_045_void_is_terminal_preserves_history_and_rejects_physical_delete",
@@ -10602,7 +10610,7 @@
       "test_level": "security",
       "test_path": "backend/tests/test_invoice_migration.py",
       "status": "implemented",
-      "notes": "An issued dependency-free Invoice receives exactly one immutable VOID event, exact replay returns its snapshot, outstanding balance is excluded, and both financial-role and owner delete attempts fail."
+      "notes": "For an issued Invoice with no active financial applications, the directly asserted exceptional rule records exactly one immutable VOID event, exact replay returns its snapshot, VOID is excluded from outstanding balance, and both financial-role and owner delete attempts fail."
     },
     {
       "test_id": "test_v1_045_draft_source_correction_and_database_cursor_are_derived",
@@ -10614,27 +10622,27 @@
     },
     {
       "test_id": "test_v1_045_same_key_replay_changed_input_conflict_and_concurrent_duplicates",
-      "upstream_ids": ["API-015", "API-016", "API-017", "API-018", "DB-TXN-003", "SEC-028", "SEC-029", "TEST-056", "TEST-119"],
+      "upstream_ids": ["API-015", "API-016", "API-017", "API-018", "SEC-028", "SEC-029", "TEST-119"],
       "test_level": "integration",
       "test_path": "backend/tests/test_invoice_migration.py",
       "status": "implemented",
-      "notes": "Concurrent duplicate create, issue, Adjustment, and VOID calls serialize on scoped advisory keys, persist one command and audit effect each, replay exact snapshots after the first response, and conflict on changed canonical input."
+      "notes": "Concurrent duplicate create, issue, Adjustment, and VOID calls serialize on scoped command-idempotency keys, persist one command and audit effect each, replay exact snapshots after the first response, and conflict on changed canonical input. This test makes no financial posting lock-graph or full lifecycle claim."
     },
     {
       "test_id": "test_v1_045_audit_failure_atomically_rolls_back_command_and_issue",
-      "upstream_ids": ["API-017", "BR-INV-035", "SEC-030", "SEC-031", "TEST-056", "TEST-119"],
+      "upstream_ids": ["API-017", "BR-INV-035", "SEC-030", "SEC-031", "TEST-119"],
       "test_level": "DB",
       "test_path": "backend/tests/test_invoice_migration.py",
       "status": "implemented",
-      "notes": "An injected audit failure rolls back issuance, version advancement, command completion, and result snapshot in the same transaction."
+      "notes": "An injected audit failure rolls back issuance, version advancement, command completion, and result snapshot in the same transaction; this atomic-failure test does not claim the complete Invoice lifecycle matrix."
     },
     {
       "test_id": "test_v1_045_populated_revision_35_upgrades_to_invoice_command_boundary",
-      "upstream_ids": ["DB-INV-001", "DB-INV-002", "DB-INV-005", "DB-TXN-003", "TEST-117", "TEST-119"],
+      "upstream_ids": ["DB-INV-001", "DB-INV-002", "DB-INV-005", "TEST-117", "TEST-119"],
       "test_level": "migration",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
-      "notes": "A populated exact revision-35 Invoice source/header/line database upgrades to revision 36 with source data intact, a correct server snapshot, and an empty new command ledger."
+      "notes": "A populated exact revision-35 Invoice source/header/line database upgrades to revision 36 with source data intact, a correct server snapshot, and an empty new command ledger; this migration test makes no financial posting lock-order claim."
     }
   ]
 }

@@ -119,7 +119,7 @@ class UnavailableInvoiceFlow:
 class AuthorizedObligationInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    authorized_obligation_id: UUID
+    authorized_nonrecurring_obligation_id: UUID
 
 
 class DraftCorrectionInput(AuthorizedObligationInput):
@@ -297,7 +297,9 @@ def create_invoice_router(
         resource = _invoke(
             lambda: flow.create_draft(
                 property_id,
-                CreateInvoiceDraftCommand(idempotency_key, body.authorized_obligation_id),
+                CreateInvoiceDraftCommand(
+                    idempotency_key, body.authorized_nonrecurring_obligation_id
+                ),
                 actor=actor,
             )
         )
@@ -354,7 +356,7 @@ def create_invoice_router(
                 invoice_id,
                 CorrectInvoiceDraftCommand(
                     idempotency_key,
-                    body.authorized_obligation_id,
+                    body.authorized_nonrecurring_obligation_id,
                     body.reason,
                     _version(if_match),
                 ),
