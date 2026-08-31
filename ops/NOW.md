@@ -1,4 +1,4 @@
-# V1-046 — product integration blocked; policy correction 3 ready
+# V1-046 — product integration blocked; policy correction 3 reconciled
 
 - Predecessor: V1-045 is fully released, published, exact-SHA CI-green,
   reconciled, synchronized, and closed at reconciliation commit
@@ -55,6 +55,33 @@
   passed: clean exact 12-file +719/-269 scope, 188/188 automation tests with
   zero failures/skips, prompt/payload and installation identity, policy,
   secrets, JSON, routing, watchdog, syntax, and compilation.
+- Compact-state reconciliation commit
+  `78c4c86ed0c17d586c17af98002fd83c3ff6ffdb`, parent `56856757...`, records
+  the complete review outcome in exactly `ops/NOW.md` and `ops/STATE.json`.
+- Bounded correction-3 card `49f3b412-9067-42f9-83c0-30eb3e5a8113` is manager-
+  accepted DONE for worker `property-codex-1`, attempt
+  `workboard:49f3b412-9067-42f9-83c0-30eb3e5a8113:1788209383755`, branch
+  `openclaw/wb-49f3b412-9067-42f9-83c0-30eb3e5a8113`, and managed worktree
+  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-49f3b412-9067-42f9-83c0-30eb3e5a8113`.
+  Gateway initially materialized the new branch at root `origin/main`; admission
+  recovered it to exact clean `78c4c86...` before any edit. The resulting exact
+  unpushed SHA is `7efaa3a616328f23e81496b628d5ebfd69413fe9`, sole parent
+  `78c4c86...`, tree `bfacfdd6547747c7d7f21942fa416d1623a58050`, exact
+  three-path +340/-35 diff. Fresh manager verification passed 189/189 with zero
+  failures/skips plus ancestry, scope, diff, secret, JSON, compilation, and
+  cleanliness gates; both accepted HIGH native-mutation findings are covered.
+- Exact-SHA correction integration card `1f4d7407-77ab-4f12-96d4-a2745b62411f`
+  is manager-accepted DONE read-only for worker `property-codex-3`, attempt
+  `workboard:1f4d7407-77ab-4f12-96d4-a2745b62411f:1788210978943`, branch
+  `openclaw/wb-1f4d7407-77ab-4f12-96d4-a2745b62411f`, and managed worktree
+  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-1f4d7407-77ab-4f12-96d4-a2745b62411f`.
+  Admission is exact and clean at `7efaa3a6...`, parent `78c4c86...`, tree
+  `bfacfdd6...`. Runtime was GPT-5.6 Sol, xhigh, Standard, Fast off. It passed
+  189/189 with zero failures/skips, scheduler singleton/payload identity, exact
+  scope/cleanliness, JSON, canonical, secret, and both HIGH-fix inspection with
+  no finding. This exact two-path NOW/STATE change reconciles the pre-correction
+  compact state on top of `7efaa3a6...`; its resulting commit requires a fresh
+  exact-SHA gate before independent review.
 - Authoritative prompt: `ops/OPENCLAW_SUPERVISOR_PROMPT.md`, SHA-256
   `0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56`.
   The installed payload remains text-identical.
@@ -66,17 +93,19 @@
 - Production deployment, production credentials, paid services, customer data,
   and remote production access remain unauthorized.
 - Owner action required: no.
-- Exact next action: commit only this two-path compact-state reconciliation,
-  then create and dispatch one bounded xhigh/Standard security correction for
-  the two accepted HIGH code findings. Bind it to the reconciled local SHA and
-  exact three code/test/traceability paths; require fresh integration and fresh
-  max/Standard rereview. Do not publish policy or resume TEST-119 first.
+- Exact next action: inspect and reconcile exact-SHA integration worker
+  `1f4d7407-77ab-4f12-96d4-a2745b62411f` as DONE and bind the resulting exact
+  two-path reconciliation commit; then create and dispatch one fresh read-only
+  exact-SHA gate on that commit. Only after it passes may a fresh independent
+  GPT-5.6 Sol max/Standard rereview start. Do not publish policy or resume
+  TEST-119 first.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Current phase: V1-046 product integration blocked; correction 2 manager-
-  verified; final rereview manager-accepted FAIL with 2 HIGH and 1 MEDIUM;
-  compact-state reconciliation and bounded correction 3 are dependency-ready.
+- Current phase: V1-046 product integration blocked; bounded xhigh policy
+  correction 3 and its read-only correction integration manager-accepted at
+  exact `7efaa3a6...`; manager-owned two-path compact-state reconciliation is
+  prepared before a fresh reconciled-SHA gate and mandatory independent review.
 - Durable cycle action: reconcile compact state, Git, Workboard, claims,
   attempts, active workers, worktrees, and scheduler; continue only the latest
   dependency-safe stage and never duplicate completed or running work.
