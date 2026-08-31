@@ -660,7 +660,14 @@
       "production_shaped_v1_019_context_route": "PASS"
     }
   },
-  "blockers": [],
+  "blockers": [
+    {
+      "id": "continuous-supervisor-policy-clean-rereview-required",
+      "owner_action_required": false,
+      "status": "automatic_recovery_ready",
+      "detail": "Correction commit 9469b7ec is manager-verified. First rereview card e5de4d3b stopped without a verdict because manager compact-state edits made the directly claimed source checkout dirty. Commit only the compact-state reconciliation, then dispatch a fresh review in a clean managed worktree."
+    }
+  ],
   "branch": "implementation/foundation",
   "closure_correction": {
     "canonical_documents_changed": false,
@@ -703,7 +710,7 @@
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Create or reuse exactly one bounded V1-046 traceability-only correction card removing the false API-091 mapping from the API-100 bootstrap test; dispatch no other worker, then require fresh exact-SHA integration and independent review",
+  "next_action": "Commit only the manager-owned NOW/STATE reconciliation, require a clean source checkout, then create and dispatch one fresh max-reasoning independent supervisor-policy rereview in an OpenClaw-managed worktree pinned to the resulting exact SHA and complete 883dd4a-to-HEAD diff; do not publish or resume the V1-046 TEST-119 product correction before zero findings",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -802,12 +809,56 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 integration blocked; bounded TEST-119 traceability correction ready",
-    "exact_next_action": "Create or reuse exactly one bounded V1-046 traceability-only correction card removing the false API-091 mapping from the API-100 bootstrap test; dispatch no other worker, then require fresh exact-SHA integration and independent review",
+    "current_phase": "V1-046 product integration blocked; continuous-supervisor policy correction manager-verified; first rereview admission blocked without a verdict; clean managed-worktree rereview pending",
+    "exact_next_action": "Commit only the manager-owned NOW/STATE reconciliation, require a clean source checkout, then create and dispatch one fresh max-reasoning independent supervisor-policy rereview in an OpenClaw-managed worktree pinned to the resulting exact SHA and complete 883dd4a-to-HEAD diff; do not publish or resume the V1-046 TEST-119 product correction before zero findings",
+    "policy_review": {
+      "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
+      "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
+      "exact_sha": "5443383c876bb23907af93e42e2e2d0201833dc8",
+      "direct_parent": "883dd4a65f9846063ecacc0c821c0470debf10e3",
+      "model": "openai/gpt-5.6-sol",
+      "reasoning": "max",
+      "mode": "standard",
+      "verdict": "FAIL",
+      "high_findings": 2,
+      "medium_findings": 1,
+      "low_findings": 0,
+      "reviewer_edits_authorized": false,
+      "automation_tests": "PASS: 187/187",
+      "prompt_payload_identity": "PASS",
+      "status": "manager_reconciled_done"
+    },
+    "policy_correction": {
+      "card_id": "cf5c632f-8bfe-4769-9192-1aff1a8ba011",
+      "exact_sha": "9469b7ec4461f0cb224f9f74b54c039ba900bc27",
+      "direct_parent": "5443383c876bb23907af93e42e2e2d0201833dc8",
+      "status": "manager_verified_done",
+      "claim_active": false,
+      "attempt_active": false,
+      "worker_active": false,
+      "expected_model": "openai/gpt-5.6-sol",
+      "expected_reasoning": "high",
+      "expected_mode": "standard",
+      "allowed_path_count": 6,
+      "insertions": 248,
+      "deletions": 9,
+      "automation_tests": "PASS: 188/188, zero failures, zero skips",
+      "dispatch_permitted": false
+    },
+    "policy_rereview": {
+      "first_card_id": "e5de4d3b-cbb7-4413-8d21-46ebb1163c2b",
+      "first_status": "blocked_at_admission_no_verdict",
+      "first_review_or_tests_run": false,
+      "required_workspace": "clean OpenClaw-managed worktree",
+      "required_model": "openai/gpt-5.6-sol",
+      "required_reasoning": "max",
+      "required_mode": "standard",
+      "fresh_card_pending": true
+    },
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-08-31T18:41:07Z"
+    "updated_at": "2026-08-31T19:49:42Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
