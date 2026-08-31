@@ -664,8 +664,8 @@
     {
       "id": "continuous-supervisor-policy-clean-rereview-required",
       "owner_action_required": false,
-      "status": "automatic_recovery_ready",
-      "detail": "Correction commit 9469b7ec is manager-verified. First rereview card e5de4d3b stopped without a verdict because manager compact-state edits made the directly claimed source checkout dirty. Commit only the compact-state reconciliation, then dispatch a fresh review in a clean managed worktree."
+      "status": "bounded_correction_3_ready",
+      "detail": "Final rereview 55f681b6 is manager-accepted DONE as FAIL at exact 56856757 with 2 HIGH native-job mutation findings and 1 MEDIUM stale committed compact-state finding. Current NOW/STATE correct the MEDIUM finding; commit only those two paths, then dispatch one bounded xhigh correction for the complete HIGH finding set."
     }
   ],
   "branch": "implementation/foundation",
@@ -710,7 +710,7 @@
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Commit only the manager-owned NOW/STATE reconciliation, require a clean source checkout, then create and dispatch one fresh max-reasoning independent supervisor-policy rereview in an OpenClaw-managed worktree pinned to the resulting exact SHA and complete 883dd4a-to-HEAD diff; do not publish or resume the V1-046 TEST-119 product correction before zero findings",
+  "next_action": "Commit only the two-path NOW/STATE reconciliation, then create and dispatch one bounded xhigh/Standard security correction for the two accepted HIGH findings at exact 56856757, limited to restoration code, automation tests, and automation traceability; require fresh integration and fresh max/Standard rereview before policy publication or V1-046 TEST-119 resumption",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -809,8 +809,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 product integration blocked; continuous-supervisor policy correction manager-verified; first rereview admission blocked without a verdict; clean managed-worktree rereview pending",
-    "exact_next_action": "Commit only the manager-owned NOW/STATE reconciliation, require a clean source checkout, then create and dispatch one fresh max-reasoning independent supervisor-policy rereview in an OpenClaw-managed worktree pinned to the resulting exact SHA and complete 883dd4a-to-HEAD diff; do not publish or resume the V1-046 TEST-119 product correction before zero findings",
+    "current_phase": "V1-046 product integration blocked; second continuous-supervisor policy correction manager-verified; final rereview manager-accepted FAIL with 2 HIGH and 1 MEDIUM; compact-state reconciliation and bounded correction 3 dependency-ready",
+    "exact_next_action": "Commit only the two-path NOW/STATE reconciliation, then create and dispatch one bounded xhigh/Standard security correction for the two accepted HIGH findings at exact 56856757, limited to restoration code, automation tests, and automation traceability; require fresh integration and fresh max/Standard rereview before policy publication or V1-046 TEST-119 resumption",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -845,6 +845,24 @@
       "automation_tests": "PASS: 188/188, zero failures, zero skips",
       "dispatch_permitted": false
     },
+    "policy_correction_2": {
+      "card_id": "63977cd7-3061-4e66-bdaf-cfededb0ab6a",
+      "exact_sha": "56856757a2155dd340220d6076e0531c21cb95cd",
+      "direct_parent": "dd8d3380ab6a3a17a0a1e5e6b70d667042f00b2b",
+      "status": "manager_verified_done",
+      "claim_active": false,
+      "worker_active": false,
+      "model": "openai/gpt-5.6-sol",
+      "reasoning": "xhigh",
+      "mode": "standard",
+      "risk_reason": "scheduler security and repeated correction",
+      "allowed_path_count": 3,
+      "insertions": 64,
+      "deletions": 28,
+      "automation_tests": "PASS: 188/188, zero failures, zero skips",
+      "prompt_payload_identity": "PASS: 11868 bytes, SHA-256 0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
+      "publication_permitted": false
+    },
     "policy_rereview": {
       "first_card_id": "e5de4d3b-cbb7-4413-8d21-46ebb1163c2b",
       "first_status": "blocked_at_admission_no_verdict",
@@ -853,12 +871,38 @@
       "required_model": "openai/gpt-5.6-sol",
       "required_reasoning": "max",
       "required_mode": "standard",
-      "fresh_card_pending": true
+      "fresh_card_pending": false,
+      "completed_card_id": "b16ff124-ecb5-4511-b519-568ffe9f3fd6",
+      "completed_verdict": "FAIL",
+      "completed_high_findings": 1,
+      "completed_automation_tests": "PASS: 188/188, zero failures, zero skips",
+      "final_card_id": "55f681b6-3c94-4db0-981a-5f0d01221376",
+      "final_verdict": "FAIL",
+      "final_high_findings": 2,
+      "final_medium_findings": 1,
+      "final_automation_tests": "PASS: 188/188, zero failures, zero skips",
+      "manager_accepted": true,
+      "active_card_id": null,
+      "active_attempt_id": null,
+      "active_worker": null,
+      "candidate_sha": "56856757a2155dd340220d6076e0531c21cb95cd",
+      "candidate_parent": "dd8d3380ab6a3a17a0a1e5e6b70d667042f00b2b",
+      "branch": "detached",
+      "worktree": "/private/tmp/property-rental-policy-review-5685675",
+      "claim_active": false,
+      "attempt_active": false,
+      "worktree_clean": true,
+      "findings": [
+        "HIGH: missing or mismatched repository ownership policy or native-name drift can reach native supervisor disable",
+        "HIGH: legacy-to-native read-to-enable transition can enable the native supervisor before post-validation",
+        "MEDIUM: committed compact state at exact 56856757 was stale"
+      ],
+      "status": "manager_reconciled_done"
     },
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-08-31T19:49:42Z"
+    "updated_at": "2026-08-31T20:46:28Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -878,7 +922,9 @@
     "immediate_run_duration_ms": 449354,
     "immediate_run_findings": "integration attempt accurately stopped and reconciled after one TEST-119 traceability defect; all other gates passed and both V1-046 worktrees remained clean",
     "nonfatal_run_diagnostic": "one bounded shell discovery command failed after the authoritative state was established; the cycle completed successfully with explicit reconciliation",
-    "next_run_at": "2026-08-31T19:01:43.514Z",
+    "current_run_started_at": "2026-08-31T19:31:43.537Z",
+    "current_run_status": "running",
+    "next_run_at": "2026-08-31T20:01:43.530Z",
     "recovery_commit": "3d4ba8538ed838dfb0ed96f995d4a4623a6bbce8",
     "recovery_ci_run_id": 33417142442,
     "recovery_ci_status": "success",

@@ -1,4 +1,4 @@
-# V1-046 — product integration blocked; policy correction verified, rereview pending
+# V1-046 — product integration blocked; policy correction 3 ready
 
 - Predecessor: V1-045 is fully released, published, exact-SHA CI-green,
   reconciled, synchronized, and closed at reconciliation commit
@@ -33,6 +33,28 @@
   no verdict. It correctly stopped at admission because it was directly claimed
   in the source checkout while manager-owned compact-state edits were active;
   it ran no review or tests and changed no files.
+- Fresh rereview card `b16ff124-ecb5-4511-b519-568ffe9f3fd6` is DONE as FAIL
+  at exact SHA `dd8d3380ab6a3a17a0a1e5e6b70d667042f00b2b`, parent
+  `9469b7ec...`, with one accepted HIGH finding: simultaneous native
+  discriminator drift could still reach a legacy disable path. Positive proof
+  was 188/188 automation tests with zero failures/skips, clean exact scope and
+  ancestry, zero secrets, and prompt/payload identity.
+- Bounded correction-reconciliation card
+  `63977cd7-3061-4e66-bdaf-cfededb0ab6a` is manager-verified DONE for exact
+  local unpublished SHA `56856757a2155dd340220d6076e0531c21cb95cd`, sole
+  parent `dd8d3380...`, and exact three-path +64/-28 diff. Fresh manager
+  automation passed 188/188 with zero failures/skips plus routing, compact-state
+  routing, watchdog, JSON, syntax, and compilation. Prompt/payload identity and
+  the enabled scheduler were preserved.
+- Final rereview card `55f681b6-3c94-4db0-981a-5f0d01221376` is manager-accepted
+  DONE as FAIL at exact `56856757...`, parent `dd8d3380...`, with two HIGH and
+  one MEDIUM findings. Missing or mismatched repository ownership state or
+  native-name drift can still reach legacy disable; a legacy-to-native
+  read-to-enable transition can mutate the native job before post-validation;
+  and the committed compact state at the reviewed SHA was stale. Positive proof
+  passed: clean exact 12-file +719/-269 scope, 188/188 automation tests with
+  zero failures/skips, prompt/payload and installation identity, policy,
+  secrets, JSON, routing, watchdog, syntax, and compilation.
 - Authoritative prompt: `ops/OPENCLAW_SUPERVISOR_PROMPT.md`, SHA-256
   `0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56`.
   The installed payload remains text-identical.
@@ -44,17 +66,17 @@
 - Production deployment, production credentials, paid services, customer data,
   and remote production access remain unauthorized.
 - Owner action required: no.
-- Exact next action: commit only this manager-owned compact-state reconciliation,
-  require a clean source checkout, then create and dispatch one fresh
-  max-reasoning independent rereview in an OpenClaw-managed worktree pinned to
-  the resulting exact SHA and complete `883dd4a..HEAD` diff. Do not publish or
-  resume the product TEST-119 correction before a zero-finding review.
+- Exact next action: commit only this two-path compact-state reconciliation,
+  then create and dispatch one bounded xhigh/Standard security correction for
+  the two accepted HIGH code findings. Bind it to the reconciled local SHA and
+  exact three code/test/traceability paths; require fresh integration and fresh
+  max/Standard rereview. Do not publish policy or resume TEST-119 first.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Current phase: V1-046 product integration blocked; supervisor-policy correction
-  manager-verified; first rereview admission blocked without a verdict; clean
-  managed-worktree rereview pending.
+- Current phase: V1-046 product integration blocked; correction 2 manager-
+  verified; final rereview manager-accepted FAIL with 2 HIGH and 1 MEDIUM;
+  compact-state reconciliation and bounded correction 3 are dependency-ready.
 - Durable cycle action: reconcile compact state, Git, Workboard, claims,
   attempts, active workers, worktrees, and scheduler; continue only the latest
   dependency-safe stage and never duplicate completed or running work.
