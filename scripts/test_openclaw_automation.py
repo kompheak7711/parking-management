@@ -8708,6 +8708,8 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                 repo / "ops/STATE.json",
                 {
                     "continuous_supervisor_policy": {
+                        "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
+                        "prompt_sha256": restoration.digest(prompt),
                         "automation_job_id": restoration.SUPERVISOR_ID,
                         "automation_name": restoration.SUPERVISOR_NAME,
                         "authorization_from": "V1-046",
@@ -8793,12 +8795,233 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                 ) as cron_call,
             ):
                 self.assertIn(
-                    "did not disable",
+                    "could not prove the legacy supervisor",
                     restoration.disable_supervisor(args, repo) or "",
                 )
                 self.assertEqual(
                     [call.args[2] for call in cron_call.call_args_list], ["get"]
                 )
+
+    def test_native_supervisor_mutations_fail_closed_for_policy_and_transition_drift(
+        self,
+    ) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "post_exit_native_mutation_guards",
+            ROOT / "scripts/openclaw-post-exit-restoration.py",
+        )
+        assert spec and spec.loader
+        restoration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(restoration)
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            (repo / "ops").mkdir()
+            prompt = "authoritative continuous policy\n"
+            (repo / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").write_text(prompt)
+            state_path = repo / "ops/STATE.json"
+
+            def native_state(*, through: str = "V1-060") -> dict[str, object]:
+                return {
+                    "status": "active",
+                    "roadmap": {"current_id": "V1-046"},
+                    "next_candidate": {
+                        "id": "V1-046",
+                        "roadmap_id": "V1-046",
+                    },
+                    "continuous_supervisor_policy": {
+                        "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
+                        "prompt_sha256": restoration.digest(prompt),
+                        "automation_job_id": restoration.SUPERVISOR_ID,
+                        "automation_name": restoration.SUPERVISOR_NAME,
+                        "authorization_from": "V1-046",
+                        "authorization_through": through,
+                    },
+                }
+
+            legacy_state = {
+                "status": "active",
+                "roadmap": {"current_id": "V1-019"},
+                "next_candidate": {
+                    "id": "V1-019",
+                    "roadmap_id": "V1-019",
+                },
+            }
+            legacy_job = {
+                "id": restoration.SUPERVISOR_ID,
+                "declarationKey": "property-rental-24x7-v1",
+                "name": restoration.SUPERVISOR_NAME,
+                "agentId": "property-rental-supervisor",
+                "sessionTarget": "isolated",
+                "enabled": False,
+                "schedule": {"kind": "every", "everyMs": 1_800_000},
+                "payload": {
+                    "kind": "command",
+                    "argv": [str(repo / "scripts/openclaw-supervisor-dispatch.sh")],
+                    "cwd": str(repo),
+                },
+            }
+            native_job = {
+                "id": restoration.SUPERVISOR_ID,
+                "declarationKey": "property-rental-24x7-v1",
+                "name": restoration.SUPERVISOR_NAME,
+                "agentId": "property-manager",
+                "sessionTarget": "isolated",
+                "enabled": True,
+                "schedule": {"kind": "every", "everyMs": 1_800_000},
+                "payload": {
+                    "kind": "agentTurn",
+                    "message": prompt,
+                    "model": "openai/gpt-5.6-sol",
+                    "thinking": "xhigh",
+                    "timeoutSeconds": 1800,
+                    "lightContext": False,
+                },
+            }
+            name_drifted = json.loads(json.dumps(native_job))
+            name_drifted["name"] = "property-rental-native-name-drift"
+            dual_drifted = json.loads(json.dumps(native_job))
+            dual_drifted["agentId"] = "property-rental-supervisor"
+            dual_drifted["payload"]["kind"] = "command"
+            args = argparse.Namespace(
+                repo=str(repo),
+                dispatch_state=str(repo / "dispatch"),
+                evidence=str(repo / "restoration/current.json"),
+                openclaw="/test/openclaw",
+                launchctl="/test/launchctl",
+                expected_repair_head=restoration.REPAIR_PUBLICATION_COMMIT,
+            )
+
+            scenarios = (
+                (
+                    "missing_policy",
+                    {
+                        "status": "active",
+                        "roadmap": {"current_id": "V1-046"},
+                        "next_candidate": {
+                            "id": "V1-046",
+                            "roadmap_id": "V1-046",
+                        },
+                    },
+                    native_job,
+                ),
+                ("mismatched_v1_059_policy", native_state(through="V1-059"), native_job),
+                ("native_name_drift", native_state(), name_drifted),
+                ("dual_agent_payload_drift", native_state(), dual_drifted),
+                ("missing_state", None, native_job),
+                ("unreadable_state", "{", native_job),
+            )
+            routes = (
+                ("run", lambda: restoration.execute(args), 69),
+                ("install", lambda: restoration.install(args), 69),
+                (
+                    "finalize",
+                    lambda: restoration.finalize_terminal_direct(
+                        args,
+                        Path(args.evidence),
+                        unload_terminalizer=True,
+                    ),
+                    False,
+                ),
+            )
+            for scenario, state, job in scenarios:
+                for route, invoke, expected in routes:
+                    with self.subTest(scenario=scenario, route=route):
+                        if isinstance(state, dict):
+                            atomic_write_json(state_path, state)
+                        elif isinstance(state, str):
+                            state_path.write_text(state)
+                        else:
+                            state_path.unlink(missing_ok=True)
+                        with (
+                            mock.patch.object(
+                                restoration, "cron", return_value=job
+                            ) as cron_call,
+                            mock.patch.object(
+                                restoration, "unload_restoration_job"
+                            ),
+                            mock.patch.object(restoration, "unload_launchd_label"),
+                        ):
+                            self.assertEqual(invoke(), expected)
+                        self.assertTrue(cron_call.call_args_list)
+                        self.assertTrue(
+                            all(
+                                call.args[2] == "get"
+                                for call in cron_call.call_args_list
+                            )
+                        )
+
+            def transition_to_native(*_arguments: object) -> dict[str, object]:
+                atomic_write_json(state_path, native_state())
+                return native_job
+
+            with self.subTest(transition_before="disable"):
+                atomic_write_json(state_path, legacy_state)
+                disable_reads = iter((legacy_job, None))
+
+                def transition_on_second_read(
+                    *_arguments: object,
+                ) -> dict[str, object]:
+                    observed = next(disable_reads)
+                    return observed if observed is not None else transition_to_native()
+
+                with (
+                    mock.patch.object(
+                        restoration,
+                        "cron",
+                        side_effect=transition_on_second_read,
+                    ) as cron_call,
+                    mock.patch.object(
+                        restoration,
+                        "exact_executable",
+                        return_value="/test/openclaw",
+                    ),
+                ):
+                    self.assertIn(
+                        "native continuous supervisor",
+                        restoration.disable_supervisor(args, repo) or "",
+                    )
+                self.assertEqual(
+                    [call.args[2] for call in cron_call.call_args_list],
+                    ["get", "get"],
+                )
+
+            with self.subTest(transition_before="enable"):
+                atomic_write_json(state_path, legacy_state)
+                with mock.patch.object(
+                    restoration,
+                    "cron",
+                    side_effect=transition_to_native,
+                ) as cron_call:
+                    with self.assertRaisesRegex(
+                        restoration.RestorationError,
+                        "native continuous supervisor",
+                    ):
+                        restoration.mutate_legacy_supervisor(
+                            "/test/openclaw",
+                            repo,
+                            "enable",
+                            legacy_job,
+                        )
+                self.assertEqual(
+                    [call.args[2] for call in cron_call.call_args_list], ["get"]
+                )
+
+            atomic_write_json(state_path, legacy_state)
+            enabled_legacy = json.loads(json.dumps(legacy_job))
+            enabled_legacy["enabled"] = True
+            with mock.patch.object(
+                restoration,
+                "cron",
+                side_effect=[legacy_job, enabled_legacy],
+            ) as cron_call:
+                self.assertTrue(
+                    restoration.mutate_legacy_supervisor(
+                        "/test/openclaw", repo, "enable", legacy_job
+                    )["enabled"]
+                )
+            self.assertEqual(
+                [call.args[2] for call in cron_call.call_args_list],
+                ["get", "enable"],
+            )
 
     def test_false_ci_failure_reconciliation_is_bound_to_exact_run_and_commit(
         self,
@@ -8890,7 +9113,14 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                 (repo / "ops").mkdir()
                 atomic_write_json(
                     repo / "ops/STATE.json",
-                    {"status": "legacy_v1_019_restoration_fixture"},
+                    {
+                        "status": "active",
+                        "roadmap": {"current_id": "V1-019"},
+                        "next_candidate": {
+                            "id": "V1-019",
+                            "roadmap_id": "V1-019",
+                        },
+                    },
                 )
                 job_path = root / "job.json"
                 atomic_write_json(
@@ -9099,7 +9329,14 @@ print(json.dumps(job))
             (repo / "ops").mkdir()
             atomic_write_json(
                 repo / "ops/STATE.json",
-                {"status": "legacy_v1_019_restoration_fixture"},
+                {
+                    "status": "active",
+                    "roadmap": {"current_id": "V1-019"},
+                    "next_candidate": {
+                        "id": "V1-019",
+                        "roadmap_id": "V1-019",
+                    },
+                },
             )
             evidence = root / "restoration.json"
             repair_head = "e0469b6d519c0947662204869a535c7080185638"
@@ -9124,10 +9361,16 @@ import json, os, pathlib, sys, time
 if sys.argv[1:3] == ['cron', 'get']:
     print(json.dumps({
         'id': '658ffdaf-1ac1-45a6-a842-f5f7d7a226eb',
+        'declarationKey': 'property-rental-24x7-v1',
         'name': 'property-rental-24x7-supervisor',
         'agentId': 'property-rental-supervisor',
+        'sessionTarget': 'isolated',
         'schedule': {'kind': 'every', 'everyMs': 1800000},
-        'payload': {'kind': 'command'},
+        'payload': {
+            'kind': 'command',
+            'argv': [str(pathlib.Path(os.environ['FAKE_REPO']) / 'scripts/openclaw-supervisor-dispatch.sh')],
+            'cwd': os.environ['FAKE_REPO'],
+        },
     }))
     raise SystemExit(0)
 if sys.argv[1:3] == ['message', 'send']:
@@ -9190,6 +9433,7 @@ raise SystemExit(9)
             environment = {
                 **os.environ,
                 "FAKE_NOTIFICATION_LOG": str(notification_log),
+                "FAKE_REPO": str(repo),
             }
             workers = [
                 subprocess.Popen(

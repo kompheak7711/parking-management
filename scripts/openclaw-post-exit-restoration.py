@@ -367,6 +367,51 @@ def exact_supervisor(job: dict[str, Any], repo: Path) -> None:
         )
 
 
+def repository_supervisor_ownership(repo: Path) -> str:
+    """Return the only ownership disposition proved by compact repository state."""
+    state = read_json_object(repo / "ops/STATE.json", "compact state")
+    policy = state.get("continuous_supervisor_policy")
+    if isinstance(policy, dict):
+        try:
+            prompt = (repo / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").read_text()
+        except OSError as error:
+            raise RestorationError(
+                "continuous supervisor repository policy prompt is unreadable"
+            ) from error
+        checks = {
+            "prompt_path": policy.get("authoritative_prompt_path")
+            == "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
+            "prompt_sha256": policy.get("prompt_sha256") == digest(prompt),
+            "job_id": policy.get("automation_job_id") == SUPERVISOR_ID,
+            "name": policy.get("automation_name") == SUPERVISOR_NAME,
+            "authorization_from": policy.get("authorization_from") == "V1-046",
+            "authorization_through": policy.get("authorization_through") == "V1-060",
+        }
+        failed = sorted(key for key, passed in checks.items() if not passed)
+        if failed:
+            raise RestorationError(
+                "continuous supervisor repository ownership policy drifted: "
+                + ", ".join(failed)
+            )
+        return "native"
+
+    roadmap = state.get("roadmap") or {}
+    candidate = state.get("next_candidate") or {}
+    if (
+        policy is None
+        and state.get("status") == "active"
+        and isinstance(roadmap, dict)
+        and roadmap.get("current_id") == "V1-019"
+        and isinstance(candidate, dict)
+        and candidate.get("id") == "V1-019"
+        and candidate.get("roadmap_id") == "V1-019"
+    ):
+        return "legacy"
+    raise RestorationError(
+        "continuous supervisor repository ownership policy is missing or invalid"
+    )
+
+
 def continuous_supervisor_disposition(
     job: dict[str, Any], repo: Path
 ) -> int | None:
@@ -378,11 +423,8 @@ def continuous_supervisor_disposition(
     fail-closed but is still left untouched for the continuous supervisor recovery
     path to repair through the supported OpenClaw interface.
     """
-    payload = job.get("payload") or {}
-    if job.get("id") != SUPERVISOR_ID or job.get("name") != SUPERVISOR_NAME:
-        return None
     try:
-        state = read_json_object(repo / "ops/STATE.json", "compact state")
+        ownership = repository_supervisor_ownership(repo)
     except RestorationError as error:
         print(
             "continuous supervisor ownership could not be classified; legacy "
@@ -390,20 +432,19 @@ def continuous_supervisor_disposition(
             file=sys.stderr,
         )
         return 69
-    policy = state.get("continuous_supervisor_policy") or {}
-    repository_declares_continuous = bool(
-        isinstance(policy, dict)
-        and policy.get("automation_job_id") == SUPERVISOR_ID
-        and policy.get("automation_name") == SUPERVISOR_NAME
-        and policy.get("authorization_from") == "V1-046"
-        and policy.get("authorization_through") == "V1-060"
-    )
-    if (
-        not repository_declares_continuous
-        and job.get("agentId") != "property-manager"
-        and payload.get("kind") != "agentTurn"
-    ):
+    if ownership == "legacy":
+        try:
+            exact_supervisor(job, repo)
+        except RestorationError as error:
+            print(
+                "legacy supervisor ownership could not be proved; restoration "
+                f"left it untouched: {error}",
+                file=sys.stderr,
+            )
+            return 69
         return None
+
+    payload = job.get("payload") or {}
     schedule = job.get("schedule") or {}
     try:
         prompt = (repo / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").read_text()
@@ -414,7 +455,9 @@ def continuous_supervisor_disposition(
         )
         return 69
     checks = {
+        "id": job.get("id") == SUPERVISOR_ID,
         "declaration": job.get("declarationKey") == "property-rental-24x7-v1",
+        "name": job.get("name") == SUPERVISOR_NAME,
         "agent": job.get("agentId") == "property-manager",
         "session": job.get("sessionTarget") == "isolated",
         "schedule": schedule.get("kind") == "every"
@@ -436,6 +479,32 @@ def continuous_supervisor_disposition(
         return 69
     print("legacy V1-019 post-exit restoration is retired for the continuous supervisor")
     return 0
+
+
+def mutate_legacy_supervisor(
+    openclaw: str,
+    repo: Path,
+    action: str,
+    observed: dict[str, Any],
+) -> dict[str, Any]:
+    """Revalidate authoritative legacy ownership immediately before mutation."""
+    if action not in {"disable", "enable"}:
+        raise RestorationError(f"unsupported legacy supervisor mutation: {action}")
+
+    def require_legacy(phase: str, job: dict[str, Any]) -> None:
+        disposition = continuous_supervisor_disposition(job, repo)
+        if disposition is not None:
+            if disposition == 0:
+                raise RestorationError(
+                    f"{phase} ownership check found the native continuous supervisor"
+                )
+            raise RestorationError(
+                f"{phase} ownership check could not prove the legacy supervisor"
+            )
+
+    require_legacy("initial", observed)
+    require_legacy("immediate pre-mutation", cron(openclaw, repo, "get"))
+    return cron(openclaw, repo, action)
 
 
 def retire_continuous_restoration(
@@ -2226,19 +2295,8 @@ def notify_recovery_scheduled_once(
 def disable_supervisor(args: argparse.Namespace, repo: Path) -> str | None:
     try:
         openclaw = exact_executable(args.openclaw, "OpenClaw")
-        current = cron(openclaw, repo, "get")
-        disposition = continuous_supervisor_disposition(current, repo)
-        if disposition is not None:
-            if disposition == 0:
-                return (
-                    "continuous supervisor is owned by current policy; legacy "
-                    "restoration did not disable it"
-                )
-            return (
-                "continuous supervisor policy drifted; legacy restoration did not "
-                "disable it"
-            )
-        disabled = cron(openclaw, repo, "disable")
+        observed = cron(openclaw, repo, "get")
+        disabled = mutate_legacy_supervisor(openclaw, repo, "disable", observed)
         exact_supervisor(disabled, repo)
         if disabled.get("enabled") is not False:
             return "disable command did not leave the supervisor disabled"
@@ -2701,7 +2759,9 @@ def execute(args: argparse.Namespace) -> int:
             candidate_base_commit=continuation_head,
             sequence_floor=sequence_floor,
         )
-        enabled_job = cron(args.openclaw, repo, "enable")
+        enabled_job = mutate_legacy_supervisor(
+            args.openclaw, repo, "enable", before_enable
+        )
         exact_supervisor(enabled_job, repo)
         if enabled_job.get("enabled") is not True:
             raise RestorationError("the exact supervisor did not become enabled")
