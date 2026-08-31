@@ -1,0 +1,389 @@
+"""Bounded late-payment review, Decision, Charge, and correction service."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import dataclass
+from enum import StrEnum
+from typing import Final, cast
+from uuid import UUID, uuid4
+
+import psycopg
+from psycopg import IsolationLevel
+
+from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
+
+LATE_PAYMENT_REVIEW_CAPABILITY: Final = "late_payment.review"
+LATE_PAYMENT_DECISION_CAPABILITY: Final = "late_payment.final_decision"
+LATE_PAYMENT_CORRECTION_CAPABILITY: Final = "late_payment.charge_correction"
+LATE_PAYMENT_CONNECT_TIMEOUT_SECONDS: Final = 3
+LATE_PAYMENT_LOCK_TIMEOUT_MS: Final = 3_000
+LATE_PAYMENT_QUERY_TIMEOUT_MS: Final = 5_000
+MAX_USD_MINOR_UNITS: Final = 9_000_000_000_000_000
+NIL_UUID: Final = UUID(int=0)
+
+
+class DecisionOutcome(StrEnum):
+    CONFIRMED_DEFAULT = "CONFIRMED_DEFAULT"
+    REDUCED = "REDUCED"
+    WAIVED = "WAIVED"
+
+
+class CorrectionKind(StrEnum):
+    REDUCTION = "REDUCTION"
+    CHARGE_REVERSAL = "CHARGE_REVERSAL"
+    REDUCTION_REVERSAL = "REDUCTION_REVERSAL"
+
+
+class LatePaymentNotFoundError(LookupError):
+    pass
+
+
+class LatePaymentConflictError(RuntimeError):
+    pass
+
+
+class LatePaymentIdempotencyKeyReused(LatePaymentConflictError):
+    pass
+
+
+class LatePaymentApplicationReversalRequired(LatePaymentConflictError):
+    pass
+
+
+class LatePaymentInvalidError(ValueError):
+    pass
+
+
+class LatePaymentAuthorizationError(PermissionError):
+    pass
+
+
+class LatePaymentServiceUnavailableError(RuntimeError):
+    pass
+
+
+def _identity(value: UUID, field: str) -> None:
+    if value == NIL_UUID:
+        raise ValueError(f"{field} must not be the nil UUID")
+
+
+def _normalized(value: str, field: str, *, maximum: int = 500) -> None:
+    if not value.strip() or value != value.strip() or len(value) > maximum:
+        raise ValueError(f"{field} must be normalized, nonblank, and bounded")
+
+
+@dataclass(frozen=True, slots=True)
+class FinalizeLatePaymentDecisionCommand:
+    idempotency_key: UUID
+    outcome: DecisionOutcome
+    approved_amount_usd_cents: int
+    reason: str
+
+    def __post_init__(self) -> None:
+        _identity(self.idempotency_key, "idempotency_key")
+        if not isinstance(self.outcome, DecisionOutcome):
+            raise ValueError("outcome is invalid")
+        if (
+            type(self.approved_amount_usd_cents) is not int
+            or not 0 <= self.approved_amount_usd_cents <= MAX_USD_MINOR_UNITS
+        ):
+            raise ValueError("approved_amount_usd_cents must be bounded USD minor units")
+        _normalized(self.reason, "reason")
+
+
+@dataclass(frozen=True, slots=True)
+class CorrectLatePaymentChargeCommand:
+    idempotency_key: UUID
+    kind: CorrectionKind
+    reason: str
+    amount_usd_cents: int | None = None
+    reverses_correction_id: UUID | None = None
+
+    def __post_init__(self) -> None:
+        _identity(self.idempotency_key, "idempotency_key")
+        if not isinstance(self.kind, CorrectionKind):
+            raise ValueError("kind is invalid")
+        _normalized(self.reason, "reason")
+        if self.kind is CorrectionKind.REDUCTION:
+            if (
+                type(self.amount_usd_cents) is not int
+                or not 1 <= self.amount_usd_cents <= MAX_USD_MINOR_UNITS
+                or self.reverses_correction_id is not None
+            ):
+                raise ValueError("REDUCTION requires one bounded positive USD amount")
+        elif self.kind is CorrectionKind.CHARGE_REVERSAL:
+            if self.amount_usd_cents is not None or self.reverses_correction_id is not None:
+                raise ValueError("CHARGE_REVERSAL derives its amount")
+        else:
+            if self.amount_usd_cents is not None or self.reverses_correction_id is None:
+                raise ValueError("REDUCTION_REVERSAL requires its source correction")
+            _identity(self.reverses_correction_id, "reverses_correction_id")
+
+
+def late_payment_request_digest(
+    *, action: str, property_id: UUID, target_id: UUID, payload: dict[str, object]
+) -> str:
+    """Return a stable digest containing only canonical client intent."""
+    serialized = json.dumps(
+        {
+            "action": action,
+            "payload": payload,
+            "property_id": str(property_id),
+            "target_id": str(target_id),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+    return hashlib.sha256(serialized.encode()).hexdigest()
+
+
+@dataclass(frozen=True, slots=True)
+class PostgresLatePaymentService:
+    database_url: str
+    financial_database_url: str | None = None
+
+    @staticmethod
+    def _bound_query(connection: psycopg.Connection[tuple[object, ...]]) -> None:
+        connection.execute(
+            "SELECT pg_catalog.set_config('lock_timeout',%s,true)",
+            (str(LATE_PAYMENT_LOCK_TIMEOUT_MS),),
+        )
+        connection.execute(
+            "SELECT pg_catalog.set_config('statement_timeout',%s,true)",
+            (str(LATE_PAYMENT_QUERY_TIMEOUT_MS),),
+        )
+
+    @staticmethod
+    def _actor_id(actor: AuthenticatedActor) -> UUID:
+        try:
+            value = UUID(actor.actor_id)
+        except ValueError as exc:
+            raise LatePaymentAuthorizationError("Late-payment actor identity is invalid") from exc
+        _identity(value, "actor_id")
+        return value
+
+    @staticmethod
+    def _authorize(
+        actor: AuthenticatedActor,
+        property_id: UUID,
+        capability: str,
+        *,
+        hide: bool = False,
+    ) -> None:
+        if is_authorized(
+            actor,
+            AuthorizationRequirement(capability=capability, property_id=str(property_id)),
+        ):
+            return
+        if hide:
+            raise LatePaymentNotFoundError("Late-payment resource was not found")
+        raise LatePaymentAuthorizationError("Late-payment capability is not authorized")
+
+    @staticmethod
+    def _resource(value: object) -> dict[str, object]:
+        if not isinstance(value, dict):
+            raise LatePaymentServiceUnavailableError("Late-payment snapshot is unavailable")
+        return cast(dict[str, object], value)
+
+    @staticmethod
+    def _map_error(exc: psycopg.Error) -> Exception:
+        if exc.sqlstate in {"P4601", "P0002"}:
+            return LatePaymentNotFoundError("Late-payment resource was not found")
+        if exc.sqlstate == "P4605":
+            return LatePaymentIdempotencyKeyReused("Late-payment idempotency key was reused")
+        if exc.sqlstate == "P4606":
+            return LatePaymentAuthorizationError("Late-payment actor is not active")
+        if exc.sqlstate == "P4608":
+            return LatePaymentApplicationReversalRequired(
+                "Active applications must be reversed explicitly"
+            )
+        if exc.sqlstate in {"P4603", "23505", "40001", "55000", "55P03"}:
+            return LatePaymentConflictError("Late-payment command conflicted")
+        if exc.sqlstate in {"P4602", "22023", "23503", "23514"}:
+            return LatePaymentInvalidError("Late-payment command is invalid")
+        return LatePaymentServiceUnavailableError("Late-payment persistence is unavailable")
+
+    def _read_connection(self) -> psycopg.Connection[tuple[object, ...]]:
+        return psycopg.connect(
+            self.database_url,
+            connect_timeout=LATE_PAYMENT_CONNECT_TIMEOUT_SECONDS,
+        )
+
+    def _command_connection(self) -> psycopg.Connection[tuple[object, ...]]:
+        if self.financial_database_url is None:
+            raise LatePaymentServiceUnavailableError(
+                "Late-payment command persistence is unavailable"
+            )
+        connection = psycopg.connect(
+            self.financial_database_url,
+            connect_timeout=LATE_PAYMENT_CONNECT_TIMEOUT_SECONDS,
+        )
+        connection.isolation_level = IsolationLevel.READ_COMMITTED
+        return connection
+
+    def _read(self, query: str, target_id: UUID) -> dict[str, object]:
+        if target_id == NIL_UUID:
+            raise LatePaymentNotFoundError("Late-payment resource was not found")
+        try:
+            with self._read_connection() as connection:
+                self._bound_query(connection)
+                row = connection.execute(query, (target_id,)).fetchone()
+        except psycopg.Error as exc:
+            raise self._map_error(exc) from exc
+        if row is None or row[0] is None:
+            raise LatePaymentNotFoundError("Late-payment resource was not found")
+        return self._resource(row[0])
+
+    def _property(self, query: str, target_id: UUID) -> UUID:
+        if target_id == NIL_UUID:
+            raise LatePaymentNotFoundError("Late-payment resource was not found")
+        try:
+            with self._read_connection() as connection:
+                self._bound_query(connection)
+                row = connection.execute(query, (target_id,)).fetchone()
+        except psycopg.Error as exc:
+            raise self._map_error(exc) from exc
+        if row is None or row[0] is None:
+            raise LatePaymentNotFoundError("Late-payment resource was not found")
+        return UUID(str(row[0]))
+
+    def property_for_invoice(self, invoice_id: UUID) -> UUID:
+        return self._property("SELECT app.invoice_property_id(%s)", invoice_id)
+
+    def property_for_charge(self, charge_id: UUID) -> UUID:
+        return self._property("SELECT app.late_payment_charge_property_id(%s)", charge_id)
+
+    def review(self, invoice_id: UUID, *, actor: AuthenticatedActor) -> dict[str, object]:
+        resource = self._read("SELECT app.late_payment_review_snapshot(%s)", invoice_id)
+        self._authorize(
+            actor,
+            UUID(str(resource["property_id"])),
+            LATE_PAYMENT_REVIEW_CAPABILITY,
+            hide=True,
+        )
+        return resource
+
+    def get_decision(self, invoice_id: UUID, *, actor: AuthenticatedActor) -> dict[str, object]:
+        resource = self._read(
+            "SELECT app.late_payment_decision_snapshot_for_invoice(%s)", invoice_id
+        )
+        self._authorize(
+            actor,
+            UUID(str(resource["property_id"])),
+            LATE_PAYMENT_REVIEW_CAPABILITY,
+            hide=True,
+        )
+        return resource
+
+    def get_charge(self, charge_id: UUID, *, actor: AuthenticatedActor) -> dict[str, object]:
+        resource = self._read("SELECT app.late_payment_charge_snapshot(%s)", charge_id)
+        self._authorize(
+            actor,
+            UUID(str(resource["property_id"])),
+            LATE_PAYMENT_REVIEW_CAPABILITY,
+            hide=True,
+        )
+        return resource
+
+    def _execute(self, query: str, parameters: tuple[object, ...]) -> dict[str, object]:
+        try:
+            with self._command_connection() as connection:
+                self._bound_query(connection)
+                row = connection.execute(query, parameters).fetchone()
+        except (LatePaymentServiceUnavailableError, LatePaymentAuthorizationError):
+            raise
+        except psycopg.Error as exc:
+            raise self._map_error(exc) from exc
+        if row is None:
+            raise LatePaymentServiceUnavailableError("Late-payment command returned no result")
+        return self._resource(row[0])
+
+    def finalize_decision(
+        self,
+        property_id: UUID,
+        invoice_id: UUID,
+        command: FinalizeLatePaymentDecisionCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        self._authorize(actor, property_id, LATE_PAYMENT_DECISION_CAPABILITY)
+        digest = late_payment_request_digest(
+            action="decision",
+            property_id=property_id,
+            target_id=invoice_id,
+            payload={
+                "approved_amount": {
+                    "currency": "USD",
+                    "minor_units": command.approved_amount_usd_cents,
+                },
+                "outcome": command.outcome.value,
+                "reason": command.reason,
+            },
+        )
+        return self._execute(
+            "SELECT app.finalize_late_payment_decision(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                invoice_id,
+                self._actor_id(actor),
+                command.idempotency_key,
+                digest,
+                command.outcome.value,
+                command.approved_amount_usd_cents,
+                command.reason,
+                uuid4(),
+                uuid4(),
+                uuid4(),
+            ),
+        )
+
+    def correct_charge(
+        self,
+        property_id: UUID,
+        charge_id: UUID,
+        command: CorrectLatePaymentChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        self._authorize(actor, property_id, LATE_PAYMENT_CORRECTION_CAPABILITY)
+        digest = late_payment_request_digest(
+            action="correction",
+            property_id=property_id,
+            target_id=charge_id,
+            payload={
+                "amount": (
+                    None
+                    if command.amount_usd_cents is None
+                    else {
+                        "currency": "USD",
+                        "minor_units": command.amount_usd_cents,
+                    }
+                ),
+                "kind": command.kind.value,
+                "reason": command.reason,
+                "reverses_correction_id": (
+                    str(command.reverses_correction_id)
+                    if command.reverses_correction_id is not None
+                    else None
+                ),
+            },
+        )
+        return self._execute(
+            "SELECT app.correct_late_payment_charge(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                charge_id,
+                self._actor_id(actor),
+                command.idempotency_key,
+                digest,
+                command.kind.value,
+                command.amount_usd_cents,
+                command.reverses_correction_id,
+                command.reason,
+                uuid4(),
+                uuid4(),
+            ),
+        )

@@ -85,6 +85,18 @@ from property_rental.invoice_api import (
     create_invoice_router,
     invoice_idempotency_key_reused_response,
 )
+from property_rental.late_payment import (
+    LatePaymentApplicationReversalRequired,
+    LatePaymentIdempotencyKeyReused,
+    PostgresLatePaymentService,
+)
+from property_rental.late_payment_api import (
+    LatePaymentFlow,
+    UnavailableLatePaymentFlow,
+    application_reversal_required_response,
+    create_late_payment_router,
+    late_payment_idempotency_key_reused_response,
+)
 from property_rental.lease_api import (
     LeaseResourceFlow,
     PostgresLeaseResourceFlow,
@@ -153,6 +165,10 @@ BILLING_RUN_API_PATH_PATTERN: Final = re.compile(
 )
 INVOICE_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:properties/[^/]+/invoices(?:/|$)|invoices(?:/|$))"
+)
+LATE_PAYMENT_API_PATH_PATTERN: Final = re.compile(
+    r"^/api/v1/(?:invoices/[^/]+/late-payment-(?:review|decision)$|"
+    r"late-payment-charges(?:/|$))"
 )
 DATABASE_TIMEOUT_SECONDS: Final = 2
 ERROR_STATUS_DETAILS: Final = {
@@ -276,6 +292,7 @@ def create_app(
     utility_resource_flow: UtilityResourceFlow | None = None,
     billing_run_flow: BillingRunFlow | None = None,
     invoice_flow: InvoiceFlow | None = None,
+    late_payment_flow: LatePaymentFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -460,6 +477,20 @@ def create_app(
     ) -> JSONResponse:
         return invoice_idempotency_key_reused_response(request)
 
+    @app.exception_handler(LatePaymentIdempotencyKeyReused)
+    async def late_payment_idempotency_key_reused(
+        request: Request,
+        _: LatePaymentIdempotencyKeyReused,
+    ) -> JSONResponse:
+        return late_payment_idempotency_key_reused_response(request)
+
+    @app.exception_handler(LatePaymentApplicationReversalRequired)
+    async def late_payment_application_reversal_required(
+        request: Request,
+        _: LatePaymentApplicationReversalRequired,
+    ) -> JSONResponse:
+        return application_reversal_required_response(request)
+
     @app.exception_handler(InvoiceVersionConflict)
     async def invoice_version_conflict(
         request: Request,
@@ -514,6 +545,7 @@ def create_app(
             or UTILITY_API_PATH_PATTERN.match(request.url.path)
             or BILLING_RUN_API_PATH_PATTERN.match(request.url.path)
             or INVOICE_API_PATH_PATTERN.match(request.url.path)
+            or LATE_PAYMENT_API_PATH_PATTERN.match(request.url.path)
         ):
             response.headers["Cache-Control"] = "private, no-store"
             response.headers["Vary"] = "Cookie"
@@ -719,6 +751,28 @@ def create_app(
                     )
                     if resolved_settings.database_url is not None
                     else UnavailableInvoiceFlow()
+                ),
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_late_payment_router(
+            actor_resolver,
+            late_payment_flow
+            or cast(
+                LatePaymentFlow,
+                (
+                    PostgresLatePaymentService(
+                        resolved_settings.database_url.get_secret_value(),
+                        (
+                            resolved_settings.financial_database_url.get_secret_value()
+                            if resolved_settings.financial_database_url is not None
+                            else None
+                        ),
+                    )
+                    if resolved_settings.database_url is not None
+                    else UnavailableLatePaymentFlow()
                 ),
             ),
             resolved_settings,

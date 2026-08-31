@@ -125,6 +125,7 @@ database_test_suites='
   tests/test_deposit_migration.py
   tests/test_deposit_api_migration.py
   tests/test_invoice_migration.py
+  tests/test_late_payment_migration.py
   tests/test_billing_service_migration.py
   tests/test_utility_meter_migration.py
   tests/test_utility_consumption_migration.py

@@ -4425,6 +4425,7 @@
     {
       "test_id": "test_success_persists_then_presents_exactly_ten_codes_and_acknowledges_before_commit",
       "upstream_ids": [
+        "API-091",
         "API-100",
         "TEST-133",
         "SEC-073",
@@ -10762,7 +10763,119 @@
       "test_level": "migration",
       "test_path": "backend/tests/test_migrations.py",
       "status": "implemented",
-      "notes": "A populated exact revision-35 Invoice source/header/line database upgrades to revision 36 with source data intact, a correct server snapshot, and an empty new command ledger; this migration test makes no financial posting lock-order claim."
+      "notes": "A populated exact revision-35 Invoice source/header/line database upgrades through revision 37 with source data intact, a correct Invoice server snapshot, and an empty Invoice command ledger; this migration test makes no late-payment lifecycle or posting lock-order claim."
+    },
+    {
+      "test_id": "test_final_decision_command_preserves_only_canonical_client_intent",
+      "upstream_ids": ["API-005", "API-016", "API-091", "TEST-119"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment.py",
+      "status": "implemented",
+      "notes": "The bounded command preserves only outcome, exact USD minor units, normalized reason, scope, target, and idempotency identity in its canonical digest; server-owned assessment facts are absent."
+    },
+    {
+      "test_id": "test_commands_reject_untrusted_or_inconsistent_shapes",
+      "upstream_ids": ["API-005", "API-091", "TEST-119", "TEST-123", "TEST-124"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_late_payment.py",
+      "status": "implemented",
+      "notes": "Decision and correction commands reject nil identities, unbounded or negative money, unnormalized reasons, and kind-specific amount/reference shapes before persistence."
+    },
+    {
+      "test_id": "test_all_five_routes_require_authentication_exact_capability_and_scope",
+      "upstream_ids": ["API-009", "API-013", "API-091", "SEC-020", "SEC-070", "TEST-123", "TEST-124"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_late_payment.py",
+      "status": "implemented",
+      "notes": "All three reads among the five API-091 routes require an authenticated actor with exact Property-scoped late_payment.review and hide wrong capability or scope as 404; mutation capability separation is covered independently."
+    },
+    {
+      "test_id": "test_mutations_enforce_independent_capabilities_csrf_and_server_owned_fields",
+      "upstream_ids": ["API-009", "API-025", "API-091", "SEC-020", "SEC-027", "SEC-070", "TEST-123", "TEST-124"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_late_payment.py",
+      "status": "implemented",
+      "notes": "Final Decision and Charge correction require their independent Property capabilities plus origin-bound double-submit CSRF, reject generic Invoice authority and caller-owned snapshots, and forward only exact canonical inputs."
+    },
+    {
+      "test_id": "test_decision_api_rejects_noncanonical_outcomes_and_money",
+      "upstream_ids": ["API-005", "API-091", "TEST-119", "TEST-123"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_late_payment.py",
+      "status": "implemented",
+      "notes": "The Decision body rejects unsupported outcomes, non-USD currency, and floating-point minor units without invoking the command flow."
+    },
+    {
+      "test_id": "test_late_payment_special_conflicts_return_safe_semantic_errors",
+      "upstream_ids": ["API-016", "API-091", "BR-LATE-005", "SEC-036", "TEST-124"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_late_payment.py",
+      "status": "implemented",
+      "notes": "Changed idempotent input and a correction that would undercut active future applications return stable IDEMPOTENCY_KEY_REUSED and APPLICATION_REVERSAL_REQUIRED envelopes without exception detail."
+    },
+    {
+      "test_id": "test_review_decisions_replay_and_source_isolation_use_authoritative_current_balance",
+      "upstream_ids": ["BR-INV-051", "BR-INV-052", "BR-INV-053", "BR-INV-054", "BR-INV-055", "API-015", "API-016", "API-091", "DB-INV-007", "DB-INV-008", "TEST-119", "TEST-123"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL derives the Property-local overdue review from a current $310.05 balance, rounds 10% half-up to $31.01, accepts an exact $15 reduced Decision, atomically creates one separate Charge, replays exactly, conflicts on changed or supplemental input, and preserves the complete source Invoice snapshot."
+    },
+    {
+      "test_id": "test_waiver_default_and_ineligible_boundaries_do_not_create_arbitrary_receivables",
+      "upstream_ids": ["BR-INV-053", "BR-INV-054", "BR-INV-055", "BR-LATE-001", "BR-LATE-002", "BR-LATE-003", "API-091", "DB-INV-007", "DB-INV-008", "TEST-123"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_migration.py",
+      "status": "implemented",
+      "notes": "A waiver preserves its final Decision with no Charge, confirmed default uses the exact server proposal, and an absent source cannot create an arbitrary receivable."
+    },
+    {
+      "test_id": "test_review_due_date_boundary_is_property_local_and_never_posts_automatically",
+      "upstream_ids": ["BR-INV-051", "BR-INV-053", "API-091", "TEST-123"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_migration.py",
+      "status": "implemented",
+      "notes": "A real PostgreSQL Invoice whose Due Date is still in the future of the Property-local business date returns an explicit DUE_DATE_NOT_PASSED review blocker, creates no Decision during review, and rejects attempted finalization."
+    },
+    {
+      "test_id": "test_corrections_preserve_original_history_bounds_and_future_application_boundary",
+      "upstream_ids": ["BR-LATE-004", "BR-LATE-005", "API-091", "DB-INV-009", "DB-VIEW-007", "TEST-124"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_migration.py",
+      "status": "implemented",
+      "notes": "Reduction, one active Reduction reversal, and complete Charge reversal append ordered history while preserving the original amount and enforcing terminal/double-reversal bounds. A transaction-local replacement of the deliberately empty future-application summary proves a correction below active applications fails P4608 without adding Payment or Credit persistence."
+    },
+    {
+      "test_id": "test_concurrent_decisions_and_over_reductions_commit_at_most_one_effect",
+      "upstream_ids": ["API-017", "API-018", "API-091", "DB-TXN-007", "SEC-029", "TEST-123", "TEST-124"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent distinct Decision commands serialize to one final Decision and Charge, while concurrent reductions that would cumulatively over-reduce commit only one append-only correction."
+    },
+    {
+      "test_id": "test_audit_failure_rolls_back_decision_charge_and_command",
+      "upstream_ids": ["API-017", "API-091", "BR-AUDIT-006", "TEST-123"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_late_payment_migration.py",
+      "status": "implemented",
+      "notes": "An injected immutable audit identity collision rolls back the Decision, any Charge, and the durable idempotency result in the same transaction."
+    },
+    {
+      "test_id": "test_late_payment_runtime_privileges_are_least_privilege_and_forward_only",
+      "upstream_ids": ["API-017", "API-091", "DB-INV-007", "DB-INV-008", "DB-INV-009", "SEC-025", "SEC-029"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_late_payment_migration.py",
+      "status": "implemented",
+      "notes": "Runtime can execute protected read snapshots but cannot insert command rows or execute financial commands; the dedicated financial role can execute commands, and revision 37 refuses destructive downgrade."
+    },
+    {
+      "test_id": "test_revision_36_upgrades_to_late_payment_api_head",
+      "upstream_ids": ["API-091", "DB-INV-007", "DB-INV-008", "DB-INV-009", "TEST-117", "TEST-119"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_late_payment_migration.py",
+      "status": "implemented",
+      "notes": "A disposable real PostgreSQL database at exact revision 36 upgrades linearly to sole head 37 with published late-payment tables intact and an empty new command ledger; lifecycle behavior is mapped by separate integration tests."
     }
   ]
 }
