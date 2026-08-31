@@ -664,8 +664,8 @@
     {
       "id": "v1-046-test-119-traceability-correction-required",
       "owner_action_required": false,
-      "status": "fresh_integration_running",
-      "detail": "Correction 09b5dafc is manager-accepted. Existing integration card bfee8d82-83e6-4000-ac63-6835b1220201 is running a wholly fresh read-only xhigh gate on the corrected exact SHA. Independent review remains blocked until zero failures and zero unexplained or environmental skips; no owner action is required."
+      "status": "corrected_integration_done_review_running",
+      "detail": "Correction and fresh exact-SHA integration at 09b5dafc are manager-accepted with zero failures/skips. Independent review card 8548ab20-00b1-4ccf-8275-1472b704ee03 is running read-only at the immutable candidate with GPT-5.6 Sol max; release remains blocked until an explicit zero-finding PASS. No owner action is required."
     }
   ],
   "branch": "implementation/foundation",
@@ -704,16 +704,16 @@
   },
   "commit": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
   "evidence_applicability": {
-    "basis": "Exact V1-046 implementation 7a5097c9f055fd7d7d91e44376f4e215dc2fa790 has sole parent 39c38e74b7b55f877f74081c94dcd9b971aa1348, a clean authorized 16-file +2282/-19 diff, six durable Workboard proof records, and a manager-rerun focused 65/65 gate. The recorded real PostgreSQL 464/464 with zero skips, backend 727/727, frontend 234/234, automation 186/186, static, audit, deployment, publication, secret, diff, and Alembic gates completed before later transcript-compaction transport failures.",
+    "basis": "Corrected V1-046 candidate 09b5dafc8cb6f6d7097c7266024484d01007b0a1 has sole parent 7a5097c9f055fd7d7d91e44376f4e215dc2fa790 and a clean authorized cumulative 16-file +2281/-19 diff from 39c38e74. Fresh integration passed real PostgreSQL 464/464 with zero skips, backend 727/727, frontend 234/234, automation 186/186, traceability 22/22, and all static, audit, deployment, publication, secret, diff, and Alembic gates; manager reruns passed focused 38/38 and automation 186/186.",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-045 target df8096c1, closure fe00f286, and reconciliation 39c38e74 are published, synchronized, exact-SHA CI-green, and closed on Workboard; V1-046 still requires its existing integration and fresh independent-review cards.",
+    "prior_review_disposition": "V1-045 target df8096c1, closure fe00f286, and reconciliation 39c38e74 are published, synchronized, exact-SHA CI-green, and closed on Workboard; V1-046 corrected integration is manager-accepted and its fresh independent review is running.",
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Inspect and reconcile integration card bfee8d82-83e6-4000-ac63-6835b1220201 without overlapping dispatch; only a complete zero-failure and zero-skip gate may unlock fresh independent review",
-  "active_worker": "property-codex-3",
-  "active_card": "bfee8d82-83e6-4000-ac63-6835b1220201",
-  "active_attempt": "workboard:bfee8d82-83e6-4000-ac63-6835b1220201:1788218269347",
+  "next_action": "Inspect and reconcile independent review card 8548ab20-00b1-4ccf-8275-1472b704ee03 without overlapping dispatch; only an explicit zero-finding PASS may unlock release",
+  "active_worker": "property-codex-2",
+  "active_card": "8548ab20-00b1-4ccf-8275-1472b704ee03",
+  "active_attempt": "workboard:8548ab20-00b1-4ccf-8275-1472b704ee03:1788219426010",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -812,8 +812,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 fresh corrected exact-SHA integration is running at 09b5dafc; independent review, release, and V1-047 remain dependency-blocked",
-    "exact_next_action": "Inspect and reconcile integration card bfee8d82-83e6-4000-ac63-6835b1220201 without overlapping dispatch; only a complete zero-failure and zero-skip gate may unlock fresh independent review",
+    "current_phase": "V1-046 fresh corrected exact-SHA integration is manager-accepted; independent review is running at 09b5dafc and release and V1-047 remain dependency-blocked",
+    "exact_next_action": "Inspect and reconcile independent review card 8548ab20-00b1-4ccf-8275-1472b704ee03 without overlapping dispatch; only an explicit zero-finding PASS may unlock release",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1091,14 +1091,37 @@
       "fast_mode": false,
       "fallbacks": [],
       "read_only": true,
+      "claim_active": false,
+      "attempt_active": false,
+      "worker_tests": "PASS: focused 16/16, traceability 22/22, backend 727/727, frontend 234/234, PostgreSQL 464/464 zero skips, migration/adversarial 8/8, automation 186/186, and all static/audit/security/migration/deployment/publication/secret/diff/clean guards",
+      "manager_tests": "PASS: exact envelope and clean immutable worktrees; focused 38/38 and automation 186/186 with zero failures/skips",
+      "status": "done_manager_accepted"
+    },
+    "product_independent_review": {
+      "card_id": "8548ab20-00b1-4ccf-8275-1472b704ee03",
+      "attempt_id": "workboard:8548ab20-00b1-4ccf-8275-1472b704ee03:1788219426010",
+      "worker": "property-codex-2",
+      "branch": "openclaw/wb-8548ab20-00b1-4ccf-8275-1472b704ee03",
+      "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-8548ab20-00b1-4ccf-8275-1472b704ee03",
+      "candidate_sha": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+      "candidate_parent": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
+      "cumulative_base": "39c38e74b7b55f877f74081c94dcd9b971aa1348",
+      "model": "openai/gpt-5.6-sol",
+      "reasoning": "max",
+      "mode": "standard",
+      "fast_mode": false,
+      "fallbacks": [],
+      "read_only": true,
       "claim_active": true,
       "attempt_active": true,
+      "verdict": "pending",
+      "findings": null,
       "status": "running"
     },
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-08-31T23:17:58Z"
+    "updated_at": "2026-08-31T23:37:16Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -1118,9 +1141,9 @@
     "immediate_run_duration_ms": 449354,
     "immediate_run_findings": "integration attempt accurately stopped and reconciled after one TEST-119 traceability defect; all other gates passed and both V1-046 worktrees remained clean",
     "nonfatal_run_diagnostic": "one bounded shell discovery command failed after the authoritative state was established; the cycle completed successfully with explicit reconciliation",
-    "current_run_started_at": "2026-08-31T22:31:50.081Z",
+    "current_run_started_at": "2026-08-31T23:32:20.452Z",
     "current_run_status": "running",
-    "next_run_at": "2026-08-31T23:01:50.059Z",
+    "next_run_at": "2026-09-01T00:02:20.439Z",
     "recovery_commit": "3d4ba8538ed838dfb0ed96f995d4a4623a6bbce8",
     "recovery_ci_run_id": 33417142442,
     "recovery_ci_status": "success",
@@ -1778,7 +1801,7 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "fresh_integration_running",
+  "status": "fresh_independent_review_running",
   "task": "Preserve the verified V1-046 implementation and perform one bounded TEST-119 traceability correction before fresh exact-SHA integration, independent review, and release",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
@@ -2008,7 +2031,7 @@
     "PASS: V1-045 ops-only closure commit fe00f286759695f53001e77937b107d343fb6947 exact-SHA GitHub Actions run 33404108038; all four jobs"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-08-31T23:17:58Z",
+  "timestamp": "2026-08-31T23:37:16Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
