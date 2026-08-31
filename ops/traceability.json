@@ -10622,7 +10622,7 @@
     },
     {
       "test_id": "test_invoice_cursor_bound_preserves_canonical_and_safe_malformed_behavior",
-      "upstream_ids": ["API-014", "API-019", "API-020", "SEC-040", "TEST-119"],
+      "upstream_ids": ["API-014", "API-019", "SEC-040", "TEST-119"],
       "test_level": "security",
       "test_path": "backend/tests/test_invoice.py",
       "status": "implemented",
@@ -10686,7 +10686,7 @@
     },
     {
       "test_id": "test_v1_045_adjustment_money_boundaries_validate_before_persistence",
-      "upstream_ids": ["API-005", "API-014", "API-052", "BR-INV-021", "BR-INV-044", "DB-INV-001", "DB-INV-002", "DB-INV-003", "DB-INV-005", "SEC-036", "TEST-117", "TEST-118", "TEST-119"],
+      "upstream_ids": ["API-005", "API-014", "API-052", "BR-INV-021", "BR-INV-044", "DB-INV-001", "DB-INV-002", "DB-INV-003", "DB-INV-005", "SEC-036", "TEST-117", "TEST-119"],
       "test_level": "integration",
       "test_path": "backend/tests/test_invoice_migration.py",
       "status": "implemented",
