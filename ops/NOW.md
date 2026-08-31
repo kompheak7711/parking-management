@@ -1,4 +1,4 @@
-# V1-046 — supervisor policy published; product TEST-119 correction next
+# V1-046 — TEST-119 correction accepted; fresh integration next
 
 - Predecessor: V1-045 is fully released, published, exact-SHA CI-green,
   reconciled, synchronized, and closed at reconciliation commit
@@ -6,14 +6,30 @@
 - Standing authorization: continue autonomously from the current V1-046 stage
   through V1-060. Activate each successor only after its predecessor is fully
   released, published, verified, reconciled, and closed.
-- Product candidate: V1-046 backend API-091 scope at exact SHA
-  `7a5097c9f055fd7d7d91e44376f4e215dc2fa790`, parent
-  `39c38e74b7b55f877f74081c94dcd9b971aa1348`, tree
-  `71fe4780286844fc1be14629565b213a887e7e1b`, exact 16-file +2282/-19 diff.
+- Corrected product candidate: exact SHA
+  `09b5dafc8cb6f6d7097c7266024484d01007b0a1`, parent
+  `7a5097c9f055fd7d7d91e44376f4e215dc2fa790`, tree
+  `0948ed78fdf9c3fcb85a94b6a07b87eae5cd98f4`; cumulative base
+  `39c38e74b7b55f877f74081c94dcd9b971aa1348`, exact 16-file +2282/-20 diff.
 - Product integration card `bfee8d82-83e6-4000-ac63-6835b1220201`
   remains BLOCKED by the false API-091 mapping to the API-100 initial-Owner
   bootstrap success test in `ops/traceability.json`. Product review and release
   remain dependency-blocked; V1-046 is not released or published.
+- Bounded correction card `e83912ca-8b13-402e-ac1f-cd0eed5ca838` is manager-
+  accepted DONE
+  for worker `property-codex-1`, attempt
+  `workboard:e83912ca-8b13-402e-ac1f-cd0eed5ca838:1788217640358`, branch
+  `openclaw/wb-e83912ca-8b13-402e-ac1f-cd0eed5ca838`, and managed worktree
+  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-e83912ca-8b13-402e-ac1f-cd0eed5ca838`.
+  The worktree is clean at exact `09b5dafc...`, parent `7a5097c9...`.
+  Two pre-start dispatch validations created no attempt or worker; the corrected
+  dispatch used the verified retained candidate branch and started exactly one
+  GPT-5.6 Sol, `high`, Standard/Fast-off worker with no fallback. The exact
+  one-path 0-addition/1-deletion diff removed only the false bootstrap API-091
+  claim; all 14 legitimate late-payment mappings remain unchanged. Worker proof
+  passed 22/22 traceability plus focused bootstrap behavior; manager verification
+  passed 38/38 traceability and late-payment tests, with zero failures/skips,
+  plus ancestry, scope, JSON, TEST-118, semantic, secret, and cleanliness guards.
 - Other product integration proof passed: focused 16/16; backend 727/727;
   frontend 234/234; real PostgreSQL 464/464 with zero skips; automation 186/186;
   formatting, lint, types, builds, audits, security, migration, deployment,
@@ -138,15 +154,14 @@
 - Production deployment, production credentials, paid services, customer data,
   and remote production access remain unauthorized.
 - Owner action required: no.
-- Exact next action: create or reuse one bounded correction card for the existing
-  V1-046 TEST-119/API-091 false traceability mapping, then require fresh exact-SHA
-  product integration and fresh independent review. Do not activate V1-047.
+- Exact next action: bind the existing integration card
+  `bfee8d82-83e6-4000-ac63-6835b1220201` to exact corrected SHA `09b5dafc...`
+  and dispatch its fresh read-only xhigh gate; do not activate V1-047.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Current phase: V1-046 product integration blocked only on the bounded TEST-119
-  traceability correction; the continuous-supervisor policy is published,
-  exact-SHA CI-green, remote-synchronized, and post-publication reconciled.
+- Current phase: V1-046 bounded TEST-119 correction is manager-accepted at exact
+  `09b5dafc`; fresh integration, review, and release remain dependency ordered.
 - Durable cycle action: reconcile compact state, Git, Workboard, claims,
   attempts, active workers, worktrees, and scheduler; continue only the latest
   dependency-safe stage and never duplicate completed or running work.
