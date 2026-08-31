@@ -1,4 +1,4 @@
-# V1-046 — product integration blocked; policy correction 3 reconciled
+# V1-046 — product integration blocked; supervisor policy publication running
 
 - Predecessor: V1-045 is fully released, published, exact-SHA CI-green,
   reconciled, synchronized, and closed at reconciliation commit
@@ -82,6 +82,48 @@
   no finding. This exact two-path NOW/STATE change reconciles the pre-correction
   compact state on top of `7efaa3a6...`; its resulting commit requires a fresh
   exact-SHA gate before independent review.
+- Reconciled policy candidate commit
+  `550443ac38bd7b5997f5d0f7df59f62343cafe3e`, sole parent `7efaa3a6...`,
+  tree `5290f9e4b91469281fe2d01a5f8af2d84e27070b`, is clean and contains the exact
+  two-path NOW/STATE reconciliation. Fresh read-only integration card
+  `4d527e92-3a00-485d-9415-f042cb5e0bf9` is manager-accepted DONE for worker
+  `property-codex-3`, corrected attempt
+  `workboard:4d527e92-3a00-485d-9415-f042cb5e0bf9:1788213145215`, branch
+  `openclaw/wb-4d527e92-3a00-485d-9415-f042cb5e0bf9`, managed worktree
+  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-4d527e92-3a00-485d-9415-f042cb5e0bf9`.
+  Runtime-policy audit found that first attempt
+  `workboard:4d527e92...:1788212317396` inherited the agent's `high` subagent
+  reasoning default, below the required `xhigh`. It safely BLOCKED after
+  preserving zero-finding proof: 189/189 passed, zero failures/skips, exact Git
+  envelope, prompt/scheduler identity, and both HIGH fixes. The corrected xhigh
+  retry completed the same immutable gate with zero findings and 189/189,
+  zero failures, zero skips; the manager independently reran the full profile
+  with the same 189/189 result. Its native task failed only during post-card-
+  completion transcript compaction, so Workboard preserves that transport
+  failure as a stopped attempt while the stale running execution is cleared.
+  The `property-codex-3` subagent default is restored to `high`.
+- Fresh independent policy-review card
+  `e6f8a47e-95c7-40fe-add6-69b0395c1acd` is manager-accepted DONE for worker
+  `property-codex-2`, attempt
+  `workboard:e6f8a47e-95c7-40fe-add6-69b0395c1acd:1788214490917`, branch
+  `openclaw/wb-e6f8a47e-95c7-40fe-add6-69b0395c1acd`, managed worktree
+  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-e6f8a47e-95c7-40fe-add6-69b0395c1acd`.
+  It is clean at exact `550443ac...`, parent `7efaa3a6...`, tree `5290f9e4...`.
+  One pre-start invalid symbolic-reference failure produced no worker or review;
+  the same card was rebound to exact SHA `550443ac...` and the supported Gateway
+  then started exactly one reviewer with no start failure. The dedicated lane ran
+  GPT-5.6 Sol, `max`, no fallback, Standard/Fast-off. It returned zero material
+  findings after a full read-only review and passed 189/189 automation tests with
+  zero failures/skips. The manager independently reverified the exact two-commit,
+  five-path +441/-50 envelope, clean worktree, and a fresh 189/189 profile with
+  zero failures/skips. The stale running execution/attempt is reconciled to
+  stopped after confirmed completion without changing the DONE result.
+- Manager-owned policy-publication card
+  `85bc9658-628d-4150-8f1b-66b5b7cf30cf` is RUNNING in branch
+  `implementation/foundation` at exact reviewed HEAD `550443ac...`. It will
+  commit only the bounded NOW/STATE publication record, rerun required gates,
+  push normally, require exact-SHA GitHub Actions success, prove local/upstream/
+  remote/CI agreement, and reconcile publication before product TEST-119 resumes.
 - Authoritative prompt: `ops/OPENCLAW_SUPERVISOR_PROMPT.md`, SHA-256
   `0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56`.
   The installed payload remains text-identical.
@@ -93,19 +135,17 @@
 - Production deployment, production credentials, paid services, customer data,
   and remote production access remain unauthorized.
 - Owner action required: no.
-- Exact next action: inspect and reconcile exact-SHA integration worker
-  `1f4d7407-77ab-4f12-96d4-a2745b62411f` as DONE and bind the resulting exact
-  two-path reconciliation commit; then create and dispatch one fresh read-only
-  exact-SHA gate on that commit. Only after it passes may a fresh independent
-  GPT-5.6 Sol max/Standard rereview start. Do not publish policy or resume
-  TEST-119 first.
+- Exact next action: finish manager-owned policy publication card
+  `85bc9658-628d-4150-8f1b-66b5b7cf30cf`: commit the bounded publication record,
+  push normally, require exact-SHA CI success and remote synchronization, then
+  reconcile publication. Only afterward resume the existing V1-046 TEST-119
+  correction path.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Current phase: V1-046 product integration blocked; bounded xhigh policy
-  correction 3 and its read-only correction integration manager-accepted at
-  exact `7efaa3a6...`; manager-owned two-path compact-state reconciliation is
-  prepared before a fresh reconciled-SHA gate and mandatory independent review.
+- Current phase: V1-046 product integration blocked; reconciled policy candidate
+  exact `550443ac...` passed corrected xhigh integration and a fresh zero-finding
+  GPT-5.6 Sol max/Standard independent review; policy publication is running.
 - Durable cycle action: reconcile compact state, Git, Workboard, claims,
   attempts, active workers, worktrees, and scheduler; continue only the latest
   dependency-safe stage and never duplicate completed or running work.
