@@ -785,6 +785,33 @@
     "status": "verified_implementation_restored_to_review",
     "recovered_at": "2026-08-31T16:49:39Z"
   },
+  "supervisor_recovery": {
+    "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+    "declaration_key": "property-rental-24x7-v1",
+    "display_name": "Property Rental 24/7 Supervisor",
+    "agent_id": "property-manager",
+    "payload_kind": "agentTurn",
+    "model": "openai/gpt-5.6-sol",
+    "thinking": "xhigh",
+    "fallbacks": [],
+    "enabled": true,
+    "interval_ms": 1800000,
+    "immediate_run_id": "cron:658ffdaf-1ac1-45a6-a842-f5f7d7a226eb:1788195703494",
+    "immediate_run_session_id": "35386fbb-9535-4053-88c2-f633dd334cf4",
+    "immediate_run_status": "ok",
+    "immediate_run_verdict": "PASS",
+    "immediate_run_duration_ms": 597337,
+    "immediate_run_findings": "zero active claims, READY/RUNNING cards, queued tasks, duplicate workers, duplicate V1-046 worktrees, or V1-047 work",
+    "nonfatal_run_diagnostic": "one exploratory jq response-shape probe exited 5; the cycle continued, verified the same evidence through supported tools, and ended success",
+    "next_run_at": "2026-08-31T17:31:43Z",
+    "recovery_commit": "3d4ba8538ed838dfb0ed96f995d4a4623a6bbce8",
+    "recovery_ci_run_id": 33417142442,
+    "recovery_ci_status": "success",
+    "duplicate_job_count": 0,
+    "legacy_payload_replaced": true,
+    "v1_047_held": true,
+    "status": "enabled_healthy"
+  },
   "publication": {
     "role": "completed_predecessor",
     "ci_completed": true,
@@ -1664,7 +1691,7 @@
     "PASS: V1-045 ops-only closure commit fe00f286759695f53001e77937b107d343fb6947 exact-SHA GitHub Actions run 33404108038; all four jobs"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-08-31T16:49:39Z",
+  "timestamp": "2026-08-31T17:14:35Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

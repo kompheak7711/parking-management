@@ -29,10 +29,19 @@
   independent-review card `8548ab20-00b1-4ccf-8275-1472b704ee03`, and release
   card `3266b3a3-e244-4926-ade8-6cc13eff775f` remain dependency-ordered and
   unclaimed. Release and publication are not complete.
-- Supervisor recovery: the existing `Property Rental 24/7 Supervisor` schedule
-  is the only authorized continuous supervisor identity. Recovery must reuse
-  that job, run one bounded native-Codex/Workboard cycle, and never create a
-  duplicate schedule or worker.
+- Supervisor recovery: existing job `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb`
+  (`Property Rental 24/7 Supervisor`) was reused, moved in place from its retired
+  Hermes-era command payload to the `property-manager` native-Codex/Workboard
+  agent turn, and enabled on its 30-minute interval with no model fallback. Its
+  immediate read-only recovery run
+  `cron:658ffdaf-1ac1-45a6-a842-f5f7d7a226eb:1788195703494` completed `ok`
+  with an explicit PASS in 597337 ms. It found zero active claims, READY/RUNNING
+  cards, queued tasks, duplicate workers, or duplicate worktrees; the next run
+  is scheduled for `2026-09-01 00:31:43 +07`.
+- Recovery-state publication: ops-only commit
+  `3d4ba8538ed838dfb0ed96f995d4a4623a6bbce8` is clean, synchronized, and
+  exact-SHA CI-green in run `33417142442` across dependency, frontend,
+  backend/traceability, and PostgreSQL migration jobs.
 - Separate operational issue: repeated `Native hook relay unavailable` errors
   are recorded for follow-up. Current gateway process health and all five hook
   eligibility checks pass; no gateway restart or mutation is justified.
@@ -45,7 +54,8 @@
 <!-- AUTOMATION_STATUS_BEGIN -->
 
 - Automation state: V1-045 complete; V1-046 exact implementation SHA `7a5097c9`
-  verified and restored to REVIEW after transport-only task failures.
+  verified and restored to REVIEW after transport-only task failures. The sole
+  30-minute supervisor is enabled and its immediate native recovery cycle passed.
 - Automation exact next action: continue the existing V1-046 Workboard DAG from
   manager review through integration and fresh independent review; do not
   reimplement, duplicate a worker, release early, or activate V1-047.
