@@ -107,6 +107,7 @@ def create_recurring_rent_invoice(
     customer_id: UUID,
     lease_id: UUID,
     period_start: date = date(2027, 2, 1),
+    invoice_date: date | None = None,
     create_line: bool = True,
     issue: bool = True,
     originating_billing_run_attempt_id: UUID | None = None,
@@ -128,7 +129,7 @@ def create_recurring_rent_invoice(
             "lease.created_by,lease.created_by FROM app.leases AS lease WHERE lease.id=%s",
             (uuid4(), customer_id, lease_id),
         )
-    invoice_date = period_start
+    resolved_invoice_date = invoice_date or period_start
     generated_started_at: datetime | None = None
     if originating_billing_run_attempt_id is not None:
         connection.execute("SET CONSTRAINTS ALL DEFERRED")
@@ -144,7 +145,7 @@ def create_recurring_rent_invoice(
         assert isinstance(stored_invoice_date, date)
         assert isinstance(stored_started_at, datetime)
         assert isinstance(stored_actor_id, UUID)
-        invoice_date = stored_invoice_date
+        resolved_invoice_date = stored_invoice_date
         generated_started_at = stored_started_at
         actor_id = stored_actor_id
     period_end = (period_start.replace(day=28) + timedelta(days=4)).replace(day=1) - timedelta(
@@ -168,7 +169,7 @@ def create_recurring_rent_invoice(
             f"INV-{invoice_id.hex}",
             customer_id,
             lease_id,
-            invoice_date,
+            resolved_invoice_date,
             period_start + timedelta(days=4),
             period_start,
             period_end,
@@ -8083,12 +8084,30 @@ def test_v1_045_draft_source_correction_and_database_cursor_are_derived(
     """BR-INV-043 and API-019: correction and paging retain relational source truth."""
     with psycopg.connect(migrated_database_url) as setup:
         actor_id, property_id, customer_id, original_source_id = setup_invoice_api_source(setup)
+        other_customer_row = setup.execute(
+            "SELECT id FROM app.customers WHERE created_by=%s AND id<>%s ORDER BY id LIMIT 1",
+            (actor_id, customer_id),
+        ).fetchone()
+        assert other_customer_row is not None
+        other_customer_id = UUID(str(other_customer_row[0]))
         replacement_source_id = uuid4()
         other_source_id = uuid4()
         leased_source_id = uuid4()
-        for source_id, amount, reference in (
-            (replacement_source_id, 15_500, "approved-obligation/replacement"),
-            (other_source_id, 8_000, "approved-obligation/other"),
+        other_customer_source_id = uuid4()
+        for source_id, source_customer_id, amount, reference in (
+            (
+                replacement_source_id,
+                customer_id,
+                15_500,
+                "approved-obligation/replacement",
+            ),
+            (other_source_id, customer_id, 8_000, "approved-obligation/other"),
+            (
+                other_customer_source_id,
+                other_customer_id,
+                7_000,
+                "approved-obligation/other-customer",
+            ),
         ):
             setup.execute(
                 "INSERT INTO app.authorized_nonrecurring_obligations("
@@ -8097,7 +8116,15 @@ def test_v1_045_draft_source_correction_and_database_cursor_are_derived(
                 "authorized_by,authorization_reference) VALUES (%s,%s,"
                 "'MISCELLANEOUS_CHARGES',%s,%s,current_date+21,%s,%s,clock_timestamp(),%s,"
                 "'invoice.nonrecurring.authorize')",
-                (source_id, customer_id, reference, amount, reference, reference, actor_id),
+                (
+                    source_id,
+                    source_customer_id,
+                    reference,
+                    amount,
+                    reference,
+                    reference,
+                    actor_id,
+                ),
             )
         unit_row = setup.execute(
             "SELECT id FROM app.units WHERE property_id=%s AND created_by=%s ORDER BY id LIMIT 1",
@@ -8114,6 +8141,11 @@ def test_v1_045_draft_source_correction_and_database_cursor_are_derived(
         )
         sign_lease(setup, lease_id, actor_id)
         setup.execute(
+            "INSERT INTO app.occupancies(id,lease_id,customer_id,move_in_date,"
+            "created_by,updated_by) VALUES (%s,%s,%s,%s,%s,%s)",
+            (uuid4(), lease_id, customer_id, date.today(), actor_id, actor_id),
+        )
+        setup.execute(
             "INSERT INTO app.authorized_nonrecurring_obligations("
             "id,customer_id,lease_id,category,description,authorized_amount_usd_cents,"
             "governing_due_date,due_date_source,source_reference,authorized_at,authorized_by,"
@@ -8122,6 +8154,16 @@ def test_v1_045_draft_source_correction_and_database_cursor_are_derived(
             "'approved-obligation/leased',clock_timestamp(),%s,"
             "'invoice.nonrecurring.authorize')",
             (leased_source_id, customer_id, lease_id, actor_id),
+        )
+        rent_period_start = (date.today().replace(day=1) + timedelta(days=63)).replace(day=1)
+        rent_invoice_id, _ = create_recurring_rent_invoice(
+            setup,
+            actor_id=actor_id,
+            customer_id=customer_id,
+            lease_id=lease_id,
+            period_start=rent_period_start,
+            invoice_date=(rent_period_start - timedelta(days=1)).replace(day=25),
+            issue=False,
         )
         setup.commit()
     service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
@@ -8146,26 +8188,106 @@ def test_v1_045_draft_source_correction_and_database_cursor_are_derived(
         CreateInvoiceDraftCommand(uuid4(), other_source_id),
         actor=authenticated,
     )
+    issued_other = service.issue(
+        property_id,
+        UUID(str(other["id"])),
+        IssueInvoiceCommand(uuid4(), 1),
+        actor=authenticated,
+    )
+    leased = service.create_draft(
+        property_id,
+        CreateInvoiceDraftCommand(uuid4(), leased_source_id),
+        actor=authenticated,
+    )
+    other_customer = service.create_draft(
+        property_id,
+        CreateInvoiceDraftCommand(uuid4(), other_customer_source_id),
+        actor=authenticated,
+    )
+    rent = service.get(rent_invoice_id, actor=authenticated)
+
+    expected_resources = (corrected, issued_other, leased, rent)
+    expected_descending = sorted(
+        expected_resources,
+        key=lambda item: (str(item["invoice_date"]), UUID(str(item["id"]))),
+        reverse=True,
+    )
+    expected_ascending = list(reversed(expected_descending))
     first_page = service.list(
         property_id,
         actor=authenticated,
-        status_filter="DRAFT",
-        category="MISCELLANEOUS_CHARGES",
+        status_filter=None,
+        category=None,
         customer_id=customer_id,
         lease_id=None,
-        limit=1,
+        limit=2,
         cursor=None,
         descending=True,
     )
     second_page = service.list(
         property_id,
         actor=authenticated,
+        status_filter=None,
+        category=None,
+        customer_id=customer_id,
+        lease_id=None,
+        limit=2,
+        cursor=first_page.next_cursor,
+        descending=True,
+    )
+    ascending = service.list(
+        property_id,
+        actor=authenticated,
+        status_filter=None,
+        category=None,
+        customer_id=customer_id,
+        lease_id=None,
+        limit=50,
+        cursor=None,
+        descending=False,
+    )
+    drafts = service.list(
+        property_id,
+        actor=authenticated,
         status_filter="DRAFT",
+        category=None,
+        customer_id=customer_id,
+        lease_id=None,
+        limit=50,
+        cursor=None,
+        descending=True,
+    )
+    miscellaneous = service.list(
+        property_id,
+        actor=authenticated,
+        status_filter=None,
         category="MISCELLANEOUS_CHARGES",
         customer_id=customer_id,
         lease_id=None,
-        limit=1,
-        cursor=first_page.next_cursor,
+        limit=50,
+        cursor=None,
+        descending=True,
+    )
+    other_customer_page = service.list(
+        property_id,
+        actor=authenticated,
+        status_filter=None,
+        category=None,
+        customer_id=other_customer_id,
+        lease_id=None,
+        limit=50,
+        cursor=None,
+        descending=True,
+    )
+    lease_page = service.list(
+        property_id,
+        actor=authenticated,
+        status_filter=None,
+        category=None,
+        customer_id=None,
+        lease_id=lease_id,
+        limit=50,
+        cursor=None,
         descending=True,
     )
 
@@ -8176,27 +8298,35 @@ def test_v1_045_draft_source_correction_and_database_cursor_are_derived(
         "id": str(replacement_source_id),
     }
     assert first_page.next_cursor is not None
-    assert {item["id"] for item in first_page.items + second_page.items} == {
+    assert all(
+        str(item[field]) not in first_page.next_cursor
+        for item in expected_resources
+        for field in ("id", "invoice_date")
+    )
+    assert [item["id"] for item in first_page.items + second_page.items] == [
+        item["id"] for item in expected_descending
+    ]
+    assert len({item["id"] for item in first_page.items + second_page.items}) == 4
+    assert second_page.next_cursor is None
+    assert [item["id"] for item in ascending.items] == [item["id"] for item in expected_ascending]
+    tied_ids = [
+        UUID(str(item["id"]))
+        for item in first_page.items + second_page.items
+        if item["invoice_date"] == corrected["invoice_date"]
+    ]
+    assert tied_ids == sorted(tied_ids, reverse=True)
+    assert {item["id"] for item in drafts.items} == {
         corrected["id"],
-        other["id"],
+        leased["id"],
+        rent["id"],
     }
-    leased = service.create_draft(
-        property_id,
-        CreateInvoiceDraftCommand(uuid4(), leased_source_id),
-        actor=authenticated,
-    )
-    lease_page = service.list(
-        property_id,
-        actor=authenticated,
-        status_filter="DRAFT",
-        category=None,
-        customer_id=None,
-        lease_id=lease_id,
-        limit=50,
-        cursor=None,
-        descending=True,
-    )
-    assert [item["id"] for item in lease_page.items] == [leased["id"]]
+    assert {item["id"] for item in miscellaneous.items} == {
+        corrected["id"],
+        issued_other["id"],
+        leased["id"],
+    }
+    assert [item["id"] for item in other_customer_page.items] == [other_customer["id"]]
+    assert {item["id"] for item in lease_page.items} == {leased["id"], rent["id"]}
     with psycopg.connect(migrated_database_url) as verify:
         assert verify.execute(
             "SELECT authorized_obligation_id FROM app.active_invoice_source_claims "
@@ -8235,6 +8365,7 @@ def test_v1_045_same_key_replay_changed_input_conflict_and_concurrent_duplicates
     assert results[0] == results[1]
     invoice_id = UUID(str(results[0]["id"]))
     service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    assert service.create_draft(property_id, create_command, actor=authenticated) == results[0]
     with pytest.raises(InvoiceIdempotencyKeyReused):
         service.create_draft(
             property_id,
@@ -8256,6 +8387,14 @@ def test_v1_045_same_key_replay_changed_input_conflict_and_concurrent_duplicates
             for future in (pool.submit(issue_once), pool.submit(issue_once))
         ]
     assert issues[0] == issues[1]
+    assert service.issue(property_id, invoice_id, issue_command, actor=authenticated) == issues[0]
+    with pytest.raises(InvoiceIdempotencyKeyReused):
+        service.issue(
+            property_id,
+            invoice_id,
+            IssueInvoiceCommand(issue_command.idempotency_key, 2),
+            actor=authenticated,
+        )
     line_id = UUID(str(cast(list[dict[str, object]], issues[0]["lines"])[0]["id"]))
     adjust_command = AdjustInvoiceCommand(
         uuid4(),
@@ -8280,6 +8419,25 @@ def test_v1_045_same_key_replay_changed_input_conflict_and_concurrent_duplicates
             for future in (pool.submit(adjust_once), pool.submit(adjust_once))
         ]
     assert adjustments[0] == adjustments[1]
+    assert (
+        service.adjust(property_id, invoice_id, adjust_command, actor=authenticated)
+        == adjustments[0]
+    )
+    with pytest.raises(InvoiceIdempotencyKeyReused):
+        service.adjust(
+            property_id,
+            invoice_id,
+            AdjustInvoiceCommand(
+                adjust_command.idempotency_key,
+                line_id,
+                AdjustmentType.DEBIT,
+                501,
+                "approved-correction/concurrent",
+                "Concurrent exact debit",
+                2,
+            ),
+            actor=authenticated,
+        )
     with psycopg.connect(migrated_database_url) as setup:
         void_source_id = uuid4()
         customer_id = UUID(str(results[0]["customer_id"]))
@@ -8314,21 +8472,53 @@ def test_v1_045_same_key_replay_changed_input_conflict_and_concurrent_duplicates
             future.result(timeout=20) for future in (pool.submit(void_once), pool.submit(void_once))
         ]
     assert voids[0] == voids[1]
+    assert service.void(property_id, void_invoice_id, void_command, actor=authenticated) == voids[0]
+    with pytest.raises(InvoiceIdempotencyKeyReused):
+        service.void(
+            property_id,
+            void_invoice_id,
+            VoidInvoiceCommand(
+                void_command.idempotency_key,
+                "Changed concurrent exceptional void",
+                1,
+            ),
+            actor=authenticated,
+        )
     with psycopg.connect(migrated_database_url) as verify:
         assert verify.execute(
-            "SELECT count(*),count(DISTINCT invoice_id) FROM app.invoice_commands "
+            "SELECT count(*),"
+            "count(*) FILTER (WHERE action='create'),"
+            "count(*) FILTER (WHERE action='issue'),"
+            "count(*) FILTER (WHERE action='adjust') FROM app.invoice_commands "
             "WHERE actor_id=%s AND invoice_id=%s",
             (actor_id, invoice_id),
-        ).fetchone() == (3, 1)
+        ).fetchone() == (3, 1, 1, 1)
         assert verify.execute(
-            "SELECT count(*) FROM app.audit_events WHERE entity_id=%s AND action IN "
+            "SELECT count(*),count(*) FILTER (WHERE action='invoice.created'),"
+            "count(*) FILTER (WHERE action='invoice.issued'),"
+            "count(*) FILTER (WHERE action='invoice.adjusted') "
+            "FROM app.audit_events WHERE entity_id=%s AND action IN "
             "('invoice.created','invoice.issued','invoice.adjusted')",
             (invoice_id,),
-        ).fetchone() == (3,)
+        ).fetchone() == (3, 1, 1, 1)
         assert verify.execute(
-            "SELECT count(*) FROM app.invoice_void_events WHERE invoice_id=%s",
-            (void_invoice_id,),
-        ).fetchone() == (1,)
+            "SELECT "
+            "(SELECT count(*) FROM app.invoice_commands WHERE invoice_id=%s),"
+            "(SELECT count(*) FROM app.invoice_commands "
+            "WHERE invoice_id=%s AND action='void'),"
+            "(SELECT count(*) FROM app.audit_events WHERE entity_id=%s "
+            "AND action IN ('invoice.created','invoice.voided')) ,"
+            "(SELECT count(*) FROM app.audit_events "
+            "WHERE entity_id=%s AND action='invoice.voided'),"
+            "(SELECT count(*) FROM app.invoice_void_events WHERE invoice_id=%s)",
+            (
+                void_invoice_id,
+                void_invoice_id,
+                void_invoice_id,
+                void_invoice_id,
+                void_invoice_id,
+            ),
+        ).fetchone() == (2, 1, 2, 1, 1)
 
 
 def test_v1_045_audit_failure_atomically_rolls_back_command_and_issue(

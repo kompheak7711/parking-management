@@ -131,6 +131,7 @@ class InMemoryInvoiceFlow:
     value: dict[str, object]
     commands: list[object] = field(default_factory=list)
     replay_inputs: dict[tuple[str, UUID], object] = field(default_factory=dict)
+    list_requests: list[dict[str, object]] = field(default_factory=list)
 
     def list(
         self,
@@ -145,8 +146,19 @@ class InMemoryInvoiceFlow:
         cursor: str | None,
         descending: bool,
     ) -> InvoicePage:
-        del actor, category, customer_id, lease_id, limit, cursor, descending
+        del actor
         assert property_id == self.property_id
+        self.list_requests.append(
+            {
+                "status_filter": status_filter,
+                "category": category,
+                "customer_id": customer_id,
+                "lease_id": lease_id,
+                "limit": limit,
+                "cursor": cursor,
+                "descending": descending,
+            }
+        )
         items = () if status_filter not in {None, self.value["status"]} else (self.value,)
         return InvoicePage(items, "stable-cursor" if items else None)
 
@@ -292,6 +304,18 @@ def test_invoice_digest_is_canonical_and_binds_action_scope_and_input() -> None:
     assert first != invoice_request_digest(
         action="void", property_id=property_id, invoice_id=invoice_id, payload=payload
     )
+    assert first != invoice_request_digest(
+        action="adjust", property_id=uuid4(), invoice_id=invoice_id, payload=payload
+    )
+    assert first != invoice_request_digest(
+        action="adjust", property_id=property_id, invoice_id=uuid4(), payload=payload
+    )
+    assert first != invoice_request_digest(
+        action="adjust",
+        property_id=property_id,
+        invoice_id=invoice_id,
+        payload={**payload, "reason": "Different correction"},
+    )
 
 
 def test_invoice_commands_reject_nil_ids_nonpositive_money_and_unnormalized_evidence() -> None:
@@ -349,6 +373,9 @@ def test_create_accepts_only_authorized_source_and_enforces_scope_csrf_and_capab
     assert created.status_code == 201
     assert created.headers["location"].endswith(str(flow.value["id"]))
     assert created.headers["etag"] == '"1"'
+    assert flow.commands[-1] == CreateInvoiceDraftCommand(
+        UUID(created.request.headers["Idempotency-Key"]), source_id
+    )
     assert forbidden.status_code == 403
     assert wrong_scope.status_code == 403
 
@@ -483,23 +510,43 @@ def test_list_has_allowlisted_filters_and_stable_cursor_envelope() -> None:
     property_id = uuid4()
     flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id))
     client = api(flow, actor(property_id, "invoices.read"))
+    customer_id = uuid4()
+    lease_id = uuid4()
 
     page = client.get(
         f"/api/v1/properties/{property_id}/invoices",
         params={
             "status": "DRAFT",
-            "lease_id": str(uuid4()),
-            "sort": "-invoice_date",
+            "category": "MISCELLANEOUS_CHARGES",
+            "customer_id": str(customer_id),
+            "lease_id": str(lease_id),
+            "sort": "invoice_date",
             "limit": 1,
+            "cursor": "opaque-input-cursor",
         },
     )
     unsupported = client.get(
         f"/api/v1/properties/{property_id}/invoices", params={"include": "customer"}
     )
+    below_minimum = client.get(f"/api/v1/properties/{property_id}/invoices", params={"limit": 0})
+    above_maximum = client.get(f"/api/v1/properties/{property_id}/invoices", params={"limit": 101})
 
     assert page.status_code == 200
     assert page.json()["page"] == {"next_cursor": "stable-cursor", "limit": 1}
+    assert flow.list_requests == [
+        {
+            "status_filter": "DRAFT",
+            "category": "MISCELLANEOUS_CHARGES",
+            "customer_id": customer_id,
+            "lease_id": lease_id,
+            "limit": 1,
+            "cursor": "opaque-input-cursor",
+            "descending": False,
+        }
+    ]
     assert unsupported.status_code == 400
+    assert below_minimum.status_code == 422
+    assert above_maximum.status_code == 422
 
 
 def test_draft_correction_requires_if_match_and_replays_exact_same_key() -> None:
@@ -513,6 +560,27 @@ def test_draft_correction_requires_if_match_and_replays_exact_same_key() -> None
         "authorized_nonrecurring_obligation_id": str(source_id),
         "reason": "Correct source",
     }
+
+    missing_key_headers = mutation_headers(version=1)
+    del missing_key_headers["Idempotency-Key"]
+    missing_key = client.patch(
+        f"/api/v1/invoices/{invoice_id}", json=payload, headers=missing_key_headers
+    )
+    malformed_key = client.patch(
+        f"/api/v1/invoices/{invoice_id}",
+        json=payload,
+        headers={**mutation_headers(version=1), "Idempotency-Key": ""},
+    )
+    non_uuid_key = client.patch(
+        f"/api/v1/invoices/{invoice_id}",
+        json=payload,
+        headers={**mutation_headers(version=1), "Idempotency-Key": "not-a-uuid"},
+    )
+    nil_key = client.patch(
+        f"/api/v1/invoices/{invoice_id}",
+        json=payload,
+        headers=mutation_headers(key=UUID(int=0), version=1),
+    )
 
     shortened_legacy_field = client.patch(
         f"/api/v1/invoices/{invoice_id}",
@@ -533,12 +601,23 @@ def test_draft_correction_requires_if_match_and_replays_exact_same_key() -> None
         json=payload,
         headers=mutation_headers(key=key, version=1),
     )
+    changed_input = client.patch(
+        f"/api/v1/invoices/{invoice_id}",
+        json={**payload, "reason": "Different source correction"},
+        headers=mutation_headers(key=key, version=1),
+    )
 
+    assert missing_key.status_code == 422
+    assert malformed_key.status_code == 422
+    assert non_uuid_key.status_code == 422
+    assert nil_key.status_code == 422
     assert shortened_legacy_field.status_code == 422
     assert missing.status_code == 412
     assert corrected.status_code == 200
     assert replay.status_code == 200
     assert corrected.json()["data"] == replay.json()["data"]
+    assert changed_input.status_code == 409
+    assert changed_input.json()["error"]["code"] == "IDEMPOTENCY_KEY_REUSED"
 
 
 def test_issue_uses_separate_capability_and_only_client_version_changes() -> None:
@@ -570,6 +649,7 @@ def test_adjustment_requires_exact_usd_integer_reason_source_and_capability() ->
     flow = InMemoryInvoiceFlow(property_id, value)
     invoice_id = value["id"]
     line_id = value["lines"][0]["id"]  # type: ignore[index]
+    key = uuid4()
     payload = {
         "invoice_line_id": line_id,
         "adjustment_type": "CREDIT",
@@ -583,10 +663,15 @@ def test_adjustment_requires_exact_usd_integer_reason_source_and_capability() ->
         json={**payload, "amount": {"currency": "KHR", "minor_units": 500}},
         headers=mutation_headers(version=2),
     )
+    non_integer_amount = api(flow, actor(property_id, "invoices.adjust")).post(
+        f"/api/v1/invoices/{invoice_id}/adjustments",
+        json={**payload, "amount": {"currency": "USD", "minor_units": 500.5}},
+        headers=mutation_headers(version=2),
+    )
     adjusted = api(flow, actor(property_id, "invoices.adjust")).post(
         f"/api/v1/invoices/{invoice_id}/adjustments",
         json=payload,
-        headers=mutation_headers(version=2),
+        headers=mutation_headers(key=key, version=2),
     )
     forbidden = api(flow, actor(property_id, "invoices.issue")).post(
         f"/api/v1/invoices/{invoice_id}/adjustments",
@@ -595,8 +680,17 @@ def test_adjustment_requires_exact_usd_integer_reason_source_and_capability() ->
     )
 
     assert invalid_currency.status_code == 422
+    assert non_integer_amount.status_code == 422
     assert adjusted.status_code == 200
-    assert isinstance(flow.commands[-1], AdjustInvoiceCommand)
+    assert flow.commands[-1] == AdjustInvoiceCommand(
+        key,
+        UUID(str(line_id)),
+        AdjustmentType.CREDIT,
+        500,
+        "approved-correction/7",
+        "Correct overcharge",
+        2,
+    )
     assert forbidden.status_code == 404
 
 
@@ -605,11 +699,18 @@ def test_void_is_explicit_versioned_terminal_command_with_separate_capability() 
     value = invoice_resource(property_id, status="UNPAID", version=2)
     flow = InMemoryInvoiceFlow(property_id, value)
     invoice_id = value["id"]
+    void_key = uuid4()
+    reason = "Obligation fundamentally invalid"
 
+    forbidden = api(flow, actor(property_id, "invoices.adjust")).post(
+        f"/api/v1/invoices/{invoice_id}/void",
+        json={"reason": reason},
+        headers=mutation_headers(version=2),
+    )
     voided = api(flow, actor(property_id, "invoices.void")).post(
         f"/api/v1/invoices/{invoice_id}/void",
-        json={"reason": "Obligation fundamentally invalid"},
-        headers=mutation_headers(version=2),
+        json={"reason": reason},
+        headers=mutation_headers(key=void_key, version=2),
     )
     stale = api(flow, actor(property_id, "invoices.void")).post(
         f"/api/v1/invoices/{invoice_id}/void",
@@ -617,7 +718,9 @@ def test_void_is_explicit_versioned_terminal_command_with_separate_capability() 
         headers=mutation_headers(version=2),
     )
 
+    assert forbidden.status_code == 404
     assert voided.status_code == 200
+    assert flow.commands == [VoidInvoiceCommand(void_key, reason, 2)]
     assert voided.json()["data"]["status"] == "VOID"
     assert stale.status_code == 412
     assert stale.json()["error"]["current_version"] == 3
