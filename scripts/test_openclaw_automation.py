@@ -2254,10 +2254,10 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
             payload = prompt_text
             with sqlite3.connect(database) as connection:
                 connection.execute(
-                    "CREATE TABLE cron_jobs (job_id TEXT, name TEXT, enabled INTEGER, schedule_kind TEXT, every_ms INTEGER, payload_kind TEXT, payload_message TEXT, last_run_at_ms INTEGER, last_run_status TEXT, consecutive_errors INTEGER, running_at_ms INTEGER, updated_at INTEGER)"
+                    "CREATE TABLE cron_jobs (job_id TEXT, name TEXT, enabled INTEGER, schedule_kind TEXT, every_ms INTEGER, payload_kind TEXT, payload_message TEXT, agent_id TEXT, session_target TEXT, payload_model TEXT, payload_thinking TEXT, payload_timeout_seconds INTEGER, payload_light_context INTEGER, last_run_at_ms INTEGER, last_run_status TEXT, consecutive_errors INTEGER, running_at_ms INTEGER, updated_at INTEGER)"
                 )
                 connection.execute(
-                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (
                         "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
                         "property-rental-24x7-supervisor",
@@ -2266,6 +2266,12 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
                         1_800_000,
                         "agentTurn",
                         payload,
+                        "property-manager",
+                        "isolated",
+                        "openai/gpt-5.6-sol",
+                        "xhigh",
+                        1800,
+                        0,
                         2_000,
                         "ok",
                         0,
@@ -8724,6 +8730,53 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                 restoration.continuous_supervisor_disposition(drifted, repo), 69
             )
 
+            args = argparse.Namespace(
+                repo=str(repo),
+                dispatch_state=str(repo / "dispatch"),
+                evidence=str(repo / "restoration/current.json"),
+                openclaw="/test/openclaw",
+                launchctl="/test/launchctl",
+                expected_repair_head="e0469b6d519c0947662204869a535c7080185638",
+            )
+            evidence = repo / "restoration/current.json"
+            with (
+                mock.patch.object(restoration, "cron", return_value=job) as cron_call,
+                mock.patch.object(restoration, "unload_restoration_job") as unload,
+                mock.patch.object(restoration, "unload_launchd_label") as unload_label,
+                mock.patch.object(restoration, "disable_supervisor") as disable,
+            ):
+                self.assertEqual(restoration.execute(args), 0)
+                unload.assert_called_once_with(
+                    "/test/launchctl", args.expected_repair_head
+                )
+                self.assertTrue(
+                    restoration.finalize_terminal_direct(
+                        args, evidence, unload_terminalizer=True
+                    )
+                )
+                unload_label.assert_called_once_with(
+                    "/test/launchctl",
+                    restoration.terminalizer_label(args.expected_repair_head),
+                )
+                disable.assert_not_called()
+                self.assertTrue(
+                    all(call.args[2] == "get" for call in cron_call.call_args_list)
+                )
+
+            with (
+                mock.patch.object(
+                    restoration, "exact_executable", return_value="/test/openclaw"
+                ),
+                mock.patch.object(restoration, "cron", return_value=job) as cron_call,
+            ):
+                self.assertIn(
+                    "did not disable",
+                    restoration.disable_supervisor(args, repo) or "",
+                )
+                self.assertEqual(
+                    [call.args[2] for call in cron_call.call_args_list], ["get"]
+                )
+
     def test_false_ci_failure_reconciliation_is_bound_to_exact_run_and_commit(
         self,
     ) -> None:
@@ -9035,6 +9088,15 @@ print(json.dumps(job))
             fake_openclaw.write_text(
                 """#!/usr/bin/env python3
 import json, os, pathlib, sys, time
+if sys.argv[1:3] == ['cron', 'get']:
+    print(json.dumps({
+        'id': '658ffdaf-1ac1-45a6-a842-f5f7d7a226eb',
+        'name': 'property-rental-24x7-supervisor',
+        'agentId': 'property-rental-supervisor',
+        'schedule': {'kind': 'every', 'everyMs': 1800000},
+        'payload': {'kind': 'command'},
+    }))
+    raise SystemExit(0)
 if sys.argv[1:3] == ['message', 'send']:
     time.sleep(0.1)
     message = sys.argv[sys.argv.index('--message') + 1]
@@ -12775,6 +12837,9 @@ raise SystemExit(1)
                     """CREATE TABLE cron_jobs (
                       job_id TEXT, name TEXT, enabled INTEGER, schedule_kind TEXT,
                       every_ms INTEGER, payload_kind TEXT, payload_message TEXT,
+                      agent_id TEXT, session_target TEXT, payload_model TEXT,
+                      payload_thinking TEXT, payload_timeout_seconds INTEGER,
+                      payload_light_context INTEGER,
                       last_run_at_ms INTEGER, last_run_status TEXT,
                       consecutive_errors INTEGER, running_at_ms INTEGER,
                       updated_at INTEGER
@@ -12788,6 +12853,12 @@ raise SystemExit(1)
                     1_800_000,
                     "command",
                     payload,
+                    "property-manager",
+                    "isolated",
+                    "openai/gpt-5.6-sol",
+                    "xhigh",
+                    1800,
+                    0,
                     9_999_999,
                     "ok",
                     0,
@@ -12795,10 +12866,11 @@ raise SystemExit(1)
                     9_999_000,
                 )
                 connection.execute(
-                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", row
+                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    row,
                 )
                 connection.execute(
-                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     ("duplicate", *row[1:]),
                 )
             spec = importlib.util.spec_from_file_location(
@@ -12816,6 +12888,73 @@ raise SystemExit(1)
             ):
                 spec.loader.exec_module(report)
             self.assertTrue(report.supervisor_status()["present"])
+            self.assertFalse(report.supervisor_status()["config_valid"])
+
+    def test_daily_report_rejects_continuous_policy_downgrade(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = RepositoryEvidenceTests().make_repo(root)
+            prompt = "authoritative continuous policy\n"
+            (repo / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").write_text(prompt)
+            database = root / "openclaw.sqlite"
+            with sqlite3.connect(database) as connection:
+                connection.execute(
+                    """CREATE TABLE cron_jobs (
+                      job_id TEXT, name TEXT, enabled INTEGER, schedule_kind TEXT,
+                      every_ms INTEGER, payload_kind TEXT, payload_message TEXT,
+                      agent_id TEXT, session_target TEXT, payload_model TEXT,
+                      payload_thinking TEXT, payload_timeout_seconds INTEGER,
+                      payload_light_context INTEGER, last_run_at_ms INTEGER,
+                      last_run_status TEXT, consecutive_errors INTEGER,
+                      running_at_ms INTEGER, updated_at INTEGER
+                    )"""
+                )
+                connection.execute(
+                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+                        "property-rental-24x7-supervisor",
+                        1,
+                        "every",
+                        1_800_000,
+                        "agentTurn",
+                        prompt,
+                        "property-manager",
+                        "isolated",
+                        "openai/gpt-5.6-sol",
+                        "xhigh",
+                        1800,
+                        0,
+                        9_999_999,
+                        "ok",
+                        0,
+                        None,
+                        9_999_000,
+                    ),
+                )
+            spec = importlib.util.spec_from_file_location(
+                "daily_report_policy", ROOT / "scripts/openclaw-daily-report.py"
+            )
+            assert spec and spec.loader
+            report = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_OPENCLAW_DB": str(database),
+                },
+            ):
+                spec.loader.exec_module(report)
+            self.assertTrue(report.supervisor_status()["config_valid"])
+            with sqlite3.connect(database) as connection:
+                connection.execute(
+                    """UPDATE cron_jobs
+                          SET agent_id='obsolete-agent',
+                              payload_model='obsolete-model',
+                              payload_thinking='low',
+                              payload_timeout_seconds=30,
+                              payload_light_context=1"""
+                )
             self.assertFalse(report.supervisor_status()["config_valid"])
 
     def test_repository_owned_wrapper_enforces_supported_route(self) -> None:

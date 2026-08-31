@@ -50,6 +50,12 @@ CREATE TABLE cron_jobs (
   every_ms INTEGER,
   payload_kind TEXT,
   payload_message TEXT,
+  agent_id TEXT,
+  session_target TEXT,
+  payload_model TEXT,
+  payload_thinking TEXT,
+  payload_timeout_seconds INTEGER,
+  payload_light_context INTEGER,
   last_run_at_ms INTEGER,
   last_run_status TEXT,
   consecutive_errors INTEGER,
@@ -60,6 +66,7 @@ INSERT INTO cron_jobs VALUES (
   '658ffdaf-1ac1-45a6-a842-f5f7d7a226eb',
   'property-rental-24x7-supervisor', 1, 'every', 1800000, 'agentTurn',
   '# Test policy' || char(10),
+  'property-manager', 'isolated', 'openai/gpt-5.6-sol', 'xhigh', 1800, 0,
   1787011200000, 'ok', 0, NULL, 1787011100000
 );
 SQL
@@ -89,7 +96,12 @@ malformed_alert="$(run_watchdog)"
 printf '%s' "$malformed_alert" | grep -q 'SCHEDULER_UNHEALTHY'
 sqlite3 "$database" "UPDATE cron_jobs SET every_ms=1800000;"
 run_watchdog >/dev/null
-sqlite3 "$database" "INSERT INTO cron_jobs SELECT 'duplicate-supervisor',name,enabled,schedule_kind,every_ms,payload_kind,payload_message,last_run_at_ms,last_run_status,consecutive_errors,running_at_ms,updated_at FROM cron_jobs WHERE job_id='658ffdaf-1ac1-45a6-a842-f5f7d7a226eb';"
+sqlite3 "$database" "UPDATE cron_jobs SET agent_id='obsolete-agent',payload_model='obsolete-model',payload_thinking='low',payload_timeout_seconds=30,payload_light_context=1;"
+policy_downgrade_alert="$(run_watchdog)"
+printf '%s' "$policy_downgrade_alert" | grep -q 'SCHEDULER_UNHEALTHY'
+sqlite3 "$database" "UPDATE cron_jobs SET agent_id='property-manager',payload_model='openai/gpt-5.6-sol',payload_thinking='xhigh',payload_timeout_seconds=1800,payload_light_context=0;"
+run_watchdog >/dev/null
+sqlite3 "$database" "INSERT INTO cron_jobs SELECT 'duplicate-supervisor',name,enabled,schedule_kind,every_ms,payload_kind,payload_message,agent_id,session_target,payload_model,payload_thinking,payload_timeout_seconds,payload_light_context,last_run_at_ms,last_run_status,consecutive_errors,running_at_ms,updated_at FROM cron_jobs WHERE job_id='658ffdaf-1ac1-45a6-a842-f5f7d7a226eb';"
 duplicate_alert="$(run_watchdog)"
 printf '%s' "$duplicate_alert" | grep -q 'SCHEDULER_UNHEALTHY'
 sqlite3 "$database" "DELETE FROM cron_jobs WHERE job_id='duplicate-supervisor';"

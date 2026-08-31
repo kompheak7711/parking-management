@@ -422,6 +422,39 @@ def continuous_supervisor_disposition(
     return 0
 
 
+def retire_continuous_restoration(
+    args: argparse.Namespace,
+    repo: Path,
+    job: dict[str, Any],
+    *,
+    unload_terminalizer: bool = False,
+) -> int | None:
+    """Unload legacy keepalive jobs without ever mutating the native supervisor."""
+    disposition = continuous_supervisor_disposition(job, repo)
+    if disposition is None:
+        return None
+    unload_failures: list[str] = []
+    try:
+        unload_restoration_job(args.launchctl, args.expected_repair_head)
+    except Exception as error:
+        unload_failures.append(str(error))
+    if unload_terminalizer:
+        try:
+            unload_launchd_label(
+                args.launchctl, terminalizer_label(args.expected_repair_head)
+            )
+        except Exception as error:
+            unload_failures.append(str(error))
+    if unload_failures:
+        print(
+            "continuous supervisor left untouched, but legacy restoration unload failed: "
+            + "; ".join(unload_failures),
+            file=sys.stderr,
+        )
+        return 69
+    return disposition
+
+
 def git(repo: Path, *arguments: str) -> str:
     return run(repo, "git", *arguments).stdout.strip()
 
@@ -2177,6 +2210,18 @@ def notify_recovery_scheduled_once(
 def disable_supervisor(args: argparse.Namespace, repo: Path) -> str | None:
     try:
         openclaw = exact_executable(args.openclaw, "OpenClaw")
+        current = cron(openclaw, repo, "get")
+        disposition = continuous_supervisor_disposition(current, repo)
+        if disposition is not None:
+            if disposition == 0:
+                return (
+                    "continuous supervisor is owned by current policy; legacy "
+                    "restoration did not disable it"
+                )
+            return (
+                "continuous supervisor policy drifted; legacy restoration did not "
+                "disable it"
+            )
         disabled = cron(openclaw, repo, "disable")
         exact_supervisor(disabled, repo)
         if disabled.get("enabled") is not False:
@@ -2210,6 +2255,24 @@ def finalize_terminal_direct(
     args: argparse.Namespace, evidence_path: Path, *, unload_terminalizer: bool
 ) -> bool:
     """Finalize from a process that is not the continuation being unloaded."""
+    repo = Path(args.repo).resolve()
+    try:
+        current_job = cron(args.openclaw, repo, "get")
+    except RestorationError as error:
+        print(
+            "terminal finalization stopped before mutation because the supervisor "
+            f"could not be read: {error}",
+            file=sys.stderr,
+        )
+        return False
+    continuous_disposition = retire_continuous_restoration(
+        args,
+        repo,
+        current_job,
+        unload_terminalizer=unload_terminalizer,
+    )
+    if continuous_disposition is not None:
+        return continuous_disposition == 0
     lock_path = evidence_path.with_name(f".{evidence_path.name}.finalize.lock")
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     with lock_path.open("a+", encoding="utf-8") as lock:
@@ -2480,7 +2543,9 @@ def execute(args: argparse.Namespace) -> int:
     dispatch_state = Path(args.dispatch_state).resolve()
     evidence_path = Path(args.evidence).resolve()
     current_job = cron(args.openclaw, repo, "get")
-    continuous_disposition = continuous_supervisor_disposition(current_job, repo)
+    continuous_disposition = retire_continuous_restoration(
+        args, repo, current_job
+    )
     if continuous_disposition is not None:
         return continuous_disposition
     ci_evidence_path = (
@@ -2802,7 +2867,9 @@ def install(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve()
     evidence_path = Path(args.evidence).resolve()
     current_job = cron(args.openclaw, repo, "get")
-    continuous_disposition = continuous_supervisor_disposition(current_job, repo)
+    continuous_disposition = retire_continuous_restoration(
+        args, repo, current_job
+    )
     if continuous_disposition is not None:
         return continuous_disposition
     installation_phase = "argument_validation"
