@@ -1,57 +1,56 @@
-# V1-044 Idempotent scheduled billing worker — complete
+# V1-045 Invoice lifecycle, issuance, adjustments, and void services — closure pending
 
-- Candidate: `V1-044` — Idempotent scheduled rent, service, and utility billing
-  worker.
+- Candidate: `V1-045` — Invoice lifecycle, issuance, adjustments, and void services.
 - Authorization: Owner standing direct-Codex authorization for V1-042 through V1-060;
-  this release card is limited to the exact independently reviewed V1-044 SHA.
-- Baseline: clean synchronized `implementation/foundation` at V1-043 corrective
-  reconciliation commit `5ad5b8061113ab903c23b4a6d576acda8e477177`.
+  this release card is limited to the exact independently reviewed V1-045 SHA.
+- Baseline: clean synchronized `implementation/foundation` at V1-044 reconciliation
+  commit `5ad58a520ba9595b9b9ea9fc0ac6ed7d3c98769f`.
 - Implementation: exact cumulative commit
-  `4a6891a5eab3ab1a9d00189f65194a0fafc5294a`, direct parent
-  `b710c541afefc59596d00d02ae67e95eb4f78385`; exactly four commits and 19
-  reviewed paths from the baseline, published by non-force fast-forward.
-- Scope: singleton, retry-safe, catch-up-aware Property-local Rent, Service, and
-  Utility generation runs; immutable attempts and eligible-source evidence; scoped
-  human API commands and bounded service worker execution.
-- Authorities: `API-054` through `API-056`, `TEST-096` through `TEST-100`,
-  `TEST-117` through `TEST-119`, and the bounded worker deployment contracts.
-- Excluded: product corrections during release, production deployment or scheduler
-  activation, production data or credentials, Parking Management, and V1-045 work.
+  `df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af`, direct parent
+  `2c1c8532b7fb9b86c550457487b65e45ad06676d`; exactly 11 linear commits and
+  15 reviewed paths from the baseline, published by non-force fast-forward. The
+  final correction changed only `backend/tests/test_billing_run_migration.py`
+  (+55/-13).
+- Scope: authorized-source Invoice creation; DRAFT correction and issuance;
+  immutable exact adjustments and exceptional VOID history; typed line sources;
+  bounded list/detail APIs; financial, transaction, authorization, idempotency,
+  replay, concurrency, audit, and migration invariants.
+- Authorities: `BR-INV-*`, `API-050` through `API-053`, `TEST-053` through
+  `TEST-058`, `TEST-117` through `TEST-119`, and the bounded `DB-INV-*` contracts.
+- Excluded: physical deletion, product corrections during release, production
+  deployment, production data or credentials, late-payment policy, and V1-046 work.
 - Independent review: Workboard card
-  `ddce0359-df7c-4013-bfcd-15bef2086a57` returned an explicit PASS with zero
-  findings for exact SHA `4a6891a`; reviewer made no edits and property-manager
-  acceptance is recorded.
-- Local release verification: focused non-database billing 6/6; focused real
-  PostgreSQL adversarial 10/10 plus corrected semantic nodes 2/2; semantic TEST-119
-  5/5 and structural traceability 22/22; complete deterministic profile 15/15;
-  backend 679 passed with 421 expected database-only skips covered by real PostgreSQL
-  444/444; frontend 234/234; automation 186/186. Format, lint, strict type,
-  build/import, dependency, Alembic one-head/35-revision fresh-install and supported
-  upgrade, deployment, publication, security, secret, JSON, traceability, and diff
-  gates passed.
-- Implementation publication: GitHub Actions run `33341391640` passed all four jobs
-  for exact SHA `4a6891a5eab3ab1a9d00189f65194a0fafc5294a`.
-- Closure publication: ops-only commit
-  `986aa588d33d0497a0635fdb1342638dca5c7c19` changed only `ops/NOW.md` and
-  `ops/STATE.json`; GitHub Actions run `33341797580` passed for that exact SHA.
-- Status: V1-044 is complete, published, independently reviewed, exact-SHA
-  CI-green, and closure-valid; only this final ops-only reconciliation publication,
-  exact-SHA CI, synchronization proof, and manager verification remain.
-- V1-045: remains held at `approved_ready`; no activation, implementation, or
+  `5e6e6369-6e13-4fb9-884c-6cf9e4ba57d8` returned an explicit zero-finding PASS
+  for exact SHA `df8096c1`; reviewer made no edits and property-manager acceptance
+  is recorded.
+- Local release verification: focused Invoice 32/32; focused typed-source and
+  cumulative retry/VOID PostgreSQL 2/2; focused billing-run 11/11; structural
+  traceability 22/22 plus semantic TEST-119/API-050/API-051/API-053/DB-INV-002;
+  complete deterministic profile 15/15; backend 711 passed with 433 expected
+  database-only skips covered by real PostgreSQL 456/456; frontend 234/234;
+  automation 186/186. Format, lint, strict type, build/import, locked dependency,
+  Alembic one-head/36-linear-revision fresh and populated upgrade, deployment,
+  publication, security, secret, JSON, traceability, and diff gates passed.
+- Implementation publication: GitHub Actions run `33402789651` passed all four jobs
+  for exact SHA `df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af`.
+- Status: V1-045 is functionally complete and the exact reviewed implementation is
+  published and exact-SHA CI-green; this ops-only closure and final reconciliation
+  remain pending.
+- V1-046: remains held at `approved_ready`; no activation, implementation, or
   dispatch has occurred.
 - Scheduler: no production deployment, scheduler activation, or scheduler weakening
   occurred.
 - Blockers: none.
-- Exact next action: publish only this final ops-only reconciliation commit, require
-  its exact-SHA GitHub Actions, prove final source/local/upstream/live-remote
-  synchronization, and release only to REVIEW; property-manager alone may mark DONE
-  and activate V1-045.
+- Exact next action: publish this ops-only closure commit, require successful
+  exact-SHA GitHub Actions, then create only one bounded ops-only reconciliation
+  commit, require its exact-SHA CI, prove final source/local/upstream/live-remote
+  synchronization, and release only to REVIEW.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: exact V1-044 target `4a6891a` and closure
-  `986aa588` are published and exact-SHA CI-green; final reconciliation is pending.
-- Automation exact next action: keep V1-045 held and undispatched while V1-044
+- Automation publication state: exact V1-045 target `df8096c1` is published and
+  exact-SHA CI-green; closure and final reconciliation are pending.
+- Automation exact next action: keep V1-046 held and undispatched while V1-045
   closure, reconciliation CI, and final synchronization complete.
 
 <!-- AUTOMATION_STATUS_END -->
