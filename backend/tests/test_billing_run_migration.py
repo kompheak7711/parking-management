@@ -36,7 +36,7 @@ from property_rental.utility import (
 )
 from test_billing_service_migration import add_service, setup_billing_source
 from test_invoice_migration import register_billing_service_principal
-from test_lease_migration import create_draft, sign_lease
+from test_lease_migration import create_draft, setup_sources, sign_lease
 from test_utility_consumption_migration import (
     authorized_actor,
     database_now,
@@ -155,11 +155,29 @@ def rent_source(
     configure_service: bool = True,
 ) -> tuple[UUID, UUID, UUID, BillingRunCommand]:
     with psycopg.connect(database_url) as owner:
-        human_actor_id, property_id, _, lease_id, _ = setup_billing_source(
+        human_actor_id, property_id, unit_id, customer_id, _ = setup_sources(owner)
+        lease_id = create_draft(
             owner,
-            configure_trash=False,
-            configure_internet=False,
-            move_in_date=date(2026, 4, 26),
+            actor_id=human_actor_id,
+            unit_id=unit_id,
+            primary_tenant_id=customer_id,
+            start_date=date(2026, 4, 26),
+            end_date=date(2027, 6, 30),
+        )
+        sign_lease(owner, lease_id, human_actor_id)
+        owner.execute(
+            "INSERT INTO app.occupancies(id,lease_id,customer_id,move_in_date,created_at,"
+            "created_by,updated_at,updated_by) VALUES (%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                uuid4(),
+                lease_id,
+                customer_id,
+                date(2026, 4, 26),
+                datetime(2026, 4, 26, tzinfo=UTC),
+                human_actor_id,
+                datetime(2026, 4, 26, tzinfo=UTC),
+                human_actor_id,
+            ),
         )
         if configure_service:
             approved_service = owner.execute(
@@ -235,6 +253,18 @@ def test_two_concurrent_workers_replay_one_rent_service_invoice(
         for _ in range(2)
     )
     as_of = datetime(2026, 8, 31, 12, tzinfo=UTC)
+    expected_candidate = (
+        date(2026, 8, 25),
+        date(2026, 9, 1),
+        date(2026, 9, 30),
+        "RENT",
+    )
+    with psycopg.connect(financial_database_url()) as financial:
+        candidates = financial.execute(
+            "SELECT * FROM app.scheduled_billing_worker_candidates(%s,%s,%s,1)",
+            (property_id, worker_actor_id, as_of),
+        ).fetchall()
+    assert candidates == [expected_candidate]
 
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = tuple(
@@ -245,15 +275,27 @@ def test_two_concurrent_workers_replay_one_rent_service_invoice(
         )
     completed = tuple(run for result in results for run in result.runs)
     replay = workers[0].run_once(as_of=as_of)
-
-    assert len(completed) == 1
-    assert completed[0].business_date == date(2026, 8, 25)
-    assert len(completed[0].attempts) == 1
-    target_items = tuple(
-        item for item in completed[0].attempts[0].items if item.source_id == lease_id
+    completed_rent = tuple(
+        run
+        for run in completed
+        if (run.business_date, run.period_start, run.period_end, run.run_kind) == expected_candidate
     )
+    replayed_rent = tuple(
+        run
+        for run in replay.runs
+        if (run.business_date, run.period_start, run.period_end, run.run_kind) == expected_candidate
+    )
+
+    assert len(completed) == len(completed_rent) == 1
+    rent_run = completed_rent[0]
+    assert rent_run.run_kind == "RENT"
+    assert rent_run.business_date == date(2026, 8, 25)
+    assert rent_run.period_start == date(2026, 9, 1)
+    assert rent_run.period_end == date(2026, 9, 30)
+    assert len(rent_run.attempts) == 1
+    target_items = tuple(item for item in rent_run.attempts[0].items if item.source_id == lease_id)
     assert [item.outcome for item in target_items] == ["GENERATED"]
-    assert not replay.runs or {run.id for run in replay.runs} == {completed[0].id}
+    assert not replayed_rent or {run.id for run in replayed_rent} == {rent_run.id}
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute(
             "SELECT count(*) FROM app.invoices WHERE lease_id=%s "
@@ -262,7 +304,7 @@ def test_two_concurrent_workers_replay_one_rent_service_invoice(
         ).fetchone() == (1,)
         assert owner.execute(
             "SELECT count(*) FROM app.audit_events WHERE correlation_id=%s AND entity_id=%s",
-            (completed[0].correlation_id, target_items[0].invoice_id),
+            (rent_run.correlation_id, target_items[0].invoice_id),
         ).fetchone() == (1,)
         assert owner.execute(
             "SELECT array_agg(category ORDER BY line_sequence) FROM app.invoice_lines "
