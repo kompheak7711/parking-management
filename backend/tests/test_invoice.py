@@ -19,9 +19,11 @@ from property_rental.invoice import (
     CorrectInvoiceDraftCommand,
     CreateInvoiceDraftCommand,
     InvoiceIdempotencyKeyReused,
+    InvoiceNotFoundError,
     InvoicePage,
     InvoiceVersionConflict,
     IssueInvoiceCommand,
+    PostgresInvoiceService,
     VoidInvoiceCommand,
     invoice_request_digest,
 )
@@ -333,6 +335,26 @@ def test_invoice_commands_reject_nil_ids_nonpositive_money_and_unnormalized_evid
         VoidInvoiceCommand(uuid4(), " reason ", 1)
 
 
+def test_nil_invoice_property_lookup_is_not_found_without_database_connection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    connection_attempts = 0
+
+    def unexpected_connect(*args: object, **kwargs: object) -> None:
+        del args, kwargs
+        nonlocal connection_attempts
+        connection_attempts += 1
+        raise AssertionError("nil Invoice lookup must not connect")
+
+    monkeypatch.setattr("property_rental.invoice.psycopg.connect", unexpected_connect)
+    service = PostgresInvoiceService("postgresql://unused")
+
+    with pytest.raises(InvoiceNotFoundError, match="Invoice was not found"):
+        service.property_for_invoice(UUID(int=0))
+
+    assert connection_attempts == 0
+
+
 def test_invoice_command_versions_are_exact_positive_postgresql_integers() -> None:
     def commands(
         expected_version: int,
@@ -585,6 +607,124 @@ def test_invoice_command_context_precedes_version_rejection() -> None:
     assert [response.status_code for response in authorized_overflow] == [412] * 4
     assert flow.property_lookups == 16
     assert flow.commands == []
+
+
+def test_nil_invoice_commands_preserve_query_auth_and_hidden_not_found_precedence(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    property_id = uuid4()
+    nil_invoice_id = UUID(int=0)
+    source_id = uuid4()
+    line_id = uuid4()
+    cases: tuple[tuple[str, str, dict[str, object]], ...] = (
+        (
+            "PATCH",
+            f"/api/v1/invoices/{nil_invoice_id}",
+            {
+                "authorized_nonrecurring_obligation_id": str(source_id),
+                "reason": "Nil target correction",
+            },
+        ),
+        ("POST", f"/api/v1/invoices/{nil_invoice_id}/issue", {}),
+        (
+            "POST",
+            f"/api/v1/invoices/{nil_invoice_id}/adjustments",
+            {
+                "invoice_line_id": str(line_id),
+                "adjustment_type": "CREDIT",
+                "amount": {"currency": "USD", "minor_units": 1},
+                "source_reference": "approved-correction/nil-target",
+                "reason": "Nil target adjustment",
+            },
+        ),
+        (
+            "POST",
+            f"/api/v1/invoices/{nil_invoice_id}/void",
+            {"reason": "Nil target void"},
+        ),
+    )
+    service = PostgresInvoiceService("postgresql://unused", "postgresql://unused")
+    connection_attempts = 0
+    command_calls = 0
+
+    def unexpected_connect(*args: object, **kwargs: object) -> None:
+        del args, kwargs
+        nonlocal connection_attempts
+        connection_attempts += 1
+        raise AssertionError("nil Invoice command must not connect")
+
+    def unexpected_command(*args: object, **kwargs: object) -> dict[str, object]:
+        del args, kwargs
+        nonlocal command_calls
+        command_calls += 1
+        raise AssertionError("nil Invoice command must not be invoked")
+
+    monkeypatch.setattr("property_rental.invoice.psycopg.connect", unexpected_connect)
+    for command_name in ("correct_draft", "issue", "adjust", "void"):
+        monkeypatch.setattr(PostgresInvoiceService, command_name, unexpected_command)
+
+    authenticated = actor(
+        property_id,
+        "invoices.create",
+        "invoices.issue",
+        "invoices.adjust",
+        "invoices.void",
+    )
+    authenticated_client = TestClient(
+        create_app(actor_resolver=lambda _: authenticated, invoice_flow=service)
+    )
+    authenticated_client.cookies.set("__Host-prm_csrf", "csrf")
+    unauthenticated_client = TestClient(
+        create_app(actor_resolver=lambda _: None, invoice_flow=service)
+    )
+    headers = mutation_headers(version=1)
+
+    unsupported = [
+        authenticated_client.request(
+            method, f"{path}?include=unsupported", json=payload, headers=headers
+        )
+        for method, path, payload in cases
+    ]
+    unauthenticated = [
+        unauthenticated_client.request(method, path, json=payload, headers=headers)
+        for method, path, payload in cases
+    ]
+    inapplicable_context_client = TestClient(
+        create_app(actor_resolver=lambda _: actor(uuid4(), "invoices.read"), invoice_flow=service)
+    )
+    inapplicable_context_client.cookies.set("__Host-prm_csrf", "csrf")
+    inapplicable_context = [
+        inapplicable_context_client.request(
+            method,
+            path,
+            json=payload,
+            headers={
+                **headers,
+                "If-Match": '"2147483648"',
+                "X-CSRF-Token": "invalid",
+            },
+        )
+        for method, path, payload in cases
+    ]
+    hidden = [
+        authenticated_client.request(method, path, json=payload, headers=headers)
+        for method, path, payload in cases
+    ]
+
+    assert [response.status_code for response in unsupported] == [400] * 4
+    assert [response.status_code for response in unauthenticated] == [401] * 4
+    assert [response.status_code for response in inapplicable_context] == [404] * 4
+    assert [response.status_code for response in hidden] == [404] * 4
+    expected_error: dict[str, object] = {
+        "code": "NOT_FOUND",
+        "message": "The requested resource was not found.",
+        "fields": [],
+        "rule_ids": [],
+        "current_version": None,
+    }
+    assert [response.json()["error"] for response in hidden] == [expected_error] * 4
+    assert connection_attempts == 0
+    assert command_calls == 0
 
 
 def test_create_accepts_only_authorized_source_and_enforces_scope_csrf_and_capability() -> None:

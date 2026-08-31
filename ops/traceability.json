@@ -10533,6 +10533,14 @@
       "notes": "Domain command construction rejects nil identities, nonpositive integer USD amounts, and unnormalized correction evidence before persistence."
     },
     {
+      "test_id": "test_nil_invoice_property_lookup_is_not_found_without_database_connection",
+      "upstream_ids": ["API-014", "SEC-036", "SEC-039", "TEST-119"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "The PostgreSQL Invoice service maps the syntactically valid nil target to the normal not-found domain error before opening any database connection."
+    },
+    {
       "test_id": "test_invoice_command_versions_are_exact_positive_postgresql_integers",
       "upstream_ids": ["API-006", "SEC-036", "TEST-119"],
       "test_level": "domain",
@@ -10571,6 +10579,14 @@
       "test_path": "backend/tests/test_invoice.py",
       "status": "implemented",
       "notes": "For all four versioned Invoice routes, int4 overflow preserves unsupported-query 400, unauthenticated 401, exact Property/capability hidden 404, and browser-CSRF 403 precedence; only an authenticated, exactly authorized, CSRF-valid context reaches the bounded version parser's 412, after the minimal read-only Property lookup and before every command call."
+    },
+    {
+      "test_id": "test_nil_invoice_commands_preserve_query_auth_and_hidden_not_found_precedence",
+      "upstream_ids": ["API-013", "API-014", "API-050", "API-052", "SEC-036", "SEC-038", "SEC-039", "TEST-087", "TEST-088", "TEST-119"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "Across PATCH correction, POST issue, POST Adjustment, and POST VOID, a syntactically valid nil Invoice target preserves unsupported-query 400 and unauthenticated 401 before the exact normal safe hidden 404 envelope, without a database connection, Property capability/CSRF/version processing, or Invoice command invocation."
     },
     {
       "test_id": "test_create_accepts_only_authorized_source_and_enforces_scope_csrf_and_capability",
@@ -10643,6 +10659,14 @@
       "test_path": "backend/tests/test_invoice_migration.py",
       "status": "implemented",
       "notes": "Real PostgreSQL and FastAPI prove all four Invoice commands return 412 for 2147483648 without a 42883/503 escape, leaving DRAFT status, version, command count, adjustments, VOID events, and Invoice audit count unchanged."
+    },
+    {
+      "test_id": "test_v1_045_nil_invoice_commands_are_hidden_without_persistent_effects",
+      "upstream_ids": ["API-013", "API-014", "API-050", "API-052", "SEC-036", "SEC-038", "SEC-039", "TEST-087", "TEST-088", "TEST-117", "TEST-119"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL and actual FastAPI/service wiring prove all four authenticated, command-capable, CSRF-valid nil Invoice targets return the normal hidden 404 envelope while an existing draft's status/version and all Invoice command, Adjustment, VOID-event, and audit effects remain unchanged."
     },
     {
       "test_id": "test_v1_045_authorized_source_lifecycle_preserves_original_and_exact_adjustments",

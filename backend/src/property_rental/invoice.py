@@ -368,7 +368,8 @@ class PostgresInvoiceService:
         return resource
 
     def property_for_invoice(self, invoice_id: UUID) -> UUID:
-        _identity(invoice_id, "invoice_id")
+        if invoice_id == NIL_UUID:
+            raise InvoiceNotFoundError("Invoice was not found")
         try:
             with self._read_connection() as connection:
                 self._bound_query(connection)

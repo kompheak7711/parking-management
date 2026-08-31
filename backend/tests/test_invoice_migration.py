@@ -7805,6 +7805,85 @@ def test_v1_045_api_rejects_int4_overflow_before_invoice_command_mutation(
     assert [response.status_code for response in responses] == [412, 412, 412, 412]
 
 
+def test_v1_045_nil_invoice_commands_are_hidden_without_persistent_effects(
+    migrated_database_url: str,
+) -> None:
+    """API-013/014/050/052 and SEC-036/038/039: nil targets are hidden 404s."""
+    with psycopg.connect(migrated_database_url) as setup:
+        actor_id, property_id, _, obligation_id = setup_invoice_api_source(setup)
+        setup.commit()
+    service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    authenticated = invoice_api_actor(actor_id, property_id)
+    draft = service.create_draft(
+        property_id,
+        CreateInvoiceDraftCommand(uuid4(), obligation_id),
+        actor=authenticated,
+    )
+    invoice_id = UUID(str(draft["id"]))
+    line_id = UUID(str(cast(list[dict[str, object]], draft["lines"])[0]["id"]))
+    nil_invoice_id = UUID(int=0)
+    client = TestClient(create_app(actor_resolver=lambda _: authenticated, invoice_flow=service))
+    client.cookies.set("__Host-prm_csrf", "csrf")
+
+    def effects() -> tuple[object, ...]:
+        with psycopg.connect(migrated_database_url) as verify:
+            row = verify.execute(
+                "SELECT invoice.status,invoice.version,"
+                "(SELECT count(*) FROM app.invoice_commands),"
+                "(SELECT count(*) FROM app.invoice_adjustments),"
+                "(SELECT count(*) FROM app.invoice_void_events),"
+                "(SELECT count(*) FROM app.audit_events AS audit "
+                "WHERE audit.action LIKE 'invoice.%%') "
+                "FROM app.invoices AS invoice WHERE invoice.id=%s",
+                (invoice_id,),
+            ).fetchone()
+        assert row is not None
+        return row
+
+    baseline = effects()
+    headers = {
+        "Origin": "https://localhost",
+        "X-CSRF-Token": "csrf",
+        "If-Match": '"1"',
+    }
+    responses = [
+        client.patch(
+            f"/api/v1/invoices/{nil_invoice_id}",
+            headers={**headers, "Idempotency-Key": str(uuid4())},
+            json={
+                "authorized_nonrecurring_obligation_id": str(obligation_id),
+                "reason": "Nil target correction",
+            },
+        ),
+        client.post(
+            f"/api/v1/invoices/{nil_invoice_id}/issue",
+            headers={**headers, "Idempotency-Key": str(uuid4())},
+            json={},
+        ),
+        client.post(
+            f"/api/v1/invoices/{nil_invoice_id}/adjustments",
+            headers={**headers, "Idempotency-Key": str(uuid4())},
+            json={
+                "invoice_line_id": str(line_id),
+                "adjustment_type": "CREDIT",
+                "amount": {"currency": "USD", "minor_units": 1},
+                "source_reference": "approved-correction/nil-target",
+                "reason": "Nil target adjustment",
+            },
+        ),
+        client.post(
+            f"/api/v1/invoices/{nil_invoice_id}/void",
+            headers={**headers, "Idempotency-Key": str(uuid4())},
+            json={"reason": "Nil target void"},
+        ),
+    ]
+
+    assert [response.status_code for response in responses] == [404, 404, 404, 404]
+    assert [response.json()["error"]["code"] for response in responses] == ["NOT_FOUND"] * 4
+    assert baseline[:2] == ("DRAFT", 1)
+    assert effects() == baseline
+
+
 def test_v1_045_authorized_source_lifecycle_preserves_original_and_exact_adjustments(
     migrated_database_url: str,
 ) -> None:
