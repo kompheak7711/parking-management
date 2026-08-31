@@ -10557,12 +10557,20 @@
       "notes": "The shared parser returns 412 for missing, empty, zero, signed, fractional, non-ASCII, int4-overflow, and excessive-length versions without unbounded integer conversion."
     },
     {
-      "test_id": "test_all_invoice_commands_bound_versions_before_flow_execution",
+      "test_id": "test_all_invoice_commands_bound_versions_before_command_execution",
       "upstream_ids": ["API-006", "API-014", "API-052", "SEC-036", "TEST-119"],
       "test_level": "API",
       "test_path": "backend/tests/test_invoice.py",
       "status": "implemented",
-      "notes": "PATCH correction, POST issue, POST Adjustment, and POST VOID accept 2147483647 through command construction, while 2147483648 and a huge digit header return 412 before any Invoice flow lookup or command call."
+      "notes": "After authenticated, authorized, CSRF-valid command context performs its one read-only Property lookup, PATCH correction, POST issue, POST Adjustment, and POST VOID accept 2147483647 through command construction, while 2147483648 and a huge digit header return 412 before any Invoice command call."
+    },
+    {
+      "test_id": "test_invoice_command_context_precedes_version_rejection",
+      "upstream_ids": ["API-006", "API-008", "API-009", "API-014", "API-052", "SEC-019", "SEC-020", "SEC-036", "SEC-038", "TEST-119"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "For all four versioned Invoice routes, int4 overflow preserves unsupported-query 400, unauthenticated 401, exact Property/capability hidden 404, and browser-CSRF 403 precedence; only an authenticated, exactly authorized, CSRF-valid context reaches the bounded version parser's 412, after the minimal read-only Property lookup and before every command call."
     },
     {
       "test_id": "test_create_accepts_only_authorized_source_and_enforces_scope_csrf_and_capability",

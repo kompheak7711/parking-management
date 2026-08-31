@@ -357,8 +357,8 @@ def create_invoice_router(
         idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
         if_match: Annotated[str | None, Header(alias="If-Match")] = None,
     ) -> dict[str, object]:
-        expected_version = _version(if_match)
         actor, property_id = command_context(invoice_id, request, INVOICE_CREATE_CAPABILITY)
+        expected_version = _version(if_match)
         resource = _invoke(
             lambda: flow.correct_draft(
                 property_id,
@@ -385,8 +385,8 @@ def create_invoice_router(
         if_match: Annotated[str | None, Header(alias="If-Match")] = None,
     ) -> dict[str, object]:
         del body
-        expected_version = _version(if_match)
         actor, property_id = command_context(invoice_id, request, INVOICE_ISSUE_CAPABILITY)
+        expected_version = _version(if_match)
         resource = _invoke(
             lambda: flow.issue(
                 property_id,
@@ -407,8 +407,8 @@ def create_invoice_router(
         idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
         if_match: Annotated[str | None, Header(alias="If-Match")] = None,
     ) -> dict[str, object]:
-        expected_version = _version(if_match)
         actor, property_id = command_context(invoice_id, request, INVOICE_ADJUST_CAPABILITY)
+        expected_version = _version(if_match)
         resource = _invoke(
             lambda: flow.adjust(
                 property_id,
@@ -437,8 +437,8 @@ def create_invoice_router(
         idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
         if_match: Annotated[str | None, Header(alias="If-Match")] = None,
     ) -> dict[str, object]:
-        expected_version = _version(if_match)
         actor, property_id = command_context(invoice_id, request, INVOICE_VOID_CAPABILITY)
+        expected_version = _version(if_match)
         resource = _invoke(
             lambda: flow.void(
                 property_id,

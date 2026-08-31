@@ -271,7 +271,7 @@ class InMemoryInvoiceFlow:
         return self.value
 
 
-def api(flow: InMemoryInvoiceFlow, authenticated: AuthenticatedActor) -> TestClient:
+def api(flow: InMemoryInvoiceFlow, authenticated: AuthenticatedActor | None) -> TestClient:
     client = TestClient(create_app(actor_resolver=lambda _: authenticated, invoice_flow=flow))
     client.cookies.set("__Host-prm_csrf", "csrf")
     return client
@@ -405,7 +405,7 @@ def test_invoice_if_match_parser_rejects_unsafe_or_out_of_range_values(
     assert rejected.value.status_code == 412
 
 
-def test_all_invoice_commands_bound_versions_before_flow_execution() -> None:
+def test_all_invoice_commands_bound_versions_before_command_execution() -> None:
     property_id = uuid4()
     invoice_id = uuid4()
     source_id = uuid4()
@@ -464,6 +464,7 @@ def test_all_invoice_commands_bound_versions_before_flow_execution() -> None:
             },
         )
         assert response.status_code == 200
+        assert flow.property_lookups == 1
         assert len(flow.commands) == 1
         assert (
             cast(CorrectInvoiceDraftCommand, flow.commands[0]).expected_version
@@ -483,8 +484,107 @@ def test_all_invoice_commands_bound_versions_before_flow_execution() -> None:
                 headers={**mutation_headers(), "If-Match": invalid_header},
             )
             assert response.status_code == 412
-    assert invalid_flow.property_lookups == 0
+    assert invalid_flow.property_lookups == 8
     assert invalid_flow.commands == []
+
+
+def test_invoice_command_context_precedes_version_rejection() -> None:
+    property_id = uuid4()
+    invoice_id = uuid4()
+    source_id = uuid4()
+    line_id = uuid4()
+    cases: tuple[tuple[str, str, dict[str, object]], ...] = (
+        (
+            "PATCH",
+            f"/api/v1/invoices/{invoice_id}",
+            {
+                "authorized_nonrecurring_obligation_id": str(source_id),
+                "reason": "Authorization precedence correction",
+            },
+        ),
+        ("POST", f"/api/v1/invoices/{invoice_id}/issue", {}),
+        (
+            "POST",
+            f"/api/v1/invoices/{invoice_id}/adjustments",
+            {
+                "invoice_line_id": str(line_id),
+                "adjustment_type": "CREDIT",
+                "amount": {"currency": "USD", "minor_units": 1},
+                "source_reference": "approved-correction/authorization-precedence",
+                "reason": "Authorization precedence adjustment",
+            },
+        ),
+        (
+            "POST",
+            f"/api/v1/invoices/{invoice_id}/void",
+            {"reason": "Authorization precedence void"},
+        ),
+    )
+    all_capabilities = (
+        "invoices.create",
+        "invoices.issue",
+        "invoices.adjust",
+        "invoices.void",
+    )
+    authorized = actor(property_id, *all_capabilities)
+    flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id, invoice_id=invoice_id))
+    overflow_headers = {
+        **mutation_headers(),
+        "If-Match": '"2147483648"',
+    }
+
+    unauthenticated = [
+        api(flow, None).request(method, path, json=payload, headers=overflow_headers)
+        for method, path, payload in cases
+    ]
+    assert [response.status_code for response in unauthenticated] == [401] * 4
+    assert flow.property_lookups == 0
+
+    unsupported_query = [
+        api(flow, authorized).request(
+            method,
+            f"{path}?include=unsupported",
+            json=payload,
+            headers=overflow_headers,
+        )
+        for method, path, payload in cases
+    ]
+    assert [response.status_code for response in unsupported_query] == [400] * 4
+    assert flow.property_lookups == 0
+
+    forbidden = [
+        api(flow, actor(property_id, "invoices.read")).request(
+            method, path, json=payload, headers=overflow_headers
+        )
+        for method, path, payload in cases
+    ]
+    assert [response.status_code for response in forbidden] == [404] * 4
+    assert flow.property_lookups == 4
+
+    wrong_scope = [
+        api(flow, actor(uuid4(), *all_capabilities)).request(
+            method, path, json=payload, headers=overflow_headers
+        )
+        for method, path, payload in cases
+    ]
+    assert [response.status_code for response in wrong_scope] == [404] * 4
+    assert flow.property_lookups == 8
+
+    invalid_csrf_headers = {**overflow_headers, "X-CSRF-Token": "invalid"}
+    invalid_csrf = [
+        api(flow, authorized).request(method, path, json=payload, headers=invalid_csrf_headers)
+        for method, path, payload in cases
+    ]
+    assert [response.status_code for response in invalid_csrf] == [403] * 4
+    assert flow.property_lookups == 12
+
+    authorized_overflow = [
+        api(flow, authorized).request(method, path, json=payload, headers=overflow_headers)
+        for method, path, payload in cases
+    ]
+    assert [response.status_code for response in authorized_overflow] == [412] * 4
+    assert flow.property_lookups == 16
+    assert flow.commands == []
 
 
 def test_create_accepts_only_authorized_source_and_enforces_scope_csrf_and_capability() -> None:
