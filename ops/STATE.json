@@ -1,11 +1,11 @@
 {
   "active_cycle": "v1-045-invoice-lifecycle-issuance-adjustments-void",
   "approval": {
-    "status": "active",
+    "status": "complete",
     "basis": "owner standing direct-Codex authorization for sequential V1-042 through V1-060 execution",
         "implementation_started": true,
         "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": [
     "BR-INV-*",
@@ -694,7 +694,7 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af",
+  "commit": "fe00f286759695f53001e77937b107d343fb6947",
   "evidence_applicability": {
     "basis": "Exact V1-045 cumulative implementation df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af remains byte-for-byte identical to the independently reviewed zero-finding PASS target; focused Invoice 32/32, typed-source and cumulative PostgreSQL 2/2, billing-run PostgreSQL 11/11, semantic TEST-119/API-050/API-051/API-053/DB-INV-002, traceability 22/22, complete profile 15/15, and real PostgreSQL 456/456 passed before publication",
     "complete_profile_remains_applicable": true,
@@ -702,7 +702,7 @@
     "tranche_id": "V1-045"
   },
   "idle_reason": null,
-  "next_action": "Publish only this separate V1-045 closure commit, require successful exact-SHA GitHub Actions, then create one bounded ops-only reconciliation commit, require its exact-SHA CI, prove final source/local/upstream/live-remote synchronization, and release only to REVIEW; keep V1-046 held",
+  "next_action": "Publish only this final V1-045 ops-only reconciliation commit, require successful exact-SHA GitHub Actions, prove final source/local/upstream/live-remote synchronization, and release only to REVIEW for property-manager verification; keep V1-046 held",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -751,10 +751,14 @@
     "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33402789651",
     "commit_completed": true,
     "implementation_commit": "df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af",
-    "closure_commit": null,
+    "closure_commit": "fe00f286759695f53001e77937b107d343fb6947",
+    "closure_ci_run_attempt": 1,
+    "closure_ci_run_id": 33404108038,
+    "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33404108038",
+    "closure_ci_conclusion": "success",
     "push_completed": true,
-    "sha_reconciled": false,
-    "status": "implementation_published_closure_pending",
+    "sha_reconciled": true,
+    "status": "published_and_exact_sha_ci_green_closure_valid",
     "tranche_id": "V1-045",
     "predecessor_closure_commit": "986aa588d33d0497a0635fdb1342638dca5c7c19",
     "predecessor_reconciliation_commit": "5ad58a520ba9595b9b9ea9fc0ac6ed7d3c98769f"
@@ -1386,8 +1390,8 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "implementation_published_closure_pending",
-  "task": "Close the approved bounded candidate: Invoice lifecycle, issuance, adjustments, and void services",
+  "status": "published",
+  "task": "Completed the approved bounded candidate: Invoice lifecycle, issuance, adjustments, and void services",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -1612,10 +1616,11 @@
     "PASS: locked Python runtime and development dependency audits each resolved 50 packages with no known vulnerabilities; npm audit found zero vulnerabilities",
     "PASS: Alembic exactly one head 20260831_36 and 36 linear revisions; fresh and populated upgrades plus financial, transaction, authorization, idempotency, concurrency, replay, audit, correction, and wrong-run-exclusion invariants covered by PostgreSQL 456/456",
     "PASS: V1-045 fresh independent review card 5e6e6369-6e13-4fb9-884c-6cf9e4ba57d8 returned explicit zero-finding PASS at exact SHA df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af and made no edits",
-    "PASS: V1-045 implementation commit df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af exact-SHA GitHub Actions run 33402789651; all four jobs"
+    "PASS: V1-045 implementation commit df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af exact-SHA GitHub Actions run 33402789651; all four jobs",
+    "PASS: V1-045 ops-only closure commit fe00f286759695f53001e77937b107d343fb6947 exact-SHA GitHub Actions run 33404108038; all four jobs"
   ],
   "tests_tranche_id": "V1-045",
-  "timestamp": "2026-08-31T14:33:14Z",
+  "timestamp": "2026-08-31T14:47:18Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

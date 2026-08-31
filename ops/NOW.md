@@ -1,4 +1,4 @@
-# V1-045 Invoice lifecycle, issuance, adjustments, and void services — closure pending
+# V1-045 Invoice lifecycle, issuance, adjustments, and void services — complete
 
 - Candidate: `V1-045` — Invoice lifecycle, issuance, adjustments, and void services.
 - Authorization: Owner standing direct-Codex authorization for V1-042 through V1-060;
@@ -33,23 +33,26 @@
   publication, security, secret, JSON, traceability, and diff gates passed.
 - Implementation publication: GitHub Actions run `33402789651` passed all four jobs
   for exact SHA `df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af`.
-- Status: V1-045 is functionally complete and the exact reviewed implementation is
-  published and exact-SHA CI-green; this ops-only closure and final reconciliation
-  remain pending.
+- Closure publication: ops-only commit
+  `fe00f286759695f53001e77937b107d343fb6947` changed only `ops/NOW.md` and
+  `ops/STATE.json`; GitHub Actions run `33404108038` passed for that exact SHA.
+- Status: V1-045 is complete, published, independently reviewed, exact-SHA
+  CI-green, and closure-valid; only this final ops-only reconciliation publication,
+  exact-SHA CI, synchronization proof, and manager verification remain.
 - V1-046: remains held at `approved_ready`; no activation, implementation, or
   dispatch has occurred.
 - Scheduler: no production deployment, scheduler activation, or scheduler weakening
   occurred.
 - Blockers: none.
-- Exact next action: publish this ops-only closure commit, require successful
-  exact-SHA GitHub Actions, then create only one bounded ops-only reconciliation
-  commit, require its exact-SHA CI, prove final source/local/upstream/live-remote
-  synchronization, and release only to REVIEW.
+- Exact next action: publish only this final ops-only reconciliation commit, require
+  its exact-SHA GitHub Actions, prove final source/local/upstream/live-remote
+  synchronization, and release only to REVIEW; property-manager alone may mark DONE
+  and activate V1-046.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: exact V1-045 target `df8096c1` is published and
-  exact-SHA CI-green; closure and final reconciliation are pending.
+- Automation publication state: exact V1-045 target `df8096c1` and closure
+  `fe00f286` are published and exact-SHA CI-green; final reconciliation is pending.
 - Automation exact next action: keep V1-046 held and undispatched while V1-045
   closure, reconciliation CI, and final synchronization complete.
 
