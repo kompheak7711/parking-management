@@ -7805,6 +7805,331 @@ def test_v1_045_api_rejects_int4_overflow_before_invoice_command_mutation(
     assert [response.status_code for response in responses] == [412, 412, 412, 412]
 
 
+def test_v1_045_stored_max_invoice_versions_conflict_without_persistent_effects(
+    migrated_database_url: str,
+) -> None:
+    """API-006/014/052: schema-valid version exhaustion is an intentional 409."""
+    with psycopg.connect(migrated_database_url) as setup:
+        actor_id, property_id, customer_id, first_obligation = setup_invoice_api_source(setup)
+        obligations = [first_obligation]
+        for index in range(4):
+            obligation_id = uuid4()
+            reference = f"stored-max-version/{index}/{obligation_id}"
+            setup.execute(
+                "INSERT INTO app.authorized_nonrecurring_obligations("
+                "id,customer_id,lease_id,category,description,authorized_amount_usd_cents,"
+                "governing_due_date,due_date_source,source_reference,authorized_at,authorized_by,"
+                "authorization_reference) VALUES (%s,%s,NULL,'MISCELLANEOUS_CHARGES',"
+                "'Stored max version source',%s,current_date+14,%s,%s,clock_timestamp(),%s,"
+                "'invoice.nonrecurring.authorize')",
+                (
+                    obligation_id,
+                    customer_id,
+                    10_001 + index,
+                    reference,
+                    reference,
+                    actor_id,
+                ),
+            )
+            obligations.append(obligation_id)
+        setup.commit()
+
+    authenticated = invoice_api_actor(actor_id, property_id)
+    service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    drafts = [
+        service.create_draft(
+            property_id,
+            CreateInvoiceDraftCommand(uuid4(), obligation_id),
+            actor=authenticated,
+        )
+        for obligation_id in obligations[:4]
+    ]
+    invoice_ids = [UUID(str(draft["id"])) for draft in drafts]
+    line_id = UUID(str(cast(list[dict[str, object]], drafts[2]["lines"])[0]["id"]))
+    service.issue(
+        property_id,
+        invoice_ids[2],
+        IssueInvoiceCommand(uuid4(), 1),
+        actor=authenticated,
+    )
+
+    def effects(connection: Connection[tuple[object, ...]], invoice_id: UUID) -> tuple[object, ...]:
+        row = connection.execute(
+            "SELECT invoice.status,invoice.version,"
+            "(SELECT count(*) FROM app.invoice_commands AS command "
+            "WHERE command.invoice_id=invoice.id),"
+            "(SELECT count(*) FROM app.invoice_adjustments AS adjustment "
+            "WHERE adjustment.invoice_id=invoice.id),"
+            "(SELECT count(*) FROM app.invoice_void_events AS event "
+            "WHERE event.invoice_id=invoice.id),"
+            "(SELECT count(*) FROM app.audit_events AS audit "
+            "WHERE audit.entity_id=invoice.id AND audit.action LIKE 'invoice.%%') "
+            "FROM app.invoices AS invoice WHERE invoice.id=%s",
+            (invoice_id,),
+        ).fetchone()
+        assert row is not None
+        return row
+
+    with psycopg.connect(migrated_database_url) as setup:
+        setup.execute("ALTER TABLE app.invoices DISABLE TRIGGER USER")
+        setup.execute(
+            "UPDATE app.invoices SET version=2147483647,updated_at=clock_timestamp(),"
+            "updated_by=%s WHERE id=ANY(%s)",
+            (actor_id, invoice_ids),
+        )
+        setup.execute("ALTER TABLE app.invoices ENABLE TRIGGER USER")
+        baseline = [effects(setup, invoice_id) for invoice_id in invoice_ids]
+        setup.commit()
+
+    client = TestClient(create_app(actor_resolver=lambda _: authenticated, invoice_flow=service))
+    client.cookies.set("__Host-prm_csrf", "csrf")
+
+    def headers() -> dict[str, str]:
+        return {
+            "Origin": "https://localhost",
+            "X-CSRF-Token": "csrf",
+            "Idempotency-Key": str(uuid4()),
+            "If-Match": '"2147483647"',
+        }
+
+    responses = [
+        client.patch(
+            f"/api/v1/invoices/{invoice_ids[0]}",
+            headers=headers(),
+            json={
+                "authorized_nonrecurring_obligation_id": str(obligations[4]),
+                "reason": "Stored version ceiling correction",
+            },
+        ),
+        client.post(f"/api/v1/invoices/{invoice_ids[1]}/issue", headers=headers(), json={}),
+        client.post(
+            f"/api/v1/invoices/{invoice_ids[2]}/adjustments",
+            headers=headers(),
+            json={
+                "invoice_line_id": str(line_id),
+                "adjustment_type": "DEBIT",
+                "amount": {"currency": "USD", "minor_units": 1},
+                "source_reference": "stored-max-version/adjustment",
+                "reason": "Stored version ceiling adjustment",
+            },
+        ),
+        client.post(
+            f"/api/v1/invoices/{invoice_ids[3]}/void",
+            headers=headers(),
+            json={"reason": "Stored version ceiling void"},
+        ),
+    ]
+
+    with psycopg.connect(migrated_database_url) as verify:
+        after = [effects(verify, invoice_id) for invoice_id in invoice_ids]
+    assert [response.status_code for response in responses] == [409, 409, 409, 409]
+    assert [response.json()["error"]["code"] for response in responses] == ["CONFLICT"] * 4
+    assert after == baseline
+
+
+def test_v1_045_adjustment_money_boundaries_validate_before_persistence(
+    migrated_database_url: str,
+) -> None:
+    """API-005/014/052 and DB-INV-001/002/003/005: exact bigint math is bounded."""
+    max_bigint = 9_223_372_036_854_775_807
+    with psycopg.connect(migrated_database_url) as setup:
+        actor_id, property_id, customer_id, line_source_id = setup_invoice_api_source(
+            setup,
+            amount_usd_cents=max_bigint - 1,
+            source_reference="money-boundary/line-source",
+        )
+        aggregate_source_id = uuid4()
+        aggregate_second_source_id = uuid4()
+        credit_source_id = uuid4()
+        for obligation_id, amount, reference in (
+            (aggregate_source_id, max_bigint - 1, "money-boundary/aggregate-source"),
+            (aggregate_second_source_id, 1, "money-boundary/aggregate-second-line"),
+            (credit_source_id, 1, "money-boundary/credit-source"),
+        ):
+            setup.execute(
+                "INSERT INTO app.authorized_nonrecurring_obligations("
+                "id,customer_id,lease_id,category,description,authorized_amount_usd_cents,"
+                "governing_due_date,due_date_source,source_reference,authorized_at,authorized_by,"
+                "authorization_reference) VALUES (%s,%s,NULL,'MISCELLANEOUS_CHARGES',"
+                "'Money boundary source',%s,current_date+14,%s,%s,clock_timestamp(),%s,"
+                "'invoice.nonrecurring.authorize')",
+                (
+                    obligation_id,
+                    customer_id,
+                    amount,
+                    "money-boundary/aggregate-source",
+                    reference,
+                    actor_id,
+                ),
+            )
+        setup.commit()
+
+    authenticated = invoice_api_actor(actor_id, property_id)
+    service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    line_draft = service.create_draft(
+        property_id,
+        CreateInvoiceDraftCommand(uuid4(), line_source_id),
+        actor=authenticated,
+    )
+    aggregate_draft = service.create_draft(
+        property_id,
+        CreateInvoiceDraftCommand(uuid4(), aggregate_source_id),
+        actor=authenticated,
+    )
+    credit_draft = service.create_draft(
+        property_id,
+        CreateInvoiceDraftCommand(uuid4(), credit_source_id),
+        actor=authenticated,
+    )
+    line_invoice_id = UUID(str(line_draft["id"]))
+    line_id = UUID(str(cast(list[dict[str, object]], line_draft["lines"])[0]["id"]))
+    aggregate_invoice_id = UUID(str(aggregate_draft["id"]))
+    aggregate_second_line_id = uuid4()
+    credit_invoice_id = UUID(str(credit_draft["id"]))
+    credit_line_id = UUID(str(cast(list[dict[str, object]], credit_draft["lines"])[0]["id"]))
+
+    with psycopg.connect(migrated_database_url) as setup:
+        set_draft_correction_context(
+            setup, actor_id=actor_id, reason="Add exact aggregate boundary line"
+        )
+        setup.execute(
+            "UPDATE app.invoices SET original_total_usd_cents=%s,version=version+1,"
+            "updated_at=clock_timestamp(),updated_by=%s WHERE id=%s",
+            (max_bigint, actor_id, aggregate_invoice_id),
+        )
+        setup.execute(
+            "INSERT INTO app.invoice_lines(id,invoice_id,line_sequence,category,description,"
+            "amount_usd_cents,authorized_obligation_id,calculation_trace,created_by) VALUES "
+            "(%s,%s,2,'MISCELLANEOUS_CHARGES','Money boundary source',1,%s,%s,%s)",
+            (
+                aggregate_second_line_id,
+                aggregate_invoice_id,
+                aggregate_second_source_id,
+                Jsonb(
+                    {
+                        "formula": "authorized_source_exact_amount",
+                        "authorized_obligation_id": str(aggregate_second_source_id),
+                        "authorized_amount_usd_cents": 1,
+                    }
+                ),
+                actor_id,
+            ),
+        )
+        setup.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        setup.commit()
+
+    line_issued = service.issue(
+        property_id,
+        line_invoice_id,
+        IssueInvoiceCommand(uuid4(), 1),
+        actor=authenticated,
+    )
+    aggregate_issued = service.issue(
+        property_id,
+        aggregate_invoice_id,
+        IssueInvoiceCommand(uuid4(), int(str(aggregate_draft["version"])) + 1),
+        actor=authenticated,
+    )
+    credit_issued = service.issue(
+        property_id,
+        credit_invoice_id,
+        IssueInvoiceCommand(uuid4(), int(str(credit_draft["version"]))),
+        actor=authenticated,
+    )
+    exact = service.adjust(
+        property_id,
+        line_invoice_id,
+        AdjustInvoiceCommand(
+            uuid4(),
+            line_id,
+            AdjustmentType.DEBIT,
+            1,
+            "money-boundary/exact-bigint",
+            "Reach the exact representable bigint ceiling",
+            int(str(line_issued["version"])),
+        ),
+        actor=authenticated,
+    )
+    assert exact["adjusted_total"] == {"currency": "USD", "minor_units": max_bigint}
+
+    def effects(invoice_id: UUID) -> tuple[object, ...]:
+        with psycopg.connect(migrated_database_url) as verify:
+            row = verify.execute(
+                "SELECT invoice.status,invoice.version,invoice.original_total_usd_cents,"
+                "app.invoice_resource_snapshot(invoice.id)->'adjusted_total'->>'minor_units',"
+                "(SELECT count(*) FROM app.invoice_adjustments AS adjustment "
+                "WHERE adjustment.invoice_id=invoice.id),"
+                "(SELECT count(*) FROM app.invoice_commands AS command "
+                "WHERE command.invoice_id=invoice.id),"
+                "(SELECT count(*) FROM app.audit_events AS audit "
+                "WHERE audit.entity_id=invoice.id AND audit.action LIKE 'invoice.%%') "
+                "FROM app.invoices AS invoice WHERE invoice.id=%s",
+                (invoice_id,),
+            ).fetchone()
+        assert row is not None
+        return row
+
+    baseline = {
+        line_invoice_id: effects(line_invoice_id),
+        aggregate_invoice_id: effects(aggregate_invoice_id),
+        credit_invoice_id: effects(credit_invoice_id),
+    }
+    client = TestClient(create_app(actor_resolver=lambda _: authenticated, invoice_flow=service))
+    client.cookies.set("__Host-prm_csrf", "csrf")
+
+    def adjustment_headers(version: object) -> dict[str, str]:
+        return {
+            "Origin": "https://localhost",
+            "X-CSRF-Token": "csrf",
+            "Idempotency-Key": str(uuid4()),
+            "If-Match": f'"{version}"',
+        }
+
+    line_overflow = client.post(
+        f"/api/v1/invoices/{line_invoice_id}/adjustments",
+        headers=adjustment_headers(exact["version"]),
+        json={
+            "invoice_line_id": str(line_id),
+            "adjustment_type": "DEBIT",
+            "amount": {"currency": "USD", "minor_units": 1},
+            "source_reference": "money-boundary/line-overflow",
+            "reason": "Reject one cent beyond the bigint line ceiling",
+        },
+    )
+    aggregate_overflow = client.post(
+        f"/api/v1/invoices/{aggregate_invoice_id}/adjustments",
+        headers=adjustment_headers(aggregate_issued["version"]),
+        json={
+            "invoice_line_id": str(aggregate_second_line_id),
+            "adjustment_type": "DEBIT",
+            "amount": {"currency": "USD", "minor_units": 1},
+            "source_reference": "money-boundary/aggregate-overflow",
+            "reason": "Reject one cent beyond the bigint Invoice ceiling",
+        },
+    )
+    credit_underflow = client.post(
+        f"/api/v1/invoices/{credit_invoice_id}/adjustments",
+        headers=adjustment_headers(credit_issued["version"]),
+        json={
+            "invoice_line_id": str(credit_line_id),
+            "adjustment_type": "CREDIT",
+            "amount": {"currency": "USD", "minor_units": 2},
+            "source_reference": "money-boundary/credit-underflow",
+            "reason": "Reject a signed Invoice line obligation below zero",
+        },
+    )
+
+    assert line_overflow.status_code == 422
+    assert aggregate_overflow.status_code == 422
+    assert credit_underflow.status_code == 422
+    assert line_overflow.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert aggregate_overflow.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert credit_underflow.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert effects(line_invoice_id) == baseline[line_invoice_id]
+    assert effects(aggregate_invoice_id) == baseline[aggregate_invoice_id]
+    assert effects(credit_invoice_id) == baseline[credit_invoice_id]
+
+
 def test_v1_045_nil_invoice_commands_are_hidden_without_persistent_effects(
     migrated_database_url: str,
 ) -> None:

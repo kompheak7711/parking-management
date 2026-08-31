@@ -26,6 +26,7 @@ INVOICE_CONNECT_TIMEOUT_SECONDS: Final = 3
 INVOICE_LOCK_TIMEOUT_MS: Final = 3_000
 INVOICE_QUERY_TIMEOUT_MS: Final = 5_000
 MAX_INVOICE_PAGE_SIZE: Final = 100
+MAX_INVOICE_CURSOR_LENGTH: Final = 256
 MAX_INVOICE_EXPECTED_VERSION: Final = 2_147_483_647
 NIL_UUID: Final = UUID(int=0)
 
@@ -188,9 +189,15 @@ def _encode_cursor(invoice_date: date, invoice_id: UUID) -> str:
     return base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
 
 
+def validate_invoice_cursor(value: str | None) -> None:
+    if value is not None and len(value) > MAX_INVOICE_CURSOR_LENGTH:
+        raise InvoiceInvalidError("Invoice cursor is invalid")
+
+
 def _decode_cursor(value: str | None) -> tuple[date, UUID] | None:
     if value is None:
         return None
+    validate_invoice_cursor(value)
     try:
         raw = base64.urlsafe_b64decode(value + "=" * (-len(value) % 4)).decode()
         decoded = json.loads(raw)
@@ -263,9 +270,9 @@ class PostgresInvoiceService:
             if match is not None:
                 current = int(match.group(1))
             return InvoiceVersionConflict(current)
-        if exc.sqlstate in {"P4503", "23505", "23P01", "40001", "55P03"}:
+        if exc.sqlstate in {"P4503", "P4507", "23505", "23P01", "40001", "55P03"}:
             return InvoiceConflictError("Invoice command conflicted")
-        if exc.sqlstate in {"P4502", "22023", "23503", "23514", "55000"}:
+        if exc.sqlstate in {"P4502", "P4508", "22023", "23503", "23514", "55000"}:
             return InvoiceInvalidError("Invoice command is invalid")
         return InvoiceServiceUnavailableError("Invoice persistence is unavailable")
 

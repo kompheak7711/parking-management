@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import date
 from typing import cast
 from uuid import UUID, uuid4
 
@@ -13,18 +14,23 @@ from fastapi.testclient import TestClient
 from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.invoice import (
+    MAX_INVOICE_CURSOR_LENGTH,
     MAX_INVOICE_EXPECTED_VERSION,
     AdjustInvoiceCommand,
     AdjustmentType,
     CorrectInvoiceDraftCommand,
     CreateInvoiceDraftCommand,
+    InvoiceConflictError,
     InvoiceIdempotencyKeyReused,
+    InvoiceInvalidError,
     InvoiceNotFoundError,
     InvoicePage,
     InvoiceVersionConflict,
     IssueInvoiceCommand,
     PostgresInvoiceService,
     VoidInvoiceCommand,
+    _decode_cursor,
+    _encode_cursor,
     invoice_request_digest,
 )
 from property_rental.invoice_api import _version
@@ -211,6 +217,11 @@ class InMemoryInvoiceFlow:
         actor: AuthenticatedActor,
     ) -> dict[str, object]:
         del property_id, invoice_id, actor
+        if (
+            command.expected_version == MAX_INVOICE_EXPECTED_VERSION
+            and command.expected_version == int(str(self.value["version"]))
+        ):
+            raise InvoiceConflictError("Invoice version cannot advance")
         replayed = self._replay("correct", command.idempotency_key, command)
         if replayed:
             return self.value
@@ -230,6 +241,8 @@ class InMemoryInvoiceFlow:
         del property_id, invoice_id, actor
         if command.expected_version != int(str(self.value["version"])):
             raise InvoiceVersionConflict(int(str(self.value["version"])))
+        if command.expected_version == MAX_INVOICE_EXPECTED_VERSION:
+            raise InvoiceConflictError("Invoice version cannot advance")
         if not self._replay("issue", command.idempotency_key, command):
             self.value = {
                 **self.value,
@@ -249,6 +262,8 @@ class InMemoryInvoiceFlow:
         del property_id, invoice_id, actor
         if command.expected_version != int(str(self.value["version"])):
             raise InvoiceVersionConflict(int(str(self.value["version"])))
+        if command.expected_version == MAX_INVOICE_EXPECTED_VERSION:
+            raise InvoiceConflictError("Invoice version cannot advance")
         if not self._replay("adjust", command.idempotency_key, command):
             self.value = {**self.value, "version": command.expected_version + 1}
         return self.value
@@ -264,6 +279,8 @@ class InMemoryInvoiceFlow:
         del property_id, invoice_id, actor
         if command.expected_version != int(str(self.value["version"])):
             raise InvoiceVersionConflict(int(str(self.value["version"])))
+        if command.expected_version == MAX_INVOICE_EXPECTED_VERSION:
+            raise InvoiceConflictError("Invoice version cannot advance")
         if not self._replay("void", command.idempotency_key, command):
             self.value = {
                 **self.value,
@@ -427,7 +444,7 @@ def test_invoice_if_match_parser_rejects_unsafe_or_out_of_range_values(
     assert rejected.value.status_code == 412
 
 
-def test_all_invoice_commands_bound_versions_before_command_execution() -> None:
+def test_all_invoice_commands_reject_stored_max_version_without_effects() -> None:
     property_id = uuid4()
     invoice_id = uuid4()
     source_id = uuid4()
@@ -485,13 +502,11 @@ def test_all_invoice_commands_bound_versions_before_command_execution() -> None:
                 "If-Match": f'"{MAX_INVOICE_EXPECTED_VERSION}"',
             },
         )
-        assert response.status_code == 200
+        assert response.status_code == 409
+        assert response.json()["error"]["code"] == "CONFLICT"
         assert flow.property_lookups == 1
-        assert len(flow.commands) == 1
-        assert (
-            cast(CorrectInvoiceDraftCommand, flow.commands[0]).expected_version
-            == MAX_INVOICE_EXPECTED_VERSION
-        )
+        assert flow.commands == []
+        assert flow.value["version"] == MAX_INVOICE_EXPECTED_VERSION
 
     invalid_flow = InMemoryInvoiceFlow(
         property_id, invoice_resource(property_id, invoice_id=invoice_id)
@@ -947,6 +962,74 @@ def test_list_has_allowlisted_filters_and_stable_cursor_envelope() -> None:
     assert unsupported.status_code == 400
     assert below_minimum.status_code == 422
     assert above_maximum.status_code == 422
+
+
+def test_invoice_cursor_bound_preserves_canonical_and_safe_malformed_behavior(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    property_id = uuid4()
+    invoice_id = uuid4()
+    canonical = _encode_cursor(date(2026, 8, 31), invoice_id)
+
+    assert len(canonical) < MAX_INVOICE_CURSOR_LENGTH
+    assert _decode_cursor(canonical) == (date(2026, 8, 31), invoice_id)
+    with pytest.raises(InvoiceInvalidError, match="cursor"):
+        _decode_cursor("A" * MAX_INVOICE_CURSOR_LENGTH)
+    with pytest.raises(InvoiceInvalidError, match="cursor"):
+        _decode_cursor("A" * (MAX_INVOICE_CURSOR_LENGTH + 1))
+
+    connection_attempts = 0
+
+    def unexpected_connection(
+        _: PostgresInvoiceService,
+    ) -> object:
+        nonlocal connection_attempts
+        connection_attempts += 1
+        raise AssertionError("over-limit Invoice cursor must not connect")
+
+    monkeypatch.setattr(PostgresInvoiceService, "_read_connection", unexpected_connection)
+    service = PostgresInvoiceService("postgresql://unused")
+    with pytest.raises(InvoiceInvalidError, match="cursor"):
+        service.list(
+            property_id,
+            actor=actor(property_id, "invoices.read"),
+            status_filter=None,
+            category=None,
+            customer_id=None,
+            lease_id=None,
+            limit=50,
+            cursor="A" * (MAX_INVOICE_CURSOR_LENGTH + 1),
+            descending=True,
+        )
+    assert connection_attempts == 0
+
+
+def test_invoice_list_cursor_api_bound_preserves_query_and_authorization_precedence() -> None:
+    property_id = uuid4()
+    flow = InMemoryInvoiceFlow(property_id, invoice_resource(property_id))
+    path = f"/api/v1/properties/{property_id}/invoices"
+    over_limit = "A" * (MAX_INVOICE_CURSOR_LENGTH + 1)
+
+    exact = api(flow, actor(property_id, "invoices.read")).get(
+        path, params={"cursor": "A" * MAX_INVOICE_CURSOR_LENGTH}
+    )
+    over = api(flow, actor(property_id, "invoices.read")).get(path, params={"cursor": over_limit})
+    unsupported = api(flow, actor(property_id, "invoices.read")).get(
+        path, params={"cursor": over_limit, "include": "unsupported"}
+    )
+    unauthenticated = api(flow, None).get(path, params={"cursor": over_limit})
+    unauthorized = api(flow, actor(property_id, "invoices.create")).get(
+        path, params={"cursor": over_limit}
+    )
+
+    assert exact.status_code == 200
+    assert over.status_code == 400
+    assert unsupported.status_code == 400
+    assert unauthenticated.status_code == 401
+    assert unauthorized.status_code == 403
+    assert [request["cursor"] for request in flow.list_requests] == [
+        "A" * MAX_INVOICE_CURSOR_LENGTH
+    ]
 
 
 def test_draft_correction_requires_if_match_and_replays_exact_same_key() -> None:

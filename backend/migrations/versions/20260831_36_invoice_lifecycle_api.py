@@ -267,6 +267,9 @@ def upgrade() -> None:
             IF p_expected_version IS NULL OR v_invoice.version<>p_expected_version THEN
                 RAISE EXCEPTION 'Invoice version:%',v_invoice.version USING ERRCODE='P4504';
             END IF;
+            IF v_invoice.version=2147483647 THEN
+                RAISE EXCEPTION 'Invoice version cannot advance' USING ERRCODE='P4507';
+            END IF;
             SELECT id INTO v_line_id FROM app.invoice_lines
             WHERE invoice_id=p_invoice_id ORDER BY line_sequence,id LIMIT 1;
             IF v_invoice.status<>'DRAFT' OR v_invoice.originating_billing_run_attempt_id IS NOT NULL
@@ -342,6 +345,8 @@ def upgrade() -> None:
             THEN RAISE EXCEPTION 'Invoice was not found' USING ERRCODE='P4501'; END IF;
             IF p_expected_version IS NULL OR v_invoice.version<>p_expected_version THEN
                 RAISE EXCEPTION 'Invoice version:%',v_invoice.version USING ERRCODE='P4504'; END IF;
+            IF v_invoice.version=2147483647 THEN
+                RAISE EXCEPTION 'Invoice version cannot advance' USING ERRCODE='P4507'; END IF;
             IF v_invoice.status<>'DRAFT' THEN RAISE EXCEPTION 'Only a DRAFT Invoice may be issued'
                 USING ERRCODE='P4502'; END IF;
             v_before:=app.invoice_resource_snapshot(p_invoice_id);
@@ -370,7 +375,8 @@ def upgrade() -> None:
             p_adjustment_id uuid,p_audit_id uuid
         ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
         DECLARE v_replay jsonb; v_before jsonb; v_result jsonb; v_invoice app.invoices%ROWTYPE;
-        DECLARE v_timezone text; v_now timestamptz; v_business_date date; v_resulting bigint;
+        DECLARE v_timezone text; v_now timestamptz; v_business_date date;
+        DECLARE v_min_resulting numeric; v_resulting numeric;
         BEGIN
             v_replay:=app.invoice_command_replay(p_property_id,p_actor_id,'adjust',
                 p_idempotency_key,p_request_digest);
@@ -381,21 +387,44 @@ def upgrade() -> None:
             THEN RAISE EXCEPTION 'Invoice was not found' USING ERRCODE='P4501'; END IF;
             IF p_expected_version IS NULL OR v_invoice.version<>p_expected_version THEN
                 RAISE EXCEPTION 'Invoice version:%',v_invoice.version USING ERRCODE='P4504'; END IF;
+            IF v_invoice.version=2147483647 THEN
+                RAISE EXCEPTION 'Invoice version cannot advance' USING ERRCODE='P4507'; END IF;
             IF v_invoice.status NOT IN ('UNPAID','PAID')
                 OR NOT EXISTS (SELECT 1 FROM app.invoice_lines
                     WHERE id=p_line_id AND invoice_id=p_invoice_id)
-                OR p_adjustment_type NOT IN ('DEBIT','CREDIT') OR p_amount<=0
+                OR p_adjustment_type IS NULL
+                OR p_adjustment_type NOT IN ('DEBIT','CREDIT')
+                OR p_amount IS NULL OR p_amount<=0 OR p_amount>9000000000000000
                 OR p_source_reference IS NULL OR p_source_reference<>btrim(p_source_reference)
                 OR length(p_source_reference) NOT BETWEEN 1 AND 500
                 OR p_reason IS NULL OR p_reason<>btrim(p_reason)
                 OR length(p_reason) NOT BETWEEN 1 AND 500
             THEN RAISE EXCEPTION 'Invoice Adjustment input is invalid'
                 USING ERRCODE='P4502'; END IF;
-            SELECT app.invoice_adjusted_line_obligation(p_line_id)+
-                CASE p_adjustment_type WHEN 'DEBIT' THEN p_amount ELSE -p_amount END
-                INTO v_resulting;
-            IF v_resulting<0 THEN RAISE EXCEPTION 'Invoice line balance cannot be negative'
-                USING ERRCODE='P4502'; END IF;
+            WITH line_balances AS (
+                SELECT line.id,line.amount_usd_cents::numeric+COALESCE(sum(
+                    CASE adjustment.adjustment_type
+                        WHEN 'DEBIT' THEN adjustment.amount_usd_cents::numeric
+                        ELSE -adjustment.amount_usd_cents::numeric END
+                    ) FILTER (WHERE reversal.id IS NULL),0::numeric)
+                    +CASE WHEN line.id=p_line_id THEN
+                        CASE p_adjustment_type WHEN 'DEBIT' THEN p_amount::numeric
+                            ELSE -p_amount::numeric END
+                        ELSE 0::numeric END AS resulting
+                FROM app.invoice_lines AS line
+                LEFT JOIN app.invoice_adjustments AS adjustment
+                    ON adjustment.invoice_line_id=line.id
+                LEFT JOIN app.invoice_adjustment_reversals AS reversal
+                    ON reversal.invoice_adjustment_id=adjustment.id
+                WHERE line.invoice_id=p_invoice_id
+                GROUP BY line.id,line.amount_usd_cents
+            )
+            SELECT min(resulting),sum(resulting)
+            INTO v_min_resulting,v_resulting FROM line_balances;
+            IF v_min_resulting IS NULL OR v_min_resulting<0 OR v_resulting<0
+                OR v_resulting>9223372036854775807::numeric
+            THEN RAISE EXCEPTION 'Invoice Adjustment result is outside the money range'
+                USING ERRCODE='P4508'; END IF;
             v_before:=app.invoice_resource_snapshot(p_invoice_id);
             v_now:=clock_timestamp(); v_business_date:=timezone(v_timezone,v_now)::date;
             INSERT INTO app.invoice_adjustments(id,invoice_id,invoice_line_id,adjustment_type,
@@ -403,8 +432,6 @@ def upgrade() -> None:
                 authorization_reference)
             VALUES (p_adjustment_id,p_invoice_id,p_line_id,p_adjustment_type,p_amount,
                 p_source_reference,p_reason,v_now,p_actor_id,'invoices.adjust');
-            SELECT COALESCE(sum(app.invoice_adjusted_line_obligation(id)),0) INTO v_resulting
-                FROM app.invoice_lines WHERE invoice_id=p_invoice_id;
             UPDATE app.invoices SET status=CASE WHEN v_resulting=0 THEN 'PAID' ELSE 'UNPAID' END,
                 version=version+1,updated_at=v_now,updated_by=p_actor_id WHERE id=p_invoice_id;
             SET CONSTRAINTS ALL IMMEDIATE;
@@ -441,6 +468,8 @@ def upgrade() -> None:
             THEN RAISE EXCEPTION 'Invoice was not found' USING ERRCODE='P4501'; END IF;
             IF p_expected_version IS NULL OR v_invoice.version<>p_expected_version THEN
                 RAISE EXCEPTION 'Invoice version:%',v_invoice.version USING ERRCODE='P4504'; END IF;
+            IF v_invoice.version=2147483647 THEN
+                RAISE EXCEPTION 'Invoice version cannot advance' USING ERRCODE='P4507'; END IF;
             v_now:=clock_timestamp();
             IF v_invoice.status NOT IN ('DRAFT','UNPAID')
                 OR (v_invoice.originating_billing_run_attempt_id IS NOT NULL AND NOT EXISTS (

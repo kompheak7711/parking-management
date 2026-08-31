@@ -39,6 +39,7 @@ from property_rental.invoice import (
     InvoiceVersionConflict,
     IssueInvoiceCommand,
     VoidInvoiceCommand,
+    validate_invoice_cursor,
 )
 from property_rental.settings import Settings
 
@@ -264,6 +265,7 @@ def create_invoice_router(
         actor = _actor(request, resolver)
         _authorize(actor, property_id, INVOICE_READ_CAPABILITY)
         try:
+            validate_invoice_cursor(cursor)
             page = flow.list(
                 property_id,
                 actor=actor,

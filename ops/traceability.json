@@ -10565,12 +10565,12 @@
       "notes": "The shared parser returns 412 for missing, empty, zero, signed, fractional, non-ASCII, int4-overflow, and excessive-length versions without unbounded integer conversion."
     },
     {
-      "test_id": "test_all_invoice_commands_bound_versions_before_command_execution",
+      "test_id": "test_all_invoice_commands_reject_stored_max_version_without_effects",
       "upstream_ids": ["API-006", "API-014", "API-052", "SEC-036", "TEST-119"],
       "test_level": "API",
       "test_path": "backend/tests/test_invoice.py",
       "status": "implemented",
-      "notes": "After authenticated, authorized, CSRF-valid command context performs its one read-only Property lookup, PATCH correction, POST issue, POST Adjustment, and POST VOID accept 2147483647 through command construction, while 2147483648 and a huge digit header return 412 before any Invoice command call."
+      "notes": "After authenticated, authorized, CSRF-valid command context performs its one read-only Property lookup, PATCH correction, POST issue, POST Adjustment, and POST VOID deliberately return 409 for a stored version of 2147483647 without command or version effects; 2147483648 and a huge digit header still return 412 before every Invoice command call."
     },
     {
       "test_id": "test_invoice_command_context_precedes_version_rejection",
@@ -10621,6 +10621,22 @@
       "notes": "The API forwards exact status, category, Customer, Lease, cursor, limit, and ascending-sort values to the list flow, returns the documented envelope, rejects limits outside 1..100, and rejects an unknown expansion filter. PostgreSQL filter/order behavior is mapped separately."
     },
     {
+      "test_id": "test_invoice_cursor_bound_preserves_canonical_and_safe_malformed_behavior",
+      "upstream_ids": ["API-014", "API-019", "API-020", "SEC-040", "TEST-119"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "The shared Invoice cursor encoder/decoder round-trips the canonical date-and-UUID cursor, preserves safe malformed rejection at the exact 256-character boundary, and rejects 257 characters at the service boundary before any database connection."
+    },
+    {
+      "test_id": "test_invoice_list_cursor_api_bound_preserves_query_and_authorization_precedence",
+      "upstream_ids": ["API-009", "API-014", "API-019", "API-020", "SEC-019", "SEC-038", "SEC-040", "TEST-119"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "The list API forwards an exact 256-character cursor but rejects 257 characters before list-flow execution, while preserving unsupported-query 400, unauthenticated 401, and unauthorized 403 precedence."
+    },
+    {
       "test_id": "test_draft_correction_requires_if_match_and_replays_exact_same_key",
       "upstream_ids": ["API-006", "API-015", "API-016", "API-050", "TEST-119"],
       "test_level": "API",
@@ -10659,6 +10675,22 @@
       "test_path": "backend/tests/test_invoice_migration.py",
       "status": "implemented",
       "notes": "Real PostgreSQL and FastAPI prove all four Invoice commands return 412 for 2147483648 without a 42883/503 escape, leaving DRAFT status, version, command count, adjustments, VOID events, and Invoice audit count unchanged."
+    },
+    {
+      "test_id": "test_v1_045_stored_max_invoice_versions_conflict_without_persistent_effects",
+      "upstream_ids": ["API-006", "API-014", "API-052", "SEC-036", "TEST-117", "TEST-119"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL and actual FastAPI/service wiring prove correction, issue, Adjustment, and VOID deliberately return 409 when the stored Invoice version is the valid int4 maximum, with status, version, command, Adjustment, VOID-event, and audit effects unchanged and no 503 leakage."
+    },
+    {
+      "test_id": "test_v1_045_adjustment_money_boundaries_validate_before_persistence",
+      "upstream_ids": ["API-005", "API-014", "API-052", "BR-INV-021", "BR-INV-044", "DB-INV-001", "DB-INV-002", "DB-INV-003", "DB-INV-005", "SEC-036", "TEST-117", "TEST-118", "TEST-119"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL first proves an exact bigint-ceiling adjusted total is preserved, then actual FastAPI/service calls reject one-cent line overflow, multi-line aggregate overflow, and signed CREDIT underflow with 422 before persistence, leaving Invoice status/version/original total, adjusted total, Adjustment, command, and audit effects unchanged without clamping or 503 leakage."
     },
     {
       "test_id": "test_v1_045_nil_invoice_commands_are_hidden_without_persistent_effects",
