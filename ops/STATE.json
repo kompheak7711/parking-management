@@ -662,10 +662,10 @@
   },
   "blockers": [
     {
-      "id": "continuous-supervisor-policy-clean-rereview-required",
+      "id": "v1-046-test-119-traceability-correction-required",
       "owner_action_required": false,
-      "status": "bounded_correction_3_policy_publication_running",
-      "detail": "Correction 3 reconciled candidate 550443ac passed corrected xhigh integration and a fresh independent max/Standard review with zero material findings. Reviewer and manager automation each passed 189/189 with zero failures/skips. Manager-owned publication card 85bc9658 is running; product TEST-119 remains blocked until policy publication and reconciliation complete. No owner action is required."
+      "status": "bounded_correction_ready",
+      "detail": "Continuous-supervisor policy publication 916b2589 is exact-SHA CI-green, remote-synchronized, and reconciled. V1-046 product integration remains blocked only by the false API-091 mapping to the API-100 initial-Owner bootstrap success test in ops/traceability.json. One bounded correction, fresh integration, and fresh independent review are required; no owner action is required."
     }
   ],
   "branch": "implementation/foundation",
@@ -710,9 +710,9 @@
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Finish manager-owned policy publication card 85bc9658: commit the bounded NOW/STATE publication record, push normally, require exact-SHA GitHub Actions success and remote synchronization, then reconcile publication before resuming the existing V1-046 TEST-119 correction path",
-  "active_worker": "property-manager",
-  "active_card": "85bc9658-628d-4150-8f1b-66b5b7cf30cf",
+  "next_action": "Create or reuse one bounded correction card for the existing V1-046 TEST-119/API-091 false traceability mapping, then require fresh exact-SHA product integration and fresh independent review; do not activate V1-047",
+  "active_worker": null,
+  "active_card": null,
   "active_attempt": null,
   "next_candidate": {
     "acceptance_profile": "financial",
@@ -812,8 +812,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 product integration blocked; reconciled continuous-supervisor policy candidate exact 550443ac passed corrected xhigh integration and a fresh zero-finding GPT-5.6 Sol max/Standard independent review; manager-owned policy publication is running",
-    "exact_next_action": "Finish manager-owned policy publication card 85bc9658: commit the bounded NOW/STATE publication record, push normally, require exact-SHA GitHub Actions success and remote synchronization, then reconcile publication before resuming the existing V1-046 TEST-119 correction path",
+    "current_phase": "V1-046 product integration blocked only on the bounded TEST-119 traceability correction; continuous-supervisor policy publication 916b2589 is zero-finding reviewed, exact-SHA CI-green, remote-synchronized, and post-publication reconciled",
+    "exact_next_action": "Create or reuse one bounded correction card for the existing V1-046 TEST-119/API-091 false traceability mapping, then require fresh exact-SHA product integration and fresh independent review; do not activate V1-047",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1033,19 +1033,22 @@
       "reasoning": "xhigh",
       "mode": "standard",
       "fast_mode": false,
-      "claim_active": true,
-      "candidate_sha": null,
+      "claim_active": false,
+      "candidate_sha": "916b2589f8a38ebf95ba4d94aa5d9ed71a5a9d2b",
       "candidate_parent": "550443ac38bd7b5997f5d0f7df59f62343cafe3e",
-      "tests": "PASS: manager automation 189/189, zero failures, zero skips; routing, compact-state routing, watchdog, roadmap, JSON, shell syntax, Python compilation, publication guard, installation/prompt identity, diff, secret, and cleanliness gates pass",
-      "github_actions": "pending",
-      "remote_sync": "pending",
-      "reconciliation": "pending",
-      "status": "precommit_verified_ready_to_publish"
+      "candidate_tree": "1afbec371667446f87101ff71c96477882e6209b",
+      "diff": "2 files, 156 insertions, 30 deletions",
+      "tests": "PASS: exact-SHA manager automation 189/189, zero failures, zero skips; routing, compact-state routing, watchdog, roadmap, JSON, shell syntax, Python compilation, publication guard, installation/prompt identity, diff, secret, and cleanliness gates pass",
+      "github_actions": "PASS: run 33447605098, all four jobs successful at exact SHA 916b2589f8a38ebf95ba4d94aa5d9ed71a5a9d2b",
+      "remote_sync": "PASS: local HEAD, upstream, and origin/implementation/foundation all matched 916b2589f8a38ebf95ba4d94aa5d9ed71a5a9d2b after fetch",
+      "reconciliation": "This exact two-path NOW/STATE change records the verified publication before product TEST-119 resumes",
+      "manager_accepted": true,
+      "status": "published_exact_sha_ci_green_remote_synchronized_reconciled"
     },
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-08-31T22:38:26Z"
+    "updated_at": "2026-08-31T22:48:43Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -1955,7 +1958,7 @@
     "PASS: V1-045 ops-only closure commit fe00f286759695f53001e77937b107d343fb6947 exact-SHA GitHub Actions run 33404108038; all four jobs"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-08-31T22:38:26Z",
+  "timestamp": "2026-08-31T22:48:43Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

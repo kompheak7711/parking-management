@@ -1,4 +1,4 @@
-# V1-046 — product integration blocked; supervisor policy publication running
+# V1-046 — supervisor policy published; product TEST-119 correction next
 
 - Predecessor: V1-045 is fully released, published, exact-SHA CI-green,
   reconciled, synchronized, and closed at reconciliation commit
@@ -119,11 +119,14 @@
   zero failures/skips. The stale running execution/attempt is reconciled to
   stopped after confirmed completion without changing the DONE result.
 - Manager-owned policy-publication card
-  `85bc9658-628d-4150-8f1b-66b5b7cf30cf` is RUNNING in branch
-  `implementation/foundation` at exact reviewed HEAD `550443ac...`. It will
-  commit only the bounded NOW/STATE publication record, rerun required gates,
-  push normally, require exact-SHA GitHub Actions success, prove local/upstream/
-  remote/CI agreement, and reconcile publication before product TEST-119 resumes.
+  `85bc9658-628d-4150-8f1b-66b5b7cf30cf` published exact SHA
+  `916b2589f8a38ebf95ba4d94aa5d9ed71a5a9d2b`, sole parent `550443ac...`,
+  tree `1afbec371667446f87101ff71c96477882e6209b`, exact two-path +156/-30
+  publication diff. Final exact-SHA automation passed 189/189 with zero
+  failures/skips; publication and installation/prompt-identity guards passed.
+  GitHub Actions run `33447605098` passed all four jobs, and local HEAD,
+  upstream, and remote all matched `916b2589...`. This exact NOW/STATE change is
+  the bounded post-publication reconciliation; no product scope is included.
 - Authoritative prompt: `ops/OPENCLAW_SUPERVISOR_PROMPT.md`, SHA-256
   `0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56`.
   The installed payload remains text-identical.
@@ -135,17 +138,15 @@
 - Production deployment, production credentials, paid services, customer data,
   and remote production access remain unauthorized.
 - Owner action required: no.
-- Exact next action: finish manager-owned policy publication card
-  `85bc9658-628d-4150-8f1b-66b5b7cf30cf`: commit the bounded publication record,
-  push normally, require exact-SHA CI success and remote synchronization, then
-  reconcile publication. Only afterward resume the existing V1-046 TEST-119
-  correction path.
+- Exact next action: create or reuse one bounded correction card for the existing
+  V1-046 TEST-119/API-091 false traceability mapping, then require fresh exact-SHA
+  product integration and fresh independent review. Do not activate V1-047.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Current phase: V1-046 product integration blocked; reconciled policy candidate
-  exact `550443ac...` passed corrected xhigh integration and a fresh zero-finding
-  GPT-5.6 Sol max/Standard independent review; policy publication is running.
+- Current phase: V1-046 product integration blocked only on the bounded TEST-119
+  traceability correction; the continuous-supervisor policy is published,
+  exact-SHA CI-green, remote-synchronized, and post-publication reconciled.
 - Durable cycle action: reconcile compact state, Git, Workboard, claims,
   attempts, active workers, worktrees, and scheduler; continue only the latest
   dependency-safe stage and never duplicate completed or running work.
