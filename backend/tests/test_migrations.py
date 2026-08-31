@@ -3637,7 +3637,7 @@ def test_protected_bootstrap_migration_accepts_large_object_without_bootstrap_au
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260831_35",)
+                assert cursor.fetchone() == ("20260831_36",)
 
 
 def test_customer_migration_accepts_a_malformed_revision_15_email_domain() -> None:
@@ -4266,7 +4266,7 @@ def test_v1_027_upgrade_preserves_v1_022_payment_configuration() -> None:
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260831_35",)
+                assert cursor.fetchone() == ("20260831_36",)
                 cursor.execute(
                     """
                     SELECT id, code, display_name, accepted, created_by, updated_by
@@ -4420,7 +4420,7 @@ def test_v1_029_upgrade_preserves_v1_028_property_unit_and_customer_data() -> No
         with psycopg.connect(migration_url) as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT version_num FROM alembic_version")
-                assert cursor.fetchone() == ("20260831_35",)
+                assert cursor.fetchone() == ("20260831_36",)
                 cursor.execute(
                     """
                     SELECT unit.id, unit.property_id, unit.status, customer.id
@@ -4715,7 +4715,7 @@ def test_v1_031_upgrade_preserves_and_completes_v1_030_pending_outcome() -> None
             )
             connection.commit()
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260831_35",
+                "20260831_36",
             )
             assert connection.execute(
                 """
@@ -4815,7 +4815,7 @@ def test_v1_034_upgrade_preserves_v1_033_lease_and_replaces_unbounded_runtime_he
         assert result.returncode == 0, result.stderr
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260831_35",
+                "20260831_36",
             )
             assert connection.execute(
                 "SELECT id,status,version,start_date,end_date FROM app.leases WHERE id=%s",
@@ -4994,7 +4994,7 @@ def test_v1_039_upgrade_serializes_user_creation_across_actor_identity_backfill(
                 (actor_id,),
             ).fetchone() == ("HUMAN",)
             assert verify.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260831_35",
+                "20260831_36",
             )
 
 
@@ -5082,7 +5082,7 @@ def test_v1_042_published_schema_upgrades_to_corrected_runtime_contract() -> Non
         assert corrected.returncode == 0, corrected.stderr
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260831_35",
+                "20260831_36",
             )
             assert connection.execute(
                 "SELECT format_type(attribute.atttypid,attribute.atttypmod) "
@@ -5203,6 +5203,67 @@ def test_v1_044_populated_v1_043_upgrade_restores_billing_history_guards() -> No
                         (run_id,),
                     )
             assert snapshot_mutation.value.sqlstate == "55000"
+
+
+def test_v1_045_populated_revision_35_upgrades_to_invoice_command_boundary() -> None:
+    """A supported populated revision-35 database upgrades in place to V1-045."""
+    from test_invoice_migration import setup_invoice_api_source
+
+    with _temporary_migration_database("prm_v1_045_populated_upgrade") as migration_url:
+        prior = _run_alembic("upgrade", "20260831_35")
+        assert prior.returncode == 0, prior.stderr
+        invoice_id = uuid.uuid4()
+        line_id = uuid.uuid4()
+        with psycopg.connect(migration_url) as connection:
+            actor_id, property_id, customer_id, obligation_id = setup_invoice_api_source(connection)
+            due_date_source = connection.execute(
+                "SELECT due_date_source FROM app.authorized_nonrecurring_obligations WHERE id=%s",
+                (obligation_id,),
+            ).fetchone()
+            assert due_date_source is not None
+            connection.execute(
+                "INSERT INTO app.invoices(id,invoice_number,customer_id,primary_category,status,"
+                "invoice_date,due_date,original_total_usd_cents,due_date_rule,due_date_source,"
+                "created_by,updated_by) VALUES (%s,%s,%s,'MISCELLANEOUS_CHARGES','DRAFT',"
+                "current_date,current_date+14,10000,'GOVERNING_SOURCE',%s,%s,%s)",
+                (
+                    invoice_id,
+                    f"UPGRADE-{invoice_id.hex}",
+                    customer_id,
+                    due_date_source[0],
+                    actor_id,
+                    actor_id,
+                ),
+            )
+            connection.execute(
+                "INSERT INTO app.invoice_lines(id,invoice_id,line_sequence,category,description,"
+                "amount_usd_cents,authorized_obligation_id,calculation_trace,created_by) VALUES "
+                "(%s,%s,1,'MISCELLANEOUS_CHARGES','Authorized replacement key',10000,%s,"
+                "jsonb_build_object('source','revision-35'),%s)",
+                (line_id, invoice_id, obligation_id, actor_id),
+            )
+            connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+            connection.commit()
+
+        upgraded = _run_alembic("upgrade", "head")
+
+        assert upgraded.returncode == 0, upgraded.stderr
+        with psycopg.connect(migration_url) as connection:
+            assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
+                "20260831_36",
+            )
+            snapshot = connection.execute(
+                "SELECT app.invoice_resource_snapshot(%s)", (invoice_id,)
+            ).fetchone()
+            assert snapshot is not None
+            assert snapshot[0]["property_id"] == str(property_id)
+            assert snapshot[0]["original_total"] == {
+                "currency": "USD",
+                "minor_units": 10_000,
+            }
+            assert connection.execute("SELECT count(*) FROM app.invoice_commands").fetchone() == (
+                0,
+            )
 
 
 def test_v1_042_upgrade_front_door_gate_prevents_service_writer_deadlock() -> None:
@@ -5394,7 +5455,7 @@ def test_v1_042_upgrade_front_door_gate_prevents_service_writer_deadlock() -> No
 
         with psycopg.connect(migration_url) as connection:
             assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-                "20260831_35",
+                "20260831_36",
             )
             assert connection.execute(
                 "SELECT consumption_quantity FROM app.utility_consumption_periods WHERE id=%s",

@@ -74,6 +74,17 @@ from property_rental.deposit_api import (
     deposit_idempotency_key_reused_response,
 )
 from property_rental.identity import ActorResolver, deny_unauthenticated_actor
+from property_rental.invoice import (
+    InvoiceIdempotencyKeyReused,
+    InvoiceVersionConflict,
+    PostgresInvoiceService,
+)
+from property_rental.invoice_api import (
+    InvoiceFlow,
+    UnavailableInvoiceFlow,
+    create_invoice_router,
+    invoice_idempotency_key_reused_response,
+)
 from property_rental.lease_api import (
     LeaseResourceFlow,
     PostgresLeaseResourceFlow,
@@ -139,6 +150,9 @@ UTILITY_API_PATH_PATTERN: Final = re.compile(
 )
 BILLING_RUN_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:properties/[^/]+/billing-runs/(?:rent|utilities)$|billing-runs/[^/]+$)"
+)
+INVOICE_API_PATH_PATTERN: Final = re.compile(
+    r"^/api/v1/(?:properties/[^/]+/invoices(?:/|$)|invoices(?:/|$))"
 )
 DATABASE_TIMEOUT_SECONDS: Final = 2
 ERROR_STATUS_DETAILS: Final = {
@@ -261,6 +275,7 @@ def create_app(
     deposit_resource_flow: DepositResourceFlow | None = None,
     utility_resource_flow: UtilityResourceFlow | None = None,
     billing_run_flow: BillingRunFlow | None = None,
+    invoice_flow: InvoiceFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -438,6 +453,24 @@ def create_app(
     ) -> JSONResponse:
         return deposit_idempotency_key_reused_response(request)
 
+    @app.exception_handler(InvoiceIdempotencyKeyReused)
+    async def invoice_idempotency_key_reused(
+        request: Request,
+        _: InvoiceIdempotencyKeyReused,
+    ) -> JSONResponse:
+        return invoice_idempotency_key_reused_response(request)
+
+    @app.exception_handler(InvoiceVersionConflict)
+    async def invoice_version_conflict(
+        request: Request,
+        exc: InvoiceVersionConflict,
+    ) -> JSONResponse:
+        return error_response(
+            status.HTTP_412_PRECONDITION_FAILED,
+            request.state.request_id,
+            current_version=exc.current_version,
+        )
+
     @app.exception_handler(CustomerLifecycleConflict)
     async def customer_lifecycle_conflict(
         request: Request,
@@ -480,6 +513,7 @@ def create_app(
             or DEPOSIT_API_PATH_PATTERN.match(request.url.path)
             or UTILITY_API_PATH_PATTERN.match(request.url.path)
             or BILLING_RUN_API_PATH_PATTERN.match(request.url.path)
+            or INVOICE_API_PATH_PATTERN.match(request.url.path)
         ):
             response.headers["Cache-Control"] = "private, no-store"
             response.headers["Vary"] = "Cookie"
@@ -663,6 +697,28 @@ def create_app(
                     )
                     if resolved_settings.financial_database_url is not None
                     else UnavailableBillingRunFlow()
+                ),
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_invoice_router(
+            actor_resolver,
+            invoice_flow
+            or cast(
+                InvoiceFlow,
+                (
+                    PostgresInvoiceService(
+                        resolved_settings.database_url.get_secret_value(),
+                        (
+                            resolved_settings.financial_database_url.get_secret_value()
+                            if resolved_settings.financial_database_url is not None
+                            else None
+                        ),
+                    )
+                    if resolved_settings.database_url is not None
+                    else UnavailableInvoiceFlow()
                 ),
             ),
             resolved_settings,

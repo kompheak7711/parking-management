@@ -1,4 +1,4 @@
-"""Real PostgreSQL coverage for V1-039 Invoice and billing-run persistence."""
+"""Real PostgreSQL coverage for Invoice persistence and lifecycle commands."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from threading import Barrier, Event
+from typing import cast
 from uuid import UUID, uuid4
 
 import psycopg
@@ -17,6 +18,19 @@ from alembic.config import Config
 from psycopg import Connection, Error
 from psycopg.types.json import Jsonb
 
+from property_rental.identity import AuthenticatedActor, CapabilityGrant
+from property_rental.invoice import (
+    AdjustInvoiceCommand,
+    AdjustmentType,
+    CorrectInvoiceDraftCommand,
+    CreateInvoiceDraftCommand,
+    InvoiceIdempotencyKeyReused,
+    InvoiceInvalidError,
+    InvoiceServiceUnavailableError,
+    IssueInvoiceCommand,
+    PostgresInvoiceService,
+    VoidInvoiceCommand,
+)
 from test_lease_migration import create_draft, setup_sources, sign_lease
 
 
@@ -572,7 +586,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
     obligation_id = uuid4()
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20260831_35",
+            "20260831_36",
         )
         expected = {
             "actor_identities",
@@ -590,6 +604,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
             "late_payment_charges",
             "late_payment_charge_corrections",
             "invoice_adjustment_reversals",
+            "invoice_commands",
             "billing_runs",
             "billing_run_eligible_sources",
             "billing_run_attempts",
@@ -649,12 +664,22 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
                         "SELECT has_table_privilege(%s,%s,%s)",
                         (role, relation, privilege),
                     ).fetchone() == (False,)
+        command_function = (
+            "app.adjust_invoice(uuid,uuid,uuid,uuid,uuid,text,integer,text,bigint,"
+            "text,text,uuid,uuid)"
+        )
+        assert owner.execute(
+            "SELECT has_function_privilege('prm_runtime',%s,'EXECUTE')", (command_function,)
+        ).fetchone() == (False,)
+        assert owner.execute(
+            "SELECT has_function_privilege('prm_financial',%s,'EXECUTE')", (command_function,)
+        ).fetchone() == (True,)
 
     with pytest.raises(RuntimeError, match="forward-only"):
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "20260826_28")
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20260831_35",
+            "20260831_36",
         )
         assert owner.execute(
             "SELECT description FROM app.authorized_nonrecurring_obligations WHERE id=%s",
@@ -7595,3 +7620,516 @@ def test_lease_and_occupancy_writers_share_one_advisory_lock_order(
             )
             cleanup.execute("DROP FUNCTION IF EXISTS app.capture_v1_039_lock_order_probe()")
             cleanup.execute("DROP TABLE IF EXISTS app.v1_039_lock_order_probe")
+
+
+def setup_invoice_api_source(
+    connection: Connection[tuple[object, ...]],
+    *,
+    amount_usd_cents: int = 10_000,
+    source_reference: str | None = None,
+    lease_associated: bool = False,
+) -> tuple[UUID, UUID, UUID, UUID]:
+    """Commit one active human and exact authorized non-recurring source."""
+    actor_id, property_id, unit_id, customer_id, _ = setup_sources(connection)
+    lease_id: UUID | None = None
+    if lease_associated:
+        lease_id = create_draft(
+            connection,
+            actor_id=actor_id,
+            unit_id=unit_id,
+            primary_tenant_id=customer_id,
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=365),
+        )
+        sign_lease(connection, lease_id, actor_id)
+    obligation_id = uuid4()
+    reference = source_reference or f"approved-obligation/{obligation_id}"
+    connection.execute(
+        "INSERT INTO app.authorized_nonrecurring_obligations("
+        "id,customer_id,lease_id,category,description,authorized_amount_usd_cents,"
+        "governing_due_date,due_date_source,source_reference,authorized_at,authorized_by,"
+        "authorization_reference) VALUES (%s,%s,%s,'MISCELLANEOUS_CHARGES',"
+        "'Authorized replacement key',%s,current_date+14,%s,%s,clock_timestamp(),%s,"
+        "'invoice.nonrecurring.authorize')",
+        (
+            obligation_id,
+            customer_id,
+            lease_id,
+            amount_usd_cents,
+            reference,
+            reference,
+            actor_id,
+        ),
+    )
+    return actor_id, property_id, customer_id, obligation_id
+
+
+def invoice_api_actor(actor_id: UUID, property_id: UUID) -> AuthenticatedActor:
+    """Build the exact five independently grantable Invoice capabilities."""
+    scope = frozenset({str(property_id)})
+    return AuthenticatedActor(
+        actor_id=str(actor_id),
+        capability_grants=frozenset(
+            CapabilityGrant(capability, scope)
+            for capability in (
+                "invoices.read",
+                "invoices.create",
+                "invoices.issue",
+                "invoices.adjust",
+                "invoices.void",
+            )
+        ),
+    )
+
+
+def test_v1_045_authorized_source_lifecycle_preserves_original_and_exact_adjustments(
+    migrated_database_url: str,
+) -> None:
+    """TEST-053..057: ownership, source, lifecycle, exact money, and immutable events."""
+    with psycopg.connect(migrated_database_url) as setup:
+        actor_id, property_id, customer_id, obligation_id = setup_invoice_api_source(
+            setup, lease_associated=True
+        )
+        setup.commit()
+    service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    authenticated = invoice_api_actor(actor_id, property_id)
+    create = CreateInvoiceDraftCommand(uuid4(), obligation_id)
+
+    draft = service.create_draft(property_id, create, actor=authenticated)
+    replay = service.create_draft(property_id, create, actor=authenticated)
+
+    assert replay == draft
+    assert draft["customer_id"] == str(customer_id)
+    assert draft["lease_id"] is not None
+    assert draft["status"] == "DRAFT"
+    assert draft["original_total"] == {"currency": "USD", "minor_units": 10_000}
+    assert draft["outstanding_balance"] == {"currency": "USD", "minor_units": 0}
+    assert len(cast(list[object], draft["lines"])) == 1
+    invoice_id = UUID(str(draft["id"]))
+    line = cast(list[dict[str, object]], draft["lines"])[0]
+    line_id = UUID(str(line["id"]))
+    issued = service.issue(
+        property_id,
+        invoice_id,
+        IssueInvoiceCommand(uuid4(), 1),
+        actor=authenticated,
+    )
+    credited = service.adjust(
+        property_id,
+        invoice_id,
+        AdjustInvoiceCommand(
+            uuid4(),
+            line_id,
+            AdjustmentType.CREDIT,
+            2_500,
+            "approved-correction/credit",
+            "Reduce the approved obligation",
+            2,
+        ),
+        actor=authenticated,
+    )
+    debited = service.adjust(
+        property_id,
+        invoice_id,
+        AdjustInvoiceCommand(
+            uuid4(),
+            line_id,
+            AdjustmentType.DEBIT,
+            1_000,
+            "approved-correction/debit",
+            "Restore documented value",
+            3,
+        ),
+        actor=authenticated,
+    )
+    paid = service.adjust(
+        property_id,
+        invoice_id,
+        AdjustInvoiceCommand(
+            uuid4(),
+            line_id,
+            AdjustmentType.CREDIT,
+            8_500,
+            "approved-correction/full-credit",
+            "Resolve remaining obligation",
+            4,
+        ),
+        actor=authenticated,
+    )
+
+    assert issued["status"] == "UNPAID"
+    assert issued["outstanding_balance"] == {"currency": "USD", "minor_units": 10_000}
+    assert credited["adjusted_total"] == {"currency": "USD", "minor_units": 7_500}
+    assert debited["adjusted_total"] == {"currency": "USD", "minor_units": 8_500}
+    assert paid["adjusted_total"] == {"currency": "USD", "minor_units": 0}
+    assert paid["status"] == "PAID"
+    assert paid["original_total"] == {"currency": "USD", "minor_units": 10_000}
+    assert [event["type"] for event in cast(list[dict[str, object]], paid["adjustments"])] == [
+        "CREDIT",
+        "DEBIT",
+        "CREDIT",
+    ]
+    with pytest.raises(InvoiceInvalidError):
+        service.void(
+            property_id,
+            invoice_id,
+            VoidInvoiceCommand(uuid4(), "Paid corrected Invoice cannot be voided", 5),
+            actor=authenticated,
+        )
+    with psycopg.connect(migrated_database_url) as owner:
+        assert owner.execute(
+            "SELECT count(*) FROM app.audit_events WHERE entity_id=%s AND action LIKE %s",
+            (invoice_id, "invoice.%"),
+        ).fetchone() == (5,)
+        with pytest.raises(Error) as mutate_adjustment:
+            owner.execute(
+                "UPDATE app.invoice_adjustments SET reason='erased' WHERE invoice_id=%s",
+                (invoice_id,),
+            )
+        assert mutate_adjustment.value.sqlstate == "55000"
+
+
+def test_v1_045_void_is_terminal_preserves_history_and_rejects_physical_delete(
+    migrated_database_url: str,
+) -> None:
+    """TEST-058: resolved exceptional VOID is one immutable event and no deletion."""
+    with psycopg.connect(migrated_database_url) as setup:
+        actor_id, property_id, _, obligation_id = setup_invoice_api_source(setup)
+        setup.commit()
+    service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    authenticated = invoice_api_actor(actor_id, property_id)
+    draft = service.create_draft(
+        property_id, CreateInvoiceDraftCommand(uuid4(), obligation_id), actor=authenticated
+    )
+    invoice_id = UUID(str(draft["id"]))
+    issued = service.issue(
+        property_id, invoice_id, IssueInvoiceCommand(uuid4(), 1), actor=authenticated
+    )
+    command = VoidInvoiceCommand(uuid4(), "Obligation fundamentally should not exist", 2)
+
+    voided = service.void(property_id, invoice_id, command, actor=authenticated)
+    replay = service.void(property_id, invoice_id, command, actor=authenticated)
+
+    assert issued["status"] == "UNPAID"
+    assert replay == voided
+    assert voided["status"] == "VOID"
+    assert voided["outstanding_balance"] == {"currency": "USD", "minor_units": 0}
+    assert cast(dict[str, object], voided["void_event"])["reason"] == command.reason
+    with psycopg.connect(financial_database_url()) as financial:
+        with pytest.raises(Error) as runtime_delete:
+            financial.execute("DELETE FROM app.invoices WHERE id=%s", (invoice_id,))
+        assert runtime_delete.value.sqlstate == "42501"
+    with psycopg.connect(migrated_database_url) as owner:
+        with pytest.raises(Error) as owner_delete:
+            with owner.transaction():
+                owner.execute("DELETE FROM app.invoices WHERE id=%s", (invoice_id,))
+        assert owner_delete.value.sqlstate == "55000"
+        assert owner.execute(
+            "SELECT status,(SELECT count(*) FROM app.invoice_void_events WHERE invoice_id=%s) "
+            "FROM app.invoices WHERE id=%s",
+            (invoice_id, invoice_id),
+        ).fetchone() == ("VOID", 1)
+
+
+def test_v1_045_draft_source_correction_and_database_cursor_are_derived(
+    migrated_database_url: str,
+) -> None:
+    """BR-INV-043 and API-019: correction and paging retain relational source truth."""
+    with psycopg.connect(migrated_database_url) as setup:
+        actor_id, property_id, customer_id, original_source_id = setup_invoice_api_source(setup)
+        replacement_source_id = uuid4()
+        other_source_id = uuid4()
+        leased_source_id = uuid4()
+        for source_id, amount, reference in (
+            (replacement_source_id, 15_500, "approved-obligation/replacement"),
+            (other_source_id, 8_000, "approved-obligation/other"),
+        ):
+            setup.execute(
+                "INSERT INTO app.authorized_nonrecurring_obligations("
+                "id,customer_id,category,description,authorized_amount_usd_cents,"
+                "governing_due_date,due_date_source,source_reference,authorized_at,"
+                "authorized_by,authorization_reference) VALUES (%s,%s,"
+                "'MISCELLANEOUS_CHARGES',%s,%s,current_date+21,%s,%s,clock_timestamp(),%s,"
+                "'invoice.nonrecurring.authorize')",
+                (source_id, customer_id, reference, amount, reference, reference, actor_id),
+            )
+        unit_row = setup.execute(
+            "SELECT id FROM app.units WHERE property_id=%s ORDER BY id LIMIT 1", (property_id,)
+        ).fetchone()
+        assert unit_row is not None
+        lease_id = create_draft(
+            setup,
+            actor_id=actor_id,
+            unit_id=unit_row[0],
+            primary_tenant_id=customer_id,
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=365),
+        )
+        sign_lease(setup, lease_id, actor_id)
+        setup.execute(
+            "INSERT INTO app.authorized_nonrecurring_obligations("
+            "id,customer_id,lease_id,category,description,authorized_amount_usd_cents,"
+            "governing_due_date,due_date_source,source_reference,authorized_at,authorized_by,"
+            "authorization_reference) VALUES (%s,%s,%s,'MISCELLANEOUS_CHARGES',"
+            "'Lease-filtered obligation',9000,current_date+21,'approved-obligation/leased',"
+            "'approved-obligation/leased',clock_timestamp(),%s,"
+            "'invoice.nonrecurring.authorize')",
+            (leased_source_id, customer_id, lease_id, actor_id),
+        )
+        setup.commit()
+    service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    authenticated = invoice_api_actor(actor_id, property_id)
+    original = service.create_draft(
+        property_id,
+        CreateInvoiceDraftCommand(uuid4(), original_source_id),
+        actor=authenticated,
+    )
+    invoice_id = UUID(str(original["id"]))
+
+    corrected = service.correct_draft(
+        property_id,
+        invoice_id,
+        CorrectInvoiceDraftCommand(
+            uuid4(), replacement_source_id, "Replace the approved source", 1
+        ),
+        actor=authenticated,
+    )
+    other = service.create_draft(
+        property_id,
+        CreateInvoiceDraftCommand(uuid4(), other_source_id),
+        actor=authenticated,
+    )
+    first_page = service.list(
+        property_id,
+        actor=authenticated,
+        status_filter="DRAFT",
+        category="MISCELLANEOUS_CHARGES",
+        customer_id=customer_id,
+        lease_id=None,
+        limit=1,
+        cursor=None,
+        descending=True,
+    )
+    second_page = service.list(
+        property_id,
+        actor=authenticated,
+        status_filter="DRAFT",
+        category="MISCELLANEOUS_CHARGES",
+        customer_id=customer_id,
+        lease_id=None,
+        limit=1,
+        cursor=first_page.next_cursor,
+        descending=True,
+    )
+
+    assert corrected["version"] == 2
+    assert corrected["original_total"] == {"currency": "USD", "minor_units": 15_500}
+    assert cast(list[dict[str, object]], corrected["lines"])[0]["source"] == {
+        "type": "AUTHORIZED_NONRECURRING_OBLIGATION",
+        "id": str(replacement_source_id),
+    }
+    assert first_page.next_cursor is not None
+    assert {item["id"] for item in first_page.items + second_page.items} == {
+        corrected["id"],
+        other["id"],
+    }
+    leased = service.create_draft(
+        property_id,
+        CreateInvoiceDraftCommand(uuid4(), leased_source_id),
+        actor=authenticated,
+    )
+    lease_page = service.list(
+        property_id,
+        actor=authenticated,
+        status_filter="DRAFT",
+        category=None,
+        customer_id=None,
+        lease_id=lease_id,
+        limit=50,
+        cursor=None,
+        descending=True,
+    )
+    assert [item["id"] for item in lease_page.items] == [leased["id"]]
+    with psycopg.connect(migrated_database_url) as verify:
+        assert verify.execute(
+            "SELECT authorized_obligation_id FROM app.active_invoice_source_claims "
+            "WHERE invoice_id=%s",
+            (invoice_id,),
+        ).fetchone() == (replacement_source_id,)
+        assert verify.execute(
+            "SELECT entity_kind,operation FROM app.invoice_draft_revision_events "
+            "WHERE invoice_id=%s ORDER BY id",
+            (invoice_id,),
+        ).fetchall() == [("INVOICE", "UPDATE"), ("LINE", "UPDATE")]
+
+
+def test_v1_045_same_key_replay_changed_input_conflict_and_concurrent_duplicates(
+    migrated_database_url: str,
+) -> None:
+    """API-015..018: lost response and concurrent retries produce one effect per command."""
+    with psycopg.connect(migrated_database_url) as setup:
+        actor_id, property_id, _, obligation_id = setup_invoice_api_source(setup)
+        setup.commit()
+    authenticated = invoice_api_actor(actor_id, property_id)
+    create_command = CreateInvoiceDraftCommand(uuid4(), obligation_id)
+    together = Barrier(2)
+
+    def create_once() -> dict[str, object]:
+        together.wait(timeout=10)
+        return PostgresInvoiceService(
+            runtime_database_url(), financial_database_url()
+        ).create_draft(property_id, create_command, actor=authenticated)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = [
+            future.result(timeout=20)
+            for future in (pool.submit(create_once), pool.submit(create_once))
+        ]
+    assert results[0] == results[1]
+    invoice_id = UUID(str(results[0]["id"]))
+    service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    with pytest.raises(InvoiceIdempotencyKeyReused):
+        service.create_draft(
+            property_id,
+            CreateInvoiceDraftCommand(create_command.idempotency_key, uuid4()),
+            actor=authenticated,
+        )
+    issue_command = IssueInvoiceCommand(uuid4(), 1)
+    issue_together = Barrier(2)
+
+    def issue_once() -> dict[str, object]:
+        issue_together.wait(timeout=10)
+        return PostgresInvoiceService(runtime_database_url(), financial_database_url()).issue(
+            property_id, invoice_id, issue_command, actor=authenticated
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        issues = [
+            future.result(timeout=20)
+            for future in (pool.submit(issue_once), pool.submit(issue_once))
+        ]
+    assert issues[0] == issues[1]
+    line_id = UUID(str(cast(list[dict[str, object]], issues[0]["lines"])[0]["id"]))
+    adjust_command = AdjustInvoiceCommand(
+        uuid4(),
+        line_id,
+        AdjustmentType.DEBIT,
+        500,
+        "approved-correction/concurrent",
+        "Concurrent exact debit",
+        2,
+    )
+    adjust_together = Barrier(2)
+
+    def adjust_once() -> dict[str, object]:
+        adjust_together.wait(timeout=10)
+        return PostgresInvoiceService(runtime_database_url(), financial_database_url()).adjust(
+            property_id, invoice_id, adjust_command, actor=authenticated
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        adjustments = [
+            future.result(timeout=20)
+            for future in (pool.submit(adjust_once), pool.submit(adjust_once))
+        ]
+    assert adjustments[0] == adjustments[1]
+    with psycopg.connect(migrated_database_url) as setup:
+        void_source_id = uuid4()
+        customer_id = UUID(str(results[0]["customer_id"]))
+        setup.execute(
+            "INSERT INTO app.authorized_nonrecurring_obligations("
+            "id,customer_id,category,description,authorized_amount_usd_cents,governing_due_date,"
+            "due_date_source,source_reference,authorized_at,authorized_by,"
+            "authorization_reference) VALUES (%s,%s,'MISCELLANEOUS_CHARGES','Concurrent void',"
+            "1000,current_date+14,'approved-obligation/concurrent-void',"
+            "'approved-obligation/concurrent-void',clock_timestamp(),%s,"
+            "'invoice.nonrecurring.authorize')",
+            (void_source_id, customer_id, actor_id),
+        )
+        setup.commit()
+    void_draft = service.create_draft(
+        property_id,
+        CreateInvoiceDraftCommand(uuid4(), void_source_id),
+        actor=authenticated,
+    )
+    void_invoice_id = UUID(str(void_draft["id"]))
+    void_command = VoidInvoiceCommand(uuid4(), "Concurrent exceptional void", 1)
+    void_together = Barrier(2)
+
+    def void_once() -> dict[str, object]:
+        void_together.wait(timeout=10)
+        return PostgresInvoiceService(runtime_database_url(), financial_database_url()).void(
+            property_id, void_invoice_id, void_command, actor=authenticated
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        voids = [
+            future.result(timeout=20) for future in (pool.submit(void_once), pool.submit(void_once))
+        ]
+    assert voids[0] == voids[1]
+    with psycopg.connect(migrated_database_url) as verify:
+        assert verify.execute(
+            "SELECT count(*),count(DISTINCT invoice_id) FROM app.invoice_commands "
+            "WHERE actor_id=%s AND invoice_id=%s",
+            (actor_id, invoice_id),
+        ).fetchone() == (3, 1)
+        assert verify.execute(
+            "SELECT count(*) FROM app.audit_events WHERE entity_id=%s AND action IN "
+            "('invoice.created','invoice.issued','invoice.adjusted')",
+            (invoice_id,),
+        ).fetchone() == (3,)
+        assert verify.execute(
+            "SELECT count(*) FROM app.invoice_void_events WHERE invoice_id=%s",
+            (void_invoice_id,),
+        ).fetchone() == (1,)
+
+
+def test_v1_045_audit_failure_atomically_rolls_back_command_and_issue(
+    migrated_database_url: str,
+) -> None:
+    """API-017: command, lifecycle, audit, and replay snapshot share one transaction."""
+    with psycopg.connect(migrated_database_url) as setup:
+        actor_id, property_id, _, obligation_id = setup_invoice_api_source(setup)
+        setup.commit()
+    service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    authenticated = invoice_api_actor(actor_id, property_id)
+    draft = service.create_draft(
+        property_id, CreateInvoiceDraftCommand(uuid4(), obligation_id), actor=authenticated
+    )
+    invoice_id = UUID(str(draft["id"]))
+    issue_key = uuid4()
+    with psycopg.connect(migrated_database_url) as owner:
+        owner.execute(
+            "CREATE FUNCTION app.fail_v1_045_invoice_audit() RETURNS trigger LANGUAGE plpgsql "
+            "SET search_path=pg_catalog AS $$ BEGIN IF NEW.action='invoice.issued' THEN "
+            "RAISE EXCEPTION 'injected Invoice audit failure' USING ERRCODE='P0001'; END IF; "
+            "RETURN NEW; END $$"
+        )
+        owner.execute(
+            "CREATE TRIGGER audit_events_fail_v1_045 BEFORE INSERT ON app.audit_events "
+            "FOR EACH ROW EXECUTE FUNCTION app.fail_v1_045_invoice_audit()"
+        )
+        owner.commit()
+    try:
+        with pytest.raises(
+            InvoiceServiceUnavailableError, match="Invoice persistence is unavailable"
+        ):
+            service.issue(
+                property_id,
+                invoice_id,
+                IssueInvoiceCommand(issue_key, 1),
+                actor=authenticated,
+            )
+        with psycopg.connect(migrated_database_url) as verify:
+            assert verify.execute(
+                "SELECT status,version FROM app.invoices WHERE id=%s", (invoice_id,)
+            ).fetchone() == ("DRAFT", 1)
+            assert verify.execute(
+                "SELECT count(*) FROM app.invoice_commands WHERE action='issue' "
+                "AND idempotency_key=%s",
+                (issue_key,),
+            ).fetchone() == (0,)
+    finally:
+        with psycopg.connect(migrated_database_url) as cleanup:
+            cleanup.execute("DROP TRIGGER audit_events_fail_v1_045 ON app.audit_events")
+            cleanup.execute("DROP FUNCTION app.fail_v1_045_invoice_audit()")

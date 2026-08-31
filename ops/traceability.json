@@ -9077,11 +9077,11 @@
     },
     {
       "test_id": "test_invoice_tables_are_current_forward_only_and_read_only_to_runtime",
-      "upstream_ids": ["DB-INV-001", "DB-INV-010", "TEST-053", "TEST-058"],
+      "upstream_ids": ["API-017", "DB-INV-001", "DB-INV-010", "SEC-046", "TEST-053", "TEST-058"],
       "test_level": "migration",
       "test_path": "backend/tests/test_invoice_migration.py",
       "status": "implemented",
-      "notes": "The complete V1-039 relation set reaches the reviewed migration head, refuses destructive downgrade without changing the head or seeded evidence, and proves the complete per-table SELECT and mutation privilege matrix for runtime, financial, and bootstrap roles."
+      "notes": "The complete Invoice relation set reaches the reviewed migration head, refuses destructive downgrade without changing the head or seeded evidence, and proves the complete per-table SELECT/mutation matrix plus runtime-denied and financial-only Invoice command execution."
     },
     {
       "test_id": "test_initial_rent_component_kinds_are_bound_to_calendar_position",
@@ -10515,6 +10515,126 @@
       "test_path": "backend/tests/test_billing_run_migration.py",
       "status": "implemented",
       "notes": "After an injected second-source audit failure, live PostgreSQL preserves the first Rent Invoice and ordered failed attempt; retry adopts that exact Invoice, generates only the unresolved source, converges once to SUCCEEDED, and replays without duplicates."
+    },
+    {
+      "test_id": "test_invoice_digest_is_canonical_and_binds_action_scope_and_input",
+      "upstream_ids": ["API-015", "API-016", "SEC-028", "TEST-119"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "Canonical Invoice command digests are stable across JSON key order and bind action, Property, target, and exact client input."
+    },
+    {
+      "test_id": "test_invoice_commands_reject_nil_ids_nonpositive_money_and_unnormalized_evidence",
+      "upstream_ids": ["API-003", "API-005", "SEC-036", "TEST-057", "TEST-119"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "Domain command construction rejects nil identities, nonpositive integer USD amounts, and unnormalized correction evidence before persistence."
+    },
+    {
+      "test_id": "test_create_accepts_only_authorized_source_and_enforces_scope_csrf_and_capability",
+      "upstream_ids": ["API-050", "API-051", "API-053", "BR-INV-016", "DB-INV-005", "SEC-016", "SEC-019", "SEC-020", "TEST-055", "TEST-119"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "The create route accepts only one relational authorized-obligation ID, rejects caller money, requires browser CSRF, and enforces the separate Property-scoped invoices.create capability."
+    },
+    {
+      "test_id": "test_detail_hides_invoice_without_exact_read_scope",
+      "upstream_ids": ["API-009", "API-050", "SEC-019", "SEC-038", "SEC-039", "TEST-053", "TEST-119"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "Invoice detail is returned only with exact invoices.read Property scope and otherwise uses the non-revealing not-found response."
+    },
+    {
+      "test_id": "test_list_has_allowlisted_filters_and_stable_cursor_envelope",
+      "upstream_ids": ["API-012", "API-019", "API-020", "API-021", "SEC-040", "TEST-119"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "Invoice list status, category, Customer, and optional Lease filters plus sort, limit, and cursor use the documented bounded envelope and reject an unknown expansion filter."
+    },
+    {
+      "test_id": "test_draft_correction_requires_if_match_and_replays_exact_same_key",
+      "upstream_ids": ["API-006", "API-015", "API-016", "API-050", "BR-INV-043", "TEST-056", "TEST-119"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "DRAFT source correction requires If-Match and a UUID idempotency key, then returns the same authoritative resource for equivalent replay."
+    },
+    {
+      "test_id": "test_issue_uses_separate_capability_and_only_client_version_changes",
+      "upstream_ids": ["API-006", "API-052", "BR-INV-011", "BR-INV-015", "SEC-020", "SEC-024", "TEST-056", "TEST-119"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "Issuance is a versioned explicit DRAFT-to-UNPAID command protected by invoices.issue independently from draft creation."
+    },
+    {
+      "test_id": "test_adjustment_requires_exact_usd_integer_reason_source_and_capability",
+      "upstream_ids": ["API-005", "API-052", "BR-INV-021", "BR-INV-044", "BR-INV-045", "BR-INV-048", "SEC-020", "TEST-057", "TEST-119"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "Adjustment input requires exact integer USD, line identity, direction, reason, and source while invoices.adjust remains separately scoped."
+    },
+    {
+      "test_id": "test_void_is_explicit_versioned_terminal_command_with_separate_capability",
+      "upstream_ids": ["API-006", "API-052", "BR-INV-022", "BR-INV-046", "SEC-020", "SEC-024", "TEST-058", "TEST-119"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "Exceptional VOID is an explicit versioned command requiring invoices.void; stale repetition receives the current version rather than arbitrary status editing."
+    },
+    {
+      "test_id": "test_v1_045_authorized_source_lifecycle_preserves_original_and_exact_adjustments",
+      "upstream_ids": ["BR-INV-002", "BR-INV-011", "BR-INV-015", "BR-INV-036", "BR-INV-038", "BR-INV-044", "BR-INV-045", "DB-INV-001", "DB-INV-003", "DB-INV-005", "DB-DER-001", "TEST-053", "TEST-054", "TEST-055", "TEST-056", "TEST-057", "TEST-119"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "A relational Lease-associated authorized source creates one owned DRAFT, issues to UNPAID, applies exact CREDIT/DEBIT/CREDIT events to PAID, preserves the original USD integer total, and rejects event mutation or invalid VOID."
+    },
+    {
+      "test_id": "test_v1_045_void_is_terminal_preserves_history_and_rejects_physical_delete",
+      "upstream_ids": ["BR-INV-014", "BR-INV-022", "BR-INV-023", "BR-INV-025", "BR-INV-046", "BR-INV-047", "DB-INV-004", "SEC-046", "TEST-056", "TEST-058", "TEST-119"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "An issued dependency-free Invoice receives exactly one immutable VOID event, exact replay returns its snapshot, outstanding balance is excluded, and both financial-role and owner delete attempts fail."
+    },
+    {
+      "test_id": "test_v1_045_draft_source_correction_and_database_cursor_are_derived",
+      "upstream_ids": ["API-019", "API-020", "API-021", "API-050", "BR-INV-043", "DB-INV-002", "DB-INV-005", "TEST-055", "TEST-056", "TEST-119"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "A DRAFT correction replaces only its relational authorized source and server-derived amount/detail under revision history; real PostgreSQL status/category/Customer filtering and an opaque date/UUID cursor return two records exactly once."
+    },
+    {
+      "test_id": "test_v1_045_same_key_replay_changed_input_conflict_and_concurrent_duplicates",
+      "upstream_ids": ["API-015", "API-016", "API-017", "API-018", "DB-TXN-003", "SEC-028", "SEC-029", "TEST-056", "TEST-119"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent duplicate create, issue, Adjustment, and VOID calls serialize on scoped advisory keys, persist one command and audit effect each, replay exact snapshots after the first response, and conflict on changed canonical input."
+    },
+    {
+      "test_id": "test_v1_045_audit_failure_atomically_rolls_back_command_and_issue",
+      "upstream_ids": ["API-017", "BR-INV-035", "SEC-030", "SEC-031", "TEST-056", "TEST-119"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "An injected audit failure rolls back issuance, version advancement, command completion, and result snapshot in the same transaction."
+    },
+    {
+      "test_id": "test_v1_045_populated_revision_35_upgrades_to_invoice_command_boundary",
+      "upstream_ids": ["DB-INV-001", "DB-INV-002", "DB-INV-005", "DB-TXN-003", "TEST-117", "TEST-119"],
+      "test_level": "migration",
+      "test_path": "backend/tests/test_migrations.py",
+      "status": "implemented",
+      "notes": "A populated exact revision-35 Invoice source/header/line database upgrades to revision 36 with source data intact, a correct server snapshot, and an empty new command ledger."
     }
   ]
 }
