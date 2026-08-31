@@ -1,17 +1,18 @@
 {
-  "active_cycle": "v1-045-invoice-lifecycle-issuance-adjustments-void",
+  "active_cycle": "v1-046-late-payment-decision-charge-correction-api",
   "approval": {
-    "status": "complete",
+    "status": "approved_complete",
     "basis": "owner standing direct-Codex authorization for sequential V1-042 through V1-060 execution",
         "implementation_started": true,
         "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
   "authorities": [
-    "BR-INV-*",
-    "API-050-053",
-    "TEST-053-058",
-    "TEST-117-119"
+    "BR-INV-051-055",
+    "BR-LATE-*",
+    "API-091",
+    "TEST-117-119",
+    "TEST-123-124"
   ],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -694,15 +695,15 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "fe00f286759695f53001e77937b107d343fb6947",
+  "commit": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
   "evidence_applicability": {
-    "basis": "Exact V1-045 cumulative implementation df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af remains byte-for-byte identical to the independently reviewed zero-finding PASS target; focused Invoice 32/32, typed-source and cumulative PostgreSQL 2/2, billing-run PostgreSQL 11/11, semantic TEST-119/API-050/API-051/API-053/DB-INV-002, traceability 22/22, complete profile 15/15, and real PostgreSQL 456/456 passed before publication",
+    "basis": "Exact V1-046 implementation 7a5097c9f055fd7d7d91e44376f4e215dc2fa790 has sole parent 39c38e74b7b55f877f74081c94dcd9b971aa1348, a clean authorized 16-file +2282/-19 diff, six durable Workboard proof records, and a manager-rerun focused 65/65 gate. The recorded real PostgreSQL 464/464 with zero skips, backend 727/727, frontend 234/234, automation 186/186, static, audit, deployment, publication, secret, diff, and Alembic gates completed before later transcript-compaction transport failures.",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-044 target, closure, and reconciliation are published and exact-SHA CI-green at baseline 5ad58a520ba9595b9b9ea9fc0ac6ed7d3c98769f; independent V1-045 review card 5e6e6369-6e13-4fb9-884c-6cf9e4ba57d8 passed exact SHA df8096c1 with zero findings",
-    "tranche_id": "V1-045"
+    "prior_review_disposition": "V1-045 target df8096c1, closure fe00f286, and reconciliation 39c38e74 are published, synchronized, exact-SHA CI-green, and closed on Workboard; V1-046 still requires its existing integration and fresh independent-review cards.",
+    "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Publish only this final V1-045 ops-only reconciliation commit, require successful exact-SHA GitHub Actions, prove final source/local/upstream/live-remote synchronization, and release only to REVIEW for property-manager verification; keep V1-046 held",
+  "next_action": "Manager-verify exact V1-046 implementation SHA 7a5097c9, then advance only the existing dependency-ordered integration and fresh independent-review cards; do not reimplement or activate V1-047",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -722,7 +723,7 @@
     "order": 46,
     "phase": "Billing",
     "risk_class": "high",
-    "status": "approved_ready",
+    "status": "verified_for_review",
     "task": "Late-payment decision, charge, correction, and allocation boundaries",
     "roadmap_id": "V1-046"
   },
@@ -732,6 +733,13 @@
       "status": "deferred",
       "scope": "operational infrastructure outside V1-033 through V1-036",
       "action": "record only; do not inspect, repair, or mix into product tranches"
+    },
+    {
+      "id": "native-hook-relay-unavailable",
+      "status": "diagnosed_nonblocking",
+      "scope": "OpenClaw native harness relay; separate from V1-046 product and release gates",
+      "evidence": "historical PreToolUse failures report Native hook relay unavailable; current gateway is running, OpenClaw reports 5/5 hooks ready, and current Workboard, cron, Git, and shell checks succeed",
+      "action": "record and monitor only; do not restart or alter the healthy gateway without fresh failing health evidence"
     }
   ],
   "owner_action": "none",
@@ -743,7 +751,42 @@
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
   "phase": "Billing",
+  "implementation_recovery": {
+    "tranche_id": "V1-046",
+    "contract_card_id": "0bdb979f-dce4-4ea8-8036-d08bfc810270",
+    "implementation_card_id": "90ffb0d9-ea08-4a87-916f-af461387692b",
+    "integration_card_id": "bfee8d82-83e6-4000-ac63-6835b1220201",
+    "independent_review_card_id": "8548ab20-00b1-4ccf-8275-1472b704ee03",
+    "release_card_id": "3266b3a3-e244-4926-ade8-6cc13eff775f",
+    "exact_sha": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
+    "direct_parent": "39c38e74b7b55f877f74081c94dcd9b971aa1348",
+    "tree": "71fe4780286844fc1be14629565b213a887e7e1b",
+    "changed_path_count": 16,
+    "insertions": 2282,
+    "deletions": 19,
+    "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-90ffb0d9-ea08-4a87-916f-af461387692b",
+    "worktree_clean": true,
+    "workboard_status": "review",
+    "claim_active": false,
+    "duplicate_worker_active": false,
+    "transport_failures": [
+      "CLI transcript compaction timed out after completion",
+      "CLI transcript compaction session-file lock timed out after completion"
+    ],
+    "stale_dispatch_effect": "none; no second implementation, commit, claim, or worktree",
+    "verification": {
+      "focused_unit_api_traceability": "PASS: 65/65; independently rerun during recovery",
+      "real_postgresql": "PASS: 464/464, zero failures, zero skips; durable Workboard proof predates transport failure",
+      "backend": "PASS: 727/727",
+      "frontend": "PASS: 234/234",
+      "automation": "PASS: 186/186",
+      "other_gates": "PASS: format, lint, strict types, builds, locked dependency audits, deployment, publication/secret, diff, and sole linear Alembic head 20260831_37"
+    },
+    "status": "verified_implementation_restored_to_review",
+    "recovered_at": "2026-08-31T16:49:39Z"
+  },
   "publication": {
+    "role": "completed_predecessor",
     "ci_completed": true,
     "ci_conclusion": "success",
     "ci_run_attempt": 1,
@@ -764,6 +807,7 @@
     "predecessor_reconciliation_commit": "5ad58a520ba9595b9b9ea9fc0ac6ed7d3c98769f"
   },
   "release_review": {
+    "role": "completed_predecessor",
     "card_id": "5e6e6369-6e13-4fb9-884c-6cf9e4ba57d8",
     "exact_sha": "df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af",
     "direct_parent": "2c1c8532b7fb9b86c550457487b65e45ad06676d",
@@ -774,15 +818,15 @@
     "status": "PASS"
   },
   "relevant_docs": [
-    "docs/001_DOMAIN_MODEL.md: Invoice, line, adjustment, issue, VOID, and typed-source vocabulary",
-    "docs/002_BUSINESS_RULES.md: BR-INV lifecycle, correction, issuance, amount, and history invariants",
-    "docs/004_DATABASE_MODEL.md: DB-INV storage, immutability, command, source, and transaction contracts",
-    "docs/005_API_SPECIFICATION.md: API-050 through API-053",
-    "docs/007_TESTING_STRATEGY.md: TEST-053 through TEST-058 and TEST-117 through TEST-119",
-    "docs/008_SECURITY_MODEL.md: Property-scoped Invoice read and separate create, issue, adjust, and void capabilities"
+    "docs/001_DOMAIN_MODEL.md: Late-payment Decision and separate Charge vocabulary",
+    "docs/002_BUSINESS_RULES.md: BR/PR-INV-051-055 and BR/PR-LATE-* final-decision, non-compounding, correction, and history invariants",
+    "docs/004_DATABASE_MODEL.md: DB-INV-007-009, DB-DER-009, DB-TXN-007, and DB-VIEW-007",
+    "docs/005_API_SPECIFICATION.md: API-091",
+    "docs/007_TESTING_STRATEGY.md: TEST-117 through TEST-119 and TEST-123 through TEST-124",
+    "docs/008_SECURITY_MODEL.md: separate Property-scoped late-payment review, final-decision, and charge-correction capabilities"
   ],
   "repair": {
-    "tranche_id": "V1-045",
+    "tranche_id": "V1-046",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -1384,14 +1428,14 @@
   "risk_class": "high",
   "roadmap": {
     "completed": 45,
-    "current_id": "V1-045",
+    "current_id": "V1-046",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
-  "task": "Completed the approved bounded candidate: Invoice lifecycle, issuance, adjustments, and void services",
+  "status": "implemented_awaiting_supervisor_review",
+  "task": "Verified the approved bounded V1-046 implementation and restored its existing Workboard card to REVIEW; integration, independent review, and release remain pending",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -1619,8 +1663,8 @@
     "PASS: V1-045 implementation commit df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af exact-SHA GitHub Actions run 33402789651; all four jobs",
     "PASS: V1-045 ops-only closure commit fe00f286759695f53001e77937b107d343fb6947 exact-SHA GitHub Actions run 33404108038; all four jobs"
   ],
-  "tests_tranche_id": "V1-045",
-  "timestamp": "2026-08-31T14:47:18Z",
+  "tests_tranche_id": "V1-046",
+  "timestamp": "2026-08-31T16:49:39Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -1647,23 +1691,22 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
-    "backend/migrations/versions/20260831_36_invoice_lifecycle_api.py",
+    "backend/migrations/versions/20260831_37_late_payment_api.py",
     "backend/src/property_rental/app.py",
-    "backend/src/property_rental/invoice.py",
-    "backend/src/property_rental/invoice_api.py",
-    "backend/tests/test_billing_run_migration.py",
+    "backend/src/property_rental/late_payment.py",
+    "backend/src/property_rental/late_payment_api.py",
     "backend/tests/test_billing_service_migration.py",
     "backend/tests/test_initial_owner_bootstrap_cli.py",
-    "backend/tests/test_invoice.py",
     "backend/tests/test_invoice_migration.py",
+    "backend/tests/test_late_payment.py",
+    "backend/tests/test_late_payment_migration.py",
     "backend/tests/test_lease_api_migration.py",
     "backend/tests/test_migrations.py",
     "backend/tests/test_utility_api_migration.py",
     "backend/tests/test_utility_consumption_migration.py",
     "backend/tests/test_utility_meter_migration.py",
     "ops/traceability.json",
-    "ops/NOW.md",
-    "ops/STATE.json"
+    "scripts/database-test.sh"
   ],
-  "tranche": "Invoice lifecycle, issuance, adjustments, and void services"
+  "tranche": "Late-payment decision, charge, correction, and allocation boundaries"
 }

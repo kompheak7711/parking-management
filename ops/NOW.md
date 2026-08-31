@@ -1,59 +1,53 @@
-# V1-045 Invoice lifecycle, issuance, adjustments, and void services — complete
+# V1-046 Late-payment decision, charge, and correction API — implementation verified for review
 
-- Candidate: `V1-045` — Invoice lifecycle, issuance, adjustments, and void services.
-- Authorization: Owner standing direct-Codex authorization for V1-042 through V1-060;
-  this release card is limited to the exact independently reviewed V1-045 SHA.
-- Baseline: clean synchronized `implementation/foundation` at V1-044 reconciliation
-  commit `5ad58a520ba9595b9b9ea9fc0ac6ed7d3c98769f`.
-- Implementation: exact cumulative commit
-  `df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af`, direct parent
-  `2c1c8532b7fb9b86c550457487b65e45ad06676d`; exactly 11 linear commits and
-  15 reviewed paths from the baseline, published by non-force fast-forward. The
-  final correction changed only `backend/tests/test_billing_run_migration.py`
-  (+55/-13).
-- Scope: authorized-source Invoice creation; DRAFT correction and issuance;
-  immutable exact adjustments and exceptional VOID history; typed line sources;
-  bounded list/detail APIs; financial, transaction, authorization, idempotency,
-  replay, concurrency, audit, and migration invariants.
-- Authorities: `BR-INV-*`, `API-050` through `API-053`, `TEST-053` through
-  `TEST-058`, `TEST-117` through `TEST-119`, and the bounded `DB-INV-*` contracts.
-- Excluded: physical deletion, product corrections during release, production
-  deployment, production data or credentials, late-payment policy, and V1-046 work.
-- Independent review: Workboard card
-  `5e6e6369-6e13-4fb9-884c-6cf9e4ba57d8` returned an explicit zero-finding PASS
-  for exact SHA `df8096c1`; reviewer made no edits and property-manager acceptance
-  is recorded.
-- Local release verification: focused Invoice 32/32; focused typed-source and
-  cumulative retry/VOID PostgreSQL 2/2; focused billing-run 11/11; structural
-  traceability 22/22 plus semantic TEST-119/API-050/API-051/API-053/DB-INV-002;
-  complete deterministic profile 15/15; backend 711 passed with 433 expected
-  database-only skips covered by real PostgreSQL 456/456; frontend 234/234;
-  automation 186/186. Format, lint, strict type, build/import, locked dependency,
-  Alembic one-head/36-linear-revision fresh and populated upgrade, deployment,
-  publication, security, secret, JSON, traceability, and diff gates passed.
-- Implementation publication: GitHub Actions run `33402789651` passed all four jobs
-  for exact SHA `df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af`.
-- Closure publication: ops-only commit
-  `fe00f286759695f53001e77937b107d343fb6947` changed only `ops/NOW.md` and
-  `ops/STATE.json`; GitHub Actions run `33404108038` passed for that exact SHA.
-- Status: V1-045 is complete, published, independently reviewed, exact-SHA
-  CI-green, and closure-valid; only this final ops-only reconciliation publication,
-  exact-SHA CI, synchronization proof, and manager verification remain.
-- V1-046: remains held at `approved_ready`; no activation, implementation, or
-  dispatch has occurred.
-- Scheduler: no production deployment, scheduler activation, or scheduler weakening
-  occurred.
-- Blockers: none.
-- Exact next action: publish only this final ops-only reconciliation commit, require
-  its exact-SHA GitHub Actions, prove final source/local/upstream/live-remote
-  synchronization, and release only to REVIEW; property-manager alone may mark DONE
-  and activate V1-046.
+- Predecessor: `V1-045` is complete, published, and reconciled. Implementation
+  `df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af`, closure
+  `fe00f286759695f53001e77937b107d343fb6947`, and final reconciliation
+  `39c38e74b7b55f877f74081c94dcd9b971aa1348` are published, synchronized,
+  independently reviewed, and exact-SHA CI-green.
+- Active candidate: `V1-046` — Late-payment decision, charge, correction, and
+  allocation boundaries. The implemented scope remains backend API-091 only;
+  V1-047 UI and V1-049 allocation implementation remain excluded.
+- Frozen contract: Workboard card `0bdb979f-dce4-4ea8-8036-d08bfc810270` is DONE.
+- Implementation: Workboard card `90ffb0d9-ea08-4a87-916f-af461387692b` is
+  restored to REVIEW at exact commit
+  `7a5097c9f055fd7d7d91e44376f4e215dc2fa790`, sole parent
+  `39c38e74b7b55f877f74081c94dcd9b971aa1348`. The retained managed worktree is
+  clean; the authorized diff is exactly 16 files, +2282/-19.
+- Verification evidence: focused unit/API/traceability 65/65 (independently
+  rerun during recovery); real PostgreSQL 464/464 with zero skips; backend
+  727/727; frontend 234/234; automation 186/186. Format, lint, strict types,
+  builds, dependency audits, deployment checks, publication/secret guards,
+  diff checks, and sole linear Alembic head `20260831_37` passed before the
+  worker transport failure.
+- Recovery classification: two native task records ended through CLI transcript
+  compaction after the commit and proof were already durable. The later packet
+  was a stale duplicate dispatch; it created no new implementation, commit,
+  claim, worker, or worktree. Historical task failures remain preserved as
+  transport evidence and do not invalidate the verified commit.
+- Remaining gates: integration card `bfee8d82-83e6-4000-ac63-6835b1220201`,
+  independent-review card `8548ab20-00b1-4ccf-8275-1472b704ee03`, and release
+  card `3266b3a3-e244-4926-ade8-6cc13eff775f` remain dependency-ordered and
+  unclaimed. Release and publication are not complete.
+- Supervisor recovery: the existing `Property Rental 24/7 Supervisor` schedule
+  is the only authorized continuous supervisor identity. Recovery must reuse
+  that job, run one bounded native-Codex/Workboard cycle, and never create a
+  duplicate schedule or worker.
+- Separate operational issue: repeated `Native hook relay unavailable` errors
+  are recorded for follow-up. Current gateway process health and all five hook
+  eligibility checks pass; no gateway restart or mutation is justified.
+- V1-047: held and untouched.
+- Blockers: none for continuity reconciliation. V1-046 still requires its
+  existing integration, fresh independent review, and release gates.
+- Exact next action: manager-verify the REVIEW implementation card, advance only
+  the existing dependency-ready V1-046 integration path, and keep V1-047 held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: exact V1-045 target `df8096c1` and closure
-  `fe00f286` are published and exact-SHA CI-green; final reconciliation is pending.
-- Automation exact next action: keep V1-046 held and undispatched while V1-045
-  closure, reconciliation CI, and final synchronization complete.
+- Automation state: V1-045 complete; V1-046 exact implementation SHA `7a5097c9`
+  verified and restored to REVIEW after transport-only task failures.
+- Automation exact next action: continue the existing V1-046 Workboard DAG from
+  manager review through integration and fresh independent review; do not
+  reimplement, duplicate a worker, release early, or activate V1-047.
 
 <!-- AUTOMATION_STATUS_END -->
