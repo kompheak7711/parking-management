@@ -7726,6 +7726,85 @@ def invoice_api_actor(actor_id: UUID, property_id: UUID) -> AuthenticatedActor:
     )
 
 
+def test_v1_045_api_rejects_int4_overflow_before_invoice_command_mutation(
+    migrated_database_url: str,
+) -> None:
+    """API-006/014/052 and SEC-036: version overflow is a safe precondition failure."""
+    with psycopg.connect(migrated_database_url) as setup:
+        actor_id, property_id, _, obligation_id = setup_invoice_api_source(setup)
+        setup.commit()
+    service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    authenticated = invoice_api_actor(actor_id, property_id)
+    draft = service.create_draft(
+        property_id,
+        CreateInvoiceDraftCommand(uuid4(), obligation_id),
+        actor=authenticated,
+    )
+    invoice_id = UUID(str(draft["id"]))
+    line_id = UUID(str(cast(list[dict[str, object]], draft["lines"])[0]["id"]))
+    client = TestClient(create_app(actor_resolver=lambda _: authenticated, invoice_flow=service))
+    client.cookies.set("__Host-prm_csrf", "csrf")
+
+    def effects() -> tuple[object, ...]:
+        with psycopg.connect(migrated_database_url) as verify:
+            row = verify.execute(
+                "SELECT invoice.status,invoice.version,"
+                "(SELECT count(*) FROM app.invoice_commands AS command "
+                "WHERE command.invoice_id=invoice.id),"
+                "(SELECT count(*) FROM app.invoice_adjustments AS adjustment "
+                "WHERE adjustment.invoice_id=invoice.id),"
+                "(SELECT count(*) FROM app.invoice_void_events AS event "
+                "WHERE event.invoice_id=invoice.id),"
+                "(SELECT count(*) FROM app.audit_events AS audit "
+                "WHERE audit.entity_id=invoice.id AND audit.action LIKE 'invoice.%%') "
+                "FROM app.invoices AS invoice WHERE invoice.id=%s",
+                (invoice_id,),
+            ).fetchone()
+        assert row is not None
+        return row
+
+    baseline = effects()
+    shared_headers = {
+        "Origin": "https://localhost",
+        "X-CSRF-Token": "csrf",
+        "If-Match": '"2147483648"',
+    }
+    responses = [
+        client.patch(
+            f"/api/v1/invoices/{invoice_id}",
+            headers={**shared_headers, "Idempotency-Key": str(uuid4())},
+            json={
+                "authorized_nonrecurring_obligation_id": str(obligation_id),
+                "reason": "Out-of-range draft correction",
+            },
+        ),
+        client.post(
+            f"/api/v1/invoices/{invoice_id}/issue",
+            headers={**shared_headers, "Idempotency-Key": str(uuid4())},
+            json={},
+        ),
+        client.post(
+            f"/api/v1/invoices/{invoice_id}/adjustments",
+            headers={**shared_headers, "Idempotency-Key": str(uuid4())},
+            json={
+                "invoice_line_id": str(line_id),
+                "adjustment_type": "CREDIT",
+                "amount": {"currency": "USD", "minor_units": 1},
+                "source_reference": "approved-correction/int4-boundary",
+                "reason": "Out-of-range adjustment",
+            },
+        ),
+        client.post(
+            f"/api/v1/invoices/{invoice_id}/void",
+            headers={**shared_headers, "Idempotency-Key": str(uuid4())},
+            json={"reason": "Out-of-range void"},
+        ),
+    ]
+
+    assert effects() == baseline == ("DRAFT", 1, 1, 0, 0, 1)
+    assert [response.status_code for response in responses] == [412, 412, 412, 412]
+
+
 def test_v1_045_authorized_source_lifecycle_preserves_original_and_exact_adjustments(
     migrated_database_url: str,
 ) -> None:

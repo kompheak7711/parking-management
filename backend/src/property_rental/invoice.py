@@ -26,6 +26,7 @@ INVOICE_CONNECT_TIMEOUT_SECONDS: Final = 3
 INVOICE_LOCK_TIMEOUT_MS: Final = 3_000
 INVOICE_QUERY_TIMEOUT_MS: Final = 5_000
 MAX_INVOICE_PAGE_SIZE: Final = 100
+MAX_INVOICE_EXPECTED_VERSION: Final = 2_147_483_647
 NIL_UUID: Final = UUID(int=0)
 
 
@@ -74,6 +75,18 @@ def _normalized(value: str, field: str, *, maximum: int = 500) -> None:
         raise ValueError(f"{field} must be normalized, nonblank, and bounded")
 
 
+def _expected_version(value: object) -> None:
+    if type(value) is not int:
+        raise ValueError(
+            f"expected_version must be an integer from 1 to {MAX_INVOICE_EXPECTED_VERSION}"
+        )
+    expected_version = value
+    if not 1 <= expected_version <= MAX_INVOICE_EXPECTED_VERSION:
+        raise ValueError(
+            f"expected_version must be an integer from 1 to {MAX_INVOICE_EXPECTED_VERSION}"
+        )
+
+
 @dataclass(frozen=True, slots=True)
 class CreateInvoiceDraftCommand:
     idempotency_key: UUID
@@ -95,8 +108,7 @@ class CorrectInvoiceDraftCommand:
         _identity(self.idempotency_key, "idempotency_key")
         _identity(self.authorized_obligation_id, "authorized_obligation_id")
         _normalized(self.reason, "reason")
-        if self.expected_version < 1:
-            raise ValueError("expected_version must be positive")
+        _expected_version(self.expected_version)
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,8 +118,7 @@ class IssueInvoiceCommand:
 
     def __post_init__(self) -> None:
         _identity(self.idempotency_key, "idempotency_key")
-        if self.expected_version < 1:
-            raise ValueError("expected_version must be positive")
+        _expected_version(self.expected_version)
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,8 +140,7 @@ class AdjustInvoiceCommand:
             raise ValueError("amount_usd_cents must be a bounded positive integer")
         _normalized(self.source_reference, "source_reference")
         _normalized(self.reason, "reason")
-        if self.expected_version < 1:
-            raise ValueError("expected_version must be positive")
+        _expected_version(self.expected_version)
 
 
 @dataclass(frozen=True, slots=True)
@@ -142,8 +152,7 @@ class VoidInvoiceCommand:
     def __post_init__(self) -> None:
         _identity(self.idempotency_key, "idempotency_key")
         _normalized(self.reason, "reason")
-        if self.expected_version < 1:
-            raise ValueError("expected_version must be positive")
+        _expected_version(self.expected_version)
 
 
 @dataclass(frozen=True, slots=True)

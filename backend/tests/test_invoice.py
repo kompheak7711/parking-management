@@ -3,14 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import cast
 from uuid import UUID, uuid4
 
 import pytest
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
 from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.invoice import (
+    MAX_INVOICE_EXPECTED_VERSION,
     AdjustInvoiceCommand,
     AdjustmentType,
     CorrectInvoiceDraftCommand,
@@ -22,6 +25,7 @@ from property_rental.invoice import (
     VoidInvoiceCommand,
     invoice_request_digest,
 )
+from property_rental.invoice_api import _version
 
 
 def actor(property_id: UUID, *capabilities: str) -> AuthenticatedActor:
@@ -132,6 +136,7 @@ class InMemoryInvoiceFlow:
     commands: list[object] = field(default_factory=list)
     replay_inputs: dict[tuple[str, UUID], object] = field(default_factory=dict)
     list_requests: list[dict[str, object]] = field(default_factory=list)
+    property_lookups: int = 0
 
     def list(
         self,
@@ -169,6 +174,7 @@ class InMemoryInvoiceFlow:
 
     def property_for_invoice(self, invoice_id: UUID) -> UUID:
         assert invoice_id == UUID(str(self.value["id"]))
+        self.property_lookups += 1
         return self.property_id
 
     def _replay(self, action: str, key: UUID, command: object) -> bool:
@@ -325,6 +331,160 @@ def test_invoice_commands_reject_nil_ids_nonpositive_money_and_unnormalized_evid
         AdjustInvoiceCommand(uuid4(), uuid4(), AdjustmentType.CREDIT, 0, "source", "reason", 1)
     with pytest.raises(ValueError, match="normalized"):
         VoidInvoiceCommand(uuid4(), " reason ", 1)
+
+
+def test_invoice_command_versions_are_exact_positive_postgresql_integers() -> None:
+    def commands(
+        expected_version: int,
+    ) -> tuple[
+        CorrectInvoiceDraftCommand,
+        IssueInvoiceCommand,
+        AdjustInvoiceCommand,
+        VoidInvoiceCommand,
+    ]:
+        return (
+            CorrectInvoiceDraftCommand(uuid4(), uuid4(), "Correction", expected_version),
+            IssueInvoiceCommand(uuid4(), expected_version),
+            AdjustInvoiceCommand(
+                uuid4(),
+                uuid4(),
+                AdjustmentType.CREDIT,
+                1,
+                "approved-correction/version-boundary",
+                "Version boundary",
+                expected_version,
+            ),
+            VoidInvoiceCommand(uuid4(), "Version boundary", expected_version),
+        )
+
+    assert all(
+        command.expected_version == MAX_INVOICE_EXPECTED_VERSION
+        for command in commands(MAX_INVOICE_EXPECTED_VERSION)
+    )
+    for invalid in (0, MAX_INVOICE_EXPECTED_VERSION + 1, True, cast(int, "1")):
+        with pytest.raises(ValueError, match="expected_version"):
+            commands(invalid)
+
+
+@pytest.mark.parametrize(
+    ("header", "expected"),
+    [
+        ("1", 1),
+        ('"1"', 1),
+        (" 000000001 ", 1),
+        (str(MAX_INVOICE_EXPECTED_VERSION), MAX_INVOICE_EXPECTED_VERSION),
+        (f'"{MAX_INVOICE_EXPECTED_VERSION}"', MAX_INVOICE_EXPECTED_VERSION),
+    ],
+)
+def test_invoice_if_match_parser_preserves_bounded_decimal_grammar(
+    header: str, expected: int
+) -> None:
+    assert _version(header) == expected
+
+
+@pytest.mark.parametrize(
+    "header",
+    [
+        None,
+        "",
+        '""',
+        "0",
+        "-1",
+        "+1",
+        "1.0",
+        "\N{ARABIC-INDIC DIGIT ONE}",
+        "2147483648",
+        "9" * 10_000,
+    ],
+)
+def test_invoice_if_match_parser_rejects_unsafe_or_out_of_range_values(
+    header: str | None,
+) -> None:
+    with pytest.raises(HTTPException) as rejected:
+        _version(header)
+    assert rejected.value.status_code == 412
+
+
+def test_all_invoice_commands_bound_versions_before_flow_execution() -> None:
+    property_id = uuid4()
+    invoice_id = uuid4()
+    source_id = uuid4()
+    line_id = uuid4()
+    all_capabilities = actor(
+        property_id,
+        "invoices.create",
+        "invoices.issue",
+        "invoices.adjust",
+        "invoices.void",
+    )
+    cases: tuple[tuple[str, str, dict[str, object]], ...] = (
+        (
+            "PATCH",
+            f"/api/v1/invoices/{invoice_id}",
+            {
+                "authorized_nonrecurring_obligation_id": str(source_id),
+                "reason": "Version boundary correction",
+            },
+        ),
+        ("POST", f"/api/v1/invoices/{invoice_id}/issue", {}),
+        (
+            "POST",
+            f"/api/v1/invoices/{invoice_id}/adjustments",
+            {
+                "invoice_line_id": str(line_id),
+                "adjustment_type": "CREDIT",
+                "amount": {"currency": "USD", "minor_units": 1},
+                "source_reference": "approved-correction/version-boundary",
+                "reason": "Version boundary adjustment",
+            },
+        ),
+        (
+            "POST",
+            f"/api/v1/invoices/{invoice_id}/void",
+            {"reason": "Version boundary void"},
+        ),
+    )
+
+    for method, path, payload in cases:
+        flow = InMemoryInvoiceFlow(
+            property_id,
+            invoice_resource(
+                property_id,
+                invoice_id=invoice_id,
+                version=MAX_INVOICE_EXPECTED_VERSION,
+            ),
+        )
+        response = api(flow, all_capabilities).request(
+            method,
+            path,
+            json=payload,
+            headers={
+                **mutation_headers(),
+                "If-Match": f'"{MAX_INVOICE_EXPECTED_VERSION}"',
+            },
+        )
+        assert response.status_code == 200
+        assert len(flow.commands) == 1
+        assert (
+            cast(CorrectInvoiceDraftCommand, flow.commands[0]).expected_version
+            == MAX_INVOICE_EXPECTED_VERSION
+        )
+
+    invalid_flow = InMemoryInvoiceFlow(
+        property_id, invoice_resource(property_id, invoice_id=invoice_id)
+    )
+    invalid_client = api(invalid_flow, all_capabilities)
+    for invalid_header in ('"2147483648"', "9" * 10_000):
+        for method, path, payload in cases:
+            response = invalid_client.request(
+                method,
+                path,
+                json=payload,
+                headers={**mutation_headers(), "If-Match": invalid_header},
+            )
+            assert response.status_code == 412
+    assert invalid_flow.property_lookups == 0
+    assert invalid_flow.commands == []
 
 
 def test_create_accepts_only_authorized_source_and_enforces_scope_csrf_and_capability() -> None:

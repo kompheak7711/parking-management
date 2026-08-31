@@ -23,6 +23,7 @@ from property_rental.invoice import (
     INVOICE_ISSUE_CAPABILITY,
     INVOICE_READ_CAPABILITY,
     INVOICE_VOID_CAPABILITY,
+    MAX_INVOICE_EXPECTED_VERSION,
     MAX_INVOICE_PAGE_SIZE,
     AdjustInvoiceCommand,
     AdjustmentType,
@@ -197,9 +198,16 @@ def _version(value: str | None) -> int:
     candidate = value.strip()
     if candidate.startswith('"') and candidate.endswith('"'):
         candidate = candidate[1:-1]
-    if not candidate.isdigit() or int(candidate) < 1:
+    if (
+        len(candidate) > len(str(MAX_INVOICE_EXPECTED_VERSION))
+        or not candidate.isascii()
+        or not candidate.isdecimal()
+    ):
         raise HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED)
-    return int(candidate)
+    version = int(candidate)
+    if not 1 <= version <= MAX_INVOICE_EXPECTED_VERSION:
+        raise HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED)
+    return version
 
 
 def _invoke(command: Callable[[], dict[str, object]]) -> dict[str, object]:
@@ -349,6 +357,7 @@ def create_invoice_router(
         idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
         if_match: Annotated[str | None, Header(alias="If-Match")] = None,
     ) -> dict[str, object]:
+        expected_version = _version(if_match)
         actor, property_id = command_context(invoice_id, request, INVOICE_CREATE_CAPABILITY)
         resource = _invoke(
             lambda: flow.correct_draft(
@@ -358,7 +367,7 @@ def create_invoice_router(
                     idempotency_key,
                     body.authorized_nonrecurring_obligation_id,
                     body.reason,
-                    _version(if_match),
+                    expected_version,
                 ),
                 actor=actor,
             )
@@ -376,12 +385,13 @@ def create_invoice_router(
         if_match: Annotated[str | None, Header(alias="If-Match")] = None,
     ) -> dict[str, object]:
         del body
+        expected_version = _version(if_match)
         actor, property_id = command_context(invoice_id, request, INVOICE_ISSUE_CAPABILITY)
         resource = _invoke(
             lambda: flow.issue(
                 property_id,
                 invoice_id,
-                IssueInvoiceCommand(idempotency_key, _version(if_match)),
+                IssueInvoiceCommand(idempotency_key, expected_version),
                 actor=actor,
             )
         )
@@ -397,6 +407,7 @@ def create_invoice_router(
         idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
         if_match: Annotated[str | None, Header(alias="If-Match")] = None,
     ) -> dict[str, object]:
+        expected_version = _version(if_match)
         actor, property_id = command_context(invoice_id, request, INVOICE_ADJUST_CAPABILITY)
         resource = _invoke(
             lambda: flow.adjust(
@@ -409,7 +420,7 @@ def create_invoice_router(
                     body.amount.minor_units,
                     body.source_reference,
                     body.reason,
-                    _version(if_match),
+                    expected_version,
                 ),
                 actor=actor,
             )
@@ -426,12 +437,13 @@ def create_invoice_router(
         idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
         if_match: Annotated[str | None, Header(alias="If-Match")] = None,
     ) -> dict[str, object]:
+        expected_version = _version(if_match)
         actor, property_id = command_context(invoice_id, request, INVOICE_VOID_CAPABILITY)
         resource = _invoke(
             lambda: flow.void(
                 property_id,
                 invoice_id,
-                VoidInvoiceCommand(idempotency_key, body.reason, _version(if_match)),
+                VoidInvoiceCommand(idempotency_key, body.reason, expected_version),
                 actor=actor,
             )
         )

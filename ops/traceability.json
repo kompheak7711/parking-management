@@ -10533,6 +10533,38 @@
       "notes": "Domain command construction rejects nil identities, nonpositive integer USD amounts, and unnormalized correction evidence before persistence."
     },
     {
+      "test_id": "test_invoice_command_versions_are_exact_positive_postgresql_integers",
+      "upstream_ids": ["API-006", "SEC-036", "TEST-119"],
+      "test_level": "domain",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "Every versioned Invoice command accepts the PostgreSQL integer maximum and rejects zero, int4 overflow, booleans, and non-integers before persistence."
+    },
+    {
+      "test_id": "test_invoice_if_match_parser_preserves_bounded_decimal_grammar",
+      "upstream_ids": ["API-006", "API-014", "SEC-036", "TEST-119"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "The shared Invoice If-Match parser preserves quoted and unquoted ASCII decimal versions, surrounding whitespace, and bounded leading zeroes through the PostgreSQL integer maximum."
+    },
+    {
+      "test_id": "test_invoice_if_match_parser_rejects_unsafe_or_out_of_range_values",
+      "upstream_ids": ["API-006", "API-014", "SEC-036", "TEST-119"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "The shared parser returns 412 for missing, empty, zero, signed, fractional, non-ASCII, int4-overflow, and excessive-length versions without unbounded integer conversion."
+    },
+    {
+      "test_id": "test_all_invoice_commands_bound_versions_before_flow_execution",
+      "upstream_ids": ["API-006", "API-014", "API-052", "SEC-036", "TEST-119"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice.py",
+      "status": "implemented",
+      "notes": "PATCH correction, POST issue, POST Adjustment, and POST VOID accept 2147483647 through command construction, while 2147483648 and a huge digit header return 412 before any Invoice flow lookup or command call."
+    },
+    {
       "test_id": "test_create_accepts_only_authorized_source_and_enforces_scope_csrf_and_capability",
       "upstream_ids": ["API-050", "API-053", "SEC-016", "SEC-019", "SEC-020", "TEST-119"],
       "test_level": "API",
@@ -10595,6 +10627,14 @@
       "test_path": "backend/tests/test_invoice.py",
       "status": "implemented",
       "notes": "The explicit versioned VOID route denies an actor with only invoices.adjust, succeeds with invoices.void, and returns the current version for a stale follow-up instead of accepting arbitrary status editing."
+    },
+    {
+      "test_id": "test_v1_045_api_rejects_int4_overflow_before_invoice_command_mutation",
+      "upstream_ids": ["API-006", "API-014", "API-052", "SEC-036", "TEST-119"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL and FastAPI prove all four Invoice commands return 412 for 2147483648 without a 42883/503 escape, leaving DRAFT status, version, command count, adjustments, VOID events, and Invoice audit count unchanged."
     },
     {
       "test_id": "test_v1_045_authorized_source_lifecycle_preserves_original_and_exact_adjustments",
