@@ -36,6 +36,7 @@ cat >"$repo/ops/V1_ROADMAP.json" <<'EOF'
 {"total_tranches":60,"tranches":[{"id":"V1-001","status":"complete"},{"id":"V1-012","status":"complete"},{"id":"V1-013","status":"approved_ready"}]}
 EOF
 printf '%s\n' '# Test' >"$repo/ops/QUEUE.md"
+printf '%s\n' '# Test policy' >"$repo/ops/OPENCLAW_SUPERVISOR_PROMPT.md"
 git -C "$repo" init -q
 git -C "$repo" add .
 git -C "$repo" -c user.name=test -c user.email=test@example.invalid commit -qm test
@@ -57,12 +58,11 @@ CREATE TABLE cron_jobs (
 );
 INSERT INTO cron_jobs VALUES (
   '658ffdaf-1ac1-45a6-a842-f5f7d7a226eb',
-  'property-rental-24x7-supervisor', 1, 'every', 1800000, 'command',
-  '{"kind":"command","argv":["REPLACE_DISPATCHER"],"cwd":"REPLACE_REPO","noOutputTimeoutSeconds":10860,"outputMaxBytes":20000}',
+  'property-rental-24x7-supervisor', 1, 'every', 1800000, 'agentTurn',
+  '# Test policy' || char(10),
   1787011200000, 'ok', 0, NULL, 1787011100000
 );
 SQL
-sqlite3 "$database" "UPDATE cron_jobs SET payload_message=json_set(payload_message, '$.argv[0]', '$repo/scripts/openclaw-supervisor-dispatch.sh', '$.cwd', '$repo');"
 
 run_watchdog() {
   PROPERTY_RENTAL_REPO="$repo" \

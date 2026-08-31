@@ -367,6 +367,61 @@ def exact_supervisor(job: dict[str, Any], repo: Path) -> None:
         )
 
 
+def continuous_supervisor_disposition(
+    job: dict[str, Any], repo: Path
+) -> int | None:
+    """Retire this V1-019 restoration without mutating the continuous supervisor.
+
+    The post-exit restorer predates the native property-manager agent-turn job. Once
+    that job owns this exact identity, this legacy process must never enable, disable,
+    recreate, or otherwise rewrite it. A malformed current-policy job is reported
+    fail-closed but is still left untouched for the continuous supervisor recovery
+    path to repair through the supported OpenClaw interface.
+    """
+    payload = job.get("payload") or {}
+    if (
+        job.get("id") != SUPERVISOR_ID
+        or job.get("name") != SUPERVISOR_NAME
+        or (
+            job.get("agentId") != "property-manager"
+            and payload.get("kind") != "agentTurn"
+        )
+    ):
+        return None
+    schedule = job.get("schedule") or {}
+    try:
+        prompt = (repo / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").read_text()
+    except OSError as error:
+        print(
+            f"continuous supervisor policy is unreadable; legacy restoration left it untouched: {error}",
+            file=sys.stderr,
+        )
+        return 69
+    checks = {
+        "declaration": job.get("declarationKey") == "property-rental-24x7-v1",
+        "agent": job.get("agentId") == "property-manager",
+        "session": job.get("sessionTarget") == "isolated",
+        "schedule": schedule.get("kind") == "every"
+        and schedule.get("everyMs") == EXPECTED_INTERVAL_MS,
+        "payload_kind": payload.get("kind") == "agentTurn",
+        "prompt": payload.get("message") == prompt,
+        "model": payload.get("model") == "openai/gpt-5.6-sol",
+        "reasoning": payload.get("thinking") == "xhigh",
+        "timeout": payload.get("timeoutSeconds") == 1800,
+        "standard_context": payload.get("lightContext") is False,
+    }
+    failed = sorted(key for key, passed in checks.items() if not passed)
+    if failed:
+        print(
+            "continuous supervisor policy drifted; legacy restoration left it untouched: "
+            + ", ".join(failed),
+            file=sys.stderr,
+        )
+        return 69
+    print("legacy V1-019 post-exit restoration is retired for the continuous supervisor")
+    return 0
+
+
 def git(repo: Path, *arguments: str) -> str:
     return run(repo, "git", *arguments).stdout.strip()
 
@@ -2424,6 +2479,10 @@ def execute(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve()
     dispatch_state = Path(args.dispatch_state).resolve()
     evidence_path = Path(args.evidence).resolve()
+    current_job = cron(args.openclaw, repo, "get")
+    continuous_disposition = continuous_supervisor_disposition(current_job, repo)
+    if continuous_disposition is not None:
+        return continuous_disposition
     ci_evidence_path = (
         Path(args.ci_evidence).resolve()
         if args.ci_evidence
@@ -2742,6 +2801,10 @@ def execute(args: argparse.Namespace) -> int:
 def install(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve()
     evidence_path = Path(args.evidence).resolve()
+    current_job = cron(args.openclaw, repo, "get")
+    continuous_disposition = continuous_supervisor_disposition(current_job, repo)
+    if continuous_disposition is not None:
+        return continuous_disposition
     installation_phase = "argument_validation"
     submit_diagnostics: dict[str, Any] | None = None
     prior: dict[str, Any] | None = None

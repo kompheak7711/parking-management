@@ -2,7 +2,7 @@
   "active_cycle": "v1-046-late-payment-decision-charge-correction-api",
   "approval": {
     "status": "approved_complete",
-    "basis": "owner standing direct-Codex authorization for sequential V1-042 through V1-060 execution",
+    "basis": "owner standing continuous authorization from the current live V1-046 stage through V1-060, dependency ordered and without repeated routine authorization",
         "implementation_started": true,
         "implementation_completed": true,
     "publication_completed": false
@@ -703,7 +703,7 @@
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Manager-verify exact V1-046 implementation SHA 7a5097c9, then advance only the existing dependency-ordered integration and fresh independent-review cards; do not reimplement or activate V1-047",
+  "next_action": "Create or reuse exactly one bounded V1-046 traceability-only correction card removing the false API-091 mapping from the API-100 bootstrap test; dispatch no other worker, then require fresh exact-SHA integration and independent review",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -723,7 +723,7 @@
     "order": 46,
     "phase": "Billing",
     "risk_class": "high",
-    "status": "verified_for_review",
+    "status": "integration_blocked_bounded_correction_ready",
     "task": "Late-payment decision, charge, correction, and allocation boundaries",
     "roadmap_id": "V1-046"
   },
@@ -766,7 +766,7 @@
     "deletions": 19,
     "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-90ffb0d9-ea08-4a87-916f-af461387692b",
     "worktree_clean": true,
-    "workboard_status": "review",
+    "workboard_status": "implementation_done_integration_blocked",
     "claim_active": false,
     "duplicate_worker_active": false,
     "transport_failures": [
@@ -785,6 +785,30 @@
     "status": "verified_implementation_restored_to_review",
     "recovered_at": "2026-08-31T16:49:39Z"
   },
+  "continuous_supervisor_policy": {
+    "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
+    "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
+    "automation_job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+    "automation_name": "property-rental-24x7-supervisor",
+    "authorization_from": "V1-046",
+    "authorization_through": "V1-060",
+    "authorization_rule": "activate each successor automatically only after its predecessor is fully released, published, verified, reconciled, and closed; no repeated routine authorization",
+    "immediate_action": "On every cycle, reconcile ops/NOW.md, ops/STATE.json, ops/QUEUE.md, ops/V1_ROADMAP.json, Git, Workboard, claims, attempts, active workers, worktrees, and the scheduler. Continue from the latest verified dependency-safe stage. Never repeat completed work or dispatch a duplicate worker. If a valid worker is running, inspect and reconcile it. Activate the next version only after its predecessor is fully closed.",
+    "model_policy": {
+      "supervisor": {"model": "openai/gpt-5.6-sol", "reasoning": "xhigh", "mode": "standard"},
+      "independent_reviewer": {"model": "openai/gpt-5.6-sol", "reasoning": "max", "mode": "standard"},
+      "implementation_worker": {"model": "openai/gpt-5.6-sol", "reasoning": "high", "mode": "standard"},
+      "worker_xhigh_when": ["migrations", "concurrency", "security", "transactions", "repeated failures"],
+      "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
+      "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
+    },
+    "current_phase": "V1-046 integration blocked; bounded TEST-119 traceability correction ready",
+    "exact_next_action": "Create or reuse exactly one bounded V1-046 traceability-only correction card removing the false API-091 mapping from the API-100 bootstrap test; dispatch no other worker, then require fresh exact-SHA integration and independent review",
+    "production_authorized": false,
+    "paid_services_authorized": false,
+    "customer_data_authorized": false,
+    "updated_at": "2026-08-31T18:41:07Z"
+  },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
     "declaration_key": "property-rental-24x7-v1",
@@ -796,20 +820,20 @@
     "fallbacks": [],
     "enabled": true,
     "interval_ms": 1800000,
-    "immediate_run_id": "cron:658ffdaf-1ac1-45a6-a842-f5f7d7a226eb:1788195703494",
-    "immediate_run_session_id": "35386fbb-9535-4053-88c2-f633dd334cf4",
+    "immediate_run_id": "cron:658ffdaf-1ac1-45a6-a842-f5f7d7a226eb:1788201103514",
+    "immediate_run_session_id": "a81939a5-3f01-4ba6-8299-8ce59683a65c",
     "immediate_run_status": "ok",
     "immediate_run_verdict": "PASS",
-    "immediate_run_duration_ms": 597337,
-    "immediate_run_findings": "zero active claims, READY/RUNNING cards, queued tasks, duplicate workers, duplicate V1-046 worktrees, or V1-047 work",
-    "nonfatal_run_diagnostic": "one exploratory jq response-shape probe exited 5; the cycle continued, verified the same evidence through supported tools, and ended success",
-    "next_run_at": "2026-08-31T17:31:43Z",
+    "immediate_run_duration_ms": 449354,
+    "immediate_run_findings": "integration attempt accurately stopped and reconciled after one TEST-119 traceability defect; all other gates passed and both V1-046 worktrees remained clean",
+    "nonfatal_run_diagnostic": "one bounded shell discovery command failed after the authoritative state was established; the cycle completed successfully with explicit reconciliation",
+    "next_run_at": "2026-08-31T19:01:43.514Z",
     "recovery_commit": "3d4ba8538ed838dfb0ed96f995d4a4623a6bbce8",
     "recovery_ci_run_id": 33417142442,
     "recovery_ci_status": "success",
     "duplicate_job_count": 0,
     "legacy_payload_replaced": true,
-    "v1_047_held": true,
+    "successor_policy": "V1-047 remains dependency-blocked until V1-046 is fully closed, then starts automatically under the standing V1-060 authorization",
     "status": "enabled_healthy"
   },
   "publication": {
@@ -1461,8 +1485,8 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "implemented_awaiting_supervisor_review",
-  "task": "Verified the approved bounded V1-046 implementation and restored its existing Workboard card to REVIEW; integration, independent review, and release remain pending",
+  "status": "integration_blocked_bounded_correction_ready",
+  "task": "Preserve the verified V1-046 implementation and perform one bounded TEST-119 traceability correction before fresh exact-SHA integration, independent review, and release",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -1691,7 +1715,7 @@
     "PASS: V1-045 ops-only closure commit fe00f286759695f53001e77937b107d343fb6947 exact-SHA GitHub Actions run 33404108038; all four jobs"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-08-31T17:14:35Z",
+  "timestamp": "2026-08-31T18:41:07Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

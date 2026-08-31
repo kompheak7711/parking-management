@@ -120,33 +120,20 @@ def supervisor() -> dict[str, object]:
             "running": None,
             "config_valid": False,
         }
+    payload_message = row[5] if isinstance(row[5], str) else None
     try:
-        payload = json.loads(row[5])
-    except (TypeError, json.JSONDecodeError):
-        payload = None
-    expected_payload = {
-        "kind": "command",
-        "argv": [str(REPO / "scripts/openclaw-supervisor-dispatch.sh")],
-        "cwd": str(REPO),
-        "noOutputTimeoutSeconds": 10860,
-        "outputMaxBytes": 20000,
-    }
-    try:
-        wrapper_matches = (
-            INSTALLED_WRAPPER.is_file()
-            and INSTALLED_WRAPPER.read_bytes()
-            == (REPO / "scripts/hermes-property-rental").read_bytes()
-        )
+        authoritative_prompt = (
+            REPO / "ops/OPENCLAW_SUPERVISOR_PROMPT.md"
+        ).read_text()
     except OSError:
-        wrapper_matches = False
+        authoritative_prompt = None
     config_valid = bool(
         count == 1
         and row[0] == "property-rental-24x7-supervisor"
         and row[2] == "every"
         and row[3] == 1800000
-        and row[4] == "command"
-        and payload == expected_payload
-        and wrapper_matches
+        and row[4] == "agentTurn"
+        and payload_message == authoritative_prompt
     )
     return {
         "present": True,

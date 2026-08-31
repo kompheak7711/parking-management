@@ -2,7 +2,7 @@
   "schema_version": 1,
   "roadmap_id": "property-rental-v1",
   "total_tranches": 60,
-  "authorization_basis": "Owner durable v1 authorization bounded by authoritative specifications 001-010",
+  "authorization_basis": "Owner standing continuous authorization from the current live V1-046 stage through V1-060, dependency ordered, bounded by authoritative specifications 001-010, and requiring no repeated routine authorization",
   "global_owner_stops": [
     "unresolved or contradictory business, financial, security, or architecture policy",
     "canonical specification changes without separate authorization",

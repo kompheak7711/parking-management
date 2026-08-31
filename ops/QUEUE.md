@@ -45,9 +45,12 @@
     API/UI, emergency/bootstrap procedures, production operations, canonical changes, and policy
     invention.
 
-Remaining v1 application tranches are authorized when bounded by canonical documents
-001-010 and all publication gates; unresolved policy and protected production work still
-require owner review.
+The owner has standing continuous authorization for the current live V1-046 stage
+through V1-060. Each successor activates automatically only after its predecessor is
+fully released, published, verified, reconciled, and closed. Routine transitions need
+no additional authorization. Unresolved policy, production deployment or credentials,
+paid services, customer data, destructive operations, and exhausted bounded recovery
+still require owner review.
 
 The executable finite queue is now `ops/V1_ROADMAP.json`. It contains 60 stable tranches,
 explicit dependencies, canonical authorities, scope boundaries, risk classes, acceptance
