@@ -8704,6 +8704,17 @@ class LockHealthAndWrapperTests(unittest.TestCase):
             (repo / "ops").mkdir()
             prompt = "authoritative continuous policy\n"
             (repo / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").write_text(prompt)
+            atomic_write_json(
+                repo / "ops/STATE.json",
+                {
+                    "continuous_supervisor_policy": {
+                        "automation_job_id": restoration.SUPERVISOR_ID,
+                        "automation_name": restoration.SUPERVISOR_NAME,
+                        "authorization_from": "V1-046",
+                        "authorization_through": "V1-060",
+                    }
+                },
+            )
             job = {
                 "id": restoration.SUPERVISOR_ID,
                 "declarationKey": "property-rental-24x7-v1",
@@ -8728,6 +8739,16 @@ class LockHealthAndWrapperTests(unittest.TestCase):
             drifted["payload"]["message"] = "obsolete"
             self.assertEqual(
                 restoration.continuous_supervisor_disposition(drifted, repo), 69
+            )
+            dual_drifted = json.loads(json.dumps(job))
+            dual_drifted["agentId"] = "property-rental-supervisor"
+            dual_drifted["payload"]["kind"] = "command"
+            dual_drifted["payload"]["message"] = "obsolete"
+            self.assertEqual(
+                restoration.continuous_supervisor_disposition(
+                    dual_drifted, repo
+                ),
+                69,
             )
 
             args = argparse.Namespace(
@@ -8767,7 +8788,9 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                 mock.patch.object(
                     restoration, "exact_executable", return_value="/test/openclaw"
                 ),
-                mock.patch.object(restoration, "cron", return_value=job) as cron_call,
+                mock.patch.object(
+                    restoration, "cron", return_value=dual_drifted
+                ) as cron_call,
             ):
                 self.assertIn(
                     "did not disable",
@@ -8864,6 +8887,11 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                 root = Path(directory)
                 repo = root / "repo"
                 repo.mkdir()
+                (repo / "ops").mkdir()
+                atomic_write_json(
+                    repo / "ops/STATE.json",
+                    {"status": "legacy_v1_019_restoration_fixture"},
+                )
                 job_path = root / "job.json"
                 atomic_write_json(
                     job_path,
@@ -9068,6 +9096,11 @@ print(json.dumps(job))
             root = Path(directory)
             repo = root / "repo"
             repo.mkdir()
+            (repo / "ops").mkdir()
+            atomic_write_json(
+                repo / "ops/STATE.json",
+                {"status": "legacy_v1_019_restoration_fixture"},
+            )
             evidence = root / "restoration.json"
             repair_head = "e0469b6d519c0947662204869a535c7080185638"
             atomic_write_json(
