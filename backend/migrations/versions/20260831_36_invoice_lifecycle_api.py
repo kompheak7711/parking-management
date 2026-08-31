@@ -76,8 +76,11 @@ def upgrade() -> None:
                             WHEN 'UTILITIES' THEN 'UTILITY_CONSUMPTION_PERIOD'
                             WHEN 'SERVICE_CHARGES' THEN 'PROPERTY_SERVICE'
                             ELSE 'AUTHORIZED_NONRECURRING_OBLIGATION' END,
-                        'id',COALESCE(line.source_lease_id,line.utility_consumption_period_id,
-                            line.property_service_id,line.authorized_obligation_id)),
+                        'id',CASE line.category
+                            WHEN 'RENT' THEN line.source_lease_id
+                            WHEN 'UTILITIES' THEN line.utility_consumption_period_id
+                            WHEN 'SERVICE_CHARGES' THEN line.property_service_id
+                            ELSE line.authorized_obligation_id END),
                     'calculation_evidence',line.calculation_trace,
                     'created_at',line.created_at,'created_by',line.created_by
                 ) ORDER BY line.line_sequence,line.id),'[]'::jsonb)

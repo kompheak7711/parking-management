@@ -10598,11 +10598,19 @@
     },
     {
       "test_id": "test_invoice_response_schema_is_complete_and_consistent_across_command_list_and_detail",
-      "upstream_ids": ["API-050", "API-051", "API-053", "TEST-119"],
+      "upstream_ids": ["API-050", "API-051"],
       "test_level": "API",
       "test_path": "backend/tests/test_invoice.py",
       "status": "implemented",
-      "notes": "Create-command, list, and detail envelopes return the same complete Invoice resource: one Customer, nullable scalar Lease, category and dates, optional periods, ordered lines with typed sources and calculation evidence, USD original/adjusted/application/outstanding amounts, status, and complete issuance/create/update/version metadata."
+      "notes": "Create-command, list, and detail envelopes return the same complete Invoice resource shape: one Customer, nullable scalar Lease, category and dates, optional periods, ordered line source objects and calculation evidence, USD original/adjusted/application/outstanding amounts, status, and complete issuance/create/update/version metadata. Exact relational source identity is mapped only to the controlling real-PostgreSQL regression."
+    },
+    {
+      "test_id": "test_v1_045_typed_sources_keep_category_and_controlling_id_together",
+      "upstream_ids": ["API-053", "TEST-119"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Fresh migrated PostgreSQL drives production Invoice create-command, service, list, and detail paths and proves exact source type/ID identity for RENT/Lease, UTILITIES/UtilityConsumptionPeriod, SERVICE_CHARGES/PropertyService, and authorized nonrecurring obligations. Lease-associated Utility and Service lines return their controlling typed IDs and never the associated Lease ID."
     },
     {
       "test_id": "test_detail_hides_invoice_without_exact_read_scope",

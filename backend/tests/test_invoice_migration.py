@@ -34,6 +34,7 @@ from property_rental.invoice import (
     VoidInvoiceCommand,
 )
 from test_lease_migration import create_draft, setup_sources, sign_lease
+from test_utility_meter_migration import add_meter, add_rate, add_reading
 
 
 @pytest.fixture(scope="session")
@@ -7724,6 +7725,272 @@ def invoice_api_actor(actor_id: UUID, property_id: UUID) -> AuthenticatedActor:
             )
         ),
     )
+
+
+def test_v1_045_typed_sources_keep_category_and_controlling_id_together(
+    migrated_database_url: str,
+) -> None:
+    """API-053/TEST-119: PostgreSQL resources expose the category controller ID."""
+    with psycopg.connect(migrated_database_url) as setup:
+        actor_id, property_id, unit_id, customer_id, _ = setup_sources(setup)
+        lease_id = create_draft(
+            setup,
+            actor_id=actor_id,
+            unit_id=unit_id,
+            primary_tenant_id=customer_id,
+            start_date=date(2027, 1, 1),
+            end_date=date(2027, 12, 31),
+        )
+        sign_lease(setup, lease_id, actor_id)
+        rent_invoice_id, _ = create_recurring_rent_invoice(
+            setup,
+            actor_id=actor_id,
+            customer_id=customer_id,
+            lease_id=lease_id,
+            period_start=date(2027, 4, 1),
+            issue=False,
+        )
+
+        meter_id = add_meter(setup, actor_id=actor_id, unit_id=unit_id)
+        start_reading_id = add_reading(
+            setup,
+            actor_id=actor_id,
+            meter_id=meter_id,
+            reading_date=date(2027, 3, 31),
+            reading_value="100",
+        )
+        end_reading_id = add_reading(
+            setup,
+            actor_id=actor_id,
+            meter_id=meter_id,
+            reading_date=date(2027, 4, 30),
+            reading_value="200",
+        )
+        utility_rate_id = add_rate(
+            setup,
+            actor_id=actor_id,
+            property_id=property_id,
+            utility_type="ELECTRICITY",
+            measurement_unit_code="KWH",
+            effective_date=date(2027, 4, 1),
+        )
+        utility_period_id = uuid4()
+        setup.execute(
+            "INSERT INTO app.utility_consumption_periods("
+            "id,unit_id,utility_type,start_date,end_date,start_reading_id,end_reading_id,"
+            "calculation_kind,consumption_quantity,calculation_trace,finalized_at,finalized_by) "
+            "VALUES (%s,%s,'ELECTRICITY','2027-04-01','2027-04-30',%s,%s,'ACTUAL',100,"
+            "%s,statement_timestamp(),%s)",
+            (
+                utility_period_id,
+                unit_id,
+                start_reading_id,
+                end_reading_id,
+                Jsonb({"start": "100", "end": "200"}),
+                actor_id,
+            ),
+        )
+        utility_invoice_id = uuid4()
+        setup.execute(
+            "INSERT INTO app.invoices(id,invoice_number,customer_id,lease_id,primary_category,"
+            "status,invoice_date,due_date,billing_period_start,billing_period_end,"
+            "original_total_usd_cents,due_date_rule,due_date_source,created_by,updated_by) "
+            "VALUES (%s,%s,%s,%s,'UTILITIES','DRAFT','2027-04-30','2027-05-05',"
+            "'2027-04-01','2027-04-30',2500,'GOVERNING_SOURCE','BR-UTIL-022',%s,%s)",
+            (
+                utility_invoice_id,
+                f"INV-{utility_invoice_id.hex}",
+                customer_id,
+                lease_id,
+                actor_id,
+                actor_id,
+            ),
+        )
+        setup.execute(
+            "INSERT INTO app.invoice_lines(id,invoice_id,line_sequence,category,description,"
+            "amount_usd_cents,period_start,period_end,source_lease_id,"
+            "utility_consumption_period_id,utility_rate_id,quantity,unit_rate_usd,"
+            "calculation_trace,created_by) VALUES (%s,%s,1,'UTILITIES','Electricity',2500,"
+            "'2027-04-01','2027-04-30',%s,%s,%s,100,0.25,%s,%s)",
+            (
+                uuid4(),
+                utility_invoice_id,
+                lease_id,
+                utility_period_id,
+                utility_rate_id,
+                Jsonb({"quantity": "100", "unit_rate_usd": "0.25"}),
+                actor_id,
+            ),
+        )
+
+        property_service_id = uuid4()
+        service_rate_id = uuid4()
+        approval_id = uuid4()
+        term_id = uuid4()
+        setup.execute(
+            "INSERT INTO app.property_services(id,property_id,service_code,display_name,"
+            "configured_by,created_by,updated_by) VALUES (%s,%s,%s,'Typed Source Service',"
+            "%s,%s,%s)",
+            (
+                property_service_id,
+                property_id,
+                f"TYPED-{property_service_id.hex}",
+                actor_id,
+                actor_id,
+                actor_id,
+            ),
+        )
+        setup.execute(
+            "INSERT INTO app.service_rates(id,property_service_id,monthly_rate_usd_cents,"
+            "effective_date,occurred_at,actor_id) VALUES (%s,%s,10000,'2027-01-01',"
+            "statement_timestamp(),%s)",
+            (service_rate_id, property_service_id, actor_id),
+        )
+        setup.execute(
+            "INSERT INTO app.property_service_approval_periods(id,property_service_id,"
+            "effective_from,effective_through,approval_reference,approved_at,approved_by,"
+            "reason) VALUES (%s,%s,'2027-01-01','2027-12-31','typed-source-approval',"
+            "statement_timestamp(),%s,'Approve typed source regression')",
+            (approval_id, property_service_id, actor_id),
+        )
+        setup.execute(
+            "INSERT INTO app.lease_service_terms(id,lease_id,property_service_id,"
+            "applicable_from,applicable_through,service_approval_period_id,terms_reference,"
+            "recorded_at,recorded_by) VALUES (%s,%s,%s,'2027-01-01','2027-12-31',%s,"
+            "'typed-source-term',statement_timestamp(),%s)",
+            (term_id, lease_id, property_service_id, approval_id, actor_id),
+        )
+        service_invoice_id = uuid4()
+        service_line_id = uuid4()
+        setup.execute(
+            "INSERT INTO app.invoices(id,invoice_number,customer_id,lease_id,primary_category,"
+            "status,invoice_date,due_date,billing_period_start,billing_period_end,"
+            "original_total_usd_cents,due_date_rule,due_date_source,created_by,updated_by) "
+            "VALUES (%s,%s,%s,%s,'SERVICE_CHARGES','DRAFT','2027-04-30','2027-04-30',"
+            "'2027-04-01','2027-04-30',10000,'GOVERNING_SOURCE','BR-SVC-013',%s,%s)",
+            (
+                service_invoice_id,
+                f"INV-{service_invoice_id.hex}",
+                customer_id,
+                lease_id,
+                actor_id,
+                actor_id,
+            ),
+        )
+        setup.execute(
+            "INSERT INTO app.invoice_lines(id,invoice_id,line_sequence,category,description,"
+            "amount_usd_cents,period_start,period_end,source_lease_id,property_service_id,"
+            "service_rate_id,lease_service_term_id,service_approval_period_id,"
+            "contractual_monthly_usd_cents,billable_days,calendar_days,calculation_trace,"
+            "created_by) VALUES (%s,%s,1,'SERVICE_CHARGES','Typed Source Service',10000,"
+            "'2027-04-01','2027-04-30',%s,%s,%s,%s,%s,10000,30,30,%s,%s)",
+            (
+                service_line_id,
+                service_invoice_id,
+                lease_id,
+                property_service_id,
+                service_rate_id,
+                term_id,
+                approval_id,
+                Jsonb({"formula": "monthly_service"}),
+                actor_id,
+            ),
+        )
+        setup.execute(
+            "INSERT INTO app.invoice_line_calculation_components(id,invoice_line_id,"
+            "component_sequence,component_kind,period_start,period_end,service_rate_id,"
+            "service_monthly_rate_usd_cents,billable_days,calendar_days,amount_usd_cents,"
+            "calculation_trace,created_by) VALUES (%s,%s,1,'FULL_RECURRING_MONTH',"
+            "'2027-04-01','2027-04-30',%s,10000,30,30,10000,%s,%s)",
+            (
+                uuid4(),
+                service_line_id,
+                service_rate_id,
+                Jsonb({"formula": "monthly_service"}),
+                actor_id,
+            ),
+        )
+
+        obligation_id = uuid4()
+        setup.execute(
+            "INSERT INTO app.authorized_nonrecurring_obligations(id,customer_id,lease_id,"
+            "category,description,authorized_amount_usd_cents,governing_due_date,"
+            "due_date_source,source_reference,authorized_at,authorized_by,"
+            "authorization_reference) VALUES (%s,%s,%s,'MISCELLANEOUS_CHARGES',"
+            "'Typed source obligation',7500,'2027-05-05','typed-source-obligation',"
+            "'typed-source-obligation',statement_timestamp(),%s,"
+            "'invoice.nonrecurring.authorize')",
+            (obligation_id, customer_id, lease_id, actor_id),
+        )
+        setup.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        setup.commit()
+
+    authenticated = invoice_api_actor(actor_id, property_id)
+    service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    client = TestClient(create_app(actor_resolver=lambda _: authenticated, invoice_flow=service))
+    client.cookies.set("__Host-prm_csrf", "csrf")
+    create_response = client.post(
+        f"/api/v1/properties/{property_id}/invoices",
+        headers={
+            "Origin": "https://localhost",
+            "X-CSRF-Token": "csrf",
+            "Idempotency-Key": str(uuid4()),
+        },
+        json={"authorized_nonrecurring_obligation_id": str(obligation_id)},
+    )
+    assert create_response.status_code == 201
+    obligation_resource = cast(dict[str, object], create_response.json()["data"])
+    obligation_invoice_id = UUID(str(obligation_resource["id"]))
+    expected = {
+        rent_invoice_id: {"type": "LEASE", "id": str(lease_id)},
+        utility_invoice_id: {
+            "type": "UTILITY_CONSUMPTION_PERIOD",
+            "id": str(utility_period_id),
+        },
+        service_invoice_id: {
+            "type": "PROPERTY_SERVICE",
+            "id": str(property_service_id),
+        },
+        obligation_invoice_id: {
+            "type": "AUTHORIZED_NONRECURRING_OBLIGATION",
+            "id": str(obligation_id),
+        },
+    }
+
+    def source(resource: dict[str, object]) -> object:
+        return cast(list[dict[str, object]], resource["lines"])[0]["source"]
+
+    assert source(obligation_resource) == expected[obligation_invoice_id]
+    for invoice_id, expected_source in expected.items():
+        assert source(service.get(invoice_id, actor=authenticated)) == expected_source
+
+    list_response = client.get(
+        f"/api/v1/properties/{property_id}/invoices",
+        params={"customer_id": str(customer_id), "limit": 50},
+    )
+    assert list_response.status_code == 200
+    listed = {
+        UUID(str(resource["id"])): cast(dict[str, object], resource)
+        for resource in list_response.json()["data"]
+        if UUID(str(resource["id"])) in expected
+    }
+    assert set(listed) == set(expected)
+    for invoice_id, expected_source in expected.items():
+        assert source(listed[invoice_id]) == expected_source
+        detail_response = client.get(f"/api/v1/invoices/{invoice_id}")
+        assert detail_response.status_code == 200
+        assert source(cast(dict[str, object], detail_response.json()["data"])) == expected_source
+
+    assert expected[utility_invoice_id]["id"] != str(lease_id)
+    assert expected[service_invoice_id]["id"] != str(lease_id)
+    with psycopg.connect(migrated_database_url) as cleanup:
+        set_draft_correction_context(
+            cleanup,
+            actor_id=actor_id,
+            reason="Release typed-source Utility test rate reference",
+        )
+        cleanup.execute("DELETE FROM app.invoice_lines WHERE invoice_id=%s", (utility_invoice_id,))
+        cleanup.commit()
 
 
 def test_v1_045_api_rejects_int4_overflow_before_invoice_command_mutation(
