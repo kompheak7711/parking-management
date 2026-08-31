@@ -441,8 +441,49 @@ def upgrade() -> None:
             THEN RAISE EXCEPTION 'Invoice was not found' USING ERRCODE='P4501'; END IF;
             IF p_expected_version IS NULL OR v_invoice.version<>p_expected_version THEN
                 RAISE EXCEPTION 'Invoice version:%',v_invoice.version USING ERRCODE='P4504'; END IF;
+            v_now:=clock_timestamp();
             IF v_invoice.status NOT IN ('DRAFT','UNPAID')
-                OR v_invoice.originating_billing_run_attempt_id IS NOT NULL
+                OR (v_invoice.originating_billing_run_attempt_id IS NOT NULL AND NOT EXISTS (
+                    SELECT 1
+                    FROM app.billing_run_attempts AS origin_attempt
+                    JOIN app.billing_runs AS run
+                      ON run.id=origin_attempt.billing_run_id
+                    JOIN LATERAL (
+                        SELECT attempt.attempt_number,attempt.outcome,attempt.completed_at
+                        FROM app.billing_run_attempts AS attempt
+                        WHERE attempt.billing_run_id=run.id
+                        ORDER BY attempt.attempt_number DESC
+                        LIMIT 1
+                    ) AS latest_attempt ON true
+                    WHERE origin_attempt.id=v_invoice.originating_billing_run_attempt_id
+                      AND origin_attempt.outcome IN ('FAILED','SUCCEEDED')
+                      AND origin_attempt.completed_at IS NOT NULL
+                      AND EXISTS (
+                          SELECT 1 FROM app.billing_run_items AS origin_item
+                          WHERE origin_item.billing_run_attempt_id=origin_attempt.id
+                            AND origin_item.billing_run_id=run.id
+                            AND origin_item.invoice_id=p_invoice_id
+                            AND origin_item.outcome='GENERATED'
+                            AND origin_item.recorded_at<v_now
+                      )
+                      AND run.status='SUCCEEDED'
+                      AND run.completed_at IS NOT NULL
+                      AND run.completed_at<v_now
+                      AND latest_attempt.outcome='SUCCEEDED'
+                      AND latest_attempt.completed_at IS NOT NULL
+                      AND latest_attempt.completed_at<=run.completed_at
+                      AND NOT EXISTS (
+                          SELECT 1 FROM app.billing_run_attempts AS running_attempt
+                          WHERE running_attempt.billing_run_id=run.id
+                            AND running_attempt.outcome='RUNNING'
+                      )
+                      AND NOT app.billing_run_has_unresolved_sources(
+                          run.id,latest_attempt.attempt_number
+                      )
+                      AND NOT app.billing_run_has_missing_eligible_sources(
+                          run.id,latest_attempt.attempt_number
+                      )
+                ))
                 OR p_reason IS NULL OR p_reason<>btrim(p_reason)
                 OR length(p_reason) NOT BETWEEN 1 AND 500
                 OR EXISTS (SELECT 1 FROM app.invoice_adjustments AS adjustment
@@ -457,7 +498,7 @@ def upgrade() -> None:
             THEN RAISE EXCEPTION 'Invoice VOID dependencies are not resolved'
                 USING ERRCODE='P4502'; END IF;
             v_before:=app.invoice_resource_snapshot(p_invoice_id);
-            v_now:=clock_timestamp(); v_business_date:=timezone(v_timezone,v_now)::date;
+            v_business_date:=timezone(v_timezone,v_now)::date;
             UPDATE app.invoices SET status='VOID',version=version+1,updated_at=v_now,
                 updated_by=p_actor_id WHERE id=p_invoice_id;
             INSERT INTO app.invoice_void_events(id,invoice_id,reason,occurred_at,actor_id,

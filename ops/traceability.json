@@ -10613,6 +10613,14 @@
       "notes": "For an issued Invoice with no active financial applications, the directly asserted exceptional rule records exactly one immutable VOID event, exact replay returns its snapshot, VOID is excluded from outstanding balance, and both financial-role and owner delete attempts fail."
     },
     {
+      "test_id": "test_v1_045_generated_void_waits_for_resolved_retry_and_serializes_replay",
+      "upstream_ids": ["API-015", "API-016", "API-017", "API-018", "API-052", "BR-INV-014", "BR-INV-015", "BR-INV-022", "BR-INV-024", "BR-INV-046", "BR-INV-047", "BR-INV-050", "DB-INV-004", "SEC-019", "SEC-020", "SEC-028", "SEC-029", "TEST-058", "TEST-117", "TEST-119"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_invoice_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL public API calls reject RUNNING and incomplete retry dependencies with 422 and no Invoice, command, VOID-event, or audit mutation. After the originating generated attempt is FAILED and a complete retry and run are SUCCEEDED, concurrent duplicate service calls produce one version advance, command, immutable VOID event, and audit effect; exact replay returns the same snapshot, changed input conflicts, and the originating attempt/run provenance remains linked."
+    },
+    {
       "test_id": "test_v1_045_draft_source_correction_and_database_cursor_are_derived",
       "upstream_ids": ["API-019", "API-020", "API-021", "API-050", "BR-INV-043", "DB-INV-002", "DB-INV-005", "TEST-055", "TEST-056", "TEST-119"],
       "test_level": "integration",

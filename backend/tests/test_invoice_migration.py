@@ -15,9 +15,11 @@ import psycopg
 import pytest
 from alembic import command
 from alembic.config import Config
+from fastapi.testclient import TestClient
 from psycopg import Connection, Error
 from psycopg.types.json import Jsonb
 
+from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.invoice import (
     AdjustInvoiceCommand,
@@ -7870,6 +7872,209 @@ def test_v1_045_void_is_terminal_preserves_history_and_rejects_physical_delete(
             "FROM app.invoices WHERE id=%s",
             (invoice_id, invoice_id),
         ).fetchone() == ("VOID", 1)
+
+
+def test_v1_045_generated_void_waits_for_resolved_retry_and_serializes_replay(
+    migrated_database_url: str,
+) -> None:
+    """BR-INV-014/046/047: generated VOID waits for complete terminal run evidence."""
+    with psycopg.connect(migrated_database_url) as setup:
+        actor_id, property_id, unit_id, customer_id, _ = setup_sources(setup)
+        lease_id = create_draft(
+            setup,
+            actor_id=actor_id,
+            unit_id=unit_id,
+            primary_tenant_id=customer_id,
+            start_date=date(2024, 1, 1),
+            end_date=date(2025, 12, 31),
+        )
+        sign_lease(setup, lease_id, actor_id)
+        setup.execute(
+            "INSERT INTO app.occupancies(id,lease_id,customer_id,move_in_date,"
+            "created_by,updated_by) VALUES (%s,%s,%s,'2024-01-01',%s,%s)",
+            (uuid4(), lease_id, customer_id, actor_id, actor_id),
+        )
+        service_actor_id = register_billing_service_principal(
+            setup, property_id=property_id, created_by=actor_id
+        )
+        run_id = uuid4()
+        origin_attempt_id = uuid4()
+        setup.execute(
+            "INSERT INTO app.billing_runs(id,property_id,run_kind,logical_run_key,"
+            "business_date,period_start,period_end,idempotency_key,system_actor_id,status,"
+            "started_at) VALUES (%s,%s,'RENT',%s,'2024-01-25','2024-02-01','2024-02-29',"
+            "%s,%s,'RUNNING',clock_timestamp())",
+            (run_id, property_id, f"generated-void-{run_id}", uuid4(), service_actor_id),
+        )
+        setup.execute(
+            "INSERT INTO app.billing_run_attempts(id,billing_run_id,attempt_number,started_at,"
+            "outcome) VALUES (%s,%s,1,clock_timestamp(),'RUNNING')",
+            (origin_attempt_id, run_id),
+        )
+        invoice_id, _ = create_recurring_rent_invoice(
+            setup,
+            actor_id=actor_id,
+            customer_id=customer_id,
+            lease_id=lease_id,
+            period_start=date(2024, 2, 1),
+            originating_billing_run_attempt_id=origin_attempt_id,
+        )
+        setup.execute(
+            "INSERT INTO app.billing_run_items(id,billing_run_id,billing_run_attempt_id,"
+            "source_kind,source_id,source_period_start,source_period_end,outcome,invoice_id,"
+            "recorded_at) VALUES (%s,%s,%s,'LEASE_PERIOD',%s,'2024-02-01','2024-02-29',"
+            "'GENERATED',%s,clock_timestamp())",
+            (uuid4(), run_id, origin_attempt_id, lease_id, invoice_id),
+        )
+        assert setup.execute(
+            "SELECT count(*) FROM app.billing_run_eligible_sources WHERE billing_run_id=%s",
+            (run_id,),
+        ).fetchone() == (1,)
+        setup.commit()
+
+    service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    authenticated = invoice_api_actor(actor_id, property_id)
+    command = VoidInvoiceCommand(uuid4(), "Generated obligation should not exist", 2)
+    client = TestClient(create_app(actor_resolver=lambda _: authenticated, invoice_flow=service))
+    client.cookies.set("__Host-prm_csrf", "csrf")
+    headers = {
+        "Origin": "https://localhost",
+        "X-CSRF-Token": "csrf",
+        "Idempotency-Key": str(command.idempotency_key),
+        "If-Match": '"2"',
+    }
+
+    def void_effects() -> tuple[object, ...]:
+        with psycopg.connect(migrated_database_url) as verify:
+            row = verify.execute(
+                "SELECT invoice.status,invoice.version,"
+                "invoice.originating_billing_run_attempt_id,"
+                "(SELECT count(*) FROM app.invoice_commands AS command "
+                "WHERE command.invoice_id=invoice.id AND command.action='void'),"
+                "(SELECT count(*) FROM app.invoice_void_events AS event "
+                "WHERE event.invoice_id=invoice.id),"
+                "(SELECT count(*) FROM app.audit_events AS audit "
+                "WHERE audit.entity_id=invoice.id AND audit.action='invoice.voided') "
+                "FROM app.invoices AS invoice WHERE invoice.id=%s",
+                (invoice_id,),
+            ).fetchone()
+        assert row is not None
+        return row
+
+    def run_evidence() -> tuple[object, ...]:
+        with psycopg.connect(migrated_database_url) as verify:
+            row = verify.execute(
+                "SELECT run.status,run.completed_at,"
+                "(SELECT string_agg(attempt.outcome,',' ORDER BY attempt.attempt_number) "
+                "FROM app.billing_run_attempts AS attempt WHERE attempt.billing_run_id=run.id),"
+                "(SELECT count(*) FROM app.billing_run_items AS item "
+                "WHERE item.billing_run_id=run.id),"
+                "(SELECT count(*) FROM app.billing_run_eligible_sources AS eligible "
+                "WHERE eligible.billing_run_id=run.id) "
+                "FROM app.billing_runs AS run WHERE run.id=%s",
+                (run_id,),
+            ).fetchone()
+        assert row is not None
+        return row
+
+    unchanged = ("UNPAID", 2, origin_attempt_id, 0, 0, 0)
+    assert void_effects() == unchanged
+    running_evidence = run_evidence()
+    unresolved = client.post(
+        f"/api/v1/invoices/{invoice_id}/void",
+        headers=headers,
+        json={"reason": command.reason},
+    )
+    assert unresolved.status_code == 422
+    assert void_effects() == unchanged
+    assert run_evidence() == running_evidence
+
+    with psycopg.connect(migrated_database_url) as retry:
+        retry.execute(
+            "UPDATE app.billing_run_attempts SET outcome='FAILED',"
+            "completed_at=clock_timestamp(),diagnostic_code='retry-required' WHERE id=%s",
+            (origin_attempt_id,),
+        )
+        retry_attempt_id = uuid4()
+        retry.execute(
+            "INSERT INTO app.billing_run_attempts(id,billing_run_id,attempt_number,started_at,"
+            "outcome) VALUES (%s,%s,2,clock_timestamp(),'RUNNING')",
+            (retry_attempt_id, run_id),
+        )
+        retry.commit()
+
+    incomplete_evidence = run_evidence()
+    incomplete_retry = client.post(
+        f"/api/v1/invoices/{invoice_id}/void",
+        headers=headers,
+        json={"reason": command.reason},
+    )
+    assert incomplete_retry.status_code == 422
+    assert void_effects() == unchanged
+    assert run_evidence() == incomplete_evidence
+
+    with psycopg.connect(migrated_database_url) as complete:
+        complete.execute(
+            "INSERT INTO app.billing_run_items(id,billing_run_id,billing_run_attempt_id,"
+            "source_kind,source_id,source_period_start,source_period_end,outcome,invoice_id,"
+            "diagnostic_code,recorded_at) VALUES (%s,%s,%s,'LEASE_PERIOD',%s,'2024-02-01',"
+            "'2024-02-29','SKIPPED',%s,'ACTIVE_INVOICE_ALREADY_EXISTS',clock_timestamp())",
+            (uuid4(), run_id, retry_attempt_id, lease_id, invoice_id),
+        )
+        complete.execute(
+            "UPDATE app.billing_run_attempts SET outcome='SUCCEEDED',"
+            "completed_at=clock_timestamp() WHERE id=%s",
+            (retry_attempt_id,),
+        )
+        complete.execute(
+            "UPDATE app.billing_runs SET status='SUCCEEDED',completed_at=clock_timestamp() "
+            "WHERE id=%s",
+            (run_id,),
+        )
+        complete.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        complete.commit()
+
+    together = Barrier(2)
+
+    def void_once() -> dict[str, object]:
+        together.wait(timeout=10)
+        return PostgresInvoiceService(runtime_database_url(), financial_database_url()).void(
+            property_id, invoice_id, command, actor=authenticated
+        )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = [
+            future.result(timeout=20) for future in (pool.submit(void_once), pool.submit(void_once))
+        ]
+    assert results[0] == results[1]
+    assert results[0]["status"] == "VOID"
+    assert service.void(property_id, invoice_id, command, actor=authenticated) == results[0]
+    with pytest.raises(InvoiceIdempotencyKeyReused):
+        service.void(
+            property_id,
+            invoice_id,
+            VoidInvoiceCommand(command.idempotency_key, "Changed generated VOID reason", 2),
+            actor=authenticated,
+        )
+    with psycopg.connect(migrated_database_url) as verify:
+        assert verify.execute(
+            "SELECT invoice.status,invoice.version,invoice.originating_billing_run_attempt_id,"
+            "origin_attempt.outcome,run.status,"
+            "(SELECT count(*) FROM app.billing_run_attempts AS attempt "
+            "WHERE attempt.billing_run_id=run.id),"
+            "(SELECT count(*) FROM app.invoice_commands AS command "
+            "WHERE command.invoice_id=invoice.id AND command.action='void'),"
+            "(SELECT count(*) FROM app.invoice_void_events AS event "
+            "WHERE event.invoice_id=invoice.id),"
+            "(SELECT count(*) FROM app.audit_events AS audit "
+            "WHERE audit.entity_id=invoice.id AND audit.action='invoice.voided') "
+            "FROM app.invoices AS invoice "
+            "JOIN app.billing_run_attempts AS origin_attempt "
+            "ON origin_attempt.id=invoice.originating_billing_run_attempt_id "
+            "JOIN app.billing_runs AS run ON run.id=origin_attempt.billing_run_id "
+            "WHERE invoice.id=%s",
+            (invoice_id,),
+        ).fetchone() == ("VOID", 3, origin_attempt_id, "FAILED", "SUCCEEDED", 2, 1, 1, 1)
 
 
 def test_v1_045_draft_source_correction_and_database_cursor_are_derived(
