@@ -664,8 +664,8 @@
     {
       "id": "v1-046-test-119-traceability-correction-required",
       "owner_action_required": false,
-      "status": "correction_verified_integration_ready",
-      "detail": "Manager accepted bounded correction card e83912ca-8b13-402e-ac1f-cd0eed5ca838 at exact 09b5dafc, parent 7a5097c9. Its one-path 0-addition/1-deletion diff removes only the false API-091 mapping from the API-100 bootstrap success test, preserves all legitimate late-payment mappings, and passes 38/38 manager tests with zero failures/skips. Fresh integration and fresh independent review remain required; no owner action is required."
+      "status": "fresh_integration_running",
+      "detail": "Correction 09b5dafc is manager-accepted. Existing integration card bfee8d82-83e6-4000-ac63-6835b1220201 is running a wholly fresh read-only xhigh gate on the corrected exact SHA. Independent review remains blocked until zero failures and zero unexplained or environmental skips; no owner action is required."
     }
   ],
   "branch": "implementation/foundation",
@@ -710,10 +710,10 @@
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Bind existing integration card bfee8d82-83e6-4000-ac63-6835b1220201 to exact corrected SHA 09b5dafc and dispatch its fresh read-only xhigh gate; do not activate V1-047",
-  "active_worker": null,
-  "active_card": null,
-  "active_attempt": null,
+  "next_action": "Inspect and reconcile integration card bfee8d82-83e6-4000-ac63-6835b1220201 without overlapping dispatch; only a complete zero-failure and zero-skip gate may unlock fresh independent review",
+  "active_worker": "property-codex-3",
+  "active_card": "bfee8d82-83e6-4000-ac63-6835b1220201",
+  "active_attempt": "workboard:bfee8d82-83e6-4000-ac63-6835b1220201:1788218269347",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -812,8 +812,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 bounded TEST-119 correction is manager-accepted at exact 09b5dafc; fresh integration, independent review, release, and V1-047 remain dependency ordered",
-    "exact_next_action": "Bind existing integration card bfee8d82-83e6-4000-ac63-6835b1220201 to exact corrected SHA 09b5dafc and dispatch its fresh read-only xhigh gate",
+    "current_phase": "V1-046 fresh corrected exact-SHA integration is running at 09b5dafc; independent review, release, and V1-047 remain dependency-blocked",
+    "exact_next_action": "Inspect and reconcile integration card bfee8d82-83e6-4000-ac63-6835b1220201 without overlapping dispatch; only a complete zero-failure and zero-skip gate may unlock fresh independent review",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1074,10 +1074,31 @@
       "manager_accepted": true,
       "status": "done_manager_accepted"
     },
+    "product_integration_retry": {
+      "card_id": "bfee8d82-83e6-4000-ac63-6835b1220201",
+      "attempt_id": "workboard:bfee8d82-83e6-4000-ac63-6835b1220201:1788218269347",
+      "worker": "property-codex-3",
+      "branch": "openclaw/wb-bfee8d82-83e6-4000-ac63-6835b1220201",
+      "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-bfee8d82-83e6-4000-ac63-6835b1220201",
+      "candidate_sha": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+      "candidate_parent": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
+      "candidate_tree": "0948ed78fdf9c3fcb85a94b6a07b87eae5cd98f4",
+      "cumulative_base": "39c38e74b7b55f877f74081c94dcd9b971aa1348",
+      "cumulative_diff": "2 commits, 16 files, 2281 insertions, 19 deletions",
+      "model": "openai/gpt-5.6-sol",
+      "reasoning": "xhigh",
+      "mode": "standard",
+      "fast_mode": false,
+      "fallbacks": [],
+      "read_only": true,
+      "claim_active": true,
+      "attempt_active": true,
+      "status": "running"
+    },
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-08-31T23:14:10Z"
+    "updated_at": "2026-08-31T23:17:58Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -1757,7 +1778,7 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "correction_verified_integration_ready",
+  "status": "fresh_integration_running",
   "task": "Preserve the verified V1-046 implementation and perform one bounded TEST-119 traceability correction before fresh exact-SHA integration, independent review, and release",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
@@ -1987,7 +2008,7 @@
     "PASS: V1-045 ops-only closure commit fe00f286759695f53001e77937b107d343fb6947 exact-SHA GitHub Actions run 33404108038; all four jobs"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-08-31T23:14:10Z",
+  "timestamp": "2026-08-31T23:17:58Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

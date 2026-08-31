@@ -10,11 +10,16 @@
   `09b5dafc8cb6f6d7097c7266024484d01007b0a1`, parent
   `7a5097c9f055fd7d7d91e44376f4e215dc2fa790`, tree
   `0948ed78fdf9c3fcb85a94b6a07b87eae5cd98f4`; cumulative base
-  `39c38e74b7b55f877f74081c94dcd9b971aa1348`, exact 16-file +2282/-20 diff.
-- Product integration card `bfee8d82-83e6-4000-ac63-6835b1220201`
-  remains BLOCKED by the false API-091 mapping to the API-100 initial-Owner
-  bootstrap success test in `ops/traceability.json`. Product review and release
-  remain dependency-blocked; V1-046 is not released or published.
+  `39c38e74b7b55f877f74081c94dcd9b971aa1348`, exact 16-file +2281/-19 diff.
+- Product integration card `bfee8d82-83e6-4000-ac63-6835b1220201` is RUNNING
+  a wholly fresh read-only gate for worker `property-codex-3`, attempt
+  `workboard:bfee8d82-83e6-4000-ac63-6835b1220201:1788218269347`, branch
+  `openclaw/wb-bfee8d82-83e6-4000-ac63-6835b1220201`, managed worktree
+  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-bfee8d82-83e6-4000-ac63-6835b1220201`.
+  The retained clean worktree was fast-forwarded without merge to exact
+  `09b5dafc...`. Runtime is pinned GPT-5.6 Sol, `xhigh`, no fallback,
+  Standard/Fast-off. Product review and release remain dependency-blocked;
+  V1-046 is not released or published.
 - Bounded correction card `e83912ca-8b13-402e-ac1f-cd0eed5ca838` is manager-
   accepted DONE
   for worker `property-codex-1`, attempt
@@ -154,14 +159,14 @@
 - Production deployment, production credentials, paid services, customer data,
   and remote production access remain unauthorized.
 - Owner action required: no.
-- Exact next action: bind the existing integration card
-  `bfee8d82-83e6-4000-ac63-6835b1220201` to exact corrected SHA `09b5dafc...`
-  and dispatch its fresh read-only xhigh gate; do not activate V1-047.
+- Exact next action: inspect and reconcile integration card
+  `bfee8d82-83e6-4000-ac63-6835b1220201` without overlapping dispatch. Only a
+  complete zero-failure/zero-skip gate may unlock fresh independent review.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Current phase: V1-046 bounded TEST-119 correction is manager-accepted at exact
-  `09b5dafc`; fresh integration, review, and release remain dependency ordered.
+- Current phase: V1-046 fresh corrected exact-SHA integration is running at
+  `09b5dafc`; independent review and release remain dependency-blocked.
 - Durable cycle action: reconcile compact state, Git, Workboard, claims,
   attempts, active workers, worktrees, and scheduler; continue only the latest
   dependency-safe stage and never duplicate completed or running work.
