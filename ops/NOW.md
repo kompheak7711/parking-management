@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded H3 correction running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent coordination review running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -119,16 +119,42 @@
   recoverable. A direct probe returned `BLOCKED_OWNER_ACCEPTED`; the candidate
   is rejected and remains uninstalled and unpublished.
 - Narrow changed-fingerprint correction: Workboard
-  `dd728972-8d05-4e0f-bbfd-9626adae9527` started exactly once on
-  `property-codex-1`; attempt
-  `workboard:dd728972-8d05-4e0f-bbfd-9626adae9527:1788279048082` has a healthy
-  claim. Its managed worktree and branch are
-  `wb-dd728972-8d05-4e0f-bbfd-9626adae9527` /
-  `openclaw/wb-dd728972-8d05-4e0f-bbfd-9626adae9527`, clean at exact base
-  `8b1046be`. Runtime contract is GPT-5.6 Sol `xhigh`, Standard/Fast-off, with
-  no fallback. Scope remains the exact four coordination, test, traceability,
-  and manifest paths. No install, publication, live bootstrap, or V1-047
+  `dd728972-8d05-4e0f-bbfd-9626adae9527` is property-manager-accepted DONE at
+  exact `85e18b801b8dda55c3482a3fc3cd5725847b5a55`, sole parent `8b1046be`, tree
+  `420d996307d3107e662583d903f15ef8f2bfed7b`. Its clean exact four-path +90/-3
+  diff SHA-256 is `8e195ef1b93f684c18d504b8088f7891b53682dcb9c99a0308b172375434b54d`.
+  Worker and manager verification each passed coordination 84/84 and automation
+  189/189 with zero failures/skips; manager inspection found 0 HIGH, 0 MEDIUM,
+  0 LOW and confirmed blocked and unknown owners reject without mutation.
+- Cumulative integration: fresh read-only card
+  `a440be0b-71ba-4522-82c4-af6a24d0fd96` is property-manager-accepted DONE at
+  exact `85e18b8` after one attempt on `property-codex-3`. Its clean retained
+  managed worktree and branch are
+  `wb-a440be0b-71ba-4522-82c4-af6a24d0fd96` /
+  `openclaw/wb-a440be0b-71ba-4522-82c4-af6a24d0fd96` at immutable `85e18b8`.
+  The complete `ece9afd..85e18b8` candidate is three commits, four paths,
+  +2344/-26, raw diff SHA-256
+  `eee6f82b1a6421c1c5edbaa9d2bed84e241bf47f20a1c3765edd046f0a3a0da8`.
+  Worker and manager each passed coordination 84/84 and automation 189/189
+  with zero failures/skips; all named policy gates passed and manager findings
+  were 0 HIGH, 0 MEDIUM, 0 LOW. Runtime was GPT-5.6 Sol `xhigh`,
+  Standard/Fast-off, no fallback, and read-only.
+- Independent review: fresh read-only card
+  `79120fbe-cd09-4bf1-baed-cac17b40ba48` started exactly once on
+  `property-codex-2`; attempt
+  `workboard:79120fbe-cd09-4bf1-baed-cac17b40ba48:1788281038351` has a healthy
+  claim. Its managed branch/worktree are
+  `openclaw/wb-79120fbe-cd09-4bf1-baed-cac17b40ba48` /
+  `wb-79120fbe-cd09-4bf1-baed-cac17b40ba48` at immutable `85e18b8`.
+  Runtime contract is GPT-5.6 Sol `max`, Standard/Fast-off, no fallback, and
+  read-only; Workboard execution metadata exposes only `model: default`.
+  Findings are pending. No install, publication, live bootstrap, or V1-047
   implementation dispatch occurred.
+- Current-state publication: exact ops-only commit
+  `36d5ae3456c0e442495dcef860f7b60c5900fbba`, parent `1a7b0e7`, changed only
+  `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
+  189/189 with zero failures/skips; exact-SHA GitHub Actions run `33530660444`
+  passed all four jobs. Local, tracking, fetched, and live-remote refs match.
 - Owner-decision reconciliation: exact ops-only commit
   `0ce6ac9030174e8039c7367ed26737f676be957b`, parent `1c523409`, tree
   `b4b43b89`, changed only `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`.
@@ -152,26 +178,26 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the active bounded correction. V1-047 implementation
+- Blocker: none for the active independent review. V1-047 implementation
   remains BLOCKED with zero starts; no install, live bootstrap, or implementation
   dispatch is permitted before a zero-finding review and release acceptance.
 - Owner action required: no.
-- Exact next action: preserve and inspect narrow correction
-  `dd728972-8d05-4e0f-bbfd-9626adae9527` through REVIEW, then independently
-  verify its exact commit, complete bounded diff, clean worktree, tests,
-  blocked-owner zero-mutation behavior, traceability, manifest, secrets, and
-  runtime before fresh integration and a fresh independent max review. Do not
-  install, publish, bootstrap the live V1-047 card, or dispatch implementation
-  `26b14ae0` yet.
+- Exact next action: preserve and inspect independent review
+  `79120fbe-cd09-4bf1-baed-cac17b40ba48` through REVIEW, then independently
+  verify its exact verdict and evidence. A material finding routes one bounded
+  correction; only an exact zero-finding verdict may advance installation and
+  live-card bootstrap. Do not install, publish, bootstrap the live V1-047 card,
+  or dispatch implementation `26b14ae0` yet.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
 - Automation candidate state: V1-047 approved and active at exact green
-  activation `870472b7`; candidate `8b1046be` failed manager verification with
-  1 HIGH/0 MEDIUM/0 LOW, and narrow correction `dd728972` runs exactly once
-  while implementation remains blocked and unstarted.
-- Automation exact next action: inspect correction `dd728972` through REVIEW,
-  manager-verify it, then require fresh integration and fresh independent max
-  review before any installation or implementation dispatch.
+  activation `870472b7`; correction `dd728972` is manager-accepted at exact
+  `85e18b8` with 0 HIGH/0 MEDIUM/0 LOW, cumulative integration `a440be0b` is
+  manager-accepted DONE, and independent max review `79120fbe` runs exactly
+  once while implementation remains blocked and unstarted.
+- Automation exact next action: inspect independent review `79120fbe` through
+  REVIEW and manager-verify its exact verdict before any installation or
+  implementation dispatch.
 
 <!-- AUTOMATION_STATUS_END -->

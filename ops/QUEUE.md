@@ -57,7 +57,7 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: owner-authorized V1-047 bounded H3 correction after
+Current live queue position: owner-authorized V1-047 fresh independent coordination review after
 a material independent exact-SHA review verdict, before implementation can start.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
@@ -80,13 +80,24 @@ correction `555bf742-61a0-47fd-b508-8ed2db72cce3` concluded at exact `8b1046be`;
 coordination 83/83 and automation 189/189 passed, but manager verification
 rejected it with 1 HIGH, 0 MEDIUM, 0 LOW after a direct blocked-owner probe
 returned `BLOCKED_OWNER_ACCEPTED`. Narrow changed-fingerprint correction
-`dd728972-8d05-4e0f-bbfd-9626adae9527` now runs exactly once on
-`property-codex-1` at GPT-5.6 Sol `xhigh`, Standard/Fast-off, attempt
-`workboard:dd728972-8d05-4e0f-bbfd-9626adae9527:1788279048082`, from clean exact
-base `8b1046be`. Preserve this correction and do not install, bootstrap the live
-card, or dispatch implementation `26b14ae0` until fresh integration and an exact
-zero-finding independent review are manager-accepted.
+`dd728972-8d05-4e0f-bbfd-9626adae9527` is property-manager-accepted DONE at
+exact `85e18b8`, parent `8b1046be`, after worker and manager coordination 84/84
+and automation 189/189 passed with zero failures/skips and manager inspection
+found 0 HIGH, 0 MEDIUM, 0 LOW. Fresh cumulative read-only integration
+`a440be0b-71ba-4522-82c4-af6a24d0fd96` is property-manager-accepted DONE at
+immutable `85e18b8`; worker and manager coordination 84/84 and automation
+189/189 passed with zero failures/skips. Fresh independent max review
+`79120fbe-cd09-4bf1-baed-cac17b40ba48` now runs exactly once on
+`property-codex-2`, Standard/Fast-off, attempt
+`workboard:79120fbe-cd09-4bf1-baed-cac17b40ba48:1788281038351`, in a managed
+read-only worktree at immutable `85e18b8`. Preserve this reviewer and do not
+install, bootstrap the live card, or dispatch implementation `26b14ae0` until
+its exact zero-finding verdict is manager-accepted.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent
 `1c523409`; local automation passed 189/189, exact-SHA CI run `33512759067`
 passed all four jobs, and local/tracking/fetched/live-remote refs match.
 V1-048 remains dependency-held.
+
+The latest exact ops-state publication `36d5ae3`, parent `1a7b0e7`, is pushed,
+remote-synchronized, and exact-SHA CI-green in run `33530660444` with all four
+jobs passed; local automation passed 189/189 with zero failures/skips.
