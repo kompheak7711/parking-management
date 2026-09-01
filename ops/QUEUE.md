@@ -58,8 +58,8 @@ profiles, authorization status, and deterministic order. This legacy narrative q
 historical context only and must not be used to invent successors.
 
 Current live queue position: owner-authorized V1-047 H1-H5 coordination
-correction is manager-accepted DONE; fresh cumulative integration is BLOCKED
-before start on external Gateway authorization, before implementation.
+correction is manager-accepted DONE; fresh cumulative integration is RUNNING
+exactly once on `property-codex-3`, before implementation.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
@@ -122,12 +122,17 @@ passed with zero failures/skips; manager auxiliary adversarial probes passed
 13/13 and found 0 HIGH, 0 MEDIUM, 0 LOW. Card `c3536723` is manager-accepted
 DONE. Fresh integration card `82257d37-d17b-42f3-8909-b855dfac5eac` was
 created once with stable key `v1-047-ops-cumulative-integration-587768e-v1`.
-Its default local start failed before any claim/attempt/worker/worktree because
-the operator lacks `operator.admin`; a materially different configured-token
-route failed because `gateway.auth.token` mismatches the running Gateway. The
-exact card is BLOCKED and unstarted. Owner/Gateway administrator action is
-required only to restore one supported `operator.admin` credential route; then
-resume and dispatch `82257d37` once before fresh independent max review. Do not
+Its first start failed before any claim/attempt/worker/worktree because the
+local route lacked `operator.admin`; a materially different configured-token
+route also mismatched the running Gateway. The supported token-free operator
+route then recovered, and the exact preserved card moved BLOCKED -> TODO ->
+READY and started exactly once with zero start failures on `property-codex-3`
+as attempt `workboard:82257d37-d17b-42f3-8909-b855dfac5eac:1788296690469`
+in clean managed branch/worktree
+`openclaw/wb-82257d37-d17b-42f3-8909-b855dfac5eac` /
+`wb-82257d37-d17b-42f3-8909-b855dfac5eac` at exact `587768eb`, parent
+`3a912c3`, tree `814cdcee`. Preserve and inspect that healthy integration; after
+manager acceptance, create one fresh independent max review. Do not
 install, bootstrap the live card, publish, or dispatch implementation `26b14ae0`
 before an accepted zero-finding independent review.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent

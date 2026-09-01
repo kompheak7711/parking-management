@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — cumulative integration blocked before start
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — cumulative integration running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -208,12 +208,17 @@
   `82257d37-d17b-42f3-8909-b855dfac5eac` was created once with stable
   idempotency key `v1-047-ops-cumulative-integration-587768e-v1`, parent
   `c3536723`, immutable source `587768eb`, and GPT-5.6 Sol `xhigh`,
-  Standard/Fast-off, empty fallbacks, read-only. The default supported local
-  Gateway route failed before claim/attempt/worker/branch/worktree creation
-  because `operator.admin` is absent. One materially different configured-token
-  route failed authentication because `gateway.auth.token` mismatches the
-  running Gateway. The exact card is BLOCKED before start with zero attempt,
-  worker, managed branch, or managed worktree; no duplicate dispatch occurred.
+  Standard/Fast-off, empty fallbacks, read-only. Its first start remained
+  blocked before claim/attempt/worker/branch/worktree creation when the local
+  route lacked `operator.admin` and a configured-token route mismatched the
+  running Gateway. At 21:04 UTC the supported token-free Gateway operator route
+  returned zero failures; the exact preserved card moved BLOCKED -> TODO ->
+  READY and started exactly once on `property-codex-3` as attempt
+  `workboard:82257d37-d17b-42f3-8909-b855dfac5eac:1788296690469` with zero
+  start failures. Its clean managed branch/worktree are
+  `openclaw/wb-82257d37-d17b-42f3-8909-b855dfac5eac` /
+  `wb-82257d37-d17b-42f3-8909-b855dfac5eac` at exact `587768eb`, parent
+  `3a912c3`, tree `814cdcee`; the claim and execution are RUNNING and healthy.
 - Prior blocker-state publication: exact ops-only commit
   `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -242,19 +247,16 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: external Gateway authorization prevents managed-worktree start for
-  exact integration card `82257d37`; the local operator lacks `operator.admin`
-  and the configured token mismatches the running Gateway. V1-047 implementation
-  remains dependency-held with zero starts; V1-048 remains dependency-held.
-- Owner action required: yes — restore one supported Gateway credential route
-  with `operator.admin` for `property-manager`; no repository or product policy
-  decision is needed.
-- Exact next action: after the supported Gateway scope/credential is restored,
-  move exact card `82257d37` BLOCKED -> TODO -> READY and dispatch it once in a
-  fresh managed worktree at immutable `587768eb`. Property-manager must verify
-  its exact cumulative integration evidence before creating a fresh independent
-  `max` review. Do not install, publish, bootstrap the live V1-047 card, or
-  dispatch implementation `26b14ae0` before an accepted zero-finding verdict.
+- Blocker: none for the healthy fresh cumulative integration attempt. V1-047
+  implementation remains dependency-held with zero starts; V1-048 remains
+  dependency-held.
+- Owner action required: no.
+- Exact next action: preserve and inspect the healthy integration attempt. When
+  it concludes, property-manager must verify its immutable SHA, parent, complete
+  five-commit/four-path diff, clean worktree, runtime proof, test counts, and
+  findings before creating a fresh independent GPT-5.6 Sol `max` review. Do not
+  install, publish, bootstrap the live V1-047 card, or dispatch implementation
+  `26b14ae0` before an accepted zero-finding verdict.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
@@ -268,10 +270,10 @@
   independent max review `28daaec5` is manager-accepted DONE with 5 HIGH/
   0 MEDIUM/0 LOW, exact correction `c3536723` is manager-accepted DONE at
   `587768eb` with 0 HIGH/0 MEDIUM/0 LOW, and fresh cumulative integration
-  `82257d37` is BLOCKED before start on missing `operator.admin` plus a
-  mismatched configured Gateway token. Implementation remains blocked/unstarted.
-- Automation exact next action: restore a supported `operator.admin` Gateway
-  credential, then resume and dispatch exact integration card `82257d37` once;
-  after manager acceptance, route a fresh independent `max` review.
+  `82257d37` is RUNNING exactly once on `property-codex-3` at immutable
+  `587768eb` with a healthy claim and zero start failures on the recovered
+  dispatch. Implementation remains blocked/unstarted.
+- Automation exact next action: inspect the healthy integration attempt and,
+  after property-manager acceptance, route a fresh independent `max` review.
 
 <!-- AUTOMATION_STATUS_END -->
