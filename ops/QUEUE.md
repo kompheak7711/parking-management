@@ -58,15 +58,17 @@ profiles, authorization status, and deterministic order. This legacy narrative q
 historical context only and must not be used to invent successors.
 
 Current live queue position: owner-authorized V1-047 bounded H1-H5 coordination
-correction after a failed independent max review, before implementation.
+correction RUNNING exactly once after a failed independent max review, before
+implementation.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
 activation `870472b7` is published, synchronized, and exact-SHA CI-green in run
 `33472963195`. Implementation `26b14ae0-92b3-433d-bed6-46bd732c569c` remains
-BLOCKED before start because managed-worktree Gateway dispatch requires
-`operator.admin`; two bounded supported paths produced zero starts. A fresh
-independent exact-SHA rereview of the uninstalled coordination
+BLOCKED before start with zero starts. Its former Gateway permission blocker is
+restored, but coordination correction, fresh integration, and accepted
+zero-finding independent review remain hard dependencies. A fresh independent
+exact-SHA rereview of the uninstalled coordination
 candidate `ece9afd` then failed with 3 HIGH findings, including two surviving
 material classes and one missing bootstrap for this exact pre-existing card. The
 owner explicitly cleared that exhausted-recovery stop for one materially different
@@ -107,20 +109,24 @@ failures/skips, but independently confirmed five secret-handling, runtime-replay
 logical-duplicate, worktree-drift, and late-failure-consumption defects. Exact
 bounded correction `c3536723-13f6-446a-a973-8a67963c51d4` was created once at
 base `3a912c3` for GPT-5.6 Sol `xhigh`, Standard/Fast-off, with four allowed
-paths. Its only supported Gateway start failed before claim, attempt, worker,
-branch, or worktree creation because the connected operator has zero scopes and
-managed-worktree dispatch requires `operator.admin`; the remote credential route
-is absent and the configured local auth token mismatches the running Gateway.
-The card is preserved BLOCKED. Owner action is required only to restore a
-supported `operator.admin` Gateway credential/session; then move and dispatch
-this exact card once. Do not install, bootstrap the live card, publish, or
-dispatch implementation `26b14ae0` before a corrected fresh integration and
-accepted zero-finding independent review.
+paths. Its first supported Gateway start failed before claim, attempt, worker,
+branch, or worktree creation on missing `operator.admin`. The supported RPC now
+succeeds: the exact preserved card was moved BLOCKED -> TODO -> READY and
+dispatched once with zero start failures. It is RUNNING on `property-codex-1`
+as attempt `workboard:c3536723-13f6-446a-a973-8a67963c51d4:1788291263209`
+in clean managed branch/worktree
+`openclaw/wb-c3536723-13f6-446a-a973-8a67963c51d4` /
+`wb-c3536723-13f6-446a-a973-8a67963c51d4` at immutable `3a912c3`, with a
+healthy claim. No owner action is required. Preserve and inspect this attempt;
+after it concludes, manager-verify the exact bounded result before fresh
+integration and fresh independent max review. Do not install, bootstrap the
+live card, publish, or dispatch implementation `26b14ae0` before an accepted
+zero-finding independent review.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent
 `1c523409`; local automation passed 189/189, exact-SHA CI run `33512759067`
 passed all four jobs, and local/tracking/fetched/live-remote refs match.
 V1-048 remains dependency-held.
 
-The latest exact ops-state publication `05a70f5`, parent `48ba0db`, is pushed,
-remote-synchronized, and exact-SHA CI-green in run `33540882715` with all four
+The latest exact ops-state publication `4854408`, parent `05a70f5`, is pushed,
+remote-synchronized, and exact-SHA CI-green in run `33545659366` with all four
 jobs passed; local automation passed 189/189 with zero failures/skips.

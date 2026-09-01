@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — H1-H5 correction blocked before start
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — H1-H5 correction running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -71,11 +71,12 @@
   focused local reproduction passed 1/1, and the one bounded failed-job rerun
   completed run `33473549663` with all four jobs green, including automation
   189/189. No product or implementation execution changed.
-- Implementation: card `26b14ae0-92b3-433d-bed6-46bd732c569c` is BLOCKED
-  before start. Two bounded supported Gateway dispatch paths, including the
-  authenticated `gateway.remote.token`, both required `operator.admin` for the
-  managed worktree. Zero worker, claim, attempt, branch, or worktree was created.
-  Runtime remains GPT-5.6 Sol `xhigh`, Standard, Fast-off, with no fallback.
+- Implementation: card `26b14ae0-92b3-433d-bed6-46bd732c569c` remains BLOCKED
+  before start with zero worker, claim, attempt, branch, or worktree. Its former
+  `operator.admin` dispatch blocker is restored, but coordination correction,
+  fresh integration, and accepted zero-finding independent review remain hard
+  dependencies. Runtime remains GPT-5.6 Sol `xhigh`, Standard, Fast-off, with
+  no fallback.
 - Coordination safety rereview: fresh independent read-only card
   `9d1990ed-d3d5-4b0a-ba90-406372df359c` reviewed exact uninstalled candidate
   `ece9afdaf1c4d5bd79b44b0826a4b14a8637f13e`, parent `3fc58af902c0b58bfe88d45316e11994436063d0`,
@@ -190,16 +191,20 @@
   `c3536723-13f6-446a-a973-8a67963c51d4` was created once with stable
   idempotency key `v1-047-ops-correction-five-high-3a912c3-v1`, exact base
   `3a912c3`, four allowed paths, and GPT-5.6 Sol `xhigh`, Standard/Fast-off,
-  empty fallbacks. The only Gateway dispatch failed before claim/attempt/
-  worker/worktree/branch creation: the running Gateway connection is operator
-  role with zero scopes and managed-worktree dispatch requires
-  `operator.admin`. `gateway.remote.token`/URL are absent and the configured
-  `gateway.auth.token` mismatches the running Gateway. The card is preserved
-  BLOCKED; no duplicate dispatch is permitted until access is restored.
-- Current-state publication: exact ops-only commit
-  `05a70f5b4a2802af49bf55ad0fd50a94d9b06f0c`, parent `48ba0db`, changed only
+  empty fallbacks. The first Gateway dispatch failed before claim/attempt/
+  worker/worktree/branch creation on missing `operator.admin`. At 02:31 +07 the
+  supported managed-worktree RPC succeeded with zero start failures, so the
+  exact preserved card was moved BLOCKED -> TODO -> READY and dispatched once.
+  It is RUNNING exactly once on `property-codex-1` as attempt
+  `workboard:c3536723-13f6-446a-a973-8a67963c51d4:1788291263209` in clean
+  managed branch/worktree
+  `openclaw/wb-c3536723-13f6-446a-a973-8a67963c51d4` /
+  `wb-c3536723-13f6-446a-a973-8a67963c51d4` at immutable base `3a912c3`.
+  Claim heartbeats are healthy; implementation remains blocked and unstarted.
+- Prior blocker-state publication: exact ops-only commit
+  `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
-  189/189 with zero failures/skips; exact-SHA GitHub Actions run `33540882715`
+  189/189 with zero failures/skips; exact-SHA GitHub Actions run `33545659366`
   passed all four jobs. Local, tracking, fetched, and live-remote refs match.
 - Owner-decision reconciliation: exact ops-only commit
   `0ce6ac9030174e8039c7367ed26737f676be957b`, parent `1c523409`, tree
@@ -224,18 +229,15 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: correction `c3536723` cannot start because the running Gateway lacks
-  `operator.admin`; zero worker artifacts were created. V1-047 implementation
-  remains BLOCKED with zero starts; V1-048 remains dependency-held.
-- Owner action required: yes — restore a supported Gateway credential/session
-  with `operator.admin` for managed-worktree dispatch. No secret value should be
-  shared in chat or committed.
-- Exact next action: after `operator.admin` is restored, move the exact preserved
-  correction `c3536723-13f6-446a-a973-8a67963c51d4` to READY and dispatch it
-  once. Then manager-verify the correction before fresh cumulative integration
-  and a fresh independent `max` review. Do not install, publish, bootstrap the
-  live V1-047 card, or dispatch implementation `26b14ae0` before an accepted
-  zero-finding verdict.
+- Blocker: none for the running H1-H5 correction. V1-047 implementation remains
+  dependency-held with zero starts; V1-048 remains dependency-held.
+- Owner action required: no.
+- Exact next action: preserve and inspect the healthy correction attempt. When
+  it concludes, property-manager must verify its exact SHA, parent, complete
+  four-path diff, clean worktree, runtime proof, and all deterministic gates
+  before fresh cumulative integration and a fresh independent `max` review.
+  Do not install, publish, bootstrap the live V1-047 card, or dispatch
+  implementation `26b14ae0` before an accepted zero-finding verdict.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
@@ -247,10 +249,12 @@
   accepted DONE at exact `3a912c3` with 0 HIGH/0 MEDIUM/0 LOW, fresh cumulative
   integration `c108b139` is manager-accepted DONE with zero findings,
   independent max review `28daaec5` is manager-accepted DONE with 5 HIGH/
-  0 MEDIUM/0 LOW, and exact correction `c3536723` is BLOCKED before start on
-  missing Gateway `operator.admin`. Implementation remains blocked/unstarted.
-- Automation exact next action: healthy blocked no-op until `operator.admin` is
-  restored; then redispatch preserved correction `c3536723` exactly once before
-  any installation, bootstrap, publication, or implementation dispatch.
+  0 MEDIUM/0 LOW, and exact correction `c3536723` is RUNNING exactly once on
+  `property-codex-1` at immutable base `3a912c3` with a healthy claim and zero
+  start failures on the successful recovery dispatch. Implementation remains
+  blocked/unstarted.
+- Automation exact next action: inspect the healthy attempt and, after it
+  concludes, manager-verify the exact bounded result before fresh cumulative
+  integration and fresh independent `max` review.
 
 <!-- AUTOMATION_STATUS_END -->
