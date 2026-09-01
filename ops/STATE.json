@@ -4,7 +4,7 @@
     "status": "approved_complete",
     "basis": "owner standing continuous authorization from the current live V1-046 stage through V1-060, dependency ordered and without repeated routine authorization",
         "implementation_started": true,
-        "implementation_completed": true,
+        "implementation_completed": false,
     "publication_completed": false
   },
   "authorities": [
@@ -664,8 +664,8 @@
     {
       "id": "v1-046-test-119-traceability-correction-required",
       "owner_action_required": false,
-      "status": "integration_accepted_fresh_rereview_running",
-      "detail": "Independent review 8548ab20 is manager-accepted FAIL with six MEDIUM findings. Bounded correction dfe221fe and fresh integration 87d90c87 are manager-accepted DONE at exact clean 0a55db2b; fresh independent rereview 208ac3de is running while release and V1-047 remain dependency-blocked. No owner action is required."
+      "status": "rereview_failed_correction_3_running",
+      "detail": "Fresh rereview 208ac3de is manager-accepted FAIL with three MEDIUM findings at exact clean 0a55db2b. Bounded correction 0efc51d0 is running; fresh integration 6dc815a8 and fresh rereview 7ab561b7 are dependency-held, while release and V1-047 remain blocked. No owner action is required."
     }
   ],
   "branch": "implementation/foundation",
@@ -704,16 +704,16 @@
   },
   "commit": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
   "evidence_applicability": {
-    "basis": "Corrected candidate 0a55db2b has sole parent 09b5dafc, tree 1835b750, a clean bounded five-path +620/-83 correction diff, and a clean cumulative authorized diff from 39c38e74. Correction and fresh integration are manager-accepted DONE with all gates green, including PostgreSQL 465/465 zero skips. Release still requires the running fresh independent exact-SHA review to return an explicit zero-finding verdict.",
-    "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-045 target df8096c1, closure fe00f286, and reconciliation 39c38e74 are published, synchronized, exact-SHA CI-green, and closed on Workboard; V1-046 review 8548ab20 is manager-accepted FAIL with six MEDIUM findings, correction dfe221fe and fresh integration 87d90c87 are manager-accepted DONE, and fresh rereview 208ac3de is running.",
+    "basis": "Candidate 0a55db2b remains clean and immutable, but fresh rereview 208ac3de reproduced three MEDIUM contract failures despite all deterministic gates passing. Its evidence is valid for the rejected SHA only; any correction requires fresh integration and fresh independent rereview before release.",
+    "complete_profile_remains_applicable": false,
+    "prior_review_disposition": "V1-045 is published and closed. V1-046 review 8548ab20 failed with six MEDIUM findings; correction dfe221fe and integration 87d90c87 were accepted; fresh rereview 208ac3de then failed with three MEDIUM findings. Correction 0efc51d0 is now running and release remains blocked.",
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Inspect and reconcile fresh rereview card 208ac3de-72f2-45a2-9be7-4e096aaf08ca health, immutable SHA, complete-diff review evidence, deterministic gates, and verdict without overlapping dispatch",
-  "active_worker": "property-codex-2",
-  "active_card": "208ac3de-72f2-45a2-9be7-4e096aaf08ca",
-  "active_attempt": "workboard:208ac3de-72f2-45a2-9be7-4e096aaf08ca:1788223875841",
+  "next_action": "Inspect and reconcile bounded correction card 0efc51d0-fbb0-4c53-9f1a-c1f54642927e health, heartbeat, exact base, bounded diff, tests, and terminal evidence without overlapping dispatch",
+  "active_worker": "property-codex-1",
+  "active_card": "0efc51d0-fbb0-4c53-9f1a-c1f54642927e",
+  "active_attempt": "workboard:0efc51d0-fbb0-4c53-9f1a-c1f54642927e:1788226750428",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -733,7 +733,7 @@
     "order": 46,
     "phase": "Billing",
     "risk_class": "high",
-    "status": "integration_accepted_fresh_rereview_running",
+    "status": "in_progress",
     "task": "Late-payment decision, charge, correction, and allocation boundaries",
     "roadmap_id": "V1-046"
   },
@@ -812,8 +812,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 bounded correction and fresh exact-SHA integration are manager-accepted DONE; fresh independent rereview is running and release and V1-047 remain dependency-blocked",
-    "exact_next_action": "Inspect and reconcile fresh rereview card 208ac3de-72f2-45a2-9be7-4e096aaf08ca health, immutable SHA, complete-diff review evidence, deterministic gates, and verdict without overlapping dispatch",
+    "current_phase": "V1-046 fresh rereview is manager-accepted FAIL with three MEDIUM findings; bounded correction 3 is running while fresh integration, fresh rereview, release, and V1-047 remain dependency-blocked",
+    "exact_next_action": "Inspect and reconcile bounded correction card 0efc51d0-fbb0-4c53-9f1a-c1f54642927e health, heartbeat, exact base, bounded diff, tests, and terminal evidence without overlapping dispatch",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1218,17 +1218,84 @@
       "fast_mode": false,
       "fallbacks": [],
       "read_only": true,
-      "claim_active": true,
-      "attempt_active": true,
+      "claim_active": false,
+      "attempt_active": false,
       "worktree_clean_at_admission": true,
       "dispatch_count": 1,
       "start_failures": 0,
+      "verdict": "FAIL",
+      "findings": {
+        "high": 0,
+        "medium": 3,
+        "low": 0,
+        "summary": [
+          "mutation-only actors cannot receive required API-018 current safe conflict state",
+          "actor-scoped correction keys collide through a Charge-global correlation identifier",
+          "exact API-016 replay rebuilds meta.request_id instead of preserving the original body"
+        ]
+      },
+      "positive_tests": "PASS: focused 40/40, backend 729/729, frontend 234/234, automation 186/186, real PostgreSQL 465/465 zero skips, and all applicable static/build/dependency/migration/security/traceability/publication/secret/diff/clean guards",
+      "stale_attempt_reconciliation": "Terminal read-only proof and clean worktree confirmed before the obsolete running execution display was stopped; no work or evidence was discarded",
+      "manager_accepted": true,
+      "status": "done_manager_accepted_fail"
+    },
+    "product_review_correction_3": {
+      "card_id": "0efc51d0-fbb0-4c53-9f1a-c1f54642927e",
+      "attempt_id": "workboard:0efc51d0-fbb0-4c53-9f1a-c1f54642927e:1788226750428",
+      "worker": "property-codex-1",
+      "branch": "openclaw/wb-0efc51d0-fbb0-4c53-9f1a-c1f54642927e",
+      "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-0efc51d0-fbb0-4c53-9f1a-c1f54642927e",
+      "source_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-208ac3de-72f2-45a2-9be7-4e096aaf08ca",
+      "required_base_sha": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
+      "required_base_parent": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+      "required_base_tree": "1835b750aa75c798784affae3bff1f1a50d92696",
+      "allowed_paths": [
+        "backend/migrations/versions/20260831_37_late_payment_api.py",
+        "backend/src/property_rental/late_payment.py",
+        "backend/src/property_rental/late_payment_api.py",
+        "backend/tests/test_late_payment.py",
+        "backend/tests/test_late_payment_migration.py",
+        "ops/traceability.json"
+      ],
+      "model": "openai/gpt-5.6-sol",
+      "reasoning": "xhigh",
+      "mode": "standard",
+      "fast_mode": false,
+      "fallbacks": [],
+      "claim_active": true,
+      "attempt_active": true,
+      "worktree_clean_at_admission": true,
+      "dispatch_count": 2,
+      "start_failures": 1,
+      "transport_recovery": "First Gateway dispatch created zero worker attempts because the worktree source lacked an absolute checkout path. The same card was rebound to the exact clean source path and branch; the changed retry started exactly one worker with no start failure.",
+      "manager_compact_state_tests": "PASS: automation 189/189 plus roadmap validation, state-routing, visibility-watchdog, JSON, shell-syntax, and Python-compile guards",
+      "integration_card_id": "6dc815a8-b86b-484c-98a4-852341997947",
+      "rereview_card_id": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
+      "release_card_id": "3266b3a3-e244-4926-ade8-6cc13eff775f",
       "status": "running_admission_passed"
+    },
+    "product_correction_3_integration": {
+      "card_id": "6dc815a8-b86b-484c-98a4-852341997947",
+      "worker": "property-codex-3",
+      "model": "openai/gpt-5.6-sol",
+      "reasoning": "high",
+      "mode": "standard",
+      "read_only": true,
+      "status": "todo_dependency_blocked"
+    },
+    "product_correction_3_rereview": {
+      "card_id": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
+      "worker": "property-codex-2",
+      "model": "openai/gpt-5.6-sol",
+      "reasoning": "max",
+      "mode": "standard",
+      "read_only": true,
+      "status": "todo_dependency_blocked"
     },
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-09-01T00:51:47Z"
+    "updated_at": "2026-09-01T01:39:34Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -1908,8 +1975,8 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "fresh_integration_running",
-  "task": "Preserve the verified V1-046 implementation and perform one bounded TEST-119 traceability correction before fresh exact-SHA integration, independent review, and release",
+  "status": "in_progress",
+  "task": "Resolve the three manager-accepted V1-046 rereview findings through one bounded correction, then require fresh exact-SHA integration, fresh independent review, and release",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -2135,10 +2202,12 @@
     "PASS: Alembic exactly one head 20260831_36 and 36 linear revisions; fresh and populated upgrades plus financial, transaction, authorization, idempotency, concurrency, replay, audit, correction, and wrong-run-exclusion invariants covered by PostgreSQL 456/456",
     "PASS: V1-045 fresh independent review card 5e6e6369-6e13-4fb9-884c-6cf9e4ba57d8 returned explicit zero-finding PASS at exact SHA df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af and made no edits",
     "PASS: V1-045 implementation commit df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af exact-SHA GitHub Actions run 33402789651; all four jobs",
-    "PASS: V1-045 ops-only closure commit fe00f286759695f53001e77937b107d343fb6947 exact-SHA GitHub Actions run 33404108038; all four jobs"
+    "PASS: V1-045 ops-only closure commit fe00f286759695f53001e77937b107d343fb6947 exact-SHA GitHub Actions run 33404108038; all four jobs",
+    "FAIL: V1-046 fresh independent rereview 208ac3de found exactly three MEDIUM contract failures at immutable 0a55db2b; positive gates passed focused 40/40, backend 729/729, frontend 234/234, automation 186/186, and real PostgreSQL 465/465 with zero skips",
+    "PASS: bounded correction chain 0efc51d0 -> 6dc815a8 -> 7ab561b7 is dependency-linked to release; the corrected Gateway retry started exactly one property-codex-1 worker at clean base 0a55db2b with no start failure"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T00:39:00Z",
+  "timestamp": "2026-09-01T01:39:34Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
