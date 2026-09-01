@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — activation green, managed-worktree permission blocked
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — activation green, owner stop after coordination rereview
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -76,6 +76,16 @@
   authenticated `gateway.remote.token`, both required `operator.admin` for the
   managed worktree. Zero worker, claim, attempt, branch, or worktree was created.
   Runtime remains GPT-5.6 Sol `xhigh`, Standard, Fast-off, with no fallback.
+- Coordination safety rereview: fresh independent read-only card
+  `9d1990ed-d3d5-4b0a-ba90-406372df359c` reviewed exact uninstalled candidate
+  `ece9afdaf1c4d5bd79b44b0826a4b14a8637f13e`, parent `3fc58af902c0b58bfe88d45316e11994436063d0`,
+  after coordination 75/75 and automation 189/189 passed with zero skips. The
+  review nevertheless failed with 3 HIGH, 0 MEDIUM, 0 LOW runtime findings:
+  unsupported terminal-state expectations, a quoted sensitive-key persistence
+  bypass, and no supported idempotent bootstrap for the exact pre-existing
+  V1-047 card. The first two material classes survived the prior correction, so
+  the bounded-recovery human-stop threshold is reached. The candidate remains
+  uninstalled; no scheduler mutation, publication, or V1 dispatch occurred.
 - Scheduler: enabled singleton `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains
   on its 30-minute interval with GPT-5.6 Sol `xhigh`, Standard/Fast-off. Its
   saved payload and `ops/OPENCLAW_SUPERVISOR_PROMPT.md` are byte-identical at
@@ -84,19 +94,22 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: external OpenClaw permission — managed-worktree dispatch requires
-  `operator.admin` and cannot be safely bypassed.
-- Owner action required: yes. Grant `operator.admin` to the dispatching Gateway
-  identity or invoke `/workboard dispatch` as the authenticated owner.
-- Exact next action: after that permission action, unblock implementation
-  `26b14ae0-92b3-433d-bed6-46bd732c569c` and start it exactly once from immutable
-  activation `870472b7`; do not retry the unchanged permission failure.
+- Blockers: managed-worktree dispatch still requires `operator.admin`, and the
+  fresh coordination rereview exhausted bounded recovery with 3 HIGH findings.
+- Owner action required: yes. Review Workboard `9d1990ed-d3d5-4b0a-ba90-406372df359c`
+  and decide whether to authorize another materially different coordination
+  correction and live-card bootstrap. The managed-worktree identity also needs
+  `operator.admin` before any eventual start.
+- Exact next action: hold installation, scheduler mutation, correction dispatch,
+  and V1-047 dispatch until the owner resolves the exhausted-recovery stop. Do
+  not retry the unchanged permission failure.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
 - Automation candidate state: V1-047 approved and active at exact green
-  activation `870472b7`; implementation is blocked before start on operator scope.
-- Automation exact next action: wait for `operator.admin` or authenticated-owner
-  `/workboard dispatch`, then unblock and start the same card exactly once.
+  activation `870472b7`; implementation is held before start by operator scope
+  and an exhausted coordination-safety recovery.
+- Automation exact next action: preserve the exact card and all evidence while
+  awaiting owner direction on the 3 HIGH rereview findings; do not dispatch.
 
 <!-- AUTOMATION_STATUS_END -->

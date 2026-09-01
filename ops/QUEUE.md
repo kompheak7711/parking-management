@@ -65,6 +65,10 @@ activation `870472b7` is published, synchronized, and exact-SHA CI-green in run
 `33472963195`. Implementation `26b14ae0-92b3-433d-bed6-46bd732c569c` is the
 sole dependency-ready stage but is BLOCKED before start because managed-worktree
 Gateway dispatch requires `operator.admin`. Two bounded supported paths produced
-zero starts. Owner/operator must grant that scope or invoke `/workboard dispatch`
-as authenticated owner; then unblock and start the same card exactly once.
+zero starts. A fresh independent exact-SHA rereview of the uninstalled coordination
+candidate `ece9afd` then failed with 3 HIGH findings, including two surviving
+material classes and one missing bootstrap for this exact pre-existing card. The
+bounded-recovery human-stop threshold is reached. Owner review is required before
+another correction or any V1-047 dispatch; `operator.admin` remains required for
+an eventual managed-worktree start. Preserve the same card and do not retry.
 V1-048 remains dependency-held.

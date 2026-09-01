@@ -671,6 +671,21 @@
       ],
       "result": "zero workers, claims, attempts, branches, or worktrees created",
       "owner_action_required": true
+    },
+    {
+      "category": "exhausted_bounded_recovery",
+      "summary": "Fresh coordination rereview failed with 3 HIGH findings; two material classes survived the prior correction",
+      "card_id": "9d1990ed-d3d5-4b0a-ba90-406372df359c",
+      "candidate_sha": "ece9afdaf1c4d5bd79b44b0826a4b14a8637f13e",
+      "candidate_parent": "3fc58af902c0b58bfe88d45316e11994436063d0",
+      "findings": {"high": 3, "medium": 0, "low": 0},
+      "surviving_material_classes": [
+        "supported REVIEW release semantics incompatible with terminal reporting",
+        "quoted sensitive-key scalar persistence bypass"
+      ],
+      "additional_finding": "no supported idempotent bootstrap for the exact pre-existing V1-047 card",
+      "result": "candidate uninstalled; scheduler, publication, and V1 dispatch held",
+      "owner_action_required": true
     }
   ],
   "branch": "implementation/foundation",
@@ -715,7 +730,7 @@
     "tranche_id": "V1-047"
   },
   "idle_reason": null,
-  "next_action": "Owner/operator must grant operator.admin to the dispatching Gateway identity or invoke /workboard dispatch as the authenticated owner; then unblock and start implementation 26b14ae0 exactly once without changing its contract",
+  "next_action": "Owner must resolve the exhausted coordination-safety recovery recorded on Workboard 9d1990ed before any further correction or V1-047 dispatch; preserve implementation 26b14ae0 and do not retry the unchanged operator.admin failure",
   "active_worker": null,
   "active_card": "26b14ae0-92b3-433d-bed6-46bd732c569c",
   "active_claim": null,
@@ -759,9 +774,16 @@
       "scope": "OpenClaw native harness relay; separate from V1-046 product and release gates",
       "evidence": "historical PreToolUse failures report Native hook relay unavailable; current gateway is running, OpenClaw reports 5/5 hooks ready, and current Workboard, cron, Git, and shell checks succeed",
       "action": "record and monitor only; do not restart or alter the healthy gateway without fresh failing health evidence"
+    },
+    {
+      "id": "worker-coordination-rereview-human-stop",
+      "status": "owner_stop",
+      "scope": "uninstalled OpenClaw coordination safety candidate and exact pre-existing V1-047 card bootstrap",
+      "evidence": "Workboard 9d1990ed-d3d5-4b0a-ba90-406372df359c failed exact ece9afd with 3 HIGH, 0 MEDIUM, 0 LOW after coordination 75/75 and automation 189/189 passed; two material classes survived the prior correction",
+      "action": "hold installation, scheduler mutation, correction dispatch, and V1-047 dispatch until owner direction"
     }
   ],
-  "owner_action": "Grant operator.admin to the dispatching Gateway identity or invoke /workboard dispatch as the authenticated owner so OpenClaw can create the managed V1-047 worktree.",
+  "owner_action": "Review Workboard 9d1990ed-d3d5-4b0a-ba90-406372df359c and decide whether to authorize another materially different coordination correction and exact-card bootstrap; operator.admin remains required before any eventual managed-worktree start.",
   "owner_decisions": {
     "bootstrap_protection": "prm_bootstrap has safe cluster-global attributes and no unsafe memberships, ownership, or authority in the target database; no runtime cross-database introspection; provisioning attests and verifies the dedicated role is unused in every other database; target checks fail closed; atomic closure/revocation and secret-free repeat audit remain mandatory",
     "ceremony_deadline": "one absolute monotonic deadline begins before TOTP confirmation and covers TOTP input, recovery presentation and COMPLETE writes, acknowledgement input, and commit preparation; writes, partial input, retries, and trickled input never reset or extend it; timeout rolls back the ceremony",
@@ -821,8 +843,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-047 activation 870472b7 is published, synchronized, and exact-SHA CI-green; frozen implementation 26b14ae0 is blocked before start because the available Gateway identity lacks operator.admin for managed worktrees",
-    "exact_next_action": "After owner/operator supplies operator.admin or invokes /workboard dispatch as authenticated owner, unblock and start exactly one property-codex-1 managed-worktree attempt at 870472b7 using GPT-5.6 Sol xhigh Standard mode with no fallback",
+    "current_phase": "V1-047 activation 870472b7 is published, synchronized, and exact-SHA CI-green; frozen implementation 26b14ae0 is held before start by the unchanged operator.admin requirement and an exhausted coordination-safety recovery with 3 HIGH rereview findings",
+    "exact_next_action": "Preserve implementation 26b14ae0 and all evidence; hold installation, scheduler mutation, correction dispatch, and V1-047 dispatch until owner direction on Workboard 9d1990ed; do not retry the unchanged permission failure",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
