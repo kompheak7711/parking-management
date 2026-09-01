@@ -57,12 +57,15 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-046 fresh independent rereview after correction 3.
+Current live queue position: V1-046 release after correction 3 and a zero-finding
+fresh independent rereview.
 Rereview `208ac3de-72f2-45a2-9be7-4e096aaf08ca` is manager-accepted DONE as
 FAIL with three MEDIUM findings at exact `0a55db2b445c776a2f91afee308cc0a13d8a93e7`.
 Bounded correction `0efc51d0-fbb0-4c53-9f1a-c1f54642927e` is manager-accepted
 DONE at exact `47798abdbacf04df917eea6ee7f2b889eee7ac8c`. Fresh integration
 `6dc815a8-b86b-484c-98a4-852341997947` is manager-accepted DONE with zero
 findings. Fresh independent rereview `7ab561b7-7fee-483c-88ce-759273ceb9f6`
-is running at the immutable candidate; release and V1-047 remain
-dependency-blocked pending a manager-accepted zero-finding rereview.
+is manager-accepted DONE as PASS with zero findings at the immutable candidate.
+Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is dependency-ready for exact
+source binding and one managed-worktree dispatch; V1-047 remains blocked until
+V1-046 is fully released, published, exact-SHA CI-green, reconciled, and closed.

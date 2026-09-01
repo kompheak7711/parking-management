@@ -1,4 +1,4 @@
-# V1-046 — fresh independent rereview running
+# V1-046 — zero-finding rereview accepted; release ready
 
 - V1-045 is fully released, published, exact-SHA CI-green, reconciled,
   synchronized, and closed. V1-047 remains dependency-blocked until V1-046 is
@@ -25,18 +25,24 @@
   dependency, security, traceability, deployment, publication, secret, diff,
   cleanup, and clean-state check. Manager reran focused 18/18 and independently
   confirmed the immutable Git/diff/clean/no-process proof.
-- Fresh independent rereview `7ab561b7-7fee-483c-88ce-759273ceb9f6` is RUNNING
-  for `property-codex-2`, attempt
+- Fresh independent rereview `7ab561b7-7fee-483c-88ce-759273ceb9f6` is now
+  manager-accepted DONE as PASS with zero findings. Reviewer `property-codex-2`,
+  attempt
   `workboard:7ab561b7-7fee-483c-88ce-759273ceb9f6:1788229221677`, branch
   `openclaw/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6`, managed worktree
   `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6`.
-  Admission is clean at immutable `47798abd`. Exactly one fresh read-only worker
-  started with zero failures under GPT-5.6 Sol `max`, no fallback,
-  Standard/Fast-off. It is bound to the complete diff and frozen authorities and
-  must independently reproduce the three prior findings and inspect for adjacent
-  regressions; verdict and review test counts are pending.
-- Release `3266b3a3-e244-4926-ade8-6cc13eff775f` remains unclaimed and
-  dependency-held. The candidate is not published.
+  The reviewer inspected all 16 cumulative paths and every changed line, freshly
+  reproduced the three prior findings as resolved, and reported zero adjacent
+  regressions. Gates passed focused 18/18, backend 729/729 with 444 explained
+  database-only skips, frontend 234/234, automation 186/186, and isolated
+  PostgreSQL 467/467 with zero skips; adversarial 2/2 and revision-upgrade 1/1
+  also passed. Property-manager independently rechecked the exact SHA, parent,
+  tree, path set, diff hash, clean state, and focused 18/18. The obsolete running
+  attempt presentation was stopped only after terminal proof; its evidence,
+  session, branch, and worktree remain preserved.
+- Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is dependency-ready and remains
+  unclaimed pending exact-source binding and one supported Gateway dispatch from
+  the clean reviewed worktree. The candidate is not published.
 - Scheduler `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains the enabled singleton
   on a 30-minute interval with GPT-5.6 Sol `xhigh`, Standard/Fast-off. The
   authoritative prompt and saved payload are byte-identical at 11,868 bytes,
@@ -45,7 +51,7 @@
   `5672dfdc554b14dfaab2c2b5d096ee1f7724744f` with successful GitHub Actions
   run `33448153128`.
 - Owner action required: no.
-- Exact next action: inspect and reconcile rereview `7ab561b7` health,
-  heartbeat, exact binding, complete-diff inspection, fresh deterministic gates,
-  and explicit verdict without overlapping dispatch. Only a manager-accepted
-  zero-finding PASS may unlock release.
+- Exact next action: bind release `3266b3a3` to exact clean reviewed
+  `47798abd`, promote it, and start exactly one `property-codex-3` managed-worktree
+  release worker through the supported Gateway at GPT-5.6 Sol `xhigh`, no
+  fallback, Standard/Fast-off.

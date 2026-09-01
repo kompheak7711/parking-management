@@ -662,10 +662,10 @@
   },
   "blockers": [
     {
-      "id": "v1-046-fresh-rereview-required",
+      "id": "v1-046-release-pending",
       "owner_action_required": false,
-      "status": "integration_accepted_fresh_rereview_running",
-      "detail": "Correction 0efc51d0 and zero-finding integration 6dc815a8 are manager-accepted DONE at exact clean 47798abd. Fresh independent rereview 7ab561b7 is running; release and V1-047 remain dependency-held. No owner action is required."
+      "status": "zero_finding_rereview_accepted_release_ready",
+      "detail": "Correction 0efc51d0, zero-finding integration 6dc815a8, and zero-finding fresh rereview 7ab561b7 are manager-accepted DONE at exact clean 47798abd. Release 3266b3a3 is dependency-ready for exact-source binding and one managed-worktree dispatch; V1-047 remains dependency-held. No owner action is required."
     }
   ],
   "branch": "implementation/foundation",
@@ -704,16 +704,16 @@
   },
   "commit": "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
   "evidence_applicability": {
-    "basis": "Manager-accepted correction candidate 47798abd is clean and immutable, resolves the three rereview findings, and has a manager-accepted zero-finding fresh cumulative integration gate. Release still requires the fresh independent rereview now running against the exact SHA and complete diff.",
-    "complete_profile_remains_applicable": false,
-    "prior_review_disposition": "V1-045 is published and closed. V1-046 review 8548ab20 failed with six MEDIUM findings; correction dfe221fe and integration 87d90c87 were accepted; rereview 208ac3de then failed with three MEDIUM findings. Correction 0efc51d0 and integration 6dc815a8 are manager-accepted DONE at 47798abd; fresh independent rereview 7ab561b7 is running and release remains blocked.",
+    "basis": "Manager-accepted correction candidate 47798abd is clean and immutable, resolves the three rereview findings, and has both a manager-accepted zero-finding fresh cumulative integration gate and a manager-accepted zero-finding fresh independent rereview of the exact complete diff.",
+    "complete_profile_remains_applicable": true,
+    "prior_review_disposition": "V1-045 is published and closed. V1-046 review 8548ab20 failed with six MEDIUM findings; correction dfe221fe and integration 87d90c87 were accepted; rereview 208ac3de then failed with three MEDIUM findings. Correction 0efc51d0, integration 6dc815a8, and fresh independent rereview 7ab561b7 are manager-accepted DONE at 47798abd; release is dependency-ready.",
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Inspect and reconcile fresh independent rereview card 7ab561b7-7fee-483c-88ce-759273ceb9f6 health, heartbeat, immutable candidate binding, complete-diff inspection, deterministic gates, and terminal verdict without overlapping dispatch",
-  "active_worker": "property-codex-2",
-  "active_card": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
-  "active_attempt": "workboard:7ab561b7-7fee-483c-88ce-759273ceb9f6:1788229221677",
+  "next_action": "Bind release card 3266b3a3-e244-4926-ade8-6cc13eff775f to exact clean reviewed 47798abd, promote it, and start exactly one property-codex-3 managed-worktree release worker through the supported Gateway",
+  "active_worker": null,
+  "active_card": "3266b3a3-e244-4926-ade8-6cc13eff775f",
+  "active_attempt": null,
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -812,8 +812,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 correction 3 and zero-finding integration are manager-accepted DONE at exact 47798abd; fresh independent rereview is running while release and V1-047 remain dependency-blocked",
-    "exact_next_action": "Inspect and reconcile fresh independent rereview card 7ab561b7-7fee-483c-88ce-759273ceb9f6 health, heartbeat, immutable candidate binding, complete-diff inspection, deterministic gates, and terminal verdict without overlapping dispatch",
+    "current_phase": "V1-046 correction 3, zero-finding integration, and zero-finding fresh independent rereview are manager-accepted DONE at exact 47798abd; release is dependency-ready while V1-047 remains blocked",
+    "exact_next_action": "Bind release card 3266b3a3-e244-4926-ade8-6cc13eff775f to exact clean reviewed 47798abd, promote it, and start exactly one property-codex-3 managed-worktree release worker through the supported Gateway",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1337,17 +1337,24 @@
       "fast_mode": false,
       "fallbacks": [],
       "read_only": true,
-      "claim_active": true,
-      "attempt_active": true,
+      "claim_active": false,
+      "attempt_active": false,
+      "worker_active": false,
       "worktree_clean_at_admission": true,
+      "worktree_clean_at_completion": true,
       "dispatch_started": 1,
       "start_failures": 0,
-      "status": "running_admission_passed"
+      "worker_tests": "PASS: focused 18/18, backend 729/729 with 444 explained database-only skips, frontend 234/234, automation 186/186, isolated PostgreSQL 467/467 zero skips, adversarial 2/2 with 465 deselected, revision upgrade 1/1 with 466 deselected, and all static, migration, dependency, security, traceability, deployment, publication, secret, diff, cleanup, and clean-state guards",
+      "review_findings": 0,
+      "review_verdict": "PASS",
+      "manager_acceptance": "PASS: exact SHA/parent/tree/four-commit ancestry/16-path cumulative diff/hash/clean proof plus focused 18/18; terminal rereview evidence accepted with zero findings",
+      "stale_attempt_reconciliation": "Terminal read-only proof and clean worktree were confirmed before the obsolete running execution display was stopped; branch, worktree, session, proof, and artifacts remain preserved",
+      "status": "done_manager_accepted_zero_findings"
     },
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-09-01T02:20:33Z"
+    "updated_at": "2026-09-01T03:16:00Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -1400,13 +1407,13 @@
     "predecessor_reconciliation_commit": "5ad58a520ba9595b9b9ea9fc0ac6ed7d3c98769f"
   },
   "release_review": {
-    "role": "completed_predecessor",
-    "card_id": "5e6e6369-6e13-4fb9-884c-6cf9e4ba57d8",
-    "exact_sha": "df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af",
-    "direct_parent": "2c1c8532b7fb9b86c550457487b65e45ad06676d",
+    "role": "active_version_release_gate",
+    "card_id": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
+    "exact_sha": "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
+    "direct_parent": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
     "findings": 0,
-    "cumulative_path_count": 15,
-    "reviewed_path_count": 15,
+    "cumulative_path_count": 16,
+    "reviewed_path_count": 16,
     "reviewer_edits": false,
     "status": "PASS"
   },
@@ -2028,7 +2035,7 @@
   "schema_version": 1,
   "secrets_present": false,
   "status": "in_progress",
-  "task": "Resolve the three manager-accepted V1-046 rereview findings through one bounded correction, then require fresh exact-SHA integration, fresh independent review, and release",
+  "task": "Release, publish, exact-SHA verify, close, and reconcile the manager-accepted zero-finding V1-046 candidate, then activate V1-047",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -2261,10 +2268,11 @@
     "PASS: fresh integration 6dc815a8 started exactly one property-codex-3 worker in a managed clean worktree at immutable 47798abd; Gateway dispatch reported zero start failures",
     "PASS: reconciled supervisor compact state passed automation 189/189 plus roadmap validation, state-routing, visibility-watchdog, JSON, shell-syntax, and Python-compilation checks",
     "PASS: fresh integration 6dc815a8 is manager-accepted DONE with zero findings at exact 47798abd; focused 18/18, backend 729/729, frontend 234/234, isolated PostgreSQL 467/467 zero skips, automation 186/186, and all required guards passed",
-    "PASS: fresh independent rereview 7ab561b7 started exactly one property-codex-2 worker in a clean managed worktree at immutable 47798abd; Gateway dispatch reported zero start failures"
+    "PASS: fresh independent rereview 7ab561b7 started exactly one property-codex-2 worker in a clean managed worktree at immutable 47798abd; Gateway dispatch reported zero start failures",
+    "PASS: fresh independent rereview 7ab561b7 is manager-accepted DONE with zero findings at exact 47798abd; reviewer gates passed focused 18/18, backend 729/729, frontend 234/234, PostgreSQL 467/467 zero skips, automation 186/186, adversarial 2/2, revision upgrade 1/1, and every required guard; manager exact-diff checks and focused 18/18 passed"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T02:20:33Z",
+  "timestamp": "2026-09-01T03:16:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
