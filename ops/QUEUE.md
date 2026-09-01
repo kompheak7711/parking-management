@@ -57,10 +57,14 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 activation and implementation.
+Current live queue position: V1-047 implementation blocked before start.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
-V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE.
-Implementation `26b14ae0-92b3-433d-bed6-46bd732c569c` is the sole ready stage;
-dispatch it exactly once in a managed worktree only after the activation commit
-is published and exact-SHA CI-green. V1-048 remains dependency-held.
+V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
+activation `870472b7` is published, synchronized, and exact-SHA CI-green in run
+`33472963195`. Implementation `26b14ae0-92b3-433d-bed6-46bd732c569c` is the
+sole dependency-ready stage but is BLOCKED before start because managed-worktree
+Gateway dispatch requires `operator.admin`. Two bounded supported paths produced
+zero starts. Owner/operator must grant that scope or invoke `/workboard dispatch`
+as authenticated owner; then unblock and start the same card exactly once.
+V1-048 remains dependency-held.

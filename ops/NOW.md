@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — contract frozen, activation pending publication
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — activation green, managed-worktree permission blocked
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -60,10 +60,15 @@
   acceptance, exact allowed paths, payments exclusion, and financial,
   authorization, CSRF, transaction, concurrency, audit, traceability, build,
   secret, integration, and independent-review gates.
-- Implementation: card `26b14ae0-92b3-433d-bed6-46bd732c569c` is ready for
-  exactly one managed-worktree property-codex-1 attempt after this activation is
-  published and exact-SHA CI-green. Runtime is GPT-5.6 Sol `xhigh`, Standard,
-  Fast-off, with no fallback.
+- Activation: exact commit `870472b7dffd28caf2c771e54196a0244c6c1a1e`,
+  parent `57fd5d34`, tree `b8e8fa70`, passed automation 189/189 with zero
+  failures/skips and exact-SHA GitHub Actions run `33472963195` with all four
+  jobs green; local, tracking, fetched, and live-remote refs match.
+- Implementation: card `26b14ae0-92b3-433d-bed6-46bd732c569c` is BLOCKED
+  before start. Two bounded supported Gateway dispatch paths, including the
+  authenticated `gateway.remote.token`, both required `operator.admin` for the
+  managed worktree. Zero worker, claim, attempt, branch, or worktree was created.
+  Runtime remains GPT-5.6 Sol `xhigh`, Standard, Fast-off, with no fallback.
 - Scheduler: enabled singleton `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains
   on its 30-minute interval with GPT-5.6 Sol `xhigh`, Standard/Fast-off. Its
   saved payload and `ops/OPENCLAW_SUPERVISOR_PROMPT.md` are byte-identical at
@@ -72,16 +77,19 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blockers: none.
-- Owner action required: no.
-- Exact next action: publish this bounded V1-047 activation, require exact-SHA
-  GitHub Actions success and ref synchronization, then dispatch implementation
-  `26b14ae0-92b3-433d-bed6-46bd732c569c` exactly once from that immutable base.
+- Blocker: external OpenClaw permission — managed-worktree dispatch requires
+  `operator.admin` and cannot be safely bypassed.
+- Owner action required: yes. Grant `operator.admin` to the dispatching Gateway
+  identity or invoke `/workboard dispatch` as the authenticated owner.
+- Exact next action: after that permission action, unblock implementation
+  `26b14ae0-92b3-433d-bed6-46bd732c569c` and start it exactly once from immutable
+  activation `870472b7`; do not retry the unchanged permission failure.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation candidate state: V1-047 approved and active; implementation has not started.
-- Automation exact next action: publish and verify activation, then dispatch the
-  single ready V1-047 implementation card without overlap.
+- Automation candidate state: V1-047 approved and active at exact green
+  activation `870472b7`; implementation is blocked before start on operator scope.
+- Automation exact next action: wait for `operator.admin` or authenticated-owner
+  `/workboard dispatch`, then unblock and start the same card exactly once.
 
 <!-- AUTOMATION_STATUS_END -->

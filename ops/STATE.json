@@ -659,7 +659,20 @@
       "production_shaped_v1_019_context_route": "PASS"
     }
   },
-  "blockers": [],
+  "blockers": [
+    {
+      "category": "external_permission",
+      "summary": "OpenClaw managed-worktree dispatch requires operator.admin",
+      "card_id": "26b14ae0-92b3-433d-bed6-46bd732c569c",
+      "attempts": 2,
+      "changed_fingerprints": [
+        "configured_cli_identity",
+        "authenticated_gateway_remote_token"
+      ],
+      "result": "zero workers, claims, attempts, branches, or worktrees created",
+      "owner_action_required": true
+    }
+  ],
   "branch": "implementation/foundation",
   "closure_correction": {
     "canonical_documents_changed": false,
@@ -694,7 +707,7 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "57fd5d34f4e91102f4d49cc124d17d6022467ae4",
+  "commit": "870472b7dffd28caf2c771e54196a0244c6c1a1e",
   "evidence_applicability": {
     "basis": "V1-046 release 48e377e6, closure 57f0a816, and reconciliation 57fd5d34 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE. V1-047 contract 0df357b4 is frozen from 16 exact canonical authorities at predecessor 57fd5d34.",
     "complete_profile_remains_applicable": false,
@@ -702,7 +715,7 @@
     "tranche_id": "V1-047"
   },
   "idle_reason": null,
-  "next_action": "Publish and verify this V1-047 activation, then dispatch implementation card 26b14ae0 exactly once in a managed worktree at the activation SHA",
+  "next_action": "Owner/operator must grant operator.admin to the dispatching Gateway identity or invoke /workboard dispatch as the authenticated owner; then unblock and start implementation 26b14ae0 exactly once without changing its contract",
   "active_worker": null,
   "active_card": "26b14ae0-92b3-433d-bed6-46bd732c569c",
   "active_claim": null,
@@ -710,7 +723,7 @@
   "active_branch": null,
   "active_worktree": null,
   "candidate_sha": null,
-  "candidate_parent": "57fd5d34f4e91102f4d49cc124d17d6022467ae4",
+  "candidate_parent": "870472b7dffd28caf2c771e54196a0244c6c1a1e",
   "next_candidate": {
     "acceptance_profile": "api_ui",
     "authorities": [
@@ -748,7 +761,7 @@
       "action": "record and monitor only; do not restart or alter the healthy gateway without fresh failing health evidence"
     }
   ],
-  "owner_action": "none",
+  "owner_action": "Grant operator.admin to the dispatching Gateway identity or invoke /workboard dispatch as the authenticated owner so OpenClaw can create the managed V1-047 worktree.",
   "owner_decisions": {
     "bootstrap_protection": "prm_bootstrap has safe cluster-global attributes and no unsafe memberships, ownership, or authority in the target database; no runtime cross-database introspection; provisioning attests and verifies the dedicated role is unused in every other database; target checks fail closed; atomic closure/revocation and secret-free repeat audit remain mandatory",
     "ceremony_deadline": "one absolute monotonic deadline begins before TOTP confirmation and covers TOTP input, recovery presentation and COMPLETE writes, acknowledgement input, and commit preparation; writes, partial input, retries, and trickled input never reset or extend it; timeout rolls back the ceremony",
@@ -808,8 +821,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 is fully released, published, exact-SHA CI-green, synchronized, reconciled, and Workboard-closed; V1-047 is active with frozen contract 0df357b4 and implementation 26b14ae0 ready but undispatched",
-    "exact_next_action": "Publish and exact-SHA verify the V1-047 activation, then start exactly one property-codex-1 managed-worktree implementation attempt at that activation SHA using GPT-5.6 Sol xhigh Standard mode with no fallback",
+    "current_phase": "V1-047 activation 870472b7 is published, synchronized, and exact-SHA CI-green; frozen implementation 26b14ae0 is blocked before start because the available Gateway identity lacks operator.admin for managed worktrees",
+    "exact_next_action": "After owner/operator supplies operator.admin or invokes /workboard dispatch as authenticated owner, unblock and start exactly one property-codex-1 managed-worktree attempt at 870472b7 using GPT-5.6 Sol xhigh Standard mode with no fallback",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1512,6 +1525,30 @@
     "tranche_id": "V1-046",
     "predecessor_closure_commit": "fe00f286759695f53001e77937b107d343fb6947",
     "predecessor_reconciliation_commit": "39c38e74b7b55f877f74081c94dcd9b971aa1348"
+  },
+  "activation": {
+    "tranche_id": "V1-047",
+    "commit": "870472b7dffd28caf2c771e54196a0244c6c1a1e",
+    "parent": "57fd5d34f4e91102f4d49cc124d17d6022467ae4",
+    "tree": "b8e8fa70b110d14735b34a11f122a1b9b6418aa8",
+    "changed_paths": [
+      "ops/NOW.md",
+      "ops/QUEUE.md",
+      "ops/STATE.json",
+      "ops/V1_ROADMAP.json"
+    ],
+    "automation_tests_passed": 189,
+    "automation_tests_failed": 0,
+    "automation_tests_skipped": 0,
+    "ci_run_id": 33472963195,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33472963195",
+    "ci_jobs": 4,
+    "ci_conclusion": "success",
+    "refs_reconciled": true,
+    "contract_card_id": "0df357b4-61a3-4697-af85-b6dcf2cf0305",
+    "implementation_card_id": "26b14ae0-92b3-433d-bed6-46bd732c569c",
+    "implementation_status": "blocked_before_start_external_permission",
+    "worker_started": false
   },
   "release_review": {
     "role": "completed_release_gate",
@@ -2384,7 +2421,7 @@
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T05:11:49Z",
+  "timestamp": "2026-09-01T05:22:52Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
