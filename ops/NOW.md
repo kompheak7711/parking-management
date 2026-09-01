@@ -1,74 +1,83 @@
-# V1-046 — exact-SHA release running
+# V1-046 Late-payment decision, charge, correction, and allocation boundaries — closure pending
 
-- V1-045 is fully released, published, exact-SHA CI-green, reconciled,
-  synchronized, and closed. V1-047 remains dependency-blocked until V1-046 is
-  fully closed.
-- Prior rereview `208ac3de-72f2-45a2-9be7-4e096aaf08ca` remains
-  manager-accepted DONE as FAIL at `0a55db2b` with exactly three MEDIUM findings
-  and zero HIGH, CRITICAL, or LOW findings.
-- Bounded correction `0efc51d0-fbb0-4c53-9f1a-c1f54642927e` is
-  manager-accepted DONE at exact unpushed
+- Candidate: `V1-046` — late-payment Decision, separate non-compounding Charge,
+  correction, replay, concurrency, authorization, audit, and allocation boundaries.
+- Authorization: Owner standing continuous authorization from V1-046 through
+  V1-060; this release remains limited to the exact manager-accepted candidate
+  and bounded manager operations metadata.
+- Baseline: V1-045 reconciliation
+  `39c38e74b7b55f877f74081c94dcd9b971aa1348`.
+- Reviewed implementation: exact candidate
   `47798abdbacf04df917eea6ee7f2b889eee7ac8c`, sole parent
   `0a55db2b445c776a2f91afee308cc0a13d8a93e7`, tree
-  `b337076e239acd1b2c3c4711af908675bb6841fe`. Its one-commit six-path diff is
-  +499/-66 with SHA-256
-  `d1f1c380fb5f668eb4c8c05a73f03811d47042bbcb562d7b616fd4f7f2a4b621`.
-  Manager inspection found no additional correction defect.
-- Fresh integration `6dc815a8-b86b-484c-98a4-852341997947` is now
-  manager-accepted DONE with zero findings at the same immutable candidate. The
-  complete cumulative diff from `39c38e74` is four commits, 16 paths,
-  +3251/-19, SHA-256
+  `b337076e239acd1b2c3c4711af908675bb6841fe`; four commits, 16 paths,
+  +3251/-19, raw diff SHA-256
   `515b130833b37b94d9817f88bd7e259801306cb3a36b6f454b6efd871f4fb539`.
-  Gates passed focused 18/18, backend 729/729 with 444 fully explained
-  database-only skips, frontend 234/234, automation 186/186, and fresh isolated
-  PostgreSQL 467/467 with zero skips, plus every required static, migration,
-  dependency, security, traceability, deployment, publication, secret, diff,
-  cleanup, and clean-state check. Manager reran focused 18/18 and independently
-  confirmed the immutable Git/diff/clean/no-process proof.
-- Fresh independent rereview `7ab561b7-7fee-483c-88ce-759273ceb9f6` is now
-  manager-accepted DONE as PASS with zero findings. Reviewer `property-codex-2`,
-  attempt
-  `workboard:7ab561b7-7fee-483c-88ce-759273ceb9f6:1788229221677`, branch
-  `openclaw/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6`, managed worktree
-  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6`.
-  The reviewer inspected all 16 cumulative paths and every changed line, freshly
-  reproduced the three prior findings as resolved, and reported zero adjacent
-  regressions. Gates passed focused 18/18, backend 729/729 with 444 explained
-  database-only skips, frontend 234/234, automation 186/186, and isolated
-  PostgreSQL 467/467 with zero skips; adversarial 2/2 and revision-upgrade 1/1
-  also passed. Property-manager independently rechecked the exact SHA, parent,
-  tree, path set, diff hash, clean state, and focused 18/18. The obsolete running
-  attempt presentation was stopped only after terminal proof; its evidence,
-  session, branch, and worktree remain preserved.
-- Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is RUNNING for
-  `property-codex-1`, bounded recovery attempt
-  `workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788235506113`, branch
-  `openclaw/wb-3266b3a3-e244-4926-ade8-6cc13eff775f`, managed worktree
-  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-3266b3a3-e244-4926-ade8-6cc13eff775f`.
-  The first preflight-only attempt by `property-codex-3` stopped before any Git
-  mutation because its immutable rollout proved `high`, not required `xhigh`;
-  its evidence remains preserved. The second attempt proved GPT-5.6 Sol
-  `xhigh` with no fallback, created the clean unpushed non-rewriting release
-  merge `62ef004ae25f1d9088f714e4acc571b8912c6bcc` with parents reviewed
-  candidate `47798abd` and manager ops tip `a945d125`, then stopped before
-  publication when `make frontend-test` found that the managed worktree lacked
-  installed locked dependencies (`vitest: command not found`, exit 127).
-  Property-manager restored the exact lockfile environment with
-  `make frontend-install`, reproduced frontend PASS 234/234 across 17/17 files
-  with zero failures/skips and zero npm audit vulnerabilities, and confirmed
-  the merge remained clean. The supported Gateway then started exactly the one
-  expected third attempt with zero start failures; its claim and heartbeat are
-  healthy. It must rerun every complete merged-tree gate before normal push,
-  exact-SHA CI, closure, and reconciliation. The candidate is not yet published.
-- Scheduler `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains the enabled singleton
-  on a 30-minute interval with GPT-5.6 Sol `xhigh`, Standard/Fast-off. The
-  authoritative prompt and saved payload are byte-identical at 11,868 bytes,
-  SHA-256 `0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56`.
-- Publication/remote is unchanged: the last remote reconciliation SHA is
-  `5672dfdc554b14dfaab2c2b5d096ee1f7724744f` with successful GitHub Actions
-  run `33448153128`.
+- Independent review: Workboard card
+  `7ab561b7-7fee-483c-88ce-759273ceb9f6` is property-manager-accepted DONE as
+  PASS with zero findings at exact `47798abd`; the reviewer made no edits.
+- Release history: normal non-rewriting merge
+  `62ef004ae25f1d9088f714e4acc571b8912c6bcc` preserved exact parents
+  `47798abd` and `a945d125`. After the bounded frontend-environment recovery,
+  clean ops-only successor `d6ca376c60cf8475406cc79006313350726896ed`
+  was incorporated by ordinary release merge
+  `48e377e60df41b93a8d5d06975ffe8d7b9272055`, parents `62ef004a` and
+  `d6ca376c`, tree `070733bc997d017d43eb70ff9616b046e6ae78c2`.
+  Both exact histories remain ancestors; no reviewed product commit was
+  recreated, rebased, or rewritten.
+- Local release verification at exact `48e377e6`: focused V1-046 18/18;
+  backend 729 passed with 444 fully explained database-only skips; frontend
+  234/234 across 17/17 files; fresh isolated PostgreSQL 467/467 with zero
+  skips; adversarial replay/namespace 2/2; revision-36 upgrade 1/1; automation
+  189/189. Format, lint, strict type, build/import, locked dependency,
+  deployment, publication, security, secret, JSON, traceability, Alembic,
+  diff, cleanup, and clean-state gates all passed. The reviewed 16-path product
+  diff remains byte-identical at the accepted SHA-256.
+- Implementation publication: `implementation/foundation` fast-forwarded
+  normally and was pushed without force. GitHub Actions run `33469533522`
+  passed all four jobs for exact release SHA `48e377e6`; local, tracking,
+  fetched, live-remote, and retained release refs were equal after CI.
+- Closure-metadata recovery: manager-owned correction
+  `2eafb153-0693-42a6-8704-dc3bbaae9906` removed only the nonexistent
+  `UI-INV-*` roadmap authority in exact commit
+  `2bc9816db18aa71abf7e98ff7684351fa56ae898`, parent `48e377e6`.
+  V1-047 retains 16 exact canonical API/test authorities; automation passed
+  189/189 and GitHub Actions run `33470535203` passed all four jobs.
+- Retention recovery: the control plane removed the clean release worktree and
+  branch while the terminal attempt was reassigned for manager-only closure.
+  Property-manager restored the same branch and managed path non-destructively
+  at exact release `48e377e6`, verified it clean, and locked it for retained
+  evidence; no unique commit or uncommitted work was lost.
+- Status: V1-046 is functionally complete and the exact reviewed product is
+  published and exact-SHA CI-green; this two-file ops-only closure and one final
+  two-file ops-only reconciliation remain pending.
+- V1-047: held at `approved_ready`; no activation, implementation, or dispatch
+  may occur before this closure, reconciliation CI, final synchronization, and
+  property-manager release verification complete.
+- Scheduler: enabled singleton `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains
+  on its 30-minute interval with GPT-5.6 Sol `xhigh`, Standard/Fast-off. Its
+  saved payload and `ops/OPENCLAW_SUPERVISOR_PROMPT.md` are byte-identical at
+  11,868 bytes, SHA-256
+  `0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56`.
+- Production deployment, production data, credentials, paid services,
+  customer data, force push, history rewrite, unrelated cleanup, and worktree
+  deletion: none.
+- Blockers: none.
 - Owner action required: no.
-- Exact next action: continue to inspect and reconcile release `3266b3a3`
-  recovery health, xhigh runtime reconfirmation, complete merged-tree gates,
-  publication, exact-SHA CI, closure, and terminal proof without overlapping
-  dispatch.
+- Exact next action: publish this ops-only closure commit, require every
+  GitHub Actions job green at its exact SHA, then create only one bounded
+  closure reconciliation across `ops/NOW.md`, `ops/STATE.json`,
+  `ops/QUEUE.md`, and `ops/V1_ROADMAP.json`, require its exact-SHA CI, prove
+  final synchronization and retained worktrees, and move the release card only
+  to REVIEW for property-manager verification.
+
+<!-- AUTOMATION_STATUS_BEGIN -->
+
+- Automation publication state: exact V1-046 release `48e377e6` is published,
+  synchronized, and exact-SHA CI-green; closure and final reconciliation are
+  pending.
+- Automation exact next action: keep V1-047 held and undispatched while V1-046
+  closure, reconciliation CI, final synchronization, and Workboard review handoff
+  complete.
+
+<!-- AUTOMATION_STATUS_END -->

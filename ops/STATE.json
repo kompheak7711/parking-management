@@ -1,10 +1,10 @@
 {
   "active_cycle": "v1-046-late-payment-decision-charge-correction-api",
   "approval": {
-    "status": "approved_complete",
+    "status": "active",
     "basis": "owner standing continuous authorization from the current live V1-046 stage through V1-060, dependency ordered and without repeated routine authorization",
         "implementation_started": true,
-        "implementation_completed": false,
+        "implementation_completed": true,
     "publication_completed": false
   },
   "authorities": [
@@ -660,14 +660,7 @@
       "production_shaped_v1_019_context_route": "PASS"
     }
   },
-  "blockers": [
-    {
-      "id": "v1-046-release-running",
-      "owner_action_required": false,
-      "status": "zero_finding_rereview_accepted_release_running",
-      "detail": "Correction 0efc51d0, zero-finding integration 6dc815a8, and zero-finding fresh rereview 7ab561b7 are manager-accepted DONE at exact clean 47798abd. Release 3266b3a3 first stopped preflight-only because its rollout was high rather than required xhigh. Its second GPT-5.6 Sol xhigh/no-fallback attempt created clean unpushed merge 62ef004a, then stopped before publication because locked frontend dependencies were absent. Property-manager installed the exact lockfile environment and reproduced frontend 234/234 with zero failures/skips; the same card, merge, branch, and worktree now have one bounded third attempt running with a healthy claim and heartbeat. V1-047 remains dependency-held. No owner action is required."
-    }
-  ],
+  "blockers": [],
   "branch": "implementation/foundation",
   "closure_correction": {
     "canonical_documents_changed": false,
@@ -702,40 +695,39 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
+  "commit": "48e377e60df41b93a8d5d06975ffe8d7b9272055",
   "evidence_applicability": {
-    "basis": "Manager-accepted correction candidate 47798abd is clean and immutable, resolves the three rereview findings, and has both a manager-accepted zero-finding fresh cumulative integration gate and a manager-accepted zero-finding fresh independent rereview of the exact complete diff.",
+    "basis": "Exact V1-046 release 48e377e60df41b93a8d5d06975ffe8d7b9272055 preserves the manager-accepted candidate product diff byte-for-byte, includes only dependency-safe manager operations metadata, passed every local release gate, and is published with all four exact-SHA GitHub Actions jobs green in run 33469533522.",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-045 is published and closed. V1-046 review 8548ab20 failed with six MEDIUM findings; correction dfe221fe and integration 87d90c87 were accepted; rereview 208ac3de then failed with three MEDIUM findings. Correction 0efc51d0, integration 6dc815a8, and fresh independent rereview 7ab561b7 are manager-accepted DONE at 47798abd; release is dependency-ready.",
+    "prior_review_disposition": "V1-045 is published and closed. V1-046 correction 0efc51d0, integration 6dc815a8, and independent rereview 7ab561b7 are manager-accepted DONE with zero findings at immutable candidate 47798abd; ordinary release 48e377e6 is exact-SHA CI-green and closure is pending.",
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Inspect and reconcile release card 3266b3a3-e244-4926-ade8-6cc13eff775f third-attempt health, xhigh runtime reconfirmation, complete merged-tree gates, publication, exact-SHA CI, closure, and terminal proof without overlapping dispatch",
-  "active_worker": "property-codex-1",
+  "next_action": "Publish only this separate V1-046 closure commit, require every exact-SHA GitHub Actions job green, then create one bounded ops/NOW.md plus ops/STATE.json reconciliation commit, require its exact-SHA CI, prove final synchronization, and release only to REVIEW; keep V1-047 held",
+  "active_worker": "property-manager",
   "active_card": "3266b3a3-e244-4926-ade8-6cc13eff775f",
-  "active_attempt": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788235506113",
+  "active_attempt": null,
   "next_candidate": {
-    "acceptance_profile": "financial",
+    "acceptance_profile": "api_ui",
     "authorities": [
-      "BR-INV-051-055",
-      "BR-LATE-*",
+      "API-050-056",
       "API-091",
-      "TEST-123-124",
-      "DL-050"
+      "TEST-053-058",
+      "TEST-123-124"
     ],
     "authorization": "durable_v1",
-    "dependencies": ["V1-045"],
-    "exclude": ["automatic discretionary decision"],
-    "id": "V1-046",
+    "dependencies": ["V1-043", "V1-045", "V1-046"],
+    "exclude": ["payments"],
+    "id": "V1-047",
     "include": [
-      "one final non-compounding decision and explicit linked charge"
+      "invoice staff workflows and explicit confirmations"
     ],
-    "order": 46,
+    "order": 47,
     "phase": "Billing",
     "risk_class": "high",
-    "status": "in_progress",
-    "task": "Late-payment decision, charge, correction, and allocation boundaries",
-    "roadmap_id": "V1-046"
+    "status": "approved_ready",
+    "task": "Invoice, adjustment, late-payment, and billing-run API/UI",
+    "roadmap_id": "V1-047"
   },
   "operational_issues": [
     {
@@ -812,8 +804,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 correction 3, zero-finding integration, and zero-finding fresh independent rereview are manager-accepted DONE at exact 47798abd; clean unpushed release merge 62ef004a is in one bounded third-attempt recovery while V1-047 remains blocked",
-    "exact_next_action": "Inspect and reconcile release card 3266b3a3-e244-4926-ade8-6cc13eff775f third-attempt health, xhigh runtime reconfirmation, complete merged-tree gates, publication, exact-SHA CI, closure, and terminal proof without overlapping dispatch",
+    "current_phase": "V1-046 exact release 48e377e6 is normally published and GitHub Actions run 33469533522 passed all four jobs; one bounded ops-only closure and final reconciliation remain while V1-047 stays held",
+    "exact_next_action": "Publish the two-file V1-046 closure, require every exact-SHA CI job green, then publish one bounded four-file compact-state reconciliation, require exact-SHA CI and final synchronization, and hand release 3266b3a3 to property-manager REVIEW without overlapping dispatch",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1337,12 +1329,19 @@
       "candidate_parent": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
       "candidate_tree": "b337076e239acd1b2c3c4711af908675bb6841fe",
       "metadata_tip_at_dispatch": "a945d1258929438d2f4a5e07859c478394ff392d",
+      "metadata_tip_at_release": "d6ca376c60cf8475406cc79006313350726896ed",
       "merge_sha": "62ef004ae25f1d9088f714e4acc571b8912c6bcc",
       "merge_parents": [
         "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
         "a945d1258929438d2f4a5e07859c478394ff392d"
       ],
       "merge_tree": "e8d8407c04afec68f22c0817b12133280cf520f8",
+      "release_sha": "48e377e60df41b93a8d5d06975ffe8d7b9272055",
+      "release_parents": [
+        "62ef004ae25f1d9088f714e4acc571b8912c6bcc",
+        "d6ca376c60cf8475406cc79006313350726896ed"
+      ],
+      "release_tree": "070733bc997d017d43eb70ff9616b046e6ae78c2",
       "model": "openai/gpt-5.6-sol",
       "reasoning": "xhigh",
       "risk_reason": "financial migration, transaction, concurrency, security, Git integration, publication, and exact-SHA CI",
@@ -1350,14 +1349,47 @@
       "fast_mode": false,
       "fallbacks": [],
       "claim_active": true,
-      "attempt_active": true,
-      "runtime_identity_proof": "Required for the third attempt and pending worker reconfirmation; the same property-codex-1 configuration and prior attempt proved gpt-5.6-sol xhigh with empty fallbacks",
+      "attempt_active": false,
+      "runtime_identity_proof": "PASS: exact active rollout and agent configuration are openai/gpt-5.6-sol xhigh, Standard/Fast-off, with an empty fallback list",
       "worktree_clean_at_admission": true,
+      "worktree_clean_after_release_ci": true,
       "environment_recovery": "PASS: make frontend-install restored the exact package-lock environment; manager reproduced make frontend-test 234/234 across 17/17 files, zero failures/skips, npm install audit zero vulnerabilities, and clean Git at 62ef004a",
       "dispatch_started": 3,
       "start_failures": 0,
+      "local_release_gates": "PASS: focused 18/18; backend 729 passed with 444 explained database-only skips; frontend 234/234 across 17 files; isolated PostgreSQL 467/467 zero skips; adversarial 2/2; revision upgrade 1/1; automation 189/189; every static, build, import, dependency, deployment, publication, traceability, Alembic, security, secret, diff, cleanup, and clean-state gate",
+      "candidate_product_diff_sha256": "515b130833b37b94d9817f88bd7e259801306cb3a36b6f454b6efd871f4fb539",
+      "release_ci_run_id": 33469533522,
+      "release_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33469533522",
+      "release_ci_jobs": 4,
+      "release_ci_conclusion": "success",
+      "refs_reconciled": true,
+      "closure_manager": "property-manager",
+      "closure_metadata_correction": {
+        "card_id": "2eafb153-0693-42a6-8704-dc3bbaae9906",
+        "commit": "2bc9816db18aa71abf7e98ff7684351fa56ae898",
+        "parent": "48e377e60df41b93a8d5d06975ffe8d7b9272055",
+        "changed_paths": [
+          "ops/V1_ROADMAP.json"
+        ],
+        "automation_tests_passed": 189,
+        "ci_run_id": 33470535203,
+        "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33470535203",
+        "ci_jobs": 4,
+        "ci_conclusion": "success",
+        "status": "done_manager_accepted"
+      },
+      "retention_recovery": {
+        "trigger": "control_plane_removed_clean_release_worktree_and_branch_during_terminal_attempt_reassignment",
+        "unique_work_lost": false,
+        "branch": "openclaw/wb-3266b3a3-e244-4926-ade8-6cc13eff775f",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-3266b3a3-e244-4926-ade8-6cc13eff775f",
+        "restored_sha": "48e377e60df41b93a8d5d06975ffe8d7b9272055",
+        "clean": true,
+        "locked": true,
+        "status": "recovered"
+      },
       "publication_completed": false,
-      "status": "running_third_attempt_environment_recovered_runtime_reconfirmation_pending"
+      "status": "implementation_published_exact_sha_ci_green_closure_pending"
     },
     "product_correction_3_rereview": {
       "card_id": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
@@ -1396,7 +1428,7 @@
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-09-01T03:15:29Z"
+    "updated_at": "2026-09-01T04:46:22Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -1428,28 +1460,27 @@
     "status": "enabled_healthy"
   },
   "publication": {
-    "role": "completed_predecessor",
+    "role": "active_version",
     "ci_completed": true,
     "ci_conclusion": "success",
     "ci_run_attempt": 1,
-    "ci_run_id": 33402789651,
-    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33402789651",
+    "ci_run_id": 33469533522,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33469533522",
     "commit_completed": true,
-    "implementation_commit": "df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af",
-    "closure_commit": "fe00f286759695f53001e77937b107d343fb6947",
-    "closure_ci_run_attempt": 1,
-    "closure_ci_run_id": 33404108038,
-    "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33404108038",
-    "closure_ci_conclusion": "success",
+    "implementation_commit": "48e377e60df41b93a8d5d06975ffe8d7b9272055",
+    "closure_commit": null,
+    "closure_metadata_correction_commit": "2bc9816db18aa71abf7e98ff7684351fa56ae898",
+    "closure_metadata_correction_ci_run_id": 33470535203,
+    "closure_metadata_correction_ci_conclusion": "success",
     "push_completed": true,
-    "sha_reconciled": true,
-    "status": "published_and_exact_sha_ci_green_closure_valid",
-    "tranche_id": "V1-045",
-    "predecessor_closure_commit": "986aa588d33d0497a0635fdb1342638dca5c7c19",
-    "predecessor_reconciliation_commit": "5ad58a520ba9595b9b9ea9fc0ac6ed7d3c98769f"
+    "sha_reconciled": false,
+    "status": "implementation_published_closure_pending",
+    "tranche_id": "V1-046",
+    "predecessor_closure_commit": "fe00f286759695f53001e77937b107d343fb6947",
+    "predecessor_reconciliation_commit": "39c38e74b7b55f877f74081c94dcd9b971aa1348"
   },
   "release_review": {
-    "role": "active_version_release_gate",
+    "role": "completed_release_gate",
     "card_id": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
     "exact_sha": "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
     "direct_parent": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
@@ -2069,15 +2100,15 @@
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 45,
+    "completed": 46,
     "current_id": "V1-046",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "in_progress",
-  "task": "Release, publish, exact-SHA verify, close, and reconcile the manager-accepted zero-finding V1-046 candidate, then activate V1-047",
+  "status": "implementation_published_closure_pending",
+  "task": "Close the approved bounded candidate: Late-payment decision, charge, correction, and allocation boundaries",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -2313,10 +2344,16 @@
     "PASS: fresh independent rereview 7ab561b7 started exactly one property-codex-2 worker in a clean managed worktree at immutable 47798abd; Gateway dispatch reported zero start failures",
     "PASS: fresh independent rereview 7ab561b7 is manager-accepted DONE with zero findings at exact 47798abd; reviewer gates passed focused 18/18, backend 729/729, frontend 234/234, PostgreSQL 467/467 zero skips, automation 186/186, adversarial 2/2, revision upgrade 1/1, and every required guard; manager exact-diff checks and focused 18/18 passed",
     "FAIL/RECOVERED: release 3266b3a3 first started one property-codex-3 preflight-only attempt whose immutable rollout was GPT-5.6 Sol high rather than required xhigh; it stopped before Git mutation with exact candidate/worktree preserved. The same card was reassigned to property-codex-1 and the supported Gateway started exactly one recovery attempt with zero start failures; the worker then proved its exact active rollout as GPT-5.6 Sol xhigh with empty fallbacks before Git mutation",
-    "FAIL/RECOVERED: release 3266b3a3 second attempt created clean unpushed merge 62ef004a with exact parents 47798abd and a945d125, then stopped before publication when make frontend-test found no installed vitest in the fresh managed worktree. Property-manager installed the exact lockfile environment, reproduced frontend 234/234 across 17/17 files with zero failures/skips and zero npm audit vulnerabilities, confirmed clean Git, and the supported Gateway started exactly one third attempt with zero start failures"
+    "FAIL/RECOVERED: release 3266b3a3 second attempt created clean unpushed merge 62ef004a with exact parents 47798abd and a945d125, then stopped before publication when make frontend-test found no installed vitest in the fresh managed worktree. Property-manager installed the exact lockfile environment, reproduced frontend 234/234 across 17/17 files with zero failures/skips and zero npm audit vulnerabilities, confirmed clean Git, and the supported Gateway started exactly one third attempt with zero start failures",
+    "PASS: V1-046 release preserved normal merge 62ef004a and incorporated clean dependency-safe manager metadata d6ca376c by ordinary merge 48e377e6 with parents 62ef004a and d6ca376c; the reviewed candidate remains an ancestor and its 16-path +3251/-19 product diff SHA-256 remains exactly 515b130833b37b94d9817f88bd7e259801306cb3a36b6f454b6efd871f4fb539",
+    "PASS: V1-046 release gates at exact 48e377e6 passed focused 18/18, backend 729 with 444 explained database-only skips, frontend 234/234 across 17 files, isolated PostgreSQL 467/467 zero skips, adversarial 2/2, revision upgrade 1/1, and automation 189/189",
+    "PASS: V1-046 format, lint, strict type, build/import, locked runtime/development/frontend dependency, deployment, publication, security, secret, JSON, traceability, Alembic 20260831_37 one-head, diff, cleanup, clean-state, runtime, prompt, and scheduler gates passed",
+    "PASS: V1-046 release commit 48e377e60df41b93a8d5d06975ffe8d7b9272055 exact-SHA GitHub Actions run 33469533522 passed all four jobs; local, tracking, fetched, live-remote, and retained release refs reconciled exactly",
+    "FAIL/RECOVERED: closure metadata validation rejected nonexistent V1-047 authority UI-INV-* after 189/189 automation tests; bounded manager correction 2eafb153 removed only that dangling roadmap authority in exact commit 2bc9816d, retained 16 exact canonical API/test authorities, passed fresh automation 189/189, and exact-SHA CI run 33470535203 passed all four jobs",
+    "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T04:05:30Z",
+  "timestamp": "2026-09-01T04:46:22Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2358,7 +2395,9 @@
     "backend/tests/test_utility_consumption_migration.py",
     "backend/tests/test_utility_meter_migration.py",
     "ops/traceability.json",
-    "scripts/database-test.sh"
+    "scripts/database-test.sh",
+    "ops/NOW.md",
+    "ops/STATE.json"
   ],
   "tranche": "Late-payment decision, charge, correction, and allocation boundaries"
 }
