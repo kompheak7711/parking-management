@@ -45,11 +45,30 @@
     API/UI, emergency/bootstrap procedures, production operations, canonical changes, and policy
     invention.
 
-Remaining v1 application tranches are authorized when bounded by canonical documents
-001-010 and all publication gates; unresolved policy and protected production work still
-require owner review.
+The owner has standing continuous authorization for the current live V1-046 stage
+through V1-060. Each successor activates automatically only after its predecessor is
+fully released, published, verified, reconciled, and closed. Routine transitions need
+no additional authorization. Unresolved policy, production deployment or credentials,
+paid services, customer data, destructive operations, and exhausted bounded recovery
+still require owner review.
 
 The executable finite queue is now `ops/V1_ROADMAP.json`. It contains 60 stable tranches,
 explicit dependencies, canonical authorities, scope boundaries, risk classes, acceptance
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
+
+Current live queue position: V1-046 release after correction 3 and a zero-finding
+fresh independent rereview.
+Rereview `208ac3de-72f2-45a2-9be7-4e096aaf08ca` is manager-accepted DONE as
+FAIL with three MEDIUM findings at exact `0a55db2b445c776a2f91afee308cc0a13d8a93e7`.
+Bounded correction `0efc51d0-fbb0-4c53-9f1a-c1f54642927e` is manager-accepted
+DONE at exact `47798abdbacf04df917eea6ee7f2b889eee7ac8c`. Fresh integration
+`6dc815a8-b86b-484c-98a4-852341997947` is manager-accepted DONE with zero
+findings. Fresh independent rereview `7ab561b7-7fee-483c-88ce-759273ceb9f6`
+is manager-accepted DONE as PASS with zero findings at the immutable candidate.
+Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is running in one clean managed
+worktree from exact reviewed `47798abd`. Its first preflight-only attempt safely
+blocked before Git mutation on an effective `high` versus required `xhigh`
+runtime; the preserved card is now running one bounded GPT-5.6 Sol `xhigh`,
+no-fallback recovery attempt. V1-047 remains blocked until V1-046 is fully
+released, published, exact-SHA CI-green, reconciled, and closed.

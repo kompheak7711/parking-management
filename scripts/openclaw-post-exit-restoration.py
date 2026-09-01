@@ -367,6 +367,179 @@ def exact_supervisor(job: dict[str, Any], repo: Path) -> None:
         )
 
 
+def repository_supervisor_ownership(repo: Path) -> str:
+    """Return the only ownership disposition proved by compact repository state."""
+    state = read_json_object(repo / "ops/STATE.json", "compact state")
+    policy = state.get("continuous_supervisor_policy")
+    if isinstance(policy, dict):
+        try:
+            prompt = (repo / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").read_text()
+        except OSError as error:
+            raise RestorationError(
+                "continuous supervisor repository policy prompt is unreadable"
+            ) from error
+        checks = {
+            "prompt_path": policy.get("authoritative_prompt_path")
+            == "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
+            "prompt_sha256": policy.get("prompt_sha256") == digest(prompt),
+            "job_id": policy.get("automation_job_id") == SUPERVISOR_ID,
+            "name": policy.get("automation_name") == SUPERVISOR_NAME,
+            "authorization_from": policy.get("authorization_from") == "V1-046",
+            "authorization_through": policy.get("authorization_through") == "V1-060",
+        }
+        failed = sorted(key for key, passed in checks.items() if not passed)
+        if failed:
+            raise RestorationError(
+                "continuous supervisor repository ownership policy drifted: "
+                + ", ".join(failed)
+            )
+        return "native"
+
+    roadmap = state.get("roadmap") or {}
+    candidate = state.get("next_candidate") or {}
+    if (
+        policy is None
+        and state.get("status") == "active"
+        and isinstance(roadmap, dict)
+        and roadmap.get("current_id") == "V1-019"
+        and isinstance(candidate, dict)
+        and candidate.get("id") == "V1-019"
+        and candidate.get("roadmap_id") == "V1-019"
+    ):
+        return "legacy"
+    raise RestorationError(
+        "continuous supervisor repository ownership policy is missing or invalid"
+    )
+
+
+def continuous_supervisor_disposition(
+    job: dict[str, Any], repo: Path
+) -> int | None:
+    """Retire this V1-019 restoration without mutating the continuous supervisor.
+
+    The post-exit restorer predates the native property-manager agent-turn job. Once
+    that job owns this exact identity, this legacy process must never enable, disable,
+    recreate, or otherwise rewrite it. A malformed current-policy job is reported
+    fail-closed but is still left untouched for the continuous supervisor recovery
+    path to repair through the supported OpenClaw interface.
+    """
+    try:
+        ownership = repository_supervisor_ownership(repo)
+    except RestorationError as error:
+        print(
+            "continuous supervisor ownership could not be classified; legacy "
+            f"restoration left it untouched: {error}",
+            file=sys.stderr,
+        )
+        return 69
+    if ownership == "legacy":
+        try:
+            exact_supervisor(job, repo)
+        except RestorationError as error:
+            print(
+                "legacy supervisor ownership could not be proved; restoration "
+                f"left it untouched: {error}",
+                file=sys.stderr,
+            )
+            return 69
+        return None
+
+    payload = job.get("payload") or {}
+    schedule = job.get("schedule") or {}
+    try:
+        prompt = (repo / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").read_text()
+    except OSError as error:
+        print(
+            f"continuous supervisor policy is unreadable; legacy restoration left it untouched: {error}",
+            file=sys.stderr,
+        )
+        return 69
+    checks = {
+        "id": job.get("id") == SUPERVISOR_ID,
+        "declaration": job.get("declarationKey") == "property-rental-24x7-v1",
+        "name": job.get("name") == SUPERVISOR_NAME,
+        "agent": job.get("agentId") == "property-manager",
+        "session": job.get("sessionTarget") == "isolated",
+        "schedule": schedule.get("kind") == "every"
+        and schedule.get("everyMs") == EXPECTED_INTERVAL_MS,
+        "payload_kind": payload.get("kind") == "agentTurn",
+        "prompt": payload.get("message") == prompt,
+        "model": payload.get("model") == "openai/gpt-5.6-sol",
+        "reasoning": payload.get("thinking") == "xhigh",
+        "timeout": payload.get("timeoutSeconds") == 1800,
+        "standard_context": payload.get("lightContext") is False,
+    }
+    failed = sorted(key for key, passed in checks.items() if not passed)
+    if failed:
+        print(
+            "continuous supervisor policy drifted; legacy restoration left it untouched: "
+            + ", ".join(failed),
+            file=sys.stderr,
+        )
+        return 69
+    print("legacy V1-019 post-exit restoration is retired for the continuous supervisor")
+    return 0
+
+
+def mutate_legacy_supervisor(
+    openclaw: str,
+    repo: Path,
+    action: str,
+    observed: dict[str, Any],
+) -> dict[str, Any]:
+    """Revalidate authoritative legacy ownership immediately before mutation."""
+    if action not in {"disable", "enable"}:
+        raise RestorationError(f"unsupported legacy supervisor mutation: {action}")
+
+    def require_legacy(phase: str, job: dict[str, Any]) -> None:
+        disposition = continuous_supervisor_disposition(job, repo)
+        if disposition is not None:
+            if disposition == 0:
+                raise RestorationError(
+                    f"{phase} ownership check found the native continuous supervisor"
+                )
+            raise RestorationError(
+                f"{phase} ownership check could not prove the legacy supervisor"
+            )
+
+    require_legacy("initial", observed)
+    require_legacy("immediate pre-mutation", cron(openclaw, repo, "get"))
+    return cron(openclaw, repo, action)
+
+
+def retire_continuous_restoration(
+    args: argparse.Namespace,
+    repo: Path,
+    job: dict[str, Any],
+    *,
+    unload_terminalizer: bool = False,
+) -> int | None:
+    """Unload legacy keepalive jobs without ever mutating the native supervisor."""
+    disposition = continuous_supervisor_disposition(job, repo)
+    if disposition is None:
+        return None
+    unload_failures: list[str] = []
+    try:
+        unload_restoration_job(args.launchctl, args.expected_repair_head)
+    except Exception as error:
+        unload_failures.append(str(error))
+    if unload_terminalizer:
+        try:
+            unload_launchd_label(
+                args.launchctl, terminalizer_label(args.expected_repair_head)
+            )
+        except Exception as error:
+            unload_failures.append(str(error))
+    if unload_failures:
+        print(
+            "continuous supervisor left untouched, but legacy restoration unload failed: "
+            + "; ".join(unload_failures),
+            file=sys.stderr,
+        )
+        return 69
+    return disposition
+
+
 def git(repo: Path, *arguments: str) -> str:
     return run(repo, "git", *arguments).stdout.strip()
 
@@ -2122,7 +2295,8 @@ def notify_recovery_scheduled_once(
 def disable_supervisor(args: argparse.Namespace, repo: Path) -> str | None:
     try:
         openclaw = exact_executable(args.openclaw, "OpenClaw")
-        disabled = cron(openclaw, repo, "disable")
+        observed = cron(openclaw, repo, "get")
+        disabled = mutate_legacy_supervisor(openclaw, repo, "disable", observed)
         exact_supervisor(disabled, repo)
         if disabled.get("enabled") is not False:
             return "disable command did not leave the supervisor disabled"
@@ -2155,6 +2329,24 @@ def finalize_terminal_direct(
     args: argparse.Namespace, evidence_path: Path, *, unload_terminalizer: bool
 ) -> bool:
     """Finalize from a process that is not the continuation being unloaded."""
+    repo = Path(args.repo).resolve()
+    try:
+        current_job = cron(args.openclaw, repo, "get")
+    except RestorationError as error:
+        print(
+            "terminal finalization stopped before mutation because the supervisor "
+            f"could not be read: {error}",
+            file=sys.stderr,
+        )
+        return False
+    continuous_disposition = retire_continuous_restoration(
+        args,
+        repo,
+        current_job,
+        unload_terminalizer=unload_terminalizer,
+    )
+    if continuous_disposition is not None:
+        return continuous_disposition == 0
     lock_path = evidence_path.with_name(f".{evidence_path.name}.finalize.lock")
     lock_path.parent.mkdir(parents=True, exist_ok=True)
     with lock_path.open("a+", encoding="utf-8") as lock:
@@ -2424,6 +2616,12 @@ def execute(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve()
     dispatch_state = Path(args.dispatch_state).resolve()
     evidence_path = Path(args.evidence).resolve()
+    current_job = cron(args.openclaw, repo, "get")
+    continuous_disposition = retire_continuous_restoration(
+        args, repo, current_job
+    )
+    if continuous_disposition is not None:
+        return continuous_disposition
     ci_evidence_path = (
         Path(args.ci_evidence).resolve()
         if args.ci_evidence
@@ -2446,12 +2644,9 @@ def execute(args: argparse.Namespace) -> int:
                 terminal_job = cron(args.openclaw, repo, "get")
                 exact_supervisor(terminal_job, repo)
                 if terminal_job.get("enabled") is not False:
-                    terminal_job = cron(args.openclaw, repo, "disable")
-                    exact_supervisor(terminal_job, repo)
-                    if terminal_job.get("enabled") is not False:
-                        raise RestorationError(
-                            "terminal restoration evidence could not keep the supervisor disabled"
-                        )
+                    disable_failure = disable_supervisor(args, repo)
+                    if disable_failure is not None:
+                        raise RestorationError(disable_failure)
             except Exception as error:
                 reentry_errors.append(str(error))
         finalized = finalize_terminal(args, evidence_path)
@@ -2502,12 +2697,9 @@ def execute(args: argparse.Namespace) -> int:
         initial = cron(args.openclaw, repo, "get")
         exact_supervisor(initial, repo)
         if initial.get("enabled") is not False:
-            initial = cron(args.openclaw, repo, "disable")
-            exact_supervisor(initial, repo)
-            if initial.get("enabled") is not False:
-                raise RestorationError(
-                    "a resumed continuation could not fail-close the enabled supervisor"
-                )
+            disable_failure = disable_supervisor(args, repo)
+            if disable_failure is not None:
+                raise RestorationError(disable_failure)
         wait_for_zero_overlap(repo, args.owner_pid, args.overlap_timeout, args.poll)
         pre_metadata_integrity = v1_019_integrity(
             repo, dispatch_state, expected_head=pre_metadata_head
@@ -2567,7 +2759,9 @@ def execute(args: argparse.Namespace) -> int:
             candidate_base_commit=continuation_head,
             sequence_floor=sequence_floor,
         )
-        enabled_job = cron(args.openclaw, repo, "enable")
+        enabled_job = mutate_legacy_supervisor(
+            args.openclaw, repo, "enable", before_enable
+        )
         exact_supervisor(enabled_job, repo)
         if enabled_job.get("enabled") is not True:
             raise RestorationError("the exact supervisor did not become enabled")
@@ -2688,14 +2882,7 @@ def execute(args: argparse.Namespace) -> int:
         )
     except Exception as error:
         failure_boundary = current_failure_boundary(dispatch_state)
-        disable_error: str | None = None
-        try:
-            disabled = cron(args.openclaw, repo, "disable")
-            exact_supervisor(disabled, repo)
-            if disabled.get("enabled") is not False:
-                disable_error = "disable command did not leave the supervisor disabled"
-        except Exception as disable_failure:
-            disable_error = str(disable_failure)
+        disable_error = disable_supervisor(args, repo)
         boundary_archive = archive_restoration_boundary(
             dispatch_state, status="failed_closed"
         )
@@ -2742,6 +2929,12 @@ def execute(args: argparse.Namespace) -> int:
 def install(args: argparse.Namespace) -> int:
     repo = Path(args.repo).resolve()
     evidence_path = Path(args.evidence).resolve()
+    current_job = cron(args.openclaw, repo, "get")
+    continuous_disposition = retire_continuous_restoration(
+        args, repo, current_job
+    )
+    if continuous_disposition is not None:
+        return continuous_disposition
     installation_phase = "argument_validation"
     submit_diagnostics: dict[str, Any] | None = None
     prior: dict[str, Any] | None = None

@@ -1,59 +1,71 @@
-# V1-045 Invoice lifecycle, issuance, adjustments, and void services — complete
+# V1-046 — exact-SHA release running
 
-- Candidate: `V1-045` — Invoice lifecycle, issuance, adjustments, and void services.
-- Authorization: Owner standing direct-Codex authorization for V1-042 through V1-060;
-  this release card is limited to the exact independently reviewed V1-045 SHA.
-- Baseline: clean synchronized `implementation/foundation` at V1-044 reconciliation
-  commit `5ad58a520ba9595b9b9ea9fc0ac6ed7d3c98769f`.
-- Implementation: exact cumulative commit
-  `df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af`, direct parent
-  `2c1c8532b7fb9b86c550457487b65e45ad06676d`; exactly 11 linear commits and
-  15 reviewed paths from the baseline, published by non-force fast-forward. The
-  final correction changed only `backend/tests/test_billing_run_migration.py`
-  (+55/-13).
-- Scope: authorized-source Invoice creation; DRAFT correction and issuance;
-  immutable exact adjustments and exceptional VOID history; typed line sources;
-  bounded list/detail APIs; financial, transaction, authorization, idempotency,
-  replay, concurrency, audit, and migration invariants.
-- Authorities: `BR-INV-*`, `API-050` through `API-053`, `TEST-053` through
-  `TEST-058`, `TEST-117` through `TEST-119`, and the bounded `DB-INV-*` contracts.
-- Excluded: physical deletion, product corrections during release, production
-  deployment, production data or credentials, late-payment policy, and V1-046 work.
-- Independent review: Workboard card
-  `5e6e6369-6e13-4fb9-884c-6cf9e4ba57d8` returned an explicit zero-finding PASS
-  for exact SHA `df8096c1`; reviewer made no edits and property-manager acceptance
-  is recorded.
-- Local release verification: focused Invoice 32/32; focused typed-source and
-  cumulative retry/VOID PostgreSQL 2/2; focused billing-run 11/11; structural
-  traceability 22/22 plus semantic TEST-119/API-050/API-051/API-053/DB-INV-002;
-  complete deterministic profile 15/15; backend 711 passed with 433 expected
-  database-only skips covered by real PostgreSQL 456/456; frontend 234/234;
-  automation 186/186. Format, lint, strict type, build/import, locked dependency,
-  Alembic one-head/36-linear-revision fresh and populated upgrade, deployment,
-  publication, security, secret, JSON, traceability, and diff gates passed.
-- Implementation publication: GitHub Actions run `33402789651` passed all four jobs
-  for exact SHA `df8096c1eb1e04aa7ec6c3c782a95fd3b549f1af`.
-- Closure publication: ops-only commit
-  `fe00f286759695f53001e77937b107d343fb6947` changed only `ops/NOW.md` and
-  `ops/STATE.json`; GitHub Actions run `33404108038` passed for that exact SHA.
-- Status: V1-045 is complete, published, independently reviewed, exact-SHA
-  CI-green, and closure-valid; only this final ops-only reconciliation publication,
-  exact-SHA CI, synchronization proof, and manager verification remain.
-- V1-046: remains held at `approved_ready`; no activation, implementation, or
-  dispatch has occurred.
-- Scheduler: no production deployment, scheduler activation, or scheduler weakening
-  occurred.
-- Blockers: none.
-- Exact next action: publish only this final ops-only reconciliation commit, require
-  its exact-SHA GitHub Actions, prove final source/local/upstream/live-remote
-  synchronization, and release only to REVIEW; property-manager alone may mark DONE
-  and activate V1-046.
-
-<!-- AUTOMATION_STATUS_BEGIN -->
-
-- Automation publication state: exact V1-045 target `df8096c1` and closure
-  `fe00f286` are published and exact-SHA CI-green; final reconciliation is pending.
-- Automation exact next action: keep V1-046 held and undispatched while V1-045
-  closure, reconciliation CI, and final synchronization complete.
-
-<!-- AUTOMATION_STATUS_END -->
+- V1-045 is fully released, published, exact-SHA CI-green, reconciled,
+  synchronized, and closed. V1-047 remains dependency-blocked until V1-046 is
+  fully closed.
+- Prior rereview `208ac3de-72f2-45a2-9be7-4e096aaf08ca` remains
+  manager-accepted DONE as FAIL at `0a55db2b` with exactly three MEDIUM findings
+  and zero HIGH, CRITICAL, or LOW findings.
+- Bounded correction `0efc51d0-fbb0-4c53-9f1a-c1f54642927e` is
+  manager-accepted DONE at exact unpushed
+  `47798abdbacf04df917eea6ee7f2b889eee7ac8c`, sole parent
+  `0a55db2b445c776a2f91afee308cc0a13d8a93e7`, tree
+  `b337076e239acd1b2c3c4711af908675bb6841fe`. Its one-commit six-path diff is
+  +499/-66 with SHA-256
+  `d1f1c380fb5f668eb4c8c05a73f03811d47042bbcb562d7b616fd4f7f2a4b621`.
+  Manager inspection found no additional correction defect.
+- Fresh integration `6dc815a8-b86b-484c-98a4-852341997947` is now
+  manager-accepted DONE with zero findings at the same immutable candidate. The
+  complete cumulative diff from `39c38e74` is four commits, 16 paths,
+  +3251/-19, SHA-256
+  `515b130833b37b94d9817f88bd7e259801306cb3a36b6f454b6efd871f4fb539`.
+  Gates passed focused 18/18, backend 729/729 with 444 fully explained
+  database-only skips, frontend 234/234, automation 186/186, and fresh isolated
+  PostgreSQL 467/467 with zero skips, plus every required static, migration,
+  dependency, security, traceability, deployment, publication, secret, diff,
+  cleanup, and clean-state check. Manager reran focused 18/18 and independently
+  confirmed the immutable Git/diff/clean/no-process proof.
+- Fresh independent rereview `7ab561b7-7fee-483c-88ce-759273ceb9f6` is now
+  manager-accepted DONE as PASS with zero findings. Reviewer `property-codex-2`,
+  attempt
+  `workboard:7ab561b7-7fee-483c-88ce-759273ceb9f6:1788229221677`, branch
+  `openclaw/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6`, managed worktree
+  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6`.
+  The reviewer inspected all 16 cumulative paths and every changed line, freshly
+  reproduced the three prior findings as resolved, and reported zero adjacent
+  regressions. Gates passed focused 18/18, backend 729/729 with 444 explained
+  database-only skips, frontend 234/234, automation 186/186, and isolated
+  PostgreSQL 467/467 with zero skips; adversarial 2/2 and revision-upgrade 1/1
+  also passed. Property-manager independently rechecked the exact SHA, parent,
+  tree, path set, diff hash, clean state, and focused 18/18. The obsolete running
+  attempt presentation was stopped only after terminal proof; its evidence,
+  session, branch, and worktree remain preserved.
+- Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is RUNNING for
+  `property-codex-1`, recovery attempt
+  `workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788233653256`, branch
+  `openclaw/wb-3266b3a3-e244-4926-ade8-6cc13eff775f`, managed worktree
+  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-3266b3a3-e244-4926-ade8-6cc13eff775f`.
+  The first preflight-only attempt by `property-codex-3` stopped before any Git
+  mutation because its immutable rollout proved `high`, not required `xhigh`;
+  its evidence remains preserved. Bounded recovery reassigned the same card and
+  clean worktree to the already configured GPT-5.6 Sol `xhigh`, no-fallback
+  worker. The supported Gateway started exactly that one expected recovery with
+  zero start failures. The worker then proved its exact active rollout as
+  GPT-5.6 Sol `xhigh` with an empty fallback list before any Git mutation and
+  continues with a healthy claim and heartbeat.
+  The worktree remains clean at reviewed `47798abd`, parent `0a55db2b`, tree
+  `b337076e`. The recovery
+  is bound to the non-rewriting candidate/ops-history integration, full local
+  and PostgreSQL gates, normal push, exact-SHA CI, closure, and reconciliation.
+  The candidate is not yet published.
+- Scheduler `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains the enabled singleton
+  on a 30-minute interval with GPT-5.6 Sol `xhigh`, Standard/Fast-off. The
+  authoritative prompt and saved payload are byte-identical at 11,868 bytes,
+  SHA-256 `0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56`.
+- Publication/remote is unchanged: the last remote reconciliation SHA is
+  `5672dfdc554b14dfaab2c2b5d096ee1f7724744f` with successful GitHub Actions
+  run `33448153128`.
+- Owner action required: no.
+- Exact next action: continue to inspect and reconcile release `3266b3a3` health, heartbeat,
+  exact candidate/metadata history binding, deterministic gates, publication,
+  exact-SHA CI, closure, and terminal proof without overlapping dispatch.

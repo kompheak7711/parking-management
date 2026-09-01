@@ -158,7 +158,10 @@ def supervisor_status() -> dict[str, object]:
             row = connection.execute(
                 """SELECT name, enabled, schedule_kind, every_ms, payload_kind,
                           payload_message, last_run_at_ms, last_run_status,
-                          consecutive_errors, running_at_ms, updated_at
+                          consecutive_errors, running_at_ms, updated_at,
+                          agent_id, session_target, payload_model,
+                          payload_thinking, payload_timeout_seconds,
+                          payload_light_context
                      FROM cron_jobs WHERE job_id = ?""",
                 (SUPERVISOR_ID,),
             ).fetchone()
@@ -166,25 +169,13 @@ def supervisor_status() -> dict[str, object]:
         return {"present": False, "enabled": False, "config_valid": False}
     if row is None:
         return {"present": False, "enabled": False, "config_valid": False}
+    payload_message = row[5] if isinstance(row[5], str) else None
     try:
-        payload = json.loads(row[5])
-    except (TypeError, json.JSONDecodeError):
-        payload = None
-    expected_payload = {
-        "kind": "command",
-        "argv": [str(REPO / "scripts/openclaw-supervisor-dispatch.sh")],
-        "cwd": str(REPO),
-        "noOutputTimeoutSeconds": 10860,
-        "outputMaxBytes": 20000,
-    }
-    try:
-        wrapper_matches = (
-            INSTALLED_WRAPPER.is_file()
-            and INSTALLED_WRAPPER.read_bytes()
-            == (REPO / "scripts/hermes-property-rental").read_bytes()
-        )
+        authoritative_prompt = (
+            REPO / "ops/OPENCLAW_SUPERVISOR_PROMPT.md"
+        ).read_text()
     except OSError:
-        wrapper_matches = False
+        authoritative_prompt = None
     return {
         "present": True,
         "enabled": bool(row[1]),
@@ -193,9 +184,14 @@ def supervisor_status() -> dict[str, object]:
             and row[0] == "property-rental-24x7-supervisor"
             and row[2] == "every"
             and row[3] == 1800000
-            and row[4] == "command"
-            and payload == expected_payload
-            and wrapper_matches
+            and row[4] == "agentTurn"
+            and payload_message == authoritative_prompt
+            and row[11] == "property-manager"
+            and row[12] == "isolated"
+            and row[13] == "openai/gpt-5.6-sol"
+            and row[14] == "xhigh"
+            and row[15] == 1800
+            and row[16] == 0
         ),
         "last_run": row[6],
         "status": row[7] or "unknown",

@@ -686,6 +686,9 @@ class RepositoryEvidenceTests(unittest.TestCase):
         )
         (repo / "ops/NOW.md").write_text("# Compact state\n")
         (repo / "ops/QUEUE.md").write_text("durable queue\n")
+        (repo / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").write_text(
+            "authoritative continuous test policy\n"
+        )
         state = {
             "branch": "main",
             "status": "approved_ready",
@@ -2247,30 +2250,28 @@ print(json.dumps({'stage_result':'completed','changed_paths':['ops/STATE.json'],
             self.assertFalse(durable_usage["reservation_violation"])
 
             database = root / "openclaw.sqlite"
-            payload = json.dumps(
-                {
-                    "kind": "command",
-                    "argv": [str(repo / "scripts/openclaw-supervisor-dispatch.sh")],
-                    "cwd": str(repo),
-                    "noOutputTimeoutSeconds": 10860,
-                    "outputMaxBytes": 20000,
-                },
-                separators=(",", ":"),
-            )
+            prompt_text = (repo / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").read_text()
+            payload = prompt_text
             with sqlite3.connect(database) as connection:
                 connection.execute(
-                    "CREATE TABLE cron_jobs (job_id TEXT, name TEXT, enabled INTEGER, schedule_kind TEXT, every_ms INTEGER, payload_kind TEXT, payload_message TEXT, last_run_at_ms INTEGER, last_run_status TEXT, consecutive_errors INTEGER, running_at_ms INTEGER, updated_at INTEGER)"
+                    "CREATE TABLE cron_jobs (job_id TEXT, name TEXT, enabled INTEGER, schedule_kind TEXT, every_ms INTEGER, payload_kind TEXT, payload_message TEXT, agent_id TEXT, session_target TEXT, payload_model TEXT, payload_thinking TEXT, payload_timeout_seconds INTEGER, payload_light_context INTEGER, last_run_at_ms INTEGER, last_run_status TEXT, consecutive_errors INTEGER, running_at_ms INTEGER, updated_at INTEGER)"
                 )
                 connection.execute(
-                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     (
                         "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
                         "property-rental-24x7-supervisor",
                         1,
                         "every",
                         1_800_000,
-                        "command",
+                        "agentTurn",
                         payload,
+                        "property-manager",
+                        "isolated",
+                        "openai/gpt-5.6-sol",
+                        "xhigh",
+                        1800,
+                        0,
                         2_000,
                         "ok",
                         0,
@@ -8690,6 +8691,338 @@ class LockHealthAndWrapperTests(unittest.TestCase):
             self.assertTrue(path.exists())
             self.assertFalse(path.with_suffix(".owner.json").exists())
 
+    def test_legacy_restoration_leaves_continuous_supervisor_untouched(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "post_exit_continuous_guard",
+            ROOT / "scripts/openclaw-post-exit-restoration.py",
+        )
+        assert spec and spec.loader
+        restoration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(restoration)
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            (repo / "ops").mkdir()
+            prompt = "authoritative continuous policy\n"
+            (repo / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").write_text(prompt)
+            atomic_write_json(
+                repo / "ops/STATE.json",
+                {
+                    "continuous_supervisor_policy": {
+                        "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
+                        "prompt_sha256": restoration.digest(prompt),
+                        "automation_job_id": restoration.SUPERVISOR_ID,
+                        "automation_name": restoration.SUPERVISOR_NAME,
+                        "authorization_from": "V1-046",
+                        "authorization_through": "V1-060",
+                    }
+                },
+            )
+            job = {
+                "id": restoration.SUPERVISOR_ID,
+                "declarationKey": "property-rental-24x7-v1",
+                "name": restoration.SUPERVISOR_NAME,
+                "agentId": "property-manager",
+                "sessionTarget": "isolated",
+                "enabled": True,
+                "schedule": {"kind": "every", "everyMs": 1_800_000},
+                "payload": {
+                    "kind": "agentTurn",
+                    "message": prompt,
+                    "model": "openai/gpt-5.6-sol",
+                    "thinking": "xhigh",
+                    "timeoutSeconds": 1800,
+                    "lightContext": False,
+                },
+            }
+            self.assertEqual(
+                restoration.continuous_supervisor_disposition(job, repo), 0
+            )
+            drifted = json.loads(json.dumps(job))
+            drifted["payload"]["message"] = "obsolete"
+            self.assertEqual(
+                restoration.continuous_supervisor_disposition(drifted, repo), 69
+            )
+            dual_drifted = json.loads(json.dumps(job))
+            dual_drifted["agentId"] = "property-rental-supervisor"
+            dual_drifted["payload"]["kind"] = "command"
+            dual_drifted["payload"]["message"] = "obsolete"
+            self.assertEqual(
+                restoration.continuous_supervisor_disposition(
+                    dual_drifted, repo
+                ),
+                69,
+            )
+
+            args = argparse.Namespace(
+                repo=str(repo),
+                dispatch_state=str(repo / "dispatch"),
+                evidence=str(repo / "restoration/current.json"),
+                openclaw="/test/openclaw",
+                launchctl="/test/launchctl",
+                expected_repair_head="e0469b6d519c0947662204869a535c7080185638",
+            )
+            evidence = repo / "restoration/current.json"
+            with (
+                mock.patch.object(restoration, "cron", return_value=job) as cron_call,
+                mock.patch.object(restoration, "unload_restoration_job") as unload,
+                mock.patch.object(restoration, "unload_launchd_label") as unload_label,
+                mock.patch.object(restoration, "disable_supervisor") as disable,
+            ):
+                self.assertEqual(restoration.execute(args), 0)
+                unload.assert_called_once_with(
+                    "/test/launchctl", args.expected_repair_head
+                )
+                self.assertTrue(
+                    restoration.finalize_terminal_direct(
+                        args, evidence, unload_terminalizer=True
+                    )
+                )
+                unload_label.assert_called_once_with(
+                    "/test/launchctl",
+                    restoration.terminalizer_label(args.expected_repair_head),
+                )
+                disable.assert_not_called()
+                self.assertTrue(
+                    all(call.args[2] == "get" for call in cron_call.call_args_list)
+                )
+
+            with (
+                mock.patch.object(
+                    restoration, "exact_executable", return_value="/test/openclaw"
+                ),
+                mock.patch.object(
+                    restoration, "cron", return_value=dual_drifted
+                ) as cron_call,
+            ):
+                self.assertIn(
+                    "could not prove the legacy supervisor",
+                    restoration.disable_supervisor(args, repo) or "",
+                )
+                self.assertEqual(
+                    [call.args[2] for call in cron_call.call_args_list], ["get"]
+                )
+
+    def test_native_supervisor_mutations_fail_closed_for_policy_and_transition_drift(
+        self,
+    ) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "post_exit_native_mutation_guards",
+            ROOT / "scripts/openclaw-post-exit-restoration.py",
+        )
+        assert spec and spec.loader
+        restoration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(restoration)
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            (repo / "ops").mkdir()
+            prompt = "authoritative continuous policy\n"
+            (repo / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").write_text(prompt)
+            state_path = repo / "ops/STATE.json"
+
+            def native_state(*, through: str = "V1-060") -> dict[str, object]:
+                return {
+                    "status": "active",
+                    "roadmap": {"current_id": "V1-046"},
+                    "next_candidate": {
+                        "id": "V1-046",
+                        "roadmap_id": "V1-046",
+                    },
+                    "continuous_supervisor_policy": {
+                        "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
+                        "prompt_sha256": restoration.digest(prompt),
+                        "automation_job_id": restoration.SUPERVISOR_ID,
+                        "automation_name": restoration.SUPERVISOR_NAME,
+                        "authorization_from": "V1-046",
+                        "authorization_through": through,
+                    },
+                }
+
+            legacy_state = {
+                "status": "active",
+                "roadmap": {"current_id": "V1-019"},
+                "next_candidate": {
+                    "id": "V1-019",
+                    "roadmap_id": "V1-019",
+                },
+            }
+            legacy_job = {
+                "id": restoration.SUPERVISOR_ID,
+                "declarationKey": "property-rental-24x7-v1",
+                "name": restoration.SUPERVISOR_NAME,
+                "agentId": "property-rental-supervisor",
+                "sessionTarget": "isolated",
+                "enabled": False,
+                "schedule": {"kind": "every", "everyMs": 1_800_000},
+                "payload": {
+                    "kind": "command",
+                    "argv": [str(repo / "scripts/openclaw-supervisor-dispatch.sh")],
+                    "cwd": str(repo),
+                },
+            }
+            native_job = {
+                "id": restoration.SUPERVISOR_ID,
+                "declarationKey": "property-rental-24x7-v1",
+                "name": restoration.SUPERVISOR_NAME,
+                "agentId": "property-manager",
+                "sessionTarget": "isolated",
+                "enabled": True,
+                "schedule": {"kind": "every", "everyMs": 1_800_000},
+                "payload": {
+                    "kind": "agentTurn",
+                    "message": prompt,
+                    "model": "openai/gpt-5.6-sol",
+                    "thinking": "xhigh",
+                    "timeoutSeconds": 1800,
+                    "lightContext": False,
+                },
+            }
+            name_drifted = json.loads(json.dumps(native_job))
+            name_drifted["name"] = "property-rental-native-name-drift"
+            dual_drifted = json.loads(json.dumps(native_job))
+            dual_drifted["agentId"] = "property-rental-supervisor"
+            dual_drifted["payload"]["kind"] = "command"
+            args = argparse.Namespace(
+                repo=str(repo),
+                dispatch_state=str(repo / "dispatch"),
+                evidence=str(repo / "restoration/current.json"),
+                openclaw="/test/openclaw",
+                launchctl="/test/launchctl",
+                expected_repair_head=restoration.REPAIR_PUBLICATION_COMMIT,
+            )
+
+            scenarios = (
+                (
+                    "missing_policy",
+                    {
+                        "status": "active",
+                        "roadmap": {"current_id": "V1-046"},
+                        "next_candidate": {
+                            "id": "V1-046",
+                            "roadmap_id": "V1-046",
+                        },
+                    },
+                    native_job,
+                ),
+                ("mismatched_v1_059_policy", native_state(through="V1-059"), native_job),
+                ("native_name_drift", native_state(), name_drifted),
+                ("dual_agent_payload_drift", native_state(), dual_drifted),
+                ("missing_state", None, native_job),
+                ("unreadable_state", "{", native_job),
+            )
+            routes = (
+                ("run", lambda: restoration.execute(args), 69),
+                ("install", lambda: restoration.install(args), 69),
+                (
+                    "finalize",
+                    lambda: restoration.finalize_terminal_direct(
+                        args,
+                        Path(args.evidence),
+                        unload_terminalizer=True,
+                    ),
+                    False,
+                ),
+            )
+            for scenario, state, job in scenarios:
+                for route, invoke, expected in routes:
+                    with self.subTest(scenario=scenario, route=route):
+                        if isinstance(state, dict):
+                            atomic_write_json(state_path, state)
+                        elif isinstance(state, str):
+                            state_path.write_text(state)
+                        else:
+                            state_path.unlink(missing_ok=True)
+                        with (
+                            mock.patch.object(
+                                restoration, "cron", return_value=job
+                            ) as cron_call,
+                            mock.patch.object(
+                                restoration, "unload_restoration_job"
+                            ),
+                            mock.patch.object(restoration, "unload_launchd_label"),
+                        ):
+                            self.assertEqual(invoke(), expected)
+                        self.assertTrue(cron_call.call_args_list)
+                        self.assertTrue(
+                            all(
+                                call.args[2] == "get"
+                                for call in cron_call.call_args_list
+                            )
+                        )
+
+            def transition_to_native(*_arguments: object) -> dict[str, object]:
+                atomic_write_json(state_path, native_state())
+                return native_job
+
+            with self.subTest(transition_before="disable"):
+                atomic_write_json(state_path, legacy_state)
+                disable_reads = iter((legacy_job, None))
+
+                def transition_on_second_read(
+                    *_arguments: object,
+                ) -> dict[str, object]:
+                    observed = next(disable_reads)
+                    return observed if observed is not None else transition_to_native()
+
+                with (
+                    mock.patch.object(
+                        restoration,
+                        "cron",
+                        side_effect=transition_on_second_read,
+                    ) as cron_call,
+                    mock.patch.object(
+                        restoration,
+                        "exact_executable",
+                        return_value="/test/openclaw",
+                    ),
+                ):
+                    self.assertIn(
+                        "native continuous supervisor",
+                        restoration.disable_supervisor(args, repo) or "",
+                    )
+                self.assertEqual(
+                    [call.args[2] for call in cron_call.call_args_list],
+                    ["get", "get"],
+                )
+
+            with self.subTest(transition_before="enable"):
+                atomic_write_json(state_path, legacy_state)
+                with mock.patch.object(
+                    restoration,
+                    "cron",
+                    side_effect=transition_to_native,
+                ) as cron_call:
+                    with self.assertRaisesRegex(
+                        restoration.RestorationError,
+                        "native continuous supervisor",
+                    ):
+                        restoration.mutate_legacy_supervisor(
+                            "/test/openclaw",
+                            repo,
+                            "enable",
+                            legacy_job,
+                        )
+                self.assertEqual(
+                    [call.args[2] for call in cron_call.call_args_list], ["get"]
+                )
+
+            atomic_write_json(state_path, legacy_state)
+            enabled_legacy = json.loads(json.dumps(legacy_job))
+            enabled_legacy["enabled"] = True
+            with mock.patch.object(
+                restoration,
+                "cron",
+                side_effect=[legacy_job, enabled_legacy],
+            ) as cron_call:
+                self.assertTrue(
+                    restoration.mutate_legacy_supervisor(
+                        "/test/openclaw", repo, "enable", legacy_job
+                    )["enabled"]
+                )
+            self.assertEqual(
+                [call.args[2] for call in cron_call.call_args_list],
+                ["get", "enable"],
+            )
+
     def test_false_ci_failure_reconciliation_is_bound_to_exact_run_and_commit(
         self,
     ) -> None:
@@ -8777,6 +9110,18 @@ class LockHealthAndWrapperTests(unittest.TestCase):
                 root = Path(directory)
                 repo = root / "repo"
                 repo.mkdir()
+                (repo / "ops").mkdir()
+                atomic_write_json(
+                    repo / "ops/STATE.json",
+                    {
+                        "status": "active",
+                        "roadmap": {"current_id": "V1-019"},
+                        "next_candidate": {
+                            "id": "V1-019",
+                            "roadmap_id": "V1-019",
+                        },
+                    },
+                )
                 job_path = root / "job.json"
                 atomic_write_json(
                     job_path,
@@ -8981,6 +9326,18 @@ print(json.dumps(job))
             root = Path(directory)
             repo = root / "repo"
             repo.mkdir()
+            (repo / "ops").mkdir()
+            atomic_write_json(
+                repo / "ops/STATE.json",
+                {
+                    "status": "active",
+                    "roadmap": {"current_id": "V1-019"},
+                    "next_candidate": {
+                        "id": "V1-019",
+                        "roadmap_id": "V1-019",
+                    },
+                },
+            )
             evidence = root / "restoration.json"
             repair_head = "e0469b6d519c0947662204869a535c7080185638"
             atomic_write_json(
@@ -9001,6 +9358,21 @@ print(json.dumps(job))
             fake_openclaw.write_text(
                 """#!/usr/bin/env python3
 import json, os, pathlib, sys, time
+if sys.argv[1:3] == ['cron', 'get']:
+    print(json.dumps({
+        'id': '658ffdaf-1ac1-45a6-a842-f5f7d7a226eb',
+        'declarationKey': 'property-rental-24x7-v1',
+        'name': 'property-rental-24x7-supervisor',
+        'agentId': 'property-rental-supervisor',
+        'sessionTarget': 'isolated',
+        'schedule': {'kind': 'every', 'everyMs': 1800000},
+        'payload': {
+            'kind': 'command',
+            'argv': [str(pathlib.Path(os.environ['FAKE_REPO']) / 'scripts/openclaw-supervisor-dispatch.sh')],
+            'cwd': os.environ['FAKE_REPO'],
+        },
+    }))
+    raise SystemExit(0)
 if sys.argv[1:3] == ['message', 'send']:
     time.sleep(0.1)
     message = sys.argv[sys.argv.index('--message') + 1]
@@ -9061,6 +9433,7 @@ raise SystemExit(9)
             environment = {
                 **os.environ,
                 "FAKE_NOTIFICATION_LOG": str(notification_log),
+                "FAKE_REPO": str(repo),
             }
             workers = [
                 subprocess.Popen(
@@ -12741,6 +13114,9 @@ raise SystemExit(1)
                     """CREATE TABLE cron_jobs (
                       job_id TEXT, name TEXT, enabled INTEGER, schedule_kind TEXT,
                       every_ms INTEGER, payload_kind TEXT, payload_message TEXT,
+                      agent_id TEXT, session_target TEXT, payload_model TEXT,
+                      payload_thinking TEXT, payload_timeout_seconds INTEGER,
+                      payload_light_context INTEGER,
                       last_run_at_ms INTEGER, last_run_status TEXT,
                       consecutive_errors INTEGER, running_at_ms INTEGER,
                       updated_at INTEGER
@@ -12754,6 +13130,12 @@ raise SystemExit(1)
                     1_800_000,
                     "command",
                     payload,
+                    "property-manager",
+                    "isolated",
+                    "openai/gpt-5.6-sol",
+                    "xhigh",
+                    1800,
+                    0,
                     9_999_999,
                     "ok",
                     0,
@@ -12761,10 +13143,11 @@ raise SystemExit(1)
                     9_999_000,
                 )
                 connection.execute(
-                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)", row
+                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    row,
                 )
                 connection.execute(
-                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                     ("duplicate", *row[1:]),
                 )
             spec = importlib.util.spec_from_file_location(
@@ -12782,6 +13165,73 @@ raise SystemExit(1)
             ):
                 spec.loader.exec_module(report)
             self.assertTrue(report.supervisor_status()["present"])
+            self.assertFalse(report.supervisor_status()["config_valid"])
+
+    def test_daily_report_rejects_continuous_policy_downgrade(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = RepositoryEvidenceTests().make_repo(root)
+            prompt = "authoritative continuous policy\n"
+            (repo / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").write_text(prompt)
+            database = root / "openclaw.sqlite"
+            with sqlite3.connect(database) as connection:
+                connection.execute(
+                    """CREATE TABLE cron_jobs (
+                      job_id TEXT, name TEXT, enabled INTEGER, schedule_kind TEXT,
+                      every_ms INTEGER, payload_kind TEXT, payload_message TEXT,
+                      agent_id TEXT, session_target TEXT, payload_model TEXT,
+                      payload_thinking TEXT, payload_timeout_seconds INTEGER,
+                      payload_light_context INTEGER, last_run_at_ms INTEGER,
+                      last_run_status TEXT, consecutive_errors INTEGER,
+                      running_at_ms INTEGER, updated_at INTEGER
+                    )"""
+                )
+                connection.execute(
+                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+                        "property-rental-24x7-supervisor",
+                        1,
+                        "every",
+                        1_800_000,
+                        "agentTurn",
+                        prompt,
+                        "property-manager",
+                        "isolated",
+                        "openai/gpt-5.6-sol",
+                        "xhigh",
+                        1800,
+                        0,
+                        9_999_999,
+                        "ok",
+                        0,
+                        None,
+                        9_999_000,
+                    ),
+                )
+            spec = importlib.util.spec_from_file_location(
+                "daily_report_policy", ROOT / "scripts/openclaw-daily-report.py"
+            )
+            assert spec and spec.loader
+            report = importlib.util.module_from_spec(spec)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "PROPERTY_RENTAL_REPO": str(repo),
+                    "PROPERTY_RENTAL_OPENCLAW_DB": str(database),
+                },
+            ):
+                spec.loader.exec_module(report)
+            self.assertTrue(report.supervisor_status()["config_valid"])
+            with sqlite3.connect(database) as connection:
+                connection.execute(
+                    """UPDATE cron_jobs
+                          SET agent_id='obsolete-agent',
+                              payload_model='obsolete-model',
+                              payload_thinking='low',
+                              payload_timeout_seconds=30,
+                              payload_light_context=1"""
+                )
             self.assertFalse(report.supervisor_status()["config_valid"])
 
     def test_repository_owned_wrapper_enforces_supported_route(self) -> None:
@@ -12990,49 +13440,53 @@ print('{}')
             self.assertEqual(result.returncode, 2)
             self.assertIn("must not be empty", result.stderr)
 
-    def test_installed_and_repository_dispatchers_can_be_compared_exactly(self) -> None:
+    def test_installed_native_supervisor_matches_authoritative_prompt(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            workspace = root / "workspace"
-            (workspace / "bin").mkdir(parents=True)
-            installed = workspace / "bin/hermes-property-rental"
-            installed.write_bytes(
-                (ROOT / "scripts/hermes-property-rental").read_bytes()
-            )
-            installed.chmod(0o755)
-            database = root / "openclaw.sqlite"
-            payload = json.dumps(
-                {
-                    "kind": "command",
-                    "argv": [str(ROOT / "scripts/openclaw-supervisor-dispatch.sh")],
-                    "cwd": str(ROOT),
-                    "noOutputTimeoutSeconds": 10860,
-                    "outputMaxBytes": 20000,
+            prompt = (ROOT / "ops/OPENCLAW_SUPERVISOR_PROMPT.md").read_text()
+            job = {
+                "id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+                "declarationKey": "property-rental-24x7-v1",
+                "name": "property-rental-24x7-supervisor",
+                "agentId": "property-manager",
+                "sessionTarget": "isolated",
+                "enabled": False,
+                "schedule": {"kind": "every", "everyMs": 1_800_000},
+                "payload": {
+                    "kind": "agentTurn",
+                    "message": prompt,
+                    "model": "openai/gpt-5.6-sol",
+                    "thinking": "xhigh",
+                    "timeoutSeconds": 1800,
+                    "lightContext": False,
                 },
-                separators=(",", ":"),
+            }
+            jobs_path = root / "jobs.json"
+            atomic_write_json(jobs_path, {"jobs": [job]})
+            fake_openclaw = root / "openclaw"
+            fake_openclaw.write_text(
+                """#!/usr/bin/env python3
+import json, os, pathlib, sys
+value = json.loads(pathlib.Path(os.environ['FAKE_OPENCLAW_JOBS']).read_text())
+if sys.argv[1:] == ['cron', 'list', '--json']:
+    print(json.dumps(value))
+    raise SystemExit(0)
+if sys.argv[1:3] == ['cron', 'get']:
+    selected = [job for job in value['jobs'] if job['id'] == sys.argv[3]]
+    if len(selected) != 1:
+        raise SystemExit(1)
+    print(json.dumps(selected[0]))
+    raise SystemExit(0)
+raise SystemExit(2)
+"""
             )
-            with sqlite3.connect(database) as connection:
-                connection.execute(
-                    "CREATE TABLE cron_jobs (job_id TEXT, name TEXT, enabled INTEGER, schedule_kind TEXT, every_ms INTEGER, payload_kind TEXT, payload_message TEXT)"
-                )
-                connection.execute(
-                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?)",
-                    (
-                        "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
-                        "property-rental-24x7-supervisor",
-                        0,
-                        "every",
-                        1_800_000,
-                        "command",
-                        payload,
-                    ),
-                )
+            fake_openclaw.chmod(0o755)
             environment = {
                 **os.environ,
                 "PROPERTY_RENTAL_REPO": str(ROOT),
-                "PROPERTY_RENTAL_OPENCLAW_WORKSPACE": str(workspace),
-                "PROPERTY_RENTAL_OPENCLAW_DB": str(database),
+                "PROPERTY_RENTAL_OPENCLAW_BIN": str(fake_openclaw),
                 "PROPERTY_RENTAL_EXPECT_SCHEDULER_ENABLED": "false",
+                "FAKE_OPENCLAW_JOBS": str(jobs_path),
             }
             result = subprocess.run(
                 [str(ROOT / "scripts/openclaw-installation-check.sh")],
@@ -13042,19 +13496,9 @@ print('{}')
                 check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            with sqlite3.connect(database) as connection:
-                connection.execute(
-                    "INSERT INTO cron_jobs VALUES (?,?,?,?,?,?,?)",
-                    (
-                        "different-supervisor-id",
-                        "property-rental-24x7-supervisor",
-                        0,
-                        "every",
-                        1_800_000,
-                        "command",
-                        payload,
-                    ),
-                )
+            duplicate_job = json.loads(json.dumps(job))
+            duplicate_job["id"] = "different-supervisor-id"
+            atomic_write_json(jobs_path, {"jobs": [job, duplicate_job]})
             duplicate = subprocess.run(
                 [str(ROOT / "scripts/openclaw-installation-check.sh")],
                 env=environment,
@@ -13064,11 +13508,8 @@ print('{}')
             )
             self.assertNotEqual(duplicate.returncode, 0)
             self.assertIn("exactly one", duplicate.stderr)
-            with sqlite3.connect(database) as connection:
-                connection.execute(
-                    "DELETE FROM cron_jobs WHERE job_id = 'different-supervisor-id'"
-                )
-                connection.execute("UPDATE cron_jobs SET every_ms = 60000")
+            job["schedule"]["everyMs"] = 60_000
+            atomic_write_json(jobs_path, {"jobs": [job]})
             refused = subprocess.run(
                 [str(ROOT / "scripts/openclaw-installation-check.sh")],
                 env=environment,
