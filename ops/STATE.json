@@ -665,7 +665,7 @@
       "id": "v1-046-release-running",
       "owner_action_required": false,
       "status": "zero_finding_rereview_accepted_release_running",
-      "detail": "Correction 0efc51d0, zero-finding integration 6dc815a8, and zero-finding fresh rereview 7ab561b7 are manager-accepted DONE at exact clean 47798abd. Release 3266b3a3 first stopped preflight-only before Git mutation because its rollout was high rather than required xhigh; the same preserved card and clean worktree now have one bounded GPT-5.6 Sol xhigh/no-fallback recovery attempt running. V1-047 remains dependency-held. No owner action is required."
+      "detail": "Correction 0efc51d0, zero-finding integration 6dc815a8, and zero-finding fresh rereview 7ab561b7 are manager-accepted DONE at exact clean 47798abd. Release 3266b3a3 first stopped preflight-only because its rollout was high rather than required xhigh. Its second GPT-5.6 Sol xhigh/no-fallback attempt created clean unpushed merge 62ef004a, then stopped before publication because locked frontend dependencies were absent. Property-manager installed the exact lockfile environment and reproduced frontend 234/234 with zero failures/skips; the same card, merge, branch, and worktree now have one bounded third attempt running with a healthy claim and heartbeat. V1-047 remains dependency-held. No owner action is required."
     }
   ],
   "branch": "implementation/foundation",
@@ -710,10 +710,10 @@
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Inspect and reconcile release card 3266b3a3-e244-4926-ade8-6cc13eff775f health, heartbeat, exact candidate and metadata-history binding, deterministic gates, publication, exact-SHA CI, closure, and terminal proof without overlapping dispatch",
+  "next_action": "Inspect and reconcile release card 3266b3a3-e244-4926-ade8-6cc13eff775f third-attempt health, xhigh runtime reconfirmation, complete merged-tree gates, publication, exact-SHA CI, closure, and terminal proof without overlapping dispatch",
   "active_worker": "property-codex-1",
   "active_card": "3266b3a3-e244-4926-ade8-6cc13eff775f",
-  "active_attempt": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788233653256",
+  "active_attempt": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788235506113",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -812,8 +812,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 correction 3, zero-finding integration, and zero-finding fresh independent rereview are manager-accepted DONE at exact 47798abd; one exact-SHA release worker is running while V1-047 remains blocked",
-    "exact_next_action": "Inspect and reconcile release card 3266b3a3-e244-4926-ade8-6cc13eff775f health, heartbeat, exact candidate and metadata-history binding, deterministic gates, publication, exact-SHA CI, closure, and terminal proof without overlapping dispatch",
+    "current_phase": "V1-046 correction 3, zero-finding integration, and zero-finding fresh independent rereview are manager-accepted DONE at exact 47798abd; clean unpushed release merge 62ef004a is in one bounded third-attempt recovery while V1-047 remains blocked",
+    "exact_next_action": "Inspect and reconcile release card 3266b3a3-e244-4926-ade8-6cc13eff775f third-attempt health, xhigh runtime reconfirmation, complete merged-tree gates, publication, exact-SHA CI, closure, and terminal proof without overlapping dispatch",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1319,12 +1319,16 @@
     },
     "product_release": {
       "card_id": "3266b3a3-e244-4926-ade8-6cc13eff775f",
-      "attempt_id": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788233653256",
+      "attempt_id": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788235506113",
       "worker": "property-codex-1",
-      "prior_attempt_id": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788232491145",
-      "prior_worker": "property-codex-3",
-      "prior_attempt_status": "blocked_preflight_only_before_git_mutation",
-      "prior_attempt_failure": "effective reasoning high did not satisfy required xhigh; candidate, target, branches, and worktrees remained clean and unchanged",
+      "prior_attempt_id": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788233653256",
+      "prior_worker": "property-codex-1",
+      "prior_attempt_status": "blocked_merged_tree_environment_before_publication",
+      "prior_attempt_failure": "make frontend-test exited 127 before collection because the fresh managed worktree lacked installed locked frontend dependencies; clean unpushed merge 62ef004a and every history remained preserved",
+      "initial_attempt_id": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788232491145",
+      "initial_worker": "property-codex-3",
+      "initial_attempt_status": "blocked_preflight_only_before_git_mutation",
+      "initial_attempt_failure": "effective reasoning high did not satisfy required xhigh; candidate, target, branches, and worktrees remained clean and unchanged",
       "branch": "openclaw/wb-3266b3a3-e244-4926-ade8-6cc13eff775f",
       "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-3266b3a3-e244-4926-ade8-6cc13eff775f",
       "source_branch": "openclaw/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6",
@@ -1332,7 +1336,13 @@
       "candidate_sha": "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
       "candidate_parent": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
       "candidate_tree": "b337076e239acd1b2c3c4711af908675bb6841fe",
-      "metadata_tip_at_dispatch": "9612ca885026662ae719456398ab76a52428ff20",
+      "metadata_tip_at_dispatch": "a945d1258929438d2f4a5e07859c478394ff392d",
+      "merge_sha": "62ef004ae25f1d9088f714e4acc571b8912c6bcc",
+      "merge_parents": [
+        "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
+        "a945d1258929438d2f4a5e07859c478394ff392d"
+      ],
+      "merge_tree": "e8d8407c04afec68f22c0817b12133280cf520f8",
       "model": "openai/gpt-5.6-sol",
       "reasoning": "xhigh",
       "risk_reason": "financial migration, transaction, concurrency, security, Git integration, publication, and exact-SHA CI",
@@ -1341,12 +1351,13 @@
       "fallbacks": [],
       "claim_active": true,
       "attempt_active": true,
-      "runtime_identity_proof": "PASS before Git mutation: active rollout gpt-5.6-sol xhigh and empty fallback list; configured agent primary, fallback list, and thinkingDefault agree",
+      "runtime_identity_proof": "Required for the third attempt and pending worker reconfirmation; the same property-codex-1 configuration and prior attempt proved gpt-5.6-sol xhigh with empty fallbacks",
       "worktree_clean_at_admission": true,
-      "dispatch_started": 1,
+      "environment_recovery": "PASS: make frontend-install restored the exact package-lock environment; manager reproduced make frontend-test 234/234 across 17/17 files, zero failures/skips, npm install audit zero vulnerabilities, and clean Git at 62ef004a",
+      "dispatch_started": 3,
       "start_failures": 0,
       "publication_completed": false,
-      "status": "running_recovery_runtime_admission_passed"
+      "status": "running_third_attempt_environment_recovered_runtime_reconfirmation_pending"
     },
     "product_correction_3_rereview": {
       "card_id": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
@@ -2301,10 +2312,11 @@
     "PASS: fresh integration 6dc815a8 is manager-accepted DONE with zero findings at exact 47798abd; focused 18/18, backend 729/729, frontend 234/234, isolated PostgreSQL 467/467 zero skips, automation 186/186, and all required guards passed",
     "PASS: fresh independent rereview 7ab561b7 started exactly one property-codex-2 worker in a clean managed worktree at immutable 47798abd; Gateway dispatch reported zero start failures",
     "PASS: fresh independent rereview 7ab561b7 is manager-accepted DONE with zero findings at exact 47798abd; reviewer gates passed focused 18/18, backend 729/729, frontend 234/234, PostgreSQL 467/467 zero skips, automation 186/186, adversarial 2/2, revision upgrade 1/1, and every required guard; manager exact-diff checks and focused 18/18 passed",
-    "FAIL/RECOVERED: release 3266b3a3 first started one property-codex-3 preflight-only attempt whose immutable rollout was GPT-5.6 Sol high rather than required xhigh; it stopped before Git mutation with exact candidate/worktree preserved. The same card was reassigned to property-codex-1 and the supported Gateway started exactly one recovery attempt with zero start failures; the worker then proved its exact active rollout as GPT-5.6 Sol xhigh with empty fallbacks before Git mutation"
+    "FAIL/RECOVERED: release 3266b3a3 first started one property-codex-3 preflight-only attempt whose immutable rollout was GPT-5.6 Sol high rather than required xhigh; it stopped before Git mutation with exact candidate/worktree preserved. The same card was reassigned to property-codex-1 and the supported Gateway started exactly one recovery attempt with zero start failures; the worker then proved its exact active rollout as GPT-5.6 Sol xhigh with empty fallbacks before Git mutation",
+    "FAIL/RECOVERED: release 3266b3a3 second attempt created clean unpushed merge 62ef004a with exact parents 47798abd and a945d125, then stopped before publication when make frontend-test found no installed vitest in the fresh managed worktree. Property-manager installed the exact lockfile environment, reproduced frontend 234/234 across 17/17 files with zero failures/skips and zero npm audit vulnerabilities, confirmed clean Git, and the supported Gateway started exactly one third attempt with zero start failures"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T03:37:07Z",
+  "timestamp": "2026-09-01T04:05:30Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
