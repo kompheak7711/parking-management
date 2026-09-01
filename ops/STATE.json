@@ -702,18 +702,18 @@
     "tranche_id": "V1-047"
   },
   "idle_reason": null,
-  "next_action": "Inspect fresh independent review 84c1950f through REVIEW; then property-manager accepts only an exact zero-finding verdict or creates one bounded correction without installing, publishing, live-bootstrap, or implementation dispatch",
-  "active_worker": "property-codex-2",
-  "active_card": "84c1950f-0dfc-4400-9c4b-a6dab427b4c3",
+  "next_action": "Inspect bounded H3 correction 555bf742 through REVIEW; then property-manager independently verifies its exact commit and complete diff before fresh integration and fresh independent max review, with no installation, publication, live bootstrap, or V1-047 implementation dispatch",
+  "active_worker": "property-codex-1",
+  "active_card": "555bf742-61a0-47fd-b508-8ed2db72cce3",
   "active_claim": {
-    "owner": "property-codex-2",
-    "claimed_at_ms": 1788273631753,
-    "last_heartbeat_at_ms": 1788273650727,
-    "expires_at_ms": 1788280850727
+    "owner": "property-codex-1",
+    "claimed_at_ms": 1788275366514,
+    "last_heartbeat_at_ms": 1788275388944,
+    "expires_at_ms": 1788282588944
   },
-  "active_attempt": "workboard:84c1950f-0dfc-4400-9c4b-a6dab427b4c3:1788273631793",
-  "active_branch": "openclaw/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea",
-  "active_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea",
+  "active_attempt": "workboard:555bf742-61a0-47fd-b508-8ed2db72cce3:1788275366556",
+  "active_branch": "openclaw/wb-555bf742-61a0-47fd-b508-8ed2db72cce3",
+  "active_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-555bf742-61a0-47fd-b508-8ed2db72cce3",
   "candidate_sha": "85a3439459286103ce2710b20f767f49fa9a5a00",
   "candidate_parent": "ece9afdaf1c4d5bd79b44b0826a4b14a8637f13e",
   "next_candidate": {
@@ -754,12 +754,12 @@
     },
     {
       "id": "worker-coordination-rereview-human-stop",
-      "status": "owner_authorized_correction_review_running",
+      "status": "owner_authorized_bounded_h3_correction_running",
       "scope": "uninstalled OpenClaw coordination safety candidate and exact pre-existing V1-047 card bootstrap",
       "evidence": "Workboard 9d1990ed-d3d5-4b0a-ba90-406372df359c failed exact ece9afd with 3 HIGH, 0 MEDIUM, 0 LOW after coordination 75/75 and automation 189/189 passed; two material classes survived the prior correction",
       "owner_decision": "2026-09-01 standing authorization explicitly clears the exhausted-recovery stop for one materially different H1-H3 correction",
       "correction_card_id": "d2d1f66e-de97-4f26-93fc-9806feae82ea",
-      "action": "inspect the one healthy independent exact-SHA review through REVIEW; manager-accept only a zero-finding verdict before any installation, live bootstrap, or V1-047 implementation dispatch"
+      "action": "inspect the one healthy bounded H3 correction through REVIEW; manager-verify it before fresh integration and fresh independent max review, with no installation, live bootstrap, or V1-047 implementation dispatch"
     }
   ],
   "owner_action": null,
@@ -822,8 +822,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-047 activation 870472b7 is published and CI-green; correction 85a3439 and fresh integration c54f4a90 are manager-accepted DONE; independent max review 84c1950f runs exactly once while implementation 26b14ae0 remains blocked",
-    "exact_next_action": "Inspect independent exact-SHA review 84c1950f through REVIEW; property-manager accepts only a zero-finding verdict or creates one bounded correction without install, publication, live bootstrap, or implementation dispatch",
+    "current_phase": "V1-047 activation 870472b7 is published and CI-green; candidate 85a3439 failed independent max review 84c1950f with 1 HIGH/1 MEDIUM/0 LOW; bounded H3 correction 555bf742 runs exactly once while implementation 26b14ae0 remains blocked",
+    "exact_next_action": "Inspect bounded H3 correction 555bf742 through REVIEW; property-manager independently verifies it before fresh integration and fresh independent max review, without install, publication, live bootstrap, or implementation dispatch",
     "coordination_safety_rereview": {
       "card_id": "9d1990ed-d3d5-4b0a-ba90-406372df359c",
       "candidate_sha": "ece9afdaf1c4d5bd79b44b0826a4b14a8637f13e",
@@ -883,14 +883,49 @@
         "mode": "standard",
         "fast_mode": false,
         "fallbacks": [],
-        "claim_active": true,
-        "last_heartbeat_at_ms": 1788273650727,
-        "claim_expires_at_ms": 1788280850727,
+        "claim_active": false,
+        "last_heartbeat_at_ms": 1788274987741,
+        "claim_expires_at_ms": null,
         "reviewer_edits_authorized": false,
+        "findings": {"high": 1, "medium": 1, "low": 0},
+        "verdict": "FAIL",
+        "manager_reproduction": "PASS: exact clean four-path identity verified and violated workerProtocol reproduced binding={} / phase=legacy",
+        "status": "done_manager_accepted_fail"
+      },
+      "review_findings_correction": {
+        "card_id": "555bf742-61a0-47fd-b508-8ed2db72cce3",
+        "parent_review_card_id": "84c1950f-0dfc-4400-9c4b-a6dab427b4c3",
+        "base_sha": "85a3439459286103ce2710b20f767f49fa9a5a00",
+        "base_parent": "ece9afdaf1c4d5bd79b44b0826a4b14a8637f13e",
+        "worker": "property-codex-1",
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "xhigh",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "claim_active": true,
+        "attempt_active": true,
+        "worker_active": true,
+        "attempt_id": "workboard:555bf742-61a0-47fd-b508-8ed2db72cce3:1788275366556",
+        "branch": "openclaw/wb-555bf742-61a0-47fd-b508-8ed2db72cce3",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-555bf742-61a0-47fd-b508-8ed2db72cce3",
+        "dispatch_count": 1,
+        "dispatch_at_ms": 1788275362156,
+        "last_heartbeat_at_ms": 1788275388944,
+        "claim_expires_at_ms": 1788282588944,
+        "allowed_paths": [
+          "ops/AUTOMATION_TRACEABILITY.json",
+          "ops/OPENCLAW_INSTALL_MANIFEST.json",
+          "scripts/openclaw_worker_coordination.py",
+          "scripts/test_openclaw_worker_coordination.py"
+        ],
+        "findings": {"high": 1, "medium": 1, "low": 0},
+        "preliminary_verification_error": "A canonical-check jq command named the uninstalled candidate-only ops/OPENCLAW_INSTALL_MANIFEST.json and exited before tests; no repository state changed.",
+        "verification": "PASS after corrected canonical path set: roadmap 46/60, JSON, diff, automation 189/189, compact-state routing, visibility watchdog, shell syntax, and Python compile; zero failures and zero skips",
         "status": "running"
       },
       "blocker": null,
-      "status": "done_manager_accepted_review_running"
+      "status": "done_manager_accepted_bounded_correction_running"
     },
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
@@ -2606,7 +2641,7 @@
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T14:47:30Z",
+  "timestamp": "2026-09-01T15:15:49Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

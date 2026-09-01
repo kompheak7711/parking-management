@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — coordination correction under fresh review
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded H3 correction running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -97,12 +97,27 @@
   automation 189/189 with zero failures/skips, plus roadmap, JSON, Python,
   manifest, traceability, scope, ancestry, secret, diff, and clean-state gates.
 - Fresh independent review: card `84c1950f-0dfc-4400-9c4b-a6dab427b4c3`
-  is running exactly once on `property-codex-2` at the immutable candidate.
-  Attempt `workboard:84c1950f-0dfc-4400-9c4b-a6dab427b4c3:1788273631793`
-  has a healthy claim and heartbeat. The reviewer is GPT-5.6 Sol `max`,
-  Standard/Fast-off, read-only, and bound to the complete exact diff. The
-  correction remains uninstalled and unpublished; live V1-047 bootstrap and
-  implementation dispatch have not occurred.
+  is property-manager-accepted DONE for review work with a FAIL verdict at the
+  immutable candidate. Attempt
+  `workboard:84c1950f-0dfc-4400-9c4b-a6dab427b4c3:1788273631793` stopped only
+  after the reviewer terminally released to REVIEW with complete proof. The
+  GPT-5.6 Sol `max`, Standard/Fast-off, read-only review found 1 HIGH, 1 MEDIUM,
+  0 LOW: another nonterminal live card can own the prospective canonical
+  worktree without rejection, and a present malformed or violated
+  `workerProtocol` is misclassified as pristine legacy. Property-manager
+  independently reproduced `binding={}` / `phase=legacy` and verified the
+  exact clean four-path candidate before accepting the findings.
+- Bounded finding correction: card
+  `555bf742-61a0-47fd-b508-8ed2db72cce3` started exactly once on
+  `property-codex-1`; attempt
+  `workboard:555bf742-61a0-47fd-b508-8ed2db72cce3:1788275366556` has a healthy
+  claim and heartbeat. Its managed worktree and branch are
+  `wb-555bf742-61a0-47fd-b508-8ed2db72cce3` /
+  `openclaw/wb-555bf742-61a0-47fd-b508-8ed2db72cce3`, clean at exact base
+  `85a3439` with parent `ece9afd`. Runtime is GPT-5.6 Sol `xhigh`,
+  Standard/Fast-off, with no fallback. Scope is limited to the same four
+  coordination, test, traceability, and manifest paths. No install,
+  publication, live bootstrap, or V1-047 implementation dispatch occurred.
 - Owner-decision reconciliation: exact ops-only commit
   `0ce6ac9030174e8039c7367ed26737f676be957b`, parent `1c523409`, tree
   `b4b43b89`, changed only `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`.
@@ -117,26 +132,34 @@
   saved payload and `ops/OPENCLAW_SUPERVISOR_PROMPT.md` are byte-identical at
   11,868 bytes, SHA-256
   `0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56`.
+- Coordination-transition metadata verification: one preliminary `jq` command
+  stopped before tests because it named the uninstalled candidate-only
+  `ops/OPENCLAW_INSTALL_MANIFEST.json` in the canonical checkout. The corrected
+  canonical command passed roadmap 46/60, JSON, diff, automation 189/189,
+  compact-state routing, visibility watchdog, shell syntax, and Python compile
+  checks with zero failures/skips.
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the active independent review. V1-047 implementation
+- Blocker: none for the active bounded correction. V1-047 implementation
   remains BLOCKED with zero starts; no install, live bootstrap, or implementation
   dispatch is permitted before a zero-finding review and release acceptance.
 - Owner action required: no.
-- Exact next action: preserve and inspect independent review
-  `84c1950f-0dfc-4400-9c4b-a6dab427b4c3` through REVIEW. Property-manager then
-  accepts a zero-finding exact-SHA verdict or creates one bounded correction for
-  material findings. Do not install, publish, bootstrap the live V1-047 card, or
-  dispatch implementation `26b14ae0` yet.
+- Exact next action: preserve and inspect bounded correction
+  `555bf742-61a0-47fd-b508-8ed2db72cce3` through REVIEW, then independently
+  verify its exact commit, complete bounded diff, clean worktree, tests,
+  traceability, manifest, secrets, and runtime before fresh integration and a
+  fresh independent max review. Do not install, publish, bootstrap the live
+  V1-047 card, or dispatch implementation `26b14ae0` yet.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
 - Automation candidate state: V1-047 approved and active at exact green
-  activation `870472b7`; correction `85a3439` and fresh integration are
-  manager-accepted DONE, and one independent max review is running while
+  activation `870472b7`; candidate `85a3439` failed independent review with
+  1 HIGH/1 MEDIUM/0 LOW, and one bounded H3 correction runs exactly once while
   implementation remains blocked and unstarted.
-- Automation exact next action: inspect the healthy independent review through
-  REVIEW, then manager-accept only an exact zero-finding verdict.
+- Automation exact next action: inspect correction `555bf742` through REVIEW,
+  manager-verify it, then require fresh integration and fresh independent max
+  review before any installation or implementation dispatch.
 
 <!-- AUTOMATION_STATUS_END -->

@@ -57,8 +57,8 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: owner-authorized V1-047 coordination correction under
-fresh independent exact-SHA review before implementation can start.
+Current live queue position: owner-authorized V1-047 bounded H3 correction after
+a material independent exact-SHA review verdict, before implementation can start.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
@@ -74,11 +74,14 @@ H1-H3 correction. Correction `d2d1f66e-de97-4f26-93fc-9806feae82ea` is now
 property-manager-accepted DONE at exact `85a3439`, parent `ece9afd`; its complete
 four-path +1621/-26 diff and fresh manager integration card `c54f4a90` passed
 coordination 80/80 and automation 189/189 with zero failures/skips. Fresh read-only
-independent review `84c1950f-0dfc-4400-9c4b-a6dab427b4c3` now runs exactly once
-on `property-codex-2` at GPT-5.6 Sol `max`, Standard/Fast-off, attempt
-`workboard:84c1950f-0dfc-4400-9c4b-a6dab427b4c3:1788273631793`. Preserve this
-review and do not install, bootstrap the live card, or dispatch implementation
-`26b14ae0` until an exact zero-finding review is manager-accepted.
+independent review `84c1950f-0dfc-4400-9c4b-a6dab427b4c3` is manager-accepted
+DONE for review work with a FAIL verdict of 1 HIGH, 1 MEDIUM, 0 LOW. One bounded
+correction `555bf742-61a0-47fd-b508-8ed2db72cce3` now runs exactly once on
+`property-codex-1` at GPT-5.6 Sol `xhigh`, Standard/Fast-off, attempt
+`workboard:555bf742-61a0-47fd-b508-8ed2db72cce3:1788275366556`, from clean exact
+base `85a3439`. Preserve this correction and do not install, bootstrap the live
+card, or dispatch implementation `26b14ae0` until fresh integration and an exact
+zero-finding independent review are manager-accepted.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent
 `1c523409`; local automation passed 189/189, exact-SHA CI run `33512759067`
 passed all four jobs, and local/tracking/fetched/live-remote refs match.
