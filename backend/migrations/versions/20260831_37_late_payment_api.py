@@ -40,7 +40,12 @@ def upgrade() -> None:
                 result_entity_id<>'00000000-0000-0000-0000-000000000000'::uuid
             ),
             response_status smallint NOT NULL,
-            result_snapshot jsonb NOT NULL CHECK (jsonb_typeof(result_snapshot)='object'),
+            response_body jsonb NOT NULL CHECK (
+                jsonb_typeof(response_body)='object'
+                AND jsonb_typeof(response_body->'data')='object'
+                AND jsonb_typeof(response_body->'meta')='object'
+                AND jsonb_typeof(response_body->'meta'->'request_id')='string'
+            ),
             completed_at timestamptz NOT NULL,
             PRIMARY KEY(property_id,actor_id,action,idempotency_key),
             CONSTRAINT late_payment_command_shape CHECK (
@@ -343,34 +348,41 @@ def upgrade() -> None:
                 RAISE EXCEPTION 'Late-payment idempotency key was reused'
                     USING ERRCODE='P4605';
             END IF;
-            RETURN v_command.result_snapshot;
+            RETURN jsonb_build_object(
+                'status_code',v_command.response_status,'body',v_command.response_body
+            );
         END $$;
 
         CREATE FUNCTION app.record_late_payment_command(
             p_property_id uuid,p_actor_id uuid,p_action text,p_idempotency_key uuid,
             p_request_digest text,p_target_kind text,p_target_id uuid,
-            p_result_entity_id uuid,p_result_snapshot jsonb,p_completed_at timestamptz
+            p_result_entity_id uuid,p_response_body jsonb,p_completed_at timestamptz
         ) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
         BEGIN
             INSERT INTO app.late_payment_commands(property_id,actor_id,action,idempotency_key,
                 request_digest,target_kind,target_id,result_entity_id,response_status,
-                result_snapshot,completed_at)
+                response_body,completed_at)
             VALUES (p_property_id,p_actor_id,p_action,p_idempotency_key,p_request_digest,
                 p_target_kind,p_target_id,p_result_entity_id,
                 CASE p_action WHEN 'decision' THEN 201 ELSE 200 END,
-                p_result_snapshot,p_completed_at);
+                p_response_body,p_completed_at);
         END $$;
 
         CREATE FUNCTION app.finalize_late_payment_decision(
             p_property_id uuid,p_invoice_id uuid,p_actor_id uuid,p_idempotency_key uuid,
-            p_request_digest text,p_outcome text,p_approved_amount bigint,p_reason text,
+            p_request_digest text,p_request_id text,p_outcome text,
+            p_approved_amount bigint,p_reason text,
             p_decision_id uuid,p_charge_id uuid,p_audit_id uuid
         ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
-        DECLARE v_replay jsonb; v_before jsonb; v_result jsonb;
+        DECLARE v_replay jsonb; v_before jsonb; v_result jsonb; v_response jsonb;
         DECLARE v_invoice app.invoices%ROWTYPE; v_timezone text; v_now timestamptz;
         DECLARE v_business_date date; v_balance bigint; v_default bigint;
         DECLARE v_lease_status text;
         BEGIN
+            IF p_request_id IS NULL
+                OR p_request_id!~'^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'
+            THEN RAISE EXCEPTION 'Late-payment request identity is invalid'
+                USING ERRCODE='P4602'; END IF;
             v_replay:=app.late_payment_command_replay(p_property_id,p_actor_id,'decision',
                 p_idempotency_key,p_request_digest);
             IF v_replay IS NOT NULL THEN RETURN v_replay; END IF;
@@ -447,22 +459,30 @@ def upgrade() -> None:
                 v_invoice.customer_id,v_invoice.lease_id);
             PERFORM app.record_late_payment_command(p_property_id,p_actor_id,'decision',
                 p_idempotency_key,p_request_digest,'INVOICE',p_invoice_id,p_decision_id,
-                v_result,v_now);
-            RETURN v_result;
+                jsonb_build_object('data',v_result,'meta',
+                    jsonb_build_object('request_id',p_request_id)),v_now);
+            v_response:=jsonb_build_object('data',v_result,'meta',
+                jsonb_build_object('request_id',p_request_id));
+            RETURN jsonb_build_object('status_code',201,'body',v_response);
         END $$;
 
         CREATE FUNCTION app.correct_late_payment_charge(
             p_property_id uuid,p_charge_id uuid,p_actor_id uuid,p_idempotency_key uuid,
-            p_request_digest text,p_kind text,p_amount bigint,p_reverses_correction_id uuid,
+            p_request_digest text,p_request_id text,p_kind text,p_amount bigint,
+            p_reverses_correction_id uuid,
             p_reason text,p_correction_id uuid,p_audit_id uuid
         ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
-        DECLARE v_replay jsonb; v_before jsonb; v_result jsonb;
+        DECLARE v_replay jsonb; v_before jsonb; v_result jsonb; v_response jsonb;
         DECLARE v_charge app.late_payment_charges%ROWTYPE;
         DECLARE v_source app.late_payment_charge_corrections%ROWTYPE;
         DECLARE v_timezone text; v_now timestamptz; v_business_date date;
         DECLARE v_current bigint; v_resulting bigint; v_resolved_amount bigint;
-        DECLARE v_active_applications bigint;
+        DECLARE v_active_applications bigint; v_correlation_id uuid;
         BEGIN
+            IF p_request_id IS NULL
+                OR p_request_id!~'^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'
+            THEN RAISE EXCEPTION 'Late-payment request identity is invalid'
+                USING ERRCODE='P4602'; END IF;
             v_replay:=app.late_payment_command_replay(p_property_id,p_actor_id,'correction',
                 p_idempotency_key,p_request_digest);
             IF v_replay IS NOT NULL THEN RETURN v_replay; END IF;
@@ -530,6 +550,10 @@ def upgrade() -> None:
                     USING ERRCODE='P4608'; END IF;
             v_before:=app.late_payment_charge_snapshot(p_charge_id);
             v_now:=clock_timestamp(); v_business_date:=timezone(v_timezone,v_now)::date;
+            v_correlation_id:=pg_catalog.md5(
+                'late-payment-command:'||p_property_id::text||':'||p_actor_id::text||
+                ':correction:'||p_idempotency_key::text
+            )::uuid;
             INSERT INTO app.late_payment_charge_corrections(
                 id,late_payment_charge_id,correction_kind,amount_usd_cents,
                 reverses_correction_id,reason,previous_obligation_usd_cents,
@@ -537,7 +561,7 @@ def upgrade() -> None:
                 authorization_reference,correlation_id)
             VALUES (p_correction_id,p_charge_id,p_kind,v_resolved_amount,
                 p_reverses_correction_id,p_reason,v_current,v_resulting,v_now,p_actor_id,
-                'late_payment.charge_correction',p_idempotency_key);
+                'late_payment.charge_correction',v_correlation_id);
             SET CONSTRAINTS ALL IMMEDIATE;
             v_result:=app.late_payment_charge_snapshot(p_charge_id);
             INSERT INTO app.audit_events(
@@ -548,7 +572,7 @@ def upgrade() -> None:
             SELECT p_audit_id,v_now,v_business_date,p_actor_id,
                 'late_payment.charge_corrected','late_payment_charge',p_charge_id,p_reason,
                 'late_payment.charge_correction',p_property_id,v_before,v_result,
-                p_idempotency_key,'API','SUCCEEDED',jsonb_build_object(
+                v_correlation_id,'API','SUCCEEDED',jsonb_build_object(
                     'capability','late_payment.charge_correction','kind',p_kind,
                     'amount_usd_cents',v_resolved_amount,
                     'reverses_correction_id',p_reverses_correction_id),p_correction_id,
@@ -556,8 +580,11 @@ def upgrade() -> None:
             FROM app.invoices AS invoice WHERE invoice.id=v_charge.source_invoice_id;
             PERFORM app.record_late_payment_command(p_property_id,p_actor_id,'correction',
                 p_idempotency_key,p_request_digest,'CHARGE',p_charge_id,p_correction_id,
-                v_result,v_now);
-            RETURN v_result;
+                jsonb_build_object('data',v_result,'meta',
+                    jsonb_build_object('request_id',p_request_id)),v_now);
+            v_response:=jsonb_build_object('data',v_result,'meta',
+                jsonb_build_object('request_id',p_request_id));
+            RETURN jsonb_build_object('status_code',200,'body',v_response);
         END $$;
         """
     )
@@ -588,8 +615,8 @@ def upgrade() -> None:
         "app.require_late_payment_actor(uuid,uuid)",
         "app.late_payment_command_replay(uuid,uuid,text,uuid,text)",
         "app.record_late_payment_command(uuid,uuid,text,uuid,text,text,uuid,uuid,jsonb,timestamp with time zone)",
-        "app.finalize_late_payment_decision(uuid,uuid,uuid,uuid,text,text,bigint,text,uuid,uuid,uuid)",
-        "app.correct_late_payment_charge(uuid,uuid,uuid,uuid,text,text,bigint,uuid,text,uuid,uuid)",
+        "app.finalize_late_payment_decision(uuid,uuid,uuid,uuid,text,text,text,bigint,text,uuid,uuid,uuid)",
+        "app.correct_late_payment_charge(uuid,uuid,uuid,uuid,text,text,text,bigint,uuid,text,uuid,uuid)",
     )
     for function in functions:
         op.execute(
@@ -605,8 +632,8 @@ def upgrade() -> None:
     )
     op.execute(
         "GRANT EXECUTE ON FUNCTION "
-        "app.finalize_late_payment_decision(uuid,uuid,uuid,uuid,text,text,bigint,text,uuid,uuid,uuid),"
-        "app.correct_late_payment_charge(uuid,uuid,uuid,uuid,text,text,bigint,uuid,text,uuid,uuid) "
+        "app.finalize_late_payment_decision(uuid,uuid,uuid,uuid,text,text,text,bigint,text,uuid,uuid,uuid),"
+        "app.correct_late_payment_charge(uuid,uuid,uuid,uuid,text,text,text,bigint,uuid,text,uuid,uuid) "
         "TO prm_financial"
     )
 

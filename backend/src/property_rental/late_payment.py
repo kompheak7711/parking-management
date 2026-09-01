@@ -6,7 +6,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Final, cast
+from typing import Final, cast, overload
 from uuid import UUID, uuid4
 
 import psycopg
@@ -138,6 +138,12 @@ def late_payment_request_digest(
         ensure_ascii=False,
     )
     return hashlib.sha256(serialized.encode()).hexdigest()
+
+
+@dataclass(frozen=True, slots=True)
+class LatePaymentCommandResponse:
+    status_code: int
+    body: dict[str, object]
 
 
 @dataclass(frozen=True, slots=True)
@@ -288,7 +294,36 @@ class PostgresLatePaymentService:
         )
         return resource
 
-    def _execute(self, query: str, parameters: tuple[object, ...]) -> dict[str, object]:
+    def decision_conflict_state(
+        self, invoice_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        try:
+            resource = self._read(
+                "SELECT app.late_payment_decision_snapshot_for_invoice(%s)", invoice_id
+            )
+        except LatePaymentNotFoundError:
+            resource = self._read("SELECT app.late_payment_review_snapshot(%s)", invoice_id)
+        self._authorize(
+            actor,
+            UUID(str(resource["property_id"])),
+            LATE_PAYMENT_DECISION_CAPABILITY,
+            hide=True,
+        )
+        return resource
+
+    def charge_conflict_state(
+        self, charge_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        resource = self._read("SELECT app.late_payment_charge_snapshot(%s)", charge_id)
+        self._authorize(
+            actor,
+            UUID(str(resource["property_id"])),
+            LATE_PAYMENT_CORRECTION_CAPABILITY,
+            hide=True,
+        )
+        return resource
+
+    def _execute(self, query: str, parameters: tuple[object, ...]) -> LatePaymentCommandResponse:
         try:
             with self._command_connection() as connection:
                 self._bound_query(connection)
@@ -299,7 +334,34 @@ class PostgresLatePaymentService:
             raise self._map_error(exc) from exc
         if row is None:
             raise LatePaymentServiceUnavailableError("Late-payment command returned no result")
-        return self._resource(row[0])
+        response = self._resource(row[0])
+        status_code = response.get("status_code")
+        body = response.get("body")
+        if type(status_code) is not int or not isinstance(body, dict):
+            raise LatePaymentServiceUnavailableError("Late-payment response is unavailable")
+        return LatePaymentCommandResponse(status_code, cast(dict[str, object], body))
+
+    @overload
+    def finalize_decision(
+        self,
+        property_id: UUID,
+        invoice_id: UUID,
+        command: FinalizeLatePaymentDecisionCommand,
+        *,
+        actor: AuthenticatedActor,
+        request_id: None = None,
+    ) -> dict[str, object]: ...
+
+    @overload
+    def finalize_decision(
+        self,
+        property_id: UUID,
+        invoice_id: UUID,
+        command: FinalizeLatePaymentDecisionCommand,
+        *,
+        actor: AuthenticatedActor,
+        request_id: str,
+    ) -> LatePaymentCommandResponse: ...
 
     def finalize_decision(
         self,
@@ -308,7 +370,8 @@ class PostgresLatePaymentService:
         command: FinalizeLatePaymentDecisionCommand,
         *,
         actor: AuthenticatedActor,
-    ) -> dict[str, object]:
+        request_id: str | None = None,
+    ) -> dict[str, object] | LatePaymentCommandResponse:
         self._authorize(actor, property_id, LATE_PAYMENT_DECISION_CAPABILITY)
         digest = late_payment_request_digest(
             action="decision",
@@ -323,14 +386,15 @@ class PostgresLatePaymentService:
                 "reason": command.reason,
             },
         )
-        return self._execute(
-            "SELECT app.finalize_late_payment_decision(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+        response = self._execute(
+            "SELECT app.finalize_late_payment_decision(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (
                 property_id,
                 invoice_id,
                 self._actor_id(actor),
                 command.idempotency_key,
                 digest,
+                request_id or "late-payment-service",
                 command.outcome.value,
                 command.approved_amount_usd_cents,
                 command.reason,
@@ -339,6 +403,31 @@ class PostgresLatePaymentService:
                 uuid4(),
             ),
         )
+        if request_id is None:
+            return self._resource(response.body.get("data"))
+        return response
+
+    @overload
+    def correct_charge(
+        self,
+        property_id: UUID,
+        charge_id: UUID,
+        command: CorrectLatePaymentChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+        request_id: None = None,
+    ) -> dict[str, object]: ...
+
+    @overload
+    def correct_charge(
+        self,
+        property_id: UUID,
+        charge_id: UUID,
+        command: CorrectLatePaymentChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+        request_id: str,
+    ) -> LatePaymentCommandResponse: ...
 
     def correct_charge(
         self,
@@ -347,7 +436,8 @@ class PostgresLatePaymentService:
         command: CorrectLatePaymentChargeCommand,
         *,
         actor: AuthenticatedActor,
-    ) -> dict[str, object]:
+        request_id: str | None = None,
+    ) -> dict[str, object] | LatePaymentCommandResponse:
         self._authorize(actor, property_id, LATE_PAYMENT_CORRECTION_CAPABILITY)
         digest = late_payment_request_digest(
             action="correction",
@@ -371,14 +461,15 @@ class PostgresLatePaymentService:
                 ),
             },
         )
-        return self._execute(
-            "SELECT app.correct_late_payment_charge(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+        response = self._execute(
+            "SELECT app.correct_late_payment_charge(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
             (
                 property_id,
                 charge_id,
                 self._actor_id(actor),
                 command.idempotency_key,
                 digest,
+                request_id or "late-payment-service",
                 command.kind.value,
                 command.amount_usd_cents,
                 command.reverses_correction_id,
@@ -387,3 +478,6 @@ class PostgresLatePaymentService:
                 uuid4(),
             ),
         )
+        if request_id is None:
+            return self._resource(response.body.get("data"))
+        return response

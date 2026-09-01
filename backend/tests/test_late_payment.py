@@ -12,7 +12,12 @@ import pytest
 from fastapi.testclient import TestClient
 
 from property_rental.app import create_app
-from property_rental.identity import AuthenticatedActor, CapabilityGrant
+from property_rental.identity import (
+    AuthenticatedActor,
+    AuthorizationRequirement,
+    CapabilityGrant,
+    is_authorized,
+)
 from property_rental.late_payment import (
     MAX_USD_MINOR_UNITS,
     CorrectionKind,
@@ -20,6 +25,7 @@ from property_rental.late_payment import (
     DecisionOutcome,
     FinalizeLatePaymentDecisionCommand,
     LatePaymentApplicationReversalRequired,
+    LatePaymentCommandResponse,
     LatePaymentConflictError,
     LatePaymentIdempotencyKeyReused,
     LatePaymentNotFoundError,
@@ -94,6 +100,19 @@ class InMemoryLatePaymentFlow:
     corrections: list[CorrectLatePaymentChargeCommand] = field(default_factory=list)
     decision_error: Exception | None = None
     correction_error: Exception | None = None
+    decision_responses: dict[
+        UUID, tuple[FinalizeLatePaymentDecisionCommand, LatePaymentCommandResponse]
+    ] = field(default_factory=dict)
+    correction_responses: dict[
+        UUID, tuple[CorrectLatePaymentChargeCommand, LatePaymentCommandResponse]
+    ] = field(default_factory=dict)
+
+    def _authorize(self, resolved_actor: AuthenticatedActor, capability: str) -> None:
+        if not is_authorized(
+            resolved_actor,
+            AuthorizationRequirement(capability, str(self.property_id)),
+        ):
+            raise LatePaymentNotFoundError
 
     def property_for_invoice(self, invoice_id: UUID) -> UUID:
         if invoice_id != self.invoice_id:
@@ -106,7 +125,7 @@ class InMemoryLatePaymentFlow:
         return self.property_id
 
     def review(self, invoice_id: UUID, *, actor: AuthenticatedActor) -> dict[str, object]:
-        del actor
+        self._authorize(actor, "late_payment.review")
         assert invoice_id == self.invoice_id
         return {
             "invoice_id": str(invoice_id),
@@ -120,12 +139,26 @@ class InMemoryLatePaymentFlow:
         }
 
     def get_decision(self, invoice_id: UUID, *, actor: AuthenticatedActor) -> dict[str, object]:
-        del actor
+        self._authorize(actor, "late_payment.review")
         assert invoice_id == self.invoice_id
         return decision_resource(self.property_id, self.invoice_id, self.charge_id)
 
     def get_charge(self, charge_id: UUID, *, actor: AuthenticatedActor) -> dict[str, object]:
-        del actor
+        self._authorize(actor, "late_payment.review")
+        assert charge_id == self.charge_id
+        return charge_resource(self.property_id, self.invoice_id, self.charge_id)
+
+    def decision_conflict_state(
+        self, invoice_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        self._authorize(actor, "late_payment.final_decision")
+        assert invoice_id == self.invoice_id
+        return decision_resource(self.property_id, self.invoice_id, self.charge_id)
+
+    def charge_conflict_state(
+        self, charge_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        self._authorize(actor, "late_payment.charge_correction")
         assert charge_id == self.charge_id
         return charge_resource(self.property_id, self.invoice_id, self.charge_id)
 
@@ -136,14 +169,28 @@ class InMemoryLatePaymentFlow:
         command: FinalizeLatePaymentDecisionCommand,
         *,
         actor: AuthenticatedActor,
-    ) -> dict[str, object]:
-        del actor
+        request_id: str,
+    ) -> LatePaymentCommandResponse:
+        self._authorize(actor, "late_payment.final_decision")
         assert property_id == self.property_id
         assert invoice_id == self.invoice_id
         if self.decision_error is not None:
             raise self.decision_error
+        prior = self.decision_responses.get(command.idempotency_key)
+        if prior is not None:
+            if prior[0] != command:
+                raise LatePaymentIdempotencyKeyReused
+            return prior[1]
         self.decisions.append(command)
-        return decision_resource(self.property_id, self.invoice_id, self.charge_id)
+        response = LatePaymentCommandResponse(
+            201,
+            {
+                "data": decision_resource(self.property_id, self.invoice_id, self.charge_id),
+                "meta": {"request_id": request_id},
+            },
+        )
+        self.decision_responses[command.idempotency_key] = (command, response)
+        return response
 
     def correct_charge(
         self,
@@ -152,14 +199,28 @@ class InMemoryLatePaymentFlow:
         command: CorrectLatePaymentChargeCommand,
         *,
         actor: AuthenticatedActor,
-    ) -> dict[str, object]:
-        del actor
+        request_id: str,
+    ) -> LatePaymentCommandResponse:
+        self._authorize(actor, "late_payment.charge_correction")
         assert property_id == self.property_id
         assert charge_id == self.charge_id
         if self.correction_error is not None:
             raise self.correction_error
+        prior = self.correction_responses.get(command.idempotency_key)
+        if prior is not None:
+            if prior[0] != command:
+                raise LatePaymentIdempotencyKeyReused
+            return prior[1]
         self.corrections.append(command)
-        return charge_resource(self.property_id, self.invoice_id, self.charge_id)
+        response = LatePaymentCommandResponse(
+            200,
+            {
+                "data": charge_resource(self.property_id, self.invoice_id, self.charge_id),
+                "meta": {"request_id": request_id},
+            },
+        )
+        self.correction_responses[command.idempotency_key] = (command, response)
+        return response
 
 
 def api(flow: InMemoryLatePaymentFlow, resolved_actor: AuthenticatedActor | None) -> TestClient:
@@ -304,20 +365,23 @@ def test_mutations_enforce_independent_capabilities_csrf_and_server_owned_fields
     assert flow.decisions[-1].approved_amount_usd_cents == 1_500
 
     correction_client = api(flow, actor(property_id, "late_payment.charge_correction"))
-    correction_headers = {
-        **mutation_headers(),
-        "X-Request-ID": "late-payment-correction-replay",
-    }
+    correction_headers = mutation_headers()
+    correction_headers["X-Request-ID"] = "late-payment-correction-original"
     corrected = correction_client.post(
         correction_path, json=correction_body, headers=correction_headers
     )
     replayed = correction_client.post(
-        correction_path, json=correction_body, headers=correction_headers
+        correction_path,
+        json=correction_body,
+        headers={**correction_headers, "X-Request-ID": "late-payment-correction-replay"},
     )
     assert corrected.status_code == replayed.status_code == 200
     assert "Location" not in corrected.headers
     assert "Location" not in replayed.headers
     assert replayed.json() == corrected.json()
+    assert corrected.json()["meta"] == {"request_id": "late-payment-correction-original"}
+    assert replayed.headers["X-Request-ID"] == "late-payment-correction-replay"
+    assert len(flow.corrections) == 1
     assert flow.corrections[-1].amount_usd_cents == 500
 
 
@@ -494,6 +558,21 @@ def test_late_payment_traceability_mappings_are_truthful() -> None:
             "DB-INV-007",
             "DB-INV-008",
             "TEST-123",
+        ],
+        "test_real_api_exact_replay_and_mutation_only_conflict_state": [
+            "API-011",
+            "API-016",
+            "API-018",
+            "SEC-020",
+            "SEC-022",
+            "SEC-070",
+        ],
+        "test_two_actors_share_uuid_without_correlation_collision_and_keep_replay_scope": [
+            "API-015",
+            "API-016",
+            "API-017",
+            "SEC-019",
+            "SEC-069",
         ],
         "test_waiver_default_and_ineligible_boundaries_do_not_create_arbitrary_receivables": [
             "BR-INV-053",

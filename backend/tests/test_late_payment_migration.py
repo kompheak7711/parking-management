@@ -13,14 +13,17 @@ import psycopg
 import pytest
 from alembic import command
 from alembic.config import Config
+from fastapi.testclient import TestClient
 from psycopg import Connection, Error
 
+from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.late_payment import (
     CorrectionKind,
     CorrectLatePaymentChargeCommand,
     DecisionOutcome,
     FinalizeLatePaymentDecisionCommand,
+    LatePaymentCommandResponse,
     LatePaymentConflictError,
     LatePaymentIdempotencyKeyReused,
     LatePaymentInvalidError,
@@ -93,6 +96,15 @@ def setup_invoice(
 
 def service() -> PostgresLatePaymentService:
     return PostgresLatePaymentService(runtime_database_url(), financial_database_url())
+
+
+def api_headers(key: UUID, request_id: str) -> dict[str, str]:
+    return {
+        "Idempotency-Key": str(key),
+        "Origin": "https://localhost",
+        "X-CSRF-Token": "csrf-token",
+        "X-Request-ID": request_id,
+    }
 
 
 def test_review_decisions_replay_and_source_isolation_use_authoritative_current_balance(
@@ -216,10 +228,13 @@ def test_review_decisions_replay_and_source_isolation_use_authoritative_current_
         (invoice_id,),
     ).fetchone() == (1, 1)
     assert connection.execute(
-        "SELECT response_status,result_snapshot FROM app.late_payment_commands "
+        "SELECT response_status,response_body FROM app.late_payment_commands "
         "WHERE idempotency_key=%s",
         (key,),
-    ).fetchone() == (201, result)
+    ).fetchone() == (
+        201,
+        {"data": result, "meta": {"request_id": "late-payment-service"}},
+    )
 
     with pytest.raises(LatePaymentIdempotencyKeyReused):
         flow.finalize_decision(
@@ -239,6 +254,190 @@ def test_review_decisions_replay_and_source_isolation_use_authoritative_current_
             ),
             actor=actor,
         )
+
+
+def test_real_api_exact_replay_and_mutation_only_conflict_state(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    actor_id, property_id, _, invoice_id, _ = setup_invoice(
+        connection, period_start=date(2026, 4, 1)
+    )
+    scope = frozenset({str(property_id)})
+    resolved_actor = [
+        AuthenticatedActor(
+            actor_id=str(actor_id),
+            capability_grants=frozenset({CapabilityGrant("late_payment.final_decision", scope)}),
+        )
+    ]
+    client = TestClient(
+        create_app(
+            actor_resolver=lambda _: resolved_actor[0],
+            late_payment_flow=service(),
+        )
+    )
+    client.cookies.set("__Host-prm_csrf", "csrf-token")
+    decision_key = uuid4()
+    decision_body = {
+        "outcome": "REDUCED",
+        "approved_amount": {"currency": "USD", "minor_units": 1_500},
+        "reason": "Approved exact reduced amount",
+    }
+    decision_path = f"/api/v1/invoices/{invoice_id}/late-payment-decision"
+    original = client.post(
+        decision_path,
+        json=decision_body,
+        headers=api_headers(decision_key, "late-payment-original"),
+    )
+    replay = client.post(
+        decision_path,
+        json=decision_body,
+        headers=api_headers(decision_key, "late-payment-replay"),
+    )
+    assert original.status_code == replay.status_code == 201
+    assert replay.json() == original.json()
+    assert replay.json()["meta"] == {"request_id": "late-payment-original"}
+    assert replay.headers["X-Request-ID"] == "late-payment-replay"
+    assert connection.execute(
+        "SELECT response_status,response_body FROM app.late_payment_commands "
+        "WHERE property_id=%s AND actor_id=%s AND action='decision' AND idempotency_key=%s",
+        (property_id, actor_id, decision_key),
+    ).fetchone() == (201, original.json())
+
+    decision_conflict = client.post(
+        decision_path,
+        json={**decision_body, "reason": "A distinct final decision attempt"},
+        headers=api_headers(uuid4(), "late-payment-decision-conflict"),
+    )
+    assert decision_conflict.status_code == 409
+    assert decision_conflict.json()["error"]["current_state"] == original.json()["data"]
+
+    charge_id = UUID(original.json()["data"]["charge"]["id"])
+    resolved_actor[0] = AuthenticatedActor(
+        actor_id=str(actor_id),
+        capability_grants=frozenset({CapabilityGrant("late_payment.charge_correction", scope)}),
+    )
+    correction_path = f"/api/v1/late-payment-charges/{charge_id}/corrections"
+    correction_key = uuid4()
+    correction = client.post(
+        correction_path,
+        json={"kind": "CHARGE_REVERSAL", "reason": "Reverse complete charge"},
+        headers=api_headers(correction_key, "late-payment-correction"),
+    )
+    correction_replay = client.post(
+        correction_path,
+        json={"kind": "CHARGE_REVERSAL", "reason": "Reverse complete charge"},
+        headers=api_headers(correction_key, "late-payment-correction-replay"),
+    )
+    assert correction.status_code == 200
+    assert correction_replay.status_code == 200
+    assert correction_replay.json() == correction.json()
+    assert correction_replay.json()["meta"] == {"request_id": "late-payment-correction"}
+    correction_conflict = client.post(
+        correction_path,
+        json={
+            "kind": "REDUCTION",
+            "amount": {"currency": "USD", "minor_units": 1},
+            "reason": "Terminal conflict",
+        },
+        headers=api_headers(uuid4(), "late-payment-correction-conflict"),
+    )
+    assert correction_conflict.status_code == 409
+    assert correction_conflict.json()["error"]["current_state"] == correction.json()["data"]
+
+
+def test_two_actors_share_uuid_without_correlation_collision_and_keep_replay_scope(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    first_actor_id, property_id, _, invoice_id, _ = setup_invoice(
+        connection, period_start=date(2026, 3, 1)
+    )
+    flow = service()
+    first_actor = late_payment_actor(first_actor_id, property_id)
+    decision = flow.finalize_decision(
+        property_id,
+        invoice_id,
+        FinalizeLatePaymentDecisionCommand(
+            uuid4(), DecisionOutcome.REDUCED, 1_500, "Approved correction test charge"
+        ),
+        actor=first_actor,
+    )
+    charge_id = UUID(str(decision["charge"]["id"]))  # type: ignore[index]
+    second_actor_id = uuid4()
+    connection.execute(
+        "INSERT INTO app.user_accounts(actor_id,normalized_username,display_name,audit_name,"
+        "lifecycle_state,mfa_policy_class,provenance) VALUES (%s,%s,'Second Late Actor',"
+        "'Second Late Actor','active','optional','test')",
+        (second_actor_id, f"late-payment-{second_actor_id}"),
+    )
+    connection.commit()
+    second_actor = late_payment_actor(second_actor_id, property_id)
+    shared_key = uuid4()
+    first_command = CorrectLatePaymentChargeCommand(
+        shared_key, CorrectionKind.REDUCTION, "First actor correction", 100
+    )
+    second_command = CorrectLatePaymentChargeCommand(
+        shared_key, CorrectionKind.REDUCTION, "Second actor correction", 200
+    )
+    first = flow.correct_charge(
+        property_id,
+        charge_id,
+        first_command,
+        actor=first_actor,
+        request_id="first-actor-original",
+    )
+    first_replay = flow.correct_charge(
+        property_id,
+        charge_id,
+        first_command,
+        actor=first_actor,
+        request_id="first-actor-replay",
+    )
+    assert isinstance(first, LatePaymentCommandResponse)
+    assert first_replay == first
+    with pytest.raises(LatePaymentIdempotencyKeyReused):
+        flow.correct_charge(
+            property_id,
+            charge_id,
+            CorrectLatePaymentChargeCommand(
+                shared_key, CorrectionKind.REDUCTION, "Changed first actor input", 101
+            ),
+            actor=first_actor,
+            request_id="first-actor-changed",
+        )
+    second = flow.correct_charge(
+        property_id,
+        charge_id,
+        second_command,
+        actor=second_actor,
+        request_id="second-actor-original",
+    )
+    assert isinstance(second, LatePaymentCommandResponse)
+    assert (
+        flow.correct_charge(
+            property_id,
+            charge_id,
+            second_command,
+            actor=second_actor,
+            request_id="second-actor-replay",
+        )
+        == second
+    )
+    rows = connection.execute(
+        "SELECT correction.actor_id,correction.correlation_id,audit.correlation_id "
+        "FROM app.late_payment_charge_corrections AS correction "
+        "JOIN app.audit_events AS audit ON audit.linked_source_event_id=correction.id "
+        "WHERE correction.late_payment_charge_id=%s ORDER BY correction.occurred_at",
+        (charge_id,),
+    ).fetchall()
+    assert len(rows) == 2
+    assert {row[0] for row in rows} == {first_actor_id, second_actor_id}
+    assert len({row[1] for row in rows}) == 2
+    assert all(row[1] == row[2] and row[1] != shared_key for row in rows)
+    assert connection.execute(
+        "SELECT count(*) FROM app.late_payment_commands WHERE property_id=%s "
+        "AND action='correction' AND idempotency_key=%s",
+        (property_id, shared_key),
+    ).fetchone() == (2,)
 
 
 def test_waiver_default_and_ineligible_boundaries_do_not_create_arbitrary_receivables(
@@ -415,10 +614,13 @@ def test_corrections_preserve_original_history_bounds_and_future_application_bou
     assert reduced["original_amount"] == {"currency": "USD", "minor_units": 1_500}
     assert reduced["adjusted_obligation"] == {"currency": "USD", "minor_units": 1_000}
     assert connection.execute(
-        "SELECT response_status,result_snapshot FROM app.late_payment_commands "
+        "SELECT response_status,response_body FROM app.late_payment_commands "
         "WHERE idempotency_key=%s",
         (reduction_key,),
-    ).fetchone() == (200, reduced)
+    ).fetchone() == (
+        200,
+        {"data": reduced, "meta": {"request_id": "late-payment-service"}},
+    )
     reduction_id = UUID(str(reduced["corrections"][0]["id"]))  # type: ignore[index]
 
     restored = flow.correct_charge(
@@ -484,7 +686,8 @@ def test_corrections_preserve_original_history_bounds_and_future_application_bou
     with pytest.raises(Error) as application_conflict:
         with connection.transaction():
             connection.execute(
-                "SELECT app.correct_late_payment_charge(%s,%s,%s,%s,%s,'REDUCTION',200,NULL,"
+                "SELECT app.correct_late_payment_charge(%s,%s,%s,%s,%s,'application-conflict',"
+                "'REDUCTION',200,NULL,"
                 "'Would exceed active applications',%s,%s)",
                 (
                     property_id,
@@ -607,7 +810,7 @@ def test_audit_failure_rolls_back_decision_charge_and_command(
         with connection.transaction():
             connection.execute(
                 "SELECT app.finalize_late_payment_decision(%s,%s,%s,%s,%s,"
-                "'WAIVED',0,'Audit collision rollback',%s,%s,%s)",
+                "'audit-collision','WAIVED',0,'Audit collision rollback',%s,%s,%s)",
                 (
                     property_id,
                     invoice_id,
@@ -646,9 +849,9 @@ def test_late_payment_runtime_privileges_are_least_privilege_and_forward_only(
         "'app.late_payment_charge_financial_position','SELECT'),"
         "has_function_privilege('prm_runtime','app.late_payment_review_snapshot(uuid)','EXECUTE'),"
         "has_function_privilege('prm_runtime',"
-        "'app.finalize_late_payment_decision(uuid,uuid,uuid,uuid,text,text,bigint,text,uuid,uuid,uuid)',"
+        "'app.finalize_late_payment_decision(uuid,uuid,uuid,uuid,text,text,text,bigint,text,uuid,uuid,uuid)',"
         "'EXECUTE'),has_function_privilege('prm_financial',"
-        "'app.finalize_late_payment_decision(uuid,uuid,uuid,uuid,text,text,bigint,text,uuid,uuid,uuid)',"
+        "'app.finalize_late_payment_decision(uuid,uuid,uuid,uuid,text,text,text,bigint,text,uuid,uuid,uuid)',"
         "'EXECUTE')"
     ).fetchone() == (True, False, True, False, False, True, False, True)
     assert connection.execute(

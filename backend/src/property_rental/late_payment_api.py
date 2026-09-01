@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Annotated, Protocol
+from typing import Annotated, Protocol, TypeVar
 from uuid import UUID
 
 from fastapi import APIRouter, Header, HTTPException, Request, Response, status
@@ -28,6 +28,7 @@ from property_rental.late_payment import (
     FinalizeLatePaymentDecisionCommand,
     LatePaymentApplicationReversalRequired,
     LatePaymentAuthorizationError,
+    LatePaymentCommandResponse,
     LatePaymentConflictError,
     LatePaymentIdempotencyKeyReused,
     LatePaymentInvalidError,
@@ -48,6 +49,14 @@ class LatePaymentFlow(Protocol):
 
     def get_charge(self, charge_id: UUID, *, actor: AuthenticatedActor) -> dict[str, object]: ...
 
+    def decision_conflict_state(
+        self, invoice_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]: ...
+
+    def charge_conflict_state(
+        self, charge_id: UUID, *, actor: AuthenticatedActor
+    ) -> dict[str, object]: ...
+
     def finalize_decision(
         self,
         property_id: UUID,
@@ -55,7 +64,8 @@ class LatePaymentFlow(Protocol):
         command: FinalizeLatePaymentDecisionCommand,
         *,
         actor: AuthenticatedActor,
-    ) -> dict[str, object]: ...
+        request_id: str,
+    ) -> LatePaymentCommandResponse: ...
 
     def correct_charge(
         self,
@@ -64,7 +74,8 @@ class LatePaymentFlow(Protocol):
         command: CorrectLatePaymentChargeCommand,
         *,
         actor: AuthenticatedActor,
-    ) -> dict[str, object]: ...
+        request_id: str,
+    ) -> LatePaymentCommandResponse: ...
 
 
 class UnavailableLatePaymentFlow:
@@ -192,9 +203,12 @@ def _authorize(
     )
 
 
+InvokeResult = TypeVar("InvokeResult")
+
+
 def _invoke(
-    command: Callable[[], dict[str, object]], *, preserve_conflict: bool = False
-) -> dict[str, object]:
+    command: Callable[[], InvokeResult], *, preserve_conflict: bool = False
+) -> InvokeResult:
     try:
         return command()
     except LatePaymentNotFoundError as exc:
@@ -292,21 +306,18 @@ def create_late_payment_router(
                         body.reason,
                     ),
                     actor=actor,
+                    request_id=request.state.request_id,
                 ),
                 preserve_conflict=True,
             )
         except (LatePaymentIdempotencyKeyReused, LatePaymentApplicationReversalRequired):
             raise
         except LatePaymentConflictError:
-            try:
-                current_state = _invoke(lambda: flow.get_decision(invoice_id, actor=actor))
-            except HTTPException as exc:
-                if exc.status_code != status.HTTP_404_NOT_FOUND:
-                    raise
-                current_state = _invoke(lambda: flow.review(invoice_id, actor=actor))
+            current_state = _invoke(lambda: flow.decision_conflict_state(invoice_id, actor=actor))
             return late_payment_conflict_response(request, current_state)
+        response.status_code = resource.status_code
         response.headers["Location"] = f"/api/v1/invoices/{invoice_id}/late-payment-decision"
-        return _envelope(resource, request)
+        return resource.body
 
     @router.get("/invoices/{invoice_id}/late-payment-decision")
     def get_decision(invoice_id: UUID, request: Request) -> dict[str, object]:
@@ -331,6 +342,7 @@ def create_late_payment_router(
         charge_id: UUID,
         body: ChargeCorrectionInput,
         request: Request,
+        response: Response,
         idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
     ) -> dict[str, object] | JSONResponse:
         actor, property_id = charge_context(
@@ -349,14 +361,16 @@ def create_late_payment_router(
                         body.reverses_correction_id,
                     ),
                     actor=actor,
+                    request_id=request.state.request_id,
                 ),
                 preserve_conflict=True,
             )
         except (LatePaymentIdempotencyKeyReused, LatePaymentApplicationReversalRequired):
             raise
         except LatePaymentConflictError:
-            current_state = _invoke(lambda: flow.get_charge(charge_id, actor=actor))
+            current_state = _invoke(lambda: flow.charge_conflict_state(charge_id, actor=actor))
             return late_payment_conflict_response(request, current_state)
-        return _envelope(resource, request)
+        response.status_code = resource.status_code
+        return resource.body
 
     return router

@@ -10837,6 +10837,22 @@
       "notes": "Real PostgreSQL derives the Property-local overdue review from a current $310.05 balance, rounds 10% half-up to $31.01, accepts an exact $15 reduced Decision, atomically creates one separate Charge, replays exactly, and preserves the source Invoice. Decision and Charge snapshots expose event type, applicable Lease, Property-local business date, source, money, actor, and current effect."
     },
     {
+      "test_id": "test_real_api_exact_replay_and_mutation_only_conflict_state",
+      "upstream_ids": ["API-011", "API-016", "API-018", "SEC-020", "SEC-022", "SEC-070"],
+      "test_level": "security",
+      "test_path": "backend/tests/test_late_payment_migration.py",
+      "status": "implemented",
+      "notes": "Actual FastAPI and real PostgreSQL preserve the first complete Decision response body and status across a second request ID, while final-Decision-only and correction-only actors receive authorized current conflict snapshots without review authority."
+    },
+    {
+      "test_id": "test_two_actors_share_uuid_without_correlation_collision_and_keep_replay_scope",
+      "upstream_ids": ["API-015", "API-016", "API-017", "SEC-019", "SEC-069"],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_migration.py",
+      "status": "implemented",
+      "notes": "Two active actors use the same UUID on one Charge without colliding: actor-scoped command rows replay exactly, changed input remains rejected, and distinct deterministic namespace correlations link each immutable correction to its audit event."
+    },
+    {
       "test_id": "test_waiver_default_and_ineligible_boundaries_do_not_create_arbitrary_receivables",
       "upstream_ids": ["BR-INV-053", "BR-INV-054", "BR-INV-055", "BR-LATE-003", "API-091", "DB-INV-007", "TEST-123"],
       "test_level": "integration",
