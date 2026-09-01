@@ -664,8 +664,8 @@
     {
       "id": "v1-046-test-119-traceability-correction-required",
       "owner_action_required": false,
-      "status": "corrected_integration_done_review_running",
-      "detail": "Correction and fresh exact-SHA integration at 09b5dafc are manager-accepted with zero failures/skips. Independent review card 8548ab20-00b1-4ccf-8275-1472b704ee03 is running read-only at the immutable candidate with GPT-5.6 Sol max; release remains blocked until an explicit zero-finding PASS. No owner action is required."
+      "status": "independent_review_failed_correction_running",
+      "detail": "Independent review 8548ab20 is manager-accepted FAIL with six MEDIUM findings. Bounded correction dfe221fe is running from exact clean 09b5dafc; fresh integration, fresh review, release, and V1-047 remain dependency-blocked. No owner action is required."
     }
   ],
   "branch": "implementation/foundation",
@@ -704,16 +704,16 @@
   },
   "commit": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
   "evidence_applicability": {
-    "basis": "Corrected V1-046 candidate 09b5dafc8cb6f6d7097c7266024484d01007b0a1 has sole parent 7a5097c9f055fd7d7d91e44376f4e215dc2fa790 and a clean authorized cumulative 16-file +2281/-19 diff from 39c38e74. Fresh integration passed real PostgreSQL 464/464 with zero skips, backend 727/727, frontend 234/234, automation 186/186, traceability 22/22, and all static, audit, deployment, publication, secret, diff, and Alembic gates; manager reruns passed focused 38/38 and automation 186/186.",
+    "basis": "Candidate 09b5dafc has sole parent 7a5097c9 and a clean authorized cumulative 16-file +2281/-19 diff from 39c38e74. Integration and deterministic gates passed, but fresh independent review reproduced six MEDIUM contract defects; the candidate is not releasable. Positive gate evidence remains valid only as prior-run evidence for the bounded correction and must be rerun at its new exact SHA.",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-045 target df8096c1, closure fe00f286, and reconciliation 39c38e74 are published, synchronized, exact-SHA CI-green, and closed on Workboard; V1-046 corrected integration is manager-accepted and its fresh independent review is running.",
+    "prior_review_disposition": "V1-045 target df8096c1, closure fe00f286, and reconciliation 39c38e74 are published, synchronized, exact-SHA CI-green, and closed on Workboard; V1-046 review 8548ab20 is manager-accepted FAIL with six MEDIUM findings and bounded correction dfe221fe is running.",
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Inspect and reconcile independent review card 8548ab20-00b1-4ccf-8275-1472b704ee03 without overlapping dispatch; only an explicit zero-finding PASS may unlock release",
-  "active_worker": "property-codex-2",
-  "active_card": "8548ab20-00b1-4ccf-8275-1472b704ee03",
-  "active_attempt": "workboard:8548ab20-00b1-4ccf-8275-1472b704ee03:1788219426010",
+  "next_action": "Inspect correction card dfe221fe-d32d-4baf-acb4-442376616dd5 heartbeat, bounded diff, tests, and completion evidence without overlapping dispatch",
+  "active_worker": "property-codex-1",
+  "active_card": "dfe221fe-d32d-4baf-acb4-442376616dd5",
+  "active_attempt": "workboard:dfe221fe-d32d-4baf-acb4-442376616dd5:1788221281345",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -733,7 +733,7 @@
     "order": 46,
     "phase": "Billing",
     "risk_class": "high",
-    "status": "integration_blocked_bounded_correction_ready",
+    "status": "independent_review_failed_bounded_correction_running",
     "task": "Late-payment decision, charge, correction, and allocation boundaries",
     "roadmap_id": "V1-046"
   },
@@ -812,8 +812,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 fresh corrected exact-SHA integration is manager-accepted; independent review is running at 09b5dafc and release and V1-047 remain dependency-blocked",
-    "exact_next_action": "Inspect and reconcile independent review card 8548ab20-00b1-4ccf-8275-1472b704ee03 without overlapping dispatch; only an explicit zero-finding PASS may unlock release",
+    "current_phase": "V1-046 independent review is manager-accepted FAIL with six MEDIUM findings; bounded correction is running and release and V1-047 remain dependency-blocked",
+    "exact_next_action": "Inspect correction card dfe221fe-d32d-4baf-acb4-442376616dd5 heartbeat, bounded diff, tests, and completion evidence without overlapping dispatch",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1112,16 +1112,61 @@
       "fast_mode": false,
       "fallbacks": [],
       "read_only": true,
+      "claim_active": false,
+      "attempt_active": false,
+      "verdict": "FAIL",
+      "findings": {
+        "high": 0,
+        "medium": 6,
+        "low": 0,
+        "summary": [
+          "zero-rounded CONFIRMED_DEFAULT is rejected",
+          "API-025 financial response fields are absent",
+          "Charge correction incorrectly returns 201 with Location",
+          "API-018 conflict omits current safe state/version",
+          "DB-VIEW-007 named projection is absent",
+          "TEST-119 has false mappings including SEC-027"
+        ]
+      },
+      "positive_tests": "PASS: focused 16/16, traceability 22/22, backend 727/727, frontend 234/234, PostgreSQL 464/464 zero skips, automation 186/186, and static/build/audit/migration/security/secret/clean gates",
+      "manager_accepted": true,
+      "status": "done_manager_accepted_fail"
+    },
+    "product_review_correction_2": {
+      "card_id": "dfe221fe-d32d-4baf-acb4-442376616dd5",
+      "attempt_id": "workboard:dfe221fe-d32d-4baf-acb4-442376616dd5:1788221281345",
+      "worker": "property-codex-1",
+      "branch": "openclaw/wb-dfe221fe-d32d-4baf-acb4-442376616dd5",
+      "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-dfe221fe-d32d-4baf-acb4-442376616dd5",
+      "required_base_sha": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+      "required_base_parent": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
+      "materialized_head": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+      "materialized_parent": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
+      "workspace_recovery": "Gateway initially materialized the clean branch at root 28d3568; worker admission proved ancestry and fast-forwarded only to exact 09b5dafc before any edit",
+      "worktree_clean_at_admission": true,
+      "allowed_paths": [
+        "backend/migrations/versions/20260831_37_late_payment_api.py",
+        "backend/src/property_rental/late_payment.py",
+        "backend/src/property_rental/late_payment_api.py",
+        "backend/tests/test_late_payment.py",
+        "backend/tests/test_late_payment_migration.py",
+        "ops/traceability.json"
+      ],
+      "model": "openai/gpt-5.6-sol",
+      "reasoning": "xhigh",
+      "mode": "standard",
+      "fast_mode": false,
+      "fallbacks": [],
       "claim_active": true,
       "attempt_active": true,
-      "verdict": "pending",
-      "findings": null,
-      "status": "running"
+      "integration_card_id": "87d90c87-8cca-4529-98ab-a22646332e77",
+      "rereview_card_id": "208ac3de-72f2-45a2-9be7-4e096aaf08ca",
+      "status": "running_admission_passed"
     },
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-08-31T23:37:16Z"
+    "updated_at": "2026-09-01T00:08:00Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -1141,9 +1186,9 @@
     "immediate_run_duration_ms": 449354,
     "immediate_run_findings": "integration attempt accurately stopped and reconciled after one TEST-119 traceability defect; all other gates passed and both V1-046 worktrees remained clean",
     "nonfatal_run_diagnostic": "one bounded shell discovery command failed after the authoritative state was established; the cycle completed successfully with explicit reconciliation",
-    "current_run_started_at": "2026-08-31T23:32:20.452Z",
+    "current_run_started_at": "2026-09-01T00:01:50.063Z",
     "current_run_status": "running",
-    "next_run_at": "2026-09-01T00:02:20.439Z",
+    "next_run_at": "2026-09-01T00:31:50.059Z",
     "recovery_commit": "3d4ba8538ed838dfb0ed96f995d4a4623a6bbce8",
     "recovery_ci_run_id": 33417142442,
     "recovery_ci_status": "success",

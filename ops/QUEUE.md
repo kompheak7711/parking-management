@@ -56,3 +56,8 @@ The executable finite queue is now `ops/V1_ROADMAP.json`. It contains 60 stable 
 explicit dependencies, canonical authorities, scope boundaries, risk classes, acceptance
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
+
+Current live queue position: V1-046 independent review is manager-accepted FAIL with six
+MEDIUM findings. Bounded correction card `dfe221fe-d32d-4baf-acb4-442376616dd5` is running;
+fresh integration `87d90c87-8cca-4529-98ab-a22646332e77`, fresh review
+`208ac3de-72f2-45a2-9be7-4e096aaf08ca`, release, and V1-047 remain dependency-blocked.
