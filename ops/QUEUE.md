@@ -58,8 +58,9 @@ profiles, authorization status, and deterministic order. This legacy narrative q
 historical context only and must not be used to invent successors.
 
 Current live queue position: owner-authorized V1-047 H1-H5 coordination
-correction is manager-accepted DONE; fresh cumulative integration is RUNNING
-exactly once on `property-codex-3`, before implementation.
+correction and fresh cumulative integration are manager-accepted DONE; one fresh
+independent max review is RUNNING exactly once on `property-codex-2`, before
+implementation.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
@@ -131,8 +132,20 @@ as attempt `workboard:82257d37-d17b-42f3-8909-b855dfac5eac:1788296690469`
 in clean managed branch/worktree
 `openclaw/wb-82257d37-d17b-42f3-8909-b855dfac5eac` /
 `wb-82257d37-d17b-42f3-8909-b855dfac5eac` at exact `587768eb`, parent
-`3a912c3`, tree `814cdcee`. Preserve and inspect that healthy integration; after
-manager acceptance, create one fresh independent max review. Do not
+`3a912c3`, tree `814cdcee`. Worker and manager independently passed focused 5/5,
+coordination 91/91, automation 189/189, and every exact scope/integrity gate
+with zero candidate failures/skips and 0 HIGH, 0 MEDIUM, 0 LOW; complete
+five-commit/four-path diff is +3440/-84 with binary SHA-256 `fe60b379`. The
+worker released to REVIEW and property-manager accepted card `82257d37` DONE
+after reconciling only its stale execution presentation. Fresh independent max
+review `94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` was created once with stable key
+`v1-047-ops-independent-review-587768e-v1` and started exactly once with zero
+start failures on `property-codex-2` as attempt
+`workboard:94f964ff-8a8a-4f54-a018-aa0d76aaa2b7:1788297687123` in clean managed
+branch/worktree `openclaw/wb-94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` /
+`wb-94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` at immutable `587768eb`. Preserve
+and inspect that healthy read-only GPT-5.6 Sol `max`, Standard/Fast-off review.
+Do not
 install, bootstrap the live card, publish, or dispatch implementation `26b14ae0`
 before an accepted zero-finding independent review.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent

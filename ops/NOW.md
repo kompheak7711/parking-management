@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — cumulative integration running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -218,7 +218,26 @@
   start failures. Its clean managed branch/worktree are
   `openclaw/wb-82257d37-d17b-42f3-8909-b855dfac5eac` /
   `wb-82257d37-d17b-42f3-8909-b855dfac5eac` at exact `587768eb`, parent
-  `3a912c3`, tree `814cdcee`; the claim and execution are RUNNING and healthy.
+  `3a912c3`, tree `814cdcee`. Worker and manager independently verified exactly
+  five linear commits, zero merges, four authorized paths, +3440/-84, binary
+  diff SHA-256 `fe60b379c7c4cb06c4374fb164a0cdee8c7363258661cc54d6e7c0fec1611ab2`,
+  focused H1-H5 5/5, coordination 91/91, and automation 189/189 with zero
+  candidate failures/skips; all integrity gates passed and both found 0 HIGH,
+  0 MEDIUM, 0 LOW. Two preliminary worker command setup errors were corrected
+  before candidate assertions; manager reruns were clean. The worker terminally
+  released to REVIEW; property-manager stopped only the stale execution
+  presentation, preserved all evidence, and accepted card `82257d37` DONE.
+- Fresh independent review: Workboard
+  `94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` was created once with stable
+  idempotency key `v1-047-ops-independent-review-587768e-v1`, parent
+  `82257d37`, and the complete immutable `ece9afd..587768eb` diff. It is RUNNING
+  exactly once on `property-codex-2` as attempt
+  `workboard:94f964ff-8a8a-4f54-a018-aa0d76aaa2b7:1788297687123` in clean
+  managed branch/worktree
+  `openclaw/wb-94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` /
+  `wb-94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` at exact `587768eb`. Runtime is
+  GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks, fresh and read-only;
+  the claim is healthy and the dispatch had zero start failures.
 - Prior blocker-state publication: exact ops-only commit
   `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -247,16 +266,16 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the healthy fresh cumulative integration attempt. V1-047
+- Blocker: none for the healthy fresh independent review attempt. V1-047
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect the healthy integration attempt. When
-  it concludes, property-manager must verify its immutable SHA, parent, complete
-  five-commit/four-path diff, clean worktree, runtime proof, test counts, and
-  findings before creating a fresh independent GPT-5.6 Sol `max` review. Do not
-  install, publish, bootstrap the live V1-047 card, or dispatch implementation
-  `26b14ae0` before an accepted zero-finding verdict.
+- Exact next action: preserve and inspect the healthy independent review. When
+  it concludes, property-manager must verify its immutable SHA, complete diff,
+  clean worktree, runtime proof, test counts, and every finding before accepting
+  or routing one bounded correction. Do not install, publish, bootstrap the live
+  V1-047 card, or dispatch implementation `26b14ae0` before an accepted
+  zero-finding verdict.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
@@ -269,11 +288,12 @@
   integration `c108b139` is manager-accepted DONE with zero findings,
   independent max review `28daaec5` is manager-accepted DONE with 5 HIGH/
   0 MEDIUM/0 LOW, exact correction `c3536723` is manager-accepted DONE at
-  `587768eb` with 0 HIGH/0 MEDIUM/0 LOW, and fresh cumulative integration
-  `82257d37` is RUNNING exactly once on `property-codex-3` at immutable
-  `587768eb` with a healthy claim and zero start failures on the recovered
-  dispatch. Implementation remains blocked/unstarted.
-- Automation exact next action: inspect the healthy integration attempt and,
-  after property-manager acceptance, route a fresh independent `max` review.
+  `587768eb` with 0 HIGH/0 MEDIUM/0 LOW, fresh cumulative integration
+  `82257d37` is manager-accepted DONE with zero findings, and fresh independent
+  max review `94f964ff` is RUNNING exactly once on `property-codex-2` at
+  immutable `587768eb` with a healthy claim and zero start failures.
+  Implementation remains blocked/unstarted.
+- Automation exact next action: inspect the healthy independent review and
+  manager-verify its exact verdict before any installation or implementation.
 
 <!-- AUTOMATION_STATUS_END -->
