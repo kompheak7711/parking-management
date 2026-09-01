@@ -67,8 +67,12 @@ DONE at exact `47798abdbacf04df917eea6ee7f2b889eee7ac8c`. Fresh integration
 findings. Fresh independent rereview `7ab561b7-7fee-483c-88ce-759273ceb9f6`
 is manager-accepted DONE as PASS with zero findings at the immutable candidate.
 Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is running in one clean managed
-worktree from exact reviewed `47798abd`. Its first preflight-only attempt safely
-blocked before Git mutation on an effective `high` versus required `xhigh`
-runtime; the preserved card is now running one bounded GPT-5.6 Sol `xhigh`,
-no-fallback recovery attempt. V1-047 remains blocked until V1-046 is fully
-released, published, exact-SHA CI-green, reconciled, and closed.
+worktree. Its first preflight-only attempt safely blocked before Git mutation on
+an effective `high` versus required `xhigh` runtime. Its second GPT-5.6 Sol
+`xhigh`, no-fallback attempt created clean unpushed merge `62ef004a`, then
+stopped before publication because locked frontend dependencies were absent.
+Property-manager installed the exact lockfile environment and reproduced
+frontend 234/234 with zero failures/skips; the same card, merge, branch, and
+worktree are now running one bounded third attempt with a healthy claim and
+heartbeat. V1-047 remains blocked until V1-046 is fully released, published,
+exact-SHA CI-green, reconciled, and closed.

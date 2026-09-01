@@ -41,23 +41,25 @@
   attempt presentation was stopped only after terminal proof; its evidence,
   session, branch, and worktree remain preserved.
 - Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is RUNNING for
-  `property-codex-1`, recovery attempt
-  `workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788233653256`, branch
+  `property-codex-1`, bounded recovery attempt
+  `workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788235506113`, branch
   `openclaw/wb-3266b3a3-e244-4926-ade8-6cc13eff775f`, managed worktree
   `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-3266b3a3-e244-4926-ade8-6cc13eff775f`.
   The first preflight-only attempt by `property-codex-3` stopped before any Git
   mutation because its immutable rollout proved `high`, not required `xhigh`;
-  its evidence remains preserved. Bounded recovery reassigned the same card and
-  clean worktree to the already configured GPT-5.6 Sol `xhigh`, no-fallback
-  worker. The supported Gateway started exactly that one expected recovery with
-  zero start failures. The worker then proved its exact active rollout as
-  GPT-5.6 Sol `xhigh` with an empty fallback list before any Git mutation and
-  continues with a healthy claim and heartbeat.
-  The worktree remains clean at reviewed `47798abd`, parent `0a55db2b`, tree
-  `b337076e`. The recovery
-  is bound to the non-rewriting candidate/ops-history integration, full local
-  and PostgreSQL gates, normal push, exact-SHA CI, closure, and reconciliation.
-  The candidate is not yet published.
+  its evidence remains preserved. The second attempt proved GPT-5.6 Sol
+  `xhigh` with no fallback, created the clean unpushed non-rewriting release
+  merge `62ef004ae25f1d9088f714e4acc571b8912c6bcc` with parents reviewed
+  candidate `47798abd` and manager ops tip `a945d125`, then stopped before
+  publication when `make frontend-test` found that the managed worktree lacked
+  installed locked dependencies (`vitest: command not found`, exit 127).
+  Property-manager restored the exact lockfile environment with
+  `make frontend-install`, reproduced frontend PASS 234/234 across 17/17 files
+  with zero failures/skips and zero npm audit vulnerabilities, and confirmed
+  the merge remained clean. The supported Gateway then started exactly the one
+  expected third attempt with zero start failures; its claim and heartbeat are
+  healthy. It must rerun every complete merged-tree gate before normal push,
+  exact-SHA CI, closure, and reconciliation. The candidate is not yet published.
 - Scheduler `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains the enabled singleton
   on a 30-minute interval with GPT-5.6 Sol `xhigh`, Standard/Fast-off. The
   authoritative prompt and saved payload are byte-identical at 11,868 bytes,
@@ -66,6 +68,7 @@
   `5672dfdc554b14dfaab2c2b5d096ee1f7724744f` with successful GitHub Actions
   run `33448153128`.
 - Owner action required: no.
-- Exact next action: continue to inspect and reconcile release `3266b3a3` health, heartbeat,
-  exact candidate/metadata history binding, deterministic gates, publication,
-  exact-SHA CI, closure, and terminal proof without overlapping dispatch.
+- Exact next action: continue to inspect and reconcile release `3266b3a3`
+  recovery health, xhigh runtime reconfirmation, complete merged-tree gates,
+  publication, exact-SHA CI, closure, and terminal proof without overlapping
+  dispatch.
