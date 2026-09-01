@@ -138,16 +138,21 @@ with zero candidate failures/skips and 0 HIGH, 0 MEDIUM, 0 LOW; complete
 five-commit/four-path diff is +3440/-84 with binary SHA-256 `fe60b379`. The
 worker released to REVIEW and property-manager accepted card `82257d37` DONE
 after reconciling only its stale execution presentation. Fresh independent max
-review `94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` was created once with stable key
-`v1-047-ops-independent-review-587768e-v1` and started exactly once with zero
-start failures on `property-codex-2` as attempt
-`workboard:94f964ff-8a8a-4f54-a018-aa0d76aaa2b7:1788297687123` in clean managed
-branch/worktree `openclaw/wb-94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` /
-`wb-94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` at immutable `587768eb`. Preserve
-and inspect that healthy read-only GPT-5.6 Sol `max`, Standard/Fast-off review.
-Do not
-install, bootstrap the live card, publish, or dispatch implementation `26b14ae0`
-before an accepted zero-finding independent review.
+review `94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` is property-manager-accepted DONE
+at immutable `587768eb` with FAIL verdict 3 HIGH, 0 MEDIUM, 0 LOW after reviewer
+and manager coordination 91/91 and automation 189/189 passed with zero failures/
+skips. Manager independently reproduced all three fail-closed bypasses. One
+bounded correction `dafb7f51-a40a-4a3d-a459-79ead8040e3f` was created with
+stable key `v1-047-ops-correction-three-high-587768e-v1`. Its first Gateway
+start failed before worker/session/worktree creation because the ledger lacked
+an absolute source checkout; the same card was rebound to the exact clean review
+worktree and started once with zero start failures on `property-codex-1` as
+attempt `workboard:dafb7f51-a40a-4a3d-a459-79ead8040e3f:1788300750975`. Its
+managed branch/worktree start clean at exact `587768eb`, parent `3a912c3`, tree
+`814cdcee`. Preserve and inspect that healthy GPT-5.6 Sol `xhigh`, Standard/
+Fast-off correction. Do not install, bootstrap the live card, publish, or
+dispatch implementation `26b14ae0` before fresh integration and an accepted
+zero-finding independent review.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent
 `1c523409`; local automation passed 189/189, exact-SHA CI run `33512759067`
 passed all four jobs, and local/tracking/fetched/live-remote refs match.

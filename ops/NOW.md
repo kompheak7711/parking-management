@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded H1-H3 correction running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -228,16 +228,27 @@
   released to REVIEW; property-manager stopped only the stale execution
   presentation, preserved all evidence, and accepted card `82257d37` DONE.
 - Fresh independent review: Workboard
-  `94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` was created once with stable
-  idempotency key `v1-047-ops-independent-review-587768e-v1`, parent
-  `82257d37`, and the complete immutable `ece9afd..587768eb` diff. It is RUNNING
-  exactly once on `property-codex-2` as attempt
-  `workboard:94f964ff-8a8a-4f54-a018-aa0d76aaa2b7:1788297687123` in clean
-  managed branch/worktree
-  `openclaw/wb-94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` /
-  `wb-94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` at exact `587768eb`. Runtime is
-  GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks, fresh and read-only;
-  the claim is healthy and the dispatch had zero start failures.
+  `94f964ff-8a8a-4f54-a018-aa0d76aaa2b7` is property-manager-accepted DONE at
+  immutable `587768eb` with FAIL verdict 3 HIGH, 0 MEDIUM, 0 LOW. Reviewer and
+  manager each passed coordination 91/91 and automation 189/189 with zero
+  failures/skips. Manager independently reproduced the slash-punctuated and
+  over-eight-word sensitive-assignment bypass, blocked/ambiguous board-owner
+  bypasses, and symlink registry-alias bypass. The generic Workboard execution
+  field reports `model=default`; cross-agent provider metadata is unavailable
+  from this lane and no substitution was inferred. Candidate remains rejected,
+  uninstalled, and unpublished.
+- Bounded H1-H3 correction: Workboard
+  `dafb7f51-a40a-4a3d-a459-79ead8040e3f` was created once with stable key
+  `v1-047-ops-correction-three-high-587768e-v1`, exact base `587768eb`, four
+  allowed paths, and GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks.
+  The first Gateway start failed before worker/session/worktree creation because
+  the ledger omitted an absolute source checkout. The same card preserved that
+  evidence, was rebound to the exact clean review worktree, and then started
+  once with zero start failures on `property-codex-1` as attempt
+  `workboard:dafb7f51-a40a-4a3d-a459-79ead8040e3f:1788300750975` in managed
+  branch/worktree `openclaw/wb-dafb7f51-a40a-4a3d-a459-79ead8040e3f` /
+  `wb-dafb7f51-a40a-4a3d-a459-79ead8040e3f`. Its clean initial HEAD is exact
+  `587768eb`, parent `3a912c3`, tree `814cdcee`; the claim is healthy.
 - Prior blocker-state publication: exact ops-only commit
   `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -266,16 +277,16 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the healthy fresh independent review attempt. V1-047
+- Blocker: none for the healthy bounded correction attempt. V1-047
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect the healthy independent review. When
-  it concludes, property-manager must verify its immutable SHA, complete diff,
-  clean worktree, runtime proof, test counts, and every finding before accepting
-  or routing one bounded correction. Do not install, publish, bootstrap the live
-  V1-047 card, or dispatch implementation `26b14ae0` before an accepted
-  zero-finding verdict.
+- Exact next action: preserve and inspect the healthy H1-H3 correction. When it
+  concludes, property-manager must verify its exact SHA/parent/tree, four-path
+  diff, clean worktree, runtime evidence, regressions, and complete gates before
+  fresh cumulative integration and a fresh independent max review. Do not
+  install, publish, bootstrap the live V1-047 card, or dispatch implementation
+  `26b14ae0` before an accepted zero-finding verdict.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
@@ -289,11 +300,12 @@
   independent max review `28daaec5` is manager-accepted DONE with 5 HIGH/
   0 MEDIUM/0 LOW, exact correction `c3536723` is manager-accepted DONE at
   `587768eb` with 0 HIGH/0 MEDIUM/0 LOW, fresh cumulative integration
-  `82257d37` is manager-accepted DONE with zero findings, and fresh independent
-  max review `94f964ff` is RUNNING exactly once on `property-codex-2` at
-  immutable `587768eb` with a healthy claim and zero start failures.
+  `82257d37` is manager-accepted DONE with zero findings, fresh independent max
+  review `94f964ff` is manager-accepted DONE with 3 HIGH/0 MEDIUM/0 LOW, and
+  exact H1-H3 correction `dafb7f51` is RUNNING once on `property-codex-1` from
+  immutable `587768eb` after one pre-worker workspace-source recovery.
   Implementation remains blocked/unstarted.
-- Automation exact next action: inspect the healthy independent review and
-  manager-verify its exact verdict before any installation or implementation.
+- Automation exact next action: inspect the healthy H1-H3 correction and
+  manager-verify its exact result before fresh integration/review or installation.
 
 <!-- AUTOMATION_STATUS_END -->
