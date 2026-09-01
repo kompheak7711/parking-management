@@ -665,7 +665,7 @@
       "id": "v1-046-release-running",
       "owner_action_required": false,
       "status": "zero_finding_rereview_accepted_release_running",
-      "detail": "Correction 0efc51d0, zero-finding integration 6dc815a8, and zero-finding fresh rereview 7ab561b7 are manager-accepted DONE at exact clean 47798abd. Release 3266b3a3 is running in one clean managed worktree; V1-047 remains dependency-held. No owner action is required."
+      "detail": "Correction 0efc51d0, zero-finding integration 6dc815a8, and zero-finding fresh rereview 7ab561b7 are manager-accepted DONE at exact clean 47798abd. Release 3266b3a3 first stopped preflight-only before Git mutation because its rollout was high rather than required xhigh; the same preserved card and clean worktree now have one bounded GPT-5.6 Sol xhigh/no-fallback recovery attempt running. V1-047 remains dependency-held. No owner action is required."
     }
   ],
   "branch": "implementation/foundation",
@@ -711,9 +711,9 @@
   },
   "idle_reason": null,
   "next_action": "Inspect and reconcile release card 3266b3a3-e244-4926-ade8-6cc13eff775f health, heartbeat, exact candidate and metadata-history binding, deterministic gates, publication, exact-SHA CI, closure, and terminal proof without overlapping dispatch",
-  "active_worker": "property-codex-3",
+  "active_worker": "property-codex-1",
   "active_card": "3266b3a3-e244-4926-ade8-6cc13eff775f",
-  "active_attempt": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788232491145",
+  "active_attempt": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788233653256",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -1319,8 +1319,12 @@
     },
     "product_release": {
       "card_id": "3266b3a3-e244-4926-ade8-6cc13eff775f",
-      "attempt_id": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788232491145",
-      "worker": "property-codex-3",
+      "attempt_id": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788233653256",
+      "worker": "property-codex-1",
+      "prior_attempt_id": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788232491145",
+      "prior_worker": "property-codex-3",
+      "prior_attempt_status": "blocked_preflight_only_before_git_mutation",
+      "prior_attempt_failure": "effective reasoning high did not satisfy required xhigh; candidate, target, branches, and worktrees remained clean and unchanged",
       "branch": "openclaw/wb-3266b3a3-e244-4926-ade8-6cc13eff775f",
       "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-3266b3a3-e244-4926-ade8-6cc13eff775f",
       "source_branch": "openclaw/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6",
@@ -1328,7 +1332,7 @@
       "candidate_sha": "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
       "candidate_parent": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
       "candidate_tree": "b337076e239acd1b2c3c4711af908675bb6841fe",
-      "metadata_tip_at_dispatch": "835ecfdf0f378008830feb054d81309efb952385",
+      "metadata_tip_at_dispatch": "9612ca885026662ae719456398ab76a52428ff20",
       "model": "openai/gpt-5.6-sol",
       "reasoning": "xhigh",
       "risk_reason": "financial migration, transaction, concurrency, security, Git integration, publication, and exact-SHA CI",
@@ -1337,11 +1341,12 @@
       "fallbacks": [],
       "claim_active": true,
       "attempt_active": true,
+      "runtime_identity_proof": "PASS before Git mutation: active rollout gpt-5.6-sol xhigh and empty fallback list; configured agent primary, fallback list, and thinkingDefault agree",
       "worktree_clean_at_admission": true,
       "dispatch_started": 1,
       "start_failures": 0,
       "publication_completed": false,
-      "status": "running_admission_passed"
+      "status": "running_recovery_runtime_admission_passed"
     },
     "product_correction_3_rereview": {
       "card_id": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
@@ -2296,10 +2301,10 @@
     "PASS: fresh integration 6dc815a8 is manager-accepted DONE with zero findings at exact 47798abd; focused 18/18, backend 729/729, frontend 234/234, isolated PostgreSQL 467/467 zero skips, automation 186/186, and all required guards passed",
     "PASS: fresh independent rereview 7ab561b7 started exactly one property-codex-2 worker in a clean managed worktree at immutable 47798abd; Gateway dispatch reported zero start failures",
     "PASS: fresh independent rereview 7ab561b7 is manager-accepted DONE with zero findings at exact 47798abd; reviewer gates passed focused 18/18, backend 729/729, frontend 234/234, PostgreSQL 467/467 zero skips, automation 186/186, adversarial 2/2, revision upgrade 1/1, and every required guard; manager exact-diff checks and focused 18/18 passed",
-    "PASS: release 3266b3a3 started exactly one property-codex-3 worker through the supported Gateway in a clean managed worktree at immutable 47798abd; GPT-5.6 Sol xhigh, no fallback, Standard/Fast-off; zero start failures"
+    "FAIL/RECOVERED: release 3266b3a3 first started one property-codex-3 preflight-only attempt whose immutable rollout was GPT-5.6 Sol high rather than required xhigh; it stopped before Git mutation with exact candidate/worktree preserved. The same card was reassigned to property-codex-1 and the supported Gateway started exactly one recovery attempt with zero start failures; the worker then proved its exact active rollout as GPT-5.6 Sol xhigh with empty fallbacks before Git mutation"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T03:15:29Z",
+  "timestamp": "2026-09-01T03:37:07Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

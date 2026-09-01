@@ -41,13 +41,20 @@
   attempt presentation was stopped only after terminal proof; its evidence,
   session, branch, and worktree remain preserved.
 - Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is RUNNING for
-  `property-codex-3`, attempt
-  `workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788232491145`, branch
+  `property-codex-1`, recovery attempt
+  `workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788233653256`, branch
   `openclaw/wb-3266b3a3-e244-4926-ade8-6cc13eff775f`, managed worktree
   `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-3266b3a3-e244-4926-ade8-6cc13eff775f`.
-  Admission is clean at exact reviewed `47798abd`, parent `0a55db2b`, tree
-  `b337076e`. Exactly one worker started through the supported Gateway with zero
-  start failures under GPT-5.6 Sol `xhigh`, no fallback, Standard/Fast-off. It
+  The first preflight-only attempt by `property-codex-3` stopped before any Git
+  mutation because its immutable rollout proved `high`, not required `xhigh`;
+  its evidence remains preserved. Bounded recovery reassigned the same card and
+  clean worktree to the already configured GPT-5.6 Sol `xhigh`, no-fallback
+  worker. The supported Gateway started exactly that one expected recovery with
+  zero start failures. The worker then proved its exact active rollout as
+  GPT-5.6 Sol `xhigh` with an empty fallback list before any Git mutation and
+  continues with a healthy claim and heartbeat.
+  The worktree remains clean at reviewed `47798abd`, parent `0a55db2b`, tree
+  `b337076e`. The recovery
   is bound to the non-rewriting candidate/ops-history integration, full local
   and PostgreSQL gates, normal push, exact-SHA CI, closure, and reconciliation.
   The candidate is not yet published.
@@ -59,6 +66,6 @@
   `5672dfdc554b14dfaab2c2b5d096ee1f7724744f` with successful GitHub Actions
   run `33448153128`.
 - Owner action required: no.
-- Exact next action: inspect and reconcile release `3266b3a3` health, heartbeat,
+- Exact next action: continue to inspect and reconcile release `3266b3a3` health, heartbeat,
   exact candidate/metadata history binding, deterministic gates, publication,
   exact-SHA CI, closure, and terminal proof without overlapping dispatch.
