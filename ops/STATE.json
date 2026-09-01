@@ -702,20 +702,20 @@
     "tranche_id": "V1-047"
   },
   "idle_reason": null,
-  "next_action": "Preserve and inspect bounded correction 0167afb8 through REVIEW; then property-manager independently verifies its exact SHA, diff, tests, and findings before fresh integration and fresh independent review",
-  "active_worker": "property-codex-1",
-  "active_card": "0167afb8-24e8-4391-b4d0-9ec4896cdf37",
+  "next_action": "Preserve and inspect fresh cumulative integration c108b139 through REVIEW; then property-manager independently verifies its exact SHA, cumulative diff, tests, and findings before fresh independent max review",
+  "active_worker": "property-codex-3",
+  "active_card": "c108b139-47b3-4481-b233-583eea7c3b72",
   "active_claim": {
-    "owner": "property-codex-1",
-    "claimed_at_ms": 1788282599867,
-    "last_heartbeat_at_ms": 1788282618151,
-    "expires_at_ms": 1788286218151
+    "owner": "property-codex-3",
+    "claimed_at_ms": 1788284271379,
+    "last_heartbeat_at_ms": 1788284271379,
+    "expires_at_ms": 1788287871379
   },
-  "active_attempt": "workboard:0167afb8-24e8-4391-b4d0-9ec4896cdf37:1788282599912",
-  "active_branch": "openclaw/wb-0167afb8-24e8-4391-b4d0-9ec4896cdf37",
-  "active_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-0167afb8-24e8-4391-b4d0-9ec4896cdf37",
-  "candidate_sha": "85e18b801b8dda55c3482a3fc3cd5725847b5a55",
-  "candidate_parent": "8b1046be2774a65d7e19628abdc1ce39957f62e1",
+  "active_attempt": "workboard:c108b139-47b3-4481-b233-583eea7c3b72:1788284271432",
+  "active_branch": "openclaw/wb-c108b139-47b3-4481-b233-583eea7c3b72",
+  "active_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-c108b139-47b3-4481-b233-583eea7c3b72",
+  "candidate_sha": "3a912c30181a144e35212016efde6ca4bd79d225",
+  "candidate_parent": "85e18b801b8dda55c3482a3fc3cd5725847b5a55",
   "next_candidate": {
     "acceptance_profile": "api_ui",
     "authorities": [
@@ -822,15 +822,15 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-047 activation 870472b7 is published and CI-green; independent max review 79120fbe is manager-accepted FAIL with 2 HIGH findings at exact 85e18b8; bounded correction 0167afb8 runs exactly once while implementation 26b14ae0 remains blocked",
-    "exact_next_action": "Inspect bounded correction 0167afb8 through REVIEW; property-manager independently verifies its exact result before fresh cumulative integration, fresh independent max review, or any installation and implementation dispatch",
+    "current_phase": "V1-047 activation 870472b7 is published and CI-green; bounded correction 0167afb8 is manager-accepted DONE at exact 3a912c3 with zero findings; fresh cumulative integration c108b139 runs exactly once while implementation 26b14ae0 remains blocked",
+    "exact_next_action": "Inspect fresh cumulative integration c108b139 through REVIEW; property-manager independently verifies its exact result before fresh independent max review or any installation and implementation dispatch",
     "scheduler_health": {
       "enabled": true,
       "schedule_ms": 1800000,
       "previous_run_status": "ok",
-      "previous_run_duration_ms": 1406646,
-      "current_run_recovery": "running_correction_dispatched",
-      "next_cadence_at_ms": 1788283910059,
+      "previous_run_duration_ms": 1163337,
+      "current_run_recovery": "running_cumulative_integration_dispatched",
+      "next_cadence_at_ms": 1788285710059,
       "prompt_payload_identity": "PASS: byte-identical, 11868 bytes on disk, SHA-256 0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56"
     },
     "coordination_safety_rereview": {
@@ -1055,9 +1055,9 @@
         "mode": "standard",
         "fast_mode": false,
         "fallbacks": [],
-        "claim_active": true,
-        "attempt_active": true,
-        "worker_active": true,
+        "claim_active": false,
+        "attempt_active": false,
+        "worker_active": false,
         "attempt_id": "workboard:0167afb8-24e8-4391-b4d0-9ec4896cdf37:1788282599912",
         "branch": "openclaw/wb-0167afb8-24e8-4391-b4d0-9ec4896cdf37",
         "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-0167afb8-24e8-4391-b4d0-9ec4896cdf37",
@@ -1065,8 +1065,8 @@
         "dispatch_count": 1,
         "start_failures": 0,
         "claimed_at_ms": 1788282599867,
-        "last_heartbeat_at_ms": 1788282618151,
-        "claim_expires_at_ms": 1788286218151,
+        "last_heartbeat_at_ms": 1788283659890,
+        "claim_expires_at_ms": null,
         "allowed_paths": [
           "ops/AUTOMATION_TRACEABILITY.json",
           "ops/OPENCLAW_INSTALL_MANIFEST.json",
@@ -1074,12 +1074,48 @@
           "scripts/test_openclaw_worker_coordination.py"
         ],
         "findings_to_correct": {"high": 2, "medium": 0, "low": 0},
-        "candidate_sha": null,
+        "candidate_sha": "3a912c30181a144e35212016efde6ca4bd79d225",
         "candidate_parent": "85e18b801b8dda55c3482a3fc3cd5725847b5a55",
+        "candidate_tree": "6fa43b2d719b43062aff2b0f650be1404ff283f3",
+        "diff_sha256": "1094d407e80aceac14dbd6778e473daa5367cce6527bc2ea29a432aa07bdcdbf",
+        "tests": "PASS: focused 2/2, coordination 86/86, automation 189/189, zero failures, zero skips",
+        "verification": "PASS: manager independently verified exact four-path +249/-35 correction, installed dispatcher cwd behavior, live late-failure rejection, manifest/traceability/JSON/scope/diff/secret/clean gates",
+        "findings": {"high": 0, "medium": 0, "low": 0},
+        "manager_accepted": true,
+        "status": "done_manager_accepted"
+      },
+      "review_findings_correction_2_integration": {
+        "card_id": "c108b139-47b3-4481-b233-583eea7c3b72",
+        "parent_correction_card_id": "0167afb8-24e8-4391-b4d0-9ec4896cdf37",
+        "worker": "property-codex-3",
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "xhigh",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "read_only": true,
+        "claim_active": true,
+        "attempt_active": true,
+        "worker_active": true,
+        "attempt_id": "workboard:c108b139-47b3-4481-b233-583eea7c3b72:1788284271432",
+        "branch": "openclaw/wb-c108b139-47b3-4481-b233-583eea7c3b72",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-c108b139-47b3-4481-b233-583eea7c3b72",
+        "source_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-0167afb8-24e8-4391-b4d0-9ec4896cdf37",
+        "candidate_sha": "3a912c30181a144e35212016efde6ca4bd79d225",
+        "candidate_parent": "85e18b801b8dda55c3482a3fc3cd5725847b5a55",
+        "candidate_tree": "6fa43b2d719b43062aff2b0f650be1404ff283f3",
+        "cumulative_base": "ece9afdaf1c4d5bd79b44b0826a4b14a8637f13e",
+        "cumulative_commits": 4,
+        "cumulative_diff_sha256": "a24fa3964361999b4e271cdb03a375c8eb3a38ec6031ddb9c0e862b05fdabd41",
+        "dispatch_count": 1,
+        "start_failures": 0,
+        "claimed_at_ms": 1788284271379,
+        "last_heartbeat_at_ms": 1788284271379,
+        "claim_expires_at_ms": 1788287871379,
         "status": "running"
       },
       "blocker": null,
-      "status": "done_manager_accepted_independent_review_fail_correction_running"
+      "status": "done_manager_accepted_independent_review_fail_correction_done_integration_running"
     },
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
@@ -1721,7 +1757,7 @@
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-09-01T14:08:22Z"
+    "updated_at": "2026-09-01T17:39:29Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -2795,7 +2831,7 @@
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T17:12:18Z",
+  "timestamp": "2026-09-01T17:39:29Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

@@ -149,15 +149,25 @@
   four-path diff, and accepted the findings. The candidate remains rejected,
   uninstalled, unpublished, and undispatched.
 - Bounded correction: Workboard
-  `0167afb8-24e8-4391-b4d0-9ec4896cdf37` started exactly once on
-  `property-codex-1`; attempt
-  `workboard:0167afb8-24e8-4391-b4d0-9ec4896cdf37:1788282599912` has a healthy
-  claim. Its managed branch/worktree are
-  `openclaw/wb-0167afb8-24e8-4391-b4d0-9ec4896cdf37` /
-  `wb-0167afb8-24e8-4391-b4d0-9ec4896cdf37`, based exactly on `85e18b8`.
-  Scope is limited to the same four coordination code/test/traceability/manifest
-  paths. Runtime is GPT-5.6 Sol `xhigh`, Standard/Fast-off, no fallback. No
-  install, publication, live bootstrap, or V1-047 implementation dispatch occurred.
+  `0167afb8-24e8-4391-b4d0-9ec4896cdf37` is property-manager-accepted DONE at
+  exact `3a912c30181a144e35212016efde6ca4bd79d225`, sole parent `85e18b8`, tree
+  `6fa43b2d719b43062aff2b0f650be1404ff283f3`. Its exact four-path +249/-35
+  diff SHA-256 is `1094d407e80aceac14dbd6778e473daa5367cce6527bc2ea29a432aa07bdcdbf`.
+  Worker and manager each passed focused 2/2, coordination 86/86, and automation
+  189/189 with zero failures/skips; manifest, traceability, JSON, scope, diff,
+  secret, and clean-state gates passed with 0 HIGH, 0 MEDIUM, 0 LOW findings.
+- Fresh cumulative integration: Workboard
+  `c108b139-47b3-4481-b233-583eea7c3b72` started exactly once on
+  `property-codex-3`; attempt
+  `workboard:c108b139-47b3-4481-b233-583eea7c3b72:1788284271432` has a healthy
+  claim. Its clean managed branch/worktree are
+  `openclaw/wb-c108b139-47b3-4481-b233-583eea7c3b72` /
+  `wb-c108b139-47b3-4481-b233-583eea7c3b72` at exact `3a912c3`, parent
+  `85e18b8`. The complete `ece9afd..3a912c3` candidate is four commits, four
+  paths, +2579/-47, binary diff SHA-256
+  `a24fa3964361999b4e271cdb03a375c8eb3a38ec6031ddb9c0e862b05fdabd41`.
+  Runtime is GPT-5.6 Sol `xhigh`, Standard/Fast-off, no fallback, read-only.
+  No install, publication, live bootstrap, or V1-047 implementation dispatch occurred.
 - Current-state publication: exact ops-only commit
   `36d5ae3456c0e442495dcef860f7b60c5900fbba`, parent `1a7b0e7`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -186,16 +196,15 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the active bounded correction. V1-047 implementation
+- Blocker: none for the active cumulative integration. V1-047 implementation
   remains BLOCKED with zero starts; no install, live bootstrap, or implementation
   dispatch is permitted before a zero-finding review and release acceptance.
 - Owner action required: no.
-- Exact next action: preserve and inspect correction
-  `0167afb8-24e8-4391-b4d0-9ec4896cdf37` through REVIEW, then independently
-  verify its exact SHA, diff, tests, and findings. An accepted correction still
-  requires fresh cumulative integration and fresh independent max review. Do not
-  install, publish, bootstrap the live V1-047 card, or dispatch implementation
-  `26b14ae0` yet.
+- Exact next action: preserve and inspect fresh cumulative integration
+  `c108b139-47b3-4481-b233-583eea7c3b72` through REVIEW, then independently
+  verify its exact SHA, cumulative diff, tests, and findings. An accepted gate
+  still requires a fresh independent max review. Do not install, publish,
+  bootstrap the live V1-047 card, or dispatch implementation `26b14ae0` yet.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
@@ -203,10 +212,12 @@
   activation `870472b7`; correction `dd728972` is manager-accepted at exact
   `85e18b8` with 0 HIGH/0 MEDIUM/0 LOW, cumulative integration `a440be0b` is
   manager-accepted DONE, independent max review `79120fbe` is manager-accepted
-  DONE with 2 HIGH/0 MEDIUM/0 LOW, and bounded correction `0167afb8` runs exactly
-  once while implementation remains blocked and unstarted.
-- Automation exact next action: inspect bounded correction `0167afb8` through
-  REVIEW and manager-verify its exact result before fresh integration/review or
-  any installation and implementation dispatch.
+  DONE with 2 HIGH/0 MEDIUM/0 LOW, bounded correction `0167afb8` is manager-
+  accepted DONE at exact `3a912c3` with 0 HIGH/0 MEDIUM/0 LOW, and fresh
+  cumulative integration `c108b139` runs exactly once while implementation
+  remains blocked and unstarted.
+- Automation exact next action: inspect cumulative integration `c108b139`
+  through REVIEW and manager-verify its exact result before fresh independent
+  max review or any installation and implementation dispatch.
 
 <!-- AUTOMATION_STATUS_END -->
