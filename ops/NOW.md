@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded coordination correction running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — independent max review running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -157,21 +157,33 @@
   189/189 with zero failures/skips; manifest, traceability, JSON, scope, diff,
   secret, and clean-state gates passed with 0 HIGH, 0 MEDIUM, 0 LOW findings.
 - Fresh cumulative integration: Workboard
-  `c108b139-47b3-4481-b233-583eea7c3b72` started exactly once on
-  `property-codex-3`; attempt
-  `workboard:c108b139-47b3-4481-b233-583eea7c3b72:1788284271432` has a healthy
-  claim. Its clean managed branch/worktree are
+  `c108b139-47b3-4481-b233-583eea7c3b72` is property-manager-accepted DONE
+  after exactly one `property-codex-3` attempt
+  `workboard:c108b139-47b3-4481-b233-583eea7c3b72:1788284271432`. Its retained
+  clean managed branch/worktree are
   `openclaw/wb-c108b139-47b3-4481-b233-583eea7c3b72` /
   `wb-c108b139-47b3-4481-b233-583eea7c3b72` at exact `3a912c3`, parent
   `85e18b8`. The complete `ece9afd..3a912c3` candidate is four commits, four
   paths, +2579/-47, binary diff SHA-256
   `a24fa3964361999b4e271cdb03a375c8eb3a38ec6031ddb9c0e862b05fdabd41`.
-  Runtime is GPT-5.6 Sol `xhigh`, Standard/Fast-off, no fallback, read-only.
+  Worker and manager each passed focused 11/11, coordination 86/86, and
+  automation coordination 86/86 plus routing/evidence 189/189 with zero
+  failures/skips; all auxiliary integrity gates passed with 0 findings. Runtime
+  was GPT-5.6 Sol `xhigh`, Standard/Fast-off, no fallback, read-only.
+- Fresh independent review: Workboard
+  `28daaec5-167b-4fb2-b606-11a7f54b0a86` started exactly once on
+  `property-codex-2`; attempt
+  `workboard:28daaec5-167b-4fb2-b606-11a7f54b0a86:1788285230149` has a healthy
+  claim. Its clean managed branch/worktree are
+  `openclaw/wb-28daaec5-167b-4fb2-b606-11a7f54b0a86` /
+  `wb-28daaec5-167b-4fb2-b606-11a7f54b0a86` at immutable `3a912c3`, parent
+  `85e18b8`. Runtime is GPT-5.6 Sol `max`, Standard/Fast-off, no fallback,
+  read-only, against the complete `ece9afd..3a912c3` diff.
   No install, publication, live bootstrap, or V1-047 implementation dispatch occurred.
 - Current-state publication: exact ops-only commit
-  `36d5ae3456c0e442495dcef860f7b60c5900fbba`, parent `1a7b0e7`, changed only
+  `48ba0db4ffd6981809cca92113d3a883fda48d37`, parent `dd6a62f`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
-  189/189 with zero failures/skips; exact-SHA GitHub Actions run `33530660444`
+  189/189 with zero failures/skips; exact-SHA GitHub Actions run `33539415444`
   passed all four jobs. Local, tracking, fetched, and live-remote refs match.
 - Owner-decision reconciliation: exact ops-only commit
   `0ce6ac9030174e8039c7367ed26737f676be957b`, parent `1c523409`, tree
@@ -196,15 +208,15 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the active cumulative integration. V1-047 implementation
+- Blocker: none for the active independent max review. V1-047 implementation
   remains BLOCKED with zero starts; no install, live bootstrap, or implementation
   dispatch is permitted before a zero-finding review and release acceptance.
 - Owner action required: no.
-- Exact next action: preserve and inspect fresh cumulative integration
-  `c108b139-47b3-4481-b233-583eea7c3b72` through REVIEW, then independently
-  verify its exact SHA, cumulative diff, tests, and findings. An accepted gate
-  still requires a fresh independent max review. Do not install, publish,
-  bootstrap the live V1-047 card, or dispatch implementation `26b14ae0` yet.
+- Exact next action: preserve and inspect fresh independent max review
+  `28daaec5-167b-4fb2-b606-11a7f54b0a86` through REVIEW, then property-manager
+  independently verifies its exact SHA, complete diff, tests, and findings.
+  Do not install, publish, bootstrap the live V1-047 card, or dispatch
+  implementation `26b14ae0` before an accepted zero-finding verdict.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
@@ -213,11 +225,12 @@
   `85e18b8` with 0 HIGH/0 MEDIUM/0 LOW, cumulative integration `a440be0b` is
   manager-accepted DONE, independent max review `79120fbe` is manager-accepted
   DONE with 2 HIGH/0 MEDIUM/0 LOW, bounded correction `0167afb8` is manager-
-  accepted DONE at exact `3a912c3` with 0 HIGH/0 MEDIUM/0 LOW, and fresh
-  cumulative integration `c108b139` runs exactly once while implementation
+  accepted DONE at exact `3a912c3` with 0 HIGH/0 MEDIUM/0 LOW, fresh cumulative
+  integration `c108b139` is manager-accepted DONE with zero findings, and
+  independent max review `28daaec5` runs exactly once while implementation
   remains blocked and unstarted.
-- Automation exact next action: inspect cumulative integration `c108b139`
-  through REVIEW and manager-verify its exact result before fresh independent
-  max review or any installation and implementation dispatch.
+- Automation exact next action: inspect independent max review `28daaec5`
+  through REVIEW and manager-verify its exact result before any installation,
+  bootstrap, publication, or implementation dispatch.
 
 <!-- AUTOMATION_STATUS_END -->
