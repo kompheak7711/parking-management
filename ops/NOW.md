@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — independent max review running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — H1-H5 correction blocked before start
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -171,19 +171,35 @@
   failures/skips; all auxiliary integrity gates passed with 0 findings. Runtime
   was GPT-5.6 Sol `xhigh`, Standard/Fast-off, no fallback, read-only.
 - Fresh independent review: Workboard
-  `28daaec5-167b-4fb2-b606-11a7f54b0a86` started exactly once on
-  `property-codex-2`; attempt
-  `workboard:28daaec5-167b-4fb2-b606-11a7f54b0a86:1788285230149` has a healthy
-  claim. Its clean managed branch/worktree are
+  `28daaec5-167b-4fb2-b606-11a7f54b0a86` is property-manager-accepted DONE
+  for concluded review work at immutable `3a912c3` with FAIL verdict 5 HIGH,
+  0 MEDIUM, 0 LOW. Its sole attempt was
+  `workboard:28daaec5-167b-4fb2-b606-11a7f54b0a86:1788285230149` on
+  `property-codex-2`; the clean retained branch/worktree are
   `openclaw/wb-28daaec5-167b-4fb2-b606-11a7f54b0a86` /
   `wb-28daaec5-167b-4fb2-b606-11a7f54b0a86` at immutable `3a912c3`, parent
-  `85e18b8`. Runtime is GPT-5.6 Sol `max`, Standard/Fast-off, no fallback,
-  read-only, against the complete `ece9afd..3a912c3` diff.
-  No install, publication, live bootstrap, or V1-047 implementation dispatch occurred.
+  `85e18b8`. Runtime was GPT-5.6 Sol `max`, Standard/Fast-off, no fallback,
+  read-only, against the complete `ece9afd..3a912c3` diff. Reviewer and manager
+  each passed coordination 86/86 and routing/evidence 189/189 with zero
+  failures/skips. Manager independently confirmed: unquoted spaced secret-key
+  aliases persist; READY resume/replay lacks a fresh runtime observation;
+  logical duplicates without workspace metadata evade collision checks; a
+  drifted reused worktree can start; and late failure after finish-decision can
+  be consumed. The candidate remains rejected, uninstalled, and unpublished.
+- Bounded H1-H5 correction: Workboard
+  `c3536723-13f6-446a-a973-8a67963c51d4` was created once with stable
+  idempotency key `v1-047-ops-correction-five-high-3a912c3-v1`, exact base
+  `3a912c3`, four allowed paths, and GPT-5.6 Sol `xhigh`, Standard/Fast-off,
+  empty fallbacks. The only Gateway dispatch failed before claim/attempt/
+  worker/worktree/branch creation: the running Gateway connection is operator
+  role with zero scopes and managed-worktree dispatch requires
+  `operator.admin`. `gateway.remote.token`/URL are absent and the configured
+  `gateway.auth.token` mismatches the running Gateway. The card is preserved
+  BLOCKED; no duplicate dispatch is permitted until access is restored.
 - Current-state publication: exact ops-only commit
-  `48ba0db4ffd6981809cca92113d3a883fda48d37`, parent `dd6a62f`, changed only
+  `05a70f5b4a2802af49bf55ad0fd50a94d9b06f0c`, parent `48ba0db`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
-  189/189 with zero failures/skips; exact-SHA GitHub Actions run `33539415444`
+  189/189 with zero failures/skips; exact-SHA GitHub Actions run `33540882715`
   passed all four jobs. Local, tracking, fetched, and live-remote refs match.
 - Owner-decision reconciliation: exact ops-only commit
   `0ce6ac9030174e8039c7367ed26737f676be957b`, parent `1c523409`, tree
@@ -208,15 +224,18 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the active independent max review. V1-047 implementation
-  remains BLOCKED with zero starts; no install, live bootstrap, or implementation
-  dispatch is permitted before a zero-finding review and release acceptance.
-- Owner action required: no.
-- Exact next action: preserve and inspect fresh independent max review
-  `28daaec5-167b-4fb2-b606-11a7f54b0a86` through REVIEW, then property-manager
-  independently verifies its exact SHA, complete diff, tests, and findings.
-  Do not install, publish, bootstrap the live V1-047 card, or dispatch
-  implementation `26b14ae0` before an accepted zero-finding verdict.
+- Blocker: correction `c3536723` cannot start because the running Gateway lacks
+  `operator.admin`; zero worker artifacts were created. V1-047 implementation
+  remains BLOCKED with zero starts; V1-048 remains dependency-held.
+- Owner action required: yes — restore a supported Gateway credential/session
+  with `operator.admin` for managed-worktree dispatch. No secret value should be
+  shared in chat or committed.
+- Exact next action: after `operator.admin` is restored, move the exact preserved
+  correction `c3536723-13f6-446a-a973-8a67963c51d4` to READY and dispatch it
+  once. Then manager-verify the correction before fresh cumulative integration
+  and a fresh independent `max` review. Do not install, publish, bootstrap the
+  live V1-047 card, or dispatch implementation `26b14ae0` before an accepted
+  zero-finding verdict.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
@@ -226,11 +245,12 @@
   manager-accepted DONE, independent max review `79120fbe` is manager-accepted
   DONE with 2 HIGH/0 MEDIUM/0 LOW, bounded correction `0167afb8` is manager-
   accepted DONE at exact `3a912c3` with 0 HIGH/0 MEDIUM/0 LOW, fresh cumulative
-  integration `c108b139` is manager-accepted DONE with zero findings, and
-  independent max review `28daaec5` runs exactly once while implementation
-  remains blocked and unstarted.
-- Automation exact next action: inspect independent max review `28daaec5`
-  through REVIEW and manager-verify its exact result before any installation,
-  bootstrap, publication, or implementation dispatch.
+  integration `c108b139` is manager-accepted DONE with zero findings,
+  independent max review `28daaec5` is manager-accepted DONE with 5 HIGH/
+  0 MEDIUM/0 LOW, and exact correction `c3536723` is BLOCKED before start on
+  missing Gateway `operator.admin`. Implementation remains blocked/unstarted.
+- Automation exact next action: healthy blocked no-op until `operator.admin` is
+  restored; then redispatch preserved correction `c3536723` exactly once before
+  any installation, bootstrap, publication, or implementation dispatch.
 
 <!-- AUTOMATION_STATUS_END -->

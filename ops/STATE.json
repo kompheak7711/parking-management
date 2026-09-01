@@ -659,7 +659,9 @@
       "production_shaped_v1_019_context_route": "PASS"
     }
   },
-  "blockers": [],
+  "blockers": [
+    "Gateway managed-worktree dispatch requires operator.admin; the running operator connection has zero scopes, gateway.remote credentials are absent, and gateway.auth.token mismatches the running Gateway"
+  ],
   "branch": "implementation/foundation",
   "closure_correction": {
     "canonical_documents_changed": false,
@@ -701,19 +703,14 @@
     "prior_review_disposition": "V1-046 independent rereview passed with zero findings and release card 3266b3a3 is property-manager-accepted DONE. V1-047 has no implementation evidence yet.",
     "tranche_id": "V1-047"
   },
-  "idle_reason": null,
-  "next_action": "Preserve and inspect fresh independent max review 28daaec5 through REVIEW; then property-manager independently verifies its exact SHA, complete cumulative diff, tests, and findings before any installation, bootstrap, publication, or implementation dispatch",
-  "active_worker": "property-codex-2",
-  "active_card": "28daaec5-167b-4fb2-b606-11a7f54b0a86",
-  "active_claim": {
-    "owner": "property-codex-2",
-    "claimed_at_ms": 1788285230104,
-    "last_heartbeat_at_ms": 1788285230104,
-    "expires_at_ms": 1788288830104
-  },
-  "active_attempt": "workboard:28daaec5-167b-4fb2-b606-11a7f54b0a86:1788285230149",
-  "active_branch": "openclaw/wb-28daaec5-167b-4fb2-b606-11a7f54b0a86",
-  "active_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-28daaec5-167b-4fb2-b606-11a7f54b0a86",
+  "idle_reason": "blocked_external_permission_operator_admin",
+  "next_action": "After the owner restores a supported Gateway operator.admin credential/session, move preserved correction c3536723 to READY and dispatch it exactly once; then manager-verify it before fresh cumulative integration and fresh independent max review",
+  "active_worker": null,
+  "active_card": "c3536723-13f6-446a-a973-8a67963c51d4",
+  "active_claim": null,
+  "active_attempt": null,
+  "active_branch": null,
+  "active_worktree": null,
   "candidate_sha": "3a912c30181a144e35212016efde6ca4bd79d225",
   "candidate_parent": "85e18b801b8dda55c3482a3fc3cd5725847b5a55",
   "next_candidate": {
@@ -754,15 +751,15 @@
     },
     {
       "id": "worker-coordination-rereview-human-stop",
-      "status": "owner_authorized_bounded_h3_correction_running",
+      "status": "new_review_findings_correction_blocked_external_permission",
       "scope": "uninstalled OpenClaw coordination safety candidate and exact pre-existing V1-047 card bootstrap",
-      "evidence": "Workboard 9d1990ed-d3d5-4b0a-ba90-406372df359c failed exact ece9afd with 3 HIGH, 0 MEDIUM, 0 LOW after coordination 75/75 and automation 189/189 passed; two material classes survived the prior correction",
+      "evidence": "Workboard 28daaec5 is manager-accepted DONE at exact 3a912c3 with FAIL verdict 5 HIGH, 0 MEDIUM, 0 LOW after coordination 86/86 and routing/evidence 189/189 passed; correction c3536723 could not start because the Gateway operator connection has zero scopes and managed worktrees require operator.admin",
       "owner_decision": "2026-09-01 standing authorization explicitly clears the exhausted-recovery stop for one materially different H1-H3 correction",
-      "correction_card_id": "d2d1f66e-de97-4f26-93fc-9806feae82ea",
-      "action": "inspect the one healthy bounded H3 correction through REVIEW; manager-verify it before fresh integration and fresh independent max review, with no installation, live bootstrap, or V1-047 implementation dispatch"
+      "correction_card_id": "c3536723-13f6-446a-a973-8a67963c51d4",
+      "action": "owner restores a supported operator.admin Gateway credential/session; then redispatch the exact preserved correction once, with no installation, live bootstrap, or V1-047 implementation dispatch"
     }
   ],
-  "owner_action": null,
+  "owner_action": "Restore a supported Gateway credential/session with operator.admin for managed-worktree dispatch; do not share the credential value in chat or commit it",
   "owner_decisions": {
     "bootstrap_protection": "prm_bootstrap has safe cluster-global attributes and no unsafe memberships, ownership, or authority in the target database; no runtime cross-database introspection; provisioning attests and verifies the dedicated role is unused in every other database; target checks fail closed; atomic closure/revocation and secret-free repeat audit remain mandatory",
     "ceremony_deadline": "one absolute monotonic deadline begins before TOTP confirmation and covers TOTP input, recovery presentation and COMPLETE writes, acknowledgement input, and commit preparation; writes, partial input, retries, and trickled input never reset or extend it; timeout rolls back the ceremony",
@@ -822,15 +819,15 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-047 activation 870472b7 is published and CI-green; bounded correction 0167afb8 and cumulative integration c108b139 are manager-accepted DONE at exact 3a912c3 with zero findings; fresh independent max review 28daaec5 runs exactly once while implementation 26b14ae0 remains blocked",
-    "exact_next_action": "Inspect fresh independent max review 28daaec5 through REVIEW; property-manager independently verifies its exact result before any installation, bootstrap, publication, or implementation dispatch",
+    "current_phase": "V1-047 independent max review 28daaec5 is manager-accepted DONE at exact 3a912c3 with FAIL verdict 5 HIGH/0 MEDIUM/0 LOW; bounded correction c3536723 is blocked before start because Gateway managed-worktree dispatch lacks operator.admin; implementation 26b14ae0 remains blocked",
+    "exact_next_action": "After operator.admin is restored, move exact preserved correction c3536723 to READY and dispatch it once; manager-verify it before fresh integration and fresh independent max review, with installation/bootstrap/publication/implementation held",
     "scheduler_health": {
       "enabled": true,
       "schedule_ms": 1800000,
       "previous_run_status": "ok",
-      "previous_run_duration_ms": 1163337,
-      "current_run_recovery": "cumulative_integration_accepted_independent_max_review_dispatched",
-      "next_cadence_at_ms": 1788285710059,
+      "previous_run_duration_ms": 268722,
+      "current_run_recovery": "independent_review_accepted_fail_correction_blocked_operator_admin",
+      "next_cadence_at_ms": 1788289310059,
       "prompt_payload_identity": "PASS: byte-identical, 11868 bytes on disk, SHA-256 0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56"
     },
     "coordination_safety_rereview": {
@@ -1128,9 +1125,9 @@
         "fast_mode": false,
         "fallbacks": [],
         "read_only": true,
-        "claim_active": true,
-        "attempt_active": true,
-        "worker_active": true,
+        "claim_active": false,
+        "attempt_active": false,
+        "worker_active": false,
         "attempt_id": "workboard:28daaec5-167b-4fb2-b606-11a7f54b0a86:1788285230149",
         "branch": "openclaw/wb-28daaec5-167b-4fb2-b606-11a7f54b0a86",
         "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-28daaec5-167b-4fb2-b606-11a7f54b0a86",
@@ -1144,12 +1141,50 @@
         "dispatch_count": 1,
         "start_failures": 0,
         "claimed_at_ms": 1788285230104,
-        "last_heartbeat_at_ms": 1788285230104,
-        "claim_expires_at_ms": 1788288830104,
-        "status": "running"
+        "last_heartbeat_at_ms": 1788286953992,
+        "claim_expires_at_ms": null,
+        "positive_tests": "PASS: reviewer and manager each passed coordination 86/86 and routing/evidence 189/189 with zero failures/skips; exact provenance, four-commit/four-path diff, manifest, traceability, publication, secret, canonical-drift, and clean-state gates passed",
+        "findings": {"high": 5, "medium": 0, "low": 0},
+        "verdict": "FAIL",
+        "manager_reproduction": "PASS: unquoted spaced sensitive assignment accepted; prepared replay has no fresh observer; logical duplicate without workspace accepted; advanced worktree accepted against older base; complete_action lacks late exact attempt/execution rebinding",
+        "manager_accepted": true,
+        "status": "done_manager_accepted_fail"
       },
-      "blocker": null,
-      "status": "done_manager_accepted_independent_review_fail_correction_done_integration_done_rereview_running"
+      "review_findings_correction_3": {
+        "card_id": "c3536723-13f6-446a-a973-8a67963c51d4",
+        "parent_review_card_id": "28daaec5-167b-4fb2-b606-11a7f54b0a86",
+        "base_sha": "3a912c30181a144e35212016efde6ca4bd79d225",
+        "base_parent": "85e18b801b8dda55c3482a3fc3cd5725847b5a55",
+        "base_tree": "6fa43b2d719b43062aff2b0f650be1404ff283f3",
+        "source_branch": "openclaw/wb-28daaec5-167b-4fb2-b606-11a7f54b0a86",
+        "source_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-28daaec5-167b-4fb2-b606-11a7f54b0a86",
+        "worker": "property-codex-1",
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "xhigh",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "allowed_paths": [
+          "ops/AUTOMATION_TRACEABILITY.json",
+          "ops/OPENCLAW_INSTALL_MANIFEST.json",
+          "scripts/openclaw_worker_coordination.py",
+          "scripts/test_openclaw_worker_coordination.py"
+        ],
+        "idempotency_key": "v1-047-ops-correction-five-high-3a912c3-v1",
+        "findings_to_correct": {"high": 5, "medium": 0, "low": 0},
+        "dispatch_count": 1,
+        "start_failures": 1,
+        "claim_active": false,
+        "attempt_active": false,
+        "worker_active": false,
+        "branch_created": false,
+        "worktree_created": false,
+        "failure_category": "external_permission_operator_admin",
+        "bounded_recovery": "Default local Gateway dispatch reported managed worktree requires operator.admin; gateway.remote.url/token are absent; gateway.auth.token mismatches the running Gateway",
+        "status": "blocked_before_start"
+      },
+      "blocker": "Gateway operator.admin is required to start correction c3536723 in a managed worktree",
+      "status": "done_manager_accepted_independent_review_fail_correction_blocked_external_permission"
     },
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
@@ -2865,7 +2900,7 @@
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T17:54:55Z",
+  "timestamp": "2026-09-01T18:42:25Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
