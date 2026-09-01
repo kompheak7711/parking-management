@@ -1,4 +1,4 @@
-# V1-046 Late-payment decision, charge, correction, and allocation boundaries — closure pending
+# V1-046 Late-payment decision, charge, correction, and allocation boundaries — final reconciliation pending
 
 - Candidate: `V1-046` — late-payment Decision, separate non-compounding Charge,
   correction, replay, concurrency, authorization, audit, and allocation boundaries.
@@ -48,9 +48,12 @@
   Property-manager restored the same branch and managed path non-destructively
   at exact release `48e377e6`, verified it clean, and locked it for retained
   evidence; no unique commit or uncommitted work was lost.
-- Status: V1-046 is functionally complete and the exact reviewed product is
-  published and exact-SHA CI-green; this two-file ops-only closure and one final
-  two-file ops-only reconciliation remain pending.
+- Closure publication: exact two-file closure
+  `57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319`, parent `2bc9816d`, was
+  pushed normally; GitHub Actions run `33471210962` passed all four jobs.
+- Status: V1-046 implementation, review, release, publication, correction, and
+  closure are exact-SHA CI-green. One bounded four-file final reconciliation,
+  its exact-SHA CI, final synchronization, and Workboard acceptance remain.
 - V1-047: held at `approved_ready`; no activation, implementation, or dispatch
   may occur before this closure, reconciliation CI, final synchronization, and
   property-manager release verification complete.
@@ -64,18 +67,17 @@
   deletion: none.
 - Blockers: none.
 - Owner action required: no.
-- Exact next action: publish this ops-only closure commit, require every
-  GitHub Actions job green at its exact SHA, then create only one bounded
-  closure reconciliation across `ops/NOW.md`, `ops/STATE.json`,
-  `ops/QUEUE.md`, and `ops/V1_ROADMAP.json`, require its exact-SHA CI, prove
-  final synchronization and retained worktrees, and move the release card only
-  to REVIEW for property-manager verification.
+- Exact next action: publish this bounded four-file final reconciliation,
+  require every exact-SHA GitHub Actions job green, prove local/tracking/fetched/
+  live-remote equality and retained worktrees, then move release
+  `3266b3a3-e244-4926-ade8-6cc13eff775f` to REVIEW for property-manager
+  verification; keep V1-047 undispatched until that terminal proof.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: exact V1-046 release `48e377e6` is published,
-  synchronized, and exact-SHA CI-green; closure and final reconciliation are
-  pending.
+- Automation publication state: exact V1-046 release `48e377e6`, metadata
+  correction `2bc9816d`, and closure `57f0a816` are published,
+  synchronized, and exact-SHA CI-green; final reconciliation is pending.
 - Automation exact next action: keep V1-047 held and undispatched while V1-046
   closure, reconciliation CI, final synchronization, and Workboard review handoff
   complete.

@@ -695,7 +695,7 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "48e377e60df41b93a8d5d06975ffe8d7b9272055",
+  "commit": "57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319",
   "evidence_applicability": {
     "basis": "Exact V1-046 release 48e377e60df41b93a8d5d06975ffe8d7b9272055 preserves the manager-accepted candidate product diff byte-for-byte, includes only dependency-safe manager operations metadata, passed every local release gate, and is published with all four exact-SHA GitHub Actions jobs green in run 33469533522.",
     "complete_profile_remains_applicable": true,
@@ -703,7 +703,7 @@
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Publish only this separate V1-046 closure commit, require every exact-SHA GitHub Actions job green, then create one bounded ops/NOW.md plus ops/STATE.json reconciliation commit, require its exact-SHA CI, prove final synchronization, and release only to REVIEW; keep V1-047 held",
+  "next_action": "Publish one bounded final reconciliation across ops/NOW.md, ops/STATE.json, ops/QUEUE.md, and ops/V1_ROADMAP.json; require exact-SHA CI and final ref/worktree synchronization; then move release 3266b3a3 to REVIEW for property-manager verification while V1-047 remains undispatched",
   "active_worker": "property-manager",
   "active_card": "3266b3a3-e244-4926-ade8-6cc13eff775f",
   "active_attempt": null,
@@ -804,8 +804,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 exact release 48e377e6 is normally published and GitHub Actions run 33469533522 passed all four jobs; one bounded ops-only closure and final reconciliation remain while V1-047 stays held",
-    "exact_next_action": "Publish the two-file V1-046 closure, require every exact-SHA CI job green, then publish one bounded four-file compact-state reconciliation, require exact-SHA CI and final synchronization, and hand release 3266b3a3 to property-manager REVIEW without overlapping dispatch",
+    "current_phase": "V1-046 exact release 48e377e6, metadata correction 2bc9816d, and two-file closure 57f0a816 are normally published and exact-SHA CI-green; one bounded four-file final reconciliation remains while V1-047 stays held",
+    "exact_next_action": "Publish the bounded four-file V1-046 reconciliation, require exact-SHA CI and final synchronization, and hand release 3266b3a3 to property-manager REVIEW without overlapping dispatch",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1363,6 +1363,16 @@
       "release_ci_jobs": 4,
       "release_ci_conclusion": "success",
       "refs_reconciled": true,
+      "closure_sha": "57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319",
+      "closure_parent": "2bc9816db18aa71abf7e98ff7684351fa56ae898",
+      "closure_changed_paths": [
+        "ops/NOW.md",
+        "ops/STATE.json"
+      ],
+      "closure_ci_run_id": 33471210962,
+      "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33471210962",
+      "closure_ci_jobs": 4,
+      "closure_ci_conclusion": "success",
       "closure_manager": "property-manager",
       "closure_metadata_correction": {
         "card_id": "2eafb153-0693-42a6-8704-dc3bbaae9906",
@@ -1389,7 +1399,7 @@
         "status": "recovered"
       },
       "publication_completed": false,
-      "status": "implementation_published_exact_sha_ci_green_closure_pending"
+      "status": "closure_published_exact_sha_ci_green_reconciliation_pending"
     },
     "product_correction_3_rereview": {
       "card_id": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
@@ -1428,7 +1438,7 @@
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-09-01T04:46:22Z"
+    "updated_at": "2026-09-01T04:53:20Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -1468,13 +1478,17 @@
     "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33469533522",
     "commit_completed": true,
     "implementation_commit": "48e377e60df41b93a8d5d06975ffe8d7b9272055",
-    "closure_commit": null,
+    "closure_commit": "57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319",
+    "closure_ci_run_attempt": 1,
+    "closure_ci_run_id": 33471210962,
+    "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33471210962",
+    "closure_ci_conclusion": "success",
     "closure_metadata_correction_commit": "2bc9816db18aa71abf7e98ff7684351fa56ae898",
     "closure_metadata_correction_ci_run_id": 33470535203,
     "closure_metadata_correction_ci_conclusion": "success",
     "push_completed": true,
     "sha_reconciled": false,
-    "status": "implementation_published_closure_pending",
+    "status": "closure_published_reconciliation_pending",
     "tranche_id": "V1-046",
     "predecessor_closure_commit": "fe00f286759695f53001e77937b107d343fb6947",
     "predecessor_reconciliation_commit": "39c38e74b7b55f877f74081c94dcd9b971aa1348"
@@ -2107,8 +2121,8 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "implementation_published_closure_pending",
-  "task": "Close the approved bounded candidate: Late-payment decision, charge, correction, and allocation boundaries",
+  "status": "closure_published_reconciliation_pending",
+  "task": "Reconcile and independently verify closure of the approved bounded candidate: Late-payment decision, charge, correction, and allocation boundaries",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -2350,10 +2364,11 @@
     "PASS: V1-046 format, lint, strict type, build/import, locked runtime/development/frontend dependency, deployment, publication, security, secret, JSON, traceability, Alembic 20260831_37 one-head, diff, cleanup, clean-state, runtime, prompt, and scheduler gates passed",
     "PASS: V1-046 release commit 48e377e60df41b93a8d5d06975ffe8d7b9272055 exact-SHA GitHub Actions run 33469533522 passed all four jobs; local, tracking, fetched, live-remote, and retained release refs reconciled exactly",
     "FAIL/RECOVERED: closure metadata validation rejected nonexistent V1-047 authority UI-INV-* after 189/189 automation tests; bounded manager correction 2eafb153 removed only that dangling roadmap authority in exact commit 2bc9816d, retained 16 exact canonical API/test authorities, passed fresh automation 189/189, and exact-SHA CI run 33470535203 passed all four jobs",
-    "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss"
+    "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
+    "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T04:46:22Z",
+  "timestamp": "2026-09-01T04:53:20Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

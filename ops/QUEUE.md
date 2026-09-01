@@ -57,22 +57,13 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-046 release after correction 3 and a zero-finding
-fresh independent rereview.
-Rereview `208ac3de-72f2-45a2-9be7-4e096aaf08ca` is manager-accepted DONE as
-FAIL with three MEDIUM findings at exact `0a55db2b445c776a2f91afee308cc0a13d8a93e7`.
-Bounded correction `0efc51d0-fbb0-4c53-9f1a-c1f54642927e` is manager-accepted
-DONE at exact `47798abdbacf04df917eea6ee7f2b889eee7ac8c`. Fresh integration
-`6dc815a8-b86b-484c-98a4-852341997947` is manager-accepted DONE with zero
-findings. Fresh independent rereview `7ab561b7-7fee-483c-88ce-759273ceb9f6`
-is manager-accepted DONE as PASS with zero findings at the immutable candidate.
-Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is running in one clean managed
-worktree. Its first preflight-only attempt safely blocked before Git mutation on
-an effective `high` versus required `xhigh` runtime. Its second GPT-5.6 Sol
-`xhigh`, no-fallback attempt created clean unpushed merge `62ef004a`, then
-stopped before publication because locked frontend dependencies were absent.
-Property-manager installed the exact lockfile environment and reproduced
-frontend 234/234 with zero failures/skips; the same card, merge, branch, and
-worktree are now running one bounded third attempt with a healthy claim and
-heartbeat. V1-047 remains blocked until V1-046 is fully released, published,
-exact-SHA CI-green, reconciled, and closed.
+Current live queue position: V1-046 final reconciliation.
+The zero-finding reviewed product candidate `47798abd` is preserved by ordinary
+release `48e377e6`; exact-SHA CI run `33469533522` passed all four jobs.
+Bounded closure-metadata correction `2bc9816d` and two-file closure
+`57f0a816` are also published with four green jobs in runs `33470535203` and
+`33471210962`. Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is under a
+property-manager claim for one final bounded compact-state reconciliation and
+terminal verification. V1-047 remains approved but undispatched until that
+reconciliation is exact-SHA CI-green and the release card is manager-accepted
+DONE.
