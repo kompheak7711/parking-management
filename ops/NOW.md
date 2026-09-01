@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent coordination review running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded coordination correction running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -140,16 +140,24 @@
   were 0 HIGH, 0 MEDIUM, 0 LOW. Runtime was GPT-5.6 Sol `xhigh`,
   Standard/Fast-off, no fallback, and read-only.
 - Independent review: fresh read-only card
-  `79120fbe-cd09-4bf1-baed-cac17b40ba48` started exactly once on
-  `property-codex-2`; attempt
-  `workboard:79120fbe-cd09-4bf1-baed-cac17b40ba48:1788281038351` has a healthy
+  `79120fbe-cd09-4bf1-baed-cac17b40ba48` is property-manager-accepted DONE at
+  immutable `85e18b8` with FAIL verdict 2 HIGH, 0 MEDIUM, 0 LOW. H1 reproduced
+  that the bootstrap's `workspace.kind=dir` never supplies dispatcher `cwd`;
+  H2 reproduced exact output `UNSAFE_ACCEPT pass failed blocked` after a late
+  failed attempt/blocked execution. Property-manager reran coordination 84/84
+  and automation 189/189 with zero failures/skips, verified the clean exact
+  four-path diff, and accepted the findings. The candidate remains rejected,
+  uninstalled, unpublished, and undispatched.
+- Bounded correction: Workboard
+  `0167afb8-24e8-4391-b4d0-9ec4896cdf37` started exactly once on
+  `property-codex-1`; attempt
+  `workboard:0167afb8-24e8-4391-b4d0-9ec4896cdf37:1788282599912` has a healthy
   claim. Its managed branch/worktree are
-  `openclaw/wb-79120fbe-cd09-4bf1-baed-cac17b40ba48` /
-  `wb-79120fbe-cd09-4bf1-baed-cac17b40ba48` at immutable `85e18b8`.
-  Runtime contract is GPT-5.6 Sol `max`, Standard/Fast-off, no fallback, and
-  read-only; Workboard execution metadata exposes only `model: default`.
-  Findings are pending. No install, publication, live bootstrap, or V1-047
-  implementation dispatch occurred.
+  `openclaw/wb-0167afb8-24e8-4391-b4d0-9ec4896cdf37` /
+  `wb-0167afb8-24e8-4391-b4d0-9ec4896cdf37`, based exactly on `85e18b8`.
+  Scope is limited to the same four coordination code/test/traceability/manifest
+  paths. Runtime is GPT-5.6 Sol `xhigh`, Standard/Fast-off, no fallback. No
+  install, publication, live bootstrap, or V1-047 implementation dispatch occurred.
 - Current-state publication: exact ops-only commit
   `36d5ae3456c0e442495dcef860f7b60c5900fbba`, parent `1a7b0e7`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -178,26 +186,27 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the active independent review. V1-047 implementation
+- Blocker: none for the active bounded correction. V1-047 implementation
   remains BLOCKED with zero starts; no install, live bootstrap, or implementation
   dispatch is permitted before a zero-finding review and release acceptance.
 - Owner action required: no.
-- Exact next action: preserve and inspect independent review
-  `79120fbe-cd09-4bf1-baed-cac17b40ba48` through REVIEW, then independently
-  verify its exact verdict and evidence. A material finding routes one bounded
-  correction; only an exact zero-finding verdict may advance installation and
-  live-card bootstrap. Do not install, publish, bootstrap the live V1-047 card,
-  or dispatch implementation `26b14ae0` yet.
+- Exact next action: preserve and inspect correction
+  `0167afb8-24e8-4391-b4d0-9ec4896cdf37` through REVIEW, then independently
+  verify its exact SHA, diff, tests, and findings. An accepted correction still
+  requires fresh cumulative integration and fresh independent max review. Do not
+  install, publish, bootstrap the live V1-047 card, or dispatch implementation
+  `26b14ae0` yet.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
 - Automation candidate state: V1-047 approved and active at exact green
   activation `870472b7`; correction `dd728972` is manager-accepted at exact
   `85e18b8` with 0 HIGH/0 MEDIUM/0 LOW, cumulative integration `a440be0b` is
-  manager-accepted DONE, and independent max review `79120fbe` runs exactly
+  manager-accepted DONE, independent max review `79120fbe` is manager-accepted
+  DONE with 2 HIGH/0 MEDIUM/0 LOW, and bounded correction `0167afb8` runs exactly
   once while implementation remains blocked and unstarted.
-- Automation exact next action: inspect independent review `79120fbe` through
-  REVIEW and manager-verify its exact verdict before any installation or
-  implementation dispatch.
+- Automation exact next action: inspect bounded correction `0167afb8` through
+  REVIEW and manager-verify its exact result before fresh integration/review or
+  any installation and implementation dispatch.
 
 <!-- AUTOMATION_STATUS_END -->
