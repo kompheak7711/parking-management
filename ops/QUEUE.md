@@ -66,6 +66,6 @@ DONE at exact `47798abdbacf04df917eea6ee7f2b889eee7ac8c`. Fresh integration
 `6dc815a8-b86b-484c-98a4-852341997947` is manager-accepted DONE with zero
 findings. Fresh independent rereview `7ab561b7-7fee-483c-88ce-759273ceb9f6`
 is manager-accepted DONE as PASS with zero findings at the immutable candidate.
-Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is dependency-ready for exact
-source binding and one managed-worktree dispatch; V1-047 remains blocked until
-V1-046 is fully released, published, exact-SHA CI-green, reconciled, and closed.
+Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is running in one clean managed
+worktree from exact reviewed `47798abd`; V1-047 remains blocked until V1-046 is
+fully released, published, exact-SHA CI-green, reconciled, and closed.

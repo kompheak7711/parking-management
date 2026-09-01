@@ -1,4 +1,4 @@
-# V1-046 — zero-finding rereview accepted; release ready
+# V1-046 — exact-SHA release running
 
 - V1-045 is fully released, published, exact-SHA CI-green, reconciled,
   synchronized, and closed. V1-047 remains dependency-blocked until V1-046 is
@@ -40,9 +40,17 @@
   tree, path set, diff hash, clean state, and focused 18/18. The obsolete running
   attempt presentation was stopped only after terminal proof; its evidence,
   session, branch, and worktree remain preserved.
-- Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is dependency-ready and remains
-  unclaimed pending exact-source binding and one supported Gateway dispatch from
-  the clean reviewed worktree. The candidate is not published.
+- Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is RUNNING for
+  `property-codex-3`, attempt
+  `workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788232491145`, branch
+  `openclaw/wb-3266b3a3-e244-4926-ade8-6cc13eff775f`, managed worktree
+  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-3266b3a3-e244-4926-ade8-6cc13eff775f`.
+  Admission is clean at exact reviewed `47798abd`, parent `0a55db2b`, tree
+  `b337076e`. Exactly one worker started through the supported Gateway with zero
+  start failures under GPT-5.6 Sol `xhigh`, no fallback, Standard/Fast-off. It
+  is bound to the non-rewriting candidate/ops-history integration, full local
+  and PostgreSQL gates, normal push, exact-SHA CI, closure, and reconciliation.
+  The candidate is not yet published.
 - Scheduler `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains the enabled singleton
   on a 30-minute interval with GPT-5.6 Sol `xhigh`, Standard/Fast-off. The
   authoritative prompt and saved payload are byte-identical at 11,868 bytes,
@@ -51,7 +59,6 @@
   `5672dfdc554b14dfaab2c2b5d096ee1f7724744f` with successful GitHub Actions
   run `33448153128`.
 - Owner action required: no.
-- Exact next action: bind release `3266b3a3` to exact clean reviewed
-  `47798abd`, promote it, and start exactly one `property-codex-3` managed-worktree
-  release worker through the supported Gateway at GPT-5.6 Sol `xhigh`, no
-  fallback, Standard/Fast-off.
+- Exact next action: inspect and reconcile release `3266b3a3` health, heartbeat,
+  exact candidate/metadata history binding, deterministic gates, publication,
+  exact-SHA CI, closure, and terminal proof without overlapping dispatch.

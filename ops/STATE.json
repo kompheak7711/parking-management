@@ -662,10 +662,10 @@
   },
   "blockers": [
     {
-      "id": "v1-046-release-pending",
+      "id": "v1-046-release-running",
       "owner_action_required": false,
-      "status": "zero_finding_rereview_accepted_release_ready",
-      "detail": "Correction 0efc51d0, zero-finding integration 6dc815a8, and zero-finding fresh rereview 7ab561b7 are manager-accepted DONE at exact clean 47798abd. Release 3266b3a3 is dependency-ready for exact-source binding and one managed-worktree dispatch; V1-047 remains dependency-held. No owner action is required."
+      "status": "zero_finding_rereview_accepted_release_running",
+      "detail": "Correction 0efc51d0, zero-finding integration 6dc815a8, and zero-finding fresh rereview 7ab561b7 are manager-accepted DONE at exact clean 47798abd. Release 3266b3a3 is running in one clean managed worktree; V1-047 remains dependency-held. No owner action is required."
     }
   ],
   "branch": "implementation/foundation",
@@ -710,10 +710,10 @@
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Bind release card 3266b3a3-e244-4926-ade8-6cc13eff775f to exact clean reviewed 47798abd, promote it, and start exactly one property-codex-3 managed-worktree release worker through the supported Gateway",
-  "active_worker": null,
+  "next_action": "Inspect and reconcile release card 3266b3a3-e244-4926-ade8-6cc13eff775f health, heartbeat, exact candidate and metadata-history binding, deterministic gates, publication, exact-SHA CI, closure, and terminal proof without overlapping dispatch",
+  "active_worker": "property-codex-3",
   "active_card": "3266b3a3-e244-4926-ade8-6cc13eff775f",
-  "active_attempt": null,
+  "active_attempt": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788232491145",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -812,8 +812,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 correction 3, zero-finding integration, and zero-finding fresh independent rereview are manager-accepted DONE at exact 47798abd; release is dependency-ready while V1-047 remains blocked",
-    "exact_next_action": "Bind release card 3266b3a3-e244-4926-ade8-6cc13eff775f to exact clean reviewed 47798abd, promote it, and start exactly one property-codex-3 managed-worktree release worker through the supported Gateway",
+    "current_phase": "V1-046 correction 3, zero-finding integration, and zero-finding fresh independent rereview are manager-accepted DONE at exact 47798abd; one exact-SHA release worker is running while V1-047 remains blocked",
+    "exact_next_action": "Inspect and reconcile release card 3266b3a3-e244-4926-ade8-6cc13eff775f health, heartbeat, exact candidate and metadata-history binding, deterministic gates, publication, exact-SHA CI, closure, and terminal proof without overlapping dispatch",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1317,6 +1317,32 @@
       "manager_acceptance": "PASS: exact SHA/parent/tree/ancestry/16-path cumulative diff/hash/clean/no-process proof plus focused 18/18; terminal integration evidence accepted with zero findings",
       "status": "done_manager_accepted_zero_findings"
     },
+    "product_release": {
+      "card_id": "3266b3a3-e244-4926-ade8-6cc13eff775f",
+      "attempt_id": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788232491145",
+      "worker": "property-codex-3",
+      "branch": "openclaw/wb-3266b3a3-e244-4926-ade8-6cc13eff775f",
+      "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-3266b3a3-e244-4926-ade8-6cc13eff775f",
+      "source_branch": "openclaw/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6",
+      "source_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6",
+      "candidate_sha": "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
+      "candidate_parent": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
+      "candidate_tree": "b337076e239acd1b2c3c4711af908675bb6841fe",
+      "metadata_tip_at_dispatch": "835ecfdf0f378008830feb054d81309efb952385",
+      "model": "openai/gpt-5.6-sol",
+      "reasoning": "xhigh",
+      "risk_reason": "financial migration, transaction, concurrency, security, Git integration, publication, and exact-SHA CI",
+      "mode": "standard",
+      "fast_mode": false,
+      "fallbacks": [],
+      "claim_active": true,
+      "attempt_active": true,
+      "worktree_clean_at_admission": true,
+      "dispatch_started": 1,
+      "start_failures": 0,
+      "publication_completed": false,
+      "status": "running_admission_passed"
+    },
     "product_correction_3_rereview": {
       "card_id": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
       "attempt_id": "workboard:7ab561b7-7fee-483c-88ce-759273ceb9f6:1788229221677",
@@ -1354,7 +1380,7 @@
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-09-01T03:16:00Z"
+    "updated_at": "2026-09-01T03:15:29Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -2269,10 +2295,11 @@
     "PASS: reconciled supervisor compact state passed automation 189/189 plus roadmap validation, state-routing, visibility-watchdog, JSON, shell-syntax, and Python-compilation checks",
     "PASS: fresh integration 6dc815a8 is manager-accepted DONE with zero findings at exact 47798abd; focused 18/18, backend 729/729, frontend 234/234, isolated PostgreSQL 467/467 zero skips, automation 186/186, and all required guards passed",
     "PASS: fresh independent rereview 7ab561b7 started exactly one property-codex-2 worker in a clean managed worktree at immutable 47798abd; Gateway dispatch reported zero start failures",
-    "PASS: fresh independent rereview 7ab561b7 is manager-accepted DONE with zero findings at exact 47798abd; reviewer gates passed focused 18/18, backend 729/729, frontend 234/234, PostgreSQL 467/467 zero skips, automation 186/186, adversarial 2/2, revision upgrade 1/1, and every required guard; manager exact-diff checks and focused 18/18 passed"
+    "PASS: fresh independent rereview 7ab561b7 is manager-accepted DONE with zero findings at exact 47798abd; reviewer gates passed focused 18/18, backend 729/729, frontend 234/234, PostgreSQL 467/467 zero skips, automation 186/186, adversarial 2/2, revision upgrade 1/1, and every required guard; manager exact-diff checks and focused 18/18 passed",
+    "PASS: release 3266b3a3 started exactly one property-codex-3 worker through the supported Gateway in a clean managed worktree at immutable 47798abd; GPT-5.6 Sol xhigh, no fallback, Standard/Fast-off; zero start failures"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T03:16:00Z",
+  "timestamp": "2026-09-01T03:15:29Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
