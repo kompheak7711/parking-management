@@ -664,8 +664,8 @@
     {
       "id": "v1-046-test-119-traceability-correction-required",
       "owner_action_required": false,
-      "status": "independent_review_failed_correction_running",
-      "detail": "Independent review 8548ab20 is manager-accepted FAIL with six MEDIUM findings. Bounded correction dfe221fe is running from exact clean 09b5dafc; fresh integration, fresh review, release, and V1-047 remain dependency-blocked. No owner action is required."
+      "status": "correction_accepted_fresh_integration_running",
+      "detail": "Independent review 8548ab20 is manager-accepted FAIL with six MEDIUM findings. Bounded correction dfe221fe is manager-accepted DONE at exact clean 0a55db2b; fresh integration 87d90c87 is running while fresh review, release, and V1-047 remain dependency-blocked. No owner action is required."
     }
   ],
   "branch": "implementation/foundation",
@@ -702,18 +702,18 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+  "commit": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
   "evidence_applicability": {
-    "basis": "Candidate 09b5dafc has sole parent 7a5097c9 and a clean authorized cumulative 16-file +2281/-19 diff from 39c38e74. Integration and deterministic gates passed, but fresh independent review reproduced six MEDIUM contract defects; the candidate is not releasable. Positive gate evidence remains valid only as prior-run evidence for the bounded correction and must be rerun at its new exact SHA.",
+    "basis": "Corrected candidate 0a55db2b has sole parent 09b5dafc, tree 1835b750, a clean bounded five-path +620/-83 correction diff, and a clean cumulative authorized diff from 39c38e74. Correction gates and manager reruns pass, but release still requires the running fresh exact-SHA integration gate and a fresh independent zero-finding review.",
     "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-045 target df8096c1, closure fe00f286, and reconciliation 39c38e74 are published, synchronized, exact-SHA CI-green, and closed on Workboard; V1-046 review 8548ab20 is manager-accepted FAIL with six MEDIUM findings and bounded correction dfe221fe is running.",
+    "prior_review_disposition": "V1-045 target df8096c1, closure fe00f286, and reconciliation 39c38e74 are published, synchronized, exact-SHA CI-green, and closed on Workboard; V1-046 review 8548ab20 is manager-accepted FAIL with six MEDIUM findings, correction dfe221fe is manager-accepted DONE, and fresh integration 87d90c87 is running.",
     "tranche_id": "V1-046"
   },
   "idle_reason": null,
-  "next_action": "Inspect correction card dfe221fe-d32d-4baf-acb4-442376616dd5 heartbeat, bounded diff, tests, and completion evidence without overlapping dispatch",
-  "active_worker": "property-codex-1",
-  "active_card": "dfe221fe-d32d-4baf-acb4-442376616dd5",
-  "active_attempt": "workboard:dfe221fe-d32d-4baf-acb4-442376616dd5:1788221281345",
+  "next_action": "Inspect and reconcile fresh integration card 87d90c87-8cca-4529-98ab-a22646332e77 health, immutable SHA, complete gates, and result without overlapping dispatch",
+  "active_worker": "property-codex-3",
+  "active_card": "87d90c87-8cca-4529-98ab-a22646332e77",
+  "active_attempt": "workboard:87d90c87-8cca-4529-98ab-a22646332e77:1788223132889",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -733,7 +733,7 @@
     "order": 46,
     "phase": "Billing",
     "risk_class": "high",
-    "status": "independent_review_failed_bounded_correction_running",
+    "status": "correction_accepted_fresh_integration_running",
     "task": "Late-payment decision, charge, correction, and allocation boundaries",
     "roadmap_id": "V1-046"
   },
@@ -812,8 +812,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 independent review is manager-accepted FAIL with six MEDIUM findings; bounded correction is running and release and V1-047 remain dependency-blocked",
-    "exact_next_action": "Inspect correction card dfe221fe-d32d-4baf-acb4-442376616dd5 heartbeat, bounded diff, tests, and completion evidence without overlapping dispatch",
+    "current_phase": "V1-046 bounded correction is manager-accepted DONE; fresh exact-SHA integration is running and fresh review, release, and V1-047 remain dependency-blocked",
+    "exact_next_action": "Inspect and reconcile fresh integration card 87d90c87-8cca-4529-98ab-a22646332e77 health, immutable SHA, complete gates, and result without overlapping dispatch",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1140,8 +1140,9 @@
       "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-dfe221fe-d32d-4baf-acb4-442376616dd5",
       "required_base_sha": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
       "required_base_parent": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
-      "materialized_head": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
-      "materialized_parent": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
+      "materialized_head": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
+      "materialized_parent": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+      "tree": "1835b750aa75c798784affae3bff1f1a50d92696",
       "workspace_recovery": "Gateway initially materialized the clean branch at root 28d3568; worker admission proved ancestry and fast-forwarded only to exact 09b5dafc before any edit",
       "worktree_clean_at_admission": true,
       "allowed_paths": [
@@ -1157,16 +1158,48 @@
       "mode": "standard",
       "fast_mode": false,
       "fallbacks": [],
-      "claim_active": true,
-      "attempt_active": true,
+      "claim_active": false,
+      "attempt_active": false,
+      "worktree_clean": true,
+      "changed_path_count": 5,
+      "insertions": 620,
+      "deletions": 83,
+      "worker_tests": "PASS: focused 40/40, backend 729/729, real PostgreSQL 465/465 zero skips, migration 9/9, automation 186/186, and applicable static/build/import/traceability/scope/secret/diff guards",
+      "manager_tests": "PASS: exact ancestry, tree, five allowed paths, clean worktree, focused 40/40, and automation 186/186",
+      "stale_attempt_reconciliation": "Worker terminalized to REVIEW with complete proof and a clean committed worktree; obsolete running presentation was stopped without discarding work or evidence before manager acceptance",
       "integration_card_id": "87d90c87-8cca-4529-98ab-a22646332e77",
       "rereview_card_id": "208ac3de-72f2-45a2-9be7-4e096aaf08ca",
+      "status": "done_manager_accepted"
+    },
+    "product_correction_2_integration": {
+      "card_id": "87d90c87-8cca-4529-98ab-a22646332e77",
+      "attempt_id": "workboard:87d90c87-8cca-4529-98ab-a22646332e77:1788223132889",
+      "worker": "property-codex-3",
+      "branch": "openclaw/wb-87d90c87-8cca-4529-98ab-a22646332e77",
+      "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-87d90c87-8cca-4529-98ab-a22646332e77",
+      "source_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-dfe221fe-d32d-4baf-acb4-442376616dd5",
+      "candidate_sha": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
+      "candidate_parent": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+      "tree": "1835b750aa75c798784affae3bff1f1a50d92696",
+      "cumulative_base": "39c38e74b7b55f877f74081c94dcd9b971aa1348",
+      "model": "openai/gpt-5.6-sol",
+      "reasoning": "xhigh",
+      "mode": "standard",
+      "fast_mode": false,
+      "fallbacks": [],
+      "read_only": true,
+      "claim_active": true,
+      "attempt_active": true,
+      "worktree_clean_at_admission": true,
+      "dispatch_count": 1,
+      "start_failures": 0,
+      "manager_compact_state_tests": "PASS: automation 189/189 plus state-routing, visibility-watchdog, JSON, roadmap, shell-syntax, and Python-compile guards",
       "status": "running_admission_passed"
     },
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-09-01T00:08:00Z"
+    "updated_at": "2026-09-01T00:39:00Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -1186,9 +1219,9 @@
     "immediate_run_duration_ms": 449354,
     "immediate_run_findings": "integration attempt accurately stopped and reconciled after one TEST-119 traceability defect; all other gates passed and both V1-046 worktrees remained clean",
     "nonfatal_run_diagnostic": "one bounded shell discovery command failed after the authoritative state was established; the cycle completed successfully with explicit reconciliation",
-    "current_run_started_at": "2026-09-01T00:01:50.063Z",
+    "current_run_started_at": "2026-09-01T00:31:50.067Z",
     "current_run_status": "running",
-    "next_run_at": "2026-09-01T00:31:50.059Z",
+    "next_run_at": "2026-09-01T01:01:50.063Z",
     "recovery_commit": "3d4ba8538ed838dfb0ed96f995d4a4623a6bbce8",
     "recovery_ci_run_id": 33417142442,
     "recovery_ci_status": "success",
@@ -1846,7 +1879,7 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "fresh_independent_review_running",
+  "status": "fresh_integration_running",
   "task": "Preserve the verified V1-046 implementation and perform one bounded TEST-119 traceability correction before fresh exact-SHA integration, independent review, and release",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
@@ -2076,7 +2109,7 @@
     "PASS: V1-045 ops-only closure commit fe00f286759695f53001e77937b107d343fb6947 exact-SHA GitHub Actions run 33404108038; all four jobs"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-08-31T23:37:16Z",
+  "timestamp": "2026-09-01T00:39:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
