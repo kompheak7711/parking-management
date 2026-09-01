@@ -148,6 +148,30 @@ def application_reversal_required_response(request: Request) -> JSONResponse:
     )
 
 
+def late_payment_conflict_response(
+    request: Request, current_state: dict[str, object]
+) -> JSONResponse:
+    """Return only the already-authorized public resource state for a conflict."""
+    request_id = request.state.request_id
+    candidate_version = current_state.get("version")
+    current_version = candidate_version if type(candidate_version) is int else None
+    return JSONResponse(
+        status_code=status.HTTP_409_CONFLICT,
+        content={
+            "error": {
+                "code": "CONFLICT",
+                "message": "The command conflicted with the current resource state.",
+                "fields": [],
+                "rule_ids": ["API-018"],
+                "current_version": current_version,
+                "current_state": current_state,
+            },
+            "meta": {"request_id": request_id},
+        },
+        headers={"X-Request-ID": request_id},
+    )
+
+
 def _actor(request: Request, resolver: ActorResolver) -> AuthenticatedActor:
     actor = resolver(request)
     if actor is None:
@@ -168,7 +192,9 @@ def _authorize(
     )
 
 
-def _invoke(command: Callable[[], dict[str, object]]) -> dict[str, object]:
+def _invoke(
+    command: Callable[[], dict[str, object]], *, preserve_conflict: bool = False
+) -> dict[str, object]:
     try:
         return command()
     except LatePaymentNotFoundError as exc:
@@ -178,6 +204,8 @@ def _invoke(command: Callable[[], dict[str, object]]) -> dict[str, object]:
     except (LatePaymentIdempotencyKeyReused, LatePaymentApplicationReversalRequired):
         raise
     except LatePaymentConflictError as exc:
+        if preserve_conflict:
+            raise
         raise HTTPException(status_code=status.HTTP_409_CONFLICT) from exc
     except (LatePaymentInvalidError, ValueError) as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT) from exc
@@ -240,6 +268,7 @@ def create_late_payment_router(
     @router.post(
         "/invoices/{invoice_id}/late-payment-decision",
         status_code=status.HTTP_201_CREATED,
+        response_model=None,
     )
     def finalize_decision(
         invoice_id: UUID,
@@ -247,23 +276,35 @@ def create_late_payment_router(
         request: Request,
         response: Response,
         idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
-    ) -> dict[str, object]:
+    ) -> dict[str, object] | JSONResponse:
         actor, property_id = invoice_context(
             invoice_id, request, LATE_PAYMENT_DECISION_CAPABILITY, mutation=True
         )
-        resource = _invoke(
-            lambda: flow.finalize_decision(
-                property_id,
-                invoice_id,
-                FinalizeLatePaymentDecisionCommand(
-                    idempotency_key,
-                    body.outcome,
-                    body.approved_amount.minor_units,
-                    body.reason,
+        try:
+            resource = _invoke(
+                lambda: flow.finalize_decision(
+                    property_id,
+                    invoice_id,
+                    FinalizeLatePaymentDecisionCommand(
+                        idempotency_key,
+                        body.outcome,
+                        body.approved_amount.minor_units,
+                        body.reason,
+                    ),
+                    actor=actor,
                 ),
-                actor=actor,
+                preserve_conflict=True,
             )
-        )
+        except (LatePaymentIdempotencyKeyReused, LatePaymentApplicationReversalRequired):
+            raise
+        except LatePaymentConflictError:
+            try:
+                current_state = _invoke(lambda: flow.get_decision(invoice_id, actor=actor))
+            except HTTPException as exc:
+                if exc.status_code != status.HTTP_404_NOT_FOUND:
+                    raise
+                current_state = _invoke(lambda: flow.review(invoice_id, actor=actor))
+            return late_payment_conflict_response(request, current_state)
         response.headers["Location"] = f"/api/v1/invoices/{invoice_id}/late-payment-decision"
         return _envelope(resource, request)
 
@@ -283,33 +324,39 @@ def create_late_payment_router(
 
     @router.post(
         "/late-payment-charges/{charge_id}/corrections",
-        status_code=status.HTTP_201_CREATED,
+        status_code=status.HTTP_200_OK,
+        response_model=None,
     )
     def correct_charge(
         charge_id: UUID,
         body: ChargeCorrectionInput,
         request: Request,
-        response: Response,
         idempotency_key: Annotated[UUID, Header(alias="Idempotency-Key")],
-    ) -> dict[str, object]:
+    ) -> dict[str, object] | JSONResponse:
         actor, property_id = charge_context(
             charge_id, request, LATE_PAYMENT_CORRECTION_CAPABILITY, mutation=True
         )
-        resource = _invoke(
-            lambda: flow.correct_charge(
-                property_id,
-                charge_id,
-                CorrectLatePaymentChargeCommand(
-                    idempotency_key,
-                    body.kind,
-                    body.reason,
-                    body.amount.minor_units if body.amount is not None else None,
-                    body.reverses_correction_id,
+        try:
+            resource = _invoke(
+                lambda: flow.correct_charge(
+                    property_id,
+                    charge_id,
+                    CorrectLatePaymentChargeCommand(
+                        idempotency_key,
+                        body.kind,
+                        body.reason,
+                        body.amount.minor_units if body.amount is not None else None,
+                        body.reverses_correction_id,
+                    ),
+                    actor=actor,
                 ),
-                actor=actor,
+                preserve_conflict=True,
             )
-        )
-        response.headers["Location"] = f"/api/v1/late-payment-charges/{charge_id}"
+        except (LatePaymentIdempotencyKeyReused, LatePaymentApplicationReversalRequired):
+            raise
+        except LatePaymentConflictError:
+            current_state = _invoke(lambda: flow.get_charge(charge_id, actor=actor))
+            return late_payment_conflict_response(request, current_state)
         return _envelope(resource, request)
 
     return router

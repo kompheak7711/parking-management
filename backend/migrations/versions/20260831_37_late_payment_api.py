@@ -13,6 +13,17 @@ def upgrade() -> None:
     """Install protected reads and idempotent audited late-payment commands."""
     op.execute(
         r"""
+        ALTER TABLE app.late_payment_decisions
+            DROP CONSTRAINT late_payment_decisions_outcome_amount;
+        ALTER TABLE app.late_payment_decisions
+            ADD CONSTRAINT late_payment_decisions_outcome_amount CHECK (
+                (decision_outcome='WAIVED' AND approved_amount_usd_cents=0)
+                OR (decision_outcome='CONFIRMED_DEFAULT'
+                    AND approved_amount_usd_cents=calculated_default_amount_usd_cents)
+                OR (decision_outcome='REDUCED' AND approved_amount_usd_cents>0
+                    AND approved_amount_usd_cents<calculated_default_amount_usd_cents)
+            );
+
         CREATE TABLE app.late_payment_commands (
             property_id uuid NOT NULL REFERENCES app.properties(id) ON DELETE RESTRICT,
             actor_id uuid NOT NULL REFERENCES app.user_accounts(actor_id) ON DELETE RESTRICT,
@@ -28,13 +39,17 @@ def upgrade() -> None:
             result_entity_id uuid NOT NULL CHECK (
                 result_entity_id<>'00000000-0000-0000-0000-000000000000'::uuid
             ),
-            response_status smallint NOT NULL CHECK (response_status=201),
+            response_status smallint NOT NULL,
             result_snapshot jsonb NOT NULL CHECK (jsonb_typeof(result_snapshot)='object'),
             completed_at timestamptz NOT NULL,
             PRIMARY KEY(property_id,actor_id,action,idempotency_key),
             CONSTRAINT late_payment_command_shape CHECK (
                 (action='decision' AND target_kind='INVOICE')
                 OR (action='correction' AND target_kind='CHARGE')
+            ),
+            CONSTRAINT late_payment_command_response_status CHECK (
+                (action='decision' AND response_status=201)
+                OR (action='correction' AND response_status=200)
             )
         );
         CREATE INDEX late_payment_commands_target_history_idx
@@ -58,19 +73,88 @@ def upgrade() -> None:
             ) ELSE NULL END
         $$;
 
+        CREATE VIEW app.late_payment_charge_financial_position
+        WITH (security_invoker = true)
+        AS
+        SELECT
+            charge.id AS late_payment_charge_id,
+            charge.customer_id,
+            charge.source_invoice_id,
+            charge.late_payment_decision_id,
+            charge.original_amount_usd_cents,
+            correction.reduction_usd_cents,
+            correction.reduction_reversal_usd_cents,
+            correction.active_reduction_usd_cents,
+            correction.charge_reversal_usd_cents,
+            correction.active_reduction_usd_cents
+                + correction.charge_reversal_usd_cents
+                AS active_correction_effect_usd_cents,
+            COALESCE((applications.summary->>'payment_total_usd_cents')::bigint,0)
+                AS payment_applied_usd_cents,
+            COALESCE((applications.summary->>'credit_total_usd_cents')::bigint,0)
+                AS credit_applied_usd_cents,
+            COALESCE((applications.summary->>'active_total_usd_cents')::bigint,0)
+                AS active_applications_usd_cents,
+            charge.original_amount_usd_cents
+                - correction.active_reduction_usd_cents
+                - correction.charge_reversal_usd_cents
+                AS adjusted_obligation_usd_cents,
+            charge.original_amount_usd_cents
+                - correction.active_reduction_usd_cents
+                - correction.charge_reversal_usd_cents
+                - COALESCE((applications.summary->>'active_total_usd_cents')::bigint,0)
+                AS remaining_balance_usd_cents,
+            correction.correction_count,
+            charge.payable_at,
+            charge.created_at,
+            charge.created_by
+        FROM app.late_payment_charges AS charge
+        CROSS JOIN LATERAL (
+            SELECT
+                COALESCE(sum(correction.amount_usd_cents) FILTER (
+                    WHERE correction.correction_kind='REDUCTION'),0)::bigint
+                    AS reduction_usd_cents,
+                COALESCE(sum(correction.amount_usd_cents) FILTER (
+                    WHERE correction.correction_kind='REDUCTION_REVERSAL'),0)::bigint
+                    AS reduction_reversal_usd_cents,
+                COALESCE(sum(correction.amount_usd_cents) FILTER (
+                    WHERE correction.correction_kind='REDUCTION'
+                      AND NOT EXISTS (
+                          SELECT 1
+                          FROM app.late_payment_charge_corrections AS reversal
+                          WHERE reversal.reverses_correction_id=correction.id
+                      )),0)::bigint AS active_reduction_usd_cents,
+                COALESCE(sum(correction.amount_usd_cents) FILTER (
+                    WHERE correction.correction_kind='CHARGE_REVERSAL'),0)::bigint
+                    AS charge_reversal_usd_cents,
+                count(correction.id)::bigint AS correction_count
+            FROM app.late_payment_charge_corrections AS correction
+            WHERE correction.late_payment_charge_id=charge.id
+        ) AS correction
+        CROSS JOIN LATERAL (
+            SELECT app.late_payment_charge_application_summary(charge.id) AS summary
+        ) AS applications;
+
         CREATE FUNCTION app.late_payment_decision_snapshot(p_decision_id uuid)
         RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
         DECLARE v_decision app.late_payment_decisions%ROWTYPE; v_property_id uuid;
-        DECLARE v_charge_id uuid;
+        DECLARE v_charge_id uuid; v_lease_id uuid; v_business_date date;
         BEGIN
             SELECT * INTO v_decision FROM app.late_payment_decisions WHERE id=p_decision_id;
             IF NOT FOUND THEN RETURN NULL; END IF;
             v_property_id:=app.invoice_property_id(v_decision.source_invoice_id);
+            SELECT invoice.lease_id,
+                timezone(property.timezone_name,v_decision.finalized_at)::date
+            INTO v_lease_id,v_business_date
+            FROM app.invoices AS invoice
+            JOIN app.properties AS property ON property.id=v_property_id
+            WHERE invoice.id=v_decision.source_invoice_id;
             SELECT id INTO v_charge_id FROM app.late_payment_charges
             WHERE late_payment_decision_id=v_decision.id;
             RETURN jsonb_build_object(
-                'id',v_decision.id,'property_id',v_property_id,
-                'customer_id',v_decision.customer_id,
+                'id',v_decision.id,'event_type','LATE_PAYMENT_DECISION',
+                'property_id',v_property_id,'customer_id',v_decision.customer_id,
+                'lease_id',v_lease_id,'business_date',v_business_date,
                 'source_invoice',jsonb_build_object(
                     'id',v_decision.source_invoice_id,'due_date',v_decision.source_due_date),
                 'overdue_balance_at_assessment',jsonb_build_object(
@@ -155,18 +239,23 @@ def upgrade() -> None:
         CREATE FUNCTION app.late_payment_charge_snapshot(p_charge_id uuid)
         RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
         DECLARE v_charge app.late_payment_charges%ROWTYPE; v_property_id uuid;
-        DECLARE v_adjusted bigint; v_applications jsonb; v_active_applications bigint;
-        DECLARE v_corrections jsonb;
+        DECLARE v_position app.late_payment_charge_financial_position%ROWTYPE;
+        DECLARE v_applications jsonb; v_corrections jsonb;
+        DECLARE v_lease_id uuid; v_business_date date;
         BEGIN
             SELECT * INTO v_charge FROM app.late_payment_charges WHERE id=p_charge_id;
             IF NOT FOUND THEN RETURN NULL; END IF;
             v_property_id:=app.invoice_property_id(v_charge.source_invoice_id);
-            SELECT v_charge.original_amount_usd_cents+COALESCE(sum(
-                CASE correction.correction_kind
-                    WHEN 'REDUCTION' THEN -correction.amount_usd_cents
-                    WHEN 'CHARGE_REVERSAL' THEN -correction.amount_usd_cents
-                    ELSE correction.amount_usd_cents END),0),
-                COALESCE(jsonb_agg(jsonb_build_object(
+            SELECT * INTO STRICT v_position
+            FROM app.late_payment_charge_financial_position
+            WHERE late_payment_charge_id=p_charge_id;
+            SELECT invoice.lease_id,
+                timezone(property.timezone_name,v_charge.payable_at)::date
+            INTO v_lease_id,v_business_date
+            FROM app.invoices AS invoice
+            JOIN app.properties AS property ON property.id=v_property_id
+            WHERE invoice.id=v_charge.source_invoice_id;
+            SELECT COALESCE(jsonb_agg(jsonb_build_object(
                     'id',correction.id,'kind',correction.correction_kind,
                     'amount',jsonb_build_object('currency','USD',
                         'minor_units',correction.amount_usd_cents),
@@ -182,32 +271,33 @@ def upgrade() -> None:
                         SELECT 1 FROM app.late_payment_charge_corrections AS reversal
                         WHERE reversal.reverses_correction_id=correction.id
                     ) ELSE correction.correction_kind='CHARGE_REVERSAL' END
-                ) ORDER BY correction.occurred_at,correction.id)
-                FILTER (WHERE correction.id IS NOT NULL),'[]'::jsonb)
-            INTO v_adjusted,v_corrections
+                ) ORDER BY correction.occurred_at,correction.id),'[]'::jsonb)
+            INTO v_corrections
             FROM app.late_payment_charge_corrections AS correction
             WHERE correction.late_payment_charge_id=p_charge_id;
             v_applications:=app.late_payment_charge_application_summary(p_charge_id);
-            v_active_applications:=COALESCE(
-                (v_applications->>'active_total_usd_cents')::bigint,0);
             RETURN jsonb_build_object(
-                'id',v_charge.id,'property_id',v_property_id,
-                'customer_id',v_charge.customer_id,
+                'id',v_charge.id,'event_type','LATE_PAYMENT_CHARGE',
+                'property_id',v_property_id,'customer_id',v_charge.customer_id,
+                'lease_id',v_lease_id,'business_date',v_business_date,
                 'source_invoice',jsonb_build_object('id',v_charge.source_invoice_id),
                 'decision',app.late_payment_decision_snapshot(v_charge.late_payment_decision_id),
                 'original_amount',jsonb_build_object(
                     'currency','USD','minor_units',v_charge.original_amount_usd_cents),
                 'adjusted_obligation',jsonb_build_object(
-                    'currency','USD','minor_units',v_adjusted),
+                    'currency','USD','minor_units',
+                    v_position.adjusted_obligation_usd_cents),
                 'remaining_balance',jsonb_build_object(
-                    'currency','USD','minor_units',v_adjusted-v_active_applications),
+                    'currency','USD','minor_units',
+                    v_position.remaining_balance_usd_cents),
                 'application_summary',jsonb_build_object(
                     'active_total',jsonb_build_object(
-                        'currency','USD','minor_units',v_active_applications),
+                        'currency','USD','minor_units',
+                        v_position.active_applications_usd_cents),
                     'payment_total',jsonb_build_object('currency','USD','minor_units',
-                        COALESCE((v_applications->>'payment_total_usd_cents')::bigint,0)),
+                        v_position.payment_applied_usd_cents),
                     'credit_total',jsonb_build_object('currency','USD','minor_units',
-                        COALESCE((v_applications->>'credit_total_usd_cents')::bigint,0)),
+                        v_position.credit_applied_usd_cents),
                     'items',COALESCE(v_applications->'items','[]'::jsonb)),
                 'corrections',v_corrections,'payable_at',v_charge.payable_at,
                 'created_at',v_charge.created_at,'created_by',v_charge.created_by
@@ -266,7 +356,9 @@ def upgrade() -> None:
                 request_digest,target_kind,target_id,result_entity_id,response_status,
                 result_snapshot,completed_at)
             VALUES (p_property_id,p_actor_id,p_action,p_idempotency_key,p_request_digest,
-                p_target_kind,p_target_id,p_result_entity_id,201,p_result_snapshot,p_completed_at);
+                p_target_kind,p_target_id,p_result_entity_id,
+                CASE p_action WHEN 'decision' THEN 201 ELSE 200 END,
+                p_result_snapshot,p_completed_at);
         END $$;
 
         CREATE FUNCTION app.finalize_late_payment_decision(
@@ -480,6 +572,10 @@ def upgrade() -> None:
         REVOKE ALL ON TABLE app.late_payment_commands
             FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap;
         GRANT SELECT ON TABLE app.late_payment_commands TO prm_runtime,prm_financial;
+        REVOKE ALL ON TABLE app.late_payment_charge_financial_position
+            FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap;
+        GRANT SELECT ON TABLE app.late_payment_charge_financial_position
+            TO prm_runtime,prm_financial;
         """
     )
     functions = (

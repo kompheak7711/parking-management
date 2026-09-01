@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from uuid import UUID, uuid4
+from pathlib import Path
+from uuid import UUID, uuid4, uuid5
 
 import pytest
 from fastapi.testclient import TestClient
@@ -18,6 +20,7 @@ from property_rental.late_payment import (
     DecisionOutcome,
     FinalizeLatePaymentDecisionCommand,
     LatePaymentApplicationReversalRequired,
+    LatePaymentConflictError,
     LatePaymentIdempotencyKeyReused,
     LatePaymentNotFoundError,
     late_payment_request_digest,
@@ -34,9 +37,12 @@ def actor(property_id: UUID, *capabilities: str) -> AuthenticatedActor:
 
 def decision_resource(property_id: UUID, invoice_id: UUID, charge_id: UUID) -> dict[str, object]:
     return {
-        "id": str(uuid4()),
+        "id": str(uuid5(invoice_id, "late-payment-decision")),
+        "event_type": "LATE_PAYMENT_DECISION",
         "property_id": str(property_id),
-        "customer_id": str(uuid4()),
+        "customer_id": str(uuid5(property_id, "customer")),
+        "lease_id": str(uuid5(property_id, "lease")),
+        "business_date": "2026-08-31",
         "source_invoice": {"id": str(invoice_id), "due_date": "2026-08-30"},
         "overdue_balance_at_assessment": {"currency": "USD", "minor_units": 31_005},
         "default_rate_basis_points": 1000,
@@ -45,7 +51,7 @@ def decision_resource(property_id: UUID, invoice_id: UUID, charge_id: UUID) -> d
         "approved_amount": {"currency": "USD", "minor_units": 1_500},
         "assessed_at": "2026-08-31T01:02:03Z",
         "finalized_at": "2026-08-31T01:02:03Z",
-        "finalized_by": str(uuid4()),
+        "finalized_by": str(uuid5(property_id, "manager")),
         "reason": "Approved exact reduced amount",
         "authorization_reference": "late_payment.final_decision",
         "calculation_evidence": {"rounding": "HALF_UP_TO_USD_CENT"},
@@ -56,10 +62,13 @@ def decision_resource(property_id: UUID, invoice_id: UUID, charge_id: UUID) -> d
 def charge_resource(property_id: UUID, invoice_id: UUID, charge_id: UUID) -> dict[str, object]:
     return {
         "id": str(charge_id),
+        "event_type": "LATE_PAYMENT_CHARGE",
         "property_id": str(property_id),
-        "customer_id": str(uuid4()),
+        "customer_id": str(uuid5(property_id, "customer")),
+        "lease_id": str(uuid5(property_id, "lease")),
+        "business_date": "2026-08-31",
         "source_invoice": {"id": str(invoice_id)},
-        "decision": {"id": str(uuid4())},
+        "decision": {"id": str(uuid5(invoice_id, "late-payment-decision"))},
         "original_amount": {"currency": "USD", "minor_units": 1_500},
         "adjusted_obligation": {"currency": "USD", "minor_units": 1_000},
         "remaining_balance": {"currency": "USD", "minor_units": 1_000},
@@ -72,7 +81,7 @@ def charge_resource(property_id: UUID, invoice_id: UUID, charge_id: UUID) -> dic
         "corrections": [],
         "payable_at": "2026-08-31T01:02:03Z",
         "created_at": "2026-08-31T01:02:03Z",
-        "created_by": str(uuid4()),
+        "created_by": str(uuid5(property_id, "manager")),
     }
 
 
@@ -294,11 +303,21 @@ def test_mutations_enforce_independent_capabilities_csrf_and_server_owned_fields
     assert decided.headers["Location"] == decision_path
     assert flow.decisions[-1].approved_amount_usd_cents == 1_500
 
-    corrected = api(flow, actor(property_id, "late_payment.charge_correction")).post(
-        correction_path, json=correction_body, headers=mutation_headers()
+    correction_client = api(flow, actor(property_id, "late_payment.charge_correction"))
+    correction_headers = {
+        **mutation_headers(),
+        "X-Request-ID": "late-payment-correction-replay",
+    }
+    corrected = correction_client.post(
+        correction_path, json=correction_body, headers=correction_headers
     )
-    assert corrected.status_code == 201
-    assert corrected.headers["Location"] == f"/api/v1/late-payment-charges/{charge_id}"
+    replayed = correction_client.post(
+        correction_path, json=correction_body, headers=correction_headers
+    )
+    assert corrected.status_code == replayed.status_code == 200
+    assert "Location" not in corrected.headers
+    assert "Location" not in replayed.headers
+    assert replayed.json() == corrected.json()
     assert flow.corrections[-1].amount_usd_cents == 500
 
 
@@ -359,3 +378,178 @@ def test_late_payment_special_conflicts_return_safe_semantic_errors() -> None:
     assert correction.status_code == 409
     assert correction.json()["error"]["code"] == "APPLICATION_REVERSAL_REQUIRED"
     assert "exception" not in correction.text.lower()
+
+
+def test_generic_conflicts_return_only_authorized_current_safe_state() -> None:
+    property_id, invoice_id, charge_id = uuid4(), uuid4(), uuid4()
+    flow = InMemoryLatePaymentFlow(property_id, invoice_id, charge_id)
+    decision_path = f"/api/v1/invoices/{invoice_id}/late-payment-decision"
+    decision_body = {
+        "outcome": "WAIVED",
+        "approved_amount": {"currency": "USD", "minor_units": 0},
+        "reason": "Approved waiver",
+    }
+    flow.decision_error = LatePaymentConflictError()
+
+    hidden = api(flow, actor(uuid4(), "late_payment.final_decision")).post(
+        decision_path,
+        json=decision_body,
+        headers=mutation_headers(),
+    )
+    assert hidden.status_code == 404
+    assert "current_state" not in hidden.text
+
+    decision_conflict = api(flow, actor(property_id, "late_payment.final_decision")).post(
+        decision_path, json=decision_body, headers=mutation_headers()
+    )
+    assert decision_conflict.status_code == 409
+    decision_error = decision_conflict.json()["error"]
+    assert decision_error["code"] == "CONFLICT"
+    assert decision_error["current_version"] is None
+    assert decision_error["current_state"] == decision_resource(property_id, invoice_id, charge_id)
+
+    flow.correction_error = LatePaymentConflictError()
+    correction_conflict = api(flow, actor(property_id, "late_payment.charge_correction")).post(
+        f"/api/v1/late-payment-charges/{charge_id}/corrections",
+        json={"kind": "CHARGE_REVERSAL", "reason": "Reverse the charge"},
+        headers=mutation_headers(),
+    )
+    assert correction_conflict.status_code == 409
+    correction_error = correction_conflict.json()["error"]
+    assert correction_error["current_version"] is None
+    assert correction_error["current_state"] == charge_resource(property_id, invoice_id, charge_id)
+    assert "exception" not in correction_conflict.text.lower()
+
+
+def test_late_payment_traceability_mappings_are_truthful() -> None:
+    manifest_path = Path(__file__).parents[2] / "ops" / "traceability.json"
+    manifest = json.loads(manifest_path.read_text())
+    late_payment_mappings = {
+        entry["test_id"]: entry["upstream_ids"]
+        for entry in manifest["entries"]
+        if entry["test_path"]
+        in {
+            "backend/tests/test_late_payment.py",
+            "backend/tests/test_late_payment_migration.py",
+        }
+    }
+    assert late_payment_mappings == {
+        "test_final_decision_command_preserves_only_canonical_client_intent": [
+            "API-005",
+            "API-091",
+        ],
+        "test_commands_reject_untrusted_or_inconsistent_shapes": [
+            "API-005",
+            "API-091",
+            "TEST-123",
+            "TEST-124",
+        ],
+        "test_all_five_routes_require_authentication_exact_capability_and_scope": [
+            "API-009",
+            "API-091",
+            "SEC-020",
+            "SEC-070",
+            "TEST-123",
+            "TEST-124",
+        ],
+        "test_mutations_enforce_independent_capabilities_csrf_and_server_owned_fields": [
+            "API-009",
+            "API-011",
+            "API-015",
+            "API-016",
+            "API-091",
+            "SEC-020",
+            "SEC-070",
+            "TEST-123",
+            "TEST-124",
+        ],
+        "test_decision_api_rejects_noncanonical_outcomes_and_money": [
+            "API-005",
+            "API-091",
+            "TEST-123",
+        ],
+        "test_late_payment_special_conflicts_return_safe_semantic_errors": [
+            "API-016",
+            "API-091",
+            "BR-LATE-005",
+            "TEST-124",
+        ],
+        "test_generic_conflicts_return_only_authorized_current_safe_state": [
+            "API-018",
+            "SEC-020",
+        ],
+        "test_late_payment_traceability_mappings_are_truthful": [
+            "TEST-117",
+            "TEST-119",
+        ],
+        "test_review_decisions_replay_and_source_isolation_use_authoritative_current_balance": [
+            "BR-INV-051",
+            "BR-INV-052",
+            "BR-INV-053",
+            "BR-INV-054",
+            "BR-INV-055",
+            "API-016",
+            "API-025",
+            "API-091",
+            "DB-INV-007",
+            "DB-INV-008",
+            "TEST-123",
+        ],
+        "test_waiver_default_and_ineligible_boundaries_do_not_create_arbitrary_receivables": [
+            "BR-INV-053",
+            "BR-INV-054",
+            "BR-INV-055",
+            "BR-LATE-003",
+            "API-091",
+            "DB-INV-007",
+            "TEST-123",
+        ],
+        "test_zero_rounded_confirmed_default_preserves_decision_without_charge": [
+            "BR-INV-052",
+            "BR-INV-053",
+            "BR-INV-054",
+            "BR-INV-055",
+            "BR-LATE-001",
+            "API-091",
+            "DB-INV-007",
+            "DB-INV-008",
+            "TEST-123",
+        ],
+        "test_review_due_date_boundary_is_property_local_and_never_posts_automatically": [
+            "BR-INV-051",
+            "BR-INV-053",
+            "API-091",
+            "TEST-123",
+        ],
+        "test_corrections_preserve_original_history_bounds_and_future_application_boundary": [
+            "BR-LATE-004",
+            "BR-LATE-005",
+            "API-016",
+            "API-091",
+            "DB-INV-009",
+            "DB-DER-009",
+            "DB-VIEW-007",
+            "TEST-124",
+        ],
+        "test_concurrent_decisions_and_over_reductions_commit_at_most_one_effect": [
+            "API-017",
+            "API-018",
+            "API-091",
+            "DB-TXN-007",
+            "SEC-029",
+            "TEST-123",
+            "TEST-124",
+        ],
+        "test_audit_failure_rolls_back_decision_charge_and_command": [
+            "API-017",
+            "API-091",
+            "BR-AUDIT-006",
+            "TEST-123",
+        ],
+        "test_late_payment_runtime_privileges_are_least_privilege_and_forward_only": [
+            "API-091",
+            "DB-VIEW-007",
+            "SEC-025",
+        ],
+        "test_revision_36_upgrades_to_late_payment_api_head": ["DB-MIG-001"],
+    }
