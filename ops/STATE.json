@@ -1,17 +1,16 @@
 {
-  "active_cycle": "v1-046-late-payment-decision-charge-correction-api",
+  "active_cycle": "v1-047-invoice-adjustment-late-payment-and-billing-run-api-ui",
   "approval": {
-    "status": "active",
-    "basis": "owner standing continuous authorization from the current live V1-046 stage through V1-060, dependency ordered and without repeated routine authorization",
-        "implementation_started": true,
-        "implementation_completed": true,
+    "status": "approved_ready",
+    "basis": "owner standing continuous authorization through V1-060; V1-046 is fully closed and V1-047 contract 0df357b4 is frozen",
+    "implementation_started": false,
+    "implementation_completed": false,
     "publication_completed": false
   },
   "authorities": [
-    "BR-INV-051-055",
-    "BR-LATE-*",
+    "API-050-056",
     "API-091",
-    "TEST-117-119",
+    "TEST-053-058",
     "TEST-123-124"
   ],
   "automation_repair": {
@@ -695,18 +694,23 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319",
+  "commit": "57fd5d34f4e91102f4d49cc124d17d6022467ae4",
   "evidence_applicability": {
-    "basis": "Exact V1-046 release 48e377e60df41b93a8d5d06975ffe8d7b9272055 preserves the manager-accepted candidate product diff byte-for-byte, includes only dependency-safe manager operations metadata, passed every local release gate, and is published with all four exact-SHA GitHub Actions jobs green in run 33469533522.",
-    "complete_profile_remains_applicable": true,
-    "prior_review_disposition": "V1-045 is published and closed. V1-046 correction 0efc51d0, integration 6dc815a8, and independent rereview 7ab561b7 are manager-accepted DONE with zero findings at immutable candidate 47798abd; ordinary release 48e377e6 is exact-SHA CI-green and closure is pending.",
-    "tranche_id": "V1-046"
+    "basis": "V1-046 release 48e377e6, closure 57f0a816, and reconciliation 57fd5d34 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE. V1-047 contract 0df357b4 is frozen from 16 exact canonical authorities at predecessor 57fd5d34.",
+    "complete_profile_remains_applicable": false,
+    "prior_review_disposition": "V1-046 independent rereview passed with zero findings and release card 3266b3a3 is property-manager-accepted DONE. V1-047 has no implementation evidence yet.",
+    "tranche_id": "V1-047"
   },
   "idle_reason": null,
-  "next_action": "Publish one bounded final reconciliation across ops/NOW.md, ops/STATE.json, ops/QUEUE.md, and ops/V1_ROADMAP.json; require exact-SHA CI and final ref/worktree synchronization; then move release 3266b3a3 to REVIEW for property-manager verification while V1-047 remains undispatched",
-  "active_worker": "property-manager",
-  "active_card": "3266b3a3-e244-4926-ade8-6cc13eff775f",
+  "next_action": "Publish and verify this V1-047 activation, then dispatch implementation card 26b14ae0 exactly once in a managed worktree at the activation SHA",
+  "active_worker": null,
+  "active_card": "26b14ae0-92b3-433d-bed6-46bd732c569c",
+  "active_claim": null,
   "active_attempt": null,
+  "active_branch": null,
+  "active_worktree": null,
+  "candidate_sha": null,
+  "candidate_parent": "57fd5d34f4e91102f4d49cc124d17d6022467ae4",
   "next_candidate": {
     "acceptance_profile": "api_ui",
     "authorities": [
@@ -804,8 +808,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 exact release 48e377e6, metadata correction 2bc9816d, and two-file closure 57f0a816 are normally published and exact-SHA CI-green; one bounded four-file final reconciliation remains while V1-047 stays held",
-    "exact_next_action": "Publish the bounded four-file V1-046 reconciliation, require exact-SHA CI and final synchronization, and hand release 3266b3a3 to property-manager REVIEW without overlapping dispatch",
+    "current_phase": "V1-046 is fully released, published, exact-SHA CI-green, synchronized, reconciled, and Workboard-closed; V1-047 is active with frozen contract 0df357b4 and implementation 26b14ae0 ready but undispatched",
+    "exact_next_action": "Publish and exact-SHA verify the V1-047 activation, then start exactly one property-codex-1 managed-worktree implementation attempt at that activation SHA using GPT-5.6 Sol xhigh Standard mode with no fallback",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1373,6 +1377,14 @@
       "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33471210962",
       "closure_ci_jobs": 4,
       "closure_ci_conclusion": "success",
+      "reconciliation_sha": "57fd5d34f4e91102f4d49cc124d17d6022467ae4",
+      "reconciliation_parent": "57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319",
+      "reconciliation_ci_run_id": 33471654604,
+      "reconciliation_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33471654604",
+      "reconciliation_ci_jobs": 4,
+      "reconciliation_ci_conclusion": "success",
+      "release_card": "3266b3a3-e244-4926-ade8-6cc13eff775f",
+      "release_card_status": "done_manager_accepted",
       "closure_manager": "property-manager",
       "closure_metadata_correction": {
         "card_id": "2eafb153-0693-42a6-8704-dc3bbaae9906",
@@ -1398,8 +1410,8 @@
         "locked": true,
         "status": "recovered"
       },
-      "publication_completed": false,
-      "status": "closure_published_exact_sha_ci_green_reconciliation_pending"
+      "publication_completed": true,
+      "status": "fully_released_published_verified_reconciled_closed"
     },
     "product_correction_3_rereview": {
       "card_id": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
@@ -1470,7 +1482,7 @@
     "status": "enabled_healthy"
   },
   "publication": {
-    "role": "active_version",
+    "role": "closed_predecessor",
     "ci_completed": true,
     "ci_conclusion": "success",
     "ci_run_attempt": 1,
@@ -1486,9 +1498,17 @@
     "closure_metadata_correction_commit": "2bc9816db18aa71abf7e98ff7684351fa56ae898",
     "closure_metadata_correction_ci_run_id": 33470535203,
     "closure_metadata_correction_ci_conclusion": "success",
+    "reconciliation_commit": "57fd5d34f4e91102f4d49cc124d17d6022467ae4",
+    "reconciliation_parent": "57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319",
+    "reconciliation_ci_run_id": 33471654604,
+    "reconciliation_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33471654604",
+    "reconciliation_ci_jobs": 4,
+    "reconciliation_ci_conclusion": "success",
+    "release_card_id": "3266b3a3-e244-4926-ade8-6cc13eff775f",
+    "release_card_status": "done_manager_accepted",
     "push_completed": true,
-    "sha_reconciled": false,
-    "status": "closure_published_reconciliation_pending",
+    "sha_reconciled": true,
+    "status": "fully_closed",
     "tranche_id": "V1-046",
     "predecessor_closure_commit": "fe00f286759695f53001e77937b107d343fb6947",
     "predecessor_reconciliation_commit": "39c38e74b7b55f877f74081c94dcd9b971aa1348"
@@ -1505,15 +1525,11 @@
     "status": "PASS"
   },
   "relevant_docs": [
-    "docs/001_DOMAIN_MODEL.md: Late-payment Decision and separate Charge vocabulary",
-    "docs/002_BUSINESS_RULES.md: BR/PR-INV-051-055 and BR/PR-LATE-* final-decision, non-compounding, correction, and history invariants",
-    "docs/004_DATABASE_MODEL.md: DB-INV-007-009, DB-DER-009, DB-TXN-007, and DB-VIEW-007",
-    "docs/005_API_SPECIFICATION.md: API-091",
-    "docs/007_TESTING_STRATEGY.md: TEST-117 through TEST-119 and TEST-123 through TEST-124",
-    "docs/008_SECURITY_MODEL.md: separate Property-scoped late-payment review, final-decision, and charge-correction capabilities"
+    "docs/005_API_SPECIFICATION.md: API-050 through API-056 and API-091",
+    "docs/007_TESTING_STRATEGY.md: TEST-053 through TEST-058 and TEST-123 through TEST-124"
   ],
   "repair": {
-    "tranche_id": "V1-046",
+    "tranche_id": "V1-047",
     "failure": null,
     "scope_preserved": true,
     "attempts": 0,
@@ -2115,14 +2131,14 @@
   "risk_class": "high",
   "roadmap": {
     "completed": 46,
-    "current_id": "V1-046",
+    "current_id": "V1-047",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "closure_published_reconciliation_pending",
-  "task": "Reconcile and independently verify closure of the approved bounded candidate: Late-payment decision, charge, correction, and allocation boundaries",
+  "status": "active",
+  "task": "Implement the approved bounded candidate: Invoice, adjustment, late-payment, and billing-run API/UI",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -2368,7 +2384,7 @@
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T04:53:20Z",
+  "timestamp": "2026-09-01T05:11:49Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2395,24 +2411,34 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
-    "backend/migrations/versions/20260831_37_late_payment_api.py",
     "backend/src/property_rental/app.py",
+    "backend/src/property_rental/api.py",
+    "backend/src/property_rental/invoice.py",
+    "backend/src/property_rental/invoice_api.py",
+    "backend/src/property_rental/billing_run.py",
+    "backend/src/property_rental/billing_run_api.py",
     "backend/src/property_rental/late_payment.py",
     "backend/src/property_rental/late_payment_api.py",
-    "backend/tests/test_billing_service_migration.py",
-    "backend/tests/test_initial_owner_bootstrap_cli.py",
+    "backend/tests/test_invoice.py",
+    "backend/tests/test_invoice_api.py",
     "backend/tests/test_invoice_migration.py",
+    "backend/tests/test_billing_run.py",
+    "backend/tests/test_billing_run_api.py",
+    "backend/tests/test_billing_run_migration.py",
     "backend/tests/test_late_payment.py",
+    "backend/tests/test_late_payment_api.py",
     "backend/tests/test_late_payment_migration.py",
-    "backend/tests/test_lease_api_migration.py",
     "backend/tests/test_migrations.py",
-    "backend/tests/test_utility_api_migration.py",
-    "backend/tests/test_utility_consumption_migration.py",
-    "backend/tests/test_utility_meter_migration.py",
+    "frontend/src/App.tsx",
+    "frontend/src/App.test.tsx",
+    "frontend/src/InvoiceManagement.tsx",
+    "frontend/src/InvoiceManagement.test.tsx",
+    "frontend/src/invoiceClient.ts",
+    "frontend/src/invoiceClient.test.ts",
+    "frontend/src/styles.css",
     "ops/traceability.json",
-    "scripts/database-test.sh",
     "ops/NOW.md",
     "ops/STATE.json"
   ],
-  "tranche": "Late-payment decision, charge, correction, and allocation boundaries"
+  "tranche": "Invoice, adjustment, late-payment, and billing-run API/UI"
 }

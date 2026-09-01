@@ -57,13 +57,10 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-046 final reconciliation.
-The zero-finding reviewed product candidate `47798abd` is preserved by ordinary
-release `48e377e6`; exact-SHA CI run `33469533522` passed all four jobs.
-Bounded closure-metadata correction `2bc9816d` and two-file closure
-`57f0a816` are also published with four green jobs in runs `33470535203` and
-`33471210962`. Release `3266b3a3-e244-4926-ade8-6cc13eff775f` is under a
-property-manager claim for one final bounded compact-state reconciliation and
-terminal verification. V1-047 remains approved but undispatched until that
-reconciliation is exact-SHA CI-green and the release card is manager-accepted
-DONE.
+Current live queue position: V1-047 activation and implementation.
+V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
+are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
+V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE.
+Implementation `26b14ae0-92b3-433d-bed6-46bd732c569c` is the sole ready stage;
+dispatch it exactly once in a managed worktree only after the activation commit
+is published and exact-SHA CI-green. V1-048 remains dependency-held.

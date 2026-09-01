@@ -1,12 +1,12 @@
-# V1-046 Late-payment decision, charge, correction, and allocation boundaries — final reconciliation pending
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — contract frozen, activation pending publication
 
-- Candidate: `V1-046` — late-payment Decision, separate non-compounding Charge,
-  correction, replay, concurrency, authorization, audit, and allocation boundaries.
+- Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
+  billing-run staff API/UI workflows with explicit confirmations; payments excluded.
 - Authorization: Owner standing continuous authorization from V1-046 through
   V1-060; this release remains limited to the exact manager-accepted candidate
   and bounded manager operations metadata.
-- Baseline: V1-045 reconciliation
-  `39c38e74b7b55f877f74081c94dcd9b971aa1348`.
+- Baseline: fully closed V1-046 reconciliation
+  `57fd5d34f4e91102f4d49cc124d17d6022467ae4`.
 - Reviewed implementation: exact candidate
   `47798abdbacf04df917eea6ee7f2b889eee7ac8c`, sole parent
   `0a55db2b445c776a2f91afee308cc0a13d8a93e7`, tree
@@ -51,12 +51,19 @@
 - Closure publication: exact two-file closure
   `57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319`, parent `2bc9816d`, was
   pushed normally; GitHub Actions run `33471210962` passed all four jobs.
-- Status: V1-046 implementation, review, release, publication, correction, and
-  closure are exact-SHA CI-green. One bounded four-file final reconciliation,
-  its exact-SHA CI, final synchronization, and Workboard acceptance remain.
-- V1-047: held at `approved_ready`; no activation, implementation, or dispatch
-  may occur before this closure, reconciliation CI, final synchronization, and
-  property-manager release verification complete.
+- V1-046 terminal proof: reconciliation `57fd5d34`, parent `57f0a816`, passed
+  exact-SHA GitHub Actions run `33471654604` with all four jobs green; local,
+  tracking, fetched, and live-remote refs match. Release Workboard card
+  `3266b3a3-e244-4926-ade8-6cc13eff775f` is property-manager-accepted DONE.
+- V1-047 contract: Workboard `0df357b4-61a3-4697-af85-b6dcf2cf0305` is DONE.
+  It freezes API-050..056, API-091, TEST-053..058, TEST-123..124, `api_ui`
+  acceptance, exact allowed paths, payments exclusion, and financial,
+  authorization, CSRF, transaction, concurrency, audit, traceability, build,
+  secret, integration, and independent-review gates.
+- Implementation: card `26b14ae0-92b3-433d-bed6-46bd732c569c` is ready for
+  exactly one managed-worktree property-codex-1 attempt after this activation is
+  published and exact-SHA CI-green. Runtime is GPT-5.6 Sol `xhigh`, Standard,
+  Fast-off, with no fallback.
 - Scheduler: enabled singleton `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains
   on its 30-minute interval with GPT-5.6 Sol `xhigh`, Standard/Fast-off. Its
   saved payload and `ops/OPENCLAW_SUPERVISOR_PROMPT.md` are byte-identical at
@@ -67,19 +74,14 @@
   deletion: none.
 - Blockers: none.
 - Owner action required: no.
-- Exact next action: publish this bounded four-file final reconciliation,
-  require every exact-SHA GitHub Actions job green, prove local/tracking/fetched/
-  live-remote equality and retained worktrees, then move release
-  `3266b3a3-e244-4926-ade8-6cc13eff775f` to REVIEW for property-manager
-  verification; keep V1-047 undispatched until that terminal proof.
+- Exact next action: publish this bounded V1-047 activation, require exact-SHA
+  GitHub Actions success and ref synchronization, then dispatch implementation
+  `26b14ae0-92b3-433d-bed6-46bd732c569c` exactly once from that immutable base.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: exact V1-046 release `48e377e6`, metadata
-  correction `2bc9816d`, and closure `57f0a816` are published,
-  synchronized, and exact-SHA CI-green; final reconciliation is pending.
-- Automation exact next action: keep V1-047 held and undispatched while V1-046
-  closure, reconciliation CI, final synchronization, and Workboard review handoff
-  complete.
+- Automation candidate state: V1-047 approved and active; implementation has not started.
+- Automation exact next action: publish and verify activation, then dispatch the
+  single ready V1-047 implementation card without overlap.
 
 <!-- AUTOMATION_STATUS_END -->
