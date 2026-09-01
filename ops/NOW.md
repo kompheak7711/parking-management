@@ -95,6 +95,15 @@
   quoted/JSON sensitive-value rejection, and an exact idempotent bootstrap for
   the preserved V1-047 implementation card. The correction remains unstarted
   and the rejected candidate remains uninstalled.
+- Owner-decision reconciliation: exact ops-only commit
+  `0ce6ac9030174e8039c7367ed26737f676be957b`, parent `1c523409`, tree
+  `b4b43b89`, changed only `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`.
+  Local automation passed 189/189 with zero failures/skips; GitHub Actions run
+  `33512759067` passed all four jobs. Backend passed 729 with 444 explained
+  database-only skips, PostgreSQL passed 467/467 with zero skips, frontend
+  passed 234/234 across 17/17 files, automation passed 189/189, and dependency
+  audits found zero vulnerabilities. Local, tracking, fetched, and live-remote
+  refs match exactly.
 - Scheduler: enabled singleton `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains
   on its 30-minute interval with GPT-5.6 Sol `xhigh`, Standard/Fast-off. Its
   saved payload and `ops/OPENCLAW_SUPERVISOR_PROMPT.md` are byte-identical at

@@ -77,4 +77,7 @@ because the unchanged identity still lacks `operator.admin`. After that external
 permission is supplied, start only this correction exactly once; preserve and do
 not dispatch implementation `26b14ae0` until correction, fresh integration, and
 fresh independent review pass.
+The owner-decision reconciliation is published at exact `0ce6ac9`, parent
+`1c523409`; local automation passed 189/189, exact-SHA CI run `33512759067`
+passed all four jobs, and local/tracking/fetched/live-remote refs match.
 V1-048 remains dependency-held.
