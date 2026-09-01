@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — coordination correction running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — coordination correction under fresh review
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -86,20 +86,23 @@
   V1-047 card. The first two material classes survived the prior correction, so
   the bounded-recovery human-stop threshold is reached. The candidate remains
   uninstalled; no scheduler mutation, publication, or V1 dispatch occurred.
-- Owner decision: the durable 2026-09-01 authorization clears that exhausted-
-  recovery stop for one materially different H1-H3 correction. Exactly one
-  dependency-linked correction card
-  `d2d1f66e-de97-4f26-93fc-9806feae82ea` now runs exactly once at immutable
-  base `ece9afd`, parent `3fc58af`, in managed branch
-  `openclaw/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea` and worktree
-  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea`.
-  Attempt `workboard:d2d1f66e-de97-4f26-93fc-9806feae82ea:1788269846499`
-  is claimed by `property-codex-1`; its claim and heartbeats are healthy. The
-  four current modified paths are all within the frozen correction scope.
-  H1-H3 focused regressions passed 5/5 and the complete coordination suite
-  passed 80/80 with zero failures/skips; full automation and remaining gates
-  are in progress. No corrected commit exists yet, and the rejected base
-  remains uninstalled.
+- Owner-authorized correction: Workboard
+  `d2d1f66e-de97-4f26-93fc-9806feae82ea` is property-manager-accepted DONE at
+  exact candidate `85a3439459286103ce2710b20f767f49fa9a5a00`, sole parent
+  `ece9afdaf1c4d5bd79b44b0826a4b14a8637f13e`, tree `21195130984c3be4a0378e64f50512f550139cd9`.
+  The complete correction is exactly four authorized paths, +1621/-26, raw
+  diff SHA-256 `765f43a1ac8ae715cd7c618ab90f9da01df92fa6e785b0a5e1e85885881106f8`.
+  Fresh manager verification and integration card
+  `c54f4a90-88d2-4d2b-92db-c66b49298d8a` passed coordination 80/80 and
+  automation 189/189 with zero failures/skips, plus roadmap, JSON, Python,
+  manifest, traceability, scope, ancestry, secret, diff, and clean-state gates.
+- Fresh independent review: card `84c1950f-0dfc-4400-9c4b-a6dab427b4c3`
+  is running exactly once on `property-codex-2` at the immutable candidate.
+  Attempt `workboard:84c1950f-0dfc-4400-9c4b-a6dab427b4c3:1788273631793`
+  has a healthy claim and heartbeat. The reviewer is GPT-5.6 Sol `max`,
+  Standard/Fast-off, read-only, and bound to the complete exact diff. The
+  correction remains uninstalled and unpublished; live V1-047 bootstrap and
+  implementation dispatch have not occurred.
 - Owner-decision reconciliation: exact ops-only commit
   `0ce6ac9030174e8039c7367ed26737f676be957b`, parent `1c523409`, tree
   `b4b43b89`, changed only `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`.
@@ -117,22 +120,23 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the active correction. The prior external permission
-  boundary has been crossed by one supported dispatch; it must not be retried
-  or duplicated. V1-047 implementation remains BLOCKED with zero starts.
+- Blocker: none for the active independent review. V1-047 implementation
+  remains BLOCKED with zero starts; no install, live bootstrap, or implementation
+  dispatch is permitted before a zero-finding review and release acceptance.
 - Owner action required: no.
-- Exact next action: preserve and inspect the healthy correction attempt. After
-  it releases to REVIEW with a clean bounded commit, independently verify its
-  exact SHA, parent, complete diff, tests, traceability, manifest, secret, and
-  clean-state evidence before manager acceptance. Do not install the candidate
-  or dispatch implementation `26b14ae0` yet.
+- Exact next action: preserve and inspect independent review
+  `84c1950f-0dfc-4400-9c4b-a6dab427b4c3` through REVIEW. Property-manager then
+  accepts a zero-finding exact-SHA verdict or creates one bounded correction for
+  material findings. Do not install, publish, bootstrap the live V1-047 card, or
+  dispatch implementation `26b14ae0` yet.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
 - Automation candidate state: V1-047 approved and active at exact green
-  activation `870472b7`; the H1-H3 correction is running exactly once on
-  `property-codex-1`, while implementation remains blocked and unstarted.
-- Automation exact next action: inspect the healthy correction through REVIEW,
-  then manager-verify its exact committed evidence without installing it.
+  activation `870472b7`; correction `85a3439` and fresh integration are
+  manager-accepted DONE, and one independent max review is running while
+  implementation remains blocked and unstarted.
+- Automation exact next action: inspect the healthy independent review through
+  REVIEW, then manager-accept only an exact zero-finding verdict.
 
 <!-- AUTOMATION_STATUS_END -->

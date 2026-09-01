@@ -702,19 +702,19 @@
     "tranche_id": "V1-047"
   },
   "idle_reason": null,
-  "next_action": "Inspect healthy correction d2d1f66e through REVIEW; then manager-verify its exact committed SHA, parent, bounded diff, tests, traceability, manifest, secret, and clean-state evidence without installing it or dispatching implementation 26b14ae0",
-  "active_worker": "property-codex-1",
-  "active_card": "d2d1f66e-de97-4f26-93fc-9806feae82ea",
+  "next_action": "Inspect fresh independent review 84c1950f through REVIEW; then property-manager accepts only an exact zero-finding verdict or creates one bounded correction without installing, publishing, live-bootstrap, or implementation dispatch",
+  "active_worker": "property-codex-2",
+  "active_card": "84c1950f-0dfc-4400-9c4b-a6dab427b4c3",
   "active_claim": {
-    "owner": "property-codex-1",
-    "claimed_at_ms": 1788269846459,
-    "last_heartbeat_at_ms": 1788271441393,
-    "expires_at_ms": 1788278641393
+    "owner": "property-codex-2",
+    "claimed_at_ms": 1788273631753,
+    "last_heartbeat_at_ms": 1788273650727,
+    "expires_at_ms": 1788280850727
   },
-  "active_attempt": "workboard:d2d1f66e-de97-4f26-93fc-9806feae82ea:1788269846499",
+  "active_attempt": "workboard:84c1950f-0dfc-4400-9c4b-a6dab427b4c3:1788273631793",
   "active_branch": "openclaw/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea",
   "active_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea",
-  "candidate_sha": null,
+  "candidate_sha": "85a3439459286103ce2710b20f767f49fa9a5a00",
   "candidate_parent": "ece9afdaf1c4d5bd79b44b0826a4b14a8637f13e",
   "next_candidate": {
     "acceptance_profile": "api_ui",
@@ -754,12 +754,12 @@
     },
     {
       "id": "worker-coordination-rereview-human-stop",
-      "status": "owner_authorized_correction_running",
+      "status": "owner_authorized_correction_review_running",
       "scope": "uninstalled OpenClaw coordination safety candidate and exact pre-existing V1-047 card bootstrap",
       "evidence": "Workboard 9d1990ed-d3d5-4b0a-ba90-406372df359c failed exact ece9afd with 3 HIGH, 0 MEDIUM, 0 LOW after coordination 75/75 and automation 189/189 passed; two material classes survived the prior correction",
       "owner_decision": "2026-09-01 standing authorization explicitly clears the exhausted-recovery stop for one materially different H1-H3 correction",
       "correction_card_id": "d2d1f66e-de97-4f26-93fc-9806feae82ea",
-      "action": "inspect the one healthy correction attempt through REVIEW; then manager-verify exact committed evidence before any installation or V1-047 implementation dispatch"
+      "action": "inspect the one healthy independent exact-SHA review through REVIEW; manager-accept only a zero-finding verdict before any installation, live bootstrap, or V1-047 implementation dispatch"
     }
   ],
   "owner_action": null,
@@ -822,8 +822,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-047 activation 870472b7 is published, synchronized, and exact-SHA CI-green; owner-authorized H1-H3 correction d2d1f66e is running exactly once at ece9afd on property-codex-1; implementation 26b14ae0 remains blocked",
-    "exact_next_action": "Inspect the healthy property-codex-1 correction d2d1f66e through REVIEW, then manager-verify its exact committed SHA, parent, bounded diff, tests, traceability, manifest, secret, and clean-state evidence without installing it or dispatching implementation 26b14ae0",
+    "current_phase": "V1-047 activation 870472b7 is published and CI-green; correction 85a3439 and fresh integration c54f4a90 are manager-accepted DONE; independent max review 84c1950f runs exactly once while implementation 26b14ae0 remains blocked",
+    "exact_next_action": "Inspect independent exact-SHA review 84c1950f through REVIEW; property-manager accepts only a zero-finding verdict or creates one bounded correction without install, publication, live bootstrap, or implementation dispatch",
     "coordination_safety_rereview": {
       "card_id": "9d1990ed-d3d5-4b0a-ba90-406372df359c",
       "candidate_sha": "ece9afdaf1c4d5bd79b44b0826a4b14a8637f13e",
@@ -849,26 +849,48 @@
       "mode": "standard",
       "fast_mode": false,
       "fallbacks": [],
-      "claim_active": true,
-      "attempt_active": true,
-      "worker_active": true,
+      "claim_active": false,
+      "attempt_active": false,
+      "worker_active": false,
       "attempt_id": "workboard:d2d1f66e-de97-4f26-93fc-9806feae82ea:1788269846499",
       "branch": "openclaw/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea",
       "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea",
       "dispatch_attempted": true,
       "dispatch_count": 1,
       "dispatch_at_ms": 1788269842078,
-      "last_heartbeat_at_ms": 1788271441393,
-      "claim_expires_at_ms": 1788278641393,
+      "last_heartbeat_at_ms": 1788272373325,
+      "claim_expires_at_ms": null,
       "current_paths": [
         "ops/AUTOMATION_TRACEABILITY.json",
         "ops/OPENCLAW_INSTALL_MANIFEST.json",
         "scripts/openclaw_worker_coordination.py",
         "scripts/test_openclaw_worker_coordination.py"
       ],
-      "interim_tests": "PASS: focused H1-H3 5/5 and coordination 80/80, zero failures, zero skips; full automation and remaining gates in progress",
+      "candidate_sha": "85a3439459286103ce2710b20f767f49fa9a5a00",
+      "candidate_parent": "ece9afdaf1c4d5bd79b44b0826a4b14a8637f13e",
+      "candidate_tree": "21195130984c3be4a0378e64f50512f550139cd9",
+      "diff_sha256": "765f43a1ac8ae715cd7c618ab90f9da01df92fa6e785b0a5e1e85885881106f8",
+      "tests": "PASS: coordination 80/80 and automation 189/189, zero failures, zero skips; roadmap, JSON, Python, manifest, traceability, scope, ancestry, secret, diff, and clean-state gates passed",
+      "manager_accepted": true,
+      "integration_card_id": "c54f4a90-88d2-4d2b-92db-c66b49298d8a",
+      "integration_status": "done_manager_accepted_pass",
+      "independent_review": {
+        "card_id": "84c1950f-0dfc-4400-9c4b-a6dab427b4c3",
+        "attempt_id": "workboard:84c1950f-0dfc-4400-9c4b-a6dab427b4c3:1788273631793",
+        "worker": "property-codex-2",
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "max",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "claim_active": true,
+        "last_heartbeat_at_ms": 1788273650727,
+        "claim_expires_at_ms": 1788280850727,
+        "reviewer_edits_authorized": false,
+        "status": "running"
+      },
       "blocker": null,
-      "status": "running"
+      "status": "done_manager_accepted_review_running"
     },
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
@@ -2584,7 +2606,7 @@
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T14:08:22Z",
+  "timestamp": "2026-09-01T14:47:30Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

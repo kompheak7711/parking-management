@@ -57,8 +57,8 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: owner-authorized V1-047 coordination correction running
-exactly once before implementation can start.
+Current live queue position: owner-authorized V1-047 coordination correction under
+fresh independent exact-SHA review before implementation can start.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
@@ -69,15 +69,16 @@ BLOCKED before start because managed-worktree Gateway dispatch requires
 independent exact-SHA rereview of the uninstalled coordination
 candidate `ece9afd` then failed with 3 HIGH findings, including two surviving
 material classes and one missing bootstrap for this exact pre-existing card. The
-owner has now explicitly cleared that exhausted-recovery stop for one materially
-different H1-H3 correction. Correction `d2d1f66e-de97-4f26-93fc-9806feae82ea`
-is the sole active stage at exact base `ece9afd`. One supported dispatch has now
-started attempt `workboard:d2d1f66e-de97-4f26-93fc-9806feae82ea:1788269846499`
-on `property-codex-1` in its managed worktree. The claim and heartbeats are healthy;
-focused H1-H3 regressions passed 5/5 and coordination passed 80/80 with zero
-failures/skips while full automation and remaining gates continue. Preserve this
-attempt and do not dispatch implementation `26b14ae0` until correction acceptance,
-fresh integration, and fresh independent review pass.
+owner explicitly cleared that exhausted-recovery stop for one materially different
+H1-H3 correction. Correction `d2d1f66e-de97-4f26-93fc-9806feae82ea` is now
+property-manager-accepted DONE at exact `85a3439`, parent `ece9afd`; its complete
+four-path +1621/-26 diff and fresh manager integration card `c54f4a90` passed
+coordination 80/80 and automation 189/189 with zero failures/skips. Fresh read-only
+independent review `84c1950f-0dfc-4400-9c4b-a6dab427b4c3` now runs exactly once
+on `property-codex-2` at GPT-5.6 Sol `max`, Standard/Fast-off, attempt
+`workboard:84c1950f-0dfc-4400-9c4b-a6dab427b4c3:1788273631793`. Preserve this
+review and do not install, bootstrap the live card, or dispatch implementation
+`26b14ae0` until an exact zero-finding review is manager-accepted.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent
 `1c523409`; local automation passed 189/189, exact-SHA CI run `33512759067`
 passed all four jobs, and local/tracking/fetched/live-remote refs match.
