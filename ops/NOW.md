@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — activation green, owner stop after coordination rereview
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — correction authorized, awaiting managed-worktree permission
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -86,6 +86,15 @@
   V1-047 card. The first two material classes survived the prior correction, so
   the bounded-recovery human-stop threshold is reached. The candidate remains
   uninstalled; no scheduler mutation, publication, or V1 dispatch occurred.
+- Owner decision: the durable 2026-09-01 authorization clears that exhausted-
+  recovery stop for one materially different H1-H3 correction. Exactly one
+  dependency-linked correction card
+  `d2d1f66e-de97-4f26-93fc-9806feae82ea` now exists at immutable base
+  `ece9afd`; it is READY with no claim, attempt, worker, branch, or managed
+  worktree. Its frozen scope covers actual REVIEW-release semantics, exhaustive
+  quoted/JSON sensitive-value rejection, and an exact idempotent bootstrap for
+  the preserved V1-047 implementation card. The correction remains unstarted
+  and the rejected candidate remains uninstalled.
 - Scheduler: enabled singleton `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains
   on its 30-minute interval with GPT-5.6 Sol `xhigh`, Standard/Fast-off. Its
   saved payload and `ops/OPENCLAW_SUPERVISOR_PROMPT.md` are byte-identical at
@@ -94,22 +103,24 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blockers: managed-worktree dispatch still requires `operator.admin`, and the
-  fresh coordination rereview exhausted bounded recovery with 3 HIGH findings.
-- Owner action required: yes. Review Workboard `9d1990ed-d3d5-4b0a-ba90-406372df359c`
-  and decide whether to authorize another materially different coordination
-  correction and live-card bootstrap. The managed-worktree identity also needs
-  `operator.admin` before any eventual start.
-- Exact next action: hold installation, scheduler mutation, correction dispatch,
-  and V1-047 dispatch until the owner resolves the exhausted-recovery stop. Do
-  not retry the unchanged permission failure.
+- Blocker: managed-worktree dispatch still requires `operator.admin`. The owner
+  decision did not grant that scope, and the unchanged permission failure was
+  not retried. V1-047 implementation remains BLOCKED with zero starts.
+- Owner action required: yes, only for the external permission boundary. Grant
+  `operator.admin` to the Gateway identity or invoke authenticated-owner
+  `/workboard dispatch` for correction card `d2d1f66e`; do not dispatch the
+  V1-047 implementation card yet.
+- Exact next action: after that permission change, start exactly one
+  property-codex-1 managed-worktree attempt for correction `d2d1f66e` at
+  `ece9afd` using GPT-5.6 Sol `xhigh`, Standard/Fast-off, no fallback. Preserve
+  implementation `26b14ae0` and do not install or dispatch it.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
 - Automation candidate state: V1-047 approved and active at exact green
-  activation `870472b7`; implementation is held before start by operator scope
-  and an exhausted coordination-safety recovery.
-- Automation exact next action: preserve the exact card and all evidence while
-  awaiting owner direction on the 3 HIGH rereview findings; do not dispatch.
+  activation `870472b7`; the H1-H3 correction is authorized and READY but both
+  correction and implementation remain unstarted at the operator-scope boundary.
+- Automation exact next action: await `operator.admin` or authenticated-owner
+  dispatch, then start only correction `d2d1f66e` exactly once.
 
 <!-- AUTOMATION_STATUS_END -->

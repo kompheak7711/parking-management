@@ -57,18 +57,24 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 implementation blocked before start.
+Current live queue position: owner-authorized V1-047 coordination correction awaiting
+managed-worktree permission before implementation can start.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
 activation `870472b7` is published, synchronized, and exact-SHA CI-green in run
-`33472963195`. Implementation `26b14ae0-92b3-433d-bed6-46bd732c569c` is the
-sole dependency-ready stage but is BLOCKED before start because managed-worktree
-Gateway dispatch requires `operator.admin`. Two bounded supported paths produced
-zero starts. A fresh independent exact-SHA rereview of the uninstalled coordination
+`33472963195`. Implementation `26b14ae0-92b3-433d-bed6-46bd732c569c` remains
+BLOCKED before start because managed-worktree Gateway dispatch requires
+`operator.admin`; two bounded supported paths produced zero starts. A fresh
+independent exact-SHA rereview of the uninstalled coordination
 candidate `ece9afd` then failed with 3 HIGH findings, including two surviving
 material classes and one missing bootstrap for this exact pre-existing card. The
-bounded-recovery human-stop threshold is reached. Owner review is required before
-another correction or any V1-047 dispatch; `operator.admin` remains required for
-an eventual managed-worktree start. Preserve the same card and do not retry.
+owner has now explicitly cleared that exhausted-recovery stop for one materially
+different H1-H3 correction. Correction `d2d1f66e-de97-4f26-93fc-9806feae82ea`
+is the sole dependency-ready stage at exact base `ece9afd`; it is READY with zero
+claim, attempt, worker, branch, or managed worktree. Its dispatch was not attempted
+because the unchanged identity still lacks `operator.admin`. After that external
+permission is supplied, start only this correction exactly once; preserve and do
+not dispatch implementation `26b14ae0` until correction, fresh integration, and
+fresh independent review pass.
 V1-048 remains dependency-held.
