@@ -57,10 +57,10 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: owner-authorized V1-047 H1-H5 coordination
-correction and fresh cumulative integration are manager-accepted DONE; one fresh
-independent max review is RUNNING exactly once on `property-codex-2`, before
-implementation.
+Current live queue position: owner-authorized V1-047 bounded H1-H3 correction
+is manager-accepted DONE at exact `a3a1cff`; one fresh cumulative integration is
+RUNNING exactly once on `property-codex-3`, before a fresh independent max
+review and implementation.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
@@ -148,11 +148,20 @@ start failed before worker/session/worktree creation because the ledger lacked
 an absolute source checkout; the same card was rebound to the exact clean review
 worktree and started once with zero start failures on `property-codex-1` as
 attempt `workboard:dafb7f51-a40a-4a3d-a459-79ead8040e3f:1788300750975`. Its
-managed branch/worktree start clean at exact `587768eb`, parent `3a912c3`, tree
-`814cdcee`. Preserve and inspect that healthy GPT-5.6 Sol `xhigh`, Standard/
-Fast-off correction. Do not install, bootstrap the live card, publish, or
-dispatch implementation `26b14ae0` before fresh integration and an accepted
-zero-finding independent review.
+managed branch/worktree concluded clean at exact `a3a1cff`, parent `587768eb`,
+tree `7a83808c`, as one zero-merge four-path +592/-187 commit with binary SHA-256
+`59c300f5`. Worker and manager focused 3/3, coordination 93/93, automation
+189/189, and every integrity gate passed with zero failures/skips and zero
+findings; card `dafb7f51` is manager-accepted DONE. Fresh cumulative integration
+`8ccec368-0586-42a9-8cc9-98da32d4b0ed` was created once with stable key
+`v1-047-ops-cumulative-integration-a3a1cff-v1` and started exactly once with
+zero start failures on `property-codex-3` as attempt
+`workboard:8ccec368-0586-42a9-8cc9-98da32d4b0ed:1788304194732` in managed
+branch/worktree `openclaw/wb-8ccec368-0586-42a9-8cc9-98da32d4b0ed` /
+`wb-8ccec368-0586-42a9-8cc9-98da32d4b0ed` at immutable `a3a1cff`. Preserve and
+inspect that healthy GPT-5.6 Sol `xhigh`, Standard/Fast-off, read-only gate. Do
+not install, bootstrap the live card, publish, or dispatch implementation
+`26b14ae0` before manager acceptance and a fresh zero-finding independent review.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent
 `1c523409`; local automation passed 189/189, exact-SHA CI run `33512759067`
 passed all four jobs, and local/tracking/fetched/live-remote refs match.

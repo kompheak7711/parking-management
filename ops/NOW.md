@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded H1-H3 correction running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -247,8 +247,28 @@
   once with zero start failures on `property-codex-1` as attempt
   `workboard:dafb7f51-a40a-4a3d-a459-79ead8040e3f:1788300750975` in managed
   branch/worktree `openclaw/wb-dafb7f51-a40a-4a3d-a459-79ead8040e3f` /
-  `wb-dafb7f51-a40a-4a3d-a459-79ead8040e3f`. Its clean initial HEAD is exact
-  `587768eb`, parent `3a912c3`, tree `814cdcee`; the claim is healthy.
+  `wb-dafb7f51-a40a-4a3d-a459-79ead8040e3f`. It concluded at exact
+  `a3a1cfffc33355f52904f1f25181ab21634ce07b`, parent `587768eb`, tree
+  `7a83808c78ab8dc0857bd7985e37f5a876971955`. The single-commit, zero-merge,
+  exact four-path +592/-187 diff has full-index binary SHA-256
+  `59c300f5b8a575a25b6e1d9daeaf1090e572912eaceb0d45973e9695cf030a8c`.
+  Worker and property-manager each passed focused H1-H3 3/3, coordination 93/93,
+  automation routing/evidence 189/189, and all integrity gates with zero
+  failures/skips and 0 HIGH, 0 MEDIUM, 0 LOW manager findings. The manager
+  reconciled only stale execution presentation and accepted card `dafb7f51`
+  DONE; the candidate remains uninstalled and unpublished.
+- Fresh cumulative integration: Workboard
+  `8ccec368-0586-42a9-8cc9-98da32d4b0ed` was created once with stable key
+  `v1-047-ops-cumulative-integration-a3a1cff-v1`, parent `dafb7f51`, immutable
+  source `a3a1cff`, and GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks,
+  read-only. The supported token-free Gateway operator route returned exactly
+  one start and zero failures. It is RUNNING once on `property-codex-3` as
+  attempt `workboard:8ccec368-0586-42a9-8cc9-98da32d4b0ed:1788304194732` in
+  managed branch/worktree `openclaw/wb-8ccec368-0586-42a9-8cc9-98da32d4b0ed`
+  / `wb-8ccec368-0586-42a9-8cc9-98da32d4b0ed`, exact HEAD `a3a1cff`, parent
+  `587768eb`, tree `7a83808c`. The complete `ece9afd..a3a1cff` candidate is six
+  linear commits, zero merges, four paths, +3882/-121, binary diff SHA-256
+  `381e1bf14b0823d67d5e83cc758cd63d09316b4451606c3d12fa73b0987b1a65`.
 - Prior blocker-state publication: exact ops-only commit
   `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -277,14 +297,15 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the healthy bounded correction attempt. V1-047
+- Blocker: none for the healthy fresh cumulative-integration attempt. V1-047
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect the healthy H1-H3 correction. When it
-  concludes, property-manager must verify its exact SHA/parent/tree, four-path
-  diff, clean worktree, runtime evidence, regressions, and complete gates before
-  fresh cumulative integration and a fresh independent max review. Do not
+- Exact next action: preserve and inspect the healthy fresh cumulative
+  integration. When it concludes, property-manager must verify its exact
+  SHA/parent/tree, complete six-commit/four-path diff, clean worktree, runtime
+  evidence, regressions, and complete gates before one fresh independent max
+  review. Do not
   install, publish, bootstrap the live V1-047 card, or dispatch implementation
   `26b14ae0` before an accepted zero-finding verdict.
 
@@ -302,10 +323,11 @@
   `587768eb` with 0 HIGH/0 MEDIUM/0 LOW, fresh cumulative integration
   `82257d37` is manager-accepted DONE with zero findings, fresh independent max
   review `94f964ff` is manager-accepted DONE with 3 HIGH/0 MEDIUM/0 LOW, and
-  exact H1-H3 correction `dafb7f51` is RUNNING once on `property-codex-1` from
-  immutable `587768eb` after one pre-worker workspace-source recovery.
+  exact H1-H3 correction `dafb7f51` is manager-accepted DONE at `a3a1cff` with
+  0 HIGH/0 MEDIUM/0 LOW, and fresh cumulative integration `8ccec368` is RUNNING
+  once on `property-codex-3` at immutable `a3a1cff` with zero start failures.
   Implementation remains blocked/unstarted.
-- Automation exact next action: inspect the healthy H1-H3 correction and
-  manager-verify its exact result before fresh integration/review or installation.
+- Automation exact next action: inspect the healthy fresh cumulative integration
+  and manager-verify its exact result before fresh max review or installation.
 
 <!-- AUTOMATION_STATUS_END -->
