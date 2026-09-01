@@ -1550,6 +1550,50 @@
     "implementation_status": "blocked_before_start_external_permission",
     "worker_started": false
   },
+  "manager_reconciliation": {
+    "role": "v1_047_permission_blocker_state",
+    "commit": "11cabf9f8f1003d102573995965537807d2e610c",
+    "parent": "870472b7dffd28caf2c771e54196a0244c6c1a1e",
+    "tree": "fbe0bb959d577635d8eaa21fc91de3c18be58092",
+    "changed_paths": [
+      "ops/NOW.md",
+      "ops/QUEUE.md",
+      "ops/STATE.json"
+    ],
+    "initial_ci": {
+      "run_id": 33473549663,
+      "automation_passed": 188,
+      "automation_failed": 1,
+      "automation_skipped": 0,
+      "other_jobs_passed": 3,
+      "failure_category": "deterministic_supervisor_routing"
+    },
+    "bounded_recovery": {
+      "focused_local_reproduction_passed": 1,
+      "focused_local_reproduction_failed": 0,
+      "failed_job_rerun_count": 1
+    },
+    "final_ci": {
+      "run_id": 33473549663,
+      "run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33473549663",
+      "jobs_passed": 4,
+      "jobs_failed": 0,
+      "backend_passed": 729,
+      "backend_expected_database_skips": 444,
+      "frontend_files_passed": 17,
+      "frontend_tests_passed": 234,
+      "postgresql_passed": 467,
+      "postgresql_skipped": 0,
+      "automation_passed": 189,
+      "automation_failed": 0,
+      "automation_skipped": 0,
+      "dependency_vulnerabilities": 0,
+      "conclusion": "success"
+    },
+    "refs_reconciled": true,
+    "implementation_execution_changed": false,
+    "status": "published_exact_sha_ci_green_remote_synchronized"
+  },
   "release_review": {
     "role": "completed_release_gate",
     "card_id": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
@@ -2421,7 +2465,7 @@
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T05:22:52Z",
+  "timestamp": "2026-09-01T05:42:55Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
