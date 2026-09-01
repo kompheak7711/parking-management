@@ -57,9 +57,9 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-046 independent review is manager-accepted FAIL with six
-MEDIUM findings, and bounded correction `dfe221fe-d32d-4baf-acb4-442376616dd5` is
-manager-accepted DONE at exact `0a55db2b445c776a2f91afee308cc0a13d8a93e7`. Fresh
-integration `87d90c87-8cca-4529-98ab-a22646332e77` is running at that immutable SHA;
-fresh review `208ac3de-72f2-45a2-9be7-4e096aaf08ca`, release, and V1-047 remain
-dependency-blocked.
+Current live queue position: V1-046 prior independent review is manager-accepted FAIL with
+six MEDIUM findings; bounded correction `dfe221fe-d32d-4baf-acb4-442376616dd5` and fresh
+integration `87d90c87-8cca-4529-98ab-a22646332e77` are manager-accepted DONE at exact
+`0a55db2b445c776a2f91afee308cc0a13d8a93e7`. Fresh independent rereview
+`208ac3de-72f2-45a2-9be7-4e096aaf08ca` is running at that immutable SHA; release and
+V1-047 remain dependency-blocked.

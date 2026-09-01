@@ -1,4 +1,4 @@
-# V1-046 — correction accepted; fresh integration running
+# V1-046 — integration accepted; fresh independent rereview running
 
 - V1-045 is fully released, published, exact-SHA CI-green, reconciled,
   synchronized, and closed. V1-047 remains dependency-blocked until V1-046 is
@@ -21,18 +21,26 @@
   passed focused 40/40 and automation 186/186. The stale worker attempt display
   was stopped only after terminal proof and a clean committed worktree were
   confirmed; no work or evidence was discarded.
-- Fresh integration card `87d90c87-8cca-4529-98ab-a22646332e77` is RUNNING for
-  worker `property-codex-3`, attempt
+- Fresh integration card `87d90c87-8cca-4529-98ab-a22646332e77` is manager-
+  accepted DONE for worker `property-codex-3`, attempt
   `workboard:87d90c87-8cca-4529-98ab-a22646332e77:1788223132889`, branch
   `openclaw/wb-87d90c87-8cca-4529-98ab-a22646332e77`, managed worktree
   `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-87d90c87-8cca-4529-98ab-a22646332e77`.
+  It passed exact identity and a clean three-commit, 16-path +2818/-19 cumulative
+  diff, focused 40/40, backend 729/729, frontend 234/234, automation 186/186,
+  real PostgreSQL 465/465 with zero skips, and all required static, build,
+  dependency, migration, security, traceability, publication, secret, and cleanup
+  gates. Manager independently reran focused 40/40 and accepted zero integration
+  findings.
+- Fresh independent rereview card `208ac3de-72f2-45a2-9be7-4e096aaf08ca` is
+  RUNNING for worker `property-codex-2`, attempt
+  `workboard:208ac3de-72f2-45a2-9be7-4e096aaf08ca:1788223875841`, branch
+  `openclaw/wb-208ac3de-72f2-45a2-9be7-4e096aaf08ca`, managed worktree
+  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-208ac3de-72f2-45a2-9be7-4e096aaf08ca`.
   Admission is clean at exact `0a55db2b`, parent `09b5dafc`, tree `1835b750`.
-  Runtime is GPT-5.6 Sol `xhigh`, no fallback, Standard/Fast-off. Gateway
-  dispatch started exactly this card with no start failures or duplicate worker.
-- The dependency chain remains fresh integration `87d90c87` -> fresh independent
-  review `208ac3de-72f2-45a2-9be7-4e096aaf08ca` -> release
-  `3266b3a3-e244-4926-ade8-6cc13eff775f`. Rereview, release, and V1-047 remain
-  dependency-blocked.
+  Runtime is GPT-5.6 Sol `max`, no fallback, Standard/Fast-off. Gateway dispatch
+  started exactly this card with no start failures or duplicate worker. Release
+  `3266b3a3-e244-4926-ade8-6cc13eff775f` and V1-047 remain dependency-blocked.
 - Scheduler job `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains the enabled
   singleton on a 30-minute interval with GPT-5.6 Sol `xhigh`, Standard/Fast-off.
   Prompt/payload identity remains SHA-256
@@ -44,6 +52,7 @@
   `5672dfdc554b14dfaab2c2b5d096ee1f7724744f` with successful GitHub Actions
   run `33448153128`.
 - Owner action required: no.
-- Exact next action: inspect and reconcile integration card `87d90c87` health,
-  immutable SHA, complete gate evidence, and result without overlapping dispatch.
-  Only manager-accepted zero-failure integration may unlock fresh rereview.
+- Exact next action: inspect and reconcile rereview card `208ac3de` health,
+  immutable SHA, complete-diff review evidence, deterministic gates, and verdict
+  without overlapping dispatch. Only a manager-accepted explicit zero-finding
+  review may unlock release.
