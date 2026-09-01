@@ -108,16 +108,27 @@
   independently reproduced `binding={}` / `phase=legacy` and verified the
   exact clean four-path candidate before accepting the findings.
 - Bounded finding correction: card
-  `555bf742-61a0-47fd-b508-8ed2db72cce3` started exactly once on
+  `555bf742-61a0-47fd-b508-8ed2db72cce3` is property-manager-accepted DONE for
+  its concluded work with a FAIL verdict at exact `8b1046be2774a65d7e19628abdc1ce39957f62e1`,
+  parent `85a3439459286103ce2710b20f767f49fa9a5a00`, tree
+  `5618451b3e46c696e12ea4f750386891aabdec76`. The clean four-path +689/-53
+  diff SHA-256 is `72cb59c69d649427b5542de7ef007f5d99b9eb4562a2eefc5236fa1628626b73`.
+  Coordination 83/83 and automation 189/189 passed with zero failures/skips,
+  but manager verification found 1 HIGH, 0 MEDIUM, 0 LOW: the ownership gate
+  skips `blocked`, although Workboard defines blocked cards as nonterminal and
+  recoverable. A direct probe returned `BLOCKED_OWNER_ACCEPTED`; the candidate
+  is rejected and remains uninstalled and unpublished.
+- Narrow changed-fingerprint correction: Workboard
+  `dd728972-8d05-4e0f-bbfd-9626adae9527` started exactly once on
   `property-codex-1`; attempt
-  `workboard:555bf742-61a0-47fd-b508-8ed2db72cce3:1788275366556` has a healthy
-  claim and heartbeat. Its managed worktree and branch are
-  `wb-555bf742-61a0-47fd-b508-8ed2db72cce3` /
-  `openclaw/wb-555bf742-61a0-47fd-b508-8ed2db72cce3`, clean at exact base
-  `85a3439` with parent `ece9afd`. Runtime is GPT-5.6 Sol `xhigh`,
-  Standard/Fast-off, with no fallback. Scope is limited to the same four
-  coordination, test, traceability, and manifest paths. No install,
-  publication, live bootstrap, or V1-047 implementation dispatch occurred.
+  `workboard:dd728972-8d05-4e0f-bbfd-9626adae9527:1788279048082` has a healthy
+  claim. Its managed worktree and branch are
+  `wb-dd728972-8d05-4e0f-bbfd-9626adae9527` /
+  `openclaw/wb-dd728972-8d05-4e0f-bbfd-9626adae9527`, clean at exact base
+  `8b1046be`. Runtime contract is GPT-5.6 Sol `xhigh`, Standard/Fast-off, with
+  no fallback. Scope remains the exact four coordination, test, traceability,
+  and manifest paths. No install, publication, live bootstrap, or V1-047
+  implementation dispatch occurred.
 - Owner-decision reconciliation: exact ops-only commit
   `0ce6ac9030174e8039c7367ed26737f676be957b`, parent `1c523409`, tree
   `b4b43b89`, changed only `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`.
@@ -145,20 +156,21 @@
   remains BLOCKED with zero starts; no install, live bootstrap, or implementation
   dispatch is permitted before a zero-finding review and release acceptance.
 - Owner action required: no.
-- Exact next action: preserve and inspect bounded correction
-  `555bf742-61a0-47fd-b508-8ed2db72cce3` through REVIEW, then independently
+- Exact next action: preserve and inspect narrow correction
+  `dd728972-8d05-4e0f-bbfd-9626adae9527` through REVIEW, then independently
   verify its exact commit, complete bounded diff, clean worktree, tests,
-  traceability, manifest, secrets, and runtime before fresh integration and a
-  fresh independent max review. Do not install, publish, bootstrap the live
-  V1-047 card, or dispatch implementation `26b14ae0` yet.
+  blocked-owner zero-mutation behavior, traceability, manifest, secrets, and
+  runtime before fresh integration and a fresh independent max review. Do not
+  install, publish, bootstrap the live V1-047 card, or dispatch implementation
+  `26b14ae0` yet.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
 - Automation candidate state: V1-047 approved and active at exact green
-  activation `870472b7`; candidate `85a3439` failed independent review with
-  1 HIGH/1 MEDIUM/0 LOW, and one bounded H3 correction runs exactly once while
-  implementation remains blocked and unstarted.
-- Automation exact next action: inspect correction `555bf742` through REVIEW,
+  activation `870472b7`; candidate `8b1046be` failed manager verification with
+  1 HIGH/0 MEDIUM/0 LOW, and narrow correction `dd728972` runs exactly once
+  while implementation remains blocked and unstarted.
+- Automation exact next action: inspect correction `dd728972` through REVIEW,
   manager-verify it, then require fresh integration and fresh independent max
   review before any installation or implementation dispatch.
 

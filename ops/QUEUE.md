@@ -75,11 +75,15 @@ property-manager-accepted DONE at exact `85a3439`, parent `ece9afd`; its complet
 four-path +1621/-26 diff and fresh manager integration card `c54f4a90` passed
 coordination 80/80 and automation 189/189 with zero failures/skips. Fresh read-only
 independent review `84c1950f-0dfc-4400-9c4b-a6dab427b4c3` is manager-accepted
-DONE for review work with a FAIL verdict of 1 HIGH, 1 MEDIUM, 0 LOW. One bounded
-correction `555bf742-61a0-47fd-b508-8ed2db72cce3` now runs exactly once on
+DONE for review work with a FAIL verdict of 1 HIGH, 1 MEDIUM, 0 LOW. Bounded
+correction `555bf742-61a0-47fd-b508-8ed2db72cce3` concluded at exact `8b1046be`;
+coordination 83/83 and automation 189/189 passed, but manager verification
+rejected it with 1 HIGH, 0 MEDIUM, 0 LOW after a direct blocked-owner probe
+returned `BLOCKED_OWNER_ACCEPTED`. Narrow changed-fingerprint correction
+`dd728972-8d05-4e0f-bbfd-9626adae9527` now runs exactly once on
 `property-codex-1` at GPT-5.6 Sol `xhigh`, Standard/Fast-off, attempt
-`workboard:555bf742-61a0-47fd-b508-8ed2db72cce3:1788275366556`, from clean exact
-base `85a3439`. Preserve this correction and do not install, bootstrap the live
+`workboard:dd728972-8d05-4e0f-bbfd-9626adae9527:1788279048082`, from clean exact
+base `8b1046be`. Preserve this correction and do not install, bootstrap the live
 card, or dispatch implementation `26b14ae0` until fresh integration and an exact
 zero-finding independent review are manager-accepted.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent
