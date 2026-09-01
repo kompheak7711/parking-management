@@ -659,21 +659,7 @@
       "production_shaped_v1_019_context_route": "PASS"
     }
   },
-  "blockers": [
-    {
-      "category": "external_permission",
-      "summary": "OpenClaw managed-worktree dispatch requires operator.admin for the owner-authorized H1-H3 correction before V1-047 implementation",
-      "card_id": "d2d1f66e-de97-4f26-93fc-9806feae82ea",
-      "related_implementation_card_id": "26b14ae0-92b3-433d-bed6-46bd732c569c",
-      "attempts": 2,
-      "changed_fingerprints": [
-        "configured_cli_identity",
-        "authenticated_gateway_remote_token"
-      ],
-      "result": "two prior implementation dispatch paths created zero starts; the newly authorized correction was not dispatched because the permission fingerprint is unchanged",
-      "owner_action_required": true
-    }
-  ],
+  "blockers": [],
   "branch": "implementation/foundation",
   "closure_correction": {
     "canonical_documents_changed": false,
@@ -716,15 +702,20 @@
     "tranche_id": "V1-047"
   },
   "idle_reason": null,
-  "next_action": "Owner/operator must grant operator.admin or invoke authenticated-owner Workboard dispatch; then start correction d2d1f66e exactly once at ece9afd and keep implementation 26b14ae0 blocked",
-  "active_worker": null,
+  "next_action": "Inspect healthy correction d2d1f66e through REVIEW; then manager-verify its exact committed SHA, parent, bounded diff, tests, traceability, manifest, secret, and clean-state evidence without installing it or dispatching implementation 26b14ae0",
+  "active_worker": "property-codex-1",
   "active_card": "d2d1f66e-de97-4f26-93fc-9806feae82ea",
-  "active_claim": null,
-  "active_attempt": null,
-  "active_branch": null,
-  "active_worktree": null,
+  "active_claim": {
+    "owner": "property-codex-1",
+    "claimed_at_ms": 1788269846459,
+    "last_heartbeat_at_ms": 1788271441393,
+    "expires_at_ms": 1788278641393
+  },
+  "active_attempt": "workboard:d2d1f66e-de97-4f26-93fc-9806feae82ea:1788269846499",
+  "active_branch": "openclaw/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea",
+  "active_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea",
   "candidate_sha": null,
-  "candidate_parent": "870472b7dffd28caf2c771e54196a0244c6c1a1e",
+  "candidate_parent": "ece9afdaf1c4d5bd79b44b0826a4b14a8637f13e",
   "next_candidate": {
     "acceptance_profile": "api_ui",
     "authorities": [
@@ -763,15 +754,15 @@
     },
     {
       "id": "worker-coordination-rereview-human-stop",
-      "status": "owner_authorized_correction_ready_external_permission",
+      "status": "owner_authorized_correction_running",
       "scope": "uninstalled OpenClaw coordination safety candidate and exact pre-existing V1-047 card bootstrap",
       "evidence": "Workboard 9d1990ed-d3d5-4b0a-ba90-406372df359c failed exact ece9afd with 3 HIGH, 0 MEDIUM, 0 LOW after coordination 75/75 and automation 189/189 passed; two material classes survived the prior correction",
       "owner_decision": "2026-09-01 standing authorization explicitly clears the exhausted-recovery stop for one materially different H1-H3 correction",
       "correction_card_id": "d2d1f66e-de97-4f26-93fc-9806feae82ea",
-      "action": "after operator.admin or authenticated-owner dispatch becomes available, start only correction d2d1f66e exactly once; hold installation and V1-047 implementation"
+      "action": "inspect the one healthy correction attempt through REVIEW; then manager-verify exact committed evidence before any installation or V1-047 implementation dispatch"
     }
   ],
-  "owner_action": "Grant operator.admin to the Gateway dispatch identity or invoke authenticated-owner /workboard dispatch for correction d2d1f66e; do not dispatch implementation 26b14ae0 yet.",
+  "owner_action": null,
   "owner_decisions": {
     "bootstrap_protection": "prm_bootstrap has safe cluster-global attributes and no unsafe memberships, ownership, or authority in the target database; no runtime cross-database introspection; provisioning attests and verifies the dedicated role is unused in every other database; target checks fail closed; atomic closure/revocation and secret-free repeat audit remain mandatory",
     "ceremony_deadline": "one absolute monotonic deadline begins before TOTP confirmation and covers TOTP input, recovery presentation and COMPLETE writes, acknowledgement input, and commit preparation; writes, partial input, retries, and trickled input never reset or extend it; timeout rolls back the ceremony",
@@ -831,8 +822,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-047 activation 870472b7 is published, synchronized, and exact-SHA CI-green; owner-authorized H1-H3 correction d2d1f66e is READY at ece9afd but unstarted because managed-worktree dispatch still requires operator.admin; implementation 26b14ae0 remains blocked",
-    "exact_next_action": "After operator.admin or authenticated-owner dispatch is available, start exactly one property-codex-1 correction d2d1f66e at ece9afd using GPT-5.6 Sol xhigh Standard/Fast-off with no fallback; do not dispatch implementation 26b14ae0",
+    "current_phase": "V1-047 activation 870472b7 is published, synchronized, and exact-SHA CI-green; owner-authorized H1-H3 correction d2d1f66e is running exactly once at ece9afd on property-codex-1; implementation 26b14ae0 remains blocked",
+    "exact_next_action": "Inspect the healthy property-codex-1 correction d2d1f66e through REVIEW, then manager-verify its exact committed SHA, parent, bounded diff, tests, traceability, manifest, secret, and clean-state evidence without installing it or dispatching implementation 26b14ae0",
     "coordination_safety_rereview": {
       "card_id": "9d1990ed-d3d5-4b0a-ba90-406372df359c",
       "candidate_sha": "ece9afdaf1c4d5bd79b44b0826a4b14a8637f13e",
@@ -858,12 +849,26 @@
       "mode": "standard",
       "fast_mode": false,
       "fallbacks": [],
-      "claim_active": false,
-      "attempt_active": false,
-      "worker_active": false,
-      "dispatch_attempted": false,
-      "blocker": "managed-worktree dispatch requires operator.admin",
-      "status": "ready_external_permission"
+      "claim_active": true,
+      "attempt_active": true,
+      "worker_active": true,
+      "attempt_id": "workboard:d2d1f66e-de97-4f26-93fc-9806feae82ea:1788269846499",
+      "branch": "openclaw/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea",
+      "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea",
+      "dispatch_attempted": true,
+      "dispatch_count": 1,
+      "dispatch_at_ms": 1788269842078,
+      "last_heartbeat_at_ms": 1788271441393,
+      "claim_expires_at_ms": 1788278641393,
+      "current_paths": [
+        "ops/AUTOMATION_TRACEABILITY.json",
+        "ops/OPENCLAW_INSTALL_MANIFEST.json",
+        "scripts/openclaw_worker_coordination.py",
+        "scripts/test_openclaw_worker_coordination.py"
+      ],
+      "interim_tests": "PASS: focused H1-H3 5/5 and coordination 80/80, zero failures, zero skips; full automation and remaining gates in progress",
+      "blocker": null,
+      "status": "running"
     },
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
@@ -1505,7 +1510,7 @@
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-09-01T13:24:36Z"
+    "updated_at": "2026-09-01T14:08:22Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -1705,7 +1710,8 @@
     },
     "refs_reconciled": true,
     "implementation_execution_changed": false,
-    "status": "owner_authorized_correction_ready_external_permission_reconciled"
+    "correction_execution_changed": true,
+    "status": "owner_authorized_correction_running_reconciled"
   },
   "release_review": {
     "role": "completed_release_gate",
@@ -2578,7 +2584,7 @@
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
   "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T13:24:36Z",
+  "timestamp": "2026-09-01T14:08:22Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

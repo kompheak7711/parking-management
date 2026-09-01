@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — correction authorized, awaiting managed-worktree permission
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — coordination correction running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -89,12 +89,17 @@
 - Owner decision: the durable 2026-09-01 authorization clears that exhausted-
   recovery stop for one materially different H1-H3 correction. Exactly one
   dependency-linked correction card
-  `d2d1f66e-de97-4f26-93fc-9806feae82ea` now exists at immutable base
-  `ece9afd`; it is READY with no claim, attempt, worker, branch, or managed
-  worktree. Its frozen scope covers actual REVIEW-release semantics, exhaustive
-  quoted/JSON sensitive-value rejection, and an exact idempotent bootstrap for
-  the preserved V1-047 implementation card. The correction remains unstarted
-  and the rejected candidate remains uninstalled.
+  `d2d1f66e-de97-4f26-93fc-9806feae82ea` now runs exactly once at immutable
+  base `ece9afd`, parent `3fc58af`, in managed branch
+  `openclaw/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea` and worktree
+  `/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-d2d1f66e-de97-4f26-93fc-9806feae82ea`.
+  Attempt `workboard:d2d1f66e-de97-4f26-93fc-9806feae82ea:1788269846499`
+  is claimed by `property-codex-1`; its claim and heartbeats are healthy. The
+  four current modified paths are all within the frozen correction scope.
+  H1-H3 focused regressions passed 5/5 and the complete coordination suite
+  passed 80/80 with zero failures/skips; full automation and remaining gates
+  are in progress. No corrected commit exists yet, and the rejected base
+  remains uninstalled.
 - Owner-decision reconciliation: exact ops-only commit
   `0ce6ac9030174e8039c7367ed26737f676be957b`, parent `1c523409`, tree
   `b4b43b89`, changed only `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`.
@@ -112,24 +117,22 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: managed-worktree dispatch still requires `operator.admin`. The owner
-  decision did not grant that scope, and the unchanged permission failure was
-  not retried. V1-047 implementation remains BLOCKED with zero starts.
-- Owner action required: yes, only for the external permission boundary. Grant
-  `operator.admin` to the Gateway identity or invoke authenticated-owner
-  `/workboard dispatch` for correction card `d2d1f66e`; do not dispatch the
-  V1-047 implementation card yet.
-- Exact next action: after that permission change, start exactly one
-  property-codex-1 managed-worktree attempt for correction `d2d1f66e` at
-  `ece9afd` using GPT-5.6 Sol `xhigh`, Standard/Fast-off, no fallback. Preserve
-  implementation `26b14ae0` and do not install or dispatch it.
+- Blocker: none for the active correction. The prior external permission
+  boundary has been crossed by one supported dispatch; it must not be retried
+  or duplicated. V1-047 implementation remains BLOCKED with zero starts.
+- Owner action required: no.
+- Exact next action: preserve and inspect the healthy correction attempt. After
+  it releases to REVIEW with a clean bounded commit, independently verify its
+  exact SHA, parent, complete diff, tests, traceability, manifest, secret, and
+  clean-state evidence before manager acceptance. Do not install the candidate
+  or dispatch implementation `26b14ae0` yet.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
 - Automation candidate state: V1-047 approved and active at exact green
-  activation `870472b7`; the H1-H3 correction is authorized and READY but both
-  correction and implementation remain unstarted at the operator-scope boundary.
-- Automation exact next action: await `operator.admin` or authenticated-owner
-  dispatch, then start only correction `d2d1f66e` exactly once.
+  activation `870472b7`; the H1-H3 correction is running exactly once on
+  `property-codex-1`, while implementation remains blocked and unstarted.
+- Automation exact next action: inspect the healthy correction through REVIEW,
+  then manager-verify its exact committed evidence without installing it.
 
 <!-- AUTOMATION_STATUS_END -->
