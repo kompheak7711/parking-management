@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -315,9 +315,20 @@
   `workboard:71288e13-5065-4ee8-8fda-1cd1693df39c:1788313446435`. Its clean
   managed branch/worktree are `openclaw/wb-71288e13-5065-4ee8-8fda-1cd1693df39c`
   / `wb-71288e13-5065-4ee8-8fda-1cd1693df39c` at immutable `86c61f3`, parent
-  `a3a1cff`, tree `cfb19a32`. Runtime is GPT-5.6 Sol `xhigh`, Standard/Fast-off,
-  empty fallbacks; Workboard's generic execution field still displays
-  `model=default`.
+  `a3a1cff`, tree `cfb19a32`. Worker and manager passed focused 5/5,
+  coordination 97/97, automation 189/189, and every integrity gate with zero
+  failures/skips/findings. Property-manager accepted `71288e13` DONE after
+  stopping only its stale execution presentation.
+- Fresh independent review: Workboard
+  `85465ccb-7bcb-435d-aa11-95f85ec059f8` was created once with stable key
+  `v1-047-ops-independent-review-86c61f3-v1`, parent `71288e13`, and the exact
+  clean integration worktree as source. The supported Gateway operator RPC
+  started exactly one attempt with zero failures on `property-codex-2`:
+  `workboard:85465ccb-7bcb-435d-aa11-95f85ec059f8:1788314136055`. Its clean
+  managed branch/worktree are `openclaw/wb-85465ccb-7bcb-435d-aa11-95f85ec059f8`
+  / `wb-85465ccb-7bcb-435d-aa11-95f85ec059f8` at immutable `86c61f3`. Required
+  runtime is GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks; Workboard's
+  generic execution field displays `model=default`.
 - Prior blocker-state publication: exact ops-only commit
   `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -346,15 +357,14 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the healthy fresh cumulative integration attempt. V1-047
+- Blocker: none for the healthy fresh independent review attempt. V1-047
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect the healthy fresh cumulative
-  integration. When it concludes, property-manager must verify its immutable
-  seven-commit/four-path cumulative result, clean worktree, runtime evidence,
-  every focused/adversarial regression, and complete gates before dispatching
-  one fresh independent max review.
+- Exact next action: preserve and inspect the healthy fresh independent max
+  review. When it concludes, property-manager must verify its immutable
+  candidate identity, read-only cleanliness, complete-diff verdict, every
+  finding, and complete gates before any installation or implementation.
   Do not install, publish, bootstrap the live V1-047 card, or dispatch
   implementation `26b14ae0` before an accepted zero-finding verdict.
 
@@ -377,13 +387,11 @@
   accepted DONE with zero findings, fresh independent max review `67d4ab70` is
   manager-accepted DONE as FAIL with 4 HIGH/1 MEDIUM/0 LOW, and bounded
   correction `b1614ef8` is manager-accepted DONE at exact `86c61f3` with zero
-  findings, and fresh cumulative integration `71288e13` is RUNNING once on
-  `property-codex-3` at immutable `86c61f3`. Its first generic CLI start failed
-  before attempt creation on `operator.admin`; the supported Gateway operator
-  RPC then started exactly one attempt with zero failures.
+  findings, fresh cumulative integration `71288e13` is manager-accepted DONE
+  with zero findings, and fresh independent max review `85465ccb` is RUNNING
+  once on `property-codex-2` at immutable `86c61f3` with zero start failures.
   Implementation remains blocked/unstarted.
-- Automation exact next action: inspect and manager-verify the fresh cumulative
-  integration before one fresh independent max review, installation, or
-  implementation.
+- Automation exact next action: inspect and manager-verify the fresh independent
+  max review before installation or implementation.
 
 <!-- AUTOMATION_STATUS_END -->
