@@ -57,12 +57,12 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 bounded H1/H2 correction `de86c657` and
-fresh cumulative integration `20d1ed86` are manager-accepted DONE at immutable
-`d088225` with zero findings. Fresh independent max review `435c8f6d` is manager-
-accepted DONE as FAIL with 3 HIGH, 1 MEDIUM, 0 LOW after manager reproduction.
-Changed-fingerprint correction `5994b2e5` is RUNNING exactly once on
-`property-codex-1` before fresh integration or any installation action.
+Current live queue position: V1-047 changed-fingerprint correction `5994b2e5`
+and fresh cumulative integration `7e37904e` are manager-accepted DONE at exact
+`761269c` with focused 7/7, coordination 101/101, automation 189/189, zero
+failures/skips, and zero findings. Fresh independent max review `d2fbebfe` is
+RUNNING exactly once on `property-codex-2` with a healthy claim in a clean
+read-only worktree. No duplicate dispatch or installation action is allowed.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
