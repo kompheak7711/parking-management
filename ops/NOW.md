@@ -341,9 +341,26 @@
   exactly one attempt with zero failures on `property-codex-1`:
   `workboard:de86c657-eccf-4a95-93df-54c4de6164e4:1788316794926`. Its managed
   branch/worktree are `openclaw/wb-de86c657-eccf-4a95-93df-54c4de6164e4` /
-  `wb-de86c657-eccf-4a95-93df-54c4de6164e4`, clean at base `86c61f3`, parent
-  `a3a1cff`. The claim and heartbeat are healthy. Runtime is GPT-5.6 Sol
-  `xhigh`, Standard/Fast-off, empty fallbacks.
+  `wb-de86c657-eccf-4a95-93df-54c4de6164e4`. It concluded in exact candidate
+  `d088225b86c8a0c75fed12869e9a2f202cce33c4`, sole parent `86c61f3`, tree
+  `61ff6ee74ffd43d442fa2f8ac2b48ab6c22ea3c0`. The clean exact four-path
+  +354/-161 diff has full-index SHA-256
+  `f50a8bb97a344547e06f1c3b1c99d0c6ec2714f82a9362fab5b5c21c998d3dda`.
+  Worker and property-manager each passed focused H1/H2 2/2, coordination
+  98/98, automation 189/189, TEST-118, and every required integrity gate with
+  zero failures/skips and 0 HIGH, 0 MEDIUM, 0 LOW manager findings. The card is
+  property-manager-accepted DONE; the candidate remains uninstalled and
+  unpublished.
+- Fresh cumulative integration: Workboard
+  `20d1ed86-f531-4fbf-bf4f-7dc99418b09c` was created once with stable key
+  `v1-047-ops-cumulative-integration-d088225-v1`, parent `de86c657`, and
+  immutable source `d088225`. The supported Gateway operator RPC started
+  exactly one `property-codex-3` attempt with zero start failures:
+  `workboard:20d1ed86-f531-4fbf-bf4f-7dc99418b09c:1788318728284`. Its managed
+  branch/worktree are `openclaw/wb-20d1ed86-f531-4fbf-bf4f-7dc99418b09c` /
+  `wb-20d1ed86-f531-4fbf-bf4f-7dc99418b09c`, clean at immutable `d088225`,
+  parent `86c61f3`. The claim is healthy. Runtime is GPT-5.6 Sol `xhigh`,
+  Standard/Fast-off, empty fallbacks, read-only.
 - Prior blocker-state publication: exact ops-only commit
   `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -372,14 +389,14 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the healthy bounded H1/H2 correction attempt. V1-047
+- Blocker: none for the healthy fresh cumulative integration attempt. V1-047
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect the healthy correction. When it
-  concludes, property-manager must verify its exact commit and parent, complete
-  four-path diff, cleanliness, H1/H2 adversarial behavior, and complete gates;
-  then run fresh cumulative integration and fresh independent max review.
+- Exact next action: preserve and inspect the healthy cumulative integration.
+  When it concludes, property-manager must verify the exact immutable candidate,
+  complete eight-commit four-path diff, cleanliness, H1/H2 adversarial behavior,
+  and complete gates; then dispatch a fresh independent max review.
   Do not install, publish, bootstrap the live V1-047 card, or dispatch
   implementation `26b14ae0` before an accepted zero-finding verdict.
 
@@ -404,10 +421,12 @@
   correction `b1614ef8` is manager-accepted DONE at exact `86c61f3` with zero
   findings, fresh cumulative integration `71288e13` is manager-accepted DONE
   with zero findings, fresh independent max review `85465ccb` is manager-
-  accepted DONE as FAIL with 2 HIGH/0 MEDIUM/0 LOW, and bounded H1/H2 correction
-  `de86c657` is RUNNING once on `property-codex-1` at base `86c61f3` with zero
-  start failures. Implementation remains blocked/unstarted.
-- Automation exact next action: preserve and manager-verify the correction,
-  then run fresh cumulative integration and fresh independent max review.
+  accepted DONE as FAIL with 2 HIGH/0 MEDIUM/0 LOW, bounded H1/H2 correction
+  `de86c657` is manager-accepted DONE at exact `d088225` with zero findings,
+  and fresh cumulative integration `20d1ed86` is RUNNING once on
+  `property-codex-3` with zero start failures. Implementation remains
+  blocked/unstarted.
+- Automation exact next action: preserve and manager-verify the cumulative
+  integration, then run a fresh independent max review.
 
 <!-- AUTOMATION_STATUS_END -->

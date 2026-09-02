@@ -210,11 +210,24 @@ READY-admission race findings. Bounded correction
 operator RPC started exactly one `property-codex-1` attempt with zero failures:
 `workboard:de86c657-eccf-4a95-93df-54c4de6164e4:1788316794926`. Its managed
 branch/worktree `openclaw/wb-de86c657-eccf-4a95-93df-54c4de6164e4` /
-`wb-de86c657-eccf-4a95-93df-54c4de6164e4` are clean at base `86c61f3`, parent
-`a3a1cff`; claim and heartbeat are healthy. Preserve this GPT-5.6 Sol `xhigh`,
-Standard/Fast-off correction. Do not install, bootstrap the live card, publish,
-or dispatch implementation `26b14ae0` before fresh cumulative integration and
-manager acceptance of a zero-finding fresh independent review.
+`wb-de86c657-eccf-4a95-93df-54c4de6164e4` concluded in exact candidate
+`d088225b86c8a0c75fed12869e9a2f202cce33c4`, sole parent `86c61f3`, tree
+`61ff6ee74ffd43d442fa2f8ac2b48ab6c22ea3c0`. Worker and manager focused 2/2,
+coordination 98/98, automation 189/189, TEST-118, and every integrity gate
+passed with zero failures/skips; the clean exact four-path +354/-161 diff has
+SHA-256 `f50a8bb97a344547e06f1c3b1c99d0c6ec2714f82a9362fab5b5c21c998d3dda`.
+Property-manager accepted the correction DONE with zero findings. Fresh
+cumulative integration `20d1ed86-f531-4fbf-bf4f-7dc99418b09c` was created
+once with stable key `v1-047-ops-cumulative-integration-d088225-v1`; the
+supported Gateway operator RPC started exactly one `property-codex-3` attempt
+with zero failures:
+`workboard:20d1ed86-f531-4fbf-bf4f-7dc99418b09c:1788318728284`. Its managed
+branch/worktree `openclaw/wb-20d1ed86-f531-4fbf-bf4f-7dc99418b09c` /
+`wb-20d1ed86-f531-4fbf-bf4f-7dc99418b09c` are clean at immutable `d088225`;
+claim and heartbeat are healthy. Preserve this GPT-5.6 Sol `xhigh`,
+Standard/Fast-off, read-only integration. Do not install, bootstrap the live
+card, publish, or dispatch implementation `26b14ae0` before manager acceptance
+of this integration and a zero-finding fresh independent max review.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent
 `1c523409`; local automation passed 189/189, exact-SHA CI run `33512759067`
 passed all four jobs, and local/tracking/fetched/live-remote refs match.
