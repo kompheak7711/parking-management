@@ -60,11 +60,12 @@ historical context only and must not be used to invent successors.
 Current live queue position: V1-047 cumulative integration `bc2db3a9` is
 manager-accepted DONE at immutable `2a1ef6f`, parent `761269c`, with focused
 5/5, coordination 106/106, automation 189/189, zero candidate failures/skips,
-and zero findings. Fresh independent max review `79a2c933` is RUNNING exactly
-once on `property-codex-2` in a clean managed worktree at immutable `2a1ef6f`.
-The first CLI dispatcher pass started no worker at the operator-admin boundary;
-the unchanged direct Gateway RPC started the sole attempt. No duplicate
-dispatch, installation, publication, or implementation action is allowed.
+and zero findings. Fresh independent max review `79a2c933` is manager-accepted
+DONE as FAIL at immutable `2a1ef6f` with 2 HIGH, 0 MEDIUM, 0 LOW after manager
+reproduction. Bounded correction `37ca539e` is RUNNING exactly once on
+`property-codex-1` in a clean managed worktree at immutable base `2a1ef6f`.
+Its Gateway response timed out after the worker started; reconciliation proved
+the sole healthy attempt, so no retry or duplicate dispatch is allowed.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;

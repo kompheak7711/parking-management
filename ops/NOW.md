@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running at 2a1ef6f
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded coordination correction running from 2a1ef6f
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -535,6 +535,35 @@ GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks. Preserve the fresh
 read-only reviewer and verify every terminal finding before any install,
 publication, or implementation dispatch.
 
+Current transition (2026-09-02 15:46 +07): fresh independent max review
+`79a2c933-2443-43a2-827e-0b395382fb7e` terminally released and is
+property-manager-accepted DONE as FAIL at immutable `2a1ef6f`, parent
+`761269c`, tree `dfb545ad`, with 2 HIGH, 0 MEDIUM, 0 LOW. Reviewer and manager
+coordination 106/106 and automation coordination 106/106 plus policy/routing
+189/189 passed with zero failures/skips. Manager verified the complete ten-
+commit, zero-merge, four-path +5701/-200 diff and binary full-index SHA-256
+`b5e5618527d301ae0e8336205cd62ff085ce5a1fe6af1a4549afc9d5ca6765a8`,
+clean worktree/index, fsck, and exact GPT-5.6 Sol `max`, Standard/Fast-off
+runtime. Independent adversarial reproduction proved both HIGH findings:
+rollback accepted possible live `running` delivery with and without a running
+execution, and action completion consumed a TODO successor carrying prior
+start/completion timestamps and a dispatch event; reproduction output SHA-256
+`6c2101247023d13c8cab7df4e9d62e132d55a116447a58cc5baa8329e608db62`.
+Candidate `2a1ef6f` remains rejected, uninstalled, and unpublished.
+
+One bounded four-path correction `37ca539e-69f7-4099-8b32-dd03f2a405f6`
+was created with stable key
+`v1-047-ops-correction-2a1ef6f-rollback-successor-v1`, linked to the accepted
+review, and started exactly once on `property-codex-1` as attempt
+`workboard:37ca539e-69f7-4099-8b32-dd03f2a405f6:1788338724274`. The direct
+Gateway dispatch response timed out after the worker had started; reconciliation
+proved one healthy claim, attempt, session, managed branch/worktree, initial
+heartbeat, and no duplicate. Its clean managed branch/worktree are
+`openclaw/wb-37ca539e-69f7-4099-8b32-dd03f2a405f6` /
+`wb-37ca539e-69f7-4099-8b32-dd03f2a405f6` at exact base `2a1ef6f`. Runtime is
+GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Preserve this worker;
+V1-047 implementation `26b14ae0` and V1-048 remain held.
+
 <!-- AUTOMATION_STATUS_BEGIN -->
 
 - Automation candidate state: V1-047 approved and active at exact green
@@ -564,13 +593,15 @@ publication, or implementation dispatch.
   integration `7e37904e` are manager-accepted DONE at exact `761269c` with
   zero findings, fresh independent max review `d2fbebfe` is manager-accepted
   DONE as FAIL with 4 HIGH/1 MEDIUM/0 LOW after manager reproduction, and
-  bounded correction `eff7f891` is manager-accepted DONE at exact `2a1ef6f`
-  with zero findings, and fresh cumulative integration `bc2db3a9` is RUNNING
-  once on `property-codex-3` from the clean immutable candidate.
+  bounded correction `eff7f891` and cumulative integration `bc2db3a9` are
+  manager-accepted DONE at exact `2a1ef6f` with zero findings, independent max
+  review `79a2c933` is manager-accepted DONE as FAIL with 2 HIGH/0 MEDIUM/
+  0 LOW, and bounded correction `37ca539e` is RUNNING exactly once on
+  `property-codex-1` from the clean immutable candidate.
   Implementation remains blocked/unstarted.
-- Automation exact next action: preserve cumulative integration `bc2db3a9`;
-  after terminal release, manager-verify immutable `2a1ef6f`, the complete
-  cumulative four-path diff, cleanliness, complete gates, runtime identity,
-  and zero findings before fresh independent max review.
+- Automation exact next action: preserve bounded correction `37ca539e`; after
+  terminal release, manager-verify the exact child of `2a1ef6f`, the complete
+  four-path diff, both fixes, cleanliness, runtime identity, and all gates
+  before fresh cumulative integration.
 
 <!-- AUTOMATION_STATUS_END -->
