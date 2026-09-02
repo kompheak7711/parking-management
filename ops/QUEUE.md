@@ -388,3 +388,24 @@ Gateway RPC started exactly one `property-codex-1` attempt with zero failures:
 branch/worktree remain at exact base `f124663`, with only the allowed source
 and test paths currently modified under GPT-5.6 Sol `xhigh`, Standard/Fast-off,
 empty fallbacks. Preserve it; implementation `26b14ae0` and V1-048 remain held.
+
+Current transition (2026-09-02 19:12 +07): bounded H1-H3 correction
+`b43ca2fd-c5c4-4f90-9a78-8f50ec117204` is property-manager-accepted DONE at
+exact `7bfcb9062727155d4efee111be9bb73728819ba3`, parent `f124663`, tree
+`9755739f`, as one zero-merge four-path +483/-29 commit with binary diff
+SHA-256 `40c694b1ec17efe17fe02913c8d33932f6a0d4394e76f0fbf1d10a50c2191349`.
+Worker and manager focused 3/3, coordination 111/111, automation 189/189,
+TEST-118, roadmap, parse, manifest, executable traceability,
+publication/secret, and exact Git/hash/diff/fsck/clean gates passed with zero
+candidate failures/skips/findings. Fresh cumulative integration
+`67e61bf2-5e3a-4746-bf19-db652dac2803` was created once with stable key
+`v1-047-ops-cumulative-integration-7bfcb90-v1`; the supported Gateway operator
+RPC started exactly one `property-codex-1` attempt with zero failures:
+`workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788351057604`. Its clean
+managed branch/worktree are
+`openclaw/wb-67e61bf2-5e3a-4746-bf19-db652dac2803` /
+`wb-67e61bf2-5e3a-4746-bf19-db652dac2803` at immutable `7bfcb906`. Preserve
+the fresh read-only GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty-fallback
+worker and manager-verify the complete twelve-commit/four-path cumulative diff
+and all gates before fresh independent max review. Implementation `26b14ae0`
+and V1-048 remain held.

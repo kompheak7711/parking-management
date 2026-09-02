@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded H1-H3 correction running from f124663
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration running at 7bfcb906
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -618,13 +618,14 @@ Standard/Fast-off, empty fallbacks. Preserve it; V1-047 implementation
   `f124663` with zero findings. Fresh cumulative integration `feb86085` is
   manager-accepted DONE with zero findings. Fresh independent max review
   `b6fce132` is manager-accepted DONE as FAIL with 3 HIGH/0 MEDIUM/0 LOW.
-  Bounded H1-H3 correction `b43ca2fd` is RUNNING once on `property-codex-1`
-  from the clean immutable candidate.
+  Bounded H1-H3 correction `b43ca2fd` is manager-accepted DONE at exact
+  `7bfcb906` with zero findings. Fresh cumulative integration `67e61bf2` is
+  RUNNING once on `property-codex-1` from the clean immutable candidate.
   Implementation remains blocked/unstarted.
-- Automation exact next action: preserve bounded correction `b43ca2fd`; after
-  terminal release, manager-verify its exact child of `f124663`, complete
-  four-path diff, all three fixes, cleanliness, exact `xhigh` runtime, and all
-  gates before fresh cumulative integration.
+- Automation exact next action: preserve cumulative integration `67e61bf2`;
+  after terminal release, manager-verify immutable `7bfcb906`, its complete
+  twelve-commit four-path diff, cleanliness, exact `xhigh` runtime, and all
+  gates before fresh independent max review.
 
 <!-- AUTOMATION_STATUS_END -->
 
@@ -665,3 +666,29 @@ branch/worktree are `openclaw/wb-b43ca2fd-c5c4-4f90-9a78-8f50ec117204` /
 currently modified at base `f124663`. Preserve the healthy GPT-5.6 Sol `xhigh`,
 Standard/Fast-off worker; V1-047 implementation `26b14ae0` and V1-048 remain
 dependency-held.
+
+Current transition (2026-09-02 19:12 +07): bounded H1-H3 correction
+`b43ca2fd-c5c4-4f90-9a78-8f50ec117204` is property-manager-accepted DONE at
+exact `7bfcb9062727155d4efee111be9bb73728819ba3`, sole parent `f124663`, tree
+`9755739f`, as one zero-merge four-path +483/-29 commit with binary full-index
+SHA-256 `40c694b1ec17efe17fe02913c8d33932f6a0d4394e76f0fbf1d10a50c2191349`.
+Worker and manager focused 3/3, coordination 111/111, automation 189/189,
+TEST-118, roadmap 46/60, JSON/Python parse, manifest, executable traceability,
+publication/secret, diff/fsck/clean gates passed with zero candidate failures,
+zero skips, and 0 HIGH, 0 MEDIUM, 0 LOW findings. One manager-only targeted
+unittest invocation used an invalid import path; the corrected direct command
+passed 1/1 and the complete suite was already green.
+
+Fresh cumulative integration `67e61bf2-5e3a-4746-bf19-db652dac2803` was
+created once with stable key `v1-047-ops-cumulative-integration-7bfcb90-v1`.
+The supported Gateway operator RPC started exactly one `property-codex-1`
+attempt with zero failures:
+`workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788351057604`. Its managed
+branch/worktree `openclaw/wb-67e61bf2-5e3a-4746-bf19-db652dac2803` /
+`wb-67e61bf2-5e3a-4746-bf19-db652dac2803` are clean at immutable `7bfcb906`,
+parent `f124663`, tree `9755739f`. The complete cumulative base-to-head history
+from `ece9afd` is twelve linear commits, zero merges, exactly four paths,
++6542/-195, binary SHA-256
+`24f2c137ccf83b25e9b923d9a009b1e02eb609dc1dd2d9154312234b601f939b`.
+Preserve the healthy GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty-fallback
+read-only worker. V1-047 implementation `26b14ae0` and V1-048 remain held.
