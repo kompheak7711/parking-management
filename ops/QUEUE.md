@@ -57,13 +57,14 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 bounded correction `eff7f891` is manager-
-accepted DONE at exact `2a1ef6f`, parent `761269c`, with focused 5/5,
-coordination 106/106, automation 189/189, zero candidate failures/skips, and
-zero findings. Fresh cumulative integration `bc2db3a9` is RUNNING exactly once
-on `property-codex-3` in a clean managed worktree at immutable `2a1ef6f` after
-one supported Gateway start with zero failures. No duplicate dispatch,
-installation, or implementation action is allowed.
+Current live queue position: V1-047 cumulative integration `bc2db3a9` is
+manager-accepted DONE at immutable `2a1ef6f`, parent `761269c`, with focused
+5/5, coordination 106/106, automation 189/189, zero candidate failures/skips,
+and zero findings. Fresh independent max review `79a2c933` is RUNNING exactly
+once on `property-codex-2` in a clean managed worktree at immutable `2a1ef6f`.
+The first CLI dispatcher pass started no worker at the operator-admin boundary;
+the unchanged direct Gateway RPC started the sole attempt. No duplicate
+dispatch, installation, publication, or implementation action is allowed.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
@@ -329,3 +330,17 @@ Preserve the healthy read-only worker and manager-verify immutable `2a1ef6f`,
 the complete cumulative four-path diff, all gates, cleanliness, runtime, and
 zero findings before fresh independent max review. V1-047 implementation
 `26b14ae0` and V1-048 remain held.
+
+Current transition (2026-09-02 14:45 +07): cumulative integration `bc2db3a9`
+is property-manager-accepted DONE at immutable `2a1ef6f`; corrected focused
+5/5, coordination 106/106, automation 189/189, TEST-118, roadmap, traceability,
+publication/secret, and exact Git/diff/fsck/clean gates passed with zero
+candidate failures/skips/findings. Fresh independent max review
+`79a2c933-2443-43a2-827e-0b395382fb7e` was created once with stable key
+`v1-047-ops-independent-max-review-2a1ef6f-v1`; after one zero-start CLI
+permission failure, the supported direct Gateway RPC started exactly one
+`property-codex-2` attempt with zero failures:
+`workboard:79a2c933-2443-43a2-827e-0b395382fb7e:1788334997008`. Preserve the
+fresh read-only GPT-5.6 Sol `max`, Standard/Fast-off reviewer and verify its
+exact-SHA verdict and every finding before any install, publication, or V1-047
+implementation dispatch. V1-048 remains dependency-held.

@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration running at 2a1ef6f
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running at 2a1ef6f
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -483,16 +483,16 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the healthy bounded correction. V1-047
+- Blocker: none for the healthy independent review. V1-047
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect cumulative integration `bc2db3a9`.
+- Exact next action: preserve and inspect independent max review `79a2c933`.
   When it terminally releases, property-manager must verify immutable
   `2a1ef6f`, the complete cumulative four-path diff, clean worktree, required
-  gates, runtime, and zero findings before a fresh independent max review.
-  Do not install, publish, bootstrap the live V1-047 card, or dispatch
-  implementation `26b14ae0` before an accepted zero-finding verdict.
+  gates, exact runtime, and every finding. Do not install, publish, bootstrap
+  the live V1-047 card, or dispatch implementation `26b14ae0` before an
+  accepted zero-finding verdict.
 
 Current transition (2026-09-02 14:18 +07): bounded correction `eff7f891`
 terminally released and is property-manager-accepted DONE at exact
@@ -516,6 +516,24 @@ managed branch/worktree are
 the healthy read-only integration; after terminal release, manager-verify the
 complete cumulative four-path diff and all gates before fresh independent max
 review. V1-047 implementation `26b14ae0` and V1-048 remain held.
+
+Current transition (2026-09-02 14:45 +07): cumulative integration `bc2db3a9`
+is property-manager-accepted DONE at immutable `2a1ef6f`; worker and manager
+focused 5/5, coordination 106/106, automation 189/189, TEST-118, roadmap,
+traceability, publication/secret, exact Git/hash/diff/fsck/clean gates passed
+with zero candidate failures/skips and 0 HIGH, 0 MEDIUM, 0 LOW findings. Fresh
+independent max review `79a2c933-2443-43a2-827e-0b395382fb7e` was created once
+with stable key `v1-047-ops-independent-max-review-2a1ef6f-v1`. The first CLI
+dispatch pass started no worker because managed-worktree dispatch required
+`operator.admin`; the unchanged direct Gateway RPC then started exactly one
+`property-codex-2` attempt with zero failures:
+`workboard:79a2c933-2443-43a2-827e-0b395382fb7e:1788334997008`. Its clean
+managed branch/worktree are
+`openclaw/wb-79a2c933-2443-43a2-827e-0b395382fb7e` /
+`wb-79a2c933-2443-43a2-827e-0b395382fb7e` at immutable `2a1ef6f`, under
+GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks. Preserve the fresh
+read-only reviewer and verify every terminal finding before any install,
+publication, or implementation dispatch.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
