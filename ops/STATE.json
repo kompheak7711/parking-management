@@ -702,17 +702,17 @@
     "tranche_id": "V1-047"
   },
   "idle_reason": null,
-  "next_action": "Preserve and inspect healthy fresh independent max review attempt workboard:435c8f6d-b714-43ae-b19f-3739602bfa62:1788320385831; after terminal release, independently verify exact d088225, the complete eight-commit four-path diff, cleanliness, complete gates, runtime identity, and every finding before installation or implementation",
-  "active_worker": "property-codex-2",
-  "active_card": "435c8f6d-b714-43ae-b19f-3739602bfa62",
+  "next_action": "Preserve and inspect healthy bounded correction attempt workboard:5994b2e5-037d-4a26-9267-692bb659608b:1788323948901; after terminal release, independently verify the exact child of d088225, sole four-path scope, cleanliness, complete focused/full gates, runtime identity, and zero residual findings before fresh cumulative integration",
+  "active_worker": "property-codex-1",
+  "active_card": "5994b2e5-037d-4a26-9267-692bb659608b",
   "active_claim": true,
-  "active_attempt": "workboard:435c8f6d-b714-43ae-b19f-3739602bfa62:1788320385831",
-  "active_session": "agent:property-codex-2:subagent:workboard-property-rental-435c8f6d-b714-43ae-b19f-3739602bfa62",
-  "active_claimed_at_ms": 1788320385740,
-  "active_last_heartbeat_at_ms": 1788320404336,
-  "active_claim_expires_at_ms": 1788327604336,
-  "active_branch": "openclaw/wb-435c8f6d-b714-43ae-b19f-3739602bfa62",
-  "active_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-435c8f6d-b714-43ae-b19f-3739602bfa62",
+  "active_attempt": "workboard:5994b2e5-037d-4a26-9267-692bb659608b:1788323948901",
+  "active_session": "agent:property-codex-1:subagent:workboard-property-rental-5994b2e5-037d-4a26-9267-692bb659608b",
+  "active_claimed_at_ms": 1788323948821,
+  "active_last_heartbeat_at_ms": 1788323948821,
+  "active_claim_expires_at_ms": 1788331148821,
+  "active_branch": "openclaw/wb-5994b2e5-037d-4a26-9267-692bb659608b",
+  "active_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-5994b2e5-037d-4a26-9267-692bb659608b",
   "candidate_sha": "d088225b86c8a0c75fed12869e9a2f202cce33c4",
   "candidate_parent": "86c61f37384fc7e6ea9f058232e1ea3fa4f4395e",
   "next_candidate": {
@@ -753,9 +753,9 @@
     },
     {
       "id": "worker-coordination-rereview-human-stop",
-      "status": "bounded_correction_and_integration_done_fresh_independent_review_running",
+      "status": "fresh_review_fail_manager_accepted_bounded_correction_running",
       "scope": "uninstalled OpenClaw coordination safety candidate and exact pre-existing V1-047 card bootstrap",
-      "evidence": "Bounded correction b1614ef8 is manager-accepted DONE at exact 86c61f3 with zero findings. Fresh cumulative integration 71288e13 is manager-accepted DONE after focused 5/5, coordination 97/97, automation 189/189, all integrity gates, and zero findings. Fresh independent max review 85465ccb is running once on property-codex-2 at immutable 86c61f3 with one supported Gateway start and zero failures.",
+      "evidence": "Fresh independent max review 435c8f6d is property-manager-accepted DONE as FAIL at immutable d088225 with 3 HIGH, 1 MEDIUM, 0 LOW. Reviewer gates passed focused 2/2, adjacent 21/21, coordination 98/98, and automation 189/189 with zero failures/skips. Property-manager independently reproduced seven manifestations after one corrected local fixture-collision setup error. Changed-fingerprint correction 5994b2e5 started exactly once on property-codex-1 from clean d088225 with zero Gateway start failures.",
       "owner_decision": "2026-09-01 standing authorization explicitly clears the exhausted-recovery stop for one materially different H1-H3 correction",
       "correction_card_id": "c3536723-13f6-446a-a973-8a67963c51d4",
       "integration_card_id": "82257d37-d17b-42f3-8909-b855dfac5eac",
@@ -765,8 +765,9 @@
       "latest_independent_review_card_id": "67d4ab70-d53c-4bd3-b7db-32ae3aa8a4c3",
       "latest_review_correction_card_id": "b1614ef8-368e-4fd9-bfe6-01604711e930",
       "latest_review_correction_integration_card_id": "71288e13-5065-4ee8-8fda-1cd1693df39c",
-      "latest_review_correction_independent_review_card_id": "85465ccb-7bcb-435d-aa11-95f85ec059f8",
-      "action": "Preserve and inspect the healthy fresh independent max review; manager-verify its exact verdict and every finding before installation or implementation. Live bootstrap, publication, and V1-047 implementation remain held."
+      "latest_review_correction_independent_review_card_id": "435c8f6d-b714-43ae-b19f-3739602bfa62",
+      "current_bounded_correction_card_id": "5994b2e5-037d-4a26-9267-692bb659608b",
+      "action": "Preserve and inspect the healthy bounded correction; manager-verify its exact child commit, four-path diff, complete gates, runtime, and residual findings before fresh cumulative integration. Live bootstrap, publication, and V1-047 implementation remain held."
     }
   ],
   "owner_action": null,
@@ -3396,10 +3397,12 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green",
     "PASS: V1-047 fresh cumulative integration 20d1ed86 is manager-accepted DONE at exact d088225; worker and manager coordination 98/98 and automation 189/189 passed with zero failures/skips and zero findings",
-    "PASS: V1-047 fresh independent max review 435c8f6d started exactly one property-codex-2 worker in a clean managed worktree at immutable d088225; supported Gateway dispatch reported zero start failures"
+    "PASS: V1-047 fresh independent max review 435c8f6d started exactly one property-codex-2 worker in a clean managed worktree at immutable d088225; supported Gateway dispatch reported zero start failures",
+    "FAIL: V1-047 fresh independent max review 435c8f6d is property-manager-accepted DONE at immutable d088225 with 3 HIGH, 1 MEDIUM, 0 LOW; reviewer gates passed focused 2/2, adjacent 21/21, coordination 98/98, and automation 189/189 with zero failures/skips; manager independently reproduced seven accepted vulnerability manifestations after correcting one fixture-collision setup error",
+    "PASS: changed-fingerprint bounded correction 5994b2e5 was created once with stable idempotency key and dispatched exactly once to property-codex-1 in a clean managed worktree at d088225; Gateway reported one expected start and zero failures"
   ],
   "tests_tranche_id": "V1-047",
-  "timestamp": "2026-09-02T03:42:31Z",
+  "timestamp": "2026-09-02T04:40:11Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",

@@ -59,9 +59,10 @@ historical context only and must not be used to invent successors.
 
 Current live queue position: V1-047 bounded H1/H2 correction `de86c657` and
 fresh cumulative integration `20d1ed86` are manager-accepted DONE at immutable
-`d088225` with zero findings. Fresh independent max review `435c8f6d` is RUNNING
-exactly once on `property-codex-2` before any installation or implementation
-action.
+`d088225` with zero findings. Fresh independent max review `435c8f6d` is manager-
+accepted DONE as FAIL with 3 HIGH, 1 MEDIUM, 0 LOW after manager reproduction.
+Changed-fingerprint correction `5994b2e5` is RUNNING exactly once on
+`property-codex-1` before fresh integration or any installation action.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
@@ -233,10 +234,21 @@ supported Gateway operator RPC started exactly one `property-codex-2` attempt
 with zero failures:
 `workboard:435c8f6d-b714-43ae-b19f-3739602bfa62:1788320385831`. Its clean managed
 branch/worktree `openclaw/wb-435c8f6d-b714-43ae-b19f-3739602bfa62` /
-`wb-435c8f6d-b714-43ae-b19f-3739602bfa62` are at immutable `d088225`; claim and
-heartbeat are healthy. Preserve this GPT-5.6 Sol `max`, Standard/Fast-off,
-read-only review. Do not install, bootstrap the live card, publish, or dispatch
-implementation `26b14ae0` before manager acceptance of its verdict.
+`wb-435c8f6d-b714-43ae-b19f-3739602bfa62` are at immutable `d088225`. Reviewer
+gates passed 2/2 focused, 21/21 adjacent, 98/98 coordination, and 189/189
+automation with zero failures/skips, but the verdict is 3 HIGH, 1 MEDIUM,
+0 LOW. Property-manager independently reproduced seven manifestations and
+accepted the review DONE as FAIL. Bounded correction
+`5994b2e5-037d-4a26-9267-692bb659608b` was created once with stable key
+`v1-047-ops-correction-review-3h1m-d088225-v1`; the supported Gateway operator
+RPC started exactly one `property-codex-1` attempt with zero failures:
+`workboard:5994b2e5-037d-4a26-9267-692bb659608b:1788323948901`. Its clean
+managed branch/worktree `openclaw/wb-5994b2e5-037d-4a26-9267-692bb659608b` /
+`wb-5994b2e5-037d-4a26-9267-692bb659608b` are at exact base `d088225` under
+GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Preserve the worker and
+manager-verify its exact child commit before fresh cumulative integration. Do
+not install, bootstrap the live card, publish, or dispatch implementation
+`26b14ae0` before an accepted zero-finding review chain.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent
 `1c523409`; local automation passed 189/189, exact-SHA CI run `33512759067`
 passed all four jobs, and local/tracking/fetched/live-remote refs match.

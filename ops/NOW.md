@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded review-finding correction running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -372,9 +372,26 @@
   started exactly one `property-codex-2` attempt with zero start failures:
   `workboard:435c8f6d-b714-43ae-b19f-3739602bfa62:1788320385831`. Its clean
   managed branch/worktree are `openclaw/wb-435c8f6d-b714-43ae-b19f-3739602bfa62`
-  / `wb-435c8f6d-b714-43ae-b19f-3739602bfa62` at immutable `d088225`. The claim
-  is healthy. Observed runtime provider/model are OpenAI GPT-5.6 Sol; the
-  required contract is `max`, Standard/Fast-off, empty fallbacks, read-only.
+  / `wb-435c8f6d-b714-43ae-b19f-3739602bfa62` at immutable `d088225`. Reviewer
+  and manager verified the exact eight-commit, four-path diff and clean state.
+  Focused 2/2, adjacent 21/21, coordination 98/98, and automation 189/189 passed
+  with zero failures/skips, but the review failed with 3 HIGH, 1 MEDIUM, 0 LOW:
+  compact auth-code aliases persist, falsy malformed claim projections can
+  terminalize, contradictory model projections can terminalize, and terminal
+  chronology accepts missing/future timestamps. Property-manager independently
+  reproduced seven manifestations after one preliminary fixture-collision setup
+  error was corrected with isolated fixtures. Card `435c8f6d` is manager-
+  accepted DONE as FAIL; `d088225` remains rejected, uninstalled, unpublished.
+- Bounded changed-fingerprint correction: Workboard
+  `5994b2e5-037d-4a26-9267-692bb659608b` was created once with stable key
+  `v1-047-ops-correction-review-3h1m-d088225-v1`, parent `435c8f6d`, exact base
+  `d088225`, and four allowed paths. The supported Gateway operator RPC started
+  exactly one `property-codex-1` attempt with zero start failures:
+  `workboard:5994b2e5-037d-4a26-9267-692bb659608b:1788323948901`. Its clean
+  managed branch/worktree are
+  `openclaw/wb-5994b2e5-037d-4a26-9267-692bb659608b` /
+  `wb-5994b2e5-037d-4a26-9267-692bb659608b` at base `d088225`. Runtime contract
+  is GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks.
 - Prior blocker-state publication: exact ops-only commit
   `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -403,14 +420,14 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the healthy fresh independent max review. V1-047
+- Blocker: none for the healthy bounded correction. V1-047
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect the healthy independent review. When it
-  terminally releases, property-manager must verify the exact immutable
-  candidate, complete diff, cleanliness, complete gates, runtime identity, and
-  every finding before any installation or implementation action.
+- Exact next action: preserve and inspect the healthy bounded correction. When
+  it terminally releases, property-manager must verify the exact child of
+  `d088225`, sole four-path diff, cleanliness, focused/full gates, runtime
+  identity, and zero residual findings before fresh cumulative integration.
   Do not install, publish, bootstrap the live V1-047 card, or dispatch
   implementation `26b14ae0` before an accepted zero-finding verdict.
 
@@ -438,10 +455,11 @@
   accepted DONE as FAIL with 2 HIGH/0 MEDIUM/0 LOW, bounded H1/H2 correction
   `de86c657` is manager-accepted DONE at exact `d088225` with zero findings,
   fresh cumulative integration `20d1ed86` is manager-accepted DONE with zero
-  findings, and fresh independent max review `435c8f6d` is RUNNING once on
-  `property-codex-2` with zero start failures. Implementation remains blocked/
-  unstarted.
-- Automation exact next action: preserve and manager-verify the fresh independent
-  review before any installation or implementation action.
+  findings, fresh independent max review `435c8f6d` is manager-accepted DONE as
+  FAIL with 3 HIGH/1 MEDIUM/0 LOW, and bounded correction `5994b2e5` is RUNNING
+  once on `property-codex-1` with zero start failures. Implementation remains
+  blocked/unstarted.
+- Automation exact next action: preserve and manager-verify the bounded
+  correction before fresh cumulative integration or any installation action.
 
 <!-- AUTOMATION_STATUS_END -->
