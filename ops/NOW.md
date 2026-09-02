@@ -551,18 +551,27 @@ start/completion timestamps and a dispatch event; reproduction output SHA-256
 `6c2101247023d13c8cab7df4e9d62e132d55a116447a58cc5baa8329e608db62`.
 Candidate `2a1ef6f` remains rejected, uninstalled, and unpublished.
 
-One bounded four-path correction `37ca539e-69f7-4099-8b32-dd03f2a405f6`
-was created with stable key
-`v1-047-ops-correction-2a1ef6f-rollback-successor-v1`, linked to the accepted
-review, and started exactly once on `property-codex-1` as attempt
-`workboard:37ca539e-69f7-4099-8b32-dd03f2a405f6:1788338724274`. The direct
-Gateway dispatch response timed out after the worker had started; reconciliation
-proved one healthy claim, attempt, session, managed branch/worktree, initial
-heartbeat, and no duplicate. Its clean managed branch/worktree are
-`openclaw/wb-37ca539e-69f7-4099-8b32-dd03f2a405f6` /
-`wb-37ca539e-69f7-4099-8b32-dd03f2a405f6` at exact base `2a1ef6f`. Runtime is
-GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Preserve this worker;
-V1-047 implementation `26b14ae0` and V1-048 remain held.
+Bounded four-path correction `37ca539e-69f7-4099-8b32-dd03f2a405f6` is now
+property-manager-accepted DONE at immutable `f1246632579b87f4c4a44737b06ee890948471a1`,
+parent `2a1ef6f`, tree `9270c4f`, as one zero-merge +400/-8 commit with binary
+full-index SHA-256 `30773d9f51369b42f5ae57852f2c56b8d9f0406701a4ac8e0d799b6269ae7e1c`.
+Worker and manager focused 2/2, coordination 108/108, automation 189/189,
+TEST-118, manifest, traceability, publication/secret, JSON/Python, fsck, and
+clean-state gates passed with zero candidate failures/skips and 0 HIGH,
+0 MEDIUM, 0 LOW findings. The manager recorded and corrected one verifier setup
+error that compared source modes with destination install modes; no candidate
+assertion failed and no repository state changed.
+
+Fresh cumulative integration `feb86085-69b6-4f91-bf2b-e300ba980226` was
+created once with stable key `v1-047-ops-cumulative-integration-f124663-v1`
+and the supported Gateway RPC started exactly one `property-codex-3` attempt
+with zero failures:
+`workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788340796951`. Its clean
+managed branch/worktree are
+`openclaw/wb-feb86085-69b6-4f91-bf2b-e300ba980226` /
+`wb-feb86085-69b6-4f91-bf2b-e300ba980226` at immutable `f124663`. Runtime is
+GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Preserve this read-only
+worker; V1-047 implementation `26b14ae0` and V1-048 remain held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
@@ -596,12 +605,13 @@ V1-047 implementation `26b14ae0` and V1-048 remain held.
   bounded correction `eff7f891` and cumulative integration `bc2db3a9` are
   manager-accepted DONE at exact `2a1ef6f` with zero findings, independent max
   review `79a2c933` is manager-accepted DONE as FAIL with 2 HIGH/0 MEDIUM/
-  0 LOW, and bounded correction `37ca539e` is RUNNING exactly once on
-  `property-codex-1` from the clean immutable candidate.
+  0 LOW, bounded correction `37ca539e` is manager-accepted DONE at exact
+  `f124663` with zero findings, and fresh cumulative integration `feb86085` is
+  RUNNING exactly once on `property-codex-3` from the clean immutable candidate.
   Implementation remains blocked/unstarted.
-- Automation exact next action: preserve bounded correction `37ca539e`; after
-  terminal release, manager-verify the exact child of `2a1ef6f`, the complete
-  four-path diff, both fixes, cleanliness, runtime identity, and all gates
-  before fresh cumulative integration.
+- Automation exact next action: preserve cumulative integration `feb86085`;
+  after terminal release, manager-verify immutable `f124663`, the complete
+  eleven-commit four-path diff, cleanliness, runtime identity, all gates, and
+  zero findings before fresh independent max review.
 
 <!-- AUTOMATION_STATUS_END -->

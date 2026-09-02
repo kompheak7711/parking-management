@@ -57,15 +57,15 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 cumulative integration `bc2db3a9` is
-manager-accepted DONE at immutable `2a1ef6f`, parent `761269c`, with focused
-5/5, coordination 106/106, automation 189/189, zero candidate failures/skips,
-and zero findings. Fresh independent max review `79a2c933` is manager-accepted
-DONE as FAIL at immutable `2a1ef6f` with 2 HIGH, 0 MEDIUM, 0 LOW after manager
-reproduction. Bounded correction `37ca539e` is RUNNING exactly once on
-`property-codex-1` in a clean managed worktree at immutable base `2a1ef6f`.
-Its Gateway response timed out after the worker started; reconciliation proved
-the sole healthy attempt, so no retry or duplicate dispatch is allowed.
+Current live queue position: V1-047 bounded H1/H2 correction `37ca539e` is
+manager-accepted DONE at immutable `f124663`, parent `2a1ef6f`, with focused
+2/2, coordination 108/108, automation 189/189, zero candidate failures/skips,
+and zero findings. Fresh cumulative integration `feb86085` is RUNNING exactly
+once on `property-codex-3` in a clean managed worktree at immutable `f124663`;
+its sole attempt is
+`workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788340796951`. Preserve it;
+after terminal release, manager-verify the complete eleven-commit four-path
+diff and all gates before fresh independent max review.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
