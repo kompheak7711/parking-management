@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded review-finding correction running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -390,8 +390,27 @@
   `workboard:5994b2e5-037d-4a26-9267-692bb659608b:1788323948901`. Its clean
   managed branch/worktree are
   `openclaw/wb-5994b2e5-037d-4a26-9267-692bb659608b` /
-  `wb-5994b2e5-037d-4a26-9267-692bb659608b` at base `d088225`. Runtime contract
-  is GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks.
+  `wb-5994b2e5-037d-4a26-9267-692bb659608b`. The worker released exact
+  `761269c68d225c6555676c3acbb0b5a2be185ea5`, parent `d088225`, tree
+  `21b8f77b`, as one zero-merge four-path +411/-24 commit with binary diff
+  SHA-256 `fc28036eb09668ada19dda73de7ee761055623f3316730127ea899add5ec1280`.
+  Worker and manager focused 7/7, coordination 101/101, automation 189/189,
+  TEST-118, manifest, publication/secret, canonical, diff, history, and clean
+  gates passed with zero candidate failures/skips and zero findings. After
+  protecting the retained worktree, property-manager accepted card `5994b2e5`
+  DONE.
+- Fresh cumulative integration: Workboard
+  `7e37904e-f694-45d4-8457-0e2601828c49` was created once with stable key
+  `v1-047-ops-cumulative-integration-761269c-v1`, parent `5994b2e5`, and exact
+  clean source `761269c`. The supported Gateway operator RPC started exactly
+  one `property-codex-3` attempt with zero start failures:
+  `workboard:7e37904e-f694-45d4-8457-0e2601828c49:1788325903754`. Its managed
+  branch/worktree are `openclaw/wb-7e37904e-f694-45d4-8457-0e2601828c49` /
+  `wb-7e37904e-f694-45d4-8457-0e2601828c49`, clean at immutable `761269c`.
+  The complete cumulative diff from `ece9afd` is nine commits, zero merges,
+  four paths, +5227/-188, binary SHA-256
+  `36738b21d78989a9771a068f4f5a218d4d9ab2b56b31721e95cdadb89243909f`.
+  Runtime contract is GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks.
 - Prior blocker-state publication: exact ops-only commit
   `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -420,14 +439,15 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the healthy bounded correction. V1-047
+- Blocker: none for the healthy cumulative integration. V1-047
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect the healthy bounded correction. When
-  it terminally releases, property-manager must verify the exact child of
-  `d088225`, sole four-path diff, cleanliness, focused/full gates, runtime
-  identity, and zero residual findings before fresh cumulative integration.
+- Exact next action: preserve and inspect the healthy cumulative integration.
+  When it terminally releases, property-manager must independently verify its
+  exact `761269c` identity, complete nine-commit/four-path diff, clean state,
+  focused 7/7, coordination 101/101, automation 189/189, runtime identity, and
+  zero findings before dispatching a fresh independent `max` review.
   Do not install, publish, bootstrap the live V1-047 card, or dispatch
   implementation `26b14ae0` before an accepted zero-finding verdict.
 

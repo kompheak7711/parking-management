@@ -257,3 +257,19 @@ V1-048 remains dependency-held.
 The latest exact ops-state publication `4854408`, parent `05a70f5`, is pushed,
 remote-synchronized, and exact-SHA CI-green in run `33545659366` with all four
 jobs passed; local automation passed 189/189 with zero failures/skips.
+
+Current transition (2026-09-02 12:12 +07): bounded correction `5994b2e5` is
+property-manager-accepted DONE at exact `761269c68d225c6555676c3acbb0b5a2be185ea5`,
+parent `d088225`, tree `21b8f77b`, as one zero-merge four-path +411/-24 commit.
+Manager focused 7/7, coordination 101/101, automation 189/189, TEST-118,
+manifest, publication/secret, canonical, diff, history, and clean gates passed
+with zero candidate failures/skips and zero residual findings. Fresh cumulative
+integration `7e37904e-f694-45d4-8457-0e2601828c49` was created once with stable
+key `v1-047-ops-cumulative-integration-761269c-v1`; the supported Gateway RPC
+started exactly one `property-codex-3` attempt with zero failures:
+`workboard:7e37904e-f694-45d4-8457-0e2601828c49:1788325903754`. Its clean
+managed branch/worktree are `openclaw/wb-7e37904e-f694-45d4-8457-0e2601828c49`
+/ `wb-7e37904e-f694-45d4-8457-0e2601828c49` at immutable `761269c`. Preserve
+the integration; after terminal release, manager-verify the exact cumulative
+nine-commit/four-path diff and all gates before fresh independent max review.
+V1-047 implementation `26b14ae0` and V1-048 remain dependency-held.
