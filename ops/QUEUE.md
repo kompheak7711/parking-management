@@ -61,8 +61,12 @@ Current live queue position: V1-047 changed-fingerprint correction `5994b2e5`
 and fresh cumulative integration `7e37904e` are manager-accepted DONE at exact
 `761269c` with focused 7/7, coordination 101/101, automation 189/189, zero
 failures/skips, and zero findings. Fresh independent max review `d2fbebfe` is
-RUNNING exactly once on `property-codex-2` with a healthy claim in a clean
-read-only worktree. No duplicate dispatch or installation action is allowed.
+manager-accepted DONE as FAIL with 4 HIGH, 1 MEDIUM, 0 LOW after manager exact
+Git/diff/clean verification, the same 7/7, 101/101, and 189/189 green gates,
+and five independent reproductions. Bounded correction `eff7f891` is RUNNING
+exactly once on `property-codex-1` from clean immutable base `761269c` after one
+zero-start workspace-metadata transport recovery. No duplicate dispatch or
+installation action is allowed.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
@@ -290,3 +294,25 @@ terminal finding before any install/bootstrap or V1-047 implementation.
 Integration-state commit `edc5e4236c562fceb2b97e50bb34a7a67edb5034` is
 remote-synchronized and exact-SHA CI-green in run `33594024718`; all four jobs
 passed. V1-048 remains dependency-held.
+
+Current transition (2026-09-02 13:20 +07): fresh independent max review
+`d2fbebfe` terminally released with 4 HIGH, 1 MEDIUM, 0 LOW and is
+property-manager-accepted DONE as FAIL at immutable
+`761269c68d225c6555676c3acbb0b5a2be185ea5`, parent `d088225`, tree
+`21b8f77b`. Reviewer and manager focused 7/7, coordination 101/101, automation
+189/189, exact nine-commit/zero-merge/four-path +5227/-188 diff SHA-256
+`36738b21d78989a9771a068f4f5a218d4d9ab2b56b31721e95cdadb89243909f`,
+runtime, traceability, manifest, publication/secret, and clean gates passed with
+zero failures/skips. Manager reproduced every accepted gap. Bounded correction
+`eff7f891-a892-4d13-8372-b55268032769` was created once with stable key
+`v1-047-ops-correction-761269c-review-4h1m-v1`. Its first Gateway pass started
+no worker because the absolute source checkout was missing; the same preserved
+card/key was rebound to the clean retained review worktree and retry started
+exactly one `property-codex-1` attempt with zero failures:
+`workboard:eff7f891-a892-4d13-8372-b55268032769:1788329897416`. The managed
+branch/worktree are `openclaw/wb-eff7f891-a892-4d13-8372-b55268032769` /
+`wb-eff7f891-a892-4d13-8372-b55268032769`, clean at exact base `761269c` under
+GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Preserve this worker;
+after terminal release, manager-verify its exact child, four-path scope, all
+five fixes, cleanliness, full gates, and runtime before fresh cumulative
+integration. V1-047 implementation `26b14ae0` and V1-048 remain held.
