@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded installed-runtime and late-failure correction running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -280,10 +280,31 @@
   `v1-047-ops-independent-review-a3a1cff-v1`, parent `8ccec368`, immutable
   source `a3a1cff`, and GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks,
   read-only. The supported token-free Gateway operator route returned exactly
-  one start and zero failures. It is RUNNING once on `property-codex-2` as
+  one start and zero failures. It concluded once on `property-codex-2` as
   attempt `workboard:67d4ab70-d53c-4bd3-b7db-32ae3aa8a4c3:1788305930790` in
   managed branch/worktree `openclaw/wb-67d4ab70-d53c-4bd3-b7db-32ae3aa8a4c3`
   / `wb-67d4ab70-d53c-4bd3-b7db-32ae3aa8a4c3` at immutable `a3a1cff`.
+  Property-manager accepted it DONE as FAIL with 4 HIGH, 1 MEDIUM, 0 LOW.
+  Candidate identity, the six-commit/four-path +3882/-121 diff, and cleanliness
+  passed. The first focused selector invocation omitted `PYTHONPATH` and
+  errored 7/7 before collection; the corrected invocation passed 7/7. Full
+  coordination passed 93/93 and automation passed 189/189 with zero unexplained
+  skips. Manager independently reproduced the Fast-default, retained-snapshot,
+  later-failed-attempt, and neutral-key failure-scalar gaps. The review's
+  claimed `primaryTargetId`/`targets` status shape was not the live command;
+  live `gateway status` emits `rpc` but reports operator with empty scopes, so
+  the frozen positive `operator.admin` proof still cannot pass and must not be
+  weakened.
+- Bounded correction: Workboard
+  `b1614ef8-368e-4fd9-bfe6-01604711e930` was created once with stable key
+  `v1-047-ops-correction-a3a1cff-runtime-late-failure-v1`, parent `67d4ab70`,
+  four exact allowed paths, and GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty
+  fallbacks. The supported Gateway returned exactly one start and zero
+  failures. It is RUNNING once on `property-codex-1` as attempt
+  `workboard:b1614ef8-368e-4fd9-bfe6-01604711e930:1788309806773` in clean managed
+  branch/worktree `openclaw/wb-b1614ef8-368e-4fd9-bfe6-01604711e930` /
+  `wb-b1614ef8-368e-4fd9-bfe6-01604711e930` at exact base `a3a1cff`, parent
+  `587768eb`, tree `7a83808c`.
 - Prior blocker-state publication: exact ops-only commit
   `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -312,16 +333,16 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the healthy fresh independent-review attempt. V1-047
+- Blocker: none for the healthy bounded correction attempt. V1-047
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect the healthy fresh independent max
-  review. When it concludes, property-manager must verify its exact
-  SHA/parent/tree, complete six-commit/four-path diff, clean worktree, runtime
-  evidence, every finding, and complete gates. Do not
-  install, publish, bootstrap the live V1-047 card, or dispatch implementation
-  `26b14ae0` before an accepted zero-finding verdict.
+- Exact next action: preserve and inspect the healthy bounded correction. When
+  it concludes, property-manager must verify its exact one-commit/four-path
+  result, clean worktree, runtime evidence, every H1-H5 regression, and complete
+  gates before fresh cumulative integration and a fresh independent max review.
+  Do not install, publish, bootstrap the live V1-047 card, or dispatch
+  implementation `26b14ae0` before an accepted zero-finding verdict.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
@@ -339,11 +360,13 @@
   review `94f964ff` is manager-accepted DONE with 3 HIGH/0 MEDIUM/0 LOW, and
   exact H1-H3 correction `dafb7f51` is manager-accepted DONE at `a3a1cff` with
   0 HIGH/0 MEDIUM/0 LOW, fresh cumulative integration `8ccec368` is manager-
-  accepted DONE with zero findings, and fresh independent max review `67d4ab70`
-  is RUNNING once on `property-codex-2` at immutable `a3a1cff` with zero start
-  failures.
+  accepted DONE with zero findings, fresh independent max review `67d4ab70` is
+  manager-accepted DONE as FAIL with 4 HIGH/1 MEDIUM/0 LOW, and bounded
+  correction `b1614ef8` is RUNNING once on `property-codex-1` from immutable
+  `a3a1cff` with zero start failures.
   Implementation remains blocked/unstarted.
-- Automation exact next action: inspect the healthy fresh independent max review
-  and manager-verify its exact verdict before installation or implementation.
+- Automation exact next action: inspect the healthy bounded correction and
+  manager-verify its exact result before fresh cumulative integration, fresh
+  independent max review, installation, or implementation.
 
 <!-- AUTOMATION_STATUS_END -->

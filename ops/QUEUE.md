@@ -57,11 +57,11 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: owner-authorized V1-047 bounded H1-H3 correction
-is manager-accepted DONE at exact `a3a1cff`; fresh cumulative integration
-`8ccec368` is manager-accepted DONE with zero findings, and one fresh independent
-max review `67d4ab70` is RUNNING exactly once on `property-codex-2` before
-implementation.
+Current live queue position: V1-047 fresh independent max review `67d4ab70` is
+manager-accepted DONE as FAIL with 4 HIGH, 1 MEDIUM, 0 LOW at immutable
+`a3a1cff`; bounded correction `b1614ef8` is RUNNING exactly once on
+`property-codex-1` before fresh cumulative integration and fresh independent
+review.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
@@ -168,10 +168,20 @@ accepted DONE. Fresh independent max review
 start failures on `property-codex-2` as attempt
 `workboard:67d4ab70-d53c-4bd3-b7db-32ae3aa8a4c3:1788305930790` in managed
 branch/worktree `openclaw/wb-67d4ab70-d53c-4bd3-b7db-32ae3aa8a4c3` /
-`wb-67d4ab70-d53c-4bd3-b7db-32ae3aa8a4c3` at immutable `a3a1cff`. Preserve and
-inspect that healthy GPT-5.6 Sol `max`, Standard/Fast-off, read-only review. Do
-not install, bootstrap the live card, publish, or dispatch implementation
-`26b14ae0` before manager acceptance and a fresh zero-finding independent review.
+`wb-67d4ab70-d53c-4bd3-b7db-32ae3aa8a4c3` at immutable `a3a1cff`. Reviewer and
+manager gates passed focused 7/7, coordination 93/93, and automation 189/189;
+property-manager accepted the review DONE as FAIL with 4 HIGH, 1 MEDIUM, 0 LOW
+after reproducing every material class and correcting the live Gateway schema
+description. Bounded correction `b1614ef8-368e-4fd9-bfe6-01604711e930` was
+created once with stable key
+`v1-047-ops-correction-a3a1cff-runtime-late-failure-v1` and started exactly once
+with zero start failures on `property-codex-1` as attempt
+`workboard:b1614ef8-368e-4fd9-bfe6-01604711e930:1788309806773` in clean managed
+branch/worktree `openclaw/wb-b1614ef8-368e-4fd9-bfe6-01604711e930` /
+`wb-b1614ef8-368e-4fd9-bfe6-01604711e930` at exact base `a3a1cff`. Preserve and
+inspect this healthy GPT-5.6 Sol `xhigh`, Standard/Fast-off correction. Do not
+install, bootstrap the live card, publish, or dispatch implementation `26b14ae0`
+before fresh integration and an accepted zero-finding independent review.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent
 `1c523409`; local automation passed 189/189, exact-SHA CI run `33512759067`
 passed all four jobs, and local/tracking/fetched/live-remote refs match.
