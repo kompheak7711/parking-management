@@ -57,9 +57,9 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 fresh independent max review `67d4ab70` is
-manager-accepted DONE as FAIL with 4 HIGH, 1 MEDIUM, 0 LOW at immutable
-`a3a1cff`; bounded correction `b1614ef8` is RUNNING exactly once on
+Current live queue position: V1-047 fresh independent max review `85465ccb` is
+manager-accepted DONE as FAIL with 2 HIGH, 0 MEDIUM, 0 LOW at immutable
+`86c61f3`; bounded H1/H2 correction `de86c657` is RUNNING exactly once on
 `property-codex-1` before fresh cumulative integration and fresh independent
 review.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
@@ -200,10 +200,21 @@ with stable key `v1-047-ops-independent-review-86c61f3-v1`; the supported
 Gateway operator RPC started exactly one `property-codex-2` attempt with zero
 failures: `workboard:85465ccb-7bcb-435d-aa11-95f85ec059f8:1788314136055` in
 clean managed branch/worktree `openclaw/wb-85465ccb-7bcb-435d-aa11-95f85ec059f8`
-/ `wb-85465ccb-7bcb-435d-aa11-95f85ec059f8` at immutable `86c61f3`. Preserve and
-inspect this healthy GPT-5.6 Sol `max`, Standard/Fast-off review. Do not install,
-bootstrap the live card, publish, or dispatch implementation `26b14ae0` before
-manager acceptance of a zero-finding verdict.
+/ `wb-85465ccb-7bcb-435d-aa11-95f85ec059f8` at immutable `86c61f3`. Reviewer and
+manager coordination 97/97 and automation 189/189 passed with zero failures/
+skips, but property-manager accepted the review DONE as FAIL with 2 HIGH,
+0 MEDIUM, 0 LOW after reproducing both sensitive-assignment persistence and
+READY-admission race findings. Bounded correction
+`de86c657-eccf-4a95-93df-54c4de6164e4` was created once with stable key
+`v1-047-ops-correction-86c61f3-sensitive-ready-race-v1`; the supported Gateway
+operator RPC started exactly one `property-codex-1` attempt with zero failures:
+`workboard:de86c657-eccf-4a95-93df-54c4de6164e4:1788316794926`. Its managed
+branch/worktree `openclaw/wb-de86c657-eccf-4a95-93df-54c4de6164e4` /
+`wb-de86c657-eccf-4a95-93df-54c4de6164e4` are clean at base `86c61f3`, parent
+`a3a1cff`; claim and heartbeat are healthy. Preserve this GPT-5.6 Sol `xhigh`,
+Standard/Fast-off correction. Do not install, bootstrap the live card, publish,
+or dispatch implementation `26b14ae0` before fresh cumulative integration and
+manager acceptance of a zero-finding fresh independent review.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent
 `1c523409`; local automation passed 189/189, exact-SHA CI run `33512759067`
 passed all four jobs, and local/tracking/fetched/live-remote refs match.

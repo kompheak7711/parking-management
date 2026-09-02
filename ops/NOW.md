@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded H1/H2 correction running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -326,9 +326,24 @@
   started exactly one attempt with zero failures on `property-codex-2`:
   `workboard:85465ccb-7bcb-435d-aa11-95f85ec059f8:1788314136055`. Its clean
   managed branch/worktree are `openclaw/wb-85465ccb-7bcb-435d-aa11-95f85ec059f8`
-  / `wb-85465ccb-7bcb-435d-aa11-95f85ec059f8` at immutable `86c61f3`. Required
-  runtime is GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks; Workboard's
-  generic execution field displays `model=default`.
+  / `wb-85465ccb-7bcb-435d-aa11-95f85ec059f8` at immutable `86c61f3`. Reviewer
+  and property-manager each passed coordination 97/97 and automation 189/189
+  with zero failures/skips. Property-manager accepted the review DONE as FAIL
+  with 2 HIGH, 0 MEDIUM, 0 LOW after independently reproducing both findings:
+  a punctuation-obfuscated sensitive assignment is accepted and durably
+  persisted, and an owner arriving during READY promotion raises an ownership
+  error but leaves the target READY. The candidate remains rejected,
+  uninstalled, and unpublished.
+- Bounded H1/H2 correction: Workboard
+  `de86c657-eccf-4a95-93df-54c4de6164e4` was created once with stable key
+  `v1-047-ops-correction-86c61f3-sensitive-ready-race-v1`, exact base
+  `86c61f3`, and four allowed paths. The supported Gateway operator RPC started
+  exactly one attempt with zero failures on `property-codex-1`:
+  `workboard:de86c657-eccf-4a95-93df-54c4de6164e4:1788316794926`. Its managed
+  branch/worktree are `openclaw/wb-de86c657-eccf-4a95-93df-54c4de6164e4` /
+  `wb-de86c657-eccf-4a95-93df-54c4de6164e4`, clean at base `86c61f3`, parent
+  `a3a1cff`. The claim and heartbeat are healthy. Runtime is GPT-5.6 Sol
+  `xhigh`, Standard/Fast-off, empty fallbacks.
 - Prior blocker-state publication: exact ops-only commit
   `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -357,14 +372,14 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the healthy fresh independent review attempt. V1-047
+- Blocker: none for the healthy bounded H1/H2 correction attempt. V1-047
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect the healthy fresh independent max
-  review. When it concludes, property-manager must verify its immutable
-  candidate identity, read-only cleanliness, complete-diff verdict, every
-  finding, and complete gates before any installation or implementation.
+- Exact next action: preserve and inspect the healthy correction. When it
+  concludes, property-manager must verify its exact commit and parent, complete
+  four-path diff, cleanliness, H1/H2 adversarial behavior, and complete gates;
+  then run fresh cumulative integration and fresh independent max review.
   Do not install, publish, bootstrap the live V1-047 card, or dispatch
   implementation `26b14ae0` before an accepted zero-finding verdict.
 
@@ -388,10 +403,11 @@
   manager-accepted DONE as FAIL with 4 HIGH/1 MEDIUM/0 LOW, and bounded
   correction `b1614ef8` is manager-accepted DONE at exact `86c61f3` with zero
   findings, fresh cumulative integration `71288e13` is manager-accepted DONE
-  with zero findings, and fresh independent max review `85465ccb` is RUNNING
-  once on `property-codex-2` at immutable `86c61f3` with zero start failures.
-  Implementation remains blocked/unstarted.
-- Automation exact next action: inspect and manager-verify the fresh independent
-  max review before installation or implementation.
+  with zero findings, fresh independent max review `85465ccb` is manager-
+  accepted DONE as FAIL with 2 HIGH/0 MEDIUM/0 LOW, and bounded H1/H2 correction
+  `de86c657` is RUNNING once on `property-codex-1` at base `86c61f3` with zero
+  start failures. Implementation remains blocked/unstarted.
+- Automation exact next action: preserve and manager-verify the correction,
+  then run fresh cumulative integration and fresh independent max review.
 
 <!-- AUTOMATION_STATUS_END -->
