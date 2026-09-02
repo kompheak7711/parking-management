@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded coordination correction running from 2a1ef6f
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration runtime recovery running at f124663
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -563,15 +563,24 @@ error that compared source modes with destination install modes; no candidate
 assertion failed and no repository state changed.
 
 Fresh cumulative integration `feb86085-69b6-4f91-bf2b-e300ba980226` was
-created once with stable key `v1-047-ops-cumulative-integration-f124663-v1`
-and the supported Gateway RPC started exactly one `property-codex-3` attempt
-with zero failures:
-`workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788340796951`. Its clean
-managed branch/worktree are
+created once with stable key `v1-047-ops-cumulative-integration-f124663-v1`.
+Its first two read-only `property-codex-3` attempts, `...:1788340796951` and
+`...:1788341782239`, were stopped before acceptance after exact runtime
+admission proved that their shared session lineage remained at effective
+reasoning `high`, not required `xhigh`; otherwise-green focused 2/2,
+coordination 108/108, automation 189/189, integrity, and zero-finding evidence
+is diagnostic only. Hot-pinning the worker default could not alter that
+persisted session, so property-manager restored its normal `high` default and
+reassigned the same preserved card to the already-`xhigh` correction worker.
+The supported Gateway RPC started exactly one materially different recovery
+attempt with zero start failures:
+`workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788342245163`. Its clean
+managed branch/worktree remain
 `openclaw/wb-feb86085-69b6-4f91-bf2b-e300ba980226` /
-`wb-feb86085-69b6-4f91-bf2b-e300ba980226` at immutable `f124663`. Runtime is
-GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Preserve this read-only
-worker; V1-047 implementation `26b14ae0` and V1-048 remain held.
+`wb-feb86085-69b6-4f91-bf2b-e300ba980226` at immutable `f124663`. The recovery
+is healthy on `property-codex-1` with an active claim under GPT-5.6 Sol `xhigh`,
+Standard/Fast-off, empty fallbacks. Preserve it; V1-047 implementation
+`26b14ae0` and V1-048 remain held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
@@ -606,8 +615,10 @@ worker; V1-047 implementation `26b14ae0` and V1-048 remain held.
   manager-accepted DONE at exact `2a1ef6f` with zero findings, independent max
   review `79a2c933` is manager-accepted DONE as FAIL with 2 HIGH/0 MEDIUM/
   0 LOW, bounded correction `37ca539e` is manager-accepted DONE at exact
-  `f124663` with zero findings, and fresh cumulative integration `feb86085` is
-  RUNNING exactly once on `property-codex-3` from the clean immutable candidate.
+  `f124663` with zero findings. Fresh cumulative integration `feb86085` rejected
+  two `property-codex-3` attempts whose shared session remained at `high` and is
+  RUNNING one materially different recovery on already-`xhigh`
+  `property-codex-1` from the clean immutable candidate.
   Implementation remains blocked/unstarted.
 - Automation exact next action: preserve cumulative integration `feb86085`;
   after terminal release, manager-verify immutable `f124663`, the complete

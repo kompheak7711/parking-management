@@ -60,10 +60,13 @@ historical context only and must not be used to invent successors.
 Current live queue position: V1-047 bounded H1/H2 correction `37ca539e` is
 manager-accepted DONE at immutable `f124663`, parent `2a1ef6f`, with focused
 2/2, coordination 108/108, automation 189/189, zero candidate failures/skips,
-and zero findings. Fresh cumulative integration `feb86085` is RUNNING exactly
-once on `property-codex-3` in a clean managed worktree at immutable `f124663`;
-its sole attempt is
-`workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788340796951`. Preserve it;
+and zero findings. Fresh cumulative integration `feb86085` stopped two
+`property-codex-3` attempts after runtime admission proved their shared session
+lineage remained at effective `high`, not required `xhigh`; their green
+technical evidence is diagnostic only. The same card, stable key, branch, and
+clean managed worktree are now RUNNING one materially different recovery on
+the already-`xhigh` `property-codex-1` worker:
+`workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788342245163`. Preserve it;
 after terminal release, manager-verify the complete eleven-commit four-path
 diff and all gates before fresh independent max review.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
@@ -345,3 +348,18 @@ permission failure, the supported direct Gateway RPC started exactly one
 fresh read-only GPT-5.6 Sol `max`, Standard/Fast-off reviewer and verify its
 exact-SHA verdict and every finding before any install, publication, or V1-047
 implementation dispatch. V1-048 remains dependency-held.
+
+Current transition (2026-09-02 16:44 +07): cumulative integration card
+`feb86085-69b6-4f91-bf2b-e300ba980226` rejected and stopped two
+`property-codex-3` attempts, `...:1788340796951` and `...:1788341782239`,
+because their persisted shared session lineage remained at effective `high`,
+not required `xhigh`. No repository/worktree mutation occurred and all prior
+technical proof is diagnostic only. Property-manager restored
+`property-codex-3` to its normal `high`, preserved the same card/key/branch/
+worktree, and reassigned the card to already-`xhigh` `property-codex-1`. The
+direct Gateway RPC started one materially different recovery with zero start
+failures: `workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788342245163`.
+Its claim, session, branch, and clean immutable `f124663` worktree are healthy;
+Standard/Fast-off and empty fallbacks remain enforced. Preserve the recovery
+and accept no prior-attempt proof; V1-047 implementation `26b14ae0` and V1-048
+remain held.

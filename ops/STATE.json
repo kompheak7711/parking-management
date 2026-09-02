@@ -702,15 +702,15 @@
     "tranche_id": "V1-047"
   },
   "idle_reason": null,
-  "next_action": "Preserve and inspect fresh cumulative integration attempt workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788340796951; after terminal release, manager-verify immutable f124663, the complete eleven-commit four-path diff, clean worktree, exact runtime, all gates, and zero findings before fresh independent max review",
-  "active_worker": "property-codex-3",
+  "next_action": "Preserve and inspect fresh cumulative integration recovery workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788342245163; after terminal release, manager-verify immutable f124663, the complete eleven-commit four-path diff, clean worktree, exact xhigh runtime, fresh gates, and zero findings before fresh independent max review",
+  "active_worker": "property-codex-1",
   "active_card": "feb86085-69b6-4f91-bf2b-e300ba980226",
   "active_claim": true,
-  "active_attempt": "workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788340796951",
-  "active_session": "agent:property-codex-3:subagent:workboard-property-rental-feb86085-69b6-4f91-bf2b-e300ba980226",
-  "active_claimed_at_ms": 1788340796862,
-  "active_last_heartbeat_at_ms": 1788340959149,
-  "active_claim_expires_at_ms": 1788344559149,
+  "active_attempt": "workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788342245163",
+  "active_session": "agent:property-codex-1:subagent:workboard-property-rental-feb86085-69b6-4f91-bf2b-e300ba980226",
+  "active_claimed_at_ms": 1788342245072,
+  "active_last_heartbeat_at_ms": 1788342245072,
+  "active_claim_expires_at_ms": 1788345845072,
   "active_branch": "openclaw/wb-feb86085-69b6-4f91-bf2b-e300ba980226",
   "active_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-feb86085-69b6-4f91-bf2b-e300ba980226",
   "candidate_sha": "f1246632579b87f4c4a44737b06ee890948471a1",
@@ -832,16 +832,16 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-047 bounded H1/H2 correction 37ca539e is manager-accepted DONE at immutable f124663 with zero findings; fresh cumulative integration feb86085 is RUNNING once on property-codex-3; implementation 26b14ae0 remains blocked",
-    "exact_next_action": "Preserve and inspect cumulative integration attempt 1788340796951; after terminal release, manager-verify immutable f124663, the complete eleven-commit four-path diff, clean worktree, exact runtime, all gates, and zero findings before fresh independent max review",
+    "current_phase": "V1-047 bounded H1/H2 correction 37ca539e is manager-accepted DONE at immutable f124663 with zero findings; fresh cumulative integration feb86085 stopped two ineligible property-codex-3 attempts sharing a high-reasoning session and is RUNNING one materially different xhigh recovery on property-codex-1; implementation 26b14ae0 remains blocked",
+    "exact_next_action": "Preserve and inspect cumulative integration recovery 1788342245163; after terminal release, manager-verify immutable f124663, the complete eleven-commit four-path diff, clean worktree, exact xhigh runtime, fresh gates, and zero findings before fresh independent max review",
     "scheduler_health": {
       "enabled": true,
       "schedule_ms": 1800000,
-      "previous_run_status": "ok",
-      "previous_run_duration_ms": 1505429,
-      "current_run_recovery": "bounded_correction_manager_accepted_pass_after_stale_execution_reconciliation; fresh_cumulative_integration_started_once",
-      "current_run_started_at_ms": 1788339710137,
-      "next_cadence_at_ms": 1788341510124,
+      "previous_run_status": "error_timeout",
+      "previous_run_duration_ms": 1800324,
+      "current_run_recovery": "fresh_cumulative_integration_two_property_codex_3_attempts_stopped_for_persisted_high_session; property_codex_3_restored_high; same_card_reassigned_to_already_xhigh_property_codex_1; one_materially_different_recovery_started_with_zero_start_failures",
+      "current_run_started_at_ms": 1788341540475,
+      "next_cadence_at_ms": 1788343310059,
       "prompt_payload_identity": "PASS: byte-identical, 11868 bytes on disk, SHA-256 0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56"
     },
     "coordination_safety_rereview": {
@@ -2591,8 +2591,26 @@
     "coordination_cumulative_integration_f124663": {
       "card_id": "feb86085-69b6-4f91-bf2b-e300ba980226",
       "parent_correction_card_id": "37ca539e-69f7-4099-8b32-dd03f2a405f6",
-      "attempt_id": "workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788340796951",
-      "worker": "property-codex-3",
+      "attempt_id": "workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788342245163",
+      "prior_ineligible_attempts": [
+        {
+          "attempt_id": "workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788340796951",
+          "effective_reasoning": "high",
+          "required_reasoning": "xhigh",
+          "status": "stopped_runtime_ineligible",
+          "accepted": false,
+          "diagnostic_tests": "focused 2/2, coordination 108/108, automation 189/189, integrity gates, and 0 HIGH/0 MEDIUM/0 LOW; not acceptance-eligible"
+        },
+        {
+          "attempt_id": "workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788341782239",
+          "effective_reasoning": "high",
+          "required_reasoning": "xhigh",
+          "status": "blocked_runtime_ineligible",
+          "accepted": false,
+          "reason": "The dispatcher reused the property-codex-3 session lineage; hot-pinning the agent default could not add a later xhigh transition to the persisted session."
+        }
+      ],
+      "worker": "property-codex-1",
       "branch": "openclaw/wb-feb86085-69b6-4f91-bf2b-e300ba980226",
       "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-feb86085-69b6-4f91-bf2b-e300ba980226",
       "source_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-37ca539e-69f7-4099-8b32-dd03f2a405f6",
@@ -2610,14 +2628,20 @@
       "read_only": true,
       "claim_active": true,
       "attempt_active": true,
-      "dispatch_count": 1,
+      "worker_active": true,
+      "claim_started_at_ms": 1788342245072,
+      "last_heartbeat_at_ms": 1788342245072,
+      "claim_expires_at_ms": 1788345845072,
+      "dispatch_count": 3,
+      "started_attempts": 3,
       "start_failures": 0,
+      "runtime_policy_recovery": "Two property-codex-3 attempts inherited the same persisted high-reasoning session and stopped before acceptance; hot-pinning the worker default did not alter that lineage. Property-manager restored property-codex-3 to high, preserved the card/key/branch/worktree, reassigned to already-xhigh property-codex-1, and direct Gateway RPC started exactly one materially different clean recovery without restart or overlap.",
       "status": "running"
     },
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-09-02T09:20:17Z"
+    "updated_at": "2026-09-02T09:44:36Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -3709,10 +3733,11 @@
     "FAIL: fresh independent max review 79a2c933 is property-manager-accepted DONE at immutable 2a1ef6f with 2 HIGH, 0 MEDIUM, 0 LOW; reviewer and manager coordination 106/106 and automation coordination 106/106 plus policy/routing 189/189 passed with zero baseline failures/skips; manager independently reproduced both material bypasses",
     "PASS/RECOVERED: bounded correction 37ca539e was created once with a stable idempotency key and started exactly once on property-codex-1 from clean 2a1ef6f; the Gateway response timed out after start, and reconciliation proved the sole healthy attempt with zero duplicate dispatch",
     "PASS: bounded correction 37ca539e is property-manager-accepted DONE at immutable f124663, parent 2a1ef6f, tree 9270c4f, as one zero-merge four-path +400/-8 commit; worker and manager focused 2/2, coordination 108/108, automation 189/189, TEST-118, manifest, traceability, publication/secret, JSON/Python, fsck, and clean gates passed with zero candidate failures/skips and zero findings",
-    "PASS: fresh cumulative integration feb86085 was created once with stable idempotency key and dispatched exactly once to property-codex-3 in a clean managed worktree at immutable f124663; Gateway reported one expected start and zero failures"
+    "PASS: fresh cumulative integration feb86085 was created once with stable idempotency key and dispatched exactly once to property-codex-3 in a clean managed worktree at immutable f124663; Gateway reported one expected start and zero failures",
+    "FAIL/RECOVERED: cumulative integration feb86085 attempts 1788340796951 and 1788341782239 were stopped and rejected because their shared property-codex-3 session remained at effective high rather than required xhigh; all technical proof remained diagnostic only and no worktree mutation occurred. Property-manager restored property-codex-3 to high, reassigned the same preserved card to already-xhigh property-codex-1, and the supported Gateway started exactly one materially different recovery 1788342245163 with zero start failures and the same clean immutable worktree"
   ],
   "tests_tranche_id": "V1-047",
-  "timestamp": "2026-09-02T09:20:17Z",
+  "timestamp": "2026-09-02T09:44:36Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
