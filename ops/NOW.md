@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded H1/H2 correction running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -359,8 +359,22 @@
   `workboard:20d1ed86-f531-4fbf-bf4f-7dc99418b09c:1788318728284`. Its managed
   branch/worktree are `openclaw/wb-20d1ed86-f531-4fbf-bf4f-7dc99418b09c` /
   `wb-20d1ed86-f531-4fbf-bf4f-7dc99418b09c`, clean at immutable `d088225`,
-  parent `86c61f3`. The claim is healthy. Runtime is GPT-5.6 Sol `xhigh`,
-  Standard/Fast-off, empty fallbacks, read-only.
+  parent `86c61f3`, tree `61ff6ee`. Worker and property-manager independently
+  passed coordination 98/98 and automation 189/189 with zero failures/skips;
+  exact eight-commit, zero-merge, four-path +4865/-213 cumulative diff SHA-256
+  `a8d736256c92e76988843c4a2b7987f4bc5d25fae008316fbf96555467102387`
+  and clean state passed. Property-manager accepted the card DONE with
+  0 HIGH, 0 MEDIUM, 0 LOW findings.
+- Fresh independent max review: Workboard
+  `435c8f6d-b714-43ae-b19f-3739602bfa62` was created once with stable key
+  `v1-047-ops-independent-max-review-d088225-v1`, parent `20d1ed86`, and the
+  exact clean integration worktree as source. The supported Gateway operator RPC
+  started exactly one `property-codex-2` attempt with zero start failures:
+  `workboard:435c8f6d-b714-43ae-b19f-3739602bfa62:1788320385831`. Its clean
+  managed branch/worktree are `openclaw/wb-435c8f6d-b714-43ae-b19f-3739602bfa62`
+  / `wb-435c8f6d-b714-43ae-b19f-3739602bfa62` at immutable `d088225`. The claim
+  is healthy. Observed runtime provider/model are OpenAI GPT-5.6 Sol; the
+  required contract is `max`, Standard/Fast-off, empty fallbacks, read-only.
 - Prior blocker-state publication: exact ops-only commit
   `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -389,14 +403,14 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the healthy fresh cumulative integration attempt. V1-047
+- Blocker: none for the healthy fresh independent max review. V1-047
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect the healthy cumulative integration.
-  When it concludes, property-manager must verify the exact immutable candidate,
-  complete eight-commit four-path diff, cleanliness, H1/H2 adversarial behavior,
-  and complete gates; then dispatch a fresh independent max review.
+- Exact next action: preserve and inspect the healthy independent review. When it
+  terminally releases, property-manager must verify the exact immutable
+  candidate, complete diff, cleanliness, complete gates, runtime identity, and
+  every finding before any installation or implementation action.
   Do not install, publish, bootstrap the live V1-047 card, or dispatch
   implementation `26b14ae0` before an accepted zero-finding verdict.
 
@@ -423,10 +437,11 @@
   with zero findings, fresh independent max review `85465ccb` is manager-
   accepted DONE as FAIL with 2 HIGH/0 MEDIUM/0 LOW, bounded H1/H2 correction
   `de86c657` is manager-accepted DONE at exact `d088225` with zero findings,
-  and fresh cumulative integration `20d1ed86` is RUNNING once on
-  `property-codex-3` with zero start failures. Implementation remains
-  blocked/unstarted.
-- Automation exact next action: preserve and manager-verify the cumulative
-  integration, then run a fresh independent max review.
+  fresh cumulative integration `20d1ed86` is manager-accepted DONE with zero
+  findings, and fresh independent max review `435c8f6d` is RUNNING once on
+  `property-codex-2` with zero start failures. Implementation remains blocked/
+  unstarted.
+- Automation exact next action: preserve and manager-verify the fresh independent
+  review before any installation or implementation action.
 
 <!-- AUTOMATION_STATUS_END -->
