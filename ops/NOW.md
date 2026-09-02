@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration runtime recovery running at f124663
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running at f124663
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -615,14 +615,34 @@ Standard/Fast-off, empty fallbacks. Preserve it; V1-047 implementation
   manager-accepted DONE at exact `2a1ef6f` with zero findings, independent max
   review `79a2c933` is manager-accepted DONE as FAIL with 2 HIGH/0 MEDIUM/
   0 LOW, bounded correction `37ca539e` is manager-accepted DONE at exact
-  `f124663` with zero findings. Fresh cumulative integration `feb86085` rejected
-  two `property-codex-3` attempts whose shared session remained at `high` and is
-  RUNNING one materially different recovery on already-`xhigh`
-  `property-codex-1` from the clean immutable candidate.
+  `f124663` with zero findings. Fresh cumulative integration `feb86085` is
+  manager-accepted DONE with zero findings. Fresh independent max review
+  `b6fce132` is RUNNING once on `property-codex-2` from the clean immutable
+  candidate.
   Implementation remains blocked/unstarted.
-- Automation exact next action: preserve cumulative integration `feb86085`;
-  after terminal release, manager-verify immutable `f124663`, the complete
-  eleven-commit four-path diff, cleanliness, runtime identity, all gates, and
-  zero findings before fresh independent max review.
+- Automation exact next action: preserve independent review `b6fce132`; after
+  terminal release, manager-verify immutable `f124663`, the complete eleven-
+  commit four-path diff, cleanliness, exact max runtime, all gates, and every
+  finding before any installation or implementation dispatch.
 
 <!-- AUTOMATION_STATUS_END -->
+
+Current transition (2026-09-02 17:22 +07): cumulative integration `feb86085`
+is property-manager-accepted DONE at immutable `f124663`; worker and manager
+focused 2/2, coordination 108/108, automation policy 189/189, TEST-118,
+roadmap 46/60, parse, manifest 4/4, traceability, publication/secret, and exact
+Git/hash/diff/fsck/clean gates passed with zero failures/skips and 0 HIGH,
+0 MEDIUM, 0 LOW findings. Fresh independent max review
+`b6fce132-2f59-4975-b387-1260eeefd8fc` was created once with stable key
+`v1-047-ops-independent-max-review-f124663-v1`. Three Gateway passes started
+no attempt because the earlier DONE `property-codex-2` review retained a stale
+`execution.status=running`; the new review's exact source workspace was also
+bound before recovery. After property-manager cleared only that verified stale
+projection through supported Workboard reconciliation, the next Gateway pass
+started exactly one clean review attempt with zero failures:
+`workboard:b6fce132-2f59-4975-b387-1260eeefd8fc:1788344530062`.
+The managed branch/worktree are
+`openclaw/wb-b6fce132-2f59-4975-b387-1260eeefd8fc` /
+`wb-b6fce132-2f59-4975-b387-1260eeefd8fc` at immutable `f124663`, under
+GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks. Preserve the reviewer;
+V1-047 implementation `26b14ae0` and V1-048 remain held.

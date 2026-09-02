@@ -57,18 +57,14 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 bounded H1/H2 correction `37ca539e` is
+Current live queue position: V1-047 cumulative integration `feb86085` is
 manager-accepted DONE at immutable `f124663`, parent `2a1ef6f`, with focused
-2/2, coordination 108/108, automation 189/189, zero candidate failures/skips,
-and zero findings. Fresh cumulative integration `feb86085` stopped two
-`property-codex-3` attempts after runtime admission proved their shared session
-lineage remained at effective `high`, not required `xhigh`; their green
-technical evidence is diagnostic only. The same card, stable key, branch, and
-clean managed worktree are now RUNNING one materially different recovery on
-the already-`xhigh` `property-codex-1` worker:
-`workboard:feb86085-69b6-4f91-bf2b-e300ba980226:1788342245163`. Preserve it;
-after terminal release, manager-verify the complete eleven-commit four-path
-diff and all gates before fresh independent max review.
+2/2, coordination 108/108, automation 189/189, zero failures/skips, and zero
+findings. Fresh independent max review `b6fce132` is RUNNING exactly once on
+`property-codex-2` in a clean managed worktree at immutable `f124663`, attempt
+`workboard:b6fce132-2f59-4975-b387-1260eeefd8fc:1788344530062`. Preserve it and
+manager-verify its complete exact-SHA verdict and every finding before any
+installation, publication, or implementation dispatch.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
@@ -363,3 +359,18 @@ Its claim, session, branch, and clean immutable `f124663` worktree are healthy;
 Standard/Fast-off and empty fallbacks remain enforced. Preserve the recovery
 and accept no prior-attempt proof; V1-047 implementation `26b14ae0` and V1-048
 remain held.
+
+Current transition (2026-09-02 17:22 +07): cumulative integration `feb86085`
+is property-manager-accepted DONE at immutable `f124663` with manager-focused
+2/2, coordination 108/108, automation 189/189, complete integrity gates, and
+zero findings. Fresh independent max review `b6fce132` was created once with
+stable key `v1-047-ops-independent-max-review-f124663-v1`. Three definitive
+zero-start Gateway passes were reconciled to the stale running execution field
+on prior DONE `property-codex-2` review `79a2c933`; no claim or attempt had
+started. After binding the new card to the exact accepted source workspace and
+clearing only that stale field through supported Workboard reconciliation, the
+next Gateway pass started exactly one `property-codex-2` attempt with zero
+failures: `workboard:b6fce132-2f59-4975-b387-1260eeefd8fc:1788344530062`.
+The reviewer is GPT-5.6 Sol `max`, Standard/Fast-off, with empty fallbacks in a
+clean managed worktree at `f124663`. V1-047 implementation `26b14ae0` and
+V1-048 remain dependency-held.
