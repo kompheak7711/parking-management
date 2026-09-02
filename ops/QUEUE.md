@@ -57,14 +57,15 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 cumulative integration `feb86085` is
-manager-accepted DONE at immutable `f124663`, parent `2a1ef6f`, with focused
-2/2, coordination 108/108, automation 189/189, zero failures/skips, and zero
-findings. Fresh independent max review `b6fce132` is RUNNING exactly once on
-`property-codex-2` in a clean managed worktree at immutable `f124663`, attempt
-`workboard:b6fce132-2f59-4975-b387-1260eeefd8fc:1788344530062`. Preserve it and
-manager-verify its complete exact-SHA verdict and every finding before any
-installation, publication, or implementation dispatch.
+Current live queue position: V1-047 independent max review `b6fce132` is
+manager-accepted DONE as FAIL at immutable `f124663`, parent `2a1ef6f`, with
+3 HIGH, 0 MEDIUM, 0 LOW after focused 2/2, coordination 108/108, automation
+189/189, zero baseline failures/skips, and manager reproduction. Bounded H1-H3
+correction `b43ca2fd` is RUNNING exactly once on `property-codex-1` at base
+`f124663`, attempt
+`workboard:b43ca2fd-c5c4-4f90-9a78-8f50ec117204:1788348438153`. Preserve it and
+manager-verify its exact child, complete four-path diff, all three fixes,
+cleanliness, `xhigh` runtime, and all gates before fresh cumulative integration.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
@@ -374,3 +375,16 @@ failures: `workboard:b6fce132-2f59-4975-b387-1260eeefd8fc:1788344530062`.
 The reviewer is GPT-5.6 Sol `max`, Standard/Fast-off, with empty fallbacks in a
 clean managed worktree at `f124663`. V1-047 implementation `26b14ae0` and
 V1-048 remain dependency-held.
+
+Current transition (2026-09-02 18:32 +07): independent max review `b6fce132`
+is property-manager-accepted DONE as FAIL at immutable `f124663` with 3 HIGH,
+0 MEDIUM, 0 LOW. Manager reproduced same-agent session misbinding, impossible
+future lifecycle acceptance by rollback/successor consumers, and positive
+numeric `blockedAt` terminal-signal PASS acceptance. Bounded correction
+`b43ca2fd-c5c4-4f90-9a78-8f50ec117204` was created once with stable key
+`v1-047-ops-correction-f124663-session-chronology-terminal-v1`; the supported
+Gateway RPC started exactly one `property-codex-1` attempt with zero failures:
+`workboard:b43ca2fd-c5c4-4f90-9a78-8f50ec117204:1788348438153`. Its managed
+branch/worktree remain at exact base `f124663`, with only the allowed source
+and test paths currently modified under GPT-5.6 Sol `xhigh`, Standard/Fast-off,
+empty fallbacks. Preserve it; implementation `26b14ae0` and V1-048 remain held.

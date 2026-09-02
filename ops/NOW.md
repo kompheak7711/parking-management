@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running at f124663
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded H1-H3 correction running from f124663
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -617,13 +617,14 @@ Standard/Fast-off, empty fallbacks. Preserve it; V1-047 implementation
   0 LOW, bounded correction `37ca539e` is manager-accepted DONE at exact
   `f124663` with zero findings. Fresh cumulative integration `feb86085` is
   manager-accepted DONE with zero findings. Fresh independent max review
-  `b6fce132` is RUNNING once on `property-codex-2` from the clean immutable
-  candidate.
+  `b6fce132` is manager-accepted DONE as FAIL with 3 HIGH/0 MEDIUM/0 LOW.
+  Bounded H1-H3 correction `b43ca2fd` is RUNNING once on `property-codex-1`
+  from the clean immutable candidate.
   Implementation remains blocked/unstarted.
-- Automation exact next action: preserve independent review `b6fce132`; after
-  terminal release, manager-verify immutable `f124663`, the complete eleven-
-  commit four-path diff, cleanliness, exact max runtime, all gates, and every
-  finding before any installation or implementation dispatch.
+- Automation exact next action: preserve bounded correction `b43ca2fd`; after
+  terminal release, manager-verify its exact child of `f124663`, complete
+  four-path diff, all three fixes, cleanliness, exact `xhigh` runtime, and all
+  gates before fresh cumulative integration.
 
 <!-- AUTOMATION_STATUS_END -->
 
@@ -646,3 +647,21 @@ The managed branch/worktree are
 `wb-b6fce132-2f59-4975-b387-1260eeefd8fc` at immutable `f124663`, under
 GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks. Preserve the reviewer;
 V1-047 implementation `26b14ae0` and V1-048 remain held.
+
+Current transition (2026-09-02 18:32 +07): independent max review `b6fce132`
+is property-manager-accepted DONE as FAIL at immutable `f124663`, parent
+`2a1ef6f`, tree `9270c4f`, with 3 HIGH, 0 MEDIUM, 0 LOW. Reviewer and manager
+focused 2/2, coordination 108/108, automation 189/189, TEST-118, roadmap,
+parse, manifest, traceability, publication/secret, exact Git/hash/diff/fsck/
+clean, and runtime gates passed with zero baseline failures/skips. Manager
+reproduced same-agent session misbinding, impossible future lifecycle acceptance,
+and positive numeric `blockedAt` terminal-signal acceptance. Bounded correction
+`b43ca2fd-c5c4-4f90-9a78-8f50ec117204` was created once with stable key
+`v1-047-ops-correction-f124663-session-chronology-terminal-v1`; the supported
+Gateway RPC started exactly one `property-codex-1` attempt with zero failures:
+`workboard:b43ca2fd-c5c4-4f90-9a78-8f50ec117204:1788348438153`. Its managed
+branch/worktree are `openclaw/wb-b43ca2fd-c5c4-4f90-9a78-8f50ec117204` /
+`wb-b43ca2fd-c5c4-4f90-9a78-8f50ec117204`, with two allowed source/test paths
+currently modified at base `f124663`. Preserve the healthy GPT-5.6 Sol `xhigh`,
+Standard/Fast-off worker; V1-047 implementation `26b14ae0` and V1-048 remain
+dependency-held.
