@@ -178,10 +178,24 @@ created once with stable key
 with zero start failures on `property-codex-1` as attempt
 `workboard:b1614ef8-368e-4fd9-bfe6-01604711e930:1788309806773` in clean managed
 branch/worktree `openclaw/wb-b1614ef8-368e-4fd9-bfe6-01604711e930` /
-`wb-b1614ef8-368e-4fd9-bfe6-01604711e930` at exact base `a3a1cff`. Preserve and
-inspect this healthy GPT-5.6 Sol `xhigh`, Standard/Fast-off correction. Do not
-install, bootstrap the live card, publish, or dispatch implementation `26b14ae0`
-before fresh integration and an accepted zero-finding independent review.
+`wb-b1614ef8-368e-4fd9-bfe6-01604711e930` at exact base `a3a1cff`. It concluded
+at exact `86c61f3`, parent `a3a1cff`, tree `cfb19a32`, as one clean four-path
++755/-57 commit with binary diff SHA-256 `51b613a1`. Worker and manager focused
+5/5, coordination 97/97, automation 189/189, and all auxiliary gates passed
+with zero failures/skips/findings; property-manager stopped only the stale
+execution presentation and accepted `b1614ef8` DONE. Fresh cumulative
+integration `71288e13-5065-4ee8-8fda-1cd1693df39c` was created once with stable
+key `v1-047-ops-cumulative-integration-86c61f3-v1`. One generic CLI pre-start
+failed on missing `operator.admin` without creating a claim, attempt, worker,
+branch, or worktree; the supported `workboard.cards.dispatch` Gateway operator
+RPC then started exactly one `property-codex-3` attempt with zero failures:
+`workboard:71288e13-5065-4ee8-8fda-1cd1693df39c:1788313446435`. Its clean
+managed branch/worktree are `openclaw/wb-71288e13-5065-4ee8-8fda-1cd1693df39c`
+/ `wb-71288e13-5065-4ee8-8fda-1cd1693df39c` at immutable `86c61f3`.
+Preserve and inspect this healthy GPT-5.6 Sol `xhigh`, Standard/Fast-off
+integration. Do not install, bootstrap the live card, publish, or dispatch
+implementation `26b14ae0` before manager acceptance and a fresh zero-finding
+independent max review.
 The owner-decision reconciliation is published at exact `0ce6ac9`, parent
 `1c523409`; local automation passed 189/189, exact-SHA CI run `33512759067`
 passed all four jobs, and local/tracking/fetched/live-remote refs match.

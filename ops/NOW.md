@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded installed-runtime and late-failure correction running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -296,15 +296,28 @@
   the frozen positive `operator.admin` proof still cannot pass and must not be
   weakened.
 - Bounded correction: Workboard
-  `b1614ef8-368e-4fd9-bfe6-01604711e930` was created once with stable key
-  `v1-047-ops-correction-a3a1cff-runtime-late-failure-v1`, parent `67d4ab70`,
-  four exact allowed paths, and GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty
-  fallbacks. The supported Gateway returned exactly one start and zero
-  failures. It is RUNNING once on `property-codex-1` as attempt
-  `workboard:b1614ef8-368e-4fd9-bfe6-01604711e930:1788309806773` in clean managed
-  branch/worktree `openclaw/wb-b1614ef8-368e-4fd9-bfe6-01604711e930` /
-  `wb-b1614ef8-368e-4fd9-bfe6-01604711e930` at exact base `a3a1cff`, parent
-  `587768eb`, tree `7a83808c`.
+  `b1614ef8-368e-4fd9-bfe6-01604711e930` is property-manager-accepted DONE at
+  exact `86c61f37384fc7e6ea9f058232e1ea3fa4f4395e`, sole parent `a3a1cff`,
+  tree `cfb19a32`. Its clean exact four-path +755/-57 diff has binary SHA-256
+  `51b613a1c7aee0388061504fb868561e54c7c3872a6ac00c2f35877cde2ac485`.
+  Worker and property-manager independently passed focused 5/5, coordination
+  97/97, automation 189/189, TEST-118, manifest 3/3, installed authority/runtime,
+  publication, secret, canonical, diff, and clean-state gates with zero
+  failures/skips/findings. The worker released to REVIEW; property-manager
+  stopped only its stale execution presentation and accepted the card DONE.
+- Fresh cumulative integration: Workboard
+  `71288e13-5065-4ee8-8fda-1cd1693df39c` was created once with stable key
+  `v1-047-ops-cumulative-integration-86c61f3-v1`, parent `b1614ef8`, and the
+  exact clean correction worktree as source. The generic CLI route recorded one
+  pre-start `operator.admin` failure with no claim, attempt, branch, or worktree;
+  the supported `workboard.cards.dispatch` Gateway operator RPC then started
+  exactly one attempt with zero failures on `property-codex-3`:
+  `workboard:71288e13-5065-4ee8-8fda-1cd1693df39c:1788313446435`. Its clean
+  managed branch/worktree are `openclaw/wb-71288e13-5065-4ee8-8fda-1cd1693df39c`
+  / `wb-71288e13-5065-4ee8-8fda-1cd1693df39c` at immutable `86c61f3`, parent
+  `a3a1cff`, tree `cfb19a32`. Runtime is GPT-5.6 Sol `xhigh`, Standard/Fast-off,
+  empty fallbacks; Workboard's generic execution field still displays
+  `model=default`.
 - Prior blocker-state publication: exact ops-only commit
   `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -333,14 +346,15 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the healthy bounded correction attempt. V1-047
+- Blocker: none for the healthy fresh cumulative integration attempt. V1-047
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect the healthy bounded correction. When
-  it concludes, property-manager must verify its exact one-commit/four-path
-  result, clean worktree, runtime evidence, every H1-H5 regression, and complete
-  gates before fresh cumulative integration and a fresh independent max review.
+- Exact next action: preserve and inspect the healthy fresh cumulative
+  integration. When it concludes, property-manager must verify its immutable
+  seven-commit/four-path cumulative result, clean worktree, runtime evidence,
+  every focused/adversarial regression, and complete gates before dispatching
+  one fresh independent max review.
   Do not install, publish, bootstrap the live V1-047 card, or dispatch
   implementation `26b14ae0` before an accepted zero-finding verdict.
 
@@ -362,11 +376,14 @@
   0 HIGH/0 MEDIUM/0 LOW, fresh cumulative integration `8ccec368` is manager-
   accepted DONE with zero findings, fresh independent max review `67d4ab70` is
   manager-accepted DONE as FAIL with 4 HIGH/1 MEDIUM/0 LOW, and bounded
-  correction `b1614ef8` is RUNNING once on `property-codex-1` from immutable
-  `a3a1cff` with zero start failures.
+  correction `b1614ef8` is manager-accepted DONE at exact `86c61f3` with zero
+  findings, and fresh cumulative integration `71288e13` is RUNNING once on
+  `property-codex-3` at immutable `86c61f3`. Its first generic CLI start failed
+  before attempt creation on `operator.admin`; the supported Gateway operator
+  RPC then started exactly one attempt with zero failures.
   Implementation remains blocked/unstarted.
-- Automation exact next action: inspect the healthy bounded correction and
-  manager-verify its exact result before fresh cumulative integration, fresh
-  independent max review, installation, or implementation.
+- Automation exact next action: inspect and manager-verify the fresh cumulative
+  integration before one fresh independent max review, installation, or
+  implementation.
 
 <!-- AUTOMATION_STATUS_END -->
