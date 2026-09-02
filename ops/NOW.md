@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -410,7 +410,21 @@
   The complete cumulative diff from `ece9afd` is nine commits, zero merges,
   four paths, +5227/-188, binary SHA-256
   `36738b21d78989a9771a068f4f5a218d4d9ab2b56b31721e95cdadb89243909f`.
-  Runtime contract is GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks.
+  Worker and manager focused 7/7, coordination 101/101, automation 189/189,
+  TEST-118, manifest, traceability, publication/secret, canonical, history,
+  diff, runtime, and clean gates passed with zero candidate failures/skips and
+  0 HIGH, 0 MEDIUM, 0 LOW findings. Property-manager accepted card `7e37904e`
+  DONE and retained its locked worktree.
+- Fresh independent review: Workboard
+  `d2fbebfe-6514-4c67-bc88-90b3962897ca` was created once with stable key
+  `v1-047-ops-independent-max-review-761269c-v1`, parent `7e37904e`, and the
+  exact clean integration source. The supported Gateway RPC started exactly
+  one `property-codex-2` attempt with zero start failures:
+  `workboard:d2fbebfe-6514-4c67-bc88-90b3962897ca:1788326558833`. Its managed
+  branch/worktree are `openclaw/wb-d2fbebfe-6514-4c67-bc88-90b3962897ca` /
+  `wb-d2fbebfe-6514-4c67-bc88-90b3962897ca`, clean at immutable `761269c`.
+  Reviewer contract is GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks,
+  fresh, independent, and read-only.
 - Prior blocker-state publication: exact ops-only commit
   `485440833ddcb19f4bc6ebd09d13347d89c7e361`, parent `05a70f5`, changed only
   `ops/NOW.md`, `ops/QUEUE.md`, and `ops/STATE.json`. Local automation passed
@@ -425,6 +439,10 @@
   passed 234/234 across 17/17 files, automation passed 189/189, and dependency
   audits found zero vulnerabilities. Local, tracking, fetched, and live-remote
   refs match exactly.
+- Integration-transition state commit
+  `edc5e4236c562fceb2b97e50bb34a7a67edb5034`, parent `b2f54292`, was pushed
+  normally. Local, tracking, fetched, and live-remote refs match; GitHub Actions
+  run `33594024718` passed all four jobs at the exact SHA.
 - Scheduler: enabled singleton `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains
   on its 30-minute interval with GPT-5.6 Sol `xhigh`, Standard/Fast-off. Its
   saved payload and `ops/OPENCLAW_SUPERVISOR_PROMPT.md` are byte-identical at
@@ -439,15 +457,14 @@
 - Production deployment, production data, credentials, paid services,
   customer data, force push, history rewrite, unrelated cleanup, and worktree
   deletion: none.
-- Blocker: none for the healthy cumulative integration. V1-047
+- Blocker: none for the healthy independent review. V1-047
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect the healthy cumulative integration.
-  When it terminally releases, property-manager must independently verify its
-  exact `761269c` identity, complete nine-commit/four-path diff, clean state,
-  focused 7/7, coordination 101/101, automation 189/189, runtime identity, and
-  zero findings before dispatching a fresh independent `max` review.
+- Exact next action: preserve and inspect the healthy independent review. When
+  it terminally releases, property-manager must verify the exact `761269c`
+  identity, complete diff, clean read-only state, required gates, runtime, and
+  every finding before installation or any V1-047 implementation dispatch.
   Do not install, publish, bootstrap the live V1-047 card, or dispatch
   implementation `26b14ae0` before an accepted zero-finding verdict.
 
