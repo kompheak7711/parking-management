@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded H1-H4/M1 correction running
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration running at 2a1ef6f
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -487,13 +487,35 @@
   implementation remains dependency-held with zero starts; V1-048 remains
   dependency-held.
 - Owner action required: no.
-- Exact next action: preserve and inspect correction `eff7f891`. When it
-  terminally releases, property-manager must verify an exact child of
-  `761269c`, the bounded four-path diff, clean worktree, all five accepted
-  finding fixes, required gates, and runtime before fresh cumulative
-  integration.
+- Exact next action: preserve and inspect cumulative integration `bc2db3a9`.
+  When it terminally releases, property-manager must verify immutable
+  `2a1ef6f`, the complete cumulative four-path diff, clean worktree, required
+  gates, runtime, and zero findings before a fresh independent max review.
   Do not install, publish, bootstrap the live V1-047 card, or dispatch
   implementation `26b14ae0` before an accepted zero-finding verdict.
+
+Current transition (2026-09-02 14:18 +07): bounded correction `eff7f891`
+terminally released and is property-manager-accepted DONE at exact
+`2a1ef6f870a015517fb7bedea21b575f53cdd625`, parent `761269c`, tree
+`dfb545ad`. Its one-commit, zero-merge, four-path +519/-57 diff has binary
+full-index SHA-256 `4b4312f7b2f683db7a09f1e9bf72fa85fc8b3b3a1ee0be6938f2535940ba14c1`.
+Worker and manager corrected-focused 5/5, coordination 106/106, automation
+189/189, TEST-118, manifest, traceability, roadmap, JSON/Python,
+publication/secret, diff, history, and clean-state gates passed with zero
+candidate failures/skips/findings. One initial manager focused-selector command
+omitted `PYTHONPATH` and produced five import errors before collection; the
+corrected command passed 5/5, so this was an invocation error rather than a
+candidate failure. Fresh cumulative integration
+`bc2db3a9-3373-4c9a-9d73-f0c8a90a3066` was created once with stable key
+`v1-047-ops-cumulative-integration-2a1ef6f-v1`; the supported Gateway RPC
+started exactly one `property-codex-3` attempt with zero failures:
+`workboard:bc2db3a9-3373-4c9a-9d73-f0c8a90a3066:1788333467620`. Its clean
+managed branch/worktree are
+`openclaw/wb-bc2db3a9-3373-4c9a-9d73-f0c8a90a3066` /
+`wb-bc2db3a9-3373-4c9a-9d73-f0c8a90a3066` at immutable `2a1ef6f`. Preserve
+the healthy read-only integration; after terminal release, manager-verify the
+complete cumulative four-path diff and all gates before fresh independent max
+review. V1-047 implementation `26b14ae0` and V1-048 remain held.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
@@ -524,12 +546,13 @@
   integration `7e37904e` are manager-accepted DONE at exact `761269c` with
   zero findings, fresh independent max review `d2fbebfe` is manager-accepted
   DONE as FAIL with 4 HIGH/1 MEDIUM/0 LOW after manager reproduction, and
-  bounded correction `eff7f891` is RUNNING once on `property-codex-1` from the
-  clean immutable base after one zero-start transport recovery.
+  bounded correction `eff7f891` is manager-accepted DONE at exact `2a1ef6f`
+  with zero findings, and fresh cumulative integration `bc2db3a9` is RUNNING
+  once on `property-codex-3` from the clean immutable candidate.
   Implementation remains blocked/unstarted.
-- Automation exact next action: preserve the correction; after terminal
-  release, manager-verify its exact child commit, bounded four-path diff,
-  cleanliness, complete gates, runtime identity, and all five fixes before
-  fresh cumulative integration.
+- Automation exact next action: preserve cumulative integration `bc2db3a9`;
+  after terminal release, manager-verify immutable `2a1ef6f`, the complete
+  cumulative four-path diff, cleanliness, complete gates, runtime identity,
+  and zero findings before fresh independent max review.
 
 <!-- AUTOMATION_STATUS_END -->

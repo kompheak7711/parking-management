@@ -57,16 +57,13 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 changed-fingerprint correction `5994b2e5`
-and fresh cumulative integration `7e37904e` are manager-accepted DONE at exact
-`761269c` with focused 7/7, coordination 101/101, automation 189/189, zero
-failures/skips, and zero findings. Fresh independent max review `d2fbebfe` is
-manager-accepted DONE as FAIL with 4 HIGH, 1 MEDIUM, 0 LOW after manager exact
-Git/diff/clean verification, the same 7/7, 101/101, and 189/189 green gates,
-and five independent reproductions. Bounded correction `eff7f891` is RUNNING
-exactly once on `property-codex-1` from clean immutable base `761269c` after one
-zero-start workspace-metadata transport recovery. No duplicate dispatch or
-installation action is allowed.
+Current live queue position: V1-047 bounded correction `eff7f891` is manager-
+accepted DONE at exact `2a1ef6f`, parent `761269c`, with focused 5/5,
+coordination 106/106, automation 189/189, zero candidate failures/skips, and
+zero findings. Fresh cumulative integration `bc2db3a9` is RUNNING exactly once
+on `property-codex-3` in a clean managed worktree at immutable `2a1ef6f` after
+one supported Gateway start with zero failures. No duplicate dispatch,
+installation, or implementation action is allowed.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
@@ -316,3 +313,19 @@ GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Preserve this worker;
 after terminal release, manager-verify its exact child, four-path scope, all
 five fixes, cleanliness, full gates, and runtime before fresh cumulative
 integration. V1-047 implementation `26b14ae0` and V1-048 remain held.
+
+Current transition (2026-09-02 14:18 +07): bounded correction `eff7f891` is
+property-manager-accepted DONE at exact `2a1ef6f`, parent `761269c`, tree
+`dfb545ad`, as one zero-merge four-path +519/-57 commit with binary diff
+SHA-256 `4b4312f7b2f683db7a09f1e9bf72fa85fc8b3b3a1ee0be6938f2535940ba14c1`.
+Corrected manager focused 5/5, coordination 106/106, automation 189/189,
+TEST-118, manifest, traceability, roadmap, parse, publication/secret, diff, and
+clean-state gates passed with zero candidate failures/skips/findings. Fresh
+cumulative integration `bc2db3a9-3373-4c9a-9d73-f0c8a90a3066` was created
+once with stable key `v1-047-ops-cumulative-integration-2a1ef6f-v1`; the
+supported Gateway RPC started exactly one `property-codex-3` attempt with zero
+failures: `workboard:bc2db3a9-3373-4c9a-9d73-f0c8a90a3066:1788333467620`.
+Preserve the healthy read-only worker and manager-verify immutable `2a1ef6f`,
+the complete cumulative four-path diff, all gates, cleanliness, runtime, and
+zero findings before fresh independent max review. V1-047 implementation
+`26b14ae0` and V1-048 remain held.
