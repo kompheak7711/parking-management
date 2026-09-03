@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running at 859397f
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — owner stop after failed independent review at 859397f
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -33,15 +33,24 @@
   `workboard:c70453ef-fd1c-46ce-b5c4-0d45eca03553:1788421447891`, worker
   `property-codex-2`, branch/worktree
   `openclaw/wb-c70453ef-fd1c-46ce-b5c4-0d45eca03553` /
-  `wb-c70453ef-fd1c-46ce-b5c4-0d45eca03553`, is RUNNING exactly once against
-  immutable `859397f`, parent `6c0e14cb`, and the complete 25-commit/19-path
-  `57fd5d34..859397f` diff with binary SHA-256
+  `wb-c70453ef-fd1c-46ce-b5c4-0d45eca03553`, is property-manager-accepted DONE
+  as FAIL against immutable `859397f`, parent `6c0e14cb`, tree `e428c455`, and
+  the complete 25-commit/19-path `57fd5d34..859397f` diff with binary SHA-256
   `42eac56b1fe35d3d3fc0dadde8755be61b27f57f979ab74809ad09d318133fe3`.
-  The supported Gateway RPC returned one expected start and zero start failures;
-  its clean managed worktree launched directly at the exact candidate. Supported
-  session metadata confirms `openai/gpt-5.6-sol`; required reasoning/mode are
-  `max`, Standard/Fast-off, with empty fallbacks. Preserve this sole reviewer
-  and dispatch no overlap. Candidate remains uninstalled and unpublished.
+  Reviewer and manager suites passed TEST-118..125 8/8, coordination 125/125,
+  and policy/routing 189/189 with zero failures/skips, but the reviewer found
+  6 HIGH, 2 MEDIUM, 0 LOW material defects and property-manager independently
+  confirmed all classes. Supported manager completion reconciled the stale
+  execution/attempt to DONE/succeeded. The exact candidate and clean retained
+  evidence remain uninstalled and unpublished.
+- Human stop: the 2026-09-01 owner decision authorized one materially different
+  H1-H3 coordination/bootstrap correction after the prior exhausted-recovery
+  stop. That allowance was consumed, and multiple further exact-SHA correction,
+  integration, and review cycles now end with corrected chronology, link, and
+  sensitive-data classes recurring alongside installer, Git-revalidation, and
+  decision-state defects. No additional correction or implementation dispatch
+  is authorized until the owner explicitly renews bounded recovery. V1-048
+  remains dependency-held; production scope remains excluded.
 - Independent review: Workboard `6b209d5a-f881-4f3a-a0bf-80d97945ba04` is
   property-manager-accepted DONE as FAIL at immutable `6c0e14cb`, with 4 HIGH,
   0 MEDIUM, 0 LOW findings. The recovered GPT-5.6 Sol `max`, Standard/Fast-off

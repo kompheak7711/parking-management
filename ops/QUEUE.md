@@ -57,7 +57,7 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 fresh independent max review. Bounded
+Current live queue position: V1-047 owner stop after failed independent review. Bounded
 correction `51cc2ff9-09c3-49a2-b7d4-a1f303989461` and fresh cumulative
 integration `20f0a035-33b9-409b-ad8f-fd449e1c62ab` are property-manager-
 accepted DONE at immutable `859397f`, parent `6c0e14cb`. Manager verification
@@ -65,15 +65,18 @@ passed coordination 125/125, policy/routing 189/189, backend 729 with 444 fully
 explained database-only skips, real PostgreSQL 467/467 with zero skips, and
 frontend 234/234, plus every applicable integrity gate with zero failures and
 0 HIGH, 0 MEDIUM, 0 LOW findings. Fresh read-only independent review
-`c70453ef-fd1c-46ce-b5c4-0d45eca03553` is RUNNING exactly once on
-`property-codex-2`, attempt
+`c70453ef-fd1c-46ce-b5c4-0d45eca03553` is property-manager-accepted DONE as
+FAIL on `property-codex-2`, attempt
 `workboard:c70453ef-fd1c-46ce-b5c4-0d45eca03553:1788421447891`, in managed
 branch/worktree `openclaw/wb-c70453ef-fd1c-46ce-b5c4-0d45eca03553` /
 `wb-c70453ef-fd1c-46ce-b5c4-0d45eca03553` directly at exact `859397f`.
-Supported runtime metadata confirms GPT-5.6 Sol; required reasoning/mode are
-`max`, Standard/Fast-off, empty fallbacks. Preserve this sole reviewer and
-accept only exact complete-diff, zero-finding proof before any installation or
-V1-047 implementation dispatch.
+Reviewer and manager TEST-118..125 8/8, coordination 125/125, and policy/routing
+189/189 passed with zero failures/skips, but the review found 6 HIGH, 2 MEDIUM,
+0 LOW and property-manager independently confirmed every class. The candidate
+remains uninstalled/unpublished. The prior owner decision's one materially
+different H1-H3 recovery allowance is consumed; repeated correction/review
+recovery is exhausted and corrected classes recur. Do not create or dispatch
+another correction or V1-047 implementation without renewed owner authority.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;

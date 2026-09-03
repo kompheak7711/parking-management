@@ -659,7 +659,19 @@
       "production_shaped_v1_019_context_route": "PASS"
     }
   },
-  "blockers": [],
+  "blockers": [
+    {
+      "category": "exhausted_bounded_recovery",
+      "summary": "Fresh independent review failed with 6 HIGH and 2 MEDIUM findings after repeated materially different coordination corrections; corrected chronology, link, and sensitive-data classes recur",
+      "card_id": "c70453ef-fd1c-46ce-b5c4-0d45eca03553",
+      "candidate_sha": "859397f5c17ca2fff2c6e652f8fae7d428167f43",
+      "candidate_parent": "6c0e14cb91ba91ca62d775f4a203c212c74ef845",
+      "findings": {"high": 6, "medium": 2, "low": 0},
+      "prior_owner_allowance": "one materially different H1-H3 coordination/bootstrap correction authorized on 2026-09-01 and consumed",
+      "result": "candidate uninstalled and unpublished; V1-047 implementation remains blocked with zero starts; V1-048 dependency-held",
+      "owner_action_required": true
+    }
+  ],
   "branch": "implementation/foundation",
   "closure_correction": {
     "canonical_documents_changed": false,
@@ -701,18 +713,18 @@
     "prior_review_disposition": "V1-046 independent rereview passed with zero findings and release card 3266b3a3 is property-manager-accepted DONE. V1-047 has no implementation evidence yet.",
     "tranche_id": "V1-047"
   },
-  "idle_reason": null,
-  "next_action": "Preserve and inspect the sole fresh independent max review attempt workboard:c70453ef-fd1c-46ce-b5c4-0d45eca03553:1788421447891; require immutable 859397f complete-diff, exact runtime, clean-state, and zero-finding proof before manager acceptance or any installation and V1-047 implementation dispatch",
-  "active_worker": "property-codex-2",
-  "active_card": "c70453ef-fd1c-46ce-b5c4-0d45eca03553",
-  "active_claim": true,
-  "active_attempt": "workboard:c70453ef-fd1c-46ce-b5c4-0d45eca03553:1788421447891",
-  "active_session": "agent:property-codex-2:subagent:workboard-property-rental-c70453ef-fd1c-46ce-b5c4-0d45eca03553",
-  "active_claimed_at_ms": 1788421447785,
-  "active_last_heartbeat_at_ms": 1788421469204,
-  "active_claim_expires_at_ms": 1788426869204,
-  "active_branch": "openclaw/wb-c70453ef-fd1c-46ce-b5c4-0d45eca03553",
-  "active_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-c70453ef-fd1c-46ce-b5c4-0d45eca03553",
+  "idle_reason": "owner stop after exhausted bounded coordination recovery",
+  "next_action": "Owner must review Workboard c70453ef and decide whether to authorize another materially different bounded coordination correction; preserve rejected candidate 859397f and blocked implementation 26b14ae0, and do not dispatch V1-047 or activate V1-048",
+  "active_worker": null,
+  "active_card": "26b14ae0-92b3-433d-bed6-46bd732c569c",
+  "active_claim": null,
+  "active_attempt": null,
+  "active_session": null,
+  "active_claimed_at_ms": null,
+  "active_last_heartbeat_at_ms": null,
+  "active_claim_expires_at_ms": null,
+  "active_branch": null,
+  "active_worktree": null,
   "candidate_sha": "859397f5c17ca2fff2c6e652f8fae7d428167f43",
   "candidate_parent": "6c0e14cb91ba91ca62d775f4a203c212c74ef845",
   "next_candidate": {
@@ -753,9 +765,9 @@
     },
     {
       "id": "worker-coordination-rereview-human-stop",
-      "status": "bounded_correction_and_integration_manager_accepted_fresh_independent_review_running",
+      "status": "exhausted_bounded_recovery_owner_stop",
       "scope": "uninstalled OpenClaw coordination safety candidate and exact pre-existing V1-047 card bootstrap",
-      "evidence": "Latest bounded correction 51cc2ff9 and cumulative integration 20f0a035 are property-manager-accepted DONE at immutable 859397f after worker and manager coordination 125/125, policy/routing 189/189, backend 729 plus 444 fully explained database-only skips, real PostgreSQL 467/467, frontend 234/234, and all integrity gates passed with zero failures and zero findings. Fresh independent max review c70453ef was created once and started exactly once on property-codex-2 with zero start failures.",
+      "evidence": "Fresh independent max review c70453ef is property-manager-accepted DONE as FAIL at immutable 859397f with 6 HIGH, 2 MEDIUM, 0 LOW after reviewer and manager TEST-118..125 8/8, coordination 125/125, and policy/routing 189/189 passed with zero failures/skips. Property-manager independently confirmed every material class. Candidate remains uninstalled and unpublished.",
       "owner_decision": "2026-09-01 standing authorization explicitly clears the exhausted-recovery stop for one materially different H1-H3 correction",
       "correction_card_id": "c3536723-13f6-446a-a973-8a67963c51d4",
       "integration_card_id": "82257d37-d17b-42f3-8909-b855dfac5eac",
@@ -769,10 +781,10 @@
       "current_bounded_correction_card_id": "51cc2ff9-09c3-49a2-b7d4-a1f303989461",
       "current_cumulative_integration_card_id": "20f0a035-33b9-409b-ad8f-fd449e1c62ab",
       "current_independent_review_card_id": "c70453ef-fd1c-46ce-b5c4-0d45eca03553",
-      "action": "Preserve and inspect the sole fresh independent max review c70453ef at immutable 859397f; require complete 25-commit 19-path exact-diff, exact runtime, clean-state, and zero-finding proof before manager acceptance. V1-047 implementation and V1-048 remain held."
+      "action": "Preserve review c70453ef and rejected candidate 859397f; do not create or dispatch another correction or V1-047 implementation until the owner explicitly renews bounded recovery. V1-048 remains held."
     }
   ],
-  "owner_action": null,
+  "owner_action": "Review Workboard c70453ef-fd1c-46ce-b5c4-0d45eca03553 and decide whether to authorize another materially different bounded coordination correction for its 6 HIGH and 2 MEDIUM findings. Without renewed authority, preserve the uninstalled candidate and blocked V1-047 implementation; do not activate V1-048.",
   "owner_decisions": {
     "bootstrap_protection": "prm_bootstrap has safe cluster-global attributes and no unsafe memberships, ownership, or authority in the target database; no runtime cross-database introspection; provisioning attests and verifies the dedicated role is unused in every other database; target checks fail closed; atomic closure/revocation and secret-free repeat audit remain mandatory",
     "ceremony_deadline": "one absolute monotonic deadline begins before TOTP confirmation and covers TOTP input, recovery presentation and COMPLETE writes, acknowledgement input, and commit preparation; writes, partial input, retries, and trickled input never reset or extend it; timeout rolls back the ceremony",
@@ -832,19 +844,19 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-047 bounded correction 51cc2ff9 and fresh cumulative integration 20f0a035 are property-manager-accepted DONE at immutable 859397f with zero findings; exactly one fresh independent max review c70453ef is RUNNING on property-codex-2; implementation 26b14ae0 remains blocked",
-    "exact_next_action": "Preserve fresh independent max review c70453ef attempt 1788421447891; manager-verify immutable 859397f, complete 25-commit 19-path diff, openai/gpt-5.6-sol max Standard/Fast-off runtime, clean read-only state, all tests, and every finding before any installation or V1-047 implementation dispatch",
+    "current_phase": "V1-047 fresh independent max review c70453ef is property-manager-accepted DONE as FAIL at immutable 859397f with 6 HIGH, 2 MEDIUM, 0 LOW; exhausted bounded recovery is an owner stop and implementation 26b14ae0 remains blocked with zero starts",
+    "exact_next_action": "Owner must decide whether to authorize another materially different bounded coordination correction for review c70453ef; preserve exact rejected candidate 859397f, do not install it, do not dispatch implementation 26b14ae0, and keep V1-048 dependency-held",
     "scheduler_health": {
       "enabled": true,
       "schedule_ms": 1800000,
       "previous_run_status": "ok",
-      "previous_run_duration_ms": 1197406,
+      "previous_run_duration_ms": 223171,
       "previous_run_consecutive_errors": 0,
       "previous_run_error": null,
-      "current_run_recovery": "Current cycle independently accepted cumulative integration 20f0a035 at exact 859397f after full local/PostgreSQL/frontend/automation/runtime gates, restored its control-plane-removed retained worktree, and started exactly one dependency-linked independent max reviewer c70453ef with zero start failures",
-      "current_run_started_at_ms": 1788420710080,
-      "current_due_at_ms": 1788420710070,
-      "next_cadence_at_ms": 1788422510070,
+      "current_run_recovery": "Current cycle manager-accepted review c70453ef DONE as FAIL after independently confirming 6 HIGH and 2 MEDIUM findings, reconciled its stale execution/attempt, and entered an exhausted-recovery owner stop without dispatching overlap",
+      "current_run_started_at_ms": 1788424310105,
+      "current_due_at_ms": 1788424310090,
+      "next_cadence_at_ms": 1788426110090,
       "next_run_state": "scheduled after current run completion; scheduler remains enabled",
       "prompt_payload_identity": "PASS: byte-identical, SHA-256 0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56"
     },
@@ -3079,9 +3091,9 @@
       "fast_mode": false,
       "fallbacks": [],
       "read_only": true,
-      "claim_active": true,
-      "attempt_active": true,
-      "worker_active": true,
+      "claim_active": false,
+      "attempt_active": false,
+      "worker_active": false,
       "claim_started_at_ms": 1788421447785,
       "last_heartbeat_at_ms": 1788421469204,
       "claim_expires_at_ms": 1788426869204,
@@ -3089,13 +3101,18 @@
       "started_attempts": 1,
       "start_failures": 0,
       "launch_reconciliation": "The supported token-free Gateway RPC started exactly the expected property-codex-2 review with zero start failures. The clean managed worktree launched directly at immutable 859397f from the restored exact integration source.",
-      "findings": null,
-      "status": "running_exact_sha_review"
+      "findings": {"high": 6, "medium": 2, "low": 0},
+      "tests": "PASS: reviewer and manager TEST-118..125 8/8, coordination 125/125, and policy/routing 189/189 with zero failures/skips; exact Git identity, complete diff, manifest, traceability, prompt, secret, and clean-state gates passed",
+      "manager_reproduction": "PASS: timestamp truncation and 30-second causal skew, percent-encoded HTTP userinfo, and stale candidate NOW/STATE directly reproduced; exact static path audit confirmed non-target-bound links, spoofable review admission, installer TOCTOU, missing result-worktree Git revalidation, and prepared-state decision claim",
+      "verdict": "FAIL",
+      "manager_accepted": true,
+      "completion_reconciliation": "Supported unclaimed Gateway completion moved REVIEW to DONE and reconciled the stale execution to done and sole attempt to succeeded while preserving the clean retained worktree and evidence.",
+      "status": "done_manager_accepted_fail"
     },
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-09-03T07:45:42Z"
+    "updated_at": "2026-09-03T08:42:05Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -4209,10 +4226,12 @@
     "PASS/RECOVERED: one bounded correction 51cc2ff9 was created with a stable key; two no-start dispatches exposed a missing source path, one subsequent no-start exposed an older DONE card's stale running execution, both were reconciled on supported interfaces, and exactly one property-codex-1 xhigh Standard/Fast-off attempt started with zero start failures",
     "PASS: bounded correction 51cc2ff9 is property-manager-accepted DONE at immutable 859397f, parent 6c0e14cb, tree e428c455, as one zero-merge four-path +528/-40 commit; worker and manager focused 8/8, coordination 125/125, policy/routing 189/189, and every integrity gate passed with zero failures/skips/findings",
     "PASS: fresh cumulative integration 20f0a035 is property-manager-accepted DONE at immutable 859397f; worker and manager coordination 125/125, policy/routing 189/189, backend 729 with 444 fully explained database-only skips, real PostgreSQL 467/467 with zero skips, frontend 234/234 across 17/17 files, and all integrity gates passed with zero failures, unexplained skips, or findings",
-    "PASS: fresh independent max review c70453ef was created once with stable idempotency key and the supported Gateway RPC started exactly one property-codex-2 attempt with zero start failures in a clean managed worktree at immutable 859397f under required GPT-5.6 Sol max, Standard/Fast-off, empty fallbacks"
+    "PASS: fresh independent max review c70453ef was created once with stable idempotency key and the supported Gateway RPC started exactly one property-codex-2 attempt with zero start failures in a clean managed worktree at immutable 859397f under required GPT-5.6 Sol max, Standard/Fast-off, empty fallbacks",
+    "FAIL: fresh independent max review c70453ef is property-manager-accepted DONE at immutable 859397f with 6 HIGH, 2 MEDIUM, 0 LOW; reviewer and manager TEST-118..125 8/8, coordination 125/125, policy/routing 189/189, exact Git/diff/clean, runtime, manifest, traceability, publication, secret, and prompt gates passed with zero suite failures/skips, but property-manager independently confirmed every material defect class and reconciled the stale attempt/execution",
+    "STOP: the prior owner decision's one materially different H1-H3 recovery allowance is consumed and repeated correction/review recovery is exhausted with corrected classes recurring; candidate 859397f remains uninstalled/unpublished, implementation 26b14ae0 has zero starts, V1-048 is dependency-held, and renewed owner authorization is required before another correction"
   ],
   "tests_tranche_id": "V1-047",
-  "timestamp": "2026-09-03T07:45:42Z",
+  "timestamp": "2026-09-03T08:42:05Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
