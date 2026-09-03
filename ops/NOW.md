@@ -1,10 +1,21 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — independent max review running at 7bfcb906
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded coordination correction running from 7bfcb906
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
 - Authorization: Owner standing continuous authorization from V1-046 through
   V1-060; this release remains limited to the exact manager-accepted candidate
   and bounded manager operations metadata.
+- Current transition: fresh independent max review `a6a1ea3c` is
+  property-manager-accepted DONE as FAIL at immutable `7bfcb906` with 5 HIGH,
+  0 MEDIUM, 0 LOW. Manager independently reproduced all five root findings
+  through seven isolated cases; focused 3/3, coordination 111/111, and policy
+  189/189 passed with zero suite failures/skips.
+- Active correction: Workboard `3457748b-29c6-4dc2-ac73-0e1ca84e8736`, attempt
+  `workboard:3457748b-29c6-4dc2-ac73-0e1ca84e8736:1788403327632`, worker
+  `property-codex-1`, branch/worktree `openclaw/wb-3457748b-29c6-4dc2-ac73-0e1ca84e8736`
+  / `wb-3457748b-29c6-4dc2-ac73-0e1ca84e8736`. It started exactly once from
+  clean base `7bfcb906` under GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty
+  fallbacks; Gateway reported zero start failures. Preserve this worker.
 - Baseline: fully closed V1-046 reconciliation
   `57fd5d34f4e91102f4d49cc124d17d6022467ae4`.
 - Reviewed implementation: exact candidate

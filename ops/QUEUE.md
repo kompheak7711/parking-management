@@ -431,3 +431,21 @@ once with a stable idempotency key and started exactly once on
 `property-codex-2`; Gateway reported one expected start and zero failures.
 Preserve the clean immutable reviewer and verify its exact-SHA verdict before
 any V1-047 implementation dispatch.
+
+Current transition (2026-09-03 09:44 +07): fresh independent max review
+`a6a1ea3c` terminally released and is property-manager-accepted DONE as FAIL at
+immutable `7bfcb906` with 5 HIGH, 0 MEDIUM, 0 LOW. Manager independently
+reproduced all five findings through seven isolated cases (reproduction
+SHA-256 `01041c82f3a5e81059e245d78ba6ebfa7d10d80323f6774d11957180bc0d5808`)
+and reran focused 3/3, coordination 111/111, and policy 189/189 with zero suite
+failures/skips. Bounded correction `3457748b-29c6-4dc2-ac73-0e1ca84e8736`
+was created once with stable key `v1-047-ops-correction-7bfcb90-review-5h-v1`;
+the supported Gateway RPC started exactly one `property-codex-1` attempt with
+zero failures: `workboard:3457748b-29c6-4dc2-ac73-0e1ca84e8736:1788403327632`.
+Its clean managed branch/worktree are
+`openclaw/wb-3457748b-29c6-4dc2-ac73-0e1ca84e8736` /
+`wb-3457748b-29c6-4dc2-ac73-0e1ca84e8736` at exact base `7bfcb906` under
+GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Preserve it; after
+terminal release, manager-verify its exact sole child, four-path scope, all
+five fixes, and complete gates before fresh cumulative integration.
+Implementation `26b14ae0` and V1-048 remain dependency-held.
