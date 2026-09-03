@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — cumulative integration recovery running at 7bfcb906
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — independent max review running at 7bfcb906
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -618,15 +618,15 @@ Standard/Fast-off, empty fallbacks. Preserve it; V1-047 implementation
   `f124663` with zero findings. Fresh cumulative integration `feb86085` is
   manager-accepted DONE with zero findings. Fresh independent max review
   `b6fce132` is manager-accepted DONE as FAIL with 3 HIGH/0 MEDIUM/0 LOW.
-  Bounded H1-H3 correction `b43ca2fd` is manager-accepted DONE at exact
-  `7bfcb906` with zero findings. Fresh cumulative integration `67e61bf2` is
-  in its sole bounded recovery attempt on `property-codex-1` from the clean
-  immutable candidate after the original attempt exceeded its runtime.
+  Bounded H1-H3 correction `b43ca2fd` and cumulative integration `67e61bf2`
+  are manager-accepted DONE at exact `7bfcb906` with zero findings. Fresh
+  independent max review `a6a1ea3c` is RUNNING exactly once on
+  `property-codex-2` in a clean managed worktree at immutable `7bfcb906`.
   Implementation remains blocked/unstarted.
-- Automation exact next action: preserve cumulative integration recovery `67e61bf2`;
-  after terminal release, manager-verify immutable `7bfcb906`, its complete
-  twelve-commit four-path diff, cleanliness, exact `xhigh` runtime, and all
-  gates before fresh independent max review.
+- Automation exact next action: preserve fresh independent max review
+  `a6a1ea3c`; after terminal release, manager-verify immutable `7bfcb906`, its
+  complete twelve-commit four-path diff, exact `max` runtime, all gates,
+  verdict, and every finding before any installation or implementation dispatch.
 
 <!-- AUTOMATION_STATUS_END -->
 
@@ -709,3 +709,21 @@ zero start failures:
 `workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788397909322`. The recovery
 claim and heartbeat are healthy under GPT-5.6 Sol `xhigh`, Standard/Fast-off,
 empty fallbacks. Implementation `26b14ae0` and V1-048 remain held.
+
+Current transition (2026-09-03 08:41 +07): cumulative integration recovery
+`workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788397909322` terminally
+released to REVIEW. Property-manager independently verified immutable
+`7bfcb906`, parent `f124663`, tree `9755739f`, twelve linear commits, zero
+merges, four paths, +6542/-195, binary SHA-256 `24f2c137`, clean state, and
+fresh focused 3/3, coordination 111/111, policy 189/189, TEST-118, roadmap
+46/60, parse, manifest, traceability, publication/secret, diff/fsck/clean gates
+with zero failures/skips/findings, then accepted `67e61bf2` DONE. Fresh
+independent max review `a6a1ea3c-55c9-41ea-89b5-e24cadf5f131` was created
+once with key `v1-047-ops-independent-max-review-7bfcb90-v1`; the supported
+Gateway RPC started exactly one `property-codex-2` attempt with zero failures:
+`workboard:a6a1ea3c-55c9-41ea-89b5-e24cadf5f131:1788399664791`. Its clean
+managed branch/worktree are
+`openclaw/wb-a6a1ea3c-55c9-41ea-89b5-e24cadf5f131` /
+`wb-a6a1ea3c-55c9-41ea-89b5-e24cadf5f131` at immutable `7bfcb906`, under
+GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks. Preserve the reviewer;
+implementation `26b14ae0` and V1-048 remain dependency-held.

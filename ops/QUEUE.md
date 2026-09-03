@@ -57,15 +57,17 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 independent max review `b6fce132` is
-manager-accepted DONE as FAIL at immutable `f124663`, parent `2a1ef6f`, with
-3 HIGH, 0 MEDIUM, 0 LOW after focused 2/2, coordination 108/108, automation
-189/189, zero baseline failures/skips, and manager reproduction. Bounded H1-H3
-correction `b43ca2fd` is RUNNING exactly once on `property-codex-1` at base
-`f124663`, attempt
-`workboard:b43ca2fd-c5c4-4f90-9a78-8f50ec117204:1788348438153`. Preserve it and
-manager-verify its exact child, complete four-path diff, all three fixes,
-cleanliness, `xhigh` runtime, and all gates before fresh cumulative integration.
+Current live queue position: V1-047 cumulative integration `67e61bf2` is
+property-manager-accepted DONE at immutable `7bfcb906`, parent `f124663`, after
+bounded recovery and fresh manager focused 3/3, coordination 111/111, policy
+189/189, TEST-118, roadmap, manifest, traceability, publication/secret, and
+Git integrity gates passed with zero failures/skips/findings. Fresh independent
+max review `a6a1ea3c-55c9-41ea-89b5-e24cadf5f131` is RUNNING exactly once on
+`property-codex-2` at immutable `7bfcb906`, attempt
+`workboard:a6a1ea3c-55c9-41ea-89b5-e24cadf5f131:1788399664791`, in a clean
+managed worktree under GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks.
+Preserve it and manager-verify its terminal verdict and every finding before
+any installation, publication, or implementation dispatch.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
@@ -420,3 +422,12 @@ one bounded `property-codex-1` recovery `...:1788397909322` with zero start
 failures and a healthy claim/heartbeat. No prior-attempt proof is accepted.
 Preserve this GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty-fallback recovery;
 implementation `26b14ae0` and V1-048 remain dependency-held.
+
+Current transition (2026-09-03 08:41 +07): cumulative integration recovery
+`67e61bf2` terminally released and is property-manager-accepted DONE at
+immutable `7bfcb906` after fresh complete manager verification with zero
+failures/skips/findings. Fresh independent max review `a6a1ea3c` was created
+once with a stable idempotency key and started exactly once on
+`property-codex-2`; Gateway reported one expected start and zero failures.
+Preserve the clean immutable reviewer and verify its exact-SHA verdict before
+any V1-047 implementation dispatch.
