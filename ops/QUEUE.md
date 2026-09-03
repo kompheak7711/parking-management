@@ -449,3 +449,24 @@ GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Preserve it; after
 terminal release, manager-verify its exact sole child, four-path scope, all
 five fixes, and complete gates before fresh cumulative integration.
 Implementation `26b14ae0` and V1-048 remain dependency-held.
+
+Current transition (2026-09-03 10:50 +07): correction `3457748b` produced exact
+clean one-commit/four-path candidate `d1c465b`, parent `7bfcb906`, tree
+`acbb65e5`, and worker/manager focused 7/7, coordination 118/118, policy/routing
+189/189, TEST-118, roadmap, manifest, traceability, publication/secret, and
+exact Git/diff/fsck/clean gates passed with zero candidate failures/skips. A
+fresh supported-workflow fixture then reproduced 1 HIGH manager-proof lifecycle
+defect: required post-REVIEW `proof_added` evidence makes `finish_decision`
+reject. The card is property-manager-accepted DONE as FAIL with 1 HIGH,
+0 MEDIUM, 0 LOW; candidate remains uninstalled/unpublished. Child correction
+`ae29b3f7-aada-4142-8a86-4d0ae5e40fa5` was created once with stable key
+`v1-047-ops-correction-d1c465b-manager-proof-lifecycle-v1`; the supported
+Gateway RPC started exactly one `property-codex-1` attempt with zero failures:
+`workboard:ae29b3f7-aada-4142-8a86-4d0ae5e40fa5:1788407344257`. Its clean
+managed branch/worktree are
+`openclaw/wb-ae29b3f7-aada-4142-8a86-4d0ae5e40fa5` /
+`wb-ae29b3f7-aada-4142-8a86-4d0ae5e40fa5` at exact base `d1c465b` under
+GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Preserve it; after
+terminal release, manager-verify its exact sole child, four-path scope, bounded
+event allowlist, and complete gates before fresh cumulative integration.
+Implementation `26b14ae0` and V1-048 remain dependency-held.
