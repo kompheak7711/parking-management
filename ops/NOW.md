@@ -1,34 +1,37 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded four-HIGH correction running from 6c0e14cb
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration running at 859397f
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
 - Authorization: Owner standing continuous authorization from V1-046 through
   V1-060; this release remains limited to the exact manager-accepted candidate
   and bounded manager operations metadata.
-- Current transition: bounded correction `ae29b3f7` produced exact clean child
-  `6c0e14cb91ba91ca62d775f4a203c212c74ef845`, parent `d1c465b`, tree
-  `363e31f1`, as one non-merge four-path +600/-37 commit with binary full-index
-  diff SHA-256 `b00fb199e4a2efaede09ce07148f56ff9355655317d6835bd770635298376e7d`.
-  Worker and manager targeted 3/3, coordination 121/121, and policy/routing
-  189/189 passed with zero candidate failures/skips; traceability, manifest,
-  publication/secret, Git/fsck/diff, and clean-state gates also passed. One
-  manager preflight used `workboard_complete`, which is not the repository's
-  unclaimed manager status action; that command-selection failure was retained,
-  the exact unclaimed REVIEW-to-DONE action succeeded, and no candidate finding
-  was established. Candidate remains uninstalled and unpublished.
-- Cumulative integration: Workboard `f25d678b-8ff4-4df0-b123-bcaa1221d375`
-  is property-manager-accepted DONE at immutable `6c0e14cb`. The worker and
-  manager independently verified the complete `57fd5d34..6c0e14cb` boundary:
-  24 commits with one preserved ordinary merge, 19 paths, +15622/-102, binary
+- Current transition: bounded four-HIGH correction
+  `51cc2ff9-09c3-49a2-b7d4-a1f303989461` is property-manager-accepted DONE at
+  immutable `859397f5c17ca2fff2c6e652f8fae7d428167f43`, parent `6c0e14cb`,
+  tree `e428c455`, as one zero-merge four-path +528/-40 commit with binary
   full-index diff SHA-256
-  `1c1c820edb15628ccdd4c56a3215b43a58d750dde73a078b0f23b17de31c285d`.
-  Manager reruns passed focused 3/3, coordination 121/121, policy/routing
-  189/189, backend 729 with 444 fully explained database-only skips, and
-  frontend 234/234 across 17/17 files. Static, build, audit, deployment,
-  Alembic, traceability, prompt, publication/secret, Git/fsck/diff, and clean
-  gates passed with 0 HIGH, 0 MEDIUM, 0 LOW findings. Only the terminal stale
-  attempt/execution projection was stopped after acceptance; all evidence and
-  the clean retained worktree remain preserved.
+  `2c1f0dd960b79345ec4a771ad4970a7c81eb194e88c4b0b6ca133dc54bfa201a`.
+  Worker and manager focused TEST-118..125 8/8, coordination 125/125, and
+  policy/routing 189/189 passed with zero failures/skips; JSON/Python,
+  manifest, traceability, publication/secret, Git/fsck/diff, and clean-state
+  gates passed with 0 HIGH, 0 MEDIUM, 0 LOW findings. The supported unclaimed
+  manager completion reconciled the stale execution and attempt to DONE while
+  preserving the clean retained branch, worktree, commit, and evidence.
+- Fresh cumulative integration: Workboard
+  `20f0a035-33b9-409b-ad8f-fd449e1c62ab`, attempt
+  `workboard:20f0a035-33b9-409b-ad8f-fd449e1c62ab:1788419443150`, worker
+  `property-codex-1`, branch/worktree
+  `openclaw/wb-20f0a035-33b9-409b-ad8f-fd449e1c62ab` /
+  `wb-20f0a035-33b9-409b-ad8f-fd449e1c62ab`, is RUNNING exactly once under
+  GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. The supported Gateway
+  RPC returned one expected start and zero start failures. Its managed worktree
+  launched clean at repository default SHA `28d3568`; the worker must align
+  non-destructively to immutable target `859397f` before accepting any evidence.
+  The complete `57fd5d34..859397f` boundary is 25 commits with one preserved
+  ordinary merge, 19 paths, +16110/-102, binary full-index diff SHA-256
+  `42eac56b1fe35d3d3fc0dadde8755be61b27f57f979ab74809ad09d318133fe3`.
+  Preserve this sole worker and dispatch no overlap. Candidate remains
+  uninstalled and unpublished.
 - Independent review: Workboard `6b209d5a-f881-4f3a-a0bf-80d97945ba04` is
   property-manager-accepted DONE as FAIL at immutable `6c0e14cb`, with 4 HIGH,
   0 MEDIUM, 0 LOW findings. The recovered GPT-5.6 Sol `max`, Standard/Fast-off
@@ -41,24 +44,6 @@
   persisted Workboard proof projection. The stale terminal attempt/execution
   projection was stopped after acceptance; the rejected candidate remains
   uninstalled and unpublished.
-- Active bounded correction: Workboard
-  `51cc2ff9-09c3-49a2-b7d4-a1f303989461`, attempt
-  `workboard:51cc2ff9-09c3-49a2-b7d4-a1f303989461:1788416830441`, worker
-  `property-codex-1`, branch/worktree
-  `openclaw/wb-51cc2ff9-09c3-49a2-b7d4-a1f303989461` /
-  `wb-51cc2ff9-09c3-49a2-b7d4-a1f303989461`, is RUNNING under GPT-5.6 Sol
-  `xhigh`, Standard/Fast-off, empty fallbacks. Two initial dispatch passes
-  recorded no start because the source path was absent; the same card and key
-  were repaired in place, and one retry still observed an older DONE card's
-  stale running execution. After that stale projection was truthfully stopped,
-  the supported Gateway RPC started exactly one worker with zero start failures.
-  Its new managed worktree launched clean at repository default SHA `28d3568`
-  and has now aligned non-destructively to exact base `6c0e14cb`, parent
-  `d1c465b`, with a clean index/worktree before edits. Preserve this sole worker
-  and dispatch no overlap. The supervisor cycle that started it timed out after
-  1,800,544 ms; the next scheduled cycle reconciled the unchanged live attempt,
-  valid claim, two bounded dirty paths, exact base, scheduler, prompt identity,
-  and synchronized canonical Git without dispatching another worker.
 - Baseline: fully closed V1-046 reconciliation
   `57fd5d34f4e91102f4d49cc124d17d6022467ae4`.
 - Reviewed implementation: exact candidate
@@ -638,49 +623,18 @@ Standard/Fast-off, empty fallbacks. Preserve it; V1-047 implementation
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation candidate state: V1-047 approved and active at exact green
-  activation `870472b7`; correction `dd728972` is manager-accepted at exact
-  `85e18b8` with 0 HIGH/0 MEDIUM/0 LOW, cumulative integration `a440be0b` is
-  manager-accepted DONE, independent max review `79120fbe` is manager-accepted
-  DONE with 2 HIGH/0 MEDIUM/0 LOW, bounded correction `0167afb8` is manager-
-  accepted DONE at exact `3a912c3` with 0 HIGH/0 MEDIUM/0 LOW, fresh cumulative
-  integration `c108b139` is manager-accepted DONE with zero findings,
-  independent max review `28daaec5` is manager-accepted DONE with 5 HIGH/
-  0 MEDIUM/0 LOW, exact correction `c3536723` is manager-accepted DONE at
-  `587768eb` with 0 HIGH/0 MEDIUM/0 LOW, fresh cumulative integration
-  `82257d37` is manager-accepted DONE with zero findings, fresh independent max
-  review `94f964ff` is manager-accepted DONE with 3 HIGH/0 MEDIUM/0 LOW, and
-  exact H1-H3 correction `dafb7f51` is manager-accepted DONE at `a3a1cff` with
-  0 HIGH/0 MEDIUM/0 LOW, fresh cumulative integration `8ccec368` is manager-
-  accepted DONE with zero findings, fresh independent max review `67d4ab70` is
-  manager-accepted DONE as FAIL with 4 HIGH/1 MEDIUM/0 LOW, and bounded
-  correction `b1614ef8` is manager-accepted DONE at exact `86c61f3` with zero
-  findings, fresh cumulative integration `71288e13` is manager-accepted DONE
-  with zero findings, fresh independent max review `85465ccb` is manager-
-  accepted DONE as FAIL with 2 HIGH/0 MEDIUM/0 LOW, bounded H1/H2 correction
-  `de86c657` is manager-accepted DONE at exact `d088225` with zero findings,
-  fresh cumulative integration `20d1ed86` is manager-accepted DONE with zero
-  findings, fresh independent max review `435c8f6d` is manager-accepted DONE as
-  FAIL with 3 HIGH/1 MEDIUM/0 LOW, bounded correction `5994b2e5` and cumulative
-  integration `7e37904e` are manager-accepted DONE at exact `761269c` with
-  zero findings, fresh independent max review `d2fbebfe` is manager-accepted
-  DONE as FAIL with 4 HIGH/1 MEDIUM/0 LOW after manager reproduction, and
-  bounded correction `eff7f891` and cumulative integration `bc2db3a9` are
-  manager-accepted DONE at exact `2a1ef6f` with zero findings, independent max
-  review `79a2c933` is manager-accepted DONE as FAIL with 2 HIGH/0 MEDIUM/
-  0 LOW, bounded correction `37ca539e` is manager-accepted DONE at exact
-  `f124663` with zero findings. Fresh cumulative integration `feb86085` is
-  manager-accepted DONE with zero findings. Fresh independent max review
-  `b6fce132` is manager-accepted DONE as FAIL with 3 HIGH/0 MEDIUM/0 LOW.
-  Bounded H1-H3 correction `b43ca2fd` and cumulative integration `67e61bf2`
-  are manager-accepted DONE at exact `7bfcb906` with zero findings. Fresh
-  independent max review `a6a1ea3c` is RUNNING exactly once on
-  `property-codex-2` in a clean managed worktree at immutable `7bfcb906`.
-  Implementation remains blocked/unstarted.
-- Automation exact next action: preserve fresh independent max review
-  `a6a1ea3c`; after terminal release, manager-verify immutable `7bfcb906`, its
-  complete twelve-commit four-path diff, exact `max` runtime, all gates,
-  verdict, and every finding before any installation or implementation dispatch.
+- Automation candidate state: V1-047 approved and active; bounded correction
+  `51cc2ff9` is property-manager-accepted DONE at immutable `859397f`, parent
+  `6c0e14cb`, with worker and manager focused 8/8, coordination 125/125,
+  policy/routing 189/189, zero failures/skips, and 0 HIGH/0 MEDIUM/0 LOW.
+  Fresh cumulative integration `20f0a035` is RUNNING exactly once on
+  `property-codex-1`, attempt `workboard:20f0a035-33b9-409b-ad8f-fd449e1c62ab:1788419443150`,
+  under GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Implementation
+  `26b14ae0` remains blocked/unstarted; V1-048 remains dependency-held.
+- Automation exact next action: preserve cumulative integration `20f0a035`;
+  require non-destructive alignment to immutable `859397f`, then manager-verify
+  the complete 25-commit/19-path diff, exact runtime, all gates, skips, and
+  findings before any fresh independent max review or installation.
 
 <!-- AUTOMATION_STATUS_END -->
 

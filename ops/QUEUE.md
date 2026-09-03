@@ -57,17 +57,21 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 cumulative integration `67e61bf2` is
-property-manager-accepted DONE at immutable `7bfcb906`, parent `f124663`, after
-bounded recovery and fresh manager focused 3/3, coordination 111/111, policy
-189/189, TEST-118, roadmap, manifest, traceability, publication/secret, and
-Git integrity gates passed with zero failures/skips/findings. Fresh independent
-max review `a6a1ea3c-55c9-41ea-89b5-e24cadf5f131` is RUNNING exactly once on
-`property-codex-2` at immutable `7bfcb906`, attempt
-`workboard:a6a1ea3c-55c9-41ea-89b5-e24cadf5f131:1788399664791`, in a clean
-managed worktree under GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks.
-Preserve it and manager-verify its terminal verdict and every finding before
-any installation, publication, or implementation dispatch.
+Current live queue position: V1-047 bounded correction
+`51cc2ff9-09c3-49a2-b7d4-a1f303989461` is property-manager-accepted DONE at
+immutable `859397f`, parent `6c0e14cb`, after manager focused 8/8,
+coordination 125/125, policy/routing 189/189, manifest, traceability,
+publication/secret, and Git integrity gates passed with zero failures/skips and
+0 HIGH, 0 MEDIUM, 0 LOW findings. Fresh cumulative integration
+`20f0a035-33b9-409b-ad8f-fd449e1c62ab` is RUNNING exactly once on
+`property-codex-1`, attempt
+`workboard:20f0a035-33b9-409b-ad8f-fd449e1c62ab:1788419443150`, in managed
+branch/worktree `openclaw/wb-20f0a035-33b9-409b-ad8f-fd449e1c62ab` /
+`wb-20f0a035-33b9-409b-ad8f-fd449e1c62ab` under GPT-5.6 Sol `xhigh`,
+Standard/Fast-off, empty fallbacks. It launched clean at default `28d3568` and
+must align non-destructively to immutable `859397f`. Preserve it and
+manager-verify exact identity, the complete 25-commit/19-path cumulative diff,
+all gates, and zero findings before fresh independent max review.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE;
