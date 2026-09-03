@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration running at 6c0e14cb
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running at 6c0e14cb
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -16,15 +16,31 @@
   unclaimed manager status action; that command-selection failure was retained,
   the exact unclaimed REVIEW-to-DONE action succeeded, and no candidate finding
   was established. Candidate remains uninstalled and unpublished.
-- Active integration: Workboard `f25d678b-8ff4-4df0-b123-bcaa1221d375`, attempt
-  `workboard:f25d678b-8ff4-4df0-b123-bcaa1221d375:1788410779051`, worker
-  `property-codex-3`, branch/worktree `openclaw/wb-f25d678b-8ff4-4df0-b123-bcaa1221d375`
-  / `wb-f25d678b-8ff4-4df0-b123-bcaa1221d375`. Its first dispatch failed before
-  worker start because the card lacked an absolute source checkout; the same
-  card/key was corrected in place and its second dispatch started exactly one
-  healthy worker from immutable `6c0e14cb`. Runtime is GPT-5.6 Sol `xhigh`,
-  Standard/Fast-off, empty fallbacks. Preserve this worker and do not dispatch
-  overlapping work.
+- Cumulative integration: Workboard `f25d678b-8ff4-4df0-b123-bcaa1221d375`
+  is property-manager-accepted DONE at immutable `6c0e14cb`. The worker and
+  manager independently verified the complete `57fd5d34..6c0e14cb` boundary:
+  24 commits with one preserved ordinary merge, 19 paths, +15622/-102, binary
+  full-index diff SHA-256
+  `1c1c820edb15628ccdd4c56a3215b43a58d750dde73a078b0f23b17de31c285d`.
+  Manager reruns passed focused 3/3, coordination 121/121, policy/routing
+  189/189, backend 729 with 444 fully explained database-only skips, and
+  frontend 234/234 across 17/17 files. Static, build, audit, deployment,
+  Alembic, traceability, prompt, publication/secret, Git/fsck/diff, and clean
+  gates passed with 0 HIGH, 0 MEDIUM, 0 LOW findings. Only the terminal stale
+  attempt/execution projection was stopped after acceptance; all evidence and
+  the clean retained worktree remain preserved.
+- Active independent review: Workboard `6b209d5a-f881-4f3a-a0bf-80d97945ba04`,
+  attempt `workboard:6b209d5a-f881-4f3a-a0bf-80d97945ba04:1788412164823`,
+  worker `property-codex-2`, branch/worktree
+  `openclaw/wb-6b209d5a-f881-4f3a-a0bf-80d97945ba04` /
+  `wb-6b209d5a-f881-4f3a-a0bf-80d97945ba04`, started exactly once with zero
+  dispatch failures under GPT-5.6 Sol `max`, Standard/Fast-off, empty
+  fallbacks. The configured source path is the exact clean accepted integration
+  checkout. Initial launch reconciliation observed the new managed branch at
+  clean `origin/main` SHA `28d3568`, not the immutable candidate; the reviewer
+  is explicitly resolving exact candidate identity and must fail closed rather
+  than accept any wrong-checkout evidence. Preserve this sole worker and do not
+  dispatch overlapping work.
 - Baseline: fully closed V1-046 reconciliation
   `57fd5d34f4e91102f4d49cc124d17d6022467ae4`.
 - Reviewed implementation: exact candidate

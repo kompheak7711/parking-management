@@ -495,3 +495,22 @@ after terminal release, manager-verify the complete 24-commit one-merge
 19-path cumulative diff from closed base `57fd5d34`, all gates, findings,
 runtime, and clean state before fresh independent max review. Implementation
 `26b14ae0` and V1-048 remain dependency-held.
+
+Current transition (2026-09-03 12:11 +07): cumulative integration `f25d678b`
+terminally released and is property-manager-accepted DONE at immutable
+`6c0e14cb`. Worker and manager independently passed focused 3/3, coordination
+121/121, policy/routing 189/189, backend 729 with 444 fully explained
+database-only skips, frontend 234/234 across 17/17 files, and every applicable
+integrity gate with zero candidate failures and 0 HIGH, 0 MEDIUM, 0 LOW
+findings. The supported Workboard reclaim stopped only the stale terminal
+attempt/execution projection after acceptance. Fresh independent max review
+`6b209d5a-f881-4f3a-a0bf-80d97945ba04` was created once with stable key
+`v1-047-ops-independent-max-review-6c0e14cb-v1`; the supported Gateway RPC
+started exactly one `property-codex-2` attempt with zero failures:
+`workboard:6b209d5a-f881-4f3a-a0bf-80d97945ba04:1788412164823`. Its configured
+source is the exact clean accepted integration checkout. Initial reconciliation
+found the newly created managed branch clean but at `origin/main` `28d3568`,
+not immutable `6c0e14cb`; the reviewer is resolving exact identity and must
+fail closed rather than accept wrong-checkout evidence. Preserve this sole
+GPT-5.6 Sol `max`, Standard/Fast-off, empty-fallback worker. Implementation
+`26b14ae0` and V1-048 remain dependency-held.
