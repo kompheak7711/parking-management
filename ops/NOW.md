@@ -1,24 +1,30 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded manager-proof lifecycle correction running from d1c465b
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration running at 6c0e14cb
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
 - Authorization: Owner standing continuous authorization from V1-046 through
   V1-060; this release remains limited to the exact manager-accepted candidate
   and bounded manager operations metadata.
-- Current transition: bounded correction `3457748b` produced exact clean child
-  `d1c465b9999156cd8c5bd465b6d3b9bcc1443c20`, parent `7bfcb906`, tree
-  `acbb65e5`, and passed worker/manager focused 7/7, coordination 118/118, and
-  policy/routing 189/189 with zero failures/skips. A fresh supported-workflow
-  probe then reproduced 1 HIGH manager-proof lifecycle defect, so the card is
-  property-manager-accepted DONE as FAIL; candidate is uninstalled/unpublished.
-- Active correction: Workboard `ae29b3f7-aada-4142-8a86-4d0ae5e40fa5`, attempt
-  `workboard:ae29b3f7-aada-4142-8a86-4d0ae5e40fa5:1788407344257`, worker
-  `property-codex-1`, branch/worktree `openclaw/wb-ae29b3f7-aada-4142-8a86-4d0ae5e40fa5`
-  / `wb-ae29b3f7-aada-4142-8a86-4d0ae5e40fa5`. It was created once with stable
-  key `v1-047-ops-correction-d1c465b-manager-proof-lifecycle-v1` and started
-  exactly once from clean immutable `d1c465b` under GPT-5.6 Sol `xhigh`,
-  Standard/Fast-off, empty fallbacks; Gateway reported zero start failures.
-  Preserve this worker and do not dispatch overlapping work.
+- Current transition: bounded correction `ae29b3f7` produced exact clean child
+  `6c0e14cb91ba91ca62d775f4a203c212c74ef845`, parent `d1c465b`, tree
+  `363e31f1`, as one non-merge four-path +600/-37 commit with binary full-index
+  diff SHA-256 `b00fb199e4a2efaede09ce07148f56ff9355655317d6835bd770635298376e7d`.
+  Worker and manager targeted 3/3, coordination 121/121, and policy/routing
+  189/189 passed with zero candidate failures/skips; traceability, manifest,
+  publication/secret, Git/fsck/diff, and clean-state gates also passed. One
+  manager preflight used `workboard_complete`, which is not the repository's
+  unclaimed manager status action; that command-selection failure was retained,
+  the exact unclaimed REVIEW-to-DONE action succeeded, and no candidate finding
+  was established. Candidate remains uninstalled and unpublished.
+- Active integration: Workboard `f25d678b-8ff4-4df0-b123-bcaa1221d375`, attempt
+  `workboard:f25d678b-8ff4-4df0-b123-bcaa1221d375:1788410779051`, worker
+  `property-codex-3`, branch/worktree `openclaw/wb-f25d678b-8ff4-4df0-b123-bcaa1221d375`
+  / `wb-f25d678b-8ff4-4df0-b123-bcaa1221d375`. Its first dispatch failed before
+  worker start because the card lacked an absolute source checkout; the same
+  card/key was corrected in place and its second dispatch started exactly one
+  healthy worker from immutable `6c0e14cb`. Runtime is GPT-5.6 Sol `xhigh`,
+  Standard/Fast-off, empty fallbacks. Preserve this worker and do not dispatch
+  overlapping work.
 - Baseline: fully closed V1-046 reconciliation
   `57fd5d34f4e91102f4d49cc124d17d6022467ae4`.
 - Reviewed implementation: exact candidate

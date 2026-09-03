@@ -470,3 +470,28 @@ GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Preserve it; after
 terminal release, manager-verify its exact sole child, four-path scope, bounded
 event allowlist, and complete gates before fresh cumulative integration.
 Implementation `26b14ae0` and V1-048 remain dependency-held.
+
+Current transition (2026-09-03 11:47 +07): bounded correction `ae29b3f7`
+produced exact clean `6c0e14cb91ba91ca62d775f4a203c212c74ef845`, parent
+`d1c465b`, tree `363e31f1`, as one non-merge four-path +600/-37 commit with
+binary full-index diff SHA-256
+`b00fb199e4a2efaede09ce07148f56ff9355655317d6835bd770635298376e7d`.
+Worker and manager targeted 3/3, coordination 121/121, policy/routing 189/189,
+traceability, manifest, publication/secret, Git/fsck/diff, and clean-state
+gates passed with zero candidate failures/skips/findings. Two manager command
+selection errors were retained and corrected with changed commands; neither
+established a candidate defect. Fresh cumulative integration
+`f25d678b-8ff4-4df0-b123-bcaa1221d375` was created once with stable key
+`v1-047-cumulative-integration-6c0e14cb-v1`. Its first dispatch failed before
+worker start because the absolute source checkout was absent; the same card/key
+was repaired in place and retry started exactly one `property-codex-3` attempt
+with zero overlap:
+`workboard:f25d678b-8ff4-4df0-b123-bcaa1221d375:1788410779051`.
+The clean managed branch/worktree are
+`openclaw/wb-f25d678b-8ff4-4df0-b123-bcaa1221d375` /
+`wb-f25d678b-8ff4-4df0-b123-bcaa1221d375` at immutable `6c0e14cb` under
+GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Preserve this worker;
+after terminal release, manager-verify the complete 24-commit one-merge
+19-path cumulative diff from closed base `57fd5d34`, all gates, findings,
+runtime, and clean state before fresh independent max review. Implementation
+`26b14ae0` and V1-048 remain dependency-held.
