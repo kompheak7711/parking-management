@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration running at 859397f
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running at 859397f
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -18,20 +18,30 @@
   manager completion reconciled the stale execution and attempt to DONE while
   preserving the clean retained branch, worktree, commit, and evidence.
 - Fresh cumulative integration: Workboard
-  `20f0a035-33b9-409b-ad8f-fd449e1c62ab`, attempt
-  `workboard:20f0a035-33b9-409b-ad8f-fd449e1c62ab:1788419443150`, worker
-  `property-codex-1`, branch/worktree
-  `openclaw/wb-20f0a035-33b9-409b-ad8f-fd449e1c62ab` /
-  `wb-20f0a035-33b9-409b-ad8f-fd449e1c62ab`, is RUNNING exactly once under
-  GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. The supported Gateway
-  RPC returned one expected start and zero start failures. Its managed worktree
-  launched clean at repository default SHA `28d3568`; the worker must align
-  non-destructively to immutable target `859397f` before accepting any evidence.
-  The complete `57fd5d34..859397f` boundary is 25 commits with one preserved
-  ordinary merge, 19 paths, +16110/-102, binary full-index diff SHA-256
+  `20f0a035-33b9-409b-ad8f-fd449e1c62ab` is property-manager-accepted DONE at
+  immutable `859397f`. Worker and manager each passed coordination 125/125,
+  policy/routing 189/189, backend 729 with 444 fully explained database-only
+  skips, real PostgreSQL 467/467 with zero skips, and frontend 234/234 across
+  17/17 files; all static, build, audit, deployment, traceability, prompt,
+  secret, diff, fsck, and clean-state gates passed with 0 HIGH, 0 MEDIUM, 0 LOW
+  findings. Supported session evidence confirms `openai/gpt-5.6-sol`; runtime
+  contract was `xhigh`, Standard/Fast-off, empty fallbacks. The control plane
+  removed the clean integration worktree and branch after release; the manager
+  restored both non-destructively at the same exact SHA and locked the worktree.
+- Fresh independent review: Workboard
+  `c70453ef-fd1c-46ce-b5c4-0d45eca03553`, attempt
+  `workboard:c70453ef-fd1c-46ce-b5c4-0d45eca03553:1788421447891`, worker
+  `property-codex-2`, branch/worktree
+  `openclaw/wb-c70453ef-fd1c-46ce-b5c4-0d45eca03553` /
+  `wb-c70453ef-fd1c-46ce-b5c4-0d45eca03553`, is RUNNING exactly once against
+  immutable `859397f`, parent `6c0e14cb`, and the complete 25-commit/19-path
+  `57fd5d34..859397f` diff with binary SHA-256
   `42eac56b1fe35d3d3fc0dadde8755be61b27f57f979ab74809ad09d318133fe3`.
-  Preserve this sole worker and dispatch no overlap. Candidate remains
-  uninstalled and unpublished.
+  The supported Gateway RPC returned one expected start and zero start failures;
+  its clean managed worktree launched directly at the exact candidate. Supported
+  session metadata confirms `openai/gpt-5.6-sol`; required reasoning/mode are
+  `max`, Standard/Fast-off, with empty fallbacks. Preserve this sole reviewer
+  and dispatch no overlap. Candidate remains uninstalled and unpublished.
 - Independent review: Workboard `6b209d5a-f881-4f3a-a0bf-80d97945ba04` is
   property-manager-accepted DONE as FAIL at immutable `6c0e14cb`, with 4 HIGH,
   0 MEDIUM, 0 LOW findings. The recovered GPT-5.6 Sol `max`, Standard/Fast-off
@@ -627,14 +637,18 @@ Standard/Fast-off, empty fallbacks. Preserve it; V1-047 implementation
   `51cc2ff9` is property-manager-accepted DONE at immutable `859397f`, parent
   `6c0e14cb`, with worker and manager focused 8/8, coordination 125/125,
   policy/routing 189/189, zero failures/skips, and 0 HIGH/0 MEDIUM/0 LOW.
-  Fresh cumulative integration `20f0a035` is RUNNING exactly once on
-  `property-codex-1`, attempt `workboard:20f0a035-33b9-409b-ad8f-fd449e1c62ab:1788419443150`,
-  under GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty fallbacks. Implementation
-  `26b14ae0` remains blocked/unstarted; V1-048 remains dependency-held.
-- Automation exact next action: preserve cumulative integration `20f0a035`;
-  require non-destructive alignment to immutable `859397f`, then manager-verify
-  the complete 25-commit/19-path diff, exact runtime, all gates, skips, and
-  findings before any fresh independent max review or installation.
+  Fresh cumulative integration `20f0a035` is property-manager-accepted DONE
+  at the same immutable SHA after worker and manager backend 729/729, real
+  PostgreSQL 467/467, frontend 234/234, coordination 125/125, policy/routing
+  189/189, and complete integrity gates passed with zero unexplained skips and
+  zero findings. Fresh independent max review `c70453ef` is RUNNING exactly
+  once on `property-codex-2`, attempt
+  `workboard:c70453ef-fd1c-46ce-b5c4-0d45eca03553:1788421447891`, under GPT-5.6
+  Sol `max`, Standard/Fast-off, empty fallbacks. Implementation `26b14ae0`
+  remains blocked/unstarted; V1-048 remains dependency-held.
+- Automation exact next action: preserve independent review `c70453ef`; then
+  property-manager must verify its exact-SHA, complete-diff, runtime, test, and
+  finding evidence before any installation or V1-047 implementation dispatch.
 
 <!-- AUTOMATION_STATUS_END -->
 
