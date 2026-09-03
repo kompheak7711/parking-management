@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh cumulative integration running at 7bfcb906
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — cumulative integration recovery running at 7bfcb906
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -620,9 +620,10 @@ Standard/Fast-off, empty fallbacks. Preserve it; V1-047 implementation
   `b6fce132` is manager-accepted DONE as FAIL with 3 HIGH/0 MEDIUM/0 LOW.
   Bounded H1-H3 correction `b43ca2fd` is manager-accepted DONE at exact
   `7bfcb906` with zero findings. Fresh cumulative integration `67e61bf2` is
-  RUNNING once on `property-codex-1` from the clean immutable candidate.
+  in its sole bounded recovery attempt on `property-codex-1` from the clean
+  immutable candidate after the original attempt exceeded its runtime.
   Implementation remains blocked/unstarted.
-- Automation exact next action: preserve cumulative integration `67e61bf2`;
+- Automation exact next action: preserve cumulative integration recovery `67e61bf2`;
   after terminal release, manager-verify immutable `7bfcb906`, its complete
   twelve-commit four-path diff, cleanliness, exact `xhigh` runtime, and all
   gates before fresh independent max review.
@@ -692,3 +693,19 @@ from `ece9afd` is twelve linear commits, zero merges, exactly four paths,
 `24f2c137ccf83b25e9b923d9a009b1e02eb609dc1dd2d9154312234b601f939b`.
 Preserve the healthy GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty-fallback
 read-only worker. V1-047 implementation `26b14ae0` and V1-048 remain held.
+
+Current transition (2026-09-03 08:14 +07): reconciliation proved cumulative
+integration attempt
+`workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788351057604` stale and
+nonterminal after its one-hour runtime expired: its last heartbeat reported
+focused 3/3 and coordination 111/111, but it produced no complete automation
+proof or terminal REVIEW release. No worker/test process remained, and the
+managed worktree was clean at immutable `7bfcb906`, parent `f124663`, tree
+`9755739f`; no prior-attempt proof is accepted. The supported Workboard
+dispatcher blocked the timed-out attempt, property-manager preserved and
+re-promoted the same card/key/branch/worktree, and the supported token-free
+Gateway RPC started exactly one bounded recovery on `property-codex-1` with
+zero start failures:
+`workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788397909322`. The recovery
+claim and heartbeat are healthy under GPT-5.6 Sol `xhigh`, Standard/Fast-off,
+empty fallbacks. Implementation `26b14ae0` and V1-048 remain held.

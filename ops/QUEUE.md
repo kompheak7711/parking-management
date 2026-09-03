@@ -409,3 +409,14 @@ the fresh read-only GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty-fallback
 worker and manager-verify the complete twelve-commit/four-path cumulative diff
 and all gates before fresh independent max review. Implementation `26b14ae0`
 and V1-048 remain held.
+
+Current transition (2026-09-03 08:14 +07): cumulative integration attempt
+`...:1788351057604` exceeded its runtime after partial focused 3/3 and
+coordination 111/111 evidence, without complete automation proof or terminal
+release. Reconciliation found no live process and a clean immutable `7bfcb906`
+worktree. Workboard deterministically blocked the stale attempt; the same
+card/key/branch/worktree was preserved, unblocked, re-promoted, and started in
+one bounded `property-codex-1` recovery `...:1788397909322` with zero start
+failures and a healthy claim/heartbeat. No prior-attempt proof is accepted.
+Preserve this GPT-5.6 Sol `xhigh`, Standard/Fast-off, empty-fallback recovery;
+implementation `26b14ae0` and V1-048 remain dependency-held.

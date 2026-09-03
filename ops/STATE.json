@@ -702,15 +702,15 @@
     "tranche_id": "V1-047"
   },
   "idle_reason": null,
-  "next_action": "Preserve and inspect fresh cumulative integration workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788351057604; after terminal REVIEW release, manager-verify immutable 7bfcb906, the complete twelve-commit four-path diff, exact xhigh runtime, clean worktree, and all zero-failure gates before fresh independent max review",
+  "next_action": "Preserve and inspect bounded cumulative integration recovery workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788397909322; accept no proof from timed-out attempt 1788351057604; after terminal REVIEW release, manager-verify immutable 7bfcb906, the complete twelve-commit four-path diff, exact xhigh runtime, clean worktree, and all zero-failure gates before fresh independent max review",
   "active_worker": "property-codex-1",
   "active_card": "67e61bf2-5e3a-4746-bf19-db652dac2803",
   "active_claim": true,
-  "active_attempt": "workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788351057604",
+  "active_attempt": "workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788397909322",
   "active_session": "agent:property-codex-1:subagent:workboard-property-rental-67e61bf2-5e3a-4746-bf19-db652dac2803",
-  "active_claimed_at_ms": 1788351057512,
-  "active_last_heartbeat_at_ms": 1788351057512,
-  "active_claim_expires_at_ms": 1788354657512,
+  "active_claimed_at_ms": 1788397909219,
+  "active_last_heartbeat_at_ms": 1788398360292,
+  "active_claim_expires_at_ms": 1788401960292,
   "active_branch": "openclaw/wb-67e61bf2-5e3a-4746-bf19-db652dac2803",
   "active_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-67e61bf2-5e3a-4746-bf19-db652dac2803",
   "candidate_sha": "7bfcb9062727155d4efee111be9bb73728819ba3",
@@ -832,16 +832,20 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-047 bounded H1-H3 correction b43ca2fd is manager-accepted DONE at exact 7bfcb906; fresh cumulative integration 67e61bf2 is RUNNING once on property-codex-1; implementation 26b14ae0 remains blocked",
-    "exact_next_action": "Preserve and inspect cumulative integration 1788351057604; after terminal release, manager-verify immutable 7bfcb906, the complete twelve-commit four-path diff, cleanliness, exact xhigh runtime, and all fresh gates before independent max review",
+    "current_phase": "V1-047 bounded H1-H3 correction b43ca2fd is manager-accepted DONE at exact 7bfcb906; cumulative integration 67e61bf2 timed-out attempt 1788351057604 is rejected and bounded recovery 1788397909322 is RUNNING on property-codex-1; implementation 26b14ae0 remains blocked",
+    "exact_next_action": "Preserve and inspect cumulative integration recovery 1788397909322; accept no prior-attempt proof; after terminal release, manager-verify immutable 7bfcb906, the complete twelve-commit four-path diff, cleanliness, exact xhigh runtime, and all fresh gates before independent max review",
     "scheduler_health": {
       "enabled": true,
       "schedule_ms": 1800000,
-      "previous_run_status": "ok",
-      "previous_run_duration_ms": 1103983,
-      "current_run_recovery": "bounded_correction_manager_accepted_done_at_7bfcb906; fresh_cumulative_integration_created_once_and_started_exactly_once; valid_property_codex_1_attempt_preserved",
-      "current_run_started_at_ms": 1788350510074,
-      "next_cadence_at_ms": 1788352310059,
+      "previous_run_status": "error",
+      "previous_run_duration_ms": 36345,
+      "previous_run_consecutive_errors": 15,
+      "previous_run_error": "stream disconnected before completion while sending the Codex response",
+      "current_run_recovery": "timed_out_integration_attempt_blocked_without_accepted_proof; same_card_key_branch_worktree_preserved; one_property_codex_1_recovery_started_with_zero_failures",
+      "current_run_started_at_ms": 1788397710577,
+      "current_due_at_ms": 1788397710565,
+      "next_cadence_at_ms": null,
+      "next_run_state": "pending current run completion",
       "prompt_payload_identity": "PASS: byte-identical, 11868 bytes on disk, SHA-256 0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56"
     },
     "coordination_safety_rereview": {
@@ -2722,7 +2726,14 @@
     "coordination_cumulative_integration_7bfcb906": {
       "card_id": "67e61bf2-5e3a-4746-bf19-db652dac2803",
       "parent_correction_card_id": "b43ca2fd-c5c4-4f90-9a78-8f50ec117204",
-      "attempt_id": "workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788351057604",
+      "attempt_id": "workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788397909322",
+      "attempt_ids": [
+        "workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788351057604",
+        "workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788397909322"
+      ],
+      "failed_attempt_id": "workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788351057604",
+      "failed_attempt_reason": "Run exceeded the card max runtime after partial focused 3/3 and coordination 111/111 evidence; no complete automation proof or terminal release; no prior-attempt proof accepted",
+      "recovery_attempt_id": "workboard:67e61bf2-5e3a-4746-bf19-db652dac2803:1788397909322",
       "worker": "property-codex-1",
       "branch": "openclaw/wb-67e61bf2-5e3a-4746-bf19-db652dac2803",
       "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-67e61bf2-5e3a-4746-bf19-db652dac2803",
@@ -2742,18 +2753,19 @@
       "claim_active": true,
       "attempt_active": true,
       "worker_active": true,
-      "claim_started_at_ms": 1788351057512,
-      "last_heartbeat_at_ms": 1788351057512,
-      "claim_expires_at_ms": 1788354657512,
-      "dispatch_count": 1,
-      "started_attempts": 1,
+      "claim_started_at_ms": 1788397909219,
+      "last_heartbeat_at_ms": 1788398360292,
+      "claim_expires_at_ms": 1788401960292,
+      "dispatch_count": 2,
+      "started_attempts": 2,
       "start_failures": 0,
-      "status": "running"
+      "timed_out_attempts": 1,
+      "status": "bounded_recovery_running"
     },
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-09-02T12:12:13Z"
+    "updated_at": "2026-09-03T01:20:37Z"
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -3850,10 +3862,12 @@
     "FAIL: fresh independent max review b6fce132 is property-manager-accepted DONE at immutable f124663 with 3 HIGH, 0 MEDIUM, 0 LOW; reviewer and manager focused 2/2, coordination 108/108, automation 189/189, TEST-118, roadmap, parse, manifest, traceability, publication/secret, exact Git/hash/diff/fsck/clean, and runtime gates passed with zero baseline failures/skips; manager independently reproduced all three flaws",
     "PASS: bounded H1-H3 correction b43ca2fd was created once with a stable idempotency key and started exactly once on property-codex-1 from clean f124663 under GPT-5.6 Sol xhigh, Standard/Fast-off, empty fallbacks, with zero start failures",
     "PASS: bounded H1-H3 correction b43ca2fd is property-manager-accepted DONE at exact 7bfcb906, parent f124663, tree 9755739f, as one zero-merge four-path +483/-29 commit; manager focused 3/3, coordination 111/111, automation 189/189, TEST-118, roadmap, parse, manifest, traceability, publication/secret, exact Git/hash/diff/fsck/clean gates passed with zero candidate failures/skips/findings",
-    "PASS: fresh cumulative integration 67e61bf2 was created once with stable idempotency key and started exactly once on property-codex-1 in a clean managed worktree at immutable 7bfcb906; supported Gateway dispatch reported one expected start and zero failures"
+    "PASS: fresh cumulative integration 67e61bf2 was created once with stable idempotency key and started exactly once on property-codex-1 in a clean managed worktree at immutable 7bfcb906; supported Gateway dispatch reported one expected start and zero failures",
+    "FAIL/RECOVERING: cumulative integration attempt 1788351057604 exceeded its runtime after partial focused 3/3 and coordination 111/111 evidence without complete automation proof or terminal release; no worker process remained and the immutable worktree was clean, so Workboard blocked it and property-manager preserved the same card/key/branch/worktree and started bounded recovery 1788397909322 on property-codex-1 with zero start failures; no prior-attempt proof is accepted",
+    "PASS: manager compact-state recovery reconciliation passed automation 189/189, roadmap 46/60, JSON parsing, diff checks, and live Workboard claim/heartbeat verification with zero failures/skips"
   ],
   "tests_tranche_id": "V1-047",
-  "timestamp": "2026-09-02T12:12:13Z",
+  "timestamp": "2026-09-03T01:20:37Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
