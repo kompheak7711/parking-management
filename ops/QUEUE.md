@@ -57,7 +57,26 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 owner stop after failed independent review. Bounded
+Current live queue position: V1-047 owner stop after the authorized recovery
+lifecycle's fresh independent review failed at exact `8118ada4`. Clean recovery
+`ed592e60`, hermetic follow-up `7c3e8e79`, disabled-state follow-up `3a4e2697`,
+and cumulative integration `04b44d4d` are complete and preserved. Independent
+GPT-5.6 Sol `max` review `a6d4f3a4-f345-43bb-a112-5a4144a50dfb` is
+property-manager-accepted DONE as FAIL with 5 HIGH, 1 MEDIUM, 0 LOW after exact
+identity/runtime verification and 320/320 shipped tests; seven proofs show
+unreachable structured admission, unsupported Workboard action ordering,
+result-Git TOCTOU, stale scheduler-enabled replay, overlapping installer
+recovery, and stale compact truth. Candidate `8118ada4` remains uninstalled and
+unpublished. Automatically generated successor `953547d1` raced into one brief
+blocked `property-codex-1` attempt and left a clean zero-diff worktree at
+`8118ada4`; it is BLOCKED and must not be dispatched. The one additional
+correction authorized on 2026-09-03 is consumed. Owner must explicitly authorize
+any further bounded correction. Implementation `26b14ae0` remains BLOCKED with
+zero starts and V1-048 remains dependency-held. The supervisor remains disabled;
+the previously observed visibility-watchdog job is absent from the live scoped
+cron registry, and no scheduler restoration is authorized in this reconciliation.
+
+Historical queue reconciliation through review `c70453ef`: bounded
 correction `51cc2ff9-09c3-49a2-b7d4-a1f303989461` and fresh cumulative
 integration `20f0a035-33b9-409b-ad8f-fd449e1c62ab` are property-manager-
 accepted DONE at immutable `859397f`, parent `6c0e14cb`. Manager verification

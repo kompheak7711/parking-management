@@ -1,68 +1,53 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — owner stop after failed independent review at 859397f
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — owner stop after failed independent review at 8118ada4
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
-- Authorization: Owner standing continuous authorization from V1-046 through
-  V1-060; this release remains limited to the exact manager-accepted candidate
-  and bounded manager operations metadata.
-- Current transition: bounded four-HIGH correction
-  `51cc2ff9-09c3-49a2-b7d4-a1f303989461` is property-manager-accepted DONE at
-  immutable `859397f5c17ca2fff2c6e652f8fae7d428167f43`, parent `6c0e14cb`,
-  tree `e428c455`, as one zero-merge four-path +528/-40 commit with binary
-  full-index diff SHA-256
-  `2c1f0dd960b79345ec4a771ad4970a7c81eb194e88c4b0b6ca133dc54bfa201a`.
-  Worker and manager focused TEST-118..125 8/8, coordination 125/125, and
-  policy/routing 189/189 passed with zero failures/skips; JSON/Python,
-  manifest, traceability, publication/secret, Git/fsck/diff, and clean-state
-  gates passed with 0 HIGH, 0 MEDIUM, 0 LOW findings. The supported unclaimed
-  manager completion reconciled the stale execution and attempt to DONE while
-  preserving the clean retained branch, worktree, commit, and evidence.
-- Fresh cumulative integration: Workboard
-  `20f0a035-33b9-409b-ad8f-fd449e1c62ab` is property-manager-accepted DONE at
-  immutable `859397f`. Worker and manager each passed coordination 125/125,
-  policy/routing 189/189, backend 729 with 444 fully explained database-only
-  skips, real PostgreSQL 467/467 with zero skips, and frontend 234/234 across
-  17/17 files; all static, build, audit, deployment, traceability, prompt,
-  secret, diff, fsck, and clean-state gates passed with 0 HIGH, 0 MEDIUM, 0 LOW
-  findings. Supported session evidence confirms `openai/gpt-5.6-sol`; runtime
-  contract was `xhigh`, Standard/Fast-off, empty fallbacks. The control plane
-  removed the clean integration worktree and branch after release; the manager
-  restored both non-destructively at the same exact SHA and locked the worktree.
-- Fresh independent review: Workboard
-  `c70453ef-fd1c-46ce-b5c4-0d45eca03553`, attempt
-  `workboard:c70453ef-fd1c-46ce-b5c4-0d45eca03553:1788421447891`, worker
-  `property-codex-2`, branch/worktree
-  `openclaw/wb-c70453ef-fd1c-46ce-b5c4-0d45eca03553` /
-  `wb-c70453ef-fd1c-46ce-b5c4-0d45eca03553`, is property-manager-accepted DONE
-  as FAIL against immutable `859397f`, parent `6c0e14cb`, tree `e428c455`, and
-  the complete 25-commit/19-path `57fd5d34..859397f` diff with binary SHA-256
-  `42eac56b1fe35d3d3fc0dadde8755be61b27f57f979ab74809ad09d318133fe3`.
-  Reviewer and manager suites passed TEST-118..125 8/8, coordination 125/125,
-  and policy/routing 189/189 with zero failures/skips, but the reviewer found
-  6 HIGH, 2 MEDIUM, 0 LOW material defects and property-manager independently
-  confirmed all classes. Supported manager completion reconciled the stale
-  execution/attempt to DONE/succeeded. The exact candidate and clean retained
-  evidence remain uninstalled and unpublished.
-- Human stop: the 2026-09-01 owner decision authorized one materially different
-  H1-H3 coordination/bootstrap correction after the prior exhausted-recovery
-  stop. That allowance was consumed, and multiple further exact-SHA correction,
-  integration, and review cycles now end with corrected chronology, link, and
-  sensitive-data classes recurring alongside installer, Git-revalidation, and
-  decision-state defects. No additional correction or implementation dispatch
-  is authorized until the owner explicitly renews bounded recovery. V1-048
-  remains dependency-held; production scope remains excluded.
-- Independent review: Workboard `6b209d5a-f881-4f3a-a0bf-80d97945ba04` is
-  property-manager-accepted DONE as FAIL at immutable `6c0e14cb`, with 4 HIGH,
-  0 MEDIUM, 0 LOW findings. The recovered GPT-5.6 Sol `max`, Standard/Fast-off
-  reviewer produced complete exact-SHA evidence; manager reruns passed focused
-  3/3, coordination 121/121, TEST-118 1/1, and policy/routing 189/189, then
-  independently reproduced all five adversarial probes (output SHA-256
-  `12213a0298f2fd6f881b6fffb5401c9d51cb5257c58c62a049df7fb3fa98b547`).
-  Findings cover real successor link events, manager REVIEW-to-BLOCKED
-  override, worker and manager priority service-tier observation, and sensitive
-  persisted Workboard proof projection. The stale terminal attempt/execution
-  projection was stopped after acceptance; the rejected candidate remains
-  uninstalled and unpublished.
+- Authorized coordination lifecycle: the owner's 2026-09-03 instruction allowed
+  one additional materially different correction for review `c70453ef`'s
+  6 HIGH / 2 MEDIUM findings. Clean recovery `ed592e60` produced `a9e2e0f`;
+  hermetic follow-up `7c3e8e79` produced `885efba`; disabled-state follow-up
+  `3a4e2697` produced final immutable candidate
+  `8118ada4385090bc66493c710a87852392982fd6`, parent `885efba`, tree
+  `6f7525d3`. Rejected `859397f`, blocked original implementation
+  `26b14ae0`, contaminated `47ec5064`, and all IDs, worktrees, and evidence are
+  preserved.
+- Exact-SHA integration: Workboard `04b44d4d-eecd-460d-9d43-5b1f473ab8d2`
+  is manager-accepted DONE/PASS. Worker and manager independently passed normal
+  and forced-temp coordination 131/131, policy/routing 189/189, focused 14/14,
+  installer preservation 1/1, aggregate automation, exact Git/diff, state,
+  watchdog, static, and clean-worktree gates with zero failures or skips.
+- Fresh independent max review: Workboard
+  `a6d4f3a4-f345-43bb-a112-5a4144a50dfb`, reviewer `property-codex-2`, attempt
+  `workboard:a6d4f3a4-f345-43bb-a112-5a4144a50dfb:1788441073412`, is
+  manager-accepted DONE as FAIL at exact clean `8118ada4`. Runtime was
+  `openai/gpt-5.6-sol`, `max`, Standard/Fast-off, empty fallbacks. The shipped
+  suites passed 320/320, but supported-runtime and adversarial probes found
+  5 HIGH, 1 MEDIUM, 0 LOW: unreachable structured admission, unsupported
+  Workboard action ordering, result-Git TOCTOU, stale scheduler-enabled replay,
+  overlapping installer recovery, and stale NOW/STATE truth. Seven reviewer
+  proofs and manager independent identity/runtime/code/state acceptance are on
+  the card. The reviewer attempt is reconciled as successfully completed.
+- Raced successor: automatic card `953547d1-a5e5-4fac-a88a-14dae99f3294`
+  was created after the failed review and raced into one brief
+  `property-codex-1` attempt
+  `workboard:953547d1-a5e5-4fac-a88a-14dae99f3294:1788443377281` before the
+  authority boundary was enforced. It was blocked; its retained managed
+  worktree remains clean at `8118ada4` with zero edits or commits. A later
+  automatic reauthorization/claim created no second attempt and was blocked
+  again. Preserve the complete chronology; do not dispatch it.
+- Human stop: the one additional correction lifecycle is consumed and its
+  required independent review failed. A further H1-H5/M1 correction would be a
+  new materially different attempt and needs fresh explicit owner authority.
+  Exact next action: the owner reviews `a6d4f3a4` and explicitly authorizes or
+  declines another bounded correction. Until then, do not install or publish
+  `8118ada4`, do not dispatch `953547d1` or implementation `26b14ae0`, and keep
+  V1-048 dependency-held.
+- Scheduler safety: `property-rental-24x7-supervisor` remains intentionally
+  disabled with no next run. Live scoped cron reconciliation no longer finds
+  the previously observed five-minute visibility-watchdog job
+  `8db8cc98-56a1-4687-9988-fd7e3750c51b`; no unauthorized scheduler
+  restoration was attempted. No production, credentials, customer data, paid
+  services, destructive operations, or safety-gate bypass is authorized.
 - Baseline: fully closed V1-046 reconciliation
   `57fd5d34f4e91102f4d49cc124d17d6022467ae4`.
 - Reviewed implementation: exact candidate
