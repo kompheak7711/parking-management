@@ -514,3 +514,58 @@ not immutable `6c0e14cb`; the reviewer is resolving exact identity and must
 fail closed rather than accept wrong-checkout evidence. Preserve this sole
 GPT-5.6 Sol `max`, Standard/Fast-off, empty-fallback worker. Implementation
 `26b14ae0` and V1-048 remain dependency-held.
+
+Current transition (2026-09-03 13:07 +07): independent max review `6b209d5a`
+attempt `workboard:6b209d5a-f881-4f3a-a0bf-80d97945ba04:1788412164823`
+completed its model turn and recorded focused 3/3, coordination 121/121,
+policy/routing 189/189, TEST-118 1/1, and four HIGH findings, but exceeded the
+original 1800-second card runtime before exact proof or REVIEW release. The
+session registry recorded FAILED and the dispatcher truthfully moved the stale
+RUNNING attempt to BLOCKED; no incomplete finding was accepted. Bounded
+changed-fingerprint recovery preserved the card, parent, idempotency key,
+candidate, source checkout, reviewer identity, and evidence, raised only the
+runtime budget to 3600 seconds, and started one non-overlapping retry with zero
+start failures:
+`workboard:6b209d5a-f881-4f3a-a0bf-80d97945ba04:1788415594212` on
+`property-codex-2`, GPT-5.6 Sol `max`, Standard/Fast-off, empty fallbacks. The
+exact source remains the clean accepted integration checkout at `6c0e14cb`;
+the recreated managed branch is clean at published ops SHA `79259088`, so only
+explicit source-checkout proof bound to immutable `6c0e14cb` is admissible.
+Preserve this sole recovery worker and manager-verify its terminal report and
+all four findings before any correction, installation, publication, or V1-047
+implementation dispatch. Implementation `26b14ae0` and V1-048 remain
+dependency-held.
+
+Current transition (2026-09-03 13:27 +07): recovered independent max review
+`6b209d5a` completed exact proof and released to REVIEW. Property-manager
+verified candidate `6c0e14cb` / parent `d1c465b`, reran focused 3/3,
+coordination 121/121, TEST-118 1/1, and policy/routing 189/189 with zero
+failures/skips, then independently reproduced all four HIGH findings in five
+probes (output SHA-256
+`12213a0298f2fd6f881b6fffb5401c9d51cb5257c58c62a049df7fb3fa98b547`).
+The review is manager-accepted DONE as FAIL with 4 HIGH / 0 MEDIUM / 0 LOW;
+its stale attempt/execution projection was stopped, and candidate `6c0e14cb`
+remains uninstalled and unpublished. One bounded child correction
+`51cc2ff9-09c3-49a2-b7d4-a1f303989461` was created once with stable key
+`v1-047-ops-correction-6c0e14cb-review-4h-v1`. Two initial dispatcher passes
+recorded no start because the source path was absent; the same card was
+repaired in place. A remaining older DONE-card execution projection then
+blocked the assigned agent until supported reclaim reconciled it. The next
+Gateway pass started exactly one `property-codex-1` attempt with zero failures:
+`workboard:51cc2ff9-09c3-49a2-b7d4-a1f303989461:1788416830441`, GPT-5.6 Sol
+`xhigh`, Standard/Fast-off, empty fallbacks, branch/worktree
+`openclaw/wb-51cc2ff9-09c3-49a2-b7d4-a1f303989461` /
+`wb-51cc2ff9-09c3-49a2-b7d4-a1f303989461`. The clean managed checkout launched
+at default SHA `28d3568` and aligned non-destructively to exact base
+`6c0e14cb`, parent `d1c465b`, with a clean index/worktree before edits.
+Preserve this sole worker; implementation `26b14ae0` and V1-048 remain
+dependency-held.
+
+Current supervisor reconciliation (2026-09-03 13:36 +07): the cycle that
+started correction `51cc2ff9` timed out after 1,800,544 ms, but the worker did
+not fail. The next scheduled cycle verified the same sole RUNNING attempt and
+valid claim, exact `6c0e14cb` / `d1c465b` base, two in-scope dirty script paths,
+live Codex process, synchronized clean canonical Git apart from the pending
+manager-owned compact-state transition, byte-identical supervisor prompt and
+payload, and enabled 30-minute scheduler. No duplicate was dispatched;
+implementation `26b14ae0` and V1-048 remain dependency-held.

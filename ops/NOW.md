@@ -1,4 +1,4 @@
-# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — fresh independent max review running at 6c0e14cb
+# V1-047 Invoice, adjustment, late-payment, and billing-run API/UI — bounded four-HIGH correction running from 6c0e14cb
 
 - Candidate: `V1-047` — Property-scoped invoice, adjustment, late-payment, and
   billing-run staff API/UI workflows with explicit confirmations; payments excluded.
@@ -29,18 +29,36 @@
   gates passed with 0 HIGH, 0 MEDIUM, 0 LOW findings. Only the terminal stale
   attempt/execution projection was stopped after acceptance; all evidence and
   the clean retained worktree remain preserved.
-- Active independent review: Workboard `6b209d5a-f881-4f3a-a0bf-80d97945ba04`,
-  attempt `workboard:6b209d5a-f881-4f3a-a0bf-80d97945ba04:1788412164823`,
-  worker `property-codex-2`, branch/worktree
-  `openclaw/wb-6b209d5a-f881-4f3a-a0bf-80d97945ba04` /
-  `wb-6b209d5a-f881-4f3a-a0bf-80d97945ba04`, started exactly once with zero
-  dispatch failures under GPT-5.6 Sol `max`, Standard/Fast-off, empty
-  fallbacks. The configured source path is the exact clean accepted integration
-  checkout. Initial launch reconciliation observed the new managed branch at
-  clean `origin/main` SHA `28d3568`, not the immutable candidate; the reviewer
-  is explicitly resolving exact candidate identity and must fail closed rather
-  than accept any wrong-checkout evidence. Preserve this sole worker and do not
-  dispatch overlapping work.
+- Independent review: Workboard `6b209d5a-f881-4f3a-a0bf-80d97945ba04` is
+  property-manager-accepted DONE as FAIL at immutable `6c0e14cb`, with 4 HIGH,
+  0 MEDIUM, 0 LOW findings. The recovered GPT-5.6 Sol `max`, Standard/Fast-off
+  reviewer produced complete exact-SHA evidence; manager reruns passed focused
+  3/3, coordination 121/121, TEST-118 1/1, and policy/routing 189/189, then
+  independently reproduced all five adversarial probes (output SHA-256
+  `12213a0298f2fd6f881b6fffb5401c9d51cb5257c58c62a049df7fb3fa98b547`).
+  Findings cover real successor link events, manager REVIEW-to-BLOCKED
+  override, worker and manager priority service-tier observation, and sensitive
+  persisted Workboard proof projection. The stale terminal attempt/execution
+  projection was stopped after acceptance; the rejected candidate remains
+  uninstalled and unpublished.
+- Active bounded correction: Workboard
+  `51cc2ff9-09c3-49a2-b7d4-a1f303989461`, attempt
+  `workboard:51cc2ff9-09c3-49a2-b7d4-a1f303989461:1788416830441`, worker
+  `property-codex-1`, branch/worktree
+  `openclaw/wb-51cc2ff9-09c3-49a2-b7d4-a1f303989461` /
+  `wb-51cc2ff9-09c3-49a2-b7d4-a1f303989461`, is RUNNING under GPT-5.6 Sol
+  `xhigh`, Standard/Fast-off, empty fallbacks. Two initial dispatch passes
+  recorded no start because the source path was absent; the same card and key
+  were repaired in place, and one retry still observed an older DONE card's
+  stale running execution. After that stale projection was truthfully stopped,
+  the supported Gateway RPC started exactly one worker with zero start failures.
+  Its new managed worktree launched clean at repository default SHA `28d3568`
+  and has now aligned non-destructively to exact base `6c0e14cb`, parent
+  `d1c465b`, with a clean index/worktree before edits. Preserve this sole worker
+  and dispatch no overlap. The supervisor cycle that started it timed out after
+  1,800,544 ms; the next scheduled cycle reconciled the unchanged live attempt,
+  valid claim, two bounded dirty paths, exact base, scheduler, prompt identity,
+  and synchronized canonical Git without dispatching another worker.
 - Baseline: fully closed V1-046 reconciliation
   `57fd5d34f4e91102f4d49cc124d17d6022467ae4`.
 - Reviewed implementation: exact candidate
