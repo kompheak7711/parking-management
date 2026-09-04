@@ -199,6 +199,7 @@ export class InvoiceClientError extends Error {
     public readonly fields: readonly string[] = [],
     public readonly requestId: string | null = null,
     public readonly currentDecision: LatePaymentDecision | null = null,
+    public readonly currentCharge: LatePaymentCharge | null = null,
   ) {
     super(
       outcomeUnknown
@@ -406,6 +407,49 @@ function charge(value: unknown): LatePaymentCharge {
     evidence: evidence(row),
   };
 }
+/** Only immutable reversal evidence proves this correction can never succeed. */
+export function terminalChargeConflict(
+  current: LatePaymentCharge,
+  input: ChargeCorrectionInput,
+): boolean {
+  try {
+    const reversed = current.corrections.some(
+      (item) =>
+        typeof item.id === "string" &&
+        item.id.length > 0 &&
+        item.kind === "CHARGE_REVERSAL" &&
+        item.active === true &&
+        BigInt(money(item.amount).minor_units) > 0n &&
+        BigInt(money(item.resulting_obligation).minor_units) === 0n,
+    );
+    if (reversed)
+      return (
+        BigInt(current.adjusted_obligation.minor_units) === 0n &&
+        BigInt(current.remaining_balance.minor_units) === 0n
+      );
+    if (input.kind !== "REDUCTION_REVERSAL") return false;
+    const id = input.reverses_correction_id;
+    return (
+      current.corrections.some(
+        (item) =>
+          item.id === id &&
+          item.kind === "REDUCTION" &&
+          item.active === false &&
+          BigInt(money(item.amount).minor_units) > 0n,
+      ) &&
+      current.corrections.some(
+        (item) =>
+          typeof item.id === "string" &&
+          item.id.length > 0 &&
+          item.kind === "REDUCTION_REVERSAL" &&
+          item.reverses_correction_id === id &&
+          BigInt(money(item.amount).minor_units) > 0n,
+      )
+    );
+  } catch {
+    return false;
+  }
+}
 function run(value: unknown): BillingRun {
   const row = object(value),
     period = object(row.period);
@@ -519,6 +563,7 @@ async function transport<T>(
     key: string;
     version?: number;
     decisionInvoiceId?: string;
+    chargeCorrection?: { id: string; input: ChargeCorrectionInput };
   },
   transmission?: BillingTransmission,
 ): Promise<T> {
@@ -557,6 +602,7 @@ async function transport<T>(
     let fields: string[] = [];
     let requestId: string | null = null;
     let currentDecision: LatePaymentDecision | null = null;
+    let currentCharge: LatePaymentCharge | null = null;
     try {
       const envelope = object(losslessJson(await response.text()));
       const error = object(envelope.error);
@@ -585,6 +631,18 @@ async function transport<T>(
         if (current.source_invoice.id === command.decisionInvoiceId)
           currentDecision = current;
       }
+      if (
+        response.status === 409 &&
+        code === "CONFLICT" &&
+        command?.chargeCorrection
+      ) {
+        const current = charge(error.current_state);
+        if (
+          current.id === command.chargeCorrection.id &&
+          terminalChargeConflict(current, command.chargeCorrection.input)
+        )
+          currentCharge = current;
+      }
     } catch {
       /* Do not reflect arbitrary server content. */
     }
@@ -596,6 +654,7 @@ async function transport<T>(
       fields,
       requestId,
       currentDecision,
+      currentCharge,
     );
   }
   try {
@@ -623,6 +682,7 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
       key: string;
       version?: number;
       decisionInvoiceId?: string;
+      chargeCorrection?: { id: string; input: ChargeCorrectionInput };
     },
   ) {
     return transport(path, decode, command, transmission);
@@ -741,6 +801,7 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
         resource(charge),
         {
           key,
+          chargeCorrection: { id, input },
           body:
             input.kind === "REDUCTION"
               ? {

@@ -30,6 +30,7 @@ import {
   formatUsd,
   money,
   parseUsd,
+  terminalChargeConflict,
 } from "./invoiceClient";
 
 export interface InvoiceManagementProps {
@@ -264,6 +265,10 @@ function BillingWorkspace({
   const [items, setItems] = useState<InvoiceResource[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [capabilities, setCapabilities] = useState<string[]>([]);
+  const [capabilityError, setCapabilityError] =
+    useState<InvoiceClientError | null>(null);
+  const [capabilityLoading, setCapabilityLoading] = useState(false);
+  const [capabilityRetry, setCapabilityRetry] = useState(0);
   const [filters, setFilters] = useState<InvoiceFilters>({});
   const [cursor, setCursor] = useState<string | null>(null);
   const [invoice, setInvoice] = useState<InvoiceResource | null>(null);
@@ -323,18 +328,32 @@ function BillingWorkspace({
   useEffect(() => {
     if (!api.capabilities) return;
     let active = true;
+    setCapabilityLoading(true);
+    setCapabilityError(null);
+    setCapabilities([]);
     void api
       .capabilities(propertyId)
       .then((grants) => {
-        if (active) setCapabilities(grants);
+        if (active) {
+          setCapabilities(grants);
+          setCapabilityLoading(false);
+        }
       })
-      .catch(() => {
-        if (active) setCapabilities([]);
+      .catch((error: unknown) => {
+        if (active) {
+          setCapabilities([]);
+          setCapabilityLoading(false);
+          setCapabilityError(
+            error instanceof InvoiceClientError
+              ? error
+              : new InvoiceClientError(null, "CAPABILITIES_UNAVAILABLE", false),
+          );
+        }
       });
     return () => {
       active = false;
     };
-  }, [api, propertyId]);
+  }, [api, propertyId, capabilityRetry]);
   useEffect(() => {
     const fields = validation?.fields ?? [];
     const controls: Element[] = [];
@@ -638,6 +657,17 @@ function BillingWorkspace({
         error.currentDecision.source_invoice.id === intent.command.id
           ? error.currentDecision
           : null;
+      const terminalCharge =
+        error instanceof InvoiceClientError &&
+        !error.outcomeUnknown &&
+        error.status === 409 &&
+        error.code === "CONFLICT" &&
+        intent.command.action === "correctCharge" &&
+        error.currentCharge?.property_id === propertyId &&
+        error.currentCharge.id === intent.command.id &&
+        terminalChargeConflict(error.currentCharge, intent.command.input)
+          ? error.currentCharge
+          : null;
       if (!saved) {
         try {
           const other = await journal.load(actorId);
@@ -645,16 +675,18 @@ function BillingWorkspace({
         } catch {
           if (stillMounted()) setReady(false);
         }
-      } else if (terminalDecision) {
+      } else if (terminalDecision || terminalCharge) {
         try {
           // Successful receipts precede final-decision conflicts on the server.
           // Clear only this rejected key, never an ambiguous or foreign outcome.
           await journal.clear(actorId, intent.key);
           if (stillMounted()) {
             setPending(null);
-            setDecision(terminalDecision);
+            if (terminalDecision) {
+              setDecision(terminalDecision);
+              setCharge(null);
+            } else if (terminalCharge) setCharge(terminalCharge);
             setAssessment(null);
-            setCharge(null);
           }
         } catch {
           /* Unconfirmed clearance retains the durable recovery gate. */
@@ -730,6 +762,29 @@ function BillingWorkspace({
   }
   return (
     <div className="billing-workspace">
+      {capabilityLoading && (
+        <p role="status">Loading billing action availability…</p>
+      )}
+      {capabilityError && (
+        <section aria-label="Billing action availability" role="alert">
+          <p>
+            Billing action availability could not be loaded.{" "}
+            {capabilityError.message}
+          </p>
+          {capabilityError.requestId && (
+            <p>Support request ID: {capabilityError.requestId}</p>
+          )}
+          <button
+            type="button"
+            disabled={capabilityLoading}
+            onClick={() => {
+              setCapabilityRetry((value) => value + 1);
+            }}
+          >
+            Retry billing action availability
+          </button>
+        </section>
+      )}
       <p id="billing-notice" tabIndex={-1} role={failed ? "alert" : "status"}>
         {notice}
       </p>

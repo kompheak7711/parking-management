@@ -17,6 +17,7 @@ import {
   LatePaymentDecision,
   PendingBillingCommand,
   parseUsd,
+  invoiceApi,
 } from "./invoiceClient";
 const propertyId = "property-one";
 const capabilities = [
@@ -193,6 +194,291 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("V1-047 staff billing workflows", () => {
+  it.each([
+    "first-confirmation",
+    "reload",
+    "already-reversed-reduction",
+    "lost-success",
+    "foreign-property",
+    "foreign-charge",
+    "malformed",
+    "nonterminal",
+    "forbidden",
+    "unknown",
+    "key-conflict",
+    "clear-failure",
+  ])(
+    "actual client and UI recover only exact terminal charge conflicts: %s",
+    async (variant) => {
+      const { api } = setup("UNPAID");
+      const input =
+        variant === "already-reversed-reduction"
+          ? {
+              kind: "REDUCTION_REVERSAL" as const,
+              reverses_correction_id: "prior-reduction",
+              reason: "approved",
+            }
+          : {
+              kind: "REDUCTION" as const,
+              amount: parseUsd("5"),
+              reason: "approved",
+            };
+      const saved: PendingBillingCommand = {
+        key: "saved-charge",
+        command: { action: "correctCharge", propertyId, id: "charge", input },
+      };
+      const journal = memoryJournal(
+        variant === "first-confirmation" ? null : saved,
+      );
+      const corrections =
+        variant === "already-reversed-reduction"
+          ? [
+              {
+                id: "prior-reduction",
+                kind: "REDUCTION",
+                active: false,
+                amount: parseUsd("5"),
+              },
+              {
+                id: "reversal",
+                kind: "REDUCTION_REVERSAL",
+                reverses_correction_id: "prior-reduction",
+                amount: parseUsd("5"),
+              },
+            ]
+          : [
+              {
+                id: "reversal",
+                kind: "CHARGE_REVERSAL",
+                active: true,
+                amount: parseUsd("15"),
+                resulting_obligation:
+                  variant === "malformed" ? null : parseUsd("0"),
+              },
+            ];
+      const current = {
+        id: variant === "foreign-charge" ? "other" : "charge",
+        property_id: variant === "foreign-property" ? "other" : propertyId,
+        customer_id: "customer-one",
+        original_amount: parseUsd("15"),
+        adjusted_obligation: parseUsd(
+          variant === "already-reversed-reduction" ? "15" : "0",
+        ),
+        remaining_balance: parseUsd(
+          variant === "already-reversed-reduction" ? "15" : "0",
+        ),
+        corrections: variant === "nonterminal" ? [] : corrections,
+      };
+      const unresolved = [
+        "foreign-property",
+        "foreign-charge",
+        "malformed",
+        "nonterminal",
+        "forbidden",
+        "unknown",
+        "key-conflict",
+        "clear-failure",
+      ].includes(variant);
+      const fetcher = vi.spyOn(globalThis, "fetch").mockImplementation(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify(
+              variant === "lost-success"
+                ? { data: current }
+                : {
+                    error: {
+                      code:
+                        variant === "key-conflict"
+                          ? "IDEMPOTENCY_KEY_REUSED"
+                          : "CONFLICT",
+                      current_state: current,
+                    },
+                    meta: { request_id: "charge-conflict" },
+                  },
+            ),
+            {
+              status:
+                variant === "lost-success"
+                  ? 200
+                  : variant === "forbidden"
+                    ? 403
+                    : variant === "unknown"
+                      ? 503
+                      : 409,
+            },
+          ),
+        ),
+      );
+      vi.spyOn(document, "cookie", "get").mockReturnValue(
+        "__Host-prm_csrf=synthetic",
+      );
+      api.correctCharge = invoiceApi.correctCharge;
+      if (variant === "clear-failure")
+        journal.clear.mockRejectedValue(new Error("storage unavailable"));
+      let mounted = render(
+        <InvoiceManagement
+          api={api}
+          journal={journal}
+          actorId="actor"
+          propertyId={propertyId}
+        />,
+      );
+      if (variant === "first-confirmation") {
+        await loadInvoice();
+        fireEvent.click(
+          screen.getByRole("button", { name: "Review late payment" }),
+        );
+        await screen.findByRole("heading", { name: "Late-payment review" });
+        fill("Final decision", "REDUCED");
+        fill("Exact reduced amount (USD; REDUCED only)", "15");
+        fill("Late-payment decision reason", "approved");
+        fireEvent.click(
+          screen.getByRole("button", { name: "Review final decision" }),
+        );
+        await confirm();
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: "Open separate Late-payment Charge",
+          }),
+        );
+        await screen.findByRole("heading", {
+          name: "Separate Late-payment Charge",
+        });
+        fill("Charge reduction amount (USD)", "5");
+        fill("Charge correction reason", "approved");
+        fireEvent.click(
+          screen.getByRole("button", { name: "Review charge correction" }),
+        );
+        await confirm();
+      } else {
+        await screen.findByRole("button", {
+          name: "Retry exact saved request",
+        });
+        mounted.unmount();
+        mounted = render(
+          <InvoiceManagement
+            api={api}
+            journal={journal}
+            actorId="actor"
+            propertyId={propertyId}
+          />,
+        );
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: "Retry exact saved request",
+          }),
+        );
+      }
+      await waitFor(() => {
+        expect(fetcher).toHaveBeenCalledTimes(1);
+      });
+      if (unresolved) {
+        await screen.findByRole("alert");
+        expect(await journal.load("actor")).toEqual(saved);
+        expect(
+          screen.queryByRole("heading", {
+            name: "Separate Late-payment Charge",
+          }),
+        ).not.toBeInTheDocument();
+        if (variant !== "clear-failure")
+          expect(journal.clear).not.toHaveBeenCalled();
+      } else {
+        await waitFor(() => {
+          expect(
+            screen.queryByRole("region", { name: "Billing reconciliation" }),
+          ).not.toBeInTheDocument();
+        });
+        expect(await journal.load("actor")).toBeNull();
+        await screen.findByRole("heading", {
+          name: "Separate Late-payment Charge",
+        });
+        expect(journal.clear).toHaveBeenLastCalledWith(
+          "actor",
+          variant === "first-confirmation"
+            ? expect.any(String)
+            : "saved-charge",
+        );
+      }
+      expect(fetcher.mock.calls[0]?.[0]).toBe(
+        "/api/v1/late-payment-charges/charge/corrections",
+      );
+      expect(fetcher.mock.calls[0]?.[1]?.headers).toHaveProperty(
+        "Idempotency-Key",
+        variant === "first-confirmation" ? expect.any(String) : "saved-charge",
+      );
+      mounted.unmount();
+    },
+  );
+  it.each(["capability-read-503", "<unsafe>"])(
+    "reports capability read failure separately and explicitly retries: %s",
+    async (requestId) => {
+      const { api, journal } = setup();
+      api.capabilities = invoiceApi.capabilities;
+      const fetcher = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              error: { code: "UNAVAILABLE", fields: ["reason"] },
+              meta: { request_id: requestId },
+            }),
+            { status: 503 },
+          ),
+        )
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              data: {
+                property_id: propertyId,
+                billing_capabilities: ["billing.generate"],
+              },
+            }),
+          ),
+        );
+      render(
+        <InvoiceManagement
+          api={api}
+          journal={journal}
+          actorId="actor"
+          propertyId={propertyId}
+        />,
+      );
+      const error = await screen.findByRole("alert", {
+        name: "Billing action availability",
+      });
+      if (requestId === "<unsafe>")
+        expect(error).not.toHaveTextContent("Support request ID");
+      else
+        expect(error).toHaveTextContent(
+          "Support request ID: capability-read-503",
+        );
+      expect(
+        screen.queryByRole("heading", { name: "Billing runs" }),
+      ).not.toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Load invoices" }));
+      await screen.findByRole("button", { name: "INV-047" });
+      expect(error).toBeInTheDocument();
+      expect(
+        screen.getByLabelText("Invoice ID to inspect"),
+      ).not.toHaveAttribute("aria-invalid");
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "Retry billing action availability",
+        }),
+      );
+      await screen.findByRole("heading", { name: "Billing runs" });
+      expect(
+        screen.queryByRole("alert", { name: "Billing action availability" }),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByText(/Support request ID:/)).not.toBeInTheDocument();
+      expect(fetcher).toHaveBeenCalledTimes(2);
+      expect(api.list).toHaveBeenCalledTimes(1);
+      expect(
+        screen.getByLabelText("Logical billing run key"),
+      ).not.toHaveAttribute("aria-invalid");
+    },
+  );
   it("TEST-FE-235 hides commands without server-granted capabilities while preserving invoice inspection", async () => {
     const { api, journal } = setup("DRAFT", []);
     render(
