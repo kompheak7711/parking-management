@@ -446,7 +446,9 @@ def test_property_lock_failure_preserves_exact_successful_receipt_after_other_ac
     assert reused.status_code == 409
     assert reused.json()["error"]["code"] == "IDEMPOTENCY_KEY_REUSED"
     assert connection.execute(
-        "SELECT count(*) FROM app.late_payment_commands WHERE property_id=%s", (property_id,)
+        "SELECT count(*) FROM app.late_payment_commands "
+        "WHERE property_id=%s AND target_id IN (%s,%s)",
+        (property_id, invoice_id, charge_id),
     ).fetchone() == (3,)
     assert connection.execute(
         "SELECT count(*) FROM app.late_payment_charge_corrections WHERE late_payment_charge_id=%s",

@@ -11064,6 +11064,28 @@
       "notes": "Changed idempotent input and a correction that would undercut active future applications return stable IDEMPOTENCY_KEY_REUSED and APPLICATION_REVERSAL_REQUIRED envelopes without exception detail."
     },
     {
+      "test_id": "test_database_failure_cannot_replace_an_existing_receipt_with_terminal_state",
+      "upstream_ids": [
+        "API-016",
+        "UI-015"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_late_payment.py",
+      "status": "implemented",
+      "notes": "Actual service/HTTP fault injection retains ambiguity for generic database failures before receipt lookup, during fetch or commit; subsequent exact replay returns the original status/body without substituting terminal current state."
+    },
+    {
+      "test_id": "test_property_lock_failure_preserves_exact_successful_receipt_after_other_actor_reversal",
+      "upstream_ids": [
+        "API-016",
+        "UI-015"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL held Property lock yields safe 503 for saved decision and charge requests after another actor reversal; releasing the lock restores the original receipt, while receipt-checked competing conflicts and key reuse remain distinct with no duplicate effects."
+    },
+    {
       "test_id": "test_generic_conflicts_return_only_authorized_current_safe_state",
       "upstream_ids": ["API-018", "SEC-020"],
       "test_level": "API",
