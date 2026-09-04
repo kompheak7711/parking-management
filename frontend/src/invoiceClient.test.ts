@@ -121,7 +121,7 @@ describe("V1-047 invoice client", () => {
           : invoiceApi.decide(
               "invoice/one",
               "WAIVED",
-              usd(0),
+              parseUsd("0"),
               "reason",
               "saved",
             )
