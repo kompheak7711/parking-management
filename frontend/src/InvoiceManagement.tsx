@@ -76,22 +76,20 @@ function EvidenceView({ value }: { value: JsonValue }) {
 function ConfirmationDialog({
   children,
   onCancel,
+  opener,
 }: {
   children: ReactNode;
   onCancel: () => void;
+  opener: HTMLElement | null;
 }) {
   const dialog = useRef<HTMLElement>(null);
   useEffect(() => {
-    const opener =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
     dialog.current?.focus();
     return () => {
       if (opener?.isConnected && !opener.matches(":disabled")) opener.focus();
       else document.getElementById("billing-notice")?.focus();
     };
-  }, []);
+  }, [opener]);
   return (
     <section
       ref={dialog}
@@ -285,6 +283,7 @@ function BillingWorkspace({
   const [failed, setFailed] = useState(false);
   const [validation, setValidation] = useState<InvoiceClientError | null>(null);
   const errorForm = useRef<HTMLFormElement | null>(null);
+  const confirmationOpener = useRef<HTMLElement | null>(null);
   const transmission = useRef(new AbortController());
   const alive = useRef(true),
     lock = useRef(false);
@@ -518,6 +517,11 @@ function BillingWorkspace({
           "Voiding ends this obligation and records an immutable void event and reason. Original invoice history is preserved. The server checks current authority, version and unresolved dependencies.",
       };
     setFailed(false);
+    // Capture before rendering disables the fieldset and the browser blurs it.
+    confirmationOpener.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
     setPreview({ pending: { key: crypto.randomUUID(), command }, context });
     setNotice("Review the exact action and evidence, then explicitly confirm.");
   }
@@ -1347,7 +1351,8 @@ function BillingWorkspace({
                 {lastRun && run.status === "RETRYABLE" && (
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(event) => {
+                      confirmationOpener.current = event.currentTarget;
                       setPreview({ pending: lastRun, context: run.evidence });
                     }}
                   >
@@ -1361,6 +1366,7 @@ function BillingWorkspace({
       </fieldset>
       {preview && (
         <ConfirmationDialog
+          opener={confirmationOpener.current}
           onCancel={() => {
             if (!busy) {
               setPreview(null);

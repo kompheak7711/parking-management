@@ -1097,6 +1097,21 @@ describe("V1-047 bounded correction regressions", () => {
     ).not.toBeInTheDocument();
   });
   it("TEST-FE-258 contains dialog keyboard focus and restores cancellation and completion focus", async () => {
+    // Real browsers blur a focused descendant when its fieldset is disabled.
+    // JSDOM does not, so reproduce that transition before passive dialog effects.
+    const setAttribute = HTMLFieldSetElement.prototype.setAttribute;
+    vi.spyOn(HTMLFieldSetElement.prototype, "setAttribute").mockImplementation(
+      function (this: HTMLFieldSetElement, name: string, value: string) {
+        setAttribute.call(this, name, value);
+        if (
+          name === "disabled" &&
+          document.activeElement instanceof HTMLElement &&
+          this.contains(document.activeElement)
+        ) {
+          document.activeElement.blur();
+        }
+      },
+    );
     const { api, journal } = setup();
     render(
       <InvoiceManagement
