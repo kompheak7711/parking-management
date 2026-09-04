@@ -662,7 +662,9 @@ def test_late_payment_traceability_mappings_are_truthful() -> None:
             "API-016",
             "UI-015",
         ],
-        "test_property_lock_failure_preserves_exact_successful_receipt_after_other_actor_reversal": [
+        (
+            "test_property_lock_failure_preserves_exact_successful_receipt_after_other_actor_reversal"
+        ): [
             "API-016",
             "UI-015",
         ],
