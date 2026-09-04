@@ -14,6 +14,7 @@ import {
   InvoiceApi,
   InvoiceClientError,
   InvoiceResource,
+  LatePaymentDecision,
   PendingBillingCommand,
   parseUsd,
 } from "./invoiceClient";
@@ -1197,10 +1198,180 @@ describe("V1-047 bounded correction regressions", () => {
       screen.getByLabelText("Authorized obligation ID"),
     ).not.toHaveAttribute("aria-invalid");
     fireEvent.click(
-      screen.getByRole("button", { name: "Review draft correction" }),
+      screen.getByRole("button", { name: "Review invoice issuance" }),
     );
     expect(field).not.toHaveAttribute("aria-invalid");
+    await confirm();
+    await screen.findByText(/Command confirmed/);
+    expect(
+      screen.queryByText("Support request ID: request-safe-123"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("reason: Check this value."),
+    ).not.toBeInTheDocument();
   });
+  it("replaces read feedback and never associates read errors with a previous form", async () => {
+    const { api, journal } = setup();
+    vi.mocked(api.list).mockRejectedValueOnce(
+      new InvoiceClientError(
+        503,
+        "UNAVAILABLE",
+        false,
+        null,
+        ["reason"],
+        "read-failure-1",
+      ),
+    );
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    await screen.findByText("Load authorized invoices to begin.");
+    fireEvent.click(screen.getByRole("button", { name: "Load invoices" }));
+    await screen.findByText("Support request ID: read-failure-1");
+    expect(screen.getByLabelText("Invoice ID to inspect")).not.toHaveAttribute(
+      "aria-invalid",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Load invoices" }));
+    await screen.findByRole("button", { name: "INV-047" });
+    expect(
+      screen.queryByText("Support request ID: read-failure-1"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("reason: Check this value."),
+    ).not.toBeInTheDocument();
+  });
+  it.each([
+    "first-confirmation",
+    "reload",
+    "lost-success",
+    "foreign-property",
+    "foreign-invoice",
+    "unknown",
+    "forbidden",
+    "key-conflict",
+    "clear-failure",
+  ])(
+    "reconciles only an exact final late-payment decision: %s",
+    async (variant) => {
+      const { api } = setup("UNPAID");
+      const saved: PendingBillingCommand = {
+        key: "saved-decision",
+        command: {
+          action: "decide",
+          propertyId,
+          id: "invoice-one",
+          outcome: "WAIVED",
+          amount: parseUsd("0"),
+          reason: "reviewed waiver",
+        },
+      };
+      const journal = memoryJournal(
+        variant === "first-confirmation" ? null : saved,
+      );
+      const current: LatePaymentDecision = {
+        id: "decision-by-other-actor",
+        property_id: variant === "foreign-property" ? "other" : propertyId,
+        customer_id: "customer-one",
+        source_invoice: {
+          id: variant === "foreign-invoice" ? "other" : "invoice-one",
+        },
+        outcome: "REDUCED",
+        approved_amount: parseUsd("15"),
+        calculated_default_amount: parseUsd("31"),
+        charge: { id: "charge" },
+        evidence: { actor: "actor-B" },
+      };
+      const unresolved = [
+        "foreign-property",
+        "foreign-invoice",
+        "unknown",
+        "forbidden",
+        "key-conflict",
+        "clear-failure",
+      ].includes(variant);
+      if (variant === "lost-success")
+        vi.mocked(api.decide).mockResolvedValue({
+          ...current,
+          id: "own-replayed-decision",
+          outcome: "WAIVED",
+          approved_amount: parseUsd("0"),
+          charge: null,
+        });
+      else
+        vi.mocked(api.decide).mockRejectedValue(
+          new InvoiceClientError(
+            variant === "unknown" ? 503 : variant === "forbidden" ? 403 : 409,
+            variant === "key-conflict" ? "IDEMPOTENCY_KEY_REUSED" : "CONFLICT",
+            variant === "unknown",
+            null,
+            [],
+            "decision-conflict",
+            current,
+          ),
+        );
+      if (variant === "clear-failure")
+        journal.clear.mockRejectedValue(new Error("storage unavailable"));
+      render(
+        <InvoiceManagement
+          api={api}
+          journal={journal}
+          actorId="actor"
+          propertyId={propertyId}
+        />,
+      );
+      if (variant === "first-confirmation") {
+        await loadInvoice();
+        fireEvent.click(
+          screen.getByRole("button", { name: "Review late payment" }),
+        );
+        await screen.findByRole("heading", { name: "Late-payment review" });
+        fill("Final decision", "WAIVED");
+        fill("Late-payment decision reason", "reviewed waiver");
+        fireEvent.click(
+          screen.getByRole("button", { name: "Review final decision" }),
+        );
+        await confirm();
+      } else
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: "Retry exact saved request",
+          }),
+        );
+      if (unresolved) {
+        await screen.findByRole("alert");
+        expect(await journal.load("actor")).not.toBeNull();
+        expect(
+          screen.queryByRole("region", { name: "Final late-payment decision" }),
+        ).not.toBeInTheDocument();
+        if (variant !== "clear-failure")
+          expect(journal.clear).not.toHaveBeenCalled();
+      } else {
+        await screen.findByRole("heading", {
+          name:
+            variant === "lost-success"
+              ? "Final decision: WAIVED"
+              : "Final decision: REDUCED",
+        });
+        expect(await journal.load("actor")).toBeNull();
+        expect(
+          screen.queryByRole("region", { name: "Billing reconciliation" }),
+        ).not.toBeInTheDocument();
+        expect(journal.clear).toHaveBeenCalledWith(
+          "actor",
+          variant === "first-confirmation"
+            ? expect.any(String)
+            : "saved-decision",
+        );
+      }
+      expect(api.decide).toHaveBeenCalledTimes(1);
+      expect(api.adjust).not.toHaveBeenCalled();
+    },
+  );
   it.each([1n, 2n])(
     "previews near-bigint-limit adjustments with exact arithmetic (delta %s)",
     async (delta) => {

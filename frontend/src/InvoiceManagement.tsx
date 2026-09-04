@@ -368,11 +368,14 @@ function BillingWorkspace({
     lock.current = true;
     setBusy(true);
     setFailed(false);
+    setValidation(null);
+    errorForm.current = null;
     try {
       await task();
     } catch (error) {
       if (stillMounted()) {
         setNotice(message(error));
+        setValidation(error instanceof InvoiceClientError ? error : null);
         setFailed(true);
       }
     } finally {
@@ -422,7 +425,13 @@ function BillingWorkspace({
       setNotice("Invoice and immutable history loaded.");
     });
   }
-  function review(command: BillingCommand, context: JsonValue = null) {
+  function review(
+    command: BillingCommand,
+    context: JsonValue = null,
+    form: HTMLFormElement | null = null,
+  ) {
+    setValidation(null);
+    errorForm.current = form;
     if (blocked || lock.current) return;
     if (command.action === "adjust" && invoice?.id === command.id) {
       const line = invoice.lines.find(
@@ -534,7 +543,11 @@ function BillingWorkspace({
     errorForm.current = event.currentTarget;
     setValidation(null);
     try {
-      review(build(new FormData(event.currentTarget)), context);
+      review(
+        build(new FormData(event.currentTarget)),
+        context,
+        event.currentTarget,
+      );
     } catch {
       setFailed(true);
       setNotice(
@@ -548,6 +561,8 @@ function BillingWorkspace({
     lock.current = true;
     setBusy(true);
     setFailed(false);
+    setValidation(null);
+    if (retry) errorForm.current = null;
     let saved = retry;
     const signal = transmission.current.signal;
     try {
@@ -613,12 +628,36 @@ function BillingWorkspace({
         "Command confirmed. History is preserved. Reload the list separately to refresh filters; do not repeat a successful command.",
       );
     } catch (error) {
+      const terminalDecision =
+        error instanceof InvoiceClientError &&
+        !error.outcomeUnknown &&
+        error.status === 409 &&
+        error.code === "CONFLICT" &&
+        intent.command.action === "decide" &&
+        error.currentDecision?.property_id === propertyId &&
+        error.currentDecision.source_invoice.id === intent.command.id
+          ? error.currentDecision
+          : null;
       if (!saved) {
         try {
           const other = await journal.load(actorId);
           if (stillMounted()) setPending(other);
         } catch {
           if (stillMounted()) setReady(false);
+        }
+      } else if (terminalDecision) {
+        try {
+          // Successful receipts precede final-decision conflicts on the server.
+          // Clear only this rejected key, never an ambiguous or foreign outcome.
+          await journal.clear(actorId, intent.key);
+          if (stillMounted()) {
+            setPending(null);
+            setDecision(terminalDecision);
+            setAssessment(null);
+            setCharge(null);
+          }
+        } catch {
+          /* Unconfirmed clearance retains the durable recovery gate. */
         }
       } else if (
         error instanceof InvoiceClientError &&

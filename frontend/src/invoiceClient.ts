@@ -198,6 +198,7 @@ export class InvoiceClientError extends Error {
     public readonly currentVersion: number | null = null,
     public readonly fields: readonly string[] = [],
     public readonly requestId: string | null = null,
+    public readonly currentDecision: LatePaymentDecision | null = null,
   ) {
     super(
       outcomeUnknown
@@ -517,6 +518,7 @@ async function transport<T>(
     body: object;
     key: string;
     version?: number;
+    decisionInvoiceId?: string;
   },
   transmission?: BillingTransmission,
 ): Promise<T> {
@@ -554,8 +556,9 @@ async function transport<T>(
       currentVersion: number | null = null;
     let fields: string[] = [];
     let requestId: string | null = null;
+    let currentDecision: LatePaymentDecision | null = null;
     try {
-      const envelope = object(await response.json());
+      const envelope = object(losslessJson(await response.text()));
       const error = object(envelope.error);
       fields = safeFields(error.fields);
       requestId =
@@ -571,6 +574,17 @@ async function transport<T>(
         error.current_version <= 2_147_483_647
       )
         currentVersion = error.current_version;
+      if (
+        response.status === 409 &&
+        code === "CONFLICT" &&
+        command?.decisionInvoiceId
+      ) {
+        // Only this command's authorized, final decision can retire its rejection.
+        // A review snapshot or malformed/foreign state leaves recovery gated.
+        const current = decision(error.current_state);
+        if (current.source_invoice.id === command.decisionInvoiceId)
+          currentDecision = current;
+      }
     } catch {
       /* Do not reflect arbitrary server content. */
     }
@@ -581,6 +595,7 @@ async function transport<T>(
       currentVersion,
       fields,
       requestId,
+      currentDecision,
     );
   }
   try {
@@ -607,6 +622,7 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
       body: object;
       key: string;
       version?: number;
+      decisionInvoiceId?: string;
     },
   ) {
     return transport(path, decode, command, transmission);
@@ -709,6 +725,7 @@ function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
         resource(decision),
         {
           key,
+          decisionInvoiceId: id,
           body: {
             outcome,
             approved_amount: requestMoney(approvedAmount),

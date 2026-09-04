@@ -77,6 +77,68 @@ afterEach(() => {
   Object.defineProperty(document, "cookie", { configurable: true, value: "" });
 });
 describe("V1-047 invoice client", () => {
+  it.each([
+    "valid",
+    "foreign",
+    "malformed",
+    "key-conflict",
+    "server-error",
+    "read",
+  ])(
+    "decodes only the exact terminal decision conflict: %s",
+    async (variant) => {
+      const state = {
+        id: "decision",
+        property_id: "property/one",
+        customer_id: "customer",
+        source_invoice: { id: variant === "foreign" ? "other" : "invoice/one" },
+        outcome: variant === "malformed" ? "PENDING" : "CONFIRMED_DEFAULT",
+        approved_amount: usd(3100),
+        calculated_default_amount: usd(3100),
+        charge: { id: "charge" },
+      };
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          new Response(
+            JSON.stringify({
+              error: {
+                code:
+                  variant === "key-conflict"
+                    ? "IDEMPOTENCY_KEY_REUSED"
+                    : "CONFLICT",
+                current_state: state,
+              },
+              meta: { request_id: "conflict-123" },
+            }),
+            { status: variant === "server-error" ? 503 : 409 },
+          ),
+        ),
+      );
+      const result = await (
+        variant === "read"
+          ? invoiceApi.lateDecision("invoice/one")
+          : invoiceApi.decide(
+              "invoice/one",
+              "WAIVED",
+              usd(0),
+              "reason",
+              "saved",
+            )
+      ).catch((error: unknown) => error);
+      expect(result).toBeInstanceOf(InvoiceClientError);
+      expect(result).toMatchObject({ requestId: "conflict-123" });
+      if (variant === "valid")
+        expect(result).toMatchObject({
+          currentDecision: {
+            id: "decision",
+            source_invoice: { id: "invoice/one" },
+            outcome: "CONFIRMED_DEFAULT",
+          },
+        });
+      else expect(result).toMatchObject({ currentDecision: null });
+    },
+  );
   it("parses exact USD cents without rounding or floating-point multiplication", () => {
     expect(parseUsd("15")).toEqual(usd(1500));
     expect(parseUsd("0.01")).toEqual(usd(1));
