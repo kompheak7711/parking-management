@@ -1,0 +1,1182 @@
+import { FormEvent, useEffect, useRef, useState } from "react";
+import {
+  BillingCommand,
+  BillingJournal,
+  BillingRun,
+  ChargeCorrectionInput,
+  DecisionOutcome,
+  InvoiceApi,
+  InvoiceCategory,
+  InvoiceClientError,
+  InvoiceFilters,
+  InvoiceResource,
+  InvoiceStatus,
+  JsonValue,
+  LatePaymentCharge,
+  LatePaymentDecision,
+  LatePaymentReview,
+  PendingBillingCommand,
+  billingJournal,
+  executeBilling,
+  formatUsd,
+  money,
+  parseUsd,
+} from "./invoiceClient";
+
+export interface InvoiceManagementProps {
+  api: InvoiceApi;
+  actorId: string;
+  propertyId?: string;
+  journal?: BillingJournal;
+}
+function EvidenceView({ value }: { value: JsonValue }) {
+  if (value === null) return <span>None</span>;
+  if (typeof value !== "object") return <span>{String(value)}</span>;
+  if (Array.isArray(value))
+    return value.length ? (
+      <ol>
+        {value.map((item, index) => (
+          <li key={index}>
+            <EvidenceView value={item} />
+          </li>
+        ))}
+      </ol>
+    ) : (
+      <span>None</span>
+    );
+  if ("currency" in value && "minor_units" in value) {
+    try {
+      return <span>{formatUsd(money(value))}</span>;
+    } catch {
+      return <span>Invalid monetary evidence</span>;
+    }
+  }
+  return (
+    <dl className="billing-evidence">
+      {Object.entries(value).map(([key, child]) => (
+        <div key={key}>
+          <dt>{key.replaceAll("_", " ")}</dt>
+          <dd>
+            <EvidenceView value={child} />
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+function Field({
+  name,
+  label,
+  type = "text",
+  required = true,
+  maxLength = 500,
+  pattern,
+}: {
+  name: string;
+  label: string;
+  type?: string;
+  required?: boolean;
+  maxLength?: number;
+  pattern?: string;
+}) {
+  return (
+    <label>
+      {label}
+      <input
+        name={name}
+        type={type}
+        required={required}
+        maxLength={maxLength}
+        pattern={pattern}
+      />
+    </label>
+  );
+}
+function value(data: FormData, name: string) {
+  const field = data.get(name);
+  return typeof field === "string" ? field.trim() : "";
+}
+function positive(data: FormData, name = "amount") {
+  const amount = parseUsd(value(data, name));
+  if (amount.minor_units === 0)
+    throw new Error(
+      "Enter a positive USD amount with at most two decimal places.",
+    );
+  return amount;
+}
+const categories: InvoiceCategory[] = [
+  "RENT",
+  "UTILITIES",
+  "SERVICE_CHARGES",
+  "DAMAGE_CHARGES",
+  "MISCELLANEOUS_CHARGES",
+];
+const statuses: InvoiceStatus[] = [
+  "DRAFT",
+  "UNPAID",
+  "PARTIALLY_PAID",
+  "PAID",
+  "VOID",
+];
+
+export function InvoiceManagement({
+  api,
+  actorId,
+  propertyId = "",
+  journal = billingJournal,
+}: InvoiceManagementProps) {
+  const [manualProperty, setManualProperty] = useState("");
+  const scope = propertyId || manualProperty;
+  return (
+    <section className="panel" aria-labelledby="billing-heading">
+      <h2 id="billing-heading">Billing and Invoices</h2>
+      <p>
+        Approved source obligations only. Financial history is preserved;
+        late-payment charges are separate from invoices.
+      </p>
+      {!propertyId && (
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            setManualProperty(
+              value(new FormData(event.currentTarget), "property"),
+            );
+          }}
+        >
+          <Field name="property" label="Billing Property ID" />
+          <button type="submit">Open billing Property</button>
+        </form>
+      )}
+      {scope && actorId ? (
+        <BillingWorkspace
+          key={actorId + ":" + scope}
+          api={api}
+          actorId={actorId}
+          propertyId={scope}
+          journal={journal}
+        />
+      ) : (
+        <p>Select an authorized Property to load billing.</p>
+      )}
+    </section>
+  );
+}
+function BillingWorkspace({
+  api,
+  actorId,
+  propertyId,
+  journal,
+}: {
+  api: InvoiceApi;
+  actorId: string;
+  propertyId: string;
+  journal: BillingJournal;
+}) {
+  const [items, setItems] = useState<InvoiceResource[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [capabilities, setCapabilities] = useState<string[]>([]);
+  const [filters, setFilters] = useState<InvoiceFilters>({});
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [invoice, setInvoice] = useState<InvoiceResource | null>(null);
+  const [assessment, setAssessment] = useState<LatePaymentReview | null>(null);
+  const [decision, setDecision] = useState<LatePaymentDecision | null>(null);
+  const [charge, setCharge] = useState<LatePaymentCharge | null>(null);
+  const [run, setRun] = useState<BillingRun | null>(null);
+  const [lastRun, setLastRun] = useState<PendingBillingCommand | null>(null);
+  const [preview, setPreview] = useState<{
+    pending: PendingBillingCommand;
+    context: JsonValue;
+  } | null>(null);
+  const [pending, setPending] = useState<PendingBillingCommand | null>(null);
+  const [ready, setReady] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("Checking billing recovery…");
+  const [failed, setFailed] = useState(false);
+  const alive = useRef(true),
+    lock = useRef(false);
+  function stillMounted() {
+    return alive.current;
+  }
+  const can = (capability: string) => capabilities.includes(capability);
+  const blocked = busy || !ready || pending !== null || preview !== null;
+  useEffect(() => {
+    alive.current = true;
+    void journal
+      .load(actorId)
+      .then((saved) => {
+        if (!stillMounted()) return;
+        setPending(saved);
+        setReady(true);
+        setNotice(
+          saved
+            ? "An earlier command needs reconciliation. Retry its exact saved request; no new financial action is allowed."
+            : "Load authorized invoices to begin.",
+        );
+      })
+      .catch(() => {
+        if (stillMounted()) {
+          setNotice(
+            "Billing recovery unavailable. Financial actions remain blocked.",
+          );
+          setFailed(true);
+        }
+      });
+    return () => {
+      alive.current = false;
+    };
+  }, [actorId, journal]);
+  function message(error: unknown) {
+    return error instanceof InvoiceClientError
+      ? error.message
+      : "The billing request could not be verified. Reload or reconcile before continuing.";
+  }
+  async function read(task: () => Promise<void>) {
+    if (lock.current) return;
+    lock.current = true;
+    setBusy(true);
+    setFailed(false);
+    try {
+      await task();
+    } catch (error) {
+      if (stillMounted()) {
+        setNotice(message(error));
+        setFailed(true);
+      }
+    } finally {
+      lock.current = false;
+      if (stillMounted()) setBusy(false);
+    }
+  }
+  async function load(nextFilters: InvoiceFilters, append = false) {
+    setCapabilities([]);
+    await read(async () => {
+      const page = await api.list(propertyId, nextFilters);
+      if (!stillMounted()) return;
+      if (page.items.some((item) => item.property_id !== propertyId))
+        throw new Error("Property scope mismatch");
+      setItems((old) =>
+        append
+          ? [
+              ...old,
+              ...page.items.filter(
+                (item) => !old.some((existing) => existing.id === item.id),
+              ),
+            ]
+          : page.items,
+      );
+      setCursor(page.next_cursor);
+      setCapabilities(page.capabilities);
+      setFilters(nextFilters);
+      setLoaded(true);
+      setNotice(
+        page.items.length
+          ? "Authorized invoices loaded."
+          : "No invoices match these filters.",
+      );
+    });
+  }
+  async function openInvoice(id: string) {
+    setInvoice(null);
+    setAssessment(null);
+    setDecision(null);
+    setCharge(null);
+    await read(async () => {
+      const result = await api.get(id);
+      if (!stillMounted()) return;
+      if (result.property_id !== propertyId || result.id !== id)
+        throw new Error("Invoice scope mismatch");
+      setInvoice(result);
+      setNotice("Invoice and immutable history loaded.");
+    });
+  }
+  function review(command: BillingCommand, context: JsonValue = null) {
+    if (blocked || lock.current) return;
+    if (command.action === "adjust" && invoice?.id === command.id) {
+      const line = invoice.lines.find(
+        (item) => item.id === command.input.invoice_line_id,
+      );
+      if (!line) throw new Error("Invoice line unavailable");
+      const delta =
+        BigInt(command.input.amount.minor_units) *
+        (command.input.adjustment_type === "DEBIT" ? 1n : -1n);
+      const adjusted = BigInt(invoice.adjusted_total.minor_units) + delta;
+      const applied = BigInt(invoice.active_application_total.minor_units);
+      if (
+        BigInt(line.adjusted_amount.minor_units) + delta < 0n ||
+        adjusted < applied ||
+        adjusted > 9_000_000_000_000_000n
+      ) {
+        throw new Error("Adjustment outside displayed balance bounds");
+      }
+      const outstanding = adjusted - applied;
+      context = {
+        reviewed_invoice: context,
+        estimated_adjusted_total: {
+          currency: "USD",
+          minor_units: Number(adjusted),
+        },
+        estimated_outstanding_balance: {
+          currency: "USD",
+          minor_units: Number(outstanding),
+        },
+        estimated_status:
+          outstanding === 0n
+            ? "PAID"
+            : applied > 0n
+              ? "PARTIALLY_PAID"
+              : "UNPAID",
+        notice:
+          "Snapshot estimate only. The server validates the current version, line balance and status at confirmation.",
+      };
+    }
+    setFailed(false);
+    setPreview({ pending: { key: crypto.randomUUID(), command }, context });
+    setNotice("Review the exact action and evidence, then explicitly confirm.");
+  }
+  function formReview(
+    event: FormEvent<HTMLFormElement>,
+    build: (data: FormData) => BillingCommand,
+    context: JsonValue = null,
+  ) {
+    event.preventDefault();
+    try {
+      review(build(new FormData(event.currentTarget)), context);
+    } catch {
+      setFailed(true);
+      setNotice(
+        "Check required fields. Use an exact positive USD amount with at most two decimal places.",
+      );
+    }
+  }
+  async function submit(intent: PendingBillingCommand, retry: boolean) {
+    if (lock.current || !ready || intent.command.propertyId !== propertyId)
+      return;
+    lock.current = true;
+    setBusy(true);
+    setFailed(false);
+    let saved = retry;
+    try {
+      if (!retry) {
+        await journal.begin(actorId, intent);
+        saved = true;
+      }
+      // Persist before sending; no authentication token is stored with the intent.
+      if (stillMounted()) {
+        setPending(intent);
+        setPreview(null);
+        setNotice("Submitting the confirmed billing command…");
+      }
+      const result = await executeBilling(api, intent);
+      if (
+        intent.command.action === "decide" &&
+        (!("source_invoice" in result) ||
+          result.source_invoice.id !== intent.command.id)
+      ) {
+        throw new InvoiceClientError(null, "RESOURCE_MISMATCH", true);
+      }
+      if (
+        intent.command.action === "run" &&
+        (!("run_kind" in result) ||
+          result.run_kind.toLowerCase() !== intent.command.kind ||
+          result.logical_run_key !== intent.command.input.logical_run_key ||
+          result.business_date !== intent.command.input.business_date ||
+          result.period.start !== intent.command.input.period_start ||
+          result.period.end !== intent.command.input.period_end)
+      ) {
+        throw new InvoiceClientError(null, "RESOURCE_MISMATCH", true);
+      }
+      if (
+        result.property_id !== propertyId ||
+        ("id" in intent.command &&
+          intent.command.action !== "decide" &&
+          result.id !== intent.command.id)
+      ) {
+        throw new InvoiceClientError(null, "RESOURCE_MISMATCH", true);
+      }
+      await journal.clear(actorId, intent.key);
+      if (!stillMounted()) return;
+      setPending(null);
+      if ("invoice_number" in result) {
+        setInvoice(result);
+        setAssessment(null);
+        setDecision(null);
+        setCharge(null);
+        setItems((old) =>
+          old.map((item) => (item.id === result.id ? result : item)),
+        );
+      } else if ("run_kind" in result) {
+        setRun(result);
+        setLastRun(intent);
+      } else if ("outcome" in result) {
+        setDecision(result);
+        setAssessment(null);
+        setCharge(null);
+      } else {
+        setCharge(result);
+      }
+      setNotice(
+        "Command confirmed. History is preserved. Reload the list separately to refresh filters; do not repeat a successful command.",
+      );
+    } catch (error) {
+      if (!saved) {
+        try {
+          const other = await journal.load(actorId);
+          if (stillMounted()) setPending(other);
+        } catch {
+          if (stillMounted()) setReady(false);
+        }
+      } else if (
+        !retry &&
+        error instanceof InvoiceClientError &&
+        !error.outcomeUnknown
+      ) {
+        try {
+          await journal.clear(actorId, intent.key);
+          if (stillMounted()) {
+            setPending(null);
+            setInvoice(null);
+            setCapabilities([]);
+          }
+        } catch {
+          /* Keep the durable gate when clearance is not confirmed. */
+        }
+      }
+      if (stillMounted()) {
+        setFailed(true);
+        setNotice(message(error));
+      }
+    } finally {
+      lock.current = false;
+      if (stillMounted()) setBusy(false);
+    }
+  }
+  async function lateReview() {
+    if (!invoice) return;
+    const id = invoice.id;
+    setAssessment(null);
+    setDecision(null);
+    setCharge(null);
+    await read(async () => {
+      const result = await api.lateReview(id);
+      if (!stillMounted()) return;
+      if (result.property_id !== propertyId || result.invoice_id !== id)
+        throw new Error("Assessment scope mismatch");
+      setAssessment(result);
+      if (result.prior_decision !== null) {
+        const prior = await api.lateDecision(id);
+        if (!stillMounted()) return;
+        if (prior.property_id !== propertyId || prior.source_invoice.id !== id)
+          throw new Error("Decision scope mismatch");
+        setDecision(prior);
+      }
+      setNotice(
+        "Late-payment review loaded. The server determines eligibility and the exact default amount.",
+      );
+    });
+  }
+  return (
+    <div className="billing-workspace">
+      <p role={failed ? "alert" : "status"}>{notice}</p>
+      {pending && (
+        <section aria-label="Billing reconciliation">
+          <h3>Reconcile saved billing command</h3>
+          <p>
+            Request {pending.key}. A lost response is not a failed transaction.
+            Do not create a replacement command.
+          </p>
+          {pending.command.propertyId === propertyId ? (
+            <>
+              <EvidenceView value={pending.command as unknown as JsonValue} />
+              <button
+                type="button"
+                disabled={busy || !ready}
+                onClick={() => void submit(pending, true)}
+              >
+                Retry exact saved request
+              </button>
+            </>
+          ) : (
+            <p>
+              The saved request belongs to another Property. Open that Property
+              to reconcile it first.
+            </p>
+          )}
+        </section>
+      )}
+      <fieldset disabled={busy || preview !== null}>
+        <legend>Find invoices</legend>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            const data = new FormData(event.currentTarget);
+            void load({
+              status: (value(data, "status") || undefined) as
+                | InvoiceStatus
+                | undefined,
+              category: (value(data, "category") || undefined) as
+                | InvoiceCategory
+                | undefined,
+              customer_id: value(data, "customer") || undefined,
+              lease_id: value(data, "lease") || undefined,
+            });
+          }}
+        >
+          <label>
+            Invoice status
+            <select name="status">
+              <option value="">All statuses</option>
+              {statuses.map((status) => (
+                <option key={status}>{status}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Invoice category
+            <select name="category">
+              <option value="">All categories</option>
+              {categories.map((category) => (
+                <option key={category}>{category}</option>
+              ))}
+            </select>
+          </label>
+          <Field
+            name="customer"
+            label="Invoice Customer ID filter"
+            required={false}
+          />
+          <Field
+            name="lease"
+            label="Invoice Lease ID filter"
+            required={false}
+          />
+          <button type="submit">Load invoices</button>
+        </form>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void openInvoice(value(new FormData(event.currentTarget), "id"));
+          }}
+        >
+          <Field name="id" label="Invoice ID to inspect" />
+          <button type="submit">Open invoice by ID</button>
+        </form>
+      </fieldset>
+      {loaded &&
+        (items.length ? (
+          <div className="table-scroll">
+            <table>
+              <caption>Invoices for this Property</caption>
+              <thead>
+                <tr>
+                  {[
+                    "Invoice",
+                    "Customer",
+                    "Lease",
+                    "Category",
+                    "Invoice date",
+                    "Due date",
+                    "Original",
+                    "Adjusted",
+                    "Outstanding",
+                    "Status",
+                  ].map((label) => (
+                    <th key={label} scope="col">
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr key={item.id}>
+                    <td>
+                      <button
+                        type="button"
+                        disabled={busy || preview !== null}
+                        onClick={() => void openInvoice(item.id)}
+                      >
+                        {item.invoice_number}
+                      </button>
+                    </td>
+                    <td>{item.customer_id}</td>
+                    <td>{item.lease_id ?? "None"}</td>
+                    <td>{item.category}</td>
+                    <td>{item.invoice_date}</td>
+                    <td>{item.due_date}</td>
+                    <td>{formatUsd(item.original_total)}</td>
+                    <td>{formatUsd(item.adjusted_total)}</td>
+                    <td>{formatUsd(item.outstanding_balance)}</td>
+                    <td>{item.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p>No matching invoices.</p>
+        ))}
+      {cursor && (
+        <button
+          type="button"
+          disabled={busy || preview !== null}
+          onClick={() => void load({ ...filters, cursor }, true)}
+        >
+          Load more invoices
+        </button>
+      )}
+      <fieldset disabled={blocked}>
+        <legend>Authorized billing actions</legend>
+        {can("invoices.create") && (
+          <form
+            onSubmit={(event) => {
+              formReview(event, (data) => ({
+                action: "create",
+                propertyId,
+                obligationId: value(data, "obligation"),
+              }));
+            }}
+          >
+            <h3>Create draft from approved source</h3>
+            <p>
+              Only an existing authorized nonrecurring obligation may supply the
+              Customer, approved category, lines and amount. Rent and Utilities
+              use billing runs.
+            </p>
+            <Field name="obligation" label="Authorized obligation ID" />
+            <button type="submit">Review draft creation</button>
+          </form>
+        )}
+        {invoice && (
+          <section aria-label="Invoice detail">
+            <h3>Invoice {invoice.invoice_number}</h3>
+            <p>
+              Customer {invoice.customer_id} · Lease{" "}
+              {invoice.lease_id ?? "None"} · {invoice.status} · Version{" "}
+              {invoice.version}
+            </p>
+            <p>
+              Original {formatUsd(invoice.original_total)} · Adjusted{" "}
+              {formatUsd(invoice.adjusted_total)} · Active applications{" "}
+              {formatUsd(invoice.active_application_total)} · Outstanding{" "}
+              {formatUsd(invoice.outstanding_balance)}
+            </p>
+            <p>
+              Invoice date {invoice.invoice_date}; due {invoice.due_date}.
+            </p>
+            <h4>Immutable lines and source evidence</h4>
+            {invoice.lines.map((line) => (
+              <article key={line.id}>
+                <h5>{line.description}</h5>
+                <p>
+                  {line.category}: original {formatUsd(line.original_amount)},
+                  adjusted {formatUsd(line.adjusted_amount)}, outstanding{" "}
+                  {formatUsd(line.outstanding_balance)}
+                </p>
+                <EvidenceView
+                  value={{
+                    source: line.source,
+                    calculation: line.calculation_evidence,
+                    period: line.period,
+                  }}
+                />
+              </article>
+            ))}
+            <details>
+              <summary>
+                Complete invoice, application, adjustment, void and audit
+                history
+              </summary>
+              <EvidenceView value={invoice.evidence} />
+            </details>
+            {invoice.status === "DRAFT" && (
+              <>
+                {can("invoices.create") && (
+                  <form
+                    onSubmit={(event) => {
+                      formReview(
+                        event,
+                        (data) => ({
+                          action: "correct",
+                          propertyId,
+                          id: invoice.id,
+                          version: invoice.version,
+                          obligationId: value(data, "obligation"),
+                          reason: value(data, "reason"),
+                        }),
+                        invoice.evidence,
+                      );
+                    }}
+                  >
+                    <Field
+                      name="obligation"
+                      label="Corrected authorized obligation ID"
+                    />
+                    <Field name="reason" label="Draft correction reason" />
+                    <button type="submit">Review draft correction</button>
+                  </form>
+                )}
+                {can("invoices.issue") && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      review(
+                        {
+                          action: "issue",
+                          propertyId,
+                          id: invoice.id,
+                          version: invoice.version,
+                        },
+                        invoice.evidence,
+                      );
+                    }}
+                  >
+                    Review invoice issuance
+                  </button>
+                )}
+              </>
+            )}
+            {invoice.status !== "DRAFT" && invoice.status !== "VOID" && (
+              <>
+                {can("invoices.adjust") && (
+                  <form
+                    onSubmit={(event) => {
+                      formReview(
+                        event,
+                        (data) => ({
+                          action: "adjust",
+                          propertyId,
+                          id: invoice.id,
+                          version: invoice.version,
+                          input: {
+                            invoice_line_id: value(data, "line"),
+                            adjustment_type: value(data, "direction") as
+                              | "DEBIT"
+                              | "CREDIT",
+                            amount: positive(data),
+                            source_reference: value(data, "source"),
+                            reason: value(data, "reason"),
+                          },
+                        }),
+                        invoice.evidence,
+                      );
+                    }}
+                  >
+                    <h4>Append an adjustment</h4>
+                    <p>
+                      Debit increases the obligation; credit decreases it. The
+                      server validates the resulting balance and status without
+                      editing issued lines.
+                    </p>
+                    <label>
+                      Adjustment line
+                      <select name="line">
+                        {invoice.lines.map((line) => (
+                          <option key={line.id} value={line.id}>
+                            {line.description}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Adjustment direction
+                      <select name="direction">
+                        <option>DEBIT</option>
+                        <option>CREDIT</option>
+                      </select>
+                    </label>
+                    <Field
+                      name="amount"
+                      label="Adjustment amount (USD)"
+                      pattern="(0|[1-9][0-9]*)(\.[0-9]{1,2})?"
+                    />
+                    <Field name="source" label="Adjustment source reference" />
+                    <Field name="reason" label="Adjustment reason" />
+                    <button type="submit">Review adjustment</button>
+                  </form>
+                )}
+                {can("invoices.void") && (
+                  <form
+                    onSubmit={(event) => {
+                      formReview(
+                        event,
+                        (data) => ({
+                          action: "void",
+                          propertyId,
+                          id: invoice.id,
+                          version: invoice.version,
+                          reason: value(data, "reason"),
+                        }),
+                        invoice.evidence,
+                      );
+                    }}
+                  >
+                    <h4>Exceptional invoice void</h4>
+                    <p>
+                      Void preserves history and ends this obligation. Active
+                      applications must be reversed through their authorized
+                      workflow first.
+                    </p>
+                    <Field name="reason" label="Invoice void reason" />
+                    <button
+                      type="submit"
+                      disabled={
+                        invoice.active_application_total.minor_units > 0
+                      }
+                    >
+                      Review invoice void
+                    </button>
+                  </form>
+                )}
+              </>
+            )}
+            {can("late_payment.review") && (
+              <button type="button" onClick={() => void lateReview()}>
+                Review late payment
+              </button>
+            )}
+          </section>
+        )}
+        {assessment && (
+          <section aria-label="Late-payment assessment">
+            <h3>Late-payment review</h3>
+            <p>
+              Overdue {formatUsd(assessment.overdue_balance)} · Default 10% ·
+              Calculated default{" "}
+              {formatUsd(assessment.calculated_default_amount)}
+            </p>
+            <p>
+              {assessment.eligible
+                ? "Eligible for one final decision."
+                : "Not eligible: " + assessment.blocking_conditions.join(", ")}
+            </p>
+            <EvidenceView value={assessment.prior_decision} />
+            {assessment.eligible &&
+              assessment.prior_decision === null &&
+              can("late_payment.final_decision") && (
+                <form
+                  onSubmit={(event) => {
+                    formReview(
+                      event,
+                      (data) => {
+                        const outcome = value(
+                          data,
+                          "outcome",
+                        ) as DecisionOutcome;
+                        const amount =
+                          outcome === "WAIVED"
+                            ? parseUsd("0")
+                            : outcome === "CONFIRMED_DEFAULT"
+                              ? assessment.calculated_default_amount
+                              : positive(data);
+                        if (
+                          outcome === "REDUCED" &&
+                          amount.minor_units >=
+                            assessment.calculated_default_amount.minor_units
+                        )
+                          throw new Error("Reduction must be below default.");
+                        return {
+                          action: "decide",
+                          propertyId,
+                          id: assessment.invoice_id,
+                          outcome,
+                          amount,
+                          reason: value(data, "reason"),
+                        };
+                      },
+                      {
+                        overdue:
+                          assessment.overdue_balance as unknown as JsonValue,
+                        default_amount:
+                          assessment.calculated_default_amount as unknown as JsonValue,
+                      },
+                    );
+                  }}
+                >
+                  <p>
+                    This decision is final. A positive amount creates a separate
+                    Late-payment Charge; a waiver creates no charge. The source
+                    invoice is unchanged.
+                  </p>
+                  <label>
+                    Final decision
+                    <select name="outcome">
+                      <option>CONFIRMED_DEFAULT</option>
+                      <option>REDUCED</option>
+                      <option>WAIVED</option>
+                    </select>
+                  </label>
+                  <Field
+                    name="amount"
+                    label="Exact reduced amount (USD; REDUCED only)"
+                    required={false}
+                  />
+                  <Field name="reason" label="Late-payment decision reason" />
+                  <button type="submit">Review final decision</button>
+                </form>
+              )}
+          </section>
+        )}
+        {decision && (
+          <section aria-label="Final late-payment decision">
+            <h3>Final decision: {decision.outcome}</h3>
+            <p>
+              Approved {formatUsd(decision.approved_amount)}. This is not an
+              invoice adjustment.
+            </p>
+            <EvidenceView value={decision.evidence} />
+            {decision.charge && can("late_payment.review") && (
+              <button
+                type="button"
+                onClick={() =>
+                  void read(async () => {
+                    const target = decision.charge;
+                    if (!target) return;
+                    const result = await api.charge(target.id);
+                    if (!stillMounted()) return;
+                    if (
+                      result.property_id !== propertyId ||
+                      result.id !== target.id ||
+                      result.customer_id !== decision.customer_id
+                    )
+                      throw new Error("Charge scope mismatch");
+                    setCharge(result);
+                    setNotice("Separate charge and correction history loaded.");
+                  })
+                }
+              >
+                Open separate Late-payment Charge
+              </button>
+            )}
+          </section>
+        )}
+        {charge && (
+          <section aria-label="Late-payment charge">
+            <h3>Separate Late-payment Charge</h3>
+            <p>
+              Original {formatUsd(charge.original_amount)} · Adjusted{" "}
+              {formatUsd(charge.adjusted_obligation)} · Remaining{" "}
+              {formatUsd(charge.remaining_balance)}
+            </p>
+            <EvidenceView value={charge.evidence} />
+            {can("late_payment.charge_correction") && (
+              <form
+                onSubmit={(event) => {
+                  formReview(
+                    event,
+                    (data) => {
+                      const kind = value(
+                          data,
+                          "kind",
+                        ) as ChargeCorrectionInput["kind"],
+                        reason = value(data, "reason");
+                      const input: ChargeCorrectionInput =
+                        kind === "REDUCTION"
+                          ? { kind, amount: positive(data), reason }
+                          : kind === "REDUCTION_REVERSAL"
+                            ? {
+                                kind,
+                                reverses_correction_id: value(data, "source"),
+                                reason,
+                              }
+                            : { kind, reason };
+                      if (
+                        kind === "REDUCTION_REVERSAL" &&
+                        !value(data, "source")
+                      )
+                        throw new Error("Source correction required");
+                      return {
+                        action: "correctCharge",
+                        propertyId,
+                        id: charge.id,
+                        input,
+                      };
+                    },
+                    charge.evidence,
+                  );
+                }}
+              >
+                <p>
+                  Append-only correction. Original charge, source invoice and
+                  applications remain in history. Required application reversals
+                  are enforced by the server.
+                </p>
+                <label>
+                  Charge correction kind
+                  <select name="kind">
+                    <option>REDUCTION</option>
+                    <option>CHARGE_REVERSAL</option>
+                    <option>REDUCTION_REVERSAL</option>
+                  </select>
+                </label>
+                <Field
+                  name="amount"
+                  label="Charge reduction amount (USD)"
+                  required={false}
+                />
+                <Field
+                  name="source"
+                  label="Reduction correction ID to reverse"
+                  required={false}
+                />
+                <Field name="reason" label="Charge correction reason" />
+                <button type="submit">Review charge correction</button>
+              </form>
+            )}
+          </section>
+        )}
+        {can("billing.generate") && (
+          <section aria-label="Billing runs">
+            <h3>Billing runs</h3>
+            <form
+              onSubmit={(event) => {
+                formReview(event, (data) => {
+                  const input = {
+                    logical_run_key: value(data, "logical"),
+                    business_date: value(data, "business"),
+                    period_start: value(data, "start"),
+                    period_end: value(data, "end"),
+                  };
+                  if (input.period_end < input.period_start)
+                    throw new Error("Period order");
+                  return {
+                    action: "run",
+                    propertyId,
+                    kind: value(data, "kind") as "rent" | "utilities",
+                    input,
+                  };
+                });
+              }}
+            >
+              <p>
+                The server resolves eligible leases and approved sources. Use
+                the same logical identity and period to reconcile a run; do not
+                invent a new key to bypass duplicate protection.
+              </p>
+              <label>
+                Billing run kind
+                <select name="kind">
+                  <option value="rent">Rent</option>
+                  <option value="utilities">Utilities</option>
+                </select>
+              </label>
+              <Field
+                name="logical"
+                label="Logical billing run key"
+                maxLength={200}
+              />
+              <Field
+                name="business"
+                label="Billing business date"
+                type="date"
+              />
+              <Field name="start" label="Billing period start" type="date" />
+              <Field name="end" label="Billing period end" type="date" />
+              <button type="submit">Review billing run</button>
+            </form>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                const id = value(new FormData(event.currentTarget), "run");
+                void read(async () => {
+                  const result = await api.getRun(id);
+                  if (!stillMounted()) return;
+                  if (result.property_id !== propertyId || result.id !== id)
+                    throw new Error("Run scope mismatch");
+                  setRun(result);
+                  setLastRun(null);
+                  setNotice("Billing run evidence loaded.");
+                });
+              }}
+            >
+              <Field name="run" label="Billing run ID" />
+              <button type="submit">Inspect billing run</button>
+            </form>
+            {run && (
+              <article>
+                <h4>
+                  Run {run.logical_run_key}: {run.status}
+                </h4>
+                <p>
+                  {run.period.start} to {run.period.end}; business date{" "}
+                  {run.business_date}
+                </p>
+                <EvidenceView value={run.evidence} />
+                {run.attempts
+                  .flatMap((attempt) =>
+                    Array.isArray(attempt.items) ? attempt.items : [],
+                  )
+                  .map((item, index) =>
+                    item !== null &&
+                    typeof item === "object" &&
+                    !Array.isArray(item) &&
+                    typeof item.invoice_id === "string" ? (
+                      <button
+                        type="button"
+                        key={index}
+                        onClick={() =>
+                          void openInvoice(item.invoice_id as string)
+                        }
+                      >
+                        Open generated invoice {item.invoice_id}
+                      </button>
+                    ) : null,
+                  )}
+                {lastRun && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPreview({ pending: lastRun, context: run.evidence });
+                    }}
+                  >
+                    Review retry of same billing run
+                  </button>
+                )}
+              </article>
+            )}
+          </section>
+        )}
+      </fieldset>
+      {preview && (
+        <section
+          role="dialog"
+          aria-modal="false"
+          aria-label="Confirm billing action"
+          tabIndex={-1}
+        >
+          <h3>Confirm {preview.pending.command.action}</h3>
+          <p>
+            Only this exact request will be sent. Review the Customer, source,
+            period, due date, original and adjusted amounts below. The server
+            validates current authority and financial invariants.
+          </p>
+          <EvidenceView
+            value={preview.pending.command as unknown as JsonValue}
+          />
+          {preview.context !== null && (
+            <details open>
+              <summary>Evidence reviewed for this action</summary>
+              <EvidenceView value={preview.context} />
+            </details>
+          )}
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void submit(preview.pending, false)}
+          >
+            Confirm billing action
+          </button>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => {
+              setPreview(null);
+              setNotice("Action cancelled; nothing was sent.");
+            }}
+          >
+            Cancel billing action
+          </button>
+        </section>
+      )}
+    </div>
+  );
+}

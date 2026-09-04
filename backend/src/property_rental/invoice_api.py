@@ -288,7 +288,28 @@ def create_invoice_router(
         return {
             "data": list(page.items),
             "page": {"next_cursor": page.next_cursor, "limit": limit},
-            "meta": {"request_id": request.state.request_id},
+            "meta": {
+                "request_id": request.state.request_id,
+                "billing_capabilities": [
+                    capability
+                    for capability in (
+                        INVOICE_CREATE_CAPABILITY,
+                        INVOICE_ISSUE_CAPABILITY,
+                        INVOICE_ADJUST_CAPABILITY,
+                        INVOICE_VOID_CAPABILITY,
+                        "billing.generate",
+                        "late_payment.review",
+                        "late_payment.final_decision",
+                        "late_payment.charge_correction",
+                    )
+                    if is_authorized(
+                        actor,
+                        AuthorizationRequirement(
+                            capability=capability, property_id=str(property_id)
+                        ),
+                    )
+                ],
+            },
         }
 
     @router.post("/properties/{property_id}/invoices", status_code=status.HTTP_201_CREATED)

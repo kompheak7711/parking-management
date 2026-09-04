@@ -61,6 +61,29 @@ Current live queue position: V1-047 activation and implementation.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE.
-Implementation `26b14ae0-92b3-433d-bed6-46bd732c569c` is the sole ready stage;
-dispatch it exactly once in a managed worktree only after the activation commit
-is published and exact-SHA CI-green. V1-048 remains dependency-held.
+Implementation `26b14ae0-92b3-433d-bed6-46bd732c569c` is the sole active product stage.
+The owner authorized direct native Codex implementation and removed only the
+rejected OpenClaw coordination-repair dependency. Do not dispatch an OpenClaw worker.
+Use the accepted activation `870472b7` in `codex/v1-047-direct-product`.
+The existing card stays dispatch-blocked while native Codex works; preserve all
+prior evidence and rejected worktrees. Full product tests, independent exact-SHA
+Sol max Standard review, normal publication, exact-SHA CI and closure remain required.
+OpenClaw stays disabled. V1-048 remains dependency-held until V1-047 is fully closed.
+
+### V1-047 operational implementation notes
+
+- The owner's explicit native takeover and removal of only the OpenClaw repair
+  prerequisite are recorded above and in STATE.direct_codex_product. The canonical
+  decision log remains unchanged because the frozen publication scope excludes
+  canonical-document edits. No business or financial policy is changed.
+- API-050 invoice list adds meta.billing_capabilities for exact-Property action
+  visibility only. Existing command authorization, scope and CSRF remain authoritative.
+- Financial requests are sealed in actor-bound browser IndexedDB with a non-extractable
+  AES-GCM key before transmission. Atomic reservation prevents competing new commands;
+  explicit replay uses the original request and idempotency key after reload. No
+  token or plaintext customer/financial intent is persisted. Unknown outcomes remain
+  blocked until an exact successful replay; recovery storage failure fails closed.
+- UI-051 consequence previews use bounded integer cents and are explicitly estimates;
+  no derived amount or status is submitted. Backend transactions remain authoritative.
+- One remote-SHA comparison test now mocks its own authorized branch, rather than
+  inheriting the operator's worktree branch. No OpenClaw runtime repair is included.

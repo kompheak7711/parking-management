@@ -2,6 +2,257 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "TEST-FE-250",
+      "upstream_ids": [
+        "UI-052",
+        "API-053",
+        "TEST-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Explicit exceptional void reason, confirmation and snapshot version."
+    },
+    {
+      "test_id": "TEST-FE-251",
+      "upstream_ids": [
+        "UI-105",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "All three Charge correction variants remain append-only and never repeat the final decision or modify the source Invoice."
+    },
+    {
+      "test_id": "TEST-FE-252",
+      "upstream_ids": [
+        "UI-051",
+        "API-052",
+        "TEST-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Exact-cent consequence preview rejects underflow and shows a zero-balance PAID estimate without submitting financial derived values."
+    },
+    {
+      "test_id": "TEST-FE-253",
+      "upstream_ids": [
+        "UI-047",
+        "API-050"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Empty list and opaque pagination cursor remain explicit."
+    },
+    {
+      "test_id": "TEST-FE-235",
+      "upstream_ids": [
+        "UI-047",
+        "API-050",
+        "SEC-019",
+        "SEC-020"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "hides commands without server-granted capabilities while preserving invoice inspection; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-236",
+      "upstream_ids": [
+        "UI-050",
+        "API-052",
+        "TEST-056"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "requires explicit issue confirmation and binds the displayed invoice version; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-237",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "UI-050",
+        "TEST-119"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "seals intent before sending, prevents duplicate clicks and replays unchanged after a lost response; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-238",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "UI-050",
+        "TEST-119"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "recovers the same saved request after remount and never sends automatically; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-239",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "UI-050",
+        "TEST-119"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "does not release an earlier unknown request merely because replay is now forbidden; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-240",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "UI-050",
+        "TEST-119"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "blocks transmission if durable storage cannot reserve the command; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-241",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "UI-050",
+        "TEST-119"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "clears a definitively rejected new command but requires fresh invoice authority; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-242",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "UI-050",
+        "TEST-119"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "does not repeat a successful command when a later list refresh fails; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-243",
+      "upstream_ids": [
+        "UI-049",
+        "API-050",
+        "TEST-053",
+        "TEST-055"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "creates drafts only from an approved obligation and corrects a draft with a reason; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-244",
+      "upstream_ids": [
+        "UI-051",
+        "API-052",
+        "TEST-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "requires line, exact amount, source and reason for an append-only adjustment; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-245",
+      "upstream_ids": [
+        "UI-052",
+        "API-053",
+        "TEST-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "blocks invoice void when active applications must first be reversed; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-246",
+      "upstream_ids": [
+        "UI-105",
+        "API-091",
+        "TEST-123"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "hides the final-decision action for an ineligible invoice and displays blockers; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-247",
+      "upstream_ids": [
+        "UI-053",
+        "API-054",
+        "API-055",
+        "API-056"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "preserves billing run identity for an explicit retry; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-248",
+      "upstream_ids": [
+        "UI-047",
+        "API-050",
+        "SEC-019",
+        "SEC-020"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "rejects wrong-property resources without displaying their customer data; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-249",
+      "upstream_ids": [
+        "UI-047",
+        "API-050",
+        "SEC-019",
+        "SEC-020"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "ignores an old Property read after the workspace changes; synthetic fixtures only."
+    },
+    {
+      "test_id": "test_billing_action_metadata_denies_by_default_and_uses_exact_property",
+      "upstream_ids": [
+        "API-050",
+        "SEC-019",
+        "SEC-020",
+        "UI-047"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "List action visibility is deny-by-default, exact-Property scoped and requires an authenticated authorized reader; underlying commands retain independent enforcement."
+    },
+    {
       "test_id": "TEST-FE-001",
       "upstream_ids": ["UI-109", "TEST-094"],
       "test_level": "UI component",

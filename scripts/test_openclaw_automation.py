@@ -11014,8 +11014,13 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
         with (
             mock.patch.object(
                 self.dispatch,
+                "authorized_branch",
+                return_value="implementation/foundation",
+            ),
+            mock.patch.object(
+                self.dispatch,
                 "git",
-                side_effect=["implementation/foundation", "local", "upstream"],
+                side_effect=["local", "upstream"],
             ),
             mock.patch.object(
                 self.dispatch,

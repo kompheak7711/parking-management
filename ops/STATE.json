@@ -1,17 +1,63 @@
 {
   "active_cycle": "v1-047-invoice-adjustment-late-payment-and-billing-run-api-ui",
+  "direct_codex_product": {
+    "execution_owner": "direct_codex",
+    "task_id": "01a04961-4270-7802-9418-e08203784a8c",
+    "automation_dependency_removed_by_owner": true,
+    "automation_repair_excluded": true,
+    "base_sha": "870472b7dffd28caf2c771e54196a0244c6c1a1e",
+    "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/codex-v1-047-direct-product",
+    "openclaw_dispatch": false,
+    "openclaw_supervisor_enabled": false,
+    "owner_action_required": false,
+    "phase": "candidate_freeze_then_exact_sha_verification",
+    "next_action": "Resolve candidate SHA from Git, finish exact-SHA integration; retry official npm advisory service on recovery. Independent Sol max Standard review, release/publication/CI/closure remain held until mandatory integration gates pass. Do not request routine owner authorization.",
+    "preflight": {
+      "frontend_client": 27,
+      "frontend_workflow": 22,
+      "backend": 730,
+      "backend_database_only_skips": 444,
+      "isolated_postgresql": 467,
+      "browser_recovery": "PASS: atomic encrypted reservation, non-extractable key, actor isolation, wrong-key refusal, reload and exact clearance",
+      "exact_sha_integration": "pending candidate freeze",
+      "independent_review": "pending",
+      "automation": "PASS: 189 tests plus state routing, watchdog, shell syntax and Python compile",
+      "dependency_audits": {
+        "backend_runtime": "PASS: no known vulnerabilities",
+        "backend_development": "PASS: no known vulnerabilities",
+        "frontend": "BLOCKED: official npm advisory POST endpoint timed out in three bounded attempts and direct diagnostic; registry GET works"
+      },
+      "browser_evidence_path": "/private/tmp/prm-v1047-native-evidence.fvAaxf/playwright"
+    },
+    "candidate_ref": "refs/heads/codex/v1-047-direct-product",
+    "blockers": [
+      "Frontend advisory service unavailable; no vulnerability verdict obtained. No bypass or waiver."
+    ]
+  },
   "approval": {
     "status": "approved_ready",
-    "basis": "owner standing continuous authorization through V1-060; V1-046 is fully closed and V1-047 contract 0df357b4 is frozen",
-    "implementation_started": false,
-    "implementation_completed": false,
+    "basis": "Owner explicitly approved removing only the OpenClaw automation-repair prerequisite and direct Codex full V1-047 closure, with all product safety/test/review/publication gates intact.",
+    "implementation_started": true,
+    "implementation_completed": true,
     "publication_completed": false
   },
   "authorities": [
-    "API-050-056",
+    "API-050",
+    "API-051",
+    "API-052",
+    "API-053",
+    "API-054",
+    "API-055",
+    "API-056",
     "API-091",
-    "TEST-053-058",
-    "TEST-123-124"
+    "TEST-053",
+    "TEST-054",
+    "TEST-055",
+    "TEST-056",
+    "TEST-057",
+    "TEST-058",
+    "TEST-123",
+    "TEST-124"
   ],
   "automation_repair": {
     "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -70,7 +116,17 @@
         "decoded_bytes": 9614,
         "decoded_sha256": "2a6e8126bc9c285f5f400137ab0b97dc87c4c1ca7b40523591128a387d9ccc3b",
         "observed_tool_output_bytes": [
-          639, 4202, 26386, 4508, 16595, 127, 153, 194, 56, 57, 5333
+          639,
+          4202,
+          26386,
+          4508,
+          16595,
+          127,
+          153,
+          194,
+          56,
+          57,
+          5333
         ]
       },
       "product_files_modified": false,
@@ -660,7 +716,7 @@
     }
   },
   "blockers": [],
-  "branch": "implementation/foundation",
+  "branch": "codex/v1-047-direct-product",
   "closure_correction": {
     "canonical_documents_changed": false,
     "changed_paths": [
@@ -694,7 +750,7 @@
       "PASS: roadmap, traceability, publication, JSON, syntax, and diff guards"
     ]
   },
-  "commit": "57fd5d34f4e91102f4d49cc124d17d6022467ae4",
+  "commit": "870472b7dffd28caf2c771e54196a0244c6c1a1e",
   "evidence_applicability": {
     "basis": "V1-046 release 48e377e6, closure 57f0a816, and reconciliation 57fd5d34 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE. V1-047 contract 0df357b4 is frozen from 16 exact canonical authorities at predecessor 57fd5d34.",
     "complete_profile_remains_applicable": false,
@@ -702,7 +758,7 @@
     "tranche_id": "V1-047"
   },
   "idle_reason": null,
-  "next_action": "Publish and verify this V1-047 activation, then dispatch implementation card 26b14ae0 exactly once in a managed worktree at the activation SHA",
+  "next_action": "Resolve candidate SHA from Git, finish exact-SHA integration; retry official npm advisory service on recovery. Independent Sol max Standard review, release/publication/CI/closure remain held until mandatory integration gates pass. Do not request routine owner authorization.",
   "active_worker": null,
   "active_card": "26b14ae0-92b3-433d-bed6-46bd732c569c",
   "active_claim": null,
@@ -720,8 +776,14 @@
       "TEST-123-124"
     ],
     "authorization": "durable_v1",
-    "dependencies": ["V1-043", "V1-045", "V1-046"],
-    "exclude": ["payments"],
+    "dependencies": [
+      "V1-043",
+      "V1-045",
+      "V1-046"
+    ],
+    "exclude": [
+      "payments"
+    ],
     "id": "V1-047",
     "include": [
       "invoice staff workflows and explicit confirmations"
@@ -801,15 +863,33 @@
     "authorization_rule": "activate each successor automatically only after its predecessor is fully released, published, verified, reconciled, and closed; no repeated routine authorization",
     "immediate_action": "On every cycle, reconcile ops/NOW.md, ops/STATE.json, ops/QUEUE.md, ops/V1_ROADMAP.json, Git, Workboard, claims, attempts, active workers, worktrees, and the scheduler. Continue from the latest verified dependency-safe stage. Never repeat completed work or dispatch a duplicate worker. If a valid worker is running, inspect and reconcile it. Activate the next version only after its predecessor is fully closed.",
     "model_policy": {
-      "supervisor": {"model": "openai/gpt-5.6-sol", "reasoning": "xhigh", "mode": "standard"},
-      "independent_reviewer": {"model": "openai/gpt-5.6-sol", "reasoning": "max", "mode": "standard"},
-      "implementation_worker": {"model": "openai/gpt-5.6-sol", "reasoning": "high", "mode": "standard"},
-      "worker_xhigh_when": ["migrations", "concurrency", "security", "transactions", "repeated failures"],
+      "supervisor": {
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "xhigh",
+        "mode": "standard"
+      },
+      "independent_reviewer": {
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "max",
+        "mode": "standard"
+      },
+      "implementation_worker": {
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "high",
+        "mode": "standard"
+      },
+      "worker_xhigh_when": [
+        "migrations",
+        "concurrency",
+        "security",
+        "transactions",
+        "repeated failures"
+      ],
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-046 is fully released, published, exact-SHA CI-green, synchronized, reconciled, and Workboard-closed; V1-047 is active with frozen contract 0df357b4 and implementation 26b14ae0 ready but undispatched",
-    "exact_next_action": "Publish and exact-SHA verify the V1-047 activation, then start exactly one property-codex-1 managed-worktree implementation attempt at that activation SHA using GPT-5.6 Sol xhigh Standard mode with no fallback",
+    "current_phase": "V1-047 native Codex product verification; rejected automation prerequisite explicitly removed by owner; OpenClaw intentionally disabled.",
+    "exact_next_action": "Resolve candidate SHA from Git, finish exact-SHA integration; retry official npm advisory service on recovery. Independent Sol max Standard review, release/publication/CI/closure remain held until mandatory integration gates pass. Do not request routine owner authorization.",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1049,7 +1129,9 @@
       "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-e83912ca-8b13-402e-ac1f-cd0eed5ca838",
       "base_sha": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
       "base_parent": "39c38e74b7b55f877f74081c94dcd9b971aa1348",
-      "allowed_paths": ["ops/traceability.json"],
+      "allowed_paths": [
+        "ops/traceability.json"
+      ],
       "model": "openai/gpt-5.6-sol",
       "reasoning": "high",
       "mode": "standard",
@@ -1450,7 +1532,8 @@
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-09-01T04:53:20Z"
+    "updated_at": "2026-09-01T04:53:20Z",
+    "enabled": false
   },
   "supervisor_recovery": {
     "job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
@@ -1525,8 +1608,12 @@
     "status": "PASS"
   },
   "relevant_docs": [
-    "docs/005_API_SPECIFICATION.md: API-050 through API-056 and API-091",
-    "docs/007_TESTING_STRATEGY.md: TEST-053 through TEST-058 and TEST-123 through TEST-124"
+    "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-004, PR-WF-009",
+    "docs/005_API_SPECIFICATION.md: API-050..056, API-091",
+    "docs/006_UI_SPECIFICATION.md: UI-046..054, UI-105",
+    "docs/007_TESTING_STRATEGY.md: TEST-053..058, TEST-123..124",
+    "docs/008_SECURITY_MODEL.md",
+    "docs/010_DECISION_LOG.md: canonical unchanged; operational takeover decision recorded in ops/QUEUE.md"
   ],
   "repair": {
     "tranche_id": "V1-047",
@@ -1569,7 +1656,7 @@
       "PASS: git diff --check"
     ],
     "corrected_findings": 206,
-    "final_verdict": null,
+    "final_verdict": "PASS",
     "initial_findings": 8,
     "initial_review_session_id": "01a031fb-96de-7d62-9870-8f6b079605aa",
     "follow_up_findings": 5,
@@ -1683,7 +1770,6 @@
     "fifty_sixth_review_findings": 0,
     "fifty_sixth_review_session_id": "01a0378e-6219-7360-a8b8-125235147941",
     "review_kind": "fresh_external_codex_exact_uncommitted_diff",
-    "final_verdict": "PASS",
     "status": "PASS",
     "tranche_id": "V1-026"
   },
@@ -1737,18 +1823,54 @@
       "01a047ba-b31e-7ac0-ad14-a738653daf61"
     ],
     "session_records": [
-      {"evidence_path": "/private/tmp/property-rental-v1-040-independent-review.txt", "session_id": "01a046e0-689a-7cb0-ae3a-697097859b0b"},
-      {"evidence_path": "/private/tmp/property-rental-v1-040-independent-review-corrected.txt", "session_id": "unavailable from provider"},
-      {"evidence_path": "/private/tmp/property-rental-v1-040-independent-review-final.txt", "session_id": "01a04714-da4f-7730-b099-2c2734a4cbe7"},
-      {"evidence_path": "/private/tmp/property-rental-v1-040-independent-review-pass-candidate.txt", "session_id": "01a04726-b610-7732-abb3-ffdc07058d90"},
-      {"evidence_path": "/private/tmp/property-rental-v1-040-independent-review-fifth.txt", "session_id": "01a04738-319a-7d62-b511-45490911ec9e"},
-      {"evidence_path": "/private/tmp/property-rental-v1-040-independent-review-sixth.txt", "session_id": "01a04747-f8a6-7ec3-b0ec-a1b67cd19cf2"},
-      {"evidence_path": "/private/tmp/property-rental-v1-040-independent-review-seventh.txt", "session_id": "01a04764-e7ca-7041-9878-fa6047988447"},
-      {"evidence_path": "/private/tmp/property-rental-v1-040-independent-review-eighth.txt", "session_id": "01a04775-497a-7713-a94b-4107b7e04e80"},
-      {"evidence_path": "/private/tmp/property-rental-v1-040-independent-review-ninth.txt", "session_id": "01a04782-c297-78c1-bcb1-2a77ca0586e7"},
-      {"evidence_path": "/private/tmp/property-rental-v1-040-independent-review-tenth.txt", "session_id": "01a0479d-b8fa-7231-a111-271ff0e45a53"},
-      {"evidence_path": "/private/tmp/property-rental-v1-040-independent-review-eleventh.txt", "session_id": "01a047ac-5385-7df0-a3a7-3812bcd5d206"},
-      {"evidence_path": "/private/tmp/property-rental-v1-040-independent-review-twelfth.txt", "session_id": "01a047ba-b31e-7ac0-ad14-a738653daf61"}
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-040-independent-review.txt",
+        "session_id": "01a046e0-689a-7cb0-ae3a-697097859b0b"
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-040-independent-review-corrected.txt",
+        "session_id": "unavailable from provider"
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-040-independent-review-final.txt",
+        "session_id": "01a04714-da4f-7730-b099-2c2734a4cbe7"
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-040-independent-review-pass-candidate.txt",
+        "session_id": "01a04726-b610-7732-abb3-ffdc07058d90"
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-040-independent-review-fifth.txt",
+        "session_id": "01a04738-319a-7d62-b511-45490911ec9e"
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-040-independent-review-sixth.txt",
+        "session_id": "01a04747-f8a6-7ec3-b0ec-a1b67cd19cf2"
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-040-independent-review-seventh.txt",
+        "session_id": "01a04764-e7ca-7041-9878-fa6047988447"
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-040-independent-review-eighth.txt",
+        "session_id": "01a04775-497a-7713-a94b-4107b7e04e80"
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-040-independent-review-ninth.txt",
+        "session_id": "01a04782-c297-78c1-bcb1-2a77ca0586e7"
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-040-independent-review-tenth.txt",
+        "session_id": "01a0479d-b8fa-7231-a111-271ff0e45a53"
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-040-independent-review-eleventh.txt",
+        "session_id": "01a047ac-5385-7df0-a3a7-3812bcd5d206"
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-040-independent-review-twelfth.txt",
+        "session_id": "01a047ba-b31e-7ac0-ad14-a738653daf61"
+      }
     ],
     "final_verdict": "PASS",
     "status": "PASS",
@@ -1923,16 +2045,16 @@
       {
         "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-corrected.txt",
         "session_id": "01a048ea-05ff-7bc3-b98d-86e35d1106ab",
-      "verdict": "MATERIAL_FINDINGS",
-      "findings": 2,
-      "material_findings_corrected": 2
-    },
-    {
-      "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-final.txt",
-      "session_id": "01a04943-7588-7771-b70c-9c77499198ac",
-      "verdict": "MATERIAL_FINDINGS",
-      "findings": 4,
-      "material_findings_corrected": 4
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 2,
+        "material_findings_corrected": 2
+      },
+      {
+        "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-final.txt",
+        "session_id": "01a04943-7588-7771-b70c-9c77499198ac",
+        "verdict": "MATERIAL_FINDINGS",
+        "findings": 4,
+        "material_findings_corrected": 4
       },
       {
         "evidence_path": "/private/tmp/property-rental-v1-042-independent-review-findings-4.txt",
@@ -2138,7 +2260,7 @@
   "schema_version": 1,
   "secrets_present": false,
   "status": "active",
-  "task": "Implement the approved bounded candidate: Invoice, adjustment, late-payment, and billing-run API/UI",
+  "task": "V1-047 native product implementation complete; fresh exact-SHA verification and independent review pending before any publication.",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -2191,13 +2313,11 @@
     "FAIL: first external Codex exact-diff review found two high and one medium finding; session 01a04834-6497-70d0-8943-3baac6655d45; /private/tmp/property-rental-v1-041-independent-review.txt",
     "PASS: all three first-review findings corrected with strict equal-timestamp correction ordering, post-failure Reading enforcement, and deterministic observed-lock Meter, correction, Rate, and replacement concurrency regressions",
     "PASS: corrected disposable PostgreSQL migration, role, history, failure-boundary, total-order, and deterministic concurrency suite 363/363",
-    "PASS: review-corrected complete deterministic verification profile 15/15; backend 641 passed with 351 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 363 passed; automation routing 185 passed; /private/tmp/property-rental-v1-041-review-corrections-verification.json"
-    ,
+    "PASS: review-corrected complete deterministic verification profile 15/15; backend 641 passed with 351 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 363 passed; automation routing 185 passed; /private/tmp/property-rental-v1-041-review-corrections-verification.json",
     "FAIL: second external Codex exact-diff review found one high reverse failure-history finding and one medium replacement-cycle finding; session 01a04844-53a3-76f0-8e22-064328d9450a; /private/tmp/property-rental-v1-041-independent-review-final.txt",
     "PASS: both second-review findings corrected with reverse Reading/failure validation, concurrent in-gap regression, and deferred recursive acyclic replacement-chain enforcement",
     "PASS: one complete-profile disposable PostgreSQL gate encountered a transient unchanged Lease signature host/container clock-skew failure; immediate clean disposable rerun passed 364/364 without code changes",
-    "PASS: second-review corrected complete deterministic verification profile 15/15; backend 641 passed with 352 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 364 passed; automation routing 185 passed; /private/tmp/property-rental-v1-041-second-review-corrections-verification.json"
-    ,
+    "PASS: second-review corrected complete deterministic verification profile 15/15; backend 641 passed with 352 expected database-environment skips; frontend 213 passed; disposable PostgreSQL 364 passed; automation routing 185 passed; /private/tmp/property-rental-v1-041-second-review-corrections-verification.json",
     "FAIL: third external Codex exact-diff review found one low durable next-action inconsistency; session 01a04856-c322-7c53-8da9-56ed61fb2b5a; /private/tmp/property-rental-v1-041-independent-review-pass.txt",
     "PASS: third-review metadata finding corrected by aligning the durable next action with the current final-review/publication step",
     "PASS: fourth fresh external Codex exact-diff review found no material findings and judged the corrected exact V1-041 diff ready for publication; session 01a0485e-8980-7983-8f18-2b5259018a03; /private/tmp/property-rental-v1-041-independent-review-fourth.txt",
@@ -2205,6 +2325,49 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
+    "Pre-freeze: backend 730 passed, 444 database-only skips separately covered",
+    "Pre-freeze: isolated PostgreSQL 467 passed, zero skips",
+    "Pre-freeze: frontend 279 passed before four added UI tests; focused final UI 22 passed and client 27 passed",
+    "Pre-freeze: format/lint/strict typing/build/import/deployment examples passed",
+    "Real browser encrypted durable billing recovery checks passed",
+    "Fresh exact-SHA integration, full final rerun, audits, independent review, publication and CI still required"
+  ],
+  "tests_tranche_id": "V1-047",
+  "timestamp": "2026-09-04T07:48:02.193Z",
+  "prior_v1_040_touched_areas": [
+    "backend/migrations/versions/20260828_30_rent_service_billing.py",
+    "backend/src/property_rental/billing.py",
+    "backend/tests/test_billing.py",
+    "backend/tests/test_billing_service_migration.py",
+    "backend/tests/test_invoice_migration.py",
+    "backend/tests/test_lease_api_migration.py",
+    "backend/tests/test_migrations.py",
+    "scripts/database-test.sh",
+    "ops/traceability.json",
+    "ops/NOW.md",
+    "ops/STATE.json"
+  ],
+  "prior_v1_041_touched_areas": [
+    "backend/migrations/versions/20260828_31_utility_meter_persistence.py",
+    "backend/tests/test_utility_meter_migration.py",
+    "backend/tests/test_billing_service_migration.py",
+    "backend/tests/test_invoice_migration.py",
+    "backend/tests/test_lease_api_migration.py",
+    "backend/tests/test_migrations.py",
+    "scripts/database-test.sh",
+    "ops/traceability.json",
+    "ops/NOW.md",
+    "ops/STATE.json"
+  ],
+  "touched_areas": [
+    "frontend billing client and staff workspace",
+    "invoice-list property-scoped action metadata",
+    "billing workflow tests and traceability",
+    "owner-approved native takeover durable state",
+    "branch-isolated remote-SHA test fixture only"
+  ],
+  "tranche": "Invoice, adjustment, late-payment, and billing-run API/UI",
+  "prior_v1_046_tests": [
     "PASS: V1-042 preflight confirmed clean synchronized V1-041 reconciliation baseline f8fe2547a6996c538fef0c3218cc52ac31c72979, disabled and non-running supervisor, no overlapping repository worker or lock, exact approved successor, and V1-043 held",
     "PASS: V1-041 implementation, closure, and reconciliation exact-SHA GitHub Actions runs 33172741306, 33173041349, and 33173354579 passed all four jobs",
     "PASS: no legitimate uncommitted V1-042 partial work existed before activation",
@@ -2382,63 +2545,5 @@
     "FAIL/RECOVERED: closure metadata validation rejected nonexistent V1-047 authority UI-INV-* after 189/189 automation tests; bounded manager correction 2eafb153 removed only that dangling roadmap authority in exact commit 2bc9816d, retained 16 exact canonical API/test authorities, passed fresh automation 189/189, and exact-SHA CI run 33470535203 passed all four jobs",
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
-  ],
-  "tests_tranche_id": "V1-046",
-  "timestamp": "2026-09-01T05:11:49Z",
-  "prior_v1_040_touched_areas": [
-    "backend/migrations/versions/20260828_30_rent_service_billing.py",
-    "backend/src/property_rental/billing.py",
-    "backend/tests/test_billing.py",
-    "backend/tests/test_billing_service_migration.py",
-    "backend/tests/test_invoice_migration.py",
-    "backend/tests/test_lease_api_migration.py",
-    "backend/tests/test_migrations.py",
-    "scripts/database-test.sh",
-    "ops/traceability.json",
-    "ops/NOW.md",
-    "ops/STATE.json"
-  ],
-  "prior_v1_041_touched_areas": [
-    "backend/migrations/versions/20260828_31_utility_meter_persistence.py",
-    "backend/tests/test_utility_meter_migration.py",
-    "backend/tests/test_billing_service_migration.py",
-    "backend/tests/test_invoice_migration.py",
-    "backend/tests/test_lease_api_migration.py",
-    "backend/tests/test_migrations.py",
-    "scripts/database-test.sh",
-    "ops/traceability.json",
-    "ops/NOW.md",
-    "ops/STATE.json"
-  ],
-  "touched_areas": [
-    "backend/src/property_rental/app.py",
-    "backend/src/property_rental/api.py",
-    "backend/src/property_rental/invoice.py",
-    "backend/src/property_rental/invoice_api.py",
-    "backend/src/property_rental/billing_run.py",
-    "backend/src/property_rental/billing_run_api.py",
-    "backend/src/property_rental/late_payment.py",
-    "backend/src/property_rental/late_payment_api.py",
-    "backend/tests/test_invoice.py",
-    "backend/tests/test_invoice_api.py",
-    "backend/tests/test_invoice_migration.py",
-    "backend/tests/test_billing_run.py",
-    "backend/tests/test_billing_run_api.py",
-    "backend/tests/test_billing_run_migration.py",
-    "backend/tests/test_late_payment.py",
-    "backend/tests/test_late_payment_api.py",
-    "backend/tests/test_late_payment_migration.py",
-    "backend/tests/test_migrations.py",
-    "frontend/src/App.tsx",
-    "frontend/src/App.test.tsx",
-    "frontend/src/InvoiceManagement.tsx",
-    "frontend/src/InvoiceManagement.test.tsx",
-    "frontend/src/invoiceClient.ts",
-    "frontend/src/invoiceClient.test.ts",
-    "frontend/src/styles.css",
-    "ops/traceability.json",
-    "ops/NOW.md",
-    "ops/STATE.json"
-  ],
-  "tranche": "Invoice, adjustment, late-payment, and billing-run API/UI"
+  ]
 }
