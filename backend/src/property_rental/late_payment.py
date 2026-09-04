@@ -206,9 +206,13 @@ class PostgresLatePaymentService:
             return LatePaymentApplicationReversalRequired(
                 "Active applications must be reversed explicitly"
             )
-        if exc.sqlstate in {"P4603", "23505", "40001", "55000", "55P03"}:
+        # Only the explicit business conflict is raised after receipt lookup.
+        # Generic database failures can occur while acquiring the Property/actor
+        # or advisory locks, reading a receipt, or committing. Current terminal
+        # state cannot prove that this exact request has no successful receipt.
+        if exc.sqlstate == "P4603":
             return LatePaymentConflictError("Late-payment command conflicted")
-        if exc.sqlstate in {"P4602", "22023", "23503", "23514"}:
+        if exc.sqlstate == "P4602":
             return LatePaymentInvalidError("Late-payment command is invalid")
         return LatePaymentServiceUnavailableError("Late-payment persistence is unavailable")
 

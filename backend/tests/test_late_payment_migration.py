@@ -345,6 +345,115 @@ def test_real_api_exact_replay_and_mutation_only_conflict_state(
     assert correction_conflict.json()["error"]["current_state"] == correction.json()["data"]
 
 
+@pytest.mark.parametrize("action", ["decision", "correction"])
+def test_property_lock_failure_preserves_exact_successful_receipt_after_other_actor_reversal(
+    connection: Connection[tuple[object, ...]], monkeypatch: pytest.MonkeyPatch, action: str
+) -> None:
+    """API-016/UI-015: run only in the coordinator's fresh isolated PostgreSQL DB."""
+    actor_id, property_id, _, invoice_id, _ = setup_invoice(
+        connection, period_start=date(2026, 4, 1)
+    )
+    resolved_actor = [late_payment_actor(actor_id, property_id)]
+    flow = service()
+    client = TestClient(
+        create_app(actor_resolver=lambda _: resolved_actor[0], late_payment_flow=flow)
+    )
+    client.cookies.set("__Host-prm_csrf", "csrf-token")
+    decision_key, correction_key = uuid4(), uuid4()
+    decision_body = {
+        "outcome": "REDUCED",
+        "approved_amount": {"currency": "USD", "minor_units": 1_500},
+        "reason": "Approved original decision",
+    }
+    decision_path = f"/api/v1/invoices/{invoice_id}/late-payment-decision"
+    decision = client.post(
+        decision_path, json=decision_body, headers=api_headers(decision_key, "decision-original")
+    )
+    assert decision.status_code == 201
+    charge_id = UUID(decision.json()["data"]["charge"]["id"])
+    correction_path = f"/api/v1/late-payment-charges/{charge_id}/corrections"
+    correction_body = {
+        "kind": "REDUCTION",
+        "amount": {"currency": "USD", "minor_units": 500},
+        "reason": "Approved original reduction",
+    }
+    correction = client.post(
+        correction_path,
+        json=correction_body,
+        headers=api_headers(correction_key, "correction-original"),
+    )
+    assert correction.status_code == 200
+    assert correction.json()["data"]["remaining_balance"]["minor_units"] == 1_000
+    second_actor_id = uuid4()
+    connection.execute(
+        "INSERT INTO app.user_accounts(actor_id,normalized_username,display_name,audit_name,"
+        "lifecycle_state,mfa_policy_class,provenance) VALUES (%s,%s,'Lock Test Actor',"
+        "'Lock Test Actor','active','optional','test')",
+        (second_actor_id, f"late-payment-lock-{second_actor_id}"),
+    )
+    connection.commit()
+    resolved_actor[0] = late_payment_actor(second_actor_id, property_id)
+    reversal = client.post(
+        correction_path,
+        json={"kind": "CHARGE_REVERSAL", "reason": "Other actor reversed remainder"},
+        headers=api_headers(uuid4(), "other-actor-reversal"),
+    )
+    assert reversal.status_code == 200
+    assert reversal.json()["data"]["remaining_balance"]["minor_units"] == 0
+    resolved_actor[0] = late_payment_actor(actor_id, property_id)
+    path, body, key, original = (
+        (decision_path, decision_body, decision_key, decision)
+        if action == "decision"
+        else (correction_path, correction_body, correction_key, correction)
+    )
+    receipt_query = (
+        "SELECT response_status,response_body FROM app.late_payment_commands "
+        "WHERE property_id=%s AND actor_id=%s AND action=%s AND idempotency_key=%s"
+    )
+    receipt_identity = (property_id, actor_id, action, key)
+    assert connection.execute(receipt_query, receipt_identity).fetchone() == (
+        original.status_code,
+        original.json(),
+    )
+    connection.rollback()
+    monkeypatch.setattr("property_rental.late_payment.LATE_PAYMENT_LOCK_TIMEOUT_MS", 100)
+    # This transaction only holds a lock; it does not modify the Property row.
+    connection.execute("SELECT id FROM app.properties WHERE id=%s FOR UPDATE", (property_id,))
+    try:
+        unavailable = client.post(path, json=body, headers=api_headers(key, "held-property-lock"))
+        assert unavailable.status_code == 503
+        assert unavailable.json()["error"]["code"] == "SERVICE_UNAVAILABLE"
+        assert "current_state" not in unavailable.json()["error"]
+    finally:
+        connection.rollback()
+    replay = client.post(path, json=body, headers=api_headers(key, "lock-released-replay"))
+    assert replay.status_code == original.status_code
+    assert replay.json() == original.json()
+    assert connection.execute(receipt_query, receipt_identity).fetchone() == (
+        original.status_code,
+        original.json(),
+    )
+    # Receipt-checked competing commands remain terminal; key collisions stay distinct.
+    conflict = client.post(path, json=body, headers=api_headers(uuid4(), "competing-command"))
+    assert conflict.status_code == 409
+    assert conflict.json()["error"]["code"] == "CONFLICT"
+    assert conflict.json()["error"]["current_state"] == (
+        decision.json()["data"] if action == "decision" else reversal.json()["data"]
+    )
+    reused = client.post(
+        path, json={**body, "reason": "Changed request"}, headers=api_headers(key, "key-conflict")
+    )
+    assert reused.status_code == 409
+    assert reused.json()["error"]["code"] == "IDEMPOTENCY_KEY_REUSED"
+    assert connection.execute(
+        "SELECT count(*) FROM app.late_payment_commands WHERE property_id=%s", (property_id,)
+    ).fetchone() == (3,)
+    assert connection.execute(
+        "SELECT count(*) FROM app.late_payment_charge_corrections WHERE late_payment_charge_id=%s",
+        (charge_id,),
+    ).fetchone() == (2,)
+
+
 def test_two_actors_share_uuid_without_correlation_collision_and_keep_replay_scope(
     connection: Connection[tuple[object, ...]],
 ) -> None:

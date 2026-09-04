@@ -6,8 +6,10 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from unittest.mock import MagicMock
 from uuid import UUID, uuid4, uuid5
 
+import psycopg
 import pytest
 from fastapi.testclient import TestClient
 
@@ -29,6 +31,7 @@ from property_rental.late_payment import (
     LatePaymentConflictError,
     LatePaymentIdempotencyKeyReused,
     LatePaymentNotFoundError,
+    PostgresLatePaymentService,
     late_payment_request_digest,
 )
 
@@ -483,6 +486,163 @@ def test_generic_conflicts_return_only_authorized_current_safe_state() -> None:
     assert correction_error["current_version"] is None
     assert correction_error["current_state"] == charge_resource(property_id, invoice_id, charge_id)
     assert "exception" not in correction_conflict.text.lower()
+
+
+@pytest.mark.parametrize("action", ["decision", "correction"])
+@pytest.mark.parametrize(
+    ("sqlstate", "stage"),
+    [("55P03", stage) for stage in ("scope", "connect", "bound", "command", "fetch", "commit")]
+    + [
+        (code, "command")
+        for code in (
+            "23505",
+            "40001",
+            "55000",
+            "22023",
+            "23503",
+            "23514",
+            "40P01",
+            "57014",
+            "08006",
+            "XX000",
+        )
+    ],
+)
+def test_database_failure_cannot_replace_an_existing_receipt_with_terminal_state(
+    monkeypatch: pytest.MonkeyPatch, action: str, sqlstate: str, stage: str
+) -> None:
+    """API-016/UI-015: exercise the real service and route, faulting only psycopg."""
+    property_id, invoice_id, charge_id, key = uuid4(), uuid4(), uuid4(), uuid4()
+    resolved_actor = actor(
+        property_id, "late_payment.final_decision", "late_payment.charge_correction"
+    )
+    target_id = invoice_id if action == "decision" else charge_id
+    body: dict[str, object] = (
+        {
+            "outcome": "REDUCED",
+            "approved_amount": {"currency": "USD", "minor_units": 1500},
+            "reason": "Approved",
+        }
+        if action == "decision"
+        else {
+            "kind": "REDUCTION",
+            "amount": {"currency": "USD", "minor_units": 500},
+            "reason": "Approved",
+        }
+    )
+    payload = body if action == "decision" else {**body, "reverses_correction_id": None}
+    digest = late_payment_request_digest(
+        action=action, property_id=property_id, target_id=target_id, payload=payload
+    )
+    original_status = 201 if action == "decision" else 200
+    original_resource = (decision_resource if action == "decision" else charge_resource)(
+        property_id, invoice_id, charge_id
+    )
+    original_body = {
+        "data": original_resource,
+        "meta": {"request_id": "successful-response-lost"},
+    }
+    receipts = {
+        (str(resolved_actor.actor_id), key, digest): {
+            "status_code": original_status,
+            "body": original_body,
+        }
+    }
+    terminal_state = {
+        **original_resource,
+        "adjusted_obligation": {"currency": "USD", "minor_units": 0},
+        "remaining_balance": {"currency": "USD", "minor_units": 0},
+        "corrections": [{"id": str(uuid4()), "kind": "CHARGE_REVERSAL"}],
+    }
+    fault = psycopg.errors.lookup(sqlstate)("private database fault must not reach the client")
+    failing = True
+    receipt_reads = 0
+    snapshot_reads = 0
+    command_calls: list[tuple[object, ...]] = []
+
+    def cursor(value: object) -> MagicMock:
+        result = MagicMock()
+        result.fetchone.return_value = (value,)
+        return result
+
+    def read_query(query: str, parameters: tuple[object, ...]) -> MagicMock:
+        nonlocal snapshot_reads
+        if "set_config" in query:
+            return cursor(None)
+        if "property_id" in query:
+            if failing and stage == "scope":
+                raise fault
+            return cursor(property_id)
+        snapshot_reads += 1
+        return cursor(terminal_state)
+
+    def command_query(query: str, parameters: tuple[object, ...]) -> MagicMock:
+        nonlocal receipt_reads
+        if "set_config" in query:
+            if failing and stage == "bound":
+                raise fault
+            return cursor(None)
+        assert parameters[:5] == (
+            property_id,
+            target_id,
+            UUID(resolved_actor.actor_id),
+            key,
+            digest,
+        )
+        command_calls.append(parameters)
+        if failing and stage == "command":
+            # require_late_payment_actor locks Property before command receipt lookup.
+            raise fault
+        receipt_reads += 1
+        result = cursor(receipts[(str(parameters[2]), key, digest)])
+        if failing and stage == "fetch":
+            result.fetchone.side_effect = fault
+        return result
+
+    def connect(database_url: str, *, connect_timeout: int) -> MagicMock:
+        if failing and stage == "connect" and database_url == "synthetic-financial":
+            raise fault
+        connection = MagicMock()
+        connection.__enter__.return_value = connection
+        connection.__exit__.return_value = False
+        connection.execute.side_effect = (
+            read_query if database_url == "synthetic-read" else command_query
+        )
+        if failing and stage == "commit" and database_url == "synthetic-financial":
+            connection.__exit__.side_effect = fault
+        return connection
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    client = TestClient(
+        create_app(
+            actor_resolver=lambda _: resolved_actor,
+            late_payment_flow=PostgresLatePaymentService("synthetic-read", "synthetic-financial"),
+        )
+    )
+    client.cookies.set("__Host-prm_csrf", "csrf-token")
+    path = (
+        f"/api/v1/invoices/{invoice_id}/late-payment-decision"
+        if action == "decision"
+        else f"/api/v1/late-payment-charges/{charge_id}/corrections"
+    )
+    headers = {**mutation_headers(), "Idempotency-Key": str(key)}
+    unavailable = client.post(path, json=body, headers=headers)
+    assert unavailable.status_code == 503
+    assert unavailable.json()["error"]["code"] == "SERVICE_UNAVAILABLE"
+    assert "current_state" not in unavailable.json()["error"]
+    assert "private database fault" not in unavailable.text
+    expected_reads = 1 if stage in {"fetch", "commit"} else 0
+    assert receipt_reads == expected_reads
+    assert snapshot_reads == 0
+    failing = False
+    replay = client.post(path, json=body, headers=headers)
+    assert replay.status_code == original_status
+    assert replay.json() == original_body
+    assert receipt_reads == expected_reads + 1
+    assert snapshot_reads == 0
+    assert len(receipts) == 1
+    if len(command_calls) == 2:
+        assert command_calls[0][:5] == command_calls[1][:5]
 
 
 def test_late_payment_traceability_mappings_are_truthful() -> None:

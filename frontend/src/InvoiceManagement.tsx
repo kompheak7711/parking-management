@@ -1446,8 +1446,14 @@ function BillingWorkspace({
                   <button
                     type="button"
                     onClick={(event) => {
+                      setValidation(null);
+                      errorForm.current = null;
+                      setFailed(false);
                       confirmationOpener.current = event.currentTarget;
                       setPreview({ pending: lastRun, context: run.evidence });
+                      setNotice(
+                        "Review the exact action and evidence, then explicitly confirm.",
+                      );
                     }}
                   >
                     Review retry of same billing run

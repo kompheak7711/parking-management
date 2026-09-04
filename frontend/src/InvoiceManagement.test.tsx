@@ -194,6 +194,195 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 describe("V1-047 staff billing workflows", () => {
+  it.each(["decide", "correctCharge"] as const)(
+    "keeps the exact %s receipt recovery through pre-lookup failure, key conflict and failed clearance",
+    async (action) => {
+      const { api } = setup("UNPAID");
+      const saved: PendingBillingCommand = {
+        key: "successful-request-with-lost-response",
+        command:
+          action === "decide"
+            ? {
+                action,
+                propertyId,
+                id: "invoice-one",
+                outcome: "REDUCED",
+                amount: parseUsd("15"),
+                reason: "approved original decision",
+              }
+            : {
+                action,
+                propertyId,
+                id: "charge",
+                input: {
+                  kind: "REDUCTION",
+                  amount: parseUsd("5"),
+                  reason: "approved original reduction",
+                },
+              },
+      };
+      const original =
+        action === "decide"
+          ? {
+              id: "own-original-decision",
+              property_id: propertyId,
+              customer_id: "customer-one",
+              source_invoice: { id: "invoice-one" },
+              outcome: "REDUCED",
+              approved_amount: parseUsd("15"),
+              calculated_default_amount: parseUsd("31"),
+              charge: { id: "charge" },
+            }
+          : {
+              id: "charge",
+              property_id: propertyId,
+              customer_id: "customer-one",
+              original_amount: parseUsd("15"),
+              adjusted_obligation: parseUsd("10"),
+              remaining_balance: parseUsd("10"),
+              corrections: [
+                {
+                  id: "own-reduction",
+                  kind: "REDUCTION",
+                  active: true,
+                  amount: parseUsd("5"),
+                },
+              ],
+            };
+      const terminal =
+        action === "decide"
+          ? original
+          : {
+              ...original,
+              adjusted_obligation: parseUsd("0"),
+              remaining_balance: parseUsd("0"),
+              corrections: [
+                {
+                  id: "other-actor-reversal",
+                  kind: "CHARGE_REVERSAL",
+                  active: true,
+                  amount: parseUsd("10"),
+                  resulting_obligation: parseUsd("0"),
+                },
+              ],
+            };
+      const wire = (body: object, status: number) =>
+        new Response(JSON.stringify(body), { status });
+      const success = () =>
+        wire(
+          { data: original, meta: { request_id: "original-success" } },
+          action === "decide" ? 201 : 200,
+        );
+      const fetcher = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce(
+          wire(
+            {
+              error: {
+                code: "SERVICE_UNAVAILABLE",
+                fields: [],
+                current_version: null,
+              },
+              meta: { request_id: "pre-receipt-lock-timeout" },
+            },
+            503,
+          ),
+        )
+        .mockResolvedValueOnce(
+          wire(
+            {
+              error: {
+                code: "IDEMPOTENCY_KEY_REUSED",
+                current_state: terminal,
+              },
+              meta: { request_id: "key-conflict" },
+            },
+            409,
+          ),
+        )
+        .mockImplementation(() => Promise.resolve(success()));
+      vi.spyOn(document, "cookie", "get").mockReturnValue(
+        "__Host-prm_csrf=synthetic",
+      );
+      api.decide = invoiceApi.decide;
+      api.correctCharge = invoiceApi.correctCharge;
+      const journal = memoryJournal(saved);
+      const mount = () =>
+        render(
+          <InvoiceManagement
+            api={api}
+            journal={journal}
+            actorId="actor"
+            propertyId={propertyId}
+          />,
+        );
+      let mounted = mount();
+      const retry = async () => {
+        const button = await screen.findByRole("button", {
+          name: "Retry exact saved request",
+        });
+        await waitFor(() => {
+          expect(button).not.toBeDisabled();
+        });
+        fireEvent.click(button);
+      };
+      await retry();
+      await screen.findByText("Support request ID: pre-receipt-lock-timeout");
+      expect(screen.getByRole("alert")).toHaveTextContent(
+        "Outcome not confirmed",
+      );
+      expect(await journal.load("actor")).toEqual(saved);
+      expect(journal.clear).not.toHaveBeenCalled();
+      mounted.unmount();
+      mounted = mount();
+      await retry();
+      await screen.findByText("Support request ID: key-conflict");
+      expect(await journal.load("actor")).toEqual(saved);
+      expect(journal.clear).not.toHaveBeenCalled();
+      journal.clear.mockRejectedValueOnce(new Error("clearance unavailable"));
+      await retry();
+      await waitFor(() => {
+        expect(journal.clear).toHaveBeenCalledTimes(1);
+      });
+      await screen.findByRole("alert");
+      expect(await journal.load("actor")).toEqual(saved);
+      expect(
+        screen.getByRole("region", { name: "Billing reconciliation" }),
+      ).toBeInTheDocument();
+      mounted.unmount();
+      mount();
+      await retry();
+      await screen.findByText(/Command confirmed/);
+      expect(await journal.load("actor")).toBeNull();
+      expect(
+        screen.queryByRole("region", { name: "Billing reconciliation" }),
+      ).not.toBeInTheDocument();
+      expect(journal.begin).not.toHaveBeenCalled();
+      expect(journal.clear).toHaveBeenLastCalledWith("actor", saved.key);
+      expect(fetcher).toHaveBeenCalledTimes(4);
+      const firstRequest = fetcher.mock.calls[0];
+      for (const call of fetcher.mock.calls) {
+        expect(call[0]).toBe(firstRequest?.[0]);
+        expect(call[1]?.body).toBe(firstRequest?.[1]?.body);
+        expect(call[1]?.headers).toMatchObject({
+          "Idempotency-Key": saved.key,
+        });
+      }
+      if (action === "decide")
+        expect(
+          screen.getByRole("heading", { name: "Final decision: REDUCED" }),
+        ).toBeInTheDocument();
+      else {
+        expect(
+          screen.getByRole("heading", { name: "Separate Late-payment Charge" }),
+        ).toBeInTheDocument();
+        expect(screen.getByText(/Remaining USD 10.00/)).toBeInTheDocument();
+        expect(
+          screen.queryByText("other-actor-reversal"),
+        ).not.toBeInTheDocument();
+      }
+    },
+  );
   it.each([
     "first-confirmation",
     "reload",
@@ -1708,6 +1897,159 @@ describe("billing-run recovery after reload", () => {
   const property = "22222222-2222-4222-8222-222222222222";
   const id = "33333333-3333-4333-8333-333333333333";
   const key = "44444444-4444-4444-8444-444444444444";
+  it.each(["command", "read"])(
+    "clears obsolete %s feedback on retry review, cancellation and confirmation without changing identity",
+    async (priorError) => {
+      const { api, journal } = setup();
+      const invoice = { ...resource(), property_id: property };
+      const run = {
+        id,
+        property_id: property,
+        run_kind: "RENT",
+        logical_run_key: "rent/2026-09",
+        business_date: "2026-08-25",
+        status: "RETRYABLE",
+        period: { start: "2026-09-01", end: "2026-09-30" },
+        attempts: [],
+        idempotency_key: key,
+        requester_actor_id: actor,
+        invocation_source: "API",
+      };
+      api.capabilities = vi.fn().mockResolvedValue(capabilities);
+      vi.mocked(api.list).mockResolvedValue({
+        items: [invoice],
+        next_cursor: null,
+        capabilities,
+      });
+      vi.mocked(api.get).mockResolvedValue(invoice);
+      api.getRun = invoiceApi.getRun;
+      api.run = invoiceApi.run;
+      api.correctDraft = invoiceApi.correctDraft;
+      const fetcher = vi
+        .spyOn(globalThis, "fetch")
+        .mockImplementation((path, init) => {
+          if (typeof path === "string" && path.endsWith("/billing-runs/" + id))
+            return Promise.resolve(new Response(JSON.stringify({ data: run })));
+          if (init?.method === "POST")
+            return Promise.resolve(
+              new Response(
+                JSON.stringify({ data: { ...run, status: "COMPLETED" } }),
+              ),
+            );
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                error: {
+                  code:
+                    priorError === "command"
+                      ? "VALIDATION_ERROR"
+                      : "SERVICE_UNAVAILABLE",
+                  fields: ["reason"],
+                },
+                meta: { request_id: "obsolete-" + priorError },
+              }),
+              { status: priorError === "command" ? 422 : 503 },
+            ),
+          );
+        });
+      vi.spyOn(document, "cookie", "get").mockReturnValue(
+        "__Host-prm_csrf=synthetic",
+      );
+      render(
+        <InvoiceManagement
+          api={api}
+          journal={journal}
+          actorId={actor}
+          propertyId={property}
+        />,
+      );
+      await loadInvoice();
+      fill("Billing run ID", id);
+      fireEvent.click(
+        screen.getByRole("button", { name: "Inspect billing run" }),
+      );
+      await screen.findByRole("heading", {
+        name: "Run rent/2026-09: RETRYABLE",
+      });
+      if (priorError === "command") {
+        fill("Corrected authorized obligation ID", "approved");
+        fill("Draft correction reason", "correct source");
+        fireEvent.click(
+          screen.getByRole("button", { name: "Review draft correction" }),
+        );
+        await confirm();
+      } else {
+        api.list = invoiceApi.list;
+        fireEvent.click(screen.getByRole("button", { name: "Load invoices" }));
+      }
+      await screen.findByText("Support request ID: obsolete-" + priorError);
+      expect(screen.getByText("reason: Check this value.")).toBeInTheDocument();
+      const field = screen.getByLabelText("Draft correction reason");
+      if (priorError === "command") {
+        expect(field).toHaveAttribute("aria-invalid", "true");
+        expect(field).toHaveAttribute(
+          "aria-describedby",
+          "billing-field-error-0",
+        );
+      } else expect(field).not.toHaveAttribute("aria-invalid");
+      const assertFeedbackCleared = () => {
+        expect(field).not.toHaveAttribute("aria-invalid");
+        expect(field).not.toHaveAttribute("aria-describedby");
+        expect(
+          screen.queryByText("Support request ID: obsolete-" + priorError),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.queryByText("reason: Check this value."),
+        ).not.toBeInTheDocument();
+        expect(document.getElementById("billing-field-error-0")).toBeNull();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      };
+      const retry = screen.getByRole("button", {
+        name: "Review retry of same billing run",
+      });
+      const beforeReview = fetcher.mock.calls.length;
+      retry.focus();
+      fireEvent.click(retry);
+      assertFeedbackCleared();
+      const firstPreview = screen.getByRole("dialog").textContent;
+      expect(firstPreview).toContain(key);
+      expect(firstPreview).toContain("rent/2026-09");
+      fireEvent.click(
+        screen.getByRole("button", { name: "Cancel billing action" }),
+      );
+      assertFeedbackCleared();
+      expect(retry).toHaveFocus();
+      expect(fetcher).toHaveBeenCalledTimes(beforeReview);
+      expect(await journal.load(actor)).toBeNull();
+      fireEvent.click(retry);
+      assertFeedbackCleared();
+      expect(screen.getByRole("dialog").textContent).toBe(firstPreview);
+      await confirm();
+      await screen.findByText(/Command confirmed/);
+      assertFeedbackCleared();
+      expect(fetcher).toHaveBeenCalledTimes(beforeReview + 1);
+      const request = fetcher.mock.calls.at(-1);
+      expect(request?.[0]).toBe(
+        "/api/v1/properties/" + property + "/billing-runs/rent",
+      );
+      expect(request?.[1]?.headers).toMatchObject({ "Idempotency-Key": key });
+      const input = {
+        logical_run_key: "rent/2026-09",
+        business_date: "2026-08-25",
+        period_start: "2026-09-01",
+        period_end: "2026-09-30",
+      };
+      const requestBody = request?.[1]?.body;
+      if (typeof requestBody !== "string")
+        throw new Error("Expected JSON request body");
+      expect(JSON.parse(requestBody)).toEqual(input);
+      expect(journal.begin).toHaveBeenLastCalledWith(actor, {
+        key,
+        command: { action: "run", propertyId: property, kind: "rent", input },
+      });
+      expect(await journal.load(actor)).toBeNull();
+    },
+  );
   it.each(["API", "SCHEDULED", "FOREIGN", "MISSING"])(
     "inspects RETRYABLE %s runs and allows only original-actor API retries",
     async (source) => {
