@@ -10,6 +10,7 @@ from uuid import UUID
 from fastapi import APIRouter, Header, HTTPException, Request, status
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from property_rental.api import require_billing_actor
 from property_rental.billing_run import (
     BILLING_GENERATE_CAPABILITY,
     BillingRunAttempt,
@@ -81,6 +82,8 @@ def _actor(request: Request, resolver: ActorResolver) -> AuthenticatedActor:
     actor = resolver(request)
     if actor is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    if request.method in {"POST", "PATCH"}:
+        require_billing_actor(request, actor)
     return actor
 
 

@@ -161,7 +161,7 @@ function setup(
       run_kind: "RENT",
       logical_run_key: "rent-september",
       business_date: "2026-09-01",
-      status: "COMPLETED",
+      status: "RETRYABLE",
       period: { start: "2026-09-01", end: "2026-09-30" },
       attempts: [],
       evidence: {},
@@ -395,9 +395,11 @@ describe("V1-047 staff billing workflows", () => {
     await confirm();
     await screen.findByRole("alert");
     expect(journal.clear).toHaveBeenCalled();
+    expect(api.get).toHaveBeenCalledTimes(2);
     expect(
-      screen.queryByRole("button", { name: "Review invoice issuance" }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: "Review invoice issuance" }),
+    ).not.toBeDisabled();
+    expect(api.issue).toHaveBeenCalledTimes(1);
   });
   it("TEST-FE-242 does not repeat a successful command when a later list refresh fails", async () => {
     const { api, journal } = setup();
@@ -715,6 +717,25 @@ describe("V1-047 staff billing workflows", () => {
       "REDUCTION_REVERSAL",
     ] as const) {
       const { api, journal } = setup("UNPAID");
+      if (kind === "REDUCTION_REVERSAL")
+        vi.mocked(api.charge).mockResolvedValue({
+          id: "charge",
+          property_id: propertyId,
+          customer_id: "customer-one",
+          original_amount: parseUsd("15"),
+          adjusted_obligation: parseUsd("10"),
+          remaining_balance: parseUsd("10"),
+          corrections: [
+            {
+              id: "prior-reduction",
+              kind: "REDUCTION",
+              active: true,
+              amount: { currency: "USD", minor_units: 500 },
+              reverses_correction_id: null,
+            },
+          ],
+          evidence: { id: "charge" },
+        });
       render(
         <InvoiceManagement
           api={api}
@@ -752,6 +773,33 @@ describe("V1-047 staff billing workflows", () => {
       fireEvent.click(
         screen.getByRole("button", { name: "Review charge correction" }),
       );
+      const dialog = screen.getByRole("dialog");
+      const resultAmount =
+        kind === "REDUCTION"
+          ? "USD 10.00"
+          : kind === "CHARGE_REVERSAL"
+            ? "USD 0.00"
+            : "USD 15.00";
+      expect(
+        within(dialog).getByText("estimated resulting obligation")
+          .nextElementSibling,
+      ).toHaveTextContent(resultAmount);
+      expect(
+        within(dialog).getByText("estimated remaining balance")
+          .nextElementSibling,
+      ).toHaveTextContent(resultAmount);
+      expect(
+        within(dialog).getByText("estimated effect").nextElementSibling,
+      ).toHaveTextContent(
+        kind === "REDUCTION"
+          ? "USD -5.00"
+          : kind === "CHARGE_REVERSAL"
+            ? "USD -15.00"
+            : "USD 5.00",
+      );
+      expect(
+        within(dialog).getByText(/Snapshot estimate only/),
+      ).toHaveTextContent("immutable correction");
       expect(api.correctCharge).not.toHaveBeenCalled();
       await confirm();
       const input =
@@ -842,4 +890,429 @@ describe("V1-047 staff billing workflows", () => {
     fireEvent.click(screen.getByRole("button", { name: "Load invoices" }));
     await screen.findByText("No matching invoices.");
   });
+});
+
+describe("V1-047 bounded correction regressions", () => {
+  it.each(["actor", "property", "unmount"])(
+    "does not transmit after %s invalidation while journal reservation is pending",
+    async (change) => {
+      const { api, journal } = setup();
+      let reserved!: () => void;
+      journal.begin.mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            reserved = resolve;
+          }),
+      );
+      const view = render(
+        <InvoiceManagement
+          api={api}
+          journal={journal}
+          actorId="actor"
+          propertyId={propertyId}
+        />,
+      );
+      await loadInvoice();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Review invoice issuance" }),
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Confirm billing action" }),
+      );
+      expect(journal.begin).toHaveBeenCalledTimes(1);
+      if (change === "unmount") view.unmount();
+      else
+        view.rerender(
+          <InvoiceManagement
+            api={api}
+            journal={journal}
+            actorId={change === "actor" ? "actor-B" : "actor"}
+            propertyId={change === "property" ? "property-B" : propertyId}
+          />,
+        );
+      await act(() => {
+        reserved();
+        return Promise.resolve();
+      });
+      expect(api.issue).not.toHaveBeenCalled();
+      expect(journal.clear).not.toHaveBeenCalled();
+    },
+  );
+  it("TEST-FE-254 passes original actor and cancellable workspace to real transmission binding", async () => {
+    const { api, journal } = setup();
+    const boundIssue = vi.fn().mockResolvedValue({ ...resource(), version: 3 });
+    api.forActor = vi.fn().mockReturnValue({ ...api, issue: boundIssue });
+    const view = render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor-A"
+        propertyId={propertyId}
+      />,
+    );
+    await loadInvoice();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review invoice issuance" }),
+    );
+    await confirm();
+    expect(vi.mocked(api.forActor).mock.calls[0]?.[0].actorId).toBe("actor-A");
+    expect(boundIssue).toHaveBeenCalledTimes(1);
+    const binding = vi.mocked(api.forActor).mock.calls[0]?.[0];
+    expect(binding?.signal).toBeInstanceOf(AbortSignal);
+    view.unmount();
+    expect(binding?.signal.aborted).toBe(true);
+  });
+  it("TEST-FE-255 reconciles a saved exact 412 and requires fresh review at the current version", async () => {
+    const { api } = setup();
+    const saved: PendingBillingCommand = {
+      key: "saved",
+      command: { action: "issue", propertyId, id: "invoice-one", version: 2 },
+    };
+    const journal = memoryJournal(saved);
+    vi.mocked(api.issue).mockRejectedValueOnce(
+      new InvoiceClientError(412, "PRECONDITION_FAILED", false, 3),
+    );
+    vi.mocked(api.get).mockResolvedValue({ ...resource(), version: 3 });
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Retry exact saved request" }),
+    );
+    await waitFor(() => {
+      expect(journal.clear).toHaveBeenCalledWith("actor", "saved");
+    });
+    await screen.findByRole("heading", { name: "Invoice INV-047" });
+    fireEvent.click(screen.getByRole("button", { name: "Load invoices" }));
+    await screen.findByRole("button", { name: "INV-047" });
+    const review = screen.getByRole("button", {
+      name: "Review invoice issuance",
+    });
+    await waitFor(() => {
+      expect(review).not.toBeDisabled();
+    });
+    expect(api.issue).toHaveBeenCalledTimes(1);
+    fireEvent.click(review);
+    await confirm();
+    expect(vi.mocked(api.issue).mock.calls[1]).toEqual([
+      "invoice-one",
+      3,
+      expect.any(String),
+    ]);
+    expect(vi.mocked(api.issue).mock.calls[1]?.[2]).not.toBe("saved");
+  });
+  it.each([
+    new InvoiceClientError(412, "PRECONDITION_FAILED", false),
+    new InvoiceClientError(409, "IDEMPOTENCY_KEY_REUSED", false),
+    new InvoiceClientError(403, "FORBIDDEN", false),
+    new InvoiceClientError(503, "UNAVAILABLE", true),
+  ])("preserves unresolved saved outcomes: $code", async (error) => {
+    const { api } = setup();
+    const journal = memoryJournal({
+      key: "saved",
+      command: { action: "issue", propertyId, id: "invoice-one", version: 2 },
+    });
+    vi.mocked(api.issue).mockRejectedValue(error);
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Retry exact saved request" }),
+    );
+    await screen.findByRole("alert");
+    expect(journal.clear).not.toHaveBeenCalled();
+    expect(await journal.load("actor")).not.toBeNull();
+  });
+  it("TEST-FE-256 shows reasoned confirmed DRAFT voiding and preserves its history consequence", async () => {
+    const { api, journal } = setup("DRAFT", ["invoices.void"]);
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    await loadInvoice();
+    const reason = screen.getByLabelText("Invoice void reason");
+    expect(reason).toBeRequired();
+    fill("Invoice void reason", "Invalid approved source");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review invoice void" }),
+    );
+    expect(api.void).not.toHaveBeenCalled();
+    expect(
+      within(screen.getByRole("dialog")).getByText(
+        /Voiding ends this obligation/,
+      ),
+    ).toHaveTextContent("immutable void event");
+    await confirm();
+    expect(api.void).toHaveBeenCalledWith(
+      "invoice-one",
+      "Invalid approved source",
+      2,
+      expect.any(String),
+    );
+    expect(
+      screen.queryByRole("button", { name: "Review invoice void" }),
+    ).not.toBeInTheDocument();
+  });
+  it("TEST-FE-257 exposes billing generation and inspection when invoice reads are forbidden", async () => {
+    const { api, journal } = setup("DRAFT", []);
+    api.capabilities = vi.fn().mockResolvedValue(["billing.generate"]);
+    vi.mocked(api.list).mockRejectedValue(
+      new InvoiceClientError(403, "FORBIDDEN", false),
+    );
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    expect(
+      await screen.findByRole("button", { name: "Review billing run" }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Load invoices" }));
+    await screen.findByRole("alert");
+    expect(
+      screen.getByRole("button", { name: "Inspect billing run" }),
+    ).not.toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Review billing run" }),
+    ).not.toBeDisabled();
+    expect(
+      screen.queryByRole("button", { name: "Review draft creation" }),
+    ).not.toBeInTheDocument();
+  });
+  it("TEST-FE-258 contains dialog keyboard focus and restores cancellation and completion focus", async () => {
+    const { api, journal } = setup();
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    await loadInvoice();
+    const opener = screen.getByRole("button", {
+      name: "Review invoice issuance",
+    });
+    opener.focus();
+    fireEvent.click(opener);
+    const dialog = screen.getByRole("dialog", {
+      name: "Confirm billing action",
+    });
+    expect(dialog).toHaveFocus();
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    fireEvent.keyDown(dialog, { key: "Tab", shiftKey: true });
+    const cancel = screen.getByRole("button", {
+      name: "Cancel billing action",
+    });
+    expect(cancel).toHaveFocus();
+    fireEvent.keyDown(cancel, { key: "Tab" });
+    expect(
+      within(dialog).getByText("Evidence reviewed for this action"),
+    ).toHaveFocus();
+    fireEvent.keyDown(screen.getByText("Evidence reviewed for this action"), {
+      key: "Escape",
+    });
+    expect(opener).toHaveFocus();
+    expect(api.issue).not.toHaveBeenCalled();
+    fireEvent.click(opener);
+    await confirm();
+    // Issuance removes its initiating button; restore to the result announcement.
+    expect(screen.getByRole("status")).toHaveFocus();
+  });
+  it("TEST-FE-259 associates safe field details with the originating form and exposes the support ID", async () => {
+    const { api, journal } = setup();
+    vi.mocked(api.correctDraft).mockRejectedValue(
+      new InvoiceClientError(
+        422,
+        "VALIDATION_ERROR",
+        false,
+        null,
+        ["reason", "authorized_nonrecurring_obligation_id"],
+        "request-safe-123",
+      ),
+    );
+    render(
+      <InvoiceManagement
+        api={api}
+        journal={journal}
+        actorId="actor"
+        propertyId={propertyId}
+      />,
+    );
+    await loadInvoice();
+    fill("Corrected authorized obligation ID", "approved");
+    fill("Draft correction reason", "reason");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review draft correction" }),
+    );
+    await confirm();
+    expect(
+      screen.getByText("Support request ID: request-safe-123"),
+    ).toBeInTheDocument();
+    const field = screen.getByLabelText("Draft correction reason");
+    expect(field).toHaveAttribute("aria-invalid", "true");
+    expect(field).toHaveAccessibleDescription("reason: Check this value.");
+    expect(screen.getByLabelText("Invoice void reason")).not.toHaveAttribute(
+      "aria-invalid",
+    );
+    expect(
+      screen.getByLabelText("Authorized obligation ID"),
+    ).not.toHaveAttribute("aria-invalid");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review draft correction" }),
+    );
+    expect(field).not.toHaveAttribute("aria-invalid");
+  });
+  it.each([1n, 2n])(
+    "previews near-bigint-limit adjustments with exact arithmetic (delta %s)",
+    async (delta) => {
+      const { api, journal } = setup("UNPAID");
+      const exact = {
+        ...resource("UNPAID"),
+        adjusted_total: {
+          currency: "USD" as const,
+          minor_units: 9223372036854775805n,
+        },
+        outstanding_balance: {
+          currency: "USD" as const,
+          minor_units: 9223372036854775805n,
+        },
+      };
+      const line = exact.lines[0];
+      if (!line) throw new Error("Missing line fixture");
+      line.adjusted_amount = exact.adjusted_total;
+      vi.mocked(api.get).mockResolvedValue(exact);
+      render(
+        <InvoiceManagement
+          api={api}
+          journal={journal}
+          actorId="actor"
+          propertyId={propertyId}
+        />,
+      );
+      await loadInvoice();
+      fill("Adjustment amount (USD)", delta === 1n ? "0.01" : "0.02");
+      fill("Adjustment reason", "approved");
+      fill("Adjustment source reference", "source");
+      fireEvent.click(
+        screen.getByRole("button", { name: "Review adjustment" }),
+      );
+      const preview = within(screen.getByRole("dialog"));
+      expect(
+        preview.getByText("estimated adjusted total").nextElementSibling,
+      ).toHaveTextContent(
+        delta === 1n ? "USD 92233720368547758.06" : "USD 92233720368547758.07",
+      );
+      expect(api.adjust).not.toHaveBeenCalled();
+    },
+  );
+});
+
+describe("billing-run recovery after reload", () => {
+  const actor = "11111111-1111-4111-8111-111111111111";
+  const property = "22222222-2222-4222-8222-222222222222";
+  const id = "33333333-3333-4333-8333-333333333333";
+  const key = "44444444-4444-4444-8444-444444444444";
+  it.each(["API", "SCHEDULED", "FOREIGN", "MISSING"])(
+    "inspects RETRYABLE %s runs and allows only original-actor API retries",
+    async (source) => {
+      const { api, journal } = setup();
+      const run = {
+        id,
+        property_id: property,
+        run_kind: "RENT" as const,
+        logical_run_key: "rent/2026-09",
+        business_date: "2026-08-25",
+        status: "RETRYABLE",
+        period: { start: "2026-09-01", end: "2026-09-30" },
+        attempts: [],
+        evidence: {
+          idempotency_key: source === "MISSING" ? null : key,
+          requester_actor_id:
+            source === "FOREIGN"
+              ? "55555555-5555-4555-8555-555555555555"
+              : actor,
+          invocation_source: source === "SCHEDULED" ? "SCHEDULED" : "API",
+        },
+      };
+      api.capabilities = vi.fn().mockResolvedValue(["billing.generate"]);
+      vi.mocked(api.getRun).mockResolvedValue(run);
+      vi.mocked(api.run).mockResolvedValue(run);
+      const first = render(
+        <InvoiceManagement
+          api={api}
+          journal={journal}
+          actorId={actor}
+          propertyId={property}
+        />,
+      );
+      await screen.findByRole("button", { name: "Inspect billing run" });
+      first.unmount();
+      render(
+        <InvoiceManagement
+          api={api}
+          journal={journal}
+          actorId={actor}
+          propertyId={property}
+        />,
+      );
+      await screen.findByRole("button", { name: "Inspect billing run" });
+      await screen.findByText("Load authorized invoices to begin.");
+      fill("Billing run ID", id);
+      fireEvent.click(
+        screen.getByRole("button", { name: "Inspect billing run" }),
+      );
+      await screen.findByRole("heading", {
+        name: "Run rent/2026-09: RETRYABLE",
+      });
+      expect(api.run).not.toHaveBeenCalled();
+      if (source === "API") {
+        const retry = screen.getByRole("button", {
+          name: "Review retry of same billing run",
+        });
+        await waitFor(() => {
+          expect(retry).not.toBeDisabled();
+        });
+        fireEvent.click(retry);
+        await confirm();
+        expect(api.run).toHaveBeenCalledWith(
+          property,
+          "rent",
+          {
+            logical_run_key: "rent/2026-09",
+            business_date: "2026-08-25",
+            period_start: "2026-09-01",
+            period_end: "2026-09-30",
+          },
+          key,
+        );
+        expect(journal.begin).toHaveBeenCalledWith(
+          actor,
+          expect.objectContaining({ key }),
+        );
+      } else
+        expect(
+          screen.queryByRole("button", {
+            name: "Review retry of same billing run",
+          }),
+        ).not.toBeInTheDocument();
+    },
+  );
 });

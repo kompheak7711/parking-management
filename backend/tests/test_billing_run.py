@@ -241,3 +241,49 @@ def test_bounded_worker_loop_uses_capped_backoff_and_stops() -> None:
 
     assert worker.calls == 4
     assert sleeps == [2, 3, 3]
+
+
+def test_billing_routes_bind_actor_and_remain_available_without_invoice_read() -> None:
+    command = rent_command()
+    flow = RecordingFlow()
+    actor = AuthenticatedActor(
+        actor_id=str(uuid4()),
+        capability_grants=frozenset(
+            {CapabilityGrant("billing.generate", frozenset({str(command.property_id)}))}
+        ),
+    )
+    client = TestClient(create_app(actor_resolver=lambda _: actor, billing_run_flow=flow))
+    client.cookies.set("__Host-prm_csrf", "csrf")
+    headers = {
+        "Origin": "https://localhost",
+        "X-CSRF-Token": "csrf",
+        "Idempotency-Key": str(command.idempotency_key),
+        "X-Billing-Actor-ID": str(uuid4()),
+    }
+    body = {
+        "logical_run_key": command.logical_run_key,
+        "business_date": command.business_date.isoformat(),
+        "period_start": command.period_start.isoformat(),
+        "period_end": command.period_end.isoformat(),
+    }
+    for kind in ("rent", "utilities"):
+        assert (
+            client.post(
+                f"/api/v1/properties/{command.property_id}/billing-runs/{kind}",
+                headers=headers,
+                json=body,
+            ).status_code
+            == 403
+        )
+    assert flow.commands == []
+    headers["X-Billing-Actor-ID"] = actor.actor_id
+    accepted = client.post(
+        f"/api/v1/properties/{command.property_id}/billing-runs/rent", headers=headers, json=body
+    )
+    assert accepted.status_code == 200
+    run = accepted.json()["data"]
+    inspected = client.get(f"/api/v1/billing-runs/{run['id']}")
+    assert inspected.status_code == 200
+    assert inspected.json()["data"]["idempotency_key"] == str(command.idempotency_key)
+    assert inspected.json()["data"]["invocation_source"] == "API"
+    assert client.get(f"/api/v1/properties/{command.property_id}/invoices").status_code == 403

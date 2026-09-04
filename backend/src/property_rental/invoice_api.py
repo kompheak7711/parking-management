@@ -10,6 +10,7 @@ from fastapi import APIRouter, Header, HTTPException, Query, Request, Response, 
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from property_rental.api import require_billing_actor
 from property_rental.browser_security import require_browser_mutation
 from property_rental.identity import (
     ActorResolver,
@@ -177,6 +178,8 @@ def _actor(request: Request, resolver: ActorResolver) -> AuthenticatedActor:
     actor = resolver(request)
     if actor is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    if request.method in {"POST", "PATCH"}:
+        require_billing_actor(request, actor)
     return actor
 
 
@@ -240,12 +243,46 @@ def _etag(response: Response, resource: dict[str, object]) -> None:
     response.headers["ETag"] = f'"{int(str(resource["version"]))}"'
 
 
+def billing_capabilities(actor: AuthenticatedActor, property_id: UUID) -> list[str]:
+    """Visibility only; each route and service retain authoritative authorization."""
+    return [
+        capability
+        for capability in (
+            INVOICE_CREATE_CAPABILITY,
+            INVOICE_ISSUE_CAPABILITY,
+            INVOICE_ADJUST_CAPABILITY,
+            INVOICE_VOID_CAPABILITY,
+            "billing.generate",
+            "late_payment.review",
+            "late_payment.final_decision",
+            "late_payment.charge_correction",
+        )
+        if is_authorized(
+            actor,
+            AuthorizationRequirement(capability=capability, property_id=str(property_id)),
+        )
+    ]
+
+
 def create_invoice_router(
     resolver: ActorResolver,
     flow: InvoiceFlow,
     settings: Settings,
 ) -> APIRouter:
     router = APIRouter(prefix="/api/v1", tags=["invoices"])
+
+    @router.get("/properties/{property_id}/billing-capabilities")
+    def get_billing_capabilities(property_id: UUID, request: Request) -> dict[str, object]:
+        if request.query_params:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        actor = _actor(request, resolver)
+        return _envelope(
+            {
+                "property_id": str(property_id),
+                "billing_capabilities": billing_capabilities(actor, property_id),
+            },
+            request,
+        )
 
     @router.get("/properties/{property_id}/invoices")
     def list_invoices(
@@ -290,25 +327,7 @@ def create_invoice_router(
             "page": {"next_cursor": page.next_cursor, "limit": limit},
             "meta": {
                 "request_id": request.state.request_id,
-                "billing_capabilities": [
-                    capability
-                    for capability in (
-                        INVOICE_CREATE_CAPABILITY,
-                        INVOICE_ISSUE_CAPABILITY,
-                        INVOICE_ADJUST_CAPABILITY,
-                        INVOICE_VOID_CAPABILITY,
-                        "billing.generate",
-                        "late_payment.review",
-                        "late_payment.final_decision",
-                        "late_payment.charge_correction",
-                    )
-                    if is_authorized(
-                        actor,
-                        AuthorizationRequirement(
-                            capability=capability, property_id=str(property_id)
-                        ),
-                    )
-                ],
+                "billing_capabilities": billing_capabilities(actor, property_id),
             },
         }
 

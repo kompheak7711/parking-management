@@ -1,4 +1,11 @@
-import { FormEvent, useEffect, useRef, useState } from "react";
+import {
+  FormEvent,
+  ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   BillingCommand,
   BillingJournal,
@@ -17,6 +24,8 @@ import {
   LatePaymentReview,
   PendingBillingCommand,
   billingJournal,
+  billingRunRetry,
+  requestMoney,
   executeBilling,
   formatUsd,
   money,
@@ -64,6 +73,88 @@ function EvidenceView({ value }: { value: JsonValue }) {
     </dl>
   );
 }
+function ConfirmationDialog({
+  children,
+  onCancel,
+}: {
+  children: ReactNode;
+  onCancel: () => void;
+}) {
+  const dialog = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const opener =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    dialog.current?.focus();
+    return () => {
+      if (opener?.isConnected && !opener.matches(":disabled")) opener.focus();
+      else document.getElementById("billing-notice")?.focus();
+    };
+  }, []);
+  return (
+    <section
+      ref={dialog}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Confirm billing action"
+      tabIndex={-1}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          onCancel();
+        }
+        if (event.key !== "Tab") return;
+        const controls = [
+          ...(dialog.current?.querySelectorAll<HTMLElement>("*") ?? []),
+        ].filter(
+          (control) =>
+            control.matches(
+              'button, summary, [href], input, select, [tabindex="0"]',
+            ) && !control.matches(":disabled"),
+        );
+        const first = controls[0],
+          last = controls.at(-1);
+        if (!first) {
+          event.preventDefault();
+          dialog.current?.focus();
+        } else if (
+          event.shiftKey &&
+          (document.activeElement === first ||
+            document.activeElement === dialog.current)
+        ) {
+          event.preventDefault();
+          last?.focus();
+        } else if (
+          !event.shiftKey &&
+          (document.activeElement === last ||
+            document.activeElement === dialog.current)
+        ) {
+          event.preventDefault();
+          first.focus();
+        }
+      }}
+    >
+      {children}
+    </section>
+  );
+}
+const fieldAliases: Record<string, string> = {
+  authorized_nonrecurring_obligation_id: "obligation",
+  invoice_line_id: "line",
+  adjustment_type: "direction",
+  amount: "amount",
+  approved_amount: "amount",
+  source_reference: "source",
+  reverses_correction_id: "source",
+  reason: "reason",
+  outcome: "outcome",
+  kind: "kind",
+  logical_run_key: "logical",
+  business_date: "business",
+  period_start: "start",
+  period_end: "end",
+};
 function Field({
   name,
   label,
@@ -192,6 +283,9 @@ function BillingWorkspace({
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("Checking billing recovery…");
   const [failed, setFailed] = useState(false);
+  const [validation, setValidation] = useState<InvoiceClientError | null>(null);
+  const errorForm = useRef<HTMLFormElement | null>(null);
+  const transmission = useRef(new AbortController());
   const alive = useRef(true),
     lock = useRef(false);
   function stillMounted() {
@@ -199,8 +293,9 @@ function BillingWorkspace({
   }
   const can = (capability: string) => capabilities.includes(capability);
   const blocked = busy || !ready || pending !== null || preview !== null;
-  useEffect(() => {
+  useLayoutEffect(() => {
     alive.current = true;
+    transmission.current = new AbortController();
     void journal
       .load(actorId)
       .then((saved) => {
@@ -223,8 +318,47 @@ function BillingWorkspace({
       });
     return () => {
       alive.current = false;
+      transmission.current.abort();
     };
   }, [actorId, journal]);
+  useEffect(() => {
+    if (!api.capabilities) return;
+    let active = true;
+    void api
+      .capabilities(propertyId)
+      .then((grants) => {
+        if (active) setCapabilities(grants);
+      })
+      .catch(() => {
+        if (active) setCapabilities([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [api, propertyId]);
+  useEffect(() => {
+    const fields = validation?.fields ?? [];
+    const controls: Element[] = [];
+    fields.forEach((field, index) => {
+      const name = fieldAliases[field.split(".")[0] ?? ""];
+      if (!name) return;
+      const control = errorForm.current?.elements.namedItem(name);
+      if (control instanceof HTMLElement) {
+        control.setAttribute("aria-invalid", "true");
+        control.setAttribute(
+          "aria-describedby",
+          "billing-field-error-" + String(index),
+        );
+        controls.push(control);
+      }
+    });
+    return () => {
+      controls.forEach((control) => {
+        control.removeAttribute("aria-invalid");
+        control.removeAttribute("aria-describedby");
+      });
+    };
+  }, [validation]);
   function message(error: unknown) {
     return error instanceof InvoiceClientError
       ? error.message
@@ -248,7 +382,7 @@ function BillingWorkspace({
     }
   }
   async function load(nextFilters: InvoiceFilters, append = false) {
-    setCapabilities([]);
+    if (!api.capabilities) setCapabilities([]);
     await read(async () => {
       const page = await api.list(propertyId, nextFilters);
       if (!stillMounted()) return;
@@ -265,7 +399,7 @@ function BillingWorkspace({
           : page.items,
       );
       setCursor(page.next_cursor);
-      setCapabilities(page.capabilities);
+      if (!api.capabilities) setCapabilities(page.capabilities);
       setFilters(nextFilters);
       setLoaded(true);
       setNotice(
@@ -304,7 +438,7 @@ function BillingWorkspace({
       if (
         BigInt(line.adjusted_amount.minor_units) + delta < 0n ||
         adjusted < applied ||
-        adjusted > 9_000_000_000_000_000n
+        adjusted > (1n << 63n) - 1n
       ) {
         throw new Error("Adjustment outside displayed balance bounds");
       }
@@ -313,11 +447,11 @@ function BillingWorkspace({
         reviewed_invoice: context,
         estimated_adjusted_total: {
           currency: "USD",
-          minor_units: Number(adjusted),
+          minor_units: adjusted,
         },
         estimated_outstanding_balance: {
           currency: "USD",
-          minor_units: Number(outstanding),
+          minor_units: outstanding,
         },
         estimated_status:
           outstanding === 0n
@@ -329,6 +463,60 @@ function BillingWorkspace({
           "Snapshot estimate only. The server validates the current version, line balance and status at confirmation.",
       };
     }
+    if (command.action === "correctCharge" && charge?.id === command.id) {
+      const current = BigInt(charge.adjusted_obligation.minor_units);
+      const remaining = BigInt(charge.remaining_balance.minor_units);
+      let delta: bigint;
+      if (command.input.kind === "REDUCTION") {
+        delta = -BigInt(command.input.amount.minor_units);
+        if (delta >= 0n || -delta >= current)
+          throw new Error("Invalid reduction");
+      } else if (command.input.kind === "CHARGE_REVERSAL") delta = -current;
+      else {
+        const id = command.input.reverses_correction_id;
+        const source = charge.corrections.find(
+          (item) =>
+            item.id === id && item.kind === "REDUCTION" && item.active === true,
+        );
+        if (
+          !source ||
+          charge.corrections.some((item) => item.reverses_correction_id === id)
+        )
+          throw new Error(
+            "Active reduction unavailable; reload charge history",
+          );
+        delta = BigInt(money(source.amount).minor_units);
+        if (delta <= 0n) throw new Error("Invalid reduction evidence");
+      }
+      const resulting = current + delta,
+        balance = remaining + delta;
+      if (
+        resulting < 0n ||
+        resulting > BigInt(charge.original_amount.minor_units) ||
+        balance < 0n
+      )
+        throw new Error(
+          "Correction requires application reversal or exceeds the obligation",
+        );
+      context = {
+        reviewed_charge: context,
+        estimated_effect: { currency: "USD", minor_units: delta },
+        estimated_resulting_obligation: {
+          currency: "USD",
+          minor_units: resulting,
+        },
+        estimated_remaining_balance: { currency: "USD", minor_units: balance },
+        notice:
+          "Snapshot estimate only. The server validates current authority, active applications and correction history. This appends an immutable correction; the original charge, final decision and source invoice remain in history.",
+      };
+    }
+    if (command.action === "void")
+      context = {
+        reviewed_invoice: context,
+        estimated_status: "VOID",
+        notice:
+          "Voiding ends this obligation and records an immutable void event and reason. Original invoice history is preserved. The server checks current authority, version and unresolved dependencies.",
+      };
     setFailed(false);
     setPreview({ pending: { key: crypto.randomUUID(), command }, context });
     setNotice("Review the exact action and evidence, then explicitly confirm.");
@@ -339,6 +527,8 @@ function BillingWorkspace({
     context: JsonValue = null,
   ) {
     event.preventDefault();
+    errorForm.current = event.currentTarget;
+    setValidation(null);
     try {
       review(build(new FormData(event.currentTarget)), context);
     } catch {
@@ -355,18 +545,19 @@ function BillingWorkspace({
     setBusy(true);
     setFailed(false);
     let saved = retry;
+    const signal = transmission.current.signal;
     try {
       if (!retry) {
         await journal.begin(actorId, intent);
         saved = true;
       }
+      if (!stillMounted() || signal.aborted) return;
       // Persist before sending; no authentication token is stored with the intent.
       if (stillMounted()) {
         setPending(intent);
-        setPreview(null);
         setNotice("Submitting the confirmed billing command…");
       }
-      const result = await executeBilling(api, intent);
+      const result = await executeBilling(api, intent, { actorId, signal });
       if (
         intent.command.action === "decide" &&
         (!("source_invoice" in result) ||
@@ -426,28 +617,48 @@ function BillingWorkspace({
           if (stillMounted()) setReady(false);
         }
       } else if (
-        !retry &&
         error instanceof InvoiceClientError &&
-        !error.outcomeUnknown
+        !error.outcomeUnknown &&
+        ((!retry &&
+          error.status !== null &&
+          [400, 412, 422].includes(error.status)) ||
+          (error.status === 412 &&
+            error.code === "PRECONDITION_FAILED" &&
+            error.currentVersion !== null &&
+            "version" in intent.command))
       ) {
         try {
           await journal.clear(actorId, intent.key);
           if (stillMounted()) {
             setPending(null);
-            setInvoice(null);
-            setCapabilities([]);
+            // Preserve reviewed inputs; any subsequent review uses a freshly loaded resource.
+            if ("version" in intent.command) {
+              const current = await api.get(intent.command.id);
+              if (
+                stillMounted() &&
+                current.property_id === propertyId &&
+                current.id === intent.command.id
+              )
+                setInvoice(current);
+              else if (stillMounted()) setInvoice(null);
+            }
           }
         } catch {
+          if (stillMounted()) setInvoice(null);
           /* Keep the durable gate when clearance is not confirmed. */
         }
       }
       if (stillMounted()) {
         setFailed(true);
+        setValidation(error instanceof InvoiceClientError ? error : null);
         setNotice(message(error));
       }
     } finally {
       lock.current = false;
-      if (stillMounted()) setBusy(false);
+      if (stillMounted()) {
+        setBusy(false);
+        setPreview(null);
+      }
     }
   }
   async function lateReview() {
@@ -476,7 +687,21 @@ function BillingWorkspace({
   }
   return (
     <div className="billing-workspace">
-      <p role={failed ? "alert" : "status"}>{notice}</p>
+      <p id="billing-notice" tabIndex={-1} role={failed ? "alert" : "status"}>
+        {notice}
+      </p>
+      {validation && (
+        <div aria-live="polite">
+          {validation.requestId && (
+            <p>Support request ID: {validation.requestId}</p>
+          )}
+          {validation.fields.map((field, index) => (
+            <p key={field} id={"billing-field-error-" + String(index)}>
+              {field.replaceAll("_", " ")}: Check this value.
+            </p>
+          ))}
+        </div>
+      )}
       {pending && (
         <section aria-label="Billing reconciliation">
           <h3>Reconcile saved billing command</h3>
@@ -489,7 +714,7 @@ function BillingWorkspace({
               <EvidenceView value={pending.command as unknown as JsonValue} />
               <button
                 type="button"
-                disabled={busy || !ready}
+                disabled={busy || !ready || preview !== null}
                 onClick={() => void submit(pending, true)}
               >
                 Retry exact saved request
@@ -794,40 +1019,38 @@ function BillingWorkspace({
                     <button type="submit">Review adjustment</button>
                   </form>
                 )}
-                {can("invoices.void") && (
-                  <form
-                    onSubmit={(event) => {
-                      formReview(
-                        event,
-                        (data) => ({
-                          action: "void",
-                          propertyId,
-                          id: invoice.id,
-                          version: invoice.version,
-                          reason: value(data, "reason"),
-                        }),
-                        invoice.evidence,
-                      );
-                    }}
-                  >
-                    <h4>Exceptional invoice void</h4>
-                    <p>
-                      Void preserves history and ends this obligation. Active
-                      applications must be reversed through their authorized
-                      workflow first.
-                    </p>
-                    <Field name="reason" label="Invoice void reason" />
-                    <button
-                      type="submit"
-                      disabled={
-                        invoice.active_application_total.minor_units > 0
-                      }
-                    >
-                      Review invoice void
-                    </button>
-                  </form>
-                )}
               </>
+            )}{" "}
+            {invoice.status !== "VOID" && can("invoices.void") && (
+              <form
+                onSubmit={(event) => {
+                  formReview(
+                    event,
+                    (data) => ({
+                      action: "void",
+                      propertyId,
+                      id: invoice.id,
+                      version: invoice.version,
+                      reason: value(data, "reason"),
+                    }),
+                    invoice.evidence,
+                  );
+                }}
+              >
+                <h4>Exceptional invoice void</h4>
+                <p>
+                  Void preserves history and ends this obligation. Active
+                  applications must be reversed through their authorized
+                  workflow first.
+                </p>
+                <Field name="reason" label="Invoice void reason" />
+                <button
+                  type="submit"
+                  disabled={invoice.active_application_total.minor_units > 0}
+                >
+                  Review invoice void
+                </button>
+              </form>
             )}
             {can("late_payment.review") && (
               <button type="button" onClick={() => void lateReview()}>
@@ -879,7 +1102,7 @@ function BillingWorkspace({
                           propertyId,
                           id: assessment.invoice_id,
                           outcome,
-                          amount,
+                          amount: requestMoney(amount),
                           reason: value(data, "reason"),
                         };
                       },
@@ -1083,7 +1306,7 @@ function BillingWorkspace({
                   if (result.property_id !== propertyId || result.id !== id)
                     throw new Error("Run scope mismatch");
                   setRun(result);
-                  setLastRun(null);
+                  setLastRun(billingRunRetry(result, actorId, propertyId));
                   setNotice("Billing run evidence loaded.");
                 });
               }}
@@ -1121,7 +1344,7 @@ function BillingWorkspace({
                       </button>
                     ) : null,
                   )}
-                {lastRun && (
+                {lastRun && run.status === "RETRYABLE" && (
                   <button
                     type="button"
                     onClick={() => {
@@ -1137,11 +1360,13 @@ function BillingWorkspace({
         )}
       </fieldset>
       {preview && (
-        <section
-          role="dialog"
-          aria-modal="false"
-          aria-label="Confirm billing action"
-          tabIndex={-1}
+        <ConfirmationDialog
+          onCancel={() => {
+            if (!busy) {
+              setPreview(null);
+              setNotice("Action cancelled; nothing was sent.");
+            }
+          }}
         >
           <h3>Confirm {preview.pending.command.action}</h3>
           <p>
@@ -1175,7 +1400,7 @@ function BillingWorkspace({
           >
             Cancel billing action
           </button>
-        </section>
+        </ConfirmationDialog>
       )}
     </div>
   );

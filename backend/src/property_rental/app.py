@@ -164,7 +164,7 @@ BILLING_RUN_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:properties/[^/]+/billing-runs/(?:rent|utilities)$|billing-runs/[^/]+$)"
 )
 INVOICE_API_PATH_PATTERN: Final = re.compile(
-    r"^/api/v1/(?:properties/[^/]+/invoices(?:/|$)|invoices(?:/|$))"
+    r"^/api/v1/(?:properties/[^/]+/(?:invoices(?:/|$)|billing-capabilities$)|invoices(?:/|$))"
 )
 LATE_PAYMENT_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:invoices/[^/]+/late-payment-(?:review|decision)$|"

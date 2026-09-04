@@ -498,6 +498,13 @@ def test_late_payment_traceability_mappings_are_truthful() -> None:
         }
     }
     assert late_payment_mappings == {
+        "test_actual_cross_actor_cookie_and_csrf_replay_is_rejected_before_second_reduction": [
+            "SEC-028",
+            "API-015",
+            "API-016",
+            "DL-039",
+        ],
+        "test_final_decision_rejects_foreign_confirming_actor": ["SEC-028", "API-091"],
         "test_final_decision_command_preserves_only_canonical_client_intent": [
             "API-005",
             "API-091",
@@ -632,3 +639,106 @@ def test_late_payment_traceability_mappings_are_truthful() -> None:
         ],
         "test_revision_36_upgrades_to_late_payment_api_head": ["DB-MIG-001"],
     }
+
+
+class ActorScopedCorrectionFlow(InMemoryLatePaymentFlow):
+    """Exercise the HTTP boundary against actor-scoped successful receipts."""
+
+    def __init__(self, property_id: UUID, invoice_id: UUID, charge_id: UUID) -> None:
+        super().__init__(property_id, invoice_id, charge_id)
+        self.balance = 1500
+        self.receipts: dict[tuple[str, UUID], LatePaymentCommandResponse] = {}
+
+    def correct_charge(
+        self,
+        property_id: UUID,
+        charge_id: UUID,
+        command: CorrectLatePaymentChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+        request_id: str,
+    ) -> LatePaymentCommandResponse:
+        self._authorize(actor, "late_payment.charge_correction")
+        identity = (actor.actor_id, command.idempotency_key)
+        if identity in self.receipts:
+            return self.receipts[identity]
+        assert command.amount_usd_cents == 500
+        self.balance -= command.amount_usd_cents
+        self.corrections.append(command)
+        resource = charge_resource(property_id, self.invoice_id, charge_id)
+        resource["adjusted_obligation"] = {"currency": "USD", "minor_units": self.balance}
+        resource["remaining_balance"] = resource["adjusted_obligation"]
+        result = LatePaymentCommandResponse(
+            200, {"data": resource, "meta": {"request_id": request_id}}
+        )
+        self.receipts[identity] = result
+        return result
+
+
+def test_actual_cross_actor_cookie_and_csrf_replay_is_rejected_before_second_reduction() -> None:
+    property_id = uuid4()
+    flow = ActorScopedCorrectionFlow(property_id, uuid4(), uuid4())
+    first = actor(property_id, "late_payment.charge_correction")
+    second = actor(property_id, "late_payment.charge_correction")
+    identities = {"A": first, "B": second}
+    client = TestClient(
+        create_app(
+            actor_resolver=lambda request: identities.get(request.cookies.get("test-session", "")),
+            late_payment_flow=flow,
+        ),
+        base_url="https://localhost",
+    )
+    client.cookies.set("test-session", "A")
+    client.cookies.set("__Host-prm_csrf", "csrf-A")
+    key = uuid4()
+    headers = {
+        "Origin": "https://localhost",
+        "X-CSRF-Token": "csrf-A",
+        "Idempotency-Key": str(key),
+        "X-Billing-Actor-ID": first.actor_id,
+    }
+    body = {
+        "kind": "REDUCTION",
+        "amount": {"currency": "USD", "minor_units": 500},
+        "reason": "Approved",
+    }
+    url = f"/api/v1/late-payment-charges/{flow.charge_id}/corrections"
+    committed = client.post(url, json=body, headers=headers)
+    assert committed.status_code == 200
+    assert flow.balance == 1000
+    # A's response is lost. Another tab signs in as B; A's saved intent is unchanged.
+    client.cookies.set("test-session", "B")
+    client.cookies.set("__Host-prm_csrf", "csrf-B")
+    headers["X-CSRF-Token"] = "csrf-B"
+    rejected = client.post(url, json=body, headers=headers)
+    assert rejected.status_code == 403
+    assert flow.balance == 1000
+    assert len(flow.corrections) == 1
+    assert (second.actor_id, key) not in flow.receipts
+    client.cookies.set("test-session", "A")
+    client.cookies.set("__Host-prm_csrf", "csrf-A")
+    headers["X-CSRF-Token"] = "csrf-A"
+    assert client.post(url, json=body, headers=headers).json() == committed.json()
+    assert len(flow.corrections) == 1
+    # Legacy clients retain actor-scoped receipts; the binding does not globalize keys.
+    client.cookies.set("test-session", "B")
+    headers.pop("X-Billing-Actor-ID")
+    assert client.post(url, json=body, headers=headers).status_code == 200
+    assert (second.actor_id, key) in flow.receipts
+
+
+def test_final_decision_rejects_foreign_confirming_actor() -> None:
+    property_id = uuid4()
+    flow = InMemoryLatePaymentFlow(property_id, uuid4(), uuid4())
+    current = actor(property_id, "late_payment.final_decision")
+    result = api(flow, current).post(
+        f"/api/v1/invoices/{flow.invoice_id}/late-payment-decision",
+        json={
+            "outcome": "WAIVED",
+            "approved_amount": {"currency": "USD", "minor_units": 0},
+            "reason": "Approved",
+        },
+        headers={**mutation_headers(), "X-Billing-Actor-ID": str(uuid4())},
+    )
+    assert result.status_code == 403
+    assert flow.decisions == []

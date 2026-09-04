@@ -1,12 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   InvoiceClientError,
+  BillingRun,
+  billingRunRetry,
   executeBilling,
   formatUsd,
   invoiceApi,
   money,
   parseUsd,
 } from "./invoiceClient";
+function required<T>(value: T | null | undefined): T {
+  if (value === null || value === undefined)
+    throw new Error("Missing test value");
+  return value;
+}
 function bodyOf(init: RequestInit | undefined): unknown {
   if (typeof init?.body !== "string")
     throw new Error("Expected JSON request body");
@@ -91,14 +98,14 @@ describe("V1-047 invoice client", () => {
   });
   it.each([
     usd(0.5),
-    usd(-1),
+    { currency: "USD", minor_units: -(1n << 63n) - 1n },
     usd(Number.MAX_SAFE_INTEGER + 1),
     { currency: "KHR", minor_units: 100 },
     { currency: "USD", minor_units: "100" },
   ])("fails closed on malformed money", (value) => {
     expect(() => money(value)).toThrow(InvoiceClientError);
   });
-  it("encodes IDs and filters and requires capability metadata", async () => {
+  it("encodes IDs and filters and accepts capability metadata", async () => {
     const fetcher = vi
       .fn<typeof fetch>()
       .mockResolvedValue(response([invoice()]));
@@ -349,5 +356,323 @@ describe("V1-047 invoice client", () => {
     await executeBilling(invoiceApi, pending);
     expect(fetcher.mock.calls[0]).toEqual(fetcher.mock.calls[1]);
     expect(bodyOf(fetcher.mock.calls[0]?.[1])).toEqual(input);
+  });
+});
+
+describe("V1-047 correction transport regressions", () => {
+  it("keeps canonical list data when visibility metadata is absent", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            data: [invoice()],
+            page: { next_cursor: null, limit: 50 },
+            meta: { request_id: "read-1" },
+          }),
+        ),
+      ),
+    );
+    const result = await invoiceApi.list("property/one");
+    expect(result.items).toHaveLength(1);
+    expect(result.capabilities).toEqual([]);
+  });
+  it.each([
+    ["9000000000000001", "USD 90000000000000.01"],
+    ["9007199254740991", "USD 90071992547409.91"],
+    ["9007199254740992", "USD 90071992547409.92"],
+    ["9007199254740993", "USD 90071992547409.93"],
+    ["9223372036854775806", "USD 92233720368547758.06"],
+    ["9223372036854775807", "USD 92233720368547758.07"],
+  ])(
+    "decodes raw JSON integer money %s losslessly on successful commands",
+    async (literal, display) => {
+      const raw = JSON.stringify({ data: invoice() }).replaceAll(
+        '"minor_units":31000',
+        '"minor_units":' + literal,
+      );
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(raw)));
+      const result = await invoiceApi.create("property", "obligation", "key");
+      expect(BigInt(result.original_total.minor_units)).toBe(BigInt(literal));
+      expect(formatUsd(result.adjusted_total)).toBe(display);
+      expect(formatUsd(required(result.lines[0]).adjusted_amount)).toBe(
+        display,
+      );
+      expect(formatUsd(money(result.evidence.original_total))).toBe(display);
+    },
+  );
+  it("preserves the signed-bigint lower boundary in raw immutable monetary evidence", async () => {
+    const raw = JSON.stringify({
+      data: { ...invoice(), adjustments: [{ amount: usd(1) }] },
+    }).replace('"minor_units":1}', '"minor_units":-9223372036854775808}');
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(raw)));
+    const result = await invoiceApi.get("id");
+    expect(formatUsd(money(result.adjustments[0]?.amount))).toBe(
+      "USD -92233720368547758.08",
+    );
+    expect(formatUsd(money(usd(-1)))).toBe("USD -0.01");
+  });
+  it.each([
+    "9223372036854775808",
+    "-9223372036854775809",
+    "1.0000000000000000001",
+    "9007199254740990.1",
+    '"9223372036854775807"',
+  ])(
+    "rejects malformed or out-of-range raw money %s without rounded success",
+    async (literal) => {
+      vi.stubGlobal(
+        "fetch",
+        vi
+          .fn()
+          .mockResolvedValue(
+            new Response(
+              JSON.stringify({ data: invoice() }).replace(
+                '"minor_units":31000',
+                '"minor_units":' + literal,
+              ),
+            ),
+          ),
+      );
+      await expect(invoiceApi.issue("id", 1, "key")).rejects.toMatchObject({
+        code: "INVALID_RESPONSE",
+        outcomeUnknown: true,
+      });
+    },
+  );
+  it("never serializes response-only amounts as financial command input", async () => {
+    const fetcher = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetcher);
+    expect(() =>
+      invoiceApi.decide(
+        "id",
+        "CONFIRMED_DEFAULT",
+        { currency: "USD", minor_units: 9223372036854775807n },
+        "reason",
+        "key",
+      ),
+    ).toThrow(InvoiceClientError);
+    expect(() =>
+      invoiceApi.decide(
+        "id",
+        "WAIVED",
+        { currency: "USD", minor_units: -1n },
+        "reason",
+        "key",
+      ),
+    ).toThrow(InvoiceClientError);
+    expect(fetcher).not.toHaveBeenCalled();
+    fetcher.mockResolvedValue(response(invoice()));
+    await invoiceApi.adjust(
+      "id",
+      {
+        invoice_line_id: "line",
+        adjustment_type: "DEBIT",
+        amount: { currency: "USD", minor_units: 9000000000000000n },
+        source_reference: "source",
+        reason: "reason",
+      },
+      1,
+      "key",
+    );
+    expect(fetcher.mock.calls[0]?.[1]?.body).toContain(
+      '"minor_units":9000000000000000',
+    );
+  });
+  it("sends the confirming actor on stale-tab replay despite a new CSRF cookie", async () => {
+    Object.defineProperty(document, "cookie", {
+      configurable: true,
+      value: "__Host-prm_csrf=actor-B-token",
+    });
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockResolvedValue(response(invoice()));
+    vi.stubGlobal("fetch", fetcher);
+    const transmission = {
+      actorId: "actor-A",
+      signal: new AbortController().signal,
+    };
+    await executeBilling(
+      invoiceApi,
+      {
+        key: "original-key",
+        command: {
+          action: "issue",
+          propertyId: "property",
+          id: "id",
+          version: 2,
+        },
+      },
+      transmission,
+    );
+    expect(fetcher.mock.calls[0]?.[1]).toMatchObject({
+      headers: {
+        "X-Billing-Actor-ID": "actor-A",
+        "X-CSRF-Token": "actor-B-token",
+        "Idempotency-Key": "original-key",
+      },
+      signal: transmission.signal,
+    });
+  });
+  it("stops a cancelled transmission before reading cookies or calling fetch", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const fetcher = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetcher);
+    await expect(
+      required(invoiceApi.forActor)({
+        actorId: "actor-A",
+        signal: controller.signal,
+      }).issue("id", 1, "key"),
+    ).rejects.toMatchObject({
+      code: "WORKSPACE_INVALIDATED",
+      outcomeUnknown: false,
+    });
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it("reads action visibility at a separate scoped authenticated endpoint", async () => {
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(
+      response({
+        property_id: "property/one",
+        billing_capabilities: ["billing.generate"],
+      }),
+    );
+    vi.stubGlobal("fetch", fetcher);
+    expect(await required(invoiceApi.capabilities)("property/one")).toEqual([
+      "billing.generate",
+    ]);
+    expect(fetcher.mock.calls[0]?.[0]).toBe(
+      "/api/v1/properties/property%2Fone/billing-capabilities",
+    );
+    expect(fetcher.mock.calls[0]?.[1]).toMatchObject({
+      credentials: "include",
+      method: "GET",
+    });
+  });
+  it("retains only bounded known field paths and safe correlation IDs", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "password=secret SQL trace",
+              fields: [
+                "body.reason",
+                "body.amount.minor_units",
+                "body.reason",
+                "body.password",
+                "<script>",
+                { field: "reason", message: "secret" },
+                "x".repeat(1000),
+              ],
+            },
+            meta: { request_id: "correlation_123-abc:4.2" },
+          }),
+          { status: 422 },
+        ),
+      ),
+    );
+    const error = await invoiceApi
+      .void("id", "reason", 1, "key")
+      .catch((error: unknown) => error);
+    expect(error).toMatchObject({
+      fields: ["reason", "amount.minor_units"],
+      requestId: "correlation_123-abc:4.2",
+    });
+    expect(JSON.stringify(error)).not.toMatch(/password|secret|script/);
+  });
+  it("discards unsafe correlation payloads independently of valid errors", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "PRECONDITION_FAILED",
+              current_version: 3,
+              fields: [],
+            },
+            meta: { request_id: "<secret>" },
+          }),
+          { status: 412 },
+        ),
+      ),
+    );
+    await expect(invoiceApi.issue("id", 2, "key")).rejects.toMatchObject({
+      code: "PRECONDITION_FAILED",
+      currentVersion: 3,
+      requestId: null,
+    });
+  });
+});
+
+const retryActor = "11111111-1111-4111-8111-111111111111";
+const retryProperty = "22222222-2222-4222-8222-222222222222";
+function retryRun(): BillingRun {
+  return {
+    id: "33333333-3333-4333-8333-333333333333",
+    property_id: retryProperty,
+    run_kind: "RENT",
+    logical_run_key: "rent/2026-09",
+    business_date: "2026-08-25",
+    status: "RETRYABLE",
+    period: { start: "2026-09-01", end: "2026-09-30" },
+    attempts: [],
+    evidence: {
+      idempotency_key: "44444444-4444-4444-8444-444444444444",
+      requester_actor_id: retryActor,
+      invocation_source: "API",
+    },
+  };
+}
+describe("inspected billing-run retry identity", () => {
+  it("reconstructs the original key, actor/source, kind, Property, logical identity and dates", () => {
+    expect(billingRunRetry(retryRun(), retryActor, retryProperty)).toEqual({
+      key: "44444444-4444-4444-8444-444444444444",
+      command: {
+        action: "run",
+        propertyId: retryProperty,
+        kind: "rent",
+        input: {
+          logical_run_key: "rent/2026-09",
+          business_date: "2026-08-25",
+          period_start: "2026-09-01",
+          period_end: "2026-09-30",
+        },
+      },
+    });
+  });
+  it.each([
+    { idempotency_key: null },
+    { idempotency_key: "malformed" },
+    { idempotency_key: "00000000-0000-0000-0000-000000000000" },
+    { requester_actor_id: null },
+    { requester_actor_id: "55555555-5555-4555-8555-555555555555" },
+    { invocation_source: "SCHEDULED" },
+    { invocation_source: null },
+  ])(
+    "refuses missing, malformed or foreign invocation identity %s",
+    (changes) => {
+      const run = retryRun();
+      for (const [key, value] of Object.entries(changes)) {
+        if (typeof value === "string") run.evidence[key] = value;
+        else if (value === null) run.evidence[key] = null;
+      }
+      expect(billingRunRetry(run, retryActor, retryProperty)).toBeNull();
+    },
+  );
+  it.each([
+    { logical_run_key: "" },
+    { logical_run_key: "x".repeat(201) },
+    { business_date: "2026-02-30" },
+    { period: { start: "2026-09-30", end: "2026-09-01" } },
+    { period: { start: "2026-01-01", end: "2026-09-30" } },
+    { property_id: "55555555-5555-4555-8555-555555555555" },
+  ])("refuses invalid saved canonical run inputs %s", (changes) => {
+    expect(
+      billingRunRetry({ ...retryRun(), ...changes }, retryActor, retryProperty),
+    ).toBeNull();
   });
 });

@@ -2,13 +2,14 @@ export type JsonValue =
   | null
   | boolean
   | number
+  | bigint
   | string
   | JsonValue[]
   | { [key: string]: JsonValue };
 export type Evidence = Record<string, JsonValue>;
 export interface Money {
   currency: "USD";
-  minor_units: number;
+  minor_units: number | bigint;
 }
 export type InvoiceStatus =
   | "DRAFT"
@@ -132,7 +133,13 @@ export type ChargeCorrectionInput =
       reverses_correction_id: string;
       reason: string;
     };
+export interface BillingTransmission {
+  actorId: string;
+  signal: AbortSignal;
+}
 export interface InvoiceApi {
+  forActor?: (transmission: BillingTransmission) => InvoiceApi;
+  capabilities?: (propertyId: string) => Promise<string[]>;
   list: (propertyId: string, filters?: InvoiceFilters) => Promise<InvoicePage>;
   get: (id: string) => Promise<InvoiceResource>;
   create: (
@@ -189,6 +196,8 @@ export class InvoiceClientError extends Error {
     public readonly code: string,
     public readonly outcomeUnknown: boolean,
     public readonly currentVersion: number | null = null,
+    public readonly fields: readonly string[] = [],
+    public readonly requestId: string | null = null,
   ) {
     super(
       outcomeUnknown
@@ -223,7 +232,7 @@ function integer(value: unknown, minimum = 0): number {
   return typeof value === "number" &&
     Number.isSafeInteger(value) &&
     value >= minimum &&
-    value <= maximum
+    value <= Number.MAX_SAFE_INTEGER
     ? value
     : invalid();
 }
@@ -238,6 +247,7 @@ function choice<T extends string>(value: unknown, options: readonly T[]): T {
 function json(value: unknown): JsonValue {
   if (value === null || typeof value === "string" || typeof value === "boolean")
     return value;
+  if (typeof value === "bigint") return value;
   if (typeof value === "number")
     return Number.isFinite(value) ? value : invalid();
   if (Array.isArray(value)) return value.map(json);
@@ -257,7 +267,24 @@ function evidence(value: unknown): Evidence {
 export function money(value: unknown): Money {
   const row = object(value);
   if (row.currency !== "USD") return invalid();
-  return { currency: "USD", minor_units: integer(row.minor_units) };
+  const units = row.minor_units;
+  if (
+    typeof units !== "bigint" &&
+    !(typeof units === "number" && Number.isSafeInteger(units))
+  )
+    return invalid();
+  const exact = BigInt(units);
+  if (exact < -(1n << 63n) || exact > (1n << 63n) - 1n) return invalid();
+  return { currency: "USD", minor_units: units };
+}
+/** Command policy is narrower than server accounting totals. */
+export function requestMoney(value: Money): {
+  currency: "USD";
+  minor_units: number;
+} {
+  const cents = BigInt(money(value).minor_units);
+  if (cents < 0n || cents > BigInt(maximum)) return invalid();
+  return { currency: "USD", minor_units: Number(cents) };
 }
 /** Parse decimal user input without floating-point multiplication or rounding. */
 export function parseUsd(value: string): Money {
@@ -268,9 +295,11 @@ export function parseUsd(value: string): Money {
   return { currency: "USD", minor_units: Number(cents) };
 }
 export function formatUsd(value: Money): string {
-  const cents = BigInt(money(value).minor_units);
+  const signed = BigInt(money(value).minor_units);
+  const cents = signed < 0n ? -signed : signed;
   return (
     "USD " +
+    (signed < 0n ? "-" : "") +
     (cents / 100n).toString() +
     "." +
     (cents % 100n).toString().padStart(2, "0")
@@ -405,7 +434,82 @@ function csrf(): string {
   }
   throw new InvoiceClientError(null, "CSRF_UNAVAILABLE", false);
 }
-async function request<T>(
+/** JSON grammar is validated by the native parser. A second token stream keeps
+ * integer lexemes exact; strings (including numeric-looking evidence) stay strings.
+ * Non-integer numeric tokens in money are rejected, even if Number would round them.
+ */
+function losslessJson(raw: string): unknown {
+  const shape: unknown = JSON.parse(raw);
+  const lexemes: unknown = JSON.parse(
+    raw.replace(
+      /"(?:\\.|[^"\\])*"|-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?/g,
+      (token) => (token.startsWith('"') ? token : JSON.stringify(token)),
+    ),
+  );
+  function restore(value: unknown, token: unknown, key = ""): unknown {
+    if (typeof value === "number") {
+      const literal = text(token);
+      if (!/^-?[0-9]+$/.test(literal))
+        return key === "minor_units" ? literal : value;
+      const exact = BigInt(literal);
+      return exact >= BigInt(Number.MIN_SAFE_INTEGER) &&
+        exact <= BigInt(Number.MAX_SAFE_INTEGER)
+        ? Number(exact)
+        : exact;
+    }
+    if (Array.isArray(value))
+      return value.map((child, index) => restore(child, array(token)[index]));
+    if (value !== null && typeof value === "object") {
+      return Object.fromEntries(
+        Object.entries(value).map(([key, child]) => [
+          key,
+          restore(child, object(token)[key], key),
+        ]),
+      );
+    }
+    return value;
+  }
+  return restore(shape, lexemes);
+}
+const fieldNames = new Set([
+  "authorized_nonrecurring_obligation_id",
+  "reason",
+  "invoice_line_id",
+  "adjustment_type",
+  "amount",
+  "amount.minor_units",
+  "amount.currency",
+  "source_reference",
+  "outcome",
+  "approved_amount",
+  "approved_amount.minor_units",
+  "approved_amount.currency",
+  "kind",
+  "reverses_correction_id",
+  "logical_run_key",
+  "business_date",
+  "period_start",
+  "period_end",
+]);
+function safeFields(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [
+    ...new Set(
+      value.slice(0, 50).flatMap((field: unknown) => {
+        if (typeof field !== "string" || field.length > 100) return [];
+        const name = field.replace(/^body\./, "");
+        return fieldNames.has(name) ? [name] : [];
+      }),
+    ),
+  ];
+}
+function safeRequestId(value: unknown): string | null {
+  return typeof value === "string" &&
+    /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(value)
+    ? value
+    : null;
+}
+async function transport<T>(
   path: string,
   decode: (body: Record<string, unknown>) => T,
   command?: {
@@ -414,6 +518,7 @@ async function request<T>(
     key: string;
     version?: number;
   },
+  transmission?: BillingTransmission,
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (command) {
@@ -421,6 +526,11 @@ async function request<T>(
       throw new InvoiceClientError(null, "INVALID_VERSION", false);
     if (!command.key)
       throw new InvoiceClientError(null, "IDEMPOTENCY_REQUIRED", false);
+    if (transmission) {
+      if (!transmission.actorId || transmission.signal.aborted)
+        throw new InvoiceClientError(null, "WORKSPACE_INVALIDATED", false);
+      headers["X-Billing-Actor-ID"] = transmission.actorId;
+    }
     headers["Content-Type"] = "application/json";
     headers["X-CSRF-Token"] = csrf();
     headers["Idempotency-Key"] = command.key;
@@ -431,6 +541,7 @@ async function request<T>(
   try {
     response = await fetch(path, {
       credentials: "include",
+      signal: transmission?.signal,
       method: command?.method ?? (command ? "POST" : "GET"),
       headers,
       ...(command ? { body: JSON.stringify(command.body) } : {}),
@@ -441,13 +552,23 @@ async function request<T>(
   if (!response.ok) {
     let code = "REQUEST_FAILED",
       currentVersion: number | null = null;
+    let fields: string[] = [];
+    let requestId: string | null = null;
     try {
-      const error = object(object(await response.json()).error);
+      const envelope = object(await response.json());
+      const error = object(envelope.error);
+      fields = safeFields(error.fields);
+      requestId =
+        envelope.meta !== null && typeof envelope.meta === "object"
+          ? safeRequestId((envelope.meta as Record<string, unknown>).request_id)
+          : null;
       if (typeof error.code === "string" && /^[A-Z_]{1,80}$/.test(error.code))
         code = error.code;
       if (
         typeof error.current_version === "number" &&
-        Number.isSafeInteger(error.current_version)
+        Number.isSafeInteger(error.current_version) &&
+        error.current_version >= 1 &&
+        error.current_version <= 2_147_483_647
       )
         currentVersion = error.current_version;
     } catch {
@@ -458,10 +579,12 @@ async function request<T>(
       code,
       Boolean(command) && response.status >= 500,
       currentVersion,
+      fields,
+      requestId,
     );
   }
   try {
-    return decode(object(await response.json()));
+    return decode(object(losslessJson(await response.text())));
   } catch {
     throw new InvoiceClientError(
       response.status,
@@ -475,134 +598,167 @@ const resource =
   <T>(decode: (value: unknown) => T) =>
   (body: Record<string, unknown>): T =>
     decode(body.data);
-export const invoiceApi: InvoiceApi = {
-  list: (propertyId, filters = {}) => {
-    const query = new URLSearchParams({
-      limit: "50",
-      sort: filters.sort ?? "-invoice_date",
-    });
-    for (const key of [
-      "status",
-      "category",
-      "customer_id",
-      "lease_id",
-      "cursor",
-    ] as const) {
-      if (filters[key]) query.set(key, filters[key]);
-    }
-    return request(
-      "/api/v1/properties/" +
-        encoded(propertyId) +
-        "/invoices?" +
-        query.toString(),
-      (body) => ({
-        items: array(body.data).map(invoice),
-        next_cursor: nullableText(object(body.page).next_cursor),
-        capabilities: array(object(body.meta).billing_capabilities).map(text),
-      }),
-    );
-  },
-  get: (id) => request("/api/v1/invoices/" + encoded(id), resource(invoice)),
-  create: (id, obligation, key) =>
-    request(
-      "/api/v1/properties/" + encoded(id) + "/invoices",
-      resource(invoice),
-      { key, body: { authorized_nonrecurring_obligation_id: obligation } },
-    ),
-  correctDraft: (id, obligation, reason, version, key) =>
-    request("/api/v1/invoices/" + encoded(id), resource(invoice), {
-      method: "PATCH",
-      key,
-      version,
-      body: { authorized_nonrecurring_obligation_id: obligation, reason },
-    }),
-  issue: (id, version, key) =>
-    request("/api/v1/invoices/" + encoded(id) + "/issue", resource(invoice), {
-      key,
-      version,
-      body: {},
-    }),
-  adjust: (id, input, version, key) =>
-    request(
-      "/api/v1/invoices/" + encoded(id) + "/adjustments",
-      resource(invoice),
-      {
+function createInvoiceApi(transmission?: BillingTransmission): InvoiceApi {
+  function request<T>(
+    path: string,
+    decode: (body: Record<string, unknown>) => T,
+    command?: {
+      method?: "POST" | "PATCH";
+      body: object;
+      key: string;
+      version?: number;
+    },
+  ) {
+    return transport(path, decode, command, transmission);
+  }
+  return {
+    forActor: createInvoiceApi,
+    capabilities: (propertyId) =>
+      request(
+        "/api/v1/properties/" + encoded(propertyId) + "/billing-capabilities",
+        (body) => {
+          const data = object(body.data);
+          if (data.property_id !== propertyId) return invalid();
+          return array(data.billing_capabilities).map(text);
+        },
+      ),
+    list: (propertyId, filters = {}) => {
+      const query = new URLSearchParams({
+        limit: "50",
+        sort: filters.sort ?? "-invoice_date",
+      });
+      for (const key of [
+        "status",
+        "category",
+        "customer_id",
+        "lease_id",
+        "cursor",
+      ] as const) {
+        if (filters[key]) query.set(key, filters[key]);
+      }
+      return request(
+        "/api/v1/properties/" +
+          encoded(propertyId) +
+          "/invoices?" +
+          query.toString(),
+        (body) => ({
+          items: array(body.data).map(invoice),
+          next_cursor: nullableText(object(body.page).next_cursor),
+          capabilities:
+            object(body.meta).billing_capabilities === undefined
+              ? []
+              : array(object(body.meta).billing_capabilities).map(text),
+        }),
+      );
+    },
+    get: (id) => request("/api/v1/invoices/" + encoded(id), resource(invoice)),
+    create: (id, obligation, key) =>
+      request(
+        "/api/v1/properties/" + encoded(id) + "/invoices",
+        resource(invoice),
+        { key, body: { authorized_nonrecurring_obligation_id: obligation } },
+      ),
+    correctDraft: (id, obligation, reason, version, key) =>
+      request("/api/v1/invoices/" + encoded(id), resource(invoice), {
+        method: "PATCH",
         key,
         version,
-        body: {
-          invoice_line_id: input.invoice_line_id,
-          adjustment_type: input.adjustment_type,
-          amount: money(input.amount),
-          source_reference: input.source_reference,
-          reason: input.reason,
+        body: { authorized_nonrecurring_obligation_id: obligation, reason },
+      }),
+    issue: (id, version, key) =>
+      request("/api/v1/invoices/" + encoded(id) + "/issue", resource(invoice), {
+        key,
+        version,
+        body: {},
+      }),
+    adjust: (id, input, version, key) =>
+      request(
+        "/api/v1/invoices/" + encoded(id) + "/adjustments",
+        resource(invoice),
+        {
+          key,
+          version,
+          body: {
+            invoice_line_id: input.invoice_line_id,
+            adjustment_type: input.adjustment_type,
+            amount: requestMoney(input.amount),
+            source_reference: input.source_reference,
+            reason: input.reason,
+          },
         },
-      },
-    ),
-  void: (id, reason, version, key) =>
-    request("/api/v1/invoices/" + encoded(id) + "/void", resource(invoice), {
-      key,
-      version,
-      body: { reason },
-    }),
-  lateReview: (id) =>
-    request(
-      "/api/v1/invoices/" + encoded(id) + "/late-payment-review",
-      resource(lateReview),
-    ),
-  lateDecision: (id) =>
-    request(
-      "/api/v1/invoices/" + encoded(id) + "/late-payment-decision",
-      resource(decision),
-    ),
-  decide: (id, outcome, approvedAmount, reason, key) =>
-    request(
-      "/api/v1/invoices/" + encoded(id) + "/late-payment-decision",
-      resource(decision),
-      {
+      ),
+    void: (id, reason, version, key) =>
+      request("/api/v1/invoices/" + encoded(id) + "/void", resource(invoice), {
         key,
-        body: { outcome, approved_amount: money(approvedAmount), reason },
-      },
-    ),
-  charge: (id) =>
-    request("/api/v1/late-payment-charges/" + encoded(id), resource(charge)),
-  correctCharge: (id, input, key) =>
-    request(
-      "/api/v1/late-payment-charges/" + encoded(id) + "/corrections",
-      resource(charge),
-      {
-        key,
-        body:
-          input.kind === "REDUCTION"
-            ? {
-                kind: input.kind,
-                amount: money(input.amount),
-                reason: input.reason,
-              }
-            : input.kind === "CHARGE_REVERSAL"
-              ? { kind: input.kind, reason: input.reason }
-              : {
+        version,
+        body: { reason },
+      }),
+    lateReview: (id) =>
+      request(
+        "/api/v1/invoices/" + encoded(id) + "/late-payment-review",
+        resource(lateReview),
+      ),
+    lateDecision: (id) =>
+      request(
+        "/api/v1/invoices/" + encoded(id) + "/late-payment-decision",
+        resource(decision),
+      ),
+    decide: (id, outcome, approvedAmount, reason, key) =>
+      request(
+        "/api/v1/invoices/" + encoded(id) + "/late-payment-decision",
+        resource(decision),
+        {
+          key,
+          body: {
+            outcome,
+            approved_amount: requestMoney(approvedAmount),
+            reason,
+          },
+        },
+      ),
+    charge: (id) =>
+      request("/api/v1/late-payment-charges/" + encoded(id), resource(charge)),
+    correctCharge: (id, input, key) =>
+      request(
+        "/api/v1/late-payment-charges/" + encoded(id) + "/corrections",
+        resource(charge),
+        {
+          key,
+          body:
+            input.kind === "REDUCTION"
+              ? {
                   kind: input.kind,
-                  reverses_correction_id: input.reverses_correction_id,
+                  amount: requestMoney(input.amount),
                   reason: input.reason,
-                },
-      },
-    ),
-  run: (id, kind, input, key) =>
-    request(
-      "/api/v1/properties/" + encoded(id) + "/billing-runs/" + kind,
-      resource(run),
-      {
-        key,
-        body: {
-          logical_run_key: input.logical_run_key,
-          business_date: input.business_date,
-          period_start: input.period_start,
-          period_end: input.period_end,
+                }
+              : input.kind === "CHARGE_REVERSAL"
+                ? { kind: input.kind, reason: input.reason }
+                : {
+                    kind: input.kind,
+                    reverses_correction_id: input.reverses_correction_id,
+                    reason: input.reason,
+                  },
         },
-      },
-    ),
-  getRun: (id) => request("/api/v1/billing-runs/" + encoded(id), resource(run)),
-};
+      ),
+    run: (id, kind, input, key) =>
+      request(
+        "/api/v1/properties/" + encoded(id) + "/billing-runs/" + kind,
+        resource(run),
+        {
+          key,
+          body: {
+            logical_run_key: input.logical_run_key,
+            business_date: input.business_date,
+            period_start: input.period_start,
+            period_end: input.period_end,
+          },
+        },
+      ),
+    getRun: (id) =>
+      request("/api/v1/billing-runs/" + encoded(id), resource(run)),
+  };
+}
+export const invoiceApi = createInvoiceApi();
 
 /** Serializable intent is sealed before sending and replayed unchanged after interruption. */
 export type BillingCommand =
@@ -654,6 +810,57 @@ export interface PendingBillingCommand {
   key: string;
   command: BillingCommand;
 }
+/** Reconstruct only a complete, original API invocation belonging to this actor. */
+export function billingRunRetry(
+  run: BillingRun,
+  actorId: string,
+  propertyId: string,
+): PendingBillingCommand | null {
+  const uuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const validId = (value: unknown): value is string =>
+    typeof value === "string" &&
+    uuid.test(value) &&
+    value !== "00000000-0000-0000-0000-000000000000";
+  const date = (value: string) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    Number.isFinite(Date.parse(value)) &&
+    new Date(value).toISOString().slice(0, 10) === value;
+  const e = run.evidence;
+  if (
+    !validId(e.idempotency_key) ||
+    !validId(e.requester_actor_id) ||
+    e.requester_actor_id !== actorId ||
+    e.invocation_source !== "API" ||
+    !validId(run.id) ||
+    !validId(run.property_id) ||
+    run.property_id !== propertyId ||
+    !["RENT", "UTILITIES"].includes(run.run_kind) ||
+    !run.logical_run_key ||
+    run.logical_run_key.trim() !== run.logical_run_key ||
+    run.logical_run_key.length > 200 ||
+    !date(run.business_date) ||
+    !date(run.period.start) ||
+    !date(run.period.end) ||
+    run.period.end < run.period.start ||
+    Date.parse(run.period.end) - Date.parse(run.period.start) > 62 * 86400000
+  )
+    return null;
+  return {
+    key: e.idempotency_key,
+    command: {
+      action: "run",
+      propertyId,
+      kind: run.run_kind === "RENT" ? "rent" : "utilities",
+      input: {
+        logical_run_key: run.logical_run_key,
+        business_date: run.business_date,
+        period_start: run.period.start,
+        period_end: run.period.end,
+      },
+    },
+  };
+}
 export interface BillingJournal {
   load(actorId: string): Promise<PendingBillingCommand | null>;
   begin(actorId: string, pending: PendingBillingCommand): Promise<void>;
@@ -662,7 +869,13 @@ export interface BillingJournal {
 export function executeBilling(
   api: InvoiceApi,
   pending: PendingBillingCommand,
+  transmission?: BillingTransmission,
 ) {
+  if (transmission) {
+    if (transmission.signal.aborted)
+      throw new InvoiceClientError(null, "WORKSPACE_INVALIDATED", false);
+    api = api.forActor?.(transmission) ?? api;
+  }
   const c = pending.command,
     key = pending.key;
   switch (c.action) {
