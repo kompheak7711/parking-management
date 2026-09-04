@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict
 
 from property_rental.identity import (
     ActorResolver,
+    AuthenticatedActor,
     AuthorizationRequirement,
     ObjectScope,
     is_authorized,
@@ -15,6 +16,17 @@ from property_rental.identity import (
 from property_rental.settings import Settings
 
 IDENTITY_READ_SELF_CAPABILITY: Final = "identity.read_self"
+
+
+def require_billing_actor(request: Request, actor: AuthenticatedActor) -> None:
+    """Bind opted-in billing transmissions to the actor who confirmed the intent.
+
+    Resolve once at the authenticated command boundary and pass that same actor
+    to the service. Legacy clients without the header retain their contract.
+    """
+    expected = request.headers.get("X-Billing-Actor-ID")
+    if expected is not None and expected != actor.actor_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
 
 class HealthResponse(BaseModel):

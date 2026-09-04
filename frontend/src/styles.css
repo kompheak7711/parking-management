@@ -425,3 +425,42 @@ h1 {
   outline: 0.1875rem solid #1769aa;
   outline-offset: 0.1875rem;
 }
+:root {
+  --billing-evidence-border: #cbd5e1;
+}
+.billing-workspace form {
+  margin-block: 1rem;
+}
+.billing-workspace label {
+  display: block;
+  margin-block: 0.5rem;
+}
+.billing-workspace label input,
+.billing-workspace label select {
+  display: block;
+  max-width: 100%;
+}
+.billing-workspace fieldset {
+  min-width: 0;
+  margin-block: 1rem;
+}
+.billing-evidence {
+  overflow-wrap: anywhere;
+}
+.billing-evidence > div {
+  border-left: 2px solid var(--billing-evidence-border);
+  padding-left: 0.75rem;
+  margin-block: 0.5rem;
+}
+.billing-evidence dt {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.billing-evidence dd {
+  margin-left: 0.75rem;
+}
+.billing-workspace [role="dialog"] {
+  border: 2px solid currentColor;
+  padding: 1rem;
+  margin-block: 1rem;
+}

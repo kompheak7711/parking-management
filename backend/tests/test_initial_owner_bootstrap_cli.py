@@ -614,6 +614,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/billing-runs/rent": {"post"},
         "/api/v1/properties/{property_id}/billing-runs/utilities": {"post"},
         "/api/v1/billing-runs/{run_id}": {"get"},
+        "/api/v1/properties/{property_id}/billing-capabilities": {"get"},
         "/api/v1/properties/{property_id}/invoices": {"get", "post"},
         "/api/v1/invoices/{invoice_id}": {"get", "patch"},
         "/api/v1/invoices/{invoice_id}/issue": {"post"},

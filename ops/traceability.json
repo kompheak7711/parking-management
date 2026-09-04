@@ -2,6 +2,257 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "TEST-FE-250",
+      "upstream_ids": [
+        "UI-052",
+        "API-053",
+        "TEST-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Explicit exceptional void reason, confirmation and snapshot version."
+    },
+    {
+      "test_id": "TEST-FE-251",
+      "upstream_ids": [
+        "UI-105",
+        "API-091",
+        "TEST-124"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "All three Charge correction variants remain append-only and never repeat the final decision or modify the source Invoice. Correction regressions assert exact reduction, full reversal and active reduction reversal effects and resulting obligation/balance with server authority and immutable-history consequences."
+    },
+    {
+      "test_id": "TEST-FE-252",
+      "upstream_ids": [
+        "UI-051",
+        "API-052",
+        "TEST-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Exact-cent consequence preview rejects underflow and shows a zero-balance PAID estimate without submitting financial derived values. Companion raw-response client regressions preserve signed-bigint money through both boundaries and reject malformed/out-of-range tokens; near-boundary previews use exact BigInt arithmetic while retaining command input limits."
+    },
+    {
+      "test_id": "TEST-FE-253",
+      "upstream_ids": [
+        "UI-047",
+        "API-050"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Empty list and opaque pagination cursor remain explicit."
+    },
+    {
+      "test_id": "TEST-FE-235",
+      "upstream_ids": [
+        "UI-047",
+        "API-050",
+        "SEC-019",
+        "SEC-020"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "hides commands without server-granted capabilities while preserving invoice inspection; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-236",
+      "upstream_ids": [
+        "UI-050",
+        "API-052",
+        "TEST-056"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "requires explicit issue confirmation and binds the displayed invoice version; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-237",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "UI-050",
+        "TEST-119"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "seals intent before sending, prevents duplicate clicks and replays unchanged after a lost response; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-238",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "UI-050",
+        "TEST-119"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "recovers the same saved request after remount and never sends automatically; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-239",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "UI-050",
+        "TEST-119"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "does not release an earlier unknown request merely because replay is now forbidden; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-240",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "UI-050",
+        "TEST-119"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "blocks transmission if durable storage cannot reserve the command; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-241",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "UI-050",
+        "TEST-119"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "clears a definitively rejected new command but requires fresh invoice authority; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-242",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "UI-050",
+        "TEST-119"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "does not repeat a successful command when a later list refresh fails; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-243",
+      "upstream_ids": [
+        "UI-049",
+        "API-050",
+        "TEST-053",
+        "TEST-055"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "creates drafts only from an approved obligation and corrects a draft with a reason; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-244",
+      "upstream_ids": [
+        "UI-051",
+        "API-052",
+        "TEST-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "requires line, exact amount, source and reason for an append-only adjustment; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-245",
+      "upstream_ids": [
+        "UI-052",
+        "API-053",
+        "TEST-058"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "blocks invoice void when active applications must first be reversed; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-246",
+      "upstream_ids": [
+        "UI-105",
+        "API-091",
+        "TEST-123"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "hides the final-decision action for an ineligible invoice and displays blockers; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-247",
+      "upstream_ids": [
+        "UI-053",
+        "API-054",
+        "API-055",
+        "API-056"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "preserves billing run identity for an explicit retry; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-248",
+      "upstream_ids": [
+        "UI-047",
+        "API-050",
+        "SEC-019",
+        "SEC-020"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "rejects wrong-property resources without displaying their customer data; synthetic fixtures only."
+    },
+    {
+      "test_id": "TEST-FE-249",
+      "upstream_ids": [
+        "UI-047",
+        "API-050",
+        "SEC-019",
+        "SEC-020"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "ignores an old Property read after the workspace changes; synthetic fixtures only."
+    },
+    {
+      "test_id": "test_billing_action_metadata_denies_by_default_and_uses_exact_property",
+      "upstream_ids": [
+        "API-050",
+        "SEC-019",
+        "SEC-020",
+        "UI-047"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "List action visibility is deny-by-default, exact-Property scoped and requires an authenticated authorized reader; underlying commands retain independent enforcement."
+    },
+    {
       "test_id": "TEST-FE-001",
       "upstream_ids": ["UI-109", "TEST-094"],
       "test_level": "UI component",
@@ -10813,6 +11064,28 @@
       "notes": "Changed idempotent input and a correction that would undercut active future applications return stable IDEMPOTENCY_KEY_REUSED and APPLICATION_REVERSAL_REQUIRED envelopes without exception detail."
     },
     {
+      "test_id": "test_database_failure_cannot_replace_an_existing_receipt_with_terminal_state",
+      "upstream_ids": [
+        "API-016",
+        "UI-015"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_late_payment.py",
+      "status": "implemented",
+      "notes": "Actual service/HTTP fault injection retains ambiguity for generic database failures before receipt lookup, during fetch or commit; subsequent exact replay returns the original status/body without substituting terminal current state."
+    },
+    {
+      "test_id": "test_property_lock_failure_preserves_exact_successful_receipt_after_other_actor_reversal",
+      "upstream_ids": [
+        "API-016",
+        "UI-015"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_late_payment_migration.py",
+      "status": "implemented",
+      "notes": "Real PostgreSQL held Property lock yields safe 503 for saved decision and charge requests after another actor reversal; releasing the lock restores the original receipt, while receipt-checked competing conflicts and key reuse remain distinct with no duplicate effects."
+    },
+    {
       "test_id": "test_generic_conflicts_return_only_authorized_current_safe_state",
       "upstream_ids": ["API-018", "SEC-020"],
       "test_level": "API",
@@ -10915,6 +11188,162 @@
       "test_path": "backend/tests/test_late_payment_migration.py",
       "status": "implemented",
       "notes": "A disposable real PostgreSQL database at exact revision 36 upgrades linearly to sole head 37 and installs an empty command ledger; lifecycle behavior is mapped by separate integration tests."
+    },
+    {
+      "test_id": "test_independent_billing_visibility_does_not_require_invoice_read",
+      "upstream_ids": [
+        "SEC-022",
+        "UI-004",
+        "API-054"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "Authenticated Property-scoped capability visibility preserves billing.generate-only access and denies missing or foreign grants without invoice-read coupling."
+    },
+    {
+      "test_id": "test_all_invoice_mutations_bind_the_confirming_actor_before_service_dispatch",
+      "upstream_ids": [
+        "SEC-028",
+        "API-015",
+        "API-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "All five invoice mutation routes reject a foreign confirming actor before service dispatch; an authorized DRAFT void still succeeds."
+    },
+    {
+      "test_id": "test_exact_version_rejection_has_safe_current_version_and_correlation",
+      "upstream_ids": [
+        "UI-015",
+        "API-018"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "A stale saved issuance receives exact 412 PRECONDITION_FAILED with current version and correlation while leaving the draft unchanged."
+    },
+    {
+      "test_id": "test_invoice_validation_retains_safe_field_locations_and_request_id",
+      "upstream_ids": [
+        "UI-014",
+        "UI-007",
+        "API-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_invoice_api.py",
+      "status": "implemented",
+      "notes": "Schema validation returns bounded safe field locations and a correlation identifier without rejected payload content."
+    },
+    {
+      "test_id": "test_actual_cross_actor_cookie_and_csrf_replay_is_rejected_before_second_reduction",
+      "upstream_ids": [
+        "SEC-028",
+        "API-015",
+        "API-016",
+        "DL-039"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_late_payment.py",
+      "status": "implemented",
+      "notes": "Actual HTTP replay under B session cookies and CSRF retains the A binding and cannot apply a second reduction; A recovers its original actor-scoped receipt. Uses synthetic in-memory financial state."
+    },
+    {
+      "test_id": "test_final_decision_rejects_foreign_confirming_actor",
+      "upstream_ids": [
+        "SEC-028",
+        "API-091"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_late_payment.py",
+      "status": "implemented",
+      "notes": "Late-payment decision routing rejects a mismatched confirming actor before service dispatch."
+    },
+    {
+      "test_id": "test_billing_routes_bind_actor_and_remain_available_without_invoice_read",
+      "upstream_ids": [
+        "SEC-022",
+        "SEC-028",
+        "API-054",
+        "API-055"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_billing_run.py",
+      "status": "implemented",
+      "notes": "Both run commands check actor binding; generation and run inspection remain accessible to billing.generate-only actors."
+    },
+    {
+      "test_id": "TEST-FE-254",
+      "upstream_ids": [
+        "SEC-028",
+        "API-015",
+        "API-016"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Transmission carries the confirming actor and cancellable workspace. Companion regressions cover stale CSRF cookies, actor/Property changes and unmount during asynchronous reservation."
+    },
+    {
+      "test_id": "TEST-FE-255",
+      "upstream_ids": [
+        "UI-015",
+        "API-016"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Saved receipt-checked version rejection releases only the exact request and reloads current state for a fresh review. Unknown, forbidden, ambiguous 412 and key conflicts remain saved."
+    },
+    {
+      "test_id": "TEST-FE-256",
+      "upstream_ids": [
+        "BR-INV-015",
+        "UI-052",
+        "TEST-056"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Authorized DRAFT voiding requires a reason and explicit confirmation and previews immutable history consequences."
+    },
+    {
+      "test_id": "TEST-FE-257",
+      "upstream_ids": [
+        "SEC-022",
+        "UI-004",
+        "UI-053",
+        "API-012",
+        "API-054",
+        "API-055"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Separate capability loading leaves generation and inspection usable after invoice-read denial. Companion tests restore exact RETRYABLE run identity after reload, reject foreign/malformed provenance and accept list envelopes without action metadata."
+    },
+    {
+      "test_id": "TEST-FE-258",
+      "upstream_ids": [
+        "UI-007",
+        "TEST-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Confirmation receives keyboard focus, traps forward/backward Tab, handles Escape and restores cancellation/completion focus."
+    },
+    {
+      "test_id": "TEST-FE-259",
+      "upstream_ids": [
+        "UI-007",
+        "UI-014"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/InvoiceManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Safe field locations are associated with only the originating form and expose a bounded support correlation ID. Client regressions reject arbitrary unsafe error content."
     }
   ]
 }

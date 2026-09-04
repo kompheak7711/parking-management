@@ -825,8 +825,11 @@ def test_invoice_response_schema_is_complete_and_consistent_across_command_list_
     assert created.json()["data"] == detail.json()["data"] == listed.json()["data"][0]
     assert listed.json()["page"] == {"next_cursor": "stable-cursor", "limit": 50}
     for response in (created, detail, listed):
-        assert set(response.json()["meta"]) == {"request_id"}
+        assert set(response.json()["meta"]) == (
+            {"request_id", "billing_capabilities"} if response is listed else {"request_id"}
+        )
         UUID(response.json()["meta"]["request_id"])
+    assert listed.json()["meta"]["billing_capabilities"] == ["invoices.create"]
 
     resource = created.json()["data"]
     assert set(resource) == {

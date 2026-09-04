@@ -6,8 +6,10 @@ import json
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
+from unittest.mock import MagicMock
 from uuid import UUID, uuid4, uuid5
 
+import psycopg
 import pytest
 from fastapi.testclient import TestClient
 
@@ -29,6 +31,7 @@ from property_rental.late_payment import (
     LatePaymentConflictError,
     LatePaymentIdempotencyKeyReused,
     LatePaymentNotFoundError,
+    PostgresLatePaymentService,
     late_payment_request_digest,
 )
 
@@ -485,6 +488,163 @@ def test_generic_conflicts_return_only_authorized_current_safe_state() -> None:
     assert "exception" not in correction_conflict.text.lower()
 
 
+@pytest.mark.parametrize("action", ["decision", "correction"])
+@pytest.mark.parametrize(
+    ("sqlstate", "stage"),
+    [("55P03", stage) for stage in ("scope", "connect", "bound", "command", "fetch", "commit")]
+    + [
+        (code, "command")
+        for code in (
+            "23505",
+            "40001",
+            "55000",
+            "22023",
+            "23503",
+            "23514",
+            "40P01",
+            "57014",
+            "08006",
+            "XX000",
+        )
+    ],
+)
+def test_database_failure_cannot_replace_an_existing_receipt_with_terminal_state(
+    monkeypatch: pytest.MonkeyPatch, action: str, sqlstate: str, stage: str
+) -> None:
+    """API-016/UI-015: exercise the real service and route, faulting only psycopg."""
+    property_id, invoice_id, charge_id, key = uuid4(), uuid4(), uuid4(), uuid4()
+    resolved_actor = actor(
+        property_id, "late_payment.final_decision", "late_payment.charge_correction"
+    )
+    target_id = invoice_id if action == "decision" else charge_id
+    body: dict[str, object] = (
+        {
+            "outcome": "REDUCED",
+            "approved_amount": {"currency": "USD", "minor_units": 1500},
+            "reason": "Approved",
+        }
+        if action == "decision"
+        else {
+            "kind": "REDUCTION",
+            "amount": {"currency": "USD", "minor_units": 500},
+            "reason": "Approved",
+        }
+    )
+    payload = body if action == "decision" else {**body, "reverses_correction_id": None}
+    digest = late_payment_request_digest(
+        action=action, property_id=property_id, target_id=target_id, payload=payload
+    )
+    original_status = 201 if action == "decision" else 200
+    original_resource = (decision_resource if action == "decision" else charge_resource)(
+        property_id, invoice_id, charge_id
+    )
+    original_body = {
+        "data": original_resource,
+        "meta": {"request_id": "successful-response-lost"},
+    }
+    receipts = {
+        (str(resolved_actor.actor_id), key, digest): {
+            "status_code": original_status,
+            "body": original_body,
+        }
+    }
+    terminal_state = {
+        **original_resource,
+        "adjusted_obligation": {"currency": "USD", "minor_units": 0},
+        "remaining_balance": {"currency": "USD", "minor_units": 0},
+        "corrections": [{"id": str(uuid4()), "kind": "CHARGE_REVERSAL"}],
+    }
+    fault = psycopg.errors.lookup(sqlstate)("private database fault must not reach the client")
+    failing = True
+    receipt_reads = 0
+    snapshot_reads = 0
+    command_calls: list[tuple[object, ...]] = []
+
+    def cursor(value: object) -> MagicMock:
+        result = MagicMock()
+        result.fetchone.return_value = (value,)
+        return result
+
+    def read_query(query: str, parameters: tuple[object, ...]) -> MagicMock:
+        nonlocal snapshot_reads
+        if "set_config" in query:
+            return cursor(None)
+        if "property_id" in query:
+            if failing and stage == "scope":
+                raise fault
+            return cursor(property_id)
+        snapshot_reads += 1
+        return cursor(terminal_state)
+
+    def command_query(query: str, parameters: tuple[object, ...]) -> MagicMock:
+        nonlocal receipt_reads
+        if "set_config" in query:
+            if failing and stage == "bound":
+                raise fault
+            return cursor(None)
+        assert parameters[:5] == (
+            property_id,
+            target_id,
+            UUID(resolved_actor.actor_id),
+            key,
+            digest,
+        )
+        command_calls.append(parameters)
+        if failing and stage == "command":
+            # require_late_payment_actor locks Property before command receipt lookup.
+            raise fault
+        receipt_reads += 1
+        result = cursor(receipts[(str(parameters[2]), key, digest)])
+        if failing and stage == "fetch":
+            result.fetchone.side_effect = fault
+        return result
+
+    def connect(database_url: str, *, connect_timeout: int) -> MagicMock:
+        if failing and stage == "connect" and database_url == "synthetic-financial":
+            raise fault
+        connection = MagicMock()
+        connection.__enter__.return_value = connection
+        connection.__exit__.return_value = False
+        connection.execute.side_effect = (
+            read_query if database_url == "synthetic-read" else command_query
+        )
+        if failing and stage == "commit" and database_url == "synthetic-financial":
+            connection.__exit__.side_effect = fault
+        return connection
+
+    monkeypatch.setattr(psycopg, "connect", connect)
+    client = TestClient(
+        create_app(
+            actor_resolver=lambda _: resolved_actor,
+            late_payment_flow=PostgresLatePaymentService("synthetic-read", "synthetic-financial"),
+        )
+    )
+    client.cookies.set("__Host-prm_csrf", "csrf-token")
+    path = (
+        f"/api/v1/invoices/{invoice_id}/late-payment-decision"
+        if action == "decision"
+        else f"/api/v1/late-payment-charges/{charge_id}/corrections"
+    )
+    headers = {**mutation_headers(), "Idempotency-Key": str(key)}
+    unavailable = client.post(path, json=body, headers=headers)
+    assert unavailable.status_code == 503
+    assert unavailable.json()["error"]["code"] == "SERVICE_UNAVAILABLE"
+    assert "current_state" not in unavailable.json()["error"]
+    assert "private database fault" not in unavailable.text
+    expected_reads = 1 if stage in {"fetch", "commit"} else 0
+    assert receipt_reads == expected_reads
+    assert snapshot_reads == 0
+    failing = False
+    replay = client.post(path, json=body, headers=headers)
+    assert replay.status_code == original_status
+    assert replay.json() == original_body
+    assert receipt_reads == expected_reads + 1
+    assert snapshot_reads == 0
+    assert len(receipts) == 1
+    if len(command_calls) == 2:
+        assert command_calls[0][:5] == command_calls[1][:5]
+
+
 def test_late_payment_traceability_mappings_are_truthful() -> None:
     manifest_path = Path(__file__).parents[2] / "ops" / "traceability.json"
     manifest = json.loads(manifest_path.read_text())
@@ -498,6 +658,23 @@ def test_late_payment_traceability_mappings_are_truthful() -> None:
         }
     }
     assert late_payment_mappings == {
+        "test_database_failure_cannot_replace_an_existing_receipt_with_terminal_state": [
+            "API-016",
+            "UI-015",
+        ],
+        (
+            "test_property_lock_failure_preserves_exact_successful_receipt_after_other_actor_reversal"
+        ): [
+            "API-016",
+            "UI-015",
+        ],
+        "test_actual_cross_actor_cookie_and_csrf_replay_is_rejected_before_second_reduction": [
+            "SEC-028",
+            "API-015",
+            "API-016",
+            "DL-039",
+        ],
+        "test_final_decision_rejects_foreign_confirming_actor": ["SEC-028", "API-091"],
         "test_final_decision_command_preserves_only_canonical_client_intent": [
             "API-005",
             "API-091",
@@ -632,3 +809,106 @@ def test_late_payment_traceability_mappings_are_truthful() -> None:
         ],
         "test_revision_36_upgrades_to_late_payment_api_head": ["DB-MIG-001"],
     }
+
+
+class ActorScopedCorrectionFlow(InMemoryLatePaymentFlow):
+    """Exercise the HTTP boundary against actor-scoped successful receipts."""
+
+    def __init__(self, property_id: UUID, invoice_id: UUID, charge_id: UUID) -> None:
+        super().__init__(property_id, invoice_id, charge_id)
+        self.balance = 1500
+        self.receipts: dict[tuple[str, UUID], LatePaymentCommandResponse] = {}
+
+    def correct_charge(
+        self,
+        property_id: UUID,
+        charge_id: UUID,
+        command: CorrectLatePaymentChargeCommand,
+        *,
+        actor: AuthenticatedActor,
+        request_id: str,
+    ) -> LatePaymentCommandResponse:
+        self._authorize(actor, "late_payment.charge_correction")
+        identity = (actor.actor_id, command.idempotency_key)
+        if identity in self.receipts:
+            return self.receipts[identity]
+        assert command.amount_usd_cents == 500
+        self.balance -= command.amount_usd_cents
+        self.corrections.append(command)
+        resource = charge_resource(property_id, self.invoice_id, charge_id)
+        resource["adjusted_obligation"] = {"currency": "USD", "minor_units": self.balance}
+        resource["remaining_balance"] = resource["adjusted_obligation"]
+        result = LatePaymentCommandResponse(
+            200, {"data": resource, "meta": {"request_id": request_id}}
+        )
+        self.receipts[identity] = result
+        return result
+
+
+def test_actual_cross_actor_cookie_and_csrf_replay_is_rejected_before_second_reduction() -> None:
+    property_id = uuid4()
+    flow = ActorScopedCorrectionFlow(property_id, uuid4(), uuid4())
+    first = actor(property_id, "late_payment.charge_correction")
+    second = actor(property_id, "late_payment.charge_correction")
+    identities = {"A": first, "B": second}
+    client = TestClient(
+        create_app(
+            actor_resolver=lambda request: identities.get(request.cookies.get("test-session", "")),
+            late_payment_flow=flow,
+        ),
+        base_url="https://localhost",
+    )
+    client.cookies.set("test-session", "A")
+    client.cookies.set("__Host-prm_csrf", "csrf-A")
+    key = uuid4()
+    headers = {
+        "Origin": "https://localhost",
+        "X-CSRF-Token": "csrf-A",
+        "Idempotency-Key": str(key),
+        "X-Billing-Actor-ID": first.actor_id,
+    }
+    body = {
+        "kind": "REDUCTION",
+        "amount": {"currency": "USD", "minor_units": 500},
+        "reason": "Approved",
+    }
+    url = f"/api/v1/late-payment-charges/{flow.charge_id}/corrections"
+    committed = client.post(url, json=body, headers=headers)
+    assert committed.status_code == 200
+    assert flow.balance == 1000
+    # A's response is lost. Another tab signs in as B; A's saved intent is unchanged.
+    client.cookies.set("test-session", "B")
+    client.cookies.set("__Host-prm_csrf", "csrf-B")
+    headers["X-CSRF-Token"] = "csrf-B"
+    rejected = client.post(url, json=body, headers=headers)
+    assert rejected.status_code == 403
+    assert flow.balance == 1000
+    assert len(flow.corrections) == 1
+    assert (second.actor_id, key) not in flow.receipts
+    client.cookies.set("test-session", "A")
+    client.cookies.set("__Host-prm_csrf", "csrf-A")
+    headers["X-CSRF-Token"] = "csrf-A"
+    assert client.post(url, json=body, headers=headers).json() == committed.json()
+    assert len(flow.corrections) == 1
+    # Legacy clients retain actor-scoped receipts; the binding does not globalize keys.
+    client.cookies.set("test-session", "B")
+    headers.pop("X-Billing-Actor-ID")
+    assert client.post(url, json=body, headers=headers).status_code == 200
+    assert (second.actor_id, key) in flow.receipts
+
+
+def test_final_decision_rejects_foreign_confirming_actor() -> None:
+    property_id = uuid4()
+    flow = InMemoryLatePaymentFlow(property_id, uuid4(), uuid4())
+    current = actor(property_id, "late_payment.final_decision")
+    result = api(flow, current).post(
+        f"/api/v1/invoices/{flow.invoice_id}/late-payment-decision",
+        json={
+            "outcome": "WAIVED",
+            "approved_amount": {"currency": "USD", "minor_units": 0},
+            "reason": "Approved",
+        },
+        headers={**mutation_headers(), "X-Billing-Actor-ID": str(uuid4())},
+    )
+    assert result.status_code == 403
+    assert flow.decisions == []
