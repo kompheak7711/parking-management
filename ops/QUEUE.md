@@ -57,7 +57,7 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: direct Codex V1-048 scope freeze is active after verified V1-047 closure at 3edda3d.
+Current live queue position: direct Codex V1-048 immutable candidate3197681 is under independent review after verified V1-047 closure at3edda3d. Preserve the candidate; complete bounded financial/traceability corrections and fresh exact-SHA gates/review before publication. Do not repeat completed implementation.
 The owner now authorizes direct continuous Codex execution through V1-053, with
 GPT-6 Astra settings in ops/CODEX_TAKEOVER_V1_048_053.md. Stop before V1-054.
 OpenClaw stays disabled; tracking card 652e776c-2a91-4ebd-bfed-90aa8d5de247
