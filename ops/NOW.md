@@ -1,23 +1,25 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-051 implementation active in the sole isolated Codex worktree. V1-050 fully closed.
+- Current: V1-051 recognition/reversal foundation verified; Credit applications and Refund implementation next. V1-050 fully closed.
 - Authority: ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455. Codex only through53; OpenClaw disabled.
-- Models: Astra xhigh Standard coordinator/financial implementation; fresh independent Astra max Standard read-only review, no fallback. Actual turn context Astra/xhigh; provider-side tier attestation unavailable.
-- Scope: ops/V1_051_SCOPE.md SHA25691adbb369a44dc25f04a49bcaa11c1dc8c29694c8805037855c1e52e4396d3b2.
-- Work: append-only payer-authorized Credit, same-Customer applications/reversals, source-bounded Refund/corrections, current/historical balance guards, exact USD/KHR evidence and distinct authorization.
-- Exclude staff HTTP/UI52, unified Customer ledger53, Final Settlement56, vendor AP, new financial policy/status/rights, production/customerdata/paid/destructive/historyrewrite.
-- Coordinator checkout: /Users/sokompheak/Development/property-rental-management, implementation/foundation. Cumulative review base remains closed50terminalcc3d18e682401cc8a9ade10295572fe1a1344317.
-- Existing sole implementation: /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct, created at localactivationb3b03e209fcb69495944d7f076ac206da5de2a98. Coordinator task01a04961-4270-7802-9418-e08203784a8c; no separate implementation worker.
-- Single tracking-only cardc5621f97-7ad1-4b1c-b04f-c854376c2ad8 blocked solely to prevent OpenClaw admission; no claim/attempt/execution, no owner blocker.
-- V1-050 closed: product3d16b65, terminalcc3d18e, independent product/terminal0HIGH0MEDIUM0LOW, exactCI33985062450/33986122538attempt1all4success, published refs equalcc3d, cardd26f24b3DONE/finalcommentbcdb1010.
-- Closure receipt v1050-closure-verification.md SHA256616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2 discharges immutable cc3d pending fields. Historical50state now explicitly resolved; do not repeat closure.
-- Predecessor product gates584PGzero skips/826backend561DB-onlyskipsseparatelycovered/369frontend/189automation/allstaticbuildconfigtraceability/auditsPASS; fresh terminal189automation/configuration and independent reviewPASS.
-- V1-051 activation preflight189automation(70.240s)/configuration/routing/watchdog/traceability/diff/guardPASS. Product tests/review/publication/CI/closure have NOT run; predecessor/activation gates do not approve51.
-- Evidence directory /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/. Retained product50 worktree clean3d16; preserve all125 prior worktrees.
-- Reconciled OpenClaw supervisor658ffdaf-1ac1-45a6-a842-f5f7d7a226eb singleton disabled30minutes/no nextRun; runningtasks0. Existing native10minute follow-up ACTIVE.
-- Exact next action: inspect and continue the existing sole51worktree from activation plus worktree-reconciliation marker; implement frozen migration41/services and focused regressions. Fresh full exact-SHA gates and independent Astra max zero findings before normal authorized push, exact CI/ref equality, same-card acceptance and terminal closure.
-- Only after51fullyclosed activate52; continue through53 without routine authorization. At53closedpausefollowup/leaveOpenClawdisabled/no54. Owner action: none.
-- Updated 2026-09-05T19:44:43Z.
+- Models: Astra xhigh Standard coordinator/financial implementation; fresh independent Astra max Standard read-only review, no fallback. Actual20:27turn_context Astra/xhigh; service_tierdefault; provider attestation unavailable.
+- Frozen scope: ops/V1_051_SCOPE.md SHA25691adbb369a44dc25f04a49bcaa11c1dc8c29694c8805037855c1e52e4396d3b2.
+- Verified partial checkpoint: ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md. NOT full product acceptance/review/publication/closure.
+- Sole work: /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct. Coordinator task01a04961-4270-7802-9418-e08203784a8c; no separate implementation worker.
+- Main coordinator remains44d93be on implementation/foundation and points here. Future full cumulative review basecc3d18e682401cc8a9ade10295572fe1a1344317.
+- Tracking-only cardc5621f97-7ad1-4b1c-b04f-c854376c2ad8 blocked solely against OpenClaw admission; no claim/attempt/execution or owner blocker.
+- V1-050 closed: product3d16b65, terminalcc3d18e, independent product/terminal0HIGH0MEDIUM0LOW, exactCI33985062450/33986122538attempt1all4success, publishedrefcc3d, cardd26f24b3DONE/finalcommentbcdb1010.
+- Closure receipt v1050-closure-verification.md SHA256616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2 resolves immutable terminalpendingfields. Do not repeat closure/activation/scope/review.
+- Implemented: append-only explicit USD Credit recognition/reversal, original Payment/Receipt/KHR evidence, replay/audit/fresh actor checks, current and historical Payment budgets, stable true-excess eligibility.
+- Partial gates PASS31unit/35focusedPG/619fullPGzero skips/857backend596DB-onlyskipsseparatelycovered/189automation/backendstaticbuildimport/configuration/traceability/secretguard/diff.
+- Initial Receipt assertion/lint and missing8unittraceability mappings corrected; full reruns passed. Retain evidence. Frontend/audits/full exact-SHA product review are still pending.
+- Exact next action: inspect current checkpoint/HEAD and continue SAME migration41 with Credit applications/details/reversals, Credit/Invoice/Charge current/historical source-target integration, then extend EXISTING Refund/correction history. Do not rebuild verified recognition slice or duplicate workers/worktrees.
+- Complete source-bounded Payment/Credit/qualifiedPet/Reservation Refunds, exact USD/KHR evidence, corrections and bounded Credit history reads. Extend excess locks and reversal dependencies for new consumers.
+- Require fresh full exact-SHA applicable gates/audits and independent Astra max zero findings before normal authorized push, exactCI/ref equality, same-card acceptance and terminal closure.
+- Exclude staffHTTP/UI52, unifiedledger53, FinalSettlement56, vendorAP, new financial policy, production/customerdata/paid/destructive/historyrewrite.
+- OpenClaw singleton658ffdaf-1ac1-45a6-a842-f5f7d7a226eb disabled30minutes/no nextRun; runningtasks0. All126worktrees retained. Existing native10minute follow-up ACTIVE.
+- Only after51fullyclosed activate52; continue through53 without routine authorization. At53closedpausefollowup/leaveOpenClawdisabled/no54. Owner action none.
+- Updated2026-09-05T20:42:21Z.
 
 ## Historical V1-047 closure record
 

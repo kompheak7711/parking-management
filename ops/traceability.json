@@ -2,6 +2,279 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_credit_recognition_requires_positive_exact_bounded_cents",
+      "upstream_ids": [
+        "DB-CREDIT-001",
+        "TEST-069"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "Reject zero, negative, boolean, fractional and excessive cents."
+    },
+    {
+      "test_id": "test_credit_recognition_requires_explicit_normalized_payer_authorization",
+      "upstream_ids": [
+        "BR-CREDIT-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "Absent, whitespace-only, unnormalized or excessive payer consent references fail validation."
+    },
+    {
+      "test_id": "test_credit_commands_require_bounded_reasons",
+      "upstream_ids": [
+        "DB-CREDIT-001",
+        "DB-CREDIT-004"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "Both recognition and reversal require normalized bounded nonempty reasons."
+    },
+    {
+      "test_id": "test_credit_command_uuid_and_immutable_scalars",
+      "upstream_ids": [
+        "TEST-068",
+        "TEST-069"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "Exact maximum cents and text accepted; non-nil command keys and frozen scalar intent prevent mutable replay."
+    },
+    {
+      "test_id": "test_credit_capabilities_and_property_scope_are_independent",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-020"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "Read, recognition and reversal each require their own exact-Property grant before database connection."
+    },
+    {
+      "test_id": "test_credit_failure_preserves_exact_replay_and_safe_message",
+      "upstream_ids": [
+        "TEST-068",
+        "TEST-088"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "SQL-state error mapping preserves original command intent and excludes private diagnostic text from public error messages; unknown outcomes remain unresolved."
+    },
+    {
+      "test_id": "test_credit_recognition_uses_financial_connection_and_complete_exact_envelope",
+      "upstream_ids": [
+        "API-062"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "Authorized recognition sends exact source, actor, key, cents, payer consent and reason using financial connection."
+    },
+    {
+      "test_id": "test_credit_read_uses_scoped_read_connection_and_actor",
+      "upstream_ids": [
+        "SEC-019"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "Read uses non-mutating connection with exact Property, Credit and actor parameters."
+    },
+    {
+      "test_id": "test_credit_explicit_recognition_replay_source_receipt_and_audit",
+      "upstream_ids": [
+        "DB-CREDIT-001",
+        "BR-CREDIT-002",
+        "BR-CREDIT-003",
+        "BR-PAY-031",
+        "TEST-064"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Explicit consent recognition, source/payer/actor/audit linkage, exact replay and changed-key conflict; original Payment and Receipt unchanged; Credit reduces Payment availability."
+    },
+    {
+      "test_id": "test_credit_recognition_bounds_and_atomic_failure",
+      "upstream_ids": [
+        "DB-CREDIT-001",
+        "BR-PAY-031"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Reject excess recognition beyond remaining Payment value without a second Credit, command or audit."
+    },
+    {
+      "test_id": "test_credit_reversal_preserves_original_and_releases_source_once",
+      "upstream_ids": [
+        "DB-CREDIT-004",
+        "BR-CREDIT-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Recognition reversal is permanent, releases source exactly once, replays exactly and permits Payment unwind only afterward. Application/Refund prerequisites are tested when those consumers are implemented."
+    },
+    {
+      "test_id": "test_credit_cannot_be_automatic_while_applicable_invoices_outstanding",
+      "upstream_ids": [
+        "BR-PAY-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Any positive outstanding applicable Invoice blocks recognition even with a large Payment."
+    },
+    {
+      "test_id": "test_credit_khr_source_facts_preserved_without_khr_balance",
+      "upstream_ids": [
+        "BR-CREDIT-001",
+        "BR-CREDIT-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "KHR Payment4143, USD101 and preserved System rate4101 remain exact source evidence; Credit exposes only USD availability."
+    },
+    {
+      "test_id": "test_credit_history_immutable_and_runtime_has_no_table_writes",
+      "upstream_ids": [
+        "DB-CREDIT-001",
+        "DB-CREDIT-004",
+        "BR-CREDIT-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Credit, recognition reversal and command receipts reject UPDATE, DELETE and TRUNCATE; runtime and financial roles have no direct INSERT."
+    },
+    {
+      "test_id": "test_credit_database_source_customer_authorization_and_time_constraints",
+      "upstream_ids": [
+        "DB-CREDIT-001",
+        "BR-CREDIT-002",
+        "BR-CREDIT-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Database independently rejects wrong payer, absent consent and recognition predating Payment."
+    },
+    {
+      "test_id": "test_credit_concurrent_recognition_never_overspends",
+      "upstream_ids": [
+        "DB-CREDIT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Two independent7000cent recognition attempts against10000 allow only one durable event; remaining3000."
+    },
+    {
+      "test_id": "test_credit_scope_and_fresh_actor_checks",
+      "upstream_ids": [
+        "SEC-019",
+        "DB-CREDIT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Read requires exact-Property grant, missing Credit is scoped not-found, and a disabled actor is rejected by a fresh database check."
+    },
+    {
+      "test_id": "test_credit_excess_rejects_snapshot_isolation_before_any_event",
+      "upstream_ids": [
+        "BR-PAY-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Repeatable Read/Serializable recognition fails closed before Credit or replay receipt; excess classification requires a post-obligation-lock Read Committed snapshot."
+    },
+    {
+      "test_id": "test_credit_obligation_set_lock_rejects_competing_writer_without_waiting",
+      "upstream_ids": [
+        "BR-PAY-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Each Invoice/Charge/application/adjustment producer table blocks excess classification immediately via NOWAIT; unchanged-key retry after writer releases commits exactly once."
+    },
+    {
+      "test_id": "test_credit_true_excess_after_full_allocation_preserves_both_consumers",
+      "upstream_ids": [
+        "BR-PAY-030",
+        "BR-PAY-031"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "160000cent Invoice allocations plus40000Credit exactly consume200000 Payment, preserve paid targets and exclude double counting."
+    },
+    {
+      "test_id": "test_credit_historical_budget_preserves_nonoverlapping_deposit_history",
+      "upstream_ids": [
+        "DB-CREDIT-001",
+        "BR-PAY-031"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "After Credit reversal, a backdated Deposit cannot exceed the Payment at earlier Credit-active breakpoints; nonoverlapping history remains allowed."
+    },
+    {
+      "test_id": "test_credit_transaction_rollback_removes_event_receipt_and_audit",
+      "upstream_ids": [
+        "DB-CREDIT-001",
+        "TEST-068"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Outer transaction cancellation removes a produced Credit, command receipt and audit together and restores full Payment availability."
+    },
+    {
+      "test_id": "test_credit_forward_upgrade_preserves_existing_payment_receipt_and_no_auto_credit",
+      "upstream_ids": [
+        "DB-CREDIT-001",
+        "TEST-100",
+        "TEST-101"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Revision40 to41 preserves existing full Payment/Receipt rows, creates no automatic Credit, then supports an explicit recognition."
+    },
+    {
+      "test_id": "test_credit_true_excess_requires_separate_charge_as_well_as_invoice_settled",
+      "upstream_ids": [
+        "BR-PAY-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Settling the source Invoice alone is insufficient while its separate positive Charge remains; recognition succeeds only after both obligations settle."
+    },
+    {
+      "test_id": "test_credit_and_deposit_share_payment_budget_in_every_supported_isolation",
+      "upstream_ids": [
+        "DB-CREDIT-001",
+        "BR-PAY-031"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Credit and Deposit competitors share current and row-version source guards across Read Committed, Repeatable Read and Serializable; only the winning1000cent disposition survives."
+    },
+    {
       "test_id": "test_receipt_migration_waits_for_writer_then_refuses_legacy_payment",
       "upstream_ids": [
         "DB-RECEIPT-001"

@@ -801,7 +801,7 @@
     "planned_branch": "codex/v1-051-direct",
     "worker_kind": "direct_codex_coordinator",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
-    "worker_status": "direct_coordinator_implementation",
+    "worker_status": "direct_coordinator_recognition_checkpoint_applications_next",
     "scope_path": "ops/V1_051_SCOPE.md",
     "scope_sha256": "91adbb369a44dc25f04a49bcaa11c1dc8c29694c8805037855c1e52e4396d3b2",
     "card_id": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
@@ -815,30 +815,36 @@
     "predecessor_closure_receipt_sha256": "616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2",
     "cumulative_review_base": "cc3d18e682401cc8a9ade10295572fe1a1344317",
     "owner_action_required": false,
-    "next_action": "Continue implementation of frozen V1-051 scope in the existing sole /Users/sokompheak/Development/property-rental-management-v1-051 on codex/v1-051-direct; inspect its current draft/commit and gates before edits, never create another worker/worktree. Add forward migration41, Credit/application/reversal and source-bounded Refund/correction services with current and historical financial integration, focused/full exact-SHA tests and fresh independent Astra max Standard read-only zero-finding review before normal authorized publication, exact CI/ref equality and same-card terminal closure. Then52 through53 dependency-ordered; OpenClawdisabled, no54.",
-    "verification_status": "Activation preflight189automation/configuration/traceability/diff/guardPASS; V1-051 product implementation/testing/review/publication not complete.",
+    "next_action": "Continue V1-051 in existing sole /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct. Read ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md and inspect current HEAD/draft before edits. Recognition/reversal foundation and focused/full backend/PostgreSQL slice gates are verified; do not repeat activation or rebuild the slice. Next implement Credit applications/details/reversals and current/historical Credit/Invoice/Charge integration, then extend existing source-bounded Refund/correction history and bounded Credit reads. Full product still incomplete; require fresh complete exact-SHA gates/audits and independent Astra max Standard read-only zero findings before reviewed normal publication, exact CI/ref equality, same-card acceptance and terminal closure. Then52through53 dependency-ordered; OpenClawdisabled, no54.",
+    "verification_status": "Partial recognition slice: 31unit/35focusedPG/619fullPG/857backend(596DB-onlyskipsseparatelycovered)/189automation/staticbuildconfigtraceability PASS. Full V1-051 applications/Refund implementation and independent product review/publication remain pending.",
     "correction_history": [],
     "activated_at": "2026-09-05T19:37:17Z",
     "last_model_configuration_check": {
-      "checked_at": "2026-09-05T19:37:17Z",
+      "checked_at": "2026-09-05T20:42:21Z",
       "observed_model": "gpt-6-astra",
       "observed_reasoning": "xhigh",
       "required_reasoning": "xhigh",
-      "source": "Actual latest turn_context2026-09-05T19:33:31.815Z",
+      "source": "Actual turn_context2026-09-05T20:27:36.075Z",
       "standard_config": "service_tier default; provider-side attestation unavailable"
     },
     "last_reconciliation": {
-      "checked_at": "2026-09-05T19:44:43Z",
-      "main_head": "b3b03e209fcb69495944d7f076ac206da5de2a98",
+      "checked_at": "2026-09-05T20:42:21Z",
+      "main_head": "44d93be5bb557bc221f392c52ad1d8a8604142e4",
       "live_remote": "cc3d18e682401cc8a9ade10295572fe1a1344317",
       "predecessor_ci": "33986122538 attempt1success all4jobs",
       "supervisor": "Exactly1matching658ffdaf disabled30minutes/no nextRun; runningtasks0",
-      "card": "Single new tracking-onlyc5621f97 blocked; no claim/attempt/execution",
-      "worktrees": "Existing soleV1-051 created atb3b03e2; all125previous retained,126total. No OpenClaw worker.",
-      "followup": "Existing ACTIVE10minutes; refresh in place to existing51worktree."
+      "card": "Existing tracking-onlyc5621f97 blocked; no claim/attempt/execution, no owner blocker",
+      "worktrees": "Existing soleV1-051; all126retained, no separate implementation worker.",
+      "followup": "Existing ACTIVE10minutes; update in place to verified partial recognition checkpoint."
     },
     "activation_sha": "b3b03e209fcb69495944d7f076ac206da5de2a98",
-    "implementation_started_at": "2026-09-05T19:44:43Z"
+    "implementation_started_at": "2026-09-05T19:44:43Z",
+    "implementation_checkpoint": {
+      "path": "ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md",
+      "status": "partial_verified_worktree_not_product_acceptance",
+      "parent_sha": "44d93be5bb557bc221f392c52ad1d8a8604142e4",
+      "next_slice": "Credit applications/details/reversals and authoritative source/target history, followed by existing Refund history extension"
+    }
   },
   "historical_v1_048_takeover": {
     "authorization_from": "V1-048",
@@ -1585,9 +1591,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-051-direct",
-  "commit": "b3b03e209fcb69495944d7f076ac206da5de2a98",
+  "commit": "44d93be5bb557bc221f392c52ad1d8a8604142e4",
   "idle_reason": null,
-  "next_action": "Continue implementation of frozen V1-051 scope in the existing sole /Users/sokompheak/Development/property-rental-management-v1-051 on codex/v1-051-direct; inspect its current draft/commit and gates before edits, never create another worker/worktree. Add forward migration41, Credit/application/reversal and source-bounded Refund/correction services with current and historical financial integration, focused/full exact-SHA tests and fresh independent Astra max Standard read-only zero-finding review before normal authorized publication, exact CI/ref equality and same-card terminal closure. Then52 through53 dependency-ordered; OpenClawdisabled, no54.",
+  "next_action": "Continue V1-051 in existing sole /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct. Read ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md and inspect current HEAD/draft before edits. Recognition/reversal foundation and focused/full backend/PostgreSQL slice gates are verified; do not repeat activation or rebuild the slice. Next implement Credit applications/details/reversals and current/historical Credit/Invoice/Charge integration, then extend existing source-bounded Refund/correction history and bounded Credit reads. Full product still incomplete; require fresh complete exact-SHA gates/audits and independent Astra max Standard read-only zero findings before reviewed normal publication, exact CI/ref equality, same-card acceptance and terminal closure. Then52through53 dependency-ordered; OpenClawdisabled, no54.",
   "active_worker": null,
   "active_card": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
   "active_claim": null,
@@ -1596,7 +1602,7 @@
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-051",
   "candidate_sha": null,
   "candidate_resolution": "Future immutable cumulative candidate in sole isolated V1-051 worktree; base is fully closed V1-050 terminal cc3d18e.",
-  "candidate_parent": "b3b03e209fcb69495944d7f076ac206da5de2a98",
+  "candidate_parent": "44d93be5bb557bc221f392c52ad1d8a8604142e4",
   "next_candidate": {
     "id": "V1-051",
     "order": 51,
@@ -1648,7 +1654,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-051 implementation active in sole isolated Codex worktree",
+  "phase": "V1-051 recognition/reversal foundation verified; applications and Refund implementation next",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2743,7 +2749,9 @@
   "tests": [
     "PASS predecessorV1-050 closure receipt/checksum/exactCI33986122538all4success/livepublishedcc3d and WorkboardDONE/finalcomment verified. No V1-051 product verification yet.",
     "PASS reconciliation: single OpenClaw supervisor disabled30minutes/no nextRun, runningtasks0; no V1-051 card/branch/worktree before one tracking-only card creation.",
-    "PASS V1-051 activation preflight189automation(70.240s)/routing/state-routing/watchdog/syntax/compile/configuration/traceability/diff/publication guard. Local activationb3b03e2 not published; cumulative independent product review still required."
+    "PASS V1-051 activation preflight189automation(70.240s)/routing/state-routing/watchdog/syntax/compile/configuration/traceability/diff/publication guard. Local activationb3b03e2 not published; cumulative independent product review still required.",
+    "PASS partial51recognition:31unit/35focusedPG/619fullPGzero skips(100.85s)/857backend596DB-onlyskipsseparatelycovered(38.84s)/189automation(74.920s)/allbackendstaticbuildimport/configuration/traceability/secretguard/diff. See ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md; not full product acceptance.",
+    "RESOLVED firstbackendrun856PASS596skip1FAIL due missing8unit traceability entries; added exact mappings and full857PASS rerun. Initial Receipt test expectation and new-test lint failures corrected without weakening assertions."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -2765,7 +2773,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-051",
-  "timestamp": "2026-09-05T19:44:43Z",
+  "timestamp": "2026-09-05T20:42:21Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2792,7 +2800,16 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
-    "V1-051 frozen scope and compact activation; sole isolated implementation worktree created; no product changes yet"
+    "backend/migrations/versions/20260906_41_credit_refund_services.py",
+    "backend/src/property_rental/credit.py",
+    "backend/tests/test_credit.py",
+    "backend/tests/test_credit_migration.py",
+    "backend/tests/*migration.py latest-head expectations only",
+    "scripts/database-test.sh",
+    "ops/traceability.json",
+    "ops/NOW.md",
+    "ops/STATE.json",
+    "ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -2980,7 +2997,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T19:44:43Z",
+  "updated_at": "2026-09-05T20:42:21Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",

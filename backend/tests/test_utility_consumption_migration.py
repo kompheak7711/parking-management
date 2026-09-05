@@ -417,9 +417,9 @@ def test_v1_042_is_forward_only_head_with_least_privilege(
     connection: Connection[tuple[object, ...]],
 ) -> None:
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
-    assert ScriptDirectory.from_config(config).get_current_head() == "20260906_40"
+    assert ScriptDirectory.from_config(config).get_current_head() == "20260906_41"
     assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-        "20260906_40",
+        "20260906_41",
     )
     source = (
         Path(__file__).parents[1] / "migrations/versions/20260829_33_v1_042_utility_corrections.py"
