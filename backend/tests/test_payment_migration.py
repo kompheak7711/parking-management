@@ -3,6 +3,7 @@
 from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from threading import Barrier
 from uuid import UUID, uuid4
 
@@ -12,7 +13,11 @@ from psycopg import Connection, Error
 from psycopg.types.json import Jsonb
 
 from payment_test_support import seed_method, seed_payment
-from test_invoice_migration import financial_database_url, register_billing_service_principal
+from test_invoice_migration import (
+    financial_database_url,
+    register_billing_service_principal,
+    setup_invoice_api_source,
+)
 from test_lease_migration import create_draft
 from test_reservation_lifecycle_migration import active_reservation, cancel
 from test_reservation_migration import (
@@ -251,6 +256,8 @@ def fx_payment(
     future: bool = False,
     channel_amount_only: bool = False,
     channel_usd_only: bool = False,
+    channel_rate_only: bool = False,
+    channel_rate: Decimal | None = None,
 ) -> UUID:
     actor, prop, _, customer = setup_reservation_sources(connection)
     method = seed_method(connection, actor)
@@ -270,8 +277,8 @@ def fx_payment(
         markup_basis_points,system_rate_khr_per_usd,rate_source,source_reference,
         applicable_at,entered_by,calculation_trace,channel_actual_currency,
         channel_actual_amount_minor,channel_actual_usd_value_cents,
-        channel_transaction_reference,channel_confirmed_at)
-        VALUES (%s,4080,50,4101,%s,'Synthetic FX source',%s,%s,%s,%s,%s,%s,%s,%s)""",
+        channel_transaction_reference,channel_confirmed_at,channel_actual_rate_khr_per_usd)
+        VALUES (%s,4080,50,4101,%s,'Synthetic FX source',%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
         (
             fx,
             "ABA_EQUIVALENT_MANUAL" if manual else "ABA_AUTOMATIC",
@@ -279,10 +286,11 @@ def fx_payment(
             actor if manual else None,
             Jsonb(trace),
             "KHR" if channel else None,
-            amount if channel and not channel_usd_only else None,
-            usd if channel and not channel_amount_only else None,
+            amount if channel and not channel_usd_only and not channel_rate_only else None,
+            usd if channel and not channel_amount_only and not channel_rate_only else None,
             "SYNTHETIC-BANK-REFERENCE" if channel else None,
             at if channel else None,
+            channel_rate,
         ),
     )
     connection.execute(
@@ -372,6 +380,208 @@ def test_partial_channel_evidence_does_not_allow_arbitrary_missing_amounts(
         with pytest.raises(Error) as failure:
             confirm()
         assert failure.value.sqlstate == "23514"
+
+
+@pytest.mark.parametrize(
+    "forward,correct", [(True, True), (True, False), (False, True), (False, False)]
+)
+def test_large_fractional_channel_rate_uses_exact_final_rounding(
+    connection: Connection[tuple[object, ...]],
+    forward: bool,
+    correct: bool,
+) -> None:
+    def confirm() -> UUID:
+        return fx_payment(
+            connection,
+            channel=True,
+            channel_rate=Decimal("4101.000001"),
+            channel_rate_only=forward,
+            channel_amount_only=not forward,
+            amount=(4105059991043 if correct else 4105059991042) if forward else 41012030005021,
+            usd=100099000001 if forward else (1000049500000 if correct else 1000049500001),
+        )
+
+    if correct:
+        confirm()
+    else:
+        with pytest.raises(Error) as failure:
+            confirm()
+        assert failure.value.sqlstate == "23514"
+
+
+@pytest.mark.parametrize("isolation", ["read committed", "repeatable read", "serializable"])
+@pytest.mark.parametrize("action", ["fund", "reverse"])
+def test_stale_snapshot_cannot_overconsume_or_reverse_payment(
+    migrated_database_url: str,  # noqa: F811
+    isolation: str,
+    action: str,
+) -> None:
+    with psycopg.connect(migrated_database_url) as setup:
+        actor, prop, unit, customer = setup_reservation_sources(setup)
+        _, first = create_reservation(
+            setup, actor_id=actor, property_id=prop, unit_id=unit, customer_id=customer
+        )
+        _, _, other_unit, _ = setup_reservation_sources(setup)
+        _, second = create_reservation(
+            setup, actor_id=actor, property_id=prop, unit_id=other_unit, customer_id=customer
+        )
+        payment = seed_payment(
+            setup, actor_id=actor, property_id=prop, customer_id=customer, amount=1000
+        )
+        setup.commit()
+    with psycopg.connect(migrated_database_url) as stale:
+        stale.execute("SET TRANSACTION ISOLATION LEVEL " + isolation)
+        stale.execute("SET statement_timeout='10s'")
+        stale.execute("SELECT count(*) FROM app.deposit_receipts WHERE payment_id=%s", (payment,))
+        with psycopg.connect(migrated_database_url) as winner:
+            winner.execute(
+                "INSERT INTO app.deposit_receipts(id,deposit_id,payment_id,amount_usd_cents,"
+                "occurred_at,actor_id) VALUES (%s,%s,%s,1000,clock_timestamp(),%s)",
+                (uuid4(), first["deposit_id"], payment, actor),
+            )
+            winner.commit()
+        with pytest.raises(Error) as failure:
+            if action == "fund":
+                stale.execute(
+                    "INSERT INTO app.deposit_receipts(id,deposit_id,payment_id,amount_usd_cents,"
+                    "occurred_at,actor_id) VALUES (%s,%s,%s,1000,clock_timestamp(),%s)",
+                    (uuid4(), second["deposit_id"], payment, actor),
+                )
+            else:
+                reverse(stale, payment, actor)
+        assert failure.value.sqlstate == ("23514" if isolation == "read committed" else "40001")
+    with psycopg.connect(migrated_database_url) as verify:
+        assert verify.execute(
+            "SELECT status FROM app.payments WHERE id=%s", (payment,)
+        ).fetchone() == ("RECEIVED",)
+        assert verify.execute(
+            "SELECT sum(amount_usd_cents) FROM app.deposit_receipts WHERE payment_id=%s", (payment,)
+        ).fetchone() == (1000,)
+
+
+def invoice_intent_sources(
+    connection: Connection[tuple[object, ...]],
+) -> tuple[UUID, UUID, UUID, UUID, UUID]:
+    actor, prop, customer, source = setup_invoice_api_source(connection)
+    _, _, _, replacement = setup_invoice_api_source(connection)
+    invoice = uuid4()
+    connection.execute(
+        "SELECT app.create_invoice_draft(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+        (prop, source, actor, uuid4(), "a" * 64, invoice, uuid4(), uuid4(), uuid4()),
+    )
+    return actor, prop, customer, invoice, replacement
+
+
+def correct_invoice_intent(
+    connection: Connection[tuple[object, ...]], actor: UUID, prop: UUID, invoice: UUID, source: UUID
+) -> None:
+    connection.execute(
+        "SELECT app.correct_invoice_draft(%s,%s,%s,%s,%s,%s,1,%s,%s)",
+        (prop, invoice, source, actor, uuid4(), "b" * 64, "Synthetic source correction", uuid4()),
+    )
+
+
+def test_confirmed_invoice_intent_cannot_be_reassigned(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    actor, prop, customer, invoice, replacement = invoice_intent_sources(connection)
+    seed_payment(
+        connection,
+        actor_id=actor,
+        property_id=prop,
+        customer_id=customer,
+        amount=100,
+        invoice_id=invoice,
+    )
+    with pytest.raises(Error) as failure, connection.transaction():
+        correct_invoice_intent(connection, actor, prop, invoice, replacement)
+    assert failure.value.sqlstate == "55000"
+    assert "immutable Payment intent" in str(failure.value)
+    assert connection.execute(
+        "SELECT customer_id FROM app.invoices WHERE id=%s", (invoice,)
+    ).fetchone() == (customer,)
+
+
+@pytest.mark.parametrize("winner_action", ["confirm", "correct"])
+def test_stale_invoice_intent_correction_is_serialized(
+    migrated_database_url: str,  # noqa: F811
+    winner_action: str,
+) -> None:
+    with psycopg.connect(migrated_database_url) as setup:
+        actor, prop, customer, invoice, replacement = invoice_intent_sources(setup)
+        seed_method(setup, actor)
+        setup.commit()
+    with psycopg.connect(migrated_database_url) as stale:
+        stale.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        stale.execute("SET statement_timeout='10s'")
+        stale.execute("SELECT count(*) FROM app.payments")
+        with psycopg.connect(migrated_database_url) as winner:
+            if winner_action == "confirm":
+                seed_payment(
+                    winner,
+                    actor_id=actor,
+                    property_id=prop,
+                    customer_id=customer,
+                    amount=100,
+                    invoice_id=invoice,
+                )
+            else:
+                correct_invoice_intent(winner, actor, prop, invoice, replacement)
+            winner.commit()
+        with pytest.raises(Error) as failure:
+            if winner_action == "confirm":
+                correct_invoice_intent(stale, actor, prop, invoice, replacement)
+            else:
+                seed_payment(
+                    stale,
+                    actor_id=actor,
+                    property_id=prop,
+                    customer_id=customer,
+                    amount=100,
+                    invoice_id=invoice,
+                )
+        assert failure.value.sqlstate == "40001"
+
+
+def test_payment_reversal_cannot_predate_receipt_unwind(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    actor, prop, unit, customer = setup_reservation_sources(connection)
+    before = datetime.now(UTC) - timedelta(minutes=2)
+    payment = seed_payment(
+        connection,
+        actor_id=actor,
+        property_id=prop,
+        customer_id=customer,
+        amount=10000,
+        confirmed_at=before,
+    )
+    _, ids = create_reservation(
+        connection,
+        actor_id=actor,
+        property_id=prop,
+        unit_id=unit,
+        customer_id=customer,
+        existing_payment_id=payment,
+        accepted_at=before,
+        received_at=before,
+    )
+    connection.commit()
+    connection.execute(
+        "INSERT INTO app.deposit_receipt_reversals(id,deposit_receipt_id,reason,occurred_at,"
+        "actor_id,authorization_reference) VALUES (%s,%s,'Synthetic unwind',clock_timestamp(),"
+        "%s,'deposits.correct')",
+        (uuid4(), ids["receipt_id"], actor),
+    )
+    with pytest.raises(Error) as failure, connection.transaction():
+        connection.execute(
+            "INSERT INTO app.payment_reversals(id,payment_id,reason,occurred_at,actor_id,"
+            "authorization_reference) "
+            "VALUES (%s,%s,'Backdated reversal',%s,%s,'payments.reverse')",
+            (uuid4(), payment, before + timedelta(seconds=1), actor),
+        )
+    assert failure.value.sqlstate == "23514"
+    reverse(connection, payment, actor)
 
 
 def test_payment_reversal_waits_for_deposit_unwind(

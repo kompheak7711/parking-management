@@ -60,6 +60,22 @@ def upgrade() -> None:
         );
         CREATE INDEX payments_customer_date_idx ON app.payments(payer_customer_id,payment_date DESC,id);
         CREATE INDEX payments_received_idx ON app.payments(property_id,id) WHERE status='RECEIVED';
+        CREATE INDEX payments_invoice_intent_idx ON app.payments(identified_invoice_id)
+            WHERE identified_invoice_id IS NOT NULL;
+
+        CREATE TABLE app.payment_serialization_guards (
+            payment_id uuid PRIMARY KEY REFERENCES app.payments(id) ON DELETE RESTRICT,
+            revision bigint NOT NULL DEFAULT 0 CHECK (revision>=0)
+        );
+        CREATE FUNCTION app.serialize_payment_state(p_payment_id uuid)
+        RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        BEGIN
+            -- A real row version change is necessary: a lock alone cannot refresh
+            -- a Repeatable Read snapshot. Conflicts fail with SQLSTATE40001.
+            INSERT INTO app.payment_serialization_guards(payment_id,revision)
+            VALUES(p_payment_id,1) ON CONFLICT(payment_id) DO UPDATE
+                SET revision=app.payment_serialization_guards.revision+1;
+        END $$;
 
         CREATE TABLE app.payment_reversals (
             id uuid PRIMARY KEY CHECK (id<>'00000000-0000-0000-0000-000000000000'::uuid),
@@ -82,6 +98,7 @@ def upgrade() -> None:
             v_method app.payment_methods%ROWTYPE;
             v_fx app.exchange_rate_records%ROWTYPE;
             v_customer uuid; v_lease uuid; v_property uuid; v_beneficiary uuid;
+            v_numerator numeric; v_denominator numeric; v_usd_cents numeric;
         BEGIN
             IF NEW.status<>'RECEIVED' THEN
                 RAISE EXCEPTION 'Payment must begin RECEIVED' USING ERRCODE='23514';
@@ -115,7 +132,8 @@ def upgrade() -> None:
             IF NEW.identified_invoice_id IS NOT NULL THEN
                 SELECT customer_id,lease_id,app.invoice_property_id(id)
                 INTO STRICT v_customer,v_lease,v_property
-                FROM app.invoices WHERE id=NEW.identified_invoice_id;
+                FROM app.invoices WHERE id=NEW.identified_invoice_id FOR SHARE;
+                PERFORM app.advance_invoice_serialization_guard('payment-invoice:' || NEW.identified_invoice_id::text);
                 IF v_property IS DISTINCT FROM NEW.property_id
                     OR (NEW.lease_id IS NOT NULL AND v_lease IS DISTINCT FROM NEW.lease_id)
                     OR (v_beneficiary IS NOT NULL AND v_customer<>v_beneficiary)
@@ -165,17 +183,39 @@ def upgrade() -> None:
                 -- arbitrary accounting amount merely because one channel field exists.
                 IF v_fx.channel_actual_amount_minor IS NULL
                     AND NEW.received_amount_minor<>ceil(NEW.usd_accounting_value_cents::numeric
-                        * COALESCE(v_fx.channel_actual_rate_khr_per_usd,v_fx.system_rate_khr_per_usd)/100)
+                        * COALESCE(v_fx.channel_actual_rate_khr_per_usd,v_fx.system_rate_khr_per_usd)*0.01)
                 THEN RAISE EXCEPTION 'Payment KHR conversion must use confirmed rate and whole-KHR ceiling' USING ERRCODE='23514'; END IF;
-                IF v_fx.channel_actual_amount_minor IS NOT NULL AND v_fx.channel_actual_usd_value_cents IS NULL
-                    AND NEW.usd_accounting_value_cents<>round(NEW.received_amount_minor::numeric*100
-                        / COALESCE(v_fx.channel_actual_rate_khr_per_usd,v_fx.system_rate_khr_per_usd))
-                THEN RAISE EXCEPTION 'Payment accounting value must use confirmed channel amount and exact half-up cents' USING ERRCODE='23514'; END IF;
+                IF v_fx.channel_actual_amount_minor IS NOT NULL AND v_fx.channel_actual_usd_value_cents IS NULL THEN
+                    v_numerator:=NEW.received_amount_minor::numeric*100*1000000;
+                    v_denominator:=COALESCE(v_fx.channel_actual_rate_khr_per_usd,v_fx.system_rate_khr_per_usd)*1000000;
+                    v_usd_cents:=div(v_numerator,v_denominator)
+                        + CASE WHEN mod(v_numerator,v_denominator)*2>=v_denominator THEN 1 ELSE 0 END;
+                    IF NEW.usd_accounting_value_cents<>v_usd_cents THEN
+                        RAISE EXCEPTION 'Payment accounting value must use confirmed channel amount and exact half-up cents' USING ERRCODE='23514';
+                    END IF;
+                END IF;
             END IF;
             RETURN NEW;
         END $$;
         CREATE TRIGGER payments_validate_source BEFORE INSERT ON app.payments
             FOR EACH ROW EXECUTE FUNCTION app.validate_payment_source();
+
+        CREATE FUNCTION app.preserve_payment_invoice_intent()
+        RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        BEGIN
+            IF NEW.customer_id IS DISTINCT FROM OLD.customer_id
+                OR NEW.lease_id IS DISTINCT FROM OLD.lease_id THEN
+                -- UPDATE already holds the Invoice row; confirmation takes the
+                -- same row before this shared MVCC guard, preserving lock order.
+                PERFORM app.advance_invoice_serialization_guard('payment-invoice:' || OLD.id::text);
+                IF EXISTS(SELECT 1 FROM app.payments WHERE identified_invoice_id=OLD.id) THEN
+                    RAISE EXCEPTION 'Invoice relationships are preserved by immutable Payment intent' USING ERRCODE='55000';
+                END IF;
+            END IF;
+            RETURN NEW;
+        END $$;
+        CREATE TRIGGER invoices_00_preserve_payment_intent BEFORE UPDATE ON app.invoices
+            FOR EACH ROW EXECUTE FUNCTION app.preserve_payment_invoice_intent();
 
         CREATE FUNCTION app.reject_payment_history_mutation()
         RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS $$
@@ -209,6 +249,7 @@ def upgrade() -> None:
         RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
         DECLARE v_payment app.payments%ROWTYPE; v_deposit app.deposits%ROWTYPE; v_used numeric;
         BEGIN
+            PERFORM app.serialize_payment_state(NEW.payment_id);
             SELECT * INTO STRICT v_payment FROM app.payments WHERE id=NEW.payment_id FOR UPDATE;
             SELECT * INTO STRICT v_deposit FROM app.deposits WHERE id=NEW.deposit_id;
             IF v_payment.status<>'RECEIVED' OR NEW.occurred_at<v_payment.confirmed_at
@@ -229,14 +270,27 @@ def upgrade() -> None:
 
         CREATE FUNCTION app.validate_payment_reversal()
         RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
-        DECLARE v_payment app.payments%ROWTYPE; v_used numeric;
+        DECLARE v_payment app.payments%ROWTYPE; v_used numeric; v_last_dependency timestamptz;
         BEGIN
+            PERFORM app.serialize_payment_state(NEW.payment_id);
             SELECT * INTO STRICT v_payment FROM app.payments WHERE id=NEW.payment_id FOR UPDATE;
             PERFORM app.assert_active_financial_actor(NEW.actor_id,NULL);
             SELECT COALESCE(sum(value::numeric),0) INTO v_used
                 FROM jsonb_each_text(app.payment_disposition_summary(NEW.payment_id));
+            SELECT max(event_at) INTO v_last_dependency FROM (
+                SELECT receipt.occurred_at AS event_at FROM app.deposit_receipts receipt
+                    WHERE receipt.payment_id=NEW.payment_id
+                UNION ALL SELECT reversal.occurred_at FROM app.deposit_receipt_reversals reversal
+                    JOIN app.deposit_receipts receipt ON receipt.id=reversal.deposit_receipt_id
+                    WHERE receipt.payment_id=NEW.payment_id
+                UNION ALL SELECT correction.occurred_at FROM app.refund_corrections correction
+                    JOIN app.refunds refund ON refund.id=correction.refund_id
+                    WHERE EXISTS(SELECT 1 FROM app.deposit_receipts receipt
+                        WHERE receipt.deposit_id=refund.source_deposit_id AND receipt.payment_id=NEW.payment_id)
+            ) dependency_events;
             IF v_payment.status<>'RECEIVED' OR v_used<>0
                 OR NOT isfinite(NEW.occurred_at) OR NEW.occurred_at<v_payment.confirmed_at
+                OR NEW.occurred_at<v_last_dependency
                 OR NEW.occurred_at>clock_timestamp()+interval '5 seconds'
             THEN RAISE EXCEPTION 'Payment reversal requires resolved dispositions and valid chronology' USING ERRCODE='23514'; END IF;
             RETURN NEW;
@@ -346,7 +400,7 @@ def upgrade() -> None:
         END $$;
         """
     )
-    for table in ("payments", "payment_reversals"):
+    for table in ("payments", "payment_reversals", "payment_serialization_guards"):
         op.execute(
             f"CREATE TRIGGER {table}_reject_truncate BEFORE TRUNCATE ON app.{table} "
             "FOR EACH STATEMENT EXECUTE FUNCTION app.reject_invoice_storage_truncate()"
@@ -354,7 +408,8 @@ def upgrade() -> None:
         op.execute(
             f"REVOKE ALL ON TABLE app.{table} FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap"
         )
-        op.execute(f"GRANT SELECT ON TABLE app.{table} TO prm_runtime,prm_financial")
+        if table != "payment_serialization_guards":
+            op.execute(f"GRANT SELECT ON TABLE app.{table} TO prm_runtime,prm_financial")
     for function in (
         "validate_payment_source()",
         "reject_payment_history_mutation()",
@@ -364,6 +419,8 @@ def upgrade() -> None:
         "apply_payment_reversal()",
         "audit_payment_event()",
         "deposit_has_unresolved_refund(uuid)",
+        "serialize_payment_state(uuid)",
+        "preserve_payment_invoice_intent()",
     ):
         op.execute(
             f"REVOKE ALL ON FUNCTION app.{function} FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap"

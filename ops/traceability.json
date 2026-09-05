@@ -2,6 +2,249 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_usd_payment_snapshots_reversal_and_audit",
+      "upstream_ids": [
+        "BR-PAY-003",
+        "BR-PAY-018",
+        "DB-PAY-003",
+        "DB-PAY-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "USD confirmation snapshots and linked reversal preserve actor and audit."
+    },
+    {
+      "test_id": "test_history_is_immutable",
+      "upstream_ids": [
+        "BR-PAY-016",
+        "BR-PAY-017",
+        "DB-IMM-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Payment and reversal updates/deletes rejected."
+    },
+    {
+      "test_id": "test_duplicate_reversal_and_number_are_rejected",
+      "upstream_ids": [
+        "BR-PAY-004",
+        "DB-PAY-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Unique Payment number and one immutable reversal."
+    },
+    {
+      "test_id": "test_application_roles_cannot_write_money",
+      "upstream_ids": [
+        "DB-IMM-001",
+        "SEC-045"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Application database identities cannot directly mutate financial tables."
+    },
+    {
+      "test_id": "test_inactive_human_cannot_confirm_or_reverse",
+      "upstream_ids": [
+        "BR-PAY-018",
+        "DB-PAY-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Inactive human attribution rejected on confirmation and reversal."
+    },
+    {
+      "test_id": "test_service_actor_cannot_confirm_payment",
+      "upstream_ids": [
+        "BR-PAY-018",
+        "DB-PAY-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Service actor cannot substitute for human financial authorization."
+    },
+    {
+      "test_id": "test_method_snapshot_survives_rename_and_retirement",
+      "upstream_ids": [
+        "BR-PAY-007",
+        "DB-PAY-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Confirmed method snapshots survive later configuration changes."
+    },
+    {
+      "test_id": "test_lease_intent_and_third_party_ownership",
+      "upstream_ids": [
+        "BR-PAY-001",
+        "BR-PAY-002",
+        "DB-PAY-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Lease intent validates payer ownership or explicit third-party designation."
+    },
+    {
+      "test_id": "test_financial_login_reads_but_cannot_insert_payment",
+      "upstream_ids": [
+        "DB-IMM-001",
+        "SEC-045"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Financial login has read-only Payment access before staff command tranche."
+    },
+    {
+      "test_id": "test_confirmed_fx_preserves_system_and_channel_evidence",
+      "upstream_ids": [
+        "BR-MONEY-007",
+        "BR-MONEY-010",
+        "BR-MONEY-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Confirmed automatic/manual and channel FX evidence remains immutable."
+    },
+    {
+      "test_id": "test_invalid_fx_is_rejected",
+      "upstream_ids": [
+        "BR-MONEY-005",
+        "BR-MONEY-008",
+        "DB-PAY-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Invalid rate selection or missing manual fallback provenance fails closed."
+    },
+    {
+      "test_id": "test_partial_channel_evidence_does_not_allow_arbitrary_missing_amounts",
+      "upstream_ids": [
+        "BR-MONEY-009",
+        "BR-MONEY-011",
+        "BR-MONEY-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Channel-provided fields control; missing values require exact derivation."
+    },
+    {
+      "test_id": "test_large_fractional_channel_rate_uses_exact_final_rounding",
+      "upstream_ids": [
+        "BR-MONEY-003",
+        "BR-MONEY-009",
+        "BR-MONEY-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Large NUMERIC boundaries use exact multiplication and quotient/remainder without intermediate rounding."
+    },
+    {
+      "test_id": "test_stale_snapshot_cannot_overconsume_or_reverse_payment",
+      "upstream_ids": [
+        "DB-TXN-003",
+        "DB-TXN-004",
+        "DB-PAY-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "READ COMMITTED rejects consumed value; stale REPEATABLE READ/SERIALIZABLE snapshots conflict through MVCC guard."
+    },
+    {
+      "test_id": "test_confirmed_invoice_intent_cannot_be_reassigned",
+      "upstream_ids": [
+        "BR-PAY-017",
+        "DB-PAY-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Draft source correction cannot invalidate immutable confirmed Invoice intent."
+    },
+    {
+      "test_id": "test_stale_invoice_intent_correction_is_serialized",
+      "upstream_ids": [
+        "DB-PAY-003",
+        "DB-TXN-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Confirmation and Invoice source correction conflict safely in both stale-snapshot directions."
+    },
+    {
+      "test_id": "test_payment_reversal_cannot_predate_receipt_unwind",
+      "upstream_ids": [
+        "BR-PAY-012",
+        "BR-PAY-017",
+        "DB-PAY-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Payment reversal cannot chronologically precede prerequisite receipt unwind."
+    },
+    {
+      "test_id": "test_payment_reversal_waits_for_deposit_unwind",
+      "upstream_ids": [
+        "BR-PAY-012",
+        "DB-DEP-002",
+        "DB-PAY-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Active Deposit-directed value prevents Payment reversal until linked unwind."
+    },
+    {
+      "test_id": "test_concurrent_reversals_have_one_winner",
+      "upstream_ids": [
+        "DB-PAY-006",
+        "DB-TXN-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent reversal attempts produce one accepted immutable event."
+    },
+    {
+      "test_id": "test_concurrent_deposit_funding_cannot_double_spend",
+      "upstream_ids": [
+        "DB-DEP-002",
+        "DB-TXN-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent Deposit funding cannot exceed the same Payment availability."
+    },
+    {
+      "test_id": "test_refund_correction_allows_receipt_and_payment_unwind_without_erasing_history",
+      "upstream_ids": [
+        "DB-PAY-006",
+        "DB-REFUND-002",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_migration.py",
+      "status": "implemented",
+      "notes": "Net corrected Refund permits receipt and Payment unwind while all original events remain; general Refund services deferred."
+    },
+    {
       "test_id": "TEST-FE-250",
       "upstream_ids": [
         "UI-052",

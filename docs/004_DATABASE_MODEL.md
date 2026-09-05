@@ -879,6 +879,15 @@ Customer/Lease relationships, and prohibits spreading value across unrelated
 obligations of payer or beneficiary.
 Index `(payer_customer_id, payment_date DESC)` and partial index on RECEIVED.
 
+Persistence uses an internal `payment_serialization_guards` row per Payment. Funding
+and reversal update its MVCC revision before checking append-only active consumption,
+so stale repeatable-read/serializable snapshots fail rather than double-consume value.
+This row is coordination metadata, not financial truth, and application roles cannot
+write it directly. Confirmed Invoice intent also serializes against draft source
+correction; a draft cannot be reassigned to a different Customer/Lease after it is
+referenced by an immutable Payment. Reversal timestamps cannot precede the latest
+prerequisite Deposit receipt, receipt reversal, or applicable Refund correction.
+
 ## DB-PAY-004 — `payment_allocations`
 
 Append-only authorized posting header: `id uuid PK`, `payment_id uuid NOT NULL FK`,

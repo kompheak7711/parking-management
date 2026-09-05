@@ -15,16 +15,21 @@
     "implementation": {"model": "gpt-6-astra", "reasoning": "xhigh", "mode": "Standard", "escalation_reason": "V1-048 financial persistence, authorization and migrations"},
     "reviewer": {"model": "gpt-6-astra", "reasoning": "max", "mode": "Standard", "read_only": true},
     "current_version": "V1-048",
-    "phase": "independent_review",
-    "candidate_sha": "31976815c839d671c8cf32d25f80fe68a17dd1ad",
-    "candidate_status": "not_publishable_pending_review_and_traceability_correction",
+    "phase": "corrected_candidate_verification",
+    "candidate_sha": null,
+    "candidate_resolution": "Resolve the clean commit containing this record on codex/v1-048-direct; record its exact SHA in external verification/review receipts before publication. No self-referential SHA claim.",
+    "candidate_status": "bounded_correction_complete_pending_fresh_exact_sha_gates_and_review",
+    "preserved_failed_product_sha": "31976815c839d671c8cf32d25f80fe68a17dd1ad",
+    "preserved_product_review_sha256": "834a8d6dac1959c3ce2cda97b7a638ade5761ed19e27f124c2b3759382e17e0f",
+    "preserved_coordination_followup_review_sha256": "4612d94b3185bf3b2bb7def1af298a2d31d93a240d3a137a83b964d72631f1b8",
+    "product_review": {"candidate_sha": "31976815c839d671c8cf32d25f80fe68a17dd1ad", "verdict": "failed", "high": 1, "medium": 3, "low": 1, "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1048-product-review-3197681.md", "correction_attempt": 1, "approach": "MVCC-updated Payment serialization guard; exact quotient/remainder FX arithmetic; stable Invoice intent guard; dependency-event chronology; complete test mappings. Fresh complete exact-SHA tests and independent Astra max review required."},
     "worktree": "/Users/sokompheak/Development/property-rental-management-v1-048",
     "branch": "codex/v1-048-direct",
     "worker_kind": "direct_codex_coordinator",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
     "scope_path": "/Users/sokompheak/Development/property-rental-management-v1-048/ops/V1_048_SCOPE.md",
     "scope_review": "Independent read-only Astra max inspection completed; fresh exact-SHA implementation review still required",
-    "verification_status": "Exact 3197681: PostgreSQL500/500 and frontend369/369 pass; format/lint/types/build frontend pass; backend768 pass477 DB-only skips with traceability-manifest failure. PyPI runtime/dev and npm audits pass. Independent product review running; no publication.",
+    "verification_status": "Correction pre-freeze diagnostics:45 focused PostgreSQL cases and22 traceability tests pass. Fresh full exact-SHA gates and independent combined product/coordination review pending; no publication. Failed3197681 gate/review evidence preserved separately.",
     "coordination_review": {"candidate_sha": "818967bce98ae9c2e85ca8c67dd1d5413966815a", "verdict": "failed", "high": 0, "medium": 1, "low": 0, "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1048-takeover-review-818967b.md", "correction": "Restore roadmap approved_ready; active execution remains in STATE. Preserve failed checkpoint and obtain fresh exact-SHA review."},
     "coordination_review_followup": {"candidate_sha": "391c36a9de98529cf7e4a412864c03c61b04fd04", "verdict": "failed", "high": 0, "medium": 0, "low": 1, "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1048-takeover-review-391c36a.md", "correction": "Synchronize top-level consumers with review/correction stage; preserve old V1-047 approval, tests and publication under historical keys. Combined corrected product and coordination must receive fresh independent exact-SHA review."},
     "development_checkpoints": [
@@ -43,7 +48,7 @@
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "owner_action_required": false,
-    "next_action": "Finish immutable product3197681 review; preserve all findings, map new tests in a correction checkpoint, rerun exact-SHA gates and fresh Astra max review. Independently verify corrected coordination checkpoint before combining and publishing normally.",
+    "next_action": "Resolve and verify the clean combined correction candidate at codex/v1-048-direct HEAD, run full exact-SHA integration and one fresh independent read-only Astra max review against published3edda3d. If zero findings, fast-forward the clean foundation checkout to the identical reviewed SHA, publish normally and verify exact-SHA CI, ref equality, Workboard acceptance and durable closure before V1-049. Inspect any valid existing reviewer; never duplicate or dispatch OpenClaw.",
     "historical_state_note": "direct_codex_product and prior closure records below preserve V1-047 history; direct_codex_takeover is the current execution authority."
   },
   "direct_codex_product": {
@@ -657,15 +662,16 @@
   "branch": "implementation/foundation",
   "commit": "3edda3d72487695dc8e2b5af3e9313090c96defa",
   "idle_reason": null,
-  "next_action": "Finish independent review of immutable V1-048 candidate31976815c839d671c8cf32d25f80fe68a17dd1ad; preserve findings, then bounded financial/traceability corrections and fresh exact-SHA tests/review. Do not repeat completed implementation or dispatch OpenClaw. Current authority: ops/CODEX_TAKEOVER_V1_048_053.md.",
+  "next_action": "Verify clean combined V1-048 correction at codex/v1-048-direct HEAD with fresh complete exact-SHA integration and independent read-only Astra max review against published3edda3d. Inspect existing reviewer before dispatch. Zero findings permits identical-SHA foundation fast-forward, normal authorized publication, exact-SHA CI and ref equality, then Workboard/durable closure before V1-049. Preserve failed3197681 and both coordination reviews; no OpenClaw dispatch. Authority: ops/CODEX_TAKEOVER_V1_048_053.md.",
   "active_worker": null,
   "active_card": "652e776c-2a91-4ebd-bfed-90aa8d5de247",
   "active_claim": null,
   "active_attempt": null,
   "active_branch": "codex/v1-048-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-048",
-  "candidate_sha": "31976815c839d671c8cf32d25f80fe68a17dd1ad",
-  "candidate_parent": "3edda3d72487695dc8e2b5af3e9313090c96defa",
+  "candidate_sha": null,
+  "candidate_resolution": "Clean codex/v1-048-direct HEAD containing this checkpoint; external exact-SHA receipts are required before publication",
+  "candidate_parent": "caff536780b47494581473ddd8034e23438988d9",
   "next_candidate": {
     "acceptance_profile": "financial",
     "authorities": [
@@ -718,7 +724,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "Billing",
+  "phase": "Payments",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -754,8 +760,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-047 is fully released, published, verified, reconciled, Workboard accepted and closed at exact final reconciliation b022d83. V1-048 is the next authorized candidate but is not activated or dispatched. OpenClaw remains disabled at the end of native takeover.",
-    "exact_next_action": "End this closure turn and pause its native follow-up. On a later authorized cycle, perform the Immediate Action reconciliation and then activate only exact V1-048 under the standing V1-060 policy.",
+    "current_phase": "OpenClaw disabled throughout direct Codex V1-048 through V1-053 takeover. V1-048 correction is awaiting fresh exact-SHA verification/review. Retained OpenClaw model policy is inactive and superseded for execution by direct_codex_takeover.",
+    "exact_next_action": "Do not enable or dispatch OpenClaw. Follow direct_codex_takeover.next_action under ops/CODEX_TAKEOVER_V1_048_053.md; leave disabled after V1-053 and do not activate V1-054.",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1401,7 +1407,8 @@
     "updated_at": "2026-09-01T04:53:20Z",
     "enabled": false
   },
-  "relevant_docs": [
+  "relevant_docs": ["docs/002_BUSINESS_RULES.md: BR-PAY-001..018 and BR-MONEY-001..013", "docs/004_DATABASE_MODEL.md: DB-PAY-001..006, DB-DEP-002/007, DB-TXN-001..004", "docs/007_TESTING_STRATEGY.md: TEST-059/067/069..074/100..104/111/117..119", "docs/008_SECURITY_MODEL.md"],
+  "historical_v1_047_relevant_docs": [
     "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-004, PR-WF-009",
     "docs/005_API_SPECIFICATION.md: API-050..056, API-091",
     "docs/006_UI_SPECIFICATION.md: UI-046..054, UI-105",
@@ -1800,7 +1807,8 @@
     "PASS: V1-041 implementation commit a6c18e524faadd3d80b13fd21e0d0cf623bb7e11 exact-SHA GitHub Actions run 33172741306; all four jobs",
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
-  "tests": [
+  "tests": ["PASS: correction pre-freeze focused PostgreSQL45/45 and traceability22/22", "PENDING: clean corrected candidate full exact-SHA integration and independent Astra max review"],
+  "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
     "PASS exact3197681 backend formatting/lint/types/build/import, automation189 and configuration checks",
     "PASS exact3197681 official PyPI runtime/development and npm audits zero known vulnerabilities",
@@ -1820,7 +1828,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-048",
-  "timestamp": "2026-09-05T09:33:00Z",
+  "timestamp": "2026-09-05T10:05:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -1846,13 +1854,14 @@
     "ops/NOW.md",
     "ops/STATE.json"
   ],
-  "touched_areas": [
+  "touched_areas": ["backend/migrations/versions/20260905_38_payment_persistence.py", "backend/tests/payment_test_support.py and Payment/existing migration fixtures", "scripts/database-test.sh", "docs/004_DATABASE_MODEL.md", "ops takeover scope/policy/traceability and current-state reconciliation"],
+  "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
     "frontend billing API/client/workflows/tests/styles",
     "ops traceability and release continuity",
     "branch-independent publication-test fixture only;no automation runtime repair"
   ],
-  "tranche": "Invoice, adjustment, late-payment, and billing-run API/UI",
+  "tranche": "Payment, FX evidence, and reversal persistence",
   "prior_v1_046_tests": [
     "PASS: V1-042 preflight confirmed clean synchronized V1-041 reconciliation baseline f8fe2547a6996c538fef0c3218cc52ac31c72979, disabled and non-running supervisor, no overlapping repository worker or lock, exact approved successor, and V1-043 held",
     "PASS: V1-041 implementation, closure, and reconciliation exact-SHA GitHub Actions runs 33172741306, 33173041349, and 33173354579 passed all four jobs",
@@ -2032,7 +2041,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T09:33:00Z",
+  "updated_at": "2026-09-05T10:05:00Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -3155,14 +3164,14 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Unpublished direct Codex V1-048 coordination; candidate awaiting corrected exact tests and independent acceptance",
+  "commit_role": "Unpublished combined V1-048 bounded product correction and current coordination; fresh exact tests and independent acceptance pending",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
-  "candidate_parents": ["3edda3d72487695dc8e2b5af3e9313090c96defa"],
+  "candidate_parents": ["caff536780b47494581473ddd8034e23438988d9"],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
     "e7a82f7f034c17390f1de26b1196b0f777dd3ca0"
   ],
-  "publication": {"status": "not_started", "tranche_id": "V1-048", "candidate_sha": "31976815c839d671c8cf32d25f80fe68a17dd1ad", "workboard_card": "652e776c-2a91-4ebd-bfed-90aa8d5de247", "workboard_status": "blocked", "production_deployment": false},
+  "publication": {"status": "not_started", "tranche_id": "V1-048", "candidate_sha": null, "candidate_resolution": "clean codex/v1-048-direct HEAD plus external exact-SHA receipts", "workboard_card": "652e776c-2a91-4ebd-bfed-90aa8d5de247", "workboard_status": "blocked", "production_deployment": false},
   "historical_v1_047_publication": {
     "tranche_id": "V1-047",
     "status": "published_exact_sha_ci_green_reconciled_workboard_accepted_closed",
@@ -3199,7 +3208,7 @@
     "report_path": "/private/tmp/prm-v1047-native-evidence.fvAaxf/release-review-32fbef1.md",
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
-  "review": {"status": "pending", "tranche_id": "V1-048", "exact_sha": "31976815c839d671c8cf32d25f80fe68a17dd1ad", "model": "gpt-6-astra", "reasoning_effort": "max", "mode": "Standard", "read_only": true},
+  "review": {"status": "pending_fresh_corrected_candidate_review", "tranche_id": "V1-048", "exact_sha": null, "candidate_resolution": "clean codex/v1-048-direct HEAD plus external exact-SHA receipt", "model": "gpt-6-astra", "reasoning_effort": "max", "mode": "Standard", "read_only": true},
   "historical_v1_047_review": {
     "status": "PASS",
     "role": "product_gate_only",
@@ -3209,7 +3218,7 @@
     "report_path": "/private/tmp/prm-v1047-native-evidence.fvAaxf/independent-review-e7a82f7.md",
     "report_sha256": "28013545bae13493b75f9af0c3f1c5f9d5c311f5584ee339e3aa3d4680652ba5"
   },
-  "evidence_applicability": {"tranche_id": "V1-048", "complete_profile_remains_applicable": false, "basis": "Candidate3197681 has a failed traceability gate and pending independent review; V1-047 acceptance is historical only."},
+  "evidence_applicability": {"tranche_id": "V1-048", "complete_profile_remains_applicable": false, "basis": "Failed3197681 preserved. Correction diagnostics45DB/22traceability passed, but fresh exact-SHA combined integration/review remain pending. V1-047 acceptance is historical only."},
   "historical_v1_047_evidence_applicability": {
     "tranche_id": "V1-047",
     "complete_profile_remains_applicable": true,

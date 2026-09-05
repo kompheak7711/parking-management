@@ -57,7 +57,7 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: direct Codex V1-048 immutable candidate3197681 is under independent review after verified V1-047 closure at3edda3d. Preserve the candidate; complete bounded financial/traceability corrections and fresh exact-SHA gates/review before publication. Do not repeat completed implementation.
+Current live queue position: direct Codex V1-048 bounded correction is complete after failed immutable3197681 review (1HIGH/3MEDIUM/1LOW). Preserve that checkpoint and coordination818967b/391c36a findings. Resolve clean codex/v1-048-direct HEAD for fresh complete exact-SHA gates and one independent Astra max review against published3edda3d. Inspect existing reviewers; do not repeat completed implementation. Only zero findings permits identical-SHA foundation fast-forward, normal publication, exact-SHA CI/ref equality, Workboard acceptance and durable closure before V1-049.
 The owner now authorizes direct continuous Codex execution through V1-053, with
 GPT-6 Astra settings in ops/CODEX_TAKEOVER_V1_048_053.md. Stop before V1-054.
 OpenClaw stays disabled; tracking card 652e776c-2a91-4ebd-bfed-90aa8d5de247
