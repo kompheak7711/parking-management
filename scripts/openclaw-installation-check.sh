@@ -10,7 +10,7 @@ authoritative_prompt="$repo/ops/OPENCLAW_SUPERVISOR_PROMPT.md"
 [ -x "$openclaw" ]
 [ -f "$authoritative_prompt" ]
 
-jobs="$($openclaw cron list --json)"
+jobs="$($openclaw cron list --all --json)"
 schedule_count="$(printf '%s' "$jobs" | jq '[.jobs[] | select(.name == "property-rental-24x7-supervisor")] | length')"
 [ "$schedule_count" = 1 ] || {
   echo "Expected exactly one Property Rental supervisor schedule" >&2

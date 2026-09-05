@@ -13473,7 +13473,7 @@ print('{}')
                 """#!/usr/bin/env python3
 import json, os, pathlib, sys
 value = json.loads(pathlib.Path(os.environ['FAKE_OPENCLAW_JOBS']).read_text())
-if sys.argv[1:] == ['cron', 'list', '--json']:
+if sys.argv[1:] == ['cron', 'list', '--all', '--json']:
     print(json.dumps(value))
     raise SystemExit(0)
 if sys.argv[1:3] == ['cron', 'get']:
