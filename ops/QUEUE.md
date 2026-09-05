@@ -57,11 +57,11 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-049 distinct EOF formatting/verification correction implemented. Fresh independent7429004 review resolved every financial and semantic mapping finding; new LOW cumulative diff failure preserved. First automatic correction for this distinct finding, not reset of semantic recovery. Successor parent7429004 requires fresh full exact tests, explicit cumulative/parent diff checks, fresh independent Astra max zero-finding review, normal publication/CI/ref/Workboard/terminal closure before V1-050. Audit checksum8957043d1375bed83fc68647640af5dbef4344c82142bfc1cc9fb94a62ee3d59. OpenClaw disabled; native follow-up ACTIVE; owner action none.
+Current live queue position: V1-049 product29bd79d accepted, normallypublished, exactCI33977400879attempt1all4success/fourrefsequal, fresh Astra max review0H0M0L and all553PG/795backend/369frontend/189automation/static/build/config/traceability/cumulative-diff/3auditsPASS. Workboard62275bf0 DONE. Terminalmetadata at containingfoundationHEAD(parent29bd79d) requires fresh checks/independentAstraMaxzero-findingreview/normalpublication/ownexactCI/refequality andexternalclosure receipt before49fullyclosed or50activated. All prior failures/recovery/ownergrants/evidence/worktrees preserved. OpenClawdisabled;nativefollowupACTIVE;owneractionnone.
 The owner now authorizes direct continuous Codex execution through V1-053, with
 GPT-6 Astra settings in ops/CODEX_TAKEOVER_V1_048_053.md. Stop before V1-054.
 OpenClaw stays disabled; current tracking card62275bf0-2739-448c-ae59-50794190ee72
-is blocked only to prevent OpenClaw admission; no claim/attempt/execution. V1-048 card652e776c is done. The V1-047 notes below are history.
+is DONE after product acceptance; no claim/attempt/execution. Terminal closure remains required. V1-048 card652e776c is done. The V1-047 notes below are history.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE.
