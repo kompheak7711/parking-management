@@ -2,6 +2,323 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_receipt_confirmation_identity_money_and_audit",
+      "upstream_ids": [
+        "DB-RECEIPT-001",
+        "BR-RECEIPT-001",
+        "BR-RECEIPT-002",
+        "PR-RECEIPT-001",
+        "PR-RECEIPT-002",
+        "TEST-125",
+        "SEC-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Receipt and Payment lookups return identical identity, payer and issuer. Payment amount stays12345; exactly one Receipt, no allocation, one linked issuance audit, and issuance chronology asserted."
+    },
+    {
+      "test_id": "test_receipt_identity_snapshot_preserves_original_payer_name",
+      "upstream_ids": [
+        "DB-RECEIPT-001",
+        "PR-RECEIPT-005",
+        "TEST-125"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Snapshot equals original Customer name; supported audited Customer update changes that source name while immutable Receipt identity and original name remain unchanged."
+    },
+    {
+      "test_id": "test_receipt_confirmation_rollback_is_atomic",
+      "upstream_ids": [
+        "DB-RECEIPT-001",
+        "TEST-125"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Payment insert creates Receipt within the transaction; deliberate transaction cancellation leaves no Payment, Receipt or linked issuance audit."
+    },
+    {
+      "test_id": "test_receipt_reprint_replay_conflict_and_no_new_money",
+      "upstream_ids": [
+        "DB-RECEIPT-002",
+        "BR-RECEIPT-004",
+        "PR-RECEIPT-004",
+        "TEST-125",
+        "SEC-028",
+        "SEC-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Exact command replay returns original event; changed reason or delivery conflicts. Receipt and authoritative Payment resource unchanged, one Payment/Receipt/reprint/audit with expected correlation and capability."
+    },
+    {
+      "test_id": "test_receipt_reprint_survives_payment_reversal",
+      "upstream_ids": [
+        "BR-RECEIPT-005",
+        "PR-RECEIPT-005",
+        "TEST-125"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Explicit source Payment reversal changes displayed status to REVERSED; Receipt identity remains identical and both before/after reprint events remain available."
+    },
+    {
+      "test_id": "test_receipt_independent_capabilities_and_disabled_replay",
+      "upstream_ids": [
+        "SEC-020",
+        "SEC-022",
+        "API-092"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Read-only capability cannot reprint and reprint-only cannot read. Disabled account loses lookup and previously successful replay access."
+    },
+    {
+      "test_id": "test_receipt_and_reprint_history_immutable",
+      "upstream_ids": [
+        "DB-RECEIPT-001",
+        "DB-RECEIPT-002",
+        "BR-RECEIPT-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "UPDATE and DELETE on Receipt, reprint and command evidence each fail with append-only55000. No assertion of direct TRUNCATE behavior; privilege denial covered separately."
+    },
+    {
+      "test_id": "test_receipt_concurrent_same_key_creates_one_reprint",
+      "upstream_ids": [
+        "SEC-028",
+        "DB-RECEIPT-002",
+        "TEST-125"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Two concurrent same-actor/scope/key commands return equal responses; history contains exactly one event."
+    },
+    {
+      "test_id": "test_receipt_history_keyset_paging_and_cross_receipt_cursor",
+      "upstream_ids": [
+        "API-092",
+        "DB-RECEIPT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Three events page in order with accurate has_more; nonexistent and actual different-Receipt cursors are both rejected."
+    },
+    {
+      "test_id": "test_receipt_storage_and_private_helpers_least_privilege",
+      "upstream_ids": [
+        "SEC-045",
+        "SEC-046",
+        "SEC-048"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Runtime, financial and bootstrap roles lack INSERT/UPDATE/DELETE/TRUNCATE on all three tables and EXECUTE on private trigger helpers; runtime cannot invoke reprint mutation."
+    },
+    {
+      "test_id": "test_receipt_migration_refuses_fabricated_legacy_issuance",
+      "upstream_ids": [
+        "DB-RECEIPT-001",
+        "TEST-125"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Upgrade from39 with existing Payment fails explicitly; migration version remains39, Receipt table absent and the original Payment retained. No invented issuance or silent backfill."
+    },
+    {
+      "test_id": "test_receipt_wrong_property_is_not_found_without_history_leak",
+      "upstream_ids": [
+        "SEC-019",
+        "API-092"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "In the single-Property domain, a different Property UUID carrying a matching claimed capability cannot resolve Receipt, Payment lookup, history or reprint. Original history remains empty."
+    },
+    {
+      "test_id": "test_receipt_khr_display_joins_exact_authoritative_fx",
+      "upstream_ids": [
+        "BR-RECEIPT-003",
+        "PR-RECEIPT-003",
+        "DB-RECEIPT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Receipt joins synthetic authoritative KHR Payment4143, USD101cents and source FX record; exact rate text4101 is preserved without float conversion or padded-format assumptions."
+    },
+    {
+      "test_id": "test_receipt_allocation_reversal_changes_display_not_original_identity",
+      "upstream_ids": [
+        "BR-RECEIPT-003",
+        "BR-RECEIPT-005",
+        "PR-RECEIPT-003",
+        "PR-RECEIPT-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Post100000cents of authorized allocations, verify displayed allocated/available position, reprint then reverse allocations. Original Receipt and reprint remain; displayed position returns to0allocated/100000available."
+    },
+    {
+      "test_id": "test_receipt_reprint_transaction_rollback_leaves_no_event_or_audit",
+      "upstream_ids": [
+        "DB-RECEIPT-002",
+        "SEC-028",
+        "SEC-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Deliberate rollback after a successful SQL reprint leaves no event, idempotency command or correlated audit. This is transaction cancellation, not simulated audit-sink failure."
+    },
+    {
+      "test_id": "test_receipt_duplicate_payment_identity_is_rejected",
+      "upstream_ids": [
+        "DB-RECEIPT-001",
+        "TEST-125"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "A second Receipt UUID/Number for the same Payment raises uniqueness violation; source retains exactly one Receipt and no audit for rejected identity."
+    },
+    {
+      "test_id": "test_receipt_sql_command_bounds_fail_without_event",
+      "upstream_ids": [
+        "DB-RECEIPT-002",
+        "SEC-036"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Direct SQL rejects empty/space-prefixed reason and empty/oversized delivery withP5002, leaving no reprint."
+    },
+    {
+      "test_id": "test_receipt_key_cannot_be_retargeted_but_another_actor_has_own_namespace",
+      "upstream_ids": [
+        "SEC-028",
+        "DB-RECEIPT-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Same-actor key cannot target a different Receipt; a different actor may use that key for a distinct event, yielding exactly two events."
+    },
+    {
+      "test_id": "test_receipt_display_waits_for_source_payment_write_lock",
+      "upstream_ids": [
+        "SEC-029",
+        "BR-RECEIPT-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "An open source Payment FOR UPDATE lock causes receipt read to time out safely; after release exact original/available12345 and allocated0 are returned."
+    },
+    {
+      "test_id": "test_receipt_command_rejects_invalid_reason",
+      "upstream_ids": [
+        "SEC-036",
+        "DB-RECEIPT-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_receipt.py",
+      "status": "implemented",
+      "notes": "Reject empty, whitespace-only, leading/trailing-space and oversized reasons before persistence."
+    },
+    {
+      "test_id": "test_receipt_command_rejects_invalid_delivery",
+      "upstream_ids": [
+        "SEC-036",
+        "DB-RECEIPT-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_receipt.py",
+      "status": "implemented",
+      "notes": "Reject empty, whitespace-only, leading/trailing-space and oversized optional delivery references."
+    },
+    {
+      "test_id": "test_receipt_command_bounds_identity_and_immutability",
+      "upstream_ids": [
+        "SEC-036",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_receipt.py",
+      "status": "implemented",
+      "notes": "Accept maximum reason/delivery lengths, reject nil key and prove immutable command object; this does not claim database replay coverage."
+    },
+    {
+      "test_id": "test_receipt_capability_and_scope_are_checked_before_database",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-020",
+        "SEC-022"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_receipt.py",
+      "status": "implemented",
+      "notes": "Each lookup/history/reprint operation denies missing, different or wrong-Property grants before opening any database connection."
+    },
+    {
+      "test_id": "test_receipt_invalid_actor_cannot_reach_database",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-036"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_receipt.py",
+      "status": "implemented",
+      "notes": "Malformed and nil actor identifiers carrying a read grant are rejected before connecting."
+    },
+    {
+      "test_id": "test_receipt_history_rejects_invalid_bounds",
+      "upstream_ids": [
+        "SEC-036",
+        "API-092"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_receipt.py",
+      "status": "implemented",
+      "notes": "Reject page sizes0,101,boolean andfloat before any database connection."
+    },
+    {
+      "test_id": "test_receipt_database_errors_preserve_safe_outcome",
+      "upstream_ids": [
+        "API-092",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_receipt.py",
+      "status": "implemented",
+      "notes": "Map missing resources/input/key-conflict/authorization SQLSTATEs to explicit safe exceptions; timeout/serialization/unknown failures remain unavailable. Original command preserved and raw diagnostic absent from public message."
+    },
+    {
+      "test_id": "test_receipt_reprint_uses_financial_connection_and_exact_parameters",
+      "upstream_ids": [
+        "SEC-045",
+        "API-092"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_receipt.py",
+      "status": "implemented",
+      "notes": "Successful reprint uses the financial DSN with timeout and passes original actor/scope/Receipt/key/reason/delivery unchanged; response equals database result."
+    },
+    {
       "test_id": "test_allocation_same_due_date_uses_issuance_then_invoice_number",
       "upstream_ids": ["BR-PAY-021", "BR-PAY-023", "DB-PAY-004", "TEST-060"],
       "test_level": "DB",

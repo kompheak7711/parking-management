@@ -1,12 +1,12 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-050 direct implementation active in the sole retained codex/v1-050-direct checkout. V1-049 is fully closed; no repeated closure work.
+- Current: V1-050 product candidate prepared; fresh exact-SHA verification pending. Actual Astra xhigh verified; V1-049 fully closed.
 - Authority: ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455. Codex only through53; OpenClaw disabled throughout.
 - Models: Astra xhigh Standard coordinator and migration/authorization implementation; fresh independent Astra max Standard read-only review, no fallback.
 - Active implementation checkout: /Users/sokompheak/Development/property-rental-management-v1-050, codex/v1-050-direct; direct coordinator only. Foundation retains coordination state and is not a duplicate worker.
 - Current tracking cardd26f24b3-08e9-476b-bc9a-379f8fdcda5e blocked only to prevent OpenClaw admission; no claim/attempt/execution. Scope ops/V1_050_SCOPE.md.
 - Included: immutable Receipt identity per confirmed Payment in same transaction, authorized reads and append-only idempotent reprint/history, authoritative display amounts, no new money. HTTP/UI deferred52, Credit/Refund51, ledger53.
-- Exact next action: freeze activation over closed5bf656f; inspect/create sole retained50checkout, implement bounded scope, focused/full exact tests/audits and fresh independent Astra max zero findings, normalpublication/exactCI/ref/Workboard/terminalclosure before51.
+- Exact next action: full exact gates/audits, fresh independent cumulative Astra max Standard zero findings, normalpublication/exactCI/ref/Workboard/terminalclosure before51. Resolve candidate from containing clean HEAD.
 - V1-049 closed terminal5bf656faee616efe9000d218961329644744bc05, product29bd79d. Both independent reviews0H0M0L. Fresh553PG/795backend/369frontend/189automation/allgates/audits passed; terminal189gates passed.
 - ProductCI33977400879attempt1success; terminalCI33978312171attempt2all4success, fourrefs equal5bf atclosure. First terminal frontendTEST-FE087 failure retained; sameSHA focused/full passes thenonefailedjobretryPASS withoutcodechange orrootcauseoverclaim.
 - V1-049 Workboard62275bf0 DONE proof7ebc9e75, finalcomment4c8ede8c-b8cc-419d-926d-ccf05cc41f8c. Closure receiptv1049-closure-verification.md SHA2568da570786a7c1fe52d4b7505aee3bf8d41624056ab663bb3431755a0ab2e5cd0 discharges prior immutablependingfields.
@@ -36,7 +36,7 @@ The following evidence is preserved as history. Its closure-turn next actions an
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation state: V1-050 scope frozen, implementation pending; V1-049 fully closed. Native follow-up active, OpenClaw disabled.
-- Exact next action: inspect/create sole retained V1-050 checkout from activation, implement frozen Receipt/reprint scope under Codex only, then fresh full exact gates/review/publication/CI/closure before51.
+- Automation state: native follow-up ACTIVE; OpenClaw disabled/no running tasks. Preflight826backend/369frontend/189automationPASS; DB574PASS/6same-messageFAIL, refusal wording fixed. Fresh exact580DB rerun pending.
+- Exact next action: inspect existing verification/reviewer first; preserve all failed checkpoints and retained worktrees; no duplicate worker or repeated completed stage.
 
 <!-- AUTOMATION_STATUS_END -->

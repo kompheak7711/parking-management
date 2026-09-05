@@ -558,17 +558,17 @@
       "read_only": true
     },
     "current_version": "V1-050",
-    "phase": "implementation_active",
+    "phase": "exact_candidate_verification_pending",
     "candidate_sha": null,
-    "candidate_resolution": "Product candidate not frozen; implementation checkout codex/v1-050-direct is authoritative active work. Preserve coordination commits and closed predecessor.",
-    "candidate_status": "implementation_pending",
+    "candidate_resolution": "Resolve containing committed V1-050 candidate from clean HEAD in sole retained codex/v1-050-direct checkout; bind external exact-SHA verification/review receipts. Cumulative review base closed5bf656f includes0312788/c964. No publication before full exact gates and independent zero findings.",
+    "candidate_status": "containing_commit_verification_pending",
     "worktree": "/Users/sokompheak/Development/property-rental-management-v1-050",
     "branch": "codex/v1-050-direct",
     "planned_worktree": "/Users/sokompheak/Development/property-rental-management-v1-050",
     "planned_branch": "codex/v1-050-direct",
     "worker_kind": "direct_codex_coordinator",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
-    "worker_status": "active_direct_codex",
+    "worker_status": "direct_coordinator_verification",
     "scope_path": "ops/V1_050_SCOPE.md",
     "scope_sha256": "493234e5cacb4496142265b8c89b19af121ea478d1589b56e45b24e58778c35c",
     "card_id": "d26f24b3-08e9-476b-bc9a-379f8fdcda5e",
@@ -583,10 +583,44 @@
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "owner_action_required": false,
-    "next_action": "Implement frozen V1-050 Receipt/reprint scope in the sole retained codex/v1-050-direct checkout. Direct coordinator owns implementation; no agent/OpenClaw dispatch. Record bounded checkpoints, verify focused/full exact gates and fresh independent Astra max zero findings before normal publication/CI/ref/Workboard/terminal closure before51.",
-    "verification_status": "V1-049 closed evidence is historical prerequisite, not V1-050 acceptance. V1-050 implementation and fresh exact verification/review pending.",
+    "next_action": "Verify the containing V1-050 candidate at exact HEAD with full PostgreSQL/backend/frontend/static/build/config/automation/traceability/audit gates. Then obtain fresh independent cumulative Astra max Standard read-only review from closed5bf656f, require zero findings, publish normally to implementation/foundation, verify exact CI/ref equality, accept existing cardd26f24b3 and complete terminal durable closure before51. Keep OpenClaw disabled; preserve all evidence/worktrees; no duplicate worker.",
+    "verification_status": "Full exact-SHA acceptance pending; preflight is not release approval.",
     "correction_history": [],
-    "implementation_started_at": "2026-09-05T17:09:13.023Z"
+    "implementation_started_at": "2026-09-05T17:09:13.023Z",
+    "last_model_configuration_check": {
+      "checked_at": "2026-09-05T17:50:20.600Z",
+      "observed_model": "gpt-6-astra",
+      "observed_reasoning": "xhigh",
+      "required_reasoning": "xhigh",
+      "source": "Actual current local turn_context timestamp2026-09-05T17:49:09.908Z",
+      "standard_config": "service_tier default; provider-side attestation unavailable",
+      "action": "Required launch settings verified; resumed existing draft without duplicate dispatch."
+    },
+    "last_reconciliation": {
+      "checked_at": "2026-09-05T17:35:12.475Z",
+      "main_and_product_head": "c964fef4c139b744beade0adc9b6d2e2d067ba9a",
+      "live_remote": "5bf656faee616efe9000d218961329644744bc05",
+      "predecessor_ci": "33978312171 attempt2 success",
+      "supervisor": "exactly1 matching job658ffdaf disabled,30minute schedule retained,no nextRun",
+      "card": "d26f24b3 blocked tracking-only,no claim/attempt/execution on supported card readback",
+      "followup": "Existing ACTIVE every10minutes; checkpoint refresh pending"
+    },
+    "model_configuration_history": [
+      {
+        "checked_at": "2026-09-05T17:35:12.475Z",
+        "observed_model": "gpt-6-astra",
+        "observed_reasoning": "high",
+        "required_reasoning": "xhigh",
+        "source": "Latest local task turn_context",
+        "standard_config": "service_tier default; provider-side attestation unavailable",
+        "action": "Preserve draft and request same-task Astra xhigh continuation through supported app interface; no fallback."
+      }
+    ],
+    "cumulative_review_base": "5bf656faee616efe9000d218961329644744bc05",
+    "preflight_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-prefreeze-verification.md",
+    "preflight_receipt_sha256": "9bcd19f5f4707a97a64f7f4af81759c86b239b27246c66be1d9c11738fc086a2",
+    "draft_checkpoint_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-draft-checkpoint-c964fef.md",
+    "draft_checkpoint_receipt_sha256": "1814a7478fc3a4702bdf1b39fdd7cd7771efacf1989605e5e64ae4ce06be0103"
   },
   "historical_v1_048_takeover": {
     "authorization_from": "V1-048",
@@ -1295,7 +1329,7 @@
     "status": "approved_active",
     "basis": "Standing direct Codex V1-048 through V1-053 authorization and verified immediate predecessor49closure; ops/CODEX_TAKEOVER_V1_048_053.md.",
     "implementation_started": true,
-    "implementation_completed": false,
+    "implementation_completed": true,
     "publication_completed": false
   },
   "historical_v1_047_approval": {
@@ -1331,9 +1365,9 @@
   ],
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "5bf656faee616efe9000d218961329644744bc05",
-  "idle_reason": "Direct Codex frozen successor verification/review pending; no owner decision outstanding. OpenClaw disabled.",
-  "next_action": "Implement frozen V1-050 Receipt/reprint scope in the sole retained codex/v1-050-direct checkout. Direct coordinator owns implementation; no agent/OpenClaw dispatch. Record bounded checkpoints, verify focused/full exact gates and fresh independent Astra max zero findings before normal publication/CI/ref/Workboard/terminal closure before51.",
+  "commit": "c964fef4c139b744beade0adc9b6d2e2d067ba9a",
+  "idle_reason": "Direct Codex exact verification/review pending; no owner decision. OpenClaw disabled.",
+  "next_action": "Verify the containing V1-050 candidate at exact HEAD with full PostgreSQL/backend/frontend/static/build/config/automation/traceability/audit gates. Then obtain fresh independent cumulative Astra max Standard read-only review from closed5bf656f, require zero findings, publish normally to implementation/foundation, verify exact CI/ref equality, accept existing cardd26f24b3 and complete terminal durable closure before51. Keep OpenClaw disabled; preserve all evidence/worktrees; no duplicate worker.",
   "active_worker": null,
   "active_card": "d26f24b3-08e9-476b-bc9a-379f8fdcda5e",
   "active_claim": null,
@@ -1341,8 +1375,8 @@
   "active_branch": "codex/v1-050-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-050",
   "candidate_sha": null,
-  "candidate_resolution": "No product candidate yet; activation is the containing clean foundation commit, parent closed5bf656f. Freeze product SHA only after implementation.",
-  "candidate_parent": "5bf656faee616efe9000d218961329644744bc05",
+  "candidate_resolution": "Resolve containing committed V1-050 candidate from clean HEAD in sole retained codex/v1-050-direct checkout; bind external exact-SHA verification/review receipts. Cumulative review base closed5bf656f includes0312788/c964. No publication before full exact gates and independent zero findings.",
+  "candidate_parent": "c964fef4c139b744beade0adc9b6d2e2d067ba9a",
   "next_candidate": {
     "id": "V1-050",
     "order": 50,
@@ -1392,7 +1426,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-050 direct implementation active",
+  "phase": "V1-050 product candidate — exact verification pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2484,7 +2518,9 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "V1-050 implementation and fresh exact-SHA verification not yet started; fully closed V1-049 receipts are prerequisite history only."
+    "Mutable preflight:826backendPASS/557DB-onlyskips;369frontendPASS;189automation/state/watchdog/static/build/config/traceabilityPASS.",
+    "Full synthetic PostgreSQL580cases:574PASS/6FAIL, all27receiptcasesPASS. Six downgrade tests required literalforward-only; newmigration40 message corrected without behavior change; fresh exact rerun pending.",
+    "Earlier fixture failures/high-reasoning mismatch preserved in draft/prefreeze receipts. Current actual Astra xhigh verified; preflight not release approval."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -2506,7 +2542,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-050",
-  "timestamp": "2026-09-05T17:09:13.023Z",
+  "timestamp": "2026-09-05T18:00:27.740Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2533,8 +2569,9 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
-    "planned Receipt/reprint migration, service and regression tests",
-    "ops/V1_050_SCOPE.md, traceability and durable state"
+    "Forward-only migration40 immutable Receipt/reprint identity, audit and source display serialization",
+    "Receipt service; unit/PostgreSQL regression suites; existing migration-head expectations",
+    "Database suite registration; semantic traceability; NOW/STATE/QUEUE/frozen scope"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -2722,7 +2759,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T17:09:13.023Z",
+  "updated_at": "2026-09-05T18:00:27.740Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -3845,7 +3882,7 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Fully closed V1-049 predecessor, not V1-050 implementation candidate",
+  "commit_role": "Pre-freeze parent of containing V1-050 candidate, not publication approval. Published predecessor is direct_codex_takeover.predecessor_sha.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
     "5bf656faee616efe9000d218961329644744bc05"
