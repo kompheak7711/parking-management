@@ -10,8 +10,8 @@
     "openclaw_dispatch": false,
     "openclaw_supervisor_enabled": false,
     "owner_action_required": false,
-    "phase": "release_candidate_preparation",
-    "next_action": "Prepare normal two-parent release merge preserving foundation4e9c00ca and independently approved producte7a82f7. Reconcile only ops/NOW,STATE,QUEUE; product/migrations/canonical/dependencies/runtime unchanged. Freeze, run fresh exact-SHA integration and independent Sol max release review before normal publication, exact-SHA CI and closure.",
+    "phase": "release_published_exact_sha_ci_green_closure_pending",
+    "next_action": "Validate and commit only ops/NOW.md plus ops/STATE.json as the V1-047 closure checkpoint; obtain fresh exact-SHA tests and independent Sol max Standard review before normal push and exact-SHA CI, then separately reconcile final four-file closure state. OpenClaw disabled;V1-048 held.",
     "preflight": {
       "frontend_client": 27,
       "frontend_workflow": 22,
@@ -55,22 +55,22 @@
     },
     "continuity_overlay": "Coordinator retains original history in codex-v1-047-direct-product; this release merge reconciles active fields and preserves historical evidence separately. Do not reset other worktrees.",
     "last_followup_check": {
-      "checked_at": "2026-09-04T15:09:58.720Z",
-      "cycle": "2026-09-04T14:41:03.810Z",
-      "candidate_sha": "e7a82f7f034c17390f1de26b1196b0f777dd3ca0",
+      "checked_at": "2026-09-05T03:38:09.627925Z",
+      "cycle": "2026-09-05T03:31:38Z",
+      "candidate_sha": "32fbef1cb7e86c92c1deae7036d17df9c890405d",
       "candidate_clean": true,
       "implementation_workers": 0,
       "review_workers": 0,
       "supervisor_enabled": false,
       "supervisor_matches": 1,
       "supervisor_next_run": null,
-      "shared_root_sha": "4e9c00cac2ee77a276c7f883face65e74a898166",
+      "shared_root_sha": "32fbef1cb7e86c92c1deae7036d17df9c890405d",
       "shared_root_clean": true,
       "followup_active": true,
       "followup_status": "ACTIVE",
       "owner_action_required": false,
-      "exact_next_action": "Prepare normal two-parent release merge preserving foundation4e9c00ca and independently approved producte7a82f7. Reconcile only ops/NOW,STATE,QUEUE; product/migrations/canonical/dependencies/runtime unchanged. Freeze, run fresh exact-SHA integration and independent Sol max release review before normal publication, exact-SHA CI and closure.",
-      "review_health": "Product reviewer finished PASS;no active worker"
+      "exact_next_action": "Validate and commit only ops/NOW.md plus ops/STATE.json as the V1-047 closure checkpoint; obtain fresh exact-SHA tests and independent Sol max Standard review before normal push and exact-SHA CI, then separately reconcile final four-file closure state. OpenClaw disabled;V1-048 held.",
+      "review_health": "Product and exact-release reviewers finished PASS zero findings;no active worker"
     },
     "independent_review": {
       "status": "failed",
@@ -410,14 +410,52 @@
       "publication": "not_started"
     },
     "release": {
-      "status": "preparing_history_preserving_merge",
+      "status": "published_exact_sha_ci_green_closure_pending",
       "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/codex-v1-047-release",
       "branch": "codex/v1-047-release",
       "foundation_parent": "4e9c00cac2ee77a276c7f883face65e74a898166",
       "product_parent": "e7a82f7f034c17390f1de26b1196b0f777dd3ca0",
-      "integration": "pending",
-      "independent_review": "pending",
-      "publication": "pending"
+      "candidate_sha": "32fbef1cb7e86c92c1deae7036d17df9c890405d",
+      "tree": "b144d22ae07bae373b303fd52cadc5e98071bbc3",
+      "integration": {
+        "status": "PASS",
+        "backend_passed": 769,
+        "backend_database_only_skips": 446,
+        "frontend_passed": 369,
+        "frontend_files": 19,
+        "postgresql_passed": 469,
+        "postgresql_skips": 0,
+        "automation_passed": 189,
+        "static_types_build_import_deployment_traceability_guard_diff": "PASS",
+        "alembic_head": "20260831_37",
+        "browser": "PASS exact-release real Chrome recovery/focus;zero financial commands",
+        "audits": "PASS backend runtime/development no known vulnerabilities;frontend zero vulnerabilities",
+        "audit_log_sha256": "ead879bc5ed486f4cde41ef2a74f56f10b705ad9a6affcc5e837cb83d23837aa"
+      },
+      "independent_review": {
+        "status": "passed",
+        "session_id": "01a06f90-32a0-75d1-8f7b-4f5683aaf0cf",
+        "model": "gpt-5.6-sol",
+        "reasoning_effort": "max",
+        "mode": "Standard",
+        "sandbox": "read-only",
+        "findings": {
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "report_path": "/private/tmp/prm-v1047-native-evidence.fvAaxf/release-review-32fbef1.md",
+        "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
+      },
+      "publication": {
+        "status": "published_exact_sha_ci_green_remote_synchronized",
+        "branch": "implementation/foundation",
+        "ci_run_id": 33942222913,
+        "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33942222913",
+        "ci_jobs": 4,
+        "ci_conclusion": "success",
+        "refs_reconciled": true
+      }
     }
   },
   "approval": {
@@ -446,16 +484,16 @@
     "TEST-124"
   ],
   "blockers": [],
-  "branch": "codex/v1-047-release",
-  "commit": "e7a82f7f034c17390f1de26b1196b0f777dd3ca0",
+  "branch": "implementation/foundation",
+  "commit": "32fbef1cb7e86c92c1deae7036d17df9c890405d",
   "idle_reason": null,
-  "next_action": "Prepare normal two-parent release merge preserving foundation4e9c00ca and independently approved producte7a82f7. Reconcile only ops/NOW,STATE,QUEUE; product/migrations/canonical/dependencies/runtime unchanged. Freeze, run fresh exact-SHA integration and independent Sol max release review before normal publication, exact-SHA CI and closure.",
-  "active_worker": null,
+  "next_action": "Validate and commit only ops/NOW.md plus ops/STATE.json as the V1-047 closure checkpoint; obtain fresh exact-SHA tests and independent Sol max Standard review before normal push and exact-SHA CI, then separately reconcile final four-file closure state. OpenClaw disabled;V1-048 held.",
+  "active_worker": "direct_codex",
   "active_card": "26b14ae0-92b3-433d-bed6-46bd732c569c",
   "active_claim": null,
   "active_attempt": null,
-  "active_branch": "codex/v1-047-release",
-  "active_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/codex-v1-047-release",
+  "active_branch": "implementation/foundation",
+  "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
   "candidate_parent": null,
   "next_candidate": {
@@ -1526,8 +1564,8 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "active",
-  "task": "V1-047 product PASS zero findings; release candidate preparation",
+  "status": "implementation_published_exact_sha_ci_green_closure_pending",
+  "task": "Close the approved V1-047 invoice, adjustment, late-payment, and billing-run API/UI candidate",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
     "PASS: focused V1-040 deterministic billing tests 10/10",
@@ -1598,7 +1636,7 @@
     "PENDING fresh exact release merge integration and independent review;no publication/CI/closure yet"
   ],
   "tests_tranche_id": "V1-047",
-  "timestamp": "2026-09-04T15:09:58.720Z",
+  "timestamp": "2026-09-05T03:38:09.627925Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
