@@ -57,18 +57,19 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 activation and implementation.
+Current live queue position: V1-047 final reconciliation.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE.
-Implementation `26b14ae0-92b3-433d-bed6-46bd732c569c` is the sole active product stage.
+Implementation `26b14ae0-92b3-433d-bed6-46bd732c569c` retains all product evidence and is dispatch-blocked solely to prevent overlap during terminal acceptance.
 The owner authorized direct native Codex implementation and removed only the
 rejected OpenClaw coordination-repair dependency. Do not dispatch an OpenClaw worker.
 Use the accepted activation `870472b7` in `codex/v1-047-direct-product`.
-The existing card stays dispatch-blocked while native Codex works; preserve all
-prior evidence and rejected worktrees. Full product tests, independent exact-SHA
-Sol max Standard review, normal publication, exact-SHA CI and closure remain required.
-OpenClaw stays disabled. V1-048 remains dependency-held until V1-047 is fully closed.
+Exact product `e7a82f7`, release `32fbef1`, and corrected closure chain through
+`34922d6` are independently approved, normally published, exact-SHA CI-green,
+and remotely synchronized. Final four-file reconciliation and terminal Workboard
+acceptance remain. OpenClaw stays disabled. V1-048 is authorized and dependency-ready
+after terminal acceptance, but must not activate or dispatch in this closure turn.
 
 ### V1-047 operational implementation notes
 
@@ -159,3 +160,15 @@ Fourth correction complete;396be6a plus test/traceability-only030d91b/e7a82f7 pr
 ### Current release preparation checkpoint
 
 Product e7a82f7 full exact-SHA integration and independent review PASS zero findings. Normal two-parent merge preserves published foundation4e9c00ca and producte7a82f7. Reconcile only ops/NOW,STATE,QUEUE; runtime identical to reviewed product. Freeze exact release candidate, run fresh gates and independent release review before publication/CI/ref reconciliation and separate closure. V1-047 not yet closed;V1-048 held. OpenClaw disabled;native follow-up active;no owner action. Earlier failed review/repair or active-worker paragraphs are historical only.
+
+### Current superseding checkpoint — final V1-047 reconciliation
+
+Release32fbef1 is published and exact-SHA CI-green. Immutable failed closure
+checkpoint549ace3 remains preserved. Correctione4a4ce0 and scheduler-inspection
+fix34922d6 each passed fresh189 automation tests and independent Sol max Standard
+review with zero findings. The linear closure chain is normally published; exact-SHA
+GitHub Actions run33945359575 passed all four jobs and every remote/local ref equals
+34922d6. Freeze this bounded four-file final reconciliation, test and independently
+review it, publish normally, require exact-SHA CI/ref equality, then complete preserved
+Workboard card26b14ae0 and record terminal V1-047 closure. Do not activate or dispatch
+V1-048 in this closure turn. OpenClaw remains disabled; no owner action required.

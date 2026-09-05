@@ -10,8 +10,8 @@
     "openclaw_dispatch": false,
     "openclaw_supervisor_enabled": false,
     "owner_action_required": false,
-    "phase": "closure_checkpoint_correction_review_pending",
-    "next_action": "Validate the successor correction to closure checkpoint 549ace3, require fresh exact-SHA automation tests and independent Sol max Standard review, then publish the reviewed closure chain and require exact-SHA CI before final four-file V1-047 reconciliation. OpenClaw disabled; V1-048 held.",
+    "phase": "final_reconciliation_pending",
+    "next_action": "Freeze the bounded four-file V1-047 reconciliation, require fresh automation/configuration tests and independent Sol max Standard review, publish normally, require exact-SHA CI and ref equality, then complete preserved Workboard card 26b14ae0 and record terminal closure without activating V1-048. OpenClaw disabled.",
     "initial_preflight": {
       "frontend_client": 27,
       "frontend_workflow": 22,
@@ -55,22 +55,22 @@
     },
     "continuity_overlay": "Coordinator retains original history in codex-v1-047-direct-product; this release merge reconciles active fields and preserves historical evidence separately. Do not reset other worktrees.",
     "last_followup_check": {
-      "checked_at": "2026-09-05T03:38:09.627925Z",
-      "cycle": "2026-09-05T03:31:38Z",
-      "candidate_sha": "32fbef1cb7e86c92c1deae7036d17df9c890405d",
+      "checked_at": "2026-09-05T04:49:00Z",
+      "cycle": "2026-09-05T04:49:00Z",
+      "candidate_sha": "34922d6e0f0f2ee9b9ad8c7d683a4d4dfa1116a1",
       "candidate_clean": true,
       "implementation_workers": 0,
       "review_workers": 0,
       "supervisor_enabled": false,
       "supervisor_matches": 1,
       "supervisor_next_run": null,
-      "shared_root_sha": "32fbef1cb7e86c92c1deae7036d17df9c890405d",
+      "shared_root_sha": "34922d6e0f0f2ee9b9ad8c7d683a4d4dfa1116a1",
       "shared_root_clean": true,
       "followup_active": true,
       "followup_status": "ACTIVE",
       "owner_action_required": false,
-      "exact_next_action": "Correct the two findings from immutable closure checkpoint review 549ace3, then require fresh exact-SHA automation tests and independent Sol max Standard review before normal closure publication. OpenClaw disabled; V1-048 held.",
-      "review_health": "Exact closure checkpoint 549ace3 independently reviewed FAIL with one MEDIUM routing finding and one LOW stale-field finding; no implementation worker active"
+      "exact_next_action": "Freeze and review the final four-file reconciliation, publish it normally, require exact-SHA CI/ref equality, then complete Workboard and record terminal V1-047 closure without activating V1-048.",
+      "review_health": "Corrected closure chain through 34922d6 independently reviewed PASS with zero findings and published with exact-SHA CI run 33945359575 green; no implementation or review worker active"
     },
     "independent_review": {
       "status": "failed",
@@ -456,6 +456,48 @@
         "ci_conclusion": "success",
         "refs_reconciled": true
       }
+    },
+    "closure_chain": {
+      "status": "published_exact_sha_ci_green_final_reconciliation_pending",
+      "failed_checkpoint": "549ace381964381caab487af744052657aed9f77",
+      "failed_checkpoint_review": {
+        "status": "failed_preserved",
+        "findings": {
+          "high": 0,
+          "medium": 1,
+          "low": 1
+        },
+        "report_path": "/private/tmp/prm-v1047-native-evidence.fvAaxf/closure-review-549ace3.md",
+        "report_sha256": "949ffaf08bbde319079d4420c02edf62fa4a437684a5ecf24fabecd358a098bb"
+      },
+      "correction_commit": "e4a4ce0a6e2b7e0ad8a7e212bd6db0ce90652e8c",
+      "correction_review": {
+        "status": "passed",
+        "session_id": "01a06fc3-33c5-7b72-a316-9ee5cb977a3b",
+        "model": "gpt-5.6-sol",
+        "reasoning_effort": "max",
+        "mode": "Standard",
+        "findings": 0,
+        "report_path": "/private/tmp/prm-v1047-native-evidence.fvAaxf/closure-correction-review-e4a4ce0.md",
+        "report_sha256": "208bd38ea129d0f199ff73a825c8ef7c028f31dd27a36f8352e1c84059c3dc06"
+      },
+      "scheduler_fix_commit": "34922d6e0f0f2ee9b9ad8c7d683a4d4dfa1116a1",
+      "scheduler_fix_review": {
+        "status": "passed",
+        "session_id": "01a06fd5-1414-70c2-bb51-8ad1224e6310",
+        "model": "gpt-5.6-sol",
+        "reasoning_effort": "max",
+        "mode": "Standard",
+        "findings": 0,
+        "report_path": "/private/tmp/prm-v1047-native-evidence.fvAaxf/closure-scheduler-review-34922d6.md",
+        "report_sha256": "093246b63b73d02f84e5ad27a57c50c2aa5e905733057ea4a2f4d0c639fc145f"
+      },
+      "automation_tests": "PASS: 189/189",
+      "ci_run_id": 33945359575,
+      "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33945359575",
+      "ci_jobs": 4,
+      "ci_conclusion": "success",
+      "refs_reconciled": true
     }
   },
   "approval": {
@@ -463,7 +505,7 @@
     "basis": "Owner explicitly authorized direct native Codex full V1-047 closure, routine corrections, commits, independent exact-SHA review and normal publication; removed only rejected OpenClaw coordination-repair prerequisite. Standing sequential authorization through V1-060 preserved.",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true
   },
   "authorities": [
     "API-050",
@@ -485,9 +527,9 @@
   ],
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "32fbef1cb7e86c92c1deae7036d17df9c890405d",
+  "commit": "34922d6e0f0f2ee9b9ad8c7d683a4d4dfa1116a1",
   "idle_reason": null,
-  "next_action": "Validate the successor correction to immutable closure checkpoint 549ace3, require fresh exact-SHA automation tests and independent Sol max Standard review, then publish the reviewed closure chain and require exact-SHA CI before final four-file V1-047 reconciliation. OpenClaw disabled; V1-048 held.",
+  "next_action": "Freeze the bounded four-file V1-047 reconciliation, require fresh automation/configuration tests and independent Sol max Standard review, publish normally, require exact-SHA CI and ref equality, then complete preserved Workboard card 26b14ae0 and record terminal closure without activating V1-048. OpenClaw disabled.",
   "active_worker": "direct_codex",
   "active_card": "26b14ae0-92b3-433d-bed6-46bd732c569c",
   "active_claim": null,
@@ -497,32 +539,33 @@
   "candidate_sha": null,
   "candidate_parent": null,
   "next_candidate": {
-    "acceptance_profile": "api_ui",
+    "acceptance_profile": "financial",
     "authorities": [
-      "API-050-056",
-      "API-091",
-      "TEST-053-058",
-      "TEST-123-124"
+      "BR-PAY-*",
+      "BR-MONEY-*",
+      "DB-PAY-*",
+      "TEST-059",
+      "TEST-067",
+      "TEST-069-074"
     ],
     "authorization": "durable_v1",
     "dependencies": [
-      "V1-043",
       "V1-045",
-      "V1-046"
+      "V1-027"
     ],
     "exclude": [
-      "payments"
+      "allocation and refund"
     ],
-    "id": "V1-047",
+    "id": "V1-048",
     "include": [
-      "invoice staff workflows and explicit confirmations"
+      "money received, confirmed FX, immutable reversal chains"
     ],
-    "order": 47,
-    "phase": "Billing",
+    "order": 48,
+    "phase": "Payments",
     "risk_class": "high",
     "status": "approved_ready",
-    "task": "Invoice, adjustment, late-payment, and billing-run API/UI",
-    "roadmap_id": "V1-047"
+    "task": "Payment, FX evidence, and reversal persistence",
+    "roadmap_id": "V1-048"
   },
   "operational_issues": [
     {
@@ -583,8 +626,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-047 release 32fbef1 is published, exact-SHA CI-green, remotely synchronized and independently approved; correcting the first closure checkpoint before publication. OpenClaw disabled during native takeover.",
-    "exact_next_action": "Validate the successor correction to immutable closure checkpoint 549ace3, require fresh exact-SHA automation tests and independent Sol max Standard review, then publish the reviewed closure chain and require exact-SHA CI before final four-file V1-047 reconciliation. V1-048 remains held.",
+    "current_phase": "V1-047 release and corrected closure chain through 34922d6 are independently approved, normally published, exact-SHA CI-green and remotely synchronized; final four-file reconciliation and terminal Workboard acceptance remain. OpenClaw disabled during native takeover.",
+    "exact_next_action": "Review and publish the final four-file V1-047 reconciliation, require exact-SHA CI/ref equality, then complete Workboard and record terminal closure. Do not activate or dispatch V1-048 in this closure turn.",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1557,14 +1600,14 @@
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 46,
+    "completed": 47,
     "current_id": "V1-047",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "verified_unpublished",
+  "status": "closure_published_reconciliation_pending",
   "task": "Close the approved V1-047 invoice, adjustment, late-payment, and billing-run API/UI candidate",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
@@ -1636,10 +1679,13 @@
     "PASS exact release 32fbef1: 769 backend with 446 DB-only skips separately covered, 369 frontend, 469 isolated PostgreSQL zero skips, 189 automation, static/build/migration/browser and locked dependency audits",
     "PASS exact release independent Sol max Standard review: zero HIGH, MEDIUM or LOW findings; report SHA-256 3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643",
     "PASS exact release publication: GitHub Actions run 33942222913 all four jobs green; local, tracking, fetched and live remote refs equal 32fbef1",
-    "FAIL preserved immutable closure checkpoint 549ace3 review: one MEDIUM executable-routing finding and one LOW stale-active-field finding; successor correction in progress"
+    "FAIL preserved immutable closure checkpoint 549ace3 review: one MEDIUM executable-routing finding and one LOW stale-active-field finding",
+    "PASS corrected closure metadata e4a4ce0: automation 189/189 and independent Sol max Standard review zero findings; report SHA-256 208bd38ea129d0f199ff73a825c8ef7c028f31dd27a36f8352e1c84059c3dc06",
+    "PASS scheduler inspection fix 34922d6: independent Sol max Standard review zero findings; report SHA-256 093246b63b73d02f84e5ad27a57c50c2aa5e905733057ea4a2f4d0c639fc145f",
+    "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-047",
-  "timestamp": "2026-09-05T03:38:09.627925Z",
+  "timestamp": "2026-09-05T04:49:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -1851,7 +1897,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T04:03:09Z",
+  "updated_at": "2026-09-05T04:49:00Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -2974,14 +3020,14 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "published independently approved exact release awaiting reviewed closure-checkpoint publication and final reconciliation",
+  "commit_role": "published independently approved exact release and corrected closure chain awaiting final four-file reconciliation and terminal Workboard acceptance",
   "candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
     "e7a82f7f034c17390f1de26b1196b0f777dd3ca0"
   ],
   "publication": {
     "tranche_id": "V1-047",
-    "status": "published_exact_sha_ci_green_closure_pending",
+    "status": "closure_chain_published_exact_sha_ci_green_final_reconciliation_pending",
     "implementation_commit": "32fbef1cb7e86c92c1deae7036d17df9c890405d",
     "product_parent": "e7a82f7f034c17390f1de26b1196b0f777dd3ca0",
     "foundation_parent": "4e9c00cac2ee77a276c7f883face65e74a898166",
@@ -2992,6 +3038,10 @@
     "ci_run_id": 33942222913,
     "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33942222913",
     "sha_reconciled": true,
+    "closure_commit": "34922d6e0f0f2ee9b9ad8c7d683a4d4dfa1116a1",
+    "closure_ci_run_id": 33945359575,
+    "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33945359575",
+    "closure_ci_conclusion": "success",
     "production_deployment": false
   },
   "release_review": {
@@ -3017,6 +3067,6 @@
   "evidence_applicability": {
     "tranche_id": "V1-047",
     "complete_profile_remains_applicable": true,
-    "basis": "Exact release 32fbef1 preserves independently approved product e7a82f7, passed its complete fresh release profile and independent zero-finding review, is normally published with exact-SHA CI run 33942222913 green, and has synchronized local, tracking, fetched and live-remote refs. Closure checkpoint 549ace3 is preserved but not publishable because its independent review found one MEDIUM and one LOW metadata finding; this successor correction must pass its own fresh exact-SHA tests and review."
+    "basis": "Exact release 32fbef1 preserves independently approved product e7a82f7 and passed complete release verification, independent zero-finding review, publication, exact-SHA CI and ref equality. Failed checkpoint 549ace3 is preserved; correction e4a4ce0 and scheduler inspection fix 34922d6 each passed fresh exact-SHA tests and independent zero-finding Sol max Standard review. The linear closure chain is normally published, GitHub Actions run 33945359575 passed all four jobs, and all refs equal 34922d6. Only final four-file reconciliation and terminal Workboard acceptance remain."
   }
 }

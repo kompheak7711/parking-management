@@ -1,15 +1,22 @@
-# V1-047 — release published and verified; closure pending
+# V1-047 — final reconciliation
 
 - Scope: invoice staff draft/issue/adjustment/void, late-payment decisions and charge corrections, and billing-run API/UI. Payments excluded.
-- Reviewed product: `e7a82f7f034c17390f1de26b1196b0f777dd3ca0`; independent GPT-5.6 Sol max Standard review passed with zero findings across all 23 cumulative paths.
-- Release: normal two-parent merge `32fbef1cb7e86c92c1deae7036d17df9c890405d`, parents `4e9c00cac2ee77a276c7f883face65e74a898166` and `e7a82f7f034c17390f1de26b1196b0f777dd3ca0`, tree `b144d22ae07bae373b303fd52cadc5e98071bbc3`; both histories preserved without rewrite.
-- Exact release gates passed: 769 backend with 446 DB-only skips separately covered; 369 frontend; 469 real PostgreSQL with zero skips; 189 automation; formatting/lint/types/build/import/deployment/traceability/publication/diff; audits; Alembic sole head `20260831_37`; real Chrome recovery/focus with zero financial commands.
-- Exact-release independent GPT-5.6 Sol max Standard review `01a06f90-32a0-75d1-8f7b-4f5683aaf0cf` passed with zero HIGH/MEDIUM/LOW findings; report SHA-256 `3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643`.
-- Publication: `implementation/foundation` was fast-forwarded and pushed normally. Exact-SHA GitHub Actions run `33942222913` passed all four jobs. Local, tracking, fetched, and live-remote refs all equal `32fbef1`.
-- Status: product implementation, review, release, publication, and exact-SHA CI are complete. Immutable first closure checkpoint `549ace3` failed independent review with one MEDIUM routing finding and one LOW stale-field finding; both are corrected in a normal successor without rewriting history.
-- Exact next action: freeze this two-file successor correction, run fresh exact-SHA automation/configuration tests and an independent Sol max Standard review, then push the reviewed closure chain normally and require exact-SHA CI/ref equality. Only then complete the separate four-file final reconciliation and its own review/CI before closing Workboard.
-- Operations: owner-authorized native Codex takeover; rejected OpenClaw repair excluded. Single OpenClaw supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb` remains disabled with its 30-minute schedule retained; native 10-minute follow-up remains active.
-- Existing product card `26b14ae0-92b3-433d-bed6-46bd732c569c` remains dispatch-blocked solely to prevent overlap; all evidence retained. V1-048 remains dependency-held and must not activate before V1-047 is fully closed.
-- Production, credentials, customer data, paid services, destructive operations, history rewrite, force push, and worktree deletion remain unauthorized.
-- Release receipt: `/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1047-release-verification-32fbef1.md`.
-- Updated: `2026-09-05T04:03:09Z`.
+- Product: exact `e7a82f7f034c17390f1de26b1196b0f777dd3ca0`; full integration passed and independent GPT-5.6 Sol max Standard review found zero HIGH/MEDIUM/LOW findings.
+- Release: normal two-parent merge `32fbef1cb7e86c92c1deae7036d17df9c890405d`, parents `4e9c00cac2ee77a276c7f883face65e74a898166` and `e7a82f7f034c17390f1de26b1196b0f777dd3ca0`, tree `b144d22ae07bae373b303fd52cadc5e98071bbc3`; published normally with exact-SHA GitHub Actions run `33942222913` green and all refs equal.
+- Closure chain: immutable failed checkpoint `549ace381964381caab487af744052657aed9f77` remains preserved. Corrected successor `e4a4ce0a6e2b7e0ad8a7e212bd6db0ce90652e8c` passed fresh 189/189 automation tests and independent Sol max Standard review. Scheduler-inspection fix `34922d6e0f0f2ee9b9ad8c7d683a4d4dfa1116a1` passed a separate independent Sol max Standard review with zero findings.
+- Closure publication: the complete linear closure chain through `34922d6` is normally published. GitHub Actions run `33945359575` passed all four jobs; local, tracking, fetched, and live-remote refs all equal exact `34922d6`.
+- Scheduler: exactly one OpenClaw supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb`; disabled by owner request during native Codex takeover, schedule retained at 30 minutes, model GPT-5.6 Sol xhigh Standard, payload byte-identical to the authoritative 11,868-byte prompt at SHA-256 `0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56`.
+- Workboard: existing product card `26b14ae0-92b3-433d-bed6-46bd732c569c` remains blocked only to prevent duplicate dispatch; all evidence and worktrees are preserved. It moves to terminal completion only after this four-file reconciliation passes exact-SHA review, publication, CI, and ref equality.
+- Status: V1-047 product, release, publication, closure correction, and closure-chain CI are complete. This bounded four-file final reconciliation and terminal Workboard acceptance remain.
+- V1-048: authorized and dependency-ready after terminal V1-047 acceptance, but it must not be activated or dispatched in this closure turn.
+- Production deployment/access/credentials, customer data, paid services, destructive operations, force push, history rewrite, and worktree deletion remain unauthorized and were not used.
+- Owner action required: no.
+- Exact next action: freeze this four-file reconciliation, run automation/configuration tests and independent GPT-5.6 Sol max Standard review, publish normally, require exact-SHA CI and ref equality, then complete Workboard card `26b14ae0` and record terminal V1-047 closure without activating V1-048.
+- Updated: `2026-09-05T04:49:00Z`.
+
+<!-- AUTOMATION_STATUS_BEGIN -->
+
+- Automation publication state: exact V1-047 release `32fbef1` and closure chain through `34922d6` are published, synchronized, independently approved, and exact-SHA CI-green; final four-file reconciliation is pending.
+- Automation exact next action: keep OpenClaw disabled and V1-048 undispatched while this reconciliation, its exact-SHA review/CI/ref equality, terminal Workboard acceptance, and terminal closure record complete.
+
+<!-- AUTOMATION_STATUS_END -->
