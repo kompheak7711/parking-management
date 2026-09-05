@@ -13,6 +13,14 @@ def upgrade() -> None:
     """Add receipts without inventing issuance evidence for existing Payments."""
     op.execute(r"""
         DO $$ BEGIN
+            IF current_setting('transaction_isolation')<>'read committed' THEN
+                RAISE EXCEPTION 'Receipt migration requires read committed isolation for safe history reconciliation';
+            END IF;
+        END $$;
+        -- Wait for prior writers before inspecting history, and exclude new writes
+        -- until the same transaction installs the atomic issuance trigger.
+        LOCK TABLE app.payments IN SHARE ROW EXCLUSIVE MODE;
+        DO $$ BEGIN
             IF EXISTS (SELECT 1 FROM app.payments) THEN
                 RAISE EXCEPTION 'Receipt migration requires explicit reconciliation of existing Payment issuance evidence; no historical Receipt is inferred';
             END IF;
@@ -125,16 +133,23 @@ def upgrade() -> None:
         CREATE FUNCTION app.receipt_resource(p_property_id uuid,p_receipt_id uuid,p_actor_id uuid)
         RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
         DECLARE v_receipt app.receipts%ROWTYPE; v_payment app.payments%ROWTYPE; v_fx app.exchange_rate_records%ROWTYPE;
+        DECLARE v_disposition jsonb; v_allocated bigint; v_deposit bigint; v_available bigint;
         BEGIN
             PERFORM app.require_invoice_command_actor(p_property_id,p_actor_id);
             PERFORM app.assert_active_financial_actor(p_actor_id,p_property_id);
             SELECT receipt.* INTO v_receipt FROM app.receipts receipt JOIN app.payments payment ON payment.id=receipt.payment_id
                 WHERE receipt.id=p_receipt_id AND payment.property_id=p_property_id;
             IF NOT FOUND THEN RAISE EXCEPTION 'Receipt not found' USING ERRCODE='P5001'; END IF;
-            -- Serialize display with source financial writes; volatile projections must
-            -- not observe different committed positions within the same resource.
+            -- Payment facts/status remain locked. Deposit reversals do not take this
+            -- lock, so capture all disposition sources in ONE authoritative query.
             SELECT * INTO STRICT v_payment FROM app.payments WHERE id=v_receipt.payment_id FOR SHARE;
             SELECT * INTO v_fx FROM app.exchange_rate_records WHERE id=v_payment.exchange_rate_record_id;
+            v_disposition:=app.payment_disposition_summary(v_payment.id);
+            v_allocated:=(v_disposition->>'allocation_usd_cents')::bigint;
+            v_deposit:=(v_disposition->>'deposit_usd_cents')::bigint;
+            v_available:=CASE WHEN v_payment.status='REVERSED' THEN 0 ELSE
+                v_payment.usd_accounting_value_cents-COALESCE((SELECT sum(value::numeric)
+                    FROM jsonb_each_text(v_disposition)),0)::bigint END;
             RETURN jsonb_build_object('receipt',to_jsonb(v_receipt),
                 'payment',jsonb_build_object('id',v_payment.id,'payment_number',v_payment.payment_number,
                     'property_id',v_payment.property_id,'payer_customer_id',v_payment.payer_customer_id,
@@ -147,7 +162,12 @@ def upgrade() -> None:
                     'channel_actual_rate_khr_per_usd',v_fx.channel_actual_rate_khr_per_usd::text,
                     'channel_actual_amount_minor',v_fx.channel_actual_amount_minor,
                     'channel_actual_usd_value_cents',v_fx.channel_actual_usd_value_cents) END,
-                'financial_position',(SELECT to_jsonb(position) FROM app.payment_financial_position position WHERE position.payment_id=v_payment.id));
+                'financial_position',jsonb_build_object('payment_id',v_payment.id,
+                    'payer_customer_id',v_payment.payer_customer_id,'property_id',v_payment.property_id,
+                    'status',v_payment.status,'original_usd_cents',v_payment.usd_accounting_value_cents,
+                    'allocated_usd_cents',v_allocated,'deposit_directed_usd_cents',v_deposit,
+                    'available_usd_cents',v_available,'allocation_condition',CASE WHEN v_allocated=0
+                        THEN 'UNALLOCATED' WHEN v_available=0 THEN 'FULLY_ALLOCATED' ELSE 'PARTIALLY_ALLOCATED' END));
         END $$;
         CREATE FUNCTION app.receipt_for_payment(p_property_id uuid,p_payment_id uuid,p_actor_id uuid)
         RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$

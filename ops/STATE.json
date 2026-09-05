@@ -558,9 +558,9 @@
       "read_only": true
     },
     "current_version": "V1-050",
-    "phase": "exact_candidate_verification_pending",
+    "phase": "correction1_exact_verification_pending",
     "candidate_sha": null,
-    "candidate_resolution": "Resolve containing committed V1-050 candidate from clean HEAD in sole retained codex/v1-050-direct checkout; bind external exact-SHA verification/review receipts. Cumulative review base closed5bf656f includes0312788/c964. No publication before full exact gates and independent zero findings.",
+    "candidate_resolution": "Resolve correction1 candidate from containing clean HEAD; actual parent is preserved fa8afe7, cumulative review base separately closed5bf656f. Bind fresh external exact-SHA gate and independent review receipts.",
     "candidate_status": "containing_commit_verification_pending",
     "worktree": "/Users/sokompheak/Development/property-rental-management-v1-050",
     "branch": "codex/v1-050-direct",
@@ -583,27 +583,55 @@
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "owner_action_required": false,
-    "next_action": "Verify the containing V1-050 candidate at exact HEAD with full PostgreSQL/backend/frontend/static/build/config/automation/traceability/audit gates. Then obtain fresh independent cumulative Astra max Standard read-only review from closed5bf656f, require zero findings, publish normally to implementation/foundation, verify exact CI/ref equality, accept existing cardd26f24b3 and complete terminal durable closure before51. Keep OpenClaw disabled; preserve all evidence/worktrees; no duplicate worker.",
-    "verification_status": "Full exact-SHA acceptance pending; preflight is not release approval.",
-    "correction_history": [],
+    "next_action": "Run fresh full exact-SHA gates and audits for the containing correction1 candidate; obtain NEW independent Astra max Standard read-only cumulative review from closed5bf656f, requiring zero findings. Only then normal publication, exact CI/ref equality, same-card Workboard acceptance and terminal durable closure before51. Inspect active work first; OpenClaw stays disabled through53.",
+    "verification_status": "Correction1 focused preflight passed; fresh full exact gates and independent review pending.",
+    "correction_history": [
+      {
+        "attempt": 1,
+        "status": "implemented_exact_verification_pending",
+        "started_at": "2026-09-05T18:26:34.575Z",
+        "failure": {
+          "candidate_sha": "fa8afe76894429eed059d441d534a7fe13ce8a88",
+          "tree": "674befed2067d2153ab6ce13522fb16853b96c15",
+          "parent": "c964fef4c139b744beade0adc9b6d2e2d067ba9a",
+          "review_status": "failed",
+          "findings": {
+            "high": 0,
+            "medium": 2,
+            "low": 3
+          },
+          "review_report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-review-fa8afe7.md",
+          "review_sha256": "980246b60696cc8127e65a50dee7b816375e92735b519d16870b8ace6a3ef474",
+          "verification_report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-verification-fa8afe7.md",
+          "verification_sha256": "590041cba4e20aadc0a4655d4f860cada30b18121e5195c41100eebea8d99299",
+          "probe_report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-review-probes-fa8afe7.md",
+          "probe_sha256": "ec6a4352bb0eebeb1fcf56f0ae828f5581b59862e7880ce66c9156668fde744b",
+          "reviewer": "/root/v1050_product_exact_review",
+          "gate_result": "580PG/826backend/369frontend/189automation and all other gates/audits passed; failed independent review means NOT publication approval."
+        },
+        "changed_approach": "Exclude concurrent Payment writes before history check, reject non-read-committed bootstrap, derive display from one captured disposition summary, independently assert provenance and scoped money-event sets, remove unsupported mappings and synchronize actual parent metadata.",
+        "implemented_at": "2026-09-05T18:36:31.283Z",
+        "preflight": "31focusedPG/189automation/static/config/traceability plus2mutationwitnessesPASS",
+        "preflight_receipt_sha256": "b5dbd1b63c5b2d35d939bbc9b4da1a18868c951940c4e3d8cf044ebbd6788d7a"
+      }
+    ],
     "implementation_started_at": "2026-09-05T17:09:13.023Z",
     "last_model_configuration_check": {
-      "checked_at": "2026-09-05T17:50:20.600Z",
+      "checked_at": "2026-09-05T18:26:34.575Z",
       "observed_model": "gpt-6-astra",
       "observed_reasoning": "xhigh",
       "required_reasoning": "xhigh",
-      "source": "Actual current local turn_context timestamp2026-09-05T17:49:09.908Z",
-      "standard_config": "service_tier default; provider-side attestation unavailable",
-      "action": "Required launch settings verified; resumed existing draft without duplicate dispatch."
+      "source": "Actual latest turn_context2026-09-05T18:23:55.095Z",
+      "standard_config": "service_tier default; provider-side attestation unavailable"
     },
     "last_reconciliation": {
-      "checked_at": "2026-09-05T17:35:12.475Z",
-      "main_and_product_head": "c964fef4c139b744beade0adc9b6d2e2d067ba9a",
+      "checked_at": "2026-09-05T18:26:34.575Z",
+      "main_and_product_head": "fa8afe76894429eed059d441d534a7fe13ce8a88",
       "live_remote": "5bf656faee616efe9000d218961329644744bc05",
-      "predecessor_ci": "33978312171 attempt2 success",
-      "supervisor": "exactly1 matching job658ffdaf disabled,30minute schedule retained,no nextRun",
-      "card": "d26f24b3 blocked tracking-only,no claim/attempt/execution on supported card readback",
-      "followup": "Existing ACTIVE every10minutes; checkpoint refresh pending"
+      "predecessor_ci": "33978312171 attempt2success",
+      "supervisor": "Exactly1matching658ffdaf disabled every30minutes/no nextRun; runningtasks0",
+      "card": "d26f24b3 blockedtrackingonly/no claim/attempt/execution",
+      "followup": "Existing ACTIVE every10minutes; refresh to correction1"
     },
     "model_configuration_history": [
       {
@@ -620,7 +648,9 @@
     "preflight_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-prefreeze-verification.md",
     "preflight_receipt_sha256": "9bcd19f5f4707a97a64f7f4af81759c86b239b27246c66be1d9c11738fc086a2",
     "draft_checkpoint_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-draft-checkpoint-c964fef.md",
-    "draft_checkpoint_receipt_sha256": "1814a7478fc3a4702bdf1b39fdd7cd7771efacf1989605e5e64ae4ce06be0103"
+    "draft_checkpoint_receipt_sha256": "1814a7478fc3a4702bdf1b39fdd7cd7771efacf1989605e5e64ae4ce06be0103",
+    "correction1_preflight_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-correction1-prefreeze.md",
+    "correction1_preflight_receipt_sha256": "b5dbd1b63c5b2d35d939bbc9b4da1a18868c951940c4e3d8cf044ebbd6788d7a"
   },
   "historical_v1_048_takeover": {
     "authorization_from": "V1-048",
@@ -1365,9 +1395,9 @@
   ],
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "c964fef4c139b744beade0adc9b6d2e2d067ba9a",
+  "commit": "fa8afe76894429eed059d441d534a7fe13ce8a88",
   "idle_reason": "Direct Codex exact verification/review pending; no owner decision. OpenClaw disabled.",
-  "next_action": "Verify the containing V1-050 candidate at exact HEAD with full PostgreSQL/backend/frontend/static/build/config/automation/traceability/audit gates. Then obtain fresh independent cumulative Astra max Standard read-only review from closed5bf656f, require zero findings, publish normally to implementation/foundation, verify exact CI/ref equality, accept existing cardd26f24b3 and complete terminal durable closure before51. Keep OpenClaw disabled; preserve all evidence/worktrees; no duplicate worker.",
+  "next_action": "Run fresh full exact-SHA gates and audits for the containing correction1 candidate; obtain NEW independent Astra max Standard read-only cumulative review from closed5bf656f, requiring zero findings. Only then normal publication, exact CI/ref equality, same-card Workboard acceptance and terminal durable closure before51. Inspect active work first; OpenClaw stays disabled through53.",
   "active_worker": null,
   "active_card": "d26f24b3-08e9-476b-bc9a-379f8fdcda5e",
   "active_claim": null,
@@ -1375,8 +1405,8 @@
   "active_branch": "codex/v1-050-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-050",
   "candidate_sha": null,
-  "candidate_resolution": "Resolve containing committed V1-050 candidate from clean HEAD in sole retained codex/v1-050-direct checkout; bind external exact-SHA verification/review receipts. Cumulative review base closed5bf656f includes0312788/c964. No publication before full exact gates and independent zero findings.",
-  "candidate_parent": "c964fef4c139b744beade0adc9b6d2e2d067ba9a",
+  "candidate_resolution": "Resolve correction1 candidate from containing clean HEAD; actual parent is preserved fa8afe7, cumulative review base separately closed5bf656f. Bind fresh external exact-SHA gate and independent review receipts.",
+  "candidate_parent": "fa8afe76894429eed059d441d534a7fe13ce8a88",
   "next_candidate": {
     "id": "V1-050",
     "order": 50,
@@ -1426,7 +1456,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-050 product candidate — exact verification pending",
+  "phase": "V1-050 correction1 candidate — exact verification pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2518,9 +2548,9 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "Mutable preflight:826backendPASS/557DB-onlyskips;369frontendPASS;189automation/state/watchdog/static/build/config/traceabilityPASS.",
-    "Full synthetic PostgreSQL580cases:574PASS/6FAIL, all27receiptcasesPASS. Six downgrade tests required literalforward-only; newmigration40 message corrected without behavior change; fresh exact rerun pending.",
-    "Earlier fixture failures/high-reasoning mismatch preserved in draft/prefreeze receipts. Current actual Astra xhigh verified; preflight not release approval."
+    "Correction1 mutable preflight31Receipt PostgreSQL cases PASS/553deselected;134files format/lint/mypy PASS;189automation/config/routing/watchdog/traceability/diff PASS.",
+    "Two external test-only mutation witnesses PASS: new regressions reject old bootstrap race and old mixed financial projection. Preflight receipt b5dbd1b63c5b2d35d939bbc9b4da1a18868c951940c4e3d8cf044ebbd6788d7a.",
+    "Fresh full exact-SHA gates/audits and independent zero-finding review pending; preserved fa8 full-gate PASS and failed review are historical, not current release approval."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -2542,7 +2572,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-050",
-  "timestamp": "2026-09-05T18:00:27.740Z",
+  "timestamp": "2026-09-05T18:36:31.283Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2759,7 +2789,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T18:00:27.740Z",
+  "updated_at": "2026-09-05T18:36:31.283Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -3882,10 +3912,10 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Pre-freeze parent of containing V1-050 candidate, not publication approval. Published predecessor is direct_codex_takeover.predecessor_sha.",
+  "commit_role": "Preserved failed-review checkpoint and parent of the next correction candidate; cumulative base is separately recorded.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "5bf656faee616efe9000d218961329644744bc05"
+    "fa8afe76894429eed059d441d534a7fe13ce8a88"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
@@ -3936,13 +3966,15 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "not_started",
+    "status": "pending_fresh_correction1_review",
     "tranche_id": "V1-050",
     "exact_sha": null,
     "model": "gpt-6-astra",
     "reasoning_effort": "max",
     "mode": "Standard",
-    "read_only": true
+    "read_only": true,
+    "previous_failed_report": "v1050-review-fa8afe7.md",
+    "previous_failed_sha256": "980246b60696cc8127e65a50dee7b816375e92735b519d16870b8ace6a3ef474"
   },
   "historical_v1_047_review": {
     "status": "PASS",

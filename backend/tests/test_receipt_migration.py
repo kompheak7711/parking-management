@@ -1,13 +1,16 @@
 """Receipt identity, immutable history, authorization and no-new-money PostgreSQL tests."""
 
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime
 from threading import Barrier
+from time import monotonic, sleep
 from uuid import UUID, uuid4
 
 import psycopg
 import pytest
 from alembic import command
 from alembic.config import Config
+from sqlalchemy.exc import DBAPIError
 
 from payment_test_support import seed_payment
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
@@ -24,6 +27,7 @@ from test_invoice_migration import financial_database_url, runtime_database_url
 from test_migrations import _temporary_migration_database
 from test_payment_migration import fx_payment, reverse
 from test_reservation_migration import (
+    create_reservation,
     migrated_database_url,  # noqa: F401
     setup_reservation_sources,
 )
@@ -142,7 +146,20 @@ def test_receipt_confirmation_rollback_is_atomic(migrated_database_url: str) -> 
 
 def test_receipt_reprint_replay_conflict_and_no_new_money(migrated_database_url: str) -> None:  # noqa: F811
     human, prop, _, payment, receipt = source(migrated_database_url)
-    staff = actor(human, prop, "receipts.reprint", "receipts.read")
+    with psycopg.connect(migrated_database_url) as connection:
+        printer, printer_prop, _, _ = setup_reservation_sources(connection)
+        assert printer != human and printer_prop == prop
+        payments_before = connection.execute(
+            "SELECT id FROM app.payments WHERE property_id=%s ORDER BY id", (prop,)
+        ).fetchall()
+        confirmations_before = connection.execute(
+            "SELECT id FROM app.audit_events WHERE property_id=%s "
+            "AND action='payment.confirmed' ORDER BY id",
+            (prop,),
+        ).fetchall()
+        started = connection.execute("SELECT clock_timestamp()").fetchone()
+        assert started is not None
+    staff = actor(printer, prop, "receipts.reprint", "receipts.read")
     before = service().get(prop, receipt, actor=staff)
     request = ReprintReceiptCommand(uuid4(), "Paper damaged", "Front desk copy")
     result = service().reprint(prop, receipt, request, actor=staff)
@@ -169,6 +186,42 @@ def test_receipt_reprint_replay_conflict_and_no_new_money(migrated_database_url:
     assert history["events"] == [result["reprint"]]
     assert history["has_more"] is False
     with psycopg.connect(migrated_database_url) as connection:
+        finished = connection.execute("SELECT clock_timestamp()").fetchone()
+        assert finished is not None
+        assert (
+            connection.execute(
+                "SELECT id FROM app.payments WHERE property_id=%s ORDER BY id", (prop,)
+            ).fetchall()
+            == payments_before
+        )
+        assert (
+            connection.execute(
+                "SELECT id FROM app.audit_events WHERE property_id=%s "
+                "AND action='payment.confirmed' ORDER BY id",
+                (prop,),
+            ).fetchall()
+            == confirmations_before
+        )
+        persisted = connection.execute(
+            "SELECT id,reprinted_by,reprinted_at,reason,delivery_reference "
+            "FROM app.receipt_reprints WHERE receipt_id=%s",
+            (receipt,),
+        ).fetchall()
+        assert len(persisted) == 1
+        event_id, reprinted_by, reprinted_at, reason, delivery = persisted[0]
+        assert reprinted_by == printer
+        assert started[0] <= reprinted_at <= finished[0]
+        assert reason == "Paper damaged" and delivery == "Front desk copy"
+        returned = result["reprint"]
+        assert isinstance(returned, dict)
+        assert returned["reprinted_by"] == str(printer)
+        assert datetime.fromisoformat(str(returned["reprinted_at"])) == reprinted_at
+        assert returned["reason"] == reason and returned["delivery_reference"] == delivery
+        assert connection.execute(
+            "SELECT actor_id,occurred_at,reason,resulting_state->>'event_id' "
+            "FROM app.audit_events WHERE entity_id=%s AND action='receipt.reprinted'",
+            (receipt,),
+        ).fetchall() == [(printer, reprinted_at, "Paper damaged", str(event_id))]
         assert connection.execute(
             "SELECT count(*) FROM app.payments WHERE id=%s", (payment,)
         ).fetchone() == (1,)
@@ -548,3 +601,161 @@ def test_receipt_display_waits_for_source_payment_write_lock(
     assert isinstance(position, dict)
     assert position["original_usd_cents"] == position["available_usd_cents"] == 12345
     assert position["allocated_usd_cents"] == 0
+
+
+def test_receipt_migration_waits_for_writer_then_refuses_legacy_payment() -> None:
+    with _temporary_migration_database("prm_receipt_overlap") as url:
+        config = Config("alembic.ini")
+        command.upgrade(config, "20260905_39")
+        with psycopg.connect(url) as setup:
+            human, prop, _, customer = setup_reservation_sources(setup)
+        with psycopg.connect(url) as writer:
+            payment = seed_payment(
+                writer, actor_id=human, property_id=prop, customer_id=customer, amount=321
+            )
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                upgrade = pool.submit(command.upgrade, config, "head")
+                blocked = False
+                try:
+                    deadline = monotonic() + 10
+                    with psycopg.connect(url, autocommit=True) as observer:
+                        while monotonic() < deadline and not upgrade.done():
+                            blocked = observer.execute(
+                                "SELECT EXISTS(SELECT 1 FROM pg_locks "
+                                "WHERE relation='app.payments'::regclass AND NOT granted "
+                                "AND mode='ShareRowExclusiveLock')"
+                            ).fetchone() == (True,)
+                            if blocked:
+                                break
+                            sleep(0.02)
+                finally:
+                    # Release only this test's writer before waiting for migration.
+                    writer.commit()
+                with pytest.raises(DBAPIError, match="explicit reconciliation"):
+                    upgrade.result(timeout=15)
+                assert blocked, "Upgrade must exclude concurrent inserts before inspecting history"
+        with psycopg.connect(url) as observer:
+            assert observer.execute("SELECT version_num FROM alembic_version").fetchone() == (
+                "20260905_39",
+            )
+            assert observer.execute("SELECT to_regclass('app.receipts')").fetchone() == (None,)
+            assert observer.execute(
+                "SELECT usd_accounting_value_cents FROM app.payments WHERE id=%s", (payment,)
+            ).fetchone() == (321,)
+            assert observer.execute(
+                "SELECT count(*) FROM app.audit_events WHERE action='receipt.issued' "
+                "AND resulting_state->>'payment_id'=%s",
+                (str(payment),),
+            ).fetchone() == (0,)
+
+
+@pytest.mark.parametrize("isolation", ["REPEATABLE READ", "SERIALIZABLE"])
+def test_receipt_migration_rejects_stale_snapshot_isolation(isolation: str) -> None:
+    with _temporary_migration_database("prm_receipt_isolation") as url:
+        config = Config("alembic.ini")
+        command.upgrade(config, "20260905_39")
+        config.set_main_option("sqlalchemy.isolation_level", isolation)
+        with pytest.raises(DBAPIError, match="requires read committed isolation"):
+            command.upgrade(config, "head")
+        with psycopg.connect(url) as observer:
+            assert observer.execute("SELECT version_num FROM alembic_version").fetchone() == (
+                "20260905_39",
+            )
+            assert observer.execute("SELECT to_regclass('app.receipts')").fetchone() == (None,)
+
+
+def test_receipt_display_snapshot_is_coherent_during_deposit_reversal() -> None:
+    with _temporary_migration_database("prm_receipt_snapshot") as url:
+        command.upgrade(Config("alembic.ini"), "head")
+        with psycopg.connect(url) as setup:
+            human, prop, unit, customer = setup_reservation_sources(setup)
+            _, ids = create_reservation(
+                setup, actor_id=human, property_id=prop, unit_id=unit, customer_id=customer
+            )
+            receipt_row = setup.execute(
+                "SELECT id FROM app.receipts WHERE payment_id=%s", (ids["payment_id"],)
+            ).fetchone()
+            assert receipt_row is not None
+            receipt = receipt_row[0]
+            definition = setup.execute(
+                "SELECT pg_get_functiondef('app.payment_disposition_summary(uuid)'::regprocedure)"
+            ).fetchone()
+            assert definition is not None and isinstance(definition[0], str)
+            assert "app.payment_disposition_summary(" in definition[0]
+            # Test-only pause in this uniquely owned database, not in production code.
+            # Copy the real summary, then replace its original OID-preserving entry
+            # point so both view and function consumers traverse the same gate.
+            setup.execute(
+                definition[0].replace(
+                    "app.payment_disposition_summary(", "app.receipt_test_disposition_source(", 1
+                )
+            )
+            setup.execute("""
+                CREATE OR REPLACE FUNCTION app.payment_disposition_summary(p_payment_id uuid)
+                RETURNS jsonb LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+                SET search_path=pg_catalog AS $$
+                DECLARE captured jsonb;
+                BEGIN
+                    captured:=app.receipt_test_disposition_source(p_payment_id);
+                    IF current_setting('application_name')='receipt_consistency_reader' THEN
+                        PERFORM pg_advisory_xact_lock(3218491050::bigint);
+                    END IF;
+                    RETURN captured;
+                END $$
+            """)
+
+        def read_position() -> dict[str, object]:
+            with psycopg.connect(url, application_name="receipt_consistency_reader") as reader:
+                reader.execute("SET LOCAL statement_timeout='15s'")
+                row = reader.execute(
+                    "SELECT app.receipt_resource(%s,%s,%s)", (prop, receipt, human)
+                ).fetchone()
+                assert row is not None
+                return dict(row[0]["financial_position"])
+
+        with psycopg.connect(url, autocommit=True) as gate:
+            gate.execute("SELECT pg_advisory_lock(3218491050::bigint)")
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                reading = pool.submit(read_position)
+                try:
+                    blocked = False
+                    deadline = monotonic() + 10
+                    while monotonic() < deadline and not reading.done():
+                        blocked = gate.execute(
+                            "SELECT EXISTS(SELECT 1 FROM pg_stat_activity "
+                            "WHERE datname=current_database() "
+                            "AND application_name='receipt_consistency_reader' "
+                            "AND wait_event='advisory')"
+                        ).fetchone() == (True,)
+                        if blocked:
+                            break
+                        sleep(0.02)
+                    assert blocked, "Reader must pause after capturing the old source position"
+                    with psycopg.connect(url) as writer:
+                        writer.execute("SET LOCAL lock_timeout='1s'")
+                        writer.execute(
+                            "SELECT app.reverse_deposit_receipt_v2(%s,%s,%s,%s,%s,%s,%s,%s)",
+                            (
+                                prop,
+                                human,
+                                uuid4(),
+                                "f" * 64,
+                                uuid4(),
+                                ids["receipt_id"],
+                                "Synthetic concurrent Receipt display reversal",
+                                "deposits.correct",
+                            ),
+                        )
+                    # Reversal committed before the paused Receipt response completes.
+                    assert not reading.done()
+                finally:
+                    gate.execute("SELECT pg_advisory_unlock(3218491050::bigint)")
+                before = reading.result(timeout=15)
+        after = read_position()
+        assert before["original_usd_cents"] == after["original_usd_cents"] == 10000
+        assert before["allocated_usd_cents"] == after["allocated_usd_cents"] == 0
+        assert before["deposit_directed_usd_cents"] == 10000
+        assert before["available_usd_cents"] == 0
+        assert after["deposit_directed_usd_cents"] == 0
+        assert after["available_usd_cents"] == 10000
+        assert before["allocation_condition"] == after["allocation_condition"] == "UNALLOCATED"

@@ -2,6 +2,37 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_receipt_migration_waits_for_writer_then_refuses_legacy_payment",
+      "upstream_ids": [
+        "DB-RECEIPT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "An uncommitted revision39 Payment blocks the write-excluding upgrade lock; after commit, upgrade refuses fabricated issuance, preserves the Payment value and revision39, and creates no Receipt table or issuance audit."
+    },
+    {
+      "test_id": "test_receipt_migration_rejects_stale_snapshot_isolation",
+      "upstream_ids": [
+        "DB-RECEIPT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "Repeatable-read and serializable migration transactions fail closed before Receipt installation, preserving revision39; prevents pre-lock transaction snapshots from bypassing legacy issuance reconciliation."
+    },
+    {
+      "test_id": "test_receipt_display_snapshot_is_coherent_during_deposit_reversal",
+      "upstream_ids": [
+        "BR-RECEIPT-003",
+        "DB-RECEIPT-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_receipt_migration.py",
+      "status": "implemented",
+      "notes": "A test-only pause after the authoritative disposition query in a uniquely owned database allows an actual Deposit reversal to commit before Receipt response completion. All returned amounts still describe the captured pre-reversal position; a later read reflects the fully reversed position. The hook preserves function OID consumers and does not alter product code."
+    },
+    {
       "test_id": "test_receipt_confirmation_identity_money_and_audit",
       "upstream_ids": [
         "DB-RECEIPT-001",
@@ -53,7 +84,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_receipt_migration.py",
       "status": "implemented",
-      "notes": "Exact command replay returns original event; changed reason or delivery conflicts. Receipt and authoritative Payment resource unchanged, one Payment/Receipt/reprint/audit with expected correlation and capability."
+      "notes": "Exact replay returns the original event; changed reason/delivery conflicts. A different reprinting actor, bounded server timestamp, reason/delivery and linked audit provenance are independently asserted against persisted rows. Property-scoped Payment and payment.confirmed event sets remain unchanged; original Payment/Receipt counts, resource identity, correlation and capability assertions retained."
     },
     {
       "test_id": "test_receipt_reprint_survives_payment_reversal",
@@ -277,7 +308,6 @@
     {
       "test_id": "test_receipt_invalid_actor_cannot_reach_database",
       "upstream_ids": [
-        "SEC-019",
         "SEC-036"
       ],
       "test_level": "unit",
@@ -288,8 +318,7 @@
     {
       "test_id": "test_receipt_history_rejects_invalid_bounds",
       "upstream_ids": [
-        "SEC-036",
-        "API-092"
+        "SEC-036"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_receipt.py",
