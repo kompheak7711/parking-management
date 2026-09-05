@@ -56,7 +56,9 @@ def test_allocation_payment_reversal_requires_expected_state() -> None:
         ReverseAllocationCommand(UUID(int=0), "Correct duplicate")
 
 
-@pytest.mark.parametrize("grant", ["", "payments.record", "payments.allocate"])
+@pytest.mark.parametrize(
+    "grant", ["", "payments.record", "payments.allocate", "payments.allocations.reverse"]
+)
 def test_allocation_reverse_payment_has_distinct_capability(grant: str) -> None:
     prop = uuid4()
     actor = AuthenticatedActor(
@@ -65,6 +67,29 @@ def test_allocation_reverse_payment_has_distinct_capability(grant: str) -> None:
     with pytest.raises(AllocationAuthorizationError):
         PaymentAllocationService("unused", "unused").reverse_payment(
             prop, uuid4(), ReversePaymentCommand(uuid4(), "Duplicate receipt"), actor=actor
+        )
+
+
+@pytest.mark.parametrize("grant", ["", "payments.record", "payments.allocate", "payments.reverse"])
+def test_allocation_reversal_has_distinct_capability(grant: str) -> None:
+    prop = uuid4()
+    actor = AuthenticatedActor(
+        str(uuid4()), frozenset({CapabilityGrant(grant, frozenset({str(prop)}))})
+    )
+    with pytest.raises(AllocationAuthorizationError):
+        PaymentAllocationService("unused", "unused").reverse_allocation(
+            prop, uuid4(), ReverseAllocationCommand(uuid4(), "Wrong assignment"), actor=actor
+        )
+
+
+def test_allocation_reversal_scope_is_checked_before_database_access() -> None:
+    actor = AuthenticatedActor(
+        str(uuid4()),
+        frozenset({CapabilityGrant("payments.allocations.reverse", frozenset({str(uuid4())}))}),
+    )
+    with pytest.raises(AllocationAuthorizationError):
+        PaymentAllocationService("unused", "unused").reverse_allocation(
+            uuid4(), uuid4(), ReverseAllocationCommand(uuid4(), "Wrong assignment"), actor=actor
         )
 
 

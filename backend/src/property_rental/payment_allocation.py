@@ -235,7 +235,7 @@ class PaymentAllocationService:
         *,
         actor: AuthenticatedActor,
     ) -> dict[str, object]:
-        actor_id = self._authorize(actor, property_id, "payments.allocate")
+        actor_id = self._authorize(actor, property_id, "payments.allocations.reverse")
         _uuid(allocation_id)
         digest = self._digest(
             "REVERSE_ALLOCATION",

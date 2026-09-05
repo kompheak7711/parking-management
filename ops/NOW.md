@@ -10,8 +10,8 @@
 - V1-048 closure receipt SHA2567e3dc8d7876d5fcf744addcc3b9ecb66d45b2200cab1fd8cb6dfa7eec91421c6; /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1048-closure-verification.md. All failed checkpoints/reviews/worktrees preserved.
 - Last verified V1-048 product gates514PostgreSQL/769backend/369frontend/189automation plus static/build/config/audits; these do not constitute V1-049 acceptance.
 - Exact6fa42b6 gates549PGzero skips/789backend526DBskipsseparatelycovered/369frontend/189automation andallstatic/build/config/3auditsPASS, butreviewFAIL0H1M1L; notacceptance.
-- Remaining: separate allocation reversal permission/audit (SEC022); correct2authorization-onlytestreferences fromSEC026 toSEC019/020/022. Reportv1049-review-6fa42b6.md hash1f3d74b0 inprojectevidencedirectory.
-- Owner action required: no. Exact next action: separate allocation-reversal capability and audit, correct two authorization test mappings, then fresh exact-SHA full gates and fresh independent Astra max zero-finding review. No publication or V1-050 until V1-049 closure gates pass.
+- Correction3 implemented: distinct allocation-reversal permission/storage/audit and precise SEC019/020/022 mappings. Development36 allocation PostgreSQL and26 allocation unit tests plus static checks passed; fresh frozen full tests and independent review remain required. Rejected reportv1049-review-6fa42b6.md hash1f3d74b0 preserved.
+- Owner action required: no. Exact next action: freeze correction3 successor, then fresh exact-SHA full gates and fresh independent Astra max zero-finding review. No publication or V1-050 until V1-049 closure gates pass.
 - Production/customerdata/paidservices/destructiveoperations/force-push/historyrewrite/worktreedeletion remain unauthorized.
 
 ## Historical V1-047 closure record

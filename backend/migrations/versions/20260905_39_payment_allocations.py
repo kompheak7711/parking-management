@@ -127,7 +127,7 @@ def upgrade() -> None:
             reason text NOT NULL CHECK(reason=btrim(reason) AND length(reason) BETWEEN 1 AND 1000),
             occurred_at timestamptz NOT NULL CHECK(isfinite(occurred_at)),
             actor_id uuid NOT NULL REFERENCES app.user_accounts(actor_id) ON DELETE RESTRICT,
-            authorization_reference text NOT NULL CHECK(authorization_reference='payments.allocate')
+            authorization_reference text NOT NULL CHECK(authorization_reference='payments.allocations.reverse')
         );
         CREATE TABLE app.payment_allocation_commands (
             property_id uuid NOT NULL REFERENCES app.properties(id) ON DELETE RESTRICT,
@@ -705,7 +705,7 @@ def create_allocation_services() -> None:
                 entity_type,entity_id,reason,authorization_reference,property_id,
                 resulting_state,correlation_id,source,outcome,customer_id,lease_id)
             VALUES(gen_random_uuid(),v_at,(v_at AT TIME ZONE 'Asia/Phnom_Penh')::date,v_actor,v_action,
-                'payment_allocation',v_header.id,v_reason,'payments.allocate',v_payment.property_id,
+                'payment_allocation',v_header.id,v_reason,NEW.authorization_reference,v_payment.property_id,
                 jsonb_build_object('allocation_id',v_header.id,'payment_id',v_header.payment_id,
                     'invoice_id',v_header.invoice_id,'late_payment_charge_id',v_header.late_payment_charge_id,
                     'amount_usd_cents',v_header.amount_usd_cents,'event',v_action,
@@ -863,7 +863,7 @@ def create_allocation_services() -> None:
                 WHERE allocation.id=p_allocation_id AND payment.property_id=p_property_id;
             IF NOT FOUND THEN RAISE EXCEPTION 'Allocation not found' USING ERRCODE='P4901'; END IF;
             INSERT INTO app.payment_allocation_reversals VALUES(v_id,p_allocation_id,p_reason,
-                clock_timestamp(),p_actor_id,'payments.allocate');
+                clock_timestamp(),p_actor_id,'payments.allocations.reverse');
             SET CONSTRAINTS ALL IMMEDIATE;
             v_result:=jsonb_build_object('allocation_id',p_allocation_id,'reversal_id',v_id,
                 'payment_id',v_header.payment_id,'available_usd_cents',app.payment_available_value(v_header.payment_id));

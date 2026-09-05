@@ -2,6 +2,30 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_allocation_posting_and_reversal_grants_are_independent_and_audited",
+      "upstream_ids": ["SEC-020", "SEC-022", "DB-PAY-004", "DB-PAY-005"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_allocation_migration.py",
+      "status": "implemented",
+      "notes": "Posting-only grants cannot reverse; reversal-only grants cannot propose/post but can reverse and replay. Original posting and linked reversal retain distinct authorization references in storage and audit."
+    },
+    {
+      "test_id": "test_allocation_reversal_has_distinct_capability",
+      "upstream_ids": ["SEC-020", "SEC-022"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_allocation.py",
+      "status": "implemented",
+      "notes": "Absent, recording, allocation-posting and Payment-reversal grants cannot authorize allocation reversal."
+    },
+    {
+      "test_id": "test_allocation_reversal_scope_is_checked_before_database_access",
+      "upstream_ids": ["SEC-019"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_allocation.py",
+      "status": "implemented",
+      "notes": "Allocation reversal grant for another Property fails before database access."
+    },
+    {
       "test_id": "test_allocation_proposal_cannot_predate_current_financial_dependencies",
       "upstream_ids": ["BR-PAY-029", "DB-PAY-004", "DB-DER-002", "TEST-060"],
       "test_level": "DB",
@@ -175,19 +199,20 @@
       "test_id": "test_allocation_reverse_payment_has_distinct_capability",
       "upstream_ids": [
         "API-060",
-        "SEC-026"
+        "SEC-020",
+        "SEC-022"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",
       "status": "implemented",
-      "notes": "Allocation/recording capabilities do not authorize Payment reversal."
+      "notes": "Allocation posting/reversal and recording capabilities do not authorize Payment reversal."
     },
     {
       "test_id": "test_allocation_scope_is_checked_before_database_access",
       "upstream_ids": [
         "BR-PAY-020",
         "API-059",
-        "SEC-026"
+        "SEC-019"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",

@@ -44,9 +44,14 @@ unauthorized financial reversals. No production or customer data operations.
 ## Canonical authority
 
 BR-PAY-019..040; DB-PAY-004/005/006/007, DB-DER-001/002/009/011, DB-TXN-001..004;
-API-059/060 service semantics; TEST-060..063/067/068; SEC-026/028..031/045..048.
+API-059/060 service semantics; TEST-060..063/067/068; SEC-019/020/022/026/028..031/045..048.
 Existing Invoice, Charge and Deposit rules remain authoritative. Resolve genuine
 policy contradictions; do not invent priority or permissions.
+
+The SEC-022 service capabilities are independently grantable: `payments.allocate`
+for proposals/posting, `payments.allocations.reverse` for allocation reversal, and
+`payments.reverse` for Payment reversal. Persist and audit the actual event authority.
+This defines no role bundle or production grant and adds no staff HTTP/UI exposure.
 
 ## Bounded execution and acceptance
 

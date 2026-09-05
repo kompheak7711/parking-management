@@ -29,6 +29,7 @@ from property_rental.late_payment import (
     LatePaymentApplicationReversalRequired,
 )
 from property_rental.payment_allocation import (
+    AllocationAuthorizationError,
     AllocationConflictError,
     AllocationIdempotencyKeyReused,
     AllocationUnavailableError,
@@ -65,7 +66,11 @@ def actor(identity: UUID, prop: UUID) -> AuthenticatedActor:
         str(identity),
         frozenset(
             CapabilityGrant(capability, frozenset({str(prop)}))
-            for capability in ("payments.allocate", "payments.reverse")
+            for capability in (
+                "payments.allocate",
+                "payments.allocations.reverse",
+                "payments.reverse",
+            )
         ),
     )
 
@@ -150,6 +155,58 @@ def test_allocation_proposal_explicit_post_replay_reverse_and_positions(
             "AND entity_id=ANY(%s)",
             ([UUID(str(value)) for value in allocations],),
         ).fetchone() == (4,)
+
+
+def test_allocation_posting_and_reversal_grants_are_independent_and_audited(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, payment, _ = source(migrated_database_url, amount=10_000)
+    posting = AuthenticatedActor(
+        str(human), frozenset({CapabilityGrant("payments.allocate", frozenset({str(prop)}))})
+    )
+    reversing = AuthenticatedActor(
+        str(human),
+        frozenset({CapabilityGrant("payments.allocations.reverse", frozenset({str(prop)}))}),
+    )
+    proposal = service().proposal(prop, payment, actor=posting)
+    command = PostAllocationsCommand(uuid4(), {"mode": "PROPOSAL", "proposal": proposal})
+    with pytest.raises(AllocationAuthorizationError):
+        service().proposal(prop, payment, actor=reversing)
+    with pytest.raises(AllocationAuthorizationError):
+        service().post(prop, payment, command, actor=reversing)
+    posted = service().post(prop, payment, command, actor=posting)
+    ids = posted["allocation_ids"]
+    assert isinstance(ids, list) and len(ids) == 1
+    allocation = UUID(str(ids[0]))
+    reversal = ReverseAllocationCommand(uuid4(), "Correct assignment")
+    with pytest.raises(AllocationAuthorizationError):
+        service().reverse_allocation(prop, allocation, reversal, actor=posting)
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM app.payment_allocation_reversals WHERE payment_allocation_id=%s",
+            (allocation,),
+        ).fetchone() == (0,)
+    result = service().reverse_allocation(prop, allocation, reversal, actor=reversing)
+    assert result["available_usd_cents"] == 10_000
+    assert service().reverse_allocation(prop, allocation, reversal, actor=reversing) == result
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT authorization_reference FROM app.payment_allocations WHERE id=%s",
+            (allocation,),
+        ).fetchone() == ("payments.allocate",)
+        assert connection.execute(
+            "SELECT actor_id,authorization_reference FROM app.payment_allocation_reversals "
+            "WHERE payment_allocation_id=%s",
+            (allocation,),
+        ).fetchone() == (human, "payments.allocations.reverse")
+        assert connection.execute(
+            "SELECT action,authorization_reference FROM app.audit_events "
+            "WHERE entity_type='payment_allocation' AND entity_id=%s ORDER BY action",
+            (allocation,),
+        ).fetchall() == [
+            ("payment_allocation.posted", "payments.allocate"),
+            ("payment_allocation.reversed", "payments.allocations.reverse"),
+        ]
 
 
 def test_allocation_rejects_stale_proposal_and_reused_intent(migrated_database_url: str) -> None:  # noqa: F811

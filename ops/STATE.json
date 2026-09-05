@@ -29,7 +29,7 @@
       "read_only": true
     },
     "current_version": "V1-049",
-    "phase": "bounded_correction_3",
+    "phase": "correction_3_candidate_freeze",
     "candidate_sha": "6fa42b64af1dc58eec30d7bc2ea13cc26c240d10",
     "candidate_resolution": "Rejected 6fa42b6 preserved; owner explicitly authorized one additional bounded correction.",
     "candidate_status": "rejected_preserved_correction_authorized",
@@ -50,12 +50,12 @@
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "owner_action_required": false,
-    "next_action": "Complete owner-authorized bounded correction 3: separate payments.allocations.reverse from payments.allocate in service, persisted reversal and audit, test independent grants and Property scope, and correct two authorization-only traceability mappings. Freeze successor, run fresh full exact-SHA gates and fresh independent Astra max zero-finding review before normal publication, exact CI, ref equality, Workboard and durable closure. Continue through V1-053 only; OpenClaw remains disabled.",
+    "next_action": "Freeze the owner-authorized correction3 successor; run fresh full exact-SHA gates and fresh independent read-only Astra max Standard cumulative review from e3ae74f. Preserve rejected6fa42b6 and all prior evidence. Publish normally only with zero findings/all gates, then verify exact CI/ref equality, Workboard and durable closure before V1-050; continue through53 with OpenClaw disabled.",
     "verification_status": "Exact549PG/789backend/369frontend/189automation+alllocalgatesandauditsPASS, independentreviewFAIL0H1M1L; no publication/acceptance.",
     "development_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-development-verification.md",
     "correction": {
       "attempt": 3,
-      "status": "active",
+      "status": "implemented_pending_freeze",
       "base_sha": "6fa42b64af1dc58eec30d7bc2ea13cc26c240d10",
       "authorization": "Explicit owner reply yes I do grants one additional correction after prior bounded exhaustion",
       "model": "gpt-6-astra",
@@ -70,7 +70,10 @@
         "low": 1
       },
       "scope": "Distinct allocation reversal capability and truthful persisted/audit authority; independent permission matrix; two residual authorization test mappings only.",
-      "next_action": "Complete owner-authorized bounded correction 3: separate payments.allocations.reverse from payments.allocate in service, persisted reversal and audit, test independent grants and Property scope, and correct two authorization-only traceability mappings. Freeze successor, run fresh full exact-SHA gates and fresh independent Astra max zero-finding review before normal publication, exact CI, ref equality, Workboard and durable closure. Continue through V1-053 only; OpenClaw remains disabled."
+      "next_action": "Freeze the owner-authorized correction3 successor; run fresh full exact-SHA gates and fresh independent read-only Astra max Standard cumulative review from e3ae74f. Preserve rejected6fa42b6 and all prior evidence. Publish normally only with zero findings/all gates, then verify exact CI/ref equality, Workboard and durable closure before V1-050; continue through53 with OpenClaw disabled.",
+      "development_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-correction3-development.md",
+      "development_verification": "36/36 allocation PostgreSQL, 26/26 allocation units, backend static, migration formatting/lint, traceability and diff passed; full frozen gates pending.",
+      "implementation_summary": "Distinct payments.allocations.reverse service/storage/audit authority, posting-only and reversal-only grants independently tested, precise SEC-019/020/022 test mappings; no production role bundle or policy change."
     },
     "correction_history": [
       {
@@ -913,8 +916,8 @@
   "blockers": [],
   "branch": "implementation/foundation",
   "commit": "e3ae74f8ca2acab1991db9f724faf3df274bcc08",
-  "idle_reason": "Owner recovery decision required; nativefollowuppaused; OpenClawdisabled.",
-  "next_action": "Complete owner-authorized bounded correction 3: separate payments.allocations.reverse from payments.allocate in service, persisted reversal and audit, test independent grants and Property scope, and correct two authorization-only traceability mappings. Freeze successor, run fresh full exact-SHA gates and fresh independent Astra max zero-finding review before normal publication, exact CI, ref equality, Workboard and durable closure. Continue through V1-053 only; OpenClaw remains disabled.",
+  "idle_reason": "Direct Codex correction3 implemented; fresh frozen-candidate verification and independent review pending. OpenClaw intentionally disabled.",
+  "next_action": "Freeze the owner-authorized correction3 successor; run fresh full exact-SHA gates and fresh independent read-only Astra max Standard cumulative review from e3ae74f. Preserve rejected6fa42b6 and all prior evidence. Publish normally only with zero findings/all gates, then verify exact CI/ref equality, Workboard and durable closure before V1-050; continue through53 with OpenClaw disabled.",
   "active_worker": null,
   "active_card": "62275bf0-2739-448c-ae59-50794190ee72",
   "active_claim": null,
@@ -975,7 +978,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-049 owner-authorized bounded correction 3",
+  "phase": "V1-049 correction 3 candidate freeze",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2089,7 +2092,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-049",
-  "timestamp": "2026-09-05T13:54:32.832Z",
+  "timestamp": "2026-09-05T14:00:17.966Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2305,7 +2308,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T13:54:32.832Z",
+  "updated_at": "2026-09-05T14:00:17.966Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
