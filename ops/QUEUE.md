@@ -57,11 +57,11 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: direct Codex V1-048 bounded correction is complete after failed immutable3197681 review (1HIGH/3MEDIUM/1LOW). Preserve that checkpoint and coordination818967b/391c36a findings. Resolve clean codex/v1-048-direct HEAD for fresh complete exact-SHA gates and one independent Astra max review against published3edda3d. Inspect existing reviewers; do not repeat completed implementation. Only zero findings permits identical-SHA foundation fast-forward, normal publication, exact-SHA CI/ref equality, Workboard acceptance and durable closure before V1-049.
+Current live queue position: V1-048 product561dd06 accepted by fresh independent Astra max zero-finding review, all local gates, normal publication, exact-SHA CI33959763928 attempt1 success and four-ref equality. Card652e776c terminal done, proof91c17813. Failed3197681 and coordination818967b/391c36a preserved. Current terminal tracked metadata reconciliation on foundation requires fresh exact-SHA metadata gates/review/publication/CI/ref equality and external closure receipt beforeV1-049 activation. Do not repeat product work.
 The owner now authorizes direct continuous Codex execution through V1-053, with
 GPT-6 Astra settings in ops/CODEX_TAKEOVER_V1_048_053.md. Stop before V1-054.
 OpenClaw stays disabled; tracking card 652e776c-2a91-4ebd-bfed-90aa8d5de247
-is blocked only to prevent OpenClaw admission. The V1-047 notes below are history.
+is now done with no claim/attempt/execution. The V1-047 notes below are history.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE.

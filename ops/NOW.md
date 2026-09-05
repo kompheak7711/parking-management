@@ -1,17 +1,19 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-048 bounded correction complete; resolve clean codex/v1-048-direct HEAD containing this checkpoint for fresh exact-SHA integration and independent Astra max review. Not publishable yet.
-- Active checkout: /Users/sokompheak/Development/property-rental-management-v1-048, branch codex/v1-048-direct; direct coordinator only, no OpenClaw worker.
-- Current authority: ops/CODEX_TAKEOVER_V1_048_053.md; checksum 4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455.
-- Models: GPT-6 Astra only; coordinator xhigh, financial/migration implementation xhigh, independent read-only review max; Standard.
-- V1-047 predecessor closed at 3edda3d72487695dc8e2b5af3e9313090c96defa; CI 33954605733 attempt 2 success, refs equal, Workboard done.
-- V1-048 card 652e776c-2a91-4ebd-bfed-90aa8d5de247 is blocked only to prevent OpenClaw admission; direct Codex work is active.
-- OpenClaw supervisor 658ffdaf-1ac1-45a6-a842-f5f7d7a226eb remains disabled. No OpenClaw worker dispatch. Existing Codex follow-up reused and active every 10 minutes.
-- Preserved failed candidate3197681: review1HIGH/3MEDIUM/1LOW and traceability gate failure. Prior gates500DB/369frontend/768backend,477DB skips, audits clean are historical only. Coordination818967b and391c36a failures also preserved.
-- Correction diagnostics:45/45 focused PostgreSQL and22/22 traceability pass. MVCC guards, exact FX arithmetic, immutable Invoice intent, prerequisite chronology and mappings corrected; full exact-SHA acceptance pending.
-- Current exact next action: verify the clean combined correction SHA against published3edda3d with complete gates and one fresh independent Astra max review. Inspect any existing reviewer first. Zero findings permits identical-SHA foundation fast-forward and normal publication, exact-SHA CI/ref equality, Workboard acceptance and durable closure before V1-049.
-- No owner action required. Continue sequentially through V1-053 after each predecessor fully closes; stop before V1-054 and pause Codex follow-up.
-- Production/customer-data/paid-service/destructive-operation restrictions remain.
+- Current: V1-048 product561dd06995d895b977235766888fa434edf4740f independently accepted, published, exact-SHA CI-green and Workboard done. Final tracked closure verification remains beforeV1-049.
+- Active checkout: /Users/sokompheak/Development/property-rental-management, branch implementation/foundation; direct coordinator only. Product checkout codex/v1-048-direct retained clean at561dd06.
+- Authority: ops/CODEX_TAKEOVER_V1_048_053.md, SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455.
+- Models: GPT-6 Astra only; coordinator xhigh, financial/migration implementation xhigh, independent read-only reviewer max; Standard.
+- V1-047 predecessor closed at3edda3d; CI33954605733 attempt2 success and Workboard done.
+- V1-048 card652e776c-2a91-4ebd-bfed-90aa8d5de247 terminal done, proof91c17813-da8e-44f5-be20-3bcb2bdf0932; no claim/attempt/execution.
+- OpenClaw supervisor658ffdaf-1ac1-45a6-a842-f5f7d7a226eb disabled, no nextRun or worker dispatch. Existing Codex follow-up active every10minutes.
+- Failed3197681 review1HIGH/3MEDIUM/1LOW and failed coordination818967b/391c36a preserved with all evidence/worktrees.
+- Exact561dd06 PASS514PostgreSQL/769backend/369frontend/189automation;491DB-only skips separately covered; static/build/config/traceability/audits clean.
+- Fresh independent Astra max cumulative25-path review0HIGH/0MEDIUM/0LOW; reportSHA256772ad336daeb90cd54ba5b971658de5ba649ffd0a176117ca8fba89cf8fbb1a3.
+- Product publication PASS: CI33959763928 attempt1 all4jobs success; local/tracking/fetched/live remote equal561dd06.
+- Exact next action: fresh gates and independent review of clean terminal metadata foundation HEAD, normal publication and its exact-SHA CI/ref equality. Reconcile external v1048-closure-verification.md, then activate onlyV1-049. No repeated product work or OpenClaw dispatch.
+- No owner action required. Continue throughV1-053 after each predecessor fully closes; stop beforeV1-054, leave OpenClaw disabled and pause Codex follow-up.
+- Production, customer data, paid services, destructive operations, force-push/history rewrite and worktree deletion remain unauthorized.
 
 ## Historical V1-047 closure record
 
@@ -34,7 +36,7 @@ The following evidence is preserved as history. Its closure-turn next actions an
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: V1-047 is fully released, published, verified, reconciled, Workboard accepted, and closed through exact final reconciliation `b022d83`; all failed checkpoints and evidence are preserved.
-- Automation exact next action: keep OpenClaw disabled and V1-048 undispatched for the remainder of this closure turn. On a later authorized execution cycle, reconcile first and activate only exact V1-048 under the standing V1-060 policy.
+- Automation publication state: V1-048 product561dd06 accepted, published, exact-SHA CI-green and Workboard done; terminal tracked reconciliation verification pending. Direct Astra authority throughV1-053 supersedes historical V1-047 instructions.
+- Automation exact next action: keep OpenClaw disabled; verify/publish terminal metadata beforeV1-049 activation. Follow current direct_codex_takeover state and external exact-SHA receipts.
 
 <!-- AUTOMATION_STATUS_END -->
