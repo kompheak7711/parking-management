@@ -1,18 +1,19 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-049 product accepted; terminal metadata awaits fresh exact verification/review/publication/CI. V1-050 is not activated.
-- Active checkout: /Users/sokompheak/Development/property-rental-management, implementation/foundation, sole direct Codex coordinator. Retained V1-049 product checkout stays clean at1e0a05a; all worktrees preserved.
-- Policy: ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455. Astra only, coordinator xhigh, implementation financial/migration xhigh, independent read-only review max, Standard.
-- Accepted V1-049 product:29bd79db51838be38c4b766ba95295d6379bc8fa, tree63d4080e163e36fa9d6211c2fbe3d9dfff52a99b. Fresh553PG zero skips/795backend530DB-onlyskips covered/369frontend/189automation plus static/build/config/traceability/cumulative-and-parent-diff/3officialaudits PASS.
-- Independent cumulative20path13commit Astra max review0HIGH/0MEDIUM/0LOW. Reportv1049-review-29bd79d.md SHA256484dbd4f4426885268fa0581227a4f552f29408acfc38a9d0eb8cabc89c3b352. Verificationv1049-verification-29bd79d.md SHA256cd5fe47a7b7c9a5dbb0a3556c76be1eb06d44d19b240bdc59bdd1724c2400a45.
-- Normally published product29bd79d; exact CI33977400879 attempt1 all4jobs success; local/tracking/fetched/live refs equal. Product publication receiptv1049-product-publication-29bd79d.md SHA256cc4185041884c6ec69a94fe09e42a2e2c8bde21f5e804ab1a9e13bb5d2b3efa4.
-- Existing Workboard62275bf0-2739-448c-ae59-50794190ee72 DONE, product proof7ebc9e75-9f32-499a-9498-4f31c2a2e2ac, acceptancef30108a8-7c38-47c7-a28f-f50cc0c0f60d. No claim/attempt/OpenClaw execution. Product acceptance is not terminal version closure.
-- Terminal candidate: containing clean foundation HEAD, parent29bd79d. Exact next action: fresh terminal automation/config/traceability/cumulative-diff gates and independent Astra max zero-finding review, normal publication, own exact4job CI and four-ref equality; external terminal closure receipt and final Workboard evidence, then49fullyclosed before50activation.
-- Prior7429004 review0H0M1L EOF/cumulative-diff failure preserved and resolved; semantic/financial findings resolved. Original receipt retains explicit correction. Audit SHA2568957043d1375bed83fc68647640af5dbef4344c82142bfc1cc9fb94a62ee3d59. All earlier rejected candidates, owner grants, recovery history and evidence remain retained.
-- V1-048 fully closed at e3ae74f8ca2acab1991db9f724faf3df274bcc08. Closure receiptv1048-closure-verification.md SHA2567e3dc8d7876d5fcf744addcc3b9ecb66d45b2200cab1fd8cb6dfa7eec91421c6.
-- Evidence files are under /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/.
-- OpenClaw supervisor658ffdaf-1ac1-45a6-a842-f5f7d7a226eb disabled, no nextRun/dispatch. Existing native Codex follow-up ACTIVE. No owner action required.
-- Continue dependency-ordered through53 after49terminalclosure; at53fullyclosed pause Codex follow-up, leave OpenClaw disabled, do not activate54. Production/customerdata/paid/destructive/force-push/historyrewrite/worktreedeletion remain unauthorized.
+- Current: V1-050 scope frozen; direct implementation pending. V1-049 is fully closed; no repeated closure work.
+- Authority: ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455. Codex only through53; OpenClaw disabled throughout.
+- Models: Astra xhigh Standard coordinator and migration/authorization implementation; fresh independent Astra max Standard read-only review, no fallback.
+- Active checkout: /Users/sokompheak/Development/property-rental-management, implementation/foundation. Planned sole implementation checkout /Users/sokompheak/Development/property-rental-management-v1-050, codex/v1-050-direct; inspect/create from activation before implementation.
+- Current tracking cardd26f24b3-08e9-476b-bc9a-379f8fdcda5e blocked only to prevent OpenClaw admission; no claim/attempt/execution. Scope ops/V1_050_SCOPE.md.
+- Included: immutable Receipt identity per confirmed Payment in same transaction, authorized reads and append-only idempotent reprint/history, authoritative display amounts, no new money. HTTP/UI deferred52, Credit/Refund51, ledger53.
+- Exact next action: freeze activation over closed5bf656f; inspect/create sole retained50checkout, implement bounded scope, focused/full exact tests/audits and fresh independent Astra max zero findings, normalpublication/exactCI/ref/Workboard/terminalclosure before51.
+- V1-049 closed terminal5bf656faee616efe9000d218961329644744bc05, product29bd79d. Both independent reviews0H0M0L. Fresh553PG/795backend/369frontend/189automation/allgates/audits passed; terminal189gates passed.
+- ProductCI33977400879attempt1success; terminalCI33978312171attempt2all4success, fourrefs equal5bf atclosure. First terminal frontendTEST-FE087 failure retained; sameSHA focused/full passes thenonefailedjobretryPASS withoutcodechange orrootcauseoverclaim.
+- V1-049 Workboard62275bf0 DONE proof7ebc9e75, finalcomment4c8ede8c-b8cc-419d-926d-ccf05cc41f8c. Closure receiptv1049-closure-verification.md SHA2568da570786a7c1fe52d4b7505aee3bf8d41624056ab663bb3431755a0ab2e5cd0 discharges prior immutablependingfields.
+- Evidence directory /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/. All failed reviews/checkpoints/CI/recovery/ownergrants/worktrees retained, including product1e0a05a checkout.
+- V1-048 also fully closed terminale3ae74f, receipt7e3dc8d7876d5fcf744addcc3b9ecb66d45b2200cab1fd8cb6dfa7eec91421c6.
+- OpenClaw supervisor658ffdaf-1ac1-45a6-a842-f5f7d7a226eb disabled/no nextRun/no dispatch. Existing native10minute Codex follow-up ACTIVE; no owner action.
+- Continue50–53 dependency ordered; at53closedpausefollowup,leaveOpenClawdisabled,no54. Production/customerdata/paid/destructive/force-push/historyrewrite/worktreedeletion remain unauthorized.
 
 ## Historical V1-047 closure record
 
@@ -35,7 +36,7 @@ The following evidence is preserved as history. Its closure-turn next actions an
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation state: V1-049 product accepted; terminal closure pending. Native follow-up active; OpenClaw disabled.
-- Exact next action: verify/review/publish/CI/reconcile the containing terminal successor of29bd79d; no V1-050 until terminal closure verified.
+- Automation state: V1-050 scope frozen, implementation pending; V1-049 fully closed. Native follow-up active, OpenClaw disabled.
+- Exact next action: inspect/create sole retained V1-050 checkout from activation, implement frozen Receipt/reprint scope under Codex only, then fresh full exact gates/review/publication/CI/closure before51.
 
 <!-- AUTOMATION_STATUS_END -->
