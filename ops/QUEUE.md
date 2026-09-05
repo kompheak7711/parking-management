@@ -57,7 +57,7 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-049 PAUSED for owner recovery decision after6fa42b6review0H1M1L. Semantictraceability remains incompleteafter2materiallydifferentboundedcorrections; oneadditionalcorrectionauthorizationrequired forresidualmappings plusnewallocation-reversalpermissionseparation. Noimplementation/publication/V1-050untildecision. Preserve4108888/a6c8f55/6fa42b6/reports/worktrees. Exactlocalgatesgreenbutzerofindinggatefailed. V1-048fullyclosed e3ae74f/card652e776cDONE. OpenClawdisabled andnativefollowuppaused.
+Current live queue position: V1-049 owner-authorized bounded correction 3 ACTIVE. Owner reply “yes I do” grants one additional correction for review6fa42b6: separate allocation reversal capability/audit and fix two authorization traceability mappings. Preserve the prior exhausted stop, all rejected commits/reports/worktrees. Require fresh full exact tests and fresh independent Astra max zero-finding review before normal publication/CI/ref/Workboard/durable closure. V1-048 fully closed e3ae74f/card652e776c DONE. OpenClaw disabled; existing native follow-up resumed in place. Do not activate V1-050 until V1-049 fully closed.
 The owner now authorizes direct continuous Codex execution through V1-053, with
 GPT-6 Astra settings in ops/CODEX_TAKEOVER_V1_048_053.md. Stop before V1-054.
 OpenClaw stays disabled; current tracking card62275bf0-2739-448c-ae59-50794190ee72
