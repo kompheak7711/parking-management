@@ -7,16 +7,16 @@
 - Closure publication: the complete linear closure chain through `34922d6` is normally published. GitHub Actions run `33945359575` passed all four jobs; local, tracking, fetched, and live-remote refs all equal exact `34922d6`.
 - Scheduler: exactly one OpenClaw supervisor `658ffdaf-1ac1-45a6-a842-f5f7d7a226eb`; disabled by owner request during native Codex takeover, schedule retained at 30 minutes, model GPT-5.6 Sol xhigh Standard, payload byte-identical to the authoritative 11,868-byte prompt at SHA-256 `0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56`.
 - Workboard: existing product card `26b14ae0-92b3-433d-bed6-46bd732c569c` remains blocked only to prevent duplicate dispatch; all evidence and worktrees are preserved. It moves to terminal completion only after this four-file reconciliation passes exact-SHA review, publication, CI, and ref equality.
-- Status: V1-047 product, release, publication, closure correction, and closure-chain CI are complete. Immutable final-reconciliation checkpoint `030577ba3a845b1f3fd4ad4dc42fffab34531949` failed independent review with one MEDIUM unrecognized-status routing finding and one LOW stale-worker finding; this normal successor corrects both without rewriting history.
+- Status: V1-047 product, release, publication, closure correction, and closure-chain CI are complete. Immutable final-reconciliation checkpoint `030577b` failed with one MEDIUM and one LOW; successor `cfbce3a5f710643afe7c90851a650d20a911b641` fixed both but failed fresh independent review with one LOW stale-next-action finding. This normal successor corrects that final metadata inconsistency; all checkpoints remain preserved.
 - V1-048: authorized and dependency-ready after terminal V1-047 acceptance, but it must not be activated or dispatched in this closure turn.
 - Production deployment/access/credentials, customer data, paid services, destructive operations, force push, history rewrite, and worktree deletion remain unauthorized and were not used.
 - Owner action required: no.
-- Exact next action: freeze this cumulative four-file successor, run automation/configuration tests and independent GPT-5.6 Sol max Standard review, publish normally, require exact-SHA CI and ref equality, then complete Workboard card `26b14ae0` and record terminal V1-047 closure without activating V1-048.
-- Updated: `2026-09-05T05:08:00Z`.
+- Exact next action: freeze this cumulative four-file successor, run fresh exact-SHA automation/configuration tests and independent GPT-5.6 Sol max Standard review, publish normally, require exact-SHA CI and ref equality, then complete Workboard card `26b14ae0` and record terminal V1-047 closure without activating V1-048.
+- Updated: `2026-09-05T05:22:00Z`.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation publication state: exact V1-047 release `32fbef1` and closure chain through `34922d6` are published, synchronized, independently approved, and exact-SHA CI-green; failed final-reconciliation checkpoint `030577b` is preserved and its two findings are corrected in a normal successor.
+- Automation publication state: exact V1-047 release `32fbef1` and closure chain through `34922d6` are published, synchronized, independently approved, and exact-SHA CI-green; failed final-reconciliation checkpoints `030577b` and `cfbce3a` are preserved and their findings are corrected in normal successors.
 - Automation exact next action: keep OpenClaw disabled and V1-048 undispatched while this reconciliation, its exact-SHA review/CI/ref equality, terminal Workboard acceptance, and terminal closure record complete.
 
 <!-- AUTOMATION_STATUS_END -->

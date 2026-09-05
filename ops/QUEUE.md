@@ -183,3 +183,13 @@ evidence. Freeze and test the cumulative four-file successor, require fresh inde
 Sol max Standard review, then publish normally, require exact-SHA CI/ref equality,
 complete Workboard card26b14ae0 and record terminal V1-047 closure. OpenClaw remains
 disabled; V1-048 must not activate or dispatch in this closure turn; no owner action.
+
+### Current superseding checkpoint — final next-action correction
+
+Checkpointcfbce3a fixed both030577b findings and passed189 automation tests, but a
+fresh independent Sol max Standard review found one LOW stale-next-action inconsistency.
+The normal successor changes only current durable instructions and preserves both failed
+checkpoints plus all evidence. Freeze and test the cumulative four-file reconciliation,
+require fresh independent Sol max Standard review, publish normally, require exact-SHA
+CI/ref equality, then complete Workboard card26b14ae0 and record terminal V1-047 closure.
+OpenClaw remains disabled; V1-048 must not activate or dispatch; no owner action.

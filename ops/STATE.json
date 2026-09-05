@@ -10,8 +10,8 @@
     "openclaw_dispatch": false,
     "openclaw_supervisor_enabled": false,
     "owner_action_required": false,
-    "phase": "final_reconciliation_correction_pending",
-    "next_action": "Correct the two findings from immutable final-reconciliation checkpoint 030577b by restoring the recognized verified_unpublished route and clearing stale worker identity; then require fresh exact-SHA automation/configuration tests and independent Sol max Standard cumulative review before publication. OpenClaw disabled; V1-048 undispatched.",
+    "phase": "final_reconciliation_review_pending",
+    "next_action": "Freeze the corrected cumulative four-file V1-047 reconciliation, require fresh exact-SHA automation/configuration tests and independent Sol max Standard review, then publish normally and require exact-SHA CI/ref equality before terminal Workboard acceptance. OpenClaw disabled; V1-048 undispatched.",
     "initial_preflight": {
       "frontend_client": 27,
       "frontend_workflow": 22,
@@ -69,8 +69,8 @@
       "followup_active": true,
       "followup_status": "ACTIVE",
       "owner_action_required": false,
-      "exact_next_action": "Correct the two findings from immutable final-reconciliation checkpoint 030577b, then require fresh exact-SHA tests and independent Sol max Standard cumulative review before publication.",
-      "review_health": "Final-reconciliation checkpoint 030577b independently reviewed FAIL with one MEDIUM unrecognized-status routing finding and one LOW stale-worker finding; no implementation or review worker active"
+      "exact_next_action": "Freeze the corrected cumulative four-file successor, require fresh exact-SHA tests and independent Sol max Standard review, then publish normally and require exact-SHA CI/ref equality before terminal Workboard acceptance.",
+      "review_health": "Checkpoint cfbce3a fixed both 030577b findings but independently reviewed FAIL with one LOW stale-next-action finding; no implementation or review worker active"
     },
     "independent_review": {
       "status": "failed",
@@ -512,6 +512,21 @@
         },
         "report_path": "/private/tmp/prm-v1047-native-evidence.fvAaxf/final-reconciliation-review-030577b.md",
         "report_sha256": "e4eecb57ea2e4179c3b464489b204e21ea6d6d45c75754dda5afaf77d5fa3895"
+      },
+      "final_reconciliation_second_failed_checkpoint": "cfbce3a5f710643afe7c90851a650d20a911b641",
+      "final_reconciliation_second_failed_review": {
+        "status": "failed_preserved",
+        "session": "v1047_final_reconciliation_rereview",
+        "model": "gpt-5.6-sol",
+        "reasoning_effort": "max",
+        "mode": "Standard",
+        "findings": {
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "report_path": "/private/tmp/prm-v1047-native-evidence.fvAaxf/final-reconciliation-rereview-cfbce3a.md",
+        "report_sha256": "d57024945c68a122faebac3bb3d8b449c5f67a62e5a608d778f6f2c873fc21e0"
       }
     }
   },
@@ -544,7 +559,7 @@
   "branch": "implementation/foundation",
   "commit": "34922d6e0f0f2ee9b9ad8c7d683a4d4dfa1116a1",
   "idle_reason": null,
-  "next_action": "Correct the two findings from immutable final-reconciliation checkpoint 030577b by restoring the recognized verified_unpublished route and clearing stale worker identity; then require fresh exact-SHA automation/configuration tests and independent Sol max Standard cumulative review before publication. OpenClaw disabled; V1-048 undispatched.",
+  "next_action": "Freeze the corrected cumulative four-file V1-047 reconciliation, require fresh exact-SHA automation/configuration tests and independent Sol max Standard review, then publish normally and require exact-SHA CI/ref equality before terminal Workboard acceptance. OpenClaw disabled; V1-048 undispatched.",
   "active_worker": null,
   "active_card": "26b14ae0-92b3-433d-bed6-46bd732c569c",
   "active_claim": null,
