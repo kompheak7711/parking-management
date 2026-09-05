@@ -558,22 +558,22 @@
       "read_only": true
     },
     "current_version": "V1-050",
-    "phase": "correction1_exact_verification_pending",
-    "candidate_sha": null,
-    "candidate_resolution": "Resolve correction1 candidate from containing clean HEAD; actual parent is preserved fa8afe7, cumulative review base separately closed5bf656f. Bind fresh external exact-SHA gate and independent review receipts.",
-    "candidate_status": "containing_commit_verification_pending",
-    "worktree": "/Users/sokompheak/Development/property-rental-management-v1-050",
-    "branch": "codex/v1-050-direct",
+    "phase": "product_accepted_terminal_closure_active",
+    "candidate_sha": "3d16b65c631593a81c87bd7be290c9a820cb791a",
+    "candidate_resolution": "Accepted immutable product3d16b65; terminal checkpoint resolves separately from containing foundation HEAD.",
+    "candidate_status": "reviewed_published_exact_ci_green_product",
+    "worktree": "/Users/sokompheak/Development/property-rental-management",
+    "branch": "implementation/foundation",
     "planned_worktree": "/Users/sokompheak/Development/property-rental-management-v1-050",
     "planned_branch": "codex/v1-050-direct",
     "worker_kind": "direct_codex_coordinator",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
-    "worker_status": "direct_coordinator_verification",
+    "worker_status": "direct_coordinator_terminal_reconciliation",
     "scope_path": "ops/V1_050_SCOPE.md",
     "scope_sha256": "493234e5cacb4496142265b8c89b19af121ea478d1589b56e45b24e58778c35c",
     "card_id": "d26f24b3-08e9-476b-bc9a-379f8fdcda5e",
-    "workboard_status": "blocked",
-    "workboard_block_reason": "Tracking only; prevents OpenClaw admission while direct Codex works",
+    "workboard_status": "done",
+    "workboard_block_reason": null,
     "predecessor_sha": "5bf656faee616efe9000d218961329644744bc05",
     "predecessor_ci_run": 33978312171,
     "predecessor_ci_attempt": 2,
@@ -583,12 +583,12 @@
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "owner_action_required": false,
-    "next_action": "Run fresh full exact-SHA gates and audits for the containing correction1 candidate; obtain NEW independent Astra max Standard read-only cumulative review from closed5bf656f, requiring zero findings. Only then normal publication, exact CI/ref equality, same-card Workboard acceptance and terminal durable closure before51. Inspect active work first; OpenClaw stays disabled through53.",
-    "verification_status": "Correction1 focused preflight passed; fresh full exact gates and independent review pending.",
+    "next_action": "Freeze the V1-050 records-only terminal candidate at clean foundation HEAD over accepted product3d16b65. Run fresh automation/configuration/traceability and cumulative/parent diff checks; obtain fresh independent Astra max Standard read-only exact terminal review with zero findings, publish normally and verify its exact four-job CI and local/tracking/fetched/live refs. Bind external terminal closure receipt and final same-card Workboard evidence. Only then50fullyclosed and51mayactivate; continue through53, OpenClawdisabled, no54.",
+    "verification_status": "Product fully verified/reviewed/published CIgreen/refequal/Workboardaccepted; terminal gates pending.",
     "correction_history": [
       {
         "attempt": 1,
-        "status": "implemented_exact_verification_pending",
+        "status": "resolved_exact_review_zero_findings_published",
         "started_at": "2026-09-05T18:26:34.575Z",
         "failure": {
           "candidate_sha": "fa8afe76894429eed059d441d534a7fe13ce8a88",
@@ -612,7 +612,9 @@
         "changed_approach": "Exclude concurrent Payment writes before history check, reject non-read-committed bootstrap, derive display from one captured disposition summary, independently assert provenance and scoped money-event sets, remove unsupported mappings and synchronize actual parent metadata.",
         "implemented_at": "2026-09-05T18:36:31.283Z",
         "preflight": "31focusedPG/189automation/static/config/traceability plus2mutationwitnessesPASS",
-        "preflight_receipt_sha256": "b5dbd1b63c5b2d35d939bbc9b4da1a18868c951940c4e3d8cf044ebbd6788d7a"
+        "preflight_receipt_sha256": "b5dbd1b63c5b2d35d939bbc9b4da1a18868c951940c4e3d8cf044ebbd6788d7a",
+        "candidate_sha": "3d16b65c631593a81c87bd7be290c9a820cb791a",
+        "result": "FreshfullgatesPASS/independent0HIGH0MEDIUM0LOW, exactCI33985062450attempt1success, allrefs3d16, sameWorkboardaccepted; failedfa8 evidence preserved."
       }
     ],
     "implementation_started_at": "2026-09-05T17:09:13.023Z",
@@ -625,13 +627,14 @@
       "standard_config": "service_tier default; provider-side attestation unavailable"
     },
     "last_reconciliation": {
-      "checked_at": "2026-09-05T18:26:34.575Z",
-      "main_and_product_head": "fa8afe76894429eed059d441d534a7fe13ce8a88",
-      "live_remote": "5bf656faee616efe9000d218961329644744bc05",
-      "predecessor_ci": "33978312171 attempt2success",
-      "supervisor": "Exactly1matching658ffdaf disabled every30minutes/no nextRun; runningtasks0",
-      "card": "d26f24b3 blockedtrackingonly/no claim/attempt/execution",
-      "followup": "Existing ACTIVE every10minutes; refresh to correction1"
+      "checked_at": "2026-09-05T18:54:16.967Z",
+      "product_head": "3d16b65c631593a81c87bd7be290c9a820cb791a",
+      "main_head_before_terminal_metadata": "3d16b65c631593a81c87bd7be290c9a820cb791a",
+      "live_remote": "3d16b65c631593a81c87bd7be290c9a820cb791a",
+      "product_ci": "33985062450 attempt1success all4jobs",
+      "supervisor": "Exactly1matching658ffdaf disabled30minutes/no nextRun; runningtasks0",
+      "card": "d26f24b3DONE proof2a56846f/no claim/attempt/execution",
+      "followup": "Existing ACTIVE10minutes; terminalcheckpoint refresh"
     },
     "model_configuration_history": [
       {
@@ -650,7 +653,42 @@
     "draft_checkpoint_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-draft-checkpoint-c964fef.md",
     "draft_checkpoint_receipt_sha256": "1814a7478fc3a4702bdf1b39fdd7cd7771efacf1989605e5e64ae4ce06be0103",
     "correction1_preflight_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-correction1-prefreeze.md",
-    "correction1_preflight_receipt_sha256": "b5dbd1b63c5b2d35d939bbc9b4da1a18868c951940c4e3d8cf044ebbd6788d7a"
+    "correction1_preflight_receipt_sha256": "b5dbd1b63c5b2d35d939bbc9b4da1a18868c951940c4e3d8cf044ebbd6788d7a",
+    "retained_product_worktree": "/Users/sokompheak/Development/property-rental-management-v1-050",
+    "retained_product_branch": "codex/v1-050-direct",
+    "retained_product_sha": "3d16b65c631593a81c87bd7be290c9a820cb791a",
+    "product_review": {
+      "status": "PASS",
+      "candidate_sha": "3d16b65c631593a81c87bd7be290c9a820cb791a",
+      "base_sha": "5bf656faee616efe9000d218961329644744bc05",
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "model": "gpt-6-astra",
+      "reasoning": "max",
+      "mode": "Standard",
+      "read_only": true,
+      "reviewer": "/root/v1050_correction1_exact_review",
+      "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-review-3d16b65.md",
+      "report_sha256": "818ce0830a54dd49c346c3e3b321d54f43c28a0de257047ece7241934d269bec",
+      "cumulative_paths": 18,
+      "cumulative_commits": 4
+    },
+    "workboard_proof_id": "2a56846f-1cd9-4afd-b8a8-07f2bddae583",
+    "workboard_acceptance_comment_id": "f09ce4ae-ce54-4be6-94ac-3aab3c0aeb61",
+    "product_verification_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-verification-3d16b65.md",
+    "product_verification_receipt_sha256": "051fdbbaf92a4ee805b2051fd91b1156ac5ca8fd5d7f7520444c16a429bf4f8a",
+    "product_publication_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-product-publication-3d16b65.md",
+    "product_publication_receipt_sha256": "1988d079f2c18aaa3d2ccf9b7ca9bb8d6f552f698106bcc3889957c6bb9a67eb",
+    "terminal_checkpoint": {
+      "status": "active_fresh_exact_metadata_gates_review_publication_ci",
+      "candidate_sha": null,
+      "candidate_resolution": "Terminal metadata at clean foundation HEAD containing this checkpoint; actual parent3d16b65c631593a81c87bd7be290c9a820cb791a. Bind external fresh exact-SHA verification/review/publication receipts. Product review cumulativebase5bf is separate.",
+      "parent_sha": "3d16b65c631593a81c87bd7be290c9a820cb791a",
+      "successor_activation_allowed": false,
+      "receipt_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-closure-verification.md",
+      "next_action": "Freeze the V1-050 records-only terminal candidate at clean foundation HEAD over accepted product3d16b65. Run fresh automation/configuration/traceability and cumulative/parent diff checks; obtain fresh independent Astra max Standard read-only exact terminal review with zero findings, publish normally and verify its exact four-job CI and local/tracking/fetched/live refs. Bind external terminal closure receipt and final same-card Workboard evidence. Only then50fullyclosed and51mayactivate; continue through53, OpenClawdisabled, no54."
+    }
   },
   "historical_v1_048_takeover": {
     "authorization_from": "V1-048",
@@ -1356,11 +1394,12 @@
     }
   },
   "approval": {
-    "status": "approved_active",
+    "status": "approved",
     "basis": "Standing direct Codex V1-048 through V1-053 authorization and verified immediate predecessor49closure; ops/CODEX_TAKEOVER_V1_048_053.md.",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": false
+    "publication_completed": true,
+    "evidence_scope": "Accepted product3d16b65 only; records-only terminal requires its own exact gates/review/publication/CI/ref reconciliation before51activation."
   },
   "historical_v1_047_approval": {
     "status": "active",
@@ -1395,18 +1434,18 @@
   ],
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "fa8afe76894429eed059d441d534a7fe13ce8a88",
-  "idle_reason": "Direct Codex exact verification/review pending; no owner decision. OpenClaw disabled.",
-  "next_action": "Run fresh full exact-SHA gates and audits for the containing correction1 candidate; obtain NEW independent Astra max Standard read-only cumulative review from closed5bf656f, requiring zero findings. Only then normal publication, exact CI/ref equality, same-card Workboard acceptance and terminal durable closure before51. Inspect active work first; OpenClaw stays disabled through53.",
+  "commit": "3d16b65c631593a81c87bd7be290c9a820cb791a",
+  "idle_reason": "Direct Codex records-only terminal reconciliation active; no owner decision outstanding. OpenClawdisabled.",
+  "next_action": "Freeze the V1-050 records-only terminal candidate at clean foundation HEAD over accepted product3d16b65. Run fresh automation/configuration/traceability and cumulative/parent diff checks; obtain fresh independent Astra max Standard read-only exact terminal review with zero findings, publish normally and verify its exact four-job CI and local/tracking/fetched/live refs. Bind external terminal closure receipt and final same-card Workboard evidence. Only then50fullyclosed and51mayactivate; continue through53, OpenClawdisabled, no54.",
   "active_worker": null,
   "active_card": "d26f24b3-08e9-476b-bc9a-379f8fdcda5e",
   "active_claim": null,
   "active_attempt": null,
-  "active_branch": "codex/v1-050-direct",
-  "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-050",
+  "active_branch": "implementation/foundation",
+  "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Resolve correction1 candidate from containing clean HEAD; actual parent is preserved fa8afe7, cumulative review base separately closed5bf656f. Bind fresh external exact-SHA gate and independent review receipts.",
-  "candidate_parent": "fa8afe76894429eed059d441d534a7fe13ce8a88",
+  "candidate_resolution": "Terminal metadata at clean foundation HEAD containing this checkpoint; actual parent3d16b65c631593a81c87bd7be290c9a820cb791a. Bind external fresh exact-SHA verification/review/publication receipts. Product review cumulativebase5bf is separate.",
+  "candidate_parent": "3d16b65c631593a81c87bd7be290c9a820cb791a",
   "next_candidate": {
     "id": "V1-050",
     "order": 50,
@@ -1430,7 +1469,7 @@
     "risk_class": "high",
     "acceptance_profile": "financial",
     "authorization": "durable_v1",
-    "status": "approved_ready",
+    "status": "complete",
     "roadmap_id": "V1-050"
   },
   "operational_issues": [
@@ -1456,7 +1495,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-050 correction1 candidate — exact verification pending",
+  "phase": "V1-050 product accepted; terminal reconciliation active",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2475,14 +2514,14 @@
   },
   "risk_class": "high",
   "roadmap": {
-    "completed": 49,
+    "completed": 50,
     "current_id": "V1-050",
     "id": "property-rental-v1",
     "total": 60
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "active",
+  "status": "published",
   "task": "V1-050 immutable Receipt and reprint services",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
@@ -2548,9 +2587,10 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "Correction1 mutable preflight31Receipt PostgreSQL cases PASS/553deselected;134files format/lint/mypy PASS;189automation/config/routing/watchdog/traceability/diff PASS.",
-    "Two external test-only mutation witnesses PASS: new regressions reject old bootstrap race and old mixed financial projection. Preflight receipt b5dbd1b63c5b2d35d939bbc9b4da1a18868c951940c4e3d8cf044ebbd6788d7a.",
-    "Fresh full exact-SHA gates/audits and independent zero-finding review pending; preserved fa8 full-gate PASS and failed review are historical, not current release approval."
+    "PASS exact3d16:584PostgreSQLzero skips/826backend561DB-onlyskipsseparatelycovered/369frontend/189automation, allstatic/build/import/config/traceability/cumulative+parentdiff/publicationguard/3officialaudits.",
+    "PASS fresh independent cumulative18path4commit Astra max Standard read-only review0HIGH0MEDIUM0LOW; report818ce0830a54dd49c346c3e3b321d54f43c28a0de257047ece7241934d269bec.",
+    "PASS normal publication3d16, exactCI33985062450attempt1all4success,fourrefsidentical; Workboardd26f24b3DONE proof2a56846f.",
+    "PENDING terminal metadata fresh configuration gates, independent exactreview, normalpublication/exactCI/ref equality andexternalclosurereceipt. No51activation yet."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -2572,7 +2612,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-050",
-  "timestamp": "2026-09-05T18:36:31.283Z",
+  "timestamp": "2026-09-05T18:54:16.967Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2789,7 +2829,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T18:36:31.283Z",
+  "updated_at": "2026-09-05T18:54:16.967Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -3912,22 +3952,32 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Preserved failed-review checkpoint and parent of the next correction candidate; cumulative base is separately recorded.",
+  "commit_role": "Accepted published V1-050 product3d16b65; terminal metadata resolves from containing foundation HEAD and successor stays gated.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "fa8afe76894429eed059d441d534a7fe13ce8a88"
+    "3d16b65c631593a81c87bd7be290c9a820cb791a"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
     "e7a82f7f034c17390f1de26b1196b0f777dd3ca0"
   ],
   "publication": {
-    "status": "not_started",
+    "status": "product_published_exact_sha_ci_green_workboard_accepted",
     "tranche_id": "V1-050",
-    "candidate_sha": null,
+    "candidate_sha": "3d16b65c631593a81c87bd7be290c9a820cb791a",
+    "commit_completed": true,
+    "push_completed": true,
+    "ci_completed": true,
+    "ci_conclusion": "success",
+    "ci_run_id": 33985062450,
+    "ci_run_attempt": 1,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33985062450",
+    "sha_reconciled": true,
     "workboard_card": "d26f24b3-08e9-476b-bc9a-379f8fdcda5e",
-    "workboard_status": "blocked",
-    "production_deployment": false
+    "workboard_status": "done",
+    "workboard_proof_id": "2a56846f-1cd9-4afd-b8a8-07f2bddae583",
+    "production_deployment": false,
+    "terminal_metadata_publication": "pending separate exact-SHA receipts"
   },
   "historical_v1_047_publication": {
     "tranche_id": "V1-047",
@@ -3966,15 +4016,32 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_fresh_correction1_review",
+    "status": "pending_terminal_metadata_exact_sha_review",
     "tranche_id": "V1-050",
     "exact_sha": null,
+    "candidate_resolution": "Terminal metadata at clean foundation HEAD containing this checkpoint; actual parent3d16b65c631593a81c87bd7be290c9a820cb791a. Bind external fresh exact-SHA verification/review/publication receipts. Product review cumulativebase5bf is separate.",
+    "base_sha": "3d16b65c631593a81c87bd7be290c9a820cb791a",
     "model": "gpt-6-astra",
     "reasoning_effort": "max",
     "mode": "Standard",
     "read_only": true,
-    "previous_failed_report": "v1050-review-fa8afe7.md",
-    "previous_failed_sha256": "980246b60696cc8127e65a50dee7b816375e92735b519d16870b8ace6a3ef474"
+    "accepted_product_review": {
+      "status": "PASS",
+      "candidate_sha": "3d16b65c631593a81c87bd7be290c9a820cb791a",
+      "base_sha": "5bf656faee616efe9000d218961329644744bc05",
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "model": "gpt-6-astra",
+      "reasoning": "max",
+      "mode": "Standard",
+      "read_only": true,
+      "reviewer": "/root/v1050_correction1_exact_review",
+      "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1050-review-3d16b65.md",
+      "report_sha256": "818ce0830a54dd49c346c3e3b321d54f43c28a0de257047ece7241934d269bec",
+      "cumulative_paths": 18,
+      "cumulative_commits": 4
+    }
   },
   "historical_v1_047_review": {
     "status": "PASS",
@@ -3988,7 +4055,7 @@
   "evidence_applicability": {
     "tranche_id": "V1-050",
     "complete_profile_remains_applicable": false,
-    "basis": "New version requires fresh implementation/exacttests/review/publication/CI/refs/Workboard/closure; prior49closed only as dependency."
+    "basis": "Unchanged product3d16 fullyverified,independentlyreviewed,published exactCIgreen/refequal andWorkboardaccepted. Retain product evidence; records-onlyterminal needs freshautomation/config/traceability/diff/exactreview/ownCI/refs beforeclosed."
   },
   "historical_v1_047_evidence_applicability": {
     "tranche_id": "V1-047",
