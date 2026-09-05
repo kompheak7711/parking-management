@@ -29,10 +29,10 @@
       "read_only": true
     },
     "current_version": "V1-049",
-    "phase": "correction_candidate_verification_pending",
+    "phase": "bounded_correction_active",
     "candidate_sha": null,
-    "candidate_resolution": "Candidate is commit containing this frozen correction checkpoint; resolve codex/v1-049-direct HEAD and record exact SHA in external verification/review evidence.",
-    "candidate_status": "correction1_frozen_pending_exact_verification",
+    "candidate_resolution": "Rejected a6c8f55 preserved in normal history; freeze new successor after correction2.",
+    "candidate_status": "rejected_preserved_correction2_active",
     "worktree": "/Users/sokompheak/Development/property-rental-management-v1-049",
     "branch": "codex/v1-049-direct",
     "worker_kind": "direct_codex_coordinator",
@@ -50,39 +50,68 @@
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "owner_action_required": false,
-    "next_action": "Resolve immutable correction1 candidate from codex/v1-049-direct HEAD; run fresh full exact-SHA gates and fresh independent Astra max read-only review of cumulative e3ae74f..candidate. Preserve failed4108888/report. Publish normally only with zero findings and all gates, verify exact CI/ref equality, reconcile Workboard/durable closure before V1-050.",
-    "verification_status": "Development29 allocationPG/788backend/189automation+state/watchdog PASS; fresh full exact-SHA acceptance pending",
+    "next_action": "Complete bounded correction2 on rejected a6c8f55: temporal consistency floor for all proposal source/target dependencies under posting locks, distinct valid bigint snapshot vs posted-amount limits, exact Charge detail intent and canonical traceability IDs. Preserve a6c8f55/4108888/reports/worktrees. Freeze successor and repeat full exact-SHA gates plus fresh independent Astra max zero-finding review before normal publication/CI/ref/Workboard/durable closure andV1-050.",
+    "verification_status": "Exact a6c8f55 all local gates PASS but independentreviewFAIL0H2M2L; no acceptance/publication.",
     "development_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-development-verification.md",
     "correction": {
-      "attempt": 1,
-      "status": "implemented_pending_exact_verification",
-      "base_sha": "4108888867685573ef7066127f3a012cd76a213e",
-      "review_report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-review-4108888.md",
-      "review_sha256": "d9c49333cfab60a0503ad7b271b6f8e34b89e52a4e2b10bba02a00e8624ff6b3",
-      "findings": {
-        "high": 1,
-        "medium": 3,
-        "low": 1
-      },
-      "scope": "Five confirmed review findings only; preserve canonical policy, parser bounds and all history. Historical validation must reject overlapping consumption without rejecting valid non-overlapping backdating. Bounded proposals preserve FIFO and truthful continuation without automatic posting.",
+      "attempt": 2,
+      "status": "active",
+      "base_sha": "a6c8f5565c9ca53e91648ce584d9ab4080644ea5",
       "model": "gpt-6-astra",
       "reasoning": "xhigh",
       "mode": "Standard",
       "worker": "direct_codex_coordinator",
-      "failed_candidate_gates": {
-        "postgresql": 537,
-        "backend": 788,
-        "backend_db_skips": 514,
-        "frontend": 369,
-        "audits": "three official audits zero vulnerabilities",
-        "automation": "189 development tests passed; current authority routing FAILED"
+      "review_report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-review-a6c8f55.md",
+      "review_sha256": "b66ebfb89c26d388fd505f43d03d7168f1e31a530bdeb0d8675151f9637ce4bd",
+      "findings": {
+        "high": 0,
+        "medium": 2,
+        "low": 2
       },
-      "next_action": "Resolve immutable correction1 candidate from codex/v1-049-direct HEAD; run fresh full exact-SHA gates and fresh independent Astra max read-only review of cumulative e3ae74f..candidate. Preserve failed4108888/report. Publish normally only with zero findings and all gates, verify exact CI/ref equality, reconcile Workboard/durable closure before V1-050.",
-      "implementation_summary": "Historical event-breakpoint budget constraints preserve valid backdating; DIRECT_CHARGE avoids fabricated Customer provenance; FIFO producer pages <=100targets/500details/200KBtargets and UTF-8 command encoding, truthful explicit continuation; exact authority ranges preserve22IDs; semantic test mappings. Deferred header validates full state once; positive immutable detail events check sums without repeated Invoice reprojection.",
-      "development_verification": "29/29 focused PostgreSQL,788backend(520DB-onlyskips),189automation/state/watchdog/config,static and traceability passed. 101Invoice/largeUnicode/501line and history overlap-valid cases included. Fresh frozen complete tests remain required.",
-      "development_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-correction1-development.md",
-      "workboard_comment": "60779223-a9e5-4666-acd0-8b5b4efde984"
-    }
+      "bounded_accounting": "Second correction for residual semantic mapping and producer/consumer contract; first for new temporal provenance and Charge-detail attribution findings. No exhausted finding yet; never repeat unchanged failed approach.",
+      "scope": "Four finalized findings only; temporal floor is not authentication of producer timestamp; preserve canonical financial policies and posted-money limits.",
+      "next_action": "Complete bounded correction2 on rejected a6c8f55: temporal consistency floor for all proposal source/target dependencies under posting locks, distinct valid bigint snapshot vs posted-amount limits, exact Charge detail intent and canonical traceability IDs. Preserve a6c8f55/4108888/reports/worktrees. Freeze successor and repeat full exact-SHA gates plus fresh independent Astra max zero-finding review before normal publication/CI/ref/Workboard/durable closure andV1-050."
+    },
+    "correction_history": [
+      {
+        "attempt": 1,
+        "status": "rejected_preserved",
+        "base_sha": "4108888867685573ef7066127f3a012cd76a213e",
+        "review_report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-review-4108888.md",
+        "review_sha256": "d9c49333cfab60a0503ad7b271b6f8e34b89e52a4e2b10bba02a00e8624ff6b3",
+        "findings": {
+          "high": 1,
+          "medium": 3,
+          "low": 1
+        },
+        "scope": "Five confirmed review findings only; preserve canonical policy, parser bounds and all history. Historical validation must reject overlapping consumption without rejecting valid non-overlapping backdating. Bounded proposals preserve FIFO and truthful continuation without automatic posting.",
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard",
+        "worker": "direct_codex_coordinator",
+        "failed_candidate_gates": {
+          "postgresql": 537,
+          "backend": 788,
+          "backend_db_skips": 514,
+          "frontend": 369,
+          "audits": "three official audits zero vulnerabilities",
+          "automation": "189 development tests passed; current authority routing FAILED"
+        },
+        "next_action": "Resolve immutable correction1 candidate from codex/v1-049-direct HEAD; run fresh full exact-SHA gates and fresh independent Astra max read-only review of cumulative e3ae74f..candidate. Preserve failed4108888/report. Publish normally only with zero findings and all gates, verify exact CI/ref equality, reconcile Workboard/durable closure before V1-050.",
+        "implementation_summary": "Historical event-breakpoint budget constraints preserve valid backdating; DIRECT_CHARGE avoids fabricated Customer provenance; FIFO producer pages <=100targets/500details/200KBtargets and UTF-8 command encoding, truthful explicit continuation; exact authority ranges preserve22IDs; semantic test mappings. Deferred header validates full state once; positive immutable detail events check sums without repeated Invoice reprojection.",
+        "development_verification": "29/29 focused PostgreSQL,788backend(520DB-onlyskips),189automation/state/watchdog/config,static and traceability passed. 101Invoice/largeUnicode/501line and history overlap-valid cases included. Fresh frozen complete tests remain required.",
+        "development_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-correction1-development.md",
+        "workboard_comment": "60779223-a9e5-4666-acd0-8b5b4efde984",
+        "candidate_sha": "a6c8f5565c9ca53e91648ce584d9ab4080644ea5",
+        "final_review": {
+          "high": 0,
+          "medium": 2,
+          "low": 2,
+          "report": "v1049-review-a6c8f55.md",
+          "sha256": "b66ebfb89c26d388fd505f43d03d7168f1e31a530bdeb0d8675151f9637ce4bd"
+        }
+      }
+    ]
   },
   "historical_v1_048_takeover": {
     "authorization_from": "V1-048",
@@ -830,7 +859,7 @@
   "branch": "implementation/foundation",
   "commit": "e3ae74f8ca2acab1991db9f724faf3df274bcc08",
   "idle_reason": null,
-  "next_action": "Resolve immutable correction1 candidate from codex/v1-049-direct HEAD; run fresh full exact-SHA gates and fresh independent Astra max read-only review of cumulative e3ae74f..candidate. Preserve failed4108888/report. Publish normally only with zero findings and all gates, verify exact CI/ref equality, reconcile Workboard/durable closure before V1-050.",
+  "next_action": "Complete bounded correction2 on rejected a6c8f55: temporal consistency floor for all proposal source/target dependencies under posting locks, distinct valid bigint snapshot vs posted-amount limits, exact Charge detail intent and canonical traceability IDs. Preserve a6c8f55/4108888/reports/worktrees. Freeze successor and repeat full exact-SHA gates plus fresh independent Astra max zero-finding review before normal publication/CI/ref/Workboard/durable closure andV1-050.",
   "active_worker": null,
   "active_card": "62275bf0-2739-448c-ae59-50794190ee72",
   "active_claim": null,
@@ -838,7 +867,7 @@
   "active_branch": "codex/v1-049-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-049",
   "candidate_sha": null,
-  "candidate_resolution": "Candidate is commit containing this frozen correction checkpoint; resolve codex/v1-049-direct HEAD and record exact SHA in external verification/review evidence.",
+  "candidate_resolution": "Rejected a6c8f55 preserved in normal history; freeze new successor after correction2.",
   "candidate_parent": "e286dd18a8ddc0448c70f9b6a686ea61982c735a",
   "next_candidate": {
     "id": "V1-049",
@@ -891,7 +920,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-049 correction1 exact verification and independent review pending",
+  "phase": "V1-049 bounded correction2 active",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -1981,8 +2010,9 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "FAILED candidate4108888 retained: exact537PostgreSQL/788backend/369frontend andofficialaudits PASS; independentreview1H3M1L andauthorityroutingFAIL",
-    "29/29 focused PostgreSQL,788backend(520DB-onlyskips),189automation/state/watchdog/config,static and traceability passed. 101Invoice/largeUnicode/501line and history overlap-valid cases included. Fresh frozen complete tests remain required."
+    "Rejected4108888:537PG/788backend/369frontendPASS; review1H3M1L andauthorityroutingFAIL preserved.",
+    "Rejecteda6c8f55:543PG/788backend(520DBskipsseparatelycovered)/369frontend/189automation+allgatesandauditsPASS; review0H2M2L preserved.",
+    "Pending correction2 complete fresh exact gates and independent Astra max review."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -2004,7 +2034,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-049",
-  "timestamp": "2026-09-05 12:40:49 UTC",
+  "timestamp": "2026-09-05 13:03:37 UTC",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2220,7 +2250,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05 12:40:49 UTC",
+  "updated_at": "2026-09-05 13:03:37 UTC",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -3399,19 +3429,19 @@
   "review": {
     "status": "failed",
     "tranche_id": "V1-049",
-    "exact_sha": "4108888867685573ef7066127f3a012cd76a213e",
+    "exact_sha": "a6c8f5565c9ca53e91648ce584d9ab4080644ea5",
     "base_sha": "e3ae74f8ca2acab1991db9f724faf3df274bcc08",
     "model": "gpt-6-astra",
     "reasoning_effort": "max",
     "mode": "Standard",
     "read_only": true,
     "candidate_ref": "refs/heads/codex/v1-049-direct",
-    "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-review-4108888.md",
-    "report_sha256": "d9c49333cfab60a0503ad7b271b6f8e34b89e52a4e2b10bba02a00e8624ff6b3",
+    "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-review-a6c8f55.md",
+    "report_sha256": "b66ebfb89c26d388fd505f43d03d7168f1e31a530bdeb0d8675151f9637ce4bd",
     "findings": {
-      "high": 1,
-      "medium": 3,
-      "low": 1
+      "high": 0,
+      "medium": 2,
+      "low": 2
     }
   },
   "historical_v1_047_review": {
@@ -3426,7 +3456,7 @@
   "evidence_applicability": {
     "tranche_id": "V1-049",
     "complete_profile_remains_applicable": false,
-    "basis": "4108888 failed independent review andauthorityrouting despiteproductgatepasses. Bounded correction must obtain wholly fresh exact acceptance."
+    "basis": "a6c8f55 exactlocalgatespassed but reviewfailed; whollyfresh successor acceptance required."
   },
   "historical_v1_047_evidence_applicability": {
     "tranche_id": "V1-047",
