@@ -1,17 +1,17 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-049 correction2 implemented, freezing successor for fresh exact gates/review. Rejecteda6c8f55(0H2M2L)/4108888(1H3M1L) and reports preserved. No release acceptance.
+- Current: V1-049 stopped for owner recovery decision. Candidate6fa42b6 rejected0H1M1L; semanticmapping remains incompleteafter2boundedcorrections. Allfailedcommits/reports/worktrees preserved. No release acceptance.
 - Active checkout: /Users/sokompheak/Development/property-rental-management-v1-049, branch codex/v1-049-direct; sole direct Codex coordinator.
 - Authority: ops/CODEX_TAKEOVER_V1_048_053.md, SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455.
 - Models: GPT-6 Astra only; coordinator xhigh, financial/migration implementation xhigh, independent read-only reviewer max; Standard.
 - V1-049 tracking card62275bf0-2739-448c-ae59-50794190ee72 blocked solely to prevent OpenClaw admission; no OpenClaw claim/attempt/execution.
-- OpenClaw supervisor658ffdaf-1ac1-45a6-a842-f5f7d7a226eb disabled, no nextRun or worker dispatch. Existing Codex follow-up active every10minutes.
+- OpenClaw supervisor658ffdaf-1ac1-45a6-a842-f5f7d7a226eb disabled, no nextRun or worker dispatch. Existing Codex follow-up PAUSED awaitingownerrecoverydecision.
 - V1-048 fully closed at e3ae74f8ca2acab1991db9f724faf3df274bcc08, after product561dd06. Both independent Astra max reviews zero findings, both normallypublished, exact CI33959763928/33960592925 attempt1 all4jobs success, four refs equal, Workboard652e776c done.
 - V1-048 closure receipt SHA2567e3dc8d7876d5fcf744addcc3b9ecb66d45b2200cab1fd8cb6dfa7eec91421c6; /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1048-closure-verification.md. All failed checkpoints/reviews/worktrees preserved.
 - Last verified V1-048 product gates514PostgreSQL/769backend/369frontend/189automation plus static/build/config/audits; these do not constitute V1-049 acceptance.
-- Development: correction2 focused35/35PostgreSQL and static/traceabilityPASS; includes temporal dependency floor, bigint snapshots, exactChargeattribution, precise DB-PAY IDs. Rejectedcandidate543PG/788backend/369frontend/189automation passes are history, not successor acceptance.
-- Exact next action: resolve correction2 immutableHEAD; run allfull exact-SHA gates and fresh independent Astra max cumulative review beforepublication/CI/ref/Workboard/durableclosure andV1-050.
-- No owner action required; continue dependency-ordered throughV1-053. LeaveOpenClawdisabled, stopbeforeV1-054 andpauseCodexfollowup atV1-053closure.
+- Exact6fa42b6 gates549PGzero skips/789backend526DBskipsseparatelycovered/369frontend/189automation andallstatic/build/config/3auditsPASS, butreviewFAIL0H1M1L; notacceptance.
+- Remaining: separate allocation reversal permission/audit (SEC022); correct2authorization-onlytestreferences fromSEC026 toSEC019/020/022. Reportv1049-review-6fa42b6.md hash1f3d74b0 inprojectevidencedirectory.
+- Owner action required: authorizeoneadditionalboundedcorrection aftersemanticmappingrecoveryexhaustion. No furtherimplementation/publication/V1-050untildecision. Thenfreshfulltests/freshindependentreview before49closureandcontinuationthrough53.
 - Production/customerdata/paidservices/destructiveoperations/force-push/historyrewrite/worktreedeletion remain unauthorized.
 
 ## Historical V1-047 closure record
@@ -35,7 +35,7 @@ The following evidence is preserved as history. Its closure-turn next actions an
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation state: direct CodexV1-049 correction2 exactverification/review pending; OpenClaw disabled, no OpenClawdispatch.
-- Exact next action: inspect exact candidate and any active reviewer; complete fullgates/review/publish/verify/close beforeV1-050; continue onlythroughV1-053.
+- Automation state: direct CodexV1-049 ownerrecoverydecisionrequired; followuppaused, OpenClawdisabled, no workers.
+- Exact next action: awaitowneradditionalauthorityforboundedreview6fa42b6correction; preserveallwork, do notpublishoractivateV1-050.
 
 <!-- AUTOMATION_STATUS_END -->

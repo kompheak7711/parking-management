@@ -7,7 +7,7 @@
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "followup_id": "property-rental-v1-047-closure-follow-up",
-    "followup_status": "ACTIVE",
+    "followup_status": "PAUSED",
     "openclaw_supervisor_job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
     "openclaw_enabled": false,
     "openclaw_dispatch_allowed": false,
@@ -29,10 +29,10 @@
       "read_only": true
     },
     "current_version": "V1-049",
-    "phase": "correction2_candidate_verification_pending",
-    "candidate_sha": null,
-    "candidate_resolution": "Candidate is commit containing this frozen correction2 checkpoint; resolve codex/v1-049-direct HEAD and bind external evidence.",
-    "candidate_status": "correction2_frozen_pending_exact_verification",
+    "phase": "owner_recovery_decision_required",
+    "candidate_sha": "6fa42b64af1dc58eec30d7bc2ea13cc26c240d10",
+    "candidate_resolution": "Rejected immutable6fa42b6 retained in codex/v1-049-direct; no correction3 authorized for residualsemanticmapping.",
+    "candidate_status": "rejected_preserved_recovery_exhausted",
     "worktree": "/Users/sokompheak/Development/property-rental-management-v1-049",
     "branch": "codex/v1-049-direct",
     "worker_kind": "direct_codex_coordinator",
@@ -49,13 +49,13 @@
     "predecessor_closure_receipt_sha256": "7e3dc8d7876d5fcf744addcc3b9ecb66d45b2200cab1fd8cb6dfa7eec91421c6",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
-    "owner_action_required": false,
-    "next_action": "Resolve correction2 immutable HEAD in codex/v1-049-direct; run fresh full exact-SHA tests and fresh independent Astra max read-only cumulative e3ae74f..HEAD review. Preserve rejected4108888/a6c8f55 and reports. Require zero findings/allgates before normal publication/exactCI/ref/Workboard/durableclosure andV1-050.",
-    "verification_status": "Development35/35allocationPG andstatic/traceabilityPASS; correctedimmutable fullacceptancepending",
+    "owner_action_required": true,
+    "next_action": "Owner must authorize one additional materially different bounded V1-049 correction for review6fa42b6: separate allocation reversal capability/audit and correct two residual authorization traceability references. Semantic mapping recovery exhausted after2rounds. Preserve allfailedcommits/reports/worktrees; no implementation/publication/V1-050untildecision. Afterauthorization resumeexistingcard62275bf0 andfreshfull exacttests/independentAstraMaxzero-findingreview beforeclosure andcontinuationthrough53.",
+    "verification_status": "Exact549PG/789backend/369frontend/189automation+alllocalgatesandauditsPASS, independentreviewFAIL0H1M1L; no publication/acceptance.",
     "development_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-development-verification.md",
     "correction": {
       "attempt": 2,
-      "status": "implemented_pending_exact_verification",
+      "status": "failed_residual_mapping_recovery_exhausted",
       "base_sha": "a6c8f5565c9ca53e91648ce584d9ab4080644ea5",
       "model": "gpt-6-astra",
       "reasoning": "xhigh",
@@ -70,11 +70,19 @@
       },
       "bounded_accounting": "Second correction for residual semantic mapping and producer/consumer contract; first for new temporal provenance and Charge-detail attribution findings. No exhausted finding yet; never repeat unchanged failed approach.",
       "scope": "Four finalized findings only; temporal floor is not authentication of producer timestamp; preserve canonical financial policies and posted-money limits.",
-      "next_action": "Resolve correction2 immutable HEAD in codex/v1-049-direct; run fresh full exact-SHA tests and fresh independent Astra max read-only cumulative e3ae74f..HEAD review. Preserve rejected4108888/a6c8f55 and reports. Require zero findings/allgates before normal publication/exactCI/ref/Workboard/durableclosure andV1-050.",
+      "next_action": "Owner must authorize one additional materially different bounded V1-049 correction for review6fa42b6: separate allocation reversal capability/audit and correct two residual authorization traceability references. Semantic mapping recovery exhausted after2rounds. Preserve allfailedcommits/reports/worktrees; no implementation/publication/V1-050untildecision. Afterauthorization resumeexistingcard62275bf0 andfreshfull exacttests/independentAstraMaxzero-findingreview beforeclosure andcontinuationthrough53.",
       "implementation_summary": "Conservative proposal temporal floor includes all scoped issued Invoice eligibility/update/financialevents and Payment Allocation/Deposit/reversal availabilityevents; checked by exact regeneration under existing posting locks, plus targetheaderfloor. Does not authenticate producer timestamp. Only outstanding_usd_cents snapshot allows signedbigint; postedamountceiling unchanged. Charge detail follows actual headerintent; five incorrect DB-PAY mappings replaced with exactcanonicaltable IDs.",
       "development_verification": "35/35isolatedallocationPGPASS(session97769), allbackendstatic/migrationruff/traceability/diffPASS. Added5temporaldependencycases,onecentbigsnapshotcase andunitlimitmatrix; freshfullcandidategatespending.",
       "development_failure": "Initial temporal/numeric fixtures assumed issuedInvoiceversion1; read actual current version without changing production concurrency checks.",
-      "development_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-correction2-development.md"
+      "development_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-correction2-development.md",
+      "candidate_sha": "6fa42b64af1dc58eec30d7bc2ea13cc26c240d10",
+      "final_review": {
+        "high": 0,
+        "medium": 1,
+        "low": 1,
+        "report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-review-6fa42b6.md",
+        "sha256": "1f3d74b093b06087f8266d29feb7c9958b4eb4aa7c4ca1185e49697ae31d25e0"
+      }
     },
     "correction_history": [
       {
@@ -115,7 +123,21 @@
           "sha256": "b66ebfb89c26d388fd505f43d03d7168f1e31a530bdeb0d8675151f9637ce4bd"
         }
       }
-    ]
+    ],
+    "worker_status": "stopped_owner_decision",
+    "human_stop": {
+      "reason": "exhausted_materially_different_bounded_recovery",
+      "finding": "broad precise per-test semantic traceability remains incomplete",
+      "attempts": 2,
+      "max_attempts": 2,
+      "residual_tests": [
+        "test_allocation_reverse_payment_has_distinct_capability",
+        "test_allocation_scope_is_checked_before_database_access"
+      ],
+      "required_correction": "Replace unrelated SEC026 calculation references with actualSEC019/020/022 authorization authorities.",
+      "new_finding": "Allocation reversal capability must be separate from posting; new finding has unused recoverybudget but fullclosureblocked by exhaustedmapping.",
+      "no_production_or_destructive_action": true
+    }
   },
   "historical_v1_048_takeover": {
     "authorization_from": "V1-048",
@@ -821,8 +843,8 @@
     }
   },
   "approval": {
-    "status": "approved_active",
-    "basis": "Direct owner authorization throughV1-053 and frozenV1-049scope; predecessor fullyclosed",
+    "status": "blocked_owner_recovery",
+    "basis": "Continuousauthorizationthrough53 preserved; additionalsemanticmappingcorrectionrequiresownerdecisionaftertwofailedrounds.",
     "implementation_started": true,
     "implementation_completed": false,
     "publication_completed": false
@@ -859,19 +881,21 @@
     "TEST-123",
     "TEST-124"
   ],
-  "blockers": [],
+  "blockers": [
+    "Authorize one additional bounded correction for finalV1-049review6fa42b6; residualsemanticmappingrecoveryexhausted."
+  ],
   "branch": "implementation/foundation",
   "commit": "e3ae74f8ca2acab1991db9f724faf3df274bcc08",
-  "idle_reason": null,
-  "next_action": "Resolve correction2 immutable HEAD in codex/v1-049-direct; run fresh full exact-SHA tests and fresh independent Astra max read-only cumulative e3ae74f..HEAD review. Preserve rejected4108888/a6c8f55 and reports. Require zero findings/allgates before normal publication/exactCI/ref/Workboard/durableclosure andV1-050.",
+  "idle_reason": "Owner recovery decision required; nativefollowuppaused; OpenClawdisabled.",
+  "next_action": "Owner must authorize one additional materially different bounded V1-049 correction for review6fa42b6: separate allocation reversal capability/audit and correct two residual authorization traceability references. Semantic mapping recovery exhausted after2rounds. Preserve allfailedcommits/reports/worktrees; no implementation/publication/V1-050untildecision. Afterauthorization resumeexistingcard62275bf0 andfreshfull exacttests/independentAstraMaxzero-findingreview beforeclosure andcontinuationthrough53.",
   "active_worker": null,
   "active_card": "62275bf0-2739-448c-ae59-50794190ee72",
   "active_claim": null,
   "active_attempt": null,
   "active_branch": "codex/v1-049-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-049",
-  "candidate_sha": null,
-  "candidate_resolution": "Candidate is commit containing this frozen correction2 checkpoint; resolve codex/v1-049-direct HEAD and bind external evidence.",
+  "candidate_sha": "6fa42b64af1dc58eec30d7bc2ea13cc26c240d10",
+  "candidate_resolution": "Rejected immutable6fa42b6 retained in codex/v1-049-direct; no correction3 authorized for residualsemanticmapping.",
   "candidate_parent": "9fcad32a13c412c9d06b8bfd8dcbf50c19767743",
   "next_candidate": {
     "id": "V1-049",
@@ -916,7 +940,7 @@
       "action": "record and monitor only; do not restart or alter the healthy gateway without fresh failing health evidence"
     }
   ],
-  "owner_action": "none",
+  "owner_action": "Authorize one additional bounded correction for finalV1-049review6fa42b6; residualsemanticmappingrecoveryexhausted.",
   "owner_decisions": {
     "bootstrap_protection": "prm_bootstrap has safe cluster-global attributes and no unsafe memberships, ownership, or authority in the target database; no runtime cross-database introspection; provisioning attests and verifies the dedicated role is unused in every other database; target checks fail closed; atomic closure/revocation and secret-free repeat audit remain mandatory",
     "ceremony_deadline": "one absolute monotonic deadline begins before TOTP confirmation and covers TOTP input, recovery presentation and COMPLETE writes, acknowledgement input, and commit preparation; writes, partial input, retries, and trickled input never reset or extend it; timeout rolls back the ceremony",
@@ -924,7 +948,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-049 correction2 exactverification andfreshindependentreview pending",
+  "phase": "V1-049 owner recovery decision required",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -1948,7 +1972,7 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "active",
+  "status": "blocked",
   "task": "V1-049 deterministic Payment allocation and reversal services",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
@@ -2016,7 +2040,7 @@
   "tests": [
     "Rejected4108888:537PG/788backend/369frontendPASS; review1H3M1L andauthorityroutingFAIL preserved.",
     "Rejecteda6c8f55:543PG/788backend(520DBskipsseparatelycovered)/369frontend/189automation+allgatesandauditsPASS; review0H2M2L preserved.",
-    "35/35isolatedallocationPGPASS(session97769), allbackendstatic/migrationruff/traceability/diffPASS. Added5temporaldependencycases,onecentbigsnapshotcase andunitlimitmatrix; freshfullcandidategatespending."
+    "Rejected6fa42b6 exact549PGzero skips/789backend526DBskipsseparatelycovered/369frontend/189automationalllocalgatesand3auditsPASS; independentreviewFAIL0H1M1L."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -2038,7 +2062,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-049",
-  "timestamp": "2026-09-05 13:12:38 UTC",
+  "timestamp": "2026-09-05 13:30:54 UTC",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2254,7 +2278,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05 13:12:38 UTC",
+  "updated_at": "2026-09-05 13:30:54 UTC",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -3433,19 +3457,19 @@
   "review": {
     "status": "failed",
     "tranche_id": "V1-049",
-    "exact_sha": "a6c8f5565c9ca53e91648ce584d9ab4080644ea5",
+    "exact_sha": "6fa42b64af1dc58eec30d7bc2ea13cc26c240d10",
     "base_sha": "e3ae74f8ca2acab1991db9f724faf3df274bcc08",
     "model": "gpt-6-astra",
     "reasoning_effort": "max",
     "mode": "Standard",
     "read_only": true,
     "candidate_ref": "refs/heads/codex/v1-049-direct",
-    "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-review-a6c8f55.md",
-    "report_sha256": "b66ebfb89c26d388fd505f43d03d7168f1e31a530bdeb0d8675151f9637ce4bd",
+    "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-review-6fa42b6.md",
+    "report_sha256": "1f3d74b093b06087f8266d29feb7c9958b4eb4aa7c4ca1185e49697ae31d25e0",
     "findings": {
       "high": 0,
-      "medium": 2,
-      "low": 2
+      "medium": 1,
+      "low": 1
     }
   },
   "historical_v1_047_review": {
@@ -3460,7 +3484,7 @@
   "evidence_applicability": {
     "tranche_id": "V1-049",
     "complete_profile_remains_applicable": false,
-    "basis": "a6c8f55 exactlocalgatespassed but reviewfailed; whollyfresh successor acceptance required."
+    "basis": "Exactlocalgatesgreen but zero-findingreviewnotmet; boundedsemanticrecoveryexhausted andownerdecisionrequired."
   },
   "historical_v1_047_evidence_applicability": {
     "tranche_id": "V1-047",
