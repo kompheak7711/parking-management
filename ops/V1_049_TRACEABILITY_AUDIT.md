@@ -49,4 +49,3 @@ Paths: unit entries use `backend/tests/test_payment_allocation.py`; DB entries u
 ## Verification boundary
 
 Development: 39 allocation PostgreSQL cases passed with zero skips, and backend format/lint/types plus structural rule audit passed. An initial long SQL test line failed lint and was formatted without semantic change. These results are not frozen-candidate acceptance. The containing successor requires fresh full exact-SHA verification, fresh independent zero-finding review, normal publication, exact CI/ref equality, Workboard acceptance and terminal durable reconciliation before V1-050. OpenClaw stays disabled; no production/customer-data/paid/destructive activity is authorized.
-

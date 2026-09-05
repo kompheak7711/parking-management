@@ -50,6 +50,24 @@
         "medium": 0,
         "low": 1
       }
+    },
+    {
+      "status": "failed",
+      "tranche_id": "V1-049",
+      "exact_sha": "742900454894d7911f3177b8399450d7925e88ae",
+      "base_sha": "e3ae74f8ca2acab1991db9f724faf3df274bcc08",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "max",
+      "mode": "Standard",
+      "read_only": true,
+      "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-review-7429004.md",
+      "report_sha256": "036a62efc22eb7d49b2bbefea8af8388a364ca48c82e57bbdf4c6be5a6edee82",
+      "findings": {
+        "high": 0,
+        "medium": 0,
+        "low": 1
+      },
+      "finding": "Distinct new EOF formatting/cumulative diff verification defect; all financial and complete semantic mapping findings resolved."
     }
   ],
   "historical_v1_049_tests": [
@@ -57,7 +75,8 @@
     "Rejecteda6c8f55:543PG/788backend(520DBskipsseparatelycovered)/369frontend/189automation+allgatesandauditsPASS; review0H2M2L preserved.",
     "Rejected6fa42b6 exact549PGzero skips/789backend526DBskipsseparatelycovered/369frontend/189automationalllocalgatesand3auditsPASS; independentreviewFAIL0H1M1L.",
     "Exact1e0a05a:550PG/795backend527DBskipscovered/369frontend/189automation+allgates/3auditsPASS; fresh reviewFAIL0H0M1L metadata only. Receipt/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-verification-1e0a05a.md SHA256c2e8569baad2b6139807a51f8136fba42969e6e958ebec3816a38ee858e27875.",
-    "Exact d5795c5:550 PostgreSQL zero skips;795 backend527DB-onlyskipsseparatelycovered;369frontend;189automation plus allstatic/build/config/migration/traceability and3officialauditsPASS. Receipt/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-verification-d5795c5.md SHA256d970fd47d7eb19e63eaef3ffcdf7bec49e69f52d3ed6275cb982af2c0b675f12. IndependentreviewFAIL0H0M1L; not release acceptance."
+    "Exact d5795c5:550 PostgreSQL zero skips;795 backend527DB-onlyskipsseparatelycovered;369frontend;189automation plus allstatic/build/config/migration/traceability and3officialauditsPASS. Receipt/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-verification-d5795c5.md SHA256d970fd47d7eb19e63eaef3ffcdf7bec49e69f52d3ed6275cb982af2c0b675f12. IndependentreviewFAIL0H0M1L; not release acceptance.",
+    "Exact7429004:553PG zero skips/795backend530DB-onlyskips separately covered/369frontend/189automation/static/build/config/3official audits PASS. Receipt v1049-verification-7429004.md SHA2564ff09130c685a827082aa2b017547032017e22f78559b14d9a7fa371031cbee4 preserved. Its plain working-tree diff PASS was insufficient: independent cumulative e3ae74f..7429004 diff FAILED exit2 trailing blank EOF. Review report036a62ef records correction; not all-gates or release acceptance."
   ],
   "active_cycle": "codex-v1-048-through-v1-053",
   "direct_codex_takeover": {
@@ -89,9 +108,9 @@
       "read_only": true
     },
     "current_version": "V1-049",
-    "phase": "complete_mapping_cleanup_verification",
+    "phase": "bounded_formatting_verification_correction",
     "candidate_sha": null,
-    "candidate_resolution": "Resolve the containing immutable commit as clean implementation/foundation HEAD after freeze; parent must be 4496990fc356bce83531007e93602784322253f1. Bind external fresh exact-SHA gates and independent review to that successor; rejected d5795c5 is history only.",
+    "candidate_resolution": "Resolve the containing immutable commit as clean implementation/foundation HEAD after freeze; parent must be 742900454894d7911f3177b8399450d7925e88ae. Bind external fresh exact-SHA verification and independent review to that successor; all earlier rejected candidates are historical.",
     "candidate_status": "successor_pending_exact_tests_review",
     "worktree": "/Users/sokompheak/Development/property-rental-management",
     "branch": "implementation/foundation",
@@ -110,45 +129,41 @@
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "owner_action_required": false,
-    "next_action": "Resolve clean foundation HEAD containing completed cleanup (parent4496990), run fresh full exact-SHA gates and fresh independent Astra max Standard cumulative zero-finding review. Inspect existing gates/reviewer, never duplicate. Preserve all rejected evidence. Only afterzero/allgates normallypublish reviewed successor, verify exact CI/four-ref equality, Workboard and terminal durable closure before V1-050; continue through53 with OpenClaw disabled.",
-    "verification_status": "Complete assertion-level audit and focused39PG/26unit/staticpassed. Fresh frozen full tests and fresh independentreview pending; no current acceptance.",
+    "next_action": "Complete the distinct EOF formatting/verification correction in a forward successor of7429004; freeze clean foundation HEAD, run fresh full exact tests including explicit cumulative base-to-candidate and parent-to-candidate diff checks, and fresh independent Astra max Standard zero-finding cumulative review. Only then normal publication, exact CI/four-ref equality, Workboard and terminal durable closure before V1-050; continue through53 with OpenClaw disabled.",
+    "verification_status": "All semantic and financial findings independently resolved at7429004; one new EOF/diff verification finding requires bounded correction and fresh full exact gates/review.",
     "development_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-development-verification.md",
     "correction": {
-      "attempt": 4,
-      "kind": "complete_semantic_mapping_cleanup",
+      "attempt": 1,
+      "kind": "distinct_eof_formatting_verification",
       "status": "implemented_pending_exact_verification",
-      "automatic_corrections_previously_used": 2,
-      "owner_extra_sequence": 2,
-      "owner_extra_allowance": 1,
-      "base_sha": "4496990fc356bce83531007e93602784322253f1",
+      "base_sha": "742900454894d7911f3177b8399450d7925e88ae",
       "failed_review": {
         "status": "failed",
         "tranche_id": "V1-049",
-        "exact_sha": "d5795c599e5bb30a387ce152e165db3f9fd53be0",
+        "exact_sha": "742900454894d7911f3177b8399450d7925e88ae",
         "base_sha": "e3ae74f8ca2acab1991db9f724faf3df274bcc08",
         "model": "gpt-6-astra",
         "reasoning_effort": "max",
         "mode": "Standard",
         "read_only": true,
-        "candidate_ref": "refs/heads/implementation/foundation",
-        "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-review-d5795c5.md",
-        "report_sha256": "f41cea6e3d09eacfd35beb83070c4b5d13444ca5c81ff3360143b0e94e0c5370",
+        "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-review-7429004.md",
+        "report_sha256": "036a62efc22eb7d49b2bbefea8af8388a364ca48c82e57bbdf4c6be5a6edee82",
         "findings": {
           "high": 0,
           "medium": 0,
           "low": 1
-        }
+        },
+        "finding": "Distinct new EOF formatting/cumulative diff verification defect; all financial and complete semantic mapping findings resolved."
       },
+      "bounded_accounting": "First routine bounded correction for distinct new formatting/verification finding, as independently classified. Prior exhausted semantic finding is resolved; its complete history and owner allowances remain preserved, not reset.",
+      "scope": "Remove extra audit-document EOF blank line, synchronize current checksum and exact candidate identity/evidence. No runtime/test/canonical policy change.",
       "model": "gpt-6-astra",
       "reasoning": "xhigh",
       "mode": "Standard",
       "worker": "direct_codex_coordinator",
-      "scope": "All allocation unit/integration test-to-authority mappings and corresponding descriptive names; assertion-by-assertion witness audit, precise corrections, no financial policy or production change.",
-      "next_action": "Resolve clean foundation HEAD containing completed cleanup (parent4496990), run fresh full exact-SHA gates and fresh independent Astra max Standard cumulative zero-finding review. Inspect existing gates/reviewer, never duplicate. Preserve all rejected evidence. Only afterzero/allgates normallypublish reviewed successor, verify exact CI/four-ref equality, Workboard and terminal durable closure before V1-050; continue through53 with OpenClaw disabled.",
+      "next_action": "Complete the distinct EOF formatting/verification correction in a forward successor of7429004; freeze clean foundation HEAD, run fresh full exact tests including explicit cumulative base-to-candidate and parent-to-candidate diff checks, and fresh independent Astra max Standard zero-finding cumulative review. Only then normal publication, exact CI/four-ref equality, Workboard and terminal durable closure before V1-050; continue through53 with OpenClaw disabled.",
       "audit_path": "ops/V1_049_TRACEABILITY_AUDIT.md",
-      "audit_sha256": "2586b6345603f9f69acbc8e49d40f9ead952bd0be6f8cec416fc6cc14e21e5d9",
-      "development_verification": "39/39 allocation PostgreSQL cases,26/26 allocation unitcases,backendformat/lint/types,traceabilityaudit/diffPASS. One initial overlong SQLtestline lint failure corrected withoutsemanticchange.",
-      "implementation_summary": "All27 prior testfunctions audited plus2neworderingfunctions(3cases).16existingentries narrowed/corrected,2testnames aligned with actual assertions; prior assertions retained. Added issuance/InvoiceNumberties andoldermisc-beforelaterRent assertions. No financialimplementation orcanonicalrule change."
+      "audit_sha256": "8957043d1375bed83fc68647640af5dbef4344c82142bfc1cc9fb94a62ee3d59"
     },
     "correction_history": [
       {
@@ -295,6 +310,62 @@
             "medium": 0,
             "low": 1
           }
+        }
+      },
+      {
+        "attempt": 4,
+        "kind": "complete_semantic_mapping_cleanup",
+        "status": "semantic_findings_resolved_distinct_formatting_finding",
+        "automatic_corrections_previously_used": 2,
+        "owner_extra_sequence": 2,
+        "owner_extra_allowance": 1,
+        "base_sha": "4496990fc356bce83531007e93602784322253f1",
+        "failed_review": {
+          "status": "failed",
+          "tranche_id": "V1-049",
+          "exact_sha": "d5795c599e5bb30a387ce152e165db3f9fd53be0",
+          "base_sha": "e3ae74f8ca2acab1991db9f724faf3df274bcc08",
+          "model": "gpt-6-astra",
+          "reasoning_effort": "max",
+          "mode": "Standard",
+          "read_only": true,
+          "candidate_ref": "refs/heads/implementation/foundation",
+          "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-review-d5795c5.md",
+          "report_sha256": "f41cea6e3d09eacfd35beb83070c4b5d13444ca5c81ff3360143b0e94e0c5370",
+          "findings": {
+            "high": 0,
+            "medium": 0,
+            "low": 1
+          }
+        },
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard",
+        "worker": "direct_codex_coordinator",
+        "scope": "All allocation unit/integration test-to-authority mappings and corresponding descriptive names; assertion-by-assertion witness audit, precise corrections, no financial policy or production change.",
+        "next_action": "Resolve clean foundation HEAD containing completed cleanup (parent4496990), run fresh full exact-SHA gates and fresh independent Astra max Standard cumulative zero-finding review. Inspect existing gates/reviewer, never duplicate. Preserve all rejected evidence. Only afterzero/allgates normallypublish reviewed successor, verify exact CI/four-ref equality, Workboard and terminal durable closure before V1-050; continue through53 with OpenClaw disabled.",
+        "audit_path": "ops/V1_049_TRACEABILITY_AUDIT.md",
+        "audit_sha256": "2586b6345603f9f69acbc8e49d40f9ead952bd0be6f8cec416fc6cc14e21e5d9",
+        "development_verification": "39/39 allocation PostgreSQL cases,26/26 allocation unitcases,backendformat/lint/types,traceabilityaudit/diffPASS. One initial overlong SQLtestline lint failure corrected withoutsemanticchange.",
+        "implementation_summary": "All27 prior testfunctions audited plus2neworderingfunctions(3cases).16existingentries narrowed/corrected,2testnames aligned with actual assertions; prior assertions retained. Added issuance/InvoiceNumberties andoldermisc-beforelaterRent assertions. No financialimplementation orcanonicalrule change.",
+        "candidate_sha": "742900454894d7911f3177b8399450d7925e88ae",
+        "final_review": {
+          "status": "failed",
+          "tranche_id": "V1-049",
+          "exact_sha": "742900454894d7911f3177b8399450d7925e88ae",
+          "base_sha": "e3ae74f8ca2acab1991db9f724faf3df274bcc08",
+          "model": "gpt-6-astra",
+          "reasoning_effort": "max",
+          "mode": "Standard",
+          "read_only": true,
+          "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-review-7429004.md",
+          "report_sha256": "036a62efc22eb7d49b2bbefea8af8388a364ca48c82e57bbdf4c6be5a6edee82",
+          "findings": {
+            "high": 0,
+            "medium": 0,
+            "low": 1
+          },
+          "finding": "Distinct new EOF formatting/cumulative diff verification defect; all financial and complete semantic mapping findings resolved."
         }
       }
     ],
@@ -1095,7 +1166,7 @@
   "branch": "implementation/foundation",
   "commit": "e3ae74f8ca2acab1991db9f724faf3df274bcc08",
   "idle_reason": "Direct Codex frozen successor verification/review pending; no owner decision outstanding. OpenClaw disabled.",
-  "next_action": "Resolve clean foundation HEAD containing completed cleanup (parent4496990), run fresh full exact-SHA gates and fresh independent Astra max Standard cumulative zero-finding review. Inspect existing gates/reviewer, never duplicate. Preserve all rejected evidence. Only afterzero/allgates normallypublish reviewed successor, verify exact CI/four-ref equality, Workboard and terminal durable closure before V1-050; continue through53 with OpenClaw disabled.",
+  "next_action": "Complete the distinct EOF formatting/verification correction in a forward successor of7429004; freeze clean foundation HEAD, run fresh full exact tests including explicit cumulative base-to-candidate and parent-to-candidate diff checks, and fresh independent Astra max Standard zero-finding cumulative review. Only then normal publication, exact CI/four-ref equality, Workboard and terminal durable closure before V1-050; continue through53 with OpenClaw disabled.",
   "active_worker": null,
   "active_card": "62275bf0-2739-448c-ae59-50794190ee72",
   "active_claim": null,
@@ -1103,8 +1174,8 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Resolve the containing immutable commit as clean implementation/foundation HEAD after freeze; parent must be 4496990fc356bce83531007e93602784322253f1. Bind external fresh exact-SHA gates and independent review to that successor; rejected d5795c5 is history only.",
-  "candidate_parent": "4496990fc356bce83531007e93602784322253f1",
+  "candidate_resolution": "Resolve the containing immutable commit as clean implementation/foundation HEAD after freeze; parent must be 742900454894d7911f3177b8399450d7925e88ae. Bind external fresh exact-SHA verification and independent review to that successor; all earlier rejected candidates are historical.",
+  "candidate_parent": "742900454894d7911f3177b8399450d7925e88ae",
   "next_candidate": {
     "id": "V1-049",
     "order": 49,
@@ -1156,7 +1227,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-049 complete mapping cleanup awaiting exact verification",
+  "phase": "V1-049 bounded formatting/verification correction",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2246,7 +2317,7 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "Pending fresh full exact-SHA verification for the owner-authorized complete test-mapping cleanup successor; historical passes are not current acceptance."
+    "Pending fresh full exact-SHA verification of formatting successor, including explicit cumulative and parent-to-candidate diff checks; previous substantive tests pass but7429004 required diff gate failed."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -2268,7 +2339,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-049",
-  "timestamp": "2026-09-05T15:35:24.735Z",
+  "timestamp": "2026-09-05T15:58:23.857Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2484,7 +2555,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T15:35:24.735Z",
+  "updated_at": "2026-09-05T15:58:23.857Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -3610,7 +3681,7 @@
   "commit_role": "commit identifiesfullyclosedV1-048 predecessor; rejectedV1-0494108888 retained; currentboundedcorrection is unverified/unpublished",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "4496990fc356bce83531007e93602784322253f1"
+    "742900454894d7911f3177b8399450d7925e88ae"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
@@ -3664,7 +3735,7 @@
     "status": "pending_fresh_exact_sha_review",
     "tranche_id": "V1-049",
     "exact_sha": null,
-    "candidate_resolution": "Resolve the containing immutable commit as clean implementation/foundation HEAD after freeze; parent must be 4496990fc356bce83531007e93602784322253f1. Bind external fresh exact-SHA gates and independent review to that successor; rejected d5795c5 is history only.",
+    "candidate_resolution": "Resolve the containing immutable commit as clean implementation/foundation HEAD after freeze; parent must be 742900454894d7911f3177b8399450d7925e88ae. Bind external fresh exact-SHA verification and independent review to that successor; all earlier rejected candidates are historical.",
     "base_sha": "e3ae74f8ca2acab1991db9f724faf3df274bcc08",
     "candidate_ref": "refs/heads/implementation/foundation",
     "model": "gpt-6-astra",
