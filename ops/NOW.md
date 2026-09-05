@@ -1,7 +1,7 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-049 owner-authorized bounded correction 3 active. Owner reply “yes I do” explicitly grants one additional correction for rejected review6fa42b6; prior exhaustion and all evidence preserved.
-- Active checkout: /Users/sokompheak/Development/property-rental-management-v1-049, branch codex/v1-049-direct; sole direct Codex coordinator.
+- Current: V1-049 bounded coordination correction 1 after review1e0a05a (0H0M1L). Both prior permission/mapping findings are resolved; one new current-versus-historical state inconsistency corrected. Owner renewal remains active; history preserved.
+- Active checkout: /Users/sokompheak/Development/property-rental-management, branch implementation/foundation; sole direct Codex coordinator. Retained product checkout codex/v1-049-direct stays clean at rejected1e0a05a.
 - Authority: ops/CODEX_TAKEOVER_V1_048_053.md, SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455.
 - Models: GPT-6 Astra only; coordinator xhigh, financial/migration implementation xhigh, independent read-only reviewer max; Standard.
 - V1-049 tracking card62275bf0-2739-448c-ae59-50794190ee72 blocked solely to prevent OpenClaw admission; no OpenClaw claim/attempt/execution.
@@ -9,9 +9,9 @@
 - V1-048 fully closed at e3ae74f8ca2acab1991db9f724faf3df274bcc08, after product561dd06. Both independent Astra max reviews zero findings, both normallypublished, exact CI33959763928/33960592925 attempt1 all4jobs success, four refs equal, Workboard652e776c done.
 - V1-048 closure receipt SHA2567e3dc8d7876d5fcf744addcc3b9ecb66d45b2200cab1fd8cb6dfa7eec91421c6; /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1048-closure-verification.md. All failed checkpoints/reviews/worktrees preserved.
 - Last verified V1-048 product gates514PostgreSQL/769backend/369frontend/189automation plus static/build/config/audits; these do not constitute V1-049 acceptance.
-- Exact6fa42b6 gates549PGzero skips/789backend526DBskipsseparatelycovered/369frontend/189automation andallstatic/build/config/3auditsPASS, butreviewFAIL0H1M1L; notacceptance.
-- Correction3 implemented: distinct allocation-reversal permission/storage/audit and precise SEC019/020/022 mappings. Development36 allocation PostgreSQL and26 allocation unit tests plus static checks passed; fresh frozen full tests and independent review remain required. Rejected reportv1049-review-6fa42b6.md hash1f3d74b0 preserved.
-- Owner action required: no. Exact next action: freeze correction3 successor, then fresh exact-SHA full gates and fresh independent Astra max zero-finding review. No publication or V1-050 until V1-049 closure gates pass.
+- Rejected1e0a05a full gates550PG/795backend(527DBskipsseparatelycovered)/369frontend/189automation/static/build/config/3auditsPASS; review0H0M1L metadata only, not release approval. Reports and all earlier failed checkpoints retained.
+- Current successor identity: containing clean foundation HEAD after freeze, parent1e0a05aa94ef4b02da06b8d4427928dda4ff4c21. Product tree unchanged; bind external fresh tests/review to that exact successor, never reuse rejected candidate identity.
+- Owner action required: no. Exact next action: freeze corrected metadata successor, run fresh full exact-SHA gates and fresh independent Astra max zero-finding review, then normal publication/CI/ref/Workboard/terminal reconciliation. No V1-050 until V1-049 fully closed.
 - Production/customerdata/paidservices/destructiveoperations/force-push/historyrewrite/worktreedeletion remain unauthorized.
 
 ## Historical V1-047 closure record
@@ -35,7 +35,7 @@ The following evidence is preserved as history. Its closure-turn next actions an
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation state: direct Codex V1-049 correction 3 active; existing follow-up resumed in place, OpenClaw disabled, no OpenClaw workers.
-- Exact next action: complete the owner-authorized correction, freeze successor and verify independently; preserve all rejected checkpoints and worktrees.
+- Automation state: direct Codex V1-049 coordination successor verification; existing follow-up active, OpenClaw disabled, no OpenClaw workers.
+- Exact next action: verify/review the containing successor, preserve all rejected evidence, and complete all publication/CI/ref/Workboard/durable closure gates before V1-050.
 
 <!-- AUTOMATION_STATUS_END -->
