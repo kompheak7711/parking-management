@@ -376,6 +376,8 @@ def upgrade() -> None:
     create_credit_application_storage()
     integrate_credit_applications()
     create_credit_application_services()
+    create_refund_source_storage()
+    integrate_refund_source_budgets()
 
 
 def create_credit_application_storage() -> None:
@@ -1063,6 +1065,306 @@ def create_credit_application_services() -> None:
         "reverse_credit_application(uuid,uuid,uuid,uuid,text)",
     ):
         op.execute(f"GRANT EXECUTE ON FUNCTION app.{signature} TO prm_financial")
+
+
+def create_refund_source_storage() -> None:
+    """Extend retained Refund history; this private checkpoint supports USD only."""
+    op.execute("""
+        ALTER TABLE app.refunds
+            ALTER COLUMN source_deposit_id DROP NOT NULL,
+            ALTER COLUMN source_lifecycle_event_id DROP NOT NULL,
+            ADD COLUMN source_payment_id uuid REFERENCES app.payments(id) ON DELETE RESTRICT,
+            ADD COLUMN source_customer_credit_id uuid REFERENCES app.customer_credits(id) ON DELETE RESTRICT,
+            ADD CONSTRAINT refund_exactly_one_source CHECK (
+                num_nonnulls(source_payment_id,source_customer_credit_id,source_deposit_id)=1),
+            ADD CONSTRAINT refund_source_context CHECK (
+                (source_deposit_id IS NOT NULL)=(source_lifecycle_event_id IS NOT NULL));
+        CREATE INDEX refunds_payment_history_idx ON app.refunds(source_payment_id,processed_at,id);
+        CREATE INDEX refunds_credit_history_idx ON app.refunds(source_customer_credit_id,processed_at,id);
+        ALTER TABLE app.refund_corrections
+            ADD COLUMN source_balance_effect_original_minor bigint CHECK(source_balance_effect_original_minor<>0),
+            ADD COLUMN verified_return_amount_minor bigint CHECK(verified_return_amount_minor>0),
+            ADD COLUMN verified_return_currency text CHECK(verified_return_currency IN ('USD','KHR')),
+            ADD COLUMN verified_returned_at timestamptz CHECK(isfinite(verified_returned_at)),
+            ADD COLUMN return_method_reference text CHECK(return_method_reference=btrim(return_method_reference)
+                AND length(return_method_reference) BETWEEN 1 AND 500),
+            ADD CONSTRAINT refund_verified_return_shape CHECK(num_nonnulls(verified_return_amount_minor,
+                verified_return_currency,verified_returned_at,return_method_reference) IN (0,4));
+
+        CREATE FUNCTION app.refund_net_value_at(p_refund_id uuid,p_as_of timestamptz)
+        RETURNS bigint LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+            SELECT CASE WHEN refund.processed_at>p_as_of THEN 0 ELSE refund.usd_accounting_value_cents
+                -COALESCE((SELECT sum(source_balance_effect_usd_cents) FROM app.refund_corrections
+                    WHERE refund_id=refund.id AND occurred_at<=p_as_of),0)::bigint END
+            FROM app.refunds refund WHERE refund.id=p_refund_id
+        $$;
+        CREATE FUNCTION app.payment_refunded_value_at(p_payment_id uuid,p_as_of timestamptz)
+        RETURNS bigint LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+            SELECT COALESCE(sum(app.refund_net_value_at(id,p_as_of)),0)::bigint
+            FROM app.refunds WHERE source_payment_id=p_payment_id
+        $$;
+        CREATE FUNCTION app.credit_refunded_value_at(p_credit_id uuid,p_as_of timestamptz)
+        RETURNS bigint LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+            SELECT COALESCE(sum(app.refund_net_value_at(id,p_as_of)),0)::bigint
+            FROM app.refunds WHERE source_customer_credit_id=p_credit_id
+        $$;
+        CREATE FUNCTION app.lock_refund_payment_source(p_payment_id uuid,p_credit_id uuid)
+        RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        DECLARE v_payment uuid;
+        BEGIN
+            IF num_nonnulls(p_payment_id,p_credit_id)<>1 THEN
+                RAISE EXCEPTION 'Refund requires one supported source' USING ERRCODE='23514';
+            END IF;
+            IF p_credit_id IS NOT NULL THEN
+                SELECT source_payment_id INTO STRICT v_payment FROM app.customer_credits WHERE id=p_credit_id;
+            ELSE v_payment:=p_payment_id; END IF;
+            -- The shared MVCC guard rejects stale Repeatable Read consumers too.
+            PERFORM app.serialize_payment_state(v_payment);
+            PERFORM 1 FROM app.payments WHERE id=v_payment FOR UPDATE;
+            IF p_credit_id IS NOT NULL THEN
+                PERFORM 1 FROM app.customer_credits WHERE id=p_credit_id FOR UPDATE;
+            END IF;
+            RETURN v_payment;
+        END $$;
+        CREATE FUNCTION app.validate_general_refund_source()
+        RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        DECLARE v_payment app.payments%ROWTYPE; v_credit app.customer_credits%ROWTYPE;
+        DECLARE v_root uuid; v_available bigint; v_latest timestamptz;
+        BEGIN
+            IF NEW.source_lifecycle_event_id IS NOT NULL THEN RETURN NEW; END IF;
+            v_root:=app.lock_refund_payment_source(NEW.source_payment_id,NEW.source_customer_credit_id);
+            SELECT * INTO STRICT v_payment FROM app.payments WHERE id=v_root;
+            PERFORM app.assert_active_financial_actor(NEW.processed_by,NULL);
+            PERFORM app.assert_active_financial_actor(NEW.processed_by,v_payment.property_id);
+            IF NEW.source_payment_id IS NOT NULL THEN
+                PERFORM app.assert_payment_excess_eligible(v_root);
+                IF v_payment.received_currency<>'USD' THEN
+                    RAISE EXCEPTION 'Original KHR excess requires the KHR Refund path' USING ERRCODE='23514';
+                END IF;
+                v_available:=app.payment_available_value(v_root);
+                v_latest:=GREATEST(v_payment.confirmed_at,app.payment_proposal_dependency_at(v_root));
+            ELSE
+                SELECT * INTO STRICT v_credit FROM app.customer_credits WHERE id=NEW.source_customer_credit_id;
+                v_available:=app.credit_available_value(v_credit.id);
+                v_latest:=app.credit_latest_at(v_credit.id);
+                IF NEW.recipient_customer_id IS DISTINCT FROM v_credit.customer_id THEN
+                    RAISE EXCEPTION 'Refund Credit recipient mismatch' USING ERRCODE='23514';
+                END IF;
+            END IF;
+            IF v_payment.status<>'RECEIVED' OR NEW.recipient_customer_id IS DISTINCT FROM v_payment.payer_customer_id
+                OR NEW.usd_accounting_value_cents NOT BETWEEN 1 AND 9000000000000000
+                OR NEW.usd_accounting_value_cents>v_available
+                OR NOT isfinite(NEW.processed_at) OR NEW.processed_at<=v_latest
+                OR NEW.processed_at>clock_timestamp()+interval '5 seconds'
+                OR length(NEW.reason) NOT BETWEEN 1 AND 1000 OR NEW.authorization_reference<>'refunds.create'
+            THEN RAISE EXCEPTION 'Refund source, amount, authorization or chronology is invalid' USING ERRCODE='23514'; END IF;
+            RETURN NEW;
+        END $$;
+        CREATE TRIGGER a_refunds_general_source BEFORE INSERT ON app.refunds
+            FOR EACH ROW EXECUTE FUNCTION app.validate_general_refund_source();
+
+        CREATE FUNCTION app.validate_general_refund_correction()
+        RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        DECLARE v_refund app.refunds%ROWTYPE; v_original app.refund_corrections%ROWTYPE;
+        DECLARE v_payment app.payments%ROWTYPE; v_root uuid; v_net bigint; v_available bigint; v_latest timestamptz;
+        BEGIN
+            SELECT * INTO STRICT v_refund FROM app.refunds WHERE id=NEW.refund_id;
+            IF v_refund.source_lifecycle_event_id IS NOT NULL THEN
+                -- Retained Reservation replacement events have no invented return evidence.
+                IF num_nonnulls(NEW.source_balance_effect_original_minor,NEW.verified_return_amount_minor,
+                    NEW.verified_return_currency,NEW.verified_returned_at,NEW.return_method_reference)<>0 THEN
+                    RAISE EXCEPTION 'Reservation correction requires its coordinated lifecycle path' USING ERRCODE='23514';
+                END IF;
+                RETURN NEW;
+            END IF;
+            v_root:=app.lock_refund_payment_source(v_refund.source_payment_id,v_refund.source_customer_credit_id);
+            PERFORM 1 FROM app.refunds WHERE id=v_refund.id FOR UPDATE;
+            SELECT * INTO STRICT v_payment FROM app.payments WHERE id=v_root;
+            PERFORM app.assert_active_financial_actor(NEW.actor_id,NULL);
+            PERFORM app.assert_active_financial_actor(NEW.actor_id,v_payment.property_id);
+            v_net:=app.refund_net_value_at(v_refund.id,'infinity');
+            v_latest:=GREATEST(v_refund.processed_at,
+                (SELECT max(occurred_at) FROM app.refund_corrections WHERE refund_id=v_refund.id),
+                CASE WHEN v_refund.source_payment_id IS NOT NULL THEN app.payment_proposal_dependency_at(v_root)
+                    ELSE app.credit_latest_at(v_refund.source_customer_credit_id) END);
+            IF NEW.previous_net_refund_usd_cents<>v_net
+                OR NEW.resulting_net_refund_usd_cents>v_refund.usd_accounting_value_cents
+                OR NEW.source_balance_effect_original_minor IS DISTINCT FROM NEW.source_balance_effect_usd_cents
+                OR NOT isfinite(NEW.occurred_at) OR NEW.occurred_at<=v_latest
+                OR NEW.occurred_at>clock_timestamp()+interval '5 seconds'
+                OR length(NEW.reason) NOT BETWEEN 1 AND 1000 OR length(NEW.evidence_reference) NOT BETWEEN 1 AND 500
+            THEN RAISE EXCEPTION 'Refund correction must continue exact source history' USING ERRCODE='23514'; END IF;
+            IF NEW.correction_kind='VALUE_CORRECTION' THEN
+                IF NEW.authorization_reference<>'refunds.correct'
+                    OR NEW.source_balance_effect_usd_cents>v_net
+                    OR NEW.verified_return_amount_minor IS DISTINCT FROM NEW.source_balance_effect_usd_cents
+                    OR NEW.verified_return_currency IS DISTINCT FROM 'USD'
+                    OR NEW.verified_returned_at IS NULL OR NEW.return_method_reference IS NULL
+                    OR NEW.verified_returned_at<v_refund.processed_at OR NEW.verified_returned_at>NEW.occurred_at
+                THEN RAISE EXCEPTION 'Refund correction requires exact demonstrated return evidence' USING ERRCODE='23514'; END IF;
+            ELSE
+                SELECT * INTO v_original FROM app.refund_corrections
+                    WHERE id=NEW.reverses_correction_id AND refund_id=v_refund.id AND correction_kind='VALUE_CORRECTION';
+                IF NOT FOUND OR NEW.authorization_reference<>'refunds.corrections.reverse'
+                    OR NEW.source_balance_effect_usd_cents<>-v_original.source_balance_effect_usd_cents
+                    OR NEW.source_balance_effect_original_minor<>-v_original.source_balance_effect_original_minor
+                    OR EXISTS(SELECT 1 FROM app.refund_corrections WHERE reverses_correction_id=v_original.id)
+                    OR num_nonnulls(NEW.verified_return_amount_minor,NEW.verified_return_currency,
+                        NEW.verified_returned_at,NEW.return_method_reference)<>0
+                THEN RAISE EXCEPTION 'Refund correction reversal must reverse one active exact correction' USING ERRCODE='23514'; END IF;
+                v_available:=CASE WHEN v_refund.source_payment_id IS NOT NULL THEN app.payment_available_value(v_root)
+                    ELSE app.credit_available_value(v_refund.source_customer_credit_id) END;
+                IF v_payment.status<>'RECEIVED' OR v_available< -NEW.source_balance_effect_usd_cents
+                THEN RAISE EXCEPTION 'Returned Refund value is no longer available to reverse' USING ERRCODE='23514'; END IF;
+            END IF;
+            RETURN NEW;
+        END $$;
+        CREATE TRIGGER a_refund_corrections_general BEFORE INSERT ON app.refund_corrections
+            FOR EACH ROW EXECUTE FUNCTION app.validate_general_refund_correction();
+
+        CREATE FUNCTION app.audit_general_refund_event()
+        RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        DECLARE v_refund app.refunds%ROWTYPE; v_payment app.payments%ROWTYPE;
+        DECLARE v_actor uuid; v_at timestamptz; v_action text;
+        BEGIN
+            IF TG_TABLE_NAME='refunds' THEN
+                v_refund:=NEW; v_actor:=NEW.processed_by; v_at:=NEW.processed_at; v_action:='refund.created';
+            ELSE
+                SELECT * INTO STRICT v_refund FROM app.refunds WHERE id=NEW.refund_id;
+                v_actor:=NEW.actor_id; v_at:=NEW.occurred_at;
+                v_action:=CASE WHEN NEW.correction_kind='VALUE_CORRECTION' THEN 'refund.value_corrected'
+                    ELSE 'refund.correction_reversed' END;
+            END IF;
+            IF v_refund.source_lifecycle_event_id IS NOT NULL THEN RETURN NULL; END IF;
+            SELECT * INTO STRICT v_payment FROM app.payments WHERE id=COALESCE(v_refund.source_payment_id,
+                (SELECT source_payment_id FROM app.customer_credits WHERE id=v_refund.source_customer_credit_id));
+            INSERT INTO app.audit_events(id,occurred_at,business_date,actor_id,action,entity_type,entity_id,
+                reason,authorization_reference,property_id,resulting_state,correlation_id,source,outcome,customer_id,lease_id)
+            VALUES(gen_random_uuid(),v_at,(v_at AT TIME ZONE
+                (SELECT timezone_name FROM app.properties WHERE id=v_payment.property_id))::date,v_actor,v_action,
+                'refund',v_refund.id,NEW.reason,NEW.authorization_reference,v_payment.property_id,
+                jsonb_build_object('refund_id',v_refund.id,'source_payment_id',v_refund.source_payment_id,
+                    'source_customer_credit_id',v_refund.source_customer_credit_id,'source_event',to_jsonb(NEW)),
+                NEW.id,'API','SUCCESS',v_refund.recipient_customer_id,v_payment.lease_id);
+            RETURN NULL;
+        END $$;
+        CREATE TRIGGER refunds_general_audit AFTER INSERT ON app.refunds
+            FOR EACH ROW EXECUTE FUNCTION app.audit_general_refund_event();
+        CREATE TRIGGER refund_corrections_general_audit AFTER INSERT ON app.refund_corrections
+            FOR EACH ROW EXECUTE FUNCTION app.audit_general_refund_event();
+    """)
+    replace_function(
+        "app.validate_reservation_financial_outcome()",
+        "IF TG_TABLE_NAME = 'deposit_dispositions' THEN",
+        """IF TG_TABLE_NAME = 'refunds' THEN
+                IF NEW.source_lifecycle_event_id IS NULL THEN RETURN NEW; END IF;
+            END IF;
+            IF TG_TABLE_NAME = 'deposit_dispositions' THEN""",
+    )
+    replace_function(
+        "app.validate_refund_correction()",
+        "SELECT refund.usd_accounting_value_cents",
+        """IF EXISTS(SELECT 1 FROM app.refunds WHERE id=NEW.refund_id AND source_lifecycle_event_id IS NULL)
+            THEN RETURN NEW; END IF;
+            SELECT refund.usd_accounting_value_cents""",
+    )
+    replace_function(
+        "app.assert_reservation_financial_outcome_complete()",
+        "IF TG_TABLE_NAME = 'reservations' THEN",
+        """IF TG_TABLE_NAME = 'refunds' THEN
+                IF NEW.source_lifecycle_event_id IS NULL THEN RETURN NULL; END IF;
+            ELSIF TG_TABLE_NAME = 'refund_corrections' THEN
+                IF EXISTS(SELECT 1 FROM app.refunds WHERE id=NEW.refund_id AND source_lifecycle_event_id IS NULL)
+                THEN RETURN NULL; END IF;
+            END IF;
+            IF TG_TABLE_NAME = 'reservations' THEN""",
+    )
+    for signature in (
+        "refund_net_value_at(uuid,timestamptz)",
+        "payment_refunded_value_at(uuid,timestamptz)",
+        "credit_refunded_value_at(uuid,timestamptz)",
+        "lock_refund_payment_source(uuid,uuid)",
+        "validate_general_refund_source()",
+        "validate_general_refund_correction()",
+        "audit_general_refund_event()",
+    ):
+        op.execute(
+            f"REVOKE ALL ON FUNCTION app.{signature} FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap"
+        )
+
+
+def integrate_refund_source_budgets() -> None:
+    """Direct Payment refunds consume Payment; Credit refunds consume only Credit."""
+    replace_function(
+        "app.payment_disposition_summary(uuid)",
+        "'refund_usd_cents',0",
+        "'refund_usd_cents',app.payment_refunded_value_at(p_payment_id,'infinity'::timestamptz)",
+    )
+    replace_function(
+        "app.credit_available_value(uuid)",
+        "-app.credit_applied_value_at(credit.id,'infinity') END",
+        "-app.credit_applied_value_at(credit.id,'infinity')-app.credit_refunded_value_at(credit.id,'infinity') END",
+    )
+    replace_function(
+        "app.credit_latest_at(uuid)",
+        ") events",
+        """UNION ALL SELECT processed_at FROM app.refunds WHERE source_customer_credit_id=p_credit_id
+                UNION ALL SELECT correction.occurred_at FROM app.refund_corrections correction
+                    JOIN app.refunds refund ON refund.id=correction.refund_id
+                    WHERE refund.source_customer_credit_id=p_credit_id
+            ) events""",
+    )
+    for domain, identity in (("payment", "v_payment_id"), ("credit", "v_credit_id")):
+        source_column = "source_payment_id" if domain == "payment" else "source_customer_credit_id"
+        first_branch = "IF TG_TABLE_NAME='customer_credits' THEN"
+        replace_function(
+            f"app.validate_{domain}_history_budget()",
+            first_branch,
+            f"""IF TG_TABLE_NAME='refunds' THEN
+                {identity}:=NEW.{source_column};
+                IF {identity} IS NULL THEN RETURN NULL; END IF;
+            ELSIF TG_TABLE_NAME='refund_corrections' THEN
+                SELECT {source_column} INTO STRICT {identity} FROM app.refunds WHERE id=NEW.refund_id;
+                IF {identity} IS NULL THEN RETURN NULL; END IF;
+            ELSIF TG_TABLE_NAME='customer_credits' THEN""",
+        )
+        refund_sign, correction_sign = ("", "-") if domain == "payment" else ("-", "")
+        replace_function(
+            f"app.validate_{domain}_history_budget()",
+            "), positions AS (",
+            f"""UNION ALL SELECT processed_at,{refund_sign}usd_accounting_value_cents::numeric
+                    FROM app.refunds WHERE {source_column}={identity}
+                UNION ALL SELECT correction.occurred_at,{correction_sign}correction.source_balance_effect_usd_cents::numeric
+                    FROM app.refund_corrections correction JOIN app.refunds refund ON refund.id=correction.refund_id
+                    WHERE refund.{source_column}={identity}
+                ), positions AS (""",
+        )
+        for table in ("refunds", "refund_corrections"):
+            op.execute(f"""
+                CREATE CONSTRAINT TRIGGER {table}_{domain}_history_budget AFTER INSERT ON app.{table}
+                DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION app.validate_{domain}_history_budget();
+            """)
+    for signature, source_id, ending in (
+        (
+            "app.payment_proposal_dependency_at(uuid)",
+            "p_payment_id",
+            ") SELECT max(event_at) FROM events",
+        ),
+        ("app.validate_payment_reversal()", "NEW.payment_id", ") dependency_events;"),
+    ):
+        replace_function(
+            signature,
+            ending,
+            f"""UNION ALL SELECT processed_at FROM app.refunds WHERE source_payment_id={source_id}
+                UNION ALL SELECT correction.occurred_at FROM app.refund_corrections correction
+                    JOIN app.refunds refund ON refund.id=correction.refund_id
+                    WHERE refund.source_payment_id={source_id}
+            {ending}""",
+        )
+    op.execute("""
+        COMMENT ON FUNCTION app.credit_available_value(uuid) IS
+            'Derived recognition less active applications and net Credit Refunds; source Payment is not consumed twice.';
+    """)
 
 
 def downgrade() -> None:

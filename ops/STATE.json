@@ -801,7 +801,7 @@
     "planned_branch": "codex/v1-051-direct",
     "worker_kind": "direct_codex_coordinator",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
-    "worker_status": "direct_coordinator_credit_accepted_refund_implementation_next",
+    "worker_status": "direct_coordinator_freezing_private_usd_refund_checkpoint",
     "scope_path": "ops/V1_051_SCOPE.md",
     "scope_sha256": "91adbb369a44dc25f04a49bcaa11c1dc8c29694c8805037855c1e52e4396d3b2",
     "card_id": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
@@ -815,7 +815,7 @@
     "predecessor_closure_receipt_sha256": "616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2",
     "cumulative_review_base": "cc3d18e682401cc8a9ade10295572fe1a1344317",
     "owner_action_required": false,
-    "next_action": "Continue V1-051 Refund implementation in existing sole /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct. Reconcile latest HEAD/draft and accepted local Credit checkpointc162b07712a77abd663cd2cc694dfb9624939d02 with its exact zero-finding review/receipt; do not repeat the completed Credit review or rebuild recognition/applications. Read v1051-refund-continuation-notes.md in the Codex evidence directory; extend EXISTING Refund/correction history for Payment excess, Credit, qualified active-Pet and preserved Reservation full refunds, exact currency/source evidence, verified-return corrections and historical/concurrent source guards; then bounded Credit history reads. Full V1-051 implementation is incomplete. Fresh complete exact-SHA gates/audits and independent cumulative Astra max zero findings remain required before normal reviewed publication, exactCI/ref equality, Workboard acceptance and terminal closure, then52and53. OpenClawdisabled; no54.",
+    "next_action": "Freeze/reconcile the partial USD Refund persistence checkpoint in the existing sole V1-051 checkout, then obtain and inspect one fresh independent Astra max Standard read-only exact-SHA review; no duplicate reviewer or implementation worker. On zero findings continue transactional USD Refund commands with immutable replay/exact responses, separate Property capabilities and bounded reads, then KHR/qualified active-Pet paths and bounded Credit history. Do not repeat accepted Creditc162b07, activate52, publish or close51 before full frozen scope, fresh complete gates/audits and independent cumulative zero findings, exact CI/ref equality and same-card terminal reconciliation. OpenClaw disabled; no54.",
     "verification_status": "Partial Credit recognition/application and correction1 accepted locally at exactc162b07 after independent0HIGH0MEDIUM0LOW. Full Refund/history work and full product gates/review/publication/closure remain pending.",
     "correction_history": [
       {
@@ -840,22 +840,22 @@
     ],
     "activated_at": "2026-09-05T19:37:17Z",
     "last_model_configuration_check": {
-      "checked_at": "2026-09-05T21:40:00Z",
-      "observed_model": "gpt-6-astra",
-      "observed_reasoning": "xhigh",
-      "required_reasoning": "xhigh",
-      "source": "Actual turn_context2026-09-05T21:37:14.960Z",
-      "standard_config": "service_tier default; provider-side attestation unavailable"
+      "checked_at": "2026-09-05T22:51:00Z",
+      "actual_turn_context": "2026-09-05T22:36:18.378Z",
+      "model": "gpt-6-astra",
+      "effort": "xhigh",
+      "local_service_tier": "default",
+      "provider_standard_attestation": "unavailable"
     },
     "last_reconciliation": {
-      "checked_at": "2026-09-05T22:10:00Z",
+      "checked_at": "2026-09-05T22:51:00Z",
       "main_head": "44d93be5bb557bc221f392c52ad1d8a8604142e4",
       "live_remote": "cc3d18e682401cc8a9ade10295572fe1a1344317",
-      "predecessor_ci": "33986122538 attempt1success all4jobs",
-      "supervisor": "Exactly1matching658ffdaf disabled30minutes/no nextRun; runningtasks0",
-      "card": "Existing tracking-onlyc5621f97 blocked; no claim/attempt/execution, no owner blocker",
-      "worktrees": "Existing soleV1-051; all126retained, no separate implementation worker.",
-      "followup": "Existing ACTIVE10minutes; accepted localCreditc162b07, Refund/history next. No active reviewers after correction review completion."
+      "predecessor_ci": "33986122538 all4SUCCESS",
+      "supervisor": "Exactly1matching disabled30minutes/no nextRun; runningtasks0",
+      "card": "Existing tracking-onlyc5621f97 blocked; no claim/attempt/execution or owner blocker",
+      "worktrees": "126retained; same sole51worktree",
+      "followup": "Existing ACTIVE10minutes, no duplicate. No reviewer running before freezing this checkpoint."
     },
     "activation_sha": "b3b03e209fcb69495944d7f076ac206da5de2a98",
     "implementation_started_at": "2026-09-05T19:44:43Z",
@@ -907,6 +907,22 @@
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-refund-continuation-notes.md",
       "sha256": "140d525c88f799606eee5ae92e4511ac6080f65238ecc169adf7ecd5d8bbf52a",
       "status": "planning_evidence_not_implementation"
+    },
+    "refund_usd_checkpoint": {
+      "status": "private_persistence_verified_freeze_and_review_pending",
+      "path": "ops/V1_051_REFUND_USD_CHECKPOINT.md",
+      "parent_sha": "7655b099d9decccf7cacf07cc97622671102bef8",
+      "commit_resolution": "Commit containing this checkpoint document; resolve exact HEAD after freezing, not a full product candidate.",
+      "tests": {
+        "postgresql_passed": 679,
+        "postgresql_skips": 0,
+        "new_refund_cases": 33,
+        "backend_passed": 876,
+        "backend_database_only_skips": 656,
+        "backend_static_build_import": "PASS",
+        "traceability_publication_guard": "PASS"
+      },
+      "remaining": "Public USD command/replay/authorization/read services, KHR and qualified active-Pet paths, Credit bounded history, full product gates/review/publication/closure."
     }
   },
   "historical_v1_048_takeover": {
@@ -1656,7 +1672,7 @@
   "branch": "codex/v1-051-direct",
   "commit": "c162b07712a77abd663cd2cc694dfb9624939d02",
   "idle_reason": null,
-  "next_action": "Continue V1-051 Refund implementation in existing sole /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct. Reconcile latest HEAD/draft and accepted local Credit checkpointc162b07712a77abd663cd2cc694dfb9624939d02 with its exact zero-finding review/receipt; do not repeat the completed Credit review or rebuild recognition/applications. Read v1051-refund-continuation-notes.md in the Codex evidence directory; extend EXISTING Refund/correction history for Payment excess, Credit, qualified active-Pet and preserved Reservation full refunds, exact currency/source evidence, verified-return corrections and historical/concurrent source guards; then bounded Credit history reads. Full V1-051 implementation is incomplete. Fresh complete exact-SHA gates/audits and independent cumulative Astra max zero findings remain required before normal reviewed publication, exactCI/ref equality, Workboard acceptance and terminal closure, then52and53. OpenClawdisabled; no54.",
+  "next_action": "Freeze/reconcile the partial USD Refund persistence checkpoint in the existing sole V1-051 checkout, then obtain and inspect one fresh independent Astra max Standard read-only exact-SHA review; no duplicate reviewer or implementation worker. On zero findings continue transactional USD Refund commands with immutable replay/exact responses, separate Property capabilities and bounded reads, then KHR/qualified active-Pet paths and bounded Credit history. Do not repeat accepted Creditc162b07, activate52, publish or close51 before full frozen scope, fresh complete gates/audits and independent cumulative zero findings, exact CI/ref equality and same-card terminal reconciliation. OpenClaw disabled; no54.",
   "active_worker": null,
   "active_card": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
   "active_claim": null,
@@ -1717,7 +1733,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-051 Credit slices locally accepted; Refund/correction implementation and bounded history reads next",
+  "phase": "V1-051 private USD Refund persistence verified; exact checkpoint freeze/review next, public services and KHR/Pet/history remain",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2819,7 +2835,8 @@
     "RESOLVED application fixtures: reverse valid adjustment before VOID, correct501line due-date source, type-narrow test result and split long test SQL. Guards/assertions preserved; full reruns green.",
     "Independent Credit checkpointcad545e rejected0HIGH1MEDIUM1LOW: exact FX response precision and frozen cumulative whitespace. Preserve report e26d025307e523c4be227af2c13edf0bcf6dc2f6e6f94e2067817a77305dfd91; earlier working-tree whitespace PASS did not cover new untracked checkpoint.",
     "PASS correction1:50unit/4focusednewPG/646fullPGzero skips104.52s/876backend623DB-onlyskipsseparatelycovered42.72s/189automation72.782s/backendformatRuffmypy138/build/import/configuration/traceability/guard/workingcumulativewhitespace. Fresh exact-SHA review pending.",
-    "PASS fresh independent bounded Credit correction reviewc162b07:0HIGH0MEDIUM0LOW, report5a9201b313db0150c6b148a3fe568fe46c68583a0b60d7dfeec998840f2fe65b. Independent50unit/explicitexactSHAcorrection+cumulativewhitespace/hash/cleanliness PASS. Receipt1d536044a467f5f4d6e18f0a705e8360797d7a6d40ce79a39be309588163c433 discharges pending review fields. NOT full V1-051 review/acceptance."
+    "PASS fresh independent bounded Credit correction reviewc162b07:0HIGH0MEDIUM0LOW, report5a9201b313db0150c6b148a3fe568fe46c68583a0b60d7dfeec998840f2fe65b. Independent50unit/explicitexactSHAcorrection+cumulativewhitespace/hash/cleanliness PASS. Receipt1d536044a467f5f4d6e18f0a705e8360797d7a6d40ce79a39be309588163c433 discharges pending review fields. NOT full V1-051 review/acceptance.",
+    "PASS partial USD Refund private persistence:33newPG/679fullPGzero skips103.23s/876backend656DB-onlyskipsseparatelycovered39.63s/format139Ruffmypy139/build/import/traceability/publicationguard. Initial test lint and incorrect standalone mypy invocation resolved with typed fixture overrides and repository gate; all requirements preserved."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -2841,7 +2858,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-051",
-  "timestamp": "2026-09-05T22:10:00Z",
+  "timestamp": "2026-09-05T22:51:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2880,7 +2897,9 @@
     "ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md",
     "backend/tests/test_credit_application_migration.py",
     "ops/V1_051_CREDIT_APPLICATION_CHECKPOINT.md",
-    "ops/V1_051_CREDIT_CORRECTION1_CHECKPOINT.md"
+    "ops/V1_051_CREDIT_CORRECTION1_CHECKPOINT.md",
+    "backend/tests/test_refund_migration.py",
+    "ops/V1_051_REFUND_USD_CHECKPOINT.md"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -3068,7 +3087,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T22:10:00Z",
+  "updated_at": "2026-09-05T22:51:00Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",

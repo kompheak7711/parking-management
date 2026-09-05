@@ -1,26 +1,23 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-051 Credit slices accepted locally at c162b07; Refund/correction implementation and bounded Credit history reads next. V1-050 fully closed.
+- Current: V1-051 private USD Refund persistence verified; checkpoint freeze/review next. Full V1-051 remains OPEN/unpublished; V1-050 fully closed.
 - Authority: ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455. Codex only through53; OpenClaw disabled.
-- Models: Astra xhigh Standard coordinator/financial implementation; fresh independent Astra max Standard read-only review, no fallback. Actual21:37coordinator/22:04reviewer turn_context Astra xhigh/max; service_tierdefault, provider attestation unavailable.
+- Models: Astra xhigh Standard coordinator/financial implementation; fresh Astra max Standard independent read-only review, no fallback. Actual22:36coordinator Astra/xhigh; localservice_tierdefault, provider Standard attestation unavailable.
 - Frozen scope: ops/V1_051_SCOPE.md SHA25691adbb369a44dc25f04a49bcaa11c1dc8c29694c8805037855c1e52e4396d3b2.
-- Accepted partial checkpoint: exactc162b07712a77abd663cd2cc694dfb9624939d02; ops/V1_051_CREDIT_CORRECTION1_CHECKPOINT.md SHA256e3a29e774c140f504ba55f6040ff092c6073121976206028ef0989565f7e220b. NOT full product acceptance/review/publication/closure.
-- Sole work: /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct. Coordinator task01a04961-4270-7802-9418-e08203784a8c; no separate implementation worker.
-- Main coordinator remains44d93be on implementation/foundation and points here. Future full cumulative review basecc3d18e682401cc8a9ade10295572fe1a1344317.
-- Tracking-only cardc5621f97-7ad1-4b1c-b04f-c854376c2ad8 blocked solely against OpenClaw admission; no claim/attempt/execution or owner blocker.
-- V1-050 closed: product3d16b65, terminalcc3d18e, independent product/terminal0HIGH0MEDIUM0LOW, exactCI33985062450/33986122538attempt1all4success, publishedrefcc3d, cardd26f24b3DONE/finalcommentbcdb1010.
-- Closure receipt v1050-closure-verification.md SHA256616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2 resolves immutable terminalpendingfields. Do not repeat closure/activation/scope/review.
-- Implemented: append-only Credit recognition/application/reversals; exact source-target current/historical budgets, proposal/designation, separate Charge effects, replay/audit/actor and concurrency guards. Original Payment/Receipt/KHR evidence preserved.
-- Partial correction gates PASS50unit/646fullPGzero skips/876backend623DB-onlyskipsseparatelycovered/189automation/backendstaticbuildimport/configuration/traceability/secretguard/staged+frozenexactcumulativewhitespace.
-- Independentcad545e review0HIGH1MEDIUM1LOW retained at v1051-credit-review-cad545e.md SHA256e26d025307e523c4be227af2c13edf0bcf6dc2f6e6f94e2067817a77305dfd91. Correction1 preserves exact decimal FX response evidence and fixes surplus EOF; deliberate pre-fix regression retained. Frontend/audits/full product review pending.
-- Fresh independent correction review0HIGH0MEDIUM0LOW: v1051-credit-correction1-review-c162b07.md SHA2565a9201b313db0150c6b148a3fe568fe46c68583a0b60d7dfeec998840f2fe65b. Acceptance receipt v1051-credit-checkpoint-accepted-c162b07.md SHA2561d536044a467f5f4d6e18f0a705e8360797d7a6d40ce79a39be309588163c433 discharges immutable checkpoint pending fields; do not repeat review.
-- Exact next action: reconcile latest HEAD/draft and accepted Credit receipt; extend EXISTING Refund/correction history and bounded Credit reads in SAME51checkout. Continuation notes v1051-refund-continuation-notes.md SHA256140d525c88f799606eee5ae92e4511ac6080f65238ecc169adf7ecd5d8bbf52a are planning evidence, not completed Refund work. No repeated slices, activation, workers or worktrees.
-- Complete source-bounded Payment/Credit/qualifiedPet/Reservation Refunds, exact USD/KHR evidence, corrections and bounded Credit history reads. Extend excess locks and reversal dependencies for new consumers.
-- Require fresh full exact-SHA applicable gates/audits and independent Astra max zero findings before normal authorized push, exactCI/ref equality, same-card acceptance and terminal closure.
-- Exclude staffHTTP/UI52, unifiedledger53, FinalSettlement56, vendorAP, new financial policy, production/customerdata/paid/destructive/historyrewrite.
-- OpenClaw singleton658ffdaf-1ac1-45a6-a842-f5f7d7a226eb disabled30minutes/no nextRun; runningtasks0. All126worktrees retained. Existing native10minute follow-up ACTIVE.
-- Only after51fullyclosed activate52; continue through53 without routine authorization. At53closedpausefollowup/leaveOpenClawdisabled/no54. Owner action none.
-- Updated2026-09-05T22:10:00Z. No owner blocker; all previous failed checks, review evidence and worktrees preserved.
+- Sole checkout /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct, parent7655b09; same coordinator task01a04961-4270-7802-9418-e08203784a8c. No separate implementation worker.
+- Main clean44d93be; tracking/fetched/livecc3d18e. Eventual full cumulative review basecc3d18e682401cc8a9ade10295572fe1a1344317.
+- V1-050 fullyclosed: product3d16b65/terminalcc3d18e, independent0HIGH0MEDIUM0LOW, CI33985062450/33986122538all4SUCCESS, cardd26f24b3DONE/finalcommentbcdb1010.
+- Closure receipt v1050-closure-verification.md SHA256616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2 discharges immutable pending fields. Do not repeat completed closure/activation.
+- Creditc162b07712a77abd663cd2cc694dfb9624939d02 accepted locally0HIGH0MEDIUM0LOW; report5a9201b313db0150c6b148a3fe568fe46c68583a0b60d7dfeec998840f2fe65b; receipt1d536044a467f5f4d6e18f0a705e8360797d7a6d40ce79a39be309588163c433. Preserve rejectedcad545e/reporte26d0253; no repeated Credit review.
+- New checkpoint ops/V1_051_REFUND_USD_CHECKPOINT.md: existing Refund history extended for private USD Payment/Credit sources, verified-return corrections/reversals, current/historical budgets, shared MVCC source guards and atomic audit; Reservation full-refund path preserved.
+- PASS33newPG/679fullPGzero skips103.23s;876backend656DB-onlyskipsseparatelycovered39.63s;format139/Ruff/mypy139/build/import/traceability/publicationguard. New suite explicitly registered. No public Refund facade/replay/capability grant yet.
+- Exact next action: freeze this partial checkpoint; obtain/inspect one fresh independent Astra max Standard read-only exact-SHA review with no duplicate worker. On zero findings continue USD command/replay/exact-response/authorization/bounded reads, then KHR/qualifiedPet and bounded Credit history.
+- Full frontend/backend/PG/config/audits and full cumulative independent zero-finding review still required before normal authorized publication, exactCI/ref equality, same-card acceptance and terminal closure. No V1-051 product acceptance yet.
+- Tracking-only cardc5621f97-7ad1-4b1c-b04f-c854376c2ad8 blocked solely against OpenClaw admission, no claim/attempt/execution or owner blocker; latestcomment1cbae15f.
+- OpenClaw singleton658ffdaf-1ac1-45a6-a842-f5f7d7a226eb disabled30minutes/no nextRun; runningtasks0. All126worktrees retained; existing native10minute follow-up ACTIVE.
+- Exclude staffHTTP/UI52, unifiedledger53, FinalSettlement56, vendorAP, new policy, production/access/credentials/customerdata/paid/destructive/forcepush/historyrewrite/retainedworktreedeletion.
+- Only after51fullyclosed activate52, then53. At53closedpausefollowup/leaveOpenClawdisabled/no54. No routine owner authorization required.
+- Updated2026-09-05T22:51:00Z. All failed tests/checkpoints and independent evidence retained.
 
 ## Historical V1-047 closure record
 

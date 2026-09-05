@@ -2,6 +2,129 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_usd_refund_source_history_audit_and_no_double_consumption",
+      "upstream_ids": [
+        "BR-REFUND-010",
+        "DB-REFUND-002",
+        "SEC-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_migration.py",
+      "status": "implemented",
+      "notes": "USD Payment and Credit Refund/correction/reversal events preserve original Payment/Receipt/Refund facts, exact historical net values and Property-local atomic audit; Credit refunds do not double-debit Payment."
+    },
+    {
+      "test_id": "test_usd_refund_invalid_source_amount_or_evidence_is_atomic",
+      "upstream_ids": [
+        "BR-REFUND-002",
+        "BR-REFUND-003",
+        "BR-REFUND-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_migration.py",
+      "status": "implemented",
+      "notes": "Invalid USD limits, recipient, authority reference, currency, chronology and reason leave no Refund or audit and preserve source availability; public capability/replay services remain pending."
+    },
+    {
+      "test_id": "test_usd_refund_correction_rejects_unverified_or_inconsistent_value",
+      "upstream_ids": [
+        "API-066",
+        "DB-REFUND-002",
+        "TEST-066"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_migration.py",
+      "status": "implemented",
+      "notes": "Missing, mismatched, over-limit or chronologically invalid verified-return evidence is rejected without correction or audit, preserving the original net Refund."
+    },
+    {
+      "test_id": "test_usd_refund_correction_reversal_cannot_reconsume_spent_source",
+      "upstream_ids": [
+        "DB-REFUND-002",
+        "BR-REFUND-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_migration.py",
+      "status": "implemented",
+      "notes": "Correction reversal rejects returned Payment value already recognized as Credit; explicit Credit reversal releases that value, allowing exactly one linked correction reversal."
+    },
+    {
+      "test_id": "test_usd_credit_refund_return_cannot_be_reversed_after_application",
+      "upstream_ids": [
+        "DB-REFUND-002",
+        "BR-CREDIT-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_migration.py",
+      "status": "implemented",
+      "notes": "Applying returned Credit value to an Invoice prevents reconsumption by Refund correction reversal; both Credit and source Payment available positions remain zero."
+    },
+    {
+      "test_id": "test_usd_refund_blocks_source_reversal_until_full_verified_return",
+      "upstream_ids": [
+        "TEST-067",
+        "DB-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_migration.py",
+      "status": "implemented",
+      "notes": "Direct Payment and Credit Refunds block source reversal until a full verified return; correction reversal cannot recreate consumption after monetary source reversal."
+    },
+    {
+      "test_id": "test_usd_refund_concurrent_consumers_never_overspend",
+      "upstream_ids": [
+        "SEC-029",
+        "BR-REFUND-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_migration.py",
+      "status": "implemented",
+      "notes": "Two simultaneous USD Refunds compete for one Payment or Credit source; only one 7000-cent event commits against a 10000-cent source."
+    },
+    {
+      "test_id": "test_usd_credit_refund_stale_repeatable_read_fails_closed",
+      "upstream_ids": [
+        "SEC-029"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_migration.py",
+      "status": "implemented",
+      "notes": "A stale Repeatable Read Credit Refund fails with serialization failure after another transaction consumes the source."
+    },
+    {
+      "test_id": "test_usd_refund_historical_budget_rejects_backdated_deposit_overlap",
+      "upstream_ids": [
+        "BR-REFUND-003",
+        "DB-DER-002",
+        "DB-TXN-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_migration.py",
+      "status": "implemented",
+      "notes": "Backdated Deposit receipt overlapping a formerly active direct Refund is rejected at the historical budget; a non-overlapping budget remains accepted."
+    },
+    {
+      "test_id": "test_usd_refund_private_boundary_immutable_history_and_fresh_actor",
+      "upstream_ids": [
+        "BR-REFUND-011",
+        "SEC-025"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_migration.py",
+      "status": "implemented",
+      "notes": "Original Refund/correction UPDATE and DELETE are denied, runtime/financial roles lack INSERT and new helper EXECUTE, and disabled actors cannot create or correct."
+    },
+    {
+      "test_id": "test_usd_refund_original_khr_payment_is_not_repriced_as_usd",
+      "upstream_ids": [
+        "BR-REFUND-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_migration.py",
+      "status": "implemented",
+      "notes": "Direct KHR Payment excess cannot enter the USD-only private Refund path; this verifies fail-closed currency routing, not completed KHR Refund implementation."
+    },
+    {
       "test_id": "test_credit_response_decoder_is_exact_nested_and_connection_local",
       "upstream_ids": [
         "BR-CREDIT-010",
