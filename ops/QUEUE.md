@@ -57,11 +57,11 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-048 product561dd06 accepted by fresh independent Astra max zero-finding review, all local gates, normal publication, exact-SHA CI33959763928 attempt1 success and four-ref equality. Card652e776c terminal done, proof91c17813. Failed3197681 and coordination818967b/391c36a preserved. Current terminal tracked metadata reconciliation on foundation requires fresh exact-SHA metadata gates/review/publication/CI/ref equality and external closure receipt beforeV1-049 activation. Do not repeat product work.
+Current live queue position: V1-049 direct implementation active under frozen ops/V1_049_SCOPE.md after V1-048 fully closed at e3ae74f. Product561dd06 and terminale3ae74f each independently reviewed zero findings, normallypublished, exactCI33959763928/33960592925 green and fourrefs equal; card652e776c done and final closure receipt7e3dc8d7 verified. All failed checkpoints/worktrees retained. Implement allocation/proposal/reversal services, reconcile existing financial positions and guards, obtain fresh exact-SHA gates and independent Astra max review, then publish/CI/ref/Workboard/durable close beforeV1-050. Do not repeat V1-048 work.
 The owner now authorizes direct continuous Codex execution through V1-053, with
 GPT-6 Astra settings in ops/CODEX_TAKEOVER_V1_048_053.md. Stop before V1-054.
-OpenClaw stays disabled; tracking card 652e776c-2a91-4ebd-bfed-90aa8d5de247
-is now done with no claim/attempt/execution. The V1-047 notes below are history.
+OpenClaw stays disabled; current tracking card62275bf0-2739-448c-ae59-50794190ee72
+is blocked only to prevent OpenClaw admission; no claim/attempt/execution. V1-048 card652e776c is done. The V1-047 notes below are history.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE.
