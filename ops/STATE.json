@@ -558,12 +558,12 @@
       "read_only": true
     },
     "current_version": "V1-050",
-    "phase": "scope_frozen_implementation_pending",
+    "phase": "implementation_active",
     "candidate_sha": null,
-    "candidate_resolution": "No product candidate yet; activation is the containing clean foundation commit, parent closed5bf656f. Freeze product SHA only after implementation.",
+    "candidate_resolution": "Product candidate not frozen; implementation checkout codex/v1-050-direct is authoritative active work. Preserve coordination commits and closed predecessor.",
     "candidate_status": "implementation_pending",
-    "worktree": "/Users/sokompheak/Development/property-rental-management",
-    "branch": "implementation/foundation",
+    "worktree": "/Users/sokompheak/Development/property-rental-management-v1-050",
+    "branch": "codex/v1-050-direct",
     "planned_worktree": "/Users/sokompheak/Development/property-rental-management-v1-050",
     "planned_branch": "codex/v1-050-direct",
     "worker_kind": "direct_codex_coordinator",
@@ -583,9 +583,10 @@
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "owner_action_required": false,
-    "next_action": "Create or inspect the sole retained codex/v1-050-direct checkout from the frozen V1-050 activation commit over closed5bf656f. Implement only ops/V1_050_SCOPE.md receipt/reprint persistence and services with direct Astra xhigh Standard; no OpenClaw dispatch. Fresh exact tests/audits and independent Astra max zero findings, normal publication/exactCI/ref/Workboard/terminal closure before51; continue through53 without routine owner questions.",
+    "next_action": "Implement frozen V1-050 Receipt/reprint scope in the sole retained codex/v1-050-direct checkout. Direct coordinator owns implementation; no agent/OpenClaw dispatch. Record bounded checkpoints, verify focused/full exact gates and fresh independent Astra max zero findings before normal publication/CI/ref/Workboard/terminal closure before51.",
     "verification_status": "V1-049 closed evidence is historical prerequisite, not V1-050 acceptance. V1-050 implementation and fresh exact verification/review pending.",
-    "correction_history": []
+    "correction_history": [],
+    "implementation_started_at": "2026-09-05T17:09:13.023Z"
   },
   "historical_v1_048_takeover": {
     "authorization_from": "V1-048",
@@ -1293,7 +1294,7 @@
   "approval": {
     "status": "approved_active",
     "basis": "Standing direct Codex V1-048 through V1-053 authorization and verified immediate predecessor49closure; ops/CODEX_TAKEOVER_V1_048_053.md.",
-    "implementation_started": false,
+    "implementation_started": true,
     "implementation_completed": false,
     "publication_completed": false
   },
@@ -1332,13 +1333,13 @@
   "branch": "implementation/foundation",
   "commit": "5bf656faee616efe9000d218961329644744bc05",
   "idle_reason": "Direct Codex frozen successor verification/review pending; no owner decision outstanding. OpenClaw disabled.",
-  "next_action": "Create or inspect the sole retained codex/v1-050-direct checkout from the frozen V1-050 activation commit over closed5bf656f. Implement only ops/V1_050_SCOPE.md receipt/reprint persistence and services with direct Astra xhigh Standard; no OpenClaw dispatch. Fresh exact tests/audits and independent Astra max zero findings, normal publication/exactCI/ref/Workboard/terminal closure before51; continue through53 without routine owner questions.",
+  "next_action": "Implement frozen V1-050 Receipt/reprint scope in the sole retained codex/v1-050-direct checkout. Direct coordinator owns implementation; no agent/OpenClaw dispatch. Record bounded checkpoints, verify focused/full exact gates and fresh independent Astra max zero findings before normal publication/CI/ref/Workboard/terminal closure before51.",
   "active_worker": null,
   "active_card": "d26f24b3-08e9-476b-bc9a-379f8fdcda5e",
   "active_claim": null,
   "active_attempt": null,
-  "active_branch": "implementation/foundation",
-  "active_worktree": "/Users/sokompheak/Development/property-rental-management",
+  "active_branch": "codex/v1-050-direct",
+  "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-050",
   "candidate_sha": null,
   "candidate_resolution": "No product candidate yet; activation is the containing clean foundation commit, parent closed5bf656f. Freeze product SHA only after implementation.",
   "candidate_parent": "5bf656faee616efe9000d218961329644744bc05",
@@ -1391,7 +1392,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-050 scope frozen; direct implementation pending",
+  "phase": "V1-050 direct implementation active",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2505,7 +2506,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-050",
-  "timestamp": "2026-09-05T16:49:27.375Z",
+  "timestamp": "2026-09-05T17:09:13.023Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2721,7 +2722,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T16:49:27.375Z",
+  "updated_at": "2026-09-05T17:09:13.023Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",

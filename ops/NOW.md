@@ -1,9 +1,9 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-050 scope frozen; direct implementation pending. V1-049 is fully closed; no repeated closure work.
+- Current: V1-050 direct implementation active in the sole retained codex/v1-050-direct checkout. V1-049 is fully closed; no repeated closure work.
 - Authority: ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455. Codex only through53; OpenClaw disabled throughout.
 - Models: Astra xhigh Standard coordinator and migration/authorization implementation; fresh independent Astra max Standard read-only review, no fallback.
-- Active checkout: /Users/sokompheak/Development/property-rental-management, implementation/foundation. Planned sole implementation checkout /Users/sokompheak/Development/property-rental-management-v1-050, codex/v1-050-direct; inspect/create from activation before implementation.
+- Active implementation checkout: /Users/sokompheak/Development/property-rental-management-v1-050, codex/v1-050-direct; direct coordinator only. Foundation retains coordination state and is not a duplicate worker.
 - Current tracking cardd26f24b3-08e9-476b-bc9a-379f8fdcda5e blocked only to prevent OpenClaw admission; no claim/attempt/execution. Scope ops/V1_050_SCOPE.md.
 - Included: immutable Receipt identity per confirmed Payment in same transaction, authorized reads and append-only idempotent reprint/history, authoritative display amounts, no new money. HTTP/UI deferred52, Credit/Refund51, ledger53.
 - Exact next action: freeze activation over closed5bf656f; inspect/create sole retained50checkout, implement bounded scope, focused/full exact tests/audits and fresh independent Astra max zero findings, normalpublication/exactCI/ref/Workboard/terminalclosure before51.
