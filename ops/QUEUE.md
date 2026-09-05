@@ -57,7 +57,7 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-047 final reconciliation.
+Current live queue position: V1-047 fully closed; V1-048 next authorized candidate, not activated.
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE.
@@ -68,8 +68,9 @@ Use the accepted activation `870472b7` in `codex/v1-047-direct-product`.
 Exact product `e7a82f7`, release `32fbef1`, and corrected closure chain through
 `34922d6` are independently approved, normally published, exact-SHA CI-green,
 and remotely synchronized. Final four-file reconciliation and terminal Workboard
-acceptance remain. OpenClaw stays disabled. V1-048 is authorized and dependency-ready
-after terminal acceptance, but must not activate or dispatch in this closure turn.
+acceptance are complete at exact final reconciliation `b022d83`; Workboard card
+`26b14ae0` is terminal DONE. OpenClaw stays disabled. V1-048 is authorized and
+dependency-ready but was not activated or dispatched in this closure turn.
 
 ### V1-047 operational implementation notes
 
@@ -193,3 +194,14 @@ checkpoints plus all evidence. Freeze and test the cumulative four-file reconcil
 require fresh independent Sol max Standard review, publish normally, require exact-SHA
 CI/ref equality, then complete Workboard card26b14ae0 and record terminal V1-047 closure.
 OpenClaw remains disabled; V1-048 must not activate or dispatch; no owner action.
+
+### Current superseding checkpoint — V1-047 terminal closure
+
+Final cumulative reconciliationb022d83 passed exact local automation189/189 and
+fresh independent Sol max Standard review with zero findings. It is normally published;
+GitHub Actions run33947895715 passed all four jobs and local/tracking/fetched/live-remote
+refs are equal. Existing Workboard card26b14ae0 is terminal DONE through the supported
+gateway with all history and failed checkpoints preserved. V1-047 is fully released,
+published, verified, reconciled and closed. End this native closure turn without
+activating or dispatching V1-048. OpenClaw remains disabled. On a later authorized
+cycle, reconcile first and activate only exact V1-048 under standing V1-060 policy.
