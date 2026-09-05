@@ -1,6 +1,6 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-049 deterministic Payment allocation and reversal services implemented under frozen ops/V1_049_SCOPE.md; freezing candidate for fresh exact-SHA gates and independent review, no release acceptance yet.
+- Current: V1-049 bounded correction1 active for rejected candidate4108888 (1HIGH3MEDIUM1LOW); complete report retained externally, no release acceptance.
 - Active checkout: /Users/sokompheak/Development/property-rental-management-v1-049, branch codex/v1-049-direct; sole direct Codex coordinator.
 - Authority: ops/CODEX_TAKEOVER_V1_048_053.md, SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455.
 - Models: GPT-6 Astra only; coordinator xhigh, financial/migration implementation xhigh, independent read-only reviewer max; Standard.
@@ -10,7 +10,7 @@
 - V1-048 closure receipt SHA2567e3dc8d7876d5fcf744addcc3b9ecb66d45b2200cab1fd8cb6dfa7eec91421c6; /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1048-closure-verification.md. All failed checkpoints/reviews/worktrees preserved.
 - Last verified V1-048 product gates514PostgreSQL/769backend/369frontend/189automation plus static/build/config/audits; these do not constitute V1-049 acceptance.
 - Development: full PostgreSQL519/519 and backend788 PASS; subsequent focused allocation batches17/17 and6/6 PASS. Fresh frozen-candidate full gates and Astra max independent review remain pending.
-- Exact next action: resolve frozen codex/v1-049-direct candidate; run fresh exact-SHA full gates/audits and independent zero-finding Astra max review; only then publish/CI/ref/Workboard/durable close beforeV1-050. Do not repeat implementation or dispatch OpenClaw.
+- Exact next action: correct historical Payment budgets, direct Charge intent, bounded FIFO continuation, authority encoding and precise traceability; freeze successor and repeat all exact gates/review beforepublication andV1-050.
 - No owner action required; continue dependency-ordered throughV1-053. LeaveOpenClawdisabled, stopbeforeV1-054 andpauseCodexfollowup atV1-053closure.
 - Production/customerdata/paidservices/destructiveoperations/force-push/historyrewrite/worktreedeletion remain unauthorized.
 
