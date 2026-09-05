@@ -57,7 +57,7 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-049 direct implementation active under frozen ops/V1_049_SCOPE.md after V1-048 fully closed at e3ae74f. Product561dd06 and terminale3ae74f each independently reviewed zero findings, normallypublished, exactCI33959763928/33960592925 green and fourrefs equal; card652e776c done and final closure receipt7e3dc8d7 verified. All failed checkpoints/worktrees retained. Implement allocation/proposal/reversal services, reconcile existing financial positions and guards, obtain fresh exact-SHA gates and independent Astra max review, then publish/CI/ref/Workboard/durable close beforeV1-050. Do not repeat V1-048 work.
+Current live queue position: V1-049 implementation is frozen for fresh exact-SHA verification and independent Astra max review under ops/V1_049_SCOPE.md. Resolve codex/v1-049-direct, inspect any active reviewer, and finish all gates before normal publication, exact-SHA CI, ref equality, Workboard and durable closure. V1-048 is fully closed at e3ae74f with product561dd06, exactCI33959763928/33960592925, card652e776c DONE and receipt7e3dc8d7. Development checks are not V1-049 release acceptance. Preserve all failed checkpoints/worktrees; do not repeat implementation or activateV1-050 before closure.
 The owner now authorizes direct continuous Codex execution through V1-053, with
 GPT-6 Astra settings in ops/CODEX_TAKEOVER_V1_048_053.md. Stop before V1-054.
 OpenClaw stays disabled; current tracking card62275bf0-2739-448c-ae59-50794190ee72
