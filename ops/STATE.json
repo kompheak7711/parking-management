@@ -801,7 +801,7 @@
     "planned_branch": "codex/v1-051-direct",
     "worker_kind": "direct_codex_coordinator",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
-    "worker_status": "direct_coordinator_usd_refund_persistence_accepted_services_next",
+    "worker_status": "direct_coordinator_usd_refund_service_checkpoint_verifying",
     "scope_path": "ops/V1_051_SCOPE.md",
     "scope_sha256": "91adbb369a44dc25f04a49bcaa11c1dc8c29694c8805037855c1e52e4396d3b2",
     "card_id": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
@@ -815,8 +815,8 @@
     "predecessor_closure_receipt_sha256": "616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2",
     "cumulative_review_base": "cc3d18e682401cc8a9ade10295572fe1a1344317",
     "owner_action_required": false,
-    "next_action": "Continue SAME sole V1-051 checkout with transactional USD Refund service/commands, immutable scoped replay, exact JSON response decoding, separate Property capabilities and bounded reads. Read v1051-usd-refund-service-next.md in the Codex evidence directory. Accepted private USD Refund checkpoint79fe7f8c95e79c444100b1a48fde4204201d98af has fresh independent0HIGH0MEDIUM0LOW; its acceptance receipt discharges immutable pending fields. Do not repeat accepted Creditc162b07 or Refund persistence/review, activation, worker or worktree creation. Then implement KHR and qualified active-Pet sources and bounded Credit history. FullV51remainsOPEN/unpublished: full frozen scope, fresh complete gates/audits, independent cumulativecc3d-to-candidate zero findings, normal authorized push, exactCI/ref equality and same-card terminal reconciliation required before52then53. At53closedpausefollowup/leaveOpenClawdisabled/no54.",
-    "verification_status": "Creditc162b07 and private USD Refund79fe7f8 checkpoints accepted locally after separate independent zero-finding reviews; public Refund services/KHR/Pet/history/fullrelease remain pending.",
+    "next_action": "Freeze the USD Refund service checkpoint in SAME sole V1-051 checkout, verify exact-SHA configuration/automation/cumulative whitespace and obtain fresh independent Astra max Standard read-only zero-finding review. Inspect/reconcile a valid reviewer without duplication. Then implement original-KHR excess, Credit-to-KHR and qualified active-Pet paths plus bounded Credit history, preserving accepted Creditc162b07 and private Refund79fe7f8. No repeat activation/worker/worktree creation. FullV51OPEN/unpublished until complete frozen scope, all fresh gates/audits, cumulativecc3d-to-candidate independent zero findings, authorized normal push, exactCI/ref equality and same-card terminal acceptance. Only then52then53; at53pausefollowup/leaveOpenClawdisabled/no54.",
+    "verification_status": "USD Refund service29newPG/708fullPG/935backend/static/build/import/traceability verified; fresh bounded exact review pending. Credit and private Refund previously accepted; fullV51OPEN.",
     "correction_history": [
       {
         "number": 1,
@@ -840,64 +840,44 @@
     ],
     "activated_at": "2026-09-05T19:37:17Z",
     "last_model_configuration_check": {
-      "checked_at": "2026-09-05T22:51:00Z",
-      "actual_turn_context": "2026-09-05T22:36:18.378Z",
+      "checked_at": "2026-09-05T23:35:01Z",
+      "actual_turn_context": "2026-09-05T23:35:01.197Z",
       "model": "gpt-6-astra",
       "effort": "xhigh",
       "local_service_tier": "default",
       "provider_standard_attestation": "unavailable"
     },
     "last_reconciliation": {
-      "checked_at": "2026-09-05T23:06:00Z",
+      "checked_at": "2026-09-05T23:38:00Z",
       "main_head": "44d93be5bb557bc221f392c52ad1d8a8604142e4",
       "live_remote": "cc3d18e682401cc8a9ade10295572fe1a1344317",
       "predecessor_ci": "33986122538 all4SUCCESS",
       "supervisor": "Exactly1matching disabled30minutes/no nextRun; runningtasks0",
-      "card": "Existing tracking-onlyc5621f97 blocked; no claim/attempt/execution or owner blocker",
+      "card": "Existing tracking-onlyc5621f97 blocked; no claim/attempt/execution; latestcommentf19ccc5e; no owner blocker",
       "worktrees": "126retained; same sole51worktree",
-      "followup": "ExistingACTIVE10minutes; reviewercompleted0findings, USDservicesnext. No active independent or implementation worker."
+      "followup": "ExistingACTIVE10minutes; no separate implementation worker"
     },
     "activation_sha": "b3b03e209fcb69495944d7f076ac206da5de2a98",
     "implementation_started_at": "2026-09-05T19:44:43Z",
     "implementation_checkpoint": {
-      "status": "accepted_locally_private_persistence_only",
-      "path": "ops/V1_051_REFUND_USD_CHECKPOINT.md",
-      "parent_sha": "7655b099d9decccf7cacf07cc97622671102bef8",
-      "commit_resolution": "Exact accepted commit below; later ops-only markers do not change its financial code or constitute a full product candidate.",
+      "status": "verified_pending_freeze_and_independent_exact_review",
+      "path": "ops/V1_051_REFUND_SERVICE_CHECKPOINT.md",
+      "parent_sha": "95c6f39a9063d67e3af466936bb5ff10448c2e58",
+      "commit_resolution": "Exact immutable commit containing this checkpoint; external verification/review receipt binds identity without circular self-SHA.",
       "tests": {
-        "postgresql_passed": 679,
+        "new_pg": 29,
+        "postgresql_passed": 708,
         "postgresql_skips": 0,
-        "new_refund_cases": 33,
-        "backend_passed": 876,
-        "backend_database_only_skips": 656,
-        "backend_static_build_import": "PASS",
-        "traceability_publication_guard": "PASS"
+        "postgresql_seconds": 106.5,
+        "backend_passed": 935,
+        "backend_database_only_skips": 685,
+        "backend_seconds": 39.37,
+        "new_unit": 59,
+        "static_build_import": "PASS",
+        "traceability": "PASS all new tests mapped"
       },
-      "remaining": "Public USD command/replay/authorization/read services, KHR and qualified active-Pet paths, Credit bounded history, full product gates/review/publication/closure.",
-      "commit": "79fe7f8c95e79c444100b1a48fde4204201d98af",
-      "tree": "e04c3ced37b10bd7541adda0b818b1f63bdf8803",
-      "sha256": "e9b6d19b935a7f0e3d2f2e897071587772f9dabf06bf243bd20ceb1967925e08",
-      "acceptance_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-usd-refund-accepted-79fe7f8.md",
-      "acceptance_receipt_sha256": "d4253c7e0b97e6218c39d1614241a199bc0ff8b3c44f0cfd4f6073c928db60aa",
-      "review": {
-        "status": "passed",
-        "agent": "/root/v1051_refund_usd_checkpoint_review",
-        "session_id": "01a073c9-43ac-7d42-bc9d-9ad24619930e",
-        "model": "gpt-6-astra",
-        "reasoning": "max",
-        "mode": "Standard",
-        "read_only": true,
-        "actual_turn_context": "2026-09-05T22:56:06.990Z",
-        "local_service_tier": "default",
-        "provider_attestation": "unavailable",
-        "findings": {
-          "high": 0,
-          "medium": 0,
-          "low": 0
-        },
-        "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-usd-refund-review-79fe7f8.md",
-        "report_sha256": "55747d14cc967c8223568cb2b1906a395b34bd5f281f3d5baecc6d8f7649409c"
-      }
+      "remaining": "Bounded independent review, KHR/qualified Pet paths, bounded Credit history and complete product gates/review/publication/closure.",
+      "development_evidence": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-refund-service-test-development.md"
     },
     "recognition_checkpoint": {
       "path": "ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md",
@@ -992,6 +972,26 @@
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-usd-refund-service-next.md",
       "sha256": "2eaa5cc9f6f0d94d9a386ae6f800b85940209fce7fa7c10832f767d7c1d55d27",
       "status": "planning_only_next_implementation_not_completed"
+    },
+    "usd_refund_service_checkpoint": {
+      "status": "verified_pending_freeze_and_independent_exact_review",
+      "path": "ops/V1_051_REFUND_SERVICE_CHECKPOINT.md",
+      "parent_sha": "95c6f39a9063d67e3af466936bb5ff10448c2e58",
+      "commit_resolution": "Exact immutable commit containing this checkpoint; external verification/review receipt binds identity without circular self-SHA.",
+      "tests": {
+        "new_pg": 29,
+        "postgresql_passed": 708,
+        "postgresql_skips": 0,
+        "postgresql_seconds": 106.5,
+        "backend_passed": 935,
+        "backend_database_only_skips": 685,
+        "backend_seconds": 39.37,
+        "new_unit": 59,
+        "static_build_import": "PASS",
+        "traceability": "PASS all new tests mapped"
+      },
+      "remaining": "Bounded independent review, KHR/qualified Pet paths, bounded Credit history and complete product gates/review/publication/closure.",
+      "development_evidence": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-refund-service-test-development.md"
     }
   },
   "historical_v1_048_takeover": {
@@ -1741,7 +1741,7 @@
   "branch": "codex/v1-051-direct",
   "commit": "79fe7f8c95e79c444100b1a48fde4204201d98af",
   "idle_reason": null,
-  "next_action": "Continue SAME sole V1-051 checkout with transactional USD Refund service/commands, immutable scoped replay, exact JSON response decoding, separate Property capabilities and bounded reads. Read v1051-usd-refund-service-next.md in the Codex evidence directory. Accepted private USD Refund checkpoint79fe7f8c95e79c444100b1a48fde4204201d98af has fresh independent0HIGH0MEDIUM0LOW; its acceptance receipt discharges immutable pending fields. Do not repeat accepted Creditc162b07 or Refund persistence/review, activation, worker or worktree creation. Then implement KHR and qualified active-Pet sources and bounded Credit history. FullV51remainsOPEN/unpublished: full frozen scope, fresh complete gates/audits, independent cumulativecc3d-to-candidate zero findings, normal authorized push, exactCI/ref equality and same-card terminal reconciliation required before52then53. At53closedpausefollowup/leaveOpenClawdisabled/no54.",
+  "next_action": "Freeze the USD Refund service checkpoint in SAME sole V1-051 checkout, verify exact-SHA configuration/automation/cumulative whitespace and obtain fresh independent Astra max Standard read-only zero-finding review. Inspect/reconcile a valid reviewer without duplication. Then implement original-KHR excess, Credit-to-KHR and qualified active-Pet paths plus bounded Credit history, preserving accepted Creditc162b07 and private Refund79fe7f8. No repeat activation/worker/worktree creation. FullV51OPEN/unpublished until complete frozen scope, all fresh gates/audits, cumulativecc3d-to-candidate independent zero findings, authorized normal push, exactCI/ref equality and same-card terminal acceptance. Only then52then53; at53pausefollowup/leaveOpenClawdisabled/no54.",
   "active_worker": null,
   "active_card": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
   "active_claim": null,
@@ -1802,7 +1802,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-051 private USD Refund persistence locally accepted; public USD services, KHR/Pet and bounded history next",
+  "phase": "V1-051 USD Refund service checkpoint verified; freeze and independent exact-SHA review next",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2906,7 +2906,9 @@
     "PASS correction1:50unit/4focusednewPG/646fullPGzero skips104.52s/876backend623DB-onlyskipsseparatelycovered42.72s/189automation72.782s/backendformatRuffmypy138/build/import/configuration/traceability/guard/workingcumulativewhitespace. Fresh exact-SHA review pending.",
     "PASS fresh independent bounded Credit correction reviewc162b07:0HIGH0MEDIUM0LOW, report5a9201b313db0150c6b148a3fe568fe46c68583a0b60d7dfeec998840f2fe65b. Independent50unit/explicitexactSHAcorrection+cumulativewhitespace/hash/cleanliness PASS. Receipt1d536044a467f5f4d6e18f0a705e8360797d7a6d40ce79a39be309588163c433 discharges pending review fields. NOT full V1-051 review/acceptance.",
     "PASS partial USD Refund private persistence:33newPG/679fullPGzero skips103.23s/876backend656DB-onlyskipsseparatelycovered39.63s/format139Ruffmypy139/build/import/traceability/publicationguard. Initial test lint and incorrect standalone mypy invocation resolved with typed fixture overrides and repository gate; all requirements preserved.",
-    "PASS private USD Refund exact79fe7f8 independent Astra max Standard read-only0HIGH0MEDIUM0LOW; report55747d14cc967c8223568cb2b1906a395b34bd5f281f3d5baecc6d8f7649409c. Independentstatic/collection33/traceability/JSON/syntax/cumulativewhitespace/hashes/cleanidentityverified. Coordinatorrequested2PGsupplementPASS1.44s validatesall7helperACLs andmixed/unsupportedsource. Acceptance receiptd4253c7e0b97e6218c39d1614241a199bc0ff8b3c44f0cfd4f6073c928db60aa discharges pending checkpointfields. Full product review/publication stillpending."
+    "PASS private USD Refund exact79fe7f8 independent Astra max Standard read-only0HIGH0MEDIUM0LOW; report55747d14cc967c8223568cb2b1906a395b34bd5f281f3d5baecc6d8f7649409c. Independentstatic/collection33/traceability/JSON/syntax/cumulativewhitespace/hashes/cleanidentityverified. Coordinatorrequested2PGsupplementPASS1.44s validatesall7helperACLs andmixed/unsupportedsource. Acceptance receiptd4253c7e0b97e6218c39d1614241a199bc0ff8b3c44f0cfd4f6073c928db60aa discharges pending checkpointfields. Full product review/publication stillpending.",
+    "PASS USD Refund service checkpoint:59newunit/81unit+traceability/29newPG2.93s/708fullPGzero skips106.50s/935backend685DB-onlyskipsseparatelycovered39.37s/formatRuffmypy142/build/import. Fresh exact-SHA automation/configuration and independent review pending; not full51acceptance.",
+    "RESOLVED USD service test development: shared-Property receipt assertions scoped to actor; timestamp ties use distinct Payment roots while source/correction chronology remains strict; ten missing new-unit traceability mappings added. Formatting/type failures resolved with typed inputs. Evidence v1051-refund-service-test-development.md; no guards weakened."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -2928,7 +2930,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-051",
-  "timestamp": "2026-09-05T23:06:00Z",
+  "timestamp": "2026-09-05T23:56:29Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2969,7 +2971,11 @@
     "ops/V1_051_CREDIT_APPLICATION_CHECKPOINT.md",
     "ops/V1_051_CREDIT_CORRECTION1_CHECKPOINT.md",
     "backend/tests/test_refund_migration.py",
-    "ops/V1_051_REFUND_USD_CHECKPOINT.md"
+    "ops/V1_051_REFUND_USD_CHECKPOINT.md",
+    "backend/src/property_rental/refund.py",
+    "backend/tests/test_refund.py",
+    "backend/tests/test_refund_service_migration.py",
+    "ops/V1_051_REFUND_SERVICE_CHECKPOINT.md"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -3157,7 +3163,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T23:06:00Z",
+  "updated_at": "2026-09-05T23:56:29Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",

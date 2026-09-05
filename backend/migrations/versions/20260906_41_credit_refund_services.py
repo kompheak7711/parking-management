@@ -378,6 +378,7 @@ def upgrade() -> None:
     create_credit_application_services()
     create_refund_source_storage()
     integrate_refund_source_budgets()
+    create_refund_services()
 
 
 def create_credit_application_storage() -> None:
@@ -1365,6 +1366,295 @@ def integrate_refund_source_budgets() -> None:
         COMMENT ON FUNCTION app.credit_available_value(uuid) IS
             'Derived recognition less active applications and net Credit Refunds; source Payment is not consumed twice.';
     """)
+
+
+def create_refund_services() -> None:
+    """Expose exact USD commands and coherent bounded reads; HTTP remains V1-052."""
+    op.execute("""
+        CREATE TABLE app.refund_commands (
+            property_id uuid NOT NULL REFERENCES app.properties(id) ON DELETE RESTRICT,
+            actor_id uuid NOT NULL REFERENCES app.user_accounts(actor_id) ON DELETE RESTRICT,
+            action text NOT NULL CHECK(action IN ('CREATE_USD','VERIFY_RETURN_USD','REVERSE_CORRECTION')),
+            idempotency_key uuid NOT NULL CHECK(idempotency_key<>'00000000-0000-0000-0000-000000000000'),
+            request jsonb NOT NULL CHECK(jsonb_typeof(request)='object' AND octet_length(request::text)<=16000),
+            response jsonb NOT NULL CHECK(jsonb_typeof(response)='object'),
+            completed_at timestamptz NOT NULL CHECK(isfinite(completed_at)),
+            PRIMARY KEY(property_id,actor_id,action,idempotency_key)
+        );
+        CREATE TRIGGER refund_commands_immutable BEFORE UPDATE OR DELETE ON app.refund_commands
+            FOR EACH ROW EXECUTE FUNCTION app.reject_payment_history_mutation();
+        CREATE TRIGGER refund_commands_no_truncate BEFORE TRUNCATE ON app.refund_commands
+            FOR EACH STATEMENT EXECUTE FUNCTION app.reject_payment_history_mutation();
+        REVOKE ALL ON TABLE app.refund_commands FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap;
+
+        CREATE FUNCTION app.refund_property_id(p_refund_id uuid)
+        RETURNS uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+            SELECT COALESCE(payment.property_id,credit_payment.property_id,app.deposit_property_id(refund.source_deposit_id))
+            FROM app.refunds refund
+            LEFT JOIN app.payments payment ON payment.id=refund.source_payment_id
+            LEFT JOIN app.customer_credits credit ON credit.id=refund.source_customer_credit_id
+            LEFT JOIN app.payments credit_payment ON credit_payment.id=credit.source_payment_id
+            WHERE refund.id=p_refund_id
+        $$;
+        CREATE FUNCTION app.refund_summary(p_refund_id uuid)
+        RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+            SELECT jsonb_build_object('refund',to_jsonb(refund),
+                'source',jsonb_build_object('type',CASE WHEN source_payment_id IS NOT NULL THEN 'PAYMENT'
+                    WHEN source_customer_credit_id IS NOT NULL THEN 'CREDIT' ELSE 'DEPOSIT' END,
+                    'id',COALESCE(source_payment_id,source_customer_credit_id,source_deposit_id),
+                    'property_id',app.refund_property_id(refund.id)),
+                'net_refund_usd_cents',app.refund_net_value_at(refund.id,'infinity'))
+            FROM app.refunds refund WHERE refund.id=p_refund_id
+        $$;
+        CREATE FUNCTION app.assert_refund_page(p_limit integer,p_after_at timestamptz,p_after_id uuid)
+        RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        BEGIN
+            IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 OR num_nonnulls(p_after_at,p_after_id) NOT IN (0,2)
+                OR (p_after_at IS NOT NULL AND NOT isfinite(p_after_at))
+                OR p_after_id='00000000-0000-0000-0000-000000000000'
+            THEN RAISE EXCEPTION 'Refund page is invalid' USING ERRCODE='P5202'; END IF;
+        END $$;
+        CREATE FUNCTION app.refund_resource(
+            p_property_id uuid,p_refund_id uuid,p_actor_id uuid,p_limit integer,p_after_at timestamptz,p_after_id uuid
+        ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+        DECLARE v_result jsonb;
+        BEGIN
+            PERFORM app.require_invoice_command_actor(p_property_id,p_actor_id);
+            PERFORM app.assert_active_financial_actor(p_actor_id,p_property_id);
+            PERFORM app.assert_refund_page(p_limit,p_after_at,p_after_id);
+            -- The complete resource, net value and bounded correction page are
+            -- captured in ONE SQL snapshot. No inverted Refund->source lock order.
+            SELECT app.refund_summary(refund.id) || jsonb_build_object(
+                'source_payment',to_jsonb(payment),'source_exchange_rate',to_jsonb(rate),
+                'corrections',(WITH page AS MATERIALIZED (
+                    SELECT correction.*,row_number() OVER (ORDER BY occurred_at DESC,id DESC) AS page_row
+                    FROM app.refund_corrections correction WHERE refund_id=refund.id
+                        AND (p_after_at IS NULL OR (occurred_at,id)<(p_after_at,p_after_id))
+                    ORDER BY occurred_at DESC,id DESC LIMIT p_limit+1
+                ) SELECT jsonb_build_object(
+                    'items',COALESCE(jsonb_agg(to_jsonb(page)-'page_row' ORDER BY page_row)
+                        FILTER(WHERE page_row<=p_limit),'[]'::jsonb),
+                    'next_cursor',CASE WHEN count(*)>p_limit THEN
+                        (SELECT jsonb_build_object('occurred_at',occurred_at,'id',id) FROM page WHERE page_row=p_limit)
+                        ELSE NULL END) FROM page))
+            INTO v_result FROM app.refunds refund
+            LEFT JOIN app.customer_credits credit ON credit.id=refund.source_customer_credit_id
+            LEFT JOIN app.payments payment ON payment.id=COALESCE(refund.source_payment_id,credit.source_payment_id)
+            LEFT JOIN app.exchange_rate_records rate ON rate.id=payment.exchange_rate_record_id
+            WHERE refund.id=p_refund_id AND app.refund_property_id(refund.id)=p_property_id;
+            IF v_result IS NULL THEN RAISE EXCEPTION 'Refund not found' USING ERRCODE='P5201'; END IF;
+            RETURN v_result;
+        END $$;
+        CREATE FUNCTION app.list_refunds(
+            p_property_id uuid,p_actor_id uuid,p_customer_id uuid,p_limit integer,p_after_at timestamptz,p_after_id uuid
+        ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+        DECLARE v_result jsonb;
+        BEGIN
+            PERFORM app.require_invoice_command_actor(p_property_id,p_actor_id);
+            PERFORM app.assert_active_financial_actor(p_actor_id,p_property_id);
+            PERFORM app.assert_refund_page(p_limit,p_after_at,p_after_id);
+            IF p_customer_id='00000000-0000-0000-0000-000000000000'
+            THEN RAISE EXCEPTION 'Refund Customer filter is invalid' USING ERRCODE='P5202'; END IF;
+            WITH page AS MATERIALIZED (
+                SELECT refund.id,refund.processed_at,row_number() OVER (ORDER BY processed_at DESC,id DESC) AS page_row
+                FROM app.refunds refund WHERE app.refund_property_id(refund.id)=p_property_id
+                    AND (p_customer_id IS NULL OR recipient_customer_id=p_customer_id)
+                    AND (p_after_at IS NULL OR (processed_at,id)<(p_after_at,p_after_id))
+                ORDER BY processed_at DESC,id DESC LIMIT p_limit+1
+            ) SELECT jsonb_build_object(
+                'items',COALESCE(jsonb_agg(app.refund_summary(id) ORDER BY page_row)
+                    FILTER(WHERE page_row<=p_limit),'[]'::jsonb),
+                'next_cursor',CASE WHEN count(*)>p_limit THEN
+                    (SELECT jsonb_build_object('occurred_at',processed_at,'id',id) FROM page WHERE page_row=p_limit)
+                    ELSE NULL END) INTO v_result FROM page;
+            RETURN v_result;
+        END $$;
+        CREATE FUNCTION app.refund_command_replay(
+            p_property_id uuid,p_actor_id uuid,p_action text,p_key uuid,p_request jsonb
+        ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        DECLARE v_command app.refund_commands%ROWTYPE;
+        BEGIN
+            PERFORM app.require_invoice_command_actor(p_property_id,p_actor_id);
+            PERFORM app.assert_active_financial_actor(p_actor_id,p_property_id);
+            IF p_action IS NULL OR p_action NOT IN ('CREATE_USD','VERIFY_RETURN_USD','REVERSE_CORRECTION')
+                OR p_key IS NULL OR p_key='00000000-0000-0000-0000-000000000000'
+                OR p_request IS NULL OR jsonb_typeof(p_request)<>'object' OR octet_length(p_request::text)>16000
+            THEN RAISE EXCEPTION 'Refund command identity is invalid' USING ERRCODE='P5202'; END IF;
+            PERFORM pg_advisory_xact_lock(hashtextextended('refund-command:'||p_property_id::text
+                ||':'||p_actor_id::text||':'||p_action||':'||p_key::text,0));
+            SELECT * INTO v_command FROM app.refund_commands WHERE property_id=p_property_id
+                AND actor_id=p_actor_id AND action=p_action AND idempotency_key=p_key;
+            IF FOUND THEN
+                IF v_command.request IS DISTINCT FROM p_request
+                THEN RAISE EXCEPTION 'Refund idempotency key reused' USING ERRCODE='P5205'; END IF;
+                RETURN v_command.response;
+            END IF;
+            RETURN NULL;
+        END $$;
+        CREATE FUNCTION app.require_usd_refund_source(p_property_id uuid,p_kind text,p_source_id uuid)
+        RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        DECLARE v_payment uuid;
+        BEGIN
+            IF p_kind IS NULL OR p_kind NOT IN ('PAYMENT','CREDIT') OR p_source_id IS NULL
+                OR p_source_id='00000000-0000-0000-0000-000000000000'
+            THEN RAISE EXCEPTION 'Unsupported USD Refund source' USING ERRCODE='P5202'; END IF;
+            IF p_kind='PAYMENT' THEN
+                SELECT id INTO v_payment FROM app.payments WHERE id=p_source_id AND property_id=p_property_id;
+            ELSE
+                SELECT payment.id INTO v_payment FROM app.customer_credits credit
+                    JOIN app.payments payment ON payment.id=credit.source_payment_id
+                    WHERE credit.id=p_source_id AND payment.property_id=p_property_id;
+            END IF;
+            IF v_payment IS NULL THEN RAISE EXCEPTION 'Refund source not found' USING ERRCODE='P5201'; END IF;
+            RETURN v_payment;
+        END $$;
+        CREATE FUNCTION app.usd_refund_source(p_property_id uuid,p_actor_id uuid,p_kind text,p_source_id uuid)
+        RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+        DECLARE v_payment_id uuid; v_payment app.payments%ROWTYPE; v_available bigint;
+        BEGIN
+            PERFORM app.require_invoice_command_actor(p_property_id,p_actor_id);
+            PERFORM app.assert_active_financial_actor(p_actor_id,p_property_id);
+            v_payment_id:=app.require_usd_refund_source(p_property_id,p_kind,p_source_id);
+            SELECT * INTO STRICT v_payment FROM app.payments WHERE id=v_payment_id FOR SHARE;
+            IF p_kind='PAYMENT' THEN
+                IF v_payment.received_currency<>'USD'
+                THEN RAISE EXCEPTION 'Original KHR excess requires its KHR Refund path' USING ERRCODE='P5202'; END IF;
+                PERFORM app.assert_payment_excess_eligible(v_payment_id);
+                v_available:=app.payment_available_value(v_payment_id);
+            ELSE
+                PERFORM 1 FROM app.customer_credits WHERE id=p_source_id FOR SHARE;
+                v_available:=app.credit_available_value(p_source_id);
+            END IF;
+            IF v_payment.status<>'RECEIVED' THEN v_available:=0; END IF;
+            RETURN jsonb_build_object('source_type',p_kind,'source_id',p_source_id,
+                'recipient_customer_id',v_payment.payer_customer_id,'property_id',p_property_id,
+                'refund_currency','USD','available_usd_cents',v_available,'eligible',v_available>0);
+        END $$;
+        CREATE FUNCTION app.create_usd_refund(
+            p_property_id uuid,p_actor_id uuid,p_key uuid,p_source_kind text,p_source_id uuid,p_amount bigint,p_reason text
+        ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+        DECLARE v_request jsonb; v_result jsonb; v_payment uuid; v_customer uuid; v_id uuid:=gen_random_uuid();
+        BEGIN
+            v_request:=jsonb_build_object('source_kind',p_source_kind,'source_id',p_source_id,'amount_usd_cents',p_amount,'reason',p_reason);
+            v_result:=app.refund_command_replay(p_property_id,p_actor_id,'CREATE_USD',p_key,v_request);
+            IF v_result IS NOT NULL THEN RETURN v_result; END IF;
+            IF p_amount IS NULL OR p_amount NOT BETWEEN 1 AND 9000000000000000
+                OR p_reason IS NULL OR p_reason<>btrim(p_reason) OR length(p_reason) NOT BETWEEN 1 AND 1000
+            THEN RAISE EXCEPTION 'USD Refund input is invalid' USING ERRCODE='P5202'; END IF;
+            v_payment:=app.require_usd_refund_source(p_property_id,p_source_kind,p_source_id);
+            PERFORM app.lock_refund_payment_source(CASE WHEN p_source_kind='PAYMENT' THEN p_source_id END,
+                CASE WHEN p_source_kind='CREDIT' THEN p_source_id END);
+            SELECT payer_customer_id INTO STRICT v_customer FROM app.payments WHERE id=v_payment;
+            INSERT INTO app.refunds(id,refund_number,recipient_customer_id,source_payment_id,source_customer_credit_id,
+                usd_accounting_value_cents,refund_currency,refund_amount_minor,reason,processed_at,processed_by,authorization_reference)
+            VALUES(v_id,'REF-'||v_id::text,v_customer,CASE WHEN p_source_kind='PAYMENT' THEN p_source_id END,
+                CASE WHEN p_source_kind='CREDIT' THEN p_source_id END,p_amount,'USD',p_amount,p_reason,clock_timestamp(),p_actor_id,'refunds.create');
+            SET CONSTRAINTS ALL IMMEDIATE;
+            v_result:=app.refund_resource(p_property_id,v_id,p_actor_id,50,NULL,NULL);
+            INSERT INTO app.refund_commands VALUES(p_property_id,p_actor_id,'CREATE_USD',p_key,v_request,v_result,clock_timestamp());
+            RETURN v_result;
+        END $$;
+        CREATE FUNCTION app.require_correctable_usd_refund(p_property_id uuid,p_refund_id uuid)
+        RETURNS app.refunds LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        DECLARE v_refund app.refunds%ROWTYPE;
+        BEGIN
+            SELECT * INTO v_refund FROM app.refunds
+                WHERE id=p_refund_id AND app.refund_property_id(id)=p_property_id;
+            IF NOT FOUND THEN RAISE EXCEPTION 'Refund not found' USING ERRCODE='P5201'; END IF;
+            IF v_refund.source_lifecycle_event_id IS NOT NULL OR v_refund.refund_currency<>'USD' THEN
+                RAISE EXCEPTION 'Refund requires its source-specific coordinated correction path' USING ERRCODE='P5202';
+            END IF;
+            PERFORM app.lock_refund_payment_source(v_refund.source_payment_id,v_refund.source_customer_credit_id);
+            PERFORM 1 FROM app.refunds WHERE id=v_refund.id FOR UPDATE;
+            RETURN v_refund;
+        END $$;
+        CREATE FUNCTION app.verify_usd_refund_return(
+            p_property_id uuid,p_refund_id uuid,p_actor_id uuid,p_key uuid,p_amount bigint,
+            p_returned_at timestamptz,p_method text,p_evidence text,p_reason text
+        ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+        DECLARE v_request jsonb; v_result jsonb; v_refund app.refunds%ROWTYPE; v_net bigint; v_id uuid:=gen_random_uuid();
+        BEGIN
+            v_request:=jsonb_build_object('refund_id',p_refund_id,'returned_amount_minor',p_amount,'returned_currency','USD',
+                'returned_at',p_returned_at,'return_method_reference',p_method,'evidence_reference',p_evidence,'reason',p_reason);
+            v_result:=app.refund_command_replay(p_property_id,p_actor_id,'VERIFY_RETURN_USD',p_key,v_request);
+            IF v_result IS NOT NULL THEN RETURN v_result; END IF;
+            IF p_amount IS NULL OR p_amount NOT BETWEEN 1 AND 9000000000000000
+                OR p_returned_at IS NULL OR NOT isfinite(p_returned_at)
+                OR p_method IS NULL OR p_method<>btrim(p_method) OR length(p_method) NOT BETWEEN 1 AND 500
+                OR p_evidence IS NULL OR p_evidence<>btrim(p_evidence) OR length(p_evidence) NOT BETWEEN 1 AND 500
+                OR p_reason IS NULL OR p_reason<>btrim(p_reason) OR length(p_reason) NOT BETWEEN 1 AND 1000
+            THEN RAISE EXCEPTION 'Verified USD return input is invalid' USING ERRCODE='P5202'; END IF;
+            v_refund:=app.require_correctable_usd_refund(p_property_id,p_refund_id);
+            v_net:=app.refund_net_value_at(v_refund.id,'infinity');
+            INSERT INTO app.refund_corrections(id,refund_id,correction_kind,source_balance_effect_usd_cents,
+                source_balance_effect_original_minor,previous_net_refund_usd_cents,resulting_net_refund_usd_cents,
+                reason,evidence_reference,occurred_at,actor_id,authorization_reference,
+                verified_return_amount_minor,verified_return_currency,verified_returned_at,return_method_reference)
+            VALUES(v_id,v_refund.id,'VALUE_CORRECTION',p_amount,p_amount,v_net,v_net-p_amount,
+                p_reason,p_evidence,clock_timestamp(),p_actor_id,'refunds.correct',p_amount,'USD',p_returned_at,p_method);
+            SET CONSTRAINTS ALL IMMEDIATE;
+            v_result:=app.refund_resource(p_property_id,v_refund.id,p_actor_id,50,NULL,NULL);
+            INSERT INTO app.refund_commands VALUES(p_property_id,p_actor_id,'VERIFY_RETURN_USD',p_key,v_request,v_result,clock_timestamp());
+            RETURN v_result;
+        END $$;
+        CREATE FUNCTION app.reverse_refund_correction(
+            p_property_id uuid,p_refund_id uuid,p_correction_id uuid,p_actor_id uuid,p_key uuid,p_evidence text,p_reason text
+        ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+        DECLARE v_request jsonb; v_result jsonb; v_refund app.refunds%ROWTYPE;
+        DECLARE v_correction app.refund_corrections%ROWTYPE; v_net bigint;
+        BEGIN
+            v_request:=jsonb_build_object('refund_id',p_refund_id,'correction_id',p_correction_id,'evidence_reference',p_evidence,'reason',p_reason);
+            v_result:=app.refund_command_replay(p_property_id,p_actor_id,'REVERSE_CORRECTION',p_key,v_request);
+            IF v_result IS NOT NULL THEN RETURN v_result; END IF;
+            IF p_evidence IS NULL OR p_evidence<>btrim(p_evidence) OR length(p_evidence) NOT BETWEEN 1 AND 500
+                OR p_reason IS NULL OR p_reason<>btrim(p_reason) OR length(p_reason) NOT BETWEEN 1 AND 1000
+            THEN RAISE EXCEPTION 'Refund correction reversal input is invalid' USING ERRCODE='P5202'; END IF;
+            v_refund:=app.require_correctable_usd_refund(p_property_id,p_refund_id);
+            SELECT * INTO v_correction FROM app.refund_corrections WHERE id=p_correction_id
+                AND refund_id=v_refund.id AND correction_kind='VALUE_CORRECTION';
+            IF NOT FOUND THEN RAISE EXCEPTION 'Refund correction not found' USING ERRCODE='P5201'; END IF;
+            v_net:=app.refund_net_value_at(v_refund.id,'infinity');
+            INSERT INTO app.refund_corrections(id,refund_id,correction_kind,reverses_correction_id,
+                source_balance_effect_usd_cents,source_balance_effect_original_minor,
+                previous_net_refund_usd_cents,resulting_net_refund_usd_cents,reason,evidence_reference,
+                occurred_at,actor_id,authorization_reference)
+            VALUES(gen_random_uuid(),v_refund.id,'CORRECTION_REVERSAL',v_correction.id,
+                -v_correction.source_balance_effect_usd_cents,-v_correction.source_balance_effect_original_minor,
+                v_net,v_net+v_correction.source_balance_effect_usd_cents,p_reason,p_evidence,
+                clock_timestamp(),p_actor_id,'refunds.corrections.reverse');
+            SET CONSTRAINTS ALL IMMEDIATE;
+            v_result:=app.refund_resource(p_property_id,v_refund.id,p_actor_id,50,NULL,NULL);
+            INSERT INTO app.refund_commands VALUES(p_property_id,p_actor_id,'REVERSE_CORRECTION',p_key,v_request,v_result,clock_timestamp());
+            RETURN v_result;
+        END $$;
+    """)
+    reads = (
+        "refund_resource(uuid,uuid,uuid,integer,timestamptz,uuid)",
+        "list_refunds(uuid,uuid,uuid,integer,timestamptz,uuid)",
+        "usd_refund_source(uuid,uuid,text,uuid)",
+    )
+    writes = (
+        "create_usd_refund(uuid,uuid,uuid,text,uuid,bigint,text)",
+        "verify_usd_refund_return(uuid,uuid,uuid,uuid,bigint,timestamptz,text,text,text)",
+        "reverse_refund_correction(uuid,uuid,uuid,uuid,uuid,text,text)",
+    )
+    for signature in (
+        "refund_property_id(uuid)",
+        "refund_summary(uuid)",
+        "assert_refund_page(integer,timestamptz,uuid)",
+        "refund_command_replay(uuid,uuid,text,uuid,jsonb)",
+        "require_usd_refund_source(uuid,text,uuid)",
+        "require_correctable_usd_refund(uuid,uuid)",
+        *reads,
+        *writes,
+    ):
+        op.execute(
+            f"REVOKE ALL ON FUNCTION app.{signature} FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap"
+        )
+    for signature in reads:
+        op.execute(f"GRANT EXECUTE ON FUNCTION app.{signature} TO prm_runtime,prm_financial")
+    for signature in writes:
+        op.execute(f"GRANT EXECUTE ON FUNCTION app.{signature} TO prm_financial")
 
 
 def downgrade() -> None:

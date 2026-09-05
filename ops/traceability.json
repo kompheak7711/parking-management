@@ -2,6 +2,310 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_refund_requires_exact_positive_bounded_minor_units",
+      "upstream_ids": [
+        "SEC-026",
+        "BR-REFUND-003"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Creation and verified-return commands reject zero, negative, boolean, fractional and excessive minor units."
+    },
+    {
+      "test_id": "test_refund_commands_require_normalized_bounded_valid_text",
+      "upstream_ids": [
+        "SEC-023",
+        "BR-REFUND-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Reasons are normalized, bounded valid UTF-8 text without NUL for creation/correction/reversal."
+    },
+    {
+      "test_id": "test_refund_verified_return_requires_bounded_evidence",
+      "upstream_ids": [
+        "API-066",
+        "TEST-066"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Verified-return commands require separate bounded method/reference and evidence values."
+    },
+    {
+      "test_id": "test_refund_usd_source_family_is_explicit",
+      "upstream_ids": [
+        "API-065",
+        "BR-REFUND-002"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "The USD command admits only explicitly supported Payment or Credit source families."
+    },
+    {
+      "test_id": "test_refund_commands_require_non_nil_uuid",
+      "upstream_ids": [
+        "SEC-023",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Creation, correction and reversal reject nil or malformed command/source identities."
+    },
+    {
+      "test_id": "test_refund_return_timestamp_must_be_aware_and_representable",
+      "upstream_ids": [
+        "API-066",
+        "SEC-023"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Naive, infinite and UTC-overflow timestamps cannot enter immutable verified-return intent."
+    },
+    {
+      "test_id": "test_refund_commands_are_immutable_and_timestamp_is_canonical",
+      "upstream_ids": [
+        "API-066",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Returned value is immutable and timezone representations normalize to one exact UTC instant."
+    },
+    {
+      "test_id": "test_refund_page_limit_is_bounded_exact_integer",
+      "upstream_ids": [
+        "API-064",
+        "SEC-023"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Page size rejects booleans, fractions, zero and values outside 1 through 100."
+    },
+    {
+      "test_id": "test_refund_cursor_is_complete_finite_and_non_nil",
+      "upstream_ids": [
+        "API-064",
+        "SEC-023"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Cursor requires both a finite aware timestamp and non-nil UUID; partial cursor is invalid."
+    },
+    {
+      "test_id": "test_refund_each_capability_works_alone_with_correct_connection",
+      "upstream_ids": [
+        "SEC-022",
+        "SEC-025"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Each action works with its sole capability, uses the correct read/financial connection and bounded connection/query/lock timeouts."
+    },
+    {
+      "test_id": "test_refund_service_create_source_replay_verified_return_reversal_history",
+      "upstream_ids": [
+        "API-064",
+        "API-065",
+        "API-066",
+        "DB-REFUND-002",
+        "SEC-022",
+        "SEC-028",
+        "SEC-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "Both Payment and Credit USD Refund sources have server-derived recipient/availability, independently granted creation/read/correction/reversal, exact immutable original-command replay, net positions and append-only atomic audit."
+    },
+    {
+      "test_id": "test_refund_service_each_command_key_is_exact_and_actor_scoped",
+      "upstream_ids": [
+        "SEC-028",
+        "TEST-068"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "Every public USD command rejects changed payload under the same actor/action/key; distinct actors have separate identity namespaces; equivalent timezone representations normalize identically."
+    },
+    {
+      "test_id": "test_refund_service_fresh_disabled_actor_rejected_before_replay",
+      "upstream_ids": [
+        "SEC-023",
+        "SEC-025",
+        "SEC-028"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "Fresh disabled-account checks precede cached results for creation, verified return and correction reversal and protect every read facade."
+    },
+    {
+      "test_id": "test_refund_service_wrong_property_customer_and_resource_are_not_disclosed",
+      "upstream_ids": [
+        "SEC-019",
+        "API-064"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "Unknown Property/resource/source fails closed, wrong-scope grant cannot substitute another Property, and Customer-filtered list never includes other Customers."
+    },
+    {
+      "test_id": "test_refund_service_concurrent_commands_replay_once_or_fail_closed",
+      "upstream_ids": [
+        "SEC-029",
+        "TEST-068",
+        "BR-REFUND-003"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "Two concurrent transmissions of one key return one Refund; competing different keys cannot overspend and failed command leaves no replay receipt."
+    },
+    {
+      "test_id": "test_refund_service_transaction_rollback_removes_refund_receipt_and_audit",
+      "upstream_ids": [
+        "SEC-030",
+        "DB-REFUND-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "Forced transaction rollback removes the new Refund, immutable command receipt and audit while restoring exact source availability."
+    },
+    {
+      "test_id": "test_refund_service_bounded_pages_walk_source_ties_and_strict_corrections",
+      "upstream_ids": [
+        "API-064",
+        "PR-REFUND-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "Limit-one keyset walks cover equal Refund timestamps across independent Payment roots and strictly ordered correction history without duplicates/omissions."
+    },
+    {
+      "test_id": "test_refund_service_coherent_history_during_concurrent_corrections",
+      "upstream_ids": [
+        "SEC-029",
+        "PR-REFUND-011"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent committed corrections never produce a resource with mismatched current net value and correction page; retained Repeatable Read snapshots are internally coherent."
+    },
+    {
+      "test_id": "test_refund_service_original_khr_source_fails_closed_but_credit_usd_preserves_fx",
+      "upstream_ids": [
+        "BR-REFUND-005",
+        "PR-REFUND-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "The USD-only direct source path rejects original KHR excess; a USD Credit Refund retains its original KHR Payment and exact fractional channel-rate evidence. KHR Refund services remain a separate required slice."
+    },
+    {
+      "test_id": "test_refund_command_receipts_are_immutable_and_private",
+      "upstream_ids": [
+        "SEC-031",
+        "SEC-028"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "Command receipt update/delete/truncate fails, ordinary roles have no direct table privileges, and all six private helpers remain inaccessible."
+    },
+    {
+      "test_id": "test_refund_database_page_parameters_fail_closed",
+      "upstream_ids": [
+        "API-064",
+        "SEC-023"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "Database facades independently reject null/invalid limits, incomplete or infinite cursors and nil cursor identities."
+    },
+    {
+      "test_id": "test_refund_service_correction_rollback_removes_event_receipt_and_audit",
+      "upstream_ids": [
+        "API-066",
+        "SEC-030"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "Forced rollback after either verified return or correction reversal preserves prior Refund net/history/audit and leaves no new command receipt."
+    },
+    {
+      "test_id": "test_refund_service_facade_database_roles_are_separated",
+      "upstream_ids": [
+        "SEC-022",
+        "SEC-025"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "Only the financial role can invoke write facades; runtime is limited to scoped reads and bootstrap has neither."
+    },
+    {
+      "test_id": "test_refund_capabilities_are_independent_and_property_scoped",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-022"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Each action denies absent or unrelated capability, wrong Property grants and malformed actors before connection."
+    },
+    {
+      "test_id": "test_refund_complete_command_envelope_and_transmission_revalidation",
+      "upstream_ids": [
+        "SEC-023",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Immutable scalar intent and bounded cursor values are revalidated before transmission; server derives recipient, net balances and authorization."
+    },
+    {
+      "test_id": "test_refund_failure_preserves_original_command_and_safe_message",
+      "upstream_ids": [
+        "SEC-028",
+        "TEST-068"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Serialization, timeout, constraint and connectivity failures preserve exact command intent; safe classifications never expose private diagnostics."
+    },
+    {
+      "test_id": "test_refund_response_decoder_is_exact_nested_and_connection_local",
+      "upstream_ids": [
+        "PR-REFUND-008",
+        "SEC-026"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Refund responses/replay preserve integer money and fractional/nested exchange values exactly with connection-local decoding only."
+    },
+    {
       "test_id": "test_usd_refund_source_history_audit_and_no_double_consumption",
       "upstream_ids": [
         "BR-REFUND-010",
