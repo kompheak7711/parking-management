@@ -1,13 +1,14 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-048 payment/FX/reversal persistence implementation; scope inspection complete, exact-SHA review pending.
+- Current: V1-048 immutable candidate 31976815c839d671c8cf32d25f80fe68a17dd1ad under independent Astra max review; not publishable yet.
 - Active checkout: /Users/sokompheak/Development/property-rental-management-v1-048, branch codex/v1-048-direct; direct coordinator only, no OpenClaw worker.
 - Current authority: ops/CODEX_TAKEOVER_V1_048_053.md; checksum 4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455.
 - Models: GPT-6 Astra only; coordinator xhigh, financial/migration implementation xhigh, independent read-only review max; Standard.
 - V1-047 predecessor closed at 3edda3d72487695dc8e2b5af3e9313090c96defa; CI 33954605733 attempt 2 success, refs equal, Workboard done.
 - V1-048 card 652e776c-2a91-4ebd-bfed-90aa8d5de247 is blocked only to prevent OpenClaw admission; direct Codex work is active.
 - OpenClaw supervisor 658ffdaf-1ac1-45a6-a842-f5f7d7a226eb remains disabled. No OpenClaw worker dispatch. Existing Codex follow-up reused and active every 10 minutes.
-- Current exact next action: complete persistence and genuine synthetic Payment-backed fixtures, inspect initial isolated PostgreSQL results, verify all required gates, then fresh independent immutable review and publication.
+- Verified candidate: PostgreSQL500/500, frontend369/369 and backend768 pass;477 database-only skips covered separately; required traceability mapping gate fails. Dependency audits clean.
+- Current exact next action: finish immutable product review, correct findings and missing test mappings, then fresh exact-SHA tests/review. Corrected coordination checkpoint preserves failed818967b and its one MEDIUM roadmap-schema finding.
 - No owner action required. Continue sequentially through V1-053 after each predecessor fully closes; stop before V1-054 and pause Codex follow-up.
 - Production/customer-data/paid-service/destructive-operation restrictions remain.
 

@@ -15,14 +15,17 @@
     "implementation": {"model": "gpt-6-astra", "reasoning": "xhigh", "mode": "Standard", "escalation_reason": "V1-048 financial persistence, authorization and migrations"},
     "reviewer": {"model": "gpt-6-astra", "reasoning": "max", "mode": "Standard", "read_only": true},
     "current_version": "V1-048",
-    "phase": "implementation",
+    "phase": "independent_review",
+    "candidate_sha": "31976815c839d671c8cf32d25f80fe68a17dd1ad",
+    "candidate_status": "not_publishable_pending_review_and_traceability_correction",
     "worktree": "/Users/sokompheak/Development/property-rental-management-v1-048",
     "branch": "codex/v1-048-direct",
     "worker_kind": "direct_codex_coordinator",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
     "scope_path": "/Users/sokompheak/Development/property-rental-management-v1-048/ops/V1_048_SCOPE.md",
     "scope_review": "Independent read-only Astra max inspection completed; fresh exact-SHA implementation review still required",
-    "verification_status": "Focused payment and reservation verification 29/29 passed; full database rerun running after initial 488/490; backend format/lint/types passed. No frozen or publishable candidate yet.",
+    "verification_status": "Exact 3197681: PostgreSQL500/500 and frontend369/369 pass; format/lint/types/build frontend pass; backend768 pass477 DB-only skips with traceability-manifest failure. PyPI runtime/dev and npm audits pass. Independent product review running; no publication.",
+    "coordination_review": {"candidate_sha": "818967bce98ae9c2e85ca8c67dd1d5413966815a", "verdict": "failed", "high": 0, "medium": 1, "low": 0, "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1048-takeover-review-818967b.md", "correction": "Restore roadmap approved_ready; active execution remains in STATE. Preserve failed checkpoint and obtain fresh exact-SHA review."},
     "development_checkpoints": [
       "Initial migration SQL parameter parsing defect corrected; no persistent data changed",
       "Previous-head test expectations updated; orphan-history upgrade rejection explicitly tested without erasing fixtures",
@@ -39,7 +42,7 @@
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "owner_action_required": false,
-    "next_action": "Complete V1-048 payment persistence and synthetic Payment-backed regression fixtures in codex/v1-048-direct; validate isolated PostgreSQL tests, then full gates and fresh independent exact-SHA Astra max review.",
+    "next_action": "Finish immutable product3197681 review; preserve all findings, map new tests in a correction checkpoint, rerun exact-SHA gates and fresh Astra max review. Independently verify corrected coordination checkpoint before combining and publishing normally.",
     "historical_state_note": "direct_codex_product and prior closure records below preserve V1-047 history; direct_codex_takeover is the current execution authority."
   },
   "direct_codex_product": {

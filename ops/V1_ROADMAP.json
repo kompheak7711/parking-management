@@ -1330,7 +1330,7 @@
       "risk_class": "high",
       "acceptance_profile": "financial",
       "authorization": "durable_v1",
-      "status": "active"
+      "status": "approved_ready"
     },
     {
       "id": "V1-049",
