@@ -29,10 +29,10 @@
       "read_only": true
     },
     "current_version": "V1-049",
-    "phase": "bounded_correction_active",
+    "phase": "correction2_candidate_verification_pending",
     "candidate_sha": null,
-    "candidate_resolution": "Rejected a6c8f55 preserved in normal history; freeze new successor after correction2.",
-    "candidate_status": "rejected_preserved_correction2_active",
+    "candidate_resolution": "Candidate is commit containing this frozen correction2 checkpoint; resolve codex/v1-049-direct HEAD and bind external evidence.",
+    "candidate_status": "correction2_frozen_pending_exact_verification",
     "worktree": "/Users/sokompheak/Development/property-rental-management-v1-049",
     "branch": "codex/v1-049-direct",
     "worker_kind": "direct_codex_coordinator",
@@ -50,12 +50,12 @@
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "owner_action_required": false,
-    "next_action": "Complete bounded correction2 on rejected a6c8f55: temporal consistency floor for all proposal source/target dependencies under posting locks, distinct valid bigint snapshot vs posted-amount limits, exact Charge detail intent and canonical traceability IDs. Preserve a6c8f55/4108888/reports/worktrees. Freeze successor and repeat full exact-SHA gates plus fresh independent Astra max zero-finding review before normal publication/CI/ref/Workboard/durable closure andV1-050.",
-    "verification_status": "Exact a6c8f55 all local gates PASS but independentreviewFAIL0H2M2L; no acceptance/publication.",
+    "next_action": "Resolve correction2 immutable HEAD in codex/v1-049-direct; run fresh full exact-SHA tests and fresh independent Astra max read-only cumulative e3ae74f..HEAD review. Preserve rejected4108888/a6c8f55 and reports. Require zero findings/allgates before normal publication/exactCI/ref/Workboard/durableclosure andV1-050.",
+    "verification_status": "Development35/35allocationPG andstatic/traceabilityPASS; correctedimmutable fullacceptancepending",
     "development_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-development-verification.md",
     "correction": {
       "attempt": 2,
-      "status": "active",
+      "status": "implemented_pending_exact_verification",
       "base_sha": "a6c8f5565c9ca53e91648ce584d9ab4080644ea5",
       "model": "gpt-6-astra",
       "reasoning": "xhigh",
@@ -70,7 +70,11 @@
       },
       "bounded_accounting": "Second correction for residual semantic mapping and producer/consumer contract; first for new temporal provenance and Charge-detail attribution findings. No exhausted finding yet; never repeat unchanged failed approach.",
       "scope": "Four finalized findings only; temporal floor is not authentication of producer timestamp; preserve canonical financial policies and posted-money limits.",
-      "next_action": "Complete bounded correction2 on rejected a6c8f55: temporal consistency floor for all proposal source/target dependencies under posting locks, distinct valid bigint snapshot vs posted-amount limits, exact Charge detail intent and canonical traceability IDs. Preserve a6c8f55/4108888/reports/worktrees. Freeze successor and repeat full exact-SHA gates plus fresh independent Astra max zero-finding review before normal publication/CI/ref/Workboard/durable closure andV1-050."
+      "next_action": "Resolve correction2 immutable HEAD in codex/v1-049-direct; run fresh full exact-SHA tests and fresh independent Astra max read-only cumulative e3ae74f..HEAD review. Preserve rejected4108888/a6c8f55 and reports. Require zero findings/allgates before normal publication/exactCI/ref/Workboard/durableclosure andV1-050.",
+      "implementation_summary": "Conservative proposal temporal floor includes all scoped issued Invoice eligibility/update/financialevents and Payment Allocation/Deposit/reversal availabilityevents; checked by exact regeneration under existing posting locks, plus targetheaderfloor. Does not authenticate producer timestamp. Only outstanding_usd_cents snapshot allows signedbigint; postedamountceiling unchanged. Charge detail follows actual headerintent; five incorrect DB-PAY mappings replaced with exactcanonicaltable IDs.",
+      "development_verification": "35/35isolatedallocationPGPASS(session97769), allbackendstatic/migrationruff/traceability/diffPASS. Added5temporaldependencycases,onecentbigsnapshotcase andunitlimitmatrix; freshfullcandidategatespending.",
+      "development_failure": "Initial temporal/numeric fixtures assumed issuedInvoiceversion1; read actual current version without changing production concurrency checks.",
+      "development_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1049-correction2-development.md"
     },
     "correction_history": [
       {
@@ -859,7 +863,7 @@
   "branch": "implementation/foundation",
   "commit": "e3ae74f8ca2acab1991db9f724faf3df274bcc08",
   "idle_reason": null,
-  "next_action": "Complete bounded correction2 on rejected a6c8f55: temporal consistency floor for all proposal source/target dependencies under posting locks, distinct valid bigint snapshot vs posted-amount limits, exact Charge detail intent and canonical traceability IDs. Preserve a6c8f55/4108888/reports/worktrees. Freeze successor and repeat full exact-SHA gates plus fresh independent Astra max zero-finding review before normal publication/CI/ref/Workboard/durable closure andV1-050.",
+  "next_action": "Resolve correction2 immutable HEAD in codex/v1-049-direct; run fresh full exact-SHA tests and fresh independent Astra max read-only cumulative e3ae74f..HEAD review. Preserve rejected4108888/a6c8f55 and reports. Require zero findings/allgates before normal publication/exactCI/ref/Workboard/durableclosure andV1-050.",
   "active_worker": null,
   "active_card": "62275bf0-2739-448c-ae59-50794190ee72",
   "active_claim": null,
@@ -867,8 +871,8 @@
   "active_branch": "codex/v1-049-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-049",
   "candidate_sha": null,
-  "candidate_resolution": "Rejected a6c8f55 preserved in normal history; freeze new successor after correction2.",
-  "candidate_parent": "e286dd18a8ddc0448c70f9b6a686ea61982c735a",
+  "candidate_resolution": "Candidate is commit containing this frozen correction2 checkpoint; resolve codex/v1-049-direct HEAD and bind external evidence.",
+  "candidate_parent": "9fcad32a13c412c9d06b8bfd8dcbf50c19767743",
   "next_candidate": {
     "id": "V1-049",
     "order": 49,
@@ -920,7 +924,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-049 bounded correction2 active",
+  "phase": "V1-049 correction2 exactverification andfreshindependentreview pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2012,7 +2016,7 @@
   "tests": [
     "Rejected4108888:537PG/788backend/369frontendPASS; review1H3M1L andauthorityroutingFAIL preserved.",
     "Rejecteda6c8f55:543PG/788backend(520DBskipsseparatelycovered)/369frontend/189automation+allgatesandauditsPASS; review0H2M2L preserved.",
-    "Pending correction2 complete fresh exact gates and independent Astra max review."
+    "35/35isolatedallocationPGPASS(session97769), allbackendstatic/migrationruff/traceability/diffPASS. Added5temporaldependencycases,onecentbigsnapshotcase andunitlimitmatrix; freshfullcandidategatespending."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -2034,7 +2038,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-049",
-  "timestamp": "2026-09-05 13:03:37 UTC",
+  "timestamp": "2026-09-05 13:12:38 UTC",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2250,7 +2254,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05 13:03:37 UTC",
+  "updated_at": "2026-09-05 13:12:38 UTC",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -3376,7 +3380,7 @@
   "commit_role": "commit identifiesfullyclosedV1-048 predecessor; rejectedV1-0494108888 retained; currentboundedcorrection is unverified/unpublished",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "e286dd18a8ddc0448c70f9b6a686ea61982c735a"
+    "9fcad32a13c412c9d06b8bfd8dcbf50c19767743"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",

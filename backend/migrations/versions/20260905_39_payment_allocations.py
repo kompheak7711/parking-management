@@ -292,7 +292,9 @@ def upgrade() -> None:
                 IF NEW.proposal_batch_id IS NOT NULL AND (
                     NEW.selected_invoice_due_date IS DISTINCT FROM v_invoice.due_date
                     OR NEW.selected_invoice_issued_at IS DISTINCT FROM v_invoice.issued_at
-                    OR NEW.selected_invoice_number_snapshot IS DISTINCT FROM v_invoice.invoice_number)
+                    OR NEW.selected_invoice_number_snapshot IS DISTINCT FROM v_invoice.invoice_number
+                    OR NEW.proposal_generated_at<GREATEST(v_source_at,
+                        app.allocation_target_latest_at('INVOICE',v_invoice.id)))
                 THEN RAISE EXCEPTION 'Allocation proposal evidence is stale' USING ERRCODE='40001'; END IF;
             ELSE
                 SELECT charge.customer_id,invoice.lease_id,invoice.id,
@@ -546,6 +548,38 @@ def create_payment_history_budget_guard() -> None:
 def create_allocation_services() -> None:
     """Expose explicit commands, never table mutation, to the financial service role."""
     op.execute("""
+        CREATE FUNCTION app.payment_proposal_dependency_at(p_payment_id uuid)
+        RETURNS timestamptz LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+            WITH source AS (SELECT * FROM app.payments WHERE id=p_payment_id), events AS (
+                SELECT confirmed_at AS event_at FROM source
+                UNION ALL SELECT occurred_at FROM app.payment_reversals WHERE payment_id=p_payment_id
+                UNION ALL SELECT posted_at FROM app.payment_allocations WHERE payment_id=p_payment_id
+                UNION ALL SELECT reversal.occurred_at FROM app.payment_allocation_reversals reversal
+                    JOIN app.payment_allocations allocation ON allocation.id=reversal.payment_allocation_id
+                    WHERE allocation.payment_id=p_payment_id
+                UNION ALL SELECT occurred_at FROM app.deposit_receipts WHERE payment_id=p_payment_id
+                UNION ALL SELECT reversal.occurred_at FROM app.deposit_receipt_reversals reversal
+                    JOIN app.deposit_receipts receipt ON receipt.id=reversal.deposit_receipt_id
+                    WHERE receipt.payment_id=p_payment_id
+                UNION ALL
+                SELECT GREATEST(invoice.issued_at,invoice.updated_at,
+                    app.allocation_target_latest_at('INVOICE',invoice.id))
+                FROM app.invoices invoice CROSS JOIN source
+                WHERE invoice.issued_at IS NOT NULL
+                    AND app.invoice_property_id(invoice.id)=source.property_id
+                    AND source.identified_late_payment_charge_id IS NULL
+                    AND (source.identified_invoice_id IS NULL OR invoice.id=source.identified_invoice_id)
+                    AND ((source.payment_scope_kind='NORMAL_CUSTOMER'
+                            AND invoice.customer_id=source.payer_customer_id)
+                        OR (source.payment_scope_kind='THIRD_PARTY_IDENTIFIED'
+                            AND (source.lease_id IS NULL OR invoice.lease_id=source.lease_id)))
+            ) SELECT max(event_at) FROM events
+        $$;
+        REVOKE ALL ON FUNCTION app.payment_proposal_dependency_at(uuid)
+            FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap;
+        COMMENT ON FUNCTION app.payment_proposal_dependency_at(uuid) IS
+            'Conservative temporal consistency floor for current eligibility and availability, not producer authentication. Extend for V1-051 Credit/Refund consumers.';
+
         CREATE FUNCTION app.payment_allocation_proposal(
             p_property_id uuid,p_payment_id uuid,p_generated_at timestamptz,p_batch_id uuid
         ) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
@@ -562,6 +596,9 @@ def create_allocation_services() -> None:
                 OR p_generated_at<v_payment.confirmed_at OR p_generated_at>clock_timestamp()+interval '5 seconds'
                 OR p_batch_id IS NULL OR p_batch_id='00000000-0000-0000-0000-000000000000'
             THEN RAISE EXCEPTION 'Payment proposal input is invalid' USING ERRCODE='P4902'; END IF;
+            IF p_generated_at<app.payment_proposal_dependency_at(p_payment_id) THEN
+                RAISE EXCEPTION 'Proposal predates current financial dependencies' USING ERRCODE='P4904';
+            END IF;
             v_available:=app.payment_available_value(p_payment_id); v_remaining:=v_available;
             FOR v_invoice IN SELECT invoice.* FROM app.invoices invoice
                 WHERE invoice.status IN ('UNPAID','PARTIALLY_PAID')
@@ -776,7 +813,8 @@ def create_allocation_services() -> None:
                         obligation_kind,posted_amount_usd_cents,attribution_basis,detail_sequence,calculation_trace)
                     VALUES(gen_random_uuid(),v_id,v_charge,'LATE_PAYMENT_CHARGE',v_amount,
                         CASE WHEN v_payment.payment_scope_kind='THIRD_PARTY_IDENTIFIED'
-                            THEN 'THIRD_PARTY_DESIGNATED' ELSE 'DIRECT_LATE_PAYMENT_CHARGE' END,1,
+                            THEN 'THIRD_PARTY_DESIGNATED' WHEN v_reference IS NOT NULL
+                            THEN 'CUSTOMER_DESIGNATED' ELSE 'DIRECT_LATE_PAYMENT_CHARGE' END,1,
                         jsonb_build_object('designation_reference',v_reference));
                 ELSE
                     IF jsonb_typeof(v_target->'details') IS DISTINCT FROM 'array'

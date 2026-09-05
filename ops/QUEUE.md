@@ -57,7 +57,7 @@ explicit dependencies, canonical authorities, scope boundaries, risk classes, ac
 profiles, authorization status, and deterministic order. This legacy narrative queue remains
 historical context only and must not be used to invent successors.
 
-Current live queue position: V1-049 bounded correction1 active after independent review4108888 failed1HIGH3MEDIUM1LOW. Preserve candidate4108888/reportd9c49333 and all worktrees; fix five findings under existing authority, then fresh full exact-SHA gates and independent Astra max review beforepublication/CI/ref/Workboard/durableclosure. V1-048 remainsfullyclosed e3ae74f, card652e776cDONE, receipt7e3dc8d7. NoV1-050activation orOpenClawdispatch.
+Current live queue position: V1-049 correction2 implemented; freeze successor and repeat fresh full exact-SHA tests and independent Astra max review. Rejected4108888(1H3M1L) and a6c8f55(0H2M2L) remain preserved with reports, commits and worktrees. V1-048 fullyclosed e3ae74f/card652e776cDONE/receipt7e3dc8d7. NoV1-050 activation orOpenClawdispatch before49fullpublication/CI/ref/Workboard/durableclosure.
 The owner now authorizes direct continuous Codex execution through V1-053, with
 GPT-6 Astra settings in ops/CODEX_TAKEOVER_V1_048_053.md. Stop before V1-054.
 OpenClaw stays disabled; current tracking card62275bf0-2739-448c-ae59-50794190ee72

@@ -14,6 +14,7 @@ from psycopg.types.json import Jsonb
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
 
 MAX_AMOUNT = 9_000_000_000_000_000
+MAX_SNAPSHOT = 9_223_372_036_854_775_807
 NIL_UUID = UUID(int=0)
 
 
@@ -52,11 +53,12 @@ def _reason(value: str) -> None:
 
 
 def _exact_json(value: object) -> str:
-    def validate(item: object) -> None:
+    def validate(item: object, field: str | None = None) -> None:
         if item is None or isinstance(item, str):
             return
         if type(item) is int:
-            if abs(item) > MAX_AMOUNT:
+            limit = MAX_SNAPSHOT if field == "outstanding_usd_cents" else MAX_AMOUNT
+            if abs(item) > limit:
                 raise AllocationInvalidError("Integer outside the money range")
             return
         if isinstance(item, list):
@@ -64,8 +66,8 @@ def _exact_json(value: object) -> str:
                 validate(child)
             return
         if isinstance(item, dict) and all(isinstance(key, str) for key in item):
-            for child in item.values():
-                validate(child)
+            for key, child in item.items():
+                validate(child, key)
             return
         raise AllocationInvalidError("Intent must use exact integers, strings, arrays and objects")
 

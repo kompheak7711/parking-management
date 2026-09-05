@@ -2,8 +2,32 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_allocation_proposal_cannot_predate_current_financial_dependencies",
+      "upstream_ids": ["BR-PAY-029", "DB-PAY-004", "DB-DER-002", "TEST-060"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_allocation_migration.py",
+      "status": "implemented",
+      "notes": "Reject impossible proposal time before Invoice issuance/adjustment or Payment Allocation/reversal/Deposit receipt, while unchanged fresh proposals still post."
+    },
+    {
+      "test_id": "test_allocation_valid_bigint_snapshot_accepts_small_posted_amount",
+      "upstream_ids": ["DB-TYPE-004", "DB-DER-001", "BR-PAY-021", "BR-PAY-027", "TEST-060"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_allocation_migration.py",
+      "status": "implemented",
+      "notes": "An authorized Invoice debit creates a valid bigint outstanding snapshot above the new-Payment amount ceiling; an exact one-cent proposal remains confirmable."
+    },
+    {
+      "test_id": "test_allocation_snapshot_and_posted_amount_have_distinct_exact_limits",
+      "upstream_ids": ["DB-TYPE-004", "BR-PAY-027", "SEC-026"],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_allocation.py",
+      "status": "implemented",
+      "notes": "Accept signed-bigint source snapshots but keep smaller posted-amount bounds; reject overflow, booleans and floating-point values."
+    },
+    {
       "test_id": "test_allocation_detail_limit_continues_same_invoice_before_later_targets",
-      "upstream_ids": ["BR-PAY-021", "BR-PAY-036", "BR-PAY-038", "DB-PAY-005", "TEST-060"],
+      "upstream_ids": ["BR-PAY-021", "BR-PAY-036", "BR-PAY-038", "DB-PAY-007", "TEST-060"],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
@@ -57,7 +81,7 @@
         "BR-PAY-022",
         "BR-PAY-023",
         "DB-PAY-004",
-        "DB-PAY-005",
+        "DB-PAY-007",
         "SEC-026",
         "TEST-060"
       ],
@@ -72,7 +96,7 @@
         "BR-PAY-036",
         "BR-PAY-037",
         "BR-PAY-039",
-        "DB-PAY-005",
+        "DB-PAY-007",
         "DB-DER-011",
         "TEST-060"
       ],
@@ -127,7 +151,7 @@
       "upstream_ids": [
         "BR-PAY-029",
         "DB-PAY-006",
-        "DB-PAY-007",
+        "DB-PAY-005",
         "API-060"
       ],
       "test_level": "unit",
@@ -253,7 +277,7 @@
       "upstream_ids": [
         "BR-PAY-040",
         "DB-PAY-004",
-        "DB-PAY-005",
+        "DB-PAY-007",
         "DB-DER-009",
         "DB-TXN-004",
         "TEST-060",

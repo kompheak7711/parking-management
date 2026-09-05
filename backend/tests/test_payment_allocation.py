@@ -36,6 +36,19 @@ def test_allocation_reversals_require_normalized_reason(reason: str) -> None:
         ReversePaymentCommand(uuid4(), reason)
 
 
+def test_allocation_snapshot_and_posted_amount_have_distinct_exact_limits() -> None:
+    proposal = {"outstanding_usd_cents": 9_223_372_036_854_775_807, "amount_usd_cents": 1}
+    PostAllocationsCommand(uuid4(), {"mode": "PROPOSAL", "proposal": proposal})
+    for invalid in (
+        {**proposal, "outstanding_usd_cents": 9_223_372_036_854_775_808},
+        {**proposal, "outstanding_usd_cents": True},
+        {**proposal, "amount_usd_cents": 9_000_000_000_000_001},
+        {**proposal, "amount_usd_cents": 1.0},
+    ):
+        with pytest.raises(AllocationInvalidError):
+            PostAllocationsCommand(uuid4(), {"mode": "PROPOSAL", "proposal": invalid})
+
+
 def test_allocation_payment_reversal_requires_expected_state() -> None:
     with pytest.raises(AllocationInvalidError):
         ReversePaymentCommand(uuid4(), "Correct duplicate", "REVERSED")

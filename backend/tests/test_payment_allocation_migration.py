@@ -355,13 +355,16 @@ def test_allocation_charge_is_separate_and_corrections_respect_consumption(
     assert result["available_usd_cents"] == 6_000
     with psycopg.connect(migrated_database_url) as connection:
         assert connection.execute(
-            "SELECT between_invoice_basis,customer_designation_reference,proposal_batch_id "
-            "FROM app.payment_allocations WHERE id=%s",
+            "SELECT allocation.between_invoice_basis,allocation.customer_designation_reference,"
+            "allocation.proposal_batch_id,detail.attribution_basis "
+            "FROM app.payment_allocations allocation JOIN app.payment_allocation_details detail "
+            "ON detail.payment_allocation_id=allocation.id WHERE allocation.id=%s",
             (UUID(str(cast(list[str], result["allocation_ids"])[0])),),
         ).fetchone() == (
             "DIRECT_LATE_PAYMENT_CHARGE" if direct else "CUSTOMER_DESIGNATED",
             None if direct else "Customer selects separate late charge",
             None,
+            "DIRECT_LATE_PAYMENT_CHARGE" if direct else "CUSTOMER_DESIGNATED",
         )
         assert connection.execute(
             "SELECT status,app.invoice_line_outstanding(line.id) FROM app.invoices invoice "
@@ -574,6 +577,134 @@ def test_allocation_detail_limit_continues_same_invoice_before_later_targets(
             PostAllocationsCommand(uuid4(), {"mode": "PROPOSAL", "proposal": proposal}),
             actor=actor(human, prop),
         )
+
+
+@pytest.mark.parametrize(
+    "dependency", ["issuance", "adjustment", "allocation", "reversal", "deposit"]
+)
+def test_allocation_proposal_cannot_predate_current_financial_dependencies(
+    migrated_database_url: str,  # noqa: F811
+    dependency: str,
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, customer, lease = setup_signed_lease(connection)
+        payment = seed_payment(
+            connection, actor_id=human, property_id=prop, customer_id=customer, amount=20_000
+        )
+        confirmed_row = connection.execute(
+            "SELECT confirmed_at FROM app.payments WHERE id=%s", (payment,)
+        ).fetchone()
+        assert confirmed_row is not None
+        before_issuance = confirmed_row[0].isoformat()
+        invoice, line = create_recurring_rent_invoice(
+            connection, actor_id=human, customer_id=customer, lease_id=lease
+        )
+    staff = actor(human, prop)
+    initial_proposal = service().proposal(prop, payment, actor=staff)
+    initial_version = int(
+        str(cast(list[dict[str, object]], initial_proposal["targets"])[0]["version"])
+    )
+    stale_time = initial_proposal["generated_at"]
+    if dependency == "issuance":
+        stale_time = before_issuance
+    elif dependency == "adjustment":
+        PostgresInvoiceService(runtime_database_url(), financial_database_url()).adjust(
+            prop,
+            invoice,
+            AdjustInvoiceCommand(
+                uuid4(),
+                line,
+                AdjustmentType.DEBIT,
+                1,
+                "approved-temporal-adjustment",
+                "Synthetic source dependency",
+                initial_version,
+            ),
+            actor=invoice_api_actor(human, prop),
+        )
+    elif dependency in {"allocation", "reversal"}:
+        posted = service().post(prop, payment, designated(invoice, line, 1), actor=staff)
+        if dependency == "reversal":
+            stale_time = service().proposal(prop, payment, actor=staff)["generated_at"]
+            service().reverse_allocation(
+                prop,
+                UUID(cast(list[str], posted["allocation_ids"])[0]),
+                ReverseAllocationCommand(uuid4(), "Synthetic dependency unwind"),
+                actor=staff,
+            )
+    else:
+        with psycopg.connect(migrated_database_url) as connection:
+            _, _, unit, _ = setup_reservation_sources(connection)
+            create_reservation(
+                connection,
+                actor_id=human,
+                property_id=prop,
+                customer_id=customer,
+                unit_id=unit,
+                accepted_usd_cents=10_000,
+                existing_payment_id=payment,
+            )
+    fresh = service().proposal(prop, payment, actor=staff)
+    stale = {**fresh, "generated_at": stale_time}
+    with pytest.raises(AllocationConflictError):
+        service().post(
+            prop,
+            payment,
+            PostAllocationsCommand(uuid4(), {"mode": "PROPOSAL", "proposal": stale}),
+            actor=staff,
+        )
+    assert (
+        service().post(
+            prop,
+            payment,
+            PostAllocationsCommand(uuid4(), {"mode": "PROPOSAL", "proposal": fresh}),
+            actor=staff,
+        )["available_usd_cents"]
+        == 0
+    )
+
+
+def test_allocation_valid_bigint_snapshot_accepts_small_posted_amount(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, payment, invoices = source(migrated_database_url, 1)
+    with psycopg.connect(migrated_database_url) as connection:
+        row = connection.execute(
+            "SELECT line.id,invoice.version FROM app.invoice_lines line "
+            "JOIN app.invoices invoice ON invoice.id=line.invoice_id WHERE invoice.id=%s",
+            (invoices[1],),
+        ).fetchone()
+        assert row is not None
+        line = row[0]
+        version = int(str(row[1]))
+    PostgresInvoiceService(runtime_database_url(), financial_database_url()).adjust(
+        prop,
+        invoices[1],
+        AdjustInvoiceCommand(
+            uuid4(),
+            line,
+            AdjustmentType.DEBIT,
+            9_000_000_000_000_000,
+            "approved-large-obligation",
+            "Synthetic exact bigint source",
+            version,
+        ),
+        actor=invoice_api_actor(human, prop),
+    )
+    proposal = service().proposal(prop, payment, actor=actor(human, prop))
+    targets = cast(list[dict[str, object]], proposal["targets"])
+    details = cast(list[dict[str, object]], targets[0]["details"])
+    assert details[0]["outstanding_usd_cents"] == 9_000_000_000_080_000
+    assert targets[0]["amount_usd_cents"] == 1
+    assert (
+        service().post(
+            prop,
+            payment,
+            PostAllocationsCommand(uuid4(), {"mode": "PROPOSAL", "proposal": proposal}),
+            actor=actor(human, prop),
+        )["available_usd_cents"]
+        == 0
+    )
 
 
 def test_allocation_third_party_is_bound_to_identified_invoice(
