@@ -791,17 +791,17 @@
       "escalation_reason": "V1-051 financial transactions, non-destructive migration, authorization, concurrency and permanent event history"
     },
     "current_version": "V1-051",
-    "phase": "scope_frozen_implementation_preparation",
+    "phase": "implementation_active",
     "candidate_sha": null,
     "candidate_status": "not_frozen",
     "candidate_resolution": "Future immutable cumulative candidate in sole isolated V1-051 worktree; base is fully closed V1-050 terminal cc3d18e.",
-    "worktree": "/Users/sokompheak/Development/property-rental-management",
-    "branch": "implementation/foundation",
+    "worktree": "/Users/sokompheak/Development/property-rental-management-v1-051",
+    "branch": "codex/v1-051-direct",
     "planned_worktree": "/Users/sokompheak/Development/property-rental-management-v1-051",
     "planned_branch": "codex/v1-051-direct",
     "worker_kind": "direct_codex_coordinator",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
-    "worker_status": "scope_freeze_then_isolated_implementation",
+    "worker_status": "direct_coordinator_implementation",
     "scope_path": "ops/V1_051_SCOPE.md",
     "scope_sha256": "91adbb369a44dc25f04a49bcaa11c1dc8c29694c8805037855c1e52e4396d3b2",
     "card_id": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
@@ -815,8 +815,8 @@
     "predecessor_closure_receipt_sha256": "616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2",
     "cumulative_review_base": "cc3d18e682401cc8a9ade10295572fe1a1344317",
     "owner_action_required": false,
-    "next_action": "Implement frozen V1-051 scope in the sole isolated codex/v1-051-direct worktree after recording its creation. Preserve closed V1-050 and all failed evidence. Add forward migration41, Credit/application/reversal and source-bounded Refund/correction services with current and historical balance integration; focused/full exact-SHA gates and fresh independent Astra max Standard read-only zero-finding review before normal authorized publication, exact CI/ref equality and same-card terminal closure. Only then activate52; continue through53, OpenClawdisabled, no54.",
-    "verification_status": "Scope frozen; V1-051 product tests, review, publication, CI and closure not yet performed.",
+    "next_action": "Continue implementation of frozen V1-051 scope in the existing sole /Users/sokompheak/Development/property-rental-management-v1-051 on codex/v1-051-direct; inspect its current draft/commit and gates before edits, never create another worker/worktree. Add forward migration41, Credit/application/reversal and source-bounded Refund/correction services with current and historical financial integration, focused/full exact-SHA tests and fresh independent Astra max Standard read-only zero-finding review before normal authorized publication, exact CI/ref equality and same-card terminal closure. Then52 through53 dependency-ordered; OpenClawdisabled, no54.",
+    "verification_status": "Activation preflight189automation/configuration/traceability/diff/guardPASS; V1-051 product implementation/testing/review/publication not complete.",
     "correction_history": [],
     "activated_at": "2026-09-05T19:37:17Z",
     "last_model_configuration_check": {
@@ -828,15 +828,17 @@
       "standard_config": "service_tier default; provider-side attestation unavailable"
     },
     "last_reconciliation": {
-      "checked_at": "2026-09-05T19:37:17Z",
-      "main_head": "cc3d18e682401cc8a9ade10295572fe1a1344317",
+      "checked_at": "2026-09-05T19:44:43Z",
+      "main_head": "b3b03e209fcb69495944d7f076ac206da5de2a98",
       "live_remote": "cc3d18e682401cc8a9ade10295572fe1a1344317",
       "predecessor_ci": "33986122538 attempt1success all4jobs",
       "supervisor": "Exactly1matching658ffdaf disabled30minutes/no nextRun; runningtasks0",
       "card": "Single new tracking-onlyc5621f97 blocked; no claim/attempt/execution",
-      "worktrees": "125 retained before V1-051 creation; no V1-051 branch/worktree; previous product50 clean3d16",
-      "followup": "Existing ACTIVE10minutes; checkpoint refresh pending"
-    }
+      "worktrees": "Existing soleV1-051 created atb3b03e2; all125previous retained,126total. No OpenClaw worker.",
+      "followup": "Existing ACTIVE10minutes; refresh in place to existing51worktree."
+    },
+    "activation_sha": "b3b03e209fcb69495944d7f076ac206da5de2a98",
+    "implementation_started_at": "2026-09-05T19:44:43Z"
   },
   "historical_v1_048_takeover": {
     "authorization_from": "V1-048",
@@ -1544,7 +1546,7 @@
   "approval": {
     "status": "approved",
     "basis": "Standing direct Codex V1-048 through V1-053 authorization, fully closed immediate predecessor50 and roadmap dependencies37/49; policy ops/CODEX_TAKEOVER_V1_048_053.md.",
-    "implementation_started": false,
+    "implementation_started": true,
     "implementation_completed": false,
     "publication_completed": false,
     "evidence_scope": "V1-051 scope frozen only; no product acceptance or publication implied."
@@ -1582,19 +1584,19 @@
     "TEST-124"
   ],
   "blockers": [],
-  "branch": "implementation/foundation",
-  "commit": "cc3d18e682401cc8a9ade10295572fe1a1344317",
+  "branch": "codex/v1-051-direct",
+  "commit": "b3b03e209fcb69495944d7f076ac206da5de2a98",
   "idle_reason": null,
-  "next_action": "Implement frozen V1-051 scope in the sole isolated codex/v1-051-direct worktree after recording its creation. Preserve closed V1-050 and all failed evidence. Add forward migration41, Credit/application/reversal and source-bounded Refund/correction services with current and historical balance integration; focused/full exact-SHA gates and fresh independent Astra max Standard read-only zero-finding review before normal authorized publication, exact CI/ref equality and same-card terminal closure. Only then activate52; continue through53, OpenClawdisabled, no54.",
+  "next_action": "Continue implementation of frozen V1-051 scope in the existing sole /Users/sokompheak/Development/property-rental-management-v1-051 on codex/v1-051-direct; inspect its current draft/commit and gates before edits, never create another worker/worktree. Add forward migration41, Credit/application/reversal and source-bounded Refund/correction services with current and historical financial integration, focused/full exact-SHA tests and fresh independent Astra max Standard read-only zero-finding review before normal authorized publication, exact CI/ref equality and same-card terminal closure. Then52 through53 dependency-ordered; OpenClawdisabled, no54.",
   "active_worker": null,
   "active_card": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
   "active_claim": null,
   "active_attempt": null,
-  "active_branch": "implementation/foundation",
-  "active_worktree": "/Users/sokompheak/Development/property-rental-management",
+  "active_branch": "codex/v1-051-direct",
+  "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-051",
   "candidate_sha": null,
   "candidate_resolution": "Future immutable cumulative candidate in sole isolated V1-051 worktree; base is fully closed V1-050 terminal cc3d18e.",
-  "candidate_parent": "cc3d18e682401cc8a9ade10295572fe1a1344317",
+  "candidate_parent": "b3b03e209fcb69495944d7f076ac206da5de2a98",
   "next_candidate": {
     "id": "V1-051",
     "order": 51,
@@ -1646,7 +1648,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-051 scope frozen; isolated implementation preparation",
+  "phase": "V1-051 implementation active in sole isolated Codex worktree",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2740,7 +2742,8 @@
   ],
   "tests": [
     "PASS predecessorV1-050 closure receipt/checksum/exactCI33986122538all4success/livepublishedcc3d and WorkboardDONE/finalcomment verified. No V1-051 product verification yet.",
-    "PASS reconciliation: single OpenClaw supervisor disabled30minutes/no nextRun, runningtasks0; no V1-051 card/branch/worktree before one tracking-only card creation."
+    "PASS reconciliation: single OpenClaw supervisor disabled30minutes/no nextRun, runningtasks0; no V1-051 card/branch/worktree before one tracking-only card creation.",
+    "PASS V1-051 activation preflight189automation(70.240s)/routing/state-routing/watchdog/syntax/compile/configuration/traceability/diff/publication guard. Local activationb3b03e2 not published; cumulative independent product review still required."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -2762,7 +2765,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-051",
-  "timestamp": "2026-09-05T19:37:17Z",
+  "timestamp": "2026-09-05T19:44:43Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2789,7 +2792,7 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
-    "V1-051 frozen scope and compact durable activation; product changes not started"
+    "V1-051 frozen scope and compact activation; sole isolated implementation worktree created; no product changes yet"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -2977,7 +2980,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T19:37:17Z",
+  "updated_at": "2026-09-05T19:44:43Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -4100,10 +4103,10 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Fully closed V1-050 terminal base; local V1-051 activation and future product remain unpublished until cumulative exact-SHA review.",
+  "commit_role": "Local V1-051 activation plus sole-worktree reconciliation; future cumulative product candidate review base remains closed V1-050 cc3d.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "cc3d18e682401cc8a9ade10295572fe1a1344317"
+    "b3b03e209fcb69495944d7f076ac206da5de2a98"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
