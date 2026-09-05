@@ -172,3 +172,14 @@ GitHub Actions run33945359575 passed all four jobs and every remote/local ref eq
 review it, publish normally, require exact-SHA CI/ref equality, then complete preserved
 Workboard card26b14ae0 and record terminal V1-047 closure. Do not activate or dispatch
 V1-048 in this closure turn. OpenClaw remains disabled; no owner action required.
+
+### Current superseding checkpoint — final-reconciliation correction
+
+Immutable final-reconciliation checkpoint030577b failed independent Sol max Standard
+review with one MEDIUM unrecognized-status routing finding and one LOW stale-worker
+finding. The normal successor restores the executable `verified_unpublished` route and
+clears stale worker/branch/worktree identity while preserving the Workboard card and all
+evidence. Freeze and test the cumulative four-file successor, require fresh independent
+Sol max Standard review, then publish normally, require exact-SHA CI/ref equality,
+complete Workboard card26b14ae0 and record terminal V1-047 closure. OpenClaw remains
+disabled; V1-048 must not activate or dispatch in this closure turn; no owner action.

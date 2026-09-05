@@ -10,8 +10,8 @@
     "openclaw_dispatch": false,
     "openclaw_supervisor_enabled": false,
     "owner_action_required": false,
-    "phase": "final_reconciliation_pending",
-    "next_action": "Freeze the bounded four-file V1-047 reconciliation, require fresh automation/configuration tests and independent Sol max Standard review, publish normally, require exact-SHA CI and ref equality, then complete preserved Workboard card 26b14ae0 and record terminal closure without activating V1-048. OpenClaw disabled.",
+    "phase": "final_reconciliation_correction_pending",
+    "next_action": "Correct the two findings from immutable final-reconciliation checkpoint 030577b by restoring the recognized verified_unpublished route and clearing stale worker identity; then require fresh exact-SHA automation/configuration tests and independent Sol max Standard cumulative review before publication. OpenClaw disabled; V1-048 undispatched.",
     "initial_preflight": {
       "frontend_client": 27,
       "frontend_workflow": 22,
@@ -69,8 +69,8 @@
       "followup_active": true,
       "followup_status": "ACTIVE",
       "owner_action_required": false,
-      "exact_next_action": "Freeze and review the final four-file reconciliation, publish it normally, require exact-SHA CI/ref equality, then complete Workboard and record terminal V1-047 closure without activating V1-048.",
-      "review_health": "Corrected closure chain through 34922d6 independently reviewed PASS with zero findings and published with exact-SHA CI run 33945359575 green; no implementation or review worker active"
+      "exact_next_action": "Correct the two findings from immutable final-reconciliation checkpoint 030577b, then require fresh exact-SHA tests and independent Sol max Standard cumulative review before publication.",
+      "review_health": "Final-reconciliation checkpoint 030577b independently reviewed FAIL with one MEDIUM unrecognized-status routing finding and one LOW stale-worker finding; no implementation or review worker active"
     },
     "independent_review": {
       "status": "failed",
@@ -497,7 +497,22 @@
       "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33945359575",
       "ci_jobs": 4,
       "ci_conclusion": "success",
-      "refs_reconciled": true
+      "refs_reconciled": true,
+      "final_reconciliation_failed_checkpoint": "030577ba3a845b1f3fd4ad4dc42fffab34531949",
+      "final_reconciliation_failed_review": {
+        "status": "failed_preserved",
+        "session": "v1047_final_reconciliation_review",
+        "model": "gpt-5.6-sol",
+        "reasoning_effort": "max",
+        "mode": "Standard",
+        "findings": {
+          "high": 0,
+          "medium": 1,
+          "low": 1
+        },
+        "report_path": "/private/tmp/prm-v1047-native-evidence.fvAaxf/final-reconciliation-review-030577b.md",
+        "report_sha256": "e4eecb57ea2e4179c3b464489b204e21ea6d6d45c75754dda5afaf77d5fa3895"
+      }
     }
   },
   "approval": {
@@ -505,7 +520,7 @@
     "basis": "Owner explicitly authorized direct native Codex full V1-047 closure, routine corrections, commits, independent exact-SHA review and normal publication; removed only rejected OpenClaw coordination-repair prerequisite. Standing sequential authorization through V1-060 preserved.",
     "implementation_started": true,
     "implementation_completed": true,
-    "publication_completed": true
+    "publication_completed": false
   },
   "authorities": [
     "API-050",
@@ -529,13 +544,13 @@
   "branch": "implementation/foundation",
   "commit": "34922d6e0f0f2ee9b9ad8c7d683a4d4dfa1116a1",
   "idle_reason": null,
-  "next_action": "Freeze the bounded four-file V1-047 reconciliation, require fresh automation/configuration tests and independent Sol max Standard review, publish normally, require exact-SHA CI and ref equality, then complete preserved Workboard card 26b14ae0 and record terminal closure without activating V1-048. OpenClaw disabled.",
-  "active_worker": "direct_codex",
+  "next_action": "Correct the two findings from immutable final-reconciliation checkpoint 030577b by restoring the recognized verified_unpublished route and clearing stale worker identity; then require fresh exact-SHA automation/configuration tests and independent Sol max Standard cumulative review before publication. OpenClaw disabled; V1-048 undispatched.",
+  "active_worker": null,
   "active_card": "26b14ae0-92b3-433d-bed6-46bd732c569c",
   "active_claim": null,
   "active_attempt": null,
-  "active_branch": "implementation/foundation",
-  "active_worktree": "/Users/sokompheak/Development/property-rental-management",
+  "active_branch": null,
+  "active_worktree": null,
   "candidate_sha": null,
   "candidate_parent": null,
   "next_candidate": {
@@ -626,8 +641,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-047 release and corrected closure chain through 34922d6 are independently approved, normally published, exact-SHA CI-green and remotely synchronized; final four-file reconciliation and terminal Workboard acceptance remain. OpenClaw disabled during native takeover.",
-    "exact_next_action": "Review and publish the final four-file V1-047 reconciliation, require exact-SHA CI/ref equality, then complete Workboard and record terminal closure. Do not activate or dispatch V1-048 in this closure turn.",
+    "current_phase": "V1-047 final-reconciliation checkpoint 030577b is preserved after independent review found one MEDIUM routing issue and one LOW stale-worker issue; a normal successor corrects both. OpenClaw disabled during native takeover.",
+    "exact_next_action": "Freeze the successor correction, require fresh exact-SHA tests and independent Sol max Standard cumulative review, then publish normally, require exact-SHA CI/ref equality, complete Workboard, and record terminal closure. Do not activate V1-048.",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1607,7 +1622,7 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "closure_published_reconciliation_pending",
+  "status": "verified_unpublished",
   "task": "Close the approved V1-047 invoice, adjustment, late-payment, and billing-run API/UI candidate",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
