@@ -2,6 +2,33 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_credit_response_decoder_is_exact_nested_and_connection_local",
+      "upstream_ids": [
+        "BR-CREDIT-010",
+        "API-061",
+        "BR-MONEY-003",
+        "SEC-026"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "Exact decimal-text JSON decoding preserves nested FX evidence and integer cents without changing process-global psycopg adapters."
+    },
+    {
+      "test_id": "test_credit_fractional_fx_and_nested_trace_remain_exact_in_responses",
+      "upstream_ids": [
+        "BR-CREDIT-010",
+        "API-061",
+        "BR-MONEY-003",
+        "BR-MONEY-010",
+        "SEC-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_migration.py",
+      "status": "implemented",
+      "notes": "Four fractional/high-precision System/channel source cases preserve exact reference/channel rates and nested traces on recognition/read/replay/reversal; original FX/Payment/Receipt rows stay byte-identical."
+    },
+    {
       "test_id": "test_credit_application_proposal_post_replay_reverse_and_distinct_source_positions",
       "upstream_ids": [
         "BR-CREDIT-006",

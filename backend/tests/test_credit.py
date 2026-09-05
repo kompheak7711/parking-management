@@ -6,6 +6,9 @@ from uuid import UUID, uuid4
 
 import psycopg
 import pytest
+from psycopg.adapt import AdaptersMap
+from psycopg.pq import Format
+from psycopg.types.json import JsonbLoader
 
 from property_rental.credit import (
     ApplyCreditCommand,
@@ -161,6 +164,32 @@ def test_credit_recognition_uses_financial_connection_and_complete_exact_envelop
             "Retain identified excess",
         ),
     )
+
+
+def test_credit_response_decoder_is_exact_nested_and_connection_local() -> None:
+    prop, credit = uuid4(), uuid4()
+    connection = MagicMock()
+    connection.adapters = AdaptersMap(psycopg.adapters)
+    connection.execute.return_value.fetchone.return_value = ({"available_usd_cents": 101},)
+    with patch("property_rental.credit.psycopg.connect") as connect:
+        connect.return_value.__enter__.return_value = connection
+        result = CustomerCreditService("read-only", "financial").get(
+            prop, credit, actor=staff(prop, "credits.read")
+        )
+    assert result == {"available_usd_cents": 101}
+    raw = (
+        b'{"reference_rate":10000000000.000001,"amount_usd_cents":101,'
+        b'"trace":{"ratio":0.1234567890123456789,"values":[4062.123456,1]}}'
+    )
+    loader = connection.adapters.get_loader(3802, Format.TEXT)
+    assert loader is not None
+    assert loader(3802).load(raw) == {
+        "reference_rate": "10000000000.000001",
+        "amount_usd_cents": 101,
+        "trace": {"ratio": "0.1234567890123456789", "values": ["4062.123456", 1]},
+    }
+    # A Credit request must not change other components' process-global adapters.
+    assert isinstance(JsonbLoader(3802).load(raw)["reference_rate"], float)
 
 
 def test_credit_read_uses_scoped_read_connection_and_actor() -> None:

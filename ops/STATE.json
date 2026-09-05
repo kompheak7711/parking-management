@@ -801,7 +801,7 @@
     "planned_branch": "codex/v1-051-direct",
     "worker_kind": "direct_codex_coordinator",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
-    "worker_status": "direct_coordinator_credit_application_checkpoint_verified",
+    "worker_status": "direct_coordinator_credit_correction1_verified_awaiting_exact_review",
     "scope_path": "ops/V1_051_SCOPE.md",
     "scope_sha256": "91adbb369a44dc25f04a49bcaa11c1dc8c29694c8805037855c1e52e4396d3b2",
     "card_id": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
@@ -815,9 +815,27 @@
     "predecessor_closure_receipt_sha256": "616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2",
     "cumulative_review_base": "cc3d18e682401cc8a9ade10295572fe1a1344317",
     "owner_action_required": false,
-    "next_action": "Continue V1-051 in existing sole /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct. Inspect HEAD and ops/V1_051_CREDIT_APPLICATION_CHECKPOINT.md; do not repeat activation or rebuild verified recognition/application slices. Bounded independent exact-SHA Astra max read-only Credit review next, while mapping existing Refund integration. Extend existing Refund/correction history with source-bounded Payment/Credit/qualifiedPet/Reservation paths, exact USD/KHR evidence and verified-return corrections, then bounded Credit history reads. Full product remains incomplete; require fresh full exact-SHA gates/audits and independent cumulative Astra max zero findings before reviewed normal publication, exact CI/ref equality, same-card acceptance and terminal closure. Then52through53 dependency-ordered; OpenClawdisabled, no54.",
-    "verification_status": "Partial Credit recognition/application slices verified:49unit/642fullPGzero skips/875backend619DB-onlyskipsseparatelycovered/189automation/allbackendstaticbuildconfigtraceability PASS. Refund/history and full product acceptance remain pending.",
-    "correction_history": [],
+    "next_action": "Inspect current HEAD and ops/V1_051_CREDIT_CORRECTION1_CHECKPOINT.md in sole /Users/sokompheak/Development/property-rental-management-v1-051. Reconcile fresh independent Astra max exact-SHA correction review before advancing; preserve rejectedcad545e/report and all prior evidence. Credit correction1 addresses FX response precision and cumulative whitespace with full646PG/876backend/189automation PASS. After zero findings, implement existing source-bounded Refund/correction history and bounded Credit reads, without rebuilding accepted Credit slices or activation. Full V1-051 fresh exact-SHA gates/audits and independent cumulative zero findings remain mandatory before normal reviewed publication/exactCI/ref equality/Workboard acceptance/terminal closure; then52and53. OpenClawdisabled; no54.",
+    "verification_status": "Partial Credit correction1 verified:50unit/646fullPG/876backend623DB-onlyskipscovered/189automation/backendstaticbuildconfigtraceability PASS; independent correction review next. Refund/history and full product acceptance pending.",
+    "correction_history": [
+      {
+        "number": 1,
+        "scope": "Credit checkpoint M1 exact FX response precision; L1 frozen cumulative whitespace",
+        "rejected_sha": "cad545ef298ef13a725fe5b02a171aec609859d4",
+        "reviewer": "/root/v1051_credit_checkpoint_review",
+        "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-credit-review-cad545e.md",
+        "report_sha256": "e26d025307e523c4be227af2c13edf0bcf6dc2f6e6f94e2067817a77305dfd91",
+        "findings": {
+          "high": 0,
+          "medium": 1,
+          "low": 1
+        },
+        "approach": "Credit connection-local decimal-text JSON decoding with integer fields/global adapters/source records preserved; fractional/channel/nested precision regressions. Trim document surplus EOF and verify staged plus explicit cumulative exact-SHA diff.",
+        "reproduction": "Installed JSONB loader precision witness; new PostgreSQL service regression fails pre-fix; exact cc3d..cad545e whitespace exits2.",
+        "verification": "50unit/4focusednewPG/646fullPG/876backend623DB-onlyskipscovered/189automation/staticbuildconfigtraceability PASS",
+        "status": "corrected_worktree_pending_fresh_exact_review"
+      }
+    ],
     "activated_at": "2026-09-05T19:37:17Z",
     "last_model_configuration_check": {
       "checked_at": "2026-09-05T21:40:00Z",
@@ -840,10 +858,10 @@
     "activation_sha": "b3b03e209fcb69495944d7f076ac206da5de2a98",
     "implementation_started_at": "2026-09-05T19:44:43Z",
     "implementation_checkpoint": {
-      "path": "ops/V1_051_CREDIT_APPLICATION_CHECKPOINT.md",
-      "status": "partial_verified_worktree_not_product_acceptance",
-      "parent_sha": "8634bedeaa14a72ceb95f3942f0fe49649c40ce0",
-      "next_slice": "Bounded independent Credit review; existing Refund/correction extension and bounded Credit history reads"
+      "path": "ops/V1_051_CREDIT_CORRECTION1_CHECKPOINT.md",
+      "status": "partial_correction_verified_pending_exact_review",
+      "parent_sha": "cad545ef298ef13a725fe5b02a171aec609859d4",
+      "next_slice": "Fresh bounded correction review, then existing Refund/correction history and bounded Credit reads"
     },
     "recognition_checkpoint": {
       "path": "ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md",
@@ -852,6 +870,15 @@
       "next_slice": "Credit applications/details/reversals and authoritative source/target history, followed by existing Refund history extension",
       "commit": "8634bedeaa14a72ceb95f3942f0fe49649c40ce0",
       "receipt_sha256": "b213d5785e78bb5f7e8ee4b5abcb5347fab68b8030bccca761433f24595daf11"
+    },
+    "application_checkpoint": {
+      "path": "ops/V1_051_CREDIT_APPLICATION_CHECKPOINT.md",
+      "status": "partial_verified_worktree_not_product_acceptance",
+      "parent_sha": "8634bedeaa14a72ceb95f3942f0fe49649c40ce0",
+      "next_slice": "Bounded independent Credit review; existing Refund/correction extension and bounded Credit history reads",
+      "commit": "cad545ef298ef13a725fe5b02a171aec609859d4",
+      "original_sha256": "b1ab1bb16bbe7a0e08287ebbb8b2dcfe3766020ae4096c965158690669b30d3e",
+      "review_status": "0HIGH1MEDIUM1LOW_rejected"
     }
   },
   "historical_v1_048_takeover": {
@@ -1599,9 +1626,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-051-direct",
-  "commit": "8634bedeaa14a72ceb95f3942f0fe49649c40ce0",
+  "commit": "cad545ef298ef13a725fe5b02a171aec609859d4",
   "idle_reason": null,
-  "next_action": "Continue V1-051 in existing sole /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct. Inspect HEAD and ops/V1_051_CREDIT_APPLICATION_CHECKPOINT.md; do not repeat activation or rebuild verified recognition/application slices. Bounded independent exact-SHA Astra max read-only Credit review next, while mapping existing Refund integration. Extend existing Refund/correction history with source-bounded Payment/Credit/qualifiedPet/Reservation paths, exact USD/KHR evidence and verified-return corrections, then bounded Credit history reads. Full product remains incomplete; require fresh full exact-SHA gates/audits and independent cumulative Astra max zero findings before reviewed normal publication, exact CI/ref equality, same-card acceptance and terminal closure. Then52through53 dependency-ordered; OpenClawdisabled, no54.",
+  "next_action": "Inspect current HEAD and ops/V1_051_CREDIT_CORRECTION1_CHECKPOINT.md in sole /Users/sokompheak/Development/property-rental-management-v1-051. Reconcile fresh independent Astra max exact-SHA correction review before advancing; preserve rejectedcad545e/report and all prior evidence. Credit correction1 addresses FX response precision and cumulative whitespace with full646PG/876backend/189automation PASS. After zero findings, implement existing source-bounded Refund/correction history and bounded Credit reads, without rebuilding accepted Credit slices or activation. Full V1-051 fresh exact-SHA gates/audits and independent cumulative zero findings remain mandatory before normal reviewed publication/exactCI/ref equality/Workboard acceptance/terminal closure; then52and53. OpenClawdisabled; no54.",
   "active_worker": null,
   "active_card": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
   "active_claim": null,
@@ -1662,7 +1689,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-051 Credit recognition/application checkpoint verified; Refund and bounded history work remain",
+  "phase": "V1-051 Credit checkpoint correction1 verified; fresh exact-SHA review next, Refund/history still pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2761,7 +2788,9 @@
     "PASS partial51recognition:31unit/35focusedPG/619fullPGzero skips(100.85s)/857backend596DB-onlyskipsseparatelycovered(38.84s)/189automation(74.920s)/allbackendstaticbuildimport/configuration/traceability/secretguard/diff. See ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md; not full product acceptance.",
     "RESOLVED firstbackendrun856PASS596skip1FAIL due missing8unit traceability entries; added exact mappings and full857PASS rerun. Initial Receipt test expectation and new-test lint failures corrected without weakening assertions.",
     "PASS application slice:49Creditunit/642fullPostgreSQLzero skips100.09s/875backend619DB-onlyskipsseparatelycovered36.02s/189automation66.321s/allbackendstaticbuildimport/configuration/traceability/publicationsecretguard/diff. Partial only, see application checkpoint.",
-    "RESOLVED application fixtures: reverse valid adjustment before VOID, correct501line due-date source, type-narrow test result and split long test SQL. Guards/assertions preserved; full reruns green."
+    "RESOLVED application fixtures: reverse valid adjustment before VOID, correct501line due-date source, type-narrow test result and split long test SQL. Guards/assertions preserved; full reruns green.",
+    "Independent Credit checkpointcad545e rejected0HIGH1MEDIUM1LOW: exact FX response precision and frozen cumulative whitespace. Preserve report e26d025307e523c4be227af2c13edf0bcf6dc2f6e6f94e2067817a77305dfd91; earlier working-tree whitespace PASS did not cover new untracked checkpoint.",
+    "PASS correction1:50unit/4focusednewPG/646fullPGzero skips104.52s/876backend623DB-onlyskipsseparatelycovered42.72s/189automation72.782s/backendformatRuffmypy138/build/import/configuration/traceability/guard/workingcumulativewhitespace. Fresh exact-SHA review pending."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -2783,7 +2812,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-051",
-  "timestamp": "2026-09-05T21:40:00Z",
+  "timestamp": "2026-09-05T22:02:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2821,7 +2850,8 @@
     "ops/STATE.json",
     "ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md",
     "backend/tests/test_credit_application_migration.py",
-    "ops/V1_051_CREDIT_APPLICATION_CHECKPOINT.md"
+    "ops/V1_051_CREDIT_APPLICATION_CHECKPOINT.md",
+    "ops/V1_051_CREDIT_CORRECTION1_CHECKPOINT.md"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -3009,7 +3039,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T21:40:00Z",
+  "updated_at": "2026-09-05T22:02:00Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -4132,7 +4162,7 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Preserved local partial recognition checkpoint parent; application slice in this successor, not full product acceptance.",
+  "commit_role": "Rejected partial Credit checkpoint parent; this successor corrects M1/L1, not full V1-051 acceptance.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
     "b3b03e209fcb69495944d7f076ac206da5de2a98"

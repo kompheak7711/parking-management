@@ -2,6 +2,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 from threading import Barrier
 from uuid import UUID, uuid4
 
@@ -10,7 +11,7 @@ import pytest
 from alembic import command
 from alembic.config import Config
 
-from payment_test_support import seed_payment
+from payment_test_support import seed_method, seed_payment
 from property_rental.credit import (
     CreditAuthorizationError,
     CreditIdempotencyKeyReused,
@@ -274,6 +275,95 @@ def test_credit_khr_source_facts_preserved_without_khr_balance(migrated_database
     assert fx["id"] == row[2]["exchange_rate_record_id"]
     assert fx["system_rate_khr_per_usd"] == 4101
     assert row[2]["received_amount_minor"] == 4143 and row[2]["usd_accounting_value_cents"] == 101
+
+
+@pytest.mark.parametrize("reference", ["4062.123456", "10000000000.000001"])
+@pytest.mark.parametrize("channel", [False, True])
+def test_credit_fractional_fx_and_nested_trace_remain_exact_in_responses(
+    migrated_database_url: str,  # noqa: F811
+    reference: str,
+    channel: bool,
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, _, customer = setup_reservation_sources(connection)
+        method = seed_method(connection, human)
+        fx, payment = uuid4(), uuid4()
+        at = datetime.now(UTC) - timedelta(seconds=2)
+        channel_reference = f"Exact-channel/{fx}" if channel else None
+        connection.execute(
+            "INSERT INTO app.exchange_rate_records("
+            "id,reference_rate_khr_per_usd,markup_basis_points,system_rate_khr_per_usd,"
+            "rate_source,source_reference,applicable_at,calculation_trace,"
+            "channel_actual_currency,channel_actual_rate_khr_per_usd,"
+            "channel_transaction_reference,channel_confirmed_at) "
+            "VALUES(%s,%s::numeric,50,ceil(%s::numeric*1.005),'ABA_AUTOMATIC',"
+            "'Exact synthetic FX',%s,"
+            '\'{"ratio":0.1234567890123456789,"values":[10000000000.000001,1]}\','
+            "%s,%s,%s,%s)",
+            (
+                fx,
+                reference,
+                reference,
+                at,
+                "KHR" if channel else None,
+                Decimal(reference) if channel else None,
+                channel_reference,
+                at if channel else None,
+            ),
+        )
+        connection.execute(
+            "INSERT INTO app.payments(id,payment_number,property_id,payer_customer_id,"
+            "payment_scope_kind,payment_date,payment_method_id,received_currency,"
+            "received_amount_minor,usd_accounting_value_cents,exchange_rate_record_id,"
+            "confirmed_at,confirmed_by,authorization_reference,channel_transaction_reference) "
+            "SELECT %s,%s,%s,%s,'NORMAL_CUSTOMER',"
+            "(clock_timestamp() AT TIME ZONE 'Asia/Phnom_Penh')::date,%s,'KHR',"
+            "ceil(101*COALESCE(channel_actual_rate_khr_per_usd,system_rate_khr_per_usd)*0.01),"
+            "101,id,clock_timestamp(),%s,'payments.record',%s "
+            "FROM app.exchange_rate_records WHERE id=%s",
+            (payment, f"Exact-{payment}", prop, customer, method, human, channel_reference, fx),
+        )
+        original = connection.execute(
+            "SELECT row_to_json(rate)::text,row_to_json(payment)::text,row_to_json(receipt)::text "
+            "FROM app.exchange_rate_records rate JOIN app.payments payment "
+            "ON payment.exchange_rate_record_id=rate.id "
+            "JOIN app.receipts receipt ON receipt.payment_id=payment.id WHERE payment.id=%s",
+            (payment,),
+        ).fetchone()
+    assert original is not None
+    staff = actor(human, prop, "credits.recognize", "credits.read", "credits.reverse")
+    request = RecognizeCreditCommand(uuid4(), 101, "Payer consent", "Retain exact excess")
+    result = service().recognize(prop, payment, request, actor=staff)
+    identity = credit_id(result)
+    assert service().recognize(prop, payment, request, actor=staff) == result
+    assert service().get(prop, identity, actor=staff) == result
+    evidence = result["exchange_rate"]
+    assert isinstance(evidence, dict)
+    assert evidence["reference_rate_khr_per_usd"] == reference
+    assert evidence["channel_actual_rate_khr_per_usd"] == (reference if channel else None)
+    assert evidence["calculation_trace"] == {
+        "ratio": "0.1234567890123456789",
+        "values": ["10000000000.000001", 1],
+    }
+    assert type(result["available_usd_cents"]) is int
+    assert type(evidence["system_rate_khr_per_usd"]) is int
+    reversal = ReverseCreditCommand(uuid4(), "Payer revoked consent")
+    reversed_result = service().reverse(prop, identity, reversal, actor=staff)
+    assert reversed_result["exchange_rate"] == evidence
+    assert service().reverse(prop, identity, reversal, actor=staff) == reversed_result
+    assert service().get(prop, identity, actor=staff) == reversed_result
+    with psycopg.connect(migrated_database_url) as connection:
+        assert (
+            connection.execute(
+                "SELECT row_to_json(rate)::text,row_to_json(payment)::text,"
+                "row_to_json(receipt)::text "
+                "FROM app.exchange_rate_records rate JOIN app.payments payment "
+                "ON payment.exchange_rate_record_id=rate.id "
+                "JOIN app.receipts receipt ON receipt.payment_id=payment.id WHERE payment.id=%s",
+                (payment,),
+            ).fetchone()
+            == original
+        )
 
 
 @pytest.mark.parametrize(

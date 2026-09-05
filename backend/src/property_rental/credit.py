@@ -8,7 +8,7 @@ from typing import cast
 from uuid import UUID
 
 import psycopg
-from psycopg.types.json import Jsonb
+from psycopg.types.json import Jsonb, set_json_loads
 
 from property_rental.identity import AuthenticatedActor, AuthorizationRequirement, is_authorized
 
@@ -191,6 +191,15 @@ class ReverseCreditApplicationCommand:
         _text(self.reason, 1000)
 
 
+def _exact_credit_json(value: str | bytes) -> object:
+    """Keep fractional source evidence as decimal text, never binary floats.
+
+    Integer cents and whole KHR remain integers. This also preserves fractional
+    values nested inside immutable exchange calculation traces and replay receipts.
+    """
+    return json.loads(value, parse_float=str)
+
+
 @dataclass(frozen=True, slots=True)
 class CustomerCreditService:
     database_url: str
@@ -216,6 +225,7 @@ class CustomerCreditService:
                 self.financial_database_url if mutation else self.database_url,
                 connect_timeout=3,
             ) as connection:
+                set_json_loads(_exact_credit_json, connection)
                 connection.execute("SET LOCAL lock_timeout='3000ms'")
                 connection.execute("SET LOCAL statement_timeout='5000ms'")
                 row = connection.execute(sql, parameters).fetchone()
