@@ -10,9 +10,9 @@
     "openclaw_dispatch": false,
     "openclaw_supervisor_enabled": false,
     "owner_action_required": false,
-    "phase": "release_published_exact_sha_ci_green_closure_pending",
-    "next_action": "Validate and commit only ops/NOW.md plus ops/STATE.json as the V1-047 closure checkpoint; obtain fresh exact-SHA tests and independent Sol max Standard review before normal push and exact-SHA CI, then separately reconcile final four-file closure state. OpenClaw disabled;V1-048 held.",
-    "preflight": {
+    "phase": "closure_checkpoint_correction_review_pending",
+    "next_action": "Validate the successor correction to closure checkpoint 549ace3, require fresh exact-SHA automation tests and independent Sol max Standard review, then publish the reviewed closure chain and require exact-SHA CI before final four-file V1-047 reconciliation. OpenClaw disabled; V1-048 held.",
+    "initial_preflight": {
       "frontend_client": 27,
       "frontend_workflow": 22,
       "backend": 730,
@@ -36,7 +36,7 @@
     "product_diff_sha256": "64ae1d2580c94c4e4de94e99af37f31c1b83dbe9f25e208d10ba26620997d4dd",
     "verification_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1047-product-verification-195f3a8.md",
     "workboard_checkpoint_comment_id": "a8fedf6a-1a96-4b3e-a9d6-5a243c36e60e",
-    "exact_sha_verification": {
+    "initial_exact_sha_verification": {
       "sha": "195f3a89aef9cfa9aaa5879f93b2423d9c3ee050",
       "backend_passed": 730,
       "backend_database_only_skips": 444,
@@ -69,8 +69,8 @@
       "followup_active": true,
       "followup_status": "ACTIVE",
       "owner_action_required": false,
-      "exact_next_action": "Validate and commit only ops/NOW.md plus ops/STATE.json as the V1-047 closure checkpoint; obtain fresh exact-SHA tests and independent Sol max Standard review before normal push and exact-SHA CI, then separately reconcile final four-file closure state. OpenClaw disabled;V1-048 held.",
-      "review_health": "Product and exact-release reviewers finished PASS zero findings;no active worker"
+      "exact_next_action": "Correct the two findings from immutable closure checkpoint review 549ace3, then require fresh exact-SHA automation tests and independent Sol max Standard review before normal closure publication. OpenClaw disabled; V1-048 held.",
+      "review_health": "Exact closure checkpoint 549ace3 independently reviewed FAIL with one MEDIUM routing finding and one LOW stale-field finding; no implementation worker active"
     },
     "independent_review": {
       "status": "failed",
@@ -487,7 +487,7 @@
   "branch": "implementation/foundation",
   "commit": "32fbef1cb7e86c92c1deae7036d17df9c890405d",
   "idle_reason": null,
-  "next_action": "Validate and commit only ops/NOW.md plus ops/STATE.json as the V1-047 closure checkpoint; obtain fresh exact-SHA tests and independent Sol max Standard review before normal push and exact-SHA CI, then separately reconcile final four-file closure state. OpenClaw disabled;V1-048 held.",
+  "next_action": "Validate the successor correction to immutable closure checkpoint 549ace3, require fresh exact-SHA automation tests and independent Sol max Standard review, then publish the reviewed closure chain and require exact-SHA CI before final four-file V1-047 reconciliation. OpenClaw disabled; V1-048 held.",
   "active_worker": "direct_codex",
   "active_card": "26b14ae0-92b3-433d-bed6-46bd732c569c",
   "active_claim": null,
@@ -583,8 +583,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "V1-047 product verified and independently approved; preparing reviewed release merge. OpenClaw disabled during native takeover.",
-    "exact_next_action": "Prepare normal two-parent release merge preserving foundation4e9c00ca and independently approved producte7a82f7. Reconcile only ops/NOW,STATE,QUEUE; product/migrations/canonical/dependencies/runtime unchanged. Freeze, run fresh exact-SHA integration and independent Sol max release review before normal publication, exact-SHA CI and closure.",
+    "current_phase": "V1-047 release 32fbef1 is published, exact-SHA CI-green, remotely synchronized and independently approved; correcting the first closure checkpoint before publication. OpenClaw disabled during native takeover.",
+    "exact_next_action": "Validate the successor correction to immutable closure checkpoint 549ace3, require fresh exact-SHA automation tests and independent Sol max Standard review, then publish the reviewed closure chain and require exact-SHA CI before final four-file V1-047 reconciliation. V1-048 remains held.",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -1564,7 +1564,7 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "implementation_published_exact_sha_ci_green_closure_pending",
+  "status": "verified_unpublished",
   "task": "Close the approved V1-047 invoice, adjustment, late-payment, and billing-run API/UI candidate",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
@@ -1633,7 +1633,10 @@
     "PASS exact product e7a82f7:769backend,446DB-only skips separately covered,369frontend,469isolatedPostgreSQL zero skips,189automation",
     "PASS exact product e7a82f7:format/lint/types/build/import/deployment/traceability/publication/diff,locked audits zero vulnerabilities,realChrome encrypted recovery/focus;zero financial commands",
     "PASS independent product review:119backend/14SQLSTATEprobes/369frontend,static/config/build;zero actionable findings",
-    "PENDING fresh exact release merge integration and independent review;no publication/CI/closure yet"
+    "PASS exact release 32fbef1: 769 backend with 446 DB-only skips separately covered, 369 frontend, 469 isolated PostgreSQL zero skips, 189 automation, static/build/migration/browser and locked dependency audits",
+    "PASS exact release independent Sol max Standard review: zero HIGH, MEDIUM or LOW findings; report SHA-256 3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643",
+    "PASS exact release publication: GitHub Actions run 33942222913 all four jobs green; local, tracking, fetched and live remote refs equal 32fbef1",
+    "FAIL preserved immutable closure checkpoint 549ace3 review: one MEDIUM executable-routing finding and one LOW stale-active-field finding; successor correction in progress"
   ],
   "tests_tranche_id": "V1-047",
   "timestamp": "2026-09-05T03:38:09.627925Z",
@@ -1848,7 +1851,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-04T15:09:58.720Z",
+  "updated_at": "2026-09-05T04:03:09Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -2971,24 +2974,36 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "last independently approved product, not release merge SHA",
+  "commit_role": "published independently approved exact release awaiting reviewed closure-checkpoint publication and final reconciliation",
   "candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
     "e7a82f7f034c17390f1de26b1196b0f777dd3ca0"
   ],
   "publication": {
     "tranche_id": "V1-047",
-    "status": "release_candidate_preparation",
-    "implementation_commit": "e7a82f7f034c17390f1de26b1196b0f777dd3ca0",
-    "commit_completed": false,
-    "push_completed": false,
-    "ci_completed": false,
-    "sha_reconciled": false,
+    "status": "published_exact_sha_ci_green_closure_pending",
+    "implementation_commit": "32fbef1cb7e86c92c1deae7036d17df9c890405d",
+    "product_parent": "e7a82f7f034c17390f1de26b1196b0f777dd3ca0",
+    "foundation_parent": "4e9c00cac2ee77a276c7f883face65e74a898166",
+    "commit_completed": true,
+    "push_completed": true,
+    "ci_completed": true,
+    "ci_conclusion": "success",
+    "ci_run_id": 33942222913,
+    "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33942222913",
+    "sha_reconciled": true,
     "production_deployment": false
   },
   "release_review": {
-    "status": "pending",
-    "scope": "Exact release merge metadata and product identity; fresh independent Sol max Standard required before publication"
+    "status": "PASS",
+    "scope": "Exact release merge metadata and product identity",
+    "exact_sha": "32fbef1cb7e86c92c1deae7036d17df9c890405d",
+    "model": "gpt-5.6-sol",
+    "reasoning_effort": "max",
+    "mode": "Standard",
+    "findings": 0,
+    "report_path": "/private/tmp/prm-v1047-native-evidence.fvAaxf/release-review-32fbef1.md",
+    "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
     "status": "PASS",
@@ -3001,7 +3016,7 @@
   },
   "evidence_applicability": {
     "tranche_id": "V1-047",
-    "complete_profile_remains_applicable": false,
-    "basis": "Product exact e7a82f7 full integration and independent review PASS; release merge requires fresh own exact-SHA gates. No predecessor evidence substituted."
+    "complete_profile_remains_applicable": true,
+    "basis": "Exact release 32fbef1 preserves independently approved product e7a82f7, passed its complete fresh release profile and independent zero-finding review, is normally published with exact-SHA CI run 33942222913 green, and has synchronized local, tracking, fetched and live-remote refs. Closure checkpoint 549ace3 is preserved but not publishable because its independent review found one MEDIUM and one LOW metadata finding; this successor correction must pass its own fresh exact-SHA tests and review."
   }
 }
