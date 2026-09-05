@@ -110,6 +110,6 @@ def test_allocation_scope_is_checked_before_database_access() -> None:
         {"mode": "DESIGNATED", "targets": [], "designation_reference": ""},
     ],
 )
-def test_allocation_never_infers_confirmation(intent: dict[str, object]) -> None:
+def test_allocation_command_requires_explicit_supported_intent(intent: dict[str, object]) -> None:
     with pytest.raises(AllocationInvalidError):
         PostAllocationsCommand(uuid4(), intent)

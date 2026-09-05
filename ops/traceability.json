@@ -2,6 +2,22 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_allocation_same_due_date_uses_issuance_then_invoice_number",
+      "upstream_ids": ["BR-PAY-021", "BR-PAY-023", "DB-PAY-004", "TEST-060"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_allocation_migration.py",
+      "status": "implemented",
+      "notes": "Equal-due-date Invoices follow issuance time even when Invoice Numbers favor the reverse order; equal issuance timestamps use Invoice Number order. Unchanged proposals post successfully."
+    },
+    {
+      "test_id": "test_allocation_between_invoice_fifo_precedes_rent_category",
+      "upstream_ids": ["BR-PAY-020", "BR-PAY-022", "BR-PAY-038", "TEST-060"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_allocation_migration.py",
+      "status": "implemented",
+      "notes": "An earlier-due miscellaneous Invoice consumes the proposal before later Rent Invoices, despite later issuance; the proposal creates no allocations."
+    },
+    {
       "test_id": "test_allocation_posting_and_reversal_grants_are_independent_and_audited",
       "upstream_ids": ["SEC-020", "SEC-022", "DB-PAY-004", "DB-PAY-005"],
       "test_level": "DB",
@@ -43,24 +59,30 @@
     },
     {
       "test_id": "test_allocation_snapshot_and_posted_amount_have_distinct_exact_limits",
-      "upstream_ids": ["DB-TYPE-004", "BR-PAY-027", "SEC-026"],
+      "upstream_ids": [
+        "DB-TYPE-004",
+        "SEC-036"
+      ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",
       "status": "implemented",
-      "notes": "Accept signed-bigint source snapshots but keep smaller posted-amount bounds; reject overflow, booleans and floating-point values."
+      "notes": "Command validation accepts signed-bigint snapshot integers but rejects snapshot overflow, boolean values and inexact or out-of-range posted amounts; this is not a balance-calculation test."
     },
     {
-      "test_id": "test_allocation_detail_limit_continues_same_invoice_before_later_targets",
-      "upstream_ids": ["BR-PAY-021", "BR-PAY-036", "BR-PAY-038", "DB-PAY-007", "TEST-060"],
+      "test_id": "test_allocation_detail_limit_continues_same_invoice",
+      "upstream_ids": [
+        "BR-PAY-021",
+        "DB-PAY-007",
+        "TEST-060"
+      ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "501 authorized Invoice lines produce a 500-detail postable page and then the remaining line on the same Invoice."
+      "notes": "One Invoice with 501 miscellaneous lines yields a postable 500-detail page, then the remaining line. This scenario does not assert Rent/Service or between-Invoice ordering."
     },
     {
       "test_id": "test_allocation_third_party_is_bound_to_identified_invoice",
       "upstream_ids": [
-        "BR-PAY-025",
         "BR-PAY-026",
         "DB-PAY-004",
         "TEST-060"
@@ -68,12 +90,12 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Third-party intent restricts targets without changing the responsible Customer."
+      "notes": "Third-party proposal selects only its identified Invoice, rejects another Invoice and persists THIRD_PARTY_DESIGNATED provenance with the confirmed Payment reference."
     },
     {
       "test_id": "test_allocation_repeatable_read_stale_target_is_rejected",
       "upstream_ids": [
-        "DB-TXN-001",
+        "DB-TXN-003",
         "DB-TXN-004",
         "SEC-029",
         "TEST-062"
@@ -91,19 +113,18 @@
         "DB-PAY-005",
         "DB-PAY-007",
         "TEST-063",
-        "SEC-031"
+        "SEC-045"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "As-of allocation/reversal projections and denied direct runtime writes preserve history."
+      "notes": "Line outstanding is 70000 at allocation and 80000 at reversal; allocation deletion is rejected. Runtime/financial identities lack direct allocation INSERT and private target-lock EXECUTE. No audit-table permission assertion is claimed."
     },
     {
       "test_id": "test_allocation_generated_proposal_tampering_is_rejected",
       "upstream_ids": [
         "BR-PAY-021",
-        "BR-PAY-022",
-        "BR-PAY-023",
+        "BR-PAY-029",
         "DB-PAY-004",
         "DB-PAY-007",
         "SEC-026",
@@ -112,7 +133,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Reject altered proposal amount, due date, detail identity, sequence and trace."
+      "notes": "Changing proposal amount, due-date snapshot, detail identity, sequence or policy trace is rejected with zero allocation rows. Ordering tie behavior is covered separately, not by these tampering cases."
     },
     {
       "test_id": "test_allocation_mixed_invoice_preserves_rent_first_and_line_designation",
@@ -136,19 +157,18 @@
         "BR-PAY-028",
         "BR-PAY-031",
         "DB-DER-002",
-        "TEST-061",
         "TEST-064"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "One-cent, exact/full and excess amounts derive positions without automatic excess disposition."
+      "notes": "One-cent, 80001-cent and 200000-cent sources leave 0/0/40000 available; original Payment amounts are unchanged and disposition totals contain no automatic Deposit, Credit or Refund. No Invoice-status assertion is claimed."
     },
     {
       "test_id": "test_allocation_and_deposit_share_one_payment_budget",
       "upstream_ids": [
         "DB-DER-002",
-        "DB-TXN-001",
+        "DB-TXN-003",
         "DB-TXN-004",
         "SEC-029",
         "TEST-062"
@@ -161,39 +181,38 @@
     {
       "test_id": "test_allocation_intent_rejects_inexact_or_unbounded_money",
       "upstream_ids": [
-        "BR-MONEY-001",
-        "SEC-026",
-        "API-059"
+        "BR-MONEY-003",
+        "DB-TYPE-004",
+        "SEC-036"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",
       "status": "implemented",
-      "notes": "Reject boolean, floating-point, nonfinite and out-of-range monetary intent."
+      "notes": "Command validation rejects boolean, floating-point, nonfinite and out-of-range monetary intent; this tests exact representation and input validation, not accounting-currency selection or derived balances."
     },
     {
       "test_id": "test_allocation_reversals_require_normalized_reason",
       "upstream_ids": [
-        "BR-PAY-029",
         "DB-PAY-006",
         "DB-PAY-005",
-        "API-060"
+        "API-060",
+        "SEC-036"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",
       "status": "implemented",
-      "notes": "Payment and Allocation reversal reasons must be present, normalized and bounded."
+      "notes": "Payment and Allocation reversal command reasons must be present, normalized and bounded; no linked-event or history assertion occurs in this unit test."
     },
     {
       "test_id": "test_allocation_payment_reversal_requires_expected_state",
       "upstream_ids": [
-        "DB-PAY-006",
         "API-060",
-        "SEC-028"
+        "SEC-036"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",
       "status": "implemented",
-      "notes": "Reject unsupported expected Payment state and nil command identity."
+      "notes": "Reject unsupported expected Payment state and nil Allocation command identity before processing; replay behavior is tested by the integration suite."
     },
     {
       "test_id": "test_allocation_reverse_payment_has_distinct_capability",
@@ -210,26 +229,25 @@
     {
       "test_id": "test_allocation_scope_is_checked_before_database_access",
       "upstream_ids": [
-        "BR-PAY-020",
-        "API-059",
         "SEC-019"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",
       "status": "implemented",
-      "notes": "Wrong-Property capability fails before any database access."
+      "notes": "A proposal request with a grant for another Property fails before database access; this unit test asserts scope denial only."
     },
     {
-      "test_id": "test_allocation_never_infers_confirmation",
+      "test_id": "test_allocation_command_requires_explicit_supported_intent",
       "upstream_ids": [
-        "BR-PAY-019",
         "BR-PAY-020",
-        "API-059"
+        "BR-PAY-024",
+        "API-059",
+        "SEC-036"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",
       "status": "implemented",
-      "notes": "No automatic posting or implicit designation; reject unexpected confirmation fields."
+      "notes": "Command construction rejects missing/unsupported intent, an extra posting field and a designation without its required reference. Absence of automatic database posting is asserted in the proposal integration test."
     },
     {
       "test_id": "test_allocation_proposal_explicit_post_replay_reverse_and_positions",
@@ -274,7 +292,7 @@
       "upstream_ids": [
         "BR-PAY-027",
         "BR-PAY-028",
-        "DB-TXN-001",
+        "DB-TXN-003",
         "DB-TXN-004",
         "SEC-029",
         "TEST-062"
@@ -287,15 +305,13 @@
     {
       "test_id": "test_allocation_adjustments_cannot_credit_already_applied_value",
       "upstream_ids": [
-        "BR-PAY-028",
-        "DB-TXN-004",
-        "DB-DER-011",
-        "TEST-061"
+        "DB-DER-001",
+        "DB-TXN-004"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Invoice adjustment floor respects applied money and derives paid/outstanding status."
+      "notes": "After 20000 is applied to an 80000 line, a 60001 credit is rejected; a 60000 credit yields adjusted obligation 20000, outstanding zero and PAID. This checks adjustment/application reconciliation, not Rent-specific enforcement."
     },
     {
       "test_id": "test_allocation_charge_is_separate_and_corrections_respect_consumption",
@@ -316,17 +332,15 @@
     {
       "test_id": "test_allocation_historical_payment_budget_preserves_valid_backdating",
       "upstream_ids": [
-        "BR-PAY-027",
         "BR-PAY-029",
         "DB-DER-002",
         "DB-TXN-004",
-        "TEST-060",
         "TEST-063"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Reject backdated Deposit overlap after Allocation reversal while accepting historically funded backdating."
+      "notes": "After Allocation reversal, backdated Deposit receipt creation rejects historically overlapping consumption but accepts historically funded consumption; receipt count and current Payment availability are asserted."
     },
     {
       "test_id": "test_allocation_bounded_fifo_proposals_continue_after_explicit_post",

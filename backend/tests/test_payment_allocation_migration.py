@@ -561,7 +561,123 @@ def test_allocation_bounded_fifo_proposals_continue_after_explicit_post(
         )
 
 
-def test_allocation_detail_limit_continues_same_invoice_before_later_targets(
+@pytest.mark.parametrize("tie_breaker", ["issued_at", "invoice_number"])
+def test_allocation_same_due_date_uses_issuance_then_invoice_number(
+    migrated_database_url: str,  # noqa: F811
+    tie_breaker: str,
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, customer, first = setup_invoice_api_source(connection, amount_usd_cents=10)
+        second = uuid4()
+        connection.execute(
+            "INSERT INTO app.authorized_nonrecurring_obligations "
+            "(id,customer_id,category,description,authorized_amount_usd_cents,"
+            "governing_due_date,due_date_source,source_reference,authorized_at,authorized_by,"
+            "authorization_reference) VALUES (%s,%s,'MISCELLANEOUS_CHARGES','Second source',10,"
+            "current_date+14,'ordering-test',%s,clock_timestamp(),%s,'invoice.nonrecurring.authorize')",
+            (second, customer, str(second), human),
+        )
+    invoice_service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    drafts = [
+        invoice_service.create_draft(
+            prop,
+            CreateInvoiceDraftCommand(uuid4(), obligation),
+            actor=invoice_api_actor(human, prop),
+        )
+        for obligation in (first, second)
+    ]
+    ids = [UUID(str(draft["id"])) for draft in drafts]
+    with psycopg.connect(migrated_database_url) as connection:
+        numbered = connection.execute(
+            'SELECT id FROM app.invoices WHERE id=ANY(%s) ORDER BY invoice_number COLLATE "C"',
+            (ids,),
+        ).fetchall()
+    expected = [UUID(str(row[0])) for row in numbered]
+    if tie_breaker == "issued_at":
+        expected.reverse()  # Earlier issuance must beat the lower Invoice Number.
+        for invoice in expected:
+            invoice_service.issue(
+                prop, invoice, IssueInvoiceCommand(uuid4(), 1), actor=invoice_api_actor(human, prop)
+            )
+    else:
+        # A single guarded statement gives both synthetic issues the same timestamp.
+        with psycopg.connect(migrated_database_url) as connection:
+            connection.execute(
+                "UPDATE app.invoices SET status='UNPAID',issued_at=statement_timestamp(),"
+                "issued_by=%s,version=2,updated_at=statement_timestamp(),updated_by=%s "
+                "WHERE id=ANY(%s)",
+                (human, human, ids),
+            )
+            connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+    with psycopg.connect(migrated_database_url) as connection:
+        facts = connection.execute(
+            "SELECT count(DISTINCT due_date),count(DISTINCT issued_at) FROM app.invoices "
+            "WHERE id=ANY(%s)",
+            (ids,),
+        ).fetchone()
+        assert facts == (1, 2 if tie_breaker == "issued_at" else 1)
+        payment = seed_payment(
+            connection, actor_id=human, property_id=prop, customer_id=customer, amount=20
+        )
+    staff = actor(human, prop)
+    proposal = service().proposal(prop, payment, actor=staff)
+    targets = cast(list[dict[str, object]], proposal["targets"])
+    assert [target["invoice_id"] for target in targets] == [str(value) for value in expected]
+    assert (
+        service().post(
+            prop,
+            payment,
+            PostAllocationsCommand(uuid4(), {"mode": "PROPOSAL", "proposal": proposal}),
+            actor=staff,
+        )["available_usd_cents"]
+        == 0
+    )
+
+
+def test_allocation_between_invoice_fifo_precedes_rent_category(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, payment, rent_invoices = source(migrated_database_url, 10)
+    with psycopg.connect(migrated_database_url) as connection:
+        row = connection.execute(
+            "SELECT customer_id,min(due_date) FROM app.invoices "
+            "WHERE id=ANY(%s) GROUP BY customer_id",
+            (rent_invoices,),
+        ).fetchone()
+        assert row is not None
+        customer, rent_due = row
+        obligation = uuid4()
+        connection.execute(
+            "INSERT INTO app.authorized_nonrecurring_obligations "
+            "(id,customer_id,category,description,authorized_amount_usd_cents,"
+            "governing_due_date,due_date_source,source_reference,authorized_at,authorized_by,"
+            "authorization_reference) VALUES (%s,%s,'MISCELLANEOUS_CHARGES','Older than Rent',10,"
+            "%s::date-1,'ordering-test',%s,clock_timestamp(),%s,'invoice.nonrecurring.authorize')",
+            (obligation, customer, rent_due, str(obligation), human),
+        )
+    invoice_service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    draft = invoice_service.create_draft(
+        prop, CreateInvoiceDraftCommand(uuid4(), obligation), actor=invoice_api_actor(human, prop)
+    )
+    invoice = UUID(str(draft["id"]))
+    invoice_service.issue(
+        prop, invoice, IssueInvoiceCommand(uuid4(), 1), actor=invoice_api_actor(human, prop)
+    )
+    proposal = service().proposal(prop, payment, actor=actor(human, prop))
+    targets = cast(list[dict[str, object]], proposal["targets"])
+    assert [target["invoice_id"] for target in targets] == [str(invoice)]
+    assert (
+        cast(list[dict[str, object]], targets[0]["details"])[0]["category"]
+        == "MISCELLANEOUS_CHARGES"
+    )
+    assert targets[0]["amount_usd_cents"] == 10
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM app.payment_allocations WHERE payment_id=%s", (payment,)
+        ).fetchone() == (0,)
+
+
+def test_allocation_detail_limit_continues_same_invoice(
     migrated_database_url: str,  # noqa: F811
 ) -> None:
     with psycopg.connect(migrated_database_url) as connection:
