@@ -2,6 +2,216 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_credit_application_proposal_post_replay_reverse_and_distinct_source_positions",
+      "upstream_ids": [
+        "BR-CREDIT-006",
+        "BR-CREDIT-009",
+        "DB-CREDIT-002",
+        "DB-CREDIT-003",
+        "DB-CREDIT-005",
+        "TEST-068"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "Exact proposal/detail confirmation, replay, separate source/target projections, audit grants, recognition reversal dependency and permanent application reversal; historical as-of values reconcile."
+    },
+    {
+      "test_id": "test_credit_application_rejects_stale_proposal_changed_key_and_wrong_customer",
+      "upstream_ids": [
+        "BR-CREDIT-008",
+        "TEST-068"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "Changed financial target invalidates prior proposal; changed intent with same key conflicts; another Customer is rejected without another event."
+    },
+    {
+      "test_id": "test_credit_application_source_and_target_bounds_are_atomic",
+      "upstream_ids": [
+        "BR-CREDIT-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "One cent beyond source or target availability is rejected with no application or audit."
+    },
+    {
+      "test_id": "test_credit_application_competing_credit_and_payment_cannot_overpay_target",
+      "upstream_ids": [
+        "BR-CREDIT-007",
+        "DB-TXN-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "Independent Credit and Payment sources compete for the same Invoice line; only one60000cent application survives and20000remains."
+    },
+    {
+      "test_id": "test_credit_application_capabilities_and_fresh_actor_are_independent",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-022"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "Application permission does not grant reversal/read; reversal does not grant application; disabled human is denied by a fresh check."
+    },
+    {
+      "test_id": "test_credit_application_mixed_invoice_default_and_customer_designation",
+      "upstream_ids": [
+        "BR-CREDIT-006",
+        "DB-CREDIT-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "Explicit Service designation is valid while Rent remains; default subsequent proposal assigns all remaining Rent before Service with exact proposed and applied details."
+    },
+    {
+      "test_id": "test_credit_application_charge_is_separate_and_correction_respects_consumption",
+      "upstream_ids": [
+        "BR-CREDIT-005",
+        "BR-CREDIT-007",
+        "DB-CREDIT-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "Direct and designated Charge paths preserve absent proposal/Invoice-line facts, reduce only Charge, block excessive Charge reduction, then restore availability by explicit application reversal."
+    },
+    {
+      "test_id": "test_credit_application_invoice_adjustment_void_and_temporal_guards",
+      "upstream_ids": [
+        "BR-CREDIT-007",
+        "BR-CREDIT-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "Invoice adjustment cannot consume applied value; VOID remains held until application and adjustment are explicitly reversed; backdated reversal/adjustment reject; historical VOID target reads zero."
+    },
+    {
+      "test_id": "test_credit_application_cross_lease_same_customer_and_source_budget_concurrency",
+      "upstream_ids": [
+        "BR-CREDIT-007",
+        "BR-CREDIT-008"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "A second Lease for the same Customer is eligible; competing60000cent applications on different targets cannot overspend the same99999cent Credit remainder."
+    },
+    {
+      "test_id": "test_credit_application_history_immutable_and_private_write_boundary",
+      "upstream_ids": [
+        "DB-CREDIT-002",
+        "DB-CREDIT-003",
+        "DB-CREDIT-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "Application/header/details/reversal reject UPDATE/DELETE/TRUNCATE; runtime and financial roles lack table INSERT."
+    },
+    {
+      "test_id": "test_credit_application_stale_repeatable_read_target_fails_closed",
+      "upstream_ids": [
+        "BR-CREDIT-007",
+        "DB-TXN-004"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "A Credit transaction with an older snapshot cannot overpay after a different Payment changes the target; row-version serialization rejects."
+    },
+    {
+      "test_id": "test_credit_application_header_detail_mismatch_rolls_back_every_effect",
+      "upstream_ids": [
+        "DB-CREDIT-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "Header101cent/detail100cent mismatch rolls back application and command receipt, preserving100000cent Credit source."
+    },
+    {
+      "test_id": "test_credit_application_bounded_proposal_continues_same_invoice_without_losing_intent",
+      "upstream_ids": [
+        "BR-CREDIT-006",
+        "DB-CREDIT-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "A501line Invoice yields a confirmable500line page and exact1line continuation; both explicit applications preserve exact requested/proposed amounts and fully paid status."
+    },
+    {
+      "test_id": "test_credit_application_forged_proposal_is_not_authority",
+      "upstream_ids": [
+        "SEC-026",
+        "BR-CREDIT-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_application_migration.py",
+      "status": "implemented",
+      "notes": "Mutated Credit/Customer identity, Invoice version, amount, detail or attribution is rejected by exact authoritative regeneration before any application/receipt."
+    },
+    {
+      "test_id": "test_credit_application_command_seals_deep_intent_before_transmission",
+      "upstream_ids": [
+        "TEST-068"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "Mutation of caller-owned or returned nested intent cannot change the stored exact command transmitted to the financial connection."
+    },
+    {
+      "test_id": "test_credit_application_intent_rejects_nonexact_or_unbounded_money",
+      "upstream_ids": [
+        "TEST-069"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "Boolean, float, zero, negative, string and excessive monetary inputs reject."
+    },
+    {
+      "test_id": "test_credit_application_intent_rejects_malformed_target_and_designation",
+      "upstream_ids": [
+        "DB-CREDIT-002",
+        "DB-CREDIT-005"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "Non-nil target, one-target shape, exact fields, explicit designation and bounded nonempty details are required."
+    },
+    {
+      "test_id": "test_credit_application_intent_utf8_and_nesting_bounds",
+      "upstream_ids": [
+        "TEST-087"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "UTF-8 bytes and nesting are bounded while valid authoritative bigint outstanding snapshots remain representable."
+    },
+    {
+      "test_id": "test_credit_application_capabilities_remain_separable_before_database_access",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-022"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit.py",
+      "status": "implemented",
+      "notes": "Proposal/application, resource read and application reversal require independent grants before any database connection."
+    },
+    {
       "test_id": "test_credit_recognition_requires_positive_exact_bounded_cents",
       "upstream_ids": [
         "DB-CREDIT-001",

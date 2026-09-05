@@ -801,7 +801,7 @@
     "planned_branch": "codex/v1-051-direct",
     "worker_kind": "direct_codex_coordinator",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
-    "worker_status": "direct_coordinator_recognition_checkpoint_applications_next",
+    "worker_status": "direct_coordinator_credit_application_checkpoint_verified",
     "scope_path": "ops/V1_051_SCOPE.md",
     "scope_sha256": "91adbb369a44dc25f04a49bcaa11c1dc8c29694c8805037855c1e52e4396d3b2",
     "card_id": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
@@ -815,35 +815,43 @@
     "predecessor_closure_receipt_sha256": "616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2",
     "cumulative_review_base": "cc3d18e682401cc8a9ade10295572fe1a1344317",
     "owner_action_required": false,
-    "next_action": "Continue V1-051 in existing sole /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct. Read ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md and inspect current HEAD/draft before edits. Recognition/reversal foundation and focused/full backend/PostgreSQL slice gates are verified; do not repeat activation or rebuild the slice. Next implement Credit applications/details/reversals and current/historical Credit/Invoice/Charge integration, then extend existing source-bounded Refund/correction history and bounded Credit reads. Full product still incomplete; require fresh complete exact-SHA gates/audits and independent Astra max Standard read-only zero findings before reviewed normal publication, exact CI/ref equality, same-card acceptance and terminal closure. Then52through53 dependency-ordered; OpenClawdisabled, no54.",
-    "verification_status": "Partial recognition slice: 31unit/35focusedPG/619fullPG/857backend(596DB-onlyskipsseparatelycovered)/189automation/staticbuildconfigtraceability PASS. Full V1-051 applications/Refund implementation and independent product review/publication remain pending.",
+    "next_action": "Continue V1-051 in existing sole /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct. Inspect HEAD and ops/V1_051_CREDIT_APPLICATION_CHECKPOINT.md; do not repeat activation or rebuild verified recognition/application slices. Bounded independent exact-SHA Astra max read-only Credit review next, while mapping existing Refund integration. Extend existing Refund/correction history with source-bounded Payment/Credit/qualifiedPet/Reservation paths, exact USD/KHR evidence and verified-return corrections, then bounded Credit history reads. Full product remains incomplete; require fresh full exact-SHA gates/audits and independent cumulative Astra max zero findings before reviewed normal publication, exact CI/ref equality, same-card acceptance and terminal closure. Then52through53 dependency-ordered; OpenClawdisabled, no54.",
+    "verification_status": "Partial Credit recognition/application slices verified:49unit/642fullPGzero skips/875backend619DB-onlyskipsseparatelycovered/189automation/allbackendstaticbuildconfigtraceability PASS. Refund/history and full product acceptance remain pending.",
     "correction_history": [],
     "activated_at": "2026-09-05T19:37:17Z",
     "last_model_configuration_check": {
-      "checked_at": "2026-09-05T20:42:21Z",
+      "checked_at": "2026-09-05T21:40:00Z",
       "observed_model": "gpt-6-astra",
       "observed_reasoning": "xhigh",
       "required_reasoning": "xhigh",
-      "source": "Actual turn_context2026-09-05T20:27:36.075Z",
+      "source": "Actual turn_context2026-09-05T21:37:14.960Z",
       "standard_config": "service_tier default; provider-side attestation unavailable"
     },
     "last_reconciliation": {
-      "checked_at": "2026-09-05T20:42:21Z",
+      "checked_at": "2026-09-05T21:40:00Z",
       "main_head": "44d93be5bb557bc221f392c52ad1d8a8604142e4",
       "live_remote": "cc3d18e682401cc8a9ade10295572fe1a1344317",
       "predecessor_ci": "33986122538 attempt1success all4jobs",
       "supervisor": "Exactly1matching658ffdaf disabled30minutes/no nextRun; runningtasks0",
       "card": "Existing tracking-onlyc5621f97 blocked; no claim/attempt/execution, no owner blocker",
       "worktrees": "Existing soleV1-051; all126retained, no separate implementation worker.",
-      "followup": "Existing ACTIVE10minutes; update in place to verified partial recognition checkpoint."
+      "followup": "Existing ACTIVE10minutes; update in place to verified Credit application checkpoint."
     },
     "activation_sha": "b3b03e209fcb69495944d7f076ac206da5de2a98",
     "implementation_started_at": "2026-09-05T19:44:43Z",
     "implementation_checkpoint": {
+      "path": "ops/V1_051_CREDIT_APPLICATION_CHECKPOINT.md",
+      "status": "partial_verified_worktree_not_product_acceptance",
+      "parent_sha": "8634bedeaa14a72ceb95f3942f0fe49649c40ce0",
+      "next_slice": "Bounded independent Credit review; existing Refund/correction extension and bounded Credit history reads"
+    },
+    "recognition_checkpoint": {
       "path": "ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md",
       "status": "partial_verified_worktree_not_product_acceptance",
       "parent_sha": "44d93be5bb557bc221f392c52ad1d8a8604142e4",
-      "next_slice": "Credit applications/details/reversals and authoritative source/target history, followed by existing Refund history extension"
+      "next_slice": "Credit applications/details/reversals and authoritative source/target history, followed by existing Refund history extension",
+      "commit": "8634bedeaa14a72ceb95f3942f0fe49649c40ce0",
+      "receipt_sha256": "b213d5785e78bb5f7e8ee4b5abcb5347fab68b8030bccca761433f24595daf11"
     }
   },
   "historical_v1_048_takeover": {
@@ -1591,9 +1599,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-051-direct",
-  "commit": "44d93be5bb557bc221f392c52ad1d8a8604142e4",
+  "commit": "8634bedeaa14a72ceb95f3942f0fe49649c40ce0",
   "idle_reason": null,
-  "next_action": "Continue V1-051 in existing sole /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct. Read ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md and inspect current HEAD/draft before edits. Recognition/reversal foundation and focused/full backend/PostgreSQL slice gates are verified; do not repeat activation or rebuild the slice. Next implement Credit applications/details/reversals and current/historical Credit/Invoice/Charge integration, then extend existing source-bounded Refund/correction history and bounded Credit reads. Full product still incomplete; require fresh complete exact-SHA gates/audits and independent Astra max Standard read-only zero findings before reviewed normal publication, exact CI/ref equality, same-card acceptance and terminal closure. Then52through53 dependency-ordered; OpenClawdisabled, no54.",
+  "next_action": "Continue V1-051 in existing sole /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct. Inspect HEAD and ops/V1_051_CREDIT_APPLICATION_CHECKPOINT.md; do not repeat activation or rebuild verified recognition/application slices. Bounded independent exact-SHA Astra max read-only Credit review next, while mapping existing Refund integration. Extend existing Refund/correction history with source-bounded Payment/Credit/qualifiedPet/Reservation paths, exact USD/KHR evidence and verified-return corrections, then bounded Credit history reads. Full product remains incomplete; require fresh full exact-SHA gates/audits and independent cumulative Astra max zero findings before reviewed normal publication, exact CI/ref equality, same-card acceptance and terminal closure. Then52through53 dependency-ordered; OpenClawdisabled, no54.",
   "active_worker": null,
   "active_card": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
   "active_claim": null,
@@ -1654,7 +1662,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-051 recognition/reversal foundation verified; applications and Refund implementation next",
+  "phase": "V1-051 Credit recognition/application checkpoint verified; Refund and bounded history work remain",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2751,7 +2759,9 @@
     "PASS reconciliation: single OpenClaw supervisor disabled30minutes/no nextRun, runningtasks0; no V1-051 card/branch/worktree before one tracking-only card creation.",
     "PASS V1-051 activation preflight189automation(70.240s)/routing/state-routing/watchdog/syntax/compile/configuration/traceability/diff/publication guard. Local activationb3b03e2 not published; cumulative independent product review still required.",
     "PASS partial51recognition:31unit/35focusedPG/619fullPGzero skips(100.85s)/857backend596DB-onlyskipsseparatelycovered(38.84s)/189automation(74.920s)/allbackendstaticbuildimport/configuration/traceability/secretguard/diff. See ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md; not full product acceptance.",
-    "RESOLVED firstbackendrun856PASS596skip1FAIL due missing8unit traceability entries; added exact mappings and full857PASS rerun. Initial Receipt test expectation and new-test lint failures corrected without weakening assertions."
+    "RESOLVED firstbackendrun856PASS596skip1FAIL due missing8unit traceability entries; added exact mappings and full857PASS rerun. Initial Receipt test expectation and new-test lint failures corrected without weakening assertions.",
+    "PASS application slice:49Creditunit/642fullPostgreSQLzero skips100.09s/875backend619DB-onlyskipsseparatelycovered36.02s/189automation66.321s/allbackendstaticbuildimport/configuration/traceability/publicationsecretguard/diff. Partial only, see application checkpoint.",
+    "RESOLVED application fixtures: reverse valid adjustment before VOID, correct501line due-date source, type-narrow test result and split long test SQL. Guards/assertions preserved; full reruns green."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -2773,7 +2783,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-051",
-  "timestamp": "2026-09-05T20:42:21Z",
+  "timestamp": "2026-09-05T21:40:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -2809,7 +2819,9 @@
     "ops/traceability.json",
     "ops/NOW.md",
     "ops/STATE.json",
-    "ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md"
+    "ops/V1_051_CREDIT_RECOGNITION_CHECKPOINT.md",
+    "backend/tests/test_credit_application_migration.py",
+    "ops/V1_051_CREDIT_APPLICATION_CHECKPOINT.md"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -2997,7 +3009,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-05T20:42:21Z",
+  "updated_at": "2026-09-05T21:40:00Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -4120,7 +4132,7 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Local V1-051 activation plus sole-worktree reconciliation; future cumulative product candidate review base remains closed V1-050 cc3d.",
+  "commit_role": "Preserved local partial recognition checkpoint parent; application slice in this successor, not full product acceptance.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
     "b3b03e209fcb69495944d7f076ac206da5de2a98"

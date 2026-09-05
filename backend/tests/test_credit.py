@@ -8,13 +8,16 @@ import psycopg
 import pytest
 
 from property_rental.credit import (
+    ApplyCreditCommand,
     CreditAuthorizationError,
+    CreditConflictError,
     CreditIdempotencyKeyReused,
     CreditInvalidError,
     CreditNotFoundError,
     CreditUnavailableError,
     CustomerCreditService,
     RecognizeCreditCommand,
+    ReverseCreditApplicationCommand,
     ReverseCreditCommand,
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
@@ -105,6 +108,7 @@ def test_credit_capabilities_and_property_scope_are_independent(operation: str) 
         ("P4501", CreditNotFoundError),
         ("P5102", CreditInvalidError),
         ("P5105", CreditIdempotencyKeyReused),
+        ("P5104", CreditConflictError),
         ("P4506", CreditAuthorizationError),
         ("42501", CreditAuthorizationError),
         ("40001", CreditUnavailableError),
@@ -172,3 +176,139 @@ def test_credit_read_uses_scoped_read_connection_and_actor() -> None:
     connection.execute.assert_called_with(
         "SELECT app.credit_resource(%s,%s,%s)", (prop, credit, UUID(actor.actor_id))
     )
+
+
+def test_credit_application_command_seals_deep_intent_before_transmission() -> None:
+    prop, credit, invoice, line = uuid4(), uuid4(), uuid4(), uuid4()
+    original: dict[str, object] = {
+        "mode": "DESIGNATED",
+        "invoice_id": str(invoice),
+        "amount_usd_cents": 100,
+        "designation_reference": "Customer instruction",
+        "details": [{"invoice_line_id": str(line), "amount_usd_cents": 100}],
+    }
+    command = ApplyCreditCommand(uuid4(), original)
+    original["amount_usd_cents"] = 999
+    details = original["details"]
+    assert isinstance(details, list)
+    details[0]["amount_usd_cents"] = 999
+    detached = command.intent
+    detached["amount_usd_cents"] = 888
+    connection = MagicMock()
+    connection.execute.return_value.fetchone.return_value = ({"application": {"id": "synthetic"}},)
+    with patch("property_rental.credit.psycopg.connect") as connect:
+        connect.return_value.__enter__.return_value = connection
+        CustomerCreditService("read", "financial").apply(
+            prop,
+            credit,
+            command,
+            actor=staff(prop, "credits.apply"),
+        )
+        connect.assert_called_once_with("financial", connect_timeout=3)
+    parameters = connection.execute.call_args.args[1]
+    transmitted = parameters[-1].obj
+    assert transmitted["amount_usd_cents"] == 100
+    assert transmitted["details"][0]["amount_usd_cents"] == 100
+    assert transmitted == command.intent
+    assert parameters[3] == command.idempotency_key
+
+
+@pytest.mark.parametrize("amount", [True, 1.1, 0, -1, "100", 9_000_000_000_000_001])
+def test_credit_application_intent_rejects_nonexact_or_unbounded_money(amount: object) -> None:
+    with pytest.raises(CreditInvalidError):
+        ApplyCreditCommand(
+            uuid4(),
+            {
+                "mode": "DIRECT_CHARGE",
+                "late_payment_charge_id": str(uuid4()),
+                "amount_usd_cents": amount,
+            },
+        )
+
+
+@pytest.mark.parametrize(
+    "mutation", ["nil", "both_targets", "unknown_field", "missing_reference", "empty_details"]
+)
+def test_credit_application_intent_rejects_malformed_target_and_designation(mutation: str) -> None:
+    intent: dict[str, object] = {
+        "mode": "DESIGNATED",
+        "invoice_id": str(uuid4()),
+        "amount_usd_cents": 100,
+        "designation_reference": "Instruction",
+        "details": [{"invoice_line_id": str(uuid4()), "amount_usd_cents": 100}],
+    }
+    if mutation == "nil":
+        intent["invoice_id"] = str(UUID(int=0))
+    elif mutation == "both_targets":
+        intent["late_payment_charge_id"] = str(uuid4())
+    elif mutation == "unknown_field":
+        intent["available_usd_cents"] = 100
+    elif mutation == "missing_reference":
+        del intent["designation_reference"]
+    else:
+        intent["details"] = []
+    with pytest.raises(CreditInvalidError):
+        ApplyCreditCommand(uuid4(), intent)
+
+
+def test_credit_application_intent_utf8_and_nesting_bounds() -> None:
+    proposal: dict[str, object] = {"invoice_id": str(uuid4()), "amount_usd_cents": 1}
+    with pytest.raises(CreditInvalidError):
+        ApplyCreditCommand(
+            uuid4(), {"mode": "PROPOSAL", "proposal": {**proposal, "text": "界" * 100000}}
+        )
+    nested: object = None
+    for _ in range(30):
+        nested = [nested]
+    with pytest.raises(CreditInvalidError):
+        ApplyCreditCommand(uuid4(), {"mode": "PROPOSAL", "proposal": {**proposal, "trace": nested}})
+    # Authoritative target snapshots may exceed the individual command money bound.
+    valid = ApplyCreditCommand(
+        uuid4(),
+        {
+            "mode": "PROPOSAL",
+            "proposal": {
+                **proposal,
+                "details": [{"outstanding_usd_cents": 9_223_372_036_854_775_807}],
+            },
+        },
+    )
+    assert valid.intent["proposal"] is not None
+
+
+@pytest.mark.parametrize("operation", ["proposal", "apply", "read", "reverse"])
+def test_credit_application_capabilities_remain_separable_before_database_access(
+    operation: str,
+) -> None:
+    prop, credit, target = uuid4(), uuid4(), uuid4()
+    service = CustomerCreditService("unused", "unused")
+    with patch("property_rental.credit.psycopg.connect") as connect:
+        with pytest.raises(CreditAuthorizationError):
+            if operation == "proposal":
+                service.application_proposal(
+                    prop, credit, target, 1, actor=staff(prop, "credits.read")
+                )
+            elif operation == "apply":
+                service.apply(
+                    prop,
+                    credit,
+                    ApplyCreditCommand(
+                        uuid4(),
+                        {
+                            "mode": "DIRECT_CHARGE",
+                            "late_payment_charge_id": str(target),
+                            "amount_usd_cents": 1,
+                        },
+                    ),
+                    actor=staff(prop, "credits.applications.reverse"),
+                )
+            elif operation == "read":
+                service.get_application(prop, target, actor=staff(prop, "credits.apply"))
+            else:
+                service.reverse_application(
+                    prop,
+                    target,
+                    ReverseCreditApplicationCommand(uuid4(), "Reason"),
+                    actor=staff(prop, "credits.apply"),
+                )
+        connect.assert_not_called()
