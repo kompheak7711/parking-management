@@ -1,6 +1,6 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-049 bounded correction1 active for rejected candidate4108888 (1HIGH3MEDIUM1LOW); complete report retained externally, no release acceptance.
+- Current: V1-049 correction1 implemented, freezing successor for fresh exact verification/review; rejected4108888 (1HIGH3MEDIUM1LOW) and report preserved. No release acceptance.
 - Active checkout: /Users/sokompheak/Development/property-rental-management-v1-049, branch codex/v1-049-direct; sole direct Codex coordinator.
 - Authority: ops/CODEX_TAKEOVER_V1_048_053.md, SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455.
 - Models: GPT-6 Astra only; coordinator xhigh, financial/migration implementation xhigh, independent read-only reviewer max; Standard.
@@ -9,8 +9,8 @@
 - V1-048 fully closed at e3ae74f8ca2acab1991db9f724faf3df274bcc08, after product561dd06. Both independent Astra max reviews zero findings, both normallypublished, exact CI33959763928/33960592925 attempt1 all4jobs success, four refs equal, Workboard652e776c done.
 - V1-048 closure receipt SHA2567e3dc8d7876d5fcf744addcc3b9ecb66d45b2200cab1fd8cb6dfa7eec91421c6; /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1048-closure-verification.md. All failed checkpoints/reviews/worktrees preserved.
 - Last verified V1-048 product gates514PostgreSQL/769backend/369frontend/189automation plus static/build/config/audits; these do not constitute V1-049 acceptance.
-- Development: full PostgreSQL519/519 and backend788 PASS; subsequent focused allocation batches17/17 and6/6 PASS. Fresh frozen-candidate full gates and Astra max independent review remain pending.
-- Exact next action: correct historical Payment budgets, direct Charge intent, bounded FIFO continuation, authority encoding and precise traceability; freeze successor and repeat all exact gates/review beforepublication andV1-050.
+- Development: correction29/29 focused PostgreSQL,788backend(520DB-onlyskips),189automation/state/watchdog/config and static/traceability PASS. Historical budget, direct Charge,101Invoice/Unicode/501line continuation covered. These are not frozen acceptance.
+- Exact next action: resolve frozen correction1 HEAD, repeat all full exact-SHA gates and fresh independent Astra max zero-finding review; only then publish/CI/ref/Workboard/durableclose beforeV1-050.
 - No owner action required; continue dependency-ordered throughV1-053. LeaveOpenClawdisabled, stopbeforeV1-054 andpauseCodexfollowup atV1-053closure.
 - Production/customerdata/paidservices/destructiveoperations/force-push/historyrewrite/worktreedeletion remain unauthorized.
 
@@ -35,7 +35,7 @@ The following evidence is preserved as history. Its closure-turn next actions an
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation state: direct CodexV1-049 review/verification pending after fully closedV1-048; OpenClaw disabled, no OpenClawdispatch.
+- Automation state: direct CodexV1-049 correction1 exact verification/review pending after fully closedV1-048; OpenClaw disabled, no OpenClawdispatch.
 - Exact next action: inspect exact candidate and any active reviewer; complete fullgates/review/publish/verify/close beforeV1-050; continue onlythroughV1-053.
 
 <!-- AUTOMATION_STATUS_END -->

@@ -356,6 +356,16 @@ def upgrade() -> None:
             SELECT * INTO STRICT v_header FROM app.payment_allocations WHERE id=v_id;
             SELECT sum(posted_amount_usd_cents),count(*) INTO v_total,v_count
                 FROM app.payment_allocation_details WHERE payment_allocation_id=v_id;
+            -- The immutable header's deferred event validates every detail and
+            -- projection once. Positive append-only details cannot be added later
+            -- without changing this sum, so detail events need only enforce the
+            -- immutable total. Avoid re-projecting a large Invoice for every line.
+            IF TG_TABLE_NAME='payment_allocation_details' THEN
+                IF v_total IS DISTINCT FROM v_header.amount_usd_cents::numeric THEN
+                    RAISE EXCEPTION 'Allocation header and detail totals must reconcile' USING ERRCODE='23514';
+                END IF;
+                RETURN NULL;
+            END IF;
             IF v_total IS DISTINCT FROM v_header.amount_usd_cents::numeric OR v_count=0
                 OR (v_header.target_kind='LATE_PAYMENT_CHARGE' AND v_count<>1)
                 OR EXISTS(SELECT 1 FROM app.payment_allocation_details detail
@@ -424,6 +434,7 @@ def upgrade() -> None:
         """
     )
     integrate_existing_financial_guards()
+    create_payment_history_budget_guard()
     create_allocation_services()
     for table in (
         "payment_allocations",
@@ -470,6 +481,68 @@ def upgrade() -> None:
         )
 
 
+def create_payment_history_budget_guard() -> None:
+    """Validate every historical breakpoint, not just today's released source value."""
+    op.execute("""
+        CREATE FUNCTION app.validate_payment_history_budget()
+        RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        DECLARE v_payment_id uuid; v_original bigint;
+        BEGIN
+            IF TG_TABLE_NAME IN ('payment_allocations','deposit_receipts') THEN
+                v_payment_id:=NEW.payment_id;
+            ELSIF TG_TABLE_NAME='payment_allocation_reversals' THEN
+                SELECT payment_id INTO STRICT v_payment_id FROM app.payment_allocations
+                    WHERE id=NEW.payment_allocation_id;
+            ELSE
+                SELECT payment_id INTO STRICT v_payment_id FROM app.deposit_receipts
+                    WHERE id=NEW.deposit_receipt_id;
+            END IF;
+            SELECT usd_accounting_value_cents INTO STRICT v_original FROM app.payments
+                WHERE id=v_payment_id;
+            IF EXISTS (
+                WITH events AS (
+                    SELECT posted_at AS event_at,amount_usd_cents::numeric AS delta
+                    FROM app.payment_allocations WHERE payment_id=v_payment_id
+                    UNION ALL
+                    SELECT reversal.occurred_at,-allocation.amount_usd_cents::numeric
+                    FROM app.payment_allocation_reversals reversal
+                    JOIN app.payment_allocations allocation ON allocation.id=reversal.payment_allocation_id
+                    WHERE allocation.payment_id=v_payment_id
+                    UNION ALL
+                    SELECT occurred_at,amount_usd_cents::numeric FROM app.deposit_receipts
+                    WHERE payment_id=v_payment_id
+                    UNION ALL
+                    SELECT reversal.occurred_at,-receipt.amount_usd_cents::numeric
+                    FROM app.deposit_receipt_reversals reversal
+                    JOIN app.deposit_receipts receipt ON receipt.id=reversal.deposit_receipt_id
+                    WHERE receipt.payment_id=v_payment_id
+                ), positions AS (
+                    SELECT sum(sum(delta)) OVER (ORDER BY event_at) AS used
+                    FROM events GROUP BY event_at
+                ) SELECT 1 FROM positions WHERE used<0 OR used>v_original
+            ) THEN
+                RAISE EXCEPTION 'Payment historical availability exceeded' USING ERRCODE='23514';
+            END IF;
+            RETURN NULL;
+        END $$;
+        REVOKE ALL ON FUNCTION app.validate_payment_history_budget()
+            FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap;
+        COMMENT ON FUNCTION app.validate_payment_history_budget() IS
+            'V1-049 all historical Allocation/Deposit breakpoints; V1-051 must extend for Credit/Refund consumers.';
+    """)
+    for table in (
+        "payment_allocations",
+        "payment_allocation_reversals",
+        "deposit_receipts",
+        "deposit_receipt_reversals",
+    ):
+        op.execute(
+            f"CREATE CONSTRAINT TRIGGER {table}_payment_history_budget AFTER INSERT ON app.{table} "
+            "DEFERRABLE INITIALLY DEFERRED FOR EACH ROW "
+            "EXECUTE FUNCTION app.validate_payment_history_budget()"
+        )
+
+
 def create_allocation_services() -> None:
     """Expose explicit commands, never table mutation, to the financial service role."""
     op.execute("""
@@ -479,6 +552,8 @@ def create_allocation_services() -> None:
         DECLARE v_payment app.payments%ROWTYPE; v_invoice record; v_line record;
         DECLARE v_available bigint; v_remaining bigint; v_amount bigint; v_total bigint;
         DECLARE v_targets jsonb:='[]'; v_details jsonb; v_sequence integer:=0;
+        DECLARE v_detail_count integer:=0; v_has_more boolean:=false;
+        DECLARE v_next_details jsonb; v_next_target jsonb; v_target jsonb;
         BEGIN
             SELECT * INTO v_payment FROM app.payments
                 WHERE id=p_payment_id AND property_id=p_property_id;
@@ -500,7 +575,7 @@ def create_allocation_services() -> None:
                 ORDER BY invoice.due_date,invoice.issued_at,invoice.invoice_number COLLATE "C",invoice.id
             LOOP
                 EXIT WHEN v_remaining=0;
-                v_details:='[]'; v_total:=0;
+                v_details:='[]'; v_total:=0; v_target:=NULL;
                 FOR v_line IN SELECT line.*,app.invoice_line_outstanding(line.id) AS outstanding
                     FROM app.invoice_lines line WHERE line.invoice_id=v_invoice.id
                     ORDER BY CASE line.category WHEN 'RENT' THEN 0 WHEN 'SERVICE_CHARGES' THEN 1 ELSE 2 END,
@@ -508,26 +583,43 @@ def create_allocation_services() -> None:
                 LOOP
                     EXIT WHEN v_remaining=0;
                     IF v_line.outstanding<=0 THEN CONTINUE; END IF;
+                    IF v_sequence>=100 OR v_detail_count>=500 THEN
+                        v_has_more:=true; EXIT;
+                    END IF;
                     v_amount:=LEAST(v_remaining,v_line.outstanding);
-                    v_details:=v_details||jsonb_build_array(jsonb_build_object(
+                    v_next_details:=v_details||jsonb_build_array(jsonb_build_object(
                         'invoice_line_id',v_line.id,'category',v_line.category,
                         'outstanding_usd_cents',v_line.outstanding,'amount_usd_cents',v_amount,
                         'attribution_basis',CASE v_line.category WHEN 'RENT' THEN 'RENT_FIRST_PROPOSAL'
                             WHEN 'SERVICE_CHARGES' THEN 'SERVICE_PROPOSAL' ELSE 'OTHER_CONFIRMED' END));
+                    v_next_target:=jsonb_build_object(
+                        'invoice_id',v_invoice.id,'target_customer_id',v_invoice.customer_id,
+                        'due_date',v_invoice.due_date,'issued_at',v_invoice.issued_at,
+                        'invoice_number',v_invoice.invoice_number,'version',v_invoice.version,
+                        'sequence',v_sequence+1,'amount_usd_cents',v_total+v_amount,'details',v_next_details);
+                    -- Bound the producer below the command's 250KB UTF-8 envelope.
+                    -- jsonb text includes spaces, so this is conservative versus compact JSON.
+                    IF octet_length((v_targets||jsonb_build_array(v_next_target))::text)>200000 THEN
+                        IF v_sequence=0 AND v_total=0 THEN
+                            RAISE EXCEPTION 'Invoice cannot fit bounded proposal' USING ERRCODE='P4902';
+                        END IF;
+                        v_has_more:=true; EXIT;
+                    END IF;
+                    v_target:=v_next_target; v_details:=v_next_details;
+                    v_detail_count:=v_detail_count+1;
                     v_total:=v_total+v_amount; v_remaining:=v_remaining-v_amount;
                 END LOOP;
                 IF v_total>0 THEN
                     v_sequence:=v_sequence+1;
-                    v_targets:=v_targets||jsonb_build_array(jsonb_build_object(
-                        'invoice_id',v_invoice.id,'target_customer_id',v_invoice.customer_id,
-                        'due_date',v_invoice.due_date,'issued_at',v_invoice.issued_at,
-                        'invoice_number',v_invoice.invoice_number,'version',v_invoice.version,
-                        'sequence',v_sequence,'amount_usd_cents',v_total,'details',v_details));
+                    v_targets:=v_targets||jsonb_build_array(v_target);
                 END IF;
+                EXIT WHEN v_has_more;
             END LOOP;
             RETURN jsonb_build_object('property_id',p_property_id,'payment_id',p_payment_id,
                 'proposal_batch_id',p_batch_id,'generated_at',p_generated_at,
                 'available_usd_cents',v_available,'unallocated_after_usd_cents',v_remaining,
+                'continuation_status',CASE WHEN v_has_more THEN 'MORE_ELIGIBLE' ELSE 'COMPLETE' END,
+                'continuation','CONFIRM_PAGE_THEN_REQUEST_FRESH_PROPOSAL',
                 'targets',v_targets,'policy','DUE_ISSUED_NUMBER_ID/RENT_SERVICE_SOURCE_ORDER',
                 'payment_scope',v_payment.payment_scope_kind,
                 'designation_reference',CASE WHEN v_payment.payment_scope_kind='THIRD_PARTY_IDENTIFIED'
@@ -606,7 +698,7 @@ def create_allocation_services() -> None:
             IF NOT FOUND OR v_payment.property_id<>p_property_id
             THEN RAISE EXCEPTION 'Payment not found' USING ERRCODE='P4901'; END IF;
             IF p_intent IS NULL OR jsonb_typeof(p_intent)<>'object'
-                OR p_intent->>'mode' IS NULL OR p_intent->>'mode' NOT IN ('PROPOSAL','DESIGNATED')
+                OR p_intent->>'mode' IS NULL OR p_intent->>'mode' NOT IN ('PROPOSAL','DESIGNATED','DIRECT_CHARGE')
             THEN RAISE EXCEPTION 'Allocation intent is invalid' USING ERRCODE='P4902'; END IF;
             v_generated:=p_intent->>'mode'='PROPOSAL';
             IF v_generated THEN
@@ -615,6 +707,15 @@ def create_allocation_services() -> None:
                 v_batch:=(v_proposal->>'proposal_batch_id')::uuid;
                 v_generated_at:=(v_proposal->>'generated_at')::timestamptz;
                 v_reference:=v_proposal->>'designation_reference';
+            ELSIF p_intent->>'mode'='DIRECT_CHARGE' THEN
+                IF NOT (p_intent ? 'late_payment_charge_id') OR NOT (p_intent ? 'amount_usd_cents')
+                    OR p_intent-ARRAY['mode','late_payment_charge_id','amount_usd_cents']<>'{}'::jsonb
+                THEN RAISE EXCEPTION 'Direct Charge intent is invalid' USING ERRCODE='P4902'; END IF;
+                v_targets:=jsonb_build_array(jsonb_build_object(
+                    'late_payment_charge_id',p_intent->'late_payment_charge_id',
+                    'amount_usd_cents',p_intent->'amount_usd_cents'));
+                v_reference:=CASE WHEN v_payment.payment_scope_kind='THIRD_PARTY_IDENTIFIED'
+                    THEN 'confirmed-payment:'||v_payment.id::text ELSE NULL END;
             ELSE
                 v_targets:=p_intent->'targets'; v_reference:=p_intent->>'designation_reference';
                 IF v_reference IS NULL OR v_reference<>btrim(v_reference)

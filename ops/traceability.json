@@ -2,318 +2,297 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_allocation_detail_limit_continues_same_invoice_before_later_targets",
+      "upstream_ids": ["BR-PAY-021", "BR-PAY-036", "BR-PAY-038", "DB-PAY-005", "TEST-060"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_allocation_migration.py",
+      "status": "implemented",
+      "notes": "501 authorized Invoice lines produce a 500-detail postable page and then the remaining line on the same Invoice."
+    },
+    {
       "test_id": "test_allocation_third_party_is_bound_to_identified_invoice",
       "upstream_ids": [
-        "BR-PAY-019",
-        "BR-PAY-020",
+        "BR-PAY-025",
         "BR-PAY-026",
-        "BR-PAY-028",
-        "BR-PAY-029",
-        "BR-PAY-036",
         "DB-PAY-004",
-        "DB-PAY-007",
-        "DB-TXN-001",
-        "TEST-060",
-        "TEST-063"
+        "TEST-060"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Isolated PostgreSQL tests for explicit allocation invariants, historical/proposal evidence, shared Payment budget, target scope and source/detail ordering."
+      "notes": "Third-party intent restricts targets without changing the responsible Customer."
     },
     {
       "test_id": "test_allocation_repeatable_read_stale_target_is_rejected",
       "upstream_ids": [
-        "BR-PAY-019",
-        "BR-PAY-020",
-        "BR-PAY-026",
-        "BR-PAY-028",
-        "BR-PAY-029",
-        "BR-PAY-036",
-        "DB-PAY-004",
-        "DB-PAY-007",
         "DB-TXN-001",
-        "TEST-060",
-        "TEST-063"
+        "DB-TXN-004",
+        "SEC-029",
+        "TEST-062"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Isolated PostgreSQL tests for explicit allocation invariants, historical/proposal evidence, shared Payment budget, target scope and source/detail ordering."
+      "notes": "Repeatable-read stale target cannot bypass allocation serialization."
     },
     {
       "test_id": "test_allocation_history_as_of_and_private_write_boundary",
       "upstream_ids": [
-        "BR-PAY-019",
-        "BR-PAY-020",
-        "BR-PAY-026",
-        "BR-PAY-028",
         "BR-PAY-029",
-        "BR-PAY-036",
         "DB-PAY-004",
+        "DB-PAY-005",
         "DB-PAY-007",
-        "DB-TXN-001",
-        "TEST-060",
-        "TEST-063"
+        "TEST-063",
+        "SEC-031"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Isolated PostgreSQL tests for explicit allocation invariants, historical/proposal evidence, shared Payment budget, target scope and source/detail ordering."
+      "notes": "As-of allocation/reversal projections and denied direct runtime writes preserve history."
     },
     {
       "test_id": "test_allocation_generated_proposal_tampering_is_rejected",
       "upstream_ids": [
-        "BR-PAY-019",
-        "BR-PAY-020",
-        "BR-PAY-026",
-        "BR-PAY-028",
-        "BR-PAY-029",
-        "BR-PAY-036",
+        "BR-PAY-021",
+        "BR-PAY-022",
+        "BR-PAY-023",
         "DB-PAY-004",
-        "DB-PAY-007",
-        "DB-TXN-001",
-        "TEST-060",
-        "TEST-063"
+        "DB-PAY-005",
+        "SEC-026",
+        "TEST-060"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Isolated PostgreSQL tests for explicit allocation invariants, historical/proposal evidence, shared Payment budget, target scope and source/detail ordering."
+      "notes": "Reject altered proposal amount, due date, detail identity, sequence and trace."
     },
     {
       "test_id": "test_allocation_mixed_invoice_preserves_rent_first_and_line_designation",
       "upstream_ids": [
-        "BR-PAY-019",
-        "BR-PAY-020",
-        "BR-PAY-026",
-        "BR-PAY-028",
-        "BR-PAY-029",
         "BR-PAY-036",
-        "DB-PAY-004",
-        "DB-PAY-007",
-        "DB-TXN-001",
-        "TEST-060",
-        "TEST-063"
+        "BR-PAY-037",
+        "BR-PAY-039",
+        "DB-PAY-005",
+        "DB-DER-011",
+        "TEST-060"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Isolated PostgreSQL tests for explicit allocation invariants, historical/proposal evidence, shared Payment budget, target scope and source/detail ordering."
+      "notes": "Rent-first and explicit Service-line designation preserve line-level Rent outstanding."
     },
     {
       "test_id": "test_allocation_exact_amount_boundaries_leave_excess_unallocated",
       "upstream_ids": [
-        "BR-PAY-019",
-        "BR-PAY-020",
-        "BR-PAY-026",
+        "BR-PAY-027",
         "BR-PAY-028",
-        "BR-PAY-029",
-        "BR-PAY-036",
-        "DB-PAY-004",
-        "DB-PAY-007",
-        "DB-TXN-001",
-        "TEST-060",
-        "TEST-063"
+        "BR-PAY-031",
+        "DB-DER-002",
+        "TEST-061",
+        "TEST-064"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Isolated PostgreSQL tests for explicit allocation invariants, historical/proposal evidence, shared Payment budget, target scope and source/detail ordering."
+      "notes": "One-cent, exact/full and excess amounts derive positions without automatic excess disposition."
     },
     {
       "test_id": "test_allocation_and_deposit_share_one_payment_budget",
       "upstream_ids": [
-        "BR-PAY-019",
-        "BR-PAY-020",
-        "BR-PAY-026",
-        "BR-PAY-028",
-        "BR-PAY-029",
-        "BR-PAY-036",
-        "DB-PAY-004",
-        "DB-PAY-007",
+        "DB-DER-002",
         "DB-TXN-001",
-        "TEST-060",
-        "TEST-063"
+        "DB-TXN-004",
+        "SEC-029",
+        "TEST-062"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Isolated PostgreSQL tests for explicit allocation invariants, historical/proposal evidence, shared Payment budget, target scope and source/detail ordering."
+      "notes": "Allocation and Deposit compete for one Payment across three isolation levels."
     },
     {
       "test_id": "test_allocation_intent_rejects_inexact_or_unbounded_money",
       "upstream_ids": [
         "BR-MONEY-001",
-        "API-059",
-        "API-060",
         "SEC-026",
-        "SEC-030"
+        "API-059"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",
       "status": "implemented",
-      "notes": "Exact money, explicit intent, reason/current-state and distinct capability/Property checks before database access."
+      "notes": "Reject boolean, floating-point, nonfinite and out-of-range monetary intent."
     },
     {
       "test_id": "test_allocation_reversals_require_normalized_reason",
       "upstream_ids": [
-        "BR-MONEY-001",
-        "API-059",
-        "API-060",
-        "SEC-026",
-        "SEC-030"
+        "BR-PAY-029",
+        "DB-PAY-006",
+        "DB-PAY-007",
+        "API-060"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",
       "status": "implemented",
-      "notes": "Exact money, explicit intent, reason/current-state and distinct capability/Property checks before database access."
+      "notes": "Payment and Allocation reversal reasons must be present, normalized and bounded."
     },
     {
       "test_id": "test_allocation_payment_reversal_requires_expected_state",
       "upstream_ids": [
-        "BR-MONEY-001",
-        "API-059",
+        "DB-PAY-006",
         "API-060",
-        "SEC-026",
-        "SEC-030"
+        "SEC-028"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",
       "status": "implemented",
-      "notes": "Exact money, explicit intent, reason/current-state and distinct capability/Property checks before database access."
+      "notes": "Reject unsupported expected Payment state and nil command identity."
     },
     {
       "test_id": "test_allocation_reverse_payment_has_distinct_capability",
       "upstream_ids": [
-        "BR-MONEY-001",
-        "API-059",
         "API-060",
-        "SEC-026",
-        "SEC-030"
+        "SEC-026"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",
       "status": "implemented",
-      "notes": "Exact money, explicit intent, reason/current-state and distinct capability/Property checks before database access."
+      "notes": "Allocation/recording capabilities do not authorize Payment reversal."
     },
     {
       "test_id": "test_allocation_scope_is_checked_before_database_access",
       "upstream_ids": [
-        "BR-MONEY-001",
+        "BR-PAY-020",
         "API-059",
-        "API-060",
-        "SEC-026",
-        "SEC-030"
+        "SEC-026"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",
       "status": "implemented",
-      "notes": "Exact money, explicit intent, reason/current-state and distinct capability/Property checks before database access."
+      "notes": "Wrong-Property capability fails before any database access."
     },
     {
       "test_id": "test_allocation_never_infers_confirmation",
       "upstream_ids": [
-        "BR-MONEY-001",
-        "API-059",
-        "API-060",
-        "SEC-026",
-        "SEC-030"
+        "BR-PAY-019",
+        "BR-PAY-020",
+        "API-059"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_payment_allocation.py",
       "status": "implemented",
-      "notes": "Exact money, explicit intent, reason/current-state and distinct capability/Property checks before database access."
+      "notes": "No automatic posting or implicit designation; reject unexpected confirmation fields."
     },
     {
       "test_id": "test_allocation_proposal_explicit_post_replay_reverse_and_positions",
       "upstream_ids": [
         "BR-PAY-019",
+        "BR-PAY-020",
         "BR-PAY-021",
+        "BR-PAY-022",
+        "BR-PAY-029",
         "DB-PAY-004",
         "DB-PAY-005",
         "DB-PAY-006",
         "DB-PAY-007",
-        "DB-TXN-001",
+        "DB-DER-002",
+        "SEC-028",
         "TEST-060",
-        "TEST-063"
+        "TEST-061",
+        "TEST-063",
+        "TEST-068"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Explicit allocation and reversal financial invariants in isolated PostgreSQL; proposal, replay, source/target balance and downstream integration."
+      "notes": "Proposal is read-only; explicit posting/replay and linked reversals derive source/target positions and gate Payment reversal."
     },
     {
       "test_id": "test_allocation_rejects_stale_proposal_and_reused_intent",
       "upstream_ids": [
-        "BR-PAY-019",
         "BR-PAY-021",
         "DB-PAY-004",
-        "DB-PAY-005",
-        "DB-PAY-006",
-        "DB-PAY-007",
-        "DB-TXN-001",
-        "TEST-060",
-        "TEST-063"
+        "SEC-028",
+        "SEC-029",
+        "TEST-060"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Explicit allocation and reversal financial invariants in isolated PostgreSQL; proposal, replay, source/target balance and downstream integration."
+      "notes": "Stale snapshots and changed intent under a reused command identity are rejected."
     },
     {
       "test_id": "test_allocation_competing_payments_cannot_overpay_one_line",
       "upstream_ids": [
-        "BR-PAY-019",
-        "BR-PAY-021",
-        "DB-PAY-004",
-        "DB-PAY-005",
-        "DB-PAY-006",
-        "DB-PAY-007",
+        "BR-PAY-027",
+        "BR-PAY-028",
         "DB-TXN-001",
-        "TEST-060",
-        "TEST-063"
+        "DB-TXN-004",
+        "SEC-029",
+        "TEST-062"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Explicit allocation and reversal financial invariants in isolated PostgreSQL; proposal, replay, source/target balance and downstream integration."
+      "notes": "Competing Payments cannot over-apply one Invoice line."
     },
     {
       "test_id": "test_allocation_adjustments_cannot_credit_already_applied_value",
       "upstream_ids": [
-        "BR-PAY-019",
-        "BR-PAY-021",
-        "DB-PAY-004",
-        "DB-PAY-005",
-        "DB-PAY-006",
-        "DB-PAY-007",
-        "DB-TXN-001",
-        "TEST-060",
-        "TEST-063"
+        "BR-PAY-028",
+        "DB-TXN-004",
+        "DB-DER-011",
+        "TEST-061"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Explicit allocation and reversal financial invariants in isolated PostgreSQL; proposal, replay, source/target balance and downstream integration."
+      "notes": "Invoice adjustment floor respects applied money and derives paid/outstanding status."
     },
     {
       "test_id": "test_allocation_charge_is_separate_and_corrections_respect_consumption",
       "upstream_ids": [
-        "BR-PAY-019",
-        "BR-PAY-021",
+        "BR-PAY-040",
         "DB-PAY-004",
         "DB-PAY-005",
-        "DB-PAY-006",
-        "DB-PAY-007",
-        "DB-TXN-001",
+        "DB-DER-009",
+        "DB-TXN-004",
+        "TEST-060",
+        "TEST-061"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_allocation_migration.py",
+      "status": "implemented",
+      "notes": "Direct staff and Customer-designated Charge allocations preserve accurate provenance, separate Invoice value, and correction floors."
+    },
+    {
+      "test_id": "test_allocation_historical_payment_budget_preserves_valid_backdating",
+      "upstream_ids": [
+        "BR-PAY-027",
+        "BR-PAY-029",
+        "DB-DER-002",
+        "DB-TXN-004",
         "TEST-060",
         "TEST-063"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_allocation_migration.py",
       "status": "implemented",
-      "notes": "Explicit allocation and reversal financial invariants in isolated PostgreSQL; proposal, replay, source/target balance and downstream integration."
+      "notes": "Reject backdated Deposit overlap after Allocation reversal while accepting historically funded backdating."
+    },
+    {
+      "test_id": "test_allocation_bounded_fifo_proposals_continue_after_explicit_post",
+      "upstream_ids": [
+        "BR-PAY-020",
+        "BR-PAY-021",
+        "BR-PAY-022",
+        "BR-PAY-038",
+        "DB-PAY-004",
+        "TEST-060"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_allocation_migration.py",
+      "status": "implemented",
+      "notes": "101 eligible Invoices produce a postable FIFO page, truthful remaining value and explicit fresh continuation."
     },
     {
       "test_id": "test_usd_payment_snapshots_reversal_and_audit",

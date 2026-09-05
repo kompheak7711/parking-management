@@ -116,6 +116,7 @@ def create_recurring_rent_invoice(
     line_actor_id: UUID | None = None,
     due_date_source: str = "BR-RENT-018",
     validate_immediately: bool = True,
+    invoice_number: str | None = None,
 ) -> tuple[UUID, UUID]:
     """Create the exact relational shape for one recurring Rent Invoice."""
     if (
@@ -167,7 +168,7 @@ def create_recurring_rent_invoice(
         """,
         (
             invoice_id,
-            f"INV-{invoice_id.hex}",
+            invoice_number or f"INV-{invoice_id.hex}",
             customer_id,
             lease_id,
             resolved_invoice_date,

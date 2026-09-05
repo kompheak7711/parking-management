@@ -3,6 +3,7 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date
 from threading import Barrier
+from typing import cast
 from uuid import UUID, uuid4
 
 import psycopg
@@ -15,7 +16,9 @@ from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.invoice import (
     AdjustInvoiceCommand,
     AdjustmentType,
+    CreateInvoiceDraftCommand,
     InvoiceInvalidError,
+    IssueInvoiceCommand,
     PostgresInvoiceService,
 )
 from property_rental.late_payment import (
@@ -40,6 +43,8 @@ from test_invoice_migration import (
     financial_database_url,
     invoice_api_actor,
     runtime_database_url,
+    set_draft_correction_context,
+    setup_invoice_api_source,
     setup_signed_lease,
 )
 from test_late_payment_migration import late_payment_actor, setup_invoice
@@ -304,8 +309,10 @@ def test_allocation_adjustments_cannot_credit_already_applied_value(
     assert result["adjusted_total"] == {"currency": "USD", "minor_units": 20_000}
 
 
+@pytest.mark.parametrize("direct", [False, True])
 def test_allocation_charge_is_separate_and_corrections_respect_consumption(
     migrated_database_url: str,  # noqa: F811
+    direct: bool,
 ) -> None:
     with psycopg.connect(migrated_database_url) as connection:
         human, prop, customer, invoice, _ = setup_invoice(connection, period_start=date(2026, 5, 1))
@@ -332,6 +339,12 @@ def test_allocation_charge_is_separate_and_corrections_respect_consumption(
         PostAllocationsCommand(
             uuid4(),
             {
+                "mode": "DIRECT_CHARGE",
+                "late_payment_charge_id": str(charge),
+                "amount_usd_cents": 4_000,
+            }
+            if direct
+            else {
                 "mode": "DESIGNATED",
                 "designation_reference": "Customer selects separate late charge",
                 "targets": [{"late_payment_charge_id": str(charge), "amount_usd_cents": 4_000}],
@@ -341,6 +354,15 @@ def test_allocation_charge_is_separate_and_corrections_respect_consumption(
     )
     assert result["available_usd_cents"] == 6_000
     with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT between_invoice_basis,customer_designation_reference,proposal_batch_id "
+            "FROM app.payment_allocations WHERE id=%s",
+            (UUID(str(cast(list[str], result["allocation_ids"])[0])),),
+        ).fetchone() == (
+            "DIRECT_LATE_PAYMENT_CHARGE" if direct else "CUSTOMER_DESIGNATED",
+            None if direct else "Customer selects separate late charge",
+            None,
+        )
         assert connection.execute(
             "SELECT status,app.invoice_line_outstanding(line.id) FROM app.invoices invoice "
             "JOIN app.invoice_lines line ON line.invoice_id=invoice.id WHERE invoice.id=%s",
@@ -359,6 +381,198 @@ def test_allocation_charge_is_separate_and_corrections_respect_consumption(
                 uuid4(), CorrectionKind.REDUCTION, "Would reduce below allocation", 4_001
             ),
             actor=late_payment_actor(human, prop),
+        )
+
+
+@pytest.mark.parametrize("overlap", [False, True])
+def test_allocation_historical_payment_budget_preserves_valid_backdating(
+    migrated_database_url: str,  # noqa: F811
+    overlap: bool,
+) -> None:
+    human, prop, payment, invoices = source(migrated_database_url, 10_000 if overlap else 20_000)
+    with psycopg.connect(migrated_database_url) as connection:
+        _, _, unit, _ = setup_reservation_sources(connection)
+        target_row = connection.execute(
+            "SELECT invoice.customer_id,line.id FROM app.invoices invoice "
+            "JOIN app.invoice_lines line ON line.invoice_id=invoice.id WHERE invoice.id=%s",
+            (invoices[0],),
+        ).fetchone()
+        assert target_row is not None
+        customer, line = target_row
+    posted = service().post(
+        prop, payment, designated(invoices[0], line, 10_000), actor=actor(human, prop)
+    )
+    allocation = UUID(str(cast(list[str], posted["allocation_ids"])[0]))
+    service().reverse_allocation(
+        prop,
+        allocation,
+        ReverseAllocationCommand(uuid4(), "Unwind original allocation"),
+        actor=actor(human, prop),
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        history_row = connection.execute(
+            "SELECT allocation.posted_at,reversal.occurred_at "
+            "FROM app.payment_allocations allocation "
+            "JOIN app.payment_allocation_reversals reversal "
+            "ON reversal.payment_allocation_id=allocation.id "
+            "WHERE allocation.id=%s",
+            (allocation,),
+        ).fetchone()
+        assert history_row is not None
+        posted_at, reversed_at = history_row
+    between = posted_at + (reversed_at - posted_at) / 2
+    assert posted_at < between < reversed_at
+
+    def receipt() -> None:
+        with psycopg.connect(migrated_database_url) as connection:
+            create_reservation(
+                connection,
+                actor_id=human,
+                property_id=prop,
+                unit_id=unit,
+                customer_id=customer,
+                accepted_usd_cents=10_000,
+                existing_payment_id=payment,
+                accepted_at=between,
+                received_at=between,
+            )
+
+    if overlap:
+        with pytest.raises(psycopg.errors.CheckViolation, match="Payment historical availability"):
+            receipt()
+    else:
+        receipt()
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM app.deposit_receipts WHERE payment_id=%s",
+            (payment,),
+        ).fetchone() == (0 if overlap else 1,)
+        assert connection.execute(
+            "SELECT app.payment_available_value(%s)",
+            (payment,),
+        ).fetchone() == (10_000,)
+
+
+@pytest.mark.parametrize("large_names", [False, True])
+def test_allocation_bounded_fifo_proposals_continue_after_explicit_post(
+    migrated_database_url: str,  # noqa: F811
+    large_names: bool,
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, customer, lease = setup_signed_lease(
+            connection, start_date=date(2026, 1, 1), end_date=date(2036, 12, 31)
+        )
+        invoices = []
+        for index in range(101):
+            invoice, _ = create_recurring_rent_invoice(
+                connection,
+                actor_id=human,
+                customer_id=customer,
+                lease_id=lease,
+                period_start=date(2027 + index // 12, index % 12 + 1, 1),
+                invoice_number=f"{index:03d}-" + "ក" * 8000 if large_names else None,
+            )
+            invoices.append(str(invoice))
+        payment = seed_payment(
+            connection, actor_id=human, property_id=prop, customer_id=customer, amount=101 * 80_000
+        )
+    staff = actor(human, prop)
+    count = 0
+    while count < 101:
+        proposal = service().proposal(prop, payment, actor=staff)
+        targets = cast(list[dict[str, object]], proposal["targets"])
+        assert 0 < len(targets) <= 100
+        if count == 0:
+            assert len(targets) < 100 if large_names else len(targets) == 100
+        assert [target["invoice_id"] for target in targets] == invoices[
+            count : count + len(targets)
+        ]
+        count += len(targets)
+        assert proposal["continuation_status"] == ("COMPLETE" if count == 101 else "MORE_ELIGIBLE")
+        assert proposal["unallocated_after_usd_cents"] == (101 - count) * 80_000
+        assert (
+            service().post(
+                prop,
+                payment,
+                PostAllocationsCommand(uuid4(), {"mode": "PROPOSAL", "proposal": proposal}),
+                actor=staff,
+            )["available_usd_cents"]
+            == (101 - count) * 80_000
+        )
+
+
+def test_allocation_detail_limit_continues_same_invoice_before_later_targets(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, customer, first_source = setup_invoice_api_source(
+            connection, amount_usd_cents=1, source_reference="bounded-lines"
+        )
+        sources = []
+        for index in range(500):
+            source_id = uuid4()
+            connection.execute(
+                "INSERT INTO app.authorized_nonrecurring_obligations "
+                "(id,customer_id,category,description,authorized_amount_usd_cents,"
+                "governing_due_date,due_date_source,source_reference,authorized_at,authorized_by,"
+                "authorization_reference) VALUES (%s,%s,'MISCELLANEOUS_CHARGES','Bounded line',1,"
+                "current_date+14,'bounded-lines',%s,clock_timestamp(),%s,'invoice.nonrecurring.authorize')",
+                (source_id, customer, f"bounded-line/{index}", human),
+            )
+            sources.append(source_id)
+    invoice_service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    draft = invoice_service.create_draft(
+        prop, CreateInvoiceDraftCommand(uuid4(), first_source), actor=invoice_api_actor(human, prop)
+    )
+    invoice = UUID(str(draft["id"]))
+    with psycopg.connect(migrated_database_url) as connection:
+        set_draft_correction_context(
+            connection, actor_id=human, reason="Add authorized bounded lines"
+        )
+        connection.execute(
+            "UPDATE app.invoices SET original_total_usd_cents=501,version=version+1,"
+            "updated_at=clock_timestamp(),updated_by=%s WHERE id=%s",
+            (human, invoice),
+        )
+        for index, source_id in enumerate(sources, 2):
+            connection.execute(
+                "INSERT INTO app.invoice_lines "
+                "(id,invoice_id,line_sequence,category,description,amount_usd_cents,"
+                "authorized_obligation_id,calculation_trace,created_by) VALUES "
+                "(%s,%s,%s,'MISCELLANEOUS_CHARGES','Bounded line',1,%s,%s,%s)",
+                (
+                    uuid4(),
+                    invoice,
+                    index,
+                    source_id,
+                    Jsonb(
+                        {
+                            "formula": "authorized_source_exact_amount",
+                            "authorized_obligation_id": str(source_id),
+                            "authorized_amount_usd_cents": 1,
+                        }
+                    ),
+                    human,
+                ),
+            )
+        connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        payment = seed_payment(
+            connection, actor_id=human, property_id=prop, customer_id=customer, amount=501
+        )
+    invoice_service.issue(
+        prop, invoice, IssueInvoiceCommand(uuid4(), 2), actor=invoice_api_actor(human, prop)
+    )
+    for expected_count, expected_remaining in ((500, 1), (1, 0)):
+        proposal = service().proposal(prop, payment, actor=actor(human, prop))
+        targets = cast(list[dict[str, object]], proposal["targets"])
+        assert len(targets) == 1 and targets[0]["invoice_id"] == str(invoice)
+        assert len(cast(list[object], targets[0]["details"])) == expected_count
+        assert proposal["unallocated_after_usd_cents"] == expected_remaining
+        service().post(
+            prop,
+            payment,
+            PostAllocationsCommand(uuid4(), {"mode": "PROPOSAL", "proposal": proposal}),
+            actor=actor(human, prop),
         )
 
 

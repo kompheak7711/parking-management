@@ -71,7 +71,9 @@ def _exact_json(value: object) -> str:
 
     try:
         validate(value)
-        result = json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        result = json.dumps(
+            value, sort_keys=True, separators=(",", ":"), allow_nan=False, ensure_ascii=False
+        )
     except (RecursionError, TypeError, ValueError) as exc:
         raise AllocationInvalidError("Allocation intent is invalid") from exc
     if len(result.encode()) > 250_000:
@@ -98,8 +100,18 @@ class PostAllocationsCommand:
                 raise AllocationInvalidError("Designation reference is invalid")
             if not 1 <= len(reference) <= 500:
                 raise AllocationInvalidError("Designation reference is required and bounded")
+        elif self.intent.get("mode") == "DIRECT_CHARGE":
+            if set(self.intent) != {"mode", "late_payment_charge_id", "amount_usd_cents"}:
+                raise AllocationInvalidError("Direct Charge intent has unexpected fields")
+            amount = self.intent["amount_usd_cents"]
+            if type(amount) is not int or not 1 <= amount <= MAX_AMOUNT:
+                raise AllocationInvalidError("Direct Charge amount must be positive exact cents")
+            try:
+                _uuid(UUID(str(self.intent["late_payment_charge_id"])))
+            except ValueError as exc:
+                raise AllocationInvalidError("Direct Charge identity is invalid") from exc
         else:
-            raise AllocationInvalidError("Explicit proposal confirmation or designation required")
+            raise AllocationInvalidError("Explicit proposal, designation or direct Charge required")
 
 
 @dataclass(frozen=True, slots=True)
