@@ -410,7 +410,7 @@
       "publication": "not_started"
     },
     "release": {
-      "status": "published_exact_sha_ci_green_closure_pending",
+      "status": "published_exact_sha_ci_green_fully_closed",
       "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/codex-v1-047-release",
       "branch": "codex/v1-047-release",
       "foundation_parent": "4e9c00cac2ee77a276c7f883face65e74a898166",
@@ -458,7 +458,7 @@
       }
     },
     "closure_chain": {
-      "status": "published_exact_sha_ci_green_final_reconciliation_pending",
+      "status": "published_exact_sha_ci_green_final_reconciliation_workboard_accepted",
       "failed_checkpoint": "549ace381964381caab487af744052657aed9f77",
       "failed_checkpoint_review": {
         "status": "failed_preserved",
@@ -527,6 +527,21 @@
         },
         "report_path": "/private/tmp/prm-v1047-native-evidence.fvAaxf/final-reconciliation-rereview-cfbce3a.md",
         "report_sha256": "d57024945c68a122faebac3bb3d8b449c5f67a62e5a608d778f6f2c873fc21e0"
+      },
+      "terminal_closure_failed_checkpoint": "0c88e39f99d24859807646dee88cb94513f77d4e",
+      "terminal_closure_failed_review": {
+        "status": "failed_preserved",
+        "session": "v1047_terminal_closure_review",
+        "model": "gpt-5.6-sol",
+        "reasoning_effort": "max",
+        "mode": "Standard",
+        "findings": {
+          "high": 0,
+          "medium": 0,
+          "low": 1
+        },
+        "report_path": "/private/tmp/prm-v1047-native-evidence.fvAaxf/terminal-closure-review-0c88e39.md",
+        "report_sha256": "50ff3e2e3778140cedecf01d9d9191236ee795f385bf1aa36a99c6e3b3210ff4"
       },
       "final_reconciliation": {
         "status": "published_exact_sha_ci_green_workboard_accepted",

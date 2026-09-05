@@ -61,7 +61,8 @@ Current live queue position: V1-047 fully closed; V1-048 next authorized candida
 V1-046 release `48e377e6`, closure `57f0a816`, and reconciliation `57fd5d34`
 are published, exact-SHA CI-green, synchronized, and Workboard-accepted DONE.
 V1-047 contract `0df357b4-61a3-4697-af85-b6dcf2cf0305` is frozen and DONE.
-Implementation `26b14ae0-92b3-433d-bed6-46bd732c569c` retains all product evidence and is dispatch-blocked solely to prevent overlap during terminal acceptance.
+Implementation `26b14ae0-92b3-433d-bed6-46bd732c569c` is terminal DONE,
+retains all product evidence, and has no active claim, attempt, or worker.
 The owner authorized direct native Codex implementation and removed only the
 rejected OpenClaw coordination-repair dependency. Do not dispatch an OpenClaw worker.
 Use the accepted activation `870472b7` in `codex/v1-047-direct-product`.
