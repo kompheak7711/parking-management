@@ -13,6 +13,7 @@ from alembic import command as alembic_command
 from alembic.config import Config
 from fastapi.testclient import TestClient
 
+from payment_test_support import seed_deposit_payment
 from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.lease_api import PostgresLeaseResourceFlow
@@ -290,7 +291,7 @@ def test_http_create_update_sign_and_replay_use_runtime_role(
             ("lease.sign",),
         ]
         assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20260831_37",
+            "20260905_38",
         )
         assert connection.execute(
             "SELECT has_function_privilege('prm_runtime',"
@@ -351,7 +352,14 @@ def test_http_draft_requires_security_deposit_from_the_same_reservation_unit(
                 "INSERT INTO app.deposit_receipts("
                 "id,deposit_id,payment_id,amount_usd_cents,occurred_at,actor_id) "
                 "VALUES (%s,%s,%s,80000,clock_timestamp(),%s)",
-                (uuid4(), deposit_id, uuid4(), actor_id),
+                (
+                    uuid4(),
+                    deposit_id,
+                    seed_deposit_payment(
+                        connection, deposit_id=deposit_id, actor_id=actor_id, amount=80_000
+                    ),
+                    actor_id,
+                ),
             )
             connection.execute(
                 "UPDATE app.units SET status='RESERVED',version=version+1,"

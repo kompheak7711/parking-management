@@ -18,6 +18,8 @@ from alembic.config import Config
 from psycopg import Connection, Error
 from psycopg.types.json import Jsonb
 
+from payment_test_support import seed_deposit_payment, seed_payment
+
 
 @pytest.fixture(scope="session")
 def migrated_database_url() -> str:
@@ -113,6 +115,7 @@ def create_reservation(
     business_date: date | None = None,
     accepted_at: datetime | None = None,
     received_at: datetime | None = None,
+    existing_payment_id: UUID | None = None,
 ) -> tuple[tuple[object, ...], dict[str, UUID]]:
     """Execute the protected Reservation activation bundle."""
     effective_business_date = business_date or reservation_business_date(connection, property_id)
@@ -128,8 +131,18 @@ def create_reservation(
         "acceptance_id": uuid4(),
         "deposit_id": uuid4(),
         "receipt_id": uuid4(),
-        "payment_id": uuid4(),
+        "payment_id": existing_payment_id or uuid4(),
     }
+    if existing_payment_id is None:
+        seed_payment(
+            connection,
+            actor_id=actor_id,
+            property_id=property_id,
+            customer_id=customer_id,
+            amount=accepted_usd_cents,
+            payment_id=identities["payment_id"],
+            confirmed_at=effective_received_at,
+        )
     trace = Jsonb(
         {
             "agreed_monthly_rent_usd_cents": 50_000,
@@ -253,7 +266,14 @@ def test_authorized_variance_is_preserved_and_replay_is_idempotent(
             id, deposit_id, payment_id, amount_usd_cents, occurred_at, actor_id
         ) VALUES (%s, %s, %s, 1000, clock_timestamp(), %s)
         """,
-        (uuid4(), identities["deposit_id"], uuid4(), actor_id),
+        (
+            uuid4(),
+            identities["deposit_id"],
+            seed_deposit_payment(
+                connection, deposit_id=identities["deposit_id"], actor_id=actor_id, amount=1000
+            ),
+            actor_id,
+        ),
     )
     replay = connection.execute(
         """
@@ -347,7 +367,14 @@ def test_extension_is_single_bounded_and_preserves_original_history(
             id, deposit_id, payment_id, amount_usd_cents, occurred_at, actor_id
         ) VALUES (%s, %s, %s, 1000, clock_timestamp(), %s)
         """,
-        (uuid4(), identities["deposit_id"], uuid4(), actor_id),
+        (
+            uuid4(),
+            identities["deposit_id"],
+            seed_deposit_payment(
+                connection, deposit_id=identities["deposit_id"], actor_id=actor_id, amount=1000
+            ),
+            actor_id,
+        ),
     )
     connection.commit()
     notice_id = uuid4()
@@ -495,7 +522,19 @@ def test_expired_reservation_cannot_be_retroactively_extended(
             id, deposit_id, payment_id, amount_usd_cents, occurred_at, actor_id
         ) VALUES (%s, %s, %s, 10000, %s, %s)
         """,
-        (uuid4(), deposit_id, uuid4(), created_at, actor_id),
+        (
+            uuid4(),
+            deposit_id,
+            seed_deposit_payment(
+                connection,
+                deposit_id=deposit_id,
+                actor_id=actor_id,
+                amount=10_000,
+                confirmed_at=created_at,
+            ),
+            created_at,
+            actor_id,
+        ),
     )
     connection.execute(
         """
@@ -705,7 +744,14 @@ def test_activation_bundle_requires_exact_accepted_receipt(
             id, deposit_id, payment_id, amount_usd_cents, occurred_at, actor_id
         ) VALUES (%s, %s, %s, 1, clock_timestamp(), %s)
         """,
-        (uuid4(), identities["deposit_id"], uuid4(), actor_id),
+        (
+            uuid4(),
+            identities["deposit_id"],
+            seed_deposit_payment(
+                connection, deposit_id=identities["deposit_id"], actor_id=actor_id, amount=1
+            ),
+            actor_id,
+        ),
     )
     with pytest.raises(Error) as overpaid_activation:
         connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
@@ -729,7 +775,14 @@ def test_received_deposit_cannot_exceed_required_liability(
             id, deposit_id, payment_id, amount_usd_cents, occurred_at, actor_id
         ) VALUES (%s, %s, %s, 40000, clock_timestamp(), %s)
         """,
-        (uuid4(), identities["deposit_id"], uuid4(), actor_id),
+        (
+            uuid4(),
+            identities["deposit_id"],
+            seed_deposit_payment(
+                connection, deposit_id=identities["deposit_id"], actor_id=actor_id, amount=40_000
+            ),
+            actor_id,
+        ),
     )
     with pytest.raises(Error) as excess:
         connection.execute(
@@ -738,7 +791,14 @@ def test_received_deposit_cannot_exceed_required_liability(
                 id, deposit_id, payment_id, amount_usd_cents, occurred_at, actor_id
             ) VALUES (%s, %s, %s, 1, clock_timestamp(), %s)
             """,
-            (uuid4(), identities["deposit_id"], uuid4(), actor_id),
+            (
+                uuid4(),
+                identities["deposit_id"],
+                seed_deposit_payment(
+                    connection, deposit_id=identities["deposit_id"], actor_id=actor_id, amount=1
+                ),
+                actor_id,
+            ),
         )
     assert excess.value.sqlstate == "23514"
 
@@ -784,6 +844,13 @@ def test_runtime_is_read_only_except_for_bounded_commands(
 ) -> None:
     with psycopg.connect(migrated_database_url) as setup:
         actor_id, property_id, unit_id, customer_id = setup_reservation_sources(setup)
+        payment_id = seed_payment(
+            setup,
+            actor_id=actor_id,
+            property_id=property_id,
+            customer_id=customer_id,
+            amount=10_000,
+        )
         setup.commit()
     runtime_url = os.environ.get("APP_DATABASE_URL")
     assert runtime_url is not None
@@ -806,6 +873,7 @@ def test_runtime_is_read_only_except_for_bounded_commands(
         assert privileges == (True, False, False, False, True)
         row, _ = create_reservation(
             runtime,
+            existing_payment_id=payment_id,
             actor_id=actor_id,
             property_id=property_id,
             unit_id=unit_id,

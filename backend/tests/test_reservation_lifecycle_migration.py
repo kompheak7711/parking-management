@@ -16,6 +16,7 @@ from alembic.config import Config
 from psycopg import Connection, Error
 from psycopg.types.json import Jsonb
 
+from payment_test_support import seed_deposit_payment, seed_payment
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.reservation import (
     CancellationResponsibility,
@@ -162,7 +163,19 @@ def expired_reservation(
             id, deposit_id, payment_id, amount_usd_cents, occurred_at, actor_id
         ) VALUES (%s,%s,%s,10000,%s,%s)
         """,
-        (uuid4(), deposit_id, uuid4(), occurred_at, actor_id),
+        (
+            uuid4(),
+            deposit_id,
+            seed_deposit_payment(
+                connection,
+                deposit_id=deposit_id,
+                actor_id=actor_id,
+                amount=10_000,
+                confirmed_at=occurred_at,
+            ),
+            occurred_at,
+            actor_id,
+        ),
     )
     connection.execute(
         """
@@ -266,6 +279,17 @@ def test_postgres_service_creates_extends_and_cancels_one_stable_reservation(
         received_at=occurred_at,
     )
 
+    with psycopg.connect(migrated_database_url) as setup:
+        seed_payment(
+            setup,
+            actor_id=actor_id,
+            property_id=property_id,
+            customer_id=customer_id,
+            amount=10_000,
+            payment_id=create_command.payment_id,
+            confirmed_at=occurred_at,
+        )
+        setup.commit()
     created = service.create(create_command)
     extended = service.extend(
         ReservationExtendCommand(

@@ -14,6 +14,7 @@ from alembic import command
 from alembic.config import Config
 from fastapi.testclient import TestClient
 
+from payment_test_support import seed_payment
 from property_rental.app import create_app
 from property_rental.deposit import ReverseDepositDispositionCommand
 from property_rental.deposit_api import PostgresDepositResourceFlow
@@ -245,6 +246,18 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
     acceptance_id = uuid4()
     receipt_id = uuid4()
     payment_id = uuid4()
+    payment_confirmed_at = datetime.now(UTC)
+    with psycopg.connect(migrated_database_url) as setup:
+        seed_payment(
+            setup,
+            actor_id=actor_id,
+            property_id=property_id,
+            customer_id=customer_id,
+            amount=10_001,
+            payment_id=payment_id,
+            confirmed_at=payment_confirmed_at,
+        )
+        setup.commit()
     create_key = uuid4()
     create_payload = {
         "reservation_id": str(reservation_id),
@@ -260,7 +273,7 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
         "deposit_id": str(deposit_id),
         "receipt_id": str(receipt_id),
         "payment_id": str(payment_id),
-        "received_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+        "received_at": payment_confirmed_at.isoformat().replace("+00:00", "Z"),
     }
 
     missing_csrf_id = uuid4()
@@ -387,7 +400,7 @@ def test_http_mutations_reach_real_postgres_with_security_replay_and_rollback(
 
     assert missing_csrf.status_code == 403
     assert wrong_scope.status_code == 404
-    assert created.status_code == create_replay.status_code == 201
+    assert created.status_code == create_replay.status_code == 201, created.json()
     assert created.headers["location"] == f"/reservations/{reservation_id}"
     created_resource = created.json()["data"]
     assert created_resource == create_replay.json()["data"]

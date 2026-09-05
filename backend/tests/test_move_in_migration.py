@@ -16,6 +16,7 @@ from alembic import command as alembic_command
 from alembic.config import Config
 from psycopg.types.json import Jsonb
 
+from payment_test_support import seed_deposit_payment
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.move_in import (
     MOVE_IN_CAPABILITY,
@@ -81,7 +82,17 @@ def setup_move_in(
                     id,deposit_id,payment_id,amount_usd_cents,occurred_at,actor_id
                 ) VALUES (%s,%s,%s,40000,clock_timestamp(),%s)
                 """,
-                (uuid4(), reservation_ids["deposit_id"], uuid4(), actor_id),
+                (
+                    uuid4(),
+                    reservation_ids["deposit_id"],
+                    seed_deposit_payment(
+                        connection,
+                        deposit_id=reservation_ids["deposit_id"],
+                        actor_id=actor_id,
+                        amount=40_000,
+                    ),
+                    actor_id,
+                ),
             )
         lease_id = create_draft(
             connection,
@@ -198,7 +209,19 @@ def setup_historical_move_in(
                 id,deposit_id,payment_id,amount_usd_cents,occurred_at,actor_id
             ) VALUES (%s,%s,%s,50000,%s,%s)
             """,
-            (uuid4(), deposit_id, uuid4(), receipt_at, actor_id),
+            (
+                uuid4(),
+                deposit_id,
+                seed_deposit_payment(
+                    connection,
+                    deposit_id=deposit_id,
+                    actor_id=actor_id,
+                    amount=50_000,
+                    confirmed_at=receipt_at,
+                ),
+                receipt_at,
+                actor_id,
+            ),
         )
         connection.execute(
             "UPDATE app.units SET status='RESERVED',version=version+1,"

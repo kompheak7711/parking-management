@@ -16,6 +16,7 @@ from alembic import command as alembic_command
 from alembic.config import Config
 from fastapi.testclient import TestClient
 
+from payment_test_support import seed_deposit_payment
 from property_rental.app import create_app
 from property_rental.customer_api import PostgresCustomerResourceFlow
 from property_rental.deposit import (
@@ -61,7 +62,14 @@ def seed_pet_deposit(
             "INSERT INTO app.deposit_receipts("
             "id,deposit_id,payment_id,amount_usd_cents,occurred_at,actor_id) "
             "VALUES (%s,%s,%s,20000,clock_timestamp(),%s)",
-            (receipt_id, deposit_id, uuid4(), service.actor_id),
+            (
+                receipt_id,
+                deposit_id,
+                seed_deposit_payment(
+                    connection, deposit_id=deposit_id, actor_id=service.actor_id, amount=20_000
+                ),
+                service.actor_id,
+            ),
         )
         connection.commit()
     return service, actor, lease_id, deposit_id

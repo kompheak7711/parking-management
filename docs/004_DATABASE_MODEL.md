@@ -850,6 +850,7 @@ Append-only authoritative money-received record plus controlled reversal status.
 |---|---|---:|---|
 | `id` | `uuid` | no | PK |
 | `payment_number` | `text` | no | unique, immutable |
+| `property_id` | `uuid` | no | immutable Property scope; intent sources must agree |
 | `payer_customer_id` | `uuid` | no | FK Customers |
 | `lease_id` | `uuid` | yes | optional intent/context FK |
 | `payment_scope_kind` | `text` | no | `NORMAL_CUSTOMER` or `THIRD_PARTY_IDENTIFIED` |
@@ -868,6 +869,7 @@ Append-only authoritative money-received record plus controlled reversal status.
 | `status` | `text` | no | `RECEIVED`, `REVERSED` |
 | `confirmed_at` | `timestamptz` | no | |
 | `confirmed_by` | `uuid` | no | |
+| `authorization_reference` | `text` | no | immutable bounded confirmation authority |
 
 Original columns are immutable. Only status may change, and only through DB-PAY-006.
 Normal Customer scope limits default proposals to the payer Customer's applicable

@@ -16,6 +16,7 @@ import pytest
 from alembic import command as alembic_command
 from alembic.config import Config
 
+from payment_test_support import seed_deposit_payment
 from property_rental.deposit import (
     DEPOSIT_CORRECT_CAPABILITY,
     DEPOSIT_DISPOSE_CAPABILITY,
@@ -147,14 +148,22 @@ def create_pet(
 def seed_historical_deposit_receipt(
     database_url: str, *, deposit_id: UUID, actor_id: UUID, amount_usd_cents: int
 ) -> UUID:
-    """Represent receipt history that predates the not-yet-published Payment aggregate."""
+    """Represent synthetic receipt history backed by authoritative Payment evidence."""
     receipt_id = uuid4()
     with psycopg.connect(database_url) as connection:
         connection.execute(
             "INSERT INTO app.deposit_receipts("
             "id,deposit_id,payment_id,amount_usd_cents,occurred_at,actor_id) "
             "VALUES (%s,%s,%s,%s,clock_timestamp(),%s)",
-            (receipt_id, deposit_id, uuid4(), amount_usd_cents, actor_id),
+            (
+                receipt_id,
+                deposit_id,
+                seed_deposit_payment(
+                    connection, deposit_id=deposit_id, actor_id=actor_id, amount=amount_usd_cents
+                ),
+                amount_usd_cents,
+                actor_id,
+            ),
         )
         connection.commit()
     return receipt_id
