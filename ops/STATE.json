@@ -1730,7 +1730,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "activation_scope_preparation",
+    "phase": "activation_correction1_implemented_prefreeze",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -1768,11 +1768,11 @@
     "planned_branch": "codex/v1-052-direct",
     "planned_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
     "scope_path": "ops/V1_052_SCOPE.md",
-    "scope_sha256": "d4292781ed0b1c54d021e43994d4150457d802db2b7f4136018d94e8cdf36d11",
+    "scope_sha256": "4ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363",
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
-    "candidate_resolution": "V1-052 activation candidate resolves from containing HEAD after freeze; bind future exact-SHA receipts externally without amending it.",
-    "candidate_status": "activation_prefreeze",
+    "candidate_resolution": "Corrected V1-052 activation resolves from containing HEAD after new freeze; actual parent0763624, complete review base fully closed51f8a33ba. Keep failed checkpoint and all evidence; fresh exact gates/review required.",
+    "candidate_status": "corrected_activation_prefreeze",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -1805,7 +1805,22 @@
       "native_agents": "Root Property Rental coordinator only; unrelated tasks untouched"
     },
     "owner_action_required": false,
-    "next_action": "Freeze V1-052 activation/scope checkpoint from fully closed predecessor f8a33ba; run exact records/scope automation/configuration/roadmap/traceability/guards and fresh independent Astra max Standard read-only review. After accepted activation prepare sole isolated codex/v1-052-direct checkout; implement bounded Payment confirmation/read and accepted-service HTTP/UI slices at Astra xhigh Standard. Cumulative product review, normal publication, exact CI/ref/card/durable closure before V1-053. Preserve card74197a0e/history; OpenClaw disabled, through53thenpause/no54; no routine authorization."
+    "next_action": "Freeze corrected V1-052 activation as NEW child of retained failed0763624; COMPLETE review base remains fully closed51f8a33ba. Exact43canonical authority expansion nowPASS, no router/test/product change. Run fresh exact full automation/configuration/roadmap/traceability/guards/parentandcumulativewhitespace and independent Astra max Standard read-only COMPLETE5path review. Require zero findings before preparing sole isolated52product checkout. Keep samecard74197a0e and all evidence; OpenClawdisabled/nativefollowupACTIVE/through53thenpause/no54.",
+    "activation_correction1": {
+      "status": "implemented_fresh_exact_gates_and_review_pending",
+      "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
+      "failure_fingerprint": "V1-052/UI-PAY-*/unmatched_canonical_authority",
+      "failure": "189 unit PASS65.601s then unchanged routing expansion rejects nonexistent UI-PAY-*; execution39408EXIT2; fail-fast remaining gates not run.",
+      "changed_approach": "Replace only V1-052 alias with exact existing UI-063-074, UI-106 and UI-107 in roadmap, mirrors and scope; preserve router/tests.",
+      "attempt": 1,
+      "max_materially_different_corrections": 2,
+      "evidence_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-activation-authority-correction.md",
+      "log_sha256": "6e2be9d70e5ba5b7f97b16acfb6e054a67c96a36110e93e87ff71c25407e07aa",
+      "full_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
+      "new_exact_gates_and_review_required": true,
+      "evidence_sha256": "24e8a7047fc650384749949fbe5f8cecb3a46113c393aac400bfe7a05df41ca6",
+      "focused_validation": "PASS all43 exact canonical authority identifiers expand uniquely, mirrored next_candidate matches roadmap; validator51/60 complete and whitespace pass."
+    }
   },
   "historical_v1_048_takeover": {
     "authorization_from": "V1-048",
@@ -2528,12 +2543,12 @@
   "authorities": [
     "API-057-066",
     "API-092",
-    "UI-PAY-*",
+    "UI-063-074",
+    "UI-106",
+    "UI-107",
     "TEST-059-074",
     "TEST-125-126",
     "DL-060",
-    "UI-063-074",
-    "UI-106-107",
     "SEC-019-029",
     "SEC-036-044"
   ],
@@ -2559,7 +2574,7 @@
   "branch": "implementation/foundation",
   "commit": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
   "idle_reason": null,
-  "next_action": "Freeze V1-052 activation/scope checkpoint from fully closed predecessor f8a33ba; run exact records/scope automation/configuration/roadmap/traceability/guards and fresh independent Astra max Standard read-only review. After accepted activation prepare sole isolated codex/v1-052-direct checkout; implement bounded Payment confirmation/read and accepted-service HTTP/UI slices at Astra xhigh Standard. Cumulative product review, normal publication, exact CI/ref/card/durable closure before V1-053. Preserve card74197a0e/history; OpenClaw disabled, through53thenpause/no54; no routine authorization.",
+  "next_action": "Freeze corrected V1-052 activation as NEW child of retained failed0763624; COMPLETE review base remains fully closed51f8a33ba. Exact43canonical authority expansion nowPASS, no router/test/product change. Run fresh exact full automation/configuration/roadmap/traceability/guards/parentandcumulativewhitespace and independent Astra max Standard read-only COMPLETE5path review. Require zero findings before preparing sole isolated52product checkout. Keep samecard74197a0e and all evidence; OpenClawdisabled/nativefollowupACTIVE/through53thenpause/no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -2567,8 +2582,8 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "V1-052 activation candidate resolves from containing HEAD after freeze; bind future exact-SHA receipts externally without amending it.",
-  "candidate_parent": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
+  "candidate_resolution": "Corrected V1-052 activation resolves from containing HEAD after new freeze; actual parent0763624, complete review base fully closed51f8a33ba. Keep failed checkpoint and all evidence; fresh exact gates/review required.",
+  "candidate_parent": "07636249632fa6e00308c7db815312edace32e26",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -2582,7 +2597,9 @@
     "authorities": [
       "API-057-066",
       "API-092",
-      "UI-PAY-*",
+      "UI-063-074",
+      "UI-106",
+      "UI-107",
       "TEST-059-074",
       "TEST-125-126"
     ],
@@ -2629,7 +2646,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 activation and scope freeze; V1-051 fully closed",
+  "phase": "V1-052 activation correction1 implemented; corrected exact freeze pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -3724,7 +3741,9 @@
   "tests": [
     "PASS V1-051 final receipt/checksum, independent product/terminal zero-finding reviews, exactCI34030703203 all4success and live/main/tracking/FETCH_HEAD f8a33ba equality; same-card DONE/proof935d944b verified. Do not repeat completed work.",
     "PASS no V1-052 card/branch/worktree/worker before one tracking-only blocked card74197a0e creation; OpenClaw singleton disabled30minutes/no nextRun/tasks0. Root coordinator only; native follow-up active.",
-    "PENDING new V1-052 activation exact gates and independent review; no implementation yet."
+    "PENDING new V1-052 activation exact gates and independent review; no implementation yet.",
+    "FAILED activation0763624 prefreeze189unitPASS65.601s then noncanonical UI-PAY-* authority routing failure; execution39408EXIT2. Remaining gates not run; failed checkpoint/log preserved. Correction1 active, no product implementation.",
+    "PASS correction1 focused validation:43 exact canonical authority identifiers, mirrored next_candidate equals roadmap,51/60 complete and whitespace. Fresh exact full activation gates/review pending."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -5091,7 +5110,7 @@
   "commit_role": "Verified fully closed predecessor; V1-052 activation candidate is next normal child",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "f8a33bad25a7993952ec1ccece1b9c2df942b3d6"
+    "07636249632fa6e00308c7db815312edace32e26"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",

@@ -106,7 +106,7 @@ service without replacing upstream history or inventing a second money event.
 
 ## Canonical authority and affected paths
 
-Roadmap API-057–066/API-092, UI-PAY-* (numeric UI-063–074 and UI-106/107),
+Roadmap API-057–066/API-092, exact existing UI-063–074 and UI-106/UI-107,
 TEST-059–074/125/126. Supporting BR-PAY-001–040, BR-RECEIPT-001–006,
 BR-CREDIT-001–013, BR-REFUND-001–013, BR-MONEY-001–013, DL-051/060;
 PR-CAP-005/007 and corresponding PR-PAY/RECEIPT/CREDIT/REFUND/MONEY;
