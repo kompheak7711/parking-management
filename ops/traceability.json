@@ -4,8 +4,7 @@
     {
       "test_id": "test_credit_read_pages_reject_noninteger_or_unbounded_limits",
       "upstream_ids": [
-        "API-061",
-        "API-094"
+        "API-061"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_credit_reads.py",
@@ -15,8 +14,7 @@
     {
       "test_id": "test_credit_read_cursors_require_complete_finite_typed_identity",
       "upstream_ids": [
-        "API-061",
-        "API-094"
+        "API-061"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_credit_reads.py",
@@ -26,8 +24,7 @@
     {
       "test_id": "test_credit_cursor_normalizes_utc_and_revalidates_at_transmission",
       "upstream_ids": [
-        "API-061",
-        "SEC-026"
+        "API-061"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_credit_reads.py",
@@ -38,7 +35,8 @@
       "test_id": "test_credit_reads_require_independent_exact_property_capability",
       "upstream_ids": [
         "API-061",
-        "SEC-025"
+        "SEC-019",
+        "SEC-022"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_credit_reads.py",
@@ -48,8 +46,7 @@
     {
       "test_id": "test_credit_reads_transmit_only_validated_identity_and_read_connection",
       "upstream_ids": [
-        "API-061",
-        "SEC-026"
+        "API-061"
       ],
       "test_level": "unit",
       "test_path": "backend/tests/test_credit_reads.py",
@@ -73,7 +70,8 @@
       "test_id": "test_credit_list_keysets_filter_customer_and_property_without_omitting_history",
       "upstream_ids": [
         "API-061",
-        "SEC-025",
+        "SEC-019",
+        "SEC-022",
         "BR-CREDIT-012"
       ],
       "test_level": "DB",
@@ -96,8 +94,7 @@
     {
       "test_id": "test_credit_ledger_database_rejects_invalid_cursor_envelopes",
       "upstream_ids": [
-        "API-061",
-        "API-094"
+        "API-061"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_credit_history_migration.py",
@@ -108,7 +105,6 @@
       "test_id": "test_credit_history_bounded_pages_keep_cross_family_event_identities",
       "upstream_ids": [
         "API-061",
-        "API-094",
         "BR-CREDIT-012"
       ],
       "test_level": "DB",
@@ -119,9 +115,7 @@
     {
       "test_id": "test_credit_read_helpers_and_position_view_are_private_and_actor_checks_stable",
       "upstream_ids": [
-        "API-061",
-        "SEC-025",
-        "SEC-026"
+        "API-061"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_credit_history_migration.py",
@@ -133,8 +127,7 @@
       "upstream_ids": [
         "API-061",
         "BR-CREDIT-010",
-        "BR-MONEY-003",
-        "API-094"
+        "BR-MONEY-003"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_credit_history_migration.py",

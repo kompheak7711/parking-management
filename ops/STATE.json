@@ -1202,13 +1202,18 @@
       "verification": "16unit/38unit+traceability/11focusedPG/748fullPGzero skips/956backend725DB-onlyskipscovered/369frontend/189automation/staticmypy145buildimport/configuration PASS. See credit_history_checkpoint. No local acceptance until fresh exact gates and independent zero-finding review."
     },
     "credit_history_checkpoint": {
-      "status": "verified_before_freeze",
+      "status": "coordination_correction1_ready_to_freeze",
+      "coordinator_rejected_candidate": "ac688fc84bfa057cbe28a5c32b47e9508dcff5c7",
+      "correction1_started_at": "2026-09-06T03:14:00Z",
+      "correction1_scope": "Only new Credit test semantic mappings and durable evidence; no product behavior or assertion changes. Preserve ac688fc. Complete corrected review base remains3c4015c.",
+      "coordinator_finding": "0HIGH/0MEDIUM/1LOW; v1051-credit-history-coordinator-finding-ac688fc.md SHA256a52b9b01a7d1a85468e836563086ab6590aa289049b049d96a6b196301b26d06; not an independent review.",
+      "max_materially_different_corrections": 2,
       "started_at": "2026-09-06T02:29:21Z",
       "review_base": "3c4015c6412803503126be3516311926c087afba",
-      "candidate_resolution": "Immutable commit containing this checkpoint, new child of3c4015c; bind SHA/tree/exact gates/review in subsequent receipt; never amend.",
+      "candidate_resolution": "Immutable new child ofac688fc containing coordination correction1; complete Credit review base3c4015c. Bind newSHA/tree/exact gates in later receipt.",
       "checkpoint_path": "ops/V1_051_CREDIT_HISTORY_CHECKPOINT.md",
       "checkpoint_sha256": "2c62da5ad0b2f6aa6c420ecabd06bfb3416bea220d6c9938a6198621d013de11",
-      "plan": "Freeze verified bounded Credit list/history checkpoint as new immutable child of accepted3c4015c in SAME51checkout. Require fresh exact-SHA integration/configuration and independent Astra max Standard read-only review of complete3c4015c-to-candidate delta/all changed paths; zero HIGH/MEDIUM/LOW. Inspect valid tests/reviewer before any duplicate and never edit during review. On acceptance continue remaining original-KHR Payment excess and later Credit-to-KHR Refunds. Full51OPEN/unpublished until allscope/audits/cumulativecc3dreview/normalreviewedpush/exactCI/refequality/same-cardterminalclosure. OpenClawdisabled; no52before51closed; through53only.",
+      "plan": "Freeze metadata-only Credit history correction1 as new child of retainedac688fc. Run fresh exact-SHA integration/configuration and independent Astra max Standard read-only review of COMPLETE corrected Credit delta from3c4015c, all10paths and coordinator semantic-mapping finding. Require0HIGH0MEDIUM0LOW; no editing or duplicate during valid review. Then continue remaining KHR Refund source scope in SAME51checkout; full51OPEN/unpublished until allscope/audits/cumulativecc3dreview/normalreviewedpush/exactCI/refequality/same-cardclosure. OpenClawdisabled; no52before51closed; through53only.",
       "postgresql": {
         "passed": 748,
         "skipped": 0,
@@ -1250,7 +1255,10 @@
         "mode": "Standard",
         "provider_attestation": "unavailable"
       },
-      "owner_action_required": false
+      "owner_action_required": false,
+      "correction1_checkpoint_path": "ops/V1_051_CREDIT_HISTORY_CORRECTION1_CHECKPOINT.md",
+      "correction1_checkpoint_sha256": "bcd2891158a92b7e370ca98334fcfe5f3696b906cdb8b88e556a0c747e3e6d38",
+      "prior_exact_gates": "Exactac688fc748PGzero skips117.25s/956backend725DB-onlyskipscovered42.03s/369frontend6.75s/189automation74.080s/staticbuildconfiguration PASS; hashes in correction1checkpoint. Not acceptance of incorrect original mappings."
     }
   },
   "historical_v1_048_takeover": {
@@ -1998,9 +2006,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-051-direct",
-  "commit": "3c4015c6412803503126be3516311926c087afba",
+  "commit": "ac688fc84bfa057cbe28a5c32b47e9508dcff5c7",
   "idle_reason": null,
-  "next_action": "Freeze verified bounded Credit list/history checkpoint as new immutable child of accepted3c4015c in SAME51checkout. Require fresh exact-SHA integration/configuration and independent Astra max Standard read-only review of complete3c4015c-to-candidate delta/all changed paths; zero HIGH/MEDIUM/LOW. Inspect valid tests/reviewer before any duplicate and never edit during review. On acceptance continue remaining original-KHR Payment excess and later Credit-to-KHR Refunds. Full51OPEN/unpublished until allscope/audits/cumulativecc3dreview/normalreviewedpush/exactCI/refequality/same-cardterminalclosure. OpenClawdisabled; no52before51closed; through53only.",
+  "next_action": "Freeze metadata-only Credit history correction1 as new child of retainedac688fc. Run fresh exact-SHA integration/configuration and independent Astra max Standard read-only review of COMPLETE corrected Credit delta from3c4015c, all10paths and coordinator semantic-mapping finding. Require0HIGH0MEDIUM0LOW; no editing or duplicate during valid review. Then continue remaining KHR Refund source scope in SAME51checkout; full51OPEN/unpublished until allscope/audits/cumulativecc3dreview/normalreviewedpush/exactCI/refequality/same-cardclosure. OpenClawdisabled; no52before51closed; through53only.",
   "active_worker": null,
   "active_card": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
   "active_claim": null,
@@ -2061,7 +2069,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-051 Credit list/history checkpoint verified before freeze; exact-SHA review pending",
+  "phase": "V1-051 Credit history coordination correction1 ready to freeze; fresh exact review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -3195,7 +3203,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-051",
-  "timestamp": "2026-09-06T03:04:55Z",
+  "timestamp": "2026-09-06T03:16:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -3247,7 +3255,8 @@
     "ops/V1_051_PET_REFUND_CORRECTION1_CHECKPOINT.md",
     "backend/tests/test_credit_history_migration.py",
     "backend/tests/test_credit_reads.py",
-    "ops/V1_051_CREDIT_HISTORY_CHECKPOINT.md"
+    "ops/V1_051_CREDIT_HISTORY_CHECKPOINT.md",
+    "ops/V1_051_CREDIT_HISTORY_CORRECTION1_CHECKPOINT.md"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -3435,7 +3444,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-06T03:04:55Z",
+  "updated_at": "2026-09-06T03:16:00Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
