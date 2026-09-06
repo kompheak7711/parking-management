@@ -2,6 +2,19 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_financial_clock_fixture_isolates_shared_relation_contention_without_weakening_nowait",
+      "upstream_ids": [
+        "TEST-059",
+        "TEST-070",
+        "API-004",
+        "SEC-048"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_financial_fixture_clock_migration.py",
+      "status": "implemented",
+      "notes": "Deliberately held shared-database relation lock preserves production55P03 NOWAIT refusal and shared Payment/no Refund history; separately owned clock fixture routes all three identities to its fresh database and verifies its USD Refund without weakening guards."
+    },
+    {
       "test_id": "test_payment_confirmation_timestamp_precision_preserves_original_intent_and_replay",
       "upstream_ids": [
         "API-004",

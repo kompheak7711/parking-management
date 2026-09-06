@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "Payment HTTP body/precision corrections focused PASS; full exact gates/complete20path review pending",
+    "phase": "Payment HTTP clock isolation focused PASS; fresh exact gates/complete21path review pending",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2057,8 +2057,8 @@
     "scope_sha256": "4ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363",
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
-    "candidate_resolution": "Containing normal successor ofee37 after freeze; full20path5263218-to-successor exact gates/review pending.",
-    "candidate_status": "corrected_normal_successor_ee37_ready_to_freeze",
+    "candidate_resolution": "Containing normal successor ofa01aae4 afterfreeze; complete21path5263218-to-successor exact gates/review pending",
+    "candidate_status": "normal_clock_isolation_successor_ready_to_freeze",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2093,7 +2093,7 @@
       "predecessor_card": "c5621f97 done"
     },
     "owner_action_required": false,
-    "next_action": "Freeze normal corrected successor of retainedee37dcb; run fresh exact866PG/fullbackend(1194expected)/158static-build-import/189automation/config/traceability/guard/diff checks. Only ifALLPASS ONE fresh independent Astra max Standard read-only COMPLETE20path5263218-to-successor zero review covering ALLFIVE488/dbf/233/ee37/successor commits. Preserve rejecteddbf/233/ee37 and all reports/logs; no amendments, duplicate workers or edits during review. Then remainingfinancialHTTP/UI/encryptedrecovery/fullproductrelease/CI/refs/card/durableclosure before53. OpenClawdisabled/nativeACTIVE; at53closedPAUSE/no54; no routineowneraction.",
+    "next_action": "Freeze normal clock-isolation successor of retaineda01aae4; run fresh exact867PG/fullbackend1194expected/158static-build-import/189automation/config/traceability/publicationguard/diffs. OnlyifALLPASS ONE fresh independent Astra max Standard read-only COMPLETE21path5263218-to-successor zero review covering ALLSIX488/dbf/233/ee37/a01/successor commits, not just finalfixture delta. Preserve all failed checkpoints/reports/logs and accepted work; no duplicate worker, amendment or frozen edits. Then remainingfinancialHTTP/UI/encryptedrecovery/fullproductrelease/CI/refs/card/durableclosure before53. OCdisabled/nativeACTIVE; at53closedPAUSE/no54; no routineowneraction.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2119,7 +2119,7 @@
     },
     "active_slice": {
       "id": "V1-052-payment-http",
-      "status": "body_and_timestamp_corrections_focused_pass_exact_gates_review_pending",
+      "status": "body_timestamp_clock_corrections_focused_pass_exact_gates_review_pending",
       "started_at": "2026-09-06T17:06:00Z",
       "base_sha": "5263218f7f7deafc05b2d9f524f138761e05c850",
       "scope": "Bounded canonical API-057/058 Payment HTTP list/detail/USD-KHR confirmation, narrow injected flow and app wiring, focused unit/API/isolated PostgreSQL tests. Downstream financial routes and all UI remain subsequent slices.",
@@ -2158,7 +2158,7 @@
       "verification_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-implementation-verification.md",
       "verification_receipt_sha256": "d58c26b302e0b39c4ad9414a48d78e6295c1d6931ac96b0490199171b9a7f8ad",
       "tests": "70403COMPLETED EXIT0/5PGPASS845deselected3.66s;75842COMPLETED158fileformat-lint-mypy/106API-inventory-tracePASS15.31s/traceability0newIDs/diffPASS",
-      "complete_review_paths": 20,
+      "complete_review_paths": 21,
       "head_compatibility": "19 truecurrent-head markers43to44/8legacytests; two explicit43 references remain in new history/down-revision test. Published/accepted38–43 and old read/USD/KHR services unchanged.",
       "runtime_sha256": "c176d8e4c0d4910e9f226fceb4cc6d9a984c6412efdcbf0b37ecb26be2fbd851",
       "new_migration": "20260907_44_payment_receipt_evidence.py",
@@ -2237,6 +2237,30 @@
           "Correction1 ACTIVE; focused/fresh exact gates/independent review pending; no full52 acceptance/publication/closure.",
           "CORRECTION1 62529COMPLETED EXIT0/135focusedPASS17.39s/158staticPASS/traceability0newIDs/diffPASS; receipt8c201a285868b38f7ee56b5f7f10fdeb7d6f91622f6d3971d9d2d7d16b0275ba. Fresh candidate exact gates and complete19path review pending.",
           "FAILED EXACT2339aa6:91566COMPLETED849PASS1FAIL126.64s due equivalent .03575/.035750 timestamp strings in old KHR test; log178f7d3d. 5093COMPLETED1194PASS827skips/static-build-import;41700COMPLETED189PASS73.281s/configPASS. Distinct bounded timestamp_test_correction1 ACTIVE; no reviewer dispatched."
+        ]
+      },
+      "clock_isolation_correction1": {
+        "attempt": 1,
+        "status": "resolved_focused_pass_exact_gates_review_pending",
+        "started_at": "2026-09-06T18:57:00Z",
+        "failed_checkpoint": "a01aae4f9a2187e02141c0cad83a2e0f3e17a171",
+        "failed_tree": "455b85dfb8a8c4be1976d5edd2e05bdd101021c9",
+        "failed_result": "76057COMPLETED EXIT2/865PASS1FAIL128.41s; +60 clock fixture refund insert hit relation app.invoices NOWAIT lock conflict55P03",
+        "failed_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-exact-a01aae4-database.log",
+        "failed_log_sha256": "547d83dfb47838d330cb6e257d3684cb284b0858d35f41473f1534ba9e6a6093",
+        "other_exact_gates": "58769COMPLETED1194PASS843DBskips56.94s/158static-build-import;75228COMPLETED189PASS74.438s/config/traceability/guardsPASS",
+        "cause": "Clock-only fixture shares the full integration database and encounters a legitimate competing relation lock. Original locker unavailable after owned DB cleanup; autovacuum possible but unproven.",
+        "changed_approach": "Isolate ONLY clock-focused fixtures with existing owned temporary-database helper and scoped URL rebasing. No disable/relax/change of production NOWAIT, time bounds, transactions or autovacuum; no retry-and-waive. Deliberate shared relation lock regression proves separation and preserved conflict guard.",
+        "next_action": "Freeze normal clock-isolation successor of retaineda01aae4; run fresh exact867PG/fullbackend1194expected/158static-build-import/189automation/config/traceability/publicationguard/diffs. OnlyifALLPASS ONE fresh independent Astra max Standard read-only COMPLETE21path5263218-to-successor zero review covering ALLSIX488/dbf/233/ee37/a01/successor commits, not just finalfixture delta. Preserve all failed checkpoints/reports/logs and accepted work; no duplicate worker, amendment or frozen edits. Then remainingfinancialHTTP/UI/encryptedrecovery/fullproductrelease/CI/refs/card/durableclosure before53. OCdisabled/nativeACTIVE; at53closedPAUSE/no54; no routineowneraction.",
+        "result": "63999COMPLETED5PGPASS862deselected5.81s/158staticPASS;38466COMPLETED22tracePASS6.03s/0newIDs/diffPASS; deliberate shared relation lock proves unchanged55P03 and isolated clock fixture successful",
+        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-clock-isolation-correction1.md",
+        "receipt_sha256": "cbebaef1109c9411836c1ce07fe9e7da88e2b169b956da163be356f47c81106c",
+        "prior_checkpoint_tests": [
+          "ACCEPTED52activation/read/USD/KHR receipts and failed checkpoints preserved;51fullyclosed. Prior dbf850PG/1165backend/189automationPASS then independent78363 oneMEDIUM body limit; rejected/reportddf4e56e retained.",
+          "BODY correction2339aa6 focused135PASS/158staticPASS; exact1194backend/189automationPASS but849PGPASS1FAIL equivalent timestamp formatting; log178f7d3d preserved. No reviewer dispatched.",
+          "TIMESTAMP correction: existing comparator preserves exact instant;16deterministicUSD/KHRcases. Failednewfixtureee37/41623 14PASS8FAIL preserved log46d98126, scoped exact-decimal decoder corrected.14538COMPLETED22PGPASS844deselected2.14s/158staticPASS;49458COMPLETED22tracePASS/0newIDs/diffPASS. Receiptd46ccdfa103e89fa5e478e5989f0bbac29d02cfde61809b8a2389873dffc3ab3.",
+          "PENDING: fresh containing candidate866PG/fullbackend/static-build-import/189automation/config/traceability/guards and ONE independent max Standard readonly complete20path zero review. No HTTP/full52acceptance/publication/CI/refclosure.",
+          "FAILED exacta01aae4:76057COMPLETED865PASS1FAIL128.41s on existingclock+60 NOWAIT55P03sharedinvoice relation; fulltimestamp22casespassed.58769COMPLETED1194PASS843skips/staticbuild,75228COMPLETED189PASS74.438s/config. Distinct clockfixture_isolation_correction1 ACTIVE, no reviewer dispatched."
         ]
       }
     },
@@ -3352,9 +3376,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "ee37dcbf750db72a588afa421c8524058c85a7c8",
+  "commit": "a01aae4f9a2187e02141c0cad83a2e0f3e17a171",
   "idle_reason": null,
-  "next_action": "Freeze normal corrected successor of retainedee37dcb; run fresh exact866PG/fullbackend(1194expected)/158static-build-import/189automation/config/traceability/guard/diff checks. Only ifALLPASS ONE fresh independent Astra max Standard read-only COMPLETE20path5263218-to-successor zero review covering ALLFIVE488/dbf/233/ee37/successor commits. Preserve rejecteddbf/233/ee37 and all reports/logs; no amendments, duplicate workers or edits during review. Then remainingfinancialHTTP/UI/encryptedrecovery/fullproductrelease/CI/refs/card/durableclosure before53. OpenClawdisabled/nativeACTIVE; at53closedPAUSE/no54; no routineowneraction.",
+  "next_action": "Freeze normal clock-isolation successor of retaineda01aae4; run fresh exact867PG/fullbackend1194expected/158static-build-import/189automation/config/traceability/publicationguard/diffs. OnlyifALLPASS ONE fresh independent Astra max Standard read-only COMPLETE21path5263218-to-successor zero review covering ALLSIX488/dbf/233/ee37/a01/successor commits, not just finalfixture delta. Preserve all failed checkpoints/reports/logs and accepted work; no duplicate worker, amendment or frozen edits. Then remainingfinancialHTTP/UI/encryptedrecovery/fullproductrelease/CI/refs/card/durableclosure before53. OCdisabled/nativeACTIVE; at53closedPAUSE/no54; no routineowneraction.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -3362,8 +3386,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Containing normal successor ofee37 after freeze; full20path5263218-to-successor exact gates/review pending.",
-  "candidate_parent": "ee37dcbf750db72a588afa421c8524058c85a7c8",
+  "candidate_resolution": "Containing normal successor ofa01aae4 afterfreeze; complete21path5263218-to-successor exact gates/review pending",
+  "candidate_parent": "a01aae4f9a2187e02141c0cad83a2e0f3e17a171",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -3426,7 +3450,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "Payment HTTP body/precision corrections focused PASS; full exact gates/complete20path review pending",
+  "phase": "Payment HTTP clock isolation focused PASS; fresh exact gates/complete21path review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4522,10 +4546,10 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "ACCEPTED52activation/read/USD/KHR receipts and failed checkpoints preserved;51fullyclosed. Prior dbf850PG/1165backend/189automationPASS then independent78363 oneMEDIUM body limit; rejected/reportddf4e56e retained.",
-    "BODY correction2339aa6 focused135PASS/158staticPASS; exact1194backend/189automationPASS but849PGPASS1FAIL equivalent timestamp formatting; log178f7d3d preserved. No reviewer dispatched.",
-    "TIMESTAMP correction: existing comparator preserves exact instant;16deterministicUSD/KHRcases. Failednewfixtureee37/41623 14PASS8FAIL preserved log46d98126, scoped exact-decimal decoder corrected.14538COMPLETED22PGPASS844deselected2.14s/158staticPASS;49458COMPLETED22tracePASS/0newIDs/diffPASS. Receiptd46ccdfa103e89fa5e478e5989f0bbac29d02cfde61809b8a2389873dffc3ab3.",
-    "PENDING: fresh containing candidate866PG/fullbackend/static-build-import/189automation/config/traceability/guards and ONE independent max Standard readonly complete20path zero review. No HTTP/full52acceptance/publication/CI/refclosure."
+    "Accepted52activation/read/USD/KHR and all predecessor51closure evidence preserved; no full52acceptance or publication.",
+    "Retaineddbf review78363 oneMEDIUM bodylimit; streamingcorrection233 focused135PASS/exact1194backend/189automationPASS but DB849PASS1FAIL timestampformat. Timestampfixtureee37 fail14PASS8FAIL due testdecoder corrected;22PGPASS. a01full1194backend/189automationPASS,865PGPASS1FAIL relationlockclockfixture. All exact/failed logs preserved in active_slice correction records.",
+    "Clock-only isolation63999COMPLETED5PGPASS862deselected5.81s/158staticPASS;38466COMPLETED22tracePASS6.03s/0newIDs/diffPASS. ExistingNOWAIT/state/time/historyassertions unchanged; deliberatecontendedsharedDBguard rejects55P03 while separateclockDB succeeds. Receiptcbebaef1109c9411836c1ce07fe9e7da88e2b169b956da163be356f47c81106c.",
+    "PENDING fresh containing exact867PG/fullbackend/static-build-import/189automation/config/traceability/guard/diff and ONE Astra max Standard readonly COMPLETE21path zero review, all sixcommits from5263218."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4547,7 +4571,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-06T18:46:00Z",
+  "timestamp": "2026-09-06T18:59:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4593,7 +4617,8 @@
     "ops/STATE.json",
     "ops/traceability.json",
     "scripts/database-test.sh",
-    "backend/tests/test_khr_payment_confirmation_migration.py"
+    "backend/tests/test_khr_payment_confirmation_migration.py",
+    "backend/tests/test_financial_fixture_clock_migration.py"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -4781,7 +4806,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-06T18:46:00Z",
+  "updated_at": "2026-09-06T18:59:00Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5907,7 +5932,7 @@
   "commit_role": "Retained failed-verification Payment HTTP draft; corrected normal successor resolves by containing HEAD",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "ee37dcbf750db72a588afa421c8524058c85a7c8"
+    "a01aae4f9a2187e02141c0cad83a2e0f3e17a171"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
@@ -5963,9 +5988,9 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_fresh_exact_complete_20path_corrected_successor",
+    "status": "pending_fresh_exact_complete_21path_clock_isolation_successor",
     "tranche_id": "V1-052",
-    "scope": "COMPLETE20path Payment HTTP/API slice from5263218 including streaming correction and one newly needed deterministic timestamp test file; all prior checkpoints preserved",
+    "scope": "COMPLETE21path Payment HTTP/API from5263218 including streaming/precision corrections plus necessary test-only clock isolation; all prior checkpoints retained",
     "base_sha": "5263218f7f7deafc05b2d9f524f138761e05c850",
     "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "exact_sha": null,
