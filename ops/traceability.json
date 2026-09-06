@@ -134,13 +134,15 @@
       "test_id": "test_credit_reads_preserve_exact_khr_source_and_bound_large_original_evidence",
       "upstream_ids": [
         "API-061",
+        "API-065",
+        "API-066",
         "BR-CREDIT-010",
         "BR-MONEY-003"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_credit_history_migration.py",
       "status": "implemented",
-      "notes": "List and ledger preserve exact high-precision KHR source rate and integer USD/Currency amounts while linking, not embedding, large immutable original rate evidence."
+      "notes": "Credit list/ledger/get/recognition/reversal and Refund create/return/correction-reversal/page responses and persisted receipts remain bounded with large immutable FX evidence linked, not embedded. Exact rates and original FX text remain unchanged; command replay is exact and private FX helper is not granted to runtime/financial/bootstrap roles."
     },
     {
       "test_id": "test_pet_verified_returns_reconcile_receipt_ledger_eligibility_and_reversal",
@@ -515,6 +517,11 @@
     {
       "test_id": "test_refund_service_khr_origin_refunds_usd_and_preserves_fx",
       "upstream_ids": [
+        "BR-CREDIT-011",
+        "BR-REFUND-006",
+        "PR-CREDIT-011",
+        "PR-REFUND-005",
+        "PR-REFUND-006",
         "BR-REFUND-005",
         "PR-REFUND-012"
       ],
@@ -748,7 +755,7 @@
       "notes": "Exact decimal-text JSON decoding preserves nested FX evidence and integer cents without changing process-global psycopg adapters."
     },
     {
-      "test_id": "test_credit_fractional_fx_and_nested_trace_remain_exact_in_responses",
+      "test_id": "test_credit_fractional_fx_summary_and_retained_trace_remain_exact",
       "upstream_ids": [
         "BR-CREDIT-010",
         "API-061",
@@ -759,7 +766,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_credit_migration.py",
       "status": "implemented",
-      "notes": "Four fractional/high-precision System/channel source cases preserve exact reference/channel rates and nested traces on recognition/read/replay/reversal; original FX/Payment/Receipt rows stay byte-identical."
+      "notes": "Four fractional/high-precision System/channel cases preserve exact typed rates and immutable FX ID in recognition/read/replay/reversal summaries. Nested trace decimals remain exact in linked original storage, not embedded responses; original FX/Payment/Receipt rows stay byte-identical."
     },
     {
       "test_id": "test_credit_application_proposal_post_replay_reverse_and_distinct_source_positions",

@@ -218,6 +218,22 @@ def upgrade() -> None:
             RETURN NULL;
         END $$;
 
+        CREATE FUNCTION app.credit_refund_exchange_rate_summary(p_rate_id uuid)
+        RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+            -- Unbounded original references/traces remain immutable in the linked record.
+            SELECT jsonb_build_object('id',rate.id,
+                'reference_rate_khr_per_usd',rate.reference_rate_khr_per_usd,
+                'system_rate_khr_per_usd',rate.system_rate_khr_per_usd,
+                'markup_basis_points',rate.markup_basis_points,'rate_source',rate.rate_source,
+                'applicable_at',rate.applicable_at,'entered_by',rate.entered_by,
+                'channel_actual_currency',rate.channel_actual_currency,
+                'channel_actual_amount_minor',rate.channel_actual_amount_minor,
+                'channel_actual_usd_value_cents',rate.channel_actual_usd_value_cents,
+                'channel_actual_rate_khr_per_usd',rate.channel_actual_rate_khr_per_usd,
+                'channel_confirmed_at',rate.channel_confirmed_at)
+            FROM app.exchange_rate_records rate WHERE rate.id=p_rate_id
+        $$;
+
         CREATE FUNCTION app.credit_resource(p_property_id uuid,p_credit_id uuid,p_actor_id uuid)
         RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
         DECLARE v_credit app.customer_credits%ROWTYPE; v_payment app.payments%ROWTYPE;
@@ -230,8 +246,8 @@ def upgrade() -> None:
             IF NOT FOUND THEN RAISE EXCEPTION 'Credit not found' USING ERRCODE='P5101'; END IF;
             SELECT * INTO STRICT v_payment FROM app.payments WHERE id=v_credit.source_payment_id FOR SHARE;
             RETURN jsonb_build_object('credit',to_jsonb(v_credit),'available_usd_cents',app.credit_available_value(v_credit.id),
-                'source_payment',to_jsonb(v_payment),'exchange_rate',(SELECT to_jsonb(rate)
-                    FROM app.exchange_rate_records rate WHERE rate.id=v_payment.exchange_rate_record_id),
+                'source_payment',to_jsonb(v_payment),
+                'exchange_rate',app.credit_refund_exchange_rate_summary(v_payment.exchange_rate_record_id),
                 'recognition_reversal',(SELECT to_jsonb(reversal) FROM app.customer_credit_reversals reversal
                     WHERE reversal.customer_credit_id=v_credit.id));
         END $$;
@@ -357,6 +373,7 @@ def upgrade() -> None:
         "validate_credit_reversal()",
         "audit_credit_event()",
         "credit_command_replay(uuid,uuid,text,uuid,jsonb)",
+        "credit_refund_exchange_rate_summary(uuid)",
         "credit_resource(uuid,uuid,uuid)",
         "recognize_customer_credit(uuid,uuid,uuid,uuid,bigint,text,text)",
         "reverse_customer_credit(uuid,uuid,uuid,uuid,text)",
@@ -1449,7 +1466,8 @@ def create_refund_services() -> None:
             -- The complete resource, net value and bounded correction page are
             -- captured in ONE SQL snapshot. No inverted Refund->source lock order.
             SELECT app.refund_summary(refund.id) || jsonb_build_object(
-                'source_payment',to_jsonb(payment),'source_exchange_rate',to_jsonb(rate),
+                'source_payment',to_jsonb(payment),
+                'source_exchange_rate',app.credit_refund_exchange_rate_summary(rate.id),
                 -- Keep source links and typed qualification facts here. Full
                 -- retained narratives belong to the existing review resource,
                 -- not every bounded Refund command response/history page.

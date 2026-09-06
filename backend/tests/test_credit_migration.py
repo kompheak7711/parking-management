@@ -1,5 +1,6 @@
 """Credit recognition/reversal persistence slice on isolated synthetic PostgreSQL."""
 
+import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
@@ -279,7 +280,7 @@ def test_credit_khr_source_facts_preserved_without_khr_balance(migrated_database
 
 @pytest.mark.parametrize("reference", ["4062.123456", "10000000000.000001"])
 @pytest.mark.parametrize("channel", [False, True])
-def test_credit_fractional_fx_and_nested_trace_remain_exact_in_responses(
+def test_credit_fractional_fx_summary_and_retained_trace_remain_exact(
     migrated_database_url: str,  # noqa: F811
     reference: str,
     channel: bool,
@@ -341,9 +342,12 @@ def test_credit_fractional_fx_and_nested_trace_remain_exact_in_responses(
     assert isinstance(evidence, dict)
     assert evidence["reference_rate_khr_per_usd"] == reference
     assert evidence["channel_actual_rate_khr_per_usd"] == (reference if channel else None)
-    assert evidence["calculation_trace"] == {
-        "ratio": "0.1234567890123456789",
-        "values": ["10000000000.000001", 1],
+    assert evidence["id"] == str(fx)
+    assert "calculation_trace" not in evidence and "source_reference" not in evidence
+    # Exact unbounded audit detail is retained in the linked source, not every receipt.
+    assert json.loads(str(original[0]), parse_float=Decimal)["calculation_trace"] == {
+        "ratio": Decimal("0.1234567890123456789"),
+        "values": [Decimal("10000000000.000001"), 1],
     }
     assert type(result["available_usd_cents"]) is int
     assert type(evidence["system_rate_khr_per_usd"]) is int

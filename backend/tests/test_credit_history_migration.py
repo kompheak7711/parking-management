@@ -13,10 +13,11 @@ from property_rental.credit import (
     CreditLedgerPage,
     CreditNotFoundError,
     CreditPage,
+    RecognizeCreditCommand,
     ReverseCreditApplicationCommand,
     ReverseCreditCommand,
 )
-from property_rental.refund import ReverseRefundCorrectionCommand
+from property_rental.refund import RefundPage, ReverseRefundCorrectionCommand
 from test_credit_application_migration import application_id, designated
 from test_credit_application_migration import source as application_source
 from test_credit_migration import actor, credit_id, recognize, service, source
@@ -362,7 +363,13 @@ def test_credit_reads_preserve_exact_khr_source_and_bound_large_original_evidenc
             "SELECT row_to_json(rate)::text FROM app.exchange_rate_records rate WHERE id=%s",
             (rate,),
         ).fetchone()
-    credit = credit_id(recognize(prop, payment, human, 101))
+    request = RecognizeCreditCommand(uuid4(), 101, "Payer consent", "Retain exact excess")
+    command_actor = actor(human, prop, "credits.read", "credits.recognize", "credits.reverse")
+    recognized = service().recognize(prop, payment, request, actor=command_actor)
+    credit = credit_id(recognized)
+    assert len(str(recognized)) < 10000
+    assert service().get(prop, credit, actor=command_actor) == recognized
+    assert service().recognize(prop, payment, request, actor=command_actor) == recognized
     reader = actor(human, prop, "credits.read")
     listed = cast(list[dict[str, object]], service().list(prop, customer, actor=reader)["items"])[0]
     ledger = service().ledger(prop, credit, actor=reader)
@@ -380,7 +387,64 @@ def test_credit_reads_preserve_exact_khr_source_and_bound_large_original_evidenc
             == 10100000001
         )
         assert len(str(result)) < 10000
+    refund_actor = actor(
+        human,
+        prop,
+        "refunds.create",
+        "refunds.read",
+        "refunds.correct",
+        "refunds.corrections.reverse",
+    )
+    refund_request = create(credit, 101, "CREDIT")
+    outbound = refunds().create_usd(prop, refund_request, actor=refund_actor)
+    identity = refund_id(outbound)
+    assert refunds().create_usd(prop, refund_request, actor=refund_actor) == outbound
+    first_return = returned(1)
+    corrected = refunds().verify_usd_return(prop, identity, first_return, actor=refund_actor)
+    assert (
+        refunds().verify_usd_return(prop, identity, first_return, actor=refund_actor) == corrected
+    )
+    correction_id = UUID(str(corrections(corrected)[0]["id"]))
+    reversal_request = ReverseRefundCorrectionCommand(uuid4(), "Evidence", "Reverse one cent")
+    reversed_return = refunds().reverse_correction(
+        prop, identity, correction_id, reversal_request, actor=refund_actor
+    )
+    assert (
+        refunds().reverse_correction(
+            prop, identity, correction_id, reversal_request, actor=refund_actor
+        )
+        == reversed_return
+    )
+    completed_return = refunds().verify_usd_return(
+        prop, identity, returned(101), actor=refund_actor
+    )
+    paged = refunds().get(prop, identity, actor=refund_actor, page=RefundPage(1))
+    for result in (outbound, corrected, reversed_return, completed_return, paged):
+        summary = cast(dict[str, object], result["source_exchange_rate"])
+        assert summary == recognized["exchange_rate"]
+        assert summary["id"] == str(rate)
+        assert summary["reference_rate_khr_per_usd"] == reference
+        assert "source_reference" not in summary and "calculation_trace" not in summary
+        assert len(str(result)) < 20000
+    assert completed_return["net_refund_usd_cents"] == 0
+    reverse_credit = ReverseCreditCommand(uuid4(), "Payer revoked consent")
+    reversed_credit = service().reverse(prop, credit, reverse_credit, actor=command_actor)
+    assert service().reverse(prop, credit, reverse_credit, actor=command_actor) == reversed_credit
+    assert len(str(reversed_credit)) < 10000
     with psycopg.connect(migrated_database_url) as connection:
+        for role in ("prm_runtime", "prm_financial", "prm_bootstrap"):
+            assert connection.execute(
+                "SELECT has_function_privilege(%s,"
+                "'app.credit_refund_exchange_rate_summary(uuid)','EXECUTE')",
+                (role,),
+            ).fetchone() == (False,)
+        for table in ("credit_commands", "refund_commands"):
+            sizes = connection.execute(
+                f"SELECT octet_length(response::text) FROM app.{table} "
+                "WHERE property_id=%s AND actor_id=%s",
+                (prop, human),
+            ).fetchall()
+            assert sizes and all(int(str(row[0])) < 20000 for row in sizes)
         assert (
             connection.execute(
                 "SELECT row_to_json(rate)::text FROM app.exchange_rate_records rate WHERE id=%s",
