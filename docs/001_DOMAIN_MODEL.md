@@ -2419,6 +2419,10 @@ Both the original event and the reversal remain auditable.
 
 A Refund represents money returned to a Customer.
 
+Every Refund must be paid and recorded in USD (DL-060). A KHR-origin Payment
+does not authorize a KHR Refund; its original KHR and conversion-rate evidence
+remains preserved for audit without rewriting historical transactions.
+
 Refunds may arise from:
 
 - Customer Credit
@@ -5408,6 +5412,11 @@ Technical storage format, time zone handling, precision, and database representa
 # 99. Monetary Principles
 
 All monetary values represent an amount together with a Currency.
+
+USD is the main accounting currency and all financial transactions are recorded
+in USD. Customers may pay in KHR only as a Payment-conversion option; original
+KHR amounts and conversion evidence remain immutable audit facts. Refunds are
+paid and recorded only in USD (DL-060).
 
 Conceptually:
 

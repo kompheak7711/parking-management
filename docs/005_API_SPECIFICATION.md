@@ -771,10 +771,10 @@ approved upstream, including:
 - the active-Lease Pet Deposit Refund exception supported by a qualifying
   DB-LEASE-011 review under API-094.
 
-An unallocated KHR excess refunded before Credit recognition uses the corresponding
-original KHR excess. A later KHR Refund of USD Customer Credit uses the exchange
-rate applicable to that Refund and preserves USD value, KHR value, rate, source,
-and timestamp. An active-Lease Pet Deposit Refund requires the matching Pet Deposit
+All Refunds are paid and recorded in USD (DL-060), including eligible KHR-origin
+Payment excess and Customer Credit. Use available recorded USD cents, not a KHR
+remainder or new exchange rate. Preserve original source KHR/FX evidence for audit;
+reject KHR Refund requests. An active-Lease Pet Deposit Refund requires the matching Pet Deposit
 source and `pet_refund_review_id` and prohibits a Final Settlement link.
 
 ## API-066 — Refund Correction
@@ -782,7 +782,9 @@ source and `pet_refund_review_id` and prohibits a Final Settlement link.
 `POST /refunds/{id}/verified-returns` records only value demonstrably returned after
 an erroneous completed Refund under DB-REFUND-002. It requires exact returned
 amount/currency, return timestamp/method reference, reason, authorization, actor,
-and idempotency; cumulative value cannot exceed the Refund. It creates no collection
+and idempotency. Returns of USD Refunds use exact USD cents, not KHR conversion;
+partial returns restore exact positive cents and cumulative value cannot exceed the
+Refund. Preserve source KHR/FX history without rewriting it. It creates no collection
 right and never erases the original outbound event. Generic PATCH/DELETE is
 prohibited.
 

@@ -791,19 +791,19 @@
       "escalation_reason": "V1-051 financial transactions, non-destructive migration, authorization, concurrency and permanent event history"
     },
     "current_version": "V1-051",
-    "phase": "V1-051 bounded Credit list/history services active; Pet correction1 independently accepted",
-    "candidate_sha": null,
-    "candidate_status": "not_frozen",
-    "candidate_resolution": "Future immutable cumulative candidate in sole isolated V1-051 worktree; base is fully closed V1-050 terminal cc3d18e.",
+    "phase": "usd_only_implemented_cumulative_candidate_freeze",
+    "candidate_sha": "edfea74515d2ddf134cdac67a4b7250594d38d2a",
+    "candidate_status": "full_v1_051_prefreeze_verified_exact_review_pending",
+    "candidate_resolution": "Immutable child of edfea74 containing ops/V1_051_USD_ONLY_POLICY_CHECKPOINT.md; bind exact candidate SHA/tree in subsequent evidence without amendment.",
     "worktree": "/Users/sokompheak/Development/property-rental-management-v1-051",
     "branch": "codex/v1-051-direct",
     "planned_worktree": "/Users/sokompheak/Development/property-rental-management-v1-051",
     "planned_branch": "codex/v1-051-direct",
     "worker_kind": "direct_codex_coordinator",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
-    "worker_status": "direct_coordinator_credit_history_active",
+    "worker_status": "direct_coordinator_active_no_implementation_worker",
     "scope_path": "ops/V1_051_SCOPE.md",
-    "scope_sha256": "91adbb369a44dc25f04a49bcaa11c1dc8c29694c8805037855c1e52e4396d3b2",
+    "scope_sha256": "7424fb52732ce8a48ca45518f19344a524f2a8cb4c57a840eb7dd0781fc40b4f",
     "card_id": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
     "workboard_status": "blocked",
     "workboard_block_reason": "Tracking-only direct Codex card; blocked solely prevents OpenClaw admission, not owner authorization.",
@@ -815,8 +815,8 @@
     "predecessor_closure_receipt_sha256": "616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2",
     "cumulative_review_base": "cc3d18e682401cc8a9ade10295572fe1a1344317",
     "owner_action_required": false,
-    "next_action": "Implement bounded API-061 Credit list/history read services in SAME sole51checkout after locally accepted Pet3c4015c. Preserve accepted mutation/replay contracts; add single-snapshot recognized/applied/refunded/reversed/available USD positions, exact immutable source/FX links, bounded keyset timeline across recognition/applications/reversals/Refunds/corrections using event-family identity, fresh credits.read actor/Property/Customer checks and accurate traceability. No HTTP/UI52/unifiedledger53/KHR policy invention. Then fresh full/exact-SHA gates and independent Astra max Standard read-only review. KHR sources/full51release remain pending; OpenClawdisabled; no52before51closed; through53only.",
-    "verification_status": "Accepted Pet3c4015c independent0HIGH0MEDIUM0LOW; all11paths and all3previousfindingsresolved. ExactPG737/backend940/frontend369/automation189/staticbuildconfigPASS. Full51OPEN/unpublished; boundedCreditreads/KHRsources/finalrelease pending.",
+    "next_action": "Freeze the reconciled USD-only V1-051 cumulative candidate as a new child of accepted edfea74515d2ddf134cdac67a4b7250594d38d2a; run fresh exact-SHA full gates and independent Astra max Standard read-only review of COMPLETE cc3d18e-to-candidate diff. Require zero findings. Preserve all accepted/rejected checkpoints and worktrees. Only reviewed normal publication, exact CI/ref equality, same-card acceptance and durable closure permit V1-052, then V1-053. DL-060 rejects KHR Refunds and resolves the old blocker; no routine authorization needed. OpenClaw disabled; at V1-053 closed pause native follow-up/no V1-054.",
+    "verification_status": "Full prefreeze751PG/956backend/369frontend/189automation/static/build/config/auditsPASS; exact-SHA gates and cumulative independent review pending.",
     "correction_history": [
       {
         "number": 1,
@@ -857,23 +857,26 @@
     ],
     "activated_at": "2026-09-05T19:37:17Z",
     "last_model_configuration_check": {
-      "checked_at": "2026-09-06T02:29:21Z",
-      "actual_turn_timestamp": "2026-09-06T02:26:11.961Z",
+      "checked_at": "2026-09-06T08:59:43Z",
+      "observed_turn_at": "2026-09-06T08:57:46.596Z",
       "model": "gpt-6-astra",
       "reasoning": "xhigh",
       "local_service_tier": "default",
       "provider_attestation": "unavailable"
     },
     "last_reconciliation": {
-      "checked_at": "2026-09-06T03:04:55Z",
+      "checked_at": "2026-09-06T08:59:43Z",
       "main_head": "44d93be5bb557bc221f392c52ad1d8a8604142e4",
-      "live_remote": "cc3d18e682401cc8a9ade10295572fe1a1344317",
-      "tracking_and_fetched": "cc3d18e682401cc8a9ade10295572fe1a1344317",
-      "predecessor_ci": "33986122538 exactcc3d all4SUCCESS rechecked03:03Z",
-      "supervisor": "Exactly1matching disabled30minutes/no nextRun/runningtasks0 rechecked03:00Z.",
-      "card": "Existing tracking-onlyc5621f97 blocked solely against OpenClaw admission; claim/attempt/executionnull; checkpointcomment2556b8ab-fa1f-4eea-a19a-a3cae9d79030; no owner blocker.",
-      "worktrees": "126retained; same sole51checkout; no separate implementation worker",
-      "followup": "ExistingACTIVE10minutes/same coordinator; supported update Petaccepted/Creditreadsactive; saved9653characters byte-identical SHA256ae076b071b5079f1d2c0de72e7ee0166ec8a76cac3b0bf8af2e0fd800ea4b2af"
+      "tracking_fetched_live": "cc3d18e682401cc8a9ade10295572fe1a1344317",
+      "predecessor_ci": "33986122538 success exact cc3d18e",
+      "retained_worktrees": 126,
+      "openclaw_matching_jobs": 1,
+      "openclaw_enabled": false,
+      "openclaw_next_run": null,
+      "openclaw_running_tasks": 0,
+      "card": "Same c5621f97 tracking-only blocked against OpenClaw admission; null claim/attempt/execution. New owner-decision comment26b84c0d-87c4-4a52-8c58-e007ceaec6df.",
+      "native_agents": "root only; no duplicate implementation worker",
+      "followup": "Supported update/readback: ACTIVE10minutes,same task,11574characters SHA256ad02e5c32b704b5de4bebdc353b372ff70c61b4e76bf3faf2e39c04ce4ca261a; terminal newline trimmed by interface, otherwise exact. USD-only policy active, obsolete KHR blocker resolved."
     },
     "activation_sha": "b3b03e209fcb69495944d7f076ac206da5de2a98",
     "implementation_started_at": "2026-09-05T19:44:43Z",
@@ -1193,16 +1196,16 @@
       "pending_fields_discharged": true
     },
     "after_pet_continuation": {
-      "status": "implemented_gates_passed_pending_exact_review",
+      "status": "completed_accepted",
       "started_at": "2026-09-06T02:29:21Z",
       "accepted_base_sha": "3c4015c6412803503126be3516311926c087afba",
       "plan": "Implement bounded API-061 Credit list/history read services in SAME sole51checkout after locally accepted Pet3c4015c. Preserve accepted mutation/replay contracts; add single-snapshot recognized/applied/refunded/reversed/available USD positions, exact immutable source/FX links, bounded keyset timeline across recognition/applications/reversals/Refunds/corrections using event-family identity, fresh credits.read actor/Property/Customer checks and accurate traceability. No HTTP/UI52/unifiedledger53/KHR policy invention. Then fresh full/exact-SHA gates and independent Astra max Standard read-only review. KHR sources/full51release remain pending; OpenClawdisabled; no52before51closed; through53only.",
       "planning_evidence": "v1051-after-pet-credit-history-plan.md",
       "read_scope": "API-061/BR-CREDIT-009..012/DB-DER-005/DB-VIEW-004; no mutation change, HTTP/UI or unifiedledger",
-      "verification": "16unit/38unit+traceability/11focusedPG/748fullPGzero skips/956backend725DB-onlyskipscovered/369frontend/189automation/staticmypy145buildimport/configuration PASS. See credit_history_checkpoint. No local acceptance until fresh exact gates and independent zero-finding review."
+      "verification": "Credit list/history edfea74 independent0HIGH0MEDIUM0LOW accepted; no repeat."
     },
     "credit_history_checkpoint": {
-      "status": "coordination_correction1_ready_to_freeze",
+      "status": "accepted_locally",
       "coordinator_rejected_candidate": "ac688fc84bfa057cbe28a5c32b47e9508dcff5c7",
       "correction1_started_at": "2026-09-06T03:14:00Z",
       "correction1_scope": "Only new Credit test semantic mappings and durable evidence; no product behavior or assertion changes. Preserve ac688fc. Complete corrected review base remains3c4015c.",
@@ -1210,7 +1213,7 @@
       "max_materially_different_corrections": 2,
       "started_at": "2026-09-06T02:29:21Z",
       "review_base": "3c4015c6412803503126be3516311926c087afba",
-      "candidate_resolution": "Immutable new child ofac688fc containing coordination correction1; complete Credit review base3c4015c. Bind newSHA/tree/exact gates in later receipt.",
+      "candidate_resolution": "Immutable acceptededfea74; acceptance265383fc discharges original pending fields and reviewhandoff. Full51release still pending.",
       "checkpoint_path": "ops/V1_051_CREDIT_HISTORY_CHECKPOINT.md",
       "checkpoint_sha256": "2c62da5ad0b2f6aa6c420ecabd06bfb3416bea220d6c9938a6198621d013de11",
       "plan": "Freeze metadata-only Credit history correction1 as new child of retainedac688fc. Run fresh exact-SHA integration/configuration and independent Astra max Standard read-only review of COMPLETE corrected Credit delta from3c4015c, all10paths and coordinator semantic-mapping finding. Require0HIGH0MEDIUM0LOW; no editing or duplicate during valid review. Then continue remaining KHR Refund source scope in SAME51checkout; full51OPEN/unpublished until allscope/audits/cumulativecc3dreview/normalreviewedpush/exactCI/refequality/same-cardclosure. OpenClawdisabled; no52before51closed; through53only.",
@@ -1248,17 +1251,66 @@
       "development_evidence": "v1051-credit-history-test-development.md",
       "development_evidence_sha256": "81dfd24caebef7680b8b35c25b9442f75940855528608e8e92a18a18a48bc3aa",
       "review": {
-        "status": "pending",
+        "status": "completed_accepted",
         "model": "gpt-6-astra",
         "reasoning": "max",
         "sandbox": "read-only",
         "mode": "Standard",
-        "provider_attestation": "unavailable"
+        "local_service_tier": "default",
+        "provider_attestation": "unavailable",
+        "session": "01a074bc-7e97-7001-8be2-b2199b66712f",
+        "completed_at": "2026-09-06T03:33:07.612Z",
+        "counts": {
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "report": "v1051-credit-history-review-edfea74.md",
+        "sha256": "2b3689a295e29e36a192328b8e04e3b901298a86c548e79e94a94406c4c3ae65",
+        "coordinator_mapping_finding_resolved": true
       },
       "owner_action_required": false,
       "correction1_checkpoint_path": "ops/V1_051_CREDIT_HISTORY_CORRECTION1_CHECKPOINT.md",
       "correction1_checkpoint_sha256": "bcd2891158a92b7e370ca98334fcfe5f3696b906cdb8b88e556a0c747e3e6d38",
-      "prior_exact_gates": "Exactac688fc748PGzero skips117.25s/956backend725DB-onlyskipscovered42.03s/369frontend6.75s/189automation74.080s/staticbuildconfiguration PASS; hashes in correction1checkpoint. Not acceptance of incorrect original mappings."
+      "prior_exact_gates": "Exactac688fc748PGzero skips117.25s/956backend725DB-onlyskipscovered42.03s/369frontend6.75s/189automation74.080s/staticbuildconfiguration PASS; hashes in correction1checkpoint. Not acceptance of incorrect original mappings.",
+      "candidate_sha": "edfea74515d2ddf134cdac67a4b7250594d38d2a",
+      "accepted_at": "2026-09-06T03:52:32Z",
+      "acceptance_receipt": "v1051-credit-history-accepted-edfea74.md",
+      "acceptance_receipt_sha256": "265383fc5578d6e537ea4387727aac973e4a580fe56df9b755512e2abc5568f9"
+    },
+    "accepted_credit_history_checkpoint": {
+      "sha": "edfea74515d2ddf134cdac67a4b7250594d38d2a",
+      "tree": "5b13985bb10ab798387812cabf556ab513e63f47",
+      "review_base": "3c4015c6412803503126be3516311926c087afba",
+      "review_sha256": "2b3689a295e29e36a192328b8e04e3b901298a86c548e79e94a94406c4c3ae65",
+      "receipt_sha256": "265383fc5578d6e537ea4387727aac973e4a580fe56df9b755512e2abc5568f9"
+    },
+    "khr_refund_continuation": {
+      "status": "superseded_rejected_by_usd_only_owner_decision",
+      "recorded_at": "2026-09-06T03:52:32Z",
+      "policy_question_path": "ops/V1_051_KHR_POLICY_QUESTION.md",
+      "policy_question_sha256": "32a8e72e25584f4a0a02f378566ad6de3100cc26f26b2c1411c30ae04960572d",
+      "owner_action_required": false,
+      "reason": "Canonical original-pair preservation and rounding do not specify attribution of partial original-KHR remainders or cumulative partial-return USD basis; valid101cents/4100KHR channel fixture yields40or41KHR for1cent remainder depending allocation rounding order.",
+      "proposal_approved": false,
+      "product_changes": false,
+      "next_action": "Apply DL-060 USD-only refund policy in the same sole V1-051 checkout: reconcile canonical requirements/scope, preserve KHR payment and FX audit evidence, support eligible KHR-origin USD refunds, verify exact USD-cent partial returns, and update the saved Codex follow-up. KHR-refund proposal rejected and obsolete blocker resolved. Then fresh full exact-SHA tests, independent Astra max Standard zero-finding review, normal reviewed publication, exact CI/ref equality and same-card closure before V1-052, then V1-053. Keep OpenClaw disabled; at V1-053 closure pause follow-up and do not activate V1-054.",
+      "resolved_at": "2026-09-06T08:59:43Z",
+      "resolution": "DL-060 prohibits KHR refunds and rejects the old proposal. Preserve this historical question and source evidence; resume USD-only reconciliation."
+    },
+    "usd_only_policy_reconciliation": {
+      "status": "implemented_prefreeze_verified",
+      "started_at": "2026-09-06T08:59:43Z",
+      "decision_id": "DL-060",
+      "accepted_base_sha": "edfea74515d2ddf134cdac67a4b7250594d38d2a",
+      "scope": "Canonical USD-only refunds, retained KHR source audit evidence, eligible KHR-origin USD refunds, exact USD partial-return tests and saved follow-up; same checkout.",
+      "max_materially_different_corrections": 2,
+      "next_action": "Freeze the reconciled USD-only V1-051 cumulative candidate as a new child of accepted edfea74515d2ddf134cdac67a4b7250594d38d2a; run fresh exact-SHA full gates and independent Astra max Standard read-only review of COMPLETE cc3d18e-to-candidate diff. Require zero findings. Preserve all accepted/rejected checkpoints and worktrees. Only reviewed normal publication, exact CI/ref equality, same-card acceptance and durable closure permit V1-052, then V1-053. DL-060 rejects KHR Refunds and resolves the old blocker; no routine authorization needed. OpenClaw disabled; at V1-053 closed pause native follow-up/no V1-054.",
+      "checkpoint_path": "ops/V1_051_USD_ONLY_POLICY_CHECKPOINT.md",
+      "decision_log_sha256": "d4455750d705e479364f995eba0369e78aecd8e144dd899ed8b3ada6aabda81e",
+      "resolved_question_sha256": "774bde419c51b50f1e1f1faccdee35736a6c23a2a794ae91f506a13bd5b93917",
+      "saved_followup_sha256": "ad02e5c32b704b5de4bebdc353b372ff70c61b4e76bf3faf2e39c04ce4ca261a",
+      "saved_followup_characters": 11574
     }
   },
   "historical_v1_048_takeover": {
@@ -1984,7 +2036,10 @@
     "BR-REFUND-*",
     "API-061-066",
     "TEST-064-066",
-    "TEST-126"
+    "TEST-126",
+    "DL-060",
+    "BR-MONEY-001",
+    "TEST-074"
   ],
   "historical_v1_047_authorities": [
     "API-050",
@@ -2006,9 +2061,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-051-direct",
-  "commit": "ac688fc84bfa057cbe28a5c32b47e9508dcff5c7",
+  "commit": "edfea74515d2ddf134cdac67a4b7250594d38d2a",
   "idle_reason": null,
-  "next_action": "Freeze metadata-only Credit history correction1 as new child of retainedac688fc. Run fresh exact-SHA integration/configuration and independent Astra max Standard read-only review of COMPLETE corrected Credit delta from3c4015c, all10paths and coordinator semantic-mapping finding. Require0HIGH0MEDIUM0LOW; no editing or duplicate during valid review. Then continue remaining KHR Refund source scope in SAME51checkout; full51OPEN/unpublished until allscope/audits/cumulativecc3dreview/normalreviewedpush/exactCI/refequality/same-cardclosure. OpenClawdisabled; no52before51closed; through53only.",
+  "next_action": "Freeze the reconciled USD-only V1-051 cumulative candidate as a new child of accepted edfea74515d2ddf134cdac67a4b7250594d38d2a; run fresh exact-SHA full gates and independent Astra max Standard read-only review of COMPLETE cc3d18e-to-candidate diff. Require zero findings. Preserve all accepted/rejected checkpoints and worktrees. Only reviewed normal publication, exact CI/ref equality, same-card acceptance and durable closure permit V1-052, then V1-053. DL-060 rejects KHR Refunds and resolves the old blocker; no routine authorization needed. OpenClaw disabled; at V1-053 closed pause native follow-up/no V1-054.",
   "active_worker": null,
   "active_card": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
   "active_claim": null,
@@ -2016,8 +2071,8 @@
   "active_branch": "codex/v1-051-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-051",
   "candidate_sha": null,
-  "candidate_resolution": "Future immutable cumulative candidate in sole isolated V1-051 worktree; base is fully closed V1-050 terminal cc3d18e.",
-  "candidate_parent": "44d93be5bb557bc221f392c52ad1d8a8604142e4",
+  "candidate_resolution": "Immutable child of edfea74 containing ops/V1_051_USD_ONLY_POLICY_CHECKPOINT.md; bind exact candidate SHA/tree in subsequent evidence without amendment.",
+  "candidate_parent": "edfea74515d2ddf134cdac67a4b7250594d38d2a",
   "next_candidate": {
     "id": "V1-051",
     "order": 51,
@@ -2067,9 +2122,17 @@
     "ceremony_deadline": "one absolute monotonic deadline begins before TOTP confirmation and covers TOTP input, recovery presentation and COMPLETE writes, acknowledgement input, and commit preparation; writes, partial input, retries, and trickled input never reset or extend it; timeout rolls back the ceremony",
     "password": "validate supplied value as 15-128 Unicode code points; NFC-normalize; revalidate normalized result as nonempty and 15-128 code points; blocklist, hash, and verify the complete normalized value without truncation; preserve spaces, paste, password managers, Unicode, no composition/rotation, and local compromised/common/expected/project-context rejection",
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
-    "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
+    "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists",
+    "v1_051_usd_only_refunds": {
+      "decision_id": "DL-060",
+      "date": "2026-09-06",
+      "decision": "USD is the main accounting currency. Customers may pay in KHR, but KHR is only a payment-conversion option. Financial transactions are recorded in USD. All refunds must be paid and recorded in USD. Do not implement KHR refunds.",
+      "supersedes": "Proposed KHR partial-refund rounding policy is rejected, not approved. Conflicting DL-031 refund clauses superseded.",
+      "history": "Preserve existing transaction evidence and original KHR amounts/conversion-rate metadata required for audit; never rewrite historical records.",
+      "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
+    }
   },
-  "phase": "V1-051 Credit history coordination correction1 ready to freeze; fresh exact review pending",
+  "phase": "V1-051 USD-only policy implemented; cumulative candidate freeze and exact review",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -2760,7 +2823,9 @@
     "docs/005_API_SPECIFICATION.md:API-061..066,API-094 service semantics",
     "docs/007_TESTING_STRATEGY.md:TEST-064..070,TEST-126",
     "docs/008_SECURITY_MODEL.md:SEC-019..031",
-    "docs/010_DECISION_LOG.md:precedence,DL-027..031,DL-053"
+    "docs/010_DECISION_LOG.md:precedence,DL-027..031,DL-053",
+    "docs/006_UI_SPECIFICATION.md:UI-071/072 USD-only policy reconciliation",
+    "docs/010_DECISION_LOG.md:DL-060 explicit USD-only refund decision"
   ],
   "historical_v1_047_relevant_docs": [
     "docs/003_PRODUCT_REQUIREMENTS.md: PR-CAP-004, PR-WF-009",
@@ -3181,7 +3246,10 @@
     "Petf311a90 independent exact-SHA REJECTED0HIGH2MEDIUM1LOW; reportSHA256e64f0ce08f7d0a93fa8eddb79e66981ca0d15966736674b20f7e903ec5cb96c2. Mediumledgernet-refundeligibility/activeSecurityfixture; lowsemantictraceability. Fresh correction1 gates/review pending; prior736PG/940backend not correction acceptance.",
     "Pet boundedcorrection1 PASS737fullPGzero skips116.74s/940backend714DB-onlyskipscovered44.07s/369frontend6.64s/formatRuffmypy143buildimport/189automation69.754s/configuration/traceability/publication/workingspace. Missingfrontendtool failure preserved and resolved with unchanged offline cache install; developmentc8c6b8b85072a5e7343df4dd0ebf5d5bdec95bba6bac4d25b4110cf1dda28802. Fresh exact-SHA independent review pending.",
     "Petcorrection1 exact3c4015c independent Astra max read-onlyPASS0HIGH0MEDIUM0LOW/all11paths/all3previousfindingsresolved. Report273848190f4728444ab10b7080cd6f4beab4c84cc5ab66b1d744e624975d914a; acceptance808c18b45ca2bbdaab2972176515c1d7174ea7443178c58e53b3b75c6e68975e discharges immutablependingfields. Independent86unittraceability+11DepositunitAPI/static/mypy143/29PGcollection/hashes/cleanidentityPASS. No repeated accepted review; full51OPEN.",
-    "Credit list/history prefreeze PASS748fullPGzero skips113.79s/956backend725DB-onlyskipscovered41.09s/369frontend6.58s/189automation68.980s/configuration/38unittraceability/formatRuffmypy145buildimport. All12newtestfunctions mapped. Development81dfd24caebef7680b8b35c25b9442f75940855528608e8e92a18a18a48bc3aa preserves failedprobes/resolutions. Fresh exact-SHA gates/review pending."
+    "Credit list/history prefreeze PASS748fullPGzero skips113.79s/956backend725DB-onlyskipscovered41.09s/369frontend6.58s/189automation68.980s/configuration/38unittraceability/formatRuffmypy145buildimport. All12newtestfunctions mapped. Development81dfd24caebef7680b8b35c25b9442f75940855528608e8e92a18a18a48bc3aa preserves failedprobes/resolutions. Fresh exact-SHA gates/review pending.",
+    "Credit historyedfea74 independent0HIGH0MEDIUM0LOW/all10paths/semanticfindingresolved; report2b3689a295e29e36a192328b8e04e3b901298a86c548e79e94a94406c4c3ae65; acceptance265383fc5578d6e537ea4387727aac973e4a580fe56df9b755512e2abc5568f9. Independent38readunittraceability+114CreditRefundunit/Ruffformatmypy145/graph41/JSON/harness/hashesPASS;11PGcollectednotexecuted. Exact fullgates preserved; no repeat.",
+    "USD-only policy prefreeze PASS751PGzero skips116.95s/956backend728DB-onlyskipsseparatelycovered42.03s/369frontend19files/189automation71.049s/staticformatRuffmypy145buildimport/configuration/traceability/graph41/cumulativewhitespace. OfficialPyPIruntime+development andnpm audits zero vulnerabilities; detailed hashes in ops/V1_051_USD_ONLY_POLICY_CHECKPOINT.md. Exact-SHA final gates and cumulative independent review pending.",
+    "Unchanged publication guard correctly flags canonical changes(exit65); separate owner DL-060 authority covers only001-007/010 policy reconciliation. Existing content secret scan separatelyPASS/allcandidatefiles; no guard weakened. Initial test lint/format issues resolved,86unittraceability and5focusedPGPASS."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -3203,7 +3271,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-051",
-  "timestamp": "2026-09-06T03:16:00Z",
+  "timestamp": "2026-09-06T09:19:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -3256,7 +3324,19 @@
     "backend/tests/test_credit_history_migration.py",
     "backend/tests/test_credit_reads.py",
     "ops/V1_051_CREDIT_HISTORY_CHECKPOINT.md",
-    "ops/V1_051_CREDIT_HISTORY_CORRECTION1_CHECKPOINT.md"
+    "ops/V1_051_CREDIT_HISTORY_CORRECTION1_CHECKPOINT.md",
+    "ops/V1_051_KHR_POLICY_QUESTION.md",
+    "docs/001_DOMAIN_MODEL.md",
+    "docs/002_BUSINESS_RULES.md",
+    "docs/003_PRODUCT_REQUIREMENTS.md",
+    "docs/004_DATABASE_MODEL.md",
+    "docs/005_API_SPECIFICATION.md",
+    "docs/006_UI_SPECIFICATION.md",
+    "docs/007_TESTING_STRATEGY.md",
+    "docs/010_DECISION_LOG.md",
+    "ops/V1_051_SCOPE.md",
+    "ops/V1_ROADMAP.json",
+    "ops/V1_051_USD_ONLY_POLICY_CHECKPOINT.md"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -3444,7 +3524,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-06T03:16:00Z",
+  "updated_at": "2026-09-06T09:19:00Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -4567,10 +4647,10 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Accepted exact private USD Refund persistence checkpoint; following two-file durable acceptance marker is unpublished and requires eventual full cumulative V1-051 review.",
+  "commit_role": "Full V1-051 cumulative candidate with owner-authorized DL-060 USD-only financial-policy reconciliation; prefreeze gates PASS, exact-SHA tests/review/publication still pending.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "b3b03e209fcb69495944d7f076ac206da5de2a98"
+    "edfea74515d2ddf134cdac67a4b7250594d38d2a"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",

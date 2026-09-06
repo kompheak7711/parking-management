@@ -627,9 +627,12 @@ Verify later rate changes do not alter confirmed Payment records and all require
 USD/KHR/reference/markup/timestamp facts remain reconstructable.
 
 Also verify Customer Credit remains USD-denominated while preserving KHR-origin
-evidence; direct Refund of unrecognized KHR excess returns the corresponding
-original KHR amount, while a later KHR Refund of USD Credit uses and preserves the
-Refund-date exchange rate and both values.
+evidence. Under DL-060 all Refunds, including eligible KHR-origin Payment excess and
+Credit, are paid and recorded in USD. Preserve original Payment/FX records byte-for-
+byte; do not compute KHR remainder allocation or a Refund-date rate. Reject KHR
+Refunds. Test one-cent and repeated partial USD returns, exact opposite reversals,
+bounded net/source balances and unchanged KHR provenance. Existing Payment-conversion
+rounding and authoritative channel-value rules remain unchanged.
 
 # 14. Warning, Termination, Move-out, and Settlement Coverage
 

@@ -1401,7 +1401,7 @@
         "TEST-126"
       ],
       "include": [
-        "credit ledger, same-customer application, source-bounded refunds"
+        "credit ledger, same-customer application, USD-only source-bounded refunds under DL-060; immutable KHR Payment/FX audit evidence"
       ],
       "exclude": [
         "vendor accounts payable"

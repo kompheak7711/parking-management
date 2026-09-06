@@ -3555,11 +3555,11 @@ relationship. The Credit balance itself remains USD.
 
 ---
 
-## BR-CREDIT-011 — Later KHR Refund
+## BR-CREDIT-011 — USD-only Credit Refund
 
-If USD Customer Credit is later refunded in KHR, calculate the Refund using the
-exchange rate applicable when that Refund is processed. Preserve the Credit's USD
-value, Refund KHR value, Refund exchange rate, and source linkage.
+Refund Customer Credit only in USD, paid and recorded in exact USD cents. Preserve
+its USD value and original source linkage, including any KHR Payment and immutable
+conversion-rate evidence. Do not convert Credit into a KHR Refund (DL-060).
 
 ---
 
@@ -3694,19 +3694,20 @@ an explicit Refund.
 
 ---
 
-## BR-REFUND-005 — Original KHR Excess Refund
+## BR-REFUND-005 — USD Refund of KHR-origin Excess
 
-If unallocated excess from a KHR Payment is refunded before becoming Customer
-Credit, refund the corresponding original KHR excess. Preserve its original USD
-accounting value and Payment-confirmation exchange rate.
+Refund eligible unallocated excess from a KHR Payment only in USD, using the
+remaining recorded USD accounting value after authorized dispositions. Preserve
+the original KHR Payment amount and Payment-confirmation exchange evidence for
+audit. Do not recalculate the Refund from a KHR remainder or a new rate (DL-060).
 
 ---
 
-## BR-REFUND-006 — USD Credit Refunded in KHR
+## BR-REFUND-006 — USD-only Credit Refund Currency
 
-If USD Customer Credit is refunded in KHR, use the System Exchange Rate applicable
-to the Refund and the approved upward KHR amount rounding. Preserve both currency
-values and that Refund rate.
+All Customer Credit Refunds must be paid and recorded in USD. KHR is a Payment
+conversion option only, not a Refund currency. No Refund-date exchange rate or
+KHR Refund rounding is used; retain original KHR source evidence (DL-060).
 
 ---
 
@@ -3720,8 +3721,11 @@ type remains traceable.
 
 ## BR-REFUND-008 — Currency and Value Preservation
 
-Every KHR Refund preserves the USD accounting value, KHR amount, applicable
-exchange rate, rate date and time, calculation, and original source relationship.
+Every Refund is paid and recorded in USD, with its amount in cents equal to its
+USD accounting value. Preserve source relationships and any original KHR amounts,
+exchange rates, timestamps and calculation evidence for audit. Historical records
+must not be rewritten. Partial verified returns of USD Refunds use exact USD cents,
+not KHR conversion or proportional KHR rounding (DL-060).
 
 ---
 
@@ -4331,6 +4335,10 @@ result necessary to reconstruct it.
 ## BR-MONEY-001 — Base and Accounting Currency
 
 USD is the Property's base and accounting currency.
+
+All financial transactions are recorded in USD. Every Refund must be paid and
+recorded in USD; KHR is only a Payment-conversion option. Original KHR and
+conversion-rate facts remain audit evidence and are never rewritten (DL-060).
 
 All Invoices and Customer Credit balances are denominated and displayed in USD.
 Receiving a Payment in KHR must not turn an Invoice into a dual-currency Invoice.

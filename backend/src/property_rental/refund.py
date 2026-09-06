@@ -1,7 +1,9 @@
 """Explicit source-bounded Refund commands and exact, paginated history reads.
 
 These service boundaries do not expose HTTP/UI, invent collection rights, or
-change the original outbound event. KHR and qualified Deposit paths are separate.
+change the original outbound event. All Refunds are USD-only, including KHR-origin
+Payment/Credit sources; original KHR and conversion evidence remains audit provenance.
+Qualified Deposit sources retain their separate eligibility checks.
 """
 
 from __future__ import annotations

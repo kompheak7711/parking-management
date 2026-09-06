@@ -611,9 +611,10 @@ Show authoritative source, maximum refundable amount, currency and applicable
 exchange facts, reason, authorization, and consequence. Do not invent a delivery
 method or pending/failed business status absent from the authoritative API/model.
 
-For unallocated KHR excess refunded before Credit recognition, show the corresponding
-original KHR excess. For USD Customer Credit later refunded in KHR, show the Refund-date
-exchange rate and preserved USD/KHR values before confirmation.
+Show only USD as the payout and accounting currency for every Refund (DL-060).
+For eligible KHR-origin Payment excess or Credit, show the available recorded USD
+value and original KHR/FX source evidence for audit. Do not offer a KHR Refund,
+convert a KHR remainder, or request a Refund-date rate.
 
 ## UI-072 — Refund History
 
@@ -622,9 +623,10 @@ exchange facts where applicable, processing facts, authorization, and linked
 corrections. Do not invent requested/pending/failed Refund business statuses.
 
 For an erroneous completed Refund, the correction action records only verified
-returned value with exact amount/currency, return timestamp/method reference, reason,
+returned value in exact USD cents with return timestamp/method reference, reason,
 and authorization; it does not imply a collection right or erase the payout. The UI
-must not imply a Refund right absent from upstream rules.
+must not imply a Refund right absent from upstream rules. Partial returns of USD
+Refunds require no KHR rounding; historical source and conversion facts remain intact.
 
 ## UI-107 — Active-Lease Pet Deposit Refund
 

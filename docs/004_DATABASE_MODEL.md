@@ -826,8 +826,8 @@ Configured data: `id uuid PK`, `code text NOT NULL UNIQUE`, `display_name text N
 
 ## DB-PAY-002 — `exchange_rate_records`
 
-Append-only System Exchange Rate record selected at KHR Payment confirmation or KHR
-Refund processing: `id uuid PK`, `reference_rate_khr_per_usd numeric(20,6) NOT NULL CHECK
+Append-only System Exchange Rate record selected at KHR Payment confirmation;
+not a new Refund conversion under DL-060: `id uuid PK`, `reference_rate_khr_per_usd numeric(20,6) NOT NULL CHECK
 (>0)`, `markup_basis_points smallint NOT NULL CHECK (= 50)`, `system_rate_khr_per_usd
 bigint NOT NULL CHECK (>0)`, `rate_source text NOT NULL CHECK IN
 ('ABA_AUTOMATIC','ABA_EQUIVALENT_MANUAL')`, `source_reference text NULL`, `applicable_at
@@ -840,7 +840,8 @@ every System Rate equals the ABA-equivalent reference × 1.005 rounded upward to
 KHR. Any channel-actual value supplied by the accepted channel is preserved; presence
 of any such value requires transaction reference and timestamp, while unavailable
 values remain null rather than fabricated. Supplied values match and control the linked
-Payment or Refund without overwriting the separately preserved System Rate.
+Payment without overwriting the separately preserved System Rate. Preserve existing
+historical exchange evidence; all new Refunds are paid and recorded in USD.
 
 ## DB-PAY-003 — `payments`
 
@@ -1211,21 +1212,22 @@ Append-only outbound financial event.
 | `final_settlement_id` | `uuid` | yes | required for settlement Deposit refund |
 | `pet_refund_review_id` | `uuid` | yes | required for active-Lease Pet Deposit Refund; FK `pet_deposit_refund_reviews` |
 | `usd_accounting_value_cents` | `bigint` | no | `CHECK (>0)` |
-| `refund_currency` | `text` | no | `USD`, `KHR` |
-| `refund_amount_minor` | `bigint` | no | cents for USD, whole riel for KHR; positive |
-| `exchange_rate_record_id` | `uuid` | yes | required exactly for KHR except original KHR excess rule below |
-| `original_khr_excess_amount` | `bigint` | yes | required for direct original-KHR-excess Refund |
+| `refund_currency` | `text` | no | `USD` only (DL-060) |
+| `refund_amount_minor` | `bigint` | no | positive USD cents, equal to `usd_accounting_value_cents` |
 | `reason` | `text` | no | |
 | `processed_at` | `timestamptz` | no | |
 | `processed_by` | `uuid` | no | |
 | `authorization_reference` | `text` | no | |
 
 Exactly one of the three source FKs is non-null. Source Customer must match recipient
-and available source value must not be exceeded. A direct Refund of KHR Payment excess
-requires a KHR source Payment and preserves the original Payment-confirmation exchange
-record; `original_khr_excess_amount` and `refund_amount_minor` must equal the exact
-corresponding original unallocated KHR excess. A later Refund of USD Credit in KHR uses a new applicable Refund
-exchange record. Settlement Deposit Refunds remain separate by Deposit.
+and available recorded USD source value must not be exceeded. A direct Refund of
+eligible KHR-origin Payment excess and a Credit Refund are paid and recorded in USD;
+neither calculates a KHR remainder nor creates a Refund-date exchange record.
+Original KHR amounts and immutable Payment-confirmation exchange records remain
+linked through the source chain for audit. DL-060 removes the proposed KHR-Refund
+fields from the new model, not existing historical transaction or conversion evidence;
+no historical record is rewritten or deleted. Settlement Deposit Refunds remain
+separate by Deposit.
 
 A Security Deposit Refund requires the Lease to be TERMINATED and the applicable Final
 Settlement. A Pet Deposit Refund normally follows that path, but while its Lease remains
@@ -1249,8 +1251,10 @@ Append-only generic linked correction: `id uuid PK`, `refund_id uuid NOT NULL FK
 `resulting_net_refund_usd_cents bigint NOT NULL CHECK (>=0)`, `reason text NOT NULL`,
 `evidence_reference text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid
 NOT NULL`, and `authorization_reference text NOT NULL`. A reversal references exactly
-one active prior correction; a non-reversal prohibits that FK. Currency effects must
-reconcile to the Refund's preserved exchange facts, and net corrected Refund value may
+one active prior correction; a non-reversal prohibits that FK. Under DL-060, verified
+returns of USD Refunds are in USD cents, with original-minor and USD effects equal;
+partial returns need no KHR conversion or rounding. Preserve exact source and return
+evidence and all historical facts. Net corrected Refund value may
 not fall below zero or exceed the immutable original Refund. This table implements only
 an authorized linked Refund correction; it invents no delivery status, returned-funds
 workflow, collection right, or new Refund right.
@@ -1682,8 +1686,9 @@ without turning it into an Invoice and keep Deposit targets Invoice-line-only.
 Tests prove Invoice/Credit accounting in USD; USD/KHR Payment facts; ABA Sell reference
 times 1.005; upward whole-KHR System Rate and final payable rounding; permitted manual
 ABA-equivalent fallback; Payment-confirmation rate snapshot; authoritative channel
-transaction values; KHR-origin Credit provenance through Payment; source-specific Refund
-conversion; and append-only/restrict-delete protection for every new event table.
+transaction values; KHR-origin Credit provenance through Payment; USD-only Refunds
+and exact-cent partial returns without Refund conversion (DL-060); and append-only/
+restrict-delete protection for every new event table.
 
 ---
 

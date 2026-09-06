@@ -1089,7 +1089,7 @@ def create_refund_source_storage() -> None:
         ALTER TABLE app.refund_corrections
             ADD COLUMN source_balance_effect_original_minor bigint CHECK(source_balance_effect_original_minor<>0),
             ADD COLUMN verified_return_amount_minor bigint CHECK(verified_return_amount_minor>0),
-            ADD COLUMN verified_return_currency text CHECK(verified_return_currency IN ('USD','KHR')),
+            ADD COLUMN verified_return_currency text CHECK(verified_return_currency='USD'),
             ADD COLUMN verified_returned_at timestamptz CHECK(isfinite(verified_returned_at)),
             ADD COLUMN return_method_reference text CHECK(return_method_reference=btrim(return_method_reference)
                 AND length(return_method_reference) BETWEEN 1 AND 500),
@@ -1147,9 +1147,7 @@ def create_refund_source_storage() -> None:
             PERFORM app.assert_active_financial_actor(NEW.processed_by,v_payment.property_id);
             IF NEW.source_payment_id IS NOT NULL THEN
                 PERFORM app.assert_payment_excess_eligible(v_root);
-                IF v_payment.received_currency<>'USD' THEN
-                    RAISE EXCEPTION 'Original KHR excess requires the KHR Refund path' USING ERRCODE='23514';
-                END IF;
+                -- DL-060: source KHR/FX facts are audit-only; Refund value is recorded USD cents.
                 v_available:=app.payment_available_value(v_root);
                 v_latest:=GREATEST(v_payment.confirmed_at,app.payment_proposal_dependency_at(v_root));
             ELSE
@@ -1560,8 +1558,7 @@ def create_refund_services() -> None:
             v_payment_id:=app.require_usd_refund_source(p_property_id,p_kind,p_source_id);
             SELECT * INTO STRICT v_payment FROM app.payments WHERE id=v_payment_id FOR SHARE;
             IF p_kind='PAYMENT' THEN
-                IF v_payment.received_currency<>'USD'
-                THEN RAISE EXCEPTION 'Original KHR excess requires its KHR Refund path' USING ERRCODE='P5202'; END IF;
+                -- Refund currency is USD regardless of the immutable source Payment currency.
                 PERFORM app.assert_payment_excess_eligible(v_payment_id);
                 v_available:=app.payment_available_value(v_payment_id);
             ELSE

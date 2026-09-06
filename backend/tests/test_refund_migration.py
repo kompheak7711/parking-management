@@ -1,4 +1,4 @@
-"""Private USD Refund source/correction substrate; public services and KHR/Pet follow."""
+"""Private USD-only Refund source/correction substrate and immutable source evidence."""
 
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
@@ -491,15 +491,37 @@ def test_usd_refund_private_boundary_immutable_history_and_fresh_actor(
             correct(connection, human, identity, 100)
 
 
-def test_usd_refund_original_khr_payment_is_not_repriced_as_usd(migrated_database_url: str) -> None:  # noqa: F811
+def test_usd_refund_khr_origin_uses_recorded_usd_without_repricing(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
     with psycopg.connect(migrated_database_url) as connection:
-        payment = fx_payment(connection)
+        payment = fx_payment(connection, channel=True, amount=4100, usd=101)
         row = connection.execute(
             "SELECT confirmed_by,payer_customer_id FROM app.payments WHERE id=%s", (payment,)
         ).fetchone()
         assert row is not None
-        with (
-            pytest.raises(psycopg.errors.CheckViolation, match="Original KHR excess"),
-            connection.transaction(),
-        ):
-            refund(connection, UUID(str(row[0])), UUID(str(row[1])), payment=payment, amount=101)
+        before = connection.execute(
+            "SELECT row_to_json(p)::text,row_to_json(fx)::text FROM app.payments p "
+            "JOIN app.exchange_rate_records fx ON fx.id=p.exchange_rate_record_id WHERE p.id=%s",
+            (payment,),
+        ).fetchone()
+        identity = refund(
+            connection, UUID(str(row[0])), UUID(str(row[1])), payment=payment, amount=101
+        )
+        assert connection.execute(
+            "SELECT refund_currency,refund_amount_minor,usd_accounting_value_cents "
+            "FROM app.refunds WHERE id=%s",
+            (identity,),
+        ).fetchone() == ("USD", 101, 101)
+        assert connection.execute(
+            "SELECT app.payment_available_value(%s)", (payment,)
+        ).fetchone() == (0,)
+        assert (
+            connection.execute(
+                "SELECT row_to_json(p)::text,row_to_json(fx)::text FROM app.payments p "
+                "JOIN app.exchange_rate_records fx ON fx.id=p.exchange_rate_record_id "
+                "WHERE p.id=%s",
+                (payment,),
+            ).fetchone()
+            == before
+        )

@@ -425,7 +425,7 @@ Older unnumbered placeholder documents are not decision authority.
 ## DL-031 — Customer Credit and KHR-origin Refund accounting
 
 - **Type:** `OWNER BUSINESS DECISION`
-- **Status:** `APPROVED`
+- **Status:** `PARTIALLY SUPERSEDED BY DL-060` — the historical KHR-refund clauses below are no longer operative. USD Credit, same-Customer scope and original KHR source-evidence preservation remain approved.
 - **Decision:** Customer Credit is maintained in USD accounting value and is not transferable to another Customer. For KHR-origin value, preserve the original KHR amount and exact receipt rate. Refund KHR excess before Credit recognition in the corresponding original KHR amount. If USD Customer Credit is later refunded in KHR, use the exchange rate applicable to that Refund and preserve both currency values, rate, and source relationship. No separate KHR-denominated Credit balance is approved.
 - **Provenance:** Literal supplementary Owner Decision S4 and the same-Customer rules embodied in 002.
 - **Affected documents/rules:** `BR-CREDIT-001` through `BR-CREDIT-012`; `BR-REFUND-005`, `BR-REFUND-006`, `BR-REFUND-008`; `BR-MONEY-001`, `BR-MONEY-002`.
@@ -789,6 +789,22 @@ Rent Due Date question in `DL-042` and do not authorize new business policy.
 - **Rationale:** Establish the trust root without exposing a public first-owner route, leaking secrets, or retaining a bootstrap backdoor.
 - **Decision date:** 2026-08-17.
 - **Alternatives:** Public web bootstrap and reusable bootstrap credentials are prohibited.
+
+---
+
+## DL-060 — USD accounting and USD-only Refunds
+
+- **Type:** `OWNER BUSINESS DECISION`
+- **Status:** `APPROVED`
+- **Decision (literal owner clarification):** USD is the main accounting currency. Customers may pay in KHR, but KHR is only a payment-conversion option. Financial transactions are recorded in USD. All refunds must be paid and recorded in USD. Do not implement KHR refunds.
+- **Supersession:** The owner explicitly rejected, not approved, the proposed V1-051 KHR partial-refund rounding policy. This decision supersedes the conflicting KHR-refund clauses of DL-031 and downstream requirements. The original decision entry and rejected proposal remain historical evidence.
+- **History:** Preserve existing transaction evidence and original KHR amounts or conversion-rate metadata required for audit; never rewrite historical records. Payment conversion, immutable source facts and USD Credit accounting remain intact.
+- **Derived implementation consequences:** Refunds from eligible KHR-origin Payment excess and Credit use recorded available USD cents, not converted KHR remainders or a Refund-date rate. Partial verified returns of USD Refunds restore their exact positive USD cents, bounded by the original/net Refund; reversals have exact opposite effects and remain source-budget constrained. No KHR partial-return rounding, zero-cent correction, collection right, new Refund status or rewritten historical fact is introduced.
+- **Provenance:** Explicit owner message in the existing Codex takeover task on 2026-09-06, titled “Owner financial-policy clarification for V1-051”. Earlier generic confirmations are not approval of the rejected proposal.
+- **Affected documents/rules:** 001-007; BR-MONEY-001/002, BR-CREDIT-010/011, BR-REFUND-003/005/006/008/010/011/012, corresponding product requirements, DB-PAY-002/003, DB-REFUND-001/002, API-065/066, UI-071/072, TEST-074; V1-051 scope and native Codex follow-up.
+- **Decision date:** 2026-09-06.
+- **Continuation:** Resume the existing direct Codex takeover from its latest verified stage, complete V1-051 then V1-052 and V1-053 under unchanged models, exact-SHA gates, independent review, normal publication and closure requirements. Keep OpenClaw disabled. At V1-053 closure pause the Codex follow-up and do not activate V1-054. Existing production and safety exclusions remain unchanged.
+- **Alternatives:** KHR Refunds and the proposed proportional KHR partial-refund/remainder policy are explicitly not approved.
 
 ---
 

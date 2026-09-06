@@ -2,6 +2,14 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_khr_origin_usd_partial_returns_reconcile_exact_cents_and_preserve_history",
+      "upstream_ids": ["BR-REFUND-003", "BR-REFUND-008", "BR-REFUND-010", "DB-REFUND-002", "API-066", "TEST-074"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_service_migration.py",
+      "status": "implemented",
+      "notes": "DL-060: direct Payment/Credit101cent Refunds from4100KHR sources accept1+1+99USDcent returns, exact same-currency effects, replay, zero-net bound and exact one-cent reversal; later Refund consumes only restored USD budget. Original outbound header and Payment/FX text snapshots remain identical."
+    },
+    {
       "test_id": "test_credit_read_pages_reject_noninteger_or_unbounded_limits",
       "upstream_ids": [
         "API-061"
@@ -505,7 +513,7 @@
       "notes": "Concurrent committed corrections never produce a resource with mismatched current net value and correction page; retained Repeatable Read snapshots are internally coherent."
     },
     {
-      "test_id": "test_refund_service_original_khr_source_fails_closed_but_credit_usd_preserves_fx",
+      "test_id": "test_refund_service_khr_origin_refunds_usd_and_preserves_fx",
       "upstream_ids": [
         "BR-REFUND-005",
         "PR-REFUND-012"
@@ -513,7 +521,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_refund_service_migration.py",
       "status": "implemented",
-      "notes": "The USD-only direct source path rejects original KHR excess; a USD Credit Refund retains its original KHR Payment and exact fractional channel-rate evidence. KHR Refund services remain a separate required slice."
+      "notes": "DL-060: direct KHR-origin Payment and Credit sources refund their recorded USD cents; returned source links retain original KHR Payment and exact fractional channel-rate evidence."
     },
     {
       "test_id": "test_refund_command_receipts_are_immutable_and_private",
@@ -717,14 +725,14 @@
       "notes": "Original Refund/correction UPDATE and DELETE are denied, runtime/financial roles lack INSERT and new helper EXECUTE, and disabled actors cannot create or correct."
     },
     {
-      "test_id": "test_usd_refund_original_khr_payment_is_not_repriced_as_usd",
+      "test_id": "test_usd_refund_khr_origin_uses_recorded_usd_without_repricing",
       "upstream_ids": [
         "BR-REFUND-005"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_refund_migration.py",
       "status": "implemented",
-      "notes": "Direct KHR Payment excess cannot enter the USD-only private Refund path; this verifies fail-closed currency routing, not completed KHR Refund implementation."
+      "notes": "DL-060: private direct Refund uses recorded101USDcents from4100KHR source, without repricing; immutable Payment/FX text snapshots remain identical and source availability reaches zero."
     },
     {
       "test_id": "test_credit_response_decoder_is_exact_nested_and_connection_local",

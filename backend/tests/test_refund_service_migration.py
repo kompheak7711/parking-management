@@ -17,7 +17,6 @@ from property_rental.refund import (
     CreateUsdRefundCommand,
     RefundAuthorizationError,
     RefundIdempotencyKeyReused,
-    RefundInvalidError,
     RefundNotFoundError,
     RefundPage,
     RefundService,
@@ -441,8 +440,10 @@ def test_refund_service_coherent_history_during_concurrent_corrections(
         )
 
 
-def test_refund_service_original_khr_source_fails_closed_but_credit_usd_preserves_fx(
+@pytest.mark.parametrize("kind", ["PAYMENT", "CREDIT"])
+def test_refund_service_khr_origin_refunds_usd_and_preserves_fx(
     migrated_database_url: str,  # noqa: F811
+    kind: str,
 ) -> None:
     with psycopg.connect(migrated_database_url) as connection:
         payment = fx_payment(connection, channel=True, channel_rate=Decimal("4101.123456"))
@@ -452,12 +453,11 @@ def test_refund_service_original_khr_source_fails_closed_but_credit_usd_preserve
         assert row is not None
         human, prop = map(lambda value: UUID(str(value)), row)
     staff = actor(human, prop, "refunds.create", "refunds.read")
-    with pytest.raises(RefundInvalidError):
-        service().usd_source(prop, "PAYMENT", payment, actor=staff)
-    with pytest.raises(RefundUnavailableError):
-        service().create_usd(prop, create(payment, 101), actor=staff)
-    identity = credit_id(recognize(prop, payment, human, 101))
-    result = service().create_usd(prop, create(identity, 101, "CREDIT"), actor=staff)
+    identity = credit_id(recognize(prop, payment, human, 101)) if kind == "CREDIT" else payment
+    preview = service().usd_source(prop, kind, identity, actor=staff)
+    assert preview["refund_currency"] == "USD"
+    assert preview["available_usd_cents"] == 101
+    result = service().create_usd(prop, create(identity, 101, kind), actor=staff)
     payment_data = cast(dict[str, object], result["source_payment"])
     rate = cast(dict[str, object], result["source_exchange_rate"])
     assert payment_data["id"] == str(payment)
@@ -465,6 +465,84 @@ def test_refund_service_original_khr_source_fails_closed_but_credit_usd_preserve
     assert rate["channel_actual_rate_khr_per_usd"] == "4101.123456"
     assert payment_data["exchange_rate_record_id"] == rate["id"]
     assert result["net_refund_usd_cents"] == 101
+    header = cast(dict[str, object], result["refund"])
+    assert header["refund_currency"] == "USD"
+    assert header["refund_amount_minor"] == header["usd_accounting_value_cents"] == 101
+
+
+@pytest.mark.parametrize("kind", ["PAYMENT", "CREDIT"])
+def test_khr_origin_usd_partial_returns_reconcile_exact_cents_and_preserve_history(
+    migrated_database_url: str,  # noqa: F811
+    kind: str,
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        payment = fx_payment(connection, channel=True, amount=4100, usd=101)
+        row = connection.execute(
+            "SELECT confirmed_by,property_id FROM app.payments WHERE id=%s", (payment,)
+        ).fetchone()
+        assert row is not None
+        human, prop = map(lambda value: UUID(str(value)), row)
+        before = connection.execute(
+            "SELECT row_to_json(p)::text,row_to_json(fx)::text FROM app.payments p "
+            "JOIN app.exchange_rate_records fx ON fx.id=p.exchange_rate_record_id WHERE p.id=%s",
+            (payment,),
+        ).fetchone()
+    staff = actor(
+        human,
+        prop,
+        "refunds.create",
+        "refunds.read",
+        "refunds.correct",
+        "refunds.corrections.reverse",
+    )
+    source_id = credit_id(recognize(prop, payment, human, 101)) if kind == "CREDIT" else payment
+    original_command = create(source_id, 101, kind)
+    original = service().create_usd(prop, original_command, actor=staff)
+    identity = refund_id(original)
+    first_return = returned(1)
+    first = service().verify_usd_return(prop, identity, first_return, actor=staff)
+    first_correction = UUID(str(corrections(first)[0]["id"]))
+    assert first["net_refund_usd_cents"] == 100
+    assert service().verify_usd_return(prop, identity, first_return, actor=staff) == first
+    assert service().usd_source(prop, kind, source_id, actor=staff)["available_usd_cents"] == 1
+    for amount, remaining in ((1, 99), (99, 0)):
+        result = service().verify_usd_return(prop, identity, returned(amount), actor=staff)
+        assert result["net_refund_usd_cents"] == remaining
+    final = service().get(prop, identity, actor=staff)
+    assert final["refund"] == original["refund"]
+    assert (
+        sum(int(str(item["source_balance_effect_usd_cents"])) for item in corrections(final)) == 101
+    )
+    for item in corrections(final):
+        assert item["verified_return_currency"] == "USD"
+        assert (
+            item["source_balance_effect_original_minor"] == item["source_balance_effect_usd_cents"]
+        )
+        assert item["verified_return_amount_minor"] == item["source_balance_effect_usd_cents"]
+    with pytest.raises(RefundUnavailableError):
+        service().verify_usd_return(prop, identity, returned(1), actor=staff)
+    assert service().create_usd(prop, original_command, actor=staff) == original
+    assert service().usd_source(prop, kind, source_id, actor=staff)["available_usd_cents"] == 101
+    reverse_command = ReverseRefundCorrectionCommand(
+        uuid4(), "Synthetic reversal evidence", "Reverse one cent"
+    )
+    reversed_result = service().reverse_correction(
+        prop, identity, first_correction, reverse_command, actor=staff
+    )
+    assert reversed_result["net_refund_usd_cents"] == 1
+    assert service().usd_source(prop, kind, source_id, actor=staff)["available_usd_cents"] == 100
+    service().create_usd(prop, create(source_id, 100, kind), actor=staff)
+    assert service().usd_source(prop, kind, source_id, actor=staff)["available_usd_cents"] == 0
+    with psycopg.connect(migrated_database_url) as connection:
+        assert (
+            connection.execute(
+                "SELECT row_to_json(p)::text,row_to_json(fx)::text FROM app.payments p "
+                "JOIN app.exchange_rate_records fx ON fx.id=p.exchange_rate_record_id "
+                "WHERE p.id=%s",
+                (payment,),
+            ).fetchone()
+            == before
+        )
 
 
 @pytest.mark.parametrize("operation", ["UPDATE", "DELETE", "TRUNCATE"])

@@ -1,5 +1,10 @@
 # V1-051 frozen implementation scope
 
+Controlled scope supersession on 2026-09-06: explicit owner decision DL-060 replaces
+only the obsolete KHR-refund policy. Previous scope SHA256
+91adbb369a44dc25f04a49bcaa11c1dc8c29694c8805037855c1e52e4396d3b2 is retained
+as historical evidence. Accepted checkpoints and all other scope limits remain.
+
 ## Authority and predecessor
 
 Direct Codex only, authorized through V1-053 by ops/CODEX_TAKEOVER_V1_048_053.md
@@ -45,11 +50,12 @@ stays disabled; native Codex follow-up stays active through V1-053.
   Credit, existing Property-caused Reservation cancellation Refunds and the already
   qualified active-Lease Pet Deposit exception. Recompute source availability and
   recipient/Property/source/review linkage transactionally.
-- Direct KHR Payment excess refunds preserve the corresponding original KHR excess,
-  original USD basis and Payment-confirmation exchange record. Later KHR refunds of
-  USD Credit use the applicable confirmed System Exchange Rate and approved upward
-  rounding, preserving both amounts, exact rate/time/calculation/source. No binary
-  floats, live FX provider or new currency policy.
+- All Refunds are paid and recorded in USD only (DL-060). Eligible KHR-origin Payment
+  excess and Credit use recorded available USD cents; retain original KHR amounts and
+  Payment-confirmation exchange evidence through immutable source links for audit.
+  Do not implement KHR Refunds, KHR remainder allocation or Refund-date conversion.
+  Partial verified USD returns restore exact positive USD cents; opposite correction
+  reversals remain source-budget constrained. No binary floats or live FX provider.
 - Authorized append-only linked Refund corrections and correction reversals under
   DB-REFUND-002. An API-066 value correction requires evidence of value demonstrably
   returned, exact currency/amount, return time/reference, actor/reason/authorization
@@ -82,7 +88,7 @@ eligible settlement source or offer its Refund path without authoritative prereq
 Keep unsupported settlement-linked requests fail-closed; later V1-056 integrates its
 approved source into this Refund history. No V1-054 or later activation in this takeover.
 
-Exclude vendor Accounts Payable, new financial policy or canonical rewrites,
+Exclude vendor Accounts Payable, unapproved financial policy or unrelated canonical rewrites,
 Refund pending/failed/delivery business statuses, new collection/refund rights,
 negative Payments, original financial-record rewrites, silent backfill, new dependencies
 or external providers. Production access/deployment/credentials, customer data, paid
@@ -100,7 +106,9 @@ Payment/Allocation/Deposit/derived-balance contracts.
 005: API-061..066 and API-094 service semantics; HTTP routing deferred.
 007: TEST-064..070, TEST-126 and existing Payment/Allocation/Receipt regressions.
 008: SEC-019..031 and applicable financial identity/history/privilege boundaries.
-010: precedence rules, DL-027..031 and DL-053. No new business/security decision is made.
+010: precedence rules, DL-027..031, DL-053 and explicit owner decision DL-060.
+DL-060 authorizes the bounded canonical USD-only reconciliation; no other new
+business/security decision is inferred.
 
 ## Bounded implementation plan and acceptance
 
@@ -111,7 +119,8 @@ Payment/Allocation/Deposit/derived-balance contracts.
    migrations38/39/40. Assert integration contracts, safe retained-history upgrade and
    transactional history/source invariants; no fabricated legacy financial records.
 3. Add synthetic unit and real isolated PostgreSQL tests for every actual authority
-   assertion: USD/KHR evidence/rounding, same-Customer and exact-Property isolation,
+   assertion: USD-only Refund/partial-return amounts and retained KHR source evidence,
+   unchanged Payment-conversion rounding, same-Customer and exact-Property isolation,
    distinct authorization, replay/key conflict, atomic rollback/audit, history/reversal,
    source and target bounds, overlapping Payment/Credit/Deposit/Refund operations,
    backdated chronology, concurrent spending/correction and Repeatable Read safety.

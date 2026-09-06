@@ -1,27 +1,22 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-051 Credit history coordination correction1 ready to freeze; fresh exact integration and independent review PENDING. Retainac688fc rejected by coordinator for semantic mappings; product unchanged. Pet accepted; full51OPEN/unpublished.
-- Authority: ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455. Codex only through53; OpenClaw disabled.
-- Frozen scope: ops/V1_051_SCOPE.md SHA25691adbb369a44dc25f04a49bcaa11c1dc8c29694c8805037855c1e52e4396d3b2. No canonical/business/security policy change.
-- Models: Astra xhigh Standard coordinator/financial implementation; fresh Astra max Standard read-only reviewers, no fallback. Actual02:54:36Z coordinator Astra/xhigh; local service_tierdefault; providerattestationunavailable.
-- Sole checkout /Users/sokompheak/Development/property-rental-management-v1-051 on codex/v1-051-direct; correction candidate must be new child of retainedac688fc84bfa057cbe28a5c32b47e9508dcff5c7; complete Credit review base accepted3c4015c. Same coordinator task01a04961-4270-7802-9418-e08203784a8c; no separate implementation worker.
-- Main clean44d93be; tracking/fetched/livecc3d18e682401cc8a9ade10295572fe1a1344317. Full eventual cumulative review/publication basecc3d18e.
-- V1-050 fullyclosed: product3d16b65/terminalcc3d18e; reviews0HIGH0MEDIUM0LOW; CI33985062450/33986122538all4SUCCESS; cardd26f24b3DONE. Closure v1050-closure-verification.md SHA256616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2 discharges immutablependingfields. Do not repeat closure/activation.
-- Accepted Creditc162b07712a77abd663cd2cc694dfb9624939d02 receiptSHA2561d536044a467f5f4d6e18f0a705e8360797d7a6d40ce79a39be309588163c433; rejectedcad545e retained. PrivateUSD79fe7f8c95e79c444100b1a48fde4204201d98af receiptSHA256d4253c7e0b97e6218c39d1614241a199bc0ff8b3c44f0cfd4f6073c928db60aa. No repeat accepted work.
-- Accepted USDserviceec77dde87cdd5f957b78afbdc736766ff43bb5fe reviewSHA25602e34bd2b7ed468ec59d855bdd50da17150381dc86fec036584d3fa39ace10d6; acceptanceSHA2566514279ef0a143e3e0598b32f430eb9aaf0f92c22b78fc57e90317ed0e28a082. All prior exact gates and receipts remain in STATE/evidence.
-- Pet correction1 accepted3c4015c: fresh independent Astra max read-only0HIGH0MEDIUM0LOW/all11paths/all3priorfindingsresolved; reviewer01a0747c-5cfe COMPLETED02:27:13Z, not reused.
-- Pet report v1051-pet-correction1-review-3c4015c.md SHA256273848190f4728444ab10b7080cd6f4beab4c84cc5ab66b1d744e624975d914a; acceptance v1051-pet-refund-accepted-3c4015c.md SHA256808c18b45ca2bbdaab2972176515c1d7174ea7443178c58e53b3b75c6e68975e discharges immutablependingfields. ExactPG737/backend940/frontend369/automation189/staticbuildconfigPASS. Rejectedf311a90 preserved.
-- New ops/V1_051_CREDIT_HISTORY_CHECKPOINT.md SHA2562c62da5ad0b2f6aa6c420ecabd06bfb3416bea220d6c9938a6198621d013de11: bounded Customer list/seven-family timeline, coherent USD positions, exact typed sourceFX, independent read permissions, immutable source links; accepted mutations/replay unchanged.
-- Credit reads PASS16unit0.20s/38unittraceability6.73s/11focusedPG2.43s/748fullPGzero skips113.79s/956backend725DB-onlyskipscovered41.09s/369frontend6.58s/189automation68.980s/staticmypy145/build/import/configuration. All12newtestfunctions mapped and PGmodule registered.
-- Development evidence v1051-credit-history-test-development.md SHA25681dfd24caebef7680b8b35c25b9442f75940855528608e8e92a18a18a48bc3aa preserves failed migration-field probe, read-only command-lock diagnosis and static fixes. No guard weakened. Full logs/hashes in checkpoint/STATE.
-- Correction1 ops/V1_051_CREDIT_HISTORY_CORRECTION1_CHECKPOINT.md SHA256bcd2891158a92b7e370ca98334fcfe5f3696b906cdb8b88e556a0c747e3e6d38 removes5unrelatedPetAPI094 and3unsupportedSEC026 mappings; actual Property/capability tests mapSEC019/022. Product/tests unchanged. Coordinatorfindinga52b9b01 retained; not independent review.
-- Exact next action: freeze new child ofac688fc; fresh exact gates and fresh independent Astra max Standard read-only review of complete3c4015c-to-candidate delta/all10paths and mapping finding. Require0HIGH0MEDIUM0LOW; no edit/duplicate while validreviewruns. Exactac688fc748PG/956backend/369frontend/189automation passed but mapping acceptance failed; all evidence retained.
-- Only after accepted Credit reads continue remaining original-KHR Payment excess and later Credit-to-KHR Refunds in SAME checkout. No invented FX policy. Full51release requires remaining scope/fullgates/audits/full cumulative review/normal authorized reviewed push/exactCI/refequality/same-cardacceptance/durableclosure.
-- Tracking-only cardc5621f97-7ad1-4b1c-b04f-c854376c2ad8 blocked solely against OpenClaw admission; claim/attempt/executionnull; checkpointcomment2556b8ab-fa1f-4eea-a19a-a3cae9d79030. No ownerblocker/no51DONE.
-- OpenClaw singleton658ffdaf-1ac1-45a6-a842-f5f7d7a226eb disabled30minutes/no nextRun/runningtasks0. All126worktrees retained. Native same-task10minute follow-up ACTIVE; saved Petaccepted/Creditreadsactive prompt byteverified SHA256ae076b071b5079f1d2c0de72e7ee0166ec8a76cac3b0bf8af2e0fd800ea4b2af; later review-phase update supersedes snapshot.
-- Reconciled2026-09-06T03:04:55Z: mainclean44d93be/tracking-fetched-livecc3d/predecessorCI33986122538all4SUCCESS/126retainedworktrees/oneOCdisabled/noactiveclaimsworkers. Roadmap50complete/51activeinSTATE/52approvedbutnoteligible.
-- Exclude HTTP/UI52, unifiedledger53, FinalSettlement56, newpolicy, production/access/credentials/customerdata/paid/destructive/forcepush/historyrewrite/retained-worktree deletion.
-- Only after51fullyclosed activate52then53. At53closed pausefollowup/leaveOpenClawdisabled/no54. No routine owner authorization required.
+- Current: V1-051 ACTIVE USD-only refund reconciliation under explicit owner decision DL-060 (2026-09-06). Full V1-051 remains OPEN/unpublished.
+- Policy: USD accounting; KHR only for Payment conversion. Every Refund is paid and recorded in USD. KHR-refund proposal explicitly REJECTED; obsolete policy blocker resolved. Preserve all original transaction/KHR/FX evidence without historical rewrites.
+- Sole checkout: /Users/sokompheak/Development/property-rental-management-v1-051, branch codex/v1-051-direct; coordinator01a04961-4270-7802-9418-e08203784a8c. No implementation worker or duplicate.
+- Authority: ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455. Scope ops/V1_051_SCOPE.md is being reconciled to DL-060; old scope hash preserved there.
+- Models: actual coordinator2026-09-06T08:57:46.596Z Astra/xhigh, local default (Standard); fresh independent Astra max Standard read-only, no fallback. Provider attestation unavailable.
+- Accepted Credit list/history edfea74515d2ddf134cdac67a4b7250594d38d2a, tree5b13985bb10ab798387812cabf556ab513e63f47; independent0HIGH0MEDIUM0LOW. Reviewer01a074bc-7e97 completed03:33:07Z; do not poll or repeat accepted work.
+- Review v1051-credit-history-review-edfea74.md SHA2562b3689a295e29e36a192328b8e04e3b901298a86c548e79e94a94406c4c3ae65; acceptance v1051-credit-history-accepted-edfea74.md SHA256265383fc5578d6e537ea4387727aac973e4a580fe56df9b755512e2abc5568f9 discharges earlier pending markers.
+- Accepted exact gates:748PG/956backend (725 DB-only skips separately covered)/369frontend/189automation/static/build/configuration/traceability/guards PASS. New USD-only changes still require fresh tests and independent exact-SHA review.
+- Preserve rejectedac688fc/f311a90 and acceptedPet3c4015c/Creditc162b07/privateUSD79fe7f8/USDserviceec77dde, all receipts/logs/hashes and126worktrees. Historical proposal ops/V1_051_KHR_POLICY_QUESTION.md now explicitly superseded, original hash retained.
+- Reconciled08:59Z: main clean44d93be, tracking/fetched/livecc3d18e682401cc8a9ade10295572fe1a1344317. V1-050 fully closed; exact predecessor CI33986122538 success. No repeated predecessor work.
+- Same cardc5621f97-7ad1-4b1c-b04f-c854376c2ad8 tracking-only blocked solely against OpenClaw admission; null claim/attempt/execution. This does not block direct Codex.
+- OpenClaw exactly one matching job658ffdaf-1ac1-45a6-a842-f5f7d7a226eb disabled,30-minute schedule retained,no next run,zero running tasks. Existing native10-minute same-task follow-up ACTIVE, updated to explicit USD-only decision; checksum readback pending.
+- Exact next action: Freeze the reconciled USD-only V1-051 cumulative candidate as a new child of accepted edfea74515d2ddf134cdac67a4b7250594d38d2a; run fresh exact-SHA full gates and independent Astra max Standard read-only review of COMPLETE cc3d18e-to-candidate diff. Require zero findings. Preserve all accepted/rejected checkpoints and worktrees. Only reviewed normal publication, exact CI/ref equality, same-card acceptance and durable closure permit V1-052, then V1-053. DL-060 rejects KHR Refunds and resolves the old blocker; no routine authorization needed. OpenClaw disabled; at V1-053 closed pause native follow-up/no V1-054.
+- Owner action required: no. Production/access/credentials/customer data/paid/destructive/force-push/history rewrite/retained-worktree deletion remain unauthorized.
+- USD-only prefreeze gates:751PG/956backend (728 DB-only skips covered)/369frontend/189automation/static/build/configuration and official dependency audits PASS. Evidence/hashes in ops/V1_051_USD_ONLY_POLICY_CHECKPOINT.md. Guard canonical flag satisfied by explicit DL-060 authority; separate content-secret scan PASS, guard unchanged.
+- Native saved prompt readback:11574characters SHA256ad02e5c32b704b5de4bebdc353b372ff70c61b4e76bf3faf2e39c04ce4ca261a. Workboard decision comment26b84c0d-87c4-4a52-8c58-e007ceaec6df.
+- Updated:2026-09-06T09:19Z. Candidate freeze/exact-SHA gates and cumulative independent review pending; do not publish until accepted.
 
 ## Historical V1-047 closure record
 
@@ -44,7 +39,7 @@ The following evidence is preserved as history. Its closure-turn next actions an
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation state: nativefollowupACTIVE; OpenClawdisabled/no runningtasks. V1-050 fullyclosed; V1-051 implementation active in existing sole isolated Codex worktree.
-- Exact next action: inspect/reconcile existing work before continuing frozen51scope; preserve all evidence/worktrees; no duplicate dispatch or repeated completed stage.
+- Automation state: native follow-up ACTIVE; OpenClaw disabled. V1-051 USD-only reconciliation active, no owner-policy blocker.
+- Exact next action: reconcile latest durable state and continue the same USD-only bounded item; preserve accepted work, no duplicate dispatch.
 
 <!-- AUTOMATION_STATUS_END -->
