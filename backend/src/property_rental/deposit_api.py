@@ -469,6 +469,11 @@ class PostgresDepositResourceFlow:
                     ) AND NOT EXISTS (
                         SELECT 1 FROM app.refunds AS refund
                         WHERE refund.source_deposit_id=receipt.deposit_id
+                          AND refund.usd_accounting_value_cents<>COALESCE((
+                              SELECT sum(correction.source_balance_effect_usd_cents)
+                              FROM app.refund_corrections AS correction
+                              WHERE correction.refund_id=refund.id
+                          ),0)
                     ) AND NOT app.deposit_has_active_application(receipt.deposit_id)
                     reversal_eligible
                 FROM app.deposit_receipts AS receipt WHERE receipt.deposit_id=%s

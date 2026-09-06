@@ -12,9 +12,12 @@ import pytest
 from psycopg import Connection
 
 from property_rental.deposit import (
+    DepositInvalidError,
     QualifyPetDepositRefundReviewCommand,
     RecordPetDepartureCommand,
+    ReverseDepositReceiptCommand,
 )
+from property_rental.deposit_api import PostgresDepositResourceFlow, _ledger_body
 from property_rental.refund import (
     CreatePetRefundCommand,
     RefundIdempotencyKeyReused,
@@ -24,13 +27,11 @@ from property_rental.refund import (
 )
 from test_credit_migration import actor
 from test_deposit_api_migration import seed_pet_deposit
+from test_deposit_migration import financial_database_url, runtime_database_url
+from test_move_in_migration import setup_move_in
 from test_refund_migration import correct, insert_event, refund
 from test_refund_service_migration import corrections, refund_id, returned, service
-from test_reservation_migration import (
-    create_reservation,
-    migrated_database_url,  # noqa: F401
-    setup_reservation_sources,
-)
+from test_reservation_migration import migrated_database_url  # noqa: F401
 
 
 def qualified(
@@ -209,18 +210,112 @@ def test_departure_alone_and_security_deposit_never_qualify_for_active_refund(
             deposits.property_id, command(deposit, departure.departure_id), actor=creator
         )
     _, _, _, _, _, review = qualified(migrated_database_url)
+    move_service, move_actor, move_command, security = setup_move_in(migrated_database_url)
+    move_service.complete(move_command, actor=move_actor)
+    security_creator = actor(move_service.actor_id, move_service.property_id, "refunds.create")
     with psycopg.connect(migrated_database_url) as connection:
-        security_actor, security_prop, unit, customer = setup_reservation_sources(connection)
-        _, reservation = create_reservation(
-            connection,
-            actor_id=security_actor,
-            property_id=security_prop,
-            unit_id=unit,
-            customer_id=customer,
+        assert connection.execute(
+            "SELECT deposit.deposit_type,deposit.lease_id,lease.status,unit.property_id,"
+            "deposit.customer_id=lease.primary_tenant_id,"
+            "app.deposit_held_value_at(deposit.id,'infinity') "
+            "FROM app.deposits deposit JOIN app.leases lease ON lease.id=deposit.lease_id "
+            "JOIN app.units unit ON unit.id=lease.unit_id WHERE deposit.id=%s",
+            (security,),
+        ).fetchone() == (
+            "SECURITY",
+            move_command.lease_id,
+            "SIGNED",
+            move_service.property_id,
+            True,
+            50000,
         )
-        security = UUID(str(reservation["deposit_id"]))
     with pytest.raises(RefundNotFoundError):
-        service().create_pet(deposits.property_id, command(security, review), actor=creator)
+        service().pet_source(move_service.property_id, security, review, actor=security_creator)
+    with pytest.raises(RefundNotFoundError):
+        service().create_pet(
+            move_service.property_id, command(security, review), actor=security_creator
+        )
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM app.refunds WHERE source_deposit_id=%s", (security,)
+        ).fetchone() == (0,)
+        assert connection.execute(
+            "SELECT status FROM app.leases WHERE id=%s", (move_command.lease_id,)
+        ).fetchone() == ("SIGNED",)
+
+
+def test_pet_verified_returns_reconcile_receipt_ledger_eligibility_and_reversal(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, _, _, deposit, review = qualified(migrated_database_url)
+    flow = PostgresDepositResourceFlow(runtime_database_url(), financial_database_url())
+    corrector = actor(human, prop, "deposits.correct")
+    reader = actor(human, prop, "deposits.read")
+
+    def receipt() -> tuple[UUID, bool]:
+        event = next(
+            item
+            for item in flow.ledger(deposit, limit=100, cursor=None).items
+            if item.event_kind == "RECEIPT"
+        )
+        assert _ledger_body(event, reader, prop)["can_reverse"] is False
+        assert _ledger_body(event, corrector, prop)["can_reverse"] is event.reversal_eligible
+        return event.event_id, event.reversal_eligible
+
+    receipt_id, eligible = receipt()
+    assert eligible is True
+    original = service().create_pet(
+        prop, command(deposit, review, 20000), actor=actor(human, prop, "refunds.create")
+    )
+    identity = refund_id(original)
+    assert receipt() == (receipt_id, False)
+    reversal = ReverseDepositReceiptCommand(uuid4(), uuid4(), receipt_id, "Correct receipt")
+    with pytest.raises(DepositInvalidError):
+        flow.reverse_receipt(receipt_id, reversal, actor=corrector)
+    partial = service().verify_usd_return(
+        prop, identity, returned(5000), actor=actor(human, prop, "refunds.correct")
+    )
+    assert partial["net_refund_usd_cents"] == 15000
+    assert receipt() == (receipt_id, False)
+    with pytest.raises(DepositInvalidError):
+        flow.reverse_receipt(receipt_id, reversal, actor=corrector)
+    full = service().verify_usd_return(
+        prop, identity, returned(15000), actor=actor(human, prop, "refunds.correct")
+    )
+    assert full["net_refund_usd_cents"] == 0
+    assert receipt() == (receipt_id, True)
+    partial_correction_id = UUID(str(corrections(partial)[0]["id"]))
+    undone = service().reverse_correction(
+        prop,
+        identity,
+        partial_correction_id,
+        ReverseRefundCorrectionCommand(uuid4(), "Synthetic evidence", "Correct return record"),
+        actor=actor(human, prop, "refunds.corrections.reverse"),
+    )
+    assert undone["net_refund_usd_cents"] == 5000
+    assert receipt() == (receipt_id, False)
+    with pytest.raises(DepositInvalidError):
+        flow.reverse_receipt(receipt_id, reversal, actor=corrector)
+    service().verify_usd_return(
+        prop, identity, returned(5000), actor=actor(human, prop, "refunds.correct")
+    )
+    assert receipt() == (receipt_id, True)
+    reversed_snapshot = flow.reverse_receipt(receipt_id, reversal, actor=corrector)
+    assert flow.reverse_receipt(receipt_id, reversal, actor=corrector) == reversed_snapshot
+    assert receipt() == (receipt_id, False)
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT amount_usd_cents FROM app.deposit_receipts WHERE id=%s", (receipt_id,)
+        ).fetchone() == (20000,)
+        assert connection.execute(
+            "SELECT usd_accounting_value_cents FROM app.refunds WHERE id=%s", (identity,)
+        ).fetchone() == (20000,)
+        assert connection.execute(
+            "SELECT count(*) FROM app.refund_corrections WHERE refund_id=%s", (identity,)
+        ).fetchone() == (4,)
+        assert connection.execute(
+            "SELECT app.deposit_held_value_at(%s,'infinity')", (deposit,)
+        ).fetchone() == (0,)
 
 
 def test_pet_verified_return_correction_reversal_and_reused_balance_are_exact(
@@ -492,6 +587,8 @@ def test_pet_refund_resource_links_retained_narratives_without_unbounded_embeddi
     result = service().create_pet(
         prop, command(deposit, review), actor=actor(human, prop, "refunds.create")
     )
+    assert result["source"] == {"type": "DEPOSIT", "id": str(deposit), "property_id": str(prop)}
+    assert cast(dict[str, object], result["pet_refund_review"])["id"] == str(review)
     assert "review_findings" not in cast(dict[str, object], result["pet_refund_review"])
     assert len(str(result)) < 10000
     with psycopg.connect(migrated_database_url) as connection:

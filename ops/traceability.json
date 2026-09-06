@@ -2,10 +2,18 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_pet_verified_returns_reconcile_receipt_ledger_eligibility_and_reversal",
+      "upstream_ids": ["DB-DEP-007", "API-042", "API-066"],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Runtime Deposit ledger and authorized receipt reversal agree on unresolved net Pet Refunds: partial and reversed returns block, full returns permit, readers lack correction rights, exact replay and original/correction history survive reversal."
+    },
+    {
       "test_id": "test_pet_refund_resource_links_retained_narratives_without_unbounded_embedding",
       "upstream_ids": [
-        "TEST-126",
-        "SEC-026"
+        "API-064",
+        "API-094"
       ],
       "test_level": "DB",
       "test_path": "backend/tests/test_pet_refund_migration.py",
