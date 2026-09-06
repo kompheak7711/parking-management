@@ -334,6 +334,85 @@ def test_confirmation_database_rejects_untrusted_shapes_and_rolls_back_every_eve
         ).fetchone() == (0,)
 
 
+@pytest.mark.parametrize(
+    "field", ["evidence_reference", "payer_intent_memo", "channel_transaction_reference"]
+)
+def test_confirmation_raw_evidence_rejects_python_whitespace_without_financial_events(
+    migrated_database_url: str,  # noqa: F811
+    field: str,
+) -> None:
+    human, prop, _, request = source(migrated_database_url)
+    # Enumerate the Python contract, including Unicode separators and C0 controls;
+    # SQL validation must not depend on the database locale's definition of space.
+    whitespace = [chr(code) for code in range(0x110000) if chr(code).isspace()]
+    constructors = {
+        "evidence_reference": lambda value: replace(request, evidence_reference=value),
+        "payer_intent_memo": lambda value: replace(request, payer_intent_memo=value),
+        "channel_transaction_reference": lambda value: replace(
+            request, channel_transaction_reference=value
+        ),
+    }
+    with psycopg.connect(financial_database_url()) as connection:
+        for character in whitespace:
+            for value in (character, character + "Evidence", "Evidence" + character):
+                with pytest.raises(PaymentConfirmationInvalidError):
+                    constructors[field](value)
+                intent = request.intent()
+                intent[field] = value
+                with pytest.raises(psycopg.Error) as failure, connection.transaction():
+                    connection.execute(
+                        "SELECT app.confirm_usd_payment(%s,%s,%s,%s)",
+                        (prop, human, request.idempotency_key, Jsonb(intent)),
+                    )
+                assert failure.value.sqlstate == "P5302", (field, repr(value))
+    with psycopg.connect(migrated_database_url) as connection:
+        for relation in ("payments", "receipts"):
+            assert connection.execute(
+                psycopg.sql.SQL("SELECT count(*) FROM app.{} WHERE payer_customer_id=%s").format(
+                    psycopg.sql.Identifier(relation)
+                ),
+                (request.payer_customer_id,),
+            ).fetchone() == (0,)
+        assert connection.execute(
+            "SELECT count(*) FROM app.payment_confirmation_commands WHERE actor_id=%s", (human,)
+        ).fetchone() == (0,)
+        assert connection.execute(
+            "SELECT count(*) FROM app.audit_events WHERE entity_type IN ('Payment','Receipt') "
+            "AND actor_id=%s",
+            (human,),
+        ).fetchone() == (0,)
+
+
+@pytest.mark.parametrize(
+    "field", ["evidence_reference", "payer_intent_memo", "channel_transaction_reference"]
+)
+def test_confirmation_raw_evidence_preserves_valid_interior_whitespace_and_nonspace_edges(
+    migrated_database_url: str,  # noqa: F811
+    field: str,
+) -> None:
+    human, prop, _, request = source(migrated_database_url)
+    value = "\u200bEvidence\t\n\u001c\u0085\u00a0\u1680\u2000\u2028\u202f\u205f\u3000unchanged\u200b"
+    assert value == value.strip()  # U+200B is not Python whitespace.
+    constructors = {
+        "evidence_reference": lambda: replace(request, evidence_reference=value),
+        "payer_intent_memo": lambda: replace(request, payer_intent_memo=value),
+        "channel_transaction_reference": lambda: replace(request, channel_transaction_reference=value),
+    }
+    intent = constructors[field]().intent()
+    with psycopg.connect(financial_database_url()) as connection:
+        result = connection.execute(
+            "SELECT app.confirm_usd_payment(%s,%s,%s,%s)",
+            (prop, human, request.idempotency_key, Jsonb(intent)),
+        ).fetchone()
+        assert result is not None
+    with psycopg.connect(migrated_database_url) as connection:
+        saved = connection.execute(
+            "SELECT request FROM app.payment_confirmation_commands WHERE idempotency_key=%s",
+            (request.idempotency_key,),
+        ).fetchone()
+        assert saved == (intent,) and saved[0][field] == value
+
+
 def test_confirmation_future_received_time_rejects_without_consuming_key(
     migrated_database_url: str,  # noqa: F811
 ) -> None:
