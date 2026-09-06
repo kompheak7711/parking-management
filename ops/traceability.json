@@ -2,6 +2,189 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_payment_api_list_filters_cursor_envelope_and_exact_money",
+      "upstream_ids": [
+        "API-005",
+        "API-012",
+        "API-019"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "Exact integer/decimal evidence, bounded opaque cursor, filters, canonical envelope and private no-store response are asserted."
+    },
+    {
+      "test_id": "test_payment_api_rejects_unsupported_and_ambiguous_queries",
+      "upstream_ids": [
+        "API-019",
+        "API-020",
+        "SEC-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "Unknown, duplicated, malformed and noncanonical bounded query inputs are rejected before service calls."
+    },
+    {
+      "test_id": "test_payment_api_cursor_rejects_malformed_dates_ids_and_extra_fields",
+      "upstream_ids": [
+        "API-019",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "Malformed dates, nil/non-string IDs and extra cursor fields fail before service dispatch."
+    },
+    {
+      "test_id": "test_payment_api_requires_actor_exact_property_and_separate_capabilities",
+      "upstream_ids": [
+        "API-008",
+        "API-009",
+        "SEC-019",
+        "SEC-022"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "Anonymous/non-human-format/wrong Property and read-versus-record rights are separated; foreign detail and wrong immutable ID stay hidden."
+    },
+    {
+      "test_id": "test_payment_api_browser_actor_and_idempotency_preconditions_precede_dispatch",
+      "upstream_ids": [
+        "API-015",
+        "SEC-025",
+        "SEC-028"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "Origin, nonempty matching CSRF cookie/header, actor binding and unique required non-nil request key reject before financial dispatch."
+    },
+    {
+      "test_id": "test_payment_api_rejects_coerced_money_invalid_evidence_and_caller_derived_fields",
+      "upstream_ids": [
+        "API-005",
+        "API-057",
+        "SEC-023",
+        "SEC-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "Boolean/float/string/invalid money, malformed timestamps/evidence, nil identity and caller-derived status/allocation/USD-accounting fields fail strict schemas."
+    },
+    {
+      "test_id": "test_payment_api_rejects_duplicate_json_keys_nested_keys_and_oversized_input",
+      "upstream_ids": [
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "Duplicate top-level/nested JSON keys, oversized valid body and noncanonical opaque cursor bytes fail without financial calls."
+    },
+    {
+      "test_id": "test_payment_api_confirmation_preserves_command_actor_and_exact_replay",
+      "upstream_ids": [
+        "API-004",
+        "API-011",
+        "API-015",
+        "API-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "USD/KHR typed command receives the resolved actor, original request key and UTC timestamp; replay preserves original data/Receipt/201 Location and changed intent returns safe key-reused conflict."
+    },
+    {
+      "test_id": "test_payment_api_khr_fallback_channel_inputs_and_independent_permission",
+      "upstream_ids": [
+        "API-058",
+        "SEC-027"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "Manual reference has independent exact-Property permission; exact string rates and missing channel facts survive typed adaptation, malformed/nonpositive rates fail before dispatch."
+    },
+    {
+      "test_id": "test_payment_api_safe_errors_preserve_unknown_outcome_without_automatic_retry",
+      "upstream_ids": [
+        "API-013",
+        "API-014",
+        "API-016"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "Every accepted service error maps safely with correlation, one invocation and no private SQL/credential/evidence disclosure or automatic retry."
+    },
+    {
+      "test_id": "test_payment_api_missing_runtime_and_financial_dependencies_fail_closed",
+      "upstream_ids": [
+        "API-014",
+        "SEC-045"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "Missing read and separate financial identities produce unavailable responses rather than privilege fallback."
+    },
+    {
+      "test_id": "test_payment_http_real_confirmation_replay_read_and_preserved_receipt_fx_history",
+      "upstream_ids": [
+        "API-057",
+        "API-058",
+        "API-016",
+        "API-017",
+        "TEST-059"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_api_migration.py",
+      "status": "implemented",
+      "notes": "Real USD/KHR HTTP creates one Payment/Receipt, preserves actual received/evidence/FX, no implicit Allocation/Credit/Deposit, scoped reads and original method snapshots after own-method retirement/reversal; exact replay and changed-payload conflicts are verified."
+    },
+    {
+      "test_id": "test_payment_http_real_scope_and_fresh_disabled_actor_fail_closed",
+      "upstream_ids": [
+        "API-009",
+        "SEC-019",
+        "SEC-025",
+        "SEC-038"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_api_migration.py",
+      "status": "implemented",
+      "notes": "Real Property/object scoping hides foreign/no-read Payments, and a freshly disabled human cannot read, list or confirm despite retained resolver grants."
+    },
+    {
+      "test_id": "test_payment_http_real_khr_outage_fallback_permission_and_provider_recovery",
+      "upstream_ids": [
+        "API-058",
+        "SEC-027",
+        "API-016"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_api_migration.py",
+      "status": "implemented",
+      "notes": "Real available-source fallback returns existing409/no Payment; independent permission and actual source outage are required, manual actor is preserved and exact replay avoids source lookup after recovery."
+    },
+    {
+      "test_id": "test_payment_http_real_evidence_view_upgrade_preserves_history_and_hides_keys",
+      "upstream_ids": [
+        "SEC-045",
+        "SEC-046",
+        "TEST-059",
+        "DB-PAY-001"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_api_migration.py",
+      "status": "implemented",
+      "notes": "Actual43-to44 upgrade preserves Payment/Receipt/FX and absent historic confirmation facts; exact four-column security-barrier non-updatable view has narrow SELECT/no writes, private command table stays unreadable, downgrade fails forward-only."
+    },
+    {
       "test_id": "test_khr_confirmation_requires_exact_bounded_received_and_usd_amounts",
       "upstream_ids": [
         "API-005",

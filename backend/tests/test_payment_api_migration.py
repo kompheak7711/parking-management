@@ -5,6 +5,9 @@ from uuid import UUID, uuid4
 
 import psycopg
 import pytest
+from alembic import command as alembic_command
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
@@ -18,8 +21,9 @@ from test_invoice import mutation_headers
 from test_invoice_migration import financial_database_url, runtime_database_url
 from test_khr_payment_confirmation import Provider
 from test_khr_payment_confirmation_migration import source as khr_source
+from test_migrations import _temporary_migration_database
 from test_payment_confirmation_migration import source
-from test_payment_migration import reverse
+from test_payment_migration import fx_payment, reverse
 from test_reservation_migration import migrated_database_url  # noqa: F401
 
 
@@ -206,7 +210,14 @@ def test_payment_http_real_khr_outage_fallback_permission_and_provider_recovery(
     assert denied.post(path, json=body, headers=mutation_headers()).status_code == 403
     assert selected.calls == 0
     client = api(actor(human, prop, "payments.record", "exchange_rates.manage"), selected)
-    assert client.post(path, json=body, headers=mutation_headers()).status_code == 422
+    # Existing accepted service treats the available source as a current-state
+    # conflict, not malformed fallback evidence. Keep its strict rejection.
+    assert client.post(path, json=body, headers=mutation_headers()).status_code == 409
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM app.payments WHERE payer_customer_id=%s",
+            (request.payer_customer_id,),
+        ).fetchone() == (0,)
     selected.error = ExchangeRateSourceUnavailable("synthetic approved source unavailable")
     key = mutation_headers()
     success = client.post(path, json=body, headers=key)
@@ -223,3 +234,58 @@ def test_payment_http_real_khr_outage_fallback_permission_and_provider_recovery(
             "SELECT count(*) FROM app.payments WHERE payer_customer_id=%s",
             (request.payer_customer_id,),
         ).fetchone() == (1,)
+
+
+def test_payment_http_real_evidence_view_upgrade_preserves_history_and_hides_keys() -> None:
+    with _temporary_migration_database("prm_payment_http_history") as url:
+        config = Config("alembic.ini")
+        alembic_command.upgrade(config, "20260906_43")
+        snapshot = (
+            "SELECT to_jsonb(p),to_jsonb(r),to_jsonb(fx) FROM app.payments p "
+            "JOIN app.receipts r ON r.payment_id=p.id JOIN app.exchange_rate_records fx "
+            "ON fx.id=p.exchange_rate_record_id WHERE p.id=%s"
+        )
+        with psycopg.connect(url) as connection:
+            identity = fx_payment(connection)
+            original = connection.execute(snapshot, (identity,)).fetchone()
+            assert original is not None
+        alembic_command.upgrade(config, "head")
+        with psycopg.connect(url) as connection:
+            assert connection.execute(snapshot, (identity,)).fetchone() == original
+            assert connection.execute(
+                "SELECT received_at,evidence_reference FROM app.payment_receipt_evidence "
+                "WHERE payment_id=%s",
+                (identity,),
+            ).fetchone() == (None, None)
+            assert connection.execute(
+                "SELECT count(*) FROM app.payment_confirmation_commands"
+            ).fetchone() == (0,)
+            assert connection.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema='app' AND table_name='payment_receipt_evidence' "
+                "ORDER BY ordinal_position"
+            ).fetchall() == [
+                ("payment_id",),
+                ("property_id",),
+                ("received_at",),
+                ("evidence_reference",),
+            ]
+            assert connection.execute(
+                "SELECT reloptions FROM pg_class WHERE oid='app.payment_receipt_evidence'::regclass"
+            ).fetchone() == (["security_barrier=true"],)
+            assert connection.execute(
+                "SELECT is_updatable FROM information_schema.views "
+                "WHERE table_schema='app' AND table_name='payment_receipt_evidence'"
+            ).fetchone() == ("NO",)
+            for role in ("prm_runtime", "prm_financial", "prm_bootstrap"):
+                assert connection.execute(
+                    "SELECT has_table_privilege(%s,'app.payment_receipt_evidence','SELECT'), "
+                    "has_table_privilege(%s,'app.payment_receipt_evidence',"
+                    "'INSERT,UPDATE,DELETE,TRUNCATE'), "
+                    "has_table_privilege(%s,'app.payment_confirmation_commands','SELECT')",
+                    (role, role, role),
+                ).fetchone() == (role != "prm_bootstrap", False, False)
+        revision = ScriptDirectory.from_config(config).get_revision("20260907_44")
+        assert revision is not None and revision.down_revision == "20260906_43"
+        with pytest.raises(RuntimeError, match="forward-only"):
+            revision.module.downgrade()
