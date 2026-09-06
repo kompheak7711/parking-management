@@ -1,6 +1,6 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-051 product7cec085 independently accepted, normally published, exactCI green/refequal. Terminal records ACTIVE in main; Workboard acceptance and full V1-051 closure still PENDING. No V1-052 activated.
+- Current: V1-051 product7cec085 accepted/published/exactCIgreen/refequal. Terminal correction1 implemented after rejectedc4e2b50 routing failure; freeze corrected child next. Workboard/fullclosure PENDING; no52activated.
 - Policy DL-060: USD accounting, KHR only Payment conversion; every Refund paid/recorded USD. KHR-refund proposal rejected/blocker resolved. Original transaction/KHR/FX evidence immutable; no historical rewrites.
 - Main /Users/sokompheak/Development/property-rental-management, implementation/foundation. Retained product /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct remains clean7cec085; all126worktrees retained.
 - Coordinator01a04961-4270-7802-9418-e08203784a8c; actual2026-09-06T10:33:04.598Z Astra/xhigh/localdefault Standard. No implementation worker. Fresh independent reviewers Astra max Standard read-only; no fallback/provider attestation claim.
@@ -13,15 +13,17 @@
 - Normal pushcc3d..7cec085 succeeded; GitHubCI34027889695attempt1all4SUCCESS. Post-CI mainHEAD=tracking=FETCH_HEAD=live=reviewed=CI7cec085; no force/historyrewrite. Product publication receiptd9d3a0de12d6425aad79e2d63ecaa3ec9c21f46a8894d57338070cdf50656c46.
 - Same cardc5621f97-7ad1-4b1c-b04f-c854376c2ad8 tracking-onlyblocked solely against OpenClaw admission; nullclaim/attempt/execution/proof. Verified-product commentd40b9b08-4fdb-48f7-97a4-746cfea678aa. No Workboard acceptance claimed.
 - Product-only completion was rejected by safety review BEFORE execution because terminal closure remained pending. Defer actual same-card completion until terminal exactreview/publication/CI/refs pass; no bypass. Sequencing receipte5baee959ed7f653462cabc53e16d67072e3c3c314a02e9beec98456a24b30a5.
-- Terminal candidate resolves from containing foundation HEAD, parent7cec085. Fresh records-only automation/config/roadmap/traceability/guard/diff and independent exactAstraMaxreview, normal publication and own exact4jobCI/refs required. Retain accepted product unchanged.
+- Corrected terminal candidate resolves from containing foundation HEAD, actual parent rejectedc4e2b504399506f5c06dbd98016b990031620c1e; COMPLETE terminalreviewbase remains product7cec085. Fresh records-only automation/config/roadmap/traceability/guard/diff and independent exactAstraMaxreview, normal publication and own exact4jobCI/refs required. Retain accepted product unchanged.
 - Roadmap51 remains approved_ready/50completed with explicit pending closure gate to avoid premature completion. Final external closure receipt discharges immutable pending terminal/card/roadmap fields; next reviewed authorized transition materializes51complete before52activation.
-- Exact next action: freeze terminal records, fresh exact gates/independent zero-finding review/normalpublication/ownCI/refequality; then complete SAMEcard and write /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-closure-verification.md plus live index. Only then51FULLYCLOSED and52mayactivate; continue through53 thenpause/no54.
+- Exact next action: freeze corrected NEWchild of retainedc4e2b50 with explicit CURRENTV1-051 routing descriptor, fresh exact gates/independent zero-finding review/normalpublication/ownCI/refequality; then complete SAMEcard and write /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-closure-verification.md plus live index. Only then51FULLYCLOSED and52mayactivate; continue through53 thenpause/no54.
 - OpenClaw singleton658ffdaf-1ac1-45a6-a842-f5f7d7a226eb disabled30minutes/nonextrun/tasks0. No supervisor/implementation worker created/enabled/dispatched; preserve its configuration.
 - Native property-rental-v1-047-closure-follow-up ACTIVE10minutes/same task, phase-independent11248characters SHA25649baafc52ee102a222a36890c93eb4c877282f3ff4d75e7ebd21e353ba1955b2.
 - Live stage/worker/receipts: /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-codex-takeover-live.md. All reports/logs above live in that evidence directory; historical pending statements are discharged only by verified later receipts.
 - Preserve rejectedbdf4538/ac688fc/f311a90 and all earlieraccepted Credit/USD/Pet/history checkpoints, failedtests/reviews and originalscope/KHRproposal evidence. No repeated implementation.
 - Owner action required: no. Production/access/credentials/customerdata/paid/destructive/forcepush/historyrewrite/retained-worktree deletion remain unauthorized.
-- Updated2026-09-06T10:47:05Z. V1-050 fullyclosedcc3d/CI33986122538/cardd26f24b3DONE; do not repeat predecessor work.
+- Rejected terminalc4e2b50:189unitPASS then mandatory routingStopIteration from next_candidate=null; reviewer01a0765a-ca4f COMPLETED11:04:45Z/35200EXIT0 with1HIGH0MEDIUM0LOW; reportcb4a8786aad679c2952e7a9643c6a0cf3c922724a99560c037b36303288cc4c8. Failure receipt15a0b42c772af17f614efc3ce277ad37c089741bb44c369447eeee4e125c4c62 retained; no publication/repeat/pollasrunning.
+- Correction1 restores only currentV1-051 descriptor, not52; no test/product/policy change. Actual preflight idle/actionablefalse/implementation_allowedfalse/owner_action_requiredfalse PASS. Fresh corrected exactgates/review still required; no bypass of failedc4 or prematurecardcompletion.
+- Updated2026-09-06T11:08:00Z. V1-050 fullyclosedcc3d/CI33986122538/cardd26f24b3DONE; do not repeat predecessor work.
 
 ## Historical V1-047 closure record
 
@@ -44,7 +46,7 @@ The following evidence is preserved as history. Its closure-turn next actions an
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation state: native follow-up ACTIVE; OpenClaw disabled. V1-051 terminal closure active; Workboard acceptance pending, no owner-policy blocker.
-- Exact next action: consult live handoff; complete terminal exact gates/review/publication/CI before same-card acceptance/finalreceipt. No52until51fullyclosed.
+- Automation state: native follow-up ACTIVE; OpenClaw disabled. V1-051 terminal correction1 implemented; Workboard acceptance pending, no owner-policy blocker.
+- Exact next action: consult live handoff; freeze corrected child, complete fresh terminal exact gates/review/publication/CI before same-card acceptance/finalreceipt. No52until51fullyclosed.
 
 <!-- AUTOMATION_STATUS_END -->

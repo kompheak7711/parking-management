@@ -791,17 +791,17 @@
       "escalation_reason": "V1-051 financial transactions, non-destructive migration, authorization, concurrency and permanent event history"
     },
     "current_version": "V1-051",
-    "phase": "product_published_terminal_closure_active_workboard_pending",
+    "phase": "terminal_correction1_implemented_prefreeze_checks",
     "candidate_sha": "7cec08509343f90a369b27d8a230b2fa850b5622",
     "candidate_status": "reviewed_published_exact_ci_green_product_workboard_pending",
-    "candidate_resolution": "Records-only terminal metadata in containing foundation HEAD; actual parent7cec08509343f90a369b27d8a230b2fa850b5622. Subsequent exact-SHA verification/review/publication/CI/Workboard and final external closure receipt bind the immutable candidate without amendment. Product cumulative basecc3d is separate.",
+    "candidate_resolution": "Corrected records-only terminal metadata at containing foundation HEAD, actual parent rejectedc4e2b504399506f5c06dbd98016b990031620c1e; COMPLETE terminalreviewbase remains acceptedproduct7cec08509343f90a369b27d8a230b2fa850b5622. Bind subsequent exact receipts externally without amending either checkpoint.",
     "worktree": "/Users/sokompheak/Development/property-rental-management",
     "branch": "implementation/foundation",
     "planned_worktree": "/Users/sokompheak/Development/property-rental-management-v1-051",
     "planned_branch": "codex/v1-051-direct",
     "worker_kind": "direct_codex_coordinator",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
-    "worker_status": "direct_coordinator_terminal_reconciliation",
+    "worker_status": "direct_coordinator_terminal_correction1",
     "scope_path": "ops/V1_051_SCOPE.md",
     "scope_sha256": "7424fb52732ce8a48ca45518f19344a524f2a8cb4c57a840eb7dd0781fc40b4f",
     "card_id": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
@@ -815,8 +815,8 @@
     "predecessor_closure_receipt_sha256": "616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2",
     "cumulative_review_base": "cc3d18e682401cc8a9ade10295572fe1a1344317",
     "owner_action_required": false,
-    "next_action": "Freeze the V1-051 records-only terminal candidate over accepted published product7cec085; fresh automation/configuration/roadmap/traceability/parent and cumulative diff checks, then fresh independent Astra max Standard read-only exact terminal review with zero findings. Publish normally and verify its own exact four-job CI and local/tracking/fetched/live refs. Only after these new verified facts complete the same Workboard card and write the final external closure receipt/live index discharging immutable pending fields. Keep roadmap51 approved_ready with explicit pending closure gate until that final receipt; materialize its complete status in the next reviewed authorized transition before activating52. No52before51fullyclosed; through53thenpausefollowup/leaveOpenClawdisabled/no54. No routine authorization wait.",
-    "verification_status": "Product all exact gates/independent0HIGH0MEDIUM0LOW/publication/exactCI34027889695all4success/refequality verified. Terminal metadata gates and actual Workboard acceptance remain pending.",
+    "next_action": "Freeze corrected terminal metadata as NEW child of retained rejectedc4e2b50; explicit routing descriptor identifies CURRENTV1-051 only. Run fresh exactautomation/config/roadmap/traceability/guards/parentandcumulativewhitespace, then fresh independent Astra max Standard read-only COMPLETE terminalreview from product7cec085. Require0HIGH0MEDIUM0LOW/allgates before normalterminalpublication/ownexactCI/refequality, then actualsame-cardcompletion/finalexternalclosure receipt. Keep OpenClawdisabled and all terminal/card/roadmap gates pending; no52until51FULLYCLOSED, through53thenpause/no54.",
+    "verification_status": "Rejectedc4e2b50 exactautomation failure after189PASS; independent1HIGH0MEDIUM0LOW reproduced null routing descriptor. Product7cec085 remains fullyverified/published/exactCIgreen; no product regression or ownerpolicy blocker.",
     "correction_history": [
       {
         "number": 1,
@@ -1514,15 +1514,85 @@
       "bypass_allowed": false
     },
     "terminal_checkpoint": {
-      "status": "active_fresh_exact_metadata_gates_review_publication_ci_then_workboard",
+      "status": "corrected_terminal_metadata_fresh_exact_gates_review_pending",
       "candidate_sha": null,
-      "candidate_resolution": "Records-only terminal metadata in containing foundation HEAD; actual parent7cec08509343f90a369b27d8a230b2fa850b5622. Subsequent exact-SHA verification/review/publication/CI/Workboard and final external closure receipt bind the immutable candidate without amendment. Product cumulative basecc3d is separate.",
-      "parent_sha": "7cec08509343f90a369b27d8a230b2fa850b5622",
+      "candidate_resolution": "Corrected records-only terminal metadata at containing foundation HEAD, actual parent rejectedc4e2b504399506f5c06dbd98016b990031620c1e; COMPLETE terminalreviewbase remains acceptedproduct7cec08509343f90a369b27d8a230b2fa850b5622. Bind subsequent exact receipts externally without amending either checkpoint.",
+      "parent_sha": "c4e2b504399506f5c06dbd98016b990031620c1e",
       "successor_activation_allowed": false,
       "workboard_acceptance_pending": true,
       "receipt_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-closure-verification.md",
       "roadmap_completion_resolution": "Do not claim51complete before remaining gates. The final external closure receipt discharges this immutable pending gate; next reviewed authorized transition materializes51complete before52activation.",
-      "next_action": "Freeze the V1-051 records-only terminal candidate over accepted published product7cec085; fresh automation/configuration/roadmap/traceability/parent and cumulative diff checks, then fresh independent Astra max Standard read-only exact terminal review with zero findings. Publish normally and verify its own exact four-job CI and local/tracking/fetched/live refs. Only after these new verified facts complete the same Workboard card and write the final external closure receipt/live index discharging immutable pending fields. Keep roadmap51 approved_ready with explicit pending closure gate until that final receipt; materialize its complete status in the next reviewed authorized transition before activating52. No52before51fullyclosed; through53thenpausefollowup/leaveOpenClawdisabled/no54. No routine authorization wait."
+      "next_action": "Freeze corrected terminal metadata as NEW child of retained rejectedc4e2b50; explicit routing descriptor identifies CURRENTV1-051 only. Run fresh exactautomation/config/roadmap/traceability/guards/parentandcumulativewhitespace, then fresh independent Astra max Standard read-only COMPLETE terminalreview from product7cec085. Require0HIGH0MEDIUM0LOW/allgates before normalterminalpublication/ownexactCI/refequality, then actualsame-cardcompletion/finalexternalclosure receipt. Keep OpenClawdisabled and all terminal/card/roadmap gates pending; no52until51FULLYCLOSED, through53thenpause/no54.",
+      "review_base": "7cec08509343f90a369b27d8a230b2fa850b5622"
+    },
+    "terminal_correction1": {
+      "status": "implemented_prefreeze_verified",
+      "prefreeze_checks": "Actual corrected preflight idle/actionablefalse/implementation_allowedfalse/owner_action_requiredfalse/candidateV1-051 PASS; JSON/whitespace PASS. Full exact candidate gates/review still required.",
+      "started_at": "2026-09-06T11:05:34Z",
+      "attempt": 1,
+      "max_materially_different_corrections": 2,
+      "rejected_sha": "c4e2b504399506f5c06dbd98016b990031620c1e",
+      "rejected_tree": "4ebb8492f3df55f074a2d65c0cb6eb8b64c38c8f",
+      "review_base": "7cec08509343f90a369b27d8a230b2fa850b5622",
+      "prior_review": {
+        "status": "completed_rejected",
+        "tranche_id": "V1-051",
+        "exact_sha": "c4e2b504399506f5c06dbd98016b990031620c1e",
+        "base_sha": "7cec08509343f90a369b27d8a230b2fa850b5622",
+        "model": "gpt-6-astra",
+        "reasoning_effort": "max",
+        "mode": "Standard",
+        "read_only": true,
+        "actual_child": "01a0765a-ca4f-7003-83fa-7e5a7fd5c448",
+        "completed_at": "2026-09-06T11:04:45.271Z",
+        "execution": 35200,
+        "execution_exit": 0,
+        "counts": {
+          "high": 1,
+          "medium": 0,
+          "low": 0
+        },
+        "report": "v1051-terminal-review-c4e2b50.md",
+        "report_sha256": "cb4a8786aad679c2952e7a9643c6a0cf3c922724a99560c037b36303288cc4c8",
+        "accepted_product_review": {
+          "status": "PASS",
+          "candidate_sha": "7cec08509343f90a369b27d8a230b2fa850b5622",
+          "tree": "1922841c6564f17560be8adcaacb2b1b4d57d82c",
+          "base_sha": "cc3d18e682401cc8a9ade10295572fe1a1344317",
+          "high": 0,
+          "medium": 0,
+          "low": 0,
+          "model": "gpt-6-astra",
+          "reasoning": "max",
+          "mode": "Standard",
+          "read_only": true,
+          "reviewer": "01a0762e-11d3-7b10-8b43-5751d7a5dc20",
+          "launcher": "01a0762e-110b-7d80-a1b0-d406c8de845b",
+          "completed_at": "2026-09-06T10:22:35.542Z",
+          "execution": 78760,
+          "execution_exit": 0,
+          "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-correction1-cumulative-review-7cec085.md",
+          "report_sha256": "f0c4751254f7c486c874d535d061790463a363409a17b86ef97280c8d78125e9",
+          "full_report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-correction1-cumulative-review-full-7cec085.md",
+          "full_report_sha256": "d6cd11d223995e88feb3e1d3161d93e960279ee8273f80d10094d664c14f4c61",
+          "cumulative_paths": 48,
+          "independent_tests": 152,
+          "collected_postgresql_tests_not_executed": 167,
+          "local_service_tier": "default",
+          "provider_attestation": "unavailable"
+        }
+      },
+      "failure_receipt": "v1051-terminal-verification-c4e2b50.md",
+      "failure_receipt_sha256": "15a0b42c772af17f614efc3ce277ad37c089741bb44c369447eeee4e125c4c62",
+      "failure_log_sha256": "6929b5344ca7431ae94463185593b7c7213b18436a76ca50d70124fa03dbba14",
+      "unaffected_checks_log": "v1051-terminal-c4e2b50-unaffected-checks.log",
+      "unaffected_checks_log_sha256": "6a22da5eb9eb94679897545f65599583d70cc66a9fdaf5ce1230c885da1f7145",
+      "unaffected_checks": "Separate post-failure state-routing/watchdog/config/roadmap/TEST-118parent0/cumulative6/guard/diff PASS; not a waiver of overallautomationFAIL.",
+      "approach": "Restore currentV1-051 roadmap descriptor plusroadmap_id, neverV1-052. Keep productpublished/terminalcardandroadmapgatepending/disabledOC. Read-only hypothetical descriptor produced idle/actionablefalse/implementation_allowedfalse/owner_action_requiredfalse with no file changes. No product or test changes.",
+      "next_action": "Freeze corrected terminal metadata as NEW child of retained rejectedc4e2b50; explicit routing descriptor identifies CURRENTV1-051 only. Run fresh exactautomation/config/roadmap/traceability/guards/parentandcumulativewhitespace, then fresh independent Astra max Standard read-only COMPLETE terminalreview from product7cec085. Require0HIGH0MEDIUM0LOW/allgates before normalterminalpublication/ownexactCI/refequality, then actualsame-cardcompletion/finalexternalclosure receipt. Keep OpenClawdisabled and all terminal/card/roadmap gates pending; no52until51FULLYCLOSED, through53thenpause/no54.",
+      "owner_action_required": false,
+      "candidate_resolution": "Corrected records-only terminal metadata at containing foundation HEAD, actual parent rejectedc4e2b504399506f5c06dbd98016b990031620c1e; COMPLETE terminalreviewbase remains acceptedproduct7cec08509343f90a369b27d8a230b2fa850b5622. Bind subsequent exact receipts externally without amending either checkpoint.",
+      "routing_descriptor": "CURRENTV1-051 only; not successor selection or implementation authorization"
     }
   },
   "historical_v1_048_takeover": {
@@ -2275,7 +2345,7 @@
   "branch": "implementation/foundation",
   "commit": "7cec08509343f90a369b27d8a230b2fa850b5622",
   "idle_reason": null,
-  "next_action": "Freeze the V1-051 records-only terminal candidate over accepted published product7cec085; fresh automation/configuration/roadmap/traceability/parent and cumulative diff checks, then fresh independent Astra max Standard read-only exact terminal review with zero findings. Publish normally and verify its own exact four-job CI and local/tracking/fetched/live refs. Only after these new verified facts complete the same Workboard card and write the final external closure receipt/live index discharging immutable pending fields. Keep roadmap51 approved_ready with explicit pending closure gate until that final receipt; materialize its complete status in the next reviewed authorized transition before activating52. No52before51fullyclosed; through53thenpausefollowup/leaveOpenClawdisabled/no54. No routine authorization wait.",
+  "next_action": "Freeze corrected terminal metadata as NEW child of retained rejectedc4e2b50; explicit routing descriptor identifies CURRENTV1-051 only. Run fresh exactautomation/config/roadmap/traceability/guards/parentandcumulativewhitespace, then fresh independent Astra max Standard read-only COMPLETE terminalreview from product7cec085. Require0HIGH0MEDIUM0LOW/allgates before normalterminalpublication/ownexactCI/refequality, then actualsame-cardcompletion/finalexternalclosure receipt. Keep OpenClawdisabled and all terminal/card/roadmap gates pending; no52until51FULLYCLOSED, through53thenpause/no54.",
   "active_worker": null,
   "active_card": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
   "active_claim": null,
@@ -2283,9 +2353,36 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Records-only terminal metadata in containing foundation HEAD; actual parent7cec08509343f90a369b27d8a230b2fa850b5622. Subsequent exact-SHA verification/review/publication/CI/Workboard and final external closure receipt bind the immutable candidate without amendment. Product cumulative basecc3d is separate.",
-  "candidate_parent": "7cec08509343f90a369b27d8a230b2fa850b5622",
-  "next_candidate": null,
+  "candidate_resolution": "Corrected records-only terminal metadata at containing foundation HEAD, actual parent rejectedc4e2b504399506f5c06dbd98016b990031620c1e; COMPLETE terminalreviewbase remains acceptedproduct7cec08509343f90a369b27d8a230b2fa850b5622. Bind subsequent exact receipts externally without amending either checkpoint.",
+  "candidate_parent": "c4e2b504399506f5c06dbd98016b990031620c1e",
+  "next_candidate": {
+    "id": "V1-051",
+    "order": 51,
+    "phase": "Payments",
+    "task": "Customer credit, application, refund, and correction services",
+    "dependencies": [
+      "V1-037",
+      "V1-049"
+    ],
+    "authorities": [
+      "BR-CREDIT-*",
+      "BR-REFUND-*",
+      "API-061-066",
+      "TEST-064-066",
+      "TEST-126"
+    ],
+    "include": [
+      "credit ledger, same-customer application, USD-only source-bounded refunds under DL-060; immutable KHR Payment/FX audit evidence"
+    ],
+    "exclude": [
+      "vendor accounts payable"
+    ],
+    "risk_class": "high",
+    "acceptance_profile": "financial",
+    "authorization": "durable_v1",
+    "status": "approved_ready",
+    "roadmap_id": "V1-051"
+  },
   "operational_issues": [
     {
       "id": "installed-hermes-wrapper-drift",
@@ -2317,7 +2414,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-051 product published and exact-CI verified; terminal records active, Workboard acceptance pending",
+  "phase": "V1-051 terminal correction1 implemented; corrected exact candidate freeze pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -3440,7 +3537,8 @@
     "Fresh complete47path independent bdf4538 review REJECTED0HIGH2MEDIUM0LOW, report0fbdda12fe1d8de331946644fa37c3c01191da4ca55e91709fbf8ad5e994c2b6. M1 unbounded FX JSON in Credit/Refund resource and command responses; M2 five missing mappings. Reviewer finished09:39:43Z, execution36965exit0; no duplicate or polling asrunning.",
     "Correction1 prefreeze PASS: 751 PostgreSQL zero skips/956 backend with728DB-onlyskips separately covered/369 frontend/189 automation/static/build/configuration. Exact committed TEST-118 and fresh cumulative independent review pending; prior bdf failed mappings and2MEDIUM preserved. Hashes in ops/V1_051_CUMULATIVE_CORRECTION1_CHECKPOINT.md.",
     "PASS exact7cec085:751PGzero skips117.45s/956backend728DB-onlyskipscovered41.31s/369frontend/189automation76.937s/staticbuildconfiguration/TEST-118sixidentifiers/48blobsecret/whitespace/migration41. Receipt d9325fea8fab6797f9a7a4f5b05fdeefac33377c3fee814b29bec05ecca33523; independent152unit/traceability plus staticchecks, all48paths0HIGH0MEDIUM0LOW; exactCI34027889695all4success/fourrefsequal. No repeat of unchanged product gates.",
-    "PENDING records-only terminal exactautomation/config/roadmap/traceability/guards/independentAstraMaxreview/normalpublication/ownCI/refs, then actualWorkboardcompletion/finalreceipt; product-only completion was rejected beforeexecution and is deferred, not bypassed."
+    "PENDING records-only terminal exactautomation/config/roadmap/traceability/guards/independentAstraMaxreview/normalpublication/ownCI/refs, then actualWorkboardcompletion/finalreceipt; product-only completion was rejected beforeexecution and is deferred, not bypassed.",
+    "FAILED exactterminalc4e2b50:189unitPASS67.372s then routingStopIteration due next_candidate=null; remaining fail-fast commands did notrun. Independent terminalreview1HIGH0MEDIUM0LOW confirms. Separate unaffected state-routing/watchdog/config/roadmap/traceability/guard/diff checksPASS; preserve failedcandidate/report/log, correction1active."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -3462,7 +3560,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-051",
-  "timestamp": "2026-09-06T10:47:05Z",
+  "timestamp": "2026-09-06T11:05:34Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -3680,7 +3778,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-06T10:47:05Z",
+  "updated_at": "2026-09-06T11:05:34Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -4806,7 +4904,7 @@
   "commit_role": "Accepted published V1-051 product7cec085; terminal metadata resolves from containing foundation HEAD; same-card completion and successor remain gated.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "7cec08509343f90a369b27d8a230b2fa850b5622"
+    "c4e2b504399506f5c06dbd98016b990031620c1e"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
@@ -4868,10 +4966,10 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_terminal_metadata_exact_sha_review",
+    "status": "pending_corrected_terminal_metadata_exact_sha_review",
     "tranche_id": "V1-051",
     "exact_sha": null,
-    "candidate_resolution": "Records-only terminal metadata in containing foundation HEAD; actual parent7cec08509343f90a369b27d8a230b2fa850b5622. Subsequent exact-SHA verification/review/publication/CI/Workboard and final external closure receipt bind the immutable candidate without amendment. Product cumulative basecc3d is separate.",
+    "candidate_resolution": "Corrected records-only terminal metadata at containing foundation HEAD, actual parent rejectedc4e2b504399506f5c06dbd98016b990031620c1e; COMPLETE terminalreviewbase remains acceptedproduct7cec08509343f90a369b27d8a230b2fa850b5622. Bind subsequent exact receipts externally without amending either checkpoint.",
     "base_sha": "7cec08509343f90a369b27d8a230b2fa850b5622",
     "model": "gpt-6-astra",
     "reasoning_effort": "max",
