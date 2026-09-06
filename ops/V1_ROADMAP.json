@@ -1409,7 +1409,17 @@
       "risk_class": "high",
       "acceptance_profile": "financial",
       "authorization": "durable_v1",
-      "status": "approved_ready"
+      "status": "approved_ready",
+      "closure_gate": {
+        "status": "pending_terminal_verification_and_workboard",
+        "product_sha": "7cec08509343f90a369b27d8a230b2fa850b5622",
+        "product_ci_run": 34027889695,
+        "product_verified": true,
+        "full_version_closed": false,
+        "successor_activation_allowed": false,
+        "receipt_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-closure-verification.md",
+        "resolution": "Keep approved_ready until terminal exactreview/publication/CI/refs and actual same-card acceptance verified. The final external receipt discharges this immutable pending gate; next reviewed authorized transition materializes51complete before52activation."
+      }
     },
     {
       "id": "V1-052",
