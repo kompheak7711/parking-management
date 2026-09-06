@@ -1,6 +1,7 @@
 """Real isolated PostgreSQL HTTP wiring and immutable Payment evidence."""
 
 from dataclasses import replace
+from datetime import datetime, timedelta
 from uuid import UUID, uuid4
 
 import psycopg
@@ -43,9 +44,11 @@ def api(who: AuthenticatedActor, selected: Provider | None = None) -> TestClient
 
 
 @pytest.mark.parametrize("currency", ["USD", "KHR"])
+@pytest.mark.parametrize("microsecond", [None, 0, 1, 10, 1000, 10000, 35750, 100000, 999999])
 def test_payment_http_real_confirmation_replay_read_and_preserved_receipt_fx_history(
     migrated_database_url: str,  # noqa: F811
     currency: str,
+    microsecond: int | None,
 ) -> None:
     human, prop, _, usd = source(migrated_database_url)
     request: Confirmation
@@ -55,6 +58,11 @@ def test_payment_http_real_confirmation_replay_read_and_preserved_receipt_fx_his
         request = khr
     else:
         request = usd
+    if microsecond is not None:
+        at = (request.received_at - timedelta(seconds=1)).replace(microsecond=microsecond)
+        request = replace(request, received_at=at)
+        if selected is not None:
+            selected.quote = replace(selected.quote, applicable_at=at)
     # Retire only this test's own configured method; do not mutate a shared
     # synthetic fixture used by unrelated migration tests.
     method = uuid4()
@@ -93,10 +101,16 @@ def test_payment_http_real_confirmation_replay_read_and_preserved_receipt_fx_his
     original = client.get(f"/api/v1/payments/{identity}")
     assert original.status_code == 200
     assert original.json()["data"]["payment"] == payment
-    assert original.json()["data"]["confirmation_evidence"] == {
-        "received_at": request.received_at.isoformat(),
+    evidence = original.json()["data"]["confirmation_evidence"]
+    assert evidence == {
+        "received_at": result["received_at"],
         "evidence_reference": request.evidence_reference,
     }
+    # PostgreSQL may trim fractional trailing zeroes, but not the exact instant.
+    instant = datetime.fromisoformat(evidence["received_at"])
+    assert instant.utcoffset() == timedelta(0)
+    assert instant == request.received_at
+    assert instant.microsecond == request.received_at.microsecond
     listed = client.get(path, params={"customer_id": str(request.payer_customer_id), "limit": "1"})
     assert listed.status_code == 200 and len(listed.json()["data"]) == 1
     assert (
@@ -145,6 +159,7 @@ def test_payment_http_real_confirmation_replay_read_and_preserved_receipt_fx_his
         detail["payment"]["payment_method_name_snapshot"] == payment["payment_method_name_snapshot"]
     )
     assert detail["receipt"]["id"] == result["receipt"]["id"]
+    assert detail["confirmation_evidence"] == evidence
     conflict = client.post(
         path, json={**body, "evidence_reference": "Changed input"}, headers=headers
     )

@@ -455,6 +455,60 @@ def test_payment_api_stream_limit_counts_encoded_bytes_and_handles_disconnect() 
     assert next(m["status"] for m in sent if m["type"] == "http.response.start") == 400
 
 
+@pytest.mark.parametrize("currency", ["USD", "KHR"])
+@pytest.mark.parametrize("encoding", ["utf-16-le", "utf-16-be", "utf-32-le", "utf-32-be"])
+@pytest.mark.parametrize("bom", [False, True])
+@pytest.mark.parametrize("charset", [None, "utf-8", "utf-16"])
+def test_payment_api_rejects_non_utf8_json_before_financial_dispatch(
+    currency: str, encoding: str, bom: bool, charset: str | None
+) -> None:
+    flow = Flow()
+    client = api(flow, actor(flow.property_id, "payments.record"))
+    body = json.dumps(payload(currency))
+    raw = (("\ufeff" if bom else "") + body).encode(encoding)
+    media_type = "application/json" + (f"; charset={charset}" if charset else "")
+    response = client.post(
+        f"/api/v1/properties/{flow.property_id}/payments",
+        content=raw,
+        headers={
+            **mutation_headers(),
+            "Content-Type": media_type,
+            "X-Request-ID": "payment-utf8-required",
+        },
+    )
+    assert response.status_code == 400
+    assert flow.calls == [] and flow.responses == {}
+    result = response.json()
+    assert result["error"]["code"] == "BAD_REQUEST"
+    assert result["meta"]["request_id"] == "payment-utf8-required"
+    assert response.headers["cache-control"] == "private, no-store"
+    assert response.headers["vary"] == "Cookie"
+    assert response.headers["x-request-id"] == "payment-utf8-required"
+    assert "UnicodeDecodeError" not in response.text and "evidence_reference" not in response.text
+
+
+@pytest.mark.parametrize("currency", ["USD", "KHR"])
+@pytest.mark.parametrize("charset", [None, "utf-8", "utf-16"])
+def test_payment_api_utf8_unicode_evidence_preserved_regardless_of_declared_charset(
+    currency: str, charset: str | None
+) -> None:
+    flow = Flow()
+    client = api(flow, actor(flow.property_id, "payments.record"))
+    body = {**payload(currency), "evidence_reference": "បង្កាន់ដៃ café — original receipt"}
+    raw = json.dumps(body, ensure_ascii=False).encode("utf-8")
+    media_type = "application/json" + (f"; charset={charset}" if charset else "")
+    headers = {**mutation_headers(), "Content-Type": media_type}
+    path = f"/api/v1/properties/{flow.property_id}/payments"
+    response = client.post(path, content=raw, headers=headers)
+    assert response.status_code == 201
+    assert len(flow.calls) == 1 and len(flow.responses) == 1
+    result = response.json()["data"]
+    assert result["original_intent"]["evidence_reference"] == body["evidence_reference"]
+    replay = client.post(path, content=raw, headers=headers)
+    assert replay.status_code == 201 and replay.json()["data"] == result
+    assert len(flow.responses) == 1
+
+
 def test_payment_api_rejects_duplicate_json_keys_nested_keys_and_oversized_input() -> None:
     flow = Flow()
     client = api(flow, actor(flow.property_id, "payments.record"))

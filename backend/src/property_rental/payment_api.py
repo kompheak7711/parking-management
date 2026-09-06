@@ -476,7 +476,8 @@ async def _strict_json(request: Request) -> None:
         body = await request.body()
         if len(body) > MAX_PAYMENT_BODY_BYTES:
             raise ValueError
-        json.loads(body, object_pairs_hook=pairs)
+        # JSON bytes otherwise auto-detect UTF-16/32, contrary to API-002.
+        json.loads(body.decode("utf-8"), object_pairs_hook=pairs)
     except ValueError as exc:
         raise HTTPException(400) from exc
 

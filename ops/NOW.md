@@ -1,6 +1,8 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-052 Payment HTTP body/timestamp/clock-isolation corrections implemented/focusedPASS; fresh full exact gates and complete21path review pending. No reviewer running or owner policy blocker.
+- Current: V1-052 Payment HTTP UTF8 correction1 and timestamp-family correction2 focused PASS; no reviewer or policy blocker. Fresh exact gates/review pending.
+- Latest focused verification:32947COMPLETED189API/inventory/tracePASS23.05s/158static/0newIDs/diff;11034COMPLETED37PGPASS846deselected7.28s. Receipt /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-utf8-timestamp-corrections.md SHA256c224a50f2cdef28f408278abfea505501bb631f6386592ed6b58867db73c3ac2. Runtime UTF8 guard d7a201ba; no service/app/migration/history/scope changes.
+- Retained aec643b: exact867PG/1194backend/189automationPASS, review82688 completed19:18:02.997Z0HIGH2MEDIUM0LOW; report b3bb092eb70185804610dd5d0e38dee3342f78eab7d679c112f181227844e703 matches final. UTF16/32 acceptance and companion HTTP timestamp formatting need bounded fixes; this is timestamp-family correction2.
 - Retaineda01aae4/tree455b85df exactDB865PASS1FAIL sharedrelationNOWAIT55P03; locker unproven. Clock-only fixture isolation now63999COMPLETED5PGPASS5.81s/158staticPASS;38466COMPLETED22tracePASS/0newIDs/diff. Deliberate-lock proof preserves55P03/sharedhistory, independentclockDB success; receipt /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-clock-isolation-correction1.md SHA256cbebaef1109c9411836c1ce07fe9e7da88e2b169b956da163be356f47c81106c.
 - Authority ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455; scope ops/V1_052_SCOPE.md SHA2564ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363 unchanged.
 - DL060: USD accounting; ALL Refunds paid/recordedUSD. KHR incomingconversion/audit only, originalhistory immutable. RejectedKHRrefundproposal/blocker resolved.
@@ -17,10 +19,10 @@
 - Sole /Users/sokompheak/Development/property-rental-management-v1-052/codex/v1-052-direct,127worktrees retained. Mainclean a5/tracking/fetched/liveremotef8/CI34030703203attempt1success verifiedthiscycle;51cardDONE.
 - Same52card74197a0e tracking-onlyblocked/no OpenClawexecution/claim/attempt. Rootactual18:24:36.139ZAstra/xhigh/localdefaultStandard, no fallback/providerattestation. No overlapping worker.
 - OpenClawsingleton658ffdaf DISABLED30min/no nextRun. Native property-rental-v1-047-closure-follow-up ACTIVE10min/sametask01a04961/hash49baafc5 with exactUSDpolicy.
-- Exact next action: Freeze normal clock-isolation successor of retaineda01aae4; run fresh exact867PG/fullbackend1194expected/158static-build-import/189automation/config/traceability/publicationguard/diffs. OnlyifALLPASS ONE fresh independent Astra max Standard read-only COMPLETE21path5263218-to-successor zero review covering ALLSIX488/dbf/233/ee37/a01/successor commits, not just finalfixture delta. Preserve all failed checkpoints/reports/logs and accepted work; no duplicate worker, amendment or frozen edits. Then remainingfinancialHTTP/UI/encryptedrecovery/fullproductrelease/CI/refs/card/durableclosure before53. OCdisabled/nativeACTIVE; at53closedPAUSE/no54; no routineowneraction.
+- Exact next action: Freeze normal UTF8/timestamp correction successor of retained aec643b. Run fresh full exact883PG/1248backend/158static-build-import/189automation/config/traceability/publicationguard/diff gates. Only if all PASS obtain ONE independent Astra max Standard read-only COMPLETE21path review from accepted5263218 covering all SEVEN retained488/dbf/233/ee37/a01/aec/successor commits. Preserve rejected reviews, all failed checkpoints, accepted work and worktrees. No edits during review or duplicate/completed work repeats. Then remaining52 financialHTTP/UI/encryptedrecovery/fullproductrelease/CI/refs/card/durableclosure before53; OpenClawdisabled/nativeACTIVE; at53closed PAUSE/no54, no routine owner action.
 - RemainingfinancialHTTP/UI/encryptedrecovery/fullfrontend/browser/audits/cumulativeexactreview/normalpub/CI/refs/card/durableclosure before53. At53fullyclosed PAUSEnativefollowup/no54.
 - Liveindex /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-codex-takeover-live.md; immutable pending fields discharged by subsequent exact receipts, never amendment.
-- Production/access/credentials/customerdata/paid/destructive/forcepush/historyrewrite/worktreedeletion unauthorized. Updated2026-09-06T18:59Z; owneractionnone.
+- Production/access/credentials/customerdata/paid/destructive/forcepush/historyrewrite/worktreedeletion unauthorized. Updated2026-09-06T19:43Z; owneractionnone.
 
 ## Historical V1-047 closure record
 
@@ -43,7 +45,7 @@ The following evidence is preserved as history. Its closure-turn next actions an
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation state: nativeACTIVE/OpenClawdisabled; body/timestamp/clockcorrectionsfocusedPASS, all priorcheckpoints/logspreserved; no reviewer.
-- Exact next action: freeze/freshcomplete21pathexact867PG/backend/config/maxreview, then full52before53. At53closedPAUSE/no54.
+- Automation state: nativeACTIVE/OpenClawdisabled; corrections focused PASS, fresh complete21path exact gates/maxreview pending.
+- Exact next action: freeze and fresh complete21path exact gates/max review; full52 before53; at53closedPAUSE/no54.
 
 <!-- AUTOMATION_STATUS_END -->

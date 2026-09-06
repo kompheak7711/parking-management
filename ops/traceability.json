@@ -2,6 +2,22 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_payment_api_rejects_non_utf8_json_before_financial_dispatch",
+      "upstream_ids": ["API-002", "API-013", "API-058", "SEC-036"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "48 authorized USD/KHR HTTP cases reject UTF16/32 LE/BE, with/without BOM and absent/misleading charset: no financial call or saved response, safe400 envelope/no-store/correlation and no evidence leak."
+    },
+    {
+      "test_id": "test_payment_api_utf8_unicode_evidence_preserved_regardless_of_declared_charset",
+      "upstream_ids": ["API-002", "API-016", "API-058", "BR-PAY-017"],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "Six USD/KHR cases preserve actual UTF8 Khmer/accented evidence and exact replay under absent, correct or misleading declared charset; one saved response identity."
+    },
+    {
       "test_id": "test_financial_clock_fixture_isolates_shared_relation_contention_without_weakening_nowait",
       "upstream_ids": [
         "TEST-059",
@@ -200,6 +216,7 @@
     {
       "test_id": "test_payment_http_real_confirmation_replay_read_and_preserved_receipt_fx_history",
       "upstream_ids": [
+        "API-004",
         "API-057",
         "API-058",
         "API-016",
@@ -209,7 +226,7 @@
       "test_level": "DB",
       "test_path": "backend/tests/test_payment_api_migration.py",
       "status": "implemented",
-      "notes": "Real USD/KHR HTTP creates one Payment/Receipt, preserves actual received/evidence/FX, no implicit Allocation/Credit/Deposit, scoped reads and original method snapshots after own-method retirement/reversal; exact replay and changed-payload conflicts are verified."
+      "notes": "18 real USD/KHR HTTP cases retain original DB-clock plus eight deterministic fractions including035750: compare exact aware UTC instant/microseconds while preserving raw POST/detail/list/replay/reversal evidence equality. One Payment/Receipt, original method/FX, no implicit Allocation/Credit/Deposit, scoped reads and changed-payload conflict assertions remain."
     },
     {
       "test_id": "test_payment_http_real_scope_and_fresh_disabled_actor_fail_closed",
