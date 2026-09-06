@@ -2,6 +2,146 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_credit_read_pages_reject_noninteger_or_unbounded_limits",
+      "upstream_ids": [
+        "API-061",
+        "API-094"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_reads.py",
+      "status": "implemented",
+      "notes": "Both list and ledger reject noninteger, boolean, nonpositive and over-limit page sizes before database access."
+    },
+    {
+      "test_id": "test_credit_read_cursors_require_complete_finite_typed_identity",
+      "upstream_ids": [
+        "API-061",
+        "API-094"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_reads.py",
+      "status": "implemented",
+      "notes": "Ledger cursors reject partial identity, naive time, nil UUID and unknown event families."
+    },
+    {
+      "test_id": "test_credit_cursor_normalizes_utc_and_revalidates_at_transmission",
+      "upstream_ids": [
+        "API-061",
+        "SEC-026"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_reads.py",
+      "status": "implemented",
+      "notes": "Cursor time is normalized to UTC and forged frozen cursor fields are rejected again before transmission."
+    },
+    {
+      "test_id": "test_credit_reads_require_independent_exact_property_capability",
+      "upstream_ids": [
+        "API-061",
+        "SEC-025"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_reads.py",
+      "status": "implemented",
+      "notes": "List and ledger require independent credits.read capability on the exact Property; other financial permissions do not grant read access."
+    },
+    {
+      "test_id": "test_credit_reads_transmit_only_validated_identity_and_read_connection",
+      "upstream_ids": [
+        "API-061",
+        "SEC-026"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_reads.py",
+      "status": "implemented",
+      "notes": "Both reads transmit only the validated scope, actor and bounded cursor through the read connection, without invoking mutation service credentials."
+    },
+    {
+      "test_id": "test_credit_ledger_reconstructs_all_event_families_and_exact_positions",
+      "upstream_ids": [
+        "API-061",
+        "DB-VIEW-004",
+        "BR-CREDIT-009",
+        "BR-CREDIT-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_history_migration.py",
+      "status": "implemented",
+      "notes": "All seven event families reconcile recognized, active applied, net refunded, reversed and available USD positions; complete keyset history and original records survive corrections and reversals without double debiting Payment."
+    },
+    {
+      "test_id": "test_credit_list_keysets_filter_customer_and_property_without_omitting_history",
+      "upstream_ids": [
+        "API-061",
+        "SEC-025",
+        "BR-CREDIT-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_history_migration.py",
+      "status": "implemented",
+      "notes": "Customer list pagination retains all scoped Credits; wrong Property, missing read capability and freshly disabled actors fail closed."
+    },
+    {
+      "test_id": "test_credit_read_only_snapshot_survives_concurrent_refund_commit_without_guard_writes",
+      "upstream_ids": [
+        "API-061",
+        "DB-VIEW-004",
+        "SEC-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_history_migration.py",
+      "status": "implemented",
+      "notes": "A read-only Repeatable Read snapshot remains coherent across a concurrent Refund commit; a fresh read sees the new balance and neither read increments Payment serialization guards."
+    },
+    {
+      "test_id": "test_credit_ledger_database_rejects_invalid_cursor_envelopes",
+      "upstream_ids": [
+        "API-061",
+        "API-094"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_history_migration.py",
+      "status": "implemented",
+      "notes": "Database facade independently rejects excessive limit, partial cursor, unknown event family, infinite timestamp and nil UUID with the specified invalid-command error."
+    },
+    {
+      "test_id": "test_credit_history_bounded_pages_keep_cross_family_event_identities",
+      "upstream_ids": [
+        "API-061",
+        "API-094",
+        "BR-CREDIT-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_history_migration.py",
+      "status": "implemented",
+      "notes": "A 106-event retained history spans bounded pages without losing distinct Refund and recognition events that share a UUID in different tables."
+    },
+    {
+      "test_id": "test_credit_read_helpers_and_position_view_are_private_and_actor_checks_stable",
+      "upstream_ids": [
+        "API-061",
+        "SEC-025",
+        "SEC-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_history_migration.py",
+      "status": "implemented",
+      "notes": "Runtime cannot select the private position view or execute internal helpers; only bounded public facades are executable and both use stable calling-query snapshots."
+    },
+    {
+      "test_id": "test_credit_reads_preserve_exact_khr_source_and_bound_large_original_evidence",
+      "upstream_ids": [
+        "API-061",
+        "BR-CREDIT-010",
+        "BR-MONEY-003",
+        "API-094"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_credit_history_migration.py",
+      "status": "implemented",
+      "notes": "List and ledger preserve exact high-precision KHR source rate and integer USD/Currency amounts while linking, not embedding, large immutable original rate evidence."
+    },
+    {
       "test_id": "test_pet_verified_returns_reconcile_receipt_ledger_eligibility_and_reversal",
       "upstream_ids": ["DB-DEP-007", "API-042", "API-066"],
       "test_level": "DB",

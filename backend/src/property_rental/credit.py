@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import cast
 from uuid import UUID
 
@@ -201,6 +202,66 @@ def _exact_credit_json(value: str | bytes) -> object:
 
 
 @dataclass(frozen=True, slots=True)
+class CreditPage:
+    limit: int = 50
+    after_at: datetime | None = None
+    after_id: UUID | None = None
+
+    def __post_init__(self) -> None:
+        if type(self.limit) is not int or not 1 <= self.limit <= 100:
+            raise CreditInvalidError("Credit page size must be between 1 and 100")
+        if (self.after_at is None) != (self.after_id is None):
+            raise CreditInvalidError("Both Credit cursor fields are required")
+        if self.after_at is not None and self.after_id is not None:
+            _uuid(self.after_id)
+            try:
+                if not isinstance(self.after_at, datetime) or self.after_at.utcoffset() is None:
+                    raise ValueError("An aware timestamp is required")
+                object.__setattr__(self, "after_at", self.after_at.astimezone(UTC))
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise CreditInvalidError("Credit cursor timestamp is invalid") from exc
+
+    def parameters(self) -> tuple[int, datetime | None, UUID | None]:
+        checked = CreditPage(self.limit, self.after_at, self.after_id)
+        return checked.limit, checked.after_at, checked.after_id
+
+
+CREDIT_EVENT_KINDS = frozenset(
+    {
+        "RECOGNITION",
+        "RECOGNITION_REVERSAL",
+        "APPLICATION",
+        "APPLICATION_REVERSAL",
+        "REFUND",
+        "REFUND_VALUE_CORRECTION",
+        "REFUND_CORRECTION_REVERSAL",
+    }
+)
+
+
+@dataclass(frozen=True, slots=True)
+class CreditLedgerPage:
+    limit: int = 50
+    after_at: datetime | None = None
+    after_kind: str | None = None
+    after_id: UUID | None = None
+
+    def __post_init__(self) -> None:
+        checked = CreditPage(self.limit, self.after_at, self.after_id)
+        if (self.after_at is None) != (self.after_kind is None):
+            raise CreditInvalidError("All Credit ledger cursor fields are required")
+        if self.after_kind is not None and (
+            not isinstance(self.after_kind, str) or self.after_kind not in CREDIT_EVENT_KINDS
+        ):
+            raise CreditInvalidError("Credit ledger event family is invalid")
+        object.__setattr__(self, "after_at", checked.after_at)
+
+    def parameters(self) -> tuple[int, datetime | None, str | None, UUID | None]:
+        checked = CreditLedgerPage(self.limit, self.after_at, self.after_kind, self.after_id)
+        return checked.limit, checked.after_at, checked.after_kind, checked.after_id
+
+
+@dataclass(frozen=True, slots=True)
 class CustomerCreditService:
     database_url: str
     financial_database_url: str
@@ -258,6 +319,36 @@ class CustomerCreditService:
         _uuid(credit_id)
         return self._query(
             "SELECT app.credit_resource(%s,%s,%s)", (property_id, credit_id, actor_id)
+        )
+
+    def list(
+        self,
+        property_id: UUID,
+        customer_id: UUID,
+        page: CreditPage | None = None,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        actor_id = self._authorize(actor, property_id, "credits.read")
+        _uuid(customer_id)
+        return self._query(
+            "SELECT app.list_customer_credits(%s,%s,%s,%s,%s,%s)",
+            (property_id, customer_id, actor_id, *(page or CreditPage()).parameters()),
+        )
+
+    def ledger(
+        self,
+        property_id: UUID,
+        credit_id: UUID,
+        page: CreditLedgerPage | None = None,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        actor_id = self._authorize(actor, property_id, "credits.read")
+        _uuid(credit_id)
+        return self._query(
+            "SELECT app.customer_credit_ledger(%s,%s,%s,%s,%s,%s,%s)",
+            (property_id, credit_id, actor_id, *(page or CreditLedgerPage()).parameters()),
         )
 
     def recognize(

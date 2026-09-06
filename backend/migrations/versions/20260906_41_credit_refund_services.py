@@ -380,6 +380,7 @@ def upgrade() -> None:
     integrate_refund_source_budgets()
     create_refund_services()
     create_pet_refund_sources()
+    create_credit_history_reads()
 
 
 def create_credit_application_storage() -> None:
@@ -1914,6 +1915,198 @@ def create_pet_refund_sources() -> None:
     op.execute(
         "GRANT EXECUTE ON FUNCTION app.create_pet_usd_refund(uuid,uuid,uuid,uuid,uuid,bigint,text) TO prm_financial"
     )
+
+
+def create_credit_history_reads() -> None:
+    """Bounded, coherent Credit-only reads; accepted mutation/replay contracts stay intact."""
+    op.execute("""
+        CREATE VIEW app.customer_credit_financial_position AS
+        SELECT credit.id customer_credit_id,credit.customer_id,credit.source_payment_id,payment.property_id,
+            credit.recognized_usd_cents,
+            app.credit_applied_value_at(credit.id,'infinity') applied_usd_cents,
+            app.credit_refunded_value_at(credit.id,'infinity') refunded_usd_cents,
+            CASE WHEN reversal.id IS NOT NULL THEN credit.recognized_usd_cents ELSE 0 END reversed_usd_cents,
+            app.credit_available_value(credit.id) available_usd_cents
+        FROM app.customer_credits credit JOIN app.payments payment ON payment.id=credit.source_payment_id
+        LEFT JOIN app.customer_credit_reversals reversal ON reversal.customer_credit_id=credit.id;
+        REVOKE ALL ON TABLE app.customer_credit_financial_position FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap;
+
+        CREATE FUNCTION app.credit_read_summary(p_credit_id uuid)
+        RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+            SELECT jsonb_build_object('credit',to_jsonb(credit),'position',to_jsonb(credit_position),
+                'source_payment',jsonb_build_object('id',payment.id,'property_id',payment.property_id,
+                    'payer_customer_id',payment.payer_customer_id,'received_currency',payment.received_currency,
+                    'received_amount_minor',payment.received_amount_minor,
+                    'usd_accounting_value_cents',payment.usd_accounting_value_cents,
+                    'confirmed_at',payment.confirmed_at,'exchange_rate_record_id',payment.exchange_rate_record_id,
+                    'channel_transaction_reference',payment.channel_transaction_reference),
+                -- Unbounded original rate references/traces remain in the linked rate resource.
+                'exchange_rate',CASE WHEN rate.id IS NOT NULL THEN jsonb_build_object('id',rate.id,
+                    'reference_rate_khr_per_usd',rate.reference_rate_khr_per_usd,
+                    'system_rate_khr_per_usd',rate.system_rate_khr_per_usd,'markup_basis_points',rate.markup_basis_points,
+                    'rate_source',rate.rate_source,'applicable_at',rate.applicable_at,
+                    'channel_actual_currency',rate.channel_actual_currency,
+                    'channel_actual_amount_minor',rate.channel_actual_amount_minor,
+                    'channel_actual_usd_value_cents',rate.channel_actual_usd_value_cents,
+                    'channel_actual_rate_khr_per_usd',rate.channel_actual_rate_khr_per_usd,
+                    'channel_confirmed_at',rate.channel_confirmed_at) END)
+            FROM app.customer_credits credit JOIN app.customer_credit_financial_position credit_position
+                ON credit_position.customer_credit_id=credit.id
+            JOIN app.payments payment ON payment.id=credit.source_payment_id
+            LEFT JOIN app.exchange_rate_records rate ON rate.id=payment.exchange_rate_record_id
+            WHERE credit.id=p_credit_id
+        $$;
+
+        CREATE FUNCTION app.credit_history_events(p_credit_id uuid)
+        RETURNS TABLE(event_kind text,event_id uuid,occurred_at timestamptz,
+            balance_effect_usd_cents bigint,reason text,detail jsonb)
+        LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+            SELECT 'RECOGNITION',credit.id,credit.recognized_at,credit.recognized_usd_cents,credit.reason,
+                jsonb_build_object('actor_id',credit.recognized_by,'authorization_reference',credit.authorization_reference,
+                    'currency','USD','amount_minor',credit.recognized_usd_cents,
+                    'source_kind','CREDIT','source_id',credit.id,'source_payment_id',credit.source_payment_id)
+            FROM app.customer_credits credit WHERE credit.id=p_credit_id
+            UNION ALL
+            SELECT 'RECOGNITION_REVERSAL',reversal.id,reversal.occurred_at,-credit.recognized_usd_cents,reversal.reason,
+                jsonb_build_object('actor_id',reversal.actor_id,'authorization_reference',reversal.authorization_reference,
+                    'currency','USD','amount_minor',credit.recognized_usd_cents,
+                    'source_kind','CREDIT_REVERSAL','source_id',reversal.id,
+                    'reverses_event_kind','RECOGNITION','reverses_event_id',credit.id)
+            FROM app.customer_credit_reversals reversal JOIN app.customer_credits credit
+                ON credit.id=reversal.customer_credit_id WHERE credit.id=p_credit_id
+            UNION ALL
+            SELECT 'APPLICATION',application.id,application.occurred_at,-application.amount_usd_cents,NULL::text,
+                jsonb_build_object('actor_id',application.actor_id,'authorization_reference',application.authorization_reference,
+                    'currency','USD','amount_minor',application.amount_usd_cents,
+                    'source_kind','CREDIT_APPLICATION','source_id',application.id,
+                    'target_kind',application.target_kind,'target_id',COALESCE(application.invoice_id,application.late_payment_charge_id),
+                    'within_invoice_basis',application.within_invoice_basis)
+            FROM app.customer_credit_applications application WHERE application.customer_credit_id=p_credit_id
+            UNION ALL
+            SELECT 'APPLICATION_REVERSAL',reversal.id,reversal.occurred_at,application.amount_usd_cents,reversal.reason,
+                jsonb_build_object('actor_id',reversal.actor_id,'authorization_reference',reversal.authorization_reference,
+                    'currency','USD','amount_minor',application.amount_usd_cents,
+                    'source_kind','CREDIT_APPLICATION_REVERSAL','source_id',reversal.id,
+                    'reverses_event_kind','APPLICATION','reverses_event_id',application.id)
+            FROM app.customer_credit_application_reversals reversal JOIN app.customer_credit_applications application
+                ON application.id=reversal.credit_application_id WHERE application.customer_credit_id=p_credit_id
+            UNION ALL
+            SELECT 'REFUND',refund.id,refund.processed_at,-refund.usd_accounting_value_cents,refund.reason,
+                jsonb_build_object('actor_id',refund.processed_by,'authorization_reference',refund.authorization_reference,
+                    'currency',refund.refund_currency,'amount_minor',refund.refund_amount_minor,
+                    'source_kind','REFUND','source_id',refund.id)
+            FROM app.refunds refund WHERE refund.source_customer_credit_id=p_credit_id
+            UNION ALL
+            SELECT 'REFUND_'||correction.correction_kind,correction.id,correction.occurred_at,
+                correction.source_balance_effect_usd_cents,correction.reason,
+                jsonb_build_object('actor_id',correction.actor_id,'authorization_reference',correction.authorization_reference,
+                    'currency',COALESCE(correction.verified_return_currency,refund.refund_currency),
+                    'amount_minor',COALESCE(correction.verified_return_amount_minor,abs(correction.source_balance_effect_original_minor)),
+                    'source_kind','REFUND_CORRECTION','source_id',correction.id,'refund_id',refund.id,
+                    'correction_kind',correction.correction_kind,'reverses_event_id',correction.reverses_correction_id,
+                    'reverses_event_kind',CASE WHEN correction.reverses_correction_id IS NOT NULL THEN 'REFUND_VALUE_CORRECTION' END,
+                    'verified_returned_at',correction.verified_returned_at)
+            FROM app.refund_corrections correction JOIN app.refunds refund ON refund.id=correction.refund_id
+            WHERE refund.source_customer_credit_id=p_credit_id
+        $$;
+
+        CREATE FUNCTION app.assert_credit_read_actor(p_property_id uuid,p_actor_id uuid)
+        RETURNS void LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+        BEGIN
+            IF NOT EXISTS(SELECT 1 FROM app.properties WHERE id=p_property_id)
+            THEN RAISE EXCEPTION 'Credit Property not found' USING ERRCODE='P5101'; END IF;
+            IF NOT EXISTS(SELECT 1 FROM app.user_accounts account JOIN app.actor_identities identity
+                ON identity.actor_id=account.actor_id WHERE account.actor_id=p_actor_id
+                AND account.lifecycle_state='active' AND identity.identity_kind='HUMAN')
+            THEN RAISE EXCEPTION 'Credit read requires an active human actor' USING ERRCODE='P4506'; END IF;
+        END $$;
+        CREATE FUNCTION app.assert_credit_read_page(p_limit integer,p_after_at timestamptz,p_after_id uuid)
+        RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        BEGIN
+            IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 OR num_nonnulls(p_after_at,p_after_id) NOT IN (0,2)
+                OR (p_after_at IS NOT NULL AND NOT isfinite(p_after_at))
+                OR p_after_id='00000000-0000-0000-0000-000000000000'
+            THEN RAISE EXCEPTION 'Credit page is invalid' USING ERRCODE='P5102'; END IF;
+        END $$;
+        CREATE FUNCTION app.list_customer_credits(
+            p_property_id uuid,p_customer_id uuid,p_actor_id uuid,p_limit integer,p_after_at timestamptz,p_after_id uuid
+        ) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+        DECLARE v_result jsonb;
+        BEGIN
+            PERFORM app.assert_credit_read_actor(p_property_id,p_actor_id);
+            PERFORM app.assert_credit_read_page(p_limit,p_after_at,p_after_id);
+            IF p_customer_id IS NULL OR p_customer_id='00000000-0000-0000-0000-000000000000'
+            THEN RAISE EXCEPTION 'Credit Customer is required' USING ERRCODE='P5102'; END IF;
+            -- Page identities, immutable source facts and current positions share one snapshot.
+            WITH page AS MATERIALIZED (
+                SELECT credit.id,credit.recognized_at,
+                    row_number() OVER(ORDER BY credit.recognized_at DESC,credit.id DESC) page_row
+                FROM app.customer_credits credit JOIN app.payments payment ON payment.id=credit.source_payment_id
+                WHERE credit.customer_id=p_customer_id AND payment.property_id=p_property_id
+                    AND (p_after_at IS NULL OR (credit.recognized_at,credit.id)<(p_after_at,p_after_id))
+                ORDER BY credit.recognized_at DESC,credit.id DESC LIMIT p_limit+1
+            ) SELECT jsonb_build_object('items',COALESCE(jsonb_agg(app.credit_read_summary(id) ORDER BY page_row)
+                    FILTER(WHERE page_row<=p_limit),'[]'::jsonb),
+                'next_cursor',CASE WHEN count(*)>p_limit THEN (SELECT jsonb_build_object(
+                    'occurred_at',recognized_at,'id',id) FROM page WHERE page_row=p_limit) ELSE NULL END)
+            INTO v_result FROM page;
+            RETURN v_result;
+        END $$;
+        CREATE FUNCTION app.customer_credit_ledger(
+            p_property_id uuid,p_credit_id uuid,p_actor_id uuid,p_limit integer,
+            p_after_at timestamptz,p_after_kind text,p_after_id uuid
+        ) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+        DECLARE v_result jsonb;
+        BEGIN
+            PERFORM app.assert_credit_read_actor(p_property_id,p_actor_id);
+            PERFORM app.assert_credit_read_page(p_limit,p_after_at,p_after_id);
+            IF num_nonnulls(p_after_at,p_after_kind,p_after_id) NOT IN (0,3)
+                OR p_after_kind NOT IN ('RECOGNITION','RECOGNITION_REVERSAL','APPLICATION','APPLICATION_REVERSAL',
+                    'REFUND','REFUND_VALUE_CORRECTION','REFUND_CORRECTION_REVERSAL')
+            THEN RAISE EXCEPTION 'Credit ledger cursor is invalid' USING ERRCODE='P5102'; END IF;
+            SELECT app.credit_read_summary(credit.id)||jsonb_build_object('history',(
+                WITH history AS MATERIALIZED (
+                    SELECT event.*,sum(balance_effect_usd_cents) OVER(ORDER BY occurred_at
+                        RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)::bigint available_after_usd_cents
+                    FROM app.credit_history_events(credit.id) event
+                ), page AS MATERIALIZED (
+                    SELECT history.*,row_number() OVER(ORDER BY occurred_at DESC,event_kind COLLATE "C" DESC,event_id DESC) page_row
+                    FROM history WHERE p_after_at IS NULL OR
+                        (occurred_at,event_kind COLLATE "C",event_id)<(p_after_at,p_after_kind COLLATE "C",p_after_id)
+                    ORDER BY occurred_at DESC,event_kind COLLATE "C" DESC,event_id DESC LIMIT p_limit+1
+                ) SELECT jsonb_build_object('items',COALESCE(jsonb_agg(detail||jsonb_build_object(
+                        'event_kind',event_kind,'event_id',event_id,'occurred_at',occurred_at,
+                        'balance_effect_usd_cents',balance_effect_usd_cents,
+                        'available_after_usd_cents',available_after_usd_cents,
+                        -- Explicitly link long historical narratives rather than truncate originals.
+                        'reason',CASE WHEN octet_length(reason)<=4000 THEN reason END,
+                        'reason_in_source',COALESCE(octet_length(reason)>4000,false)) ORDER BY page_row)
+                        FILTER(WHERE page_row<=p_limit),'[]'::jsonb),
+                    'next_cursor',CASE WHEN count(*)>p_limit THEN (SELECT jsonb_build_object(
+                        'occurred_at',occurred_at,'event_kind',event_kind,'id',event_id)
+                        FROM page WHERE page_row=p_limit) ELSE NULL END) FROM page))
+            INTO v_result FROM app.customer_credits credit JOIN app.payments payment ON payment.id=credit.source_payment_id
+            WHERE credit.id=p_credit_id AND payment.property_id=p_property_id;
+            IF v_result IS NULL THEN RAISE EXCEPTION 'Credit not found' USING ERRCODE='P5101'; END IF;
+            RETURN v_result;
+        END $$;
+    """)
+    for signature in (
+        "credit_read_summary(uuid)",
+        "assert_credit_read_actor(uuid,uuid)",
+        "credit_history_events(uuid)",
+        "assert_credit_read_page(integer,timestamp with time zone,uuid)",
+        "list_customer_credits(uuid,uuid,uuid,integer,timestamp with time zone,uuid)",
+        "customer_credit_ledger(uuid,uuid,uuid,integer,timestamp with time zone,text,uuid)",
+    ):
+        op.execute(
+            f"REVOKE ALL ON FUNCTION app.{signature} FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap"
+        )
+    for signature in (
+        "list_customer_credits(uuid,uuid,uuid,integer,timestamp with time zone,uuid)",
+        "customer_credit_ledger(uuid,uuid,uuid,integer,timestamp with time zone,text,uuid)",
+    ):
+        op.execute(f"GRANT EXECUTE ON FUNCTION app.{signature} TO prm_runtime,prm_financial")
 
 
 def downgrade() -> None:

@@ -791,7 +791,7 @@
       "escalation_reason": "V1-051 financial transactions, non-destructive migration, authorization, concurrency and permanent event history"
     },
     "current_version": "V1-051",
-    "phase": "V1-051 Pet Refund correction1 integration verified; fresh independent exact-SHA review pending",
+    "phase": "V1-051 bounded Credit list/history services active; Pet correction1 independently accepted",
     "candidate_sha": null,
     "candidate_status": "not_frozen",
     "candidate_resolution": "Future immutable cumulative candidate in sole isolated V1-051 worktree; base is fully closed V1-050 terminal cc3d18e.",
@@ -801,7 +801,7 @@
     "planned_branch": "codex/v1-051-direct",
     "worker_kind": "direct_codex_coordinator",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
-    "worker_status": "direct_coordinator_pet_correction1_integration_passed_review_pending",
+    "worker_status": "direct_coordinator_credit_history_active",
     "scope_path": "ops/V1_051_SCOPE.md",
     "scope_sha256": "91adbb369a44dc25f04a49bcaa11c1dc8c29694c8805037855c1e52e4396d3b2",
     "card_id": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
@@ -815,8 +815,8 @@
     "predecessor_closure_receipt_sha256": "616f7c7f39189d643bb485ea315ac4812313dc788738fb48cef28955dd979cc2",
     "cumulative_review_base": "cc3d18e682401cc8a9ade10295572fe1a1344317",
     "owner_action_required": false,
-    "next_action": "Freeze Pet correction1 as a new immutable child of rejectedf311a90 in SAME sole51checkout; fresh exact-SHA configuration/automation and Pet PostgreSQL checks, then fresh independent Astra max Standard read-only review of complete Pet delta from2f45c8a/all prior findings. Require0HIGH0MEDIUM0LOW; do not edit or duplicate while validreviewruns. On acceptance continue bounded Credit history and original-KHR/Credit-to-KHR. Full51OPEN/unpublished until fullscope/freshgates/audits/cumulativecc3dreview/normalauthorizedpush/exactCI/refequality/same-cardterminalclosure; OpenClawdisabled; no52before51closed; through53only.",
-    "verification_status": "Petcorrection1 fullPG737zero skips/backend940with714DB-onlyskipsseparatelycovered/frontend369/static/build/189automation/configurationPASS. Fresh exact-SHA checks/independent review pending. Accepted earlier checkpoints preserved; KHR/history/fullV51release pending.",
+    "next_action": "Implement bounded API-061 Credit list/history read services in SAME sole51checkout after locally accepted Pet3c4015c. Preserve accepted mutation/replay contracts; add single-snapshot recognized/applied/refunded/reversed/available USD positions, exact immutable source/FX links, bounded keyset timeline across recognition/applications/reversals/Refunds/corrections using event-family identity, fresh credits.read actor/Property/Customer checks and accurate traceability. No HTTP/UI52/unifiedledger53/KHR policy invention. Then fresh full/exact-SHA gates and independent Astra max Standard read-only review. KHR sources/full51release remain pending; OpenClawdisabled; no52before51closed; through53only.",
+    "verification_status": "Accepted Pet3c4015c independent0HIGH0MEDIUM0LOW; all11paths and all3previousfindingsresolved. ExactPG737/backend940/frontend369/automation189/staticbuildconfigPASS. Full51OPEN/unpublished; boundedCreditreads/KHRsources/finalrelease pending.",
     "correction_history": [
       {
         "number": 1,
@@ -850,27 +850,30 @@
         },
         "approach": "Align existing runtime ledger with original-minus-corrections predicate without new grants; service/ledger/reversal/replay/partial/reversed-return regression; real signed/move-in Security fixture; exactsource-linked narrative requirement assertions.",
         "verification": "Petcorrection1 fullPG737zero skips/backend940with714DB-onlyskipsseparatelycovered/frontend369/static/build/189automation/configurationPASS. Fresh exact-SHA checks/independent review pending. Accepted earlier checkpoints preserved; KHR/history/fullV51release pending.",
-        "status": "integration_passed_fresh_exact_sha_review_pending"
+        "status": "resolved_and_independently_accepted_at_3c4015c",
+        "accepted_sha": "3c4015c6412803503126be3516311926c087afba",
+        "acceptance_report_sha256": "273848190f4728444ab10b7080cd6f4beab4c84cc5ab66b1d744e624975d914a"
       }
     ],
     "activated_at": "2026-09-05T19:37:17Z",
     "last_model_configuration_check": {
-      "checked_at": "2026-09-06T01:50:06Z",
+      "checked_at": "2026-09-06T02:29:21Z",
+      "actual_turn_timestamp": "2026-09-06T02:26:11.961Z",
       "model": "gpt-6-astra",
       "reasoning": "xhigh",
       "local_service_tier": "default",
       "provider_attestation": "unavailable"
     },
     "last_reconciliation": {
-      "checked_at": "2026-09-06T01:50:06Z",
+      "checked_at": "2026-09-06T03:04:55Z",
       "main_head": "44d93be5bb557bc221f392c52ad1d8a8604142e4",
       "live_remote": "cc3d18e682401cc8a9ade10295572fe1a1344317",
       "tracking_and_fetched": "cc3d18e682401cc8a9ade10295572fe1a1344317",
-      "predecessor_ci": "33986122538 exactcc3d all4SUCCESS rechecked01:46Z",
-      "supervisor": "Exactly1matching disabled30minutes/no nextRun; runningtasks0",
-      "card": "Existing tracking-onlyc5621f97 blocked solely against OpenClaw admission; claim/attempt/executionnull; correctioncomment85119d19-f9a5-498a-b66c-1286a823a054; no owner blocker.",
+      "predecessor_ci": "33986122538 exactcc3d all4SUCCESS rechecked03:03Z",
+      "supervisor": "Exactly1matching disabled30minutes/no nextRun/runningtasks0 rechecked03:00Z.",
+      "card": "Existing tracking-onlyc5621f97 blocked solely against OpenClaw admission; claim/attempt/executionnull; checkpointcomment2556b8ab-fa1f-4eea-a19a-a3cae9d79030; no owner blocker.",
       "worktrees": "126retained; same sole51checkout; no separate implementation worker",
-      "followup": "ExistingACTIVE10minutes same coordinator; savedphasecorrected andexactreadbackverified; freshcorrectionreviewnotyetdispatched"
+      "followup": "ExistingACTIVE10minutes/same coordinator; supported update Petaccepted/Creditreadsactive; saved9653characters byte-identical SHA256ae076b071b5079f1d2c0de72e7ee0166ec8a76cac3b0bf8af2e0fd800ea4b2af"
     },
     "activation_sha": "b3b03e209fcb69495944d7f076ac206da5de2a98",
     "implementation_started_at": "2026-09-05T19:44:43Z",
@@ -1062,15 +1065,15 @@
       "status": "planning_only_next_implementation_not_completed"
     },
     "pet_refund_continuation": {
-      "status": "correction1_integration_passed_review_pending",
+      "status": "accepted_at_3c4015c",
       "started_at": "2026-09-06T00:35:31Z",
       "base_sha": "2f45c8ab3a9b824650e34ab0225e6f020d13ee3b",
       "accepted_usd_service_sha": "ec77dde87cdd5f957b78afbdc736766ff43bb5fe",
       "plan": "Reuse approved Pet review; add Deposit MVCC guard shared by receipts/reversals/dispositions/refunds/corrections and historical conservation; bind review/departure/approval/Customer/SIGNED Lease under transaction lock; append-only exact USD verified returns/correction reversals; separate refunds.create from deposits.refund.qualify; synthetic races including stale snapshots and source reversal. No canonical policy change or Final Settlement.",
-      "verification": "Petcorrection1 fullPG737zero skips/backend940with714DB-onlyskipsseparatelycovered/frontend369/static/build/189automation/configurationPASS. Fresh exact-SHA checks/independent review pending. Accepted earlier checkpoints preserved; KHR/history/fullV51release pending."
+      "verification": "Accepted Pet3c4015c independent0HIGH0MEDIUM0LOW; all11paths and all3previousfindingsresolved. ExactPG737/backend940/frontend369/automation189/staticbuildconfigPASS. Full51OPEN/unpublished; boundedCreditreads/KHRsources/finalrelease pending."
     },
     "pet_refund_checkpoint": {
-      "status": "rejected_correction1_active",
+      "status": "rejected_superseded_by_accepted_correction1_3c4015c",
       "base_sha": "2f45c8ab3a9b824650e34ab0225e6f020d13ee3b",
       "checkpoint_path": "ops/V1_051_PET_REFUND_CHECKPOINT.md",
       "checkpoint_sha256": "fd0c0c71bbba9b993e9dc5d9695389ed3c390b92b2dd703ba92c999beb758cf5",
@@ -1115,7 +1118,7 @@
       }
     },
     "pet_refund_correction1": {
-      "status": "integration_passed_pending_exact_sha_review",
+      "status": "accepted_locally",
       "started_at": "2026-09-06T01:50:06Z",
       "rejected_sha": "f311a9048d1f27ea9f7e7a47bb5fb565e481dd04",
       "review_base": "2f45c8ab3a9b824650e34ab0225e6f020d13ee3b",
@@ -1126,7 +1129,7 @@
       "owner_action_required": false,
       "checkpoint_path": "ops/V1_051_PET_REFUND_CORRECTION1_CHECKPOINT.md",
       "checkpoint_sha256": "ea6c6e9b9112af76d1365887d701126637777ea191d551b91b7219abb1c92569",
-      "candidate_sha": null,
+      "candidate_sha": "3c4015c6412803503126be3516311926c087afba",
       "candidate_resolution": "Immutable commit containing this checkpoint, child of rejectedf311a90; bind exactSHA/tree/configuration in subsequent receipt, never amend.",
       "postgresql": {
         "passed": 737,
@@ -1158,7 +1161,96 @@
       "automation_log_sha256": "665f64572c37ae2bd21f8fa285f84450be428aebfdedd9895f2eced2a0a13510",
       "development_evidence": "v1051-pet-correction1-test-development.md",
       "development_evidence_sha256": "c8c6b8b85072a5e7343df4dd0ebf5d5bdec95bba6bac4d25b4110cf1dda28802",
-      "review": "Pending fresh exact-SHA Astra max Standard read-only; not Pet or full51 acceptance."
+      "review": {
+        "status": "completed_accepted",
+        "model": "gpt-6-astra",
+        "reasoning": "max",
+        "sandbox": "read-only",
+        "local_service_tier": "default",
+        "provider_attestation": "unavailable",
+        "session": "01a0747c-5cfe-75d3-a960-3961e51de8af",
+        "completed_at": "2026-09-06T02:27:13.857Z",
+        "counts": {
+          "high": 0,
+          "medium": 0,
+          "low": 0
+        },
+        "report": "v1051-pet-correction1-review-3c4015c.md",
+        "sha256": "273848190f4728444ab10b7080cd6f4beab4c84cc5ab66b1d744e624975d914a",
+        "all_prior_findings_resolved": true
+      },
+      "accepted_at": "2026-09-06T02:29:21Z",
+      "acceptance_receipt": "v1051-pet-refund-accepted-3c4015c.md",
+      "acceptance_receipt_sha256": "808c18b45ca2bbdaab2972176515c1d7174ea7443178c58e53b3b75c6e68975e"
+    },
+    "accepted_pet_refund_checkpoint": {
+      "sha": "3c4015c6412803503126be3516311926c087afba",
+      "tree": "fab7d12bf30e4fa8b56ee3c372621ace7d0881dd",
+      "base": "2f45c8ab3a9b824650e34ab0225e6f020d13ee3b",
+      "receipt": "v1051-pet-refund-accepted-3c4015c.md",
+      "receipt_sha256": "808c18b45ca2bbdaab2972176515c1d7174ea7443178c58e53b3b75c6e68975e",
+      "review_sha256": "273848190f4728444ab10b7080cd6f4beab4c84cc5ab66b1d744e624975d914a",
+      "pending_fields_discharged": true
+    },
+    "after_pet_continuation": {
+      "status": "implemented_gates_passed_pending_exact_review",
+      "started_at": "2026-09-06T02:29:21Z",
+      "accepted_base_sha": "3c4015c6412803503126be3516311926c087afba",
+      "plan": "Implement bounded API-061 Credit list/history read services in SAME sole51checkout after locally accepted Pet3c4015c. Preserve accepted mutation/replay contracts; add single-snapshot recognized/applied/refunded/reversed/available USD positions, exact immutable source/FX links, bounded keyset timeline across recognition/applications/reversals/Refunds/corrections using event-family identity, fresh credits.read actor/Property/Customer checks and accurate traceability. No HTTP/UI52/unifiedledger53/KHR policy invention. Then fresh full/exact-SHA gates and independent Astra max Standard read-only review. KHR sources/full51release remain pending; OpenClawdisabled; no52before51closed; through53only.",
+      "planning_evidence": "v1051-after-pet-credit-history-plan.md",
+      "read_scope": "API-061/BR-CREDIT-009..012/DB-DER-005/DB-VIEW-004; no mutation change, HTTP/UI or unifiedledger",
+      "verification": "16unit/38unit+traceability/11focusedPG/748fullPGzero skips/956backend725DB-onlyskipscovered/369frontend/189automation/staticmypy145buildimport/configuration PASS. See credit_history_checkpoint. No local acceptance until fresh exact gates and independent zero-finding review."
+    },
+    "credit_history_checkpoint": {
+      "status": "verified_before_freeze",
+      "started_at": "2026-09-06T02:29:21Z",
+      "review_base": "3c4015c6412803503126be3516311926c087afba",
+      "candidate_resolution": "Immutable commit containing this checkpoint, new child of3c4015c; bind SHA/tree/exact gates/review in subsequent receipt; never amend.",
+      "checkpoint_path": "ops/V1_051_CREDIT_HISTORY_CHECKPOINT.md",
+      "checkpoint_sha256": "2c62da5ad0b2f6aa6c420ecabd06bfb3416bea220d6c9938a6198621d013de11",
+      "plan": "Freeze verified bounded Credit list/history checkpoint as new immutable child of accepted3c4015c in SAME51checkout. Require fresh exact-SHA integration/configuration and independent Astra max Standard read-only review of complete3c4015c-to-candidate delta/all changed paths; zero HIGH/MEDIUM/LOW. Inspect valid tests/reviewer before any duplicate and never edit during review. On acceptance continue remaining original-KHR Payment excess and later Credit-to-KHR Refunds. Full51OPEN/unpublished until allscope/audits/cumulativecc3dreview/normalreviewedpush/exactCI/refequality/same-cardterminalclosure. OpenClawdisabled; no52before51closed; through53only.",
+      "postgresql": {
+        "passed": 748,
+        "skipped": 0,
+        "seconds": 113.79,
+        "log": "v1051-credit-history-full-postgresql.log",
+        "sha256": "f0d6fe201ef3e9441433d52d448630b19d2899dd03860250870b5a8b1c5cc376"
+      },
+      "backend": {
+        "passed": 956,
+        "skipped": 725,
+        "skip_reason": "DB-only covered separately by full PostgreSQL gate",
+        "seconds": 41.09,
+        "log": "v1051-credit-history-full-backend.log",
+        "sha256": "1c0c2323ea33b9f462d023dbd2b5ff4332a04f6f23b7d7f75c49067377e3cf82"
+      },
+      "frontend": {
+        "files": 19,
+        "passed": 369,
+        "seconds": 6.58,
+        "log": "v1051-credit-history-full-frontend.log",
+        "sha256": "1578420f1da6ad08da5bf8b8ac377767f439f259a88db12101e6646805bdf947"
+      },
+      "automation": {
+        "passed": 189,
+        "seconds": 68.98,
+        "configuration": "PASS",
+        "log": "v1051-credit-history-automation-initial.log",
+        "sha256": "5aeabd4f06dd153c3cdc57f2d0686a845895c696c79640aa93e8b66dd3a822ac"
+      },
+      "focused": "16unitPASS0.20s/38unittraceabilityPASS6.73s/11PGPASS2.43s",
+      "static": "format/Ruff/mypy145/build/import/traceability/workingspace PASS",
+      "development_evidence": "v1051-credit-history-test-development.md",
+      "development_evidence_sha256": "81dfd24caebef7680b8b35c25b9442f75940855528608e8e92a18a18a48bc3aa",
+      "review": {
+        "status": "pending",
+        "model": "gpt-6-astra",
+        "reasoning": "max",
+        "sandbox": "read-only",
+        "mode": "Standard",
+        "provider_attestation": "unavailable"
+      },
+      "owner_action_required": false
     }
   },
   "historical_v1_048_takeover": {
@@ -1906,9 +1998,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-051-direct",
-  "commit": "f311a9048d1f27ea9f7e7a47bb5fb565e481dd04",
+  "commit": "3c4015c6412803503126be3516311926c087afba",
   "idle_reason": null,
-  "next_action": "Freeze Pet correction1 as a new immutable child of rejectedf311a90 in SAME sole51checkout; fresh exact-SHA configuration/automation and Pet PostgreSQL checks, then fresh independent Astra max Standard read-only review of complete Pet delta from2f45c8a/all prior findings. Require0HIGH0MEDIUM0LOW; do not edit or duplicate while validreviewruns. On acceptance continue bounded Credit history and original-KHR/Credit-to-KHR. Full51OPEN/unpublished until fullscope/freshgates/audits/cumulativecc3dreview/normalauthorizedpush/exactCI/refequality/same-cardterminalclosure; OpenClawdisabled; no52before51closed; through53only.",
+  "next_action": "Freeze verified bounded Credit list/history checkpoint as new immutable child of accepted3c4015c in SAME51checkout. Require fresh exact-SHA integration/configuration and independent Astra max Standard read-only review of complete3c4015c-to-candidate delta/all changed paths; zero HIGH/MEDIUM/LOW. Inspect valid tests/reviewer before any duplicate and never edit during review. On acceptance continue remaining original-KHR Payment excess and later Credit-to-KHR Refunds. Full51OPEN/unpublished until allscope/audits/cumulativecc3dreview/normalreviewedpush/exactCI/refequality/same-cardterminalclosure. OpenClawdisabled; no52before51closed; through53only.",
   "active_worker": null,
   "active_card": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
   "active_claim": null,
@@ -1969,7 +2061,7 @@
     "publication_evidence": "real PostgreSQL plus production service plus pseudo-TTY rollback; production recovery randomness and independent-salt persistence; FastAPI/OpenAPI negative route inventory; explicit complete-contract clause-to-test traceability",
     "recovery_codes": "exactly 10 cryptographically random single-use codes; present once through controlling TTY only; plaintext never persists"
   },
-  "phase": "V1-051 Pet Refund correction1 integration verified; fresh independent exact-SHA review pending",
+  "phase": "V1-051 Credit list/history checkpoint verified before freeze; exact-SHA review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -3079,7 +3171,9 @@
     "PASS USD service exactec77dde fresh independent Astra max Standard read-only0HIGH0MEDIUM0LOW, all9paths. Verbatimreport02e34bd2b7ed468ec59d855bdd50da17150381dc86fec036584d3fa39ace10d6; receipt6514279ef0a143e3e0598b32f430eb9aaf0f92c22b78fc57e90317ed0e28a082 discharges immutable pending fields. Independent81unit+traceability/29PGcollection/static/JSON/syntax/cumulativewhitespace/hash/cleanidentityPASS. Full product review and publication remain pending.",
     "PASS Pet Refund final checkpoint:28focusedPG3.89s/736fullPGzero skips110.82s/940backend713DB-onlyskipsseparatelycovered40.61s/86unit+traceability/formatRuffmypy143/build/import. Independent exact-SHA review and configuration readback pending. All development diagnostics retained e7271bd173c0c9ac6050597b7f18a3ab5714033ae70876bd543c2456379d889e.",
     "Petf311a90 independent exact-SHA REJECTED0HIGH2MEDIUM1LOW; reportSHA256e64f0ce08f7d0a93fa8eddb79e66981ca0d15966736674b20f7e903ec5cb96c2. Mediumledgernet-refundeligibility/activeSecurityfixture; lowsemantictraceability. Fresh correction1 gates/review pending; prior736PG/940backend not correction acceptance.",
-    "Pet boundedcorrection1 PASS737fullPGzero skips116.74s/940backend714DB-onlyskipscovered44.07s/369frontend6.64s/formatRuffmypy143buildimport/189automation69.754s/configuration/traceability/publication/workingspace. Missingfrontendtool failure preserved and resolved with unchanged offline cache install; developmentc8c6b8b85072a5e7343df4dd0ebf5d5bdec95bba6bac4d25b4110cf1dda28802. Fresh exact-SHA independent review pending."
+    "Pet boundedcorrection1 PASS737fullPGzero skips116.74s/940backend714DB-onlyskipscovered44.07s/369frontend6.64s/formatRuffmypy143buildimport/189automation69.754s/configuration/traceability/publication/workingspace. Missingfrontendtool failure preserved and resolved with unchanged offline cache install; developmentc8c6b8b85072a5e7343df4dd0ebf5d5bdec95bba6bac4d25b4110cf1dda28802. Fresh exact-SHA independent review pending.",
+    "Petcorrection1 exact3c4015c independent Astra max read-onlyPASS0HIGH0MEDIUM0LOW/all11paths/all3previousfindingsresolved. Report273848190f4728444ab10b7080cd6f4beab4c84cc5ab66b1d744e624975d914a; acceptance808c18b45ca2bbdaab2972176515c1d7174ea7443178c58e53b3b75c6e68975e discharges immutablependingfields. Independent86unittraceability+11DepositunitAPI/static/mypy143/29PGcollection/hashes/cleanidentityPASS. No repeated accepted review; full51OPEN.",
+    "Credit list/history prefreeze PASS748fullPGzero skips113.79s/956backend725DB-onlyskipscovered41.09s/369frontend6.58s/189automation68.980s/configuration/38unittraceability/formatRuffmypy145buildimport. All12newtestfunctions mapped. Development81dfd24caebef7680b8b35c25b9442f75940855528608e8e92a18a18a48bc3aa preserves failedprobes/resolutions. Fresh exact-SHA gates/review pending."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -3101,7 +3195,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-051",
-  "timestamp": "2026-09-06T02:03:40Z",
+  "timestamp": "2026-09-06T03:04:55Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -3150,7 +3244,10 @@
     "backend/tests/test_pet_refund_migration.py",
     "ops/V1_051_PET_REFUND_CHECKPOINT.md",
     "backend/src/property_rental/deposit_api.py",
-    "ops/V1_051_PET_REFUND_CORRECTION1_CHECKPOINT.md"
+    "ops/V1_051_PET_REFUND_CORRECTION1_CHECKPOINT.md",
+    "backend/tests/test_credit_history_migration.py",
+    "backend/tests/test_credit_reads.py",
+    "ops/V1_051_CREDIT_HISTORY_CHECKPOINT.md"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -3338,7 +3435,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-06T02:03:40Z",
+  "updated_at": "2026-09-06T03:04:55Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
