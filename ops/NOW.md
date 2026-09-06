@@ -1,27 +1,30 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-052 incoming-KHR bridge implemented, focused PASS; fresh exact gates/review pending.51fullyclosed;52activationa5/readc8/USD1209530 ACCEPTED. No owner blocker.
-- Authority ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455; scope ops/V1_052_SCOPE.md SHA2564ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363 unchanged.
-- DL060 USDaccounting and ALLRefunds paid/recordedUSD. KHR incoming conversion/auditonly, originalfacts immutable. Rejected KHRrefund proposal/blocker resolved.
-- Closed51 product7cec085/terminalf8a33bad25a7993952ec1ccece1b9c2df942b3d6:exacttests/maxzero/normalpublication/CI34027889695+34030703203success/refs/cardc5621f97DONE/proof935d944b/closure92fa6965. Do not repeat.
-- Accepted52activationa5/189automation+config/max8458zero; readc8/763PG991backend189automation/max98248zero/acceptance62dc741e. All prior workers COMPLETED.
-- AcceptedUSD12095305010e211710650f309906ad99a2ec3aaf/tree6c37a660/all17paths fromc8/fivecommits. Fresh801PG1058backend189automation/allapplicablechecksPASS; reviewer41953 COMPLETED16:00:01.310Z0H/M/L ALL17paths, report6de05ca4 byte-identical JSONL.
-- USDacceptance /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-usd-confirmation-accepted-1209530.md SHA256dd16effa061dfb53c11c7409f7b91670dbd608f4100061df65b8a526fab21aa1; exactreceipt6787ccad. Preserve843/e385/b9/ce207eb failures and reports; never poll/repeat41953/2526/17885/69410.
-- KHR newforward43+typedservice only: strict originalintent/source/channel, exactreference*1.005/ceilSystemRate/ceilpayable; channel providedfacts control only their fields, absentvaluesnull. No caller status/derived rate or unauthorized fallback.
-- Existing approved provider reused; manual only actual source-unavailable plus exchange_rates.manage. Actor/Property/key replay beforelookup, same USD/KHRnamespace; one transaction FX+Payment+existingReceipt/audits/immutable response. Noimplicit Allocation/Credit/Deposit. Actualreceivedtime separatefromserverconfirmation.
-- Only new43 differs under migrations from1209530; published38–41/accepted42/oldUSDservice/read untouched. SourceSHA2560dc30e5031bd651d1290d05f6c137f871ad0ea0f5ddaaa43b29cebccae32bc50;43SHA256fbb44701a274e94785d09a9cd643d6161855c7735c571f5f3a7f8bae24e400ba.
-- Retained firstKHRdraft038a83f321fd03d7c2c7bbd113ab00fddcfeeb5d/tree0cc11bcd:154filemypyPASS/49unitPASS1FAIL random expectedactor. Fixturecorrection1 uses actualactor;50unitPASS, no assertion weakening. Draft format/type diagnostics retained/disclosed.
-- Finalfocused4947 COMPLETED EXIT0/44PGPASS801deselected4.09s;4685 COMPLETED EXIT0/155fileformat-lint-mypy/72unit-tracePASS6.18s.20newassertionmappings/0newIDs;19truecurrent-head literals42to43/8legacyfiles, preserve new explicit42/history and old41fixture.
-- Implementationreceipt /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-khr-implementation-verification.md SHA256a93619b24a6fb1627bda320d10d2a45a8d6b64686be9846cbb1f27347a8d0064. All logs/checkpoint hashes inside. Focused only, no corrected exactcandidate acceptance/full52publication.
-- COMPLETE17path KHRslice base1209530, normal corrected successor038a83f ready to freeze. Whole52releasebasef8. Sole root checkout /Users/sokompheak/Development/property-rental-management-v1-052 codex/v1-052-direct; no reviewer/otherworker;127worktrees retained.
-- Mainclean a5; tracking/FETCH_HEAD/livepublishedf8/exact51CIsuccess; no52publication/CI/refequality/fullacceptance claimed.
-- Same52card74197a0e tracking-onlyblocked preventsOpenClawadmission, no claim/attempt/execution. Comment05223c0c. Not owner-policyblocked.
-- Rootactual16:10:05.585Z Astra/xhigh/localdefaultStandard; reviewersAstra/max/read-only. No providerattestation/fallback. KeepOpenClaw658ffdaf disabled30min/no nextRun, noOCdispatch/duplicate.
-- Native property-rental-v1-047-closure-follow-up ACTIVE10min/sametask01a04961/11248chars SHA25649baafc52ee102a222a36890c93eb4c877282f3ff4d75e7ebd21e353ba1955b2. SavedUSDpolicycorrect.
-- Liveindex /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-codex-takeover-live.md; frozenpending words discharged by external exactreceipts without amendment.
-- Exact next action: Freeze normal successor of retained038a83f and review COMPLETE17path incoming-KHR slice from accepted1209530, not only final delta. Run fresh exact845PG/fullbackend/static-build-import/189automation/config/traceability/publicationguard/diffs; only after ALLPASS dispatch ONE fresh independent Astra max Standard readonly zero review. Preserve failed038a83f/unitlog and all priorUSD/read evidence, no amendment or duplicate workers. After KHRacceptance continue remaining52HTTP/CSRF/staffUI/encryptedrecovery and fullproductfrontend/browser/audits/cumulative exactreview/normalpublication/exactCI/ref/card/durableclosure before53. OpenClawdisabled/nativefollowupACTIVE; at53fullyclosedPAUSE/no54; no routine authorization.
-- Remaining52HTTP/CSRF/staffUI/encryptedrecovery/fullfrontend/browser/audits/cumulativeexactreview/normalpublication/CI/ref/card/durableclosure REQUIRED before53; at53closedPAUSE/no54.
-- Production/access/credentials/customerdata/paid/destructive/forcepush/historyrewrite/retainedworktreedeletion unauthorized. Updated2026-09-06T16:45:00Z; owner action none.
+- Latest 2026-09-06T17:48Z: V1-052 Payment HTTP/API implemented; draft focused PostgreSQL3PASS1FAIL (new test expected422 but accepted manual-source conflict correctly returns409). 158-file mypy and84API/inventory tests PASS. Retain current18path draft checkpoint and failure log2da6a52b.
+- NEXT superseding older prepared wording: correct only that test expectation, add view privilege/history tests, fresh focused checks, freeze normal successor; full exact applicable gates and ONE fresh Astra max read-only zero review of COMPLETE18path slice from accepted5263218. New forward44 only; prior38–43/services/history unchanged. No acceptance/publication yet; full52closure before53; OpenClaw disabled/native ACTIVE/no54.
+
+- Current: V1-052 Payment HTTP/API bridge ACTIVE, prepared but not yet implemented. V1-051 fully closed; V1-052 activation/read/USD/KHR slices ACCEPTED. No owner blocker.
+- Authority ops/CODEX_TAKEOVER_V1_048_053.md SHA256 4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455.
+- Frozen scope ops/V1_052_SCOPE.md SHA256 4ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363 unchanged.
+- DL-060: USD accounting; ALL Refunds paid and recorded in USD. KHR incoming conversion/audit only. Original evidence immutable; rejected KHR-refund proposal/blocker resolved.
+- Closed V1-051 product7cec085/terminalf8a33bad: exact tests, max zero reviews, normal publication, CI34027889695/34030703203 success, ref equality, cardc5621f97 DONE/proof935d944b; closure receipt92fa6965. Do not repeat.
+- Accepted V1-052 activationa5/readc8/USD1209530, all exact gates and max zero reviews preserved. USD acceptance dd16effa.
+- ACCEPTED incoming-KHR 5263218f7f7deafc05b2d9f524f138761e05c850 / tree2566b9a93ca3104a98a721ccadfabb6691740b4c; COMPLETE17paths BOTH retained038a83f and5263218 from accepted1209530.
+- Exact5263218 PASS: 845 PostgreSQL/0skip, 1,108 backend/822 DB-only skips exercised in PG, 155-file format/lint/types/build/import, 189 automation and all applicable config/traceability/guards. Sessions65362/69428/55937 COMPLETED EXIT0.
+- Independent13094 COMPLETED EXIT0 at17:02:05.496Z, 0HIGH/0MEDIUM/0LOW all17paths; actual child01a077a3-53b6-7732-9434-52c563fc4e27 Astra/max/read-only. Reporte397af36 byte-identical JSONL; independent139tests/15609probes PASS, livePG not independently rerun.
+- KHR acceptance /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-khr-confirmation-accepted-5263218.md SHA256 9ce2ea8f21b1889549c7eb59d3d428288d0511d2614ab79e78fca447e6eae630; exact receipt beccae1c. Never poll completed13094 or repeat accepted work.
+- Published38–41/accepted42, USD/read services and original transaction evidence unchanged. Preserve failed038/unit log, all prior843/e385/b9/ce/read checkpoints and reports, and all127 worktrees.
+- Sole existing checkout /Users/sokompheak/Development/property-rental-management-v1-052, codex/v1-052-direct at accepted5263218. Only current ops records changed to start next slice; no new HTTP source/test implementation or reviewed successor yet.
+- Main clean a5dd97c; tracking/FETCH_HEAD f8a33bad. Last live remote/exact51 CI checked16:11Z; no V1-052 publication/CI/ref equality/full acceptance claimed.
+- Same card74197a0e tracking-only blocked to prevent OpenClaw admission, NOT policy blocked; execution/claim/attempt null. Comment3fbe797d read back; no active reviewer or separate implementation worker.
+- Coordinator/financial implementation Astra xhigh Standard; reviewers Astra max Standard read-only. Actual root16:10:05.585Z; local tier default verified, no provider attestation or fallback.
+- Exactly one OpenClaw658ffdaf DISABLED, retained30-minute schedule/no nextRun. No OpenClaw dispatch/duplicate/enable.
+- Native property-rental-v1-047-closure-follow-up ACTIVE every10minutes/same task01a04961;11248-character prompt SHA25649baafc52ee102a222a36890c93eb4c877282f3ff4d75e7ebd21e353ba1955b2; saved USD-only policy verified.
+- Exact next action: Implement the bounded Payment HTTP/API bridge from accepted5263218 in the sole existing V1-052 checkout, following v1052-http-preparation-after-khr.md: canonical API-057/058 strict USD/KHR confirmation/list/detail, scoped fresh actor and browser/CSRF protection, safe exact-money transport, immutable replay and evidence, existing approved provider only. Record is ACTIVE before source edits; no other worker/reviewer runs. Add focused API and isolated PG integration tests, traceability; freeze normal successor and fresh exact applicable gates plus ONE independent Astra max Standard read-only zero review. Preserve accepted read/USD/KHR slices and all failed checkpoints. Then remaining Allocation/Receipt/Credit/USD-Refund HTTP/UI/encrypted recovery/full-product gates and cumulative review/publication/exact CI/refs/card/durable closure before V1-053. OpenClaw disabled; native follow-up ACTIVE. At fully closed V1-053 PAUSE follow-up, no V1-054. No routine owner authorization.
+- Preparation /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-http-preparation-after-khr.md SHA2569a5bf898461bd6f76302edb0de3827443707aa692c08f94af138d62eaa2c4c04. STATE records bounded Payment HTTP/API ACTIVE before source edits.
+- Remaining downstream financial HTTP/UI/encrypted recovery/full frontend/browser/audits/cumulative exact review/normal publication/CI/refs/card/durable closure REQUIRED before V1-053. At V1-053 closed PAUSE native follow-up, OpenClaw disabled, no V1-054.
+- Live index /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-codex-takeover-live.md. Exact receipts discharge immutable historical pending words; current uncommitted ops records are not yet independently reviewed.
+- Production/access/credentials/customer data/paid/destructive/force-push/history rewrite/retained-worktree deletion unauthorized. Updated2026-09-06T17:06:00Z; owner action none.
 
 ## Historical V1-047 closure record
 
@@ -44,7 +47,7 @@ The following evidence is preserved as history. Its closure-turn next actions an
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation state: nativefollowup ACTIVE; OpenClawdisabled. V1-052 KHRbridge implemented, focusedPASS/exactgates-reviewpending; activation/read/USD ACCEPTED.
-- Exact next action: freeze/test/review COMPLETE17path KHRslice from1209530; remaining52HTTP/UI/fullrelease before53. At53closedPAUSE/no54.
+- Automation state: native follow-up ACTIVE; OpenClaw disabled. V1-052 read/USD/KHR accepted; Payment HTTP/API ACTIVE, prepared but not implemented.
+- Exact next action: implement/test/freeze/review bounded Payment HTTP/API from accepted5263218; remaining full V1-052 release before V1-053. At V1-053 closed PAUSE/no V1-054.
 
 <!-- AUTOMATION_STATUS_END -->

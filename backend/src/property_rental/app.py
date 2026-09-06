@@ -104,6 +104,13 @@ from property_rental.lease_api import (
     create_lease_router,
 )
 from property_rental.logging import create_application_logger
+from property_rental.payment_api import (
+    PaymentFlow,
+    PostgresPaymentFlow,
+    create_payment_router,
+    payment_key_reused_response,
+)
+from property_rental.payment_confirmation import PaymentConfirmationKeyReused
 from property_rental.property_api import (
     PostgresPropertyResourceFlow,
     PropertyResourceFlow,
@@ -169,6 +176,9 @@ INVOICE_API_PATH_PATTERN: Final = re.compile(
 LATE_PAYMENT_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:invoices/[^/]+/late-payment-(?:review|decision)$|"
     r"late-payment-charges(?:/|$))"
+)
+PAYMENT_API_PATH_PATTERN: Final = re.compile(
+    r"^/api/v1/(?:properties/[^/]+/payments(?:/|$)|payments(?:/|$))"
 )
 DATABASE_TIMEOUT_SECONDS: Final = 2
 ERROR_STATUS_DETAILS: Final = {
@@ -293,6 +303,7 @@ def create_app(
     billing_run_flow: BillingRunFlow | None = None,
     invoice_flow: InvoiceFlow | None = None,
     late_payment_flow: LatePaymentFlow | None = None,
+    payment_flow: PaymentFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -338,6 +349,10 @@ def create_app(
     @app.exception_handler(StarletteHTTPException)
     async def http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         return error_response(exc.status_code, request.state.request_id)
+
+    @app.exception_handler(PaymentConfirmationKeyReused)
+    async def payment_key_reused(request: Request, _: PaymentConfirmationKeyReused) -> JSONResponse:
+        return payment_key_reused_response(request)
 
     @app.exception_handler(AuthenticationUnavailable)
     async def authentication_unavailable(
@@ -546,6 +561,7 @@ def create_app(
             or BILLING_RUN_API_PATH_PATTERN.match(request.url.path)
             or INVOICE_API_PATH_PATTERN.match(request.url.path)
             or LATE_PAYMENT_API_PATH_PATTERN.match(request.url.path)
+            or PAYMENT_API_PATH_PATTERN.match(request.url.path)
         ):
             response.headers["Cache-Control"] = "private, no-store"
             response.headers["Vary"] = "Cookie"
@@ -774,6 +790,22 @@ def create_app(
                     if resolved_settings.database_url is not None
                     else UnavailableLatePaymentFlow()
                 ),
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_payment_router(
+            actor_resolver,
+            payment_flow
+            or PostgresPaymentFlow(
+                resolved_settings.database_url.get_secret_value()
+                if resolved_settings.database_url is not None
+                else None,
+                resolved_settings.financial_database_url.get_secret_value()
+                if resolved_settings.financial_database_url is not None
+                else None,
+                exchange_rate_provider,
             ),
             resolved_settings,
         )
