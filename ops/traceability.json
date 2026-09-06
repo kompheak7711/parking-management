@@ -2,6 +2,163 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_pet_refund_resource_links_retained_narratives_without_unbounded_embedding",
+      "upstream_ids": [
+        "TEST-126",
+        "SEC-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Large valid retained qualification narratives remain intact in their original source; Refund responses carry bounded typed facts and exact source links instead of copying unbounded text."
+    },
+    {
+      "test_id": "test_pet_refund_holds_signed_lease_status_until_commit",
+      "upstream_ids": [
+        "TEST-126",
+        "BR-DEP-012"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent termination cannot change the authoritative SIGNED Lease before the qualified Pet Refund commits."
+    },
+    {
+      "test_id": "test_pet_correction_reversal_cannot_spend_stale_returned_balance",
+      "upstream_ids": [
+        "API-066",
+        "SEC-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Correction reversal shares the Deposit MVCC guard and cannot spend returned value consumed by a newer Refund in any supported isolation."
+    },
+    {
+      "test_id": "test_deposit_receipt_reversal_cannot_precede_its_original_receipt",
+      "upstream_ids": [
+        "SEC-026",
+        "DB-DEP-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Receipt reversal chronology cannot invent Deposit source value before its original receipt."
+    },
+    {
+      "test_id": "test_pet_refund_transmission_preserves_review_and_revalidates_intent",
+      "upstream_ids": [
+        "API-065",
+        "SEC-026"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_refund.py",
+      "status": "implemented",
+      "notes": "Exact qualified Deposit/review command envelope is transmitted and revalidated."
+    },
+    {
+      "test_id": "test_pet_refund_reuses_review_preserves_lease_and_exact_replay_audit",
+      "upstream_ids": [
+        "TEST-126",
+        "DL-053",
+        "API-065"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Pet Refund reuses resolved review and departure, preserves SIGNED Lease and liability, exact replay, recipient and Property audit."
+    },
+    {
+      "test_id": "test_pet_refund_rejects_unqualified_scope_amount_and_chronology",
+      "upstream_ids": [
+        "TEST-126",
+        "BR-DEP-012",
+        "SEC-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Rejects missing/mismatched review, Customer/Property scope, overspend, wrong authorization, backdating and terminated Lease."
+    },
+    {
+      "test_id": "test_departure_alone_and_security_deposit_never_qualify_for_active_refund",
+      "upstream_ids": [
+        "TEST-126",
+        "BR-DEP-012",
+        "SEC-022"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Departure alone does not qualify a Pet Refund; active Security Deposit never uses the exception."
+    },
+    {
+      "test_id": "test_pet_verified_return_correction_reversal_and_reused_balance_are_exact",
+      "upstream_ids": [
+        "API-066",
+        "DB-REFUND-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Verified returned Pet value and exact correction reversal are append-only; reused held funds cannot be spent twice."
+    },
+    {
+      "test_id": "test_deposit_historical_budget_rejects_backdated_receipt_reversal_after_return",
+      "upstream_ids": [
+        "DB-REFUND-002",
+        "SEC-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Backdated receipt reversal cannot conceal a historical negative Deposit balance after a full returned-value correction."
+    },
+    {
+      "test_id": "test_pet_deposit_mvcc_guard_rejects_stale_competing_consumers",
+      "upstream_ids": [
+        "TEST-126",
+        "SEC-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "READ COMMITTED rechecks source; Repeatable Read/Serializable stale Refund and receipt reversal fail with serialization error."
+    },
+    {
+      "test_id": "test_simultaneous_pet_refund_and_deposit_consumers_conserve_value",
+      "upstream_ids": [
+        "TEST-126",
+        "SEC-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Simultaneous Refund/Refund and Refund/receipt-reversal consumers conserve held funds with only one accepted operation."
+    },
+    {
+      "test_id": "test_pet_return_cannot_restore_reversed_deposit_receipt_for_correction_reversal",
+      "upstream_ids": [
+        "API-066",
+        "SEC-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Correction reversal fails when returned funds no longer remain after receipt reversal."
+    },
+    {
+      "test_id": "test_pet_helpers_and_guard_state_remain_private_and_financial_role_has_only_command",
+      "upstream_ids": [
+        "SEC-022",
+        "SEC-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_pet_refund_migration.py",
+      "status": "implemented",
+      "notes": "Operational roles lack table/private helper privileges; only financial role may execute Pet Refund creation."
+    },
+    {
       "test_id": "test_refund_requires_exact_positive_bounded_minor_units",
       "upstream_ids": [
         "SEC-026",

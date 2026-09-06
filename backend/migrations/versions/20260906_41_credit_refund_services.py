@@ -379,6 +379,7 @@ def upgrade() -> None:
     create_refund_source_storage()
     integrate_refund_source_budgets()
     create_refund_services()
+    create_pet_refund_sources()
 
 
 def create_credit_application_storage() -> None:
@@ -1076,10 +1077,12 @@ def create_refund_source_storage() -> None:
             ALTER COLUMN source_lifecycle_event_id DROP NOT NULL,
             ADD COLUMN source_payment_id uuid REFERENCES app.payments(id) ON DELETE RESTRICT,
             ADD COLUMN source_customer_credit_id uuid REFERENCES app.customer_credits(id) ON DELETE RESTRICT,
+            ADD COLUMN pet_refund_review_id uuid REFERENCES app.pet_deposit_refund_reviews(id) ON DELETE RESTRICT,
             ADD CONSTRAINT refund_exactly_one_source CHECK (
                 num_nonnulls(source_payment_id,source_customer_credit_id,source_deposit_id)=1),
             ADD CONSTRAINT refund_source_context CHECK (
-                (source_deposit_id IS NOT NULL)=(source_lifecycle_event_id IS NOT NULL));
+                (source_deposit_id IS NOT NULL)=(num_nonnulls(source_lifecycle_event_id,pet_refund_review_id)=1)
+                AND num_nonnulls(source_lifecycle_event_id,pet_refund_review_id)<=1);
         CREATE INDEX refunds_payment_history_idx ON app.refunds(source_payment_id,processed_at,id);
         CREATE INDEX refunds_credit_history_idx ON app.refunds(source_customer_credit_id,processed_at,id);
         ALTER TABLE app.refund_corrections
@@ -1133,6 +1136,10 @@ def create_refund_source_storage() -> None:
         DECLARE v_root uuid; v_available bigint; v_latest timestamptz;
         BEGIN
             IF NEW.source_lifecycle_event_id IS NOT NULL THEN RETURN NEW; END IF;
+            IF NEW.pet_refund_review_id IS NOT NULL THEN
+                PERFORM app.assert_pet_refund_source(NEW);
+                RETURN NEW;
+            END IF;
             v_root:=app.lock_refund_payment_source(NEW.source_payment_id,NEW.source_customer_credit_id);
             SELECT * INTO STRICT v_payment FROM app.payments WHERE id=v_root;
             PERFORM app.assert_active_financial_actor(NEW.processed_by,NULL);
@@ -1168,6 +1175,7 @@ def create_refund_source_storage() -> None:
         RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
         DECLARE v_refund app.refunds%ROWTYPE; v_original app.refund_corrections%ROWTYPE;
         DECLARE v_payment app.payments%ROWTYPE; v_root uuid; v_net bigint; v_available bigint; v_latest timestamptz;
+        DECLARE v_property uuid;
         BEGIN
             SELECT * INTO STRICT v_refund FROM app.refunds WHERE id=NEW.refund_id;
             IF v_refund.source_lifecycle_event_id IS NOT NULL THEN
@@ -1178,15 +1186,22 @@ def create_refund_source_storage() -> None:
                 END IF;
                 RETURN NEW;
             END IF;
-            v_root:=app.lock_refund_payment_source(v_refund.source_payment_id,v_refund.source_customer_credit_id);
+            IF v_refund.pet_refund_review_id IS NOT NULL THEN
+                PERFORM app.serialize_deposit_state(v_refund.source_deposit_id);
+                v_property:=app.deposit_property_id(v_refund.source_deposit_id);
+            ELSE
+                v_root:=app.lock_refund_payment_source(v_refund.source_payment_id,v_refund.source_customer_credit_id);
+                SELECT * INTO STRICT v_payment FROM app.payments WHERE id=v_root;
+                v_property:=v_payment.property_id;
+            END IF;
             PERFORM 1 FROM app.refunds WHERE id=v_refund.id FOR UPDATE;
-            SELECT * INTO STRICT v_payment FROM app.payments WHERE id=v_root;
             PERFORM app.assert_active_financial_actor(NEW.actor_id,NULL);
-            PERFORM app.assert_active_financial_actor(NEW.actor_id,v_payment.property_id);
+            PERFORM app.assert_active_financial_actor(NEW.actor_id,v_property);
             v_net:=app.refund_net_value_at(v_refund.id,'infinity');
             v_latest:=GREATEST(v_refund.processed_at,
                 (SELECT max(occurred_at) FROM app.refund_corrections WHERE refund_id=v_refund.id),
-                CASE WHEN v_refund.source_payment_id IS NOT NULL THEN app.payment_proposal_dependency_at(v_root)
+                CASE WHEN v_refund.pet_refund_review_id IS NOT NULL THEN app.deposit_balance_latest_at(v_refund.source_deposit_id)
+                    WHEN v_refund.source_payment_id IS NOT NULL THEN app.payment_proposal_dependency_at(v_root)
                     ELSE app.credit_latest_at(v_refund.source_customer_credit_id) END);
             IF NEW.previous_net_refund_usd_cents<>v_net
                 OR NEW.resulting_net_refund_usd_cents>v_refund.usd_accounting_value_cents
@@ -1213,9 +1228,11 @@ def create_refund_source_storage() -> None:
                     OR num_nonnulls(NEW.verified_return_amount_minor,NEW.verified_return_currency,
                         NEW.verified_returned_at,NEW.return_method_reference)<>0
                 THEN RAISE EXCEPTION 'Refund correction reversal must reverse one active exact correction' USING ERRCODE='23514'; END IF;
-                v_available:=CASE WHEN v_refund.source_payment_id IS NOT NULL THEN app.payment_available_value(v_root)
+                v_available:=CASE WHEN v_refund.pet_refund_review_id IS NOT NULL THEN app.deposit_held_value_at(v_refund.source_deposit_id,'infinity')
+                    WHEN v_refund.source_payment_id IS NOT NULL THEN app.payment_available_value(v_root)
                     ELSE app.credit_available_value(v_refund.source_customer_credit_id) END;
-                IF v_payment.status<>'RECEIVED' OR v_available< -NEW.source_balance_effect_usd_cents
+                IF (v_refund.pet_refund_review_id IS NULL AND v_payment.status<>'RECEIVED')
+                    OR v_available< -NEW.source_balance_effect_usd_cents
                 THEN RAISE EXCEPTION 'Returned Refund value is no longer available to reverse' USING ERRCODE='23514'; END IF;
             END IF;
             RETURN NEW;
@@ -1227,6 +1244,7 @@ def create_refund_source_storage() -> None:
         RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
         DECLARE v_refund app.refunds%ROWTYPE; v_payment app.payments%ROWTYPE;
         DECLARE v_actor uuid; v_at timestamptz; v_action text;
+        DECLARE v_property uuid; v_lease uuid;
         BEGIN
             IF TG_TABLE_NAME='refunds' THEN
                 v_refund:=NEW; v_actor:=NEW.processed_by; v_at:=NEW.processed_at; v_action:='refund.created';
@@ -1237,16 +1255,23 @@ def create_refund_source_storage() -> None:
                     ELSE 'refund.correction_reversed' END;
             END IF;
             IF v_refund.source_lifecycle_event_id IS NOT NULL THEN RETURN NULL; END IF;
-            SELECT * INTO STRICT v_payment FROM app.payments WHERE id=COALESCE(v_refund.source_payment_id,
-                (SELECT source_payment_id FROM app.customer_credits WHERE id=v_refund.source_customer_credit_id));
+            IF v_refund.pet_refund_review_id IS NOT NULL THEN
+                SELECT app.deposit_property_id(id),lease_id INTO STRICT v_property,v_lease
+                    FROM app.deposits WHERE id=v_refund.source_deposit_id;
+            ELSE
+                SELECT * INTO STRICT v_payment FROM app.payments WHERE id=COALESCE(v_refund.source_payment_id,
+                    (SELECT source_payment_id FROM app.customer_credits WHERE id=v_refund.source_customer_credit_id));
+                v_property:=v_payment.property_id; v_lease:=v_payment.lease_id;
+            END IF;
             INSERT INTO app.audit_events(id,occurred_at,business_date,actor_id,action,entity_type,entity_id,
                 reason,authorization_reference,property_id,resulting_state,correlation_id,source,outcome,customer_id,lease_id)
             VALUES(gen_random_uuid(),v_at,(v_at AT TIME ZONE
-                (SELECT timezone_name FROM app.properties WHERE id=v_payment.property_id))::date,v_actor,v_action,
-                'refund',v_refund.id,NEW.reason,NEW.authorization_reference,v_payment.property_id,
+                (SELECT timezone_name FROM app.properties WHERE id=v_property))::date,v_actor,v_action,
+                'refund',v_refund.id,NEW.reason,NEW.authorization_reference,v_property,
                 jsonb_build_object('refund_id',v_refund.id,'source_payment_id',v_refund.source_payment_id,
+                    'source_deposit_id',v_refund.source_deposit_id,'pet_refund_review_id',v_refund.pet_refund_review_id,
                     'source_customer_credit_id',v_refund.source_customer_credit_id,'source_event',to_jsonb(NEW)),
-                NEW.id,'API','SUCCESS',v_refund.recipient_customer_id,v_payment.lease_id);
+                NEW.id,'API','SUCCESS',v_refund.recipient_customer_id,v_lease);
             RETURN NULL;
         END $$;
         CREATE TRIGGER refunds_general_audit AFTER INSERT ON app.refunds
@@ -1374,7 +1399,7 @@ def create_refund_services() -> None:
         CREATE TABLE app.refund_commands (
             property_id uuid NOT NULL REFERENCES app.properties(id) ON DELETE RESTRICT,
             actor_id uuid NOT NULL REFERENCES app.user_accounts(actor_id) ON DELETE RESTRICT,
-            action text NOT NULL CHECK(action IN ('CREATE_USD','VERIFY_RETURN_USD','REVERSE_CORRECTION')),
+            action text NOT NULL CHECK(action IN ('CREATE_USD','CREATE_PET_USD','VERIFY_RETURN_USD','REVERSE_CORRECTION')),
             idempotency_key uuid NOT NULL CHECK(idempotency_key<>'00000000-0000-0000-0000-000000000000'),
             request jsonb NOT NULL CHECK(jsonb_typeof(request)='object' AND octet_length(request::text)<=16000),
             response jsonb NOT NULL CHECK(jsonb_typeof(response)='object'),
@@ -1426,6 +1451,23 @@ def create_refund_services() -> None:
             -- captured in ONE SQL snapshot. No inverted Refund->source lock order.
             SELECT app.refund_summary(refund.id) || jsonb_build_object(
                 'source_payment',to_jsonb(payment),'source_exchange_rate',to_jsonb(rate),
+                -- Keep source links and typed qualification facts here. Full
+                -- retained narratives belong to the existing review resource,
+                -- not every bounded Refund command response/history page.
+                'pet_refund_review',(SELECT jsonb_build_object('id',review.id,
+                    'pet_departure_id',review.pet_departure_id,'pet_deposit_id',review.pet_deposit_id,
+                    'obligations_reviewed_usd_cents',review.obligations_reviewed_usd_cents,
+                    'all_pet_obligations_resolved',review.all_pet_obligations_resolved,
+                    'reviewed_at',review.reviewed_at,'reviewed_by',review.reviewed_by)
+                    FROM app.pet_deposit_refund_reviews review
+                    WHERE review.id=refund.pet_refund_review_id),
+                'pet_departure',(SELECT jsonb_build_object('id',departure.id,
+                    'pet_approval_id',departure.pet_approval_id,'lease_id',departure.lease_id,
+                    'permanently_left_date',departure.permanently_left_date,
+                    'occurred_at',departure.occurred_at,'actor_id',departure.actor_id)
+                    FROM app.lease_pet_departures departure
+                    JOIN app.pet_deposit_refund_reviews review ON review.pet_departure_id=departure.id
+                    WHERE review.id=refund.pet_refund_review_id),
                 'corrections',(WITH page AS MATERIALIZED (
                     SELECT correction.*,row_number() OVER (ORDER BY occurred_at DESC,id DESC) AS page_row
                     FROM app.refund_corrections correction WHERE refund_id=refund.id
@@ -1476,7 +1518,7 @@ def create_refund_services() -> None:
         BEGIN
             PERFORM app.require_invoice_command_actor(p_property_id,p_actor_id);
             PERFORM app.assert_active_financial_actor(p_actor_id,p_property_id);
-            IF p_action IS NULL OR p_action NOT IN ('CREATE_USD','VERIFY_RETURN_USD','REVERSE_CORRECTION')
+            IF p_action IS NULL OR p_action NOT IN ('CREATE_USD','CREATE_PET_USD','VERIFY_RETURN_USD','REVERSE_CORRECTION')
                 OR p_key IS NULL OR p_key='00000000-0000-0000-0000-000000000000'
                 OR p_request IS NULL OR jsonb_typeof(p_request)<>'object' OR octet_length(p_request::text)>16000
             THEN RAISE EXCEPTION 'Refund command identity is invalid' USING ERRCODE='P5202'; END IF;
@@ -1564,7 +1606,11 @@ def create_refund_services() -> None:
             IF v_refund.source_lifecycle_event_id IS NOT NULL OR v_refund.refund_currency<>'USD' THEN
                 RAISE EXCEPTION 'Refund requires its source-specific coordinated correction path' USING ERRCODE='P5202';
             END IF;
-            PERFORM app.lock_refund_payment_source(v_refund.source_payment_id,v_refund.source_customer_credit_id);
+            IF v_refund.pet_refund_review_id IS NOT NULL THEN
+                PERFORM app.serialize_deposit_state(v_refund.source_deposit_id);
+            ELSE
+                PERFORM app.lock_refund_payment_source(v_refund.source_payment_id,v_refund.source_customer_credit_id);
+            END IF;
             PERFORM 1 FROM app.refunds WHERE id=v_refund.id FOR UPDATE;
             RETURN v_refund;
         END $$;
@@ -1655,6 +1701,219 @@ def create_refund_services() -> None:
         op.execute(f"GRANT EXECUTE ON FUNCTION app.{signature} TO prm_runtime,prm_financial")
     for signature in writes:
         op.execute(f"GRANT EXECUTE ON FUNCTION app.{signature} TO prm_financial")
+
+
+def create_pet_refund_sources() -> None:
+    """Reuse qualified Pet evidence and conserve every Deposit balance event."""
+    op.execute("""
+        CREATE TABLE app.deposit_serialization_guards (
+            deposit_id uuid PRIMARY KEY REFERENCES app.deposits(id) ON DELETE RESTRICT,
+            revision bigint NOT NULL DEFAULT 0 CHECK(revision>=0)
+        );
+        REVOKE ALL ON TABLE app.deposit_serialization_guards FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap;
+        CREATE FUNCTION app.serialize_deposit_state(p_deposit_id uuid)
+        RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        BEGIN
+            -- Existing Deposit commands already acquire this root row. Keep its
+            -- order before the new MVCC guard; a row lock alone is not enough
+            -- for a transaction retaining a Repeatable Read snapshot.
+            PERFORM 1 FROM app.deposits WHERE id=p_deposit_id FOR UPDATE;
+            IF NOT FOUND THEN RAISE EXCEPTION 'Deposit not found' USING ERRCODE='23503'; END IF;
+            INSERT INTO app.deposit_serialization_guards(deposit_id,revision) VALUES(p_deposit_id,1)
+                ON CONFLICT(deposit_id) DO UPDATE SET revision=app.deposit_serialization_guards.revision+1;
+        END $$;
+        CREATE FUNCTION app.deposit_balance_events(p_deposit_id uuid)
+        RETURNS TABLE(event_at timestamptz,amount numeric)
+        LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+            SELECT occurred_at,amount_usd_cents::numeric FROM app.deposit_receipts WHERE deposit_id=p_deposit_id
+            UNION ALL SELECT reversal.occurred_at,-receipt.amount_usd_cents::numeric
+                FROM app.deposit_receipt_reversals reversal JOIN app.deposit_receipts receipt ON receipt.id=reversal.deposit_receipt_id
+                WHERE receipt.deposit_id=p_deposit_id
+            UNION ALL SELECT occurred_at,-amount_usd_cents::numeric FROM app.deposit_dispositions WHERE deposit_id=p_deposit_id
+            UNION ALL SELECT reversal.occurred_at,disposition.amount_usd_cents::numeric
+                FROM app.deposit_disposition_reversals reversal JOIN app.deposit_dispositions disposition ON disposition.id=reversal.deposit_disposition_id
+                WHERE disposition.deposit_id=p_deposit_id
+            UNION ALL SELECT processed_at,-usd_accounting_value_cents::numeric FROM app.refunds WHERE source_deposit_id=p_deposit_id
+            UNION ALL SELECT correction.occurred_at,correction.source_balance_effect_usd_cents::numeric
+                FROM app.refund_corrections correction JOIN app.refunds refund ON refund.id=correction.refund_id
+                WHERE refund.source_deposit_id=p_deposit_id
+        $$;
+        CREATE FUNCTION app.deposit_held_value_at(p_deposit_id uuid,p_as_of timestamptz)
+        RETURNS bigint LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+            SELECT COALESCE(sum(amount),0)::bigint FROM app.deposit_balance_events(p_deposit_id) WHERE event_at<=p_as_of
+        $$;
+        CREATE FUNCTION app.deposit_balance_latest_at(p_deposit_id uuid)
+        RETURNS timestamptz LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+            SELECT max(event_at) FROM app.deposit_balance_events(p_deposit_id)
+        $$;
+        CREATE FUNCTION app.serialize_deposit_balance_event()
+        RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        DECLARE v_deposit uuid; v_original_at timestamptz;
+        BEGIN
+            IF TG_TABLE_NAME IN ('deposit_receipts','deposit_dispositions') THEN v_deposit:=NEW.deposit_id;
+            ELSIF TG_TABLE_NAME='deposit_receipt_reversals' THEN
+                SELECT deposit_id,occurred_at INTO STRICT v_deposit,v_original_at
+                    FROM app.deposit_receipts WHERE id=NEW.deposit_receipt_id;
+            ELSIF TG_TABLE_NAME='deposit_disposition_reversals' THEN
+                SELECT deposit_id,occurred_at INTO STRICT v_deposit,v_original_at
+                    FROM app.deposit_dispositions WHERE id=NEW.deposit_disposition_id;
+            ELSIF TG_TABLE_NAME='refunds' THEN v_deposit:=NEW.source_deposit_id;
+            ELSE SELECT source_deposit_id INTO STRICT v_deposit FROM app.refunds WHERE id=NEW.refund_id;
+            END IF;
+            IF v_deposit IS NOT NULL THEN PERFORM app.serialize_deposit_state(v_deposit); END IF;
+            IF v_original_at IS NOT NULL THEN
+                IF NEW.occurred_at<v_original_at
+                THEN RAISE EXCEPTION 'Deposit reversal cannot predate its source' USING ERRCODE='23514'; END IF;
+            END IF;
+            RETURN NEW;
+        END $$;
+        CREATE FUNCTION app.validate_deposit_history_budget()
+        RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        DECLARE v_deposit uuid;
+        BEGIN
+            IF TG_TABLE_NAME IN ('deposit_receipts','deposit_dispositions') THEN v_deposit:=NEW.deposit_id;
+            ELSIF TG_TABLE_NAME='deposit_receipt_reversals' THEN
+                SELECT deposit_id INTO STRICT v_deposit FROM app.deposit_receipts WHERE id=NEW.deposit_receipt_id;
+            ELSIF TG_TABLE_NAME='deposit_disposition_reversals' THEN
+                SELECT deposit_id INTO STRICT v_deposit FROM app.deposit_dispositions WHERE id=NEW.deposit_disposition_id;
+            ELSIF TG_TABLE_NAME='refunds' THEN v_deposit:=NEW.source_deposit_id;
+            ELSE SELECT source_deposit_id INTO STRICT v_deposit FROM app.refunds WHERE id=NEW.refund_id;
+            END IF;
+            IF v_deposit IS NULL THEN RETURN NULL; END IF;
+            -- Validate every historical time group, not a zero-clamped current
+            -- projection that could conceal a backdated transient overspend.
+            IF EXISTS(SELECT 1 FROM (
+                SELECT event_at,sum(amount) OVER (ORDER BY event_at RANGE UNBOUNDED PRECEDING) AS held
+                FROM app.deposit_balance_events(v_deposit)
+            ) positions WHERE held<0 OR NOT isfinite(event_at))
+            THEN RAISE EXCEPTION 'Deposit historical held balance cannot be negative' USING ERRCODE='23514'; END IF;
+            RETURN NULL;
+        END $$;
+        CREATE FUNCTION app.pet_refund_qualification(p_property_id uuid,p_deposit_id uuid,p_review_id uuid)
+        RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+            SELECT jsonb_build_object('source_type','PET_DEPOSIT','source_id',deposit.id,
+                'pet_refund_review_id',review.id,'pet_departure_id',departure.id,'pet_approval_id',approval.id,
+                'lease_id',lease.id,'property_id',unit.property_id,'recipient_customer_id',deposit.customer_id,
+                'qualified_at',GREATEST(review.reviewed_at,departure.occurred_at,approval.approved_at,lease.signed_at),
+                'refund_currency','USD','available_usd_cents',app.deposit_held_value_at(deposit.id,'infinity'),
+                'eligible',app.deposit_held_value_at(deposit.id,'infinity')>0)
+            FROM app.deposits deposit
+            JOIN app.pet_deposit_refund_reviews review ON review.pet_deposit_id=deposit.id AND review.id=p_review_id
+            JOIN app.lease_pet_departures departure ON departure.id=review.pet_departure_id
+                AND departure.pet_approval_id=deposit.pet_approval_id AND departure.lease_id=deposit.lease_id
+            JOIN app.lease_pet_approvals approval ON approval.id=deposit.pet_approval_id AND approval.lease_id=deposit.lease_id
+            JOIN app.leases lease ON lease.id=deposit.lease_id AND lease.primary_tenant_id=deposit.customer_id
+            JOIN app.units unit ON unit.id=lease.unit_id
+            WHERE deposit.id=p_deposit_id AND deposit.deposit_type='PET' AND lease.status='SIGNED'
+                AND unit.property_id=p_property_id AND review.all_pet_obligations_resolved
+                AND review.authorization_reference='deposits.refund.qualify'
+                AND departure.permanently_left_date<=(clock_timestamp() AT TIME ZONE
+                    (SELECT timezone_name FROM app.properties WHERE id=p_property_id))::date
+        $$;
+        CREATE FUNCTION app.lock_pet_refund_source(p_property_id uuid,p_deposit_id uuid,p_review_id uuid)
+        RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        DECLARE v_result jsonb;
+        BEGIN
+            -- Hold the Lease status through commit. Do not terminate it or
+            -- invent Final Settlement merely to return a qualified Pet balance.
+            PERFORM 1 FROM app.leases lease JOIN app.deposits deposit ON deposit.lease_id=lease.id
+                JOIN app.units unit ON unit.id=lease.unit_id
+                WHERE deposit.id=p_deposit_id AND unit.property_id=p_property_id AND lease.status='SIGNED'
+                FOR SHARE OF lease;
+            IF NOT FOUND THEN RAISE EXCEPTION 'Qualified Pet Refund source not found' USING ERRCODE='P5201'; END IF;
+            PERFORM app.serialize_deposit_state(p_deposit_id);
+            v_result:=app.pet_refund_qualification(p_property_id,p_deposit_id,p_review_id);
+            IF v_result IS NULL THEN RAISE EXCEPTION 'Qualified Pet Refund source not found' USING ERRCODE='P5201'; END IF;
+            RETURN v_result;
+        END $$;
+        CREATE FUNCTION app.assert_pet_refund_source(p_refund app.refunds)
+        RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        DECLARE v_property uuid; v_source jsonb;
+        BEGIN
+            v_property:=app.deposit_property_id(p_refund.source_deposit_id);
+            v_source:=app.lock_pet_refund_source(v_property,p_refund.source_deposit_id,p_refund.pet_refund_review_id);
+            PERFORM app.assert_active_financial_actor(p_refund.processed_by,NULL);
+            PERFORM app.assert_active_financial_actor(p_refund.processed_by,v_property);
+            IF p_refund.recipient_customer_id IS DISTINCT FROM (v_source->>'recipient_customer_id')::uuid
+                OR p_refund.usd_accounting_value_cents NOT BETWEEN 1 AND 9000000000000000
+                OR p_refund.usd_accounting_value_cents>(v_source->>'available_usd_cents')::bigint
+                OR NOT isfinite(p_refund.processed_at) OR p_refund.processed_at<=(v_source->>'qualified_at')::timestamptz
+                OR p_refund.processed_at<=app.deposit_balance_latest_at(p_refund.source_deposit_id)
+                OR p_refund.processed_at>clock_timestamp()+interval '5 seconds'
+                OR length(p_refund.reason) NOT BETWEEN 1 AND 1000 OR p_refund.authorization_reference<>'refunds.create'
+            THEN RAISE EXCEPTION 'Pet Refund source, amount, authorization or chronology is invalid' USING ERRCODE='23514'; END IF;
+        END $$;
+        CREATE FUNCTION app.pet_refund_source(p_property_id uuid,p_actor_id uuid,p_deposit_id uuid,p_review_id uuid)
+        RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog AS $$
+        DECLARE v_result jsonb;
+        BEGIN
+            PERFORM app.require_invoice_command_actor(p_property_id,p_actor_id);
+            PERFORM app.assert_active_financial_actor(p_actor_id,p_property_id);
+            v_result:=app.pet_refund_qualification(p_property_id,p_deposit_id,p_review_id);
+            IF v_result IS NULL THEN RAISE EXCEPTION 'Qualified Pet Refund source not found' USING ERRCODE='P5201'; END IF;
+            RETURN v_result;
+        END $$;
+        CREATE FUNCTION app.create_pet_usd_refund(
+            p_property_id uuid,p_actor_id uuid,p_key uuid,p_deposit_id uuid,p_review_id uuid,p_amount bigint,p_reason text
+        ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+        DECLARE v_request jsonb; v_result jsonb; v_source jsonb; v_id uuid:=gen_random_uuid();
+        BEGIN
+            v_request:=jsonb_build_object('deposit_id',p_deposit_id,'pet_refund_review_id',p_review_id,
+                'amount_usd_cents',p_amount,'reason',p_reason);
+            v_result:=app.refund_command_replay(p_property_id,p_actor_id,'CREATE_PET_USD',p_key,v_request);
+            IF v_result IS NOT NULL THEN RETURN v_result; END IF;
+            IF p_deposit_id IS NULL OR p_review_id IS NULL
+                OR p_deposit_id='00000000-0000-0000-0000-000000000000' OR p_review_id='00000000-0000-0000-0000-000000000000'
+                OR p_amount IS NULL OR p_amount NOT BETWEEN 1 AND 9000000000000000
+                OR p_reason IS NULL OR p_reason<>btrim(p_reason) OR length(p_reason) NOT BETWEEN 1 AND 1000
+            THEN RAISE EXCEPTION 'Pet Refund input is invalid' USING ERRCODE='P5202'; END IF;
+            v_source:=app.lock_pet_refund_source(p_property_id,p_deposit_id,p_review_id);
+            INSERT INTO app.refunds(id,refund_number,recipient_customer_id,source_deposit_id,pet_refund_review_id,
+                usd_accounting_value_cents,refund_currency,refund_amount_minor,reason,processed_at,processed_by,authorization_reference)
+            VALUES(v_id,'REF-'||v_id::text,(v_source->>'recipient_customer_id')::uuid,p_deposit_id,p_review_id,
+                p_amount,'USD',p_amount,p_reason,clock_timestamp(),p_actor_id,'refunds.create');
+            SET CONSTRAINTS ALL IMMEDIATE;
+            v_result:=app.refund_resource(p_property_id,v_id,p_actor_id,50,NULL,NULL);
+            INSERT INTO app.refund_commands VALUES(p_property_id,p_actor_id,'CREATE_PET_USD',p_key,v_request,v_result,clock_timestamp());
+            RETURN v_result;
+        END $$;
+    """)
+    for table in (
+        "deposit_receipts",
+        "deposit_receipt_reversals",
+        "deposit_dispositions",
+        "deposit_disposition_reversals",
+        "refunds",
+        "refund_corrections",
+    ):
+        op.execute(f"""
+            CREATE TRIGGER b_deposit_balance_source BEFORE INSERT ON app.{table}
+                FOR EACH ROW EXECUTE FUNCTION app.serialize_deposit_balance_event();
+            CREATE CONSTRAINT TRIGGER {table}_deposit_history_budget AFTER INSERT ON app.{table}
+                DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION app.validate_deposit_history_budget();
+        """)
+    for signature in (
+        "serialize_deposit_state(uuid)",
+        "deposit_balance_events(uuid)",
+        "deposit_held_value_at(uuid,timestamptz)",
+        "deposit_balance_latest_at(uuid)",
+        "serialize_deposit_balance_event()",
+        "validate_deposit_history_budget()",
+        "pet_refund_qualification(uuid,uuid,uuid)",
+        "lock_pet_refund_source(uuid,uuid,uuid)",
+        "assert_pet_refund_source(app.refunds)",
+        "pet_refund_source(uuid,uuid,uuid,uuid)",
+        "create_pet_usd_refund(uuid,uuid,uuid,uuid,uuid,bigint,text)",
+    ):
+        op.execute(
+            f"REVOKE ALL ON FUNCTION app.{signature} FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap"
+        )
+    op.execute(
+        "GRANT EXECUTE ON FUNCTION app.pet_refund_source(uuid,uuid,uuid,uuid) TO prm_runtime,prm_financial"
+    )
+    op.execute(
+        "GRANT EXECUTE ON FUNCTION app.create_pet_usd_refund(uuid,uuid,uuid,uuid,uuid,bigint,text) TO prm_financial"
+    )
 
 
 def downgrade() -> None:

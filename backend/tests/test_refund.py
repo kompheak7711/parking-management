@@ -13,6 +13,7 @@ from psycopg.types.json import JsonbLoader
 
 from property_rental.identity import AuthenticatedActor
 from property_rental.refund import (
+    CreatePetRefundCommand,
     CreateUsdRefundCommand,
     RefundAuthorizationError,
     RefundIdempotencyKeyReused,
@@ -43,6 +44,8 @@ def test_refund_requires_exact_positive_bounded_minor_units(amount: int) -> None
         replace(create(), amount_usd_cents=amount)
     with pytest.raises(RefundInvalidError):
         replace(returned(), returned_amount_minor=amount)
+    with pytest.raises(RefundInvalidError):
+        CreatePetRefundCommand(uuid4(), uuid4(), uuid4(), amount, "Qualified Pet Refund")
 
 
 @pytest.mark.parametrize("reason", ["", " ", " leading", "trailing ", "x" * 1001, "\x00", "\ud800"])
@@ -53,6 +56,8 @@ def test_refund_commands_require_normalized_bounded_valid_text(reason: str) -> N
         replace(returned(), reason=reason)
     with pytest.raises(RefundInvalidError):
         ReverseRefundCorrectionCommand(uuid4(), "Evidence", reason)
+    with pytest.raises(RefundInvalidError):
+        CreatePetRefundCommand(uuid4(), uuid4(), uuid4(), 100, reason)
 
 
 @pytest.mark.parametrize("field", ["return_method_reference", "evidence_reference"])
@@ -81,6 +86,13 @@ def test_refund_commands_require_non_nil_uuid(identity: UUID) -> None:
         replace(returned(), idempotency_key=identity)
     with pytest.raises(RefundInvalidError):
         ReverseRefundCorrectionCommand(identity, "Evidence", "Reason")
+    for key, deposit, review in (
+        (identity, uuid4(), uuid4()),
+        (uuid4(), identity, uuid4()),
+        (uuid4(), uuid4(), identity),
+    ):
+        with pytest.raises(RefundInvalidError):
+            CreatePetRefundCommand(key, deposit, review, 100, "Qualified Refund")
 
 
 @pytest.mark.parametrize(
@@ -128,6 +140,8 @@ CAPABILITIES = {
     "list": "refunds.read",
     "usd_source": "refunds.create",
     "create_usd": "refunds.create",
+    "pet_source": "refunds.create",
+    "create_pet": "refunds.create",
     "verify_usd_return": "refunds.correct",
     "reverse_correction": "refunds.corrections.reverse",
 }
@@ -145,6 +159,14 @@ def invoke(
         return service.usd_source(prop, "PAYMENT", target, actor=actor)
     if operation == "create_usd":
         return service.create_usd(prop, create(), actor=actor)
+    if operation == "pet_source":
+        return service.pet_source(prop, target, uuid4(), actor=actor)
+    if operation == "create_pet":
+        return service.create_pet(
+            prop,
+            CreatePetRefundCommand(uuid4(), target, uuid4(), 100, "Qualified Refund"),
+            actor=actor,
+        )
     if operation == "verify_usd_return":
         return service.verify_usd_return(prop, target, returned(), actor=actor)
     return service.reverse_correction(
@@ -183,7 +205,8 @@ def test_refund_each_capability_works_alone_with_correct_connection(operation: s
             RefundService("read", "write"), operation, prop, staff(prop, CAPABILITIES[operation])
         ) == {"exact_usd_cents": 123}
         connect.assert_called_once_with(
-            "read" if operation in {"get", "list", "usd_source"} else "write", connect_timeout=3
+            "read" if operation in {"get", "list", "usd_source", "pet_source"} else "write",
+            connect_timeout=3,
         )
     assert connection.execute.call_args_list[0].args == ("SET LOCAL lock_timeout='3000ms'",)
     assert connection.execute.call_args_list[1].args == ("SET LOCAL statement_timeout='5000ms'",)
@@ -220,6 +243,33 @@ def test_refund_complete_command_envelope_and_transmission_revalidation() -> Non
         with pytest.raises(RefundInvalidError):
             service.list(prop, actor=staff(prop, "refunds.read"), page=page)
         connect.assert_not_called()
+
+
+def test_pet_refund_transmission_preserves_review_and_revalidates_intent() -> None:
+    prop = uuid4()
+    actor = staff(prop, "refunds.create")
+    request = CreatePetRefundCommand(uuid4(), uuid4(), uuid4(), 100, "Qualified Pet Refund")
+    with patch.object(RefundService, "_query", return_value={}) as query:
+        service = RefundService("read", "write")
+        service.create_pet(prop, request, actor=actor)
+        query.assert_called_once_with(
+            "SELECT app.create_pet_usd_refund(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                prop,
+                UUID(actor.actor_id),
+                request.idempotency_key,
+                request.deposit_id,
+                request.pet_refund_review_id,
+                100,
+                request.reason,
+            ),
+            mutation=True,
+        )
+        query.reset_mock()
+        object.__setattr__(request, "pet_refund_review_id", UUID(int=0))
+        with pytest.raises(RefundInvalidError):
+            service.create_pet(prop, request, actor=actor)
+        query.assert_not_called()
 
 
 @pytest.mark.parametrize(

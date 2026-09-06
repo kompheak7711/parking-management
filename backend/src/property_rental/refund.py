@@ -94,6 +94,22 @@ class CreateUsdRefundCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class CreatePetRefundCommand:
+    idempotency_key: UUID
+    deposit_id: UUID
+    pet_refund_review_id: UUID
+    amount_usd_cents: int
+    reason: str
+
+    def __post_init__(self) -> None:
+        _uuid(self.idempotency_key)
+        _uuid(self.deposit_id)
+        _uuid(self.pet_refund_review_id)
+        _amount(self.amount_usd_cents)
+        _text(self.reason, 1000)
+
+
+@dataclass(frozen=True, slots=True)
 class VerifyUsdRefundReturnCommand:
     idempotency_key: UUID
     returned_amount_minor: int
@@ -256,6 +272,47 @@ class RefundService:
                 request.idempotency_key,
                 request.source_kind,
                 request.source_id,
+                request.amount_usd_cents,
+                request.reason,
+            ),
+            mutation=True,
+        )
+
+    def pet_source(
+        self,
+        property_id: UUID,
+        deposit_id: UUID,
+        pet_refund_review_id: UUID,
+        *,
+        actor: AuthenticatedActor,
+    ) -> dict[str, object]:
+        actor_id = self._authorize(actor, property_id, "refunds.create")
+        _uuid(deposit_id)
+        _uuid(pet_refund_review_id)
+        return self._query(
+            "SELECT app.pet_refund_source(%s,%s,%s,%s)",
+            (property_id, actor_id, deposit_id, pet_refund_review_id),
+        )
+
+    def create_pet(
+        self, property_id: UUID, command: CreatePetRefundCommand, *, actor: AuthenticatedActor
+    ) -> dict[str, object]:
+        actor_id = self._authorize(actor, property_id, "refunds.create")
+        request = CreatePetRefundCommand(
+            command.idempotency_key,
+            command.deposit_id,
+            command.pet_refund_review_id,
+            command.amount_usd_cents,
+            command.reason,
+        )
+        return self._query(
+            "SELECT app.create_pet_usd_refund(%s,%s,%s,%s,%s,%s,%s)",
+            (
+                property_id,
+                actor_id,
+                request.idempotency_key,
+                request.deposit_id,
+                request.pet_refund_review_id,
                 request.amount_usd_cents,
                 request.reason,
             ),
