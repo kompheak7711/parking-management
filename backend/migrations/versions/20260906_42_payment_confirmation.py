@@ -66,6 +66,9 @@ def upgrade() -> None:
             v_id uuid:=gen_random_uuid(); v_customer uuid; v_method uuid; v_lease uuid;
             v_invoice uuid; v_charge uuid; v_received timestamptz; v_at timestamptz;
             v_amount bigint; v_key text; v_limit integer;
+            -- Python str.strip whitespace, explicit and database-locale independent.
+            -- Reject boundary padding; do not normalize or rewrite original evidence.
+            v_whitespace text:=U&'\0009\000A\000B\000C\000D\001C\001D\001E\001F\0020\0085\00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000';
             v_keys text[]:=ARRAY['received_currency','payer_customer_id','payment_method_id',
                 'received_amount_minor','received_at','evidence_reference','payer_intent_memo',
                 'lease_id','payment_scope_kind','identified_invoice_id',
@@ -94,7 +97,7 @@ def upgrade() -> None:
                 IF p_request->v_key='null'::jsonb AND v_key<>'evidence_reference' THEN CONTINUE; END IF;
                 v_limit:=CASE WHEN v_key='payer_intent_memo' THEN 2000 ELSE 500 END;
                 IF jsonb_typeof(p_request->v_key) IS DISTINCT FROM 'string'
-                    OR p_request->>v_key<>btrim(p_request->>v_key)
+                    OR p_request->>v_key<>btrim(p_request->>v_key,v_whitespace)
                     OR length(p_request->>v_key) NOT BETWEEN 1 AND v_limit
                 THEN RAISE EXCEPTION 'Payment evidence is invalid' USING ERRCODE='P5302'; END IF;
             END LOOP;

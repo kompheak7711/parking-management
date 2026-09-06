@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "V1-052 USD confirmation SQL whitespace correction active; b9 review completed one MEDIUM",
+    "phase": "V1-052 USD SQL whitespace corrected; fresh exact gates and independent review pending",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2056,9 +2056,9 @@
     "scope_path": "ops/V1_052_SCOPE.md",
     "scope_sha256": "4ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363",
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
-    "candidate_sha": "b9a9e3f2977fc121ef4b1b25b9c896bf9d6c0653",
+    "candidate_sha": null,
     "candidate_resolution": "Containing normal successor e385974 after freeze; COMPLETE17path USD slice basec8, whole52basef8; new exact full gates and independent zero review pending.",
-    "candidate_status": "retained_one_medium_whitespace_correction_active",
+    "candidate_status": "corrected_whitespace_candidate_freeze_pending",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2092,7 +2092,7 @@
       "followup": "ACTIVE10minutes/11248chars/hash49baafc5 unchanged"
     },
     "owner_action_required": false,
-    "next_action": "Complete bounded SQL evidence-whitespace correction to retained b9a9e3f: reproduce raw JSON tab/newline/Unicode boundary rejection regressions, then align unpublished migration42 with Python strip without altering historical records or published38–41. Freeze a normal successor, run fresh full exact applicable gates and ONE fresh independent Astra max Standard read-only review of complete USD slice from acceptedc8. No acceptance until zero findings. Then REQUIRED KHR incoming confirmation/FX bridge and remaining52HTTP/UI/full cumulative release/CI/ref/card/durable closure; only then53. OpenClawdisabled/nativefollowupACTIVE; at53fullyclosed PAUSE/no54. No routine authorization.",
+    "next_action": "Freeze normal successor of retained whitespace-red ce207eb; require fresh exact801PG/fullbackend/static/build/import/189automation/config/traceability/guards, then ONE fresh independent Astra max Standard readonly zero review of COMPLETE17path USD slice from acceptedc8 (allfivecommits). Preserve failed843/e385/b9/ce207eb and all review/test evidence; no amendment or duplicate workers. After bounded USD acceptance continue REQUIRED KHR incoming confirmation/FX source/fallback bridge, remaining52HTTP/UI/fullproduct gates/normalpublication/exactCI/ref/card/durable closure before53. OpenClawdisabled/nativefollowupACTIVE; at53fullyclosed PAUSE/no54; no routine owner authorization.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2118,7 +2118,7 @@
     },
     "active_slice": {
       "id": "V1-052-payment-confirmation",
-      "status": "usd_sql_whitespace_correction_active_khr_bridge_required",
+      "status": "usd_whitespace_corrected_exact_gates_review_pending_khr_required",
       "started_at": "2026-09-06T14:05:00Z",
       "base_sha": "c8c4b63e2bc716b1449ddd900a5333e8a851ea53",
       "scope": "Missing bounded Payment confirmation transactional service and necessary new forward-only migration bridge; HTTP/client/UI remain later slices under unchanged frozen52scope.",
@@ -2136,7 +2136,7 @@
       "remaining_version_scope": "Financial HTTP adapters, staff client/recovery/UI and complete product tests/review/publication/CI/ref/card/durable closure; no53 before full52closure.",
       "substage": {
         "id": "V1-052-payment-confirmation-usd",
-        "status": "review_one_medium_sql_whitespace_correction_active",
+        "status": "whitespace_corrected_focused_pass_exact_gates_review_pending",
         "scope": "First bounded USD confirmation command/service. KHR confirmation and FX source/fallback bridge remain required before full52closure, followed by HTTP/UI.",
         "new_migration": "20260906_42_payment_confirmation.py",
         "received_timestamp_design": "Store actual received_at and payer evidence in append-only confirmation request/response; derive PaymentDate from received_at, confirmed_at from database confirmation clock. Do not fabricate received_at for historical rows or alter published Payment schema/38–41.",
@@ -2159,7 +2159,7 @@
         "correction_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-usd-confirmation-correction1.md",
         "correction_receipt_sha256": "bc7e31a91515ff840b25a0e2b3295902343c36d13540797fcaed7dcb7a605c60",
         "runtime_sha256": "a42b1de9811bf3015d9a90523ae2f31f4956da8620cc765fa9ba8a1beae9cd35",
-        "migration_sha256": "540e13156b7eb34ba6520005bc04f0603e76ad408c165fd49bfd94c53493a33f",
+        "migration_sha256": "939ca62f0f13e298dff07764f55e2d3065d911806b39bf0c703a67d6df6183fe",
         "remaining": "KHR incoming confirmation and server FX source/fallback bridge is REQUIRED before full52closure; USD-only current command intentionally rejects KHR, no outbound KHR Refund ever.",
         "head_compatibility_correction": {
           "attempt": 1,
@@ -2182,7 +2182,7 @@
         },
         "whitespace_correction": {
           "attempt": 1,
-          "status": "active",
+          "status": "implemented_final_focused_pass_exact_gates_review_pending",
           "fingerprint": "SQL default btrim accepts whitespace-only or Unicode-padded evidence unlike Python _text strip",
           "failed_sha": "b9a9e3f2977fc121ef4b1b25b9c896bf9d6c0653",
           "review_exec": 33019,
@@ -2201,7 +2201,15 @@
             "Normal successor; fresh exact full PG/backend/automation/config/static/build/import/traceability checks; fresh independent complete c8-to-head Astra max read-only zero review."
           ],
           "policy_change": false,
-          "started_at": "2026-09-06T15:35:00Z"
+          "started_at": "2026-09-06T15:35:00Z",
+          "red_checkpoint": "ce207ebe05bef7f8d0a6345875c143d44fbd4efb",
+          "red_tree": "34683ea9a51b6e4707cacf6f3d8481e81f91ab01",
+          "red": "77471COMPLETED EXIT2/3FAIL3PASS795deselected1.62s",
+          "final_focused": "55670COMPLETED EXIT0/6PASS795deselected1.74s",
+          "static_unit": "65398COMPLETED EXIT0/152filesformat-lint-mypy/89confirmation-traceabilityPASS6.04s",
+          "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-usd-whitespace-correction1.md",
+          "receipt_sha256": "90e84b0dd96c784bc7384a3372438266f2c0f4f714185438c96fd1236e8d9ce1",
+          "changed_approach": "Explicit Python29character SQL Unicode btrim set in unpublished42, not locale-dependent regex/defaultspaceonly; 261rawSQL+typed invalid evidence checks/all3fields and positive original-preservation regressions. No history rewrite or financial guard weakening."
         }
       }
     },
@@ -3043,9 +3051,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "b9a9e3f2977fc121ef4b1b25b9c896bf9d6c0653",
+  "commit": "ce207ebe05bef7f8d0a6345875c143d44fbd4efb",
   "idle_reason": null,
-  "next_action": "Complete bounded SQL evidence-whitespace correction to retained b9a9e3f: reproduce raw JSON tab/newline/Unicode boundary rejection regressions, then align unpublished migration42 with Python strip without altering historical records or published38–41. Freeze a normal successor, run fresh full exact applicable gates and ONE fresh independent Astra max Standard read-only review of complete USD slice from acceptedc8. No acceptance until zero findings. Then REQUIRED KHR incoming confirmation/FX bridge and remaining52HTTP/UI/full cumulative release/CI/ref/card/durable closure; only then53. OpenClawdisabled/nativefollowupACTIVE; at53fullyclosed PAUSE/no54. No routine authorization.",
+  "next_action": "Freeze normal successor of retained whitespace-red ce207eb; require fresh exact801PG/fullbackend/static/build/import/189automation/config/traceability/guards, then ONE fresh independent Astra max Standard readonly zero review of COMPLETE17path USD slice from acceptedc8 (allfivecommits). Preserve failed843/e385/b9/ce207eb and all review/test evidence; no amendment or duplicate workers. After bounded USD acceptance continue REQUIRED KHR incoming confirmation/FX source/fallback bridge, remaining52HTTP/UI/fullproduct gates/normalpublication/exactCI/ref/card/durable closure before53. OpenClawdisabled/nativefollowupACTIVE; at53fullyclosed PAUSE/no54; no routine owner authorization.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -3117,7 +3125,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 USD confirmation SQL whitespace correction active; b9 review completed one MEDIUM",
+  "phase": "V1-052 USD SQL whitespace corrected; fresh exact gates and independent review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4221,7 +4229,9 @@
     "PENDING fresh corrected17path exact795PG/fullbackend/189automation/static/build/import/config/traceability/guards and ONE independent Astra max readonly zero review fromc8 afterALLPASS.",
     "KHR incoming confirmation/FX bridge and remainingHTTP/UI/fullproductfrontend/browser/audits/release gates REQUIRED. No whole52completion/publication.",
     "EXACTb9 ALLPASS:795PG0skip/1058backend772DB-onlyskips/189automation/static/build/import/config. All6421/53809/99215 completed EXIT0; exact receipt81b73fda retained.",
-    "REVIEWb9 33019 completed EXIT0 at15:14:56.540Z, one MEDIUM whitespace guard; reportb7dabe5. Bounded SQL correction ACTIVE, fresh gates/review pending; no USDslice/full52acceptance."
+    "REVIEWb9 33019 completed EXIT0 at15:14:56.540Z, one MEDIUM whitespace guard; reportb7dabe5. Bounded SQL correction ACTIVE, fresh gates/review pending; no USDslice/full52acceptance.",
+    "Preserved ce207eb whitespace red77471COMPLETED EXIT2/3FAIL3PASS; finalfocused55670COMPLETED EXIT0/6PASS795deselected1.74s. All29Pythonwhitespace/all3fields/blank-padding, noevents and unchanged valid evidence.",
+    "Static/unit65398COMPLETED EXIT0/152filesformat-lint-mypy/89testsPASS6.04s. Correctionreceipt90e84b0d; fresh frozen801PG/fullbackend/189automation/config and independent max zero review PENDING."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4243,7 +4253,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-06T15:35:00Z",
+  "timestamp": "2026-09-06T15:43:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4474,7 +4484,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-06T15:35:00Z",
+  "updated_at": "2026-09-06T15:43:00Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5597,7 +5607,7 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Retained reviewed b9 checkpoint; working correction not exact-reviewed or accepted",
+  "commit_role": "Retained deterministic SQL whitespace red checkpoint; corrected normal successor resolves by containing HEAD",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
     "935aa438b9b4923ac557547b0e0001eff9b7e389"
@@ -5656,12 +5666,12 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "completed_one_medium_correction_active",
+    "status": "pending_corrected_exact_17path_usd_slice",
     "tranche_id": "V1-052",
     "scope": "Complete17path USD confirmation command/service/new42/tests/records fromc8; include all3slice commits; KHR/HTTP/UI/fullversion pending",
     "base_sha": "c8c4b63e2bc716b1449ddd900a5333e8a851ea53",
     "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
-    "exact_sha": "b9a9e3f2977fc121ef4b1b25b9c896bf9d6c0653",
+    "exact_sha": null,
     "model": "gpt-6-astra",
     "reasoning_effort": "max",
     "mode": "Standard",
@@ -5688,15 +5698,18 @@
       "exact_tests": "763PGPASS0skip/991backendPASS740DB-onlyskips/189automationPASS/all applicable slice gates; completed5555/15346/30096",
       "not_whole_version_acceptance": true
     },
-    "report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-usd-confirmation-review-b9a9e3f.md",
-    "report_sha256": "b7dabe5da6874101dd308e4d037dbb3ff946ae6d66a5b64b8f70f5a847c22592",
-    "findings": {
-      "high": 0,
-      "medium": 1,
-      "low": 0
-    },
-    "completed_at": "2026-09-06T15:14:56.540Z",
-    "exec": 33019
+    "previous_rejected_review": {
+      "exact_sha": "b9a9e3f2977fc121ef4b1b25b9c896bf9d6c0653",
+      "report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-usd-confirmation-review-b9a9e3f.md",
+      "sha256": "b7dabe5da6874101dd308e4d037dbb3ff946ae6d66a5b64b8f70f5a847c22592",
+      "findings": {
+        "high": 0,
+        "medium": 1,
+        "low": 0
+      },
+      "completed_at": "2026-09-06T15:14:56.540Z",
+      "exec": 33019
+    }
   },
   "historical_v1_047_review": {
     "status": "PASS",

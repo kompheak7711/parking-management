@@ -1,5 +1,6 @@
 """USD confirmation, exact replay, original evidence and forward-only PostgreSQL bridge."""
 
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
@@ -345,7 +346,7 @@ def test_confirmation_raw_evidence_rejects_python_whitespace_without_financial_e
     # Enumerate the Python contract, including Unicode separators and C0 controls;
     # SQL validation must not depend on the database locale's definition of space.
     whitespace = [chr(code) for code in range(0x110000) if chr(code).isspace()]
-    constructors = {
+    constructors: dict[str, Callable[[str], ConfirmUsdPaymentCommand]] = {
         "evidence_reference": lambda value: replace(request, evidence_reference=value),
         "payer_intent_memo": lambda value: replace(request, payer_intent_memo=value),
         "channel_transaction_reference": lambda value: replace(
@@ -377,7 +378,7 @@ def test_confirmation_raw_evidence_rejects_python_whitespace_without_financial_e
             "SELECT count(*) FROM app.payment_confirmation_commands WHERE actor_id=%s", (human,)
         ).fetchone() == (0,)
         assert connection.execute(
-            "SELECT count(*) FROM app.audit_events WHERE entity_type IN ('Payment','Receipt') "
+            "SELECT count(*) FROM app.audit_events WHERE entity_type IN ('payment','receipt') "
             "AND actor_id=%s",
             (human,),
         ).fetchone() == (0,)
@@ -391,12 +392,16 @@ def test_confirmation_raw_evidence_preserves_valid_interior_whitespace_and_nonsp
     field: str,
 ) -> None:
     human, prop, _, request = source(migrated_database_url)
-    value = "\u200bEvidence\t\n\u001c\u0085\u00a0\u1680\u2000\u2028\u202f\u205f\u3000unchanged\u200b"
+    value = (
+        "\u200bEvidence\t\n\u001c\u0085\u00a0\u1680\u2000\u2028\u202f\u205f\u3000unchanged\u200b"
+    )
     assert value == value.strip()  # U+200B is not Python whitespace.
     constructors = {
         "evidence_reference": lambda: replace(request, evidence_reference=value),
         "payer_intent_memo": lambda: replace(request, payer_intent_memo=value),
-        "channel_transaction_reference": lambda: replace(request, channel_transaction_reference=value),
+        "channel_transaction_reference": lambda: replace(
+            request, channel_transaction_reference=value
+        ),
     }
     intent = constructors[field]().intent()
     with psycopg.connect(financial_database_url()) as connection:

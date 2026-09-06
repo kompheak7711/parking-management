@@ -203,6 +203,29 @@
       "notes": "Privileged command independently rejects KHR at USD-only boundary, derived/extra fields, invalid amounts/IDs/timestamps/evidence/scope; no Payment/Receipt/command persists."
     },
     {
+      "test_id": "test_confirmation_raw_evidence_rejects_python_whitespace_without_financial_events",
+      "upstream_ids": [
+        "API-057",
+        "SEC-023",
+        "TEST-059"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Raw JSON database command rejects blank and leading/trailing forms of every Python Unicode whitespace character in all three evidence fields with P5302, no Payment/Receipt/command/audit events; typed service independently rejects the same values."
+    },
+    {
+      "test_id": "test_confirmation_raw_evidence_preserves_valid_interior_whitespace_and_nonspace_edges",
+      "upstream_ids": [
+        "API-057",
+        "TEST-059"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Python and raw JSON SQL preserve normalized original evidence including interior Unicode/control whitespace and U+200B non-whitespace edges, without trimming or broadening whitespace rejection."
+    },
+    {
       "test_id": "test_confirmation_future_received_time_rejects_without_consuming_key",
       "upstream_ids": [
         "API-004",
