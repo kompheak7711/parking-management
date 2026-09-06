@@ -1409,16 +1409,25 @@
       "risk_class": "high",
       "acceptance_profile": "financial",
       "authorization": "durable_v1",
-      "status": "approved_ready",
+      "status": "complete",
       "closure_gate": {
-        "status": "pending_terminal_verification_and_workboard",
+        "status": "verified_closed",
         "product_sha": "7cec08509343f90a369b27d8a230b2fa850b5622",
+        "terminal_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
         "product_ci_run": 34027889695,
-        "product_verified": true,
-        "full_version_closed": false,
-        "successor_activation_allowed": false,
+        "terminal_ci_run": 34030703203,
+        "all_required_jobs": "success",
+        "independent_reviews": "Product and terminal Astra max Standard read-only, zero HIGH/MEDIUM/LOW",
+        "ref_equality": true,
+        "workboard_card": "c5621f97-7ad1-4b1c-b04f-c854376c2ad8",
+        "workboard_status": "done",
+        "workboard_proof": "935d944b-2e5c-4630-a57a-d40b2d9f81eb",
+        "workboard_comment": "0ac21228-50ce-4090-867f-8a727a8fda37",
+        "full_version_closed": true,
+        "successor_activation_allowed": true,
         "receipt_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-closure-verification.md",
-        "resolution": "Keep approved_ready until terminal exactreview/publication/CI/refs and actual same-card acceptance verified. The final external receipt discharges this immutable pending gate; next reviewed authorized transition materializes51complete before52activation."
+        "receipt_sha256": "92fa6965749c1b8a6e9f8b8c5eaa164a8418e0e720c58d62ef2b35ed7da65d86",
+        "resolution": "All lifecycle gates verified before V1-052 activation. Final receipt discharges immutable pending fields; preserve checkpoints and do not repeat closure."
       }
     },
     {

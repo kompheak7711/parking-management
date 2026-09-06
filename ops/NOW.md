@@ -1,29 +1,27 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-051 product7cec085 accepted/published/exactCIgreen/refequal. Terminal correction1 implemented after rejectedc4e2b50 routing failure; freeze corrected child next. Workboard/fullclosure PENDING; no52activated.
-- Policy DL-060: USD accounting, KHR only Payment conversion; every Refund paid/recorded USD. KHR-refund proposal rejected/blocker resolved. Original transaction/KHR/FX evidence immutable; no historical rewrites.
-- Main /Users/sokompheak/Development/property-rental-management, implementation/foundation. Retained product /Users/sokompheak/Development/property-rental-management-v1-051, codex/v1-051-direct remains clean7cec085; all126worktrees retained.
-- Coordinator01a04961-4270-7802-9418-e08203784a8c; actual2026-09-06T10:33:04.598Z Astra/xhigh/localdefault Standard. No implementation worker. Fresh independent reviewers Astra max Standard read-only; no fallback/provider attestation claim.
-- Authority ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455; current scope ops/V1_051_SCOPE.md SHA2567424fb52732ce8a48ca45518f19344a524f2a8cb4c57a840eb7dd0781fc40b4f.
-- Accepted product7cec08509343f90a369b27d8a230b2fa850b5622, tree1922841c6564f17560be8adcaacb2b1b4d57d82c, rejectedparentbdf45389946af3aa4fd67d273dc6c8cf9f00daa0; complete review baseclosed50cc3d18e682401cc8a9ade10295572fe1a1344317.
-- Full48path independent reviewer01a0762e-11d3 COMPLETED10:22:35.542Z/78760EXIT0,0HIGH0MEDIUM0LOW/both priorMEDIUMresolved. Do not poll/repeat completed review or tests.
-- Report v1051-correction1-cumulative-review-7cec085.md SHA256f0c4751254f7c486c874d535d061790463a363409a17b86ef97280c8d78125e9; full actualchild reportd6cd11d223995e88feb3e1d3161d93e960279ee8273f80d10094d664c14f4c61.
-- Acceptance v1051-cumulative-accepted-7cec085.md SHA256d5ce84c6425a4d55f57eda27b920199ffe6d8e8681538ca7afb864d57b67111c discharges immutable product pending markers.
-- Exact product751PGzero skips/956backend728DB-onlyskipscovered/369frontend/189automation/staticbuild/config/TEST-118sixIDs/48blobsecret/whitespace/graph41/officialaudits PASS; verificationd9325fea8fab6797f9a7a4f5b05fdeefac33377c3fee814b29bec05ecca33523. Independent152unit/traceability checks;167PG collected not executed.
-- Normal pushcc3d..7cec085 succeeded; GitHubCI34027889695attempt1all4SUCCESS. Post-CI mainHEAD=tracking=FETCH_HEAD=live=reviewed=CI7cec085; no force/historyrewrite. Product publication receiptd9d3a0de12d6425aad79e2d63ecaa3ec9c21f46a8894d57338070cdf50656c46.
-- Same cardc5621f97-7ad1-4b1c-b04f-c854376c2ad8 tracking-onlyblocked solely against OpenClaw admission; nullclaim/attempt/execution/proof. Verified-product commentd40b9b08-4fdb-48f7-97a4-746cfea678aa. No Workboard acceptance claimed.
-- Product-only completion was rejected by safety review BEFORE execution because terminal closure remained pending. Defer actual same-card completion until terminal exactreview/publication/CI/refs pass; no bypass. Sequencing receipte5baee959ed7f653462cabc53e16d67072e3c3c314a02e9beec98456a24b30a5.
-- Corrected terminal candidate resolves from containing foundation HEAD, actual parent rejectedc4e2b504399506f5c06dbd98016b990031620c1e; COMPLETE terminalreviewbase remains product7cec085. Fresh records-only automation/config/roadmap/traceability/guard/diff and independent exactAstraMaxreview, normal publication and own exact4jobCI/refs required. Retain accepted product unchanged.
-- Roadmap51 remains approved_ready/50completed with explicit pending closure gate to avoid premature completion. Final external closure receipt discharges immutable pending terminal/card/roadmap fields; next reviewed authorized transition materializes51complete before52activation.
-- Exact next action: freeze corrected NEWchild of retainedc4e2b50 with explicit CURRENTV1-051 routing descriptor, fresh exact gates/independent zero-finding review/normalpublication/ownCI/refequality; then complete SAMEcard and write /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-closure-verification.md plus live index. Only then51FULLYCLOSED and52mayactivate; continue through53 thenpause/no54.
-- OpenClaw singleton658ffdaf-1ac1-45a6-a842-f5f7d7a226eb disabled30minutes/nonextrun/tasks0. No supervisor/implementation worker created/enabled/dispatched; preserve its configuration.
-- Native property-rental-v1-047-closure-follow-up ACTIVE10minutes/same task, phase-independent11248characters SHA25649baafc52ee102a222a36890c93eb4c877282f3ff4d75e7ebd21e353ba1955b2.
-- Live stage/worker/receipts: /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-codex-takeover-live.md. All reports/logs above live in that evidence directory; historical pending statements are discharged only by verified later receipts.
-- Preserve rejectedbdf4538/ac688fc/f311a90 and all earlieraccepted Credit/USD/Pet/history checkpoints, failedtests/reviews and originalscope/KHRproposal evidence. No repeated implementation.
-- Owner action required: no. Production/access/credentials/customerdata/paid/destructive/forcepush/historyrewrite/retained-worktree deletion remain unauthorized.
-- Rejected terminalc4e2b50:189unitPASS then mandatory routingStopIteration from next_candidate=null; reviewer01a0765a-ca4f COMPLETED11:04:45Z/35200EXIT0 with1HIGH0MEDIUM0LOW; reportcb4a8786aad679c2952e7a9643c6a0cf3c922724a99560c037b36303288cc4c8. Failure receipt15a0b42c772af17f614efc3ce277ad37c089741bb44c369447eeee4e125c4c62 retained; no publication/repeat/pollasrunning.
-- Correction1 restores only currentV1-051 descriptor, not52; no test/product/policy change. Actual preflight idle/actionablefalse/implementation_allowedfalse/owner_action_requiredfalse PASS. Fresh corrected exactgates/review still required; no bypass of failedc4 or prematurecardcompletion.
-- Updated2026-09-06T11:08:00Z. V1-050 fullyclosedcc3d/CI33986122538/cardd26f24b3DONE; do not repeat predecessor work.
+- Current: V1-052 activation/scope preparation ACTIVE after fully closed V1-051. No product implementation yet; no duplicate worker. Fresh exact activation gates and independent Astra max review next.
+- Authority: ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455; direct Codex through53, normal reviewed publication authorized, no routine permission requests.
+- DL-060: USD accounting and USD-only Refunds; KHR only incoming Payment conversion/audit. Original transaction/KHR/FX evidence immutable. Rejected KHR-refund proposal/blocker is resolved.
+- V1-051 fully closed: product7cec08509343f90a369b27d8a230b2fa850b5622; terminalf8a33bad25a7993952ec1ccece1b9c2df942b3d6, tree9ec6ddea68601e129e97402389818010b24e5438. Both fresh independent reviews zero HIGH/MEDIUM/LOW; exact tests passed, normal publication, CI34027889695/34030703203attempt1all4SUCCESS.
+- Closed51 main/tracking/FETCH_HEAD/live/reviewed/CI refs equal f8a33ba before this activation. Same predecessor cardc5621f97 DONE/proof935d944b-2e5c-4630-a57a-d40b2d9f81eb/comment0ac21228-50ce-4090-867f-8a727a8fda37.
+- Final closure receipt /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-closure-verification.md SHA25692fa6965749c1b8a6e9f8b8c5eaa164a8418e0e720c58d62ef2b35ed7da65d86 discharges immutable pending markers; do not repeat completed51 work.
+- Roadmap51 now complete/count51; current52 depends on fully complete49/50/51. Final Settlement sources remain unavailable until V1-056; unified ledger is V1-053.
+- Scope ops/V1_052_SCOPE.md SHA256d4292781ed0b1c54d021e43994d4150457d802db2b7f4136018d94e8cdf36d11. Staff Payment/FX/allocation/Receipt/Credit/USD-Refund HTTP/UI with explicit confirmations and actor-bound safe recovery; no new financial policy/provider/dependencies.
+- Sole new tracking card74197a0e-ae91-459f-a9ce-6744e4097ff6 blocked only against OpenClaw admission, no claim/attempt/execution. Created after absence of existing52 card/worker/worktree verified; preserve ID/evidence.
+- Active preparation checkout main /Users/sokompheak/Development/property-rental-management, implementation/foundation. Candidate next child of closed51f8a33ba; not published/reviewed yet.
+- After accepted activation prepare only /Users/sokompheak/Development/property-rental-management-v1-052, codex/v1-052-direct. Reconcile absence before creation; retained51 checkout clean7cec085 and all126 existing worktrees preserved.
+- Coordinator task01a04961-4270-7802-9418-e08203784a8c observed2026-09-06T12:00:34.845Z Astra/xhigh/localdefault Standard. Financial/authorization/concurrency implementation Astra xhigh Standard; fresh independent exact reviewers Astra max Standard read-only; no fallback/provider attestation claim.
+- Product sources: accepted Payment persistence38, allocations39, Receipt40, Credit/Refund41. Published migrations38–41 immutable; any needed persistence bridge uses NEW forward migration only. Isolated synthetic tests, no existing database resets.
+- Exact next action: freeze activation/scope checkpoint, run fresh exact records/config/roadmap/traceability/guards/whitespace and independent Astra max read-only review. Then sole isolated52 checkout and bounded product slices; full cumulative review/publication/exactCI/refs/card/durable closure before53.
+- Historical51 pending terminal state/tests/reviews/publication/failed candidates moved unchanged into STATE.historical_v1_051_terminal_state and linked final receipt. All older historical/prior/policy/owner-decision records preserved.
+- Workboard preclosure snapshot093b5d0e and postclosure1d845669 retain all evidence, including3 older comments compacted by supported Gateway. Never delete either snapshot or failed checkpoint.
+- OpenClaw exactly one supervisor658ffdaf-1ac1-45a6-a842-f5f7d7a226eb disabled,30-minute schedule retained/no next run/tasks0. Never create/enable/dispatch any OpenClaw supervisor or implementationworker.
+- Native property-rental-v1-047-closure-follow-up ACTIVE10minutes/same task, stable11248-character phase-independent prompt SHA25649baafc52ee102a222a36890c93eb4c877282f3ff4d75e7ebd21e353ba1955b2. Do not rewrite per stage.
+- Live stage/evidence: /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-codex-takeover-live.md. Future exact-SHA receipts outside frozen checkout discharge explicitly pending fields without amendment.
+- Continue52then53. At53fullyclosed pause native follow-up, keep OpenClaw disabled, do not activate54.
+- Owner action required: no. Production/access/credentials/customerdata/paid/destructive/force-push/history-rewrite/retained-worktree deletion remain unauthorized.
+- Updated2026-09-06T12:12:53Z. Tests/review/publication marked pending refer only to NEW52, never to accepted51 work.
 
 ## Historical V1-047 closure record
 
@@ -46,7 +44,7 @@ The following evidence is preserved as history. Its closure-turn next actions an
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation state: native follow-up ACTIVE; OpenClaw disabled. V1-051 terminal correction1 implemented; Workboard acceptance pending, no owner-policy blocker.
-- Exact next action: consult live handoff; freeze corrected child, complete fresh terminal exact gates/review/publication/CI before same-card acceptance/finalreceipt. No52until51fullyclosed.
+- Automation state: native follow-up ACTIVE; OpenClaw disabled. V1-051 fully closed; V1-052 activation/scope preparation active, no owner-policy blocker.
+- Exact next action: freeze/test/independently review52activation, then sole isolated implementation; no53before52fullyclosed, pausefollowup/no54 at53closure.
 
 <!-- AUTOMATION_STATUS_END -->
