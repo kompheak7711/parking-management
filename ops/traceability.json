@@ -2,6 +2,240 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_confirmation_rejects_inexact_or_unbounded_received_usd",
+      "upstream_ids": [
+        "API-005",
+        "SEC-026"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Nonpositive, bool, float, string and over-limit amounts reject before database calls."
+    },
+    {
+      "test_id": "test_confirmation_requires_typed_non_nil_source_ids",
+      "upstream_ids": [
+        "API-003",
+        "API-057"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "All six command/source identifiers reject nil UUID and non-UUID text."
+    },
+    {
+      "test_id": "test_confirmation_evidence_is_normalized_bounded_and_valid",
+      "upstream_ids": [
+        "API-057"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Required/optional reference and payer-intent fields reject blank, unnormalized, invalid UTF-8/NUL and oversized input."
+    },
+    {
+      "test_id": "test_confirmation_received_timestamp_is_aware_and_representable",
+      "upstream_ids": [
+        "API-004"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Naive, non-datetime and UTC-overflow timestamps reject."
+    },
+    {
+      "test_id": "test_confirmation_third_party_requires_explicit_designation_and_only_known_scope",
+      "upstream_ids": [
+        "API-057"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Third-party payment requires a known explicit designation and rejects arbitrary scope values."
+    },
+    {
+      "test_id": "test_confirmation_intent_preserves_exact_amount_normalizes_utc_and_is_immutable",
+      "upstream_ids": [
+        "API-005",
+        "SEC-026",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Max exact cents and UTC-equivalent received time serialize identically; no derived fields accepted; immutable command/copy isolation."
+    },
+    {
+      "test_id": "test_confirmation_requires_separate_exact_property_record_permission",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-022",
+        "SEC-025"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Read/reverse/allocation/Credit/FX capabilities and another Property grant do not authorize confirmation; no connection opens."
+    },
+    {
+      "test_id": "test_confirmation_revalidates_intent_and_rejects_untyped_command_before_connection",
+      "upstream_ids": [
+        "SEC-023",
+        "SEC-026"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Tampered frozen amount and arbitrary KHR dictionary reject before connection."
+    },
+    {
+      "test_id": "test_confirmation_uses_one_scoped_transaction_parameterized_exact_intent_and_safe_decoder",
+      "upstream_ids": [
+        "SEC-028",
+        "API-005"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "One financial connection, transaction context, finite timeouts, UTC, parameterized exact actor/Property/key/intent and integer/decimal-safe response decoding."
+    },
+    {
+      "test_id": "test_confirmation_errors_redact_database_details_and_preserve_unknown_outcomes",
+      "upstream_ids": [
+        "API-013",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Known validation/authorization/replay/source conflicts map safely; connection/lock unknown outcomes are not successful and SQL/private text does not leak."
+    },
+    {
+      "test_id": "test_confirmation_missing_result_is_unknown_not_success",
+      "upstream_ids": [
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Absent/null/non-object result stays unknown rather than accepted."
+    },
+    {
+      "test_id": "test_confirmation_records_usd_received_time_unique_receipt_audit_and_no_implicit_money_moves",
+      "upstream_ids": [
+        "TEST-059",
+        "API-057",
+        "API-092",
+        "API-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "One cent, ordinary and maximum USD amounts persist exactly; actual received timestamp determines Phnom Penh date while server confirmation remains separate; one Receipt/two audits and no automatic allocation, Credit, Deposit or Invoice."
+    },
+    {
+      "test_id": "test_confirmation_exact_replay_preserves_original_response_after_method_retirement_and_reversal",
+      "upstream_ids": [
+        "TEST-059",
+        "SEC-028",
+        "API-057"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Same key/exact request returns original immutable result after method retirement and reversal; changed payload conflicts, new retired-method confirmation rejects without duplicate Payment."
+    },
+    {
+      "test_id": "test_confirmation_concurrent_same_key_has_one_payment_receipt_and_exact_conflict",
+      "upstream_ids": [
+        "SEC-028",
+        "SEC-029",
+        "TEST-059"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent same-key exact or conflicting payloads commit exactly one Payment/Receipt/command; identical responses or one key conflict."
+    },
+    {
+      "test_id": "test_confirmation_denies_missing_cross_property_and_disabled_actor_even_on_replay",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-023",
+        "SEC-029"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Missing payer/Property rejected, actual disabled account cannot replay; saved evidence unchanged."
+    },
+    {
+      "test_id": "test_confirmation_distinct_keys_and_actor_scopes_are_independent_not_accidental_replay",
+      "upstream_ids": [
+        "SEC-028"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Distinct keys and actor-scoped same key create independent Payment/Receipt identities without accidental response crossover."
+    },
+    {
+      "test_id": "test_confirmation_preserves_lease_intent_without_assigning_third_party_ownership",
+      "upstream_ids": [
+        "API-057",
+        "TEST-059"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Normal owned intent accepts, foreign normal intent rejects, explicit third-party designation accepts without modifying primary tenant or implicit ownership."
+    },
+    {
+      "test_id": "test_confirmation_database_rejects_untrusted_shapes_and_rolls_back_every_event",
+      "upstream_ids": [
+        "SEC-023",
+        "SEC-026",
+        "TEST-059"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Privileged command independently rejects KHR at USD-only boundary, derived/extra fields, invalid amounts/IDs/timestamps/evidence/scope; no Payment/Receipt/command persists."
+    },
+    {
+      "test_id": "test_confirmation_future_received_time_rejects_without_consuming_key",
+      "upstream_ids": [
+        "API-004",
+        "SEC-028"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Future received time rejects; valid correction reusing unconsumed key then succeeds."
+    },
+    {
+      "test_id": "test_confirmation_append_only_records_and_narrow_function_grants",
+      "upstream_ids": [
+        "SEC-024",
+        "SEC-028"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Runtime/bootstrap cannot execute confirmation; financial cannot directly mutate command history or execute private replay; owner mutation attempts reject55000 and evidence remains identical."
+    },
+    {
+      "test_id": "test_confirmation_upgrade_preserves_revision41_history_without_received_backfill",
+      "upstream_ids": [
+        "TEST-059",
+        "API-057"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Forward upgrade from actual41 preserves original Payment/Receipt JSON, creates no invented historical command/received timestamp and enables explicit new USD confirmation."
+    },
+    {
       "test_id": "test_financial_fixture_clock_ignores_host_skew_and_preserves_event_chronology",
       "upstream_ids": [
         "TEST-066",

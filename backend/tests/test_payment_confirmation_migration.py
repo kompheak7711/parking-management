@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from threading import Barrier
-from typing import cast
+from typing import Literal, cast
 from uuid import UUID, uuid4
 
 import psycopg
@@ -65,17 +65,21 @@ def payment_id(result: dict[str, object]) -> UUID:
     return UUID(str(cast(dict[str, object], result["payment"])["id"]))
 
 
+@pytest.mark.parametrize("amount", [1, 12345, 9_000_000_000_000_000])
 def test_confirmation_records_usd_received_time_unique_receipt_audit_and_no_implicit_money_moves(
     migrated_database_url: str,  # noqa: F811
+    amount: int,
 ) -> None:
     human, prop, _, request = source(migrated_database_url)
-    request = replace(request, received_at=datetime(2026, 5, 1, 17, 30, tzinfo=UTC))
+    request = replace(
+        request, received_at=datetime(2026, 5, 1, 17, 30, tzinfo=UTC), received_amount_minor=amount
+    )
     result = service().confirm_usd(prop, request, actor=actor(human, prop, "payments.record"))
     payment = cast(dict[str, object], result["payment"])
     identity = payment_id(result)
     assert payment["payment_number"] == f"PAY-{identity}"
     assert payment["received_currency"] == "USD"
-    assert payment["received_amount_minor"] == payment["usd_accounting_value_cents"] == 12345
+    assert payment["received_amount_minor"] == payment["usd_accounting_value_cents"] == amount
     assert payment["status"] == "RECEIVED" and payment["exchange_rate_record_id"] is None
     assert payment["payment_date"] == "2026-05-02"
     assert result["received_at"] == "2026-05-01T17:30:00+00:00"
@@ -94,7 +98,8 @@ def test_confirmation_records_usd_received_time_unique_receipt_audit_and_no_impl
     )
     with psycopg.connect(migrated_database_url) as connection:
         saved = connection.execute(
-            "SELECT request,response,recorded_at FROM app.payment_confirmation_commands WHERE payment_id=%s",
+            "SELECT request,response,recorded_at FROM app.payment_confirmation_commands "
+            "WHERE payment_id=%s",
             (identity,),
         ).fetchone()
         assert saved is not None and saved[0] == request.intent() and saved[1] == result
@@ -129,7 +134,8 @@ def test_confirmation_exact_replay_preserves_original_response_after_method_reti
     identity = payment_id(result)
     with psycopg.connect(migrated_database_url) as connection:
         connection.execute(
-            "UPDATE app.payment_methods SET display_name='Retired synthetic method',accepted=false WHERE id=%s",
+            "UPDATE app.payment_methods SET display_name='Retired synthetic method',"
+            "accepted=false WHERE id=%s",
             (request.payment_method_id,),
         )
         reverse(connection, identity, human)
@@ -155,8 +161,8 @@ def test_confirmation_exact_replay_preserves_original_response_after_method_reti
 
 @pytest.mark.parametrize("different_payload", [False, True])
 def test_confirmation_concurrent_same_key_has_one_payment_receipt_and_exact_conflict(
-    migrated_database_url: str,
-    different_payload: bool,  # noqa: F811
+    migrated_database_url: str,  # noqa: F811
+    different_payload: bool,
 ) -> None:
     human, prop, _, request = source(migrated_database_url)
     gate = Barrier(2)
@@ -182,11 +188,13 @@ def test_confirmation_concurrent_same_key_has_one_payment_receipt_and_exact_conf
         assert results[0] == results[1] and isinstance(results[0], dict)
     with psycopg.connect(migrated_database_url) as connection:
         assert connection.execute(
-            "SELECT count(*) FROM app.payment_confirmation_commands WHERE actor_id=%s AND idempotency_key=%s",
+            "SELECT count(*) FROM app.payment_confirmation_commands "
+            "WHERE actor_id=%s AND idempotency_key=%s",
             (human, request.idempotency_key),
         ).fetchone() == (1,)
         assert connection.execute(
-            "SELECT count(*) FROM app.payments p JOIN app.receipts r ON r.payment_id=p.id WHERE payer_customer_id=%s",
+            "SELECT count(*) FROM app.payments p JOIN app.receipts r ON r.payment_id=p.id "
+            "WHERE p.payer_customer_id=%s",
             (request.payer_customer_id,),
         ).fetchone() == (1,)
 
@@ -217,8 +225,8 @@ def test_confirmation_denies_missing_cross_property_and_disabled_actor_even_on_r
 
 @pytest.mark.parametrize("different_actor", [False, True])
 def test_confirmation_distinct_keys_and_actor_scopes_are_independent_not_accidental_replay(
-    migrated_database_url: str,
-    different_actor: bool,  # noqa: F811
+    migrated_database_url: str,  # noqa: F811
+    different_actor: bool,
 ) -> None:
     human, prop, _, request = source(migrated_database_url)
     other, _, _, _ = source(migrated_database_url)
@@ -241,10 +249,10 @@ def test_confirmation_distinct_keys_and_actor_scopes_are_independent_not_acciden
     ],
 )
 def test_confirmation_preserves_lease_intent_without_assigning_third_party_ownership(
-    migrated_database_url: str,
-    scope: str,
+    migrated_database_url: str,  # noqa: F811
+    scope: Literal["NORMAL_CUSTOMER", "THIRD_PARTY_IDENTIFIED"],
     owned: bool,
-    allowed: bool,  # noqa: F811
+    allowed: bool,
 ) -> None:
     human, prop, unit, request = source(migrated_database_url)
     _, _, _, third_party = source(migrated_database_url)
@@ -257,7 +265,7 @@ def test_confirmation_preserves_lease_intent_without_assigning_third_party_owner
         lease_id=lease,
         payment_scope_kind=scope,
         payer_customer_id=request.payer_customer_id if owned else third_party.payer_customer_id,
-    )  # type: ignore[arg-type]
+    )
     if allowed:
         result = service().confirm_usd(prop, intended, actor=actor(human, prop, "payments.record"))
         assert cast(dict[str, object], result["payment"])["payer_customer_id"] == str(
@@ -298,9 +306,9 @@ def test_confirmation_preserves_lease_intent_without_assigning_third_party_owner
     ],
 )
 def test_confirmation_database_rejects_untrusted_shapes_and_rolls_back_every_event(
-    migrated_database_url: str,
+    migrated_database_url: str,  # noqa: F811
     field: str,
-    value: object,  # noqa: F811
+    value: object,
 ) -> None:
     human, prop, _, request = source(migrated_database_url)
     intent = request.intent()
@@ -349,7 +357,11 @@ def test_confirmation_append_only_records_and_narrow_function_grants(
     with psycopg.connect(migrated_database_url) as connection:
         for role in ("prm_runtime", "prm_financial", "prm_bootstrap"):
             assert connection.execute(
-                "SELECT has_table_privilege(%s,'app.payment_confirmation_commands','INSERT,UPDATE,DELETE,TRUNCATE'), has_function_privilege(%s,'app.confirm_usd_payment(uuid,uuid,uuid,jsonb)','EXECUTE'), has_function_privilege(%s,'app.payment_confirmation_replay(uuid,uuid,uuid,jsonb)','EXECUTE')",
+                "SELECT has_table_privilege(%s,'app.payment_confirmation_commands',"
+                "'INSERT,UPDATE,DELETE,TRUNCATE'), has_function_privilege(%s,"
+                "'app.confirm_usd_payment(uuid,uuid,uuid,jsonb)','EXECUTE'), "
+                "has_function_privilege(%s,'app.payment_confirmation_replay(uuid,uuid,uuid,jsonb)',"
+                "'EXECUTE')",
                 (role, role, role),
             ).fetchone() == (False, role == "prm_financial", False)
         for mutation in (
@@ -373,9 +385,7 @@ def test_confirmation_append_only_records_and_narrow_function_grants(
         assert failure.value.sqlstate == "42501"
 
 
-def test_confirmation_forward_upgrade_preserves_revision41_payment_receipt_and_no_invented_received_fact() -> (
-    None
-):
+def test_confirmation_upgrade_preserves_revision41_history_without_received_backfill() -> None:
     with _temporary_migration_database("prm_payment_confirmation_history") as url:
         config = Config("alembic.ini")
         alembic_command.upgrade(config, "20260906_41")
@@ -389,7 +399,8 @@ def test_confirmation_forward_upgrade_preserves_revision41_payment_receipt_and_n
                 amount=100,
             )
             original = connection.execute(
-                "SELECT to_jsonb(p),to_jsonb(r) FROM app.payments p JOIN app.receipts r ON r.payment_id=p.id WHERE p.id=%s",
+                "SELECT to_jsonb(p),to_jsonb(r) FROM app.payments p "
+                "JOIN app.receipts r ON r.payment_id=p.id WHERE p.id=%s",
                 (identity,),
             ).fetchone()
             assert original is not None
@@ -397,7 +408,8 @@ def test_confirmation_forward_upgrade_preserves_revision41_payment_receipt_and_n
         with psycopg.connect(url) as connection:
             assert (
                 connection.execute(
-                    "SELECT to_jsonb(p),to_jsonb(r) FROM app.payments p JOIN app.receipts r ON r.payment_id=p.id WHERE p.id=%s",
+                    "SELECT to_jsonb(p),to_jsonb(r) FROM app.payments p "
+                    "JOIN app.receipts r ON r.payment_id=p.id WHERE p.id=%s",
                     (identity,),
                 ).fetchone()
                 == original

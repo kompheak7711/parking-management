@@ -48,8 +48,18 @@ def test_confirmation_rejects_inexact_or_unbounded_received_usd(amount: int) -> 
 )
 @pytest.mark.parametrize("identity", [UUID(int=0), "not-a-uuid"])
 def test_confirmation_requires_typed_non_nil_source_ids(field: str, identity: UUID) -> None:
+    constructors = {
+        "idempotency_key": lambda: replace(command(), idempotency_key=identity),
+        "payer_customer_id": lambda: replace(command(), payer_customer_id=identity),
+        "payment_method_id": lambda: replace(command(), payment_method_id=identity),
+        "lease_id": lambda: replace(command(), lease_id=identity),
+        "identified_invoice_id": lambda: replace(command(), identified_invoice_id=identity),
+        "identified_late_payment_charge_id": lambda: replace(
+            command(), identified_late_payment_charge_id=identity
+        ),
+    }
     with pytest.raises(PaymentConfirmationInvalidError):
-        replace(command(), **{field: identity})
+        constructors[field]()
 
 
 @pytest.mark.parametrize(
@@ -57,8 +67,15 @@ def test_confirmation_requires_typed_non_nil_source_ids(field: str, identity: UU
 )
 @pytest.mark.parametrize("value", ["", " leading", "trailing ", "\x00", "\ud800", "x" * 2001])
 def test_confirmation_evidence_is_normalized_bounded_and_valid(field: str, value: str) -> None:
+    constructors = {
+        "evidence_reference": lambda: replace(command(), evidence_reference=value),
+        "payer_intent_memo": lambda: replace(command(), payer_intent_memo=value),
+        "channel_transaction_reference": lambda: replace(
+            command(), channel_transaction_reference=value
+        ),
+    }
     with pytest.raises(PaymentConfirmationInvalidError):
-        replace(command(), **{field: value})
+        constructors[field]()
 
 
 @pytest.mark.parametrize(
@@ -76,7 +93,8 @@ def test_confirmation_received_timestamp_is_aware_and_representable(received: da
 
 
 def test_confirmation_third_party_requires_explicit_designation_and_only_known_scope() -> None:
-    for scope in ("THIRD_PARTY_IDENTIFIED", "UNKNOWN", None, True, []):
+    invalid_scopes: tuple[object, ...] = ("THIRD_PARTY_IDENTIFIED", "UNKNOWN", None, True, [])
+    for scope in invalid_scopes:
         with pytest.raises(PaymentConfirmationInvalidError):
             replace(command(), payment_scope_kind=scope)  # type: ignore[arg-type]
     identified = replace(command(), payment_scope_kind="THIRD_PARTY_IDENTIFIED", lease_id=uuid4())

@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "payment_confirmation_active_plan_recorded",
+    "phase": "usd_confirmation_corrected_implemented_prefreeze",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2048,7 +2048,7 @@
     "workboard_block_reason": "Tracking/evidence only, blocked solely against OpenClaw admission; no direct Codex policy blocker.",
     "worker_kind": "direct_root_codex",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
-    "worker_status": "sole_root_confirmation_slice_active_no_separate_worker",
+    "worker_status": "sole_root_usd_confirmation_implemented_exact_gates_review_pending",
     "branch": "codex/v1-052-direct",
     "worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
     "planned_branch": "codex/v1-052-direct",
@@ -2057,8 +2057,8 @@
     "scope_sha256": "4ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363",
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
-    "candidate_resolution": "Working next Payment confirmation slice based on accepted c8c4b63; no new frozen candidate yet; complete52 release base remains f8a33ba.",
-    "candidate_status": "next_slice_active_no_new_candidate",
+    "candidate_resolution": "Containing normal successor843e964 after freeze; complete10path USD-only confirmation slice basec8; new exact full gates/review pending.",
+    "candidate_status": "corrected_usd_confirmation_prefreeze_unaccepted",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2092,7 +2092,7 @@
       "followup": "ACTIVE10minutes/11248chars/hash49baafc5 unchanged"
     },
     "owner_action_required": false,
-    "next_action": "Continue sole V1-052 checkout from accepted read-slice c8c4b63. Payment confirmation service/necessary forward-only migration bridge is ACTIVE before edits. Inspect published38/FX configuration/40Receipt trigger/41command replay and selected Payment/money/security contracts, implement only missing transactional confirmation with strict actor/Property/idempotency and server-derived USD/KHR/FX evidence; preserve existing source guards and automatic unique Receipt, no implicit Allocation/Credit/Deposit. Test exact money/replay/concurrency/authorization/history, then freeze and obtain fresh exact gates and independent Astra max Standard read-only zero review. Never repeat completed98248/5555/15346/30096 or mutate accepted read slice without new evidence. Remaining52HTTP/UI/full cumulative release gates follow; close52 fully before53. Keep OpenClawdisabled/nativefollowupACTIVE; at53fullyclosed pause/no54. No routine authorization.",
+    "next_action": "Freeze corrected complete10path USD confirmation bridge as normal child843e964, slice base acceptedc8c4b63, whole52baseclosed51f8a33ba. Run fresh exact full795isolatedPostgreSQL/backend/189automation/static/config/traceability/guards/whitespace, then ONE fresh independent Astra max Standard readonly zero review of all10paths. Keep candidate immutable; external receipts discharge pending markers. Preserve failed843/log83b8909d and correction1/bc7e31a9; never repeat completed6602/8467/52412 or prior98248. After slice acceptance continue REQUIRED KHR incoming confirmation/FX source/fallback bridge, then financialHTTP/staffclient/recovery/UI/fullversion frontend/browser/audits/review/normalpublication/exactCI/refs/card/durableclosure. No53 before52fullyclosed. Keep OpenClawdisabled/nativefollowupACTIVE; at53fullyclosed pause/no54; no routine authorization.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2118,7 +2118,7 @@
     },
     "active_slice": {
       "id": "V1-052-payment-confirmation",
-      "status": "active_plan_recorded_before_implementation",
+      "status": "usd_confirmation_implemented_exact_tests_review_pending_khr_bridge_pending",
       "started_at": "2026-09-06T14:05:00Z",
       "base_sha": "c8c4b63e2bc716b1449ddd900a5333e8a851ea53",
       "scope": "Missing bounded Payment confirmation transactional service and necessary new forward-only migration bridge; HTTP/client/UI remain later slices under unchanged frozen52scope.",
@@ -2136,7 +2136,7 @@
       "remaining_version_scope": "Financial HTTP adapters, staff client/recovery/UI and complete product tests/review/publication/CI/ref/card/durable closure; no53 before full52closure.",
       "substage": {
         "id": "V1-052-payment-confirmation-usd",
-        "status": "prefreeze_focused_database_failed_test_query_correction_pending",
+        "status": "corrected_usd_bridge_implemented_fresh_exact_gates_review_pending",
         "scope": "First bounded USD confirmation command/service. KHR confirmation and FX source/fallback bridge remain required before full52closure, followed by HTTP/UI.",
         "new_migration": "20260906_42_payment_confirmation.py",
         "received_timestamp_design": "Store actual received_at and payer evidence in append-only confirmation request/response; derive PaymentDate from received_at, confirmed_at from database confirmation clock. Do not fabricate received_at for historical rows or alter published Payment schema/38–41.",
@@ -2146,9 +2146,21 @@
           "fingerprint": "new USD confirmation concurrency assertion uses ambiguous unqualified payer_customer_id in Payment/Receipt join",
           "failure": "Focused isolatedPG6602EXIT2:30PASS2FAIL761deselected3.33s. Both failures are verification SQL AmbiguousColumn after concurrent commands returned correct replay/conflict outcomes. Draft lint also requires wrapping and correct imported-fixture noqa placement.",
           "changed_approach": "Qualify the existing joined verification column p.payer_customer_id, preserve one-payment/one-Receipt assertion; format SQL/name lines and fixture suppression placement, no runtime/migration weakening.",
-          "status": "recorded_before_correction",
-          "evidence_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-usd-confirmation-prefreeze-focused-database.log"
-        }
+          "status": "implemented_focused_green_exact_full_gates_pending",
+          "evidence_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-usd-confirmation-prefreeze-focused-database.log",
+          "failed_checkpoint": "843e9640e00dd07f916533f051a4401932adb72d",
+          "failed_log_sha256": "83b8909daf435b49418f1e947f9852e653cf74bb7bd5aa122d0b3f84b4d89648",
+          "focused_green": "8467COMPLETED EXIT0/32PASS761deselected3.01s; logbd885bd1. Added min/max PG cases after this run, full795exact still pending.",
+          "static_and_unit": "152filemypy/ruffPASS;67confirmation unit+22traceability52412COMPLETED EXIT0/89PASS5.98s;21new assertion-level entries/0newmaterialIDs",
+          "runtime_migration_unchanged": true
+        },
+        "failed_checkpoint": "843e9640e00dd07f916533f051a4401932adb72d",
+        "review_base": "c8c4b63e2bc716b1449ddd900a5333e8a851ea53",
+        "correction_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-usd-confirmation-correction1.md",
+        "correction_receipt_sha256": "bc7e31a91515ff840b25a0e2b3295902343c36d13540797fcaed7dcb7a605c60",
+        "runtime_sha256": "a42b1de9811bf3015d9a90523ae2f31f4956da8620cc765fa9ba8a1beae9cd35",
+        "migration_sha256": "540e13156b7eb34ba6520005bc04f0603e76ad408c165fd49bfd94c53493a33f",
+        "remaining": "KHR incoming confirmation and server FX source/fallback bridge is REQUIRED before full52closure; USD-only current command intentionally rejects KHR, no outbound KHR Refund ever."
       }
     },
     "accepted_read_slice": {
@@ -2989,9 +3001,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "c8c4b63e2bc716b1449ddd900a5333e8a851ea53",
+  "commit": "843e9640e00dd07f916533f051a4401932adb72d",
   "idle_reason": null,
-  "next_action": "Continue sole V1-052 checkout from accepted read-slice c8c4b63. Payment confirmation service/necessary forward-only migration bridge is ACTIVE before edits. Inspect published38/FX configuration/40Receipt trigger/41command replay and selected Payment/money/security contracts, implement only missing transactional confirmation with strict actor/Property/idempotency and server-derived USD/KHR/FX evidence; preserve existing source guards and automatic unique Receipt, no implicit Allocation/Credit/Deposit. Test exact money/replay/concurrency/authorization/history, then freeze and obtain fresh exact gates and independent Astra max Standard read-only zero review. Never repeat completed98248/5555/15346/30096 or mutate accepted read slice without new evidence. Remaining52HTTP/UI/full cumulative release gates follow; close52 fully before53. Keep OpenClawdisabled/nativefollowupACTIVE; at53fullyclosed pause/no54. No routine authorization.",
+  "next_action": "Freeze corrected complete10path USD confirmation bridge as normal child843e964, slice base acceptedc8c4b63, whole52baseclosed51f8a33ba. Run fresh exact full795isolatedPostgreSQL/backend/189automation/static/config/traceability/guards/whitespace, then ONE fresh independent Astra max Standard readonly zero review of all10paths. Keep candidate immutable; external receipts discharge pending markers. Preserve failed843/log83b8909d and correction1/bc7e31a9; never repeat completed6602/8467/52412 or prior98248. After slice acceptance continue REQUIRED KHR incoming confirmation/FX source/fallback bridge, then financialHTTP/staffclient/recovery/UI/fullversion frontend/browser/audits/review/normalpublication/exactCI/refs/card/durableclosure. No53 before52fullyclosed. Keep OpenClawdisabled/nativefollowupACTIVE; at53fullyclosed pause/no54; no routine authorization.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -2999,8 +3011,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Working next Payment confirmation slice based on accepted c8c4b63; no new frozen candidate yet; complete52 release base remains f8a33ba.",
-  "candidate_parent": "c8c4b63e2bc716b1449ddd900a5333e8a851ea53",
+  "candidate_resolution": "Containing normal successor843e964 after freeze; complete10path USD-only confirmation slice basec8; new exact full gates/review pending.",
+  "candidate_parent": "843e9640e00dd07f916533f051a4401932adb72d",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -3063,7 +3075,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 Payment confirmation service/forward migration bridge ACTIVE; read slice accepted",
+  "phase": "V1-052 corrected USD confirmation bridge implemented; exact gates/review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4159,13 +4171,13 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "ACCEPTED V1-051 fully closed and V1-052 activationa5; no repeat.",
-    "PRESERVED818guard-fixture failure/c764DB4FAIL/935clock-red2FAIL and all reports/checkpoints.",
-    "ACCEPTED exactc8c4b63:763PGPASS0skip/991backendPASS740DB-onlyskips/189automationPASS and static/config/traceability/guards; completed5555/15346/30096.",
-    "Fresh independent Astra max Standard read-only98248 COMPLETED EXIT0 at14:02:41.309Z;0HIGH0MEDIUM0LOW all12cumulative paths,57focused independenttests/static/preservationPASS; independent liveDBprobes unavailable disclosed.",
-    "Read-slice acceptance receipt62dc741e; review8d7d7cf7. No full52publication/CI/ref/card acceptance.",
-    "Next Payment confirmation slice ACTIVE plan recorded; implementation/tests/new candidate pending. Fresh exact gates/review required after implementation; remaining full52frontend/browser/audits/release gates not waived.",
-    "NEW USDconfirmation first focusedPG6602EXIT2/30PASS2FAIL761deselected3.33s: test assertion joined column ambiguity, correction1 recorded before edits; no publication/acceptance. Draft formatting/lint issues also pending. Preserve failed draft checkpoint before correcting."
+    "ACCEPTED closed51 and52activation/readc8; all prior exacttests/independentzero receipts preserved, do not repeat.",
+    "PRESERVED failed843e964 exactdraft:focusedPG6602EXIT2/30PASS2FAIL761deselected3.33s; joined test query ambiguity; log83b8909d.",
+    "CORRECTION1 runtime/migration unchanged:qualify p.payer_customer_id; preserve concurrency uniqueness assertions; wrap formatting and explicit typed negative-test constructors/fixture annotations.",
+    "GREEN focusedPG8467COMPLETED EXIT0/32PASS761deselected3.01s, logbd885bd1; min/max PG parameter cases subsequently added, full795exact pending.",
+    "PASS152filemypy/ruff;67confirmation unit+22traceability52412COMPLETED EXIT0/89PASS5.98s;21new mappings and zero newmaterialIDs.",
+    "PENDING fresh corrected exact full795PG/backend/189automation/config/static/traceability/guards and independent Astra max Standard read-only complete10path zero review fromc8.",
+    "KHR incoming confirmation/FX bridge and remainingHTTP/UI/fullproduct frontend/browser/audits/release gates REQUIRED; no full52completion or publication."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4187,7 +4199,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-06T14:38:00Z",
+  "timestamp": "2026-09-06T14:45:28Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4222,7 +4234,8 @@
     "scripts/database-test.sh",
     "ops/NOW.md",
     "ops/STATE.json",
-    "ops/QUEUE.md"
+    "ops/QUEUE.md",
+    "ops/traceability.json"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -4410,7 +4423,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-06T14:38:00Z",
+  "updated_at": "2026-09-06T14:45:28Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5592,8 +5605,9 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "next_confirmation_slice_pending_accepted_read_slice_preserved",
+    "status": "pending_corrected_exact_usd_confirmation_slice",
     "tranche_id": "V1-052",
+    "scope": "Complete10path USD confirmation command/service/forward migration/tests/records only; KHR/HTTP/UI and fullversion pending",
     "base_sha": "c8c4b63e2bc716b1449ddd900a5333e8a851ea53",
     "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "exact_sha": null,
@@ -5635,7 +5649,7 @@
   },
   "evidence_applicability": {
     "tranche_id": "V1-052",
-    "status": "activation_and_read_slice_accepted_confirmation_active_product_in_progress",
+    "status": "read_slice_accepted_usd_confirmation_unaccepted_product_in_progress",
     "predecessor_closed": true,
     "predecessor_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "product_tests_pending": true
