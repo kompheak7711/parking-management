@@ -17,7 +17,9 @@ from uuid import UUID
 import psycopg
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from pydantic import AfterValidator, BaseModel, BeforeValidator, ConfigDict, Field
+from starlette.types import Message, Receive, Scope, Send
 
 from property_rental.api import require_billing_actor
 from property_rental.browser_security import require_browser_mutation
@@ -434,6 +436,33 @@ def _page(limit: int, cursor: str | None) -> PaymentPage:
         raise HTTPException(400) from exc
 
 
+MAX_PAYMENT_BODY_BYTES = 32_768
+
+
+class PaymentRequestRoute(APIRoute):
+    """Bound incoming bytes before FastAPI buffers or decodes a Payment body."""
+
+    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["method"] != "POST":
+            await super().handle(scope, receive, send)
+            return
+
+        received = 0
+
+        async def bounded_receive() -> Message:
+            nonlocal received
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > MAX_PAYMENT_BODY_BYTES:
+                    # Reject before forwarding this chunk to Request.body(). Never
+                    # drain the remainder or trust a missing/incorrect Content-Length.
+                    raise HTTPException(400)
+            return message
+
+        await super().handle(scope, bounded_receive, send)
+
+
 async def _strict_json(request: Request) -> None:
     def pairs(items: list[tuple[str, object]]) -> dict[str, object]:
         result: dict[str, object] = {}
@@ -445,7 +474,7 @@ async def _strict_json(request: Request) -> None:
 
     try:
         body = await request.body()
-        if len(body) > 32_768:
+        if len(body) > MAX_PAYMENT_BODY_BYTES:
             raise ValueError
         json.loads(body, object_pairs_hook=pairs)
     except ValueError as exc:
@@ -455,7 +484,7 @@ async def _strict_json(request: Request) -> None:
 def create_payment_router(
     resolver: ActorResolver, flow: PaymentFlow, settings: Settings
 ) -> APIRouter:
-    router = APIRouter(prefix="/api/v1", tags=["payments"])
+    router = APIRouter(prefix="/api/v1", tags=["payments"], route_class=PaymentRequestRoute)
 
     @router.get("/properties/{property_id}/payments")
     def list_payments(

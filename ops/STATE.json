@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "V1-052 Payment HTTP/API implemented and focused tests pass; fresh exact gates/review pending",
+    "phase": "Payment HTTP body-limit correction1 focused PASS, fresh exact gates/review pending",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2057,8 +2057,8 @@
     "scope_sha256": "4ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363",
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
-    "candidate_resolution": "Containing normal corrected successor48805c3 after freeze; COMPLETE19path Payment HTTP/API slice base accepted5263218, whole52basef8; full exact gates and independent zero review pending.",
-    "candidate_status": "payment_http_implemented_focused_pass_freeze_pending",
+    "candidate_resolution": "Normal successor of retained dbf3576 pending; complete19path slice5263218-to-successor must pass fresh exact gates and independent zero review.",
+    "candidate_status": "corrected_normal_successor_ready_to_freeze",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2070,31 +2070,30 @@
     "followup_prompt_sha256": "49baafc52ee102a222a36890c93eb4c877282f3ff4d75e7ebd21e353ba1955b2",
     "live_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-codex-takeover-live.md",
     "last_model_configuration_check": {
-      "checked_at": "2026-09-06T17:29:00Z",
-      "actual_turn": "2026-09-06T17:23:35.871Z",
+      "timestamp": "2026-09-06T18:24:36.139Z",
       "model": "gpt-6-astra",
-      "reasoning": "xhigh",
-      "mode": "Standard",
+      "reasoning_effort": "xhigh",
       "service_tier": "default",
+      "mode": "Standard",
       "provider_attestation": "unavailable"
     },
     "last_reconciliation": {
-      "checked_at": "2026-09-06T17:29:00Z",
-      "main_head": "a5dd97c8cde26008dcecf02be847561771092fe1",
-      "implementation_head": "5263218f7f7deafc05b2d9f524f138761e05c850",
-      "tracking_fetched": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
-      "last_live_remote_and_predecessor_ci_checked_at": "2026-09-06T17:25:00Z",
-      "predecessor_ci": "34030703203 attempt1 success",
-      "retained_worktrees": 127,
-      "openclaw_matching_jobs": 1,
-      "openclaw_enabled": false,
-      "openclaw_next_run": null,
-      "card": "Same74197a0e tracking-only blocked/no execution/claim/attempt, latestf7d3ea54;51DONE",
-      "native_agents": "Sole root implementation coordinator, no codex exec/hermes/OC worker;13094COMPLETED, unrelated active Parking task untouched.",
-      "followup": "ACTIVE10minutes/11248characters/hash49baafc5; saved USD-only Refund policy verified."
+      "checked_at": "2026-09-06T18:27:00Z",
+      "main_sha": "a5dd97c8cde26008dcecf02be847561771092fe1",
+      "published_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
+      "ci_run": 34030703203,
+      "ci_attempt": 1,
+      "ci_conclusion": "success",
+      "main_clean": true,
+      "worktrees": 127,
+      "review78363": "COMPLETED EXIT0 with one MEDIUM; no active reviewer or overlapping implementation worker",
+      "openclaw": "exactly one disabled30min/no nextRun",
+      "native_followup": "ACTIVE10min/hash49baafc5",
+      "card": "74197a0e tracking-only blocked/null execution/claim/attempt",
+      "predecessor_card": "c5621f97 done"
     },
     "owner_action_required": false,
-    "next_action": "Freeze normal corrected successor of retained48805c3 and test/review COMPLETE19path Payment HTTP/API slice from accepted5263218, not only the final test/records delta. Run fresh exact850PG/fullbackend/158static-build-import/189automation/config/traceability/publicationguard/diffs; only after ALL PASS dispatch ONE fresh independent Astra max Standard read-only zero review. Preserve failed48805c3/3PASS1FAIL log and prior accepted/failed evidence, no amendment or duplicate workers. After bounded acceptance continue remaining Allocation/Receipt/Credit/USD-Refund HTTP/UI/encrypted recovery and all full-product frontend/browser/audits/cumulative exact review/normal publication/exact CI/ref/card/durable closure before V1-053. OpenClaw disabled/native follow-up ACTIVE; at fully closed V1-053 PAUSE/no V1-054; no routine authorization.",
+    "next_action": "Freeze normal body-limit correction successor of retaineddbf3576 and run fresh complete19path exact gates from accepted5263218:850PG/fullbackend(expected1194)/158static-build-import/189automation/config/traceability/publicationguard/diffs. Only if ALL PASS dispatch ONE fresh independent Astra max Standard read-only COMPLETE19path zero review covering all three retained488/dbf/successor commits, not just the final correction. Keep rejected dbf/reportddf4e56e and every prior checkpoint; no edit during review or duplicate worker. Then remaining financial HTTP/UI/encrypted recovery/full-product release/CI/refs/card/durableclosure before53. OpenClawdisabled/nativefollowupACTIVE; at53closed PAUSE/no54; no owner routine action.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2120,7 +2119,7 @@
     },
     "active_slice": {
       "id": "V1-052-payment-http",
-      "status": "implemented_focused_pass_exact_gates_review_pending",
+      "status": "body_limit_correction1_focused_pass_exact_gates_review_pending",
       "started_at": "2026-09-06T17:06:00Z",
       "base_sha": "5263218f7f7deafc05b2d9f524f138761e05c850",
       "scope": "Bounded canonical API-057/058 Payment HTTP list/detail/USD-KHR confirmation, narrow injected flow and app wiring, focused unit/API/isolated PostgreSQL tests. Downstream financial routes and all UI remain subsequent slices.",
@@ -2161,9 +2160,56 @@
       "tests": "70403COMPLETED EXIT0/5PGPASS845deselected3.66s;75842COMPLETED158fileformat-lint-mypy/106API-inventory-tracePASS15.31s/traceability0newIDs/diffPASS",
       "complete_review_paths": 19,
       "head_compatibility": "19 truecurrent-head markers43to44/8legacytests; two explicit43 references remain in new history/down-revision test. Published/accepted38–43 and old read/USD/KHR services unchanged.",
-      "runtime_sha256": "d92d5ed777115147b0bc09c3e6e48394cbdc341c624be7419976162e1ac64d2a",
+      "runtime_sha256": "c176d8e4c0d4910e9f226fceb4cc6d9a984c6412efdcbf0b37ecb26be2fbd851",
       "new_migration": "20260907_44_payment_receipt_evidence.py",
-      "migration_sha256": "f85258a762c406b638a4473d732cce57673f8f1c757e9975d7f2c046f59a330e"
+      "migration_sha256": "f85258a762c406b638a4473d732cce57673f8f1c757e9975d7f2c046f59a330e",
+      "rejected_review": {
+        "status": "completed_failed_preserved",
+        "sha": "dbf3576865b8d4bee68028343ce3693e58c26edd",
+        "tree": "d744173a9297a21599fb716f6b0036122f5b9066",
+        "base_sha": "5263218f7f7deafc05b2d9f524f138761e05c850",
+        "exec_session": 78363,
+        "completed_at": "2026-09-06T18:14:24.160Z",
+        "findings": {
+          "high": 0,
+          "medium": 1,
+          "low": 0
+        },
+        "fingerprint": "32KiB dependency runs after full FastAPI body buffering/JSON decode; chunked unauthenticated input exhausts resources",
+        "report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-review-dbf3576.md",
+        "report_sha256": "ddf4e56ed2b4c2da055f7e5d2ab11d9c41c105b674caf073a353307450c75a6e",
+        "report_matches_completed_jsonl": true,
+        "reviewer_child": "01a077e3-71bb-7eb2-9e31-eef19c28ede7",
+        "model": "gpt-6-astra",
+        "reasoning": "max",
+        "mode": "Standard",
+        "read_only": true,
+        "independent_checks": "232focusedtests/352inputprobes/static/import/traceability/preservation/wire/shell/diff PASS; no live isolated PG endpoint, full gates/build/frontend/browser/audits not independently repeated",
+        "exact_tests": "850PG0skip/1165backend827DB-onlyskips/189automation/158static-build-import/all applicable config PASS;83059/79662/86063 COMPLETED EXIT0",
+        "exact_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-exact-verification-dbf3576.md",
+        "exact_receipt_sha256": "2fb8805917babda5b72334bae0d11ccbe62158016b28916b8390865595875026"
+      },
+      "body_limit_correction1": {
+        "attempt": 1,
+        "status": "implemented_focused_pass_exact_gates_review_pending",
+        "started_at": "2026-09-06T18:27:00Z",
+        "fingerprint": "32KiB dependency runs after full FastAPI body buffering/JSON decode; chunked unauthenticated input exhausts resources",
+        "changed_approach": "Replace late size validation with a scoped APIRoute ASGI receive byte guard before framework parsing; early termination tested directly, not status-only. Keep duplicate-key dependency and accepted business behavior.",
+        "plan": "Complete bounded Payment HTTP body-limit correction1 for review78363 MEDIUM at retained dbf3576: enforce the 32768-byte limit on the ASGI receive stream before FastAPI buffering/JSON decoding, independent of Content-Length; prove early stop/no parser/no actor or financial dispatch, exact-boundary success, chunk/header/disconnect and existing API regressions. Preserve all19path Payment HTTP changes from accepted5263218, prior migrations/services and every failed checkpoint. Freeze a normal successor, run fresh exact850PG/fullbackend/static-build-import/189automation/config/traceability/guards, then ONE fresh independent Astra max Standard read-only complete19path zero review. Remaining financial HTTP/UI/recovery/full-product release and closure precedes53. OpenClaw disabled/nativefollowupACTIVE; at53closed PAUSE/no54; no routine authorization.",
+        "scope": "payment_api.py, test_payment_api.py, traceability and compact records only; no migration or policy changes.",
+        "result": "62529COMPLETED135focusedPASS17.39s/158staticPASS/traceability0newIDs/diffPASS;29newstreamingcases; runtime31added2removed lines; app/migrations/services/scope unchanged",
+        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-body-limit-correction1.md",
+        "receipt_sha256": "8c201a285868b38f7ee56b5f7f10fdeb7d6f91622f6d3971d9d2d7d16b0275ba"
+      },
+      "pre_correction_tests": [
+        "ACCEPTED exact5263218:845 PostgreSQL PASS0skip/1108backend PASS822DB-only skips/189automation/155-file static/build/import/all applicable config/traceability/guards PASS. Sessions65362/69428/55937 COMPLETED EXIT0; do not repeat unchanged.",
+        "ACCEPTED independent13094 COMPLETED17:02:05.496Z0HIGH0MEDIUM0LOW across COMPLETE17paths BOTH038/526commits from1209530; actual Astra/max/read-only, local default Standard. Reporte397af36/acceptance9ce2ea8f; independent139tests+15609validationprobes PASS, livePG not independently rerun.",
+        "CURRENT bounded Payment HTTP/API slice active/prepared, implementation and all its tests/review pending. Historical failed/accepted tests preserved in accepted_payment_confirmation_slice and original logs. No full V1-052 acceptance/publication/CI/ref equality/closure.",
+        "DRAFT Payment HTTP/API:158filemypy PASS;43545COMPLETED84API+inventoryPASS8.55s. New view44 and bounded original evidence read implemented;19current-head markers43to44 across8legacyfiles, prior migrations/services unchanged.",
+        "FAILED focused11348 COMPLETED EXIT2/3PGPASS1FAIL845deselected2.79s: expected422 vs correct accepted-service409 automatic-source/manual fallback conflict. Preserve checkpoint/log2da6a52b; correction1 pending. Early draft lint/type diagnostics corrected, no runtime policy change.",
+        "CORRECTED focused70403COMPLETED EXIT0:5PGPASS845deselected3.66s;75842COMPLETED EXIT0:158fileformat-lint-mypy/106API-inventory-traceabilityPASS15.31s/0newmaterialIDs/diffPASS. Correction1 resolved, failed488 preserved. Receipt d58c26b3.",
+        "PENDING frozen corrected COMPLETE19path exact850PG/fullbackend/189automation/static-build-import-config/traceability/guards and ONE independent Astra max Standard read-only zero review from5263218. No Payment HTTP/full52acceptance/publication."
+      ]
     },
     "accepted_read_slice": {
       "id": "V1-052-payment-read",
@@ -3277,9 +3323,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "48805c32d3fe1c477757ed96991851422b9a31bf",
+  "commit": "dbf3576865b8d4bee68028343ce3693e58c26edd",
   "idle_reason": null,
-  "next_action": "Freeze normal corrected successor of retained48805c3 and test/review COMPLETE19path Payment HTTP/API slice from accepted5263218, not only the final test/records delta. Run fresh exact850PG/fullbackend/158static-build-import/189automation/config/traceability/publicationguard/diffs; only after ALL PASS dispatch ONE fresh independent Astra max Standard read-only zero review. Preserve failed48805c3/3PASS1FAIL log and prior accepted/failed evidence, no amendment or duplicate workers. After bounded acceptance continue remaining Allocation/Receipt/Credit/USD-Refund HTTP/UI/encrypted recovery and all full-product frontend/browser/audits/cumulative exact review/normal publication/exact CI/ref/card/durable closure before V1-053. OpenClaw disabled/native follow-up ACTIVE; at fully closed V1-053 PAUSE/no V1-054; no routine authorization.",
+  "next_action": "Freeze normal body-limit correction successor of retaineddbf3576 and run fresh complete19path exact gates from accepted5263218:850PG/fullbackend(expected1194)/158static-build-import/189automation/config/traceability/publicationguard/diffs. Only if ALL PASS dispatch ONE fresh independent Astra max Standard read-only COMPLETE19path zero review covering all three retained488/dbf/successor commits, not just the final correction. Keep rejected dbf/reportddf4e56e and every prior checkpoint; no edit during review or duplicate worker. Then remaining financial HTTP/UI/encrypted recovery/full-product release/CI/refs/card/durableclosure before53. OpenClawdisabled/nativefollowupACTIVE; at53closed PAUSE/no54; no owner routine action.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -3287,8 +3333,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Containing normal corrected successor48805c3 after freeze; COMPLETE19path Payment HTTP/API slice base accepted5263218, whole52basef8; full exact gates and independent zero review pending.",
-  "candidate_parent": "48805c32d3fe1c477757ed96991851422b9a31bf",
+  "candidate_resolution": "Normal successor of retained dbf3576 pending; complete19path slice5263218-to-successor must pass fresh exact gates and independent zero review.",
+  "candidate_parent": "dbf3576865b8d4bee68028343ce3693e58c26edd",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -3351,7 +3397,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 Payment HTTP/API implemented and focused tests pass; fresh exact gates/review pending",
+  "phase": "V1-052 Payment HTTP body-limit correction1 implemented focused PASS; fresh exact gates/review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4447,13 +4493,10 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "ACCEPTED exact5263218:845 PostgreSQL PASS0skip/1108backend PASS822DB-only skips/189automation/155-file static/build/import/all applicable config/traceability/guards PASS. Sessions65362/69428/55937 COMPLETED EXIT0; do not repeat unchanged.",
-    "ACCEPTED independent13094 COMPLETED17:02:05.496Z0HIGH0MEDIUM0LOW across COMPLETE17paths BOTH038/526commits from1209530; actual Astra/max/read-only, local default Standard. Reporte397af36/acceptance9ce2ea8f; independent139tests+15609validationprobes PASS, livePG not independently rerun.",
-    "CURRENT bounded Payment HTTP/API slice active/prepared, implementation and all its tests/review pending. Historical failed/accepted tests preserved in accepted_payment_confirmation_slice and original logs. No full V1-052 acceptance/publication/CI/ref equality/closure.",
-    "DRAFT Payment HTTP/API:158filemypy PASS;43545COMPLETED84API+inventoryPASS8.55s. New view44 and bounded original evidence read implemented;19current-head markers43to44 across8legacyfiles, prior migrations/services unchanged.",
-    "FAILED focused11348 COMPLETED EXIT2/3PGPASS1FAIL845deselected2.79s: expected422 vs correct accepted-service409 automatic-source/manual fallback conflict. Preserve checkpoint/log2da6a52b; correction1 pending. Early draft lint/type diagnostics corrected, no runtime policy change.",
-    "CORRECTED focused70403COMPLETED EXIT0:5PGPASS845deselected3.66s;75842COMPLETED EXIT0:158fileformat-lint-mypy/106API-inventory-traceabilityPASS15.31s/0newmaterialIDs/diffPASS. Correction1 resolved, failed488 preserved. Receipt d58c26b3.",
-    "PENDING frozen corrected COMPLETE19path exact850PG/fullbackend/189automation/static-build-import-config/traceability/guards and ONE independent Astra max Standard read-only zero review from5263218. No Payment HTTP/full52acceptance/publication."
+    "850PG0skip/1165backend827DB-onlyskips/189automation/158static-build-import/all applicable config PASS;83059/79662/86063 COMPLETED EXIT0",
+    "Review78363 COMPLETED18:14:24.160Z:0HIGH/1MEDIUM/0LOW complete19paths; reportddf4e56e byte-identical final. Rejectdbf despite passing tests; all evidence preserved.",
+    "Correction1 ACTIVE; focused/fresh exact gates/independent review pending; no full52 acceptance/publication/closure.",
+    "CORRECTION1 62529COMPLETED EXIT0/135focusedPASS17.39s/158staticPASS/traceability0newIDs/diffPASS; receipt8c201a285868b38f7ee56b5f7f10fdeb7d6f91622f6d3971d9d2d7d16b0275ba. Fresh candidate exact gates and complete19path review pending."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4475,7 +4518,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-06T17:55:00Z",
+  "timestamp": "2026-09-06T18:35:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4708,7 +4751,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-06T17:55:00Z",
+  "updated_at": "2026-09-06T18:35:00Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5834,7 +5877,7 @@
   "commit_role": "Retained failed-verification Payment HTTP draft; corrected normal successor resolves by containing HEAD",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "48805c32d3fe1c477757ed96991851422b9a31bf"
+    "dbf3576865b8d4bee68028343ce3693e58c26edd"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
@@ -5890,7 +5933,7 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_fresh_exact_complete_19path_payment_http_slice",
+    "status": "pending_fresh_exact_complete_19path_body_limit_successor",
     "tranche_id": "V1-052",
     "scope": "COMPLETE19path Payment HTTP/API from accepted5263218 including retained488 and corrected successor, new44 view, 19head markers, schemas/wiring/API/PG tests/records/traceability; later financial HTTP/UI/full product pending.",
     "base_sha": "5263218f7f7deafc05b2d9f524f138761e05c850",
@@ -5921,6 +5964,37 @@
       "exact_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-khr-exact-verification-5263218.md",
       "exact_receipt_sha256": "beccae1cfb2c36715c3c6b413cd5860f735446e3c4bb8ed8a1898aa34985c92f",
       "not_whole_version_acceptance": true
+    },
+    "findings": {
+      "high": 0,
+      "medium": 1,
+      "low": 0
+    },
+    "rejected_candidate": {
+      "status": "completed_failed_preserved",
+      "sha": "dbf3576865b8d4bee68028343ce3693e58c26edd",
+      "tree": "d744173a9297a21599fb716f6b0036122f5b9066",
+      "base_sha": "5263218f7f7deafc05b2d9f524f138761e05c850",
+      "exec_session": 78363,
+      "completed_at": "2026-09-06T18:14:24.160Z",
+      "findings": {
+        "high": 0,
+        "medium": 1,
+        "low": 0
+      },
+      "fingerprint": "32KiB dependency runs after full FastAPI body buffering/JSON decode; chunked unauthenticated input exhausts resources",
+      "report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-review-dbf3576.md",
+      "report_sha256": "ddf4e56ed2b4c2da055f7e5d2ab11d9c41c105b674caf073a353307450c75a6e",
+      "report_matches_completed_jsonl": true,
+      "reviewer_child": "01a077e3-71bb-7eb2-9e31-eef19c28ede7",
+      "model": "gpt-6-astra",
+      "reasoning": "max",
+      "mode": "Standard",
+      "read_only": true,
+      "independent_checks": "232focusedtests/352inputprobes/static/import/traceability/preservation/wire/shell/diff PASS; no live isolated PG endpoint, full gates/build/frontend/browser/audits not independently repeated",
+      "exact_tests": "850PG0skip/1165backend827DB-onlyskips/189automation/158static-build-import/all applicable config PASS;83059/79662/86063 COMPLETED EXIT0",
+      "exact_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-exact-verification-dbf3576.md",
+      "exact_receipt_sha256": "2fb8805917babda5b72334bae0d11ccbe62158016b28916b8390865595875026"
     }
   },
   "historical_v1_047_review": {

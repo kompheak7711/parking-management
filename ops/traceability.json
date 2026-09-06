@@ -2,6 +2,43 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_payment_api_stream_limit_rejects_before_buffering_decoding_or_dispatch",
+      "upstream_ids": [
+        "SEC-036",
+        "SEC-040",
+        "API-013",
+        "API-057",
+        "API-058"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "Direct full-app ASGI2.0/2.4 chunks, anonymous/authorized resolver and absent/false/large length headers: stops at first over-budget chunk without remaining reads, JSON decode, actor or financial dispatch; safe no-store/correlation400 asserted."
+    },
+    {
+      "test_id": "test_payment_api_stream_limit_accepts_exact_byte_boundary_and_chunked_json",
+      "upstream_ids": [
+        "SEC-036",
+        "API-058"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "Exactly32768 bytes across split and empty chunks remains accepted once under ASGI2.0/2.4, missing or exact length; both strict decode passes and one actor/financial dispatch asserted."
+    },
+    {
+      "test_id": "test_payment_api_stream_limit_counts_encoded_bytes_and_handles_disconnect",
+      "upstream_ids": [
+        "SEC-036",
+        "SEC-040",
+        "API-013"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_api.py",
+      "status": "implemented",
+      "notes": "UTF8 byte count, not character count, bounds early receive; truncated disconnected request fails safely before parsing/actor/financial effects."
+    },
+    {
       "test_id": "test_payment_api_list_filters_cursor_envelope_and_exact_money",
       "upstream_ids": [
         "API-005",

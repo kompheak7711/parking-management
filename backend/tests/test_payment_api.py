@@ -2,22 +2,32 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
 from typing import cast
+from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 from httpx import Response
+from starlette.types import Message, Scope
 
 from property_rental.app import create_app
 from property_rental.identity import AuthenticatedActor
 from property_rental.khr_payment_confirmation import ConfirmKhrPaymentCommand
-from property_rental.payment_api import Confirmation, PaymentFlow, PostgresPaymentFlow, _cursor
+from property_rental.payment_api import (
+    MAX_PAYMENT_BODY_BYTES,
+    Confirmation,
+    PaymentFlow,
+    PostgresPaymentFlow,
+    _cursor,
+)
 from property_rental.payment_confirmation import (
     ConfirmUsdPaymentCommand,
     PaymentConfirmationAuthorizationError,
@@ -300,6 +310,149 @@ def test_payment_api_rejects_coerced_money_invalid_evidence_and_caller_derived_f
     response = post(api(flow, actor(flow.property_id, "payments.record")), flow, body)
     assert response.status_code == 422 and flow.calls == []
     assert "stack" not in response.text and "Original receipt evidence" not in response.text
+
+
+def _streamed_payment_request(
+    flow: Flow,
+    chunks: list[bytes],
+    *,
+    authenticated: AuthenticatedActor | None,
+    content_length: str | None,
+    disconnect: bool = False,
+    asgi_spec: str = "2.4",
+) -> tuple[list[Message], int, list[int], list[str]]:
+    calls: list[str] = []
+
+    def resolve(request: object) -> AuthenticatedActor | None:
+        del request
+        calls.append("actor")
+        return authenticated
+
+    app = create_app(actor_resolver=resolve, payment_flow=flow)
+    headers = {
+        **mutation_headers(),
+        "Content-Type": "application/json",
+        "Cookie": "__Host-prm_csrf=csrf",
+        "X-Request-ID": "payment-stream-bound",
+    }
+    if content_length is not None:
+        headers["Content-Length"] = content_length
+    path = f"/api/v1/properties/{flow.property_id}/payments"
+    scope: Scope = {
+        "type": "http",
+        "asgi": {"version": "3.0", "spec_version": asgi_spec},
+        "http_version": "1.1",
+        "method": "POST",
+        "scheme": "https",
+        "path": path,
+        "raw_path": path.encode(),
+        "query_string": b"",
+        "root_path": "",
+        "headers": [(key.lower().encode(), value.encode()) for key, value in headers.items()],
+        "server": ("testserver", 443),
+        "client": ("127.0.0.1", 1234),
+    }
+    consumed = 0
+    sent: list[Message] = []
+    decoded: list[int] = []
+    loads = json.loads
+
+    def observed_loads(value: str | bytes | bytearray, **kwargs: object) -> object:
+        decoded.append(len(value))
+        return cast(Callable[..., object], loads)(value, **kwargs)
+
+    async def receive() -> Message:
+        nonlocal consumed
+        if consumed == len(chunks):
+            if disconnect:
+                return {"type": "http.disconnect"}
+            await asyncio.Event().wait()
+            raise AssertionError("Unreachable: response completion cancels disconnect listener")
+        chunk = chunks[consumed]
+        consumed += 1
+        return {
+            "type": "http.request",
+            "body": chunk,
+            "more_body": disconnect or consumed < len(chunks),
+        }
+
+    async def send(message: Message) -> None:
+        sent.append(message)
+
+    with patch("json.loads", side_effect=observed_loads):
+        asyncio.run(app(scope, receive, send))
+    return sent, consumed, decoded, calls
+
+
+@pytest.mark.parametrize("content_length", [None, "1", "120000"])
+@pytest.mark.parametrize("chunk_sizes", [(40000, 40000, 40000), (16000, 16769, 40000)])
+@pytest.mark.parametrize("asgi_spec", ["2.0", "2.4"])
+@pytest.mark.parametrize("authenticated", [False, True])
+def test_payment_api_stream_limit_rejects_before_buffering_decoding_or_dispatch(
+    content_length: str | None,
+    chunk_sizes: tuple[int, ...],
+    asgi_spec: str,
+    authenticated: bool,
+) -> None:
+    flow = Flow()
+    chunks = [b" " * size for size in chunk_sizes]
+    sent, consumed, decoded, actors = _streamed_payment_request(
+        flow,
+        chunks,
+        authenticated=actor(flow.property_id, "payments.record") if authenticated else None,
+        content_length=content_length,
+        asgi_spec=asgi_spec,
+    )
+    assert consumed == (1 if chunk_sizes[0] > MAX_PAYMENT_BODY_BYTES else 2)
+    assert consumed < len(chunks)
+    assert decoded == [] and actors == [] and flow.calls == []
+    start = next(message for message in sent if message["type"] == "http.response.start")
+    assert start["status"] == 400
+    headers = dict(start["headers"])
+    assert headers[b"cache-control"] == b"private, no-store"
+    assert headers[b"vary"] == b"Cookie"
+    assert headers[b"x-request-id"] == b"payment-stream-bound"
+    body = b"".join(message.get("body", b"") for message in sent)
+    result = json.loads(body)
+    assert result["error"]["code"] == "BAD_REQUEST"
+    assert result["meta"]["request_id"] == "payment-stream-bound"
+    assert b"HTTPException" not in body
+
+
+@pytest.mark.parametrize("length", [None, "32768"])
+@pytest.mark.parametrize("asgi_spec", ["2.0", "2.4"])
+def test_payment_api_stream_limit_accepts_exact_byte_boundary_and_chunked_json(
+    length: str | None,
+    asgi_spec: str,
+) -> None:
+    flow = Flow()
+    raw = json.dumps(payload(), ensure_ascii=False).encode()
+    raw += b" " * (MAX_PAYMENT_BODY_BYTES - len(raw))
+    sent, consumed, decoded, actors = _streamed_payment_request(
+        flow,
+        [raw[:100], b"", raw[100:]],
+        authenticated=actor(flow.property_id, "payments.record"),
+        content_length=length,
+        asgi_spec=asgi_spec,
+    )
+    assert consumed == 3 and decoded == [MAX_PAYMENT_BODY_BYTES, MAX_PAYMENT_BODY_BYTES]
+    assert actors == ["actor"] and len(flow.calls) == 1
+    assert next(m["status"] for m in sent if m["type"] == "http.response.start") == 201
+
+
+def test_payment_api_stream_limit_counts_encoded_bytes_and_handles_disconnect() -> None:
+    flow = Flow()
+    raw = ("é" * (MAX_PAYMENT_BODY_BYTES // 2 + 1)).encode()
+    sent, consumed, decoded, actors = _streamed_payment_request(
+        flow, [raw, b"unread"], authenticated=None, content_length=None
+    )
+    assert consumed == 1 and decoded == [] and actors == [] and flow.calls == []
+    assert next(m["status"] for m in sent if m["type"] == "http.response.start") == 400
+    sent, consumed, decoded, actors = _streamed_payment_request(
+        flow, [b"{"], authenticated=None, content_length=None, disconnect=True
+    )
+    assert consumed == 1 and decoded == [] and actors == [] and flow.calls == []
+    assert next(m["status"] for m in sent if m["type"] == "http.response.start") == 400
 
 
 def test_payment_api_rejects_duplicate_json_keys_nested_keys_and_oversized_input() -> None:
