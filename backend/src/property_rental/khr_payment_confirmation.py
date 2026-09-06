@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from datetime import datetime
-from decimal import Decimal, InvalidOperation, localcontext
+from decimal import Decimal
 from typing import Literal, NoReturn, cast
 from uuid import UUID
 
@@ -50,15 +50,21 @@ def _rate(value: Decimal) -> str:
         or not Decimal("0") < value < Decimal("100000000000000")
     ):
         raise PaymentConfirmationInvalidError("A positive numeric(20,6) reference rate is required")
-    try:
-        with localcontext() as context:
-            context.prec = 40
-            fixed = value.quantize(Decimal("0.000001"))
-    except InvalidOperation as exc:
-        raise PaymentConfirmationInvalidError("Reference rate precision is invalid") from exc
-    if value != fixed:
+    # Inspect the exact coefficient instead of rounding under ambient Decimal
+    # precision/traps. Trailing zeros do not change the numeric(20,6) value.
+    parts = value.as_tuple()
+    digits = list(parts.digits)
+    exponent = cast(int, parts.exponent)
+    while digits[-1] == 0:
+        digits.pop()
+        exponent += 1
+    if exponent < -6:
         raise PaymentConfirmationInvalidError("Reference rates support at most six decimal places")
-    return format(fixed, "f")
+    coefficient = 0
+    for digit in digits:
+        coefficient = coefficient * 10 + digit
+    millionths = coefficient * 10 ** (exponent + 6)
+    return f"{millionths // 1_000_000}.{millionths % 1_000_000:06d}"
 
 
 @dataclass(frozen=True, slots=True)

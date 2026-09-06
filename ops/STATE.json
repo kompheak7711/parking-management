@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "V1-052 incoming-KHR confirmation bridge active; USD1209530 accepted",
+    "phase": "V1-052 incoming-KHR bridge implemented; fresh exact gates/review pending",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2057,8 +2057,8 @@
     "scope_sha256": "4ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363",
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
-    "candidate_resolution": "Containing normal successor e385974 after freeze; COMPLETE17path USD slice basec8, whole52basef8; new exact full gates and independent zero review pending.",
-    "candidate_status": "khr_confirmation_implementation_active",
+    "candidate_resolution": "Containing normal successor038a83f after freeze; COMPLETE17path KHRslice base accepted1209530, whole52basef8; exact full gates and independent zero review pending.",
+    "candidate_status": "khr_implemented_focused_green_freeze_pending",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2092,7 +2092,7 @@
       "followup": "ACTIVE10minutes/11248chars/hash49baafc5 unchanged"
     },
     "owner_action_required": false,
-    "next_action": "Implement bounded incoming-KHR confirmation/FX bridge from accepted1209530 in sole existing52checkout: newforward43 strict financial command/replay and typed service reusing approved-source provider, authorized outage-only fallback, exact markup/ceilings/channel evidence, atomic immutable FX+Payment+Receipt/audit. Preserve published38–41/accepted42 and originalhistory; no KHRRefund. Cover strict unit/rawPG/money/authority/replay/concurrency/history tests, register traceability/current-head expectations, freeze normal candidate, fresh full exact applicable gates and ONE independent Astra max Standard readonly zero review. Then remaining52HTTP/UI/recovery/fullproduct release/CI/refs/card/durableclosure before53; at53closed PAUSEfollowup/no54. OpenClawdisabled; no routine owner authorization.",
+    "next_action": "Freeze normal successor of retained038a83f and review COMPLETE17path incoming-KHR slice from accepted1209530, not only final delta. Run fresh exact845PG/fullbackend/static-build-import/189automation/config/traceability/publicationguard/diffs; only after ALLPASS dispatch ONE fresh independent Astra max Standard readonly zero review. Preserve failed038a83f/unitlog and all priorUSD/read evidence, no amendment or duplicate workers. After KHRacceptance continue remaining52HTTP/CSRF/staffUI/encryptedrecovery and fullproductfrontend/browser/audits/cumulative exactreview/normalpublication/exactCI/ref/card/durableclosure before53. OpenClawdisabled/nativefollowupACTIVE; at53fullyclosedPAUSE/no54; no routine authorization.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2118,9 +2118,9 @@
     },
     "active_slice": {
       "id": "V1-052-payment-confirmation",
-      "status": "khr_confirmation_active_usd_accepted",
+      "status": "khr_implemented_exact_gates_review_pending_usd_accepted",
       "started_at": "2026-09-06T14:05:00Z",
-      "base_sha": "c8c4b63e2bc716b1449ddd900a5333e8a851ea53",
+      "base_sha": "12095305010e211710650f309906ad99a2ec3aaf",
       "scope": "Missing bounded Payment confirmation transactional service and necessary new forward-only migration bridge; HTTP/client/UI remain later slices under unchanged frozen52scope.",
       "model": "gpt-6-astra",
       "reasoning": "xhigh",
@@ -2136,7 +2136,7 @@
       "remaining_version_scope": "Financial HTTP adapters, staff client/recovery/UI and complete product tests/review/publication/CI/ref/card/durable closure; no53 before full52closure.",
       "substage": {
         "id": "V1-052-payment-confirmation-khr",
-        "status": "active",
+        "status": "implemented_focused_pass_exact_gates_review_pending",
         "started_at": "2026-09-06T16:14:00Z",
         "base_sha": "12095305010e211710650f309906ad99a2ec3aaf",
         "scope": "Required bounded incoming-KHR confirmation/FX source/fallback bridge; no HTTP/UI or Refund changes",
@@ -2151,7 +2151,25 @@
           "Replay original user intent before fresh source lookup inside financial transaction; exactsamekey conflict/currency/actor/Property namespace, fresh actor, narrowgrants/privatecommandtable.",
           "Cover unit and isolatedPG automatic/manual/outage/capability/strict types/Unicode/timestamps/rounding/channel combinations/rollback/noimplicit events/replay/concurrency/history; update only truecurrent-head assertions and traceability.",
           "Normal frozen boundedcandidate from1209530, fresh exactfullbackend/PG/automation/staticbuildconfig/traceability and ONE fresh independent Astra max Standard readonly zero review; laterHTTP/UI/full52release required."
-        ]
+        ],
+        "verification_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-khr-implementation-verification.md",
+        "verification_receipt_sha256": "a93619b24a6fb1627bda320d10d2a45a8d6b64686be9846cbb1f27347a8d0064",
+        "migration_sha256": "fbb44701a274e94785d09a9cd643d6161855c7735c571f5f3a7f8bae24e400ba",
+        "runtime_sha256": "0dc30e5031bd651d1290d05f6c137f871ad0ea0f5ddaaa43b29cebccae32bc50",
+        "tests": "4947COMPLETED EXIT0/44PGPASS801deselected4.09s;4685COMPLETED EXIT0/155filesformat-lint-mypy/50unit+22traceability72PASS6.18s;20newassertionmappings/0newIDs",
+        "fixture_correction1": {
+          "attempt": 1,
+          "status": "resolved_focused_unit_pass",
+          "fingerprint": "unit verification generates a second random actor instead of comparing the actual command actor",
+          "failed_sha": "038a83f321fd03d7c2c7bbd113ab00fddcfeeb5d",
+          "failed_tree": "0cc11bcdf7da394b890129494a558e6a0a062a20",
+          "failed_result": "154filemypyPASS;49unitPASS1FAIL0.21s",
+          "failed_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-khr-prefreeze-unit.log",
+          "failed_log_sha256": "f4d9b3c41b8f4c83716735aa3be87cc5232a158bc69055614773bfcc9000332d",
+          "changed_approach": "Capture/reuse actual authorized actor for exact parameter assertion; no assertion/runtime guard weakening.",
+          "result": "50unitPASS0.14s then final50unit+22traceabilityPASS/155static. Draft format/type diagnostics corrected; all evidence in receipt."
+        },
+        "head_compatibility": "Exactly19current-head literals42to43 across8legacytests, all assertions intact; sole explicit42 remains new retained-history fixture, oldUSD explicit41 preserved."
       },
       "usd_substage": {
         "id": "V1-052-payment-confirmation-usd",
@@ -3114,9 +3132,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "12095305010e211710650f309906ad99a2ec3aaf",
+  "commit": "038a83f321fd03d7c2c7bbd113ab00fddcfeeb5d",
   "idle_reason": null,
-  "next_action": "Implement bounded incoming-KHR confirmation/FX bridge from accepted1209530 in sole existing52checkout: newforward43 strict financial command/replay and typed service reusing approved-source provider, authorized outage-only fallback, exact markup/ceilings/channel evidence, atomic immutable FX+Payment+Receipt/audit. Preserve published38–41/accepted42 and originalhistory; no KHRRefund. Cover strict unit/rawPG/money/authority/replay/concurrency/history tests, register traceability/current-head expectations, freeze normal candidate, fresh full exact applicable gates and ONE independent Astra max Standard readonly zero review. Then remaining52HTTP/UI/recovery/fullproduct release/CI/refs/card/durableclosure before53; at53closed PAUSEfollowup/no54. OpenClawdisabled; no routine owner authorization.",
+  "next_action": "Freeze normal successor of retained038a83f and review COMPLETE17path incoming-KHR slice from accepted1209530, not only final delta. Run fresh exact845PG/fullbackend/static-build-import/189automation/config/traceability/publicationguard/diffs; only after ALLPASS dispatch ONE fresh independent Astra max Standard readonly zero review. Preserve failed038a83f/unitlog and all priorUSD/read evidence, no amendment or duplicate workers. After KHRacceptance continue remaining52HTTP/CSRF/staffUI/encryptedrecovery and fullproductfrontend/browser/audits/cumulative exactreview/normalpublication/exactCI/ref/card/durableclosure before53. OpenClawdisabled/nativefollowupACTIVE; at53fullyclosedPAUSE/no54; no routine authorization.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -3124,8 +3142,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Containing normal successor e385974 after freeze; COMPLETE17path USD slice basec8, whole52basef8; new exact full gates and independent zero review pending.",
-  "candidate_parent": "e385974044181b59d3d68cfcbf1f1cd88f58ba79",
+  "candidate_resolution": "Containing normal successor038a83f after freeze; COMPLETE17path KHRslice base accepted1209530, whole52basef8; exact full gates and independent zero review pending.",
+  "candidate_parent": "038a83f321fd03d7c2c7bbd113ab00fddcfeeb5d",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -3188,7 +3206,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 incoming-KHR confirmation bridge active; USD1209530 accepted",
+  "phase": "V1-052 incoming-KHR bridge implemented; fresh exact gates/review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4296,7 +4314,10 @@
     "Preserved ce207eb whitespace red77471COMPLETED EXIT2/3FAIL3PASS; finalfocused55670COMPLETED EXIT0/6PASS795deselected1.74s. All29Pythonwhitespace/all3fields/blank-padding, noevents and unchanged valid evidence.",
     "Static/unit65398COMPLETED EXIT0/152filesformat-lint-mypy/89testsPASS6.04s. Correctionreceipt90e84b0d; fresh frozen801PG/fullbackend/189automation/config and independent max zero review PENDING.",
     "ACCEPTED exactUSD1209530:all801PG/1058backend/189automationPASS;41953COMPLETED EXIT0 at16:00:01.310Z0H/M/L all17paths/fivecommits; report6de05ca4/acceptancedd16effa. Do not repeat accepted USD work or poll completed sessions.",
-    "ACTIVE KHR confirmation bridge: newforward43/strictservice/tests pending; USD-onlyRefunds unchanged, required remainingHTTP/UI/fullversion gates before52closure."
+    "ACTIVE KHR confirmation bridge: newforward43/strictservice/tests pending; USD-onlyRefunds unchanged, required remainingHTTP/UI/fullversion gates before52closure.",
+    "KHRdraft038a83f retained:154filemypyPASS/49unitPASS1FAIL random expectedactor. Fixturecorrection1 retains actualactor;50unitPASS. No runtimefinding or policychange; draft format/type diagnostics disclosed in implementationreceipt.",
+    "FINAL FOCUSED:4947COMPLETED EXIT0/44PGPASS801deselected4.09s;4685COMPLETED EXIT0/155format-lint-mypy/72unit-traceabilityPASS6.18s. 20newassertionmappings,19current-head literals42to43; historyfixtures/published38–41/accepted42/oldUSDread unchanged.",
+    "PENDING fresh corrected exact845PG/fullbackend/189automation/static-build-import-config/traceability/guards and independent Astra max Standard readonly zero COMPLETE17path review from1209530; no KHRslice/full52acceptance/publication. Receipta93619b2."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4318,7 +4339,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-06T16:14:00Z",
+  "timestamp": "2026-09-06T16:45:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4345,23 +4366,23 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
-    "backend/migrations/versions/20260906_42_payment_confirmation.py",
-    "backend/src/property_rental/payment_confirmation.py",
-    "backend/tests/test_payment_confirmation.py",
-    "backend/tests/test_payment_confirmation_migration.py",
+    "backend/migrations/versions/20260906_43_khr_payment_confirmation.py",
+    "backend/src/property_rental/khr_payment_confirmation.py",
+    "backend/tests/test_khr_payment_confirmation.py",
+    "backend/tests/test_khr_payment_confirmation_migration.py",
+    "backend/tests/test_billing_service_migration.py",
+    "backend/tests/test_invoice_migration.py",
+    "backend/tests/test_late_payment_migration.py",
+    "backend/tests/test_lease_api_migration.py",
     "backend/tests/test_migrations.py",
+    "backend/tests/test_utility_api_migration.py",
+    "backend/tests/test_utility_consumption_migration.py",
+    "backend/tests/test_utility_meter_migration.py",
     "scripts/database-test.sh",
     "ops/NOW.md",
     "ops/STATE.json",
     "ops/QUEUE.md",
-    "ops/traceability.json",
-    "backend/tests/test_lease_api_migration.py",
-    "backend/tests/test_invoice_migration.py",
-    "backend/tests/test_late_payment_migration.py",
-    "backend/tests/test_billing_service_migration.py",
-    "backend/tests/test_utility_meter_migration.py",
-    "backend/tests/test_utility_consumption_migration.py",
-    "backend/tests/test_utility_api_migration.py"
+    "ops/traceability.json"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -4549,7 +4570,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-06T16:14:00Z",
+  "updated_at": "2026-09-06T16:45:00Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5672,10 +5693,10 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Accepted USD confirmation base; KHR bridge active, not yet a reviewed candidate",
+  "commit_role": "Retained KHR draft/unit-fixture failed checkpoint; corrected normal successor resolves by containing HEAD",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "935aa438b9b4923ac557547b0e0001eff9b7e389"
+    "038a83f321fd03d7c2c7bbd113ab00fddcfeeb5d"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
@@ -5731,9 +5752,9 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_khr_confirmation_candidate",
+    "status": "pending_fresh_exact_complete_17path_khr_slice",
     "tranche_id": "V1-052",
-    "scope": "Complete bounded incoming-KHR bridge from accepted1209530; HTTP/UI/fullversion pending",
+    "scope": "Complete17path incoming-KHR bridge from accepted1209530, including both draft and corrected successor; laterHTTP/UI/fullversion pending",
     "base_sha": "12095305010e211710650f309906ad99a2ec3aaf",
     "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "exact_sha": null,
@@ -5775,7 +5796,7 @@
   },
   "evidence_applicability": {
     "tranche_id": "V1-052",
-    "status": "read_slice_accepted_usd_confirmation_unaccepted_product_in_progress",
+    "status": "activation_read_usd_accepted_khr_unaccepted_product_in_progress",
     "predecessor_closed": true,
     "predecessor_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "product_tests_pending": true

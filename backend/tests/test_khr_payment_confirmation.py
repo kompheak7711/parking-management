@@ -2,7 +2,7 @@
 
 from dataclasses import FrozenInstanceError, dataclass, replace
 from datetime import UTC, datetime, timedelta, timezone
-from decimal import Decimal, localcontext
+from decimal import Decimal, Inexact, Rounded, localcontext
 from unittest.mock import patch
 from uuid import UUID, uuid4
 
@@ -104,6 +104,8 @@ def test_khr_reference_rejects_nondecimal_nonfinite_and_invalid_precision(value:
 def test_khr_reference_is_exact_under_low_decimal_context_and_preserves_numeric_value() -> None:
     with localcontext() as context:
         context.prec = 3
+        context.traps[Inexact] = True
+        context.traps[Rounded] = True
         assert _rate(Decimal("99999999999999.999999")) == "99999999999999.999999"
         assert _rate(Decimal("4062.000000000")) == "4062.000000"
         assert _rate(Decimal("0.000001")) == "0.000001"
@@ -233,6 +235,7 @@ def test_khr_malformed_successful_provider_response_fails_closed(quote: Exchange
 
 def test_khr_replay_skips_source_lookup_and_new_command_parameters_preserve_exact_intent() -> None:
     prop, source, connection, selected = uuid4(), command(), database(), provider()
+    authorized = staff(prop, "payments.record")
     connection.execute.return_value.fetchone.side_effect = [
         (None,),
         ({"payment": {"id": "original"}},),
@@ -241,16 +244,14 @@ def test_khr_replay_skips_source_lookup_and_new_command_parameters_preserve_exac
         "property_rental.khr_payment_confirmation.psycopg.connect", return_value=connection
     ) as connect:
         flow = KhrPaymentConfirmationService("financial-endpoint", selected)
-        assert flow.confirm_khr(prop, source, actor=staff(prop, "payments.record")) == {
-            "payment": {"id": "original"}
-        }
+        assert flow.confirm_khr(prop, source, actor=authorized) == {"payment": {"id": "original"}}
         connect.assert_called_once_with("financial-endpoint", connect_timeout=3)
         calls = connection.execute.call_args_list
         assert calls[3].args[0] == "SELECT app.replay_khr_payment_confirmation(%s,%s,%s,%s)"
         assert calls[4].args[0] == "SELECT app.confirm_khr_payment(%s,%s,%s,%s,%s)"
         assert calls[3].args[1][:3] == (
             prop,
-            UUID(staff(prop, "payments.record").actor_id),
+            UUID(authorized.actor_id),
             source.idempotency_key,
         )
         assert calls[3].args[1][3].obj == calls[4].args[1][3].obj == source.intent()

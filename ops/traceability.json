@@ -2,6 +2,230 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_khr_confirmation_requires_exact_bounded_received_and_usd_amounts",
+      "upstream_ids": [
+        "API-005",
+        "SEC-026"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_khr_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Both incoming whole-KHR and explicit USD cents reject bool/float/string/nonpositive/overflow before persistence."
+    },
+    {
+      "test_id": "test_khr_reference_rejects_nondecimal_nonfinite_and_invalid_precision",
+      "upstream_ids": [
+        "API-058",
+        "BR-MONEY-003"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_khr_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Manual reference rejects non-Decimal, nonfinite, nonpositive and out-of-range or sub-millionth values."
+    },
+    {
+      "test_id": "test_khr_reference_is_exact_under_low_decimal_context_and_preserves_numeric_value",
+      "upstream_ids": [
+        "SEC-026",
+        "BR-MONEY-003"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_khr_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Exact numeric(20,6) boundary and insignificant trailing zeros preserve value despite low ambient precision and enabled rounding/inexact traps."
+    },
+    {
+      "test_id": "test_khr_manual_and_channel_reference_evidence_is_strict",
+      "upstream_ids": [
+        "API-057",
+        "SEC-023"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_khr_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Manual source/reason and channel reference reject blank/Unicode padding/NUL/surrogate/overlimit evidence."
+    },
+    {
+      "test_id": "test_khr_intent_is_immutable_utc_and_contains_no_caller_derived_rate_or_status",
+      "upstream_ids": [
+        "API-058",
+        "SEC-026",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_khr_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Fixed incomingKHR intent, UTC equivalence, immutable envelope, fresh nested validation, no caller derived status/SystemRate/outage flags."
+    },
+    {
+      "test_id": "test_khr_channel_requires_actual_facts_matching_reference_and_aware_timestamps",
+      "upstream_ids": [
+        "DB-PAY-002",
+        "BR-MONEY-011"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_khr_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Actual channel facts need matching bounded reference/aware time and at least one provided fact; null facts remain absent and tampering rejects."
+    },
+    {
+      "test_id": "test_khr_permissions_fail_before_database_or_provider_and_manual_requires_separate_capability",
+      "upstream_ids": [
+        "SEC-025",
+        "SEC-027"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_khr_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Read-only or crossProperty grants deny before DB/provider; manual source separately requires exchange_rates.manage."
+    },
+    {
+      "test_id": "test_khr_source_selection_uses_only_approved_provider_and_actual_outage_for_fallback",
+      "upstream_ids": [
+        "API-058",
+        "SEC-027"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_khr_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Server owns automatic source; manual rejects while automatic succeeds, requires explicit source-unavailable exception and evidence, unexpected errors fail closed safely."
+    },
+    {
+      "test_id": "test_khr_malformed_successful_provider_response_fails_closed",
+      "upstream_ids": [
+        "API-058",
+        "SEC-023"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_khr_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Malformed successful quote rate/reference/time never becomes an automatic confirmation."
+    },
+    {
+      "test_id": "test_khr_replay_skips_source_lookup_and_new_command_parameters_preserve_exact_intent",
+      "upstream_ids": [
+        "SEC-028",
+        "SEC-029"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_khr_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "One scoped transaction obtains original replay before quote; parameter identity/intent match, quote separated from caller payload, exact JSON decimal decoding and no replay lookup."
+    },
+    {
+      "test_id": "test_khr_database_errors_are_safe_and_unknown_outcomes_never_become_success",
+      "upstream_ids": [
+        "API-009",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_khr_payment_confirmation.py",
+      "status": "implemented",
+      "notes": "Safe SQL-state mapping hides DSN/provider details and preserves unavailable unknown outcomes."
+    },
+    {
+      "test_id": "test_khr_confirmation_automatic_rounding_and_atomic_original_facts",
+      "upstream_ids": [
+        "API-057",
+        "API-058",
+        "TEST-059"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_khr_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Automatic reference/50basispoints/upwardSystemRate/upwardpayable include minimum/large boundary inputs; exactUSD/KHR/time/evidence/oneReceipt/threeaudits/noimplicitmoney."
+    },
+    {
+      "test_id": "test_khr_confirmation_manual_requires_outage_permission_and_replays_after_recovery_and_reversal",
+      "upstream_ids": [
+        "SEC-027",
+        "SEC-028",
+        "TEST-059"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_khr_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Manual denied without separate grant or actual outage; authorized fallback records actor/source/reason; same request replays original after recovery/methodretirement/reversal, changed intent conflicts."
+    },
+    {
+      "test_id": "test_khr_confirmation_channel_supplied_facts_control_only_their_fields",
+      "upstream_ids": [
+        "BR-MONEY-011",
+        "DB-PAY-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_khr_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Amount-only exact half-up cents, rate-only ceiling, USD-only/allactual/currency-only cases preserve supplied fields, missing fields null and independent SystemRate."
+    },
+    {
+      "test_id": "test_khr_confirmation_concurrent_exact_key_has_one_fx_payment_receipt",
+      "upstream_ids": [
+        "SEC-028",
+        "SEC-029"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_khr_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Concurrent exact/conflicting payloads produce one source lookup/FX/Payment/Receipt or exact key conflict."
+    },
+    {
+      "test_id": "test_khr_confirmation_replay_shares_usd_key_namespace_and_checks_fresh_actor",
+      "upstream_ids": [
+        "SEC-025",
+        "SEC-028"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_khr_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Missing source leaves no events, USD andKHR share actor/key namespace, disabledactor rejects replay without changing original evidence."
+    },
+    {
+      "test_id": "test_khr_confirmation_raw_json_denies_untrusted_envelopes_without_any_events",
+      "upstream_ids": [
+        "SEC-023",
+        "SEC-026",
+        "API-058"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_khr_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Raw financial SQL rejects extra/derived fields, wrong currency/scope/money/time/IDs/evidence, malformed channel/manual/source selection and rounding mismatches with no FX/Payment/Receipt/command."
+    },
+    {
+      "test_id": "test_khr_confirmation_source_failure_future_time_and_retired_method_roll_back_fx",
+      "upstream_ids": [
+        "API-058",
+        "SEC-029"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_khr_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Source outage, future receipt or rate time and retiredmethod reject with no partialFX/Payment/Receipt/command."
+    },
+    {
+      "test_id": "test_khr_confirmation_private_helpers_and_financial_only_commands",
+      "upstream_ids": [
+        "SEC-023",
+        "SEC-025"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_khr_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Validationhelpers private; only financial role executes replay/confirm; runtime cannot call financial command."
+    },
+    {
+      "test_id": "test_khr_confirmation_forward_upgrade_preserves_existing_payment_receipt_and_fx",
+      "upstream_ids": [
+        "DB-PAY-002",
+        "TEST-059"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_khr_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Actual42-to43 upgrade preserves byte-equivalent original KHRPayment/Receipt/FX JSON and invents no confirmation history."
+    },
+    {
       "test_id": "test_confirmation_rejects_inexact_or_unbounded_received_usd",
       "upstream_ids": [
         "API-005",
