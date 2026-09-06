@@ -1854,12 +1854,54 @@
     "acceptance_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-activation-accepted-a5dd97c.md",
     "acceptance_sha256": "d531c8475df8c2ee3ba2b6bdec9078fbeb246d3a3ec9f88e1d63dc806722d7c6"
   },
+  "historical_v1_052_read_verification": {
+    "checkpoint": "c764652ad7ed693108f2d40b3493368c7be8b319",
+    "review": {
+      "status": "last_candidate_zero_findings_but_failed_database_new_correction_active",
+      "tranche_id": "V1-052",
+      "scope": "Bounded Payment read-service slice only; not full version acceptance",
+      "base_sha": "a5dd97c8cde26008dcecf02be847561771092fe1",
+      "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
+      "exact_sha": "c764652ad7ed693108f2d40b3493368c7be8b319",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "max",
+      "mode": "Standard",
+      "read_only": true,
+      "activation_accepted": true,
+      "activation_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-activation-accepted-a5dd97c.md",
+      "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-read-review-c764652.md",
+      "report_sha256": "d1b3b830ae877a3257c1e704172cf4e61d6f58a109ee410a160d6bf307b73191",
+      "exec_completed": 59029,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "new_candidate_review_required": true
+    },
+    "tests": [
+      "PASS accepted activation a5dd97c exact189automation and all config/routing/roadmap/traceability gates; completed78277.",
+      "PASS fresh independent exacta5dd97c Astra max Standard read-only0HIGH0MEDIUM0LOW; completed8458. Acceptance receipt d531c847 discharges frozen markers; failed076 retained.",
+      "PASS closed51 receipt92fa6965/CI34030703203/same-cardDONE/livef8 preserved; no repeat.",
+      "PASS sole isolated52checkout created at a5dd97c; all127worktrees retained; offline backend dependencies installed.",
+      "PREFREEZE Payment read unit35PASS plus traceability22PASS; backend20446EXIT0/991PASS736DB-onlyskips44.20s/148files static-build-importPASS; automation69727EXIT0/189PASS73.359s and configuration/guardsPASS. Not corrected exact-SHA acceptance.",
+      "PRESERVED FAILED81857ab and database79503EXIT2/758PASS1FAIL0skip116.91s: new snapshot test wrongly inner-joined optional lazy guard before service call. Seven other new DB testsPASS. Failure log44e2dfce/correction receiptb3fcccef; bounded LEFT JOIN+explicit absent guard+unchanged history correction implemented without runtime/migration change.",
+      "PENDING fresh corrected exact full backend/759DB/automation/config/traceability and independent Astra max read-only slice review; no version acceptance or publication.",
+      "EXACT c764652 backend991PASS736DBskips/staticbuildPASS;189automation/config/guardsPASS; DB755PASS4FAIL0skip118s (all8new PaymentreadPASS). Four unchanged Refund/Pet chronology setups failed; do not repeat until green or waive.",
+      "Independent c76465259029EXIT0 completed13:24:00.302Z Astra max Standard readonly0HIGH0MEDIUM0LOW;35unit+22traceability independentPASS; slice acceptance withheld by failed DB gate. Reportd1b3b830/verification34e11052 retained.",
+      "ACTIVE new distinct cross-clock test-fixture correction1; deterministic reproduction then database-clock fixtures, no runtime/migration/policy change. New exact gates/review pending."
+    ],
+    "next_action": "Implement bounded Refund fixture clock correction1 with deterministic skew reproduction, database-clock synthetic timestamps and unchanged bad-chronology guards. Preserve c764652 zero-review/failed-DB evidence and all earlier checkpoints. Freeze a NEW child, full exact backend/isolatedPG/config/automation/traceability plus independent Astra max zero review before read-slice acceptance. Then Paymentconfirmation/remaining52HTTP/UI; full cumulative publication/CI/refs/card/durable closure before53. OpenClawdisabled; nativefollowupACTIVE; at53closed pause/no54.",
+    "evidence_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-read-exact-verification-c764652.md",
+    "red_checkpoint": "935aa438b9b4923ac557547b0e0001eff9b7e389",
+    "red_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-fixture-clock-red-reproduction.log",
+    "red_sha256": "e3512c974251f2f010d570ffd2aeb8a6d3b1bab98e29527d783fbd505451ebd8",
+    "disposition": "Prior pending markers superseded by exact failed/zero-review receipts and active correction; immutable commits/logs retained."
+  },
   "direct_codex_takeover": {
     "execution_owner": "direct_codex",
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "refund_fixture_clock_correction1_active",
+    "phase": "clock_fixture_correction_implemented_prefreeze",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -1891,7 +1933,7 @@
     "workboard_block_reason": "Tracking/evidence only, blocked solely against OpenClaw admission; no direct Codex policy blocker.",
     "worker_kind": "direct_root_codex",
     "worker_task_id": "01a04961-4270-7802-9418-e08203784a8c",
-    "worker_status": "direct_root_bounded_test_correction_active",
+    "worker_status": "correction_complete_exact_gates_review_pending",
     "branch": "codex/v1-052-direct",
     "worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
     "planned_branch": "codex/v1-052-direct",
@@ -1900,8 +1942,8 @@
     "scope_sha256": "4ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363",
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
-    "candidate_resolution": "Next normal child of failed exact c764652; preserve zero-finding review and failed database gate; complete slice basea5, fullversionbasef8.",
-    "candidate_status": "clock_fixture_correction_in_progress",
+    "candidate_resolution": "Containing corrected next HEAD after normal child935aa43 freeze; complete slice basea5dd97c/fullversionbasef8a33ba; fresh exact full gates/review pending.",
+    "candidate_status": "corrected_read_slice_prefreeze_unaccepted",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -1935,7 +1977,7 @@
       "native_agents": "Direct root only; completed activation reviewer not running"
     },
     "owner_action_required": false,
-    "next_action": "Implement bounded Refund fixture clock correction1 with deterministic skew reproduction, database-clock synthetic timestamps and unchanged bad-chronology guards. Preserve c764652 zero-review/failed-DB evidence and all earlier checkpoints. Freeze a NEW child, full exact backend/isolatedPG/config/automation/traceability plus independent Astra max zero review before read-slice acceptance. Then Paymentconfirmation/remaining52HTTP/UI; full cumulative publication/CI/refs/card/durable closure before53. OpenClawdisabled; nativefollowupACTIVE; at53closed pause/no54.",
+    "next_action": "Freeze corrected clock-fixture/read-slice candidate as normal child935aa43, complete12path slicebase accepteda5dd97c. Run fresh exact full backend/763isolatedPostgreSQL/189automation/config/traceability/secret/whitespace gates, then one independent Astra max Standard read-only complete-slice zero review. External receipts bind frozen HEAD; never amend or poll completed workers. Only after acceptance continue Payment confirmation and remaining52HTTP/UI/fullversion release from closed51f8a33ba. No publication before full52tests/review/CI/refs/card/durable closure; then53; OpenClawdisabled/nativefollowupACTIVE/at53pause/no54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -1961,7 +2003,7 @@
     },
     "active_slice": {
       "id": "V1-052-payment-read",
-      "status": "active",
+      "status": "implemented_fresh_exact_gates_review_pending",
       "started_at": "2026-09-06T12:54:00Z",
       "scope": "Payment list/detail read service and tests only; confirmation and HTTP/UI follow under frozen version scope.",
       "plan": [
@@ -1998,7 +2040,7 @@
       },
       "clock_correction": {
         "attempt": 1,
-        "status": "active_before_edits",
+        "status": "implemented_focused_red_green_proven_exact_gates_pending",
         "fingerprint": "Refund/Pet synthetic chronology mixes host datetime.now with database clock_timestamp",
         "failure_evidence": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-read-exact-verification-c764652.md",
         "plan": [
@@ -2014,7 +2056,14 @@
           "real clock changes",
           "financial guard relaxation"
         ],
-        "started_at": "2026-09-06T13:34:13Z"
+        "started_at": "2026-09-06T13:34:13Z",
+        "evidence_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-fixture-clock-correction.md",
+        "evidence_sha256": "f5af1e530a0db4e86fa33e069673b4bdef361ada7589a3490560167e10b5a137",
+        "red_checkpoint": "935aa438b9b4923ac557547b0e0001eff9b7e389",
+        "red_result": "75392EXIT2/2FAIL761deselected1.43s at old fixture helpers with +/-60seconds",
+        "green_result": "54682EXIT0/4PASS759deselected1.79s including unchanged invalid chronology guards; no skips",
+        "green_log_sha256": "6adf1c4739efb2717564cd36ba8a841cf24dc66d2a530432f05cf8ca16527f1d",
+        "static_focused": "149filelint/typesPASS;35unit+22traceabilityPASS6.25s/56828EXIT0; draft datetime typing diagnostics corrected without suppressions"
       }
     }
   },
@@ -2768,9 +2817,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "c764652ad7ed693108f2d40b3493368c7be8b319",
+  "commit": "935aa438b9b4923ac557547b0e0001eff9b7e389",
   "idle_reason": null,
-  "next_action": "Implement bounded Refund fixture clock correction1 with deterministic skew reproduction, database-clock synthetic timestamps and unchanged bad-chronology guards. Preserve c764652 zero-review/failed-DB evidence and all earlier checkpoints. Freeze a NEW child, full exact backend/isolatedPG/config/automation/traceability plus independent Astra max zero review before read-slice acceptance. Then Paymentconfirmation/remaining52HTTP/UI; full cumulative publication/CI/refs/card/durable closure before53. OpenClawdisabled; nativefollowupACTIVE; at53closed pause/no54.",
+  "next_action": "Freeze corrected clock-fixture/read-slice candidate as normal child935aa43, complete12path slicebase accepteda5dd97c. Run fresh exact full backend/763isolatedPostgreSQL/189automation/config/traceability/secret/whitespace gates, then one independent Astra max Standard read-only complete-slice zero review. External receipts bind frozen HEAD; never amend or poll completed workers. Only after acceptance continue Payment confirmation and remaining52HTTP/UI/fullversion release from closed51f8a33ba. No publication before full52tests/review/CI/refs/card/durable closure; then53; OpenClawdisabled/nativefollowupACTIVE/at53pause/no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -2778,8 +2827,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Next normal child of failed exact c764652; preserve zero-finding review and failed database gate; complete slice basea5, fullversionbasef8.",
-  "candidate_parent": "c764652ad7ed693108f2d40b3493368c7be8b319",
+  "candidate_resolution": "Containing corrected next HEAD after normal child935aa43 freeze; complete slice basea5dd97c/fullversionbasef8a33ba; fresh exact full gates/review pending.",
+  "candidate_parent": "935aa438b9b4923ac557547b0e0001eff9b7e389",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -2842,7 +2891,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 Refund fixture clock correction1 active after zero-review/failed-DB checkpoint",
+  "phase": "V1-052 clock-fixture corrected read slice ready for exact checkpoint gates",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -3935,16 +3984,12 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "PASS accepted activation a5dd97c exact189automation and all config/routing/roadmap/traceability gates; completed78277.",
-    "PASS fresh independent exacta5dd97c Astra max Standard read-only0HIGH0MEDIUM0LOW; completed8458. Acceptance receipt d531c847 discharges frozen markers; failed076 retained.",
-    "PASS closed51 receipt92fa6965/CI34030703203/same-cardDONE/livef8 preserved; no repeat.",
-    "PASS sole isolated52checkout created at a5dd97c; all127worktrees retained; offline backend dependencies installed.",
-    "PREFREEZE Payment read unit35PASS plus traceability22PASS; backend20446EXIT0/991PASS736DB-onlyskips44.20s/148files static-build-importPASS; automation69727EXIT0/189PASS73.359s and configuration/guardsPASS. Not corrected exact-SHA acceptance.",
-    "PRESERVED FAILED81857ab and database79503EXIT2/758PASS1FAIL0skip116.91s: new snapshot test wrongly inner-joined optional lazy guard before service call. Seven other new DB testsPASS. Failure log44e2dfce/correction receiptb3fcccef; bounded LEFT JOIN+explicit absent guard+unchanged history correction implemented without runtime/migration change.",
-    "PENDING fresh corrected exact full backend/759DB/automation/config/traceability and independent Astra max read-only slice review; no version acceptance or publication.",
-    "EXACT c764652 backend991PASS736DBskips/staticbuildPASS;189automation/config/guardsPASS; DB755PASS4FAIL0skip118s (all8new PaymentreadPASS). Four unchanged Refund/Pet chronology setups failed; do not repeat until green or waive.",
-    "Independent c76465259029EXIT0 completed13:24:00.302Z Astra max Standard readonly0HIGH0MEDIUM0LOW;35unit+22traceability independentPASS; slice acceptance withheld by failed DB gate. Reportd1b3b830/verification34e11052 retained.",
-    "ACTIVE new distinct cross-clock test-fixture correction1; deterministic reproduction then database-clock fixtures, no runtime/migration/policy change. New exact gates/review pending."
+    "PASS V1-051 fully closed product7cec085/terminalf8a33ba; activationa5 exacttests/independentzero accepted. Do not repeat.",
+    "PRESERVED818guard-fixture failure and c764exactDB755PASS4FAIL; c764independentreview0HIGH0MEDIUM0LOW withheld acceptance; review59029COMPLETED. Exact logs/receipts in historical_v1_052_read_verification and direct active_slice.last_checkpoint.",
+    "RED935aa43:75392EXIT2/2FAIL761deselected1.43s deterministic +/-60second host-fixture clock reproduces invalid Refund chronology with old helpers; loge3512c97.",
+    "GREEN clock correction focused54682EXIT0/4PASS759deselected1.79s: valid synthetic chronology survives both clock shifts; explicit invalid Refund/return dates still reject23514 and preserve original history; log6adf1c47.",
+    "PASS corrected149filelint/types and35Payment unit+22traceability6.25s/56828EXIT0. No runtime/publishedmigration/canonical/frontend/dependency change.",
+    "PENDING fresh exact corrected complete backend/763isolatedPG/189automation/config/traceability/guard and independent Astra max Standard readonly complete12path review. No slice/version acceptance/publication claimed."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -3966,7 +4011,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-06T13:34:13Z",
+  "timestamp": "2026-09-06T13:45:51Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -3993,14 +4038,18 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
+    "backend/src/property_rental/payment_read.py",
+    "backend/tests/payment_test_support.py",
+    "backend/tests/test_financial_fixture_clock_migration.py",
+    "backend/tests/test_payment_read.py",
+    "backend/tests/test_payment_read_migration.py",
+    "backend/tests/test_refund_migration.py",
+    "backend/tests/test_refund_service_migration.py",
     "ops/NOW.md",
     "ops/STATE.json",
     "ops/QUEUE.md",
-    "backend/src/property_rental/payment_read.py",
-    "backend/tests/test_payment_read.py",
-    "backend/tests/test_payment_read_migration.py",
-    "scripts/database-test.sh",
-    "ops/traceability.json"
+    "ops/traceability.json",
+    "scripts/database-test.sh"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -4188,7 +4237,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-06T13:34:13Z",
+  "updated_at": "2026-09-06T13:45:51Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5311,10 +5360,10 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Retained exact read-slice checkpoint with zero review but failed database gate; new test-only correction active",
+  "commit_role": "Preserved deterministic red-reproduction checkpoint; corrected containing HEAD next; not published",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "c764652ad7ed693108f2d40b3493368c7be8b319"
+    "935aa438b9b4923ac557547b0e0001eff9b7e389"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
@@ -5370,25 +5419,17 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "last_candidate_zero_findings_but_failed_database_new_correction_active",
+    "status": "pending_corrected_exact_read_slice_review",
     "tranche_id": "V1-052",
-    "scope": "Bounded Payment read-service slice only; not full version acceptance",
+    "scope": "Complete12path bounded read service plus fixture-clock correction only; fullversion acceptance pending",
     "base_sha": "a5dd97c8cde26008dcecf02be847561771092fe1",
     "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
-    "exact_sha": "c764652ad7ed693108f2d40b3493368c7be8b319",
+    "exact_sha": null,
     "model": "gpt-6-astra",
     "reasoning_effort": "max",
     "mode": "Standard",
     "read_only": true,
-    "activation_accepted": true,
-    "activation_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-activation-accepted-a5dd97c.md",
-    "report_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-read-review-c764652.md",
-    "report_sha256": "d1b3b830ae877a3257c1e704172cf4e61d6f58a109ee410a160d6bf307b73191",
-    "exec_completed": 59029,
-    "high": 0,
-    "medium": 0,
-    "low": 0,
-    "new_candidate_review_required": true
+    "prior_zero_review_preserved": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-read-review-c764652.md"
   },
   "historical_v1_047_review": {
     "status": "PASS",

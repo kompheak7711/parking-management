@@ -1,9 +1,23 @@
 """Explicit synthetic Payment evidence for current-head financial tests only."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from psycopg import Connection
+
+
+def database_instant(connection: Connection[tuple[object, ...]]) -> datetime:
+    """Use the event store's clock for synthetic financial fixture chronology.
+
+    Host/VM wall clocks can differ by even a fraction of a millisecond. Never
+    solve a fixture race by widening production chronology guards or changing
+    original financial timestamps. This helper is test-only; explicit invalid
+    fixture timestamps still override it in their negative tests.
+    """
+    row = connection.execute("SELECT clock_timestamp()").fetchone()
+    assert row is not None and isinstance(row[0], datetime)
+    assert row[0].utcoffset() is not None
+    return row[0].astimezone(UTC)
 
 
 def seed_method(connection: Connection[tuple[object, ...]], actor_id: UUID) -> UUID:

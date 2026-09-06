@@ -9,6 +9,7 @@ import psycopg
 import pytest
 from psycopg import Connection, sql
 
+from payment_test_support import database_instant
 from property_rental.credit import CreditUnavailableError, ReverseCreditCommand
 from test_credit_application_migration import designated
 from test_credit_application_migration import source as application_source
@@ -59,7 +60,7 @@ def refund(
             "refund_currency": "USD",
             "refund_amount_minor": amount,
             "reason": "Return eligible excess",
-            "processed_at": datetime.now(UTC),
+            "processed_at": database_instant(connection),
             "processed_by": human,
             "authorization_reference": "refunds.create",
             **(overrides or {}),
@@ -81,7 +82,7 @@ def correct(
     ).fetchone()
     assert row is not None
     net = int(str(row[0]))
-    now = datetime.now(UTC)
+    now = database_instant(connection)
     return insert_event(
         connection,
         "refund_corrections",

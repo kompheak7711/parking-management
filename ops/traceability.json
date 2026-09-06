@@ -2,6 +2,30 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_financial_fixture_clock_ignores_host_skew_and_preserves_event_chronology",
+      "upstream_ids": [
+        "TEST-066",
+        "API-066",
+        "SEC-029"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_fixture_clock_migration.py",
+      "status": "implemented",
+      "notes": "Synthetic Refund/verified-return helpers ignore injected +/-60second host clock shifts; committed payout and two exact USD returns maintain database chronology/net600cents and preserve Payment/Refund/first correction history. No real clock or runtime guard change."
+    },
+    {
+      "test_id": "test_financial_fixture_clock_does_not_relax_invalid_refund_or_return_chronology",
+      "upstream_ids": [
+        "TEST-066",
+        "API-066",
+        "SEC-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_fixture_clock_migration.py",
+      "status": "implemented",
+      "notes": "Even with database-clock fixture defaults, explicit before-source or future payout/return timestamps reject23514, leave original Refund/net800cents unchanged, and create no correction."
+    },
+    {
       "test_id": "test_payment_pages_reject_noninteger_or_unbounded_limits",
       "upstream_ids": [
         "API-012"

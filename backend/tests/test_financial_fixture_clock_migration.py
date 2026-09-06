@@ -2,7 +2,7 @@
 
 from dataclasses import replace
 from datetime import datetime, timedelta, tzinfo
-from typing import cast
+from typing import Self, cast
 
 import psycopg
 import pytest
@@ -21,12 +21,11 @@ def test_financial_fixture_clock_ignores_host_skew_and_preserves_event_chronolog
     host_offset_seconds: int,
 ) -> None:
     human, prop, customer, payment = source(migrated_database_url, 1000)
-    real_datetime = datetime
 
-    class ShiftedDateTime(real_datetime):
+    class ShiftedDateTime(datetime):
         @classmethod
-        def now(cls, tz: tzinfo | None = None) -> datetime:
-            return real_datetime.now(tz) + timedelta(seconds=host_offset_seconds)
+        def now(cls, tz: tzinfo | None = None) -> Self:
+            return super().now(tz) + timedelta(seconds=host_offset_seconds)
 
     # No real clock is changed. Only these synthetic fixture modules see skew.
     monkeypatch.setattr(refund_fixtures, "datetime", ShiftedDateTime)

@@ -12,7 +12,7 @@ import psycopg
 import pytest
 from psycopg import sql
 
-from payment_test_support import seed_payment
+from payment_test_support import database_instant, seed_payment
 from property_rental.refund import (
     CreateUsdRefundCommand,
     RefundAuthorizationError,
@@ -40,10 +40,12 @@ def create(source_id: UUID, amount: int = 8000, kind: str = "PAYMENT") -> Create
 
 
 def returned(amount: int = 4000) -> VerifyUsdRefundReturnCommand:
+    with psycopg.connect(runtime_database_url()) as connection:
+        at = database_instant(connection)
     return VerifyUsdRefundReturnCommand(
         uuid4(),
         amount,
-        datetime.now(UTC),
+        at,
         "Synthetic verified bank return",
         "Synthetic return evidence",
         "Correct demonstrated returned value",
@@ -358,7 +360,7 @@ def test_refund_service_bounded_pages_walk_source_ties_and_strict_corrections(
             )
             for _ in range(2)
         ]
-        at = datetime.now(UTC)
+        at = database_instant(connection)
         identities = [
             refund(
                 connection,
