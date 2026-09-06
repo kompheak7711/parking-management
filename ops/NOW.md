@@ -1,6 +1,6 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-052 activation a5dd97c independently ACCEPTED; bounded Payment read-service implementation ACTIVE in sole isolated checkout. V1-051 FULLY CLOSED. No owner-policy blocker.
+- Current: V1-052 activation ACCEPTED; Payment read-service slice implemented with bounded fixture correction, ready for fresh exact gates and independent review. V1-051 FULLY CLOSED. No policy blocker.
 - Authority: ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455. Continue52then53; routine decisions/reviews/normal publication authorized.
 - DL-060: USD accounting and USD-only Refunds. KHR only incoming Payment conversion; original transaction/KHR/FX evidence immutable. Obsolete KHR-refund proposal/blocker rejected/resolved.
 - Closed51: product7cec08509343f90a369b27d8a230b2fa850b5622; terminalf8a33bad25a7993952ec1ccece1b9c2df942b3d6. Exact tests, independent zero-finding reviews, normal publication, CI34027889695/34030703203all4success, refs equal and same cardc5621f97 DONE/proof935d944b verified. Receipt /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1051-closure-verification.md SHA25692fa6965749c1b8a6e9f8b8c5eaa164a8418e0e720c58d62ef2b35ed7da65d86. Do not repeat.
@@ -15,9 +15,10 @@
 - Coordinator/financial implementation GPT-6 Astra xhigh Standard; independent exact-SHA reviewers Astra max Standard read-only. Actual root12:41:04.945Z model/effort verified, local service_tier default; provider attestation unavailable. No fallback.
 - OpenClaw singleton658ffdaf-1ac1-45a6-a842-f5f7d7a226eb DISABLED,30minute schedule retained/no nextRun/tasks0; never enable/create/dispatch.
 - Native property-rental-v1-047-closure-follow-up ACTIVE10minutes, same task01a04961; phase-independent11248-character prompt SHA25649baafc52ee102a222a36890c93eb4c877282f3ff4d75e7ebd21e353ba1955b2 unchanged. Live index /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-codex-takeover-live.md.
-- Exact next action: Implement and test bounded Payment read-service list/detail foundation in sole codex/v1-052-direct checkout; exact scoped capabilities, active actor, repeatable-read coherent balances, bounded deterministic pagination and immutable receipt/FX evidence. No financial mutation or API/UI yet. Preserve accepted a5dd97c activation and failed076 checkpoint; continue remaining52 slices then full cumulative exact tests/independent Astra max review/normal publication/exactCI/refs/same-card/durable closure before53. OpenClawdisabled; at53closure pause nativefollowup/no54.
+- Exact next action: Freeze corrected bounded Payment read-service checkpoint as NEW child of retained failed81857ab. Run fresh exact backend, all759 isolated PostgreSQL, automation/configuration/traceability/publication guards and full slice diff checks. Obtain one independent Astra max Standard read-only zero-finding review of complete a5dd97c-to-head read slice; full V1-052 cumulative release review remains based on closed51f8a33ba. Bind receipts outside frozen checkout, no amendments. After slice acceptance resume Payment confirmation then remaining52HTTP/UI. No publication or version closure until all52gates; samecard/OpenClawdisabled/nativefollowupACTIVE/through53thenpause/no54.
 - No production/access/credentials/customerdata/paid/destructive/force-push/history-rewrite/retained-worktree deletion. At53fullyclosed pause nativefollowup, keepOpenClawdisabled, no54. Owner action required: no.
-- Updated2026-09-06T12:54:00Z. Implementation tests/review remain pending; accepted51/activation evidence preserved.
+- Preserved failed81857ab: prefreeze DB758PASS1FAIL, optional-guard fixture assumption. Correction receiptb3fcccef; only test LEFT JOIN/absent-guard assertion changed. Runtime untouched. Backend991PASS736DBskips and automation189PASS prefreeze; fresh corrected exact gates/review pending.
+- Updated2026-09-06T13:10:35Z. Full52 product/HTTP/UI/release gates remain incomplete; no publication.
 
 ## Historical V1-047 closure record
 

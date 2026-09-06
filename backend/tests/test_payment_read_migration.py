@@ -50,10 +50,11 @@ def test_payment_read_preserves_original_facts_receipt_and_exact_usd_position(
         before = connection.execute(
             "SELECT to_jsonb(p),to_jsonb(r),g.revision FROM app.payments p "
             "JOIN app.receipts r ON r.payment_id=p.id "
-            "JOIN app.payment_serialization_guards g ON g.payment_id=p.id WHERE p.id=%s",
+            "LEFT JOIN app.payment_serialization_guards g ON g.payment_id=p.id WHERE p.id=%s",
             (payment,),
         ).fetchone()
         assert before is not None
+        assert before[2] is None  # A read must not create a lazily allocated write guard.
     detail = service().get(prop, payment, actor=reader)
     assert header(detail) == before[0]
     assert detail["receipt"] == {
@@ -82,7 +83,7 @@ def test_payment_read_preserves_original_facts_receipt_and_exact_usd_position(
             connection.execute(
                 "SELECT to_jsonb(p),to_jsonb(r),g.revision FROM app.payments p "
                 "JOIN app.receipts r ON r.payment_id=p.id "
-                "JOIN app.payment_serialization_guards g ON g.payment_id=p.id WHERE p.id=%s",
+                "LEFT JOIN app.payment_serialization_guards g ON g.payment_id=p.id WHERE p.id=%s",
                 (payment,),
             ).fetchone()
             == before
