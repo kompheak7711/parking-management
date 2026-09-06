@@ -1,5 +1,6 @@
 """Atomic incoming KHR/FX confirmation, original channel evidence and exact replay."""
 
+import json
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
@@ -12,7 +13,7 @@ import psycopg
 import pytest
 from alembic import command as alembic_command
 from alembic.config import Config
-from psycopg.types.json import Jsonb
+from psycopg.types.json import Jsonb, set_json_loads
 
 from property_rental.configuration_api import ExchangeRateSourceUnavailable
 from property_rental.khr_payment_confirmation import (
@@ -190,6 +191,9 @@ def test_payment_confirmation_timestamp_precision_preserves_original_intent_and_
     assert instant.utcoffset() == timedelta(0) and instant.tzinfo == UTC
     assert replay == result
     with psycopg.connect(migrated_database_url) as connection:
+        # Compare the complete saved response using the service's exact-decimal
+        # decoding contract, not psycopg's default binary-float representation.
+        set_json_loads(lambda value: json.loads(value, parse_float=str), connection)
         saved = connection.execute(
             "SELECT request,response FROM app.payment_confirmation_commands WHERE payment_id=%s",
             (identity(result),),
