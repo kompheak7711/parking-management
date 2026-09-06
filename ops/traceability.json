@@ -2,6 +2,216 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_payment_pages_reject_noninteger_or_unbounded_limits",
+      "upstream_ids": [
+        "API-012"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_read.py",
+      "status": "implemented",
+      "notes": "Boolean, fractional, nonpositive and over100 limits rejected."
+    },
+    {
+      "test_id": "test_payment_cursor_requires_complete_typed_date_and_identity",
+      "upstream_ids": [
+        "API-004",
+        "API-012"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_read.py",
+      "status": "implemented",
+      "notes": "Partial cursor, datetime-as-date, string date and nil/invalid UUID rejected."
+    },
+    {
+      "test_id": "test_payment_filters_reject_invented_statuses_and_invalid_ids",
+      "upstream_ids": [
+        "API-057",
+        "BR-PAY-008"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_read.py",
+      "status": "implemented",
+      "notes": "Only RECEIVED/REVERSED accepted; filter IDs non-nil."
+    },
+    {
+      "test_id": "test_payment_reads_require_separate_exact_property_capability",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-022",
+        "API-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_read.py",
+      "status": "implemented",
+      "notes": "Read requires exact payments.read Property grant, not confirmation/allocation/Credit/Receipt authority."
+    },
+    {
+      "test_id": "test_payment_reads_use_bounded_readonly_repeatable_snapshot_and_exact_decimal_loader",
+      "upstream_ids": [
+        "API-005",
+        "API-012",
+        "SEC-026"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_read.py",
+      "status": "implemented",
+      "notes": "Read connection only; repeatable-read/read-only first; bounded timeouts; bound inputs/limit+1; exact integer/decimal JSON."
+    },
+    {
+      "test_id": "test_payment_list_uses_exclusive_last_visible_cursor_without_extra_row_leak",
+      "upstream_ids": [
+        "API-012"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_read.py",
+      "status": "implemented",
+      "notes": "Only limit rows returned, cursor identifies last visible row, no lookahead leak."
+    },
+    {
+      "test_id": "test_payment_forged_envelopes_revalidated_before_connection",
+      "upstream_ids": [
+        "API-012"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_read.py",
+      "status": "implemented",
+      "notes": "Frozen page/filter tampering revalidated before DB."
+    },
+    {
+      "test_id": "test_payment_inactive_actor_never_queries_financial_rows",
+      "upstream_ids": [
+        "SEC-019",
+        "API-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_read.py",
+      "status": "implemented",
+      "notes": "Failed fresh actor check stops before Payment query, including absent context."
+    },
+    {
+      "test_id": "test_payment_missing_property_and_payment_return_safe_not_found",
+      "upstream_ids": [
+        "API-057"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_read.py",
+      "status": "implemented",
+      "notes": "Missing scoped Property/resource maps to safe not-found."
+    },
+    {
+      "test_id": "test_payment_read_errors_redact_database_details",
+      "upstream_ids": [
+        "API-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_read.py",
+      "status": "implemented",
+      "notes": "Permission, serialization, timeout, transport and constraint errors never expose DB text."
+    },
+    {
+      "test_id": "test_payment_invalid_resource_or_actor_identity_fails_before_connection",
+      "upstream_ids": [
+        "API-003",
+        "API-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_read.py",
+      "status": "implemented",
+      "notes": "Malformed/nil actor and resource identity reject without database access."
+    },
+    {
+      "test_id": "test_payment_read_preserves_original_facts_receipt_and_exact_usd_position",
+      "upstream_ids": [
+        "API-057",
+        "DB-PAY-003",
+        "TEST-059"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_read_migration.py",
+      "status": "implemented",
+      "notes": "Maximum supported exact USD amount, immutable header/Receipt link, list/detail agreement and unchanged serialization guard."
+    },
+    {
+      "test_id": "test_payment_reads_reconcile_credit_and_direct_usd_refund_without_double_consumption",
+      "upstream_ids": [
+        "API-057",
+        "BR-PAY-008",
+        "TEST-064"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_read_migration.py",
+      "status": "implemented",
+      "notes": "Recognized Credit consumes Payment once, Credit Refund not again; direct USD Refund minus verified USD return yields exact availability without inventing status."
+    },
+    {
+      "test_id": "test_payment_reads_keep_method_snapshots_after_configuration_rename_and_retirement",
+      "upstream_ids": [
+        "BR-PAY-007",
+        "TEST-059"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_read_migration.py",
+      "status": "implemented",
+      "notes": "Both reads retain original method code/name after synthetic method rename/retirement."
+    },
+    {
+      "test_id": "test_payment_reversal_keeps_original_receipt_and_zero_available_value",
+      "upstream_ids": [
+        "API-057",
+        "BR-PAY-008",
+        "TEST-059"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_read_migration.py",
+      "status": "implemented",
+      "notes": "Reversed source shows zero availability, permanent original header/Receipt and linked reversal; status filters separate."
+    },
+    {
+      "test_id": "test_payment_keysets_filter_customer_method_and_keep_tied_dates_without_duplicates",
+      "upstream_ids": [
+        "API-012",
+        "API-057"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_read_migration.py",
+      "status": "implemented",
+      "notes": "Full exclusive descending date/UUID traversal across tied dates; exact Customer/method filters, no other Customer leak."
+    },
+    {
+      "test_id": "test_payment_khr_read_preserves_original_channel_fx_and_usd_accounting_only",
+      "upstream_ids": [
+        "API-057",
+        "DB-PAY-002",
+        "BR-PAY-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_read_migration.py",
+      "status": "implemented",
+      "notes": "Original4100KHR/101USDcents and channel/system FX remain immutable; fractional rates exact text; bounded projection links original FX instead of unbounded trace."
+    },
+    {
+      "test_id": "test_payment_read_denies_cross_property_missing_and_freshly_disabled_actor",
+      "upstream_ids": [
+        "SEC-019",
+        "API-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_read_migration.py",
+      "status": "implemented",
+      "notes": "Wrong Property/unknown resource and unknown/freshly disabled human fail closed."
+    },
+    {
+      "test_id": "test_payment_read_snapshot_stays_coherent_across_concurrent_refund_without_guard_writes",
+      "upstream_ids": [
+        "API-057",
+        "SEC-026"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_read_migration.py",
+      "status": "implemented",
+      "notes": "Repeatable-read resource remains unchanged across concurrent USD Refund commit; fresh service read sees exact new balance and neither read changes financial guard."
+    },
+    {
       "test_id": "test_khr_origin_usd_partial_returns_reconcile_exact_cents_and_preserve_history",
       "upstream_ids": ["BR-REFUND-003", "BR-REFUND-008", "BR-REFUND-010", "DB-REFUND-002", "API-066", "TEST-074"],
       "test_level": "DB",

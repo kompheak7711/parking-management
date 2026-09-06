@@ -127,6 +127,7 @@ database_test_suites='
   tests/test_invoice_migration.py
   tests/test_late_payment_migration.py
   tests/test_payment_migration.py
+  tests/test_payment_read_migration.py
   tests/test_payment_allocation_migration.py
   tests/test_receipt_migration.py
   tests/test_credit_migration.py
