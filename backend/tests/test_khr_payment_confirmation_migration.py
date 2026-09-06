@@ -2,7 +2,7 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from threading import Barrier
 from typing import cast
@@ -118,7 +118,7 @@ def test_khr_confirmation_automatic_rounding_and_atomic_original_facts(
     assert (
         fx["channel_actual_amount_minor"] is None and fx["channel_actual_usd_value_cents"] is None
     )
-    assert result["received_at"] == request.received_at.isoformat()
+    assert datetime.fromisoformat(str(result["received_at"])) == request.received_at
     assert result["evidence_reference"] == request.evidence_reference
     trace = cast(dict[str, object], fx["calculation_trace"])
     assert trace["payable_khr"] == khr and trace["automatic_source_unavailable"] is False
@@ -150,6 +150,59 @@ def test_khr_confirmation_automatic_rounding_and_atomic_original_facts(
             "SELECT count(*) FROM app.customer_credits WHERE source_payment_id=%s",
             (identity(result),),
         ).fetchone() == (0,)
+
+
+@pytest.mark.parametrize("currency", ["USD", "KHR"])
+@pytest.mark.parametrize("microsecond", [0, 1, 10, 1000, 10000, 35750, 100000, 999999])
+def test_payment_confirmation_timestamp_precision_preserves_original_intent_and_replay(
+    migrated_database_url: str,  # noqa: F811
+    currency: str,
+    microsecond: int,
+) -> None:
+    human, prop, _, usd = usd_source(migrated_database_url)
+    at = (usd.received_at - timedelta(seconds=1)).replace(microsecond=microsecond)
+    authorized = actor(human, prop, "payments.record")
+    if currency == "USD":
+        usd_request = replace(usd, received_at=at)
+        usd_flow = PaymentConfirmationService(financial_database_url())
+        result = usd_flow.confirm_usd(prop, usd_request, actor=authorized)
+        replay = usd_flow.confirm_usd(prop, usd_request, actor=authorized)
+        original_intent = usd_request.intent()
+    else:
+        khr_request = ConfirmKhrPaymentCommand(
+            usd.idempotency_key,
+            usd.payer_customer_id,
+            usd.payment_method_id,
+            40871,
+            1001,
+            at,
+            "Synthetic precision evidence",
+        )
+        khr_flow = KhrPaymentConfirmationService(financial_database_url(), provider(at))
+        result = khr_flow.confirm_khr(prop, khr_request, actor=authorized)
+        replay = khr_flow.confirm_khr(prop, khr_request, actor=authorized)
+        original_intent = khr_request.intent()
+    received = result["received_at"]
+    assert isinstance(received, str)
+    instant = datetime.fromisoformat(received)
+    # Fractional trailing zeroes are optional RFC3339 presentation, not lost precision.
+    assert instant == at and instant.microsecond == microsecond
+    assert instant.utcoffset() == timedelta(0) and instant.tzinfo == UTC
+    assert replay == result
+    with psycopg.connect(migrated_database_url) as connection:
+        saved = connection.execute(
+            "SELECT request,response FROM app.payment_confirmation_commands WHERE payment_id=%s",
+            (identity(result),),
+        ).fetchone()
+        assert saved is not None and saved[0] == original_intent and saved[1] == result
+        assert saved[0]["received_at"] == at.isoformat()
+        assert connection.execute(
+            "SELECT count(*) FROM app.payments WHERE payer_customer_id=%s",
+            (usd.payer_customer_id,),
+        ).fetchone() == (1,)
+        assert connection.execute(
+            "SELECT count(*) FROM app.receipts WHERE payment_id=%s", (identity(result),)
+        ).fetchone() == (1,)
 
 
 def test_khr_confirmation_manual_requires_outage_permission_and_replays_after_recovery_and_reversal(

@@ -1,6 +1,7 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: V1-052 Payment HTTP body-limit correction1 implemented,135focusedPASS; fresh exact gates/review pending. V1-051 fully closed; activation/read/USD/KHR accepted. No owner policy blocker.
+- Current: V1-052 Payment HTTP timestamp-test correction1 ACTIVE after preserved2339aa6 exactDB849PASS1FAIL; body-limit correction implemented. Backend1194/automation189PASS. No reviewer running, no owner policy blocker.
+- Failure is equivalent .03575/.035750 RFC3339 formatting, not lost precision or money. Log178f7d3d retained. Add deterministic USD/KHR exact instant/intent/replay cases, no runtime/migration/history changes; complete slice now20paths from5263218.
 - Authority ops/CODEX_TAKEOVER_V1_048_053.md SHA2564e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455; frozen scope ops/V1_052_SCOPE.md SHA2564ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363.
 - DL-060: USD accounting; ALL Refunds paid and recorded USD. KHR incoming conversion/audit only, original history immutable. Rejected KHR-refund proposal/blocker resolved.
 - V1-051 CLOSED terminalf8/product7cec085, exact tests/maxzero/normalpub/CI34027889695+34030703203/ref equality/cardc5621f97DONE/proof935d944b/closure92fa6965; do not repeat.
@@ -16,7 +17,7 @@
 - Sole52checkout /Users/sokompheak/Development/property-rental-management-v1-052/codex-v1-052-direct;127worktrees retained, mainclean a5/tracking/FETCH_HEAD/livef8/CI34030703203success verified thiscycle.
 - Samecard74197a0e tracking-onlyblocked/no OpenClaw execution/claim/attempt, not policyblocked. Root actual18:24:36.139Z Astra/xhigh/Standard; no model fallback or provider attestation.
 - OpenClaw singleton658ffdaf DISABLED, retained30min/no nextRun. Nativefollowup property-rental-v1-047-closure-follow-up ACTIVE10min/sametask01a04961/hash49baafc5 with USD-only policy unchanged.
-- Exact next action: Freeze normal body-limit correction successor of retaineddbf3576 and run fresh complete19path exact gates from accepted5263218:850PG/fullbackend(expected1194)/158static-build-import/189automation/config/traceability/publicationguard/diffs. Only if ALL PASS dispatch ONE fresh independent Astra max Standard read-only COMPLETE19path zero review covering all three retained488/dbf/successor commits, not just the final correction. Keep rejected dbf/reportddf4e56e and every prior checkpoint; no edit during review or duplicate worker. Then remaining financial HTTP/UI/encrypted recovery/full-product release/CI/refs/card/durableclosure before53. OpenClawdisabled/nativefollowupACTIVE; at53closed PAUSE/no54; no owner routine action.
+- Exact next action: Fix the newly exposed equivalent-RFC3339-format test at preserved2339aa6 without changing stored timestamps or financial behavior: compare exact timezone-aware instants, add deterministic USD/KHR fractional-microsecond intent/response/replay/history cases, retain failed849PASS1FAIL log178f7d3d. Then fresh focused PG and normal successor, full exact866PG/backend/automation/static/config checks, ONE fresh independent Astra max Standard read-only COMPLETE20path5263218-to-successor zero review. Body-limit correction remains implemented, rejecteddbf preserved; no duplicate workers or waiver. Remaining52fullfinancialHTTP/UI/release before53; OCdisabled/nativeACTIVE, at53closedPAUSE/no54.
 - Liveindex /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-codex-takeover-live.md; subsequent exact receipts may discharge immutable pending fields without amendment.
 - Remaining financial HTTP/UI/encrypted recovery/full-product frontend/browser/audits/cumulative exact review/normalpub/CI/refs/card/durableclosure REQUIRED before53. At53fullyclosed PAUSEnativefollowup/no54.
 - Production/access/credentials/customerdata/paid/destructive/forcepush/historyrewrite/retainedworktree deletion unauthorized. Updated2026-09-06T18:27Z; no owner action.
@@ -42,7 +43,7 @@ The following evidence is preserved as history. Its closure-turn next actions an
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
-- Automation state: nativefollowup ACTIVE/OpenClaw disabled. V1-052 Payment HTTP body-limit correction1 focusedPASS; review78363 completed one MEDIUM, dbf3576 retained.
-- Exact next action: freeze/fresh complete19path tests/maxreview, then remaining full52release before53. At53closed PAUSE/no54.
+- Automation state: nativefollowup ACTIVE/OpenClawdisabled; distinct timestamp-test correction1 ACTIVE, failed2339aa6/dbf retained; all old test/review sessions COMPLETED.
+- Exact next action: deterministic timestamp tests/fresh complete20path exact gates/maxreview, then full52release before53. At53closedPAUSE/no54.
 
 <!-- AUTOMATION_STATUS_END -->

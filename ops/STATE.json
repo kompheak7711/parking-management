@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "Payment HTTP body-limit correction1 focused PASS, fresh exact gates/review pending",
+    "phase": "Payment HTTP exact gate found timestamp-format test mismatch; bounded fixture correction active",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2058,7 +2058,7 @@
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
     "candidate_resolution": "Normal successor of retained dbf3576 pending; complete19path slice5263218-to-successor must pass fresh exact gates and independent zero review.",
-    "candidate_status": "corrected_normal_successor_ready_to_freeze",
+    "candidate_status": "2339aa6_failed_exact_database_preserved_timestamp_test_correction_active",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2093,7 +2093,7 @@
       "predecessor_card": "c5621f97 done"
     },
     "owner_action_required": false,
-    "next_action": "Freeze normal body-limit correction successor of retaineddbf3576 and run fresh complete19path exact gates from accepted5263218:850PG/fullbackend(expected1194)/158static-build-import/189automation/config/traceability/publicationguard/diffs. Only if ALL PASS dispatch ONE fresh independent Astra max Standard read-only COMPLETE19path zero review covering all three retained488/dbf/successor commits, not just the final correction. Keep rejected dbf/reportddf4e56e and every prior checkpoint; no edit during review or duplicate worker. Then remaining financial HTTP/UI/encrypted recovery/full-product release/CI/refs/card/durableclosure before53. OpenClawdisabled/nativefollowupACTIVE; at53closed PAUSE/no54; no owner routine action.",
+    "next_action": "Fix the newly exposed equivalent-RFC3339-format test at preserved2339aa6 without changing stored timestamps or financial behavior: compare exact timezone-aware instants, add deterministic USD/KHR fractional-microsecond intent/response/replay/history cases, retain failed849PASS1FAIL log178f7d3d. Then fresh focused PG and normal successor, full exact866PG/backend/automation/static/config checks, ONE fresh independent Astra max Standard read-only COMPLETE20path5263218-to-successor zero review. Body-limit correction remains implemented, rejecteddbf preserved; no duplicate workers or waiver. Remaining52fullfinancialHTTP/UI/release before53; OCdisabled/nativeACTIVE, at53closedPAUSE/no54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2119,7 +2119,7 @@
     },
     "active_slice": {
       "id": "V1-052-payment-http",
-      "status": "body_limit_correction1_focused_pass_exact_gates_review_pending",
+      "status": "active_timestamp_rendering_correction1",
       "started_at": "2026-09-06T17:06:00Z",
       "base_sha": "5263218f7f7deafc05b2d9f524f138761e05c850",
       "scope": "Bounded canonical API-057/058 Payment HTTP list/detail/USD-KHR confirmation, narrow injected flow and app wiring, focused unit/API/isolated PostgreSQL tests. Downstream financial routes and all UI remain subsequent slices.",
@@ -2158,7 +2158,7 @@
       "verification_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-implementation-verification.md",
       "verification_receipt_sha256": "d58c26b302e0b39c4ad9414a48d78e6295c1d6931ac96b0490199171b9a7f8ad",
       "tests": "70403COMPLETED EXIT0/5PGPASS845deselected3.66s;75842COMPLETED158fileformat-lint-mypy/106API-inventory-tracePASS15.31s/traceability0newIDs/diffPASS",
-      "complete_review_paths": 19,
+      "complete_review_paths": 20,
       "head_compatibility": "19 truecurrent-head markers43to44/8legacytests; two explicit43 references remain in new history/down-revision test. Published/accepted38–43 and old read/USD/KHR services unchanged.",
       "runtime_sha256": "c176d8e4c0d4910e9f226fceb4cc6d9a984c6412efdcbf0b37ecb26be2fbd851",
       "new_migration": "20260907_44_payment_receipt_evidence.py",
@@ -2209,7 +2209,21 @@
         "FAILED focused11348 COMPLETED EXIT2/3PGPASS1FAIL845deselected2.79s: expected422 vs correct accepted-service409 automatic-source/manual fallback conflict. Preserve checkpoint/log2da6a52b; correction1 pending. Early draft lint/type diagnostics corrected, no runtime policy change.",
         "CORRECTED focused70403COMPLETED EXIT0:5PGPASS845deselected3.66s;75842COMPLETED EXIT0:158fileformat-lint-mypy/106API-inventory-traceabilityPASS15.31s/0newmaterialIDs/diffPASS. Correction1 resolved, failed488 preserved. Receipt d58c26b3.",
         "PENDING frozen corrected COMPLETE19path exact850PG/fullbackend/189automation/static-build-import-config/traceability/guards and ONE independent Astra max Standard read-only zero review from5263218. No Payment HTTP/full52acceptance/publication."
-      ]
+      ],
+      "timestamp_rendering_correction1": {
+        "attempt": 1,
+        "status": "active",
+        "started_at": "2026-09-06T18:41:00Z",
+        "failed_checkpoint": "2339aa692a5d47281ff6856823e3e592d3cba251",
+        "failed_tree": "fbb30fcf9112c1156b867f9a83f58ec3d15060cd",
+        "fingerprint": "Existing KHR original-received timestamp assertion compares PostgreSQL trimmed fractional seconds to Python six-digit isoformat; .03575 and .035750 represent identical microseconds",
+        "failure": "91566 COMPLETED EXIT2,849PASS1FAIL126.64s; no runtime money/FX failure",
+        "failed_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-exact-2339aa6-database.log",
+        "failed_log_sha256": "178f7d3dc18739d5c2554cff537254ce62b2b375b36230a98c08ab2dd0db90f9",
+        "other_exact_gates": "5093COMPLETED1194PASS827DB-onlyskips55.14s/158static-build-import;41700COMPLETED189PASS73.281s/config/traceability/guardsPASS",
+        "changed_approach": "Preserve exact instant/microseconds and original intent/response evidence, not optional trailing-zero presentation. Fix only test comparator and add16 deterministic USD/KHR microsecond cases including0/trailingzero/nonzero and exact replay/saved request-response/one Receipt; no source/migration edits.",
+        "next_action": "Fix the newly exposed equivalent-RFC3339-format test at preserved2339aa6 without changing stored timestamps or financial behavior: compare exact timezone-aware instants, add deterministic USD/KHR fractional-microsecond intent/response/replay/history cases, retain failed849PASS1FAIL log178f7d3d. Then fresh focused PG and normal successor, full exact866PG/backend/automation/static/config checks, ONE fresh independent Astra max Standard read-only COMPLETE20path5263218-to-successor zero review. Body-limit correction remains implemented, rejecteddbf preserved; no duplicate workers or waiver. Remaining52fullfinancialHTTP/UI/release before53; OCdisabled/nativeACTIVE, at53closedPAUSE/no54."
+      }
     },
     "accepted_read_slice": {
       "id": "V1-052-payment-read",
@@ -3323,9 +3337,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "dbf3576865b8d4bee68028343ce3693e58c26edd",
+  "commit": "2339aa692a5d47281ff6856823e3e592d3cba251",
   "idle_reason": null,
-  "next_action": "Freeze normal body-limit correction successor of retaineddbf3576 and run fresh complete19path exact gates from accepted5263218:850PG/fullbackend(expected1194)/158static-build-import/189automation/config/traceability/publicationguard/diffs. Only if ALL PASS dispatch ONE fresh independent Astra max Standard read-only COMPLETE19path zero review covering all three retained488/dbf/successor commits, not just the final correction. Keep rejected dbf/reportddf4e56e and every prior checkpoint; no edit during review or duplicate worker. Then remaining financial HTTP/UI/encrypted recovery/full-product release/CI/refs/card/durableclosure before53. OpenClawdisabled/nativefollowupACTIVE; at53closed PAUSE/no54; no owner routine action.",
+  "next_action": "Fix the newly exposed equivalent-RFC3339-format test at preserved2339aa6 without changing stored timestamps or financial behavior: compare exact timezone-aware instants, add deterministic USD/KHR fractional-microsecond intent/response/replay/history cases, retain failed849PASS1FAIL log178f7d3d. Then fresh focused PG and normal successor, full exact866PG/backend/automation/static/config checks, ONE fresh independent Astra max Standard read-only COMPLETE20path5263218-to-successor zero review. Body-limit correction remains implemented, rejecteddbf preserved; no duplicate workers or waiver. Remaining52fullfinancialHTTP/UI/release before53; OCdisabled/nativeACTIVE, at53closedPAUSE/no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -3333,8 +3347,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Normal successor of retained dbf3576 pending; complete19path slice5263218-to-successor must pass fresh exact gates and independent zero review.",
-  "candidate_parent": "dbf3576865b8d4bee68028343ce3693e58c26edd",
+  "candidate_resolution": "Normal successor of retained2339aa6 pending, COMPLETE20path5263218-to-successor; no fresh review until every exact gate passes.",
+  "candidate_parent": "2339aa692a5d47281ff6856823e3e592d3cba251",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -3397,7 +3411,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 Payment HTTP body-limit correction1 implemented focused PASS; fresh exact gates/review pending",
+  "phase": "Payment HTTP exact gate found timestamp-format test mismatch; bounded fixture correction active",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4496,7 +4510,8 @@
     "850PG0skip/1165backend827DB-onlyskips/189automation/158static-build-import/all applicable config PASS;83059/79662/86063 COMPLETED EXIT0",
     "Review78363 COMPLETED18:14:24.160Z:0HIGH/1MEDIUM/0LOW complete19paths; reportddf4e56e byte-identical final. Rejectdbf despite passing tests; all evidence preserved.",
     "Correction1 ACTIVE; focused/fresh exact gates/independent review pending; no full52 acceptance/publication/closure.",
-    "CORRECTION1 62529COMPLETED EXIT0/135focusedPASS17.39s/158staticPASS/traceability0newIDs/diffPASS; receipt8c201a285868b38f7ee56b5f7f10fdeb7d6f91622f6d3971d9d2d7d16b0275ba. Fresh candidate exact gates and complete19path review pending."
+    "CORRECTION1 62529COMPLETED EXIT0/135focusedPASS17.39s/158staticPASS/traceability0newIDs/diffPASS; receipt8c201a285868b38f7ee56b5f7f10fdeb7d6f91622f6d3971d9d2d7d16b0275ba. Fresh candidate exact gates and complete19path review pending.",
+    "FAILED EXACT2339aa6:91566COMPLETED849PASS1FAIL126.64s due equivalent .03575/.035750 timestamp strings in old KHR test; log178f7d3d. 5093COMPLETED1194PASS827skips/static-build-import;41700COMPLETED189PASS73.281s/configPASS. Distinct bounded timestamp_test_correction1 ACTIVE; no reviewer dispatched."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4518,7 +4533,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-06T18:35:00Z",
+  "timestamp": "2026-09-06T18:41:00Z",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4563,7 +4578,8 @@
     "ops/QUEUE.md",
     "ops/STATE.json",
     "ops/traceability.json",
-    "scripts/database-test.sh"
+    "scripts/database-test.sh",
+    "backend/tests/test_khr_payment_confirmation_migration.py"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -4751,7 +4767,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-06T18:35:00Z",
+  "updated_at": "2026-09-06T18:41:00Z",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5877,7 +5893,7 @@
   "commit_role": "Retained failed-verification Payment HTTP draft; corrected normal successor resolves by containing HEAD",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "dbf3576865b8d4bee68028343ce3693e58c26edd"
+    "2339aa692a5d47281ff6856823e3e592d3cba251"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
@@ -5933,9 +5949,9 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_fresh_exact_complete_19path_body_limit_successor",
+    "status": "pending_after_failed_exact2339aa6_database_correction",
     "tranche_id": "V1-052",
-    "scope": "COMPLETE19path Payment HTTP/API from accepted5263218 including retained488 and corrected successor, new44 view, 19head markers, schemas/wiring/API/PG tests/records/traceability; later financial HTTP/UI/full product pending.",
+    "scope": "COMPLETE20path Payment HTTP/API slice from5263218 including streaming correction and one newly needed deterministic timestamp test file; all prior checkpoints preserved",
     "base_sha": "5263218f7f7deafc05b2d9f524f138761e05c850",
     "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "exact_sha": null,

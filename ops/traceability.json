@@ -2,6 +2,21 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_payment_confirmation_timestamp_precision_preserves_original_intent_and_replay",
+      "upstream_ids": [
+        "API-004",
+        "API-016",
+        "API-057",
+        "API-058",
+        "BR-PAY-017",
+        "TEST-059"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_khr_payment_confirmation_migration.py",
+      "status": "implemented",
+      "notes": "Sixteen real PostgreSQL USD/KHR cases include exact zero/nonzero/trailing-zero fractions and observed035750 microseconds. UTC instant and every microsecond are preserved; original six-digit request intent and original database response remain unchanged on replay with one Payment/Receipt."
+    },
+    {
       "test_id": "test_payment_api_stream_limit_rejects_before_buffering_decoding_or_dispatch",
       "upstream_ids": [
         "SEC-036",
