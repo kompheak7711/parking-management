@@ -201,11 +201,24 @@ def test_traceability_manifest_covers_executable_tests() -> None:
 
     # Preserve the existing Python/component inventory and register the bounded
     # financial unit/browser suites; do not waive or remove any prior mapping.
-    for name in ("financialJson.test.ts", "billingJournal.test.ts", "sealedIntentStore.test.ts"):
+    for name in (
+        "financialJson.test.ts",
+        "billingJournal.test.ts",
+        "sealedIntentStore.test.ts",
+        "financialContracts.test.ts",
+        "financialClient.test.ts",
+        "financialRecovery.test.ts",
+    ):
         executable_ids.update(collect_financial_unit_test_ids(FRONTEND_TEST_DIRECTORY / name))
     executable_ids.update(
         collect_financial_browser_test_ids(
             FRONTEND_TEST_DIRECTORY / "test" / "financialRecovery.browser.ts"
+        )
+    )
+
+    executable_ids.update(
+        collect_financial_browser_test_ids(
+            FRONTEND_TEST_DIRECTORY / "test" / "financialCommands.browser.ts"
         )
     )
 
