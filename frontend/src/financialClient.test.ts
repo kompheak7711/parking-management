@@ -417,3 +417,42 @@ it("TEST-FE-320 binds filtered Refund recipient identity without inventing a cus
     ).data,
   ).toEqual(fixture("refundList").data);
 });
+
+describe("989d934 error correlation regression", () => {
+  it.each(["json", "utf8", "contract"])(
+    "TEST-FE-326 preserves local correlation and observed status after invalid %s evidence",
+    async (kind) => {
+      let requestId: string | null = null;
+      const fetcher = vi.fn<typeof fetch>((_url, init) => {
+        requestId = new Headers(init?.headers).get("X-Request-ID");
+        return Promise.resolve(
+          new Response(
+            kind === "utf8"
+              ? new Uint8Array([0xc3, 0x28])
+              : kind === "json"
+                ? "{"
+                : "{}",
+            {
+              status: 200,
+              headers: {
+                "Content-Type": "application/json",
+                "X-Request-ID": requestId ?? "",
+              },
+            },
+          ),
+        );
+      });
+      const error: unknown = await createFinancialTransport(fetcher)
+        .send(scope(), captureFinancialRequest(read(1)))
+        .catch((error: unknown) => error);
+      expect(requestId).toBeTruthy();
+      expect(error).toMatchObject({
+        code: "INVALID_RESPONSE",
+        dispatched: true,
+        status: 200,
+        requestId,
+      });
+      expect(String(error)).not.toContain("Synthetic secret");
+    },
+  );
+});

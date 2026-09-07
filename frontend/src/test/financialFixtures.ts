@@ -209,7 +209,18 @@ export function fixture(
   const map: Record<FinancialOperation, FinancialJson> = {
     paymentList: [paymentResource],
     paymentGet: paymentResource,
-    paymentRecord: paymentResource,
+    paymentRecord: {
+      payment,
+      receipt: {
+        id: ids.receipt,
+        payment_id: ids.payment,
+        receipt_number: "R-SYNTHETIC",
+        issued_at: "2026-09-01T12:00:00+00:00",
+      },
+      received_at: "2026-09-01T05:00:00+00:00",
+      evidence_reference: "Synthetic receipt",
+      property_timezone: "Asia/Phnom_Penh",
+    },
     allocationProposal: {
       property_id: ids.property,
       payment_id: ids.payment,
@@ -266,8 +277,55 @@ export function fixture(
     refundList: [refund],
     refundGet: refund,
     refundCreate: refund,
-    refundReturn: refund,
-    refundReturnReverse: refund,
+    refundReturn: {
+      ...refund,
+      net_refund_usd_cents: 0,
+      corrections: {
+        page,
+        items: [
+          {
+            id: ids.event,
+            refund_id: ids.refund,
+            correction_kind: "VALUE_CORRECTION",
+            reverses_correction_id: null,
+            source_balance_effect_usd_cents: 100,
+            source_balance_effect_original_minor: 100,
+            previous_net_refund_usd_cents: 100,
+            resulting_net_refund_usd_cents: 0,
+            verified_return_amount_minor: 100,
+            verified_return_currency: "USD",
+            verified_returned_at: "2026-09-01T12:00:00+00:00",
+            return_method_reference: "Synthetic evidence",
+            reason: "Synthetic return",
+            evidence_reference: "Synthetic evidence",
+          },
+        ],
+      },
+    },
+    refundReturnReverse: {
+      ...refund,
+      corrections: {
+        page,
+        items: [
+          {
+            id: ids.other,
+            refund_id: ids.refund,
+            correction_kind: "CORRECTION_REVERSAL",
+            reverses_correction_id: ids.event,
+            source_balance_effect_usd_cents: -100,
+            source_balance_effect_original_minor: -100,
+            previous_net_refund_usd_cents: 0,
+            resulting_net_refund_usd_cents: 100,
+            verified_return_amount_minor: null,
+            verified_return_currency: null,
+            verified_returned_at: null,
+            return_method_reference: null,
+            reason: "Synthetic correction",
+            evidence_reference: "Synthetic evidence",
+          },
+        ],
+      },
+    },
     refundSource: {
       property_id: ids.property,
       source_type: "PAYMENT",

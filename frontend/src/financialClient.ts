@@ -1,6 +1,7 @@
 import { parseFinancialJson, stringifyFinancialJson } from "./financialJson";
 import {
   FINANCIAL_OPERATIONS,
+  FINANCIAL_ENVELOPE_BYTES,
   captureFinancialRequest,
   captureWireRequest,
   financialId,
@@ -92,6 +93,8 @@ export function createFinancialTransport(
   return {
     async send(suppliedScope, suppliedRequest, suppliedKey) {
       let dispatched = false;
+      let requestId: string | null = null;
+      let observedStatus: number | null = null;
       const controller = new AbortController();
       let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -103,7 +106,8 @@ export function createFinancialTransport(
         // Recapture supplied data before the first await, including restored commands.
         const captured = financialObject(
           parseFinancialJson(
-            stringifyFinancialJson(suppliedRequest, 1_048_576),
+            stringifyFinancialJson(suppliedRequest, FINANCIAL_ENVELOPE_BYTES),
+            FINANCIAL_ENVELOPE_BYTES,
           ),
         );
         const request = captureWireRequest({
@@ -117,7 +121,7 @@ export function createFinancialTransport(
           key = command ? financialId(suppliedKey) : undefined;
         if (!command && suppliedKey !== undefined)
           throw new FinancialClientError("INVALID_REQUEST", false);
-        const requestId = financialId(crypto.randomUUID());
+        requestId = financialId(crypto.randomUUID());
         const headers = new Headers({
           Accept: "application/json",
           "X-Financial-Property-ID": scope.propertyId,
@@ -167,6 +171,7 @@ export function createFinancialTransport(
             ...(command ? { body: request.wireBody ?? "" } : {}),
           }),
         );
+        observedStatus = response.status;
         const invalid = () =>
           new FinancialClientError(
             "INVALID_RESPONSE",
@@ -268,6 +273,8 @@ export function createFinancialTransport(
         throw new FinancialClientError(
           dispatched ? "INVALID_RESPONSE" : "INVALID_REQUEST",
           dispatched,
+          observedStatus,
+          requestId,
         );
       } finally {
         if (timer !== undefined) clearTimeout(timer);

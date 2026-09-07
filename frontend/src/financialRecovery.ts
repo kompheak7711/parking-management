@@ -124,10 +124,31 @@ export interface FinancialRecovery {
     expectedKey: string,
   ): Promise<FinancialExecutionResult>;
 }
+export interface FinancialAttemptCoordinator {
+  run<T>(actorId: string, action: () => Promise<T>): Promise<T | null>;
+}
+const browserFinancialAttempts: FinancialAttemptCoordinator = {
+  async run<T>(actorId: string, action: () => Promise<T>): Promise<T | null> {
+    const locks =
+      typeof navigator === "undefined"
+        ? undefined
+        : (navigator as Partial<Pick<Navigator, "locks">>).locks;
+    if (!locks)
+      return Promise.reject(
+        new Error("Financial attempt coordination unavailable"),
+      );
+    return await locks.request<Promise<T> | null>(
+      `property-rental.financial-attempt:${actorId}`,
+      { mode: "exclusive", ifAvailable: true },
+      (lock) => (lock ? action() : null),
+    );
+  },
+};
 export function createFinancialRecovery(
   store: SealedIntentStore = sealedIntentStore,
   transport: FinancialTransport = financialTransport,
   csrf = financialCsrf,
+  attempts: FinancialAttemptCoordinator = browserFinancialAttempts,
 ): FinancialRecovery {
   async function load(scope: FinancialScope): Promise<FinancialRecoveryState> {
     try {
@@ -143,6 +164,23 @@ export function createFinancialRecovery(
       return financialAborted(scope.signal)
         ? { kind: "invalidated" }
         : { kind: "unavailable" };
+    }
+  }
+  async function attempt(
+    scope: FinancialScope,
+    action: () => Promise<FinancialExecutionResult>,
+  ): Promise<FinancialExecutionResult> {
+    try {
+      const result = await attempts.run(scope.actorId, () =>
+        financialAborted(scope.signal)
+          ? Promise.resolve<FinancialExecutionResult>({ kind: "invalidated" })
+          : action(),
+      );
+      return result ?? { kind: "blocked", state: await load(scope) };
+    } catch {
+      return financialAborted(scope.signal)
+        ? { kind: "invalidated" }
+        : { kind: "blocked", state: { kind: "unavailable" } };
     }
   }
   async function execute(
@@ -227,24 +265,28 @@ export function createFinancialRecovery(
         pending,
         MAX_SEALED_INTENT_BYTES,
       );
-      try {
-        await store.begin(scope.actorId, {
-          requestKey: pending.key,
-          plaintext,
-        });
-      } catch {
-        return { kind: "blocked", state: await load(scope) };
-      }
-      return execute(scope, pending, true);
+      return attempt(scope, async () => {
+        try {
+          await store.begin(scope.actorId, {
+            requestKey: pending.key,
+            plaintext,
+          });
+        } catch {
+          return { kind: "blocked", state: await load(scope) };
+        }
+        return execute(scope, pending, true);
+      });
     },
     async replay(supplied, expectedKey) {
       const scope = captureFinancialScope(supplied),
         key = financialId(expectedKey);
-      const state = await load(scope);
-      if (state.kind !== "pending" || state.command.key !== key)
-        return { kind: "blocked", state };
-      // Explicit caller action is required; load never invokes this operation.
-      return execute(scope, state.command, false);
+      return attempt(scope, async () => {
+        const state = await load(scope);
+        if (state.kind !== "pending" || state.command.key !== key)
+          return { kind: "blocked", state };
+        // Explicit caller action is required; load never invokes this operation.
+        return execute(scope, state.command, false);
+      });
     },
   };
 }

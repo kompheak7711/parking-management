@@ -289,3 +289,92 @@ export async function verifyCommandRace(
   );
   return "TEST-FE-318";
 }
+
+// Held synthetic transport lets a second real page attempt the same saved key.
+const initialAttempts = new Map<
+  string,
+  {
+    finish: () => void;
+    done: Promise<import("../financialRecovery").FinancialExecutionResult>;
+  }
+>();
+export async function holdInitialFinancialAttempt(): Promise<{
+  actor: string;
+  key: string;
+}> {
+  const scope = current();
+  let started = () => {
+    /* Installed before submission. */
+  };
+  const dispatched = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  let finish: () => void = () => {
+    throw new Error("Synthetic attempt not dispatched");
+  };
+  const transport: FinancialTransport = {
+    send: () =>
+      new Promise((_resolve, reject) => {
+        finish = () => {
+          reject(
+            new FinancialClientError(
+              "HTTP_REJECTION",
+              true,
+              422,
+              ids.key,
+              true,
+            ),
+          );
+        };
+        started();
+      }),
+  };
+  const done = createFinancialRecovery(
+    sealedIntentStore,
+    transport,
+    () => "synthetic-csrf",
+  ).submit(scope, command(0));
+  await dispatched;
+  initialAttempts.set(scope.actorId, { finish, done });
+  const saved = await sealedIntentStore.read(scope.actorId);
+  check(saved, "Initial attempt durably reserved before transport");
+  return { actor: scope.actorId, key: saved.requestKey };
+}
+export async function assertCompetingFinancialReplay(
+  actor: string,
+  key: string,
+): Promise<void> {
+  const count = { sends: 0 },
+    scope = current(actor);
+  const result = await createFinancialRecovery(
+    sealedIntentStore,
+    unavailable(count),
+    () => "synthetic-csrf",
+  ).replay(scope, key);
+  check(
+    result.kind === "blocked" && count.sends === 0,
+    "Native Web Lock excludes explicit replay while initial attempt unresolved",
+  );
+  check(
+    (await sealedIntentStore.read(actor))?.requestKey === key,
+    "Competing attempt preserves exact reservation",
+  );
+}
+export async function finishInitialFinancialAttempt(
+  actor: string,
+): Promise<string> {
+  const held = initialAttempts.get(actor);
+  check(held, "Owned initial attempt exists");
+  held.finish();
+  const result = await held.done;
+  initialAttempts.delete(actor);
+  check(
+    result.kind === "rejected",
+    "Sole initial definitive rejection resolves",
+  );
+  check(
+    (await sealedIntentStore.read(actor)) === null,
+    "Exact key retired only after sole initial rejection",
+  );
+  return "TEST-FE-329";
+}

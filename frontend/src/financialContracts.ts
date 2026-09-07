@@ -1,11 +1,12 @@
 import {
   ExactJsonNumber,
-  FINANCIAL_BODY_BYTES,
   parseFinancialJson,
   stringifyFinancialJson,
   type FinancialJson,
 } from "./financialJson";
 
+// Internal wrappers may quote/escape a full bounded wire body. Wire limits stay separate.
+export const FINANCIAL_ENVELOPE_BYTES = 1_048_576;
 export type FinancialObject = Record<string, FinancialJson>;
 export class FinancialContractError extends Error {
   constructor() {
@@ -110,6 +111,16 @@ function instant(value: unknown): void {
     second > 59
   )
     invalidFinancial();
+}
+export function financialInstant(value: unknown): bigint {
+  instant(value);
+  if (typeof value !== "string") return invalidFinancial();
+  const milliseconds = Date.parse(value);
+  if (!Number.isSafeInteger(milliseconds)) return invalidFinancial();
+  const fraction = /\.([0-9]{1,6})(?:Z|[+-])/.exec(value)?.[1] ?? "";
+  return (
+    BigInt(milliseconds) * 1000n + BigInt(fraction.padEnd(6, "0").slice(3))
+  );
 }
 function rate(value: unknown): void {
   if (
@@ -554,14 +565,18 @@ export function captureFinancialRequest(
 ): CapturedFinancialRequest {
   return captureWireRequest(
     parseFinancialJson(
-      stringifyFinancialJson(input, FINANCIAL_BODY_BYTES + 16_384),
+      stringifyFinancialJson(input, FINANCIAL_ENVELOPE_BYTES),
+      FINANCIAL_ENVELOPE_BYTES,
     ),
   );
 }
 /** Restore a finite operation and original wire bytes; stored paths are never accepted. */
 export function captureWireRequest(input: unknown): CapturedFinancialRequest {
   const row = financialObject(
-    parseFinancialJson(stringifyFinancialJson(input, 1_048_576), 1_048_576),
+    parseFinancialJson(
+      stringifyFinancialJson(input, FINANCIAL_ENVELOPE_BYTES),
+      FINANCIAL_ENVELOPE_BYTES,
+    ),
   );
   if (
     typeof row.operation !== "string" ||

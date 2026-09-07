@@ -50,3 +50,11 @@ an explicit client availability ceiling because some historical text is unbounde
 Oversized evidence remains unavailable and an affected command remains unresolved.
 The overall20-second deadline spans fetch and streamed body reads, including a
 noncooperating transport. No dependency inputs or accepted runtime files change.
+
+Correction1 after rejected989d934: initial/replay financial attempts require a
+shared actor-scoped exclusive Web Lock with ifAvailable (no queued automatic send).
+Hold through outcome retirement; unavailable coordination blocks commands. The
+encrypted store format stays unchanged. Actual Payment confirmation has no position;
+Refund correction replies must prove the newest returned/reversed event. Align
+internal envelope budgets without raising wire limits and retain safe correlation
+on invalid replies. Five findings require regression proof and fresh full-base review.

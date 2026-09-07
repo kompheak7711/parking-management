@@ -3,6 +3,7 @@ import {
   commandBody,
   financialId,
   financialInteger,
+  financialInstant,
   financialObject,
   invalidFinancial,
   isFinancialCommand,
@@ -193,8 +194,10 @@ export function validateFinancialReply(
       case "paymentGet":
       case "paymentRecord": {
         const item = payment(row.payment, prop);
-        if (op === "paymentGet") same(item.id, id);
-        else {
+        if (op === "paymentGet") {
+          same(item.id, id);
+          financialObject(row.position);
+        } else {
           same(item.payer_customer_id, body.payer_customer_id as string);
           same(item.payment_method_id, body.payment_method_id as string);
           if (item.status !== "RECEIVED") invalidFinancial();
@@ -214,9 +217,11 @@ export function validateFinancialReply(
             BigInt(financialInteger(usd.minor_units))
           )
             invalidFinancial();
-          financialId(financialObject(row.receipt).id);
+          const receipt = financialObject(row.receipt);
+          financialId(receipt.id);
+          same(receipt.payment_id, item.id);
+          nonempty(receipt.receipt_number);
         }
-        financialObject(row.position);
         break;
       }
       case "allocationProposal":
@@ -334,11 +339,81 @@ export function validateFinancialReply(
         break;
       }
       case "refundGet":
-      case "refundReturn":
-      case "refundReturnReverse":
         refund(row, prop, id);
         history(row.corrections, request);
         break;
+      case "refundReturn":
+      case "refundReturnReverse": {
+        refund(row, prop, id);
+        history(row.corrections, request);
+        // Both commands append strictly after all existing corrections and save
+        // this exact response for replay. The first event is their consequence.
+        const event = financialObject(
+          array(financialObject(row.corrections).items)[0],
+        );
+        financialId(event.id);
+        same(event.refund_id, id);
+        if (
+          event.reason !== body.reason ||
+          event.evidence_reference !== body.evidence_reference
+        )
+          invalidFinancial();
+        const effect = BigInt(
+          financialInteger(
+            event.source_balance_effect_usd_cents,
+            -9_000_000_000_000_000n,
+          ),
+        );
+        if (
+          BigInt(
+            financialInteger(
+              event.source_balance_effect_original_minor,
+              -9_000_000_000_000_000n,
+            ),
+          ) !== effect
+        )
+          invalidFinancial();
+        const previous = BigInt(
+          financialInteger(event.previous_net_refund_usd_cents, 0n),
+        );
+        const resulting = BigInt(
+          financialInteger(event.resulting_net_refund_usd_cents, 0n),
+        );
+        if (
+          resulting !== previous - effect ||
+          BigInt(financialInteger(row.net_refund_usd_cents)) !== resulting
+        )
+          invalidFinancial();
+        if (op === "refundReturn") {
+          if (
+            event.correction_kind !== "VALUE_CORRECTION" ||
+            event.reverses_correction_id !== null ||
+            event.verified_return_currency !== "USD" ||
+            effect !==
+              BigInt(financialInteger(body.returned_amount_minor, 1n)) ||
+            BigInt(financialInteger(event.verified_return_amount_minor, 1n)) !==
+              effect ||
+            event.return_method_reference !== body.return_method_reference ||
+            financialInstant(event.verified_returned_at) !==
+              financialInstant(body.returned_at)
+          )
+            invalidFinancial();
+        } else {
+          same(event.reverses_correction_id, request.target.correctionId);
+          if (
+            event.correction_kind !== "CORRECTION_REVERSAL" ||
+            effect >= 0n ||
+            financialId(event.id) ===
+              financialId(request.target.correctionId) ||
+            event.verified_return_amount_minor !== null ||
+            event.verified_return_currency !== null ||
+            event.verified_returned_at !== null ||
+            event.return_method_reference !== null
+          )
+            invalidFinancial();
+        }
+        break;
+      }
       case "refundCreate": {
         const item = refund(row, prop);
         const source = financialObject(item.source),
