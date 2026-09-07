@@ -22623,6 +22623,234 @@
       "test_path": "frontend/src/financialReferenceClient.test.ts",
       "status": "implemented",
       "notes": "Captured cursor is normalized before request and response comparison; equal or earlier returned page IDs rejected and strictly later ID accepted even with uppercase input."
+    },
+    {
+      "test_id": "test_financial_reference_http_preserves_backend_valid_unicode_evidence",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_financial_reference_api.py",
+      "status": "implemented",
+      "notes": "Actual preview HTTP/service preserves automatic and authorized outage/manual evidence with internal whitespace, 300/500 supplementary code points and FEFF boundaries."
+    },
+    {
+      "test_id": "test_financial_reference_http_keeps_whole_valid_configured_labels",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_financial_reference_api.py",
+      "status": "implemented",
+      "notes": "Actual reference HTTP/service returns whole configured names, codes and labels containing tabs/newlines and supplementary characters."
+    },
+    {
+      "test_id": "test_financial_reference_http_malformed_source_is_unavailable_before_manual_conflict",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_financial_reference_api.py",
+      "status": "implemented",
+      "notes": "Twelve real route/service scenarios return safe503 for invalid/future provider evidence with and without manual input; exactly one provider call and unchanged accepted confirmation conflict contract."
+    },
+    {
+      "test_id": "TEST-FE-348",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Automatic/manual evidence compatibility with backend Unicode code-point counting and internal whitespace, exact returned text and one dispatch."
+    },
+    {
+      "test_id": "TEST-FE-349",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Whole workspace/method labels and method codes preserved despite internal whitespace and long supplementary characters; shared fixture flags isolated."
+    },
+    {
+      "test_id": "TEST-FE-350",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Rejects501code-point, Python-boundary whitespace, NUL and unpaired-surrogate evidence before dispatch."
+    },
+    {
+      "test_id": "TEST-FE-351",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Noncooperating reference fetch arriving after abort/deadline is cancelled; closed stream rejects further oversized enqueue."
+    },
+    {
+      "test_id": "TEST-FE-352",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Reference body cancelled after correlation/content-type/declared-length rejection before reader acquisition."
+    },
+    {
+      "test_id": "TEST-FE-353",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialClient.test.ts",
+      "status": "implemented",
+      "notes": "Identical inherited financial transport late-body regression: explicit abort/deadline cancellation without a duplicate dispatch."
+    },
+    {
+      "test_id": "TEST-FE-354",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialClient.test.ts",
+      "status": "implemented",
+      "notes": "Inherited financial transport cancels bodies rejected before reader acquisition without changing response validation or recovery."
+    },
+    {
+      "test_id": "TEST-FE-355",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Actual Chromium reference transport preserves whole valid configured labels and manual Unicode/internal-whitespace evidence."
+    },
+    {
+      "test_id": "TEST-FE-356",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Actual Chromium cancels late reference and financial bodies, even when cleanup itself never settles; resulting streams are closed."
     }
   ]
 }

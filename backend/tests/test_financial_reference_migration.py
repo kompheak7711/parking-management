@@ -23,6 +23,7 @@ def test_financial_reference_runtime_pages_keep_method_identities_and_skip_retir
 ) -> None:
     prefix = str(uuid4())
     ids = [uuid4() for _ in range(105)]
+    legacy_label = "Legacy\nlabel\t" + "😀" * 500 + "x" * 3000
     with psycopg.connect(migrated_database_url) as connection:
         human, prop, _, _ = setup_reservation_sources(connection)
         baseline = connection.execute(
@@ -36,7 +37,7 @@ def test_financial_reference_runtime_pages_keep_method_identities_and_skip_retir
                 (
                     identity,
                     f"{prefix}-{index}",
-                    "Legacy label " + "x" * (3000 if index == 0 else 1),
+                    legacy_label if index == 0 else "Legacy label x",
                     index != 104,
                     human,
                     human,
@@ -64,6 +65,10 @@ def test_financial_reference_runtime_pages_keep_method_identities_and_skip_retir
             (str(row[0]), row[1], row[2]) for row in expected
         ]
         assert str(ids[104]) not in {item["id"] for item in observed}
+        assert (
+            next(item for item in observed if item["id"] == str(ids[0]))["display_name"]
+            == legacy_label
+        )
         workspaces = service.workspaces(ReferencePage(1), actor=current)
         work = cast(list[dict[str, object]], workspaces["items"])
         assert len(work) == 1 and work[0]["property_id"] == str(prop)

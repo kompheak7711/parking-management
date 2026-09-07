@@ -4,7 +4,11 @@ import {
   FINANCIAL_CAPABILITIES,
   FinancialReferenceError,
 } from "../financialReferenceClient";
-import { financialObject } from "../financialContracts";
+import {
+  captureFinancialRequest,
+  financialObject,
+} from "../financialContracts";
+import { createFinancialTransport } from "../financialClient";
 import { stringifyFinancialJson } from "../financialJson";
 import { sealedIntentStore } from "../sealedIntentStore";
 function check(value: unknown, message: string): asserts value {
@@ -220,5 +224,135 @@ export async function runFinancialReferenceBrowserChecks(): Promise<string[]> {
   } finally {
     await sealedIntentStore.clear(actor, key);
   }
+
+  const evidence = "Synthetic\nsource\t" + "😀".repeat(300),
+    displayName = "Cash\tcounter\n" + "😀".repeat(700);
+  const compatible: typeof fetch = (url, init) => {
+    const id = new Headers(init?.headers).get("X-Request-ID");
+    check(id && typeof url === "string", "Scoped compatible reference");
+    const preview = url.endsWith("/khr-preview"),
+      global = url.endsWith("/financial-workspaces");
+    const data = preview
+      ? {
+          ...financialObject(quote.data),
+          source_reference: evidence,
+          fallback_reason: evidence,
+          rate_source: "ABA_EQUIVALENT_MANUAL",
+          automatic_source_unavailable: true,
+        }
+      : global
+        ? [
+            {
+              property_id: property,
+              name: displayName,
+              timezone: "Asia/Phnom_Penh",
+              capabilities: permissions,
+            },
+          ]
+        : [
+            {
+              id: method,
+              property_id: property,
+              code: "Cash\tcounter",
+              display_name: displayName,
+            },
+          ];
+    return Promise.resolve(
+      new Response(
+        JSON.stringify({
+          data,
+          meta: {
+            actor_id: actor,
+            request_id: id,
+            ...(global ? {} : { property_id: property }),
+          },
+          ...(preview ? {} : { page: { limit: 50, next_cursor: null } }),
+        }),
+        { headers: { "Content-Type": "application/json", "X-Request-ID": id } },
+      ),
+    );
+  };
+  const compatibleClient = createFinancialReferenceClient(
+    compatible,
+    () => "synthetic-csrf",
+  );
+  for (const operation of ["workspaces", "methods"] as const) {
+    const reply = await compatibleClient.read(
+      operation === "workspaces"
+        ? { actorId: actor, signal: scope.signal }
+        : scope,
+      { operation },
+    );
+    check(Array.isArray(reply.data), "Compatible reference page");
+    check(
+      financialObject(reply.data[0])[
+        operation === "workspaces" ? "name" : "display_name"
+      ] === displayName,
+      "Whole configured label survives actual browser transport",
+    );
+  }
+  const manualReply = await compatibleClient.read(scope, {
+    operation: "khrPreview",
+    usd_amount_cents: 1001,
+    manual_reference: {
+      reference_rate_khr_per_usd: "4062.000000",
+      source_reference: evidence,
+      applicable_at: "2026-05-01T00:00:00Z",
+      fallback_reason: evidence,
+    },
+  });
+  check(
+    financialObject(manualReply.data).source_reference === evidence &&
+      financialObject(manualReply.data).fallback_reason === evidence,
+    "Unicode and internal whitespace manual evidence remains exact",
+  );
+  passed.push("TEST-FE-355");
+
+  for (const transport of ["reference", "financial"] as const) {
+    const abort = new AbortController();
+    let finish: ((value: Response) => void) | undefined;
+    const cancellation = { count: 0 };
+    const late: typeof fetch = () =>
+      new Promise<Response>((resolve) => {
+        finish = resolve;
+      });
+    const context = { ...scope, signal: abort.signal };
+    const request =
+      transport === "reference"
+        ? createFinancialReferenceClient(late).read(context, {
+            operation: "methods",
+          })
+        : createFinancialTransport(late).send(
+            context,
+            captureFinancialRequest({ operation: "paymentList", target: {} }),
+          );
+    const result = request.catch((error: unknown) => error);
+    abort.abort();
+    check(
+      (await result) instanceof Error,
+      "Interrupted request settles without a response",
+    );
+    check(finish, "Synthetic fetch was dispatched");
+    const stream = new ReadableStream<Uint8Array>({
+      cancel() {
+        cancellation.count += 1;
+        return new Promise<void>(() => {
+          /* Cleanup itself deliberately never settles. */
+        });
+      },
+    });
+    finish(new Response(stream));
+    await Promise.resolve();
+    await Promise.resolve();
+    check(
+      cancellation.count === 1,
+      "Late stream is cancelled in actual Chromium",
+    );
+    check(
+      (await stream.getReader().read()).done,
+      "Cancelled late stream is closed despite noncooperating cleanup",
+    );
+  }
+  passed.push("TEST-FE-356");
   return passed;
 }

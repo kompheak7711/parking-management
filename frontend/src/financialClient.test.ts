@@ -456,3 +456,85 @@ describe("989d934 error correlation regression", () => {
     },
   );
 });
+
+describe("shared late-body cleanup regression", () => {
+  it.each(["abort", "deadline"])(
+    "TEST-FE-353 cancels an inherited financial transport body arriving after %s",
+    async (kind) => {
+      vi.useFakeTimers();
+      const controller = new AbortController(),
+        cancel = vi.fn();
+      let resolve: ((value: Response) => void) | undefined;
+      let streamController:
+        | ReadableStreamDefaultController<Uint8Array>
+        | undefined;
+      const fetcher = vi.fn<typeof fetch>(
+        () =>
+          new Promise<Response>((done) => {
+            resolve = done;
+          }),
+      );
+      const pending = createFinancialTransport(fetcher).send(
+        { ...scope(), signal: controller.signal },
+        captureFinancialRequest(read(0)),
+      );
+      const rejected = expect(pending).rejects.toMatchObject({
+        code: kind === "abort" ? "WORKSPACE_INVALIDATED" : "UNAVAILABLE",
+      });
+      if (kind === "abort") controller.abort();
+      else await vi.advanceTimersByTimeAsync(FINANCIAL_DEADLINE_MS + 1);
+      await rejected;
+      if (!resolve) throw new Error();
+      resolve(
+        new Response(
+          new ReadableStream<Uint8Array>({
+            start(value) {
+              streamController = value;
+            },
+            cancel,
+          }),
+        ),
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(cancel).toHaveBeenCalledOnce();
+      expect(() =>
+        streamController?.enqueue(new Uint8Array(FINANCIAL_REPLY_BYTES + 1)),
+      ).toThrow();
+      expect(fetcher).toHaveBeenCalledOnce();
+    },
+  );
+  it.each(["correlation", "content_type", "content_length"])(
+    "TEST-FE-354 cancels an inherited financial body rejected before reader for %s",
+    async (kind) => {
+      const cancel = vi.fn();
+      const fetcher = vi.fn<typeof fetch>((_url, init) =>
+        Promise.resolve(
+          new Response(new ReadableStream<Uint8Array>({ cancel }), {
+            headers: {
+              "Content-Type":
+                kind === "content_type" ? "text/plain" : "application/json",
+              "X-Request-ID":
+                kind === "correlation"
+                  ? "wrong"
+                  : (new Headers(init?.headers).get("X-Request-ID") ?? ""),
+              ...(kind === "content_length"
+                ? { "Content-Length": (FINANCIAL_REPLY_BYTES + 1).toString() }
+                : {}),
+            },
+          }),
+        ),
+      );
+      await expect(
+        createFinancialTransport(fetcher).send(
+          scope(),
+          captureFinancialRequest(read(0)),
+        ),
+      ).rejects.toMatchObject({
+        code:
+          kind === "content_length" ? "RESPONSE_TOO_LARGE" : "INVALID_RESPONSE",
+      });
+      expect(cancel).toHaveBeenCalledOnce();
+    },
+  );
+});

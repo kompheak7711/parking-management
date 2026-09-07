@@ -98,3 +98,6 @@ automatic enforcement. Preserve rejected5578/989/b7/reports/all regressions. Sep
 Workboard private-note hold is unresolved and is not retried. After acceptance,
 complete staff UI/full52release/CI/refs/same-card/durable closure before53;
 fully closed53pausesSAME native, OpenClawdisabled, no54.
+
+
+Correction1 after rejected456910f: preserve backend-valid whole legacy labels, internal tabs/newlines and Unicode evidence measured in code points, while matching existing evidence normalization and UTF-8/NUL rules. Keep byte ceilings. Preview validates automatic source before manual conflict; only explicit approved source outage allows fallback, without changing confirmation/replay. Both affected transports own/cancel late response bodies and bodies rejected before reader acquisition; cleanup must not block settlement or alter financial recovery. All three findings and identical inherited cleanup receive red/green tests and fresh complete8a-base review.

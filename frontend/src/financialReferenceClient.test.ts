@@ -39,7 +39,7 @@ function fixture(operation: string): FinancialObject {
             property_id: property,
             name: "Synthetic property",
             timezone: "Asia/Phnom_Penh",
-            capabilities: permissions,
+            capabilities: { ...permissions },
           },
         ]
       : operation === "methods"
@@ -52,7 +52,7 @@ function fixture(operation: string): FinancialObject {
             },
           ]
         : operation === "capabilities"
-          ? { property_id: property, capabilities: permissions }
+          ? { property_id: property, capabilities: { ...permissions } }
           : {
               property_id: property,
               usd_amount_cents: 1001,
@@ -386,6 +386,7 @@ describe("financial references and provisional preview", () => {
             if (operation === "capabilities") {
               financialObject(financialObject(row.data).capabilities).admin =
                 true;
+              expect(permissions).not.toHaveProperty("admin");
               return;
             }
             if (mode === "wrong_method_property" && Array.isArray(row.data))
@@ -525,6 +526,193 @@ describe("financial references and provisional preview", () => {
       expect(fetcher.mock.calls[0]?.[0]).toBe(
         `/api/v1/properties/${property}/payment-methods?cursor=${cursor.toLowerCase()}`,
       );
+    },
+  );
+});
+
+describe("reference review correction1", () => {
+  it.each([
+    "Synthetic\nreference",
+    "Cash\tcounter",
+    "😀".repeat(300),
+    "😀".repeat(500),
+    "\ufeffReference\ufeff",
+  ])(
+    "TEST-FE-348 preserves backend-valid evidence %s through automatic and manual preview",
+    async (value) => {
+      for (const manualInput of [false, true]) {
+        const selected = {
+          reference_rate_khr_per_usd: "4062.000000",
+          source_reference: value,
+          applicable_at: "2026-05-01T00:00:00Z",
+          fallback_reason: value,
+        };
+        const fetcher = vi.fn<typeof fetch>((_url, init) =>
+          Promise.resolve(
+            response("khrPreview", init ?? {}, (row) => {
+              Object.assign(financialObject(row.data), {
+                source_reference: value,
+                fallback_reason: manualInput ? value : null,
+                rate_source: manualInput
+                  ? "ABA_EQUIVALENT_MANUAL"
+                  : "ABA_AUTOMATIC",
+                automatic_source_unavailable: manualInput,
+              });
+            }),
+          ),
+        );
+        const result = await createFinancialReferenceClient(
+          fetcher,
+          () => "csrf",
+        ).read(scope("khrPreview"), {
+          operation: "khrPreview",
+          usd_amount_cents: 1001,
+          ...(manualInput ? { manual_reference: selected } : {}),
+        });
+        expect(financialObject(result.data).source_reference).toBe(value);
+        expect(financialObject(result.data).fallback_reason).toBe(
+          manualInput ? value : null,
+        );
+        expect(fetcher).toHaveBeenCalledOnce();
+      }
+    },
+  );
+  it.each(["workspaces", "methods"] as const)(
+    "TEST-FE-349 preserves whole configured %s labels",
+    async (operation) => {
+      const label = "Synthetic\nCash\tcounter " + "😀".repeat(700);
+      const fetcher = vi.fn<typeof fetch>((_url, init) =>
+        Promise.resolve(
+          response(operation, init ?? {}, (row) => {
+            if (!Array.isArray(row.data)) throw new Error();
+            const item = financialObject(row.data[0]);
+            item[operation === "workspaces" ? "name" : "display_name"] = label;
+            if (operation === "methods") item.code = "Cash\tcounter";
+          }),
+        ),
+      );
+      const result = await createFinancialReferenceClient(fetcher).read(
+        scope(operation),
+        { operation },
+      );
+      if (!Array.isArray(result.data)) throw new Error();
+      expect(
+        financialObject(result.data[0])[
+          operation === "workspaces" ? "name" : "display_name"
+        ],
+      ).toBe(label);
+    },
+  );
+  it.each([
+    "😀".repeat(501),
+    "\u001cReference",
+    "Reference\u001f",
+    "Reference\0source",
+    "\ud800",
+  ])(
+    "TEST-FE-350 rejects evidence outside the backend contract %s",
+    async (value) => {
+      const fetcher = vi.fn<typeof fetch>();
+      await expect(
+        createFinancialReferenceClient(fetcher, () => "csrf").read(
+          scope("khrPreview"),
+          {
+            operation: "khrPreview",
+            usd_amount_cents: 1001,
+            manual_reference: {
+              reference_rate_khr_per_usd: "4062.000000",
+              source_reference: value,
+              applicable_at: "2026-05-01T00:00:00Z",
+              fallback_reason: "outage",
+            },
+          },
+        ),
+      ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+      expect(fetcher).not.toHaveBeenCalled();
+    },
+  );
+  it.each(["abort", "deadline"])(
+    "TEST-FE-351 cancels a body arriving after %s",
+    async (kind) => {
+      vi.useFakeTimers();
+      const controller = new AbortController(),
+        cancel = vi.fn();
+      let resolve: ((value: Response) => void) | undefined;
+      let streamController:
+        | ReadableStreamDefaultController<Uint8Array>
+        | undefined;
+      const fetcher = vi.fn<typeof fetch>(
+        () =>
+          new Promise<Response>((done) => {
+            resolve = done;
+          }),
+      );
+      const pending = createFinancialReferenceClient(fetcher).read(
+        scope("methods", controller.signal),
+        { operation: "methods" },
+      );
+      const rejected = expect(pending).rejects.toMatchObject({
+        code: kind === "abort" ? "WORKSPACE_INVALIDATED" : "UNAVAILABLE",
+      });
+      if (kind === "abort") controller.abort();
+      else await vi.advanceTimersByTimeAsync(FINANCIAL_DEADLINE_MS + 1);
+      await rejected;
+      if (!resolve) throw new Error();
+      resolve(
+        new Response(
+          new ReadableStream<Uint8Array>({
+            start(value) {
+              streamController = value;
+            },
+            cancel,
+          }),
+        ),
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(cancel).toHaveBeenCalledOnce();
+      expect(() =>
+        streamController?.enqueue(
+          new Uint8Array(FINANCIAL_REFERENCE_REPLY_BYTES + 1),
+        ),
+      ).toThrow();
+      expect(fetcher).toHaveBeenCalledOnce();
+    },
+  );
+  it.each(["correlation", "content_type", "content_length"])(
+    "TEST-FE-352 cancels a body rejected before reader acquisition for %s",
+    async (kind) => {
+      const cancel = vi.fn();
+      const fetcher = vi.fn<typeof fetch>((_url, init) =>
+        Promise.resolve(
+          new Response(new ReadableStream<Uint8Array>({ cancel }), {
+            headers: {
+              "Content-Type":
+                kind === "content_type" ? "text/plain" : "application/json",
+              "X-Request-ID":
+                kind === "correlation"
+                  ? "wrong"
+                  : (new Headers(init?.headers).get("X-Request-ID") ?? ""),
+              ...(kind === "content_length"
+                ? {
+                    "Content-Length": (
+                      FINANCIAL_REFERENCE_REPLY_BYTES + 1
+                    ).toString(),
+                  }
+                : {}),
+            },
+          }),
+        ),
+      );
+      await expect(
+        createFinancialReferenceClient(fetcher).read(scope("methods"), {
+          operation: "methods",
+        }),
+      ).rejects.toMatchObject({
+        code:
+          kind === "content_length" ? "RESPONSE_TOO_LARGE" : "INVALID_RESPONSE",
+      });
+      expect(cancel).toHaveBeenCalledOnce();
     },
   );
 });

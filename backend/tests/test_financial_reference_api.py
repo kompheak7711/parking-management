@@ -1,19 +1,32 @@
 """Authorization, bounded strict requests, no-store and correlation for references."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from typing import cast
+from unittest.mock import MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
 
 from property_rental.app import create_app
-from property_rental.financial_reference import ReferencePage, capabilities
+from property_rental.configuration_api import ExchangeRateQuote, ExchangeRateSourceUnavailable
+from property_rental.financial_reference import (
+    FinancialReferenceService,
+    ReferencePage,
+    capabilities,
+)
 from property_rental.identity import AuthenticatedActor
-from property_rental.khr_payment_confirmation import ManualKhrReference
+from property_rental.khr_payment_confirmation import (
+    KhrPaymentConfirmationService,
+    ManualKhrReference,
+)
+from property_rental.payment_confirmation import PaymentConfirmationConflictError
 from property_rental.payment_read import PaymentReadUnavailableError
 from test_credit_migration import actor
 from test_invoice import mutation_headers as invoice_headers
+from test_khr_payment_confirmation import manual, provider
 
 
 def mutation_headers() -> dict[str, str]:
@@ -290,3 +303,107 @@ def test_financial_reference_preview_manual_grant_checked_before_flow_and_error_
         error = api.get(route("methods", prop))
     assert error.status_code == 503 and "private SQL" not in error.text
     assert error.json()["meta"]["request_id"] == error.headers["X-Request-ID"]
+
+
+@pytest.mark.parametrize(
+    "value",
+    ["Synthetic\nreference", "Cash\tcounter", "😀" * 300, "😀" * 500, "\ufeffReference\ufeff"],
+)
+@pytest.mark.parametrize("manual_input", [False, True])
+def test_financial_reference_http_preserves_backend_valid_unicode_evidence(
+    value: str, manual_input: bool
+) -> None:
+    prop, human = uuid4(), uuid4()
+    current = actor(human, prop, "payments.record", "exchange_rates.manage")
+    source = provider()
+    source.quote = replace(source.quote, source_reference=value)
+    payload: dict[str, object] = {"usd_amount_cents": 1001}
+    if manual_input:
+        source.error = ExchangeRateSourceUnavailable("synthetic outage")
+        payload["manual_reference"] = {
+            **manual().intent(),
+            "source_reference": value,
+            "fallback_reason": value,
+        }
+    service = FinancialReferenceService("synthetic", source)
+    with (
+        patch.object(FinancialReferenceService, "_read"),
+        TestClient(
+            create_app(actor_resolver=lambda _: current, financial_reference_flow=service)
+        ) as api,
+    ):
+        api.cookies.set("__Host-prm_csrf", "csrf")
+        response = api.post(route("preview", prop), json=payload, headers=mutation_headers())
+    assert response.status_code == 200 and source.calls == 1
+    assert response.json()["data"]["source_reference"] == value
+    assert response.json()["data"]["fallback_reason"] == (value if manual_input else None)
+    assert response.json()["data"]["payable_khr_amount"] == 40871
+
+
+@pytest.mark.parametrize("kind", ["workspaces", "methods"])
+def test_financial_reference_http_keeps_whole_valid_configured_labels(kind: str) -> None:
+    prop, human, method_id = uuid4(), uuid4(), uuid4()
+    label = "Synthetic\nCash\tcounter " + "😀" * 700
+    connection = MagicMock()
+    connection.execute.return_value.fetchall.return_value = (
+        [(prop, label, "Asia/Phnom_Penh")]
+        if kind == "workspaces"
+        else [(method_id, "Cash\tcounter", label)]
+    )
+    current = actor(human, prop, "payments.record")
+    service = FinancialReferenceService("synthetic")
+    with (
+        patch.object(FinancialReferenceService, "_read") as read,
+        TestClient(
+            create_app(actor_resolver=lambda _: current, financial_reference_flow=service)
+        ) as api,
+    ):
+        read.return_value.__enter__.return_value = connection
+        response = api.get(route(kind, prop))
+    assert response.status_code == 200
+    row = response.json()["data"][0]
+    assert row["name" if kind == "workspaces" else "display_name"] == label
+    if kind == "methods":
+        assert row["code"] == "Cash\tcounter"
+
+
+@pytest.mark.parametrize(
+    "malformation", ["none", "wrong_type", "nan", "precision", "blank", "future"]
+)
+@pytest.mark.parametrize("manual_input", [False, True])
+def test_financial_reference_http_malformed_source_is_unavailable_before_manual_conflict(
+    malformation: str, manual_input: bool
+) -> None:
+    prop, human = uuid4(), uuid4()
+    current = actor(human, prop, "payments.record", "exchange_rates.manage")
+    source = provider()
+    choices = {
+        "none": None,
+        "wrong_type": "private malformed quote",
+        "nan": replace(source.quote, reference_rate_khr_per_usd=Decimal("NaN")),
+        "precision": replace(source.quote, reference_rate_khr_per_usd=Decimal("0.0000001")),
+        "blank": replace(source.quote, source_reference=""),
+        "future": replace(source.quote, applicable_at=datetime.now(UTC) + timedelta(days=1)),
+    }
+    source.quote = cast(ExchangeRateQuote, choices[malformation])
+    payload: dict[str, object] = {"usd_amount_cents": 1001}
+    if manual_input:
+        payload["manual_reference"] = manual().intent()
+    with (
+        patch.object(FinancialReferenceService, "_read"),
+        TestClient(
+            create_app(
+                actor_resolver=lambda _: current,
+                financial_reference_flow=FinancialReferenceService("synthetic", source),
+            )
+        ) as api,
+    ):
+        api.cookies.set("__Host-prm_csrf", "csrf")
+        response = api.post(route("preview", prop), json=payload, headers=mutation_headers())
+    assert response.status_code == 503 and source.calls == 1
+    assert response.json()["error"]["code"] == "SERVICE_UNAVAILABLE"
+    assert "data" not in response.json() and "manual_fallback_allowed" not in response.text
+    assert "private malformed" not in response.text
+    # The accepted confirmation selector's existing conflict/replay contract is untouched.
+    with pytest.raises(PaymentConfirmationConflictError):
+        KhrPaymentConfirmationService("synthetic", source)._selection(manual())

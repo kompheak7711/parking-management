@@ -97,6 +97,9 @@ export function createFinancialTransport(
       let observedStatus: number | null = null;
       const controller = new AbortController();
       let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+      const responseBody: { current: ReadableStream<Uint8Array> | null } = {
+        current: null,
+      };
       let timer: ReturnType<typeof setTimeout> | undefined;
       let release = () => {
         /* Replaced when the abort listener is registered. */
@@ -169,6 +172,15 @@ export function createFinancialTransport(
             redirect: "error",
             signal: controller.signal,
             ...(command ? { body: request.wireBody ?? "" } : {}),
+          }).then((received) => {
+            responseBody.current = received.body;
+            // A noncooperating fetch may resolve after the raced request has
+            // already settled. Its body must still have an explicit owner.
+            if (financialAborted(controller.signal))
+              void responseBody.current?.cancel().catch(() => {
+                /* Best-effort late-body cancellation must not delay settlement. */
+              });
+            return received;
           }),
         );
         observedStatus = response.status;
@@ -283,6 +295,10 @@ export function createFinancialTransport(
         if (reader)
           void reader.cancel().catch(() => {
             /* Cancellation is best effort after the bounded result settles. */
+          });
+        else
+          void responseBody.current?.cancel().catch(() => {
+            /* Header/length rejection can precede reader acquisition. */
           });
       }
     },

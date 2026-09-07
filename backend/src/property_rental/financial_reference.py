@@ -20,6 +20,7 @@ from property_rental.khr_payment_confirmation import (
     select_khr_reference,
 )
 from property_rental.payment_confirmation import (
+    PaymentConfirmationConflictError,
     PaymentConfirmationInvalidError,
     PaymentConfirmationUnavailableError,
 )
@@ -223,14 +224,30 @@ class FinancialReferenceService:
             "provisional": True,
         }
         try:
-            selected = select_khr_reference(self.provider, manual)
+            # Preview must establish valid automatic evidence before calling it
+            # available. Keep the accepted confirmation selector/replay unchanged.
+            selected = select_khr_reference(self.provider, None)
         except ApprovedKhrSourceUnavailable:
-            return {**common, "status": "source_unavailable", "manual_fallback_allowed": allowed}
+            if manual is None:
+                return {
+                    **common,
+                    "status": "source_unavailable",
+                    "manual_fallback_allowed": allowed,
+                }
+            selected = {
+                **manual.intent(),
+                "rate_source": "ABA_EQUIVALENT_MANUAL",
+                "automatic_source_unavailable": True,
+            }
         applicable = datetime.fromisoformat(cast(str, selected["applicable_at"]))
         if applicable > datetime.now(UTC):
-            if manual is not None:
+            if selected["automatic_source_unavailable"] is True:
                 raise PaymentConfirmationInvalidError("Manual reference timestamp is in the future")
             raise PaymentConfirmationUnavailableError("Approved reference timestamp is invalid")
+        if manual is not None and selected["automatic_source_unavailable"] is False:
+            raise PaymentConfirmationConflictError(
+                "Automatic source is available; manual fallback is not permitted"
+            )
         millionths = int(cast(str, selected["reference_rate_khr_per_usd"]).replace(".", ""))
         marked = millionths * 1005
         rate = (marked + 1_000_000_000 - 1) // 1_000_000_000

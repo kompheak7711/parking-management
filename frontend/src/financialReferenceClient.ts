@@ -83,18 +83,33 @@ export class FinancialReferenceError extends Error {
     this.name = "FinancialReferenceError";
   }
 }
-function text(value: unknown, limit = FINANCIAL_REFERENCE_REPLY_BYTES): string {
+// Existing PostgreSQL labels use btrim's ASCII-space nonblank check. They have
+// no character ceiling; the bounded UTF-8 response budget still applies.
+function label(value: unknown): string {
+  if (typeof value !== "string" || !/[^ ]/.test(value) || value.includes("\0"))
+    invalidFinancial();
+  return value;
+}
+// Match Python str.strip and len for the existing bounded FX evidence contract.
+// FEFF is not Python boundary whitespace; internal whitespace remains valid.
+const evidenceBoundarySpace = new Set([
+  9, 10, 11, 12, 13, 28, 29, 30, 31, 32, 133, 160, 5760, 8192, 8193, 8194, 8195,
+  8196, 8197, 8198, 8199, 8200, 8201, 8202, 8232, 8233, 8239, 8287, 12288,
+]);
+function evidenceText(value: unknown): string {
+  const checked = label(value),
+    characters = Array.from(checked);
   if (
-    typeof value !== "string" ||
-    !value.trim() ||
-    value.length > limit ||
-    Array.from(value).some((character) => {
-      const code = character.codePointAt(0) ?? 0;
-      return code < 32 || (code >= 127 && code <= 159);
+    characters.length > 500 ||
+    evidenceBoundarySpace.has(checked.charCodeAt(0)) ||
+    evidenceBoundarySpace.has(checked.charCodeAt(checked.length - 1)) ||
+    characters.some((character) => {
+      const point = character.codePointAt(0) ?? 0;
+      return point >= 0xd800 && point <= 0xdfff;
     })
   )
     invalidFinancial();
-  return value;
+  return checked;
 }
 function rate(value: unknown): bigint {
   if (
@@ -117,8 +132,8 @@ function manual(value: unknown): FinancialObject {
     "fallback_reason",
   ]);
   rate(row.reference_rate_khr_per_usd);
-  text(row.source_reference, 500);
-  text(row.fallback_reason, 500);
+  evidenceText(row.source_reference);
+  evidenceText(row.fallback_reason);
   financialInstant(row.applicable_at);
   return row;
 }
@@ -188,7 +203,7 @@ function validate(
       last = identity;
       if (input.operation === "workspaces") {
         exactKeys(row, ["property_id", "name", "timezone", "capabilities"]);
-        text(row.name);
+        label(row.name);
         if (row.timezone !== "Asia/Phnom_Penh") invalidFinancial();
         const permissions = grants(row.capabilities);
         if (
@@ -198,8 +213,8 @@ function validate(
       } else {
         exactKeys(row, ["id", "property_id", "code", "display_name"]);
         if (row.property_id !== propertyId) invalidFinancial();
-        text(row.code);
-        text(row.display_name);
+        label(row.code);
+        label(row.display_name);
       }
     }
     const cursor =
@@ -249,7 +264,7 @@ function validate(
       if (row.status !== "available" || row.markup_basis_points !== 50)
         invalidFinancial();
       const reference = rate(row.reference_rate_khr_per_usd);
-      text(row.source_reference, 500);
+      evidenceText(row.source_reference);
       financialInstant(row.applicable_at);
       if (input.manual_reference === undefined) {
         if (
@@ -309,6 +324,9 @@ export function createFinancialReferenceClient(
       const controller = new AbortController();
       let timer: ReturnType<typeof setTimeout> | undefined;
       let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+      const responseBody: { current: ReadableStream<Uint8Array> | null } = {
+        current: null,
+      };
       let release = () => {
         /* Set after listener registration. */
       };
@@ -394,6 +412,15 @@ export function createFinancialReferenceClient(
             redirect: "error",
             signal: controller.signal,
             ...(body === undefined ? {} : { body }),
+          }).then((received) => {
+            responseBody.current = received.body;
+            // A noncooperating fetch may resolve after the raced request has
+            // already settled. Its body must still have an explicit owner.
+            if (financialAborted(controller.signal))
+              void responseBody.current?.cancel().catch(() => {
+                /* Best-effort late-body cancellation must not delay settlement. */
+              });
+            return received;
           }),
         );
         status = response.status;
@@ -489,6 +516,10 @@ export function createFinancialReferenceClient(
         if (reader)
           void reader.cancel().catch(() => {
             /* Best-effort stream cancellation after settlement. */
+          });
+        else
+          void responseBody.current?.cancel().catch(() => {
+            /* Header/length rejection can precede reader acquisition. */
           });
       }
     },
