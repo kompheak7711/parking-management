@@ -2,6 +2,32 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "TEST-FE-287",
+      "upstream_ids": [
+        "API-002",
+        "API-005",
+        "SEC-036",
+        "SEC-037"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialJson.test.ts",
+      "status": "implemented",
+      "notes": "Forged accessor-backed and frozen-data exact-number prototypes reject without invoking a getter; genuine constructor-created decimal tokens retain exact numeric wire output. Regression red on5578, correction1 uses private immutable constructor branding."
+    },
+    {
+      "test_id": "TEST-FE-288",
+      "upstream_ids": [
+        "API-015",
+        "API-018",
+        "SEC-036",
+        "SEC-044"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialRecovery.browser.ts",
+      "status": "implemented",
+      "notes": "Actual IndexedDB cursor proves a committed undefined value physically exists. Loading, clearing and beginning all reject while preserving that exact record; only owned synthetic fixture is cleaned. Regression red on5578 before atomic key-presence correction1."
+    },
+    {
       "test_id": "TEST-FE-260",
       "upstream_ids": [
         "API-002",

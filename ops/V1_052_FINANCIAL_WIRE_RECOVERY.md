@@ -106,3 +106,16 @@ TypeScript unit suites (including parameterized cases) and the browser harness
 success identifiers. Original Python/component inventory and all1469prior mappings
 remain intact;27new assertion mappings are added. No unexecuted browser success is
 claimed by static inventory: actual browser logs and exact-source hashes are required.
+
+## Independent review correction1
+
+Rejected5578d61 and its report remain preserved. Numeric serialization now uses a
+private constructor-created immutable token; forged prototypes cannot trigger a
+literal accessor or change the emitted token after validation. The storage
+transaction reads key existence separately from value, so a physically present
+undefined record fails closed for read, begin and clear. These changes preserve
+the existing key/value layout and database version. TEST-FE287 and TEST-FE288 add
+forged-tag and actual IndexedDB cursor-presence regressions, preserving all1496
+prior mappings for1498total. Both regressions first failed against5578runtime.
+Fresh full exact successor checks and complete9b-base independent review remain
+required before acceptance; the two findings each receive correction attempt1.

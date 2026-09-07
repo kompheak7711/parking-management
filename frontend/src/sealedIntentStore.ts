@@ -60,7 +60,7 @@ function database(): Promise<IDBDatabase> {
 async function transaction<T>(
   actorId: string,
   mode: IDBTransactionMode,
-  apply: (store: IDBObjectStore, stored: unknown) => T,
+  apply: (store: IDBObjectStore, stored: unknown, present: boolean) => T,
 ): Promise<T> {
   identity(actorId);
   const db = await database();
@@ -68,6 +68,8 @@ async function transaction<T>(
     return await new Promise<T>((resolve, reject) => {
       const tx = db.transaction("pending", mode);
       const store = tx.objectStore("pending");
+      // Key existence and value are read atomically; a stored undefined is present.
+      const presence = store.getKey(actorId);
       const request = store.get(actorId);
       let result: T;
       tx.oncomplete = () => {
@@ -78,7 +80,11 @@ async function transaction<T>(
       };
       request.onsuccess = () => {
         try {
-          result = apply(store, request.result as unknown);
+          result = apply(
+            store,
+            request.result as unknown,
+            presence.result !== undefined,
+          );
         } catch {
           tx.abort();
         }
@@ -124,10 +130,10 @@ export const sealedIntentStore: SealedIntentStore = {
       const stored = await transaction(
         actorId,
         "readonly",
-        (_store, value) => value,
+        (_store, value, present) => ({ value, present }),
       );
-      if (stored === undefined) return null;
-      const record = sealed(stored);
+      if (!stored.present) return null;
+      const record = sealed(stored.value);
       const plaintext = await crypto.subtle.decrypt(
         {
           name: "AES-GCM",
@@ -176,8 +182,8 @@ export const sealedIntentStore: SealedIntentStore = {
         key,
         data,
       );
-      await transaction(actorId, "readwrite", (store, existing) => {
-        if (existing !== undefined) throw new IntentStorageError();
+      await transaction(actorId, "readwrite", (store, _existing, present) => {
+        if (present) throw new IntentStorageError();
         store.put(
           { key, iv, ciphertext, requestKey } satisfies SealedIntent,
           actorId,
@@ -190,8 +196,8 @@ export const sealedIntentStore: SealedIntentStore = {
   async clear(actorId, requestKey) {
     try {
       identity(requestKey);
-      await transaction(actorId, "readwrite", (store, existing) => {
-        if (existing !== undefined) {
+      await transaction(actorId, "readwrite", (store, existing, present) => {
+        if (present) {
           if (sealed(existing).requestKey !== requestKey)
             throw new IntentStorageError();
           store.delete(actorId);

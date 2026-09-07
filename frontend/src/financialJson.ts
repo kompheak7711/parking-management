@@ -9,12 +9,16 @@ export class FinancialJsonError extends Error {
   }
 }
 
+// Only constructor-created instances carry a validated immutable numeric token.
+const exactNumberLiterals = new WeakMap<object, string>();
+
 export class ExactJsonNumber {
   readonly literal: string;
   constructor(literal: string) {
     if (typeof literal !== "string" || !numericLiteral.test(literal))
       throw new FinancialJsonError();
     this.literal = literal;
+    exactNumberLiterals.set(this, literal);
     Object.freeze(this);
   }
   toString(): string {
@@ -237,14 +241,12 @@ export function stringifyFinancialJson(
     else if (typeof current === "number") {
       if (!Number.isSafeInteger(current)) throw new FinancialJsonError();
       emit(Object.is(current, -0) ? "-0" : String(current));
-    } else if (current instanceof ExactJsonNumber) {
-      if (
-        typeof current.literal !== "string" ||
-        !numericLiteral.test(current.literal)
-      )
-        throw new FinancialJsonError();
-      emit(current.literal);
     } else if (typeof current === "object") {
+      const literal = exactNumberLiterals.get(current);
+      if (literal !== undefined) {
+        emit(literal);
+        continue;
+      }
       if (active.has(current)) throw new FinancialJsonError();
       const array = Array.isArray(current);
       if (

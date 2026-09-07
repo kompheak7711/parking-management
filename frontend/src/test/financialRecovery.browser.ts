@@ -420,3 +420,86 @@ export async function verifyRace(
   await sealedIntentStore.clear(id, winner);
   return "TEST-FE-284";
 }
+
+async function undefinedRecordProbe(
+  id: string,
+  operation: "insert" | "inspect" | "cleanup",
+): Promise<{ present: boolean; value: unknown }> {
+  check(id.startsWith("synthetic-financial-wire-"), "Synthetic actor required");
+  const db = await new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open(INTENT_DATABASE, 1);
+    request.onsuccess = () => {
+      resolve(request.result);
+    };
+    request.onerror = () => {
+      reject(new Error("Synthetic database unavailable"));
+    };
+  });
+  try {
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(
+        "pending",
+        operation === "inspect" ? "readonly" : "readwrite",
+      );
+      const store = tx.objectStore("pending");
+      if (operation === "insert") store.put(undefined, id);
+      if (operation === "cleanup") store.delete(id);
+      // An actual cursor distinguishes a present undefined value from no record.
+      const request = store.openCursor(IDBKeyRange.only(id));
+      let result: { present: boolean; value: unknown } = {
+        present: false,
+        value: undefined,
+      };
+      request.onsuccess = () => {
+        const cursor = request.result;
+        result = { present: cursor !== null, value: cursor?.value as unknown };
+      };
+      tx.oncomplete = () => {
+        resolve(result);
+      };
+      tx.onerror = tx.onabort = () => {
+        reject(new Error("Synthetic transaction failed"));
+      };
+    });
+  } finally {
+    db.close();
+  }
+}
+
+export async function verifyUndefinedPendingRecord(): Promise<string> {
+  const id = actor();
+  await sealedIntentStore.read(actor());
+  const inserted = await undefinedRecordProbe(id, "insert");
+  check(
+    inserted.present && inserted.value === undefined,
+    "TEST-FE-288 committed undefined fixture exists",
+  );
+  try {
+    await rejected(
+      () => sealedIntentStore.read(id),
+      "TEST-FE-288 existing undefined record must block read",
+    );
+    await rejected(
+      () => sealedIntentStore.clear(id, "unrelated-key"),
+      "TEST-FE-288 existing undefined record must block clear",
+    );
+    await rejected(
+      () =>
+        sealedIntentStore.begin(id, {
+          requestKey: "new-key",
+          plaintext: "synthetic",
+        }),
+      "TEST-FE-288 existing undefined record must block begin",
+    );
+    const remaining = await undefinedRecordProbe(id, "inspect");
+    check(
+      remaining.present && remaining.value === undefined,
+      "TEST-FE-288 original physical record preserved",
+    );
+  } finally {
+    // Remove only this explicitly owned synthetic fixture; never reset the store.
+    const cleaned = await undefinedRecordProbe(id, "cleanup");
+    check(!cleaned.present, "TEST-FE-288 synthetic fixture cleanup");
+  }
+  return "TEST-FE-288";
+}

@@ -156,4 +156,28 @@ describe("exact financial JSON", () => {
       expect(() => new ExactJsonNumber(literal)).toThrow(FinancialJsonError);
     expect(stringifyFinancialJson(-0)).toBe("-0");
   });
+  it("TEST-FE-287 rejects forged numeric tags without invoking their getters", () => {
+    let calls = 0;
+    const get = vi.fn(() => (++calls < 3 ? "0" : '0,"injected":true'));
+    const forged = Object.create(ExactJsonNumber.prototype) as object;
+    Object.defineProperty(forged, "literal", { enumerable: true, get });
+    expect(() => stringifyFinancialJson({ amount: forged })).toThrow(
+      FinancialJsonError,
+    );
+    expect(get).not.toHaveBeenCalled();
+
+    const fakeFrozenTag = Object.create(ExactJsonNumber.prototype) as object;
+    Object.defineProperty(fakeFrozenTag, "literal", {
+      value: "0",
+      enumerable: true,
+    });
+    Object.freeze(fakeFrozenTag);
+    expect(() => stringifyFinancialJson(fakeFrozenTag)).toThrow(
+      FinancialJsonError,
+    );
+    const genuine = new ExactJsonNumber("4100.12345678901234567890");
+    expect(stringifyFinancialJson({ amount: genuine })).toBe(
+      '{"amount":4100.12345678901234567890}',
+    );
+  });
 });
