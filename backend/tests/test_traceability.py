@@ -1093,3 +1093,65 @@ def test_reservation_deposit_outcomes_have_bounded_traceability() -> None:
     assert all(entry["status"] == "implemented" for entry in scoped_entries)
     assert required_authorities <= routed
     assert held_authorities.isdisjoint(routed)
+
+
+def test_v1052_payment_reversal_context_preserves_prior_manifest_and_complete_stage_maps() -> None:
+    import hashlib
+
+    entries = json.loads(MANIFEST_PATH.read_text())["entries"]
+    historical = json.dumps(entries[:1598], sort_keys=True, separators=(",", ":")).encode()
+    assert (
+        hashlib.sha256(historical).hexdigest()
+        == "a121fe8e1adc5075d7bfedbc5e7c93f55206d1893180cba73b6eebf00777cb5f"
+    )
+    required = {
+        "test_payment_reversal_context_limit_is_bounded",
+        "test_payment_reversal_context_same_snapshot_bounded_page_and_original_source",
+        "test_payment_reversal_context_database_complete_large_pages_and_revision_change",
+        "test_payment_reversal_context_database_coherent_snapshot_during_new_refund",
+        "test_payment_reversal_context_http_safe_source_and_changed_snapshot_errors",
+        "test_payment_reversal_context_action_grant_precedes_database",
+        "test_payment_reversal_context_fresh_identity_source_and_outage_fail_closed",
+        "test_payment_reversal_context_http_rejects_invalid_queries_before_projection",
+        "test_payment_reversal_context_http_identity_and_scope_precede_projection",
+        "TEST-FE-357",
+        "test_payment_reversal_context_database_allocation_impact_unwind_and_historical_results",
+        "test_payment_reversal_context_database_partial_full_refund_returns_and_correction_reversal",
+        "TEST-FE-362",
+        "TEST-FE-363",
+        "test_payment_reversal_context_database_unsupported_future_application_is_explicit",
+        "test_payment_reversal_context_database_statement_deadline_is_unavailable",
+        "test_payment_reversal_context_database_action_only_original_fx_and_no_writes",
+        "test_payment_reversal_context_database_pet_refund_and_return_use_deposit_revision",
+        "test_payment_reversal_context_database_other_payment_target_change_invalidates_result",
+        "TEST-FE-359",
+        "TEST-FE-361",
+        "TEST-FE-366",
+        "test_payment_reversal_context_changed_revision_rejects_continuation",
+        "TEST-FE-364",
+        "test_payment_reversal_context_refuses_incomplete_or_malformed_projection",
+        "TEST-FE-360",
+        "test_payment_reversal_context_database_migration_privileges_and_readonly_transaction",
+        "test_payment_reversal_context_database_charge_result_matches_authoritative_position",
+        "TEST-FE-358",
+        "TEST-FE-365",
+        "test_payment_reversal_context_database_credit_application_dependencies_and_results",
+        "test_payment_reversal_context_database_shared_deposit_descendants_deduplicated_and_guarded",
+        "test_payment_reversal_context_database_fresh_actor_precedes_source",
+        "test_payment_reversal_context_cursor_is_finite_canonical",
+        "test_payment_reversal_context_database_missing_property_source_and_cursor",
+        "test_payment_reversal_context_http_action_only_success_no_store_and_scope",
+    }
+    required.add(
+        "test_v1052_payment_reversal_context_preserves_prior_manifest_and_complete_stage_maps"
+    )
+    required.add("test_payment_reversal_context_database_void_invoice_has_zero_current_balance")
+    registered = {
+        entry["test_id"]: entry for entry in entries[1598:] if entry["test_id"] in required
+    }
+    assert set(registered) == required
+    assert all(entry["status"] == "implemented" for entry in registered.values())
+    assert all(
+        {"API-060", "UI-073", "UI-074", "SEC-022", "DB-PAY-006"} <= set(entry["upstream_ids"])
+        for entry in registered.values()
+    )

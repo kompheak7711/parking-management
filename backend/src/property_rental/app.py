@@ -129,6 +129,11 @@ from property_rental.payment_api import (
     payment_key_reused_response,
 )
 from property_rental.payment_confirmation import PaymentConfirmationKeyReused
+from property_rental.payment_reversal_context import PaymentReversalContextService
+from property_rental.payment_reversal_context_api import (
+    PaymentReversalContextFlow,
+    create_payment_reversal_context_router,
+)
 from property_rental.property_api import (
     PostgresPropertyResourceFlow,
     PropertyResourceFlow,
@@ -328,6 +333,7 @@ def create_app(
     late_payment_flow: LatePaymentFlow | None = None,
     payment_flow: PaymentFlow | None = None,
     financial_reference_flow: FinancialReferenceFlow | None = None,
+    payment_reversal_context_flow: PaymentReversalContextFlow | None = None,
     allocation_receipt_flow: AllocationReceiptFlow | None = None,
     credit_refund_flow: CreditRefundFlow | None = None,
 ) -> FastAPI:
@@ -845,6 +851,17 @@ def create_app(
                 exchange_rate_provider or UnavailableExchangeRateProvider(),
             ),
             resolved_settings,
+        )
+    )
+    app.include_router(
+        create_payment_reversal_context_router(
+            actor_resolver,
+            payment_reversal_context_flow
+            or PaymentReversalContextService(
+                resolved_settings.database_url.get_secret_value()
+                if resolved_settings.database_url is not None
+                else None
+            ),
         )
     )
     app.include_router(

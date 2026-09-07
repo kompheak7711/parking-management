@@ -1,3 +1,8 @@
+import {
+  ids as contextIds,
+  fixture as financialFixture,
+} from "./test/financialFixtures";
+import { PaymentReversalContextSequence } from "./paymentReversalContext";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FINANCIAL_DEADLINE_MS } from "./financialClient";
 import { financialObject, type FinancialObject } from "./financialContracts";
@@ -715,4 +720,572 @@ describe("reference review correction1", () => {
       expect(cancel).toHaveBeenCalledOnce();
     },
   );
+});
+
+const contextScope = () => ({
+  actorId: contextIds.actor,
+  propertyId: contextIds.property,
+  signal: new AbortController().signal,
+});
+const contextInput = (
+  view: "impact" | "result" = "impact",
+): FinancialReferenceRequest => ({
+  operation: "paymentReversalContext",
+  payment_id: contextIds.payment,
+  view,
+});
+const contextRevision = "a".repeat(64);
+const contextEvent = (
+  ordinal: number,
+  kind: string,
+  identity: string,
+  sourceKind: string,
+  source: string,
+  targetKind: string,
+  target: string,
+): FinancialObject => ({
+  ordinal,
+  kind,
+  id: identity,
+  data: {
+    source_kind: sourceKind,
+    source_id: source,
+    target_kind: targetKind,
+    target_id: target,
+    amount_usd_cents: 100,
+    occurred_at: "2026-09-01T05:00:00Z",
+  },
+});
+function contextEvents(): FinancialObject[] {
+  return [
+    contextEvent(
+      1,
+      "ALLOCATION",
+      contextIds.allocation,
+      "PAYMENT",
+      contextIds.payment,
+      "INVOICE",
+      contextIds.invoice,
+    ),
+    contextEvent(
+      2,
+      "ALLOCATION_LINE",
+      contextIds.event,
+      "ALLOCATION",
+      contextIds.allocation,
+      "INVOICE_LINE",
+      contextIds.other,
+    ),
+    contextEvent(
+      3,
+      "CREDIT",
+      contextIds.credit,
+      "PAYMENT",
+      contextIds.payment,
+      "CREDIT",
+      contextIds.credit,
+    ),
+    contextEvent(
+      4,
+      "CREDIT_APPLICATION",
+      contextIds.application,
+      "CREDIT",
+      contextIds.credit,
+      "LATE_PAYMENT_CHARGE",
+      contextIds.invoice,
+    ),
+    contextEvent(
+      5,
+      "CREDIT_APPLICATION_LINE",
+      contextIds.event,
+      "CREDIT_APPLICATION",
+      contextIds.application,
+      "LATE_PAYMENT_CHARGE",
+      contextIds.invoice,
+    ),
+    contextEvent(
+      6,
+      "DEPOSIT_RECEIPT",
+      contextIds.receipt,
+      "PAYMENT",
+      contextIds.payment,
+      "DEPOSIT",
+      contextIds.other,
+    ),
+    contextEvent(
+      7,
+      "DEPOSIT_DISPOSITION",
+      contextIds.event,
+      "DEPOSIT",
+      contextIds.other,
+      "DEPOSIT",
+      contextIds.other,
+    ),
+    {
+      ordinal: 8,
+      kind: "REFUND",
+      id: contextIds.refund,
+      data: {
+        source_kind: "CREDIT",
+        source_id: contextIds.credit,
+        amount_usd_cents: 100,
+        unreturned_usd_cents: 50,
+        refund_number: "RF\tOriginal\n😀",
+        occurred_at: "2026-09-01T05:00:00Z",
+      },
+    },
+  ];
+}
+function contextResults(): FinancialObject[] {
+  return [
+    {
+      ordinal: 1,
+      kind: "INVOICE",
+      id: contextIds.invoice,
+      data: {
+        invoice_number: "INV\tOriginal\n😀",
+        status: "PARTIALLY_PAID",
+        outstanding_usd_cents: 9007199254740993n,
+      },
+    },
+    {
+      ordinal: 2,
+      kind: "LATE_PAYMENT_CHARGE",
+      id: contextIds.other,
+      data: {
+        source_invoice_id: contextIds.invoice,
+        original_usd_cents: 100,
+        reversed: false,
+        adjusted_obligation_usd_cents: 90,
+        remaining_balance_usd_cents: 80,
+      },
+    },
+    {
+      ordinal: 3,
+      kind: "CREDIT",
+      id: contextIds.credit,
+      data: {
+        recognized_usd_cents: 100,
+        applied_usd_cents: 10,
+        refunded_usd_cents: 20,
+        reversed_usd_cents: 0,
+        available_usd_cents: 70,
+      },
+    },
+    {
+      ordinal: 4,
+      kind: "DEPOSIT",
+      id: contextIds.event,
+      data: {
+        deposit_type: "PET",
+        held_usd_cents: 70,
+        received_usd_cents: 100,
+        disposed_usd_cents: 20,
+        refunded_usd_cents: 10,
+      },
+    },
+  ];
+}
+function contextEnvelope(
+  view: "impact" | "result" = "impact",
+): FinancialObject {
+  return {
+    data: {
+      payment_resource: financialFixture("paymentGet").data,
+      view,
+      revision: contextRevision,
+      items: view === "impact" ? contextEvents() : contextResults(),
+    },
+    meta: {
+      actor_id: contextIds.actor,
+      property_id: contextIds.property,
+      request_id: "",
+    },
+    page: { limit: 50, next_cursor: null },
+  };
+}
+function contextResponse(
+  init: RequestInit,
+  envelope: FinancialObject,
+): Response {
+  const requestId = new Headers(init.headers).get("X-Request-ID") ?? "";
+  financialObject(envelope.meta).request_id = requestId;
+  return new Response(
+    stringifyFinancialJson(envelope, FINANCIAL_REFERENCE_REPLY_BYTES),
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "X-Request-ID": requestId,
+      },
+    },
+  );
+}
+describe("Payment reversal context", () => {
+  it.each(["impact", "result"] as const)(
+    "TEST-FE-357 maps %s to the exact read-only Property and Payment route",
+    async (view) => {
+      const fetcher = vi.fn<typeof fetch>((url, init) => {
+        expect(url).toBe(
+          `/api/v1/properties/${contextIds.property}/payments/${contextIds.payment}/reversal-context?view=${view}`,
+        );
+        expect(init?.method).toBe("GET");
+        expect(init?.body).toBeUndefined();
+        expect(init?.cache).toBe("no-store");
+        const headers = new Headers(init?.headers);
+        expect(headers.get("Idempotency-Key")).toBeNull();
+        expect(headers.get("X-CSRF-Token")).toBeNull();
+        expect(headers.get("X-Financial-Property-ID")).toBe(
+          contextIds.property,
+        );
+        return Promise.resolve(
+          contextResponse(init ?? {}, contextEnvelope(view)),
+        );
+      });
+      const csrf = vi.fn(() => "unused");
+      const reply = await createFinancialReferenceClient(fetcher, csrf).read(
+        contextScope(),
+        contextInput(view),
+      );
+      expect(reply.page).toEqual({ limit: 50, nextCursor: null });
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(csrf).not.toHaveBeenCalled();
+      const sequence = new PaymentReversalContextSequence(
+        contextIds.actor,
+        contextIds.property,
+        contextIds.payment,
+        view,
+      );
+      sequence.append(reply);
+      expect(sequence.complete).toBe(true);
+    },
+  );
+  it("TEST-FE-358 preserves exact large result amounts and whole immutable labels", async () => {
+    const reply = await createFinancialReferenceClient((_url, init) =>
+      Promise.resolve(contextResponse(init ?? {}, contextEnvelope("result"))),
+    ).read(contextScope(), contextInput("result"));
+    const rows = financialObject(reply.data).items as FinancialObject[];
+    expect(financialObject(rows[0]?.data).outstanding_usd_cents).toBe(
+      9007199254740993n,
+    );
+    expect(financialObject(rows[0]?.data).invoice_number).toBe(
+      "INV\tOriginal\n😀",
+    );
+  });
+  it.each([
+    { payment_id: "x" },
+    { payment_id: "00000000-0000-0000-0000-000000000000" },
+    { view: "all" },
+    { limit: 0 },
+    { limit: 101 },
+    { limit: 1.5 },
+    { limit: "1" },
+    { cursor: "" },
+    { cursor: `${"A".repeat(64)}:1:${contextIds.event}` },
+    { cursor: `${contextRevision}:0:${contextIds.event}` },
+    { view: "result", cursor: `${contextRevision}:5:${contextIds.event}` },
+    { idempotency_key: contextIds.key },
+    { unknown: true },
+  ])(
+    "TEST-FE-359 rejects invalid context requests before transmission %j",
+    async (invalid) => {
+      const fetcher = vi.fn<typeof fetch>();
+      await expect(
+        createFinancialReferenceClient(fetcher).read(contextScope(), {
+          ...contextInput(),
+          ...invalid,
+        } as FinancialReferenceRequest),
+      ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+      expect(fetcher).not.toHaveBeenCalled();
+    },
+  );
+  const corruptions: [string, (row: FinancialObject) => void][] = [
+    [
+      "actor",
+      (row) => {
+        financialObject(row.meta).actor_id = contextIds.other;
+      },
+    ],
+    [
+      "property",
+      (row) => {
+        financialObject(row.meta).property_id = contextIds.other;
+      },
+    ],
+    [
+      "payment",
+      (row) => {
+        financialObject(
+          financialObject(financialObject(row.data).payment_resource).payment,
+        ).id = contextIds.other;
+      },
+    ],
+    [
+      "source property",
+      (row) => {
+        financialObject(
+          financialObject(financialObject(row.data).payment_resource).payment,
+        ).property_id = contextIds.other;
+      },
+    ],
+    [
+      "revision",
+      (row) => {
+        financialObject(row.data).revision = "A".repeat(64);
+      },
+    ],
+    [
+      "view",
+      (row) => {
+        financialObject(row.data).view = "result";
+      },
+    ],
+    [
+      "unexpected data",
+      (row) => {
+        financialObject(row.data).secret_command = "x";
+      },
+    ],
+    [
+      "page limit",
+      (row) => {
+        financialObject(row.page).limit = 1;
+      },
+    ],
+    [
+      "next cursor",
+      (row) => {
+        financialObject(row.page).next_cursor = "x";
+      },
+    ],
+    [
+      "order",
+      (row) => {
+        (financialObject(row.data).items as FinancialObject[]).reverse();
+      },
+    ],
+    [
+      "duplicate",
+      (row) => {
+        const list = financialObject(row.data).items as FinancialObject[];
+        list[1] = list[0] ?? {};
+      },
+    ],
+    [
+      "kind",
+      (row) => {
+        const list = financialObject(row.data).items as FinancialObject[];
+        if (list[0]) list[0].kind = "REFUND";
+      },
+    ],
+    [
+      "wrong direct source",
+      (row) => {
+        const list = financialObject(row.data).items as FinancialObject[];
+        financialObject(list[0]?.data).source_id = contextIds.other;
+      },
+    ],
+    [
+      "unreturned zero",
+      (row) => {
+        const list = financialObject(row.data).items as FinancialObject[];
+        financialObject(list[7]?.data).unreturned_usd_cents = 0;
+      },
+    ],
+    [
+      "unreturned overflow",
+      (row) => {
+        const list = financialObject(row.data).items as FinancialObject[];
+        financialObject(list[7]?.data).unreturned_usd_cents = 101;
+      },
+    ],
+    [
+      "wrong receipt target",
+      (row) => {
+        const list = financialObject(row.data).items as FinancialObject[];
+        financialObject(list[5]?.data).target_kind = "INVOICE";
+      },
+    ],
+    [
+      "negative amount",
+      (row) => {
+        const list = financialObject(row.data).items as FinancialObject[];
+        financialObject(list[0]?.data).amount_usd_cents = -1;
+      },
+    ],
+    [
+      "bad timestamp",
+      (row) => {
+        const list = financialObject(row.data).items as FinancialObject[];
+        financialObject(list[0]?.data).occurred_at = "yesterday";
+      },
+    ],
+  ];
+  it.each(corruptions)(
+    "TEST-FE-360 rejects malformed or foreign response: %s",
+    async (_name, corrupt) => {
+      const envelope = contextEnvelope();
+      corrupt(envelope);
+      await expect(
+        createFinancialReferenceClient((_url, init) =>
+          Promise.resolve(contextResponse(init ?? {}, envelope)),
+        ).read(contextScope(), contextInput()),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+  it.each([
+    "credit total",
+    "deposit total",
+    "charge balance",
+    "charge reversed",
+    "invoice negative",
+    "void invoice balance",
+    "future deposit kind",
+  ])("TEST-FE-360 rejects impossible current result: %s", async (fault) => {
+    const envelope = contextEnvelope("result"),
+      rows = financialObject(envelope.data).items as FinancialObject[];
+    if (fault === "credit total")
+      financialObject(rows[2]?.data).available_usd_cents = 71;
+    else if (fault === "deposit total")
+      financialObject(rows[3]?.data).held_usd_cents = 71;
+    else if (fault === "charge balance")
+      financialObject(rows[1]?.data).remaining_balance_usd_cents = 91;
+    else if (fault === "charge reversed")
+      financialObject(rows[1]?.data).reversed = true;
+    else if (fault === "invoice negative")
+      financialObject(rows[0]?.data).outstanding_usd_cents = -1;
+    else if (fault === "void invoice balance")
+      financialObject(rows[0]?.data).status = "VOID";
+    else financialObject(rows[3]?.data).deposit_type = "RESERVATION";
+    await expect(
+      createFinancialReferenceClient((_url, init) =>
+        Promise.resolve(contextResponse(init ?? {}, envelope)),
+      ).read(contextScope(), contextInput("result")),
+    ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+  });
+  it("TEST-FE-361 consumes complete cross-page dependencies and refuses stale continuation", async () => {
+    const all = contextEvents(),
+      first = contextEnvelope(),
+      next = `${contextRevision}:4:${contextIds.application}`;
+    financialObject(first.data).items = all.slice(0, 4);
+    first.page = { limit: 4, next_cursor: next };
+    const last = contextEnvelope();
+    financialObject(last.data).items = all.slice(4);
+    last.page = { limit: 4, next_cursor: null };
+    const scope = contextScope(),
+      sequence = new PaymentReversalContextSequence(
+        contextIds.actor,
+        contextIds.property,
+        contextIds.payment,
+        "impact",
+      );
+    const client = createFinancialReferenceClient((url, init) =>
+      Promise.resolve(
+        contextResponse(
+          init ?? {},
+          typeof url === "string" && url.includes("cursor=") ? last : first,
+        ),
+      ),
+    );
+    sequence.append(
+      await client.read(scope, {
+        ...contextInput(),
+        limit: 4,
+      } as FinancialReferenceRequest),
+    );
+    expect(sequence.complete).toBe(false);
+    expect(sequence.nextCursor).toBe(next);
+    sequence.append(
+      await client.read(scope, {
+        ...contextInput(),
+        limit: 4,
+        cursor: next,
+      } as FinancialReferenceRequest),
+      next,
+    );
+    expect(sequence.complete).toBe(true);
+    financialObject(last.data).revision = "b".repeat(64);
+    await expect(
+      client.read(scope, {
+        ...contextInput(),
+        limit: 4,
+        cursor: next,
+      } as FinancialReferenceRequest),
+    ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+  });
+  it.each([
+    "skipped page",
+    "different actor",
+    "different property",
+    "different payment",
+    "different view",
+    "duplicate final",
+  ])("TEST-FE-362 sequence cannot claim completeness for %s", async (fault) => {
+    const reply = await createFinancialReferenceClient((_url, init) =>
+      Promise.resolve(contextResponse(init ?? {}, contextEnvelope())),
+    ).read(contextScope(), contextInput());
+    const sequence = new PaymentReversalContextSequence(
+      contextIds.actor,
+      contextIds.property,
+      fault === "different payment" ? contextIds.other : contextIds.payment,
+      fault === "different view" ? "result" : "impact",
+    );
+    if (fault === "different actor") reply.actorId = contextIds.other;
+    if (fault === "different property") reply.propertyId = contextIds.other;
+    if (fault === "duplicate final") sequence.append(reply);
+    expect(() => {
+      sequence.append(
+        reply,
+        fault === "skipped page"
+          ? `${contextRevision}:1:${contextIds.allocation}`
+          : null,
+      );
+    }).toThrow();
+    expect(sequence.complete).toBe(false);
+  });
+  it.each([
+    "orphan",
+    "line total",
+    "missing detail",
+    "charge mismatch",
+    "missing deposit",
+  ])("TEST-FE-363 complete graph rejects %s", async (fault) => {
+    const envelope = contextEnvelope(),
+      rows = financialObject(envelope.data).items as FinancialObject[];
+    if (fault === "orphan")
+      financialObject(rows[1]?.data).source_id = contextIds.other;
+    else if (fault === "line total")
+      financialObject(rows[1]?.data).amount_usd_cents = 99;
+    else if (fault === "missing detail") rows.splice(1, 1);
+    else if (fault === "charge mismatch")
+      financialObject(rows[4]?.data).target_id = contextIds.other;
+    else
+      financialObject(rows[6]?.data).source_id = financialObject(
+        rows[6]?.data,
+      ).target_id = contextIds.credit;
+    const reply = await createFinancialReferenceClient((_url, init) =>
+      Promise.resolve(contextResponse(init ?? {}, envelope)),
+    ).read(contextScope(), contextInput());
+    const sequence = new PaymentReversalContextSequence(
+      contextIds.actor,
+      contextIds.property,
+      contextIds.payment,
+      "impact",
+    );
+    expect(() => {
+      sequence.append(reply);
+    }).toThrow();
+    expect(sequence.complete).toBe(false);
+  });
+  it("TEST-FE-364 rejects invalidated actor/Property context without dispatch", async () => {
+    const controller = new AbortController(),
+      fetcher = vi.fn<typeof fetch>();
+    controller.abort();
+    await expect(
+      createFinancialReferenceClient(fetcher).read(
+        { ...contextScope(), signal: controller.signal },
+        contextInput(),
+      ),
+    ).rejects.toMatchObject({ code: "WORKSPACE_INVALIDATED" });
+    expect(fetcher).not.toHaveBeenCalled();
+  });
 });

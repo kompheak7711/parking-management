@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "V1-052 financial references correction1 focused verified; successor freeze pending",
+    "phase": "V1-052 Payment reversal context focused verified; normal candidate freeze pending",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2057,8 +2057,8 @@
     "scope_sha256": "4ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363",
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
-    "candidate_resolution": "Normal successor containing correction1; resolve exact SHA/tree through external immutable receipt.",
-    "candidate_status": "containing_correction1_requires_exact_gates_and_review",
+    "candidate_resolution": "Normal containing Payment reversal context commit; exact SHA/tree resolved by external immutable receipt.",
+    "candidate_status": "containing_payment_reversal_context_requires_exact_gates_and_review",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2078,16 +2078,16 @@
       "provider_attestation": "unavailable"
     },
     "last_reconciliation": {
-      "at": "2026-09-07T19:16:28.342249+00:00",
-      "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-correction1-prefreeze-independent-observations.json",
-      "sha256": "e572e6ce695a3b159a44a5c59b6b53797881620c916c30e15636e72663d6493a",
-      "reviewers": "None;77575completed/rejected",
-      "refs": "maina5clean;live/tracking/FETCHf8;CI4success",
-      "card": "same52blocked17comments/nullclaims;separate private-note hold",
+      "at": "2026-09-07T20:55:18.274414+00:00",
+      "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-prefreeze-reconciliation.json",
+      "sha256": "08cd3ac4535d211f55371132b395c6c5f91787e1e2729d108aea943bae9b569f",
+      "reviewers": "None;431 accepted",
+      "refs": "maina5clean/live-tracking-FETCHf8/CI4success",
+      "card": "SAME52blocked17comments/nullclaims; separate Workboard private-note hold unresolved",
       "schedulers": "SAME nativeACTIVE/OpenClawdisabled"
     },
     "owner_action_required": false,
-    "next_action": "Freeze normal correction1 successor of rejected456; run full exact933PostgreSQL/2296backend/666frontend/177static/build/import/189automation/config/trace/guard/preservation and11actual-browser groups. Then ONE fresh complete8a-base Astra/max/Standard/enforced-read-only review covering both commits/all20paths under standing authority; require zero findings. Preserve all rejected candidates/reports/regressions. Then staff UI/necessary reads and full52cumulative publication/exactCI/refs/same-card/durable closure before53; closed53pauseSAME/OpenClawdisabled/no54.",
+    "next_action": "Create normal28-path Payment reversal context candidate from accepted431; run fresh exact full953PostgreSQL/backend/frontend/179static/build/import/189automation/config/trace/guard/preservation and7reference plus6command browser groups. Then ONE fresh complete431-base Astra/max/Standard/enforced-read-only independent zero review under standing through53 authority. Preserve every failed candidate/report/log and all new draft regression evidence. After bounded acceptance continue remaining action-only sources/staff UI/full52 cumulative release/publication/exactCI/refs/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2112,586 +2112,204 @@
       "exact_tests": "189 PASS and all activation gates; execution78277 EXIT0; do not repeat"
     },
     "active_slice": {
-      "id": "V1-052-financial-references-khr-preview",
+      "id": "V1-052-payment-reversal-context",
       "status": "focused_verified_freeze_pending",
-      "started_at": "2026-09-07T17:50:22.526097+00:00",
-      "base_sha": "8a7fc60d0bb39c23dd5b6c54ea6f326583496a26",
-      "model": "gpt-6-astra",
-      "reasoning": "xhigh",
-      "mode": "Standard",
-      "reason": "Existing financial grant projection, fresh authorization and exact provisional FX calculation",
-      "scope": "Four financial reference/provisional KHR operations, correcting all three456 findings plus the identical late/pre-reader body cleanup defect in the accepted financial transport. No confirmation selector, financial command/replay/store, migration, grant, dependency, canonical policy or staff UI change.",
-      "plan": [
-        "Record accepted8a and scope before edits.",
-        "Implement narrow read-only bounded SQL and capability projection over existing16grants; no new privileges/migration expected.",
-        "Reuse approved KHR source selection with confirmation behavior preserved; calculate exact provisional preview without financial writes.",
-        "Add protected routes, no-store/errors, separate exact client and unit/API/isolatedPG regressions with assertion traceability.",
-        "Freeze normal commit; applicable full exact gates and fresh complete8a-base Astra/max/Standard/read-only zero review."
-      ],
+      "base": "431f23afbe9d35a0a6479218c4782f21337b14fe",
+      "started_at": "2026-09-07T19:53:22.780447+00:00",
       "affected_paths": [
-        "backend/src/property_rental/financial_reference.py",
-        "backend/src/property_rental/financial_reference_api.py",
-        "backend/src/property_rental/khr_payment_confirmation.py",
+        "backend/migrations/versions/20260908_46_payment_reversal_context.py",
+        "backend/src/property_rental/payment_reversal_context.py",
+        "backend/src/property_rental/payment_reversal_context_api.py",
         "backend/src/property_rental/app.py",
-        "backend/tests/test_financial_reference.py",
-        "backend/tests/test_financial_reference_api.py",
-        "backend/tests/test_financial_reference_migration.py",
+        "backend/tests/test_payment_reversal_context.py",
+        "backend/tests/test_payment_reversal_context_api.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
         "backend/tests/test_initial_owner_bootstrap_cli.py",
+        "backend/tests/test_migrations.py",
         "backend/tests/test_traceability.py",
         "scripts/database-test.sh",
+        "frontend/src/paymentReversalContext.ts",
         "frontend/src/financialReferenceClient.ts",
         "frontend/src/financialReferenceClient.test.ts",
-        "ops/V1_052_FINANCIAL_REFERENCES.md",
+        "frontend/src/test/financialReferences.browser.ts",
         "ops/NOW.md",
         "ops/STATE.json",
         "ops/QUEUE.md",
         "ops/traceability.json",
-        "frontend/src/test/financialReferences.browser.ts",
-        "frontend/src/financialClient.ts",
-        "frontend/src/financialClient.test.ts"
+        "ops/V1_052_PAYMENT_REVERSAL_CONTEXT.md",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_utility_meter_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_invoice_migration.py"
       ],
-      "upstream": [
-        "API-011",
-        "API-012",
-        "API-015",
-        "API-016",
-        "API-057",
-        "API-058",
-        "UI-063",
-        "UI-064",
-        "SEC-025",
-        "SEC-026",
-        "SEC-027",
-        "SEC-036",
-        "SEC-038",
-        "SEC-039",
-        "SEC-040"
+      "scope": "Necessary purpose-bound read for Payment reversal under payments.reverse. Original Payment/Receipt/FX resource, complete bounded active child impact and current historically affected target results. New forward-only migration46 narrowly exposes projection; no write-service/guard/grant-policy changes, general read expansion, dependency, canonical edit, or staff UI in this stage.",
+      "docs": [
+        "002_BUSINESS_RULES.md",
+        "004_DATABASE_MODEL.md",
+        "005_API_SPECIFICATION.md",
+        "006_UI_SPECIFICATION.md",
+        "007_TESTING_STRATEGY.md",
+        "008_SECURITY_MODEL.md"
       ],
+      "plan": [
+        "Verify every relevant revision guard and active/source graph against actual schemas.",
+        "Add narrow read-only projection with bounded keysets and fixed revision evidence.",
+        "Add strict exact-Property/action-authorized HTTP route and source-compatible exact client.",
+        "Add unit/API/isolatedPostgreSQL/concurrency/authorization/pagination/no-write/browser regressions and traceability.",
+        "Freeze normal candidate; exact full gates and complete-base independent zero review."
+      ],
+      "model": "gpt-6-astra",
+      "reasoning": "xhigh",
+      "mode": "Standard/default",
+      "reasoning_reason": "Financial authorization, cross-domain concurrency and new narrow database privilege require xhigh under existing policy.",
+      "implementation_owner": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "correction_attempt": 0,
       "standing_authorization": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
         "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
       },
-      "reconciliation": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-accepted-8a-before-reference-independent-observations.json",
-        "sha256": "bdf4b87b659ae61d75bc8a0967bd5c8accbeea382d5b26389a5ea7ecabd911a0"
-      },
-      "remaining_version_scope": "All staff UI then cumulative full52 release/CI/refs/same-card/durable closure, then53.",
-      "browser_scope_extension": {
-        "at": "2026-09-07T18:10:43.410503+00:00",
-        "reason": "Required actual-browser synthetic reference transport and encrypted pending-preservation checks; no App integration or extra product scope."
+      "migration_inventory_extension": {
+        "at": "2026-09-07T20:06:32.439802+00:00",
+        "paths": [
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_utility_meter_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_invoice_migration.py"
+        ],
+        "reason": "Only existing current-head expectations must advance to46. Pinned45 migration identity/down-revision/privilege tests remain45; all financial/data assertions retained."
       },
       "focused_evidence": {
-        "focused-first": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-focused-first.json",
-          "sha256": "3d4a76237ba6b9e1093cb95ec0fb8286bc5d2f169a387278ea679b37391a82ca"
+        "backend-metadata-corrected": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-backend-metadata-corrected.json",
+          "sha256": "0f4190eb9b03591401dba287906a045521d9d11215fc63e4eb4660efd6e9f508"
         },
-        "static-final1": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-static-final1.json",
-          "sha256": "acdb37918744642397ba733d79f39dbf7f6c7c9a44d195062b3bde615a88ee96"
+        "format-void-final": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-format-void-final.json",
+          "sha256": "d2c7041574483baa86b25c4097b7cb7bee27bc76da350ee612edd527f96eb738"
         },
-        "pg-recovery1": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-recovery1.json",
-          "sha256": "fcbee86b8c156916430db238bdf7d381670151f1fa88f82c696b98652d91133b"
+        "frontend-void-corrected": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-void-corrected.json",
+          "sha256": "c3ac3c6bc8fa819f613ec9a7fa1b12ce2c776c6afd2128cd96466c76947f87e0"
         },
-        "frontend-format-final": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-final.json",
-          "sha256": "449a650b4022a0ba2794525833f4f53dc544243918270cf432a3b92cb6f1fe84"
+        "postgresql-void-corrected": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-void-corrected.json",
+          "sha256": "c3bfa9e581d342e79be26caf4d9d0859b243521585135f3d86d8936b413dd99c"
         },
-        "frontend-focused-final": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-focused-final.json",
-          "sha256": "419c44a85b9e191a742cef69aaa3486e7c5ed5c5952fc5d3cbfaa81813ad277c"
+        "postgresql-full-first": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-full-first.json",
+          "sha256": "b41b3ff9843849ea369837360baf051d478f36aff6e5143a7531989e90dd11fa"
         },
-        "trace-final": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-trace-final.json",
-          "sha256": "6e58f59c6f718147aa0008f580a8e80976fca5556888d4d59a247435c2cb7c70"
+        "trace-void-final": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-trace-void-final.json",
+          "sha256": "8919c644002d2bbd4f6f13e9d28ca74f964f0b3058e776d013d488e18d86c756"
         },
-        "browser-focused1": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-browser-focused1.json",
-          "sha256": "44940f02b0dbd626af3b83028f7316425f66b5a8cc5f523ad7c78d45c06a6ee5"
+        "browser-final-focused": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-browser-final-focused.json",
+          "sha256": "9ae1c376868b9a7a5e024f861edd6af8a68014763be4d72338019edce26e36d2"
         }
       },
       "retained_failed_checks": {
-        "v1052-financial-references-cursor-red1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-cursor-red1.json",
-          "sha256": "faec011d8c6b98c9129c6a93786f2abb265b8188b27eb2930ca0434675a66ab5",
-          "failed_checks": [
-            {
-              "command": [
-                "./node_modules/.bin/vitest",
-                "run",
-                "src/financialReferenceClient.test.ts",
-                "-t",
-                "TEST-FE-347"
-              ],
-              "exit_code": 1,
-              "seconds": 0.987,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-cursor-red1-1.log",
-              "sha256": "b549b712f4f9792287fd66191fe6e3b6fc6fb1445158165ca0a151eb272a08c1"
-            }
-          ]
+        "v1052-payment-reversal-context-backend-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-backend-first.json",
+          "sha256": "036f6da89f53d494c03711fc3c27dedaf41d9fe1dbec7d801c1bbba7ae453b2b"
         },
-        "v1052-financial-references-format-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-first.json",
-          "sha256": "be356a85be19e79a341e43bebefb7106b553e16d84b00bad44885c4e49d7db54",
-          "failed_checks": [
-            {
-              "command": [
-                ".venv/bin/ruff",
-                "check",
-                "--fix",
-                "src/property_rental/financial_reference.py",
-                "src/property_rental/financial_reference_api.py",
-                "src/property_rental/khr_payment_confirmation.py",
-                "src/property_rental/app.py",
-                "tests/test_financial_reference.py",
-                "tests/test_financial_reference_api.py",
-                "tests/test_financial_reference_migration.py",
-                "tests/test_initial_owner_bootstrap_cli.py"
-              ],
-              "exit_code": 1,
-              "seconds": 0.023,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-first-2.log",
-              "sha256": "e6998053939f3a005244f857f81ef41073f3e9ceb0bf1e0356f4e10596c576d3"
-            }
-          ]
+        "v1052-payment-reversal-context-format-backend-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-format-backend-first.json",
+          "sha256": "aaff52d7f764f1155b7fe6fe1d11a8dbe54f761ab88781fc85c9268f358945e7"
         },
-        "v1052-financial-references-format-second.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-second.json",
-          "sha256": "1c03d94210212631c6ca1858c915d9e9a7f85835dbebcc1189637637e73ef51d",
-          "failed_checks": [
-            {
-              "command": [
-                ".venv/bin/ruff",
-                "check",
-                "--fix",
-                "src/property_rental/financial_reference.py",
-                "src/property_rental/financial_reference_api.py",
-                "src/property_rental/khr_payment_confirmation.py",
-                "src/property_rental/app.py",
-                "tests/test_financial_reference.py",
-                "tests/test_financial_reference_api.py",
-                "tests/test_financial_reference_migration.py",
-                "tests/test_initial_owner_bootstrap_cli.py"
-              ],
-              "exit_code": 1,
-              "seconds": 0.022,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-second-2.log",
-              "sha256": "601fcbee0bc2ccab468ece4875618da93d23997431c16b3511afdc0a93079eba"
-            }
-          ]
+        "v1052-payment-reversal-context-format-pg-additional-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-format-pg-additional-first.json",
+          "sha256": "18151bfa0bf438b68673db9ee3e0c089258ed8ca0094d1c499b9088976d78a4a"
         },
-        "v1052-financial-references-frontend-format-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-first.json",
-          "sha256": "18f4121747c76944f18399a916dd5d5d478aedd96fbd12f6f84482fec7776008",
-          "failed_checks": [
-            {
-              "command": [
-                "./node_modules/.bin/eslint",
-                "src/financialReferenceClient.ts",
-                "src/financialReferenceClient.test.ts"
-              ],
-              "exit_code": 1,
-              "seconds": 1.358,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-first-2.log",
-              "sha256": "7eec113d083144659510a398346b33b3cb226662cc0d3e042d7772fb2f905ea0"
-            }
-          ]
+        "v1052-payment-reversal-context-format-pg-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-format-pg-first.json",
+          "sha256": "2c3a50941348085eafaedeccbb4109f244ffd5247b839697273ca5160610db8c"
         },
-        "v1052-financial-references-frontend-format-second.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-second.json",
-          "sha256": "e082ac802eda1c8c3ed3469ae3127336805adb2814680082c874d6f1920d356d",
-          "failed_checks": [
-            {
-              "command": [
-                "./node_modules/.bin/tsc",
-                "-b"
-              ],
-              "exit_code": 1,
-              "seconds": 0.541,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-second-3.log",
-              "sha256": "e62eadc0c3443a7537c9d844dd82fb4425e2f6fbb6bf5e66987cf118af22fe8b"
-            }
-          ]
+        "v1052-payment-reversal-context-format-pg-style-corrected.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-format-pg-style-corrected.json",
+          "sha256": "d6ee36728244e92975ca1fecc8a9ea39ff0660b305e482f4a3703533b365119f"
         },
-        "v1052-financial-references-pg-focused1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-focused1.json",
-          "sha256": "34d51cfe82efcdbc281ac3e640729ca56d1e9f3522edda53a6a4f095131f1d3b",
-          "failed_checks": [
-            {
-              "command": [
-                "sh",
-                "scripts/database-test.sh"
-              ],
-              "exit_code": 1,
-              "seconds": 159.625,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-focused1-1.log",
-              "sha256": "def7fb6e0c03bfba57a2292fd11adc727ab7806d6addcd185ff34cc4c0aea19a"
-            }
-          ]
+        "v1052-payment-reversal-context-frontend-browser-added.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-browser-added.json",
+          "sha256": "6d406da3ff6586141b0688c59f60d23ff9d28e40a140783949784803d43eff62"
         },
-        "v1052-financial-references-types-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-types-first.json",
-          "sha256": "ecd07ac10d7bfd71b9d57d430a98beaaf2203fa6e1bf3b92fe9b57f2a2a94d1f",
-          "failed_checks": [
-            {
-              "command": [
-                ".venv/bin/mypy",
-                "src/property_rental/financial_reference.py",
-                "src/property_rental/financial_reference_api.py",
-                "src/property_rental/khr_payment_confirmation.py",
-                "src/property_rental/app.py",
-                "tests/test_financial_reference.py",
-                "tests/test_financial_reference_api.py",
-                "tests/test_financial_reference_migration.py",
-                "tests/test_initial_owner_bootstrap_cli.py"
-              ],
-              "exit_code": 1,
-              "seconds": 1.042,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-types-first-1.log",
-              "sha256": "c237d530a20dcc8923eb8e1f89959e4f0f3349dcf2773fa035f8c96494a960c6"
-            }
-          ]
+        "v1052-payment-reversal-context-frontend-context-tests-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-context-tests-first.json",
+          "sha256": "95f3f1bc0dfa3e41ca5746d1fd1e655b1b8e05dd33d916337ce85d0927ddf6da"
+        },
+        "v1052-payment-reversal-context-frontend-implementation-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-implementation-first.json",
+          "sha256": "d8209098a7ec9765cef1131957dbf3a20f6be2197bc38fc06db07f46afa942ba"
+        },
+        "v1052-payment-reversal-context-frontend-narrowing-corrected.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-narrowing-corrected.json",
+          "sha256": "4844645e691cbbdbb8baff377c14206f71af7e3faee777680470a447249aa664"
+        },
+        "v1052-payment-reversal-context-frontend-void-red-installed.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-void-red-installed.json",
+          "sha256": "36b2745bebba80652ee698232cbfa505ca062ffa8c673885a914dc2d4e9dc718"
+        },
+        "v1052-payment-reversal-context-postgresql-deposit-fixture-corrected.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-deposit-fixture-corrected.json",
+          "sha256": "2c323dbe644f4257fa28c83db916e130603f9c6cbef0104e8c353ef82157a002"
+        },
+        "v1052-payment-reversal-context-postgresql-expanded-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-expanded-first.json",
+          "sha256": "1a769748901acbaac52f1b096063c5efe319e4f0592b59998360e2eef4a82121"
+        },
+        "v1052-payment-reversal-context-postgresql-focused-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-focused-first.json",
+          "sha256": "4750a8ce8a68b63044f0ff72ef027bad865cd7f3b726bb117c82782d75de40c2"
+        },
+        "v1052-payment-reversal-context-postgresql-void-red.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-void-red.json",
+          "sha256": "aa9f61698f792650032ca659426436f890c8f4400367bd253e5f913e0f3e042a"
+        },
+        "v1052-payment-reversal-context-trace-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-trace-first.json",
+          "sha256": "99948ec8544e68d24e57f59efe3032d7b1e7b1bd6c6b3bf3b1284804e5cdd02a"
         }
       },
-      "retained_helper_evidence": {
-        "v1052-financial-references-pg-fixture-correction1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-fixture-correction1.json",
-          "sha256": "fe4c0f183d91fad019af72307980ed567850dafce64f3360bf5419d8f2101b94"
+      "helper_failure_evidence": {
+        "finish_payment_reversal_context_inventory.py": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/finish_payment_reversal_context_inventory.py",
+          "sha256": "42c715f9feedae3ee7b9bd8c61bb67e2978513d4be70904066bff940eddb0571",
+          "qualification": "Updated only declared head expectations/route inventory/PG registration and scope; stopped before writing migration due unterminated intermediate literal. Format recovery independently verified identical emitted SQL tokens."
         },
-        "v1052-financial-references-pg-fixture-before-correction1.py.txt": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-fixture-before-correction1.py.txt",
-          "sha256": "5413e2e41c157ceeaad03a90b947ea68da47bf35366fd09847ac54ed517ccb53"
+        "add_context_void_regression.py": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/add_context_void_regression.py",
+          "sha256": "66ebece1ee602eeff3a20a5b341f17be65844a42ce1d730318605c5ab64668af",
+          "qualification": "Installed backend test then stopped before frontend edit because formatted whitespace did not match. The following frontend targeted run skipped112tests and is not a passing regression result. Separate completed install produced the retained actual red1FAIL112skips."
         },
-        "v1052-financial-references-cursor-correction1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-cursor-correction1.json",
-          "sha256": "7e0cf1731af52661dd7fa8006ee5047381b249670be3af98224255e4210de284"
-        },
-        "v1052-financial-reference-reconcile-helper-correction.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-reference-reconcile-helper-correction.json",
-          "sha256": "c1c13fbca5bb24f6a0538742d0e0d5a5c787565f0d72a1e3f91424cef9ede2a2"
-        },
-        "v1052-financial-references-correction1-applied.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-correction1-applied.json",
-          "sha256": "f277e92ae28d398323a383cfca8d1bfb34f7129393f42b1a12fbd6ad40311cdb"
-        },
-        "v1052-financial-references-fixture-isolation-correction1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-fixture-isolation-correction1.json",
-          "sha256": "43ddd90936798567e573d6bd3117f7ac8a07d459bea06b8563cc62a1742d3875"
+        "register_context_void_trace.py": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/register_context_void_trace.py",
+          "sha256": "d4d1a463bdf86dae762eeb3c613f62473ccb6f0760c049581255fb170a3c518b",
+          "qualification": "Registered the new database mapping then stopped before the expected-ID assertion because formatter split a long line. Separate completion retained the mapping and finished the assertion;23tracePASS."
         }
       },
-      "focused_results": "207backend/API/KHR/inventory;197frontend including56recovery;22trace;backend/frontend static;11actual-browser groups PASS. Full933PG passed unchanged-source diagnostic run after two retained932PASS1NOWAIT runs; original contention cause not proven and original observer was scoped to bootstrap database.6backend and16frontend red failures retained. One new combined frontend failure from shared fixture contamination corrected without changing runtime/assertions.",
-      "browser_applicability": "All11focused browser groups passed on final product runtime. Exact containing-candidate11browser groups pending.",
-      "remaining_exact_gates": "Full exact successor gates and fresh complete8a-base zero review pending; no whole-version acceptance.",
-      "correction_attempt": 1,
-      "rejected_candidate": "456910f5792d8847cf41dccbd464fdda1628e78b",
-      "rejected_review": {
-        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-rejected-456910f.json",
-        "sha256": "8f27e1fcfe5fa1c5db30093dfed15719c3a1579f54d713f162c3f2f78782a221"
-      },
-      "correction_plan": [
-        {
-          "id": "FR-456-M1",
-          "severity": "MEDIUM",
-          "fingerprint": "Reference client rejects backend-valid internal controls and Unicode evidence",
-          "approach": "Separate whole legacy label validation from exact backend evidence validation. Count Unicode code points, match Python boundary whitespace and valid UTF-8/NUL rules, preserve internal tabs/newlines and all valid evidence without changing backend or byte ceilings. Add actual service/HTTP compatibility and browser/client regressions."
-        },
-        {
-          "id": "FR-456-L1",
-          "severity": "LOW",
-          "fingerprint": "Malformed automatic quote with manual input is classified as available conflict",
-          "approach": "Preview selects and validates automatic output with no manual override first; only explicit ApprovedKhrSourceUnavailable admits authorized manual input. Check future automatic timestamp before manual conflict. Keep accepted confirmation selector/replay unchanged and query the provider once."
-        },
-        {
-          "id": "FR-456-L2",
-          "severity": "LOW",
-          "fingerprint": "Late and pre-reader-rejected response bodies escape cleanup",
-          "approach": "Own each received body independently of reader acquisition. Cancel late bodies after interruption and rejected bodies before reader acquisition, without awaiting noncooperating cleanup or changing settlement/pending-command semantics. Root inspection found the same pattern in accepted financialClient.ts: reproduce and correct that directly related transport too."
-        }
+      "focused_results": "87unit/API/inventory;20focusedPG;113client;23trace;backend/frontend static;7actual-browser groups PASS. Full952PG passed before final VOID projection/client correction; fresh containing-candidate953PG pending.38newmaps preserve1598prior=1636.",
+      "remaining_exact_gates": "All fresh exact containing-candidate gates and complete431-base zero review required; no bounded acceptance or full52 closure.",
+      "draft_regression_corrections": [
+        "New migration CASE cursor syntax corrected;12focusedPGPASS.",
+        "New fixture corrected to respect unique Deposit/Payment receipt; all history/guards retained.",
+        "Historical Deposit result unsupported active application gap reproduced then fixed;19focusedPGPASS.",
+        "Historical VOID Invoice incorrectly retained80000 outstanding instead of0; actual backend and client reds reproduced, corrected to existing authoritative snapshot behavior;20PG/113clientPASS."
       ],
-      "correction_started_at": "2026-09-07T18:46:47.966308+00:00",
-      "correction_affected_paths": [
-        "backend/src/property_rental/financial_reference.py",
-        "backend/tests/test_financial_reference_api.py",
-        "backend/tests/test_financial_reference_migration.py",
-        "frontend/src/financialClient.test.ts",
-        "frontend/src/financialClient.ts",
-        "frontend/src/financialReferenceClient.test.ts",
-        "frontend/src/financialReferenceClient.ts",
-        "frontend/src/test/financialReferences.browser.ts",
-        "ops/NOW.md",
-        "ops/QUEUE.md",
-        "ops/STATE.json",
-        "ops/V1_052_FINANCIAL_REFERENCES.md",
-        "ops/traceability.json"
-      ],
-      "correction_focused_evidence": {
-        "v1052-financial-references-focused-correction1-green.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-focused-correction1-green.json",
-          "sha256": "08680095485fb724e1862119e6783e4ffc892d2a679820873ae0b24b61a7f34c"
-        },
-        "v1052-financial-references-frontend-correction1-all-fixture-recovery1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-correction1-all-fixture-recovery1.json",
-          "sha256": "2b765eb9518d919fef546f7793f9101911739809b78e05f10b781eedb14c6210"
-        },
-        "v1052-financial-references-frontend-format-correction1-browser.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-correction1-browser.json",
-          "sha256": "5760b0fe6c204df517f017355ef4648773466055047c7078d17907aef297e813"
-        },
-        "v1052-financial-references-static-correction1-final.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-static-correction1-final.json",
-          "sha256": "451d263be9a7820a504fab3de04270a644348eea6fbe5b10e81c3d71432fc9c0"
-        },
-        "v1052-financial-references-trace-correction1-final.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-trace-correction1-final.json",
-          "sha256": "76dd3ce134aa1669be6bac1bc75771ae2afd309bb694e845bad40e34e56bc90c"
-        },
-        "v1052-financial-references-pg-correction1-target-diagnostic1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-correction1-target-diagnostic1.json",
-          "sha256": "1c0ddb44fb23ef2e5cbf4bf3ebfeafa675f127d9dcdeb644815fd65c47f85fc5"
-        },
-        "v1052-financial-references-browser-correction1-focused.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-browser-correction1-focused.json",
-          "sha256": "c5c0ff1fd31ad789fbb244e8bc6ee4ef277e118c1bae55782a56a49e5cb0548e"
-        },
-        "v1052-financial-clients-browser-references-correction1-focused.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-browser-references-correction1-focused.json",
-          "sha256": "fe222353b5e0b722552cebdb901c1ee5ecc8825715468f8c98b612b23bfd8b5c"
-        }
-      },
-      "correction_retained_failed_checks": {
-        "v1052-financial-references-correction1-red-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-correction1-red-first.json",
-          "sha256": "40d484d037354344fdbd91b03a63ef4b75bdc0db390cbb6c4113e237e2d40ab6",
-          "failed_checks": [
-            {
-              "command": [
-                ".venv/bin/pytest",
-                "-q",
-                "tests/test_financial_reference_api.py",
-                "-k",
-                "preserves_backend_valid_unicode or keeps_whole_valid or malformed_source_is_unavailable"
-              ],
-              "exit_code": 1,
-              "seconds": 3.871,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-correction1-red-first-1.log",
-              "sha256": "99c6d24a16c6b4bc508661f895f5d08c69b84718afbea7be612aed3b463bcea9"
-            }
-          ]
-        },
-        "v1052-financial-references-cursor-red1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-cursor-red1.json",
-          "sha256": "faec011d8c6b98c9129c6a93786f2abb265b8188b27eb2930ca0434675a66ab5",
-          "failed_checks": [
-            {
-              "command": [
-                "./node_modules/.bin/vitest",
-                "run",
-                "src/financialReferenceClient.test.ts",
-                "-t",
-                "TEST-FE-347"
-              ],
-              "exit_code": 1,
-              "seconds": 0.987,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-cursor-red1-1.log",
-              "sha256": "b549b712f4f9792287fd66191fe6e3b6fc6fb1445158165ca0a151eb272a08c1"
-            }
-          ]
-        },
-        "v1052-financial-references-format-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-first.json",
-          "sha256": "be356a85be19e79a341e43bebefb7106b553e16d84b00bad44885c4e49d7db54",
-          "failed_checks": [
-            {
-              "command": [
-                ".venv/bin/ruff",
-                "check",
-                "--fix",
-                "src/property_rental/financial_reference.py",
-                "src/property_rental/financial_reference_api.py",
-                "src/property_rental/khr_payment_confirmation.py",
-                "src/property_rental/app.py",
-                "tests/test_financial_reference.py",
-                "tests/test_financial_reference_api.py",
-                "tests/test_financial_reference_migration.py",
-                "tests/test_initial_owner_bootstrap_cli.py"
-              ],
-              "exit_code": 1,
-              "seconds": 0.023,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-first-2.log",
-              "sha256": "e6998053939f3a005244f857f81ef41073f3e9ceb0bf1e0356f4e10596c576d3"
-            }
-          ]
-        },
-        "v1052-financial-references-format-second.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-second.json",
-          "sha256": "1c03d94210212631c6ca1858c915d9e9a7f85835dbebcc1189637637e73ef51d",
-          "failed_checks": [
-            {
-              "command": [
-                ".venv/bin/ruff",
-                "check",
-                "--fix",
-                "src/property_rental/financial_reference.py",
-                "src/property_rental/financial_reference_api.py",
-                "src/property_rental/khr_payment_confirmation.py",
-                "src/property_rental/app.py",
-                "tests/test_financial_reference.py",
-                "tests/test_financial_reference_api.py",
-                "tests/test_financial_reference_migration.py",
-                "tests/test_initial_owner_bootstrap_cli.py"
-              ],
-              "exit_code": 1,
-              "seconds": 0.022,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-second-2.log",
-              "sha256": "601fcbee0bc2ccab468ece4875618da93d23997431c16b3511afdc0a93079eba"
-            }
-          ]
-        },
-        "v1052-financial-references-frontend-correction1-all-green.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-correction1-all-green.json",
-          "sha256": "c9311ff613a551c5fcb647c7296ad56e6f67b816170ca01c0dc887ed8b89bf83",
-          "failed_checks": [
-            {
-              "command": [
-                "./node_modules/.bin/vitest",
-                "run",
-                "src/financialReferenceClient.test.ts",
-                "src/financialClient.test.ts",
-                "src/financialRecovery.test.ts"
-              ],
-              "exit_code": 1,
-              "seconds": 1.193,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-correction1-all-green-1.log",
-              "sha256": "0641f4f1be746e0c5f2e056cb7414694fdd38a88ce8ed2f72e939e252dc21cd5"
-            }
-          ]
-        },
-        "v1052-financial-references-frontend-correction1-red-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-correction1-red-first.json",
-          "sha256": "7b4fc891013d5d6e32460eeab4b844e0d8b9a672244f33851f22548c62d08680",
-          "failed_checks": [
-            {
-              "command": [
-                "./node_modules/.bin/vitest",
-                "run",
-                "src/financialReferenceClient.test.ts",
-                "src/financialClient.test.ts",
-                "-t",
-                "TEST-FE-34[89]|TEST-FE-35[0-4]"
-              ],
-              "exit_code": 1,
-              "seconds": 1.175,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-correction1-red-first-1.log",
-              "sha256": "633b02eef7a98dccb1e3727d20d155c1fd822df57bc548072b63a71470cb0665"
-            }
-          ]
-        },
-        "v1052-financial-references-frontend-format-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-first.json",
-          "sha256": "18f4121747c76944f18399a916dd5d5d478aedd96fbd12f6f84482fec7776008",
-          "failed_checks": [
-            {
-              "command": [
-                "./node_modules/.bin/eslint",
-                "src/financialReferenceClient.ts",
-                "src/financialReferenceClient.test.ts"
-              ],
-              "exit_code": 1,
-              "seconds": 1.358,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-first-2.log",
-              "sha256": "7eec113d083144659510a398346b33b3cb226662cc0d3e042d7772fb2f905ea0"
-            }
-          ]
-        },
-        "v1052-financial-references-frontend-format-second.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-second.json",
-          "sha256": "e082ac802eda1c8c3ed3469ae3127336805adb2814680082c874d6f1920d356d",
-          "failed_checks": [
-            {
-              "command": [
-                "./node_modules/.bin/tsc",
-                "-b"
-              ],
-              "exit_code": 1,
-              "seconds": 0.541,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-second-3.log",
-              "sha256": "e62eadc0c3443a7537c9d844dd82fb4425e2f6fbb6bf5e66987cf118af22fe8b"
-            }
-          ]
-        },
-        "v1052-financial-references-pg-correction1-focused.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-correction1-focused.json",
-          "sha256": "8b85438bf736832d8bc8b19a01b9351d1cccb980c1269853d54a69965f636fcb",
-          "failed_checks": [
-            {
-              "command": [
-                "sh",
-                "scripts/database-test.sh"
-              ],
-              "exit_code": 1,
-              "seconds": 157.552,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-correction1-focused-1.log",
-              "sha256": "5e80ab2dd09a07fc860ca373db2e71aa26dc6ff80341ac17aa259677a914a7a0"
-            }
-          ]
-        },
-        "v1052-financial-references-pg-correction1-observed-recovery1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-correction1-observed-recovery1.json",
-          "sha256": "225a8e31f76b1cd18990c61358be1d7479439c74cfb389b6a3b2f85572f30774",
-          "failed_checks": [
-            {
-              "command": [
-                "sh",
-                "scripts/database-test.sh"
-              ],
-              "exit_code": 1,
-              "seconds": 156.432,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-correction1-observed-recovery1-1.log",
-              "sha256": "9de0e096778c65793a41f5be880dc0877cf3745f4ede357a272edf35040873aa"
-            }
-          ]
-        },
-        "v1052-financial-references-pg-focused1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-focused1.json",
-          "sha256": "34d51cfe82efcdbc281ac3e640729ca56d1e9f3522edda53a6a4f095131f1d3b",
-          "failed_checks": [
-            {
-              "command": [
-                "sh",
-                "scripts/database-test.sh"
-              ],
-              "exit_code": 1,
-              "seconds": 159.625,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-focused1-1.log",
-              "sha256": "def7fb6e0c03bfba57a2292fd11adc727ab7806d6addcd185ff34cc4c0aea19a"
-            }
-          ]
-        },
-        "v1052-financial-references-types-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-types-first.json",
-          "sha256": "ecd07ac10d7bfd71b9d57d430a98beaaf2203fa6e1bf3b92fe9b57f2a2a94d1f",
-          "failed_checks": [
-            {
-              "command": [
-                ".venv/bin/mypy",
-                "src/property_rental/financial_reference.py",
-                "src/property_rental/financial_reference_api.py",
-                "src/property_rental/khr_payment_confirmation.py",
-                "src/property_rental/app.py",
-                "tests/test_financial_reference.py",
-                "tests/test_financial_reference_api.py",
-                "tests/test_financial_reference_migration.py",
-                "tests/test_initial_owner_bootstrap_cli.py"
-              ],
-              "exit_code": 1,
-              "seconds": 1.042,
-              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-types-first-1.log",
-              "sha256": "c237d530a20dcc8923eb8e1f89959e4f0f3349dcf2773fa035f8c96494a960c6"
-            }
-          ]
-        }
-      },
-      "traceability_inventory": "12additive correction maps preserve1586parent entries;1598total,49complete-base additions over1549."
+      "browser_applicability": "Final7groups PASS with exact current source hashes.6existingcommand groups also required at exact candidate. Browser/server stopped after focused verification.",
+      "evidence_qualifications": [
+        "Early root tsconfig --noEmit invocation checked no referenced projects; final recorded frontend gates use actual tsc -b.",
+        "Initial statement-timeout draft used an unmatched parameter query and only proved unavailable; corrected test executes pg_sleep with two typed parameters and proves4.5..8s deadline.",
+        "One targeted frontend red ran before its helper completed and skipped112; not regression evidence. Actual installed red1FAIL112skips retained.",
+        "No full PostgreSQL run after final VOID correction yet; prior full952 and focused20 are distinct evidence."
+      ]
     },
     "accepted_read_slice": {
       "id": "V1-052-payment-read",
@@ -4873,6 +4491,603 @@
         "MEDIUM": 0,
         "LOW": 0
       }
+    },
+    "accepted_financial_references_slice": {
+      "id": "V1-052-financial-references-khr-preview",
+      "status": "accepted",
+      "started_at": "2026-09-07T17:50:22.526097+00:00",
+      "base_sha": "8a7fc60d0bb39c23dd5b6c54ea6f326583496a26",
+      "model": "gpt-6-astra",
+      "reasoning": "xhigh",
+      "mode": "Standard",
+      "reason": "Existing financial grant projection, fresh authorization and exact provisional FX calculation",
+      "scope": "Four financial reference/provisional KHR operations, correcting all three456 findings plus the identical late/pre-reader body cleanup defect in the accepted financial transport. No confirmation selector, financial command/replay/store, migration, grant, dependency, canonical policy or staff UI change.",
+      "plan": [
+        "Record accepted8a and scope before edits.",
+        "Implement narrow read-only bounded SQL and capability projection over existing16grants; no new privileges/migration expected.",
+        "Reuse approved KHR source selection with confirmation behavior preserved; calculate exact provisional preview without financial writes.",
+        "Add protected routes, no-store/errors, separate exact client and unit/API/isolatedPG regressions with assertion traceability.",
+        "Freeze normal commit; applicable full exact gates and fresh complete8a-base Astra/max/Standard/read-only zero review."
+      ],
+      "affected_paths": [
+        "backend/src/property_rental/financial_reference.py",
+        "backend/src/property_rental/financial_reference_api.py",
+        "backend/src/property_rental/khr_payment_confirmation.py",
+        "backend/src/property_rental/app.py",
+        "backend/tests/test_financial_reference.py",
+        "backend/tests/test_financial_reference_api.py",
+        "backend/tests/test_financial_reference_migration.py",
+        "backend/tests/test_initial_owner_bootstrap_cli.py",
+        "backend/tests/test_traceability.py",
+        "scripts/database-test.sh",
+        "frontend/src/financialReferenceClient.ts",
+        "frontend/src/financialReferenceClient.test.ts",
+        "ops/V1_052_FINANCIAL_REFERENCES.md",
+        "ops/NOW.md",
+        "ops/STATE.json",
+        "ops/QUEUE.md",
+        "ops/traceability.json",
+        "frontend/src/test/financialReferences.browser.ts",
+        "frontend/src/financialClient.ts",
+        "frontend/src/financialClient.test.ts"
+      ],
+      "upstream": [
+        "API-011",
+        "API-012",
+        "API-015",
+        "API-016",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-025",
+        "SEC-026",
+        "SEC-027",
+        "SEC-036",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "standing_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
+        "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
+      },
+      "reconciliation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-accepted-8a-before-reference-independent-observations.json",
+        "sha256": "bdf4b87b659ae61d75bc8a0967bd5c8accbeea382d5b26389a5ea7ecabd911a0"
+      },
+      "remaining_version_scope": "All staff UI then cumulative full52 release/CI/refs/same-card/durable closure, then53.",
+      "browser_scope_extension": {
+        "at": "2026-09-07T18:10:43.410503+00:00",
+        "reason": "Required actual-browser synthetic reference transport and encrypted pending-preservation checks; no App integration or extra product scope."
+      },
+      "focused_evidence": {
+        "focused-first": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-focused-first.json",
+          "sha256": "3d4a76237ba6b9e1093cb95ec0fb8286bc5d2f169a387278ea679b37391a82ca"
+        },
+        "static-final1": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-static-final1.json",
+          "sha256": "acdb37918744642397ba733d79f39dbf7f6c7c9a44d195062b3bde615a88ee96"
+        },
+        "pg-recovery1": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-recovery1.json",
+          "sha256": "fcbee86b8c156916430db238bdf7d381670151f1fa88f82c696b98652d91133b"
+        },
+        "frontend-format-final": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-final.json",
+          "sha256": "449a650b4022a0ba2794525833f4f53dc544243918270cf432a3b92cb6f1fe84"
+        },
+        "frontend-focused-final": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-focused-final.json",
+          "sha256": "419c44a85b9e191a742cef69aaa3486e7c5ed5c5952fc5d3cbfaa81813ad277c"
+        },
+        "trace-final": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-trace-final.json",
+          "sha256": "6e58f59c6f718147aa0008f580a8e80976fca5556888d4d59a247435c2cb7c70"
+        },
+        "browser-focused1": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-browser-focused1.json",
+          "sha256": "44940f02b0dbd626af3b83028f7316425f66b5a8cc5f523ad7c78d45c06a6ee5"
+        }
+      },
+      "retained_failed_checks": {
+        "v1052-financial-references-cursor-red1.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-cursor-red1.json",
+          "sha256": "faec011d8c6b98c9129c6a93786f2abb265b8188b27eb2930ca0434675a66ab5",
+          "failed_checks": [
+            {
+              "command": [
+                "./node_modules/.bin/vitest",
+                "run",
+                "src/financialReferenceClient.test.ts",
+                "-t",
+                "TEST-FE-347"
+              ],
+              "exit_code": 1,
+              "seconds": 0.987,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-cursor-red1-1.log",
+              "sha256": "b549b712f4f9792287fd66191fe6e3b6fc6fb1445158165ca0a151eb272a08c1"
+            }
+          ]
+        },
+        "v1052-financial-references-format-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-first.json",
+          "sha256": "be356a85be19e79a341e43bebefb7106b553e16d84b00bad44885c4e49d7db54",
+          "failed_checks": [
+            {
+              "command": [
+                ".venv/bin/ruff",
+                "check",
+                "--fix",
+                "src/property_rental/financial_reference.py",
+                "src/property_rental/financial_reference_api.py",
+                "src/property_rental/khr_payment_confirmation.py",
+                "src/property_rental/app.py",
+                "tests/test_financial_reference.py",
+                "tests/test_financial_reference_api.py",
+                "tests/test_financial_reference_migration.py",
+                "tests/test_initial_owner_bootstrap_cli.py"
+              ],
+              "exit_code": 1,
+              "seconds": 0.023,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-first-2.log",
+              "sha256": "e6998053939f3a005244f857f81ef41073f3e9ceb0bf1e0356f4e10596c576d3"
+            }
+          ]
+        },
+        "v1052-financial-references-format-second.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-second.json",
+          "sha256": "1c03d94210212631c6ca1858c915d9e9a7f85835dbebcc1189637637e73ef51d",
+          "failed_checks": [
+            {
+              "command": [
+                ".venv/bin/ruff",
+                "check",
+                "--fix",
+                "src/property_rental/financial_reference.py",
+                "src/property_rental/financial_reference_api.py",
+                "src/property_rental/khr_payment_confirmation.py",
+                "src/property_rental/app.py",
+                "tests/test_financial_reference.py",
+                "tests/test_financial_reference_api.py",
+                "tests/test_financial_reference_migration.py",
+                "tests/test_initial_owner_bootstrap_cli.py"
+              ],
+              "exit_code": 1,
+              "seconds": 0.022,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-second-2.log",
+              "sha256": "601fcbee0bc2ccab468ece4875618da93d23997431c16b3511afdc0a93079eba"
+            }
+          ]
+        },
+        "v1052-financial-references-frontend-format-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-first.json",
+          "sha256": "18f4121747c76944f18399a916dd5d5d478aedd96fbd12f6f84482fec7776008",
+          "failed_checks": [
+            {
+              "command": [
+                "./node_modules/.bin/eslint",
+                "src/financialReferenceClient.ts",
+                "src/financialReferenceClient.test.ts"
+              ],
+              "exit_code": 1,
+              "seconds": 1.358,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-first-2.log",
+              "sha256": "7eec113d083144659510a398346b33b3cb226662cc0d3e042d7772fb2f905ea0"
+            }
+          ]
+        },
+        "v1052-financial-references-frontend-format-second.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-second.json",
+          "sha256": "e082ac802eda1c8c3ed3469ae3127336805adb2814680082c874d6f1920d356d",
+          "failed_checks": [
+            {
+              "command": [
+                "./node_modules/.bin/tsc",
+                "-b"
+              ],
+              "exit_code": 1,
+              "seconds": 0.541,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-second-3.log",
+              "sha256": "e62eadc0c3443a7537c9d844dd82fb4425e2f6fbb6bf5e66987cf118af22fe8b"
+            }
+          ]
+        },
+        "v1052-financial-references-pg-focused1.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-focused1.json",
+          "sha256": "34d51cfe82efcdbc281ac3e640729ca56d1e9f3522edda53a6a4f095131f1d3b",
+          "failed_checks": [
+            {
+              "command": [
+                "sh",
+                "scripts/database-test.sh"
+              ],
+              "exit_code": 1,
+              "seconds": 159.625,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-focused1-1.log",
+              "sha256": "def7fb6e0c03bfba57a2292fd11adc727ab7806d6addcd185ff34cc4c0aea19a"
+            }
+          ]
+        },
+        "v1052-financial-references-types-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-types-first.json",
+          "sha256": "ecd07ac10d7bfd71b9d57d430a98beaaf2203fa6e1bf3b92fe9b57f2a2a94d1f",
+          "failed_checks": [
+            {
+              "command": [
+                ".venv/bin/mypy",
+                "src/property_rental/financial_reference.py",
+                "src/property_rental/financial_reference_api.py",
+                "src/property_rental/khr_payment_confirmation.py",
+                "src/property_rental/app.py",
+                "tests/test_financial_reference.py",
+                "tests/test_financial_reference_api.py",
+                "tests/test_financial_reference_migration.py",
+                "tests/test_initial_owner_bootstrap_cli.py"
+              ],
+              "exit_code": 1,
+              "seconds": 1.042,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-types-first-1.log",
+              "sha256": "c237d530a20dcc8923eb8e1f89959e4f0f3349dcf2773fa035f8c96494a960c6"
+            }
+          ]
+        }
+      },
+      "retained_helper_evidence": {
+        "v1052-financial-references-pg-fixture-correction1.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-fixture-correction1.json",
+          "sha256": "fe4c0f183d91fad019af72307980ed567850dafce64f3360bf5419d8f2101b94"
+        },
+        "v1052-financial-references-pg-fixture-before-correction1.py.txt": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-fixture-before-correction1.py.txt",
+          "sha256": "5413e2e41c157ceeaad03a90b947ea68da47bf35366fd09847ac54ed517ccb53"
+        },
+        "v1052-financial-references-cursor-correction1.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-cursor-correction1.json",
+          "sha256": "7e0cf1731af52661dd7fa8006ee5047381b249670be3af98224255e4210de284"
+        },
+        "v1052-financial-reference-reconcile-helper-correction.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-reference-reconcile-helper-correction.json",
+          "sha256": "c1c13fbca5bb24f6a0538742d0e0d5a5c787565f0d72a1e3f91424cef9ede2a2"
+        },
+        "v1052-financial-references-correction1-applied.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-correction1-applied.json",
+          "sha256": "f277e92ae28d398323a383cfca8d1bfb34f7129393f42b1a12fbd6ad40311cdb"
+        },
+        "v1052-financial-references-fixture-isolation-correction1.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-fixture-isolation-correction1.json",
+          "sha256": "43ddd90936798567e573d6bd3117f7ac8a07d459bea06b8563cc62a1742d3875"
+        }
+      },
+      "focused_results": "207backend/API/KHR/inventory;197frontend including56recovery;22trace;backend/frontend static;11actual-browser groups PASS. Full933PG passed unchanged-source diagnostic run after two retained932PASS1NOWAIT runs; original contention cause not proven and original observer was scoped to bootstrap database.6backend and16frontend red failures retained. One new combined frontend failure from shared fixture contamination corrected without changing runtime/assertions.",
+      "browser_applicability": "All11focused browser groups passed on final product runtime. Exact containing-candidate11browser groups pending.",
+      "remaining_exact_gates": "Full exact successor gates and fresh complete8a-base zero review pending; no whole-version acceptance.",
+      "correction_attempt": 1,
+      "rejected_candidate": "456910f5792d8847cf41dccbd464fdda1628e78b",
+      "rejected_review": {
+        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-rejected-456910f.json",
+        "sha256": "8f27e1fcfe5fa1c5db30093dfed15719c3a1579f54d713f162c3f2f78782a221"
+      },
+      "correction_plan": [
+        {
+          "id": "FR-456-M1",
+          "severity": "MEDIUM",
+          "fingerprint": "Reference client rejects backend-valid internal controls and Unicode evidence",
+          "approach": "Separate whole legacy label validation from exact backend evidence validation. Count Unicode code points, match Python boundary whitespace and valid UTF-8/NUL rules, preserve internal tabs/newlines and all valid evidence without changing backend or byte ceilings. Add actual service/HTTP compatibility and browser/client regressions."
+        },
+        {
+          "id": "FR-456-L1",
+          "severity": "LOW",
+          "fingerprint": "Malformed automatic quote with manual input is classified as available conflict",
+          "approach": "Preview selects and validates automatic output with no manual override first; only explicit ApprovedKhrSourceUnavailable admits authorized manual input. Check future automatic timestamp before manual conflict. Keep accepted confirmation selector/replay unchanged and query the provider once."
+        },
+        {
+          "id": "FR-456-L2",
+          "severity": "LOW",
+          "fingerprint": "Late and pre-reader-rejected response bodies escape cleanup",
+          "approach": "Own each received body independently of reader acquisition. Cancel late bodies after interruption and rejected bodies before reader acquisition, without awaiting noncooperating cleanup or changing settlement/pending-command semantics. Root inspection found the same pattern in accepted financialClient.ts: reproduce and correct that directly related transport too."
+        }
+      ],
+      "correction_started_at": "2026-09-07T18:46:47.966308+00:00",
+      "correction_affected_paths": [
+        "backend/src/property_rental/financial_reference.py",
+        "backend/tests/test_financial_reference_api.py",
+        "backend/tests/test_financial_reference_migration.py",
+        "frontend/src/financialClient.test.ts",
+        "frontend/src/financialClient.ts",
+        "frontend/src/financialReferenceClient.test.ts",
+        "frontend/src/financialReferenceClient.ts",
+        "frontend/src/test/financialReferences.browser.ts",
+        "ops/NOW.md",
+        "ops/QUEUE.md",
+        "ops/STATE.json",
+        "ops/V1_052_FINANCIAL_REFERENCES.md",
+        "ops/traceability.json"
+      ],
+      "correction_focused_evidence": {
+        "v1052-financial-references-focused-correction1-green.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-focused-correction1-green.json",
+          "sha256": "08680095485fb724e1862119e6783e4ffc892d2a679820873ae0b24b61a7f34c"
+        },
+        "v1052-financial-references-frontend-correction1-all-fixture-recovery1.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-correction1-all-fixture-recovery1.json",
+          "sha256": "2b765eb9518d919fef546f7793f9101911739809b78e05f10b781eedb14c6210"
+        },
+        "v1052-financial-references-frontend-format-correction1-browser.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-correction1-browser.json",
+          "sha256": "5760b0fe6c204df517f017355ef4648773466055047c7078d17907aef297e813"
+        },
+        "v1052-financial-references-static-correction1-final.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-static-correction1-final.json",
+          "sha256": "451d263be9a7820a504fab3de04270a644348eea6fbe5b10e81c3d71432fc9c0"
+        },
+        "v1052-financial-references-trace-correction1-final.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-trace-correction1-final.json",
+          "sha256": "76dd3ce134aa1669be6bac1bc75771ae2afd309bb694e845bad40e34e56bc90c"
+        },
+        "v1052-financial-references-pg-correction1-target-diagnostic1.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-correction1-target-diagnostic1.json",
+          "sha256": "1c0ddb44fb23ef2e5cbf4bf3ebfeafa675f127d9dcdeb644815fd65c47f85fc5"
+        },
+        "v1052-financial-references-browser-correction1-focused.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-browser-correction1-focused.json",
+          "sha256": "c5c0ff1fd31ad789fbb244e8bc6ee4ef277e118c1bae55782a56a49e5cb0548e"
+        },
+        "v1052-financial-clients-browser-references-correction1-focused.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-browser-references-correction1-focused.json",
+          "sha256": "fe222353b5e0b722552cebdb901c1ee5ecc8825715468f8c98b612b23bfd8b5c"
+        }
+      },
+      "correction_retained_failed_checks": {
+        "v1052-financial-references-correction1-red-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-correction1-red-first.json",
+          "sha256": "40d484d037354344fdbd91b03a63ef4b75bdc0db390cbb6c4113e237e2d40ab6",
+          "failed_checks": [
+            {
+              "command": [
+                ".venv/bin/pytest",
+                "-q",
+                "tests/test_financial_reference_api.py",
+                "-k",
+                "preserves_backend_valid_unicode or keeps_whole_valid or malformed_source_is_unavailable"
+              ],
+              "exit_code": 1,
+              "seconds": 3.871,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-correction1-red-first-1.log",
+              "sha256": "99c6d24a16c6b4bc508661f895f5d08c69b84718afbea7be612aed3b463bcea9"
+            }
+          ]
+        },
+        "v1052-financial-references-cursor-red1.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-cursor-red1.json",
+          "sha256": "faec011d8c6b98c9129c6a93786f2abb265b8188b27eb2930ca0434675a66ab5",
+          "failed_checks": [
+            {
+              "command": [
+                "./node_modules/.bin/vitest",
+                "run",
+                "src/financialReferenceClient.test.ts",
+                "-t",
+                "TEST-FE-347"
+              ],
+              "exit_code": 1,
+              "seconds": 0.987,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-cursor-red1-1.log",
+              "sha256": "b549b712f4f9792287fd66191fe6e3b6fc6fb1445158165ca0a151eb272a08c1"
+            }
+          ]
+        },
+        "v1052-financial-references-format-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-first.json",
+          "sha256": "be356a85be19e79a341e43bebefb7106b553e16d84b00bad44885c4e49d7db54",
+          "failed_checks": [
+            {
+              "command": [
+                ".venv/bin/ruff",
+                "check",
+                "--fix",
+                "src/property_rental/financial_reference.py",
+                "src/property_rental/financial_reference_api.py",
+                "src/property_rental/khr_payment_confirmation.py",
+                "src/property_rental/app.py",
+                "tests/test_financial_reference.py",
+                "tests/test_financial_reference_api.py",
+                "tests/test_financial_reference_migration.py",
+                "tests/test_initial_owner_bootstrap_cli.py"
+              ],
+              "exit_code": 1,
+              "seconds": 0.023,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-first-2.log",
+              "sha256": "e6998053939f3a005244f857f81ef41073f3e9ceb0bf1e0356f4e10596c576d3"
+            }
+          ]
+        },
+        "v1052-financial-references-format-second.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-second.json",
+          "sha256": "1c03d94210212631c6ca1858c915d9e9a7f85835dbebcc1189637637e73ef51d",
+          "failed_checks": [
+            {
+              "command": [
+                ".venv/bin/ruff",
+                "check",
+                "--fix",
+                "src/property_rental/financial_reference.py",
+                "src/property_rental/financial_reference_api.py",
+                "src/property_rental/khr_payment_confirmation.py",
+                "src/property_rental/app.py",
+                "tests/test_financial_reference.py",
+                "tests/test_financial_reference_api.py",
+                "tests/test_financial_reference_migration.py",
+                "tests/test_initial_owner_bootstrap_cli.py"
+              ],
+              "exit_code": 1,
+              "seconds": 0.022,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-format-second-2.log",
+              "sha256": "601fcbee0bc2ccab468ece4875618da93d23997431c16b3511afdc0a93079eba"
+            }
+          ]
+        },
+        "v1052-financial-references-frontend-correction1-all-green.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-correction1-all-green.json",
+          "sha256": "c9311ff613a551c5fcb647c7296ad56e6f67b816170ca01c0dc887ed8b89bf83",
+          "failed_checks": [
+            {
+              "command": [
+                "./node_modules/.bin/vitest",
+                "run",
+                "src/financialReferenceClient.test.ts",
+                "src/financialClient.test.ts",
+                "src/financialRecovery.test.ts"
+              ],
+              "exit_code": 1,
+              "seconds": 1.193,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-correction1-all-green-1.log",
+              "sha256": "0641f4f1be746e0c5f2e056cb7414694fdd38a88ce8ed2f72e939e252dc21cd5"
+            }
+          ]
+        },
+        "v1052-financial-references-frontend-correction1-red-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-correction1-red-first.json",
+          "sha256": "7b4fc891013d5d6e32460eeab4b844e0d8b9a672244f33851f22548c62d08680",
+          "failed_checks": [
+            {
+              "command": [
+                "./node_modules/.bin/vitest",
+                "run",
+                "src/financialReferenceClient.test.ts",
+                "src/financialClient.test.ts",
+                "-t",
+                "TEST-FE-34[89]|TEST-FE-35[0-4]"
+              ],
+              "exit_code": 1,
+              "seconds": 1.175,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-correction1-red-first-1.log",
+              "sha256": "633b02eef7a98dccb1e3727d20d155c1fd822df57bc548072b63a71470cb0665"
+            }
+          ]
+        },
+        "v1052-financial-references-frontend-format-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-first.json",
+          "sha256": "18f4121747c76944f18399a916dd5d5d478aedd96fbd12f6f84482fec7776008",
+          "failed_checks": [
+            {
+              "command": [
+                "./node_modules/.bin/eslint",
+                "src/financialReferenceClient.ts",
+                "src/financialReferenceClient.test.ts"
+              ],
+              "exit_code": 1,
+              "seconds": 1.358,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-first-2.log",
+              "sha256": "7eec113d083144659510a398346b33b3cb226662cc0d3e042d7772fb2f905ea0"
+            }
+          ]
+        },
+        "v1052-financial-references-frontend-format-second.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-second.json",
+          "sha256": "e082ac802eda1c8c3ed3469ae3127336805adb2814680082c874d6f1920d356d",
+          "failed_checks": [
+            {
+              "command": [
+                "./node_modules/.bin/tsc",
+                "-b"
+              ],
+              "exit_code": 1,
+              "seconds": 0.541,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-frontend-format-second-3.log",
+              "sha256": "e62eadc0c3443a7537c9d844dd82fb4425e2f6fbb6bf5e66987cf118af22fe8b"
+            }
+          ]
+        },
+        "v1052-financial-references-pg-correction1-focused.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-correction1-focused.json",
+          "sha256": "8b85438bf736832d8bc8b19a01b9351d1cccb980c1269853d54a69965f636fcb",
+          "failed_checks": [
+            {
+              "command": [
+                "sh",
+                "scripts/database-test.sh"
+              ],
+              "exit_code": 1,
+              "seconds": 157.552,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-correction1-focused-1.log",
+              "sha256": "5e80ab2dd09a07fc860ca373db2e71aa26dc6ff80341ac17aa259677a914a7a0"
+            }
+          ]
+        },
+        "v1052-financial-references-pg-correction1-observed-recovery1.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-correction1-observed-recovery1.json",
+          "sha256": "225a8e31f76b1cd18990c61358be1d7479439c74cfb389b6a3b2f85572f30774",
+          "failed_checks": [
+            {
+              "command": [
+                "sh",
+                "scripts/database-test.sh"
+              ],
+              "exit_code": 1,
+              "seconds": 156.432,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-correction1-observed-recovery1-1.log",
+              "sha256": "9de0e096778c65793a41f5be880dc0877cf3745f4ede357a272edf35040873aa"
+            }
+          ]
+        },
+        "v1052-financial-references-pg-focused1.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-focused1.json",
+          "sha256": "34d51cfe82efcdbc281ac3e640729ca56d1e9f3522edda53a6a4f095131f1d3b",
+          "failed_checks": [
+            {
+              "command": [
+                "sh",
+                "scripts/database-test.sh"
+              ],
+              "exit_code": 1,
+              "seconds": 159.625,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-pg-focused1-1.log",
+              "sha256": "def7fb6e0c03bfba57a2292fd11adc727ab7806d6addcd185ff34cc4c0aea19a"
+            }
+          ]
+        },
+        "v1052-financial-references-types-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-types-first.json",
+          "sha256": "ecd07ac10d7bfd71b9d57d430a98beaaf2203fa6e1bf3b92fe9b57f2a2a94d1f",
+          "failed_checks": [
+            {
+              "command": [
+                ".venv/bin/mypy",
+                "src/property_rental/financial_reference.py",
+                "src/property_rental/financial_reference_api.py",
+                "src/property_rental/khr_payment_confirmation.py",
+                "src/property_rental/app.py",
+                "tests/test_financial_reference.py",
+                "tests/test_financial_reference_api.py",
+                "tests/test_financial_reference_migration.py",
+                "tests/test_initial_owner_bootstrap_cli.py"
+              ],
+              "exit_code": 1,
+              "seconds": 1.042,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-types-first-1.log",
+              "sha256": "c237d530a20dcc8923eb8e1f89959e4f0f3349dcf2773fa035f8c96494a960c6"
+            }
+          ]
+        }
+      },
+      "traceability_inventory": "12additive correction maps preserve1586parent entries;1598total,49complete-base additions over1549.",
+      "candidate": "431f23afbe9d35a0a6479218c4782f21337b14fe",
+      "acceptance_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-accepted-431f23a.json",
+      "acceptance_sha256": "be0eb7127f9fcc2328b8545c2351933e07d7f022ca5fa12b949d736bd9582c36",
+      "review_findings": {
+        "HIGH": 0,
+        "MEDIUM": 0,
+        "LOW": 0
+      },
+      "report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-review-431f23a.md",
+      "report_sha256": "d303698ac01c4252d0c114d1d1671dc172614da8e35763955694255c8e6005a8",
+      "completed_at": "2026-09-07T19:48:11.080144+00:00",
+      "rejected456_preserved": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-rejected-456910f.json",
+        "sha256": "8f27e1fcfe5fa1c5db30093dfed15719c3a1579f54d713f162c3f2f78782a221"
+      }
     }
   },
   "historical_v1_048_takeover": {
@@ -5625,9 +5840,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "456910f5792d8847cf41dccbd464fdda1628e78b",
+  "commit": "431f23afbe9d35a0a6479218c4782f21337b14fe",
   "idle_reason": null,
-  "next_action": "Freeze normal correction1 successor of rejected456; run full exact933PostgreSQL/2296backend/666frontend/177static/build/import/189automation/config/trace/guard/preservation and11actual-browser groups. Then ONE fresh complete8a-base Astra/max/Standard/enforced-read-only review covering both commits/all20paths under standing authority; require zero findings. Preserve all rejected candidates/reports/regressions. Then staff UI/necessary reads and full52cumulative publication/exactCI/refs/same-card/durable closure before53; closed53pauseSAME/OpenClawdisabled/no54.",
+  "next_action": "Create normal28-path Payment reversal context candidate from accepted431; run fresh exact full953PostgreSQL/backend/frontend/179static/build/import/189automation/config/trace/guard/preservation and7reference plus6command browser groups. Then ONE fresh complete431-base Astra/max/Standard/enforced-read-only independent zero review under standing through53 authority. Preserve every failed candidate/report/log and all new draft regression evidence. After bounded acceptance continue remaining action-only sources/staff UI/full52 cumulative release/publication/exactCI/refs/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -5635,8 +5850,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Normal successor containing correction1; resolve exact SHA/tree through external immutable receipt.",
-  "candidate_parent": "456910f5792d8847cf41dccbd464fdda1628e78b",
+  "candidate_resolution": "Normal containing Payment reversal context commit; exact SHA/tree resolved by external immutable receipt.",
+  "candidate_parent": "431f23afbe9d35a0a6479218c4782f21337b14fe",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -5699,7 +5914,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 financial references correction1 focused verified; successor freeze pending",
+  "phase": "V1-052 Payment reversal context focused verified; normal candidate freeze pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -6808,7 +7023,8 @@
     "b7 independentREJECT0HIGH1MEDIUM0LOW;correction2 8FAIL149PASS transition red then157PASS;4FAIL157PASS original payout-domain red then161PASS. Final format/types/lint/172backendstatic/22trace/config/trace/guardPASS. Type-only test narrowing failure retained;3maps1546prior preserved=1549. Exact successor602frontend and other full gates/browser/review pending.",
     "ACCEPTED8a complete15paths/threecommits:2166backend/930PG/602frontend/189automation/172static/build/import/6browserPASS; independent57920zero; acceptanceSHA2566c2c3f54745818a535c87011df05c73ac5f258f885d93f286bfe9e693a82ee53. All989/b7/5578/reports and regression evidence retained; no approval-wait rerun.",
     "Financial references focused183backend/API/KHR/inventory/933PG/42frontend/22trace/3browser/changedstaticPASS. PGfixture1FAIL932PASS then933PASS after retiring only105owned methods; cursor2FAIL1PASS targeted then42PASS after normalization; all formatting/type/helper failures retained.37newmaps1549preserved=1586. Full exact containing-candidate gates and zero review pending.",
-    "456REJECT0HIGH1MEDIUM2LOW;correction1 red6backendFAIL18PASS and16frontendFAIL6PASS. Focused207backend/API/KHR/inventory,197frontend/recovery,22trace,177static unchanged inventory,11actualbrowsergroupsPASS. Shared-fixture1FAIL196PASS retained then197PASS after isolated boolean copies. Two PG932PASS1NOWAIT failures retained; actual-test-database diagnostic full933PASS with unchanged assertions/settings/source, original holder not proven. Exact successor gates/review pending; no tests repeated for approval."
+    "456REJECT0HIGH1MEDIUM2LOW;correction1 red6backendFAIL18PASS and16frontendFAIL6PASS. Focused207backend/API/KHR/inventory,197frontend/recovery,22trace,177static unchanged inventory,11actualbrowsergroupsPASS. Shared-fixture1FAIL196PASS retained then197PASS after isolated boolean copies. Two PG932PASS1NOWAIT failures retained; actual-test-database diagnostic full933PASS with unchanged assertions/settings/source, original holder not proven. Exact successor gates/review pending; no tests repeated for approval.",
+    "Payment reversal context focused87unit/API/inventory,20PG,113client,23trace,7Chromiumgroups/staticPASS. Full952PG passed before final voided-Invoice projection correction; exact953PG pending. Historical Deposit unsupported-application and VOID Invoice result gaps reproduced/corrected. All parser/fixture/lint/type/trace/helper failures retained;112-skipped premature frontend red explicitly not evidence.38newmaps preserve1598prior=1636. Exact containing-candidate full gates and independent zero review remain required."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -6830,7 +7046,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-07T19:17:41.358496+00:00",
+  "timestamp": "2026-09-07T20:57:45.632214+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -7062,7 +7278,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-07T19:17:41.358496+00:00",
+  "updated_at": "2026-09-07T20:57:45.632214+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -8244,21 +8460,20 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_exact_financial_reference_correction1_gates_and_review",
-    "base_sha": "8a7fc60d0bb39c23dd5b6c54ea6f326583496a26",
+    "status": "pending_exact_payment_reversal_context_gates_and_review",
+    "base_sha": "431f23afbe9d35a0a6479218c4782f21337b14fe",
     "exact_sha": null,
     "model": "gpt-6-astra",
     "reasoning_effort": "max",
     "mode": "Standard",
     "read_only": true,
-    "rejected_candidate": "456910f5792d8847cf41dccbd464fdda1628e78b",
-    "rejected_review": {
-      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-rejected-456910f.json",
-      "sha256": "8f27e1fcfe5fa1c5db30093dfed15719c3a1579f54d713f162c3f2f78782a221"
-    },
     "standing_authorization": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
       "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
+    },
+    "accepted_base": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-accepted-431f23a.json",
+      "sha256": "be0eb7127f9fcc2328b8545c2351933e07d7f022ca5fa12b949d736bd9582c36"
     },
     "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6"
   },

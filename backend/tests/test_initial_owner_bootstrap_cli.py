@@ -620,6 +620,7 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/properties/{property_id}/financial-capabilities": {"get"},
         "/api/v1/properties/{property_id}/payment-methods": {"get"},
         "/api/v1/properties/{property_id}/payments/khr-preview": {"post"},
+        "/api/v1/properties/{property_id}/payments/{payment_id}/reversal-context": {"get"},
         "/api/v1/properties/{property_id}/payments": {"get", "post"},
         "/api/v1/payments/{payment_id}": {"get"},
         "/api/v1/payments/{payment_id}/allocation-proposal": {"get"},

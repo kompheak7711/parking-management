@@ -18,6 +18,12 @@ import {
   type FinancialJson,
 } from "./financialJson";
 
+import {
+  captureReversalContext,
+  validateReversalContext,
+  type ReversalContextView,
+} from "./paymentReversalContext";
+
 export const FINANCIAL_REFERENCE_REPLY_BYTES = 1_048_576;
 export const FINANCIAL_CAPABILITIES = [
   "payments.read",
@@ -50,6 +56,13 @@ export interface FinancialReferenceScope {
 export type FinancialReferenceRequest =
   | { operation: "workspaces" | "methods"; limit?: number; cursor?: string }
   | { operation: "capabilities" }
+  | {
+      operation: "paymentReversalContext";
+      payment_id: string;
+      view?: ReversalContextView;
+      limit?: number;
+      cursor?: string;
+    }
   | {
       operation: "khrPreview";
       usd_amount_cents: number | bigint;
@@ -152,7 +165,9 @@ function capture(input: FinancialReferenceRequest): FinancialObject {
     exactKeys(row, ["operation"], ["limit", "cursor"]);
     if (row.limit !== undefined) financialInteger(row.limit, 1n, 100n);
     if (row.cursor !== undefined) row.cursor = financialId(row.cursor);
-  } else if (row.operation === "capabilities") exactKeys(row, ["operation"]);
+  } else if (row.operation === "paymentReversalContext")
+    captureReversalContext(row);
+  else if (row.operation === "capabilities") exactKeys(row, ["operation"]);
   else if (row.operation === "khrPreview") {
     exactKeys(row, ["operation", "usd_amount_cents"], ["manual_reference"]);
     financialInteger(row.usd_amount_cents, 1n, 9_000_000_000_000_000n);
@@ -167,8 +182,11 @@ function validate(
   propertyId: string | null,
   requestId: string,
 ): FinancialReferenceReply {
+  const context = input.operation === "paymentReversalContext";
   const paged =
-    input.operation === "workspaces" || input.operation === "methods";
+    context ||
+    input.operation === "workspaces" ||
+    input.operation === "methods";
   exactKeys(envelope, ["data", "meta", ...(paged ? ["page"] : [])]);
   const meta = financialObject(envelope.meta);
   exactKeys(meta, [
@@ -183,7 +201,14 @@ function validate(
   )
     invalidFinancial();
   let page: FinancialReferenceReply["page"] = null;
-  if (paged) {
+  if (context) {
+    page = validateReversalContext(
+      envelope,
+      input,
+      financialId(propertyId),
+      requestId,
+    );
+  } else if (paged) {
     const pagination = financialObject(envelope.page);
     exactKeys(pagination, ["limit", "next_cursor"]);
     const limit = Number(financialInteger(input.limit ?? 50, 1n, 100n));
@@ -354,16 +379,39 @@ export function createFinancialReferenceClient(
         const path =
           input.operation === "workspaces"
             ? "/api/v1/financial-workspaces"
-            : `/api/v1/properties/${financialId(propertyId)}/${input.operation === "capabilities" ? "financial-capabilities" : input.operation === "methods" ? "payment-methods" : "payments/khr-preview"}`;
+            : input.operation === "paymentReversalContext"
+              ? `/api/v1/properties/${financialId(propertyId)}/payments/${financialId(input.payment_id)}/reversal-context`
+              : `/api/v1/properties/${financialId(propertyId)}/${input.operation === "capabilities" ? "financial-capabilities" : input.operation === "methods" ? "payment-methods" : "payments/khr-preview"}`;
         const query = new URLSearchParams();
-        if (input.operation === "workspaces" || input.operation === "methods") {
+        if (
+          ["workspaces", "methods", "paymentReversalContext"].includes(
+            typeof input.operation === "string"
+              ? input.operation
+              : invalidFinancial(),
+          )
+        ) {
           if (input.limit !== undefined)
             query.set(
               "limit",
               financialInteger(input.limit, 1n, 100n).toString(),
             );
           if (input.cursor !== undefined)
-            query.set("cursor", financialId(input.cursor));
+            query.set(
+              "cursor",
+              input.operation === "paymentReversalContext"
+                ? typeof input.cursor === "string"
+                  ? input.cursor
+                  : invalidFinancial()
+                : financialId(input.cursor),
+            );
+          if (
+            input.operation === "paymentReversalContext" &&
+            input.view !== undefined
+          )
+            query.set(
+              "view",
+              typeof input.view === "string" ? input.view : invalidFinancial(),
+            );
         }
         const headers = new Headers({
           Accept: "application/json",

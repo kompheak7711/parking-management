@@ -22851,6 +22851,683 @@
       "test_path": "frontend/src/test/financialReferences.browser.ts",
       "status": "implemented",
       "notes": "Actual Chromium cancels late reference and financial bodies, even when cleanup itself never settles; resulting streams are closed."
+    },
+    {
+      "test_id": "test_payment_reversal_context_limit_is_bounded",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_reversal_context.py",
+      "status": "implemented",
+      "notes": "Limit is bounded. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_cursor_is_finite_canonical",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_reversal_context.py",
+      "status": "implemented",
+      "notes": "Cursor is finite canonical. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_action_grant_precedes_database",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_reversal_context.py",
+      "status": "implemented",
+      "notes": "Action grant precedes database. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_same_snapshot_bounded_page_and_original_source",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_reversal_context.py",
+      "status": "implemented",
+      "notes": "Same snapshot bounded page and original source. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_changed_revision_rejects_continuation",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_reversal_context.py",
+      "status": "implemented",
+      "notes": "Changed revision rejects continuation. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_refuses_incomplete_or_malformed_projection",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_reversal_context.py",
+      "status": "implemented",
+      "notes": "Refuses incomplete or malformed projection. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_fresh_identity_source_and_outage_fail_closed",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_payment_reversal_context.py",
+      "status": "implemented",
+      "notes": "Fresh identity source and outage fail closed. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_http_action_only_success_no_store_and_scope",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_reversal_context_api.py",
+      "status": "implemented",
+      "notes": "Http action only success no store and scope. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_http_rejects_invalid_queries_before_projection",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_reversal_context_api.py",
+      "status": "implemented",
+      "notes": "Http rejects invalid queries before projection. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_http_identity_and_scope_precede_projection",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_reversal_context_api.py",
+      "status": "implemented",
+      "notes": "Http identity and scope precede projection. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_http_safe_source_and_changed_snapshot_errors",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_payment_reversal_context_api.py",
+      "status": "implemented",
+      "notes": "Http safe source and changed snapshot errors. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_action_only_original_fx_and_no_writes",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database action only original fx and no writes. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_allocation_impact_unwind_and_historical_results",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database allocation impact unwind and historical results. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_credit_application_dependencies_and_results",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database credit application dependencies and results. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_partial_full_refund_returns_and_correction_reversal",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database partial full refund returns and correction reversal. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_complete_large_pages_and_revision_change",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database complete large pages and revision change. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_other_payment_target_change_invalidates_result",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database other payment target change invalidates result. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_fresh_actor_precedes_source",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database fresh actor precedes source. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_missing_property_source_and_cursor",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database missing property source and cursor. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_migration_privileges_and_readonly_transaction",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database migration privileges and readonly transaction. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_shared_deposit_descendants_deduplicated_and_guarded",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database shared deposit descendants deduplicated and guarded. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_pet_refund_and_return_use_deposit_revision",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database pet refund and return use deposit revision. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_unsupported_future_application_is_explicit",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database unsupported future application is explicit. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_charge_result_matches_authoritative_position",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database charge result matches authoritative position. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_coherent_snapshot_during_new_refund",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database coherent snapshot during new refund. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_statement_deadline_is_unavailable",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Database statement deadline is unavailable. Synthetic evidence only; existing financial writes remain authoritative."
+    },
+    {
+      "test_id": "TEST-FE-357",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Exact Property/Payment GET mapping, action-only read and no command/CSRF/idempotency reservation."
+    },
+    {
+      "test_id": "TEST-FE-358",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Exact large current result amounts and whole valid immutable labels."
+    },
+    {
+      "test_id": "TEST-FE-359",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Reject invalid page/view/source/cursor and extra command fields before dispatch."
+    },
+    {
+      "test_id": "TEST-FE-360",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Reject foreign/malformed context, impossible result amounts and unsupported future kinds."
+    },
+    {
+      "test_id": "TEST-FE-361",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Complete cross-page dependencies and revision-bound continuation."
+    },
+    {
+      "test_id": "TEST-FE-362",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Incomplete, duplicate or mismatched actor/Property/Payment/view sequences cannot claim completeness."
+    },
+    {
+      "test_id": "TEST-FE-363",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Reject orphan dependencies, missing/mismatched target details and inconsistent line totals."
+    },
+    {
+      "test_id": "TEST-FE-364",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Invalidated actor/Property context dispatches no request."
+    },
+    {
+      "test_id": "TEST-FE-365",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Actual Chromium validates complete bounded context, exact streamed result integers and whole labels."
+    },
+    {
+      "test_id": "TEST-FE-366",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Actual Chromium409/abort/invalidated reads preserve existing encrypted pending key and original bytes without financial network calls."
+    },
+    {
+      "test_id": "test_v1052_payment_reversal_context_preserves_prior_manifest_and_complete_stage_maps",
+      "upstream_ids": [
+        "TEST-117",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "Preserves all1598 accepted-base mappings and requires every scoped reversal context test mapping without preventing future additive stages."
+    },
+    {
+      "test_id": "test_payment_reversal_context_database_void_invoice_has_zero_current_balance",
+      "upstream_ids": [
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_payment_reversal_context_migration.py",
+      "status": "implemented",
+      "notes": "Historical linked Invoice VOID invalidates prior result pagination, returns authoritative zero current balance and preserves original Invoice amount. Red80000-versus0 retained."
     }
   ]
 }

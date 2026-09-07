@@ -1,3 +1,8 @@
+import {
+  ids as contextIds,
+  fixture as financialFixture,
+} from "./financialFixtures";
+import { PaymentReversalContextSequence } from "../paymentReversalContext";
 // Real-browser reference transport and preservation of a synthetic encrypted intent.
 import {
   createFinancialReferenceClient,
@@ -355,4 +360,214 @@ export async function runFinancialReferenceBrowserChecks(): Promise<string[]> {
   }
   passed.push("TEST-FE-356");
   return passed;
+}
+
+function contextProgress(sequence: PaymentReversalContextSequence): {
+  complete: boolean;
+  nextCursor: string | null;
+} {
+  return { complete: sequence.complete, nextCursor: sequence.nextCursor };
+}
+export async function runPaymentReversalContextBrowserChecks(): Promise<
+  string[]
+> {
+  const actor = crypto.randomUUID(),
+    key = crypto.randomUUID(),
+    revision = "a".repeat(64);
+  const property = contextIds.property,
+    payment = contextIds.payment;
+  const controller = new AbortController(),
+    scope = { actorId: actor, propertyId: property, signal: controller.signal };
+  const plaintext =
+    '{"synthetic_pending":"original request bytes survive reversal context reads"}';
+  const cursor = `${revision}:3:${contextIds.credit}`;
+  const sequence = new PaymentReversalContextSequence(
+    actor,
+    property,
+    payment,
+    "impact",
+  );
+  const original = financialFixture("paymentGet").data;
+  const calls: string[] = [];
+  const client = createFinancialReferenceClient((url, init) => {
+    check(typeof url === "string", "Finite context URL");
+    const parsed = new URL(url, "https://synthetic.invalid");
+    check(
+      parsed.pathname ===
+        `/api/v1/properties/${property}/payments/${payment}/reversal-context`,
+      "Original Payment and Property path",
+    );
+    check(
+      init?.method === "GET" &&
+        init.body === undefined &&
+        init.cache === "no-store",
+      "Context is a read",
+    );
+    const headers = new Headers(init.headers),
+      requestId = headers.get("X-Request-ID");
+    check(
+      requestId &&
+        headers.get("X-Billing-Actor-ID") === actor &&
+        headers.get("X-Financial-Property-ID") === property,
+      "Captured exact context identity",
+    );
+    check(
+      headers.get("Idempotency-Key") === null &&
+        headers.get("X-CSRF-Token") === null,
+      "Read never creates a financial command",
+    );
+    calls.push(url);
+    const result = parsed.searchParams.get("view") === "result";
+    const next = parsed.searchParams.get("cursor");
+    check(next === null || next === cursor, "Finite continuation");
+    const identity = next === null ? contextIds.credit : contextIds.other;
+    const items = result
+      ? [
+          {
+            ordinal: 1,
+            kind: "INVOICE",
+            id: contextIds.invoice,
+            data: {
+              invoice_number: "Invoice\tOriginal\n😀",
+              status: "UNPAID",
+              outstanding_usd_cents: 9007199254740993n,
+            },
+          },
+        ]
+      : [
+          {
+            ordinal: 3,
+            kind: "CREDIT",
+            id: identity,
+            data: {
+              source_kind: "PAYMENT",
+              source_id: payment,
+              target_kind: "CREDIT",
+              target_id: identity,
+              amount_usd_cents: 50,
+              occurred_at: "2026-09-01T05:00:00Z",
+            },
+          },
+        ];
+    const raw = stringifyFinancialJson({
+      data: {
+        payment_resource: original,
+        view: result ? "result" : "impact",
+        revision,
+        items,
+      },
+      page: { limit: 1, next_cursor: result || next !== null ? null : cursor },
+      meta: { actor_id: actor, property_id: property, request_id: requestId },
+    });
+    const bytes = new TextEncoder().encode(raw);
+    return Promise.resolve(
+      new Response(
+        new ReadableStream<Uint8Array>({
+          start(stream) {
+            for (let i = 0; i < bytes.length; i += 31)
+              stream.enqueue(bytes.slice(i, i + 31));
+            stream.close();
+          },
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-ID": requestId,
+          },
+        },
+      ),
+    );
+  });
+  await sealedIntentStore.begin(actor, { requestKey: key, plaintext });
+  try {
+    const request = {
+      operation: "paymentReversalContext" as const,
+      payment_id: payment,
+      limit: 1,
+    };
+    sequence.append(await client.read(scope, request));
+    check(
+      !sequence.complete && sequence.nextCursor === cursor,
+      "A partial page never claims complete impact",
+    );
+    sequence.append(await client.read(scope, { ...request, cursor }), cursor);
+    const completed = contextProgress(sequence);
+    check(
+      completed.complete && completed.nextCursor === null,
+      "Complete original impact after exact continuation",
+    );
+    const result = await client.read(scope, { ...request, view: "result" });
+    const rows = financialObject(result.data).items;
+    check(
+      Array.isArray(rows) &&
+        financialObject(financialObject(rows[0]).data).outstanding_usd_cents ===
+          9007199254740993n,
+      "Actual browser preserves exact large result integer",
+    );
+    check(
+      financialObject(financialObject(rows[0]).data).invoice_number ===
+        "Invoice\tOriginal\n😀",
+      "Whole original label survives byte-boundary decoding",
+    );
+    const conflict = createFinancialReferenceClient((_url, init) => {
+      const requestId = new Headers(init?.headers).get("X-Request-ID");
+      check(requestId, "Conflict correlation");
+      return Promise.resolve(
+        new Response(
+          JSON.stringify({
+            error: { code: "CONFLICT" },
+            meta: { request_id: requestId },
+          }),
+          {
+            status: 409,
+            headers: {
+              "Content-Type": "application/json",
+              "X-Request-ID": requestId,
+            },
+          },
+        ),
+      );
+    });
+    const changed: unknown = await conflict
+      .read(scope, { ...request, cursor })
+      .catch((error: unknown) => error);
+    check(
+      changed instanceof FinancialReferenceError && changed.status === 409,
+      "Changed revision stays an explicit reload rejection",
+    );
+    const late = new AbortController();
+    const pending = createFinancialReferenceClient(
+      () =>
+        new Promise<never>(() => {
+          /* Synthetic transport ignores cancellation. */
+        }),
+    ).read({ ...scope, signal: late.signal }, request);
+    late.abort();
+    const stopped: unknown = await pending.catch((error: unknown) => error);
+    check(
+      stopped instanceof FinancialReferenceError &&
+        stopped.code === "WORKSPACE_INVALIDATED",
+      "Stale workspace settles noncooperating context read",
+    );
+    const before = calls.length;
+    controller.abort();
+    const invalid: unknown = await client
+      .read(scope, request)
+      .catch((error: unknown) => error);
+    check(
+      invalid instanceof FinancialReferenceError && calls.length === before,
+      "Invalidated Property sends no context request",
+    );
+    const preserved = await sealedIntentStore.read(actor);
+    check(
+      preserved?.requestKey === key && preserved.plaintext === plaintext,
+      "All context reads and rejections preserve original encrypted pending intent",
+    );
+    const passed: string[] = [];
+    passed.push("TEST-FE-365");
+    passed.push("TEST-FE-366");
+    return passed;
+  } finally {
+    await sealedIntentStore.clear(actor, key);
+  }
 }
