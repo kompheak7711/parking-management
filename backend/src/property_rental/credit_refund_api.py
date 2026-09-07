@@ -45,6 +45,7 @@ from property_rental.credit_refund_read import (
     FinancialReadUnavailableError,
     Resource,
 )
+from property_rental.financial_context import bind_financial_property, financial_metadata
 from property_rental.identity import ActorResolver, AuthenticatedActor
 from property_rental.payment_api import (
     Evidence,
@@ -359,10 +360,11 @@ def create_credit_refund_router(
             _mutation(request, settings)
         prop = _invoke(lambda: flow.resolve(resource, identity, capability, actor=actor))
         _authorize(actor, prop, capability, hide=True)
+        bind_financial_property(request, prop)
         return actor, prop
 
     def envelope(request: Request, result: object) -> dict[str, object]:
-        return {"data": result, "meta": {"request_id": request.state.request_id}}
+        return {"data": result, "meta": financial_metadata(request)}
 
     def queries(request: Request, allowed: set[str], limit: int | None = None) -> None:
         _queries(request, allowed)

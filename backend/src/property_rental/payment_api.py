@@ -24,6 +24,7 @@ from starlette.types import Message, Receive, Scope, Send
 from property_rental.api import require_billing_actor
 from property_rental.browser_security import require_browser_mutation
 from property_rental.configuration_api import ExchangeRateProvider, UnavailableExchangeRateProvider
+from property_rental.financial_context import bind_financial_property, financial_metadata
 from property_rental.identity import (
     ActorResolver,
     AuthenticatedActor,
@@ -503,6 +504,7 @@ def create_payment_router(
         del sort
         actor = _actor(request, resolver)
         _authorize(actor, property_id, "payments.read")
+        bind_financial_property(request, property_id)
         _queries(request, {"customer_id", "status", "payment_method_id", "limit", "cursor", "sort"})
         page = _page(limit, cursor)
         if "limit" in request.query_params and request.query_params["limit"] != str(limit):
@@ -518,7 +520,7 @@ def create_payment_router(
         return {
             "data": result["items"],
             "page": {"limit": limit, "next_cursor": _cursor(result["next_cursor"])},
-            "meta": {"request_id": request.state.request_id},
+            "meta": financial_metadata(request),
         }
 
     @router.get("/payments/{payment_id}")
@@ -530,7 +532,8 @@ def create_payment_router(
         _authorize(actor, UUID(str(payment["property_id"])), "payments.read", hide=True)
         if str(payment["id"]) != str(payment_id):
             raise HTTPException(404)
-        return {"data": result, "meta": {"request_id": request.state.request_id}}
+        bind_financial_property(request, UUID(str(payment["property_id"])))
+        return {"data": result, "meta": financial_metadata(request)}
 
     @router.post(
         "/properties/{property_id}/payments", status_code=201, dependencies=[Depends(_strict_json)]
@@ -553,10 +556,11 @@ def create_payment_router(
         require_browser_mutation(request, settings)
         if isinstance(body, KhrPaymentInput) and body.manual_reference is not None:
             _authorize(actor, property_id, "exchange_rates.manage")
+        bind_financial_property(request, property_id)
         command = _invoke(lambda: body.command(idempotency_key))
         result = _invoke(lambda: flow.confirm(property_id, command, actor=actor))
         payment = cast(dict[str, object], result["payment"])
         response.headers["Location"] = f"/api/v1/payments/{payment['id']}"
-        return {"data": result, "meta": {"request_id": request.state.request_id}}
+        return {"data": result, "meta": financial_metadata(request)}
 
     return router

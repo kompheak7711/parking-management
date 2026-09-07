@@ -18,6 +18,7 @@ from starlette.types import Message, Receive, Scope, Send
 
 from property_rental.allocation_read import AllocationHistoryPage, AllocationReadService
 from property_rental.browser_security import require_browser_mutation
+from property_rental.financial_context import bind_financial_property, financial_metadata
 from property_rental.identity import ActorResolver, AuthenticatedActor
 from property_rental.payment_allocation import (
     AllocationAuthorizationError,
@@ -459,10 +460,11 @@ def create_allocation_receipt_router(
             _mutation(request, settings)
         prop = _invoke(lambda: flow.resolve(resource, identity, capability, actor=actor))
         _authorize(actor, prop, capability, hide=True)
+        bind_financial_property(request, prop)
         return actor, prop
 
     def envelope(request: Request, result: object) -> dict[str, object]:
-        return {"data": result, "meta": {"request_id": request.state.request_id}}
+        return {"data": result, "meta": financial_metadata(request)}
 
     @router.get("/payments/{payment_id}/allocation-proposal")
     def proposal(payment_id: Identity, request: Request) -> dict[str, object]:

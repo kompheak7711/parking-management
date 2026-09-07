@@ -15903,6 +15903,111 @@
       "test_path": "frontend/src/InvoiceManagement.test.tsx",
       "status": "implemented",
       "notes": "Safe field locations are associated with only the originating form and expose a bounded support correlation ID. Client regressions reject arbitrary unsafe error content."
+    },
+    {
+      "test_id": "test_financial_context_all_routes_report_authorized_property",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-015",
+        "API-016",
+        "SEC-038",
+        "SEC-039"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_context.py",
+      "status": "implemented",
+      "notes": "All26 routes with absent/matching/uppercase expectations expose canonical authorized Property and request correlation, retaining private no-store responses."
+    },
+    {
+      "test_id": "test_financial_context_rejects_mismatched_property_before_dispatch",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-015",
+        "API-016",
+        "SEC-038",
+        "SEC-039"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_context.py",
+      "status": "implemented",
+      "notes": "All26 route expectations reject a different Property with404 before financial dispatch; no Property/data leakage. Payment detail may use its existing authorized scope read only."
+    },
+    {
+      "test_id": "test_financial_context_rejects_invalid_headers_without_dispatch",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-015",
+        "API-016",
+        "SEC-038",
+        "SEC-039"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_context.py",
+      "status": "implemented",
+      "notes": "Empty, malformed, zero, compact, duplicate identical and combined Property headers fail400 across all26 operations without financial dispatch or unsafe reflection."
+    },
+    {
+      "test_id": "test_financial_context_never_replaces_authorization",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-015",
+        "API-016",
+        "SEC-038",
+        "SEC-039"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_context.py",
+      "status": "implemented",
+      "notes": "All26 routes retain anonymous401 and missing-capability403/404 precedence even with malformed context, no command dispatch or scope metadata leak."
+    },
+    {
+      "test_id": "test_financial_context_replay_preserves_original_data_and_request_key",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-015",
+        "API-016",
+        "SEC-038",
+        "SEC-039"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_context.py",
+      "status": "implemented",
+      "notes": "KHR confirmation replay retains original exact financial data, receipt identity, Location and single stored command; mismatched replay never reaches the service."
+    },
+    {
+      "test_id": "test_financial_context_empty_page_still_identifies_authorized_scope",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-015",
+        "API-016",
+        "SEC-038",
+        "SEC-039"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_context.py",
+      "status": "implemented",
+      "notes": "Empty customer Credit collection includes authorized Property while data and pagination remain unchanged."
+    },
+    {
+      "test_id": "test_financial_context_preserves_resource_data_pages_and_locations",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-015",
+        "API-016",
+        "SEC-038",
+        "SEC-039"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_context.py",
+      "status": "implemented",
+      "notes": "All26 actual HTTP adapters return identical data/pages/Location and status with absent versus matching Property context; only authorized transport metadata is added."
     }
   ]
 }
