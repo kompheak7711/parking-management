@@ -1,3 +1,9 @@
+import { parseFinancialJson, stringifyFinancialJson } from "./financialJson";
+import {
+  MAX_SEALED_INTENT_BYTES,
+  sealedIntentStore,
+} from "./sealedIntentStore";
+
 export type JsonValue =
   | null
   | boolean
@@ -975,86 +981,16 @@ export function executeBilling(
       return api.run(c.propertyId, c.kind, c.input, key);
   }
 }
-interface SealedBilling {
-  key: CryptoKey;
-  iv: Uint8Array<ArrayBuffer>;
-  ciphertext: ArrayBuffer;
-  requestKey: string;
-}
-function database(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open("property-rental.billing-intent.v1", 1);
-    request.onupgradeneeded = () => {
-      request.result.createObjectStore("pending");
-    };
-    request.onerror = () => {
-      reject(new Error("Billing recovery storage unavailable."));
-    };
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
-    request.onblocked = () => {
-      reject(new Error("Billing recovery storage blocked."));
-    };
-  });
-}
-async function journalTransaction<T>(
-  actorId: string,
-  mode: IDBTransactionMode,
-  apply: (store: IDBObjectStore, stored: SealedBilling | undefined) => T,
-): Promise<T> {
-  const db = await database();
-  try {
-    return await new Promise<T>((resolve, reject) => {
-      const tx = db.transaction("pending", mode),
-        store = tx.objectStore("pending");
-      const request = store.get(actorId);
-      let result: T;
-      tx.oncomplete = () => {
-        resolve(result);
-      };
-      tx.onabort = tx.onerror = () => {
-        reject(
-          new Error(
-            "Billing recovery storage failed. Commands remain blocked.",
-          ),
-        );
-      };
-      request.onsuccess = () => {
-        try {
-          result = apply(store, request.result as SealedBilling | undefined);
-        } catch {
-          tx.abort();
-        }
-      };
-    });
-  } finally {
-    db.close();
-  }
-}
 export const billingJournal: BillingJournal = {
   async load(actorId) {
-    const sealed = await journalTransaction(
-      actorId,
-      "readonly",
-      (_store, stored) => stored,
-    );
-    if (!sealed) return null;
-    const plaintext = await crypto.subtle.decrypt(
-      {
-        name: "AES-GCM",
-        iv: sealed.iv,
-        additionalData: new TextEncoder().encode(actorId),
-      },
-      sealed.key,
-      sealed.ciphertext,
-    );
+    const opened = await sealedIntentStore.read(actorId);
+    if (!opened) return null;
     const parsed = object(
-      JSON.parse(new TextDecoder().decode(plaintext)) as unknown,
+      parseFinancialJson(opened.plaintext, MAX_SEALED_INTENT_BYTES),
     );
     const command = object(parsed.command);
     if (
-      parsed.key !== sealed.requestKey ||
+      parsed.key !== opened.requestKey ||
       typeof parsed.key !== "string" ||
       typeof command.propertyId !== "string" ||
       !command.propertyId ||
@@ -1076,40 +1012,9 @@ export const billingJournal: BillingJournal = {
     return parsed as unknown as PendingBillingCommand;
   },
   async begin(actorId, pending) {
-    const key = await crypto.subtle.generateKey(
-      { name: "AES-GCM", length: 256 },
-      false,
-      ["encrypt", "decrypt"],
-    );
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ciphertext = await crypto.subtle.encrypt(
-      {
-        name: "AES-GCM",
-        iv,
-        additionalData: new TextEncoder().encode(actorId),
-      },
-      key,
-      new TextEncoder().encode(JSON.stringify(pending)),
-    );
-    await journalTransaction(actorId, "readwrite", (store, existing) => {
-      if (existing)
-        throw new Error("An earlier billing request must be reconciled.");
-      store.put(
-        {
-          key,
-          iv,
-          ciphertext,
-          requestKey: pending.key,
-        } satisfies SealedBilling,
-        actorId,
-      );
-    });
+    const requestKey = pending.key;
+    const plaintext = stringifyFinancialJson(pending, MAX_SEALED_INTENT_BYTES);
+    await sealedIntentStore.begin(actorId, { requestKey, plaintext });
   },
-  async clear(actorId, requestKey) {
-    await journalTransaction(actorId, "readwrite", (store, existing) => {
-      if (existing && existing.requestKey !== requestKey)
-        throw new Error("A different request remains pending.");
-      if (existing) store.delete(actorId);
-    });
-  },
+  clear: (actorId, requestKey) => sealedIntentStore.clear(actorId, requestKey),
 };

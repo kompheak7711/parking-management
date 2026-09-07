@@ -150,6 +150,20 @@ def collect_frontend_test_ids(path: Path) -> set[str]:
     return set(re.findall(r'\b(?:it|test)\(\s*["\'](TEST-[A-Z0-9-]+)\b', path.read_text()))
 
 
+def collect_financial_unit_test_ids(path: Path) -> set[str]:
+    """Collect both ordinary and parameterized names in new financial unit suites."""
+    return set(
+        re.findall(r"(?:\b(?:it|test)\(\s*|\)\(\s*)[\"'](TEST-[A-Z0-9-]+)\b", path.read_text())
+    )
+
+
+def collect_financial_browser_test_ids(path: Path) -> set[str]:
+    """The real-browser harness returns a stable id only after its assertions pass."""
+    return set(
+        re.findall(r"(?:passed\.push\(\s*|return\s+)[\"'](TEST-[A-Z0-9-]+)[\"']", path.read_text())
+    )
+
+
 def test_traceability_manifest_covers_executable_tests() -> None:
     raw_manifest = cast(dict[str, object], json.loads(MANIFEST_PATH.read_text(encoding="utf-8")))
     assert raw_manifest["schema_version"] == 1
@@ -184,6 +198,16 @@ def test_traceability_manifest_covers_executable_tests() -> None:
         executable_ids.update(collect_test_ids(test_path))
     for test_path in FRONTEND_TEST_DIRECTORY.glob("**/*.test.tsx"):
         executable_ids.update(collect_frontend_test_ids(test_path))
+
+    # Preserve the existing Python/component inventory and register the bounded
+    # financial unit/browser suites; do not waive or remove any prior mapping.
+    for name in ("financialJson.test.ts", "billingJournal.test.ts", "sealedIntentStore.test.ts"):
+        executable_ids.update(collect_financial_unit_test_ids(FRONTEND_TEST_DIRECTORY / name))
+    executable_ids.update(
+        collect_financial_browser_test_ids(
+            FRONTEND_TEST_DIRECTORY / "test" / "financialRecovery.browser.ts"
+        )
+    )
 
     assert executable_ids == manifest_ids
 

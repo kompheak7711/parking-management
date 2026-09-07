@@ -2,6 +2,351 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "TEST-FE-260",
+      "upstream_ids": [
+        "API-002",
+        "API-005",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialJson.test.ts",
+      "status": "implemented",
+      "notes": "Exact signed-bigint boundaries, safe command integers and original decimal/exponent lexemes round trip without Number rounding."
+    },
+    {
+      "test_id": "TEST-FE-261",
+      "upstream_ids": [
+        "API-002",
+        "API-005",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialJson.test.ts",
+      "status": "implemented",
+      "notes": "Already rounded unsafe integers, fractional native numbers and nonfinite values cannot enter financial serialization."
+    },
+    {
+      "test_id": "TEST-FE-262",
+      "upstream_ids": [
+        "API-002",
+        "API-005",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialJson.test.ts",
+      "status": "implemented",
+      "notes": "Malformed JSON, duplicate decoded keys, ambiguous numeric tokens, invalid Unicode and trailing data reject."
+    },
+    {
+      "test_id": "TEST-FE-263",
+      "upstream_ids": [
+        "API-002",
+        "API-005",
+        "SEC-036",
+        "SEC-040",
+        "SEC-037"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialJson.test.ts",
+      "status": "implemented",
+      "notes": "Prototype-looking keys remain own data and do not alter object prototypes."
+    },
+    {
+      "test_id": "TEST-FE-264",
+      "upstream_ids": [
+        "API-002",
+        "API-005",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialJson.test.ts",
+      "status": "implemented",
+      "notes": "Escaped strings, Unicode, control escapes and literal numeric-looking text retain their JSON string type."
+    },
+    {
+      "test_id": "TEST-FE-265",
+      "upstream_ids": [
+        "API-002",
+        "API-005",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialJson.test.ts",
+      "status": "implemented",
+      "notes": "8000-level valid structures parse/serialize iteratively; shared noncyclic references remain valid."
+    },
+    {
+      "test_id": "TEST-FE-266",
+      "upstream_ids": [
+        "API-002",
+        "API-005",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialJson.test.ts",
+      "status": "implemented",
+      "notes": "Exact UTF8 byte limits accept the boundary and reject the first byte beyond it in both directions."
+    },
+    {
+      "test_id": "TEST-FE-267",
+      "upstream_ids": [
+        "API-002",
+        "API-005",
+        "SEC-036",
+        "SEC-040",
+        "SEC-037"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialJson.test.ts",
+      "status": "implemented",
+      "notes": "Cycles, sparse arrays, exotic values, undefined/functions/symbols and enumerable getters reject without invoking getters."
+    },
+    {
+      "test_id": "TEST-FE-268",
+      "upstream_ids": [
+        "API-002",
+        "API-005",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialJson.test.ts",
+      "status": "implemented",
+      "notes": "Original proposal bigint and decimal numeric facts survive the reviewed wire-body and outer sealed-envelope round trip."
+    },
+    {
+      "test_id": "TEST-FE-269",
+      "upstream_ids": [
+        "API-002",
+        "API-005",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialJson.test.ts",
+      "status": "implemented",
+      "notes": "Invalid resource byte budgets reject before parsing or serialization."
+    },
+    {
+      "test_id": "TEST-FE-270",
+      "upstream_ids": [
+        "API-002",
+        "API-005",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialJson.test.ts",
+      "status": "implemented",
+      "notes": "Negative zero and exponent/decimal token forms stay exact; native JSON.stringify cannot silently change tagged values."
+    },
+    {
+      "test_id": "TEST-FE-271",
+      "upstream_ids": [
+        "API-002",
+        "API-005",
+        "SEC-036",
+        "SEC-040",
+        "SEC-037"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialJson.test.ts",
+      "status": "implemented",
+      "notes": "Custom toJSON hooks never execute; malformed numeric token constructors reject."
+    },
+    {
+      "test_id": "TEST-FE-272",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/billingJournal.test.ts",
+      "status": "implemented",
+      "notes": "Billing adapter preserves legacy command/key/Property identity and exact integer value through shared sealing and loading."
+    },
+    {
+      "test_id": "TEST-FE-273",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/billingJournal.test.ts",
+      "status": "implemented",
+      "notes": "Malformed, mismatched-key or foreign commands remain blocked and are never cleared by the billing loader."
+    },
+    {
+      "test_id": "TEST-FE-274",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044",
+        "API-013"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/billingJournal.test.ts",
+      "status": "implemented",
+      "notes": "Persistence, decryption and request-key clearance failures propagate without an admission bypass."
+    },
+    {
+      "test_id": "TEST-FE-275",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044",
+        "API-013"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/billingJournal.test.ts",
+      "status": "implemented",
+      "notes": "Reading an empty journal never reserves a command or performs a fetch."
+    },
+    {
+      "test_id": "TEST-FE-276",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044",
+        "API-013"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/billingJournal.test.ts",
+      "status": "implemented",
+      "notes": "Reviewed key and plaintext are captured before asynchronous sealing even if the caller later mutates the original object."
+    },
+    {
+      "test_id": "TEST-FE-277",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialRecovery.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium reads original legacy ciphertext layout, keeps256bit keys nonextractable, preserves exact body and refuses foreign billing dispatch without deletion."
+    },
+    {
+      "test_id": "TEST-FE-278",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialRecovery.browser.ts",
+      "status": "implemented",
+      "notes": "Actual AES-GCM associated data prevents a copied record from decrypting under another actor; wrong-key clearance preserves the original pending command."
+    },
+    {
+      "test_id": "TEST-FE-279",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialRecovery.browser.ts",
+      "status": "implemented",
+      "notes": "Real-browser ciphertext, IV and stored-key tampering fail closed without deleting the record."
+    },
+    {
+      "test_id": "TEST-FE-280",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialRecovery.browser.ts",
+      "status": "implemented",
+      "notes": "Actual asynchronous WebCrypto sealing retains the original captured key and plaintext despite later caller mutation."
+    },
+    {
+      "test_id": "TEST-FE-281",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialRecovery.browser.ts",
+      "status": "implemented",
+      "notes": "Real UTF8 plaintext boundaries, malformed Unicode/identities and empty identifiers validate before new storage; exact1MiB accepted."
+    },
+    {
+      "test_id": "TEST-FE-282",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044",
+        "API-013"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialRecovery.browser.ts",
+      "status": "implemented",
+      "notes": "Injected actual IndexedDB write/clear failures abort transactions; failed writes are absent and failed clearance retains pending data."
+    },
+    {
+      "test_id": "TEST-FE-283",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044",
+        "API-013"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialRecovery.browser.ts",
+      "status": "implemented",
+      "notes": "Real page reload preserves the encrypted legacy request and does not automatically fetch or replay it."
+    },
+    {
+      "test_id": "TEST-FE-284",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044",
+        "API-013"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialRecovery.browser.ts",
+      "status": "implemented",
+      "notes": "Two browser pages compete for one actor reservation; exactly one wins and stale-tab clearance cannot delete the winner."
+    },
+    {
+      "test_id": "TEST-FE-285",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/sealedIntentStore.test.ts",
+      "status": "implemented",
+      "notes": "Malformed Unicode actor/request identities reject before crypto or IndexedDB calls; prevents UTF8 replacement aliases."
+    },
+    {
+      "test_id": "TEST-FE-286",
+      "upstream_ids": [
+        "API-015",
+        "SEC-036",
+        "SEC-044"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/sealedIntentStore.test.ts",
+      "status": "implemented",
+      "notes": "Empty and unbounded identity strings reject before storage access."
+    },
+    {
       "test_id": "test_credit_refund_http_raw_query_guard_precedes_typed_validation",
       "upstream_ids": [
         "API-020",

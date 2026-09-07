@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "V1-052 query-boundary correction1 focused verified; normal successor full exact gates pending",
+    "phase": "V1-052 financial wire/recovery foundation verified; local commit blocked by automatic approval review",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2048,7 +2048,7 @@
     "workboard_block_reason": "Tracking/evidence only, blocked solely against OpenClaw admission; no direct Codex policy blocker.",
     "worker_kind": "direct_root_codex",
     "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-    "worker_status": "sole_direct_coordinator_exact_successor_verification",
+    "worker_status": "sole_direct_coordinator_commit_approval_blocked",
     "branch": "codex/v1-052-direct",
     "worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
     "planned_branch": "codex/v1-052-direct",
@@ -2058,7 +2058,7 @@
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
     "candidate_resolution": "Containing normal correction1 successor of failedc4d6ad5; resolve exact SHA/tree from Git and immutable external receipt. Complete review base remains accepted5f4bd41.",
-    "candidate_status": "query_correction1_focused_verified_freeze_pending",
+    "candidate_status": "not_frozen_commit_approval_blocked",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2078,26 +2078,16 @@
       "provider_attestation": "unavailable"
     },
     "last_reconciliation": {
-      "checked_cycle": "explicit owner review-approval cycle through 2026-09-07T03:32:29.445027+00:00",
-      "main_sha": "a5dd97c8cde26008dcecf02be847561771092fe1",
-      "published_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
-      "ci_run": 34030703203,
-      "ci_attempt": 1,
-      "ci_conclusion": "success",
-      "main_clean": true,
-      "worktrees": 127,
-      "coordinator_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-      "workers": "review2607 COMPLETED EXIT0; no active reviewer/test or implementation worker beyond root",
-      "native_followup": "same property-rental-v1-047-closure-follow-up ACTIVE10min on released successor",
-      "native_prompt_sha256": "965b73fcae9e4719161566f3468bf856c533c4d6ce45e8e7c2ad960c4b8a4220",
-      "openclaw": "singleton658ffdaf disabled30min/no nextRun; never dispatched",
-      "card": "74197a0e tracking-onlyblocked; bounded5facceptance in notes; all17priorcomments/events retained; no execution/claim/attempt",
-      "predecessor_card": "c5621f97 done",
-      "provider_attestation": "unavailable; actual local Astra/xhigh/default Standard verified",
-      "review2607": "complete14paths/3commits0HIGH0MEDIUM0LOW"
+      "at": "2026-09-07T07:30:20.607263+00:00",
+      "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-cycle-0724-reconciliation.json",
+      "sha256": "b690966d0c1d47ca954459a3d0f6cb0c528eab5758d6dec352e84883ffbfd061",
+      "workers": "No active reviewer/test; root only;127retainedworktrees",
+      "publication": "f8/CI34030703203all4success",
+      "schedulers": "SAME nativeACTIVE10min;OpenClawdisabled/no nextRun",
+      "card": "same52tracking-onlyblocked17comments/nullclaims, separate note approval pending"
     },
     "owner_action_required": false,
-    "next_action": "Resolve the normal containing correction1 successor of retainedc4d6ad5. Run fresh full exact PostgreSQL/backend/frontend/170static/build/import/189automation/config/trace/preservation/guard/diff checks, then one fresh Astra/max/Standard/enforcedread-only complete23path review from accepted5f4bd41 including both c4andcorrection. Requirezero before acceptance. Preserve failed review/red/static logs and all approvals. Then remaining52 before53; at53closedpauseSAME/no54.",
+    "next_action": "Automatic approval review rejected the local commit twice; owner confirmation in this conversation is required before any staging/commit. Complete the reviewable source package and working-tree gates first. After explicit approval, freeze this bounded financial wire/recovery foundation as a normal candidate from accepted9b; run fresh full exact backend/PostgreSQL/frontend/browser/automation/config/trace/preservation gates, then obtain independent complete-base Astra/max/Standard/enforced-read-only zero review. After acceptance implement26financial clients and staff UI; full52 release/CI/refs/card closure before53; pause SAME follow-up only at fully closed53, keep OpenClaw disabled, no54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2122,137 +2112,108 @@
       "exact_tests": "189 PASS and all activation gates; execution78277 EXIT0; do not repeat"
     },
     "active_slice": {
-      "id": "V1-052-credit-usd-refund-http",
-      "status": "query_correction1_focused_verified_exact_gates_and_review_pending",
-      "started_at": "2026-09-07T03:32:29.445027+00:00",
-      "base_sha": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
-      "scope": "API061\u2013066 Credit list/detail/ledger/recognition/application/approved linked reversals; Refund resource/source/create/verified-return/correction links over accepted services; preserve existing qualifyingPet and Reservation full-refund lifecycle. Frontend and wholeversion closure remain subsequent required work.",
+      "id": "V1-052-financial-wire-recovery-foundation",
+      "status": "focused_verified_commit_approval_blocked",
+      "started_at": "2026-09-07T07:30:20.607263+00:00",
+      "base_sha": "9b5a33945cdb325958db45d8f70d21e859022883",
       "model": "gpt-6-astra",
       "reasoning": "xhigh",
       "mode": "Standard",
-      "no_policy_change": true,
-      "preparation_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-usd-refund-http-preparation.md",
-      "preparation_sha256": "f1f4f5085c774771318d5f9d6c8faeacec72bf24950daef6c9f09aaf0aaa6703",
+      "reason": "exact financial values, browser encryption and concurrent command admission",
+      "scope": "Exact JSON numeric wire codec; extracted shared sealed IndexedDB intent primitive integrated into existing billing adapter; preserve legacy records and fail-closed admission. Financial HTTP clients and UI remain subsequent stages.",
+      "affected_paths": [
+        "backend/tests/test_traceability.py",
+        "frontend/src/billingJournal.test.ts",
+        "frontend/src/financialJson.test.ts",
+        "frontend/src/financialJson.ts",
+        "frontend/src/invoiceClient.ts",
+        "frontend/src/sealedIntentStore.test.ts",
+        "frontend/src/sealedIntentStore.ts",
+        "frontend/src/test/financialRecovery.browser.ts",
+        "ops/NOW.md",
+        "ops/QUEUE.md",
+        "ops/STATE.json",
+        "ops/V1_052_FINANCIAL_WIRE_RECOVERY.md",
+        "ops/traceability.json"
+      ],
       "plan": [
-        "Reconcile exact canonical route/source/cursor/permission contracts and Reservation correction links before product edits.",
-        "Reuse accepted financial services and fresh HUMAN/exactProperty runtime resolution, no credential fallback or historical migration edits.",
-        "Strict UTF8 bounded command envelopes, exact USD money/KHRsourceaudit, CSRF/actor/key binding, safe errors/no-store, explicit replay only.",
-        "Unit/API/isolatedPostgreSQL source bounds, races, complete history and denied/unknown outcome regressions; exact route inventory and traceability immediately.",
-        "Normal freeze; all applicable fresh exact checks and ONE independent Astra max Standard enforced read-only complete-base zero review. Full52 release gates before53."
+        "Implement exact bounded JSON parsing/serialization without binary decimal arithmetic or bigint rounding.",
+        "Extract existing actor-bound AES-GCM/IndexedDB persistence into a shared primitive without database reset, schema migration or changed physical records.",
+        "Integrate legacy billing loading/sealing and preserve atomic actor reservation and request-key-specific clear.",
+        "Test exact numeric round trips, invalid envelopes, legacy compatibility, cross-actor and concurrent reservations, corrupted storage and stale clears; verify real browser IndexedDB/crypto with synthetic data.",
+        "Freeze a normal candidate with focused/full applicable checks and fresh exact independent zero review before accepting the foundation."
       ],
-      "remaining_version_scope": "financialstaffclients/UI/encryptedactorboundrecovery/frontend/browser/audits/fullcumulativeexactreview/normalpublication/exactCI/refs/samecard/durableclosure before53",
-      "active_step": {
-        "id": "narrow_scope_and_source_audit_read_boundary",
-        "status": "verified_working_tree_no_acceptance",
-        "started_at": "2026-09-07T04:01:36.777242+00:00",
-        "contract_path": "ops/V1_052_CREDIT_REFUND_HTTP.md",
-        "contract_sha256": "d761437f4c3433674a30a8f559407feaf7c222c7a873065d4203b66336d2b1e5",
-        "purpose": "New forward-only revision45 adds two runtime-executable read-only SECURITY DEFINER functions for fresh active HUMAN resource-to-Property resolution and immutable Payment/Credit source audit. Existing Credit table restrictions, financial services and historical migrations remain unchanged.",
-        "checks": [
-          "Exact-capability/malformed scope/UUID denial before connection",
-          "Real PostgreSQL fresh HUMAN/exact Property/no side effects and unchanged runtime table restrictions",
-          "Exact KHR source audit and receipt evidence; forward-only 45-to-44 migration graph",
-          "Focused unit/PG/static first; full HTTP slice gates/review remain pending"
-        ],
-        "completed_at": "2026-09-07T04:24:15.636945+00:00"
-      },
-      "read_boundary_verification": {
-        "status": "verified_working_tree_no_acceptance",
-        "unit_traceability": "64PASS; 17new mappings,1421prior preserved",
-        "static": "167files formatting/lint/mypyPASS",
-        "backend": "1461PASS894DB-onlySKIP",
-        "build_import_config_traceability": "PASS",
-        "full_pg": "917PASS0skip serial diagnosis1 after retained916PASS1NOWAIT failure; original blocker unknown; no retry, skip, source change or claimed cause.",
-        "failed_pg_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-expanded-pgfull.json",
-        "next": "Implement all15 canonical Credit/USDRefund HTTP operations in ops/V1_052_CREDIT_REFUND_HTTP.md over the verified narrow reader and unchanged accepted services; wire app/no-store/error handlers and exact API inventory, add full unit/API/isolatedPG regressions and traceability. Freeze normal candidate from accepted5f4bd41, fresh applicable exact gates and independent Astra/max/Standard enforced read-only complete-base zero review. Then remaining full52 lifecycle before53; at53closed pause SAME follow-up/no54.",
-        "guard": "65fromtwoadditivecanonicalnotes; notes withdrawn and exactspecbytes restored; guardPASS, patch/receiptretained.",
-        "canonical_guard_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-canonical-guard-correction1.json",
-        "focused_recovery_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-focused-correction1.json",
-        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-working-tree-verification.json",
-        "receipt_sha256": "7247b6200d2018d9d414c688c00b86f13098527593350f18ea78efb2c3f84631",
-        "active_sessions": [],
-        "test_sessions_completed": [
-          5709,
-          80639,
-          89271,
-          34220,
-          76545,
-          89520,
-          83734,
-          60670
-        ]
-      },
-      "pre_read_boundary_root_tests": [
-        "883PG0skip/1248backend860DB-onlyskips/189automation/158static-build-import/all applicable config PASS;28585/67433/95329 COMPLETED EXIT0",
-        "ACCEPTED independent49722 completed19:58:46.444Z zero21paths/all7commits;315tests/61probes/static/preservationPASS, report73a8c404/acceptance0ad91c77. No independentlivePG; completed tests/review never repeated solely for stale pending records.",
-        "CURRENT Allocation/Receipt HTTP: final171HTTP/read +22traceability PASS; earlier287unit including acceptedPaymentHTTP and21isolatedPG PASS;164staticPASS. All failures retained; fresh full exact candidate checks and review pending. Focused receipt54b1bc883cd015801885c993d4994594fe998f5db27cd676e2f9d26f2e1c9ee2.",
-        "FAILED exactd3ae2d1 inventory1FAIL/1418PASS880DB-onlyskips;903PG0skip/189automation/staticPASS. All completed logs retained; inventorycorrection1 active, no reviewer.",
-        "ACCEPTED complete14path Allocation/Receipt5f4bd41:903PG/1419backend/189automation/164static-build-import/configPASS; independent2607COMPLETED0/0/0 (194tests/147HTTP/24ASGIprobes). Receipt9735754b024d84239c92bd739fe9c6f375fc2edb65312a6accb0265f2987ae29. No full52acceptance/publication; CreditUSDRefundHTTP next."
+      "upstream": [
+        "API-002",
+        "API-005",
+        "API-013",
+        "API-015",
+        "SEC-036",
+        "SEC-037",
+        "SEC-039",
+        "SEC-040",
+        "SEC-044",
+        "UI-063",
+        "UI-064",
+        "UI-069",
+        "UI-071"
       ],
-      "workboard_progress_note": {
-        "status": "approval_required_not_posted",
-        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-workboard-note-approval-block.json",
-        "prepared_note": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/outputs/workboard-progress-note.md",
-        "sha256": "c6b356b623ce4f8b2cfc81e7ca68c66f19c0c0a74efa336ee7d5523a683973fe",
-        "blocks_implementation": false,
-        "retry_only_after_explicit_payload_destination_approval": true
+      "no_policy_change": true,
+      "preparation": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-client-contract-readonly-supplement-9b5a339.md",
+      "preparation_sha256": "b2f682d59a383959dd4271a830c2e86c3ee02b1bae0794aec4a2eb627fd02956",
+      "remaining_version_scope": "26operationfinancialclients/financialUI/browser/fullcumulativereview/normalpublication/exactCI-and-refs/samecardclosure then53",
+      "no_backend_runtime_change": true,
+      "traceability_inventory": "Register only new three financial .test.ts suites and one real-browser harness alongside unchanged Python/.test.tsx inventory;27mappings added,1469prior preserved.",
+      "focused_prefreeze": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-wire-focused-prefreeze.json",
+        "sha256": "3481ff6ae4eba1d980a7d208adbb7f0de9d9acd97457dccb75ae2cb1ed24dc86"
       },
-      "http_step": {
-        "id": "canonical_credit_usd_refund_http_adapters",
-        "status": "corrected_focused_verified_successor_pending",
-        "started_at": "2026-09-07T04:45:30.123021+00:00",
-        "model": "gpt-6-astra",
-        "reasoning": "xhigh",
-        "mode": "Standard locally configured",
-        "reason": "financial commands and authorization",
-        "scope": "15 operations in ops/V1_052_CREDIT_REFUND_HTTP.md; reuse accepted services, strict input/transport, bounded opaque cursor binding, no policy or historical migration/service changes",
-        "response_contract": "List endpoints return data items plus top-level page. Credit ledger history and Refund correction histories retain nested items plus a nested page object with opaque next_cursor; command replies adapt the original stored response only. Cursor binds collection, Property, resource, customer filter and original timestamp/id/event kind.",
-        "next_checks": "Resolve the normal containing Credit/USDRefund HTTP commit from Git and immutable receipts. Run fresh full exact PostgreSQL/backend/170-file static/build-import/frontend/189-automation/config/traceability/preservation/guard gates, then one fresh independent Astra/max/Standard enforced read-only review of the complete23path base5f4bd41-to-candidate diff. Require zero findings before acceptance. Preserve all failures and approvals; remaining full52 lifecycle before53, at53closed pause SAME follow-up/no54.",
-        "installed_at": "2026-09-07T04:50:57.061994+00:00",
-        "contract_sha256": "6acb7c699d3c3813d9ff94aa8cfdd1d1168add89ca9ab51d9e1175de3fd19cc2",
-        "focused_verification": {
-          "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-focused-prefreeze.json",
-          "sha256": "fa0b2973a2d24a911c2bdb53ba5ebab0a16e83755b779db16582af1a75c26f00",
-          "http_inventory": 329,
-          "isolated_pg": 27,
-          "static_files": 170,
-          "raw_failures_preserved": true,
-          "new_http_traceability": 29,
-          "full_exact_pending": true
+      "focused_results": "440 tests in22files;format/lint/typecheck/full tsc-b production build PASS; 22 traceability tests; all170 configured files format/lint/mypy PASS; trace audit/publication guard/diff PASS; 8 groups TEST-FE277-284 PASS, actual Chromium/IndexedDB/AES-GCM/reload/two pages; synthetic records only",
+      "correction_history": {
+        "initial-focused.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-wire-initial-focused.json",
+          "sha256": "eef5af58aa60c5bde2ad0c050b9c00efe4ccdb3c1c78c886f4d816fc12acc91a"
+        },
+        "initial-static.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-wire-initial-static.json",
+          "sha256": "9453568b87546a644da6448f9dd2cb05d523330388414f4953d102ac6d2e0614"
+        },
+        "lint-correction1.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-wire-lint-correction1.json",
+          "sha256": "69e662f56bde2be7bdaa00ee4dcc1c7705217b7015d928b5f2a6aacf49501447"
+        },
+        "style1-static.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-wire-style1-static.json",
+          "sha256": "fc90b507df33d0c7293ce5d310cde1188982225ef14c134118a68153208d9a3e"
+        },
+        "browser-preparation-corrections.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-wire-browser-preparation-corrections.json",
+          "sha256": "62e2a3704d30fc904e34596447cc971c2399015eb2013da3ab5738fdb8c3a662"
+        },
+        "browser1-static.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-wire-browser1-static.json",
+          "sha256": "5ea5035347546d95747948af79faa18a25aa73f53abfb20b261b1f3c966b8a25"
+        },
+        "identity-correction1.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-wire-identity-correction1.json",
+          "sha256": "4e89edcd55666116dbf3614e83851402e4c41e8a8b7da8868efa94ce093cb3cd"
+        },
+        "identity-red.log": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-wire-identity-red.log",
+          "sha256": "1f95d83f3aec5a57f1d565090eb5814dde89e330f4228d0ab061be515a23e1de"
+        },
+        "identity-before.ts": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-wire-identity-before.ts",
+          "sha256": "3b5fa854d35fe4acbf5d0c9dea97cfa40a1245b582258738d577846240554f43"
+        },
+        "browser-harness-types-initial.log": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-wire-browser-harness-types-initial.log",
+          "sha256": "5fd892e282b7a1a954eb05092ae6d5f5eaeca3326ba448bd55664370900284c7"
+        },
+        "browser-harness-types-before.ts": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-wire-browser-harness-types-before.ts",
+          "sha256": "1e9d5c06ec094da0a4239e3a870fdfc96912accca1d90c834c3aae18967cc5e4"
         }
-      },
-      "query_boundary_correction": {
-        "attempt": 1,
-        "status": "focused_verified_full_exact_successor_gates_pending",
-        "started_at": "2026-09-07T06:29:07.909649+00:00",
-        "failed_candidate": "c4d6ad539227367d232892546f354c14692f65ab",
-        "complete_review_base": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
-        "reviewer_task": "01a07a7b-00a2-7931-97cb-346cfd4fc82c",
-        "review_exec": 79536,
-        "review_status": "COMPLETED_EXIT0_REJECT_0HIGH_0MEDIUM_1LOW",
-        "review_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-review-c4d6ad5.md",
-        "review_sha256": "d8ced9a759567be8c858f55c4bf0bfc8819183159146604b53b685f6e4c60389",
-        "review_completed_at": "2026-09-07T06:25:51.016360+00:00",
-        "finding": "Duplicate-query rejection depends on parameter order; endpoint guard runs after typed coercion. Six query-bearing routes; no financial dispatch.",
-        "changed_approach": "Enforce raw unknown/duplicate query allowlist before framework value parsing in a CreditRefund-only request route, preserving inherited body limits and unsupported-method handling. Keep typed single-value validation and canonical limit checks unchanged.",
-        "verification_plan": [
-          "Reproduce malformed duplicate values in both orders and unknown-plus-invalid fields across every typed query argument; preserve single-invalid422 and method405 with no dispatch.",
-          "Apply one pre-validation guard only to new CreditRefund routes; no accepted service/migration/shared route edits.",
-          "Focused red/green HTTP, full configured static, traceability; normal successor; fresh complete exact PostgreSQL/backend/frontend/automation/build/config/guard gates.",
-          "One fresh independent Astra/max/Standard/read-only complete23path base5f-to-successor zero review before acceptance."
-        ],
-        "independent_evidence": "367tests +86HTTP +70ASGI passed;15query probes reproduceLOW;170static/graph/import/trace/preservationPASS; no independent livePG/fullbackend/frontend/build/automation/browser/audits.",
-        "model": "gpt-6-astra",
-        "reasoning": "xhigh",
-        "reason": "financial HTTP authorization and transport boundary",
-        "mode": "Standard locally configured",
-        "no_financial_policy_change": true,
-        "source_snapshot_state": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-c4d6ad5-pre-correction-state.json",
-        "source_snapshot_state_sha256": "462560d56fd30c9d2ff9effc2f0d0c3d24e266d8ab0f11ebb8dde80400066130",
-        "focused_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-query-boundary-correction1-prefreeze.json",
-        "focused_receipt_sha256": "25d7f24516eb5e164b93d696c26a865af59c1ed0d7ba94bfe92906a8b47535d9",
-        "final_focused_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-query-boundary-correction1-final-focused.json",
-        "final_focused_receipt_sha256": "1aee0a586e33150970bfe420f4088a72a08cc4e1f41e590d80d713df84110092"
       }
     },
     "accepted_read_slice": {
@@ -3056,6 +3017,208 @@
       "all_prior_events_retained": true,
       "original_snapshot_sha256": "543f7f2b54afb0629da1b7f352d9266443b91e298d28fae9ff55f7ba2566190e",
       "new_acceptance": "9735754b024d84239c92bd739fe9c6f375fc2edb65312a6accb0265f2987ae29"
+    },
+    "accepted_credit_usd_refund_http_slice": {
+      "id": "V1-052-credit-usd-refund-http",
+      "status": "accepted",
+      "started_at": "2026-09-07T03:32:29.445027+00:00",
+      "base_sha": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
+      "scope": "API061\u2013066 Credit list/detail/ledger/recognition/application/approved linked reversals; Refund resource/source/create/verified-return/correction links over accepted services; preserve existing qualifyingPet and Reservation full-refund lifecycle. Frontend and wholeversion closure remain subsequent required work.",
+      "model": "gpt-6-astra",
+      "reasoning": "xhigh",
+      "mode": "Standard",
+      "no_policy_change": true,
+      "preparation_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-usd-refund-http-preparation.md",
+      "preparation_sha256": "f1f4f5085c774771318d5f9d6c8faeacec72bf24950daef6c9f09aaf0aaa6703",
+      "plan": [
+        "Reconcile exact canonical route/source/cursor/permission contracts and Reservation correction links before product edits.",
+        "Reuse accepted financial services and fresh HUMAN/exactProperty runtime resolution, no credential fallback or historical migration edits.",
+        "Strict UTF8 bounded command envelopes, exact USD money/KHRsourceaudit, CSRF/actor/key binding, safe errors/no-store, explicit replay only.",
+        "Unit/API/isolatedPostgreSQL source bounds, races, complete history and denied/unknown outcome regressions; exact route inventory and traceability immediately.",
+        "Normal freeze; all applicable fresh exact checks and ONE independent Astra max Standard enforced read-only complete-base zero review. Full52 release gates before53."
+      ],
+      "remaining_version_scope": "financialstaffclients/UI/encryptedactorboundrecovery/frontend/browser/audits/fullcumulativeexactreview/normalpublication/exactCI/refs/samecard/durableclosure before53",
+      "active_step": {
+        "id": "narrow_scope_and_source_audit_read_boundary",
+        "status": "verified_working_tree_no_acceptance",
+        "started_at": "2026-09-07T04:01:36.777242+00:00",
+        "contract_path": "ops/V1_052_CREDIT_REFUND_HTTP.md",
+        "contract_sha256": "d761437f4c3433674a30a8f559407feaf7c222c7a873065d4203b66336d2b1e5",
+        "purpose": "New forward-only revision45 adds two runtime-executable read-only SECURITY DEFINER functions for fresh active HUMAN resource-to-Property resolution and immutable Payment/Credit source audit. Existing Credit table restrictions, financial services and historical migrations remain unchanged.",
+        "checks": [
+          "Exact-capability/malformed scope/UUID denial before connection",
+          "Real PostgreSQL fresh HUMAN/exact Property/no side effects and unchanged runtime table restrictions",
+          "Exact KHR source audit and receipt evidence; forward-only 45-to-44 migration graph",
+          "Focused unit/PG/static first; full HTTP slice gates/review remain pending"
+        ],
+        "completed_at": "2026-09-07T04:24:15.636945+00:00"
+      },
+      "read_boundary_verification": {
+        "status": "verified_working_tree_no_acceptance",
+        "unit_traceability": "64PASS; 17new mappings,1421prior preserved",
+        "static": "167files formatting/lint/mypyPASS",
+        "backend": "1461PASS894DB-onlySKIP",
+        "build_import_config_traceability": "PASS",
+        "full_pg": "917PASS0skip serial diagnosis1 after retained916PASS1NOWAIT failure; original blocker unknown; no retry, skip, source change or claimed cause.",
+        "failed_pg_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-expanded-pgfull.json",
+        "next": "Implement all15 canonical Credit/USDRefund HTTP operations in ops/V1_052_CREDIT_REFUND_HTTP.md over the verified narrow reader and unchanged accepted services; wire app/no-store/error handlers and exact API inventory, add full unit/API/isolatedPG regressions and traceability. Freeze normal candidate from accepted5f4bd41, fresh applicable exact gates and independent Astra/max/Standard enforced read-only complete-base zero review. Then remaining full52 lifecycle before53; at53closed pause SAME follow-up/no54.",
+        "guard": "65fromtwoadditivecanonicalnotes; notes withdrawn and exactspecbytes restored; guardPASS, patch/receiptretained.",
+        "canonical_guard_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-canonical-guard-correction1.json",
+        "focused_recovery_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-focused-correction1.json",
+        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-working-tree-verification.json",
+        "receipt_sha256": "7247b6200d2018d9d414c688c00b86f13098527593350f18ea78efb2c3f84631",
+        "active_sessions": [],
+        "test_sessions_completed": [
+          5709,
+          80639,
+          89271,
+          34220,
+          76545,
+          89520,
+          83734,
+          60670
+        ]
+      },
+      "pre_read_boundary_root_tests": [
+        "883PG0skip/1248backend860DB-onlyskips/189automation/158static-build-import/all applicable config PASS;28585/67433/95329 COMPLETED EXIT0",
+        "ACCEPTED independent49722 completed19:58:46.444Z zero21paths/all7commits;315tests/61probes/static/preservationPASS, report73a8c404/acceptance0ad91c77. No independentlivePG; completed tests/review never repeated solely for stale pending records.",
+        "CURRENT Allocation/Receipt HTTP: final171HTTP/read +22traceability PASS; earlier287unit including acceptedPaymentHTTP and21isolatedPG PASS;164staticPASS. All failures retained; fresh full exact candidate checks and review pending. Focused receipt54b1bc883cd015801885c993d4994594fe998f5db27cd676e2f9d26f2e1c9ee2.",
+        "FAILED exactd3ae2d1 inventory1FAIL/1418PASS880DB-onlyskips;903PG0skip/189automation/staticPASS. All completed logs retained; inventorycorrection1 active, no reviewer.",
+        "ACCEPTED complete14path Allocation/Receipt5f4bd41:903PG/1419backend/189automation/164static-build-import/configPASS; independent2607COMPLETED0/0/0 (194tests/147HTTP/24ASGIprobes). Receipt9735754b024d84239c92bd739fe9c6f375fc2edb65312a6accb0265f2987ae29. No full52acceptance/publication; CreditUSDRefundHTTP next."
+      ],
+      "workboard_progress_note": {
+        "status": "approval_required_not_posted",
+        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-workboard-note-approval-block.json",
+        "prepared_note": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/outputs/workboard-progress-note.md",
+        "sha256": "c6b356b623ce4f8b2cfc81e7ca68c66f19c0c0a74efa336ee7d5523a683973fe",
+        "blocks_implementation": false,
+        "retry_only_after_explicit_payload_destination_approval": true
+      },
+      "http_step": {
+        "id": "canonical_credit_usd_refund_http_adapters",
+        "status": "corrected_focused_verified_successor_pending",
+        "started_at": "2026-09-07T04:45:30.123021+00:00",
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard locally configured",
+        "reason": "financial commands and authorization",
+        "scope": "15 operations in ops/V1_052_CREDIT_REFUND_HTTP.md; reuse accepted services, strict input/transport, bounded opaque cursor binding, no policy or historical migration/service changes",
+        "response_contract": "List endpoints return data items plus top-level page. Credit ledger history and Refund correction histories retain nested items plus a nested page object with opaque next_cursor; command replies adapt the original stored response only. Cursor binds collection, Property, resource, customer filter and original timestamp/id/event kind.",
+        "next_checks": "Resolve the normal containing Credit/USDRefund HTTP commit from Git and immutable receipts. Run fresh full exact PostgreSQL/backend/170-file static/build-import/frontend/189-automation/config/traceability/preservation/guard gates, then one fresh independent Astra/max/Standard enforced read-only review of the complete23path base5f4bd41-to-candidate diff. Require zero findings before acceptance. Preserve all failures and approvals; remaining full52 lifecycle before53, at53closed pause SAME follow-up/no54.",
+        "installed_at": "2026-09-07T04:50:57.061994+00:00",
+        "contract_sha256": "6acb7c699d3c3813d9ff94aa8cfdd1d1168add89ca9ab51d9e1175de3fd19cc2",
+        "focused_verification": {
+          "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-focused-prefreeze.json",
+          "sha256": "fa0b2973a2d24a911c2bdb53ba5ebab0a16e83755b779db16582af1a75c26f00",
+          "http_inventory": 329,
+          "isolated_pg": 27,
+          "static_files": 170,
+          "raw_failures_preserved": true,
+          "new_http_traceability": 29,
+          "full_exact_pending": true
+        }
+      },
+      "query_boundary_correction": {
+        "attempt": 1,
+        "status": "focused_verified_full_exact_successor_gates_pending",
+        "started_at": "2026-09-07T06:29:07.909649+00:00",
+        "failed_candidate": "c4d6ad539227367d232892546f354c14692f65ab",
+        "complete_review_base": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
+        "reviewer_task": "01a07a7b-00a2-7931-97cb-346cfd4fc82c",
+        "review_exec": 79536,
+        "review_status": "COMPLETED_EXIT0_REJECT_0HIGH_0MEDIUM_1LOW",
+        "review_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-review-c4d6ad5.md",
+        "review_sha256": "d8ced9a759567be8c858f55c4bf0bfc8819183159146604b53b685f6e4c60389",
+        "review_completed_at": "2026-09-07T06:25:51.016360+00:00",
+        "finding": "Duplicate-query rejection depends on parameter order; endpoint guard runs after typed coercion. Six query-bearing routes; no financial dispatch.",
+        "changed_approach": "Enforce raw unknown/duplicate query allowlist before framework value parsing in a CreditRefund-only request route, preserving inherited body limits and unsupported-method handling. Keep typed single-value validation and canonical limit checks unchanged.",
+        "verification_plan": [
+          "Reproduce malformed duplicate values in both orders and unknown-plus-invalid fields across every typed query argument; preserve single-invalid422 and method405 with no dispatch.",
+          "Apply one pre-validation guard only to new CreditRefund routes; no accepted service/migration/shared route edits.",
+          "Focused red/green HTTP, full configured static, traceability; normal successor; fresh complete exact PostgreSQL/backend/frontend/automation/build/config/guard gates.",
+          "One fresh independent Astra/max/Standard/read-only complete23path base5f-to-successor zero review before acceptance."
+        ],
+        "independent_evidence": "367tests +86HTTP +70ASGI passed;15query probes reproduceLOW;170static/graph/import/trace/preservationPASS; no independent livePG/fullbackend/frontend/build/automation/browser/audits.",
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "reason": "financial HTTP authorization and transport boundary",
+        "mode": "Standard locally configured",
+        "no_financial_policy_change": true,
+        "source_snapshot_state": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-c4d6ad5-pre-correction-state.json",
+        "source_snapshot_state_sha256": "462560d56fd30c9d2ff9effc2f0d0c3d24e266d8ab0f11ebb8dde80400066130",
+        "focused_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-query-boundary-correction1-prefreeze.json",
+        "focused_receipt_sha256": "25d7f24516eb5e164b93d696c26a865af59c1ed0d7ba94bfe92906a8b47535d9",
+        "final_focused_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-query-boundary-correction1-final-focused.json",
+        "final_focused_receipt_sha256": "1aee0a586e33150970bfe420f4088a72a08cc4e1f41e590d80d713df84110092"
+      },
+      "acceptance": {
+        "at": "2026-09-07T07:13:49.103709+00:00",
+        "status": "accepted_backend_slice_only",
+        "candidate": "9b5a33945cdb325958db45d8f70d21e859022883",
+        "tree": "16d1870b5013a4650ca6b2528aa07f53d197d480",
+        "base": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
+        "complete_diff_paths": 23,
+        "complete_commits": [
+          "c4d6ad539227367d232892546f354c14692f65ab",
+          "9b5a33945cdb325958db45d8f70d21e859022883"
+        ],
+        "review_verdict": "APPROVE",
+        "findings": {
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 0
+        },
+        "review_session": 3817,
+        "reviewer": "01a07aa6-735a-7da1-be23-16cbede6a768",
+        "completed_at": "2026-09-07T07:13:12.311287+00:00",
+        "report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-review-9b5a339.md",
+        "report_sha256": "2d658a0a8a93a63309b22e81991e5429057f64f7f275bb9cbaeffcc0142ce53a",
+        "report_matches_completed_final": true,
+        "model": "gpt-6-astra",
+        "reasoning": "max",
+        "mode": "Standard/default",
+        "sandbox": "read-only",
+        "approval_policy": "never",
+        "provider_attestation": "unavailable",
+        "owner_approval": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-review-owner-approval-9b5a339.json",
+        "owner_approval_sha256": "1957fa7834d8769eabbb51b8aa5cd0344447224b3999451dc5fc1b042738bee5",
+        "original_rejection_retained_and_resolved": true,
+        "verification": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-exact-verification-9b5a339.json",
+        "verification_sha256": "fc2e7cfcf19748d4ff5e303be010abb3addddbce86d5123511d51e1ef655019d",
+        "exact_checks": "930PG0skip;1826backend907DB-onlyskips coveredPG;369frontend;189automation;170static;builds/import/config/trace/guard/diff",
+        "source_clean_through_review": true,
+        "failed_parent_review_retained": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-review-c4d6ad5.md",
+          "sha256": "d8ced9a759567be8c858f55c4bf0bfc8819183159146604b53b685f6e4c60389",
+          "findings": {
+            "HIGH": 0,
+            "MEDIUM": 0,
+            "LOW": 1
+          }
+        },
+        "correction_attempt": 1,
+        "historical_objects": 28,
+        "base_traceability_entries": 1421,
+        "new_traceability_entries": 48,
+        "protected_files": 72,
+        "immutable_pending_fields": "This external receipt discharges containing-commit pending exact-gate/review fields for the Credit/USDRefund HTTP slice only.",
+        "whole_version_accepted": false,
+        "publication": "not_started",
+        "next": "Record the bounded staff financial client/exact transport/encrypted recovery stage active, preserve accepted HTTP/services/migrations and all failed evidence, implement and validate under existing scope. Complete all52 UI/browser/cumulative review/release/CI/refs/card gates before53; pause SAME native only when53 fully closed, no54.",
+        "independent_checks": {
+          "tests": 430,
+          "http_probes": 199,
+          "asgi_probes": 28,
+          "static_files": 170,
+          "migration_revisions": 45,
+          "raw_log_hashes": 12,
+          "database_skip_modules_accounted": 41,
+          "other": "import/migration formatting/lint/forward-only refusal/shell/config/trace/guard/diff/preservation PASS"
+        },
+        "review_limitations": "No independent livePG/fullbackend/fullfrontend/build/fullautomation/browser/dependency-audit rerun; supplied exact logs verified. Initial temporary-heredoc denial and flat-route harness assumption corrected with nonmutating checks."
+      },
+      "acceptance_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-accepted-9b5a339.json",
+      "acceptance_receipt_sha256": "c5a7e3dbcac06f4e603ec75a3a2e9466c513d1548e5132d4f1e5b0e0ff6e88bc"
     }
   },
   "historical_v1_048_takeover": {
@@ -3808,9 +3971,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
+  "commit": "9b5a33945cdb325958db45d8f70d21e859022883",
   "idle_reason": null,
-  "next_action": "Resolve the normal containing correction1 successor of retainedc4d6ad5. Run fresh full exact PostgreSQL/backend/frontend/170static/build/import/189automation/config/trace/preservation/guard/diff checks, then one fresh Astra/max/Standard/enforcedread-only complete23path review from accepted5f4bd41 including both c4andcorrection. Requirezero before acceptance. Preserve failed review/red/static logs and all approvals. Then remaining52 before53; at53closedpauseSAME/no54.",
+  "next_action": "Automatic approval review rejected the local commit twice; owner confirmation in this conversation is required before any staging/commit. Complete the reviewable source package and working-tree gates first. After explicit approval, freeze this bounded financial wire/recovery foundation as a normal candidate from accepted9b; run fresh full exact backend/PostgreSQL/frontend/browser/automation/config/trace/preservation gates, then obtain independent complete-base Astra/max/Standard/enforced-read-only zero review. After acceptance implement26financial clients and staff UI; full52 release/CI/refs/card closure before53; pause SAME follow-up only at fully closed53, keep OpenClaw disabled, no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -3818,8 +3981,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Containing normal correction1 successor of failedc4d6ad5; resolve exact SHA/tree from Git and immutable external receipt. Complete review base remains accepted5f4bd41.",
-  "candidate_parent": "c4d6ad539227367d232892546f354c14692f65ab",
+  "candidate_resolution": "No candidate frozen or staged. Both local-commit attempts were automatically rejected and did not execute. Working-tree verification and exact source package are preparatory only; explicit current-conversation commit approval is required. No inherited acceptance from9b.",
+  "candidate_parent": "9b5a33945cdb325958db45d8f70d21e859022883",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -3882,7 +4045,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 query-boundary correction1 focused verified; normal successor full exact gates pending",
+  "phase": "V1-052 financial wire/recovery foundation verified; local commit blocked by automatic approval review",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4979,7 +5142,9 @@
     "Accepted Allocation/Receipt exact5f4bd41 retains903PG/1419backend/189automation/static-build-import and independent0HIGH0MEDIUM0LOW; see accepted_allocation_receipt_http_slice.",
     "CURRENT UNCOMMITTED Credit/USDRefund read foundation:917PG0skip/1461backend894DB-onlyskipscoveredbyPG/42unit+22trace/167static/build-import/config/trace/guardPASS. Retained focused fixture/style/type failures, canonical-note guard65, and initial fullPG916PASS1NOWAIT failure; no acceptance/publication. /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-working-tree-verification.json",
     "CURRENT complete23path Credit/USDRefund HTTP:329HTTP/inventory +27isolatedPG0skip +170static PASS;29HTTP assertion entries preserve all1438prior. Prefreeze receipt /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-focused-prefreeze.json SHA256fa0b2973a2d24a911c2bdb53ba5ebab0a16e83755b779db16582af1a75c26f00. Full exact frozen-candidate gates/review pending, no acceptance/publication.",
-    "Retainedc4d6ad5 full930PG/1763backend/369frontend/189automation PASS; independent79536COMPLETED REJECT0HIGH0MEDIUM1LOW. Correction1 red24FAIL39PASS; initial392HTTP27PGgreen; final63regressions22trace170staticPASS. Receipt25d7f24516eb5e164b93d696c26a865af59c1ed0d7ba94bfe92906a8b47535d9. Fresh full exact successor gates and complete-base zero review pending."
+    "Retainedc4d6ad5 full930PG/1763backend/369frontend/189automation PASS; independent79536COMPLETED REJECT0HIGH0MEDIUM1LOW. Correction1 red24FAIL39PASS; initial392HTTP27PGgreen; final63regressions22trace170staticPASS. Receipt25d7f24516eb5e164b93d696c26a865af59c1ed0d7ba94bfe92906a8b47535d9. Fresh full exact successor gates and complete-base zero review pending.",
+    "ACCEPTED9bCreditUSDRefundHTTP complete23paths/twocommits from5f:930PG/1826backend907DB-onlyskips/369frontend/189automation/170static-build-importPASS; independent3817COMPLETED0HIGH0MEDIUM0LOW,430tests199HTTP28ASGI; receiptc5a7e3dbcac06f4e603ec75a3a2e9466c513d1548e5132d4f1e5b0e0ff6e88bc. Full52notclosed.",
+    "Financial wire/recovery prefreeze:440frontend/22trace/170static and8real-browser groups PASS; full exact candidate suites and independent review pending. Receipt /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-wire-focused-prefreeze.json SHA2563481ff6ae4eba1d980a7d208adbb7f0de9d9acd97457dccb75ae2cb1ed24dc86. Initial lint/type/browser setup and identity red failures preserved, identity correction1 resolved."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -5001,7 +5166,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-07T06:36:13.932829+00:00",
+  "timestamp": "2026-09-07T08:12:56.284502+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -5028,29 +5193,15 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
-    "backend/migrations/versions/20260907_45_credit_refund_http_reads.py",
-    "backend/src/property_rental/app.py",
-    "backend/src/property_rental/credit_refund_api.py",
-    "backend/src/property_rental/credit_refund_read.py",
-    "backend/tests/test_billing_service_migration.py",
-    "backend/tests/test_credit_refund_api.py",
-    "backend/tests/test_credit_refund_api_migration.py",
-    "backend/tests/test_credit_refund_read.py",
-    "backend/tests/test_credit_refund_read_migration.py",
-    "backend/tests/test_initial_owner_bootstrap_cli.py",
-    "backend/tests/test_invoice_migration.py",
-    "backend/tests/test_late_payment_migration.py",
-    "backend/tests/test_lease_api_migration.py",
-    "backend/tests/test_migrations.py",
-    "backend/tests/test_utility_api_migration.py",
-    "backend/tests/test_utility_consumption_migration.py",
-    "backend/tests/test_utility_meter_migration.py",
+    "frontend/src/financialJson.ts",
+    "frontend/src/sealedIntentStore.ts",
+    "frontend/src/invoiceClient.ts",
+    "frontend/src/*test*",
+    "ops/V1_052_FINANCIAL_WIRE_RECOVERY.md",
     "ops/NOW.md",
-    "ops/QUEUE.md",
     "ops/STATE.json",
-    "ops/V1_052_CREDIT_REFUND_HTTP.md",
-    "ops/traceability.json",
-    "scripts/database-test.sh"
+    "ops/QUEUE.md",
+    "ops/traceability.json"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -5238,7 +5389,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-07T06:36:13.932829+00:00",
+  "updated_at": "2026-09-07T08:12:56.284502+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -6420,48 +6571,80 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_corrected_successor_full_exact_gates",
-    "tranche_id": "V1-052",
-    "base_sha": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
-    "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
+    "status": "pending_frozen_financial_wire_recovery_exact_gates_and_independent_review",
+    "base_sha": "9b5a33945cdb325958db45d8f70d21e859022883",
     "exact_sha": null,
     "model": "gpt-6-astra",
     "reasoning_effort": "max",
     "mode": "Standard",
     "read_only": true,
     "previous_slice_acceptance": {
-      "sha": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
-      "tree": "fd97fd1d2c8b340ee6a473c6b75d33110fee5bd2",
-      "base_sha": "1e79851ec5e8530d35927fe93ed2346c407a5820",
-      "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-accepted-5f4bd41.md",
-      "receipt_sha256": "9735754b024d84239c92bd739fe9c6f375fc2edb65312a6accb0265f2987ae29",
-      "review_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-review-5f4bd41.md",
-      "review_sha256": "61832d56eb1a2ab169df087445cd484f91ba57e3a0814c4b7075b040e3c82ee4",
-      "review_exec": 2607,
-      "review_status": "COMPLETED_EXIT0_0HIGH_0MEDIUM_0LOW",
-      "review_completed_at": "2026-09-07T03:29:01.013153+00:00",
-      "reviewer_child": "01a079de-9c68-7712-be9f-dd0936abf692",
+      "at": "2026-09-07T07:13:49.103709+00:00",
+      "status": "accepted_backend_slice_only",
+      "candidate": "9b5a33945cdb325958db45d8f70d21e859022883",
+      "tree": "16d1870b5013a4650ca6b2528aa07f53d197d480",
+      "base": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
+      "complete_diff_paths": 23,
+      "complete_commits": [
+        "c4d6ad539227367d232892546f354c14692f65ab",
+        "9b5a33945cdb325958db45d8f70d21e859022883"
+      ],
+      "review_verdict": "APPROVE",
+      "findings": {
+        "HIGH": 0,
+        "MEDIUM": 0,
+        "LOW": 0
+      },
+      "review_session": 3817,
+      "reviewer": "01a07aa6-735a-7da1-be23-16cbede6a768",
+      "completed_at": "2026-09-07T07:13:12.311287+00:00",
+      "report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-review-9b5a339.md",
+      "report_sha256": "2d658a0a8a93a63309b22e81991e5429057f64f7f275bb9cbaeffcc0142ce53a",
+      "report_matches_completed_final": true,
       "model": "gpt-6-astra",
       "reasoning": "max",
-      "mode": "Standard locally configured",
-      "read_only": true,
+      "mode": "Standard/default",
+      "sandbox": "read-only",
+      "approval_policy": "never",
       "provider_attestation": "unavailable",
-      "independent_checks": "194tests/147HTTPprobes/24ASGIprobes/changedstatic/44revisiongraph/shell/diff/traceability/14rawloghashes/preservationPASS; no independentlivePG/fullgates/build/frontend/browser/audits",
-      "exact_tests": "903PG0skip/1419backend880DB-onlyskips/189automation/164static/standardbuild-import/configPASS;20400/61799/55847/17293COMPLETED",
-      "exact_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-exact-verification-5f4bd41.md",
-      "exact_receipt_sha256": "2f9c84d3ba3b1e85c74b4ca437b67c7d9d5973c1a0faea2989df3d9b5d5629bd",
-      "not_whole_version_acceptance": true,
-      "owner_source_transmission_approval": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-review-owner-approval-5f4bd41.json",
-      "prior_auto_review_rejection_preserved": true
+      "owner_approval": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-review-owner-approval-9b5a339.json",
+      "owner_approval_sha256": "1957fa7834d8769eabbb51b8aa5cd0344447224b3999451dc5fc1b042738bee5",
+      "original_rejection_retained_and_resolved": true,
+      "verification": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-exact-verification-9b5a339.json",
+      "verification_sha256": "fc2e7cfcf19748d4ff5e303be010abb3addddbce86d5123511d51e1ef655019d",
+      "exact_checks": "930PG0skip;1826backend907DB-onlyskips coveredPG;369frontend;189automation;170static;builds/import/config/trace/guard/diff",
+      "source_clean_through_review": true,
+      "failed_parent_review_retained": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-review-c4d6ad5.md",
+        "sha256": "d8ced9a759567be8c858f55c4bf0bfc8819183159146604b53b685f6e4c60389",
+        "findings": {
+          "HIGH": 0,
+          "MEDIUM": 0,
+          "LOW": 1
+        }
+      },
+      "correction_attempt": 1,
+      "historical_objects": 28,
+      "base_traceability_entries": 1421,
+      "new_traceability_entries": 48,
+      "protected_files": 72,
+      "immutable_pending_fields": "This external receipt discharges containing-commit pending exact-gate/review fields for the Credit/USDRefund HTTP slice only.",
+      "whole_version_accepted": false,
+      "publication": "not_started",
+      "next": "Record the bounded staff financial client/exact transport/encrypted recovery stage active, preserve accepted HTTP/services/migrations and all failed evidence, implement and validate under existing scope. Complete all52 UI/browser/cumulative review/release/CI/refs/card gates before53; pause SAME native only when53 fully closed, no54.",
+      "independent_checks": {
+        "tests": 430,
+        "http_probes": 199,
+        "asgi_probes": 28,
+        "static_files": 170,
+        "migration_revisions": 45,
+        "raw_log_hashes": 12,
+        "database_skip_modules_accounted": 41,
+        "other": "import/migration formatting/lint/forward-only refusal/shell/config/trace/guard/diff/preservation PASS"
+      },
+      "review_limitations": "No independent livePG/fullbackend/fullfrontend/build/fullautomation/browser/dependency-audit rerun; supplied exact logs verified. Initial temporary-heredoc denial and flat-route harness assumption corrected with nonmutating checks."
     },
-    "last_report": {
-      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-review-c4d6ad5.md",
-      "sha256": "d8ced9a759567be8c858f55c4bf0bfc8819183159146604b53b685f6e4c60389",
-      "high": 0,
-      "medium": 0,
-      "low": 1,
-      "completed_at": "2026-09-07T06:25:51.016360+00:00"
-    }
+    "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6"
   },
   "historical_v1_047_review": {
     "status": "PASS",
