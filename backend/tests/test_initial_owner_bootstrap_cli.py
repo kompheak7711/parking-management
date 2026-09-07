@@ -587,9 +587,10 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
             "get"
         },
         "/api/v1/properties/{property_id}/refunds/{source_id}/verified-return-context": {"get"},
-        "/api/v1/properties/{property_id}/refunds/{refund_id}/corrections/{source_id}/reversal-context": {
-            "get"
-        },
+        (
+            "/api/v1/properties/{property_id}/refunds/{refund_id}/corrections/"
+            "{source_id}/reversal-context"
+        ): {"get"},
         "/api/v1/health/live": {"get"},
         "/api/v1/health/ready": {"get"},
         "/api/v1/identity/me": {"get"},

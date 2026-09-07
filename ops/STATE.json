@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "V1-052 financial action context: normal formatting successor pending",
+    "phase": "V1-052 action context correction2 full backend verified; normal successor pending",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2087,7 +2087,7 @@
       "schedulers": "SAME nativeACTIVE/OpenClawdisabled"
     },
     "owner_action_required": false,
-    "next_action": "Freeze normal five-path formatting correction of dc24920, retaining completec65-base31paths/two commits. Run fresh exact full gates and ONE completec65-base Astra/max/Standard/enforced-read-only review under standing through53 authority. Preserve dc24920 and all failed candidates/reports/regressions. Then staff UI/full52cumulative release/publication/exactCI/refs/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+    "next_action": "Freeze normal five-path correction2 successor of99d0b55; all187backend static and full backend/build/import now pass. Run remaining full exact successor gates, with frontend isolated from database/automation suites, and12reference/context plus6command Chromium groups. Then ONE completec65-base31path/three-commit Astra/max/Standard/enforced-read-only independent zero review under standing through53 authority. Preserve all failed candidates/reports/regressions and explicit timeout qualifications. Continue staff UI/full52cumulative release/publication/exactCI/refs/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2170,7 +2170,7 @@
       "mode": "Standard/default",
       "reasoning_reason": "Financial authorization, cross-domain concurrency and new narrow database privilege require xhigh under existing policy.",
       "implementation_owner": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-      "correction_attempt": 1,
+      "correction_attempt": 2,
       "standing_authorization": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
         "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
@@ -2182,7 +2182,7 @@
           "path": "backend/tests/test_payment_reversal_context_migration.py"
         }
       ],
-      "phase": "formatting_correction_verified",
+      "phase": "correction2_full_backend_verified",
       "focused_checks": {
         "backend-corrected": {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-backend-corrected.json",
@@ -2204,7 +2204,7 @@
           "sha256": "70823705f3f70b37c4e4926d211dbb043899bc9614e4b017ecca516a8151fe2b"
         }
       },
-      "next_action": "Freeze normal five-path formatting correction of dc24920, retaining completec65-base31paths/two commits. Run fresh exact full gates and ONE completec65-base Astra/max/Standard/enforced-read-only review under standing through53 authority. Preserve dc24920 and all failed candidates/reports/regressions. Then staff UI/full52cumulative release/publication/exactCI/refs/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+      "next_action": "Freeze normal five-path correction2 successor of99d0b55; all187backend static and full backend/build/import now pass. Run remaining full exact successor gates, with frontend isolated from database/automation suites, and12reference/context plus6command Chromium groups. Then ONE completec65-base31path/three-commit Astra/max/Standard/enforced-read-only independent zero review under standing through53 authority. Preserve all failed candidates/reports/regressions and explicit timeout qualifications. Continue staff UI/full52cumulative release/publication/exactCI/refs/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
       "synthetic_fixture_scope": {
         "path": "frontend/src/test/financialActionContextFixtures.ts",
         "purpose": "28 actual synthetic PostgreSQL projection examples support actual-client and browser contract regressions; no customer/production data or credentials.",
@@ -2249,6 +2249,18 @@
         "v1052-financial-action-context-backend-first.json": {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-backend-first.json",
           "sha256": "d13a4fa54c008514f94e282df0a2bf59ecb1f214a23e6b3343392e217b23a5cb"
+        },
+        "v1052-financial-action-context-exact-99d0b55-backend.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-exact-99d0b55-backend.json",
+          "sha256": "0f2eae399d43801e5ad28789265558b6abf95d92289c1f7176c8d659562db5f0"
+        },
+        "v1052-financial-action-context-exact-99d0b55-frontend.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-exact-99d0b55-frontend.json",
+          "sha256": "9388a04c668266fef0e83cca5fe33607cdc4661c5f3110e2f12e0af63ae66469"
+        },
+        "v1052-financial-action-context-exact-dc24920-backend.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-exact-dc24920-backend.json",
+          "sha256": "3820301856c07512f341393eb833a6598bd7ec2e75790cf30f8b244a73a43d8a"
         },
         "v1052-financial-action-context-format-first.json": {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-format-first.json",
@@ -2341,16 +2353,31 @@
         "ops/V1_052_FINANCIAL_ACTION_CONTEXT.md"
       ],
       "failed_gate": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-gate-rejected-dc24920.json",
-        "sha256": "b45f45bdbfaf2106d314cee6708f73bd06f4e9d5954717b66dbebcb4b2b76508"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-gate-rejected-99d0b55.json",
+        "sha256": "782ce7202c30c6563f6542053cb4a8b283b33f5fb83d11b0a64a4f9bda8de500"
       },
       "format_correction": {
-        "log": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-format-successor-inventory.log",
-          "sha256": "413a709001976657cb743636fd34e48fc41d8d302d665460d3f874b3313da127"
+        "preview": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/financial_action_route_inventory_preview.py",
+          "sha256": "4592afefe18115b43731c81710c0d08c8374c65207c114f648aba69835f08567"
+        },
+        "proof": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/financial-action-context-route-preview-verification.json",
+          "sha256": "9c18f1438766b3028f1af90f8f65b683ca5a2cdebb352169a808460f54b8cba4"
         },
         "full_python_ast_unchanged": true
-      }
+      },
+      "prefreeze_full_backend": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-backend-full-prefreeze-correction2.json",
+        "sha256": "7d5b9b28e16dfb0cc4b4cc8e6dd6812b6b1610b5c44759273adc9bf900ef6cd1"
+      },
+      "full_backend_counts": {
+        "backend": 2547,
+        "database_only_skips": 963,
+        "warnings": 1
+      },
+      "format_inventory_correction_attempt": 2,
+      "independent_review_correction_attempt": 0
     },
     "accepted_read_slice": {
       "id": "V1-052-payment-read",
@@ -6128,7 +6155,7 @@
   "branch": "codex/v1-052-direct",
   "commit": "c65a7cb240ca3e0e67b6802e1ea25b668ae82e3a",
   "idle_reason": null,
-  "next_action": "Freeze normal five-path formatting correction of dc24920, retaining completec65-base31paths/two commits. Run fresh exact full gates and ONE completec65-base Astra/max/Standard/enforced-read-only review under standing through53 authority. Preserve dc24920 and all failed candidates/reports/regressions. Then staff UI/full52cumulative release/publication/exactCI/refs/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+  "next_action": "Freeze normal five-path correction2 successor of99d0b55; all187backend static and full backend/build/import now pass. Run remaining full exact successor gates, with frontend isolated from database/automation suites, and12reference/context plus6command Chromium groups. Then ONE completec65-base31path/three-commit Astra/max/Standard/enforced-read-only independent zero review under standing through53 authority. Preserve all failed candidates/reports/regressions and explicit timeout qualifications. Continue staff UI/full52cumulative release/publication/exactCI/refs/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -6200,7 +6227,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 financial action context: normal formatting successor pending",
+  "phase": "V1-052 action context correction2 full backend verified; normal successor pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -7312,7 +7339,8 @@
     "456REJECT0HIGH1MEDIUM2LOW;correction1 red6backendFAIL18PASS and16frontendFAIL6PASS. Focused207backend/API/KHR/inventory,197frontend/recovery,22trace,177static unchanged inventory,11actualbrowsergroupsPASS. Shared-fixture1FAIL196PASS retained then197PASS after isolated boolean copies. Two PG932PASS1NOWAIT failures retained; actual-test-database diagnostic full933PASS with unchanged assertions/settings/source, original holder not proven. Exact successor gates/review pending; no tests repeated for approval.",
     "Payment reversal context focused87unit/API/inventory,20PG,113client,23trace,7Chromiumgroups/staticPASS. Full952PG passed before final voided-Invoice projection correction; exact953PG pending. Historical Deposit unsupported-application and VOID Invoice result gaps reproduced/corrected. All parser/fixture/lint/type/trace/helper failures retained;112-skipped premature frontend red explicitly not evidence.38newmaps preserve1598prior=1636. Exact containing-candidate full gates and independent zero review remain required.",
     "Payment reversal context correction1: actual rejected runtime15FAIL2PASS113skips preserved; corrected130client/24trace/9Chromiumgroups/TypeScript-project/lint/formatPASS. Actual client provenance rejects final-only/copied/mutated replies and immutable runtime scope rejects assignment/shadowing/prototype and mixed-actor pages.8newmaps preserve1636parent/1598base=1644. All backend runtime/migrations/financial commands/dependencies unchanged. Successor exact gates and complete431-base zero review pending.",
-    "215backend/API/inventory;225client;28PGfullmodule then5newPGcases=33covered;25trace;12Chromiumgroups;backend6type/source checks andfrontend actual project types/lint/format PASS.56newmaps preserve1644=1700. Every draft failure retained."
+    "215backend/API/inventory;225client;28PGfullmodule then5newPGcases=33covered;25trace;12Chromiumgroups;backend6type/source checks andfrontend actual project types/lint/format PASS.56newmaps preserve1644=1700. Every draft failure retained.",
+    "Correction2 route literal: fullPythonAST unchanged;187format/lint/types and 2547backendPASS963DB-onlyskips/build/import passed. Prior99 exact986PG and isolated832frontend/189automation retained; fresh successor exact gates and completec65-base review pending."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -7334,7 +7362,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-07T23:36:04.942519+00:00",
+  "timestamp": "2026-09-07T23:49:38.301185+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -7566,7 +7594,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-07T23:36:04.942519+00:00",
+  "updated_at": "2026-09-07T23:49:38.301185+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -8748,9 +8776,9 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_exact_successor_gates_and_complete_base_review",
+    "status": "pending_correction2_full_checks_and_exact_candidate_review",
     "base_sha": "c65a7cb240ca3e0e67b6802e1ea25b668ae82e3a",
-    "parent_sha": "dc24920b7cb88dbf5d9d09179f10c3833bfbf28c",
+    "parent_sha": "99d0b55a4f73705a8ecf5b0b40f41a276e80db36",
     "exact_sha": null,
     "model": "gpt-6-astra",
     "reasoning_effort": "max",
@@ -8766,8 +8794,8 @@
     },
     "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "failed_gate": {
-      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-gate-rejected-dc24920.json",
-      "sha256": "b45f45bdbfaf2106d314cee6708f73bd06f4e9d5954717b66dbebcb4b2b76508"
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-gate-rejected-99d0b55.json",
+      "sha256": "782ce7202c30c6563f6542053cb4a8b283b33f5fb83d11b0a64a4f9bda8de500"
     }
   },
   "historical_v1_047_review": {
