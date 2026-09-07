@@ -56,6 +56,7 @@ from property_rental.configuration_api import (
     ExchangeRateProvider,
     PostgresConfigurationFlow,
     UnavailableConfigurationFlow,
+    UnavailableExchangeRateProvider,
     create_configuration_router,
 )
 from property_rental.credit import CreditIdempotencyKeyReused
@@ -83,6 +84,11 @@ from property_rental.deposit_api import (
     UnavailableDepositResourceFlow,
     create_deposit_router,
     deposit_idempotency_key_reused_response,
+)
+from property_rental.financial_reference import FinancialReferenceService
+from property_rental.financial_reference_api import (
+    FinancialReferenceFlow,
+    create_financial_reference_router,
 )
 from property_rental.identity import ActorResolver, deny_unauthenticated_actor
 from property_rental.invoice import (
@@ -192,7 +198,8 @@ LATE_PAYMENT_API_PATH_PATTERN: Final = re.compile(
     r"late-payment-charges(?:/|$))"
 )
 PAYMENT_API_PATH_PATTERN: Final = re.compile(
-    r"^/api/v1/(?:properties/[^/]+/(?:payments|refunds)(?:/|$)|"
+    r"^/api/v1/(?:financial-workspaces$|properties/[^/]+/(?:financial-capabilities|payment-methods)$|"
+    r"properties/[^/]+/(?:payments|refunds)(?:/|$)|"
     r"customers/[^/]+/credits(?:/|$)|"
     r"(?:payments|payment-allocations|receipts|customer-credits|credit-applications|refunds|refund-sources)(?:/|$))"
 )
@@ -320,6 +327,7 @@ def create_app(
     invoice_flow: InvoiceFlow | None = None,
     late_payment_flow: LatePaymentFlow | None = None,
     payment_flow: PaymentFlow | None = None,
+    financial_reference_flow: FinancialReferenceFlow | None = None,
     allocation_receipt_flow: AllocationReceiptFlow | None = None,
     credit_refund_flow: CreditRefundFlow | None = None,
 ) -> FastAPI:
@@ -822,6 +830,19 @@ def create_app(
                     if resolved_settings.database_url is not None
                     else UnavailableLatePaymentFlow()
                 ),
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_financial_reference_router(
+            actor_resolver,
+            financial_reference_flow
+            or FinancialReferenceService(
+                resolved_settings.database_url.get_secret_value()
+                if resolved_settings.database_url is not None
+                else None,
+                exchange_rate_provider or UnavailableExchangeRateProvider(),
             ),
             resolved_settings,
         )

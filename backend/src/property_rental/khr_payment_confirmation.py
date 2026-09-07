@@ -245,48 +245,52 @@ def _database_error(exc: psycopg.Error) -> NoReturn:
     ) from exc
 
 
+class ApprovedKhrSourceUnavailable(PaymentConfirmationUnavailableError):
+    """The approved provider explicitly reports no source; manual fallback may apply."""
+
+
+def select_khr_reference(
+    provider: ExchangeRateProvider, manual: ManualKhrReference | None
+) -> dict[str, object]:
+    try:
+        quote = provider.current_sell_rate()
+    except ExchangeRateSourceUnavailable as exc:
+        if manual is None:
+            raise ApprovedKhrSourceUnavailable("Approved rate source is unavailable") from exc
+        return {
+            **manual.intent(),
+            "rate_source": "ABA_EQUIVALENT_MANUAL",
+            "automatic_source_unavailable": True,
+        }
+    except Exception as exc:
+        raise PaymentConfirmationUnavailableError("Approved rate source is unavailable") from exc
+    if manual is not None:
+        raise PaymentConfirmationConflictError(
+            "Automatic source is available; manual fallback is not permitted"
+        )
+    try:
+        if not isinstance(quote, ExchangeRateQuote):
+            raise PaymentConfirmationInvalidError("Approved source response is invalid")
+        _text(quote.source_reference, 500)
+        return {
+            "reference_rate_khr_per_usd": _rate(quote.reference_rate_khr_per_usd),
+            "source_reference": quote.source_reference,
+            "applicable_at": _instant(quote.applicable_at).isoformat(),
+            "fallback_reason": None,
+            "rate_source": "ABA_AUTOMATIC",
+            "automatic_source_unavailable": False,
+        }
+    except PaymentConfirmationInvalidError as exc:
+        raise PaymentConfirmationUnavailableError("Approved source response is invalid") from exc
+
+
 @dataclass(frozen=True, slots=True)
 class KhrPaymentConfirmationService:
     financial_database_url: str
     provider: ExchangeRateProvider = field(default_factory=UnavailableExchangeRateProvider)
 
     def _selection(self, manual: ManualKhrReference | None) -> dict[str, object]:
-        try:
-            quote = self.provider.current_sell_rate()
-        except ExchangeRateSourceUnavailable as exc:
-            if manual is None:
-                raise PaymentConfirmationUnavailableError(
-                    "Approved rate source is unavailable"
-                ) from exc
-            return {
-                **manual.intent(),
-                "rate_source": "ABA_EQUIVALENT_MANUAL",
-                "automatic_source_unavailable": True,
-            }
-        except Exception as exc:
-            raise PaymentConfirmationUnavailableError(
-                "Approved rate source is unavailable"
-            ) from exc
-        if manual is not None:
-            raise PaymentConfirmationConflictError(
-                "Automatic source is available; manual fallback is not permitted"
-            )
-        try:
-            if not isinstance(quote, ExchangeRateQuote):
-                raise PaymentConfirmationInvalidError("Approved source response is invalid")
-            _text(quote.source_reference, 500)
-            return {
-                "reference_rate_khr_per_usd": _rate(quote.reference_rate_khr_per_usd),
-                "source_reference": quote.source_reference,
-                "applicable_at": _instant(quote.applicable_at).isoformat(),
-                "fallback_reason": None,
-                "rate_source": "ABA_AUTOMATIC",
-                "automatic_source_unavailable": False,
-            }
-        except PaymentConfirmationInvalidError as exc:
-            raise PaymentConfirmationUnavailableError(
-                "Approved source response is invalid"
-            ) from exc
+        return select_khr_reference(self.provider, manual)
 
     def confirm_khr(
         self, property_id: UUID, command: ConfirmKhrPaymentCommand, *, actor: AuthenticatedActor

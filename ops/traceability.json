@@ -21984,6 +21984,645 @@
       "test_path": "frontend/src/financialRecovery.test.ts",
       "status": "implemented",
       "notes": "Both Refund correction commands reject original payout above9000000000000000cents, including int64maximum, despite otherwise coherent transitions; initial/replay remain pending with unchanged original intent."
+    },
+    {
+      "test_id": "test_financial_reference_capabilities_project_only_exact_existing_grants",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "UI-063",
+        "SEC-025",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_reference.py",
+      "status": "implemented",
+      "notes": "capabilities project only exact existing grants. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_page_rejects_invalid_limits",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "UI-063",
+        "SEC-025",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_reference.py",
+      "status": "implemented",
+      "notes": "page rejects invalid limits. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_queries_bound_selection_and_recheck_fresh_actor",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "UI-063",
+        "SEC-025",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_reference.py",
+      "status": "implemented",
+      "notes": "queries bound selection and recheck fresh actor. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_workspace_uses_financial_scopes_and_fresh_read_even_when_empty",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "UI-063",
+        "SEC-025",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_reference.py",
+      "status": "implemented",
+      "notes": "workspace uses financial scopes and fresh read even when empty. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_preview_exact_two_ceilings_ignore_decimal_context",
+      "upstream_ids": [
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-025",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_reference.py",
+      "status": "implemented",
+      "notes": "preview exact two ceilings ignore decimal context. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_preview_only_explicit_unavailable_admits_fallback",
+      "upstream_ids": [
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-025",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_reference.py",
+      "status": "implemented",
+      "notes": "preview only explicit unavailable admits fallback. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_manual_preview_requires_grant_unavailability_and_retains_source",
+      "upstream_ids": [
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-025",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_reference.py",
+      "status": "implemented",
+      "notes": "manual preview requires grant unavailability and retains source. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_preview_invalid_amount_never_queries_or_calls_provider",
+      "upstream_ids": [
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-025",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_reference.py",
+      "status": "implemented",
+      "notes": "preview invalid amount never queries or calls provider. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_preview_rejects_future_sources_and_payable_overflow",
+      "upstream_ids": [
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-025",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_reference.py",
+      "status": "implemented",
+      "notes": "preview rejects future sources and payable overflow. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_denied_or_stale_actor_prevents_provider_access",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "UI-063",
+        "SEC-025",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_reference.py",
+      "status": "implemented",
+      "notes": "denied or stale actor prevents provider access. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_http_actor_bound_success_and_private_no_store",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "UI-063",
+        "SEC-025",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_reference_api.py",
+      "status": "implemented",
+      "notes": "http actor bound success and private no store. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_http_denies_actor_mismatch_before_flow",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "UI-063",
+        "SEC-025",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_reference_api.py",
+      "status": "implemented",
+      "notes": "http denies actor mismatch before flow. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_http_requires_record_without_configuration_manager_dependency",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "UI-063",
+        "SEC-025",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_reference_api.py",
+      "status": "implemented",
+      "notes": "http requires record without configuration manager dependency. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_http_rejects_noncanonical_or_duplicate_pages",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "UI-063",
+        "SEC-025",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_reference_api.py",
+      "status": "implemented",
+      "notes": "http rejects noncanonical or duplicate pages. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_http_page_passes_exact_uuid_and_limit",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "UI-063",
+        "SEC-025",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_reference_api.py",
+      "status": "implemented",
+      "notes": "http page passes exact uuid and limit. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_http_property_binding_precedes_lookup",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "UI-063",
+        "SEC-025",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_reference_api.py",
+      "status": "implemented",
+      "notes": "http property binding precedes lookup. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_preview_strict_bounded_body_cannot_set_derived_values",
+      "upstream_ids": [
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-025",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_reference_api.py",
+      "status": "implemented",
+      "notes": "preview strict bounded body cannot set derived values. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_preview_requires_browser_protection_without_reservation",
+      "upstream_ids": [
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-025",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_reference_api.py",
+      "status": "implemented",
+      "notes": "preview requires browser protection without reservation. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_preview_manual_grant_checked_before_flow_and_error_is_safe",
+      "upstream_ids": [
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-025",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_reference_api.py",
+      "status": "implemented",
+      "notes": "preview manual grant checked before flow and error is safe. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_runtime_pages_keep_method_identities_and_skip_retired",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "UI-063",
+        "SEC-025",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_reference_migration.py",
+      "status": "implemented",
+      "notes": "runtime pages keep method identities and skip retired. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_runtime_preview_has_no_persistent_financial_effects",
+      "upstream_ids": [
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-025",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_reference_migration.py",
+      "status": "implemented",
+      "notes": "runtime preview has no persistent financial effects. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "test_financial_reference_runtime_denies_missing_property_actor_and_disabled_actor",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "UI-063",
+        "SEC-025",
+        "SEC-038",
+        "SEC-039",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_reference_migration.py",
+      "status": "implemented",
+      "notes": "runtime denies missing property actor and disabled actor. Actual assertion coverage; isolated synthetic data only."
+    },
+    {
+      "test_id": "TEST-FE-333",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Four finite routes carry actor/Property/correlation; preview has explicit POST and no idempotency key."
+    },
+    {
+      "test_id": "TEST-FE-334",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Wrong actor and Property success metadata rejected on all four routes."
+    },
+    {
+      "test_id": "TEST-FE-335",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Unknown operations, extra inputs, invalid amounts and pagination rejected before dispatch."
+    },
+    {
+      "test_id": "TEST-FE-336",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Preview captures original amount and scope before delayed response despite caller mutation."
+    },
+    {
+      "test_id": "TEST-FE-337",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Abort and overall fetch/body deadline settle noncooperating promises."
+    },
+    {
+      "test_id": "TEST-FE-338",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Declared/streamed byte limits, fatal UTF8, duplicate JSON and correlation failures preserve safe local status."
+    },
+    {
+      "test_id": "TEST-FE-339",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Inconsistent server preview amount,rate,payable,unrounded,markup,source and provisional flag fail closed."
+    },
+    {
+      "test_id": "TEST-FE-340",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Exact large amount boundary and long legacy labels preserved without truncation."
+    },
+    {
+      "test_id": "TEST-FE-341",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Deterministic bounded page identities/cursor and exact capability registry validated."
+    },
+    {
+      "test_id": "TEST-FE-342",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Automatic unavailability is distinct; explicit manual response must echo approved original source facts."
+    },
+    {
+      "test_id": "TEST-FE-343",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Canonical HTTP failure retains safe local status/correlation without private upstream text."
+    },
+    {
+      "test_id": "TEST-FE-344",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium executes all4reference operations with exact quote validation and no idempotency."
+    },
+    {
+      "test_id": "TEST-FE-345",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium rejects invalidated noncooperating request and decodes streamed exact-bigint preview."
+    },
+    {
+      "test_id": "TEST-FE-346",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "API-058",
+        "UI-063",
+        "UI-064",
+        "SEC-026",
+        "SEC-027",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Actual encrypted IndexedDB pending key/plaintext remains unchanged through read-only preview; only owned synthetic key cleaned."
+    },
+    {
+      "test_id": "TEST-FE-347",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "API-057",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Captured cursor is normalized before request and response comparison; equal or earlier returned page IDs rejected and strictly later ID accepted even with uppercase input."
     }
   ]
 }
