@@ -102,3 +102,8 @@ An initial targeted frontend red skipped112tests because its helper had stopped;
 it is explicitly non-evidence. The installed red and actual corrected test are retained.
 Original financial commands, serialization guards and prior migrations are unchanged.
 No staff UI, bounded acceptance, publication or version closure is claimed here.
+
+
+Correction1 after rejectedf48f4c4: retain module-private immutable provenance for actual client replies, including actual normalized cursor and complete captured scope. A sequence cannot treat a continuation response as first/final because an argument is omitted or falsified. Runtime-private actor/Property/Payment/view bindings and frozen public sequence prevent reassignment or shadowing before/during/after completeness. Extract the sequence into one module to keep imports acyclic. Add actual-client and Chromium red/green regression controls, preserve all original backend/migration/command behavior and evidence; require fresh complete431-base zero review.
+
+Correction1 verification: actual rejected runtime15FAIL2PASS113skips retained, covering continuation provenance, copied/mutated replies and writable sequence scope. Corrected130client,24trace and9actualChromiumgroups pass with full TypeScript-project/format/lint. Two new lint diagnostics corrected without weakening runtime checks. The sequence module imports client provenance and validators acyclically; only private registered response identity establishes an actual request.8additive mappings preserve all1636failed-candidate and1598accepted-base entries. Exact successor full gates and complete431-base zero review remain required.

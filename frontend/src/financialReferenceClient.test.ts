@@ -2,7 +2,7 @@ import {
   ids as contextIds,
   fixture as financialFixture,
 } from "./test/financialFixtures";
-import { PaymentReversalContextSequence } from "./paymentReversalContext";
+import { PaymentReversalContextSequence } from "./paymentReversalContextSequence";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FINANCIAL_DEADLINE_MS } from "./financialClient";
 import { financialObject, type FinancialObject } from "./financialContracts";
@@ -1288,4 +1288,181 @@ describe("Payment reversal context", () => {
     ).rejects.toMatchObject({ code: "WORKSPACE_INVALIDATED" });
     expect(fetcher).not.toHaveBeenCalled();
   });
+});
+
+function contextPair(view: "impact" | "result") {
+  const firstId = "60000000-0000-4000-8000-000000000001",
+    secondId = "60000000-0000-4000-8000-000000000002",
+    cursor = `${contextRevision}:3:${firstId}`;
+  const client = createFinancialReferenceClient((url, init) => {
+    if (typeof url !== "string")
+      throw new Error("Finite synthetic URL required");
+    const envelope = contextEnvelope(view),
+      identity = url.includes("cursor=") ? secondId : firstId,
+      headers = new Headers(init?.headers);
+    financialObject(envelope.meta).actor_id = headers.get("X-Billing-Actor-ID");
+    financialObject(envelope.data).items = [
+      view === "impact"
+        ? contextEvent(
+            3,
+            "CREDIT",
+            identity,
+            "PAYMENT",
+            contextIds.payment,
+            "CREDIT",
+            identity,
+          )
+        : {
+            ordinal: 3,
+            kind: "CREDIT",
+            id: identity,
+            data: {
+              recognized_usd_cents: 100,
+              applied_usd_cents: 0,
+              refunded_usd_cents: 0,
+              reversed_usd_cents: 0,
+              available_usd_cents: 100,
+            },
+          },
+    ];
+    envelope.page = {
+      limit: 1,
+      next_cursor: identity === firstId ? cursor : null,
+    };
+    return Promise.resolve(contextResponse(init ?? {}, envelope));
+  });
+  const input: FinancialReferenceRequest = {
+    operation: "paymentReversalContext",
+    payment_id: contextIds.payment,
+    view,
+    limit: 1,
+  };
+  const sequence = () =>
+    new PaymentReversalContextSequence(
+      contextIds.actor,
+      contextIds.property,
+      contextIds.payment,
+      view,
+    );
+  return { client, input, cursor, sequence };
+}
+
+describe("Payment reversal context correction1", () => {
+  it.each(["impact", "result"] as const)(
+    "TEST-FE-367 rejects actual %s continuation first with omitted or falsified cursor",
+    async (view) => {
+      const pair = contextPair(view);
+      const last = await pair.client.read(contextScope(), {
+        ...pair.input,
+        cursor: pair.cursor,
+      });
+      for (const cursor of [undefined, null, pair.cursor]) {
+        const sequence = pair.sequence();
+        expect(() => {
+          sequence.append(last, cursor);
+        }).toThrow();
+        expect(sequence.complete).toBe(false);
+      }
+    },
+  );
+  it.each(["impact", "result"] as const)(
+    "TEST-FE-367 consumes real %s request provenance without caller cursor authority",
+    async (view) => {
+      const pair = contextPair(view),
+        sequence = pair.sequence();
+      sequence.append(await pair.client.read(contextScope(), pair.input));
+      expect(sequence.complete).toBe(false);
+      expect(sequence.nextCursor).toBe(pair.cursor);
+      sequence.append(
+        await pair.client.read(contextScope(), {
+          ...pair.input,
+          cursor: pair.cursor,
+        }),
+      );
+      expect(sequence.complete).toBe(true);
+    },
+  );
+  it.each(["impact", "result"] as const)(
+    "TEST-FE-368 rejects copied %s reply provenance even with plausible data",
+    async (view) => {
+      const pair = contextPair(view),
+        sequence = pair.sequence();
+      const first = await pair.client.read(contextScope(), pair.input);
+      expect(() => {
+        sequence.append({ ...first });
+      }).toThrow();
+      expect(sequence.complete).toBe(false);
+    },
+  );
+  it.each(["actorId", "propertyId", "paymentId", "view"] as const)(
+    "TEST-FE-369 protects %s at runtime before, during and after completion",
+    async (field) => {
+      const pair = contextPair("result");
+      for (const stage of [0, 1, 2]) {
+        const sequence = pair.sequence(),
+          original = sequence[field];
+        if (stage > 0)
+          sequence.append(await pair.client.read(contextScope(), pair.input));
+        if (stage > 1)
+          sequence.append(
+            await pair.client.read(contextScope(), {
+              ...pair.input,
+              cursor: pair.cursor,
+            }),
+            pair.cursor,
+          );
+        expect(() =>
+          Object.assign(sequence, {
+            [field]: field === "view" ? "impact" : contextIds.other,
+          }),
+        ).toThrow();
+        expect(() =>
+          Object.defineProperty(sequence, field, { value: "forged" }),
+        ).toThrow();
+        expect(sequence[field]).toBe(original);
+        expect(sequence.complete).toBe(stage === 2);
+      }
+    },
+  );
+  it.each(["impact", "result"] as const)(
+    "TEST-FE-370 rejects actor bridging during %s continuation",
+    async (view) => {
+      const pair = contextPair(view),
+        sequence = pair.sequence();
+      sequence.append(await pair.client.read(contextScope(), pair.input));
+      try {
+        Object.assign(sequence, { actorId: contextIds.other });
+      } catch {
+        /* Mutation must fail. */
+      }
+      const foreign = await pair.client.read(
+        { ...contextScope(), actorId: contextIds.other },
+        { ...pair.input, cursor: pair.cursor },
+      );
+      expect(() => {
+        sequence.append(foreign, pair.cursor);
+      }).toThrow();
+      expect(sequence.complete).toBe(false);
+    },
+  );
+  it.each(["actorId", "propertyId", "requestId", "page", "data"] as const)(
+    "TEST-FE-371 rejects reply %s changed after validation",
+    async (field) => {
+      const pair = contextPair("result"),
+        sequence = pair.sequence();
+      const first = await pair.client.read(contextScope(), pair.input);
+      if (field === "page") {
+        if (!first.page) throw new Error("Synthetic page required");
+        first.page.nextCursor = null;
+      } else if (field === "data") {
+        const rows = financialObject(first.data).items as FinancialObject[];
+        financialObject(rows[0]?.data).recognized_usd_cents = 101;
+        financialObject(rows[0]?.data).available_usd_cents = 101;
+      } else first[field] = contextIds.other;
+      expect(() => {
+        sequence.append(first);
+      }).toThrow();
+      expect(sequence.complete).toBe(false);
+    },
+  );
 });

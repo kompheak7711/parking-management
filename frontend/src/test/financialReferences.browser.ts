@@ -2,7 +2,7 @@ import {
   ids as contextIds,
   fixture as financialFixture,
 } from "./financialFixtures";
-import { PaymentReversalContextSequence } from "../paymentReversalContext";
+import { PaymentReversalContextSequence } from "../paymentReversalContextSequence";
 // Real-browser reference transport and preservation of a synthetic encrypted intent.
 import {
   createFinancialReferenceClient,
@@ -549,6 +549,7 @@ export async function runPaymentReversalContextBrowserChecks(): Promise<
         stopped.code === "WORKSPACE_INVALIDATED",
       "Stale workspace settles noncooperating context read",
     );
+    await contextProvenanceBrowserChecks(actor, property, payment);
     const before = calls.length;
     controller.abort();
     const invalid: unknown = await client
@@ -566,8 +567,175 @@ export async function runPaymentReversalContextBrowserChecks(): Promise<
     const passed: string[] = [];
     passed.push("TEST-FE-365");
     passed.push("TEST-FE-366");
+    passed.push("TEST-FE-372");
+    passed.push("TEST-FE-373");
     return passed;
   } finally {
     await sealedIntentStore.clear(actor, key);
+  }
+}
+
+async function contextProvenanceBrowserChecks(
+  actor: string,
+  property: string,
+  payment: string,
+): Promise<void> {
+  const revision = "c".repeat(64),
+    firstId = "60000000-0000-4000-8000-000000000001",
+    lastId = "60000000-0000-4000-8000-000000000002",
+    cursor = `${revision}:3:${firstId}`;
+  function rejects(action: () => void, message: string): void {
+    let rejected = false;
+    try {
+      action();
+    } catch {
+      rejected = true;
+    }
+    check(rejected, message);
+  }
+  const client = createFinancialReferenceClient((url, init) => {
+    check(typeof url === "string", "Finite provenance URL");
+    const query = new URL(url, "https://synthetic.invalid").searchParams,
+      view = query.get("view"),
+      identity = query.has("cursor") ? lastId : firstId,
+      headers = new Headers(init?.headers),
+      requestId = headers.get("X-Request-ID");
+    check(
+      requestId && init?.method === "GET" && !init.body,
+      "Provenance is read-only",
+    );
+    check(!headers.has("Idempotency-Key"), "No new command key");
+    const value =
+      view === "impact"
+        ? {
+            source_kind: "PAYMENT",
+            source_id: payment,
+            target_kind: "CREDIT",
+            target_id: identity,
+            amount_usd_cents: 100,
+            occurred_at: "2026-09-01T05:00:00Z",
+          }
+        : {
+            recognized_usd_cents: 100,
+            applied_usd_cents: 0,
+            refunded_usd_cents: 0,
+            reversed_usd_cents: 0,
+            available_usd_cents: 100,
+          };
+    return Promise.resolve(
+      new Response(
+        stringifyFinancialJson({
+          data: {
+            payment_resource: financialFixture("paymentGet").data,
+            view,
+            revision,
+            items: [{ ordinal: 3, kind: "CREDIT", id: identity, data: value }],
+          },
+          page: { limit: 1, next_cursor: identity === firstId ? cursor : null },
+          meta: {
+            actor_id: headers.get("X-Billing-Actor-ID"),
+            property_id: property,
+            request_id: requestId,
+          },
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-ID": requestId,
+          },
+        },
+      ),
+    );
+  });
+  const scope = {
+    actorId: actor,
+    propertyId: property,
+    signal: new AbortController().signal,
+  };
+  for (const view of ["impact", "result"] as const) {
+    const request = {
+        operation: "paymentReversalContext" as const,
+        payment_id: payment,
+        view,
+        limit: 1,
+      },
+      last = await client.read(scope, { ...request, cursor });
+    for (const alleged of [undefined, null, cursor]) {
+      const sequence = new PaymentReversalContextSequence(
+        actor,
+        property,
+        payment,
+        view,
+      );
+      rejects(() => {
+        sequence.append(last, alleged);
+      }, "Continuation cannot establish complete impact/result");
+      check(!sequence.complete, "Rejected final-only sequence is incomplete");
+    }
+    const first = await client.read(scope, request),
+      sequence = new PaymentReversalContextSequence(
+        actor,
+        property,
+        payment,
+        view,
+      );
+    const assertScope = () => {
+      for (const field of ["actorId", "propertyId", "paymentId", "view"]) {
+        rejects(() => {
+          Object.assign(sequence, { [field]: "forged" });
+        }, "Scope assignment must fail");
+        rejects(() => {
+          Object.defineProperty(sequence, field, { value: "forged" });
+        }, "Scope shadowing must fail");
+      }
+      rejects(() => {
+        Object.setPrototypeOf(sequence, {});
+      }, "Scope prototype must remain fixed");
+      check(
+        sequence.actorId === actor &&
+          sequence.propertyId === property &&
+          sequence.paymentId === payment &&
+          sequence.view === view,
+        "Original runtime scope preserved",
+      );
+    };
+    assertScope();
+    sequence.append(first);
+    assertScope();
+    check(!sequence.complete, "First page incomplete");
+    sequence.append(last);
+    assertScope();
+    check(
+      contextProgress(sequence).complete,
+      "Actual captured continuation completes without a cursor argument",
+    );
+    const copied = new PaymentReversalContextSequence(
+      actor,
+      property,
+      payment,
+      view,
+    );
+    rejects(() => {
+      copied.append({ ...first });
+    }, "A reply copy has no client provenance");
+    const mixed = new PaymentReversalContextSequence(
+      actor,
+      property,
+      payment,
+      view,
+    );
+    mixed.append(first);
+    const foreignActor = crypto.randomUUID();
+    rejects(() => {
+      Object.assign(mixed, { actorId: foreignActor });
+    }, "Actor cannot bridge pages");
+    const foreign = await client.read(
+      { ...scope, actorId: foreignActor },
+      { ...request, cursor },
+    );
+    rejects(() => {
+      mixed.append(foreign, cursor);
+    }, "Foreign actor continuation rejected");
+    check(!mixed.complete, "Mixed actor sequence incomplete");
   }
 }

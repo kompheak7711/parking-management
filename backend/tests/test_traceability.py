@@ -1155,3 +1155,25 @@ def test_v1052_payment_reversal_context_preserves_prior_manifest_and_complete_st
         {"API-060", "UI-073", "UI-074", "SEC-022", "DB-PAY-006"} <= set(entry["upstream_ids"])
         for entry in registered.values()
     )
+
+
+def test_v1052_reversal_context_correction_preserves_failed_candidate_trace() -> None:
+    import hashlib
+
+    entries = json.loads(MANIFEST_PATH.read_text())["entries"]
+    retained = json.dumps(entries[:1636], sort_keys=True, separators=(",", ":")).encode()
+    assert (
+        hashlib.sha256(retained).hexdigest()
+        == "247671c11d722ea1f42e604924148bc2c5da2685eab669c34f159fa8bef8fb11"
+    )
+    required = {f"TEST-FE-{number}" for number in range(367, 374)}
+    required.add("test_v1052_reversal_context_correction_preserves_failed_candidate_trace")
+    registered = {
+        entry["test_id"]: entry for entry in entries[1636:] if entry["test_id"] in required
+    }
+    assert set(registered) == required
+    assert all(entry["status"] == "implemented" for entry in registered.values())
+    assert all(
+        {"API-060", "UI-073", "UI-074", "DB-PAY-006", "SEC-022"} <= set(entry["upstream_ids"])
+        for entry in registered.values()
+    )

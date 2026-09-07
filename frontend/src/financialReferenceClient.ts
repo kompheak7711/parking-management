@@ -76,6 +76,28 @@ export interface FinancialReferenceReply {
   data: FinancialJson;
   page: { limit: number; nextCursor: string | null } | null;
 }
+interface ReversalContextReplyProvenance {
+  readonly actorId: string;
+  readonly propertyId: string;
+  readonly paymentId: string;
+  readonly view: ReversalContextView;
+  readonly cursor: string | null;
+  readonly limit: number;
+  readonly nextCursor: string | null;
+  readonly requestId: string;
+  readonly data: string;
+}
+// Only validated responses from this client enter the registry. Public reply copies,
+// forged fields or caller-supplied cursors cannot establish request provenance.
+const reversalContextReceipts = new WeakMap<
+  object,
+  Readonly<ReversalContextReplyProvenance>
+>();
+export function reversalContextReplyProvenance(
+  reply: object,
+): Readonly<ReversalContextReplyProvenance> | undefined {
+  return reversalContextReceipts.get(reply);
+}
 export class FinancialReferenceError extends Error {
   constructor(
     readonly code:
@@ -328,7 +350,7 @@ function validate(
         invalidFinancial();
     }
   }
-  return {
+  const reply: FinancialReferenceReply = {
     operation: input.operation as FinancialReferenceRequest["operation"],
     actorId,
     propertyId,
@@ -336,6 +358,27 @@ function validate(
     data: envelope.data ?? null,
     page,
   };
+  if (context) {
+    if (!page || !propertyId) invalidFinancial();
+    reversalContextReceipts.set(
+      reply,
+      Object.freeze({
+        actorId,
+        propertyId,
+        requestId,
+        paymentId: financialId(input.payment_id),
+        view: (input.view ?? "impact") as ReversalContextView,
+        cursor: input.cursor === undefined ? null : (input.cursor as string),
+        limit: page.limit,
+        nextCursor: page.nextCursor,
+        data: stringifyFinancialJson(
+          reply.data,
+          FINANCIAL_REFERENCE_REPLY_BYTES,
+        ),
+      }),
+    );
+  }
+  return reply;
 }
 export function createFinancialReferenceClient(
   fetcher: typeof fetch = (...args) => fetch(...args),

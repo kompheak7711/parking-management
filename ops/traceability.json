@@ -23528,6 +23528,133 @@
       "test_path": "backend/tests/test_payment_reversal_context_migration.py",
       "status": "implemented",
       "notes": "Historical linked Invoice VOID invalidates prior result pagination, returns authoritative zero current balance and preserves original Invoice amount. Red80000-versus0 retained."
+    },
+    {
+      "test_id": "TEST-FE-367",
+      "upstream_ids": [
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Actual-client first/final continuation rejection with omitted or falsified caller cursor and complete two-page controls using captured provenance."
+    },
+    {
+      "test_id": "TEST-FE-368",
+      "upstream_ids": [
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Copied or fabricated reply objects cannot supply client-owned request provenance."
+    },
+    {
+      "test_id": "TEST-FE-369",
+      "upstream_ids": [
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Runtime actor/Property/Payment/view assignment and shadowing rejected before/during/after completeness."
+    },
+    {
+      "test_id": "TEST-FE-370",
+      "upstream_ids": [
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "A sequence cannot bridge actors between pages through runtime scope reassignment."
+    },
+    {
+      "test_id": "TEST-FE-371",
+      "upstream_ids": [
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Post-validation public reply identity, page and data mutation cannot change protected evidence."
+    },
+    {
+      "test_id": "TEST-FE-372",
+      "upstream_ids": [
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Actual Chromium verifies original request provenance for both views and rejects continuation-only/copied replies while preserving encrypted intent."
+    },
+    {
+      "test_id": "TEST-FE-373",
+      "upstream_ids": [
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Actual Chromium verifies immutable scope and mixed-actor rejection before/during/after completion with zero financial network requests."
+    },
+    {
+      "test_id": "test_v1052_reversal_context_correction_preserves_failed_candidate_trace",
+      "upstream_ids": [
+        "TEST-117",
+        "API-060",
+        "UI-073",
+        "UI-074",
+        "DB-PAY-006",
+        "SEC-022"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "Preserves all1636 rejected-candidate mappings and requires the bounded provenance/runtime-binding regressions without blocking future additive stages."
     }
   ]
 }
