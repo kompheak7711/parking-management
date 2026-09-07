@@ -2,6 +2,468 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_allocation_history_rejects_unbounded_or_coerced_pages",
+      "upstream_ids": [
+        "API-019",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_allocation_read.py",
+      "status": "implemented",
+      "notes": "Reject noninteger, boolean, zero, negative and oversized limits."
+    },
+    {
+      "test_id": "test_allocation_history_requires_separate_read_capability_before_connection",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-022"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_allocation_read.py",
+      "status": "implemented",
+      "notes": "Deny command-only and other-Property grants before connecting."
+    },
+    {
+      "test_id": "test_allocation_history_disabled_actor_cannot_query_payment_evidence",
+      "upstream_ids": [
+        "SEC-023",
+        "SEC-038"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_allocation_read.py",
+      "status": "implemented",
+      "notes": "A stale or absent persisted HUMAN stops before the Payment lookup."
+    },
+    {
+      "test_id": "test_allocation_history_cursor_keeps_exact_payment_and_selected_allocation",
+      "upstream_ids": [
+        "API-019",
+        "SEC-038",
+        "BR-PAY-029"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_allocation_read.py",
+      "status": "implemented",
+      "notes": "Cursor retains exact Payment/allocation/anchor; original large integer evidence stays exact."
+    },
+    {
+      "test_id": "test_allocation_history_response_budget_rejects_without_silently_removing_evidence",
+      "upstream_ids": [
+        "SEC-040",
+        "BR-PAY-029"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_allocation_read.py",
+      "status": "implemented",
+      "notes": "Oversized evidence rejects rather than silently removing original fields."
+    },
+    {
+      "test_id": "test_allocation_history_database_failures_are_safe",
+      "upstream_ids": [
+        "API-013",
+        "SEC-039"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_allocation_read.py",
+      "status": "implemented",
+      "notes": "Serialization, timeout and connection failures expose only the safe unavailable message."
+    },
+    {
+      "test_id": "test_allocation_history_pages_preserve_posted_facts_and_linked_reversals",
+      "upstream_ids": [
+        "API-059",
+        "BR-PAY-019",
+        "BR-PAY-029"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_allocation_read_migration.py",
+      "status": "implemented",
+      "notes": "Real pages enumerate every original posting, exact total, complete proposal and detail evidence; reversal adds a link while original fields/details remain identical."
+    },
+    {
+      "test_id": "test_allocation_history_scope_and_cursor_anchors_cannot_cross_resources",
+      "upstream_ids": [
+        "API-019",
+        "SEC-019",
+        "SEC-023",
+        "SEC-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_allocation_read_migration.py",
+      "status": "implemented",
+      "notes": "Real wrong-scope grants, nonexistent exact Property, foreign allocation/anchor and freshly disabled human are rejected; legitimate same-Property reads remain allowed."
+    },
+    {
+      "test_id": "test_allocation_history_full_size_proposal_and_all_details_are_accessible_without_mutation",
+      "upstream_ids": [
+        "BR-PAY-029",
+        "API-019",
+        "SEC-040"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_allocation_read_migration.py",
+      "status": "implemented",
+      "notes": "Real 500-detail proposal yields compact summaries and five bounded exact-detail pages; Payment/Receipt/serialization state remains unchanged."
+    },
+    {
+      "test_id": "test_allocation_receipt_http_exact_routes_actor_scope_and_private_envelopes",
+      "upstream_ids": [
+        "API-059",
+        "API-060",
+        "API-092",
+        "API-005",
+        "API-011",
+        "SEC-022"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "All eight full-app routes retain exact capability/actor/key/reason, expected success/Location, correlation/private headers and exact integer/FX values."
+    },
+    {
+      "test_id": "test_allocation_receipt_http_denies_before_financial_dispatch",
+      "upstream_ids": [
+        "API-008",
+        "SEC-019",
+        "SEC-022",
+        "SEC-038"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "Every route denies anonymous, unrelated capability, other Property and mismatched actor without financial dispatch."
+    },
+    {
+      "test_id": "test_allocation_receipt_mutations_require_browser_and_single_command_identity",
+      "upstream_ids": [
+        "API-015",
+        "SEC-028",
+        "SEC-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "Every mutation rejects missing CSRF/key, hostile Origin and duplicate command/actor headers before dispatch."
+    },
+    {
+      "test_id": "test_allocation_receipt_error_families_map_to_safe_full_app_responses",
+      "upstream_ids": [
+        "API-013",
+        "API-014",
+        "API-016",
+        "SEC-039"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "Both service families map not-found/auth/invalid/conflict/unavailable safely; both reused-key errors retain the API-016 code and private headers."
+    },
+    {
+      "test_id": "test_allocation_receipt_rejects_non_utf8_before_dispatch",
+      "upstream_ids": [
+        "API-002",
+        "SEC-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "All four mutations reject UTF16/32 BOM and BOM-less bodies before actor or financial dispatch."
+    },
+    {
+      "test_id": "test_allocation_receipt_rejects_duplicate_non_json_and_invalid_unicode",
+      "upstream_ids": [
+        "API-002",
+        "SEC-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "Duplicate top-level/nested members, non-JSON numbers and invalid Unicode never reach financial dispatch."
+    },
+    {
+      "test_id": "test_allocation_http_accepts_large_exact_intent_but_preserves_canonical_budget",
+      "upstream_ids": [
+        "API-059",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "Large UTF8 exact intent exceeds the old Payment cap but succeeds; canonical intent above250000 bytes still rejects."
+    },
+    {
+      "test_id": "test_allocation_http_rejects_inexact_or_out_of_range_money",
+      "upstream_ids": [
+        "API-005",
+        "BR-PAY-027",
+        "SEC-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "Reject boolean/floating/text/zero/negative/out-of-range cents before the posting service."
+    },
+    {
+      "test_id": "test_allocation_and_receipt_cursor_grammar_is_opaque_and_bound_to_selected_resource",
+      "upstream_ids": [
+        "API-019",
+        "SEC-038"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "Payment/allocation/Receipt cursor bindings cannot be retargeted or switched between summary and detail modes."
+    },
+    {
+      "test_id": "test_financial_scope_resolution_rechecks_active_human_before_financial_lookup",
+      "upstream_ids": [
+        "SEC-023",
+        "SEC-038"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "Each Postgres scope resolver checks fresh HUMAN before querying Payment, Allocation or Receipt."
+    },
+    {
+      "test_id": "test_allocation_receipt_streaming_limit_stops_before_json_decode_or_dispatch",
+      "upstream_ids": [
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "Missing/false Content-Length does not bypass encoded byte cap; excess chunks stop before JSON decoding and financial dispatch."
+    },
+    {
+      "test_id": "test_allocation_receipt_http_rejects_unsupported_or_ambiguous_query_grammar",
+      "upstream_ids": [
+        "API-020",
+        "API-019",
+        "SEC-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "All read route forms reject unknown/duplicate query keys and noncanonical limit syntax."
+    },
+    {
+      "test_id": "test_allocation_receipt_http_requires_normalized_reasons_explicit_state_and_strict_schema",
+      "upstream_ids": [
+        "API-060",
+        "API-092",
+        "SEC-036"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "Empty/whitespace/oversized reasons, missing or invented expected state, extra fields and unnormalized delivery reference are rejected."
+    },
+    {
+      "test_id": "test_allocation_receipt_http_exact_raw_body_boundary_and_unicode_reason_are_preserved",
+      "upstream_ids": [
+        "API-002",
+        "SEC-040",
+        "API-092"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_allocation_receipt_api.py",
+      "status": "implemented",
+      "notes": "Exact262144-byte request preserves original Unicode reason; one extra encoded byte rejects before any dispatch."
+    },
+    {
+      "test_id": "test_allocation_receipt_http_real_explicit_post_replay_reversal_and_stable_receipt",
+      "upstream_ids": [
+        "API-059",
+        "API-060",
+        "API-092",
+        "API-016",
+        "BR-PAY-029",
+        "BR-RECEIPT-002",
+        "BR-RECEIPT-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_allocation_receipt_api_migration.py",
+      "status": "implemented",
+      "notes": "Real HTTP proposal has no effects; posting/reversals/reprints retain exact replay and reject key reuse. Downstream guard prevents early Payment reversal. Original Receipt survives; complete reprint pages reject foreign anchor."
+    },
+    {
+      "test_id": "test_allocation_receipt_http_real_separate_capabilities_and_fresh_disabled_actor",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-022",
+        "SEC-023",
+        "SEC-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_allocation_receipt_api_migration.py",
+      "status": "implemented",
+      "notes": "All eight actual PostgreSQL-backed routes reject missing capability, wrong Property and freshly disabled HUMAN while source/allocation/reversal/reprint state stays unchanged."
+    },
+    {
+      "test_id": "test_allocation_http_real_maximum_detail_proposal_exceeds_payment_cap_and_round_trips_evidence",
+      "upstream_ids": [
+        "API-059",
+        "BR-PAY-029",
+        "SEC-040"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_allocation_receipt_api_migration.py",
+      "status": "implemented",
+      "notes": "Real500detail HTTP intent passes and replays; focused evidence equals original proposal, limits100details and rejects cursor retargeting."
+    },
+    {
+      "test_id": "test_allocation_http_real_concurrent_payments_cannot_double_consume_targets",
+      "upstream_ids": [
+        "API-018",
+        "BR-PAY-027",
+        "BR-PAY-028",
+        "SEC-029"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_allocation_receipt_api_migration.py",
+      "status": "implemented",
+      "notes": "Two concurrent HTTP Payments using competing proposals commit only one100000cent allocation total."
+    },
+    {
+      "test_id": "test_receipt_http_retains_original_khr_exact_fx_with_independent_receipt_permission",
+      "upstream_ids": [
+        "API-092",
+        "BR-RECEIPT-003",
+        "API-005",
+        "SEC-022"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_allocation_receipt_api_migration.py",
+      "status": "implemented",
+      "notes": "Receipt-only grant reads originalKHR/USD facts and exact channel FX decimal string; it cannot read allocations."
+    },
+    {
+      "test_id": "test_receipt_http_runtime_reads_do_not_require_or_borrow_financial_credentials",
+      "upstream_ids": [
+        "SEC-045",
+        "SEC-046",
+        "API-092"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_allocation_receipt_api_migration.py",
+      "status": "implemented",
+      "notes": "Receipt read works with runtime-only configuration; reprint returns503 without any persisted financial change when writer is absent."
+    },
+    {
+      "test_id": "test_allocation_proposal_read_requires_its_own_exact_property_capability",
+      "upstream_ids": [
+        "API-059",
+        "SEC-019",
+        "SEC-022"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_allocation_read.py",
+      "status": "implemented",
+      "notes": "Separate payments.allocate capability and exact Property are required before any database connection."
+    },
+    {
+      "test_id": "test_allocation_proposal_read_snapshot_exact_loader_and_bounded_existing_producer",
+      "upstream_ids": [
+        "API-059",
+        "SEC-023",
+        "SEC-029",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_allocation_read.py",
+      "status": "implemented",
+      "notes": "One read-only repeatable snapshot, fresh HUMAN check, UTC, bounded timeouts, parameterized bounded producer, exact large integers and decimal strings."
+    },
+    {
+      "test_id": "test_allocation_proposal_read_checks_fresh_human_before_financial_query",
+      "upstream_ids": [
+        "API-059",
+        "SEC-023",
+        "SEC-038"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_allocation_read.py",
+      "status": "implemented",
+      "notes": "Missing or inactive HUMAN context fails before any financial proposal query, even with stale resolver grants."
+    },
+    {
+      "test_id": "test_allocation_proposal_read_missing_property_and_invalid_identity_fail_closed",
+      "upstream_ids": [
+        "API-059",
+        "SEC-019",
+        "SEC-036"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_allocation_read.py",
+      "status": "implemented",
+      "notes": "Nil Payment identity fails before connection; absent Property returns safe not-found before financial query."
+    },
+    {
+      "test_id": "test_allocation_proposal_read_safe_database_failure_mapping",
+      "upstream_ids": [
+        "API-013",
+        "API-014",
+        "SEC-039"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_allocation_read.py",
+      "status": "implemented",
+      "notes": "Nine SQLSTATE classes preserve safe not-found/authorization/conflict/validation/unavailable mapping without exposing underlying SQL."
+    },
+    {
+      "test_id": "test_allocation_proposal_read_rejects_invalid_database_shape",
+      "upstream_ids": [
+        "API-059",
+        "SEC-036"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_allocation_read.py",
+      "status": "implemented",
+      "notes": "Missing or malformed database responses fail closed as unavailable rather than exposing invented proposal state."
+    },
+    {
+      "test_id": "test_allocation_proposal_read_preserves_source_history_and_posts_only_when_confirmed",
+      "upstream_ids": [
+        "API-059",
+        "BR-PAY-020",
+        "BR-PAY-022",
+        "TEST-060",
+        "TEST-061"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_allocation_read_migration.py",
+      "status": "implemented",
+      "notes": "Fresh read presents exact FIFO proposal, preserves Payment/Receipt/serialization guard and zero allocations; unchanged explicit confirmation posts once and exact replay preserves source identities."
+    },
+    {
+      "test_id": "test_allocation_proposal_read_rejects_stale_disabled_actor_without_effects",
+      "upstream_ids": [
+        "API-059",
+        "SEC-023",
+        "SEC-038"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_allocation_read_migration.py",
+      "status": "implemented",
+      "notes": "Real persisted account disabled after an allowed read cannot reuse stale resolver grants; no allocation is posted."
+    },
+    {
+      "test_id": "test_allocation_proposal_read_denies_cross_property_missing_payment_and_wrong_capability",
+      "upstream_ids": [
+        "API-059",
+        "SEC-019",
+        "SEC-022",
+        "SEC-038"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_allocation_read_migration.py",
+      "status": "implemented",
+      "notes": "Wrong capability/Property, missing Payment and absent Property fail closed against real scoped PostgreSQL."
+    },
+    {
       "test_id": "test_payment_api_rejects_non_utf8_json_before_financial_dispatch",
       "upstream_ids": ["API-002", "API-013", "API-058", "SEC-036"],
       "test_level": "API",

@@ -22,6 +22,11 @@ from property_rental.access_admin_api import (
     UnavailableAccessAdministrationFlow,
     create_access_admin_router,
 )
+from property_rental.allocation_receipt_api import (
+    AllocationReceiptFlow,
+    PostgresAllocationReceiptFlow,
+    create_allocation_receipt_router,
+)
 from property_rental.api import create_api_router
 from property_rental.audit_api import (
     AuditEventQueryFlow,
@@ -104,6 +109,7 @@ from property_rental.lease_api import (
     create_lease_router,
 )
 from property_rental.logging import create_application_logger
+from property_rental.payment_allocation import AllocationIdempotencyKeyReused
 from property_rental.payment_api import (
     PaymentFlow,
     PostgresPaymentFlow,
@@ -118,6 +124,7 @@ from property_rental.property_api import (
     UnavailablePropertyResourceFlow,
     create_property_router,
 )
+from property_rental.receipt import ReceiptIdempotencyKeyReused
 from property_rental.reservation_api import (
     PostgresReservationResourceFlow,
     ReservationResourceFlow,
@@ -178,7 +185,7 @@ LATE_PAYMENT_API_PATH_PATTERN: Final = re.compile(
     r"late-payment-charges(?:/|$))"
 )
 PAYMENT_API_PATH_PATTERN: Final = re.compile(
-    r"^/api/v1/(?:properties/[^/]+/payments(?:/|$)|payments(?:/|$))"
+    r"^/api/v1/(?:properties/[^/]+/payments(?:/|$)|(?:payments|payment-allocations|receipts)(?:/|$))"
 )
 DATABASE_TIMEOUT_SECONDS: Final = 2
 ERROR_STATUS_DETAILS: Final = {
@@ -304,6 +311,7 @@ def create_app(
     invoice_flow: InvoiceFlow | None = None,
     late_payment_flow: LatePaymentFlow | None = None,
     payment_flow: PaymentFlow | None = None,
+    allocation_receipt_flow: AllocationReceiptFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -352,6 +360,13 @@ def create_app(
 
     @app.exception_handler(PaymentConfirmationKeyReused)
     async def payment_key_reused(request: Request, _: PaymentConfirmationKeyReused) -> JSONResponse:
+        return payment_key_reused_response(request)
+
+    @app.exception_handler(AllocationIdempotencyKeyReused)
+    @app.exception_handler(ReceiptIdempotencyKeyReused)
+    async def allocation_receipt_key_reused(
+        request: Request, _: AllocationIdempotencyKeyReused | ReceiptIdempotencyKeyReused
+    ) -> JSONResponse:
         return payment_key_reused_response(request)
 
     @app.exception_handler(AuthenticationUnavailable)
@@ -806,6 +821,21 @@ def create_app(
                 if resolved_settings.financial_database_url is not None
                 else None,
                 exchange_rate_provider,
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_allocation_receipt_router(
+            actor_resolver,
+            allocation_receipt_flow
+            or PostgresAllocationReceiptFlow(
+                resolved_settings.database_url.get_secret_value()
+                if resolved_settings.database_url is not None
+                else None,
+                resolved_settings.financial_database_url.get_secret_value()
+                if resolved_settings.financial_database_url is not None
+                else None,
             ),
             resolved_settings,
         )

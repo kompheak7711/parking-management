@@ -133,6 +133,8 @@ database_test_suites='
   tests/test_payment_api_migration.py
   tests/test_financial_fixture_clock_migration.py
   tests/test_payment_allocation_migration.py
+  tests/test_allocation_read_migration.py
+  tests/test_allocation_receipt_api_migration.py
   tests/test_receipt_migration.py
   tests/test_credit_migration.py
   tests/test_credit_application_migration.py
