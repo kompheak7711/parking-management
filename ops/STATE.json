@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "V1-052 financial action context focused verified; containing candidate pending",
+    "phase": "V1-052 financial action context: normal formatting successor pending",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2087,7 +2087,7 @@
       "schedulers": "SAME nativeACTIVE/OpenClawdisabled"
     },
     "owner_action_required": false,
-    "next_action": "Create the normal31-path financial action-context candidate from acceptedc65; run fresh exact full PostgreSQL/backend/frontend/static/migration/build/import/automation/configuration/trace/guard/preservation and12reference/context plus6command Chromium groups. Then ONE completec65-base Astra/max/Standard/enforced-read-only zero review under standing through53 authority. Preserve all accepted/rejected candidates/reports and every failed check. Continue staff UI/full52 cumulative release/publication/exactCI/ref/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+    "next_action": "Freeze normal five-path formatting correction of dc24920, retaining completec65-base31paths/two commits. Run fresh exact full gates and ONE completec65-base Astra/max/Standard/enforced-read-only review under standing through53 authority. Preserve dc24920 and all failed candidates/reports/regressions. Then staff UI/full52cumulative release/publication/exactCI/refs/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2170,7 +2170,7 @@
       "mode": "Standard/default",
       "reasoning_reason": "Financial authorization, cross-domain concurrency and new narrow database privilege require xhigh under existing policy.",
       "implementation_owner": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-      "correction_attempt": 0,
+      "correction_attempt": 1,
       "standing_authorization": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
         "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
@@ -2182,7 +2182,7 @@
           "path": "backend/tests/test_payment_reversal_context_migration.py"
         }
       ],
-      "phase": "focused_verified_freeze_pending",
+      "phase": "formatting_correction_verified",
       "focused_checks": {
         "backend-corrected": {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-backend-corrected.json",
@@ -2204,7 +2204,7 @@
           "sha256": "70823705f3f70b37c4e4926d211dbb043899bc9614e4b017ecca516a8151fe2b"
         }
       },
-      "next_action": "Create the normal31-path financial action-context candidate from acceptedc65; run fresh exact full PostgreSQL/backend/frontend/static/migration/build/import/automation/configuration/trace/guard/preservation and12reference/context plus6command Chromium groups. Then ONE completec65-base Astra/max/Standard/enforced-read-only zero review under standing through53 authority. Preserve all accepted/rejected candidates/reports and every failed check. Continue staff UI/full52 cumulative release/publication/exactCI/ref/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+      "next_action": "Freeze normal five-path formatting correction of dc24920, retaining completec65-base31paths/two commits. Run fresh exact full gates and ONE completec65-base Astra/max/Standard/enforced-read-only review under standing through53 authority. Preserve dc24920 and all failed candidates/reports/regressions. Then staff UI/full52cumulative release/publication/exactCI/refs/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
       "synthetic_fixture_scope": {
         "path": "frontend/src/test/financialActionContextFixtures.ts",
         "purpose": "28 actual synthetic PostgreSQL projection examples support actual-client and browser contract regressions; no customer/production data or credentials.",
@@ -2332,6 +2332,24 @@
       "reconciliation": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-prefreeze-reconciliation.json",
         "sha256": "60c06ecc1a489eb62934cbe9275d37357fc99dc2e5483d165881d12427ca353a"
+      },
+      "correction_paths": [
+        "backend/tests/test_initial_owner_bootstrap_cli.py",
+        "ops/NOW.md",
+        "ops/STATE.json",
+        "ops/QUEUE.md",
+        "ops/V1_052_FINANCIAL_ACTION_CONTEXT.md"
+      ],
+      "failed_gate": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-gate-rejected-dc24920.json",
+        "sha256": "b45f45bdbfaf2106d314cee6708f73bd06f4e9d5954717b66dbebcb4b2b76508"
+      },
+      "format_correction": {
+        "log": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-format-successor-inventory.log",
+          "sha256": "413a709001976657cb743636fd34e48fc41d8d302d665460d3f874b3313da127"
+        },
+        "full_python_ast_unchanged": true
       }
     },
     "accepted_read_slice": {
@@ -6110,7 +6128,7 @@
   "branch": "codex/v1-052-direct",
   "commit": "c65a7cb240ca3e0e67b6802e1ea25b668ae82e3a",
   "idle_reason": null,
-  "next_action": "Create the normal31-path financial action-context candidate from acceptedc65; run fresh exact full PostgreSQL/backend/frontend/static/migration/build/import/automation/configuration/trace/guard/preservation and12reference/context plus6command Chromium groups. Then ONE completec65-base Astra/max/Standard/enforced-read-only zero review under standing through53 authority. Preserve all accepted/rejected candidates/reports and every failed check. Continue staff UI/full52 cumulative release/publication/exactCI/ref/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+  "next_action": "Freeze normal five-path formatting correction of dc24920, retaining completec65-base31paths/two commits. Run fresh exact full gates and ONE completec65-base Astra/max/Standard/enforced-read-only review under standing through53 authority. Preserve dc24920 and all failed candidates/reports/regressions. Then staff UI/full52cumulative release/publication/exactCI/refs/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -6182,7 +6200,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 financial action context focused verified; containing candidate pending",
+  "phase": "V1-052 financial action context: normal formatting successor pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -7316,7 +7334,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-07T23:29:25.898465+00:00",
+  "timestamp": "2026-09-07T23:36:04.942519+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -7548,7 +7566,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-07T23:29:25.898465+00:00",
+  "updated_at": "2026-09-07T23:36:04.942519+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -8730,9 +8748,9 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_exact_gates_and_complete_base_review",
+    "status": "pending_exact_successor_gates_and_complete_base_review",
     "base_sha": "c65a7cb240ca3e0e67b6802e1ea25b668ae82e3a",
-    "parent_sha": "c65a7cb240ca3e0e67b6802e1ea25b668ae82e3a",
+    "parent_sha": "dc24920b7cb88dbf5d9d09179f10c3833bfbf28c",
     "exact_sha": null,
     "model": "gpt-6-astra",
     "reasoning_effort": "max",
@@ -8746,7 +8764,11 @@
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-accepted-c65a7cb.json",
       "sha256": "8257d9b2430d1b41de5f3b6094f63b58f06d3d9a613cec6aa7077658a3330a3c"
     },
-    "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6"
+    "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
+    "failed_gate": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-gate-rejected-dc24920.json",
+      "sha256": "b45f45bdbfaf2106d314cee6708f73bd06f4e9d5954717b66dbebcb4b2b76508"
+    }
   },
   "historical_v1_047_review": {
     "status": "PASS",

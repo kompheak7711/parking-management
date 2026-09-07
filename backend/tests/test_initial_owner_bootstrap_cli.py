@@ -574,14 +574,22 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
     }
     expected_api_operations = {
         "/api/v1/properties/{property_id}/payments/{source_id}/allocation-context": {"get"},
-        "/api/v1/properties/{property_id}/payment-allocations/{source_id}/reversal-context": {"get"},
+        "/api/v1/properties/{property_id}/payment-allocations/{source_id}/reversal-context": {
+            "get"
+        },
         "/api/v1/properties/{property_id}/receipts/{source_id}/reprint-context": {"get"},
         "/api/v1/properties/{property_id}/payments/{source_id}/credit-recognition-context": {"get"},
         "/api/v1/properties/{property_id}/customer-credits/{source_id}/reversal-context": {"get"},
-        "/api/v1/properties/{property_id}/customer-credits/{source_id}/application-context": {"get"},
-        "/api/v1/properties/{property_id}/credit-applications/{source_id}/reversal-context": {"get"},
+        "/api/v1/properties/{property_id}/customer-credits/{source_id}/application-context": {
+            "get"
+        },
+        "/api/v1/properties/{property_id}/credit-applications/{source_id}/reversal-context": {
+            "get"
+        },
         "/api/v1/properties/{property_id}/refunds/{source_id}/verified-return-context": {"get"},
-        "/api/v1/properties/{property_id}/refunds/{refund_id}/corrections/{source_id}/reversal-context": {"get"},
+        "/api/v1/properties/{property_id}/refunds/{refund_id}/corrections/{source_id}/reversal-context": {
+            "get"
+        },
         "/api/v1/health/live": {"get"},
         "/api/v1/health/ready": {"get"},
         "/api/v1/identity/me": {"get"},
