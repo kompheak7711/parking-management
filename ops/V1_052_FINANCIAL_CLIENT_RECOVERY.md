@@ -58,3 +58,9 @@ encrypted store format stays unchanged. Actual Payment confirmation has no posit
 Refund correction replies must prove the newest returned/reversed event. Align
 internal envelope budgets without raising wire limits and retain safe correlation
 on invalid replies. Five findings require regression proof and fresh full-base review.
+
+Correction2 after b7fb14d: bound both previous and resulting Refund correction net
+values by the original validated USD payout using exact integers. Invalid replies
+remain pending on original submission and explicit original-key replay. Verify valid
+payout boundaries; preserve b7/989/5578 and all evidence. This is the second bounded
+correction for FC-989-M1; no reset of the two-correction recovery allowance.

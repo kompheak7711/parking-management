@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "V1-052 financial clients correction1 focused verified; successor freeze pending",
+    "phase": "V1-052 financial clients correction2 focused verified; successor freeze pending",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2057,8 +2057,8 @@
     "scope_sha256": "4ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363",
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
-    "candidate_resolution": "Normal successor containing correction1; resolve exact SHA through immutable external receipt.",
-    "candidate_status": "containing_correction1_requires_exact_gates_and_review",
+    "candidate_resolution": "Normal successor containing correction2; resolve exact SHA through immutable external receipt.",
+    "candidate_status": "containing_correction2_requires_exact_gates_and_review",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2078,16 +2078,16 @@
       "provider_attestation": "unavailable"
     },
     "last_reconciliation": {
-      "at": "2026-09-07T16:17:42.877508+00:00",
-      "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-correction1-prefreeze-1617-independent-observations.json",
-      "sha256": "fbb9848b69f9750dd867752b4e1aad50260cc68b50c89e5529e88ef647f3887e",
-      "reviewers": "None;42742completed/rejected",
+      "at": "2026-09-07T16:58:36.822583+00:00",
+      "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-correction2-prefreeze-1659-independent-observations.json",
+      "sha256": "ad4afb8a56fabb2061f46b3cc4d312a33b24753bc856de1fc599f95403b9c12c",
+      "reviewers": "None;36664completed/rejected",
       "refs": "maina5clean;live/tracking/FETCHf8;CI4success",
       "card": "same52blocked17comments/nullclaims;separateprivate-notehold",
       "schedulers": "SAME nativeACTIVE/OpenClawdisabled"
     },
     "owner_action_required": false,
-    "next_action": "Freeze normal correction1 successor of rejected989; run full exact PostgreSQL, backend,584frontend, automation, static/build/import/trace/guard and6actual-browser groups. Then ONE fresh complete226-base Astra/max/Standard/enforced-read-only review covering both commits/all15paths and all five989findings under standing authorization. Require zero findings; then references/UI, full52closure then53; closed53pauseSAME/OpenClawdisabled/no54.",
+    "next_action": "Freeze normal correction2 successor of rejectedb7; run full exact PostgreSQL/backend/602frontend/automation/static/build/import/trace/guard and6actual-browser groups. Then ONE fresh complete226-base Astra/max/Standard/enforced-read-only review covering three commits/all15paths under standing authority. Require zero findings; preserve all rejected candidates. Then references/UI/full52closure before53; closed53pauseSAME/OpenClawdisabled/no54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2120,7 +2120,7 @@
       "reasoning": "xhigh",
       "mode": "Standard",
       "reason": "Financial exact transport, uncertain outcomes, actor/Property scope and cross-tab durable concurrency",
-      "scope": "26financial clients and encrypted recovery with actor-scoped exclusive cross-tab attempt admission; fix five989findings only. No accepted codec/store, services, migrations, grants, dependencies, canonical policy or staff UI changes.",
+      "scope": "Bound Refund correction previous/resulting net values by original USD payout; preserve valid exact transitions and unknown original-key recovery. Only response validator, regression tests and ops trace/state changes.",
       "plan": [
         "Record226 acceptance and bounded contract before source edits.",
         "Add finite operation/body/query contracts and bounded exact transport with authorized Property/resource validation.",
@@ -2179,7 +2179,7 @@
         "sha256": "cf87921020c4bf0ab585d3bbc31d10ee0426c37167058c43a7fd819853dea7e3"
       },
       "remaining_version_scope": "Permission-aware references and staff UI; full52 release/closure, then53.",
-      "traceability_inventory": "8correction mappings added,1538prior preserved,1546total;41complete-base added mappings over1505.",
+      "traceability_inventory": "3correction mappings added;1546prior preserved=1549total;44complete-base added over1505.",
       "focused_verification": {
         "unit": "131PASS including retained8FAIL/123PASS identity/text red and131PASS green",
         "static": "All9new files format/fulltsc-b/lint PASS",
@@ -2391,63 +2391,37 @@
           ]
         }
       },
-      "focused_results": "Correction1:143focusedPASS/172backendstatic/22trace/6real-browser groupsPASS. Nine red failures reproduced all five findings. Type/lint and test-harness setup failures preserved. Full exact successor gates and review pending.",
+      "focused_results": "Correction2:161focusedPASS/172backendstatic/22trace PASS. Eight original/replay unsafe-transition red failures and four original payout-domain red failures preserved; all pass after exact bounds. One test-only command type-narrowing failure retained and fixed. Full exact successor gates and6browser groups/review pending.",
       "response_boundary": "Generic exact FinancialJson evidence with route-specific critical Property/resource/source/command-result validation; UI-specific presentation adapters remain future work. Standard staff mutations must use explicit financialRecovery; readFinancial rejects commands.",
-      "correction_attempt": 1,
-      "rejected_candidate": "989d93448a15b042b88663f35d3d6c608405063a",
+      "correction_attempt": 2,
+      "rejected_candidate": "b7fb14dded9253b7b8faac148a61994af7dd08d9",
       "rejected_review": {
-        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-rejected-989d934.json",
-        "sha256": "4ec59cd5e592eada81db94d9e172e356930b4c2143e781d1eba3f096d05032fe"
+        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-rejected-b7fb14d.json",
+        "sha256": "b040b9602937c82151342b00e142d430058271d5a1ccdac63aeefed79d1ee71f"
       },
       "correction_plan": [
         {
-          "id": "FC-989-H1",
-          "severity": "HIGH",
-          "fingerprint": "Confirmation success requires missing position",
-          "approach": "Separate actual USD/KHR confirmation projections from Payment detail; verify immutable Receipt linkage and initial/exact replay retirement using backend-shaped responses."
-        },
-        {
-          "id": "FC-989-H2",
-          "severity": "HIGH",
-          "fingerprint": "Delayed fresh rejection clears concurrently replayed unknown key",
-          "approach": "Use same-origin actor-scoped exclusive Web Locks with ifAvailable admission around initial/replay transmission through retirement. No queued automatic dispatch. Unavailable coordination fails closed; retain existing encrypted store layout. Test contention, late rejection, unknown replay, reload and real two-tab ownership."
-        },
-        {
-          "id": "FC-989-M1",
+          "id": "FC-b7-M1",
+          "continuation_of": "FC-989-M1",
           "severity": "MEDIUM",
-          "fingerprint": "Refund correction accepts read-only empty history",
-          "approach": "Validate actual newest immutable correction event, exact return value/currency/evidence/timestamp and requested reversal target. Existing SQL requires strictly later occurred_at and stores the original response, so command history first event is authoritative. No service/migration change."
-        },
-        {
-          "id": "FC-989-M2",
-          "severity": "MEDIUM",
-          "fingerprint": "Nested wireBody recapture defaults to smaller parser budget",
-          "approach": "Use one explicit internal envelope limit for serializing/parsing while retaining262144-byte wire and250000-byte intent limits. Exercise backend-accepted large100-target30-detail witness through original send and replay."
-        },
-        {
-          "id": "FC-989-L1",
-          "severity": "LOW",
-          "fingerprint": "Validation errors discard available correlation and HTTP status",
-          "approach": "Retain locally generated request ID and observed status for parser/decoder/contract failures, without echoing body contents."
+          "fingerprint": "Refund correction net values exceed original USD payout yet retire unknown intent",
+          "correction_attempt": 2,
+          "approach": "Bound both exact previous/resulting net balances by the validated original USD Refund payout. Prove original submission and original-byte/key replay preserve the reservation for impossible transitions, and exact valid payout boundaries retire successfully. No backend/service/store/coordination/budget changes."
         }
       ],
-      "correction_started_at": "2026-09-07T16:02:06.932914+00:00",
+      "correction_started_at": "2026-09-07T16:51:33.249358+00:00",
       "correction_focused_evidence": {
-        "new-static-correction1-static4": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-new-static-correction1-static4.json",
-          "sha256": "dc7a19ea4dc80a02b03407e1c33db6b2b5b711cc986d03529408948ffd5db548"
+        "new-static-correction2-static2": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-new-static-correction2-static2.json",
+          "sha256": "4bbe6ad8ff3f33117f6ea0cf283358f60a8135f7217163d2a72922d3240db237"
         },
-        "focused-correction1-green2": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-focused-correction1-green2.json",
-          "sha256": "27fa59a655e0db4bf79f6f04bd71161ea46a435d083d77d642b0f307a660269e"
+        "focused-correction2-green-final": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-focused-correction2-green-final.json",
+          "sha256": "cf4ecf544906da26c70b295a8e9e0dfa72d919cd9de3d2a944207f312d828096"
         },
-        "trace-static-correction1": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-trace-static-correction1.json",
-          "sha256": "057b8994734838187aa272a05558077b54be1ca1100561b61ec5dc89da9ae00a"
-        },
-        "browser-correction1-focused1": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-browser-correction1-focused1.json",
-          "sha256": "5ad3365acd2ae9f68945d8b79bd13aa430aa2068507625dda7295d562f7b13c9"
+        "trace-static-correction2": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-trace-static-correction2.json",
+          "sha256": "967a9171c69383214e4647458366927d0a6a24006d820527bfd9fe0271a084de"
         }
       },
       "correction_retained_failed_checks": {
@@ -2582,6 +2556,44 @@
               "seconds": 1.3,
               "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-focused-correction1-red2-1.log",
               "sha256": "450420aa25f7b211c873b21a57b50927a079b1b8ade0e0c955f00a63ff152af9"
+            }
+          ]
+        },
+        "v1052-financial-clients-focused-correction2-domain-red.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-focused-correction2-domain-red.json",
+          "sha256": "d7849a16fca16d7e19a191a2077a28edf4088517d6df3cef5bd1431f0d511fb6",
+          "failed_checks": [
+            {
+              "command": [
+                "./node_modules/.bin/vitest",
+                "run",
+                "src/financialContracts.test.ts",
+                "src/financialClient.test.ts",
+                "src/financialRecovery.test.ts"
+              ],
+              "exit_code": 1,
+              "seconds": 0.935,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-focused-correction2-domain-red-1.log",
+              "sha256": "8989425530713fd5437875de9e9346b5aa5f467f46c3c32bcc74b6e96ad86cbb"
+            }
+          ]
+        },
+        "v1052-financial-clients-focused-correction2-red.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-focused-correction2-red.json",
+          "sha256": "6966401dd4aa6a2a1f3f120438b29b6f4968d8396039c50af94b2c62e1edbd3e",
+          "failed_checks": [
+            {
+              "command": [
+                "./node_modules/.bin/vitest",
+                "run",
+                "src/financialContracts.test.ts",
+                "src/financialClient.test.ts",
+                "src/financialRecovery.test.ts"
+              ],
+              "exit_code": 1,
+              "seconds": 1.35,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-focused-correction2-red-1.log",
+              "sha256": "524274ed01494c2b2abb5199aef9761b5493120db3a09c3b52cfbb0e0fad47a9"
             }
           ]
         },
@@ -2729,6 +2741,22 @@
             }
           ]
         },
+        "v1052-financial-clients-new-static-correction2-static1.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-new-static-correction2-static1.json",
+          "sha256": "0dc5cc63fe800d5df8475e3efbbeff5b00638af9ec68b24d0b1178254a3f7bf7",
+          "failed_checks": [
+            {
+              "command": [
+                "./node_modules/.bin/tsc",
+                "-b"
+              ],
+              "exit_code": 1,
+              "seconds": 0.571,
+              "log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-new-static-correction2-static1-2.log",
+              "sha256": "99bc986fa9dcaab359f628b9af8558fa97b551d806e2fdea29842f12287a7700"
+            }
+          ]
+        },
         "v1052-financial-clients-static-1.json": {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-static-1.json",
           "sha256": "a682688fa87e76f1d6a28445e610b7e2ee86f5b8b553b1336780b483cdd18ee2",
@@ -2747,7 +2775,78 @@
           ]
         }
       },
-      "correction_result": "Five989findings fixed within original15path scope; unchanged accepted codec/shared encrypted store and backend/services/migrations/dependencies/canonical files."
+      "correction_result": "Exact original Refund payout1..9000000000000000; previous and resulting net values0..original payout; coherent USD effects preserved. Both invalid original/replay replies remain pending; valid0/payout boundaries retire exact keys. Runtime diff confined to financialResponse.ts; command/store/coordination/backend/migrations/dependencies/canonical unchanged.",
+      "correction_history": [
+        {
+          "correction_attempt": 1,
+          "correction_plan": [
+            {
+              "id": "FC-989-H1",
+              "severity": "HIGH",
+              "fingerprint": "Confirmation success requires missing position",
+              "approach": "Separate actual USD/KHR confirmation projections from Payment detail; verify immutable Receipt linkage and initial/exact replay retirement using backend-shaped responses."
+            },
+            {
+              "id": "FC-989-H2",
+              "severity": "HIGH",
+              "fingerprint": "Delayed fresh rejection clears concurrently replayed unknown key",
+              "approach": "Use same-origin actor-scoped exclusive Web Locks with ifAvailable admission around initial/replay transmission through retirement. No queued automatic dispatch. Unavailable coordination fails closed; retain existing encrypted store layout. Test contention, late rejection, unknown replay, reload and real two-tab ownership."
+            },
+            {
+              "id": "FC-989-M1",
+              "severity": "MEDIUM",
+              "fingerprint": "Refund correction accepts read-only empty history",
+              "approach": "Validate actual newest immutable correction event, exact return value/currency/evidence/timestamp and requested reversal target. Existing SQL requires strictly later occurred_at and stores the original response, so command history first event is authoritative. No service/migration change."
+            },
+            {
+              "id": "FC-989-M2",
+              "severity": "MEDIUM",
+              "fingerprint": "Nested wireBody recapture defaults to smaller parser budget",
+              "approach": "Use one explicit internal envelope limit for serializing/parsing while retaining262144-byte wire and250000-byte intent limits. Exercise backend-accepted large100-target30-detail witness through original send and replay."
+            },
+            {
+              "id": "FC-989-L1",
+              "severity": "LOW",
+              "fingerprint": "Validation errors discard available correlation and HTTP status",
+              "approach": "Retain locally generated request ID and observed status for parser/decoder/contract failures, without echoing body contents."
+            }
+          ],
+          "correction_started_at": "2026-09-07T16:02:06.932914+00:00",
+          "rejected_candidate": "989d93448a15b042b88663f35d3d6c608405063a",
+          "rejected_review": {
+            "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-rejected-989d934.json",
+            "sha256": "4ec59cd5e592eada81db94d9e172e356930b4c2143e781d1eba3f096d05032fe"
+          },
+          "correction_focused_evidence": {
+            "new-static-correction1-static4": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-new-static-correction1-static4.json",
+              "sha256": "dc7a19ea4dc80a02b03407e1c33db6b2b5b711cc986d03529408948ffd5db548"
+            },
+            "focused-correction1-green2": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-focused-correction1-green2.json",
+              "sha256": "27fa59a655e0db4bf79f6f04bd71161ea46a435d083d77d642b0f307a660269e"
+            },
+            "trace-static-correction1": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-trace-static-correction1.json",
+              "sha256": "057b8994734838187aa272a05558077b54be1ca1100561b61ec5dc89da9ae00a"
+            },
+            "browser-correction1-focused1": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-browser-correction1-focused1.json",
+              "sha256": "5ad3365acd2ae9f68945d8b79bd13aa430aa2068507625dda7295d562f7b13c9"
+            }
+          },
+          "focused_results": "Correction1:143focusedPASS/172backendstatic/22trace/6real-browser groupsPASS. Nine red failures reproduced all five findings. Type/lint and test-harness setup failures preserved. Full exact successor gates and review pending."
+        }
+      ],
+      "correction_affected_paths": [
+        "frontend/src/financialResponse.ts",
+        "frontend/src/financialRecovery.test.ts",
+        "ops/traceability.json",
+        "ops/V1_052_FINANCIAL_CLIENT_RECOVERY.md",
+        "ops/NOW.md",
+        "ops/STATE.json",
+        "ops/QUEUE.md"
+      ]
     },
     "accepted_read_slice": {
       "id": "V1-052-payment-read",
@@ -4936,9 +5035,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "989d93448a15b042b88663f35d3d6c608405063a",
+  "commit": "b7fb14dded9253b7b8faac148a61994af7dd08d9",
   "idle_reason": null,
-  "next_action": "Freeze normal correction1 successor of rejected989; run full exact PostgreSQL, backend,584frontend, automation, static/build/import/trace/guard and6actual-browser groups. Then ONE fresh complete226-base Astra/max/Standard/enforced-read-only review covering both commits/all15paths and all five989findings under standing authorization. Require zero findings; then references/UI, full52closure then53; closed53pauseSAME/OpenClawdisabled/no54.",
+  "next_action": "Freeze normal correction2 successor of rejectedb7; run full exact PostgreSQL/backend/602frontend/automation/static/build/import/trace/guard and6actual-browser groups. Then ONE fresh complete226-base Astra/max/Standard/enforced-read-only review covering three commits/all15paths under standing authority. Require zero findings; preserve all rejected candidates. Then references/UI/full52closure before53; closed53pauseSAME/OpenClawdisabled/no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -4946,8 +5045,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Normal successor containing correction1; resolve exact SHA through immutable external receipt.",
-  "candidate_parent": "989d93448a15b042b88663f35d3d6c608405063a",
+  "candidate_resolution": "Normal successor containing correction2; resolve exact SHA through immutable external receipt.",
+  "candidate_parent": "b7fb14dded9253b7b8faac148a61994af7dd08d9",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -5010,7 +5109,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 financial clients correction1 focused verified; successor freeze pending",
+  "phase": "V1-052 financial clients correction2 focused verified; successor freeze pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -6115,7 +6214,8 @@
     "Financial HTTP Property-context focused:340new API cases/637existing financial HTTP/22trace PASS across retained runs;172staticPASS. Red26 failures prove prior omission;3style issues fixed; sole trace inventory failure corrected with7 additive maps for1505total. All failed logs retained; exact containing-candidate full gates and independent review pending.",
     "ACCEPTED226 HTTP Property context:2166backend/930PG/441frontend/189automation/172static/builds/imports/guards PASS; review1575 completed0HIGH0MEDIUM0LOW. AcceptanceSHA2565a609be90ea8fdb7833c63e353592a204e05437616c81394169524158071f00b. Initial929PASS/1NOWAIT lock failure and serial930PASS diagnostic recovery retained; no source/assertion/settings change. No approval-wait repeat.",
     "Financial clients/recovery:572fullfrontend/131newunit/22trace/172backendstatic/build/5actualChromiumIndexedDBWebCrypto/reload/two-tab groups PASS.33maps added,1505prior preserved=1538.8identity/text red failures corrected; initial lint/type and browser runner URL ReferenceError retained with diagnostic bounded correction1. Exact containing-candidate full gates/review pending.",
-    "Financial clients989 REJECT2HIGH2MEDIUM1LOW;correction1 nine red failures reproduced five findings;143focused/172backendstatic/22trace/6actual-browser groupsPASS;8maps added,1538prior retained=1546. All runtime/static/test-harness failures preserved. No full exact successor gate/review acceptance yet."
+    "Financial clients989 REJECT2HIGH2MEDIUM1LOW;correction1 nine red failures reproduced five findings;143focused/172backendstatic/22trace/6actual-browser groupsPASS;8maps added,1538prior retained=1546. All runtime/static/test-harness failures preserved. No full exact successor gate/review acceptance yet.",
+    "b7 independentREJECT0HIGH1MEDIUM0LOW;correction2 8FAIL149PASS transition red then157PASS;4FAIL157PASS original payout-domain red then161PASS. Final format/types/lint/172backendstatic/22trace/config/trace/guardPASS. Type-only test narrowing failure retained;3maps1546prior preserved=1549. Exact successor602frontend and other full gates/browser/review pending."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -6137,7 +6237,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-07T16:19:43.096811+00:00",
+  "timestamp": "2026-09-07T17:00:24.929834+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -6366,7 +6466,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-07T16:19:43.096811+00:00",
+  "updated_at": "2026-09-07T17:00:24.929834+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -7548,17 +7648,17 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_exact_financial_clients_correction1_gates_and_review",
+    "status": "pending_exact_financial_clients_correction2_gates_and_review",
     "base_sha": "226c35382019dc12ebaadb0e3c5d16587ed81641",
     "exact_sha": null,
     "model": "gpt-6-astra",
     "reasoning_effort": "max",
     "mode": "Standard",
     "read_only": true,
-    "rejected_candidate": "989d93448a15b042b88663f35d3d6c608405063a",
+    "rejected_candidate": "b7fb14dded9253b7b8faac148a61994af7dd08d9",
     "rejected_review": {
-      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-rejected-989d934.json",
-      "sha256": "4ec59cd5e592eada81db94d9e172e356930b4c2143e781d1eba3f096d05032fe"
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-clients-rejected-b7fb14d.json",
+      "sha256": "b040b9602937c82151342b00e142d430058271d5a1ccdac63aeefed79d1ee71f"
     },
     "standing_authorization": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",

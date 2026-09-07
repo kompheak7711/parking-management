@@ -720,3 +720,206 @@ describe("correction attempt coordination and consequence evidence", () => {
     },
   );
 });
+
+describe("Refund correction payout bounds", () => {
+  const cases = [
+    ["refundReturn", 200n, 100n, 100n],
+    ["refundReturn", 201n, 100n, 101n],
+    ["refundReturnReverse", 0n, -200n, 200n],
+    ["refundReturnReverse", 101n, -100n, 201n],
+  ] as const;
+  it.each(
+    cases.flatMap(([operation, previous, effect, resulting]) =>
+      [false, true].map((lost) => ({
+        operation,
+        previous,
+        effect,
+        resulting,
+        lost,
+      })),
+    ),
+  )(
+    "TEST-FE-330 keeps impossible $operation payout transition $previous/$resulting pending after lost=$lost",
+    async ({ operation, previous, effect, resulting, lost }) => {
+      const { store, records } = memory(),
+        current = scope();
+      const input = commands.find((entry) => entry.operation === operation);
+      if (!input) throw new Error("Missing correction command");
+      const fetcher = vi.fn<typeof fetch>((_url, init) => {
+        const reply = fixture(operation),
+          data = financialObject(reply.data);
+        const items = financialObject(data.corrections).items;
+        if (!Array.isArray(items)) throw new Error("Missing corrections");
+        const event = financialObject(items[0]);
+        event.previous_net_refund_usd_cents = previous;
+        event.source_balance_effect_usd_cents = effect;
+        event.source_balance_effect_original_minor = effect;
+        event.resulting_net_refund_usd_cents = resulting;
+        data.net_refund_usd_cents = resulting;
+        const requestId = new Headers(init?.headers).get("X-Request-ID");
+        if (!requestId) throw new Error("Missing correlation");
+        reply.meta.request_id = requestId;
+        return Promise.resolve(
+          new Response(stringifyFinancialJson(reply), {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+              "X-Request-ID": requestId,
+            },
+          }),
+        );
+      });
+      if (lost)
+        fetcher.mockRejectedValueOnce(
+          new Error("Synthetic lost original reply"),
+        );
+      const recovery = createFinancialRecovery(
+        store,
+        createFinancialTransport(fetcher, () => "csrf"),
+        () => "csrf",
+      );
+      const first = await recovery.submit(current, input);
+      expect(first.kind).toBe("pending");
+      if (first.kind !== "pending")
+        throw new Error("Impossible payout must remain unresolved");
+      const original = records.get(ids.actor);
+      expect((await recovery.replay(current, first.command.key)).kind).toBe(
+        "pending",
+      );
+      expect(records.get(ids.actor)).toEqual(original);
+      expect(records.size).toBe(1);
+      expect(store.clear).not.toHaveBeenCalled();
+      expect(fetcher).toHaveBeenCalledTimes(2);
+      const initial = fetcher.mock.calls[0]?.[1],
+        replay = fetcher.mock.calls[1]?.[1];
+      expect(replay?.body).toBe(initial?.body);
+      expect(new Headers(initial?.headers).get("Idempotency-Key")).toBe(
+        first.command.key,
+      );
+      expect(new Headers(replay?.headers).get("Idempotency-Key")).toBe(
+        first.command.key,
+      );
+    },
+  );
+
+  it.each(
+    (["refundReturn", "refundReturnReverse"] as const).flatMap((operation) =>
+      [1n, 100n, 9_000_000_000_000_000n].map((payout) => ({
+        operation,
+        payout,
+      })),
+    ),
+  )(
+    "TEST-FE-331 accepts exact $operation payout boundary $payout on original and explicit replay",
+    async ({ operation, payout }) => {
+      const { store, records } = memory(),
+        current = scope();
+      const template = commands.find((entry) => entry.operation === operation);
+      if (!template || !("body" in template))
+        throw new Error("Missing correction command");
+      const input = {
+        ...template,
+        body: {
+          ...financialObject(template.body),
+          ...(operation === "refundReturn"
+            ? { returned_amount_minor: payout }
+            : {}),
+        },
+      };
+      const fetcher = vi.fn<typeof fetch>((_url, init) => {
+        const reply = fixture(operation),
+          data = financialObject(reply.data);
+        financialObject(data.refund).refund_amount_minor = payout;
+        const items = financialObject(data.corrections).items;
+        if (!Array.isArray(items)) throw new Error("Missing corrections");
+        const event = financialObject(items[0]),
+          returning = operation === "refundReturn";
+        event.previous_net_refund_usd_cents = returning ? payout : 0n;
+        event.source_balance_effect_usd_cents = returning ? payout : -payout;
+        event.source_balance_effect_original_minor = returning
+          ? payout
+          : -payout;
+        event.resulting_net_refund_usd_cents = returning ? 0n : payout;
+        data.net_refund_usd_cents = returning ? 0n : payout;
+        if (returning) event.verified_return_amount_minor = payout;
+        const requestId = new Headers(init?.headers).get("X-Request-ID");
+        if (!requestId) throw new Error("Missing correlation");
+        reply.meta.request_id = requestId;
+        return Promise.resolve(
+          new Response(stringifyFinancialJson(reply), {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+              "X-Request-ID": requestId,
+            },
+          }),
+        );
+      });
+      const recovery = createFinancialRecovery(
+        store,
+        createFinancialTransport(fetcher, () => "csrf"),
+        () => "csrf",
+      );
+      expect((await recovery.submit(current, input)).kind).toBe("success");
+      expect(records.size).toBe(0);
+      store.clear.mockClear();
+      fetcher.mockRejectedValueOnce(new Error("Synthetic lost original reply"));
+      const pending = await recovery.submit(current, input);
+      if (pending.kind !== "pending")
+        throw new Error("Expected unknown outcome");
+      expect((await recovery.replay(current, pending.command.key)).kind).toBe(
+        "success",
+      );
+      expect(store.clear).toHaveBeenCalledExactlyOnceWith(
+        ids.actor,
+        pending.command.key,
+      );
+      expect(records.size).toBe(0);
+      const original = fetcher.mock.calls[1]?.[1],
+        replay = fetcher.mock.calls[2]?.[1];
+      expect(replay?.body).toBe(original?.body);
+      expect(new Headers(replay?.headers).get("Idempotency-Key")).toBe(
+        pending.command.key,
+      );
+    },
+  );
+});
+
+it.each(
+  (["refundReturn", "refundReturnReverse"] as const).flatMap((operation) =>
+    [9_000_000_000_000_001n, 9_223_372_036_854_775_807n].map((payout) => ({
+      operation,
+      payout,
+    })),
+  ),
+)(
+  "TEST-FE-332 retains $operation correction with unsupported original payout $payout",
+  async ({ operation, payout }) => {
+    const { store, records } = memory(),
+      current = scope();
+    const input = commands.find((entry) => entry.operation === operation);
+    if (!input) throw new Error("Missing correction command");
+    const transport: FinancialTransport = {
+      send: () => {
+        const data = financialObject(fixture(operation).data);
+        financialObject(data.refund).refund_amount_minor = payout;
+        return Promise.resolve({
+          data,
+          propertyId: ids.property,
+          requestId: ids.key,
+        });
+      },
+    };
+    const recovery = createFinancialRecovery(store, transport, () => "csrf");
+    const first = await recovery.submit(current, input);
+    expect(first.kind).toBe("pending");
+    if (first.kind !== "pending")
+      throw new Error("Impossible original payout must remain pending");
+    const original = records.get(ids.actor);
+    expect((await recovery.replay(current, first.command.key)).kind).toBe(
+      "pending",
+    );
+    expect(records.get(ids.actor)).toEqual(original);
+    expect(store.clear).not.toHaveBeenCalled();
+  },
+);

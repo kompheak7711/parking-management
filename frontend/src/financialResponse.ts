@@ -373,11 +373,18 @@ export function validateFinancialReply(
           ) !== effect
         )
           invalidFinancial();
+        const payout = BigInt(
+          financialInteger(
+            financialObject(row.refund).refund_amount_minor,
+            1n,
+            9_000_000_000_000_000n,
+          ),
+        );
         const previous = BigInt(
-          financialInteger(event.previous_net_refund_usd_cents, 0n),
+          financialInteger(event.previous_net_refund_usd_cents, 0n, payout),
         );
         const resulting = BigInt(
-          financialInteger(event.resulting_net_refund_usd_cents, 0n),
+          financialInteger(event.resulting_net_refund_usd_cents, 0n, payout),
         );
         if (
           resulting !== previous - effect ||

@@ -21945,6 +21945,45 @@
       "test_path": "frontend/src/test/financialCommands.browser.ts",
       "status": "implemented",
       "notes": "Actual Chromium Web Locks/IndexedDB two-page contention excludes competing replay until initial definitive rejection and exact-key retirement."
+    },
+    {
+      "test_id": "TEST-FE-330",
+      "upstream_ids": [
+        "API-066",
+        "UI-072",
+        "SEC-028",
+        "SEC-026"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialRecovery.test.ts",
+      "status": "implemented",
+      "notes": "Impossible Refund correction previous/resulting net values above original USD payout remain pending for original HTTP200 replies and explicit original-byte/key replay after lost replies; durable reservation is not cleared."
+    },
+    {
+      "test_id": "TEST-FE-331",
+      "upstream_ids": [
+        "API-066",
+        "UI-072",
+        "SEC-028",
+        "SEC-026"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialRecovery.test.ts",
+      "status": "implemented",
+      "notes": "Exact valid Refund correction zero/original-payout boundaries for1,100and9000000000000000cents succeed initially and retire the exact key on explicit replay; no blanket rejection of valid corrections."
+    },
+    {
+      "test_id": "TEST-FE-332",
+      "upstream_ids": [
+        "API-066",
+        "UI-072",
+        "SEC-026",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialRecovery.test.ts",
+      "status": "implemented",
+      "notes": "Both Refund correction commands reject original payout above9000000000000000cents, including int64maximum, despite otherwise coherent transitions; initial/replay remain pending with unchanged original intent."
     }
   ]
 }
