@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "V1-052 Allocation/Receipt HTTP focused verified; candidate freeze and exact gates pending",
+    "phase": "V1-052 Allocation/Receipt HTTP inventory correction focused PASS; exact successor pending",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2057,8 +2057,8 @@
     "scope_sha256": "4ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363",
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
-    "candidate_resolution": "Containing normal Allocation/Receipt HTTP candidate commit; resolve exact SHA/tree from Git and immutable external verification receipt after freeze",
-    "candidate_status": "focused_verified_candidate_freeze_pending",
+    "candidate_resolution": "Containing normal inventory correction successor of retainedd3ae2d1; external exact receipt resolves after freeze",
+    "candidate_status": "retained_d3ae2d1_failed_inventory_successor_pending",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2096,7 +2096,7 @@
       "provider_attestation": "unavailable; actual local Astra/xhigh/default Standard verified"
     },
     "owner_action_required": false,
-    "next_action": "Freeze the normal complete13path Allocation/Receipt HTTP candidate from accepted1e79851. Run fresh full exact PostgreSQL/backend/static/build/import/189automation/config/traceability/preservation/guard checks, then ONE independent Astra max Standard read-only complete-base zero review. Preserve all failures. Credit/USDRefund HTTP and remaining full52 lifecycle precede53; at53closed pause same follow-up/no54.",
+    "next_action": "Finish API inventory correction1 by enumerating exactly7newcanonicalpaths/8methods while preserving exact OpenAPI/runtime equality and all bootstrap/security absence assertions. Focused inventory/static/trace checks, normal successor of retainedd3ae2d1, then fresh903PG/fullbackend/189automation/static-build-import/config gates and ONE Astra max Standard read-only COMPLETE14path1e79851-to-successor zero review. No source changes during review; remaining52 before53.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2122,7 +2122,7 @@
     },
     "active_slice": {
       "id": "V1-052-allocation-receipt-http",
-      "status": "focused_verified_exact_gates_and_review_pending",
+      "status": "api_inventory_correction1_active",
       "started_at": "2026-09-06T20:12:00Z",
       "base_sha": "1e79851ec5e8530d35927fe93ed2346c407a5820",
       "scope": "Canonical API059/060/092 Allocation/proposal/history/post/linked reversal, coordinated Payment reversal and unique Receipt/detail/reprint/history HTTP; necessary fresh-authorized bounded read adapters, app wiring, focused unit/API/isolatedPG tests. Credit/Refund HTTP and UI remain subsequent slices.",
@@ -2209,6 +2209,24 @@
         "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-focused-prefreeze.md",
         "receipt_sha256": "54b1bc883cd015801885c993d4994594fe998f5db27cd676e2f9d26f2e1c9ee2",
         "public_routes_implemented": 8
+      },
+      "api_inventory_correction1": {
+        "attempt": 1,
+        "status": "resolved_focused_pass_exact_successor_pending",
+        "fingerprint": "Exact backend API inventory expected set omits seven new canonical paths/eight methods",
+        "cause": "Existing explicit OpenAPI/runtime inventory was not extended when eight routes were added",
+        "changed_approach": "Add exact seven canonical resource paths and eight method set; preserve all88existing path operations, both exact inventory equalities and bootstrap/owner reset negative assertions; no production route changes",
+        "failed_sha": "d3ae2d1d80ef3ac5fc5a5e3f539834a445af4a6d",
+        "failed_tree": "6aada081b3ca13c3395ba909bd38c96c4ad1f4df",
+        "failed_result": "99461 COMPLETED1418PASS1FAIL880DB-onlyskips92.96s;164staticPASS; build/import not run after test failure",
+        "failed_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-exact-d3ae2d1-backend.log",
+        "failed_log_sha256": "f4f17697fb74d3f23dc8ffffcb3946e74260175741042a7bcf889242e367186d",
+        "other_exact_results": "12074 COMPLETED903PGPASS0skip156.61s;45351 COMPLETED189automation/config/traceability/guard/diffPASS; all source frozen clean and retained; no reviewer dispatched",
+        "started_at": "2026-09-07T02:55:37.138333+00:00",
+        "next_action": "Finish API inventory correction1 by enumerating exactly7newcanonicalpaths/8methods while preserving exact OpenAPI/runtime equality and all bootstrap/security absence assertions. Focused inventory/static/trace checks, normal successor of retainedd3ae2d1, then fresh903PG/fullbackend/189automation/static-build-import/config gates and ONE Astra max Standard read-only COMPLETE14path1e79851-to-successor zero review. No source changes during review; remaining52 before53.",
+        "focused_result": "4718 COMPLETED23PASS6.67s approximate;164staticPASS/traceability0newIDs/diffPASS; see raw log for exact duration",
+        "focused_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-inventory-correction1-focused.log",
+        "focused_log_sha256": "5f2276fe5f41fef650d03deb3ca7772ee60c0d6cff40af9113ab0c5f70b93d3a"
       }
     },
     "accepted_read_slice": {
@@ -3613,7 +3631,7 @@
   "branch": "codex/v1-052-direct",
   "commit": "1e79851ec5e8530d35927fe93ed2346c407a5820",
   "idle_reason": null,
-  "next_action": "Freeze the normal complete13path Allocation/Receipt HTTP candidate from accepted1e79851. Run fresh full exact PostgreSQL/backend/static/build/import/189automation/config/traceability/preservation/guard checks, then ONE independent Astra max Standard read-only complete-base zero review. Preserve all failures. Credit/USDRefund HTTP and remaining full52 lifecycle precede53; at53closed pause same follow-up/no54.",
+  "next_action": "Finish API inventory correction1 by enumerating exactly7newcanonicalpaths/8methods while preserving exact OpenAPI/runtime equality and all bootstrap/security absence assertions. Focused inventory/static/trace checks, normal successor of retainedd3ae2d1, then fresh903PG/fullbackend/189automation/static-build-import/config gates and ONE Astra max Standard read-only COMPLETE14path1e79851-to-successor zero review. No source changes during review; remaining52 before53.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -3621,8 +3639,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Containing normal Allocation/Receipt HTTP candidate commit; resolve exact SHA/tree from Git and immutable external verification receipt after freeze",
-  "candidate_parent": "1e79851ec5e8530d35927fe93ed2346c407a5820",
+  "candidate_resolution": "Containing normal inventory correction successor of retainedd3ae2d1; external exact receipt resolves after freeze",
+  "candidate_parent": "d3ae2d1d80ef3ac5fc5a5e3f539834a445af4a6d",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -3685,7 +3703,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 Allocation/Receipt HTTP focused verified; candidate freeze and exact gates pending",
+  "phase": "V1-052 Allocation/Receipt HTTP inventory correction focused PASS; exact successor pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4781,7 +4799,8 @@
   "tests": [
     "883PG0skip/1248backend860DB-onlyskips/189automation/158static-build-import/all applicable config PASS;28585/67433/95329 COMPLETED EXIT0",
     "ACCEPTED independent49722 completed19:58:46.444Z zero21paths/all7commits;315tests/61probes/static/preservationPASS, report73a8c404/acceptance0ad91c77. No independentlivePG; completed tests/review never repeated solely for stale pending records.",
-    "CURRENT Allocation/Receipt HTTP: final171HTTP/read +22traceability PASS; earlier287unit including acceptedPaymentHTTP and21isolatedPG PASS;164staticPASS. All failures retained; fresh full exact candidate checks and review pending. Focused receipt54b1bc883cd015801885c993d4994594fe998f5db27cd676e2f9d26f2e1c9ee2."
+    "CURRENT Allocation/Receipt HTTP: final171HTTP/read +22traceability PASS; earlier287unit including acceptedPaymentHTTP and21isolatedPG PASS;164staticPASS. All failures retained; fresh full exact candidate checks and review pending. Focused receipt54b1bc883cd015801885c993d4994594fe998f5db27cd676e2f9d26f2e1c9ee2.",
+    "FAILED exactd3ae2d1 inventory1FAIL/1418PASS880DB-onlyskips;903PG0skip/189automation/staticPASS. All completed logs retained; inventorycorrection1 active, no reviewer."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4803,7 +4822,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-07T02:49:10.644881+00:00",
+  "timestamp": "2026-09-07T02:55:37.138333+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4837,6 +4856,7 @@
     "backend/tests/test_allocation_read_migration.py",
     "backend/tests/test_allocation_receipt_api.py",
     "backend/tests/test_allocation_receipt_api_migration.py",
+    "backend/tests/test_initial_owner_bootstrap_cli.py",
     "ops/NOW.md",
     "ops/QUEUE.md",
     "ops/STATE.json",
@@ -5030,7 +5050,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-07T02:49:10.644881+00:00",
+  "updated_at": "2026-09-07T02:55:37.138333+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -6212,7 +6232,7 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_frozen_candidate_full_exact_gates",
+    "status": "not_dispatched_failed_exact_inventory_correction_pending",
     "tranche_id": "V1-052",
     "base_sha": "1e79851ec5e8530d35927fe93ed2346c407a5820",
     "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",

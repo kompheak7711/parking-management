@@ -1,8 +1,8 @@
 # Direct Codex — V1-048 through V1-053
 
-- Current: Allocation/Receipt HTTP complete implementation, focused verified; candidate freeze pending. Full V1-052 is not accepted or released.
+- Current: retainedd3ae2d1 exact903PG/189automation PASS; backend1418PASS1inventoryFAIL880DB-onlyskips. Inventory correction1 focused23tests/164staticPASS; full52notaccepted.
 - Sole coordinator:01a07991-38a6-7f33-b84d-0ad0620e2997 after explicit released transfer; old task historical/read-only. Actual Astra/xhigh/local default Standard; provider attestation unavailable.
-- Checkout:/Users/sokompheak/Development/property-rental-management-v1-052; branch codex/v1-052-direct; base/HEAD 1e79851ec5e8530d35927fe93ed2346c407a5820;13 scoped paths. All127 worktrees retained.
+- Checkout:/Users/sokompheak/Development/property-rental-management-v1-052; branch codex/v1-052-direct; base/HEAD 1e79851ec5e8530d35927fe93ed2346c407a5820;14 scoped paths after inventory correction. All127 worktrees retained.
 - Eight canonical routes, fresh HUMAN/exact Property capabilities, complete500detail history, original receipts/reprints, strict UTF8 streaming commands and exact reason preservation implemented. Accepted financial services, Payment HTTP and migrations unchanged.
 - Focused final171HTTP/read and22traceability PASS; prior287unit includes acceptedPaymentHTTP;21isolatedPG PASS;164static PASS. Full exact source revalidation still required for final test refinements.
 - Focused receipt:/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-focused-prefreeze.md; SHA25654b1bc883cd015801885c993d4994594fe998f5db27cd676e2f9d26f2e1c9ee2. Failed history fixture, reason validator, type and traceability logs/source retained with distinct correction evidence in STATE.
@@ -13,10 +13,10 @@
 - Mainclean a5dd97c8; tracking/FETCH_HEAD/live f8a33bad; CI34030703203attempt1all4SUCCESS verified this released implementation cycle.
 - Same52card74197a0e tracking-onlyblocked/null executionclaimattempt; comment93b18202 preserves/reconciles handoff evidence. No owner-policy blocker.
 - Native SAME follow-up ACTIVE10min on current task; promptSHA256965b73fcae9e4719161566f3468bf856c533c4d6ce45e8e7c2ad960c4b8a4220. OpenClaw658ffdaf DISABLED30min/no nextRun; no duplicate.
-- Exact next action:Freeze the normal complete13path Allocation/Receipt HTTP candidate from accepted1e79851. Run fresh full exact PostgreSQL/backend/static/build/import/189automation/config/traceability/preservation/guard checks, then ONE independent Astra max Standard read-only complete-base zero review. Preserve all failures. Credit/USDRefund HTTP and remaining full52 lifecycle precede53; at53closed pause same follow-up/no54.
+- Exact next action:Finish API inventory correction1 by enumerating exactly7newcanonicalpaths/8methods while preserving exact OpenAPI/runtime equality and all bootstrap/security absence assertions. Focused inventory/static/trace checks, normal successor of retainedd3ae2d1, then fresh903PG/fullbackend/189automation/static-build-import/config gates and ONE Astra max Standard read-only COMPLETE14path1e79851-to-successor zero review. No source changes during review; remaining52 before53.
 - Remaining:Credit/USDRefundHTTP, staffclients/UI/encrypted actorbound recovery, frontend/browser/audits, full52 exactreview/normalpublication/exactCI/refs/card/durableclosure. Then53; at53fullyclosed PAUSE/no54. No scope waiver.
 - Live index:/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1052-v1053-live.md. Immutable transfer packet7b07947d and released gate preserved. No production/customerdata/paid/destructive/historyrewrite/forcepush/worktreedeletion.
-- Updated:2026-09-07T02:49:10.644881+00:00. No active reviewer; immutable exact test/review receipts will resolve candidate commit pending fields after freeze.
+- Updated:2026-09-07T02:55:37.138333+00:00. All12074/99461/45351COMPLETED; no reviewer dispatched. Failed candidate and logs preserved.
 
 ## Historical V1-047 closure record
 
@@ -34,12 +34,12 @@ The following evidence is preserved as history. Its closure-turn next actions an
 - V1-048: authorized and dependency-ready after terminal V1-047 acceptance, but it must not be activated or dispatched in this closure turn.
 - Production deployment/access/credentials, customer data, paid services, destructive operations, force push, history rewrite, and worktree deletion remain unauthorized and were not used.
 - Owner action required: no.
-- Exact next action: end this native V1-047 closure turn without activating V1-048. A later authorized execution cycle must reconcile all durable sources and may activate exact V1-048 under the standing dependency-ordered authorization through V1-060.
-- Updated: `2026-09-05T05:49:00Z`.
+- Exact next action:Finish API inventory correction1 by enumerating exactly7newcanonicalpaths/8methods while preserving exact OpenAPI/runtime equality and all bootstrap/security absence assertions. Focused inventory/static/trace checks, normal successor of retainedd3ae2d1, then fresh903PG/fullbackend/189automation/static-build-import/config gates and ONE Astra max Standard read-only COMPLETE14path1e79851-to-successor zero review. No source changes during review; remaining52 before53.
+- Updated:2026-09-07T02:55:37.138333+00:00. All12074/99461/45351COMPLETED; no reviewer dispatched. Failed candidate and logs preserved.
 
 <!-- AUTOMATION_STATUS_BEGIN -->
 
 - Automation state: same native follow-up ACTIVE on fresh task; old task receives no follow-up; OpenClaw disabled.
-- Exact next action: successor continues existing partial work after released gate and explicit notice; full52closure before53; at53closedPAUSE/no54.
+- Exact next action:Finish API inventory correction1 by enumerating exactly7newcanonicalpaths/8methods while preserving exact OpenAPI/runtime equality and all bootstrap/security absence assertions. Focused inventory/static/trace checks, normal successor of retainedd3ae2d1, then fresh903PG/fullbackend/189automation/static-build-import/config gates and ONE Astra max Standard read-only COMPLETE14path1e79851-to-successor zero review. No source changes during review; remaining52 before53.
 
 <!-- AUTOMATION_STATUS_END -->
