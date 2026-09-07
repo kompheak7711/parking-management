@@ -886,3 +886,72 @@ def test_credit_refund_http_nested_application_money_is_exact_before_dispatch(
     )
     assert response.status_code == 422
     flow.credit_service.apply.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "index,field",
+    [
+        (0, "limit"),
+        (2, "limit"),
+        (9, "limit"),
+        (10, "limit"),
+        (0, "cursor"),
+        (2, "cursor"),
+        (9, "cursor"),
+        (10, "cursor"),
+        (5, "invoice_id"),
+        (5, "amount_usd_cents"),
+        (9, "customer_id"),
+        (11, "pet_refund_review_id"),
+    ],
+)
+@pytest.mark.parametrize(
+    "mode",
+    ["duplicate_valid_last", "duplicate_invalid_last", "unknown_and_invalid", "single_invalid"],
+)
+def test_credit_refund_http_raw_query_guard_precedes_typed_validation(
+    index: int,
+    field: str,
+    mode: str,
+) -> None:
+    flow = Flow()
+    route = routes(flow)[index]
+    valid = str(flow.invoice) if field.endswith("_id") else "opaque" if field == "cursor" else "1"
+    invalid = "x" * 1025 if field == "cursor" else "invalid"
+    params = [(key, value) for key, value in route.params.items() if key != field]
+    if mode == "duplicate_valid_last":
+        params.extend([(field, invalid), (field, valid)])
+    elif mode == "duplicate_invalid_last":
+        params.extend([(field, valid), (field, invalid)])
+    else:
+        params.append((field, invalid))
+        if mode == "unknown_and_invalid":
+            params.append(("unknown_filter", "value"))
+    response = api(flow, actor(flow.prop, route.capability)).get(
+        "/api/v1" + route.path,
+        params=params,
+    )
+    assert response.status_code == (422 if mode == "single_invalid" else 400), response.text
+    assert response.headers["cache-control"] == "private, no-store"
+    assert response.json()["meta"]["request_id"] == response.headers["x-request-id"]
+    assert flow.calls == []
+    assert not flow.credit_service.mock_calls and not flow.refund_service.mock_calls
+
+
+@pytest.mark.parametrize("index", range(15))
+def test_credit_refund_http_query_guard_preserves_unsupported_method_response(index: int) -> None:
+    flow = Flow()
+    route = routes(flow)[index]
+    method = "GET" if route.method == "POST" else "POST"
+    response = api(flow, actor(flow.prop, route.capability)).request(
+        method,
+        "/api/v1" + route.path,
+        params=[("limit", "1"), ("limit", "invalid"), ("unknown_filter", "value")],
+        content=b"not JSON",
+        headers={"Content-Type": "application/json"},
+    )
+    assert response.status_code == 405
+    assert response.headers["cache-control"] == "private, no-store"
+    assert response.json()["meta"]["request_id"] == response.headers["x-request-id"]
+    assert flow.calls == []
+    assert not flow.credit_service.mock_calls and not flow.refund_service.mock_calls

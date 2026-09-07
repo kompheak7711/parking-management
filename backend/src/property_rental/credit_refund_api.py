@@ -13,6 +13,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from pydantic import Field, model_validator
+from starlette.types import Receive, Scope, Send
 
 from property_rental.allocation_receipt_api import (
     AllocationReceiptRequestRoute,
@@ -331,11 +332,23 @@ async def _financial_json(request: Request) -> None:
             pending.extend(value)
 
 
+class CreditRefundRequestRoute(AllocationReceiptRequestRoute):
+    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if not self.methods or scope["method"] in self.methods:
+            # Reject malformed query envelopes before FastAPI parses individual
+            # values. Keep unsupported-method handling and inherited body bounds.
+            _queries(
+                Request(scope),
+                {parameter.alias for parameter in self.dependant.query_params},
+            )
+        await super().handle(scope, receive, send)
+
+
 def create_credit_refund_router(
     resolver: ActorResolver, flow: CreditRefundFlow, settings: Settings
 ) -> APIRouter:
     router = APIRouter(
-        prefix="/api/v1", tags=["credits", "refunds"], route_class=AllocationReceiptRequestRoute
+        prefix="/api/v1", tags=["credits", "refunds"], route_class=CreditRefundRequestRoute
     )
 
     def context(

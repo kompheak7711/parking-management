@@ -84,6 +84,12 @@ review precede bounded acceptance; full V1-052 UI/recovery/release gates still r
 
 ## HTTP representation detail
 
+A Credit/Refund request guard rejects duplicate and unknown raw query fields with
+400 before framework value validation, regardless of duplicate-value order. A
+single invalid typed query value still returns422; unsupported methods retain405.
+The inherited strict POST streaming boundary and accepted financial behavior are
+unchanged. This is correction1 for retained candidatec4d6ad5's independent LOW finding.
+
 Recognition uses `currency`, `amount_usd_cents`, `payer_authorization_reference`
 and `reason`. Application uses `currency` and the unchanged `intent`. Refund
 creation uses `currency`, `source_type`, `source_id`, `amount_usd_cents`, `reason`

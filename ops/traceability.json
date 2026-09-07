@@ -2,6 +2,29 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_credit_refund_http_raw_query_guard_precedes_typed_validation",
+      "upstream_ids": [
+        "API-020",
+        "API-013",
+        "SEC-036"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Across all12 typed query arguments in six endpoints, malformed duplicates reject400 in both orders and unknown-plus-invalid fields reject400 before dispatch; a single invalid typed value retains422 with safe private correlated errors."
+    },
+    {
+      "test_id": "test_credit_refund_http_query_guard_preserves_unsupported_method_response",
+      "upstream_ids": [
+        "API-013",
+        "SEC-036"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "All15 routes preserve405 for an unsupported method even with malformed duplicate/unknown queries and invalid JSON; no scope or financial service call occurs."
+    },
+    {
       "test_id": "test_credit_refund_http_exact_service_dispatch_and_private_response",
       "upstream_ids": [
         "API-061",
