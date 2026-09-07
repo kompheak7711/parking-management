@@ -1177,3 +1177,81 @@ def test_v1052_reversal_context_correction_preserves_failed_candidate_trace() ->
         {"API-060", "UI-073", "UI-074", "DB-PAY-006", "SEC-022"} <= set(entry["upstream_ids"])
         for entry in registered.values()
     )
+
+
+def test_v1052_financial_action_context_preserves_accepted_trace_and_requires_stage_maps() -> None:
+    import hashlib
+
+    entries = json.loads(MANIFEST_PATH.read_text())["entries"]
+    original = json.dumps(entries[:1644], sort_keys=True, separators=(",", ":")).encode()
+    assert (
+        hashlib.sha256(original).hexdigest()
+        == "bf884c4c65aca66bf120e00bd0e2636dc6519899e6e2f124c92305a374e22f4c"
+    )
+    required = {
+        "test_financial_action_context_http_only_own_action_needed",
+        "TEST-FE-378",
+        "TEST-FE-377",
+        "test_financial_action_context_utf8_budget_counts_combined_source_and_context",
+        "test_financial_action_context_http_actor_property_and_read_only_headers",
+        "test_financial_action_context_purpose_is_finite",
+        "test_financial_action_context_database_credit_application_original_and_reversal",
+        "TEST-FE-379",
+        "TEST-FE-374",
+        "test_financial_action_context_database_payment_receipt_fx_and_no_writes",
+        "test_financial_action_context_database_statement_deadline_is_unavailable",
+        "TEST-FE-387",
+        "test_financial_action_context_deposit_refund_has_no_invented_payment",
+        "test_financial_action_context_database_complete_500_line_sources_and_stale_pages",
+        "test_financial_action_context_http_general_read_never_implies_action",
+        "test_financial_action_context_database_direct_sql_rejects_malformed_arguments",
+        "TEST-FE-381",
+        "test_financial_action_context_database_deposit_refund_return_and_correction_source",
+        "TEST-FE-376",
+        "TEST-FE-388",
+        "test_financial_action_context_http_unauthenticated_and_default_flow_fail_closed",
+        "test_financial_action_context_database_migration_privileges_and_forward_only",
+        "test_financial_action_context_rejects_invalid_identity_target_and_cursor",
+        "test_financial_action_context_database_missing_sources_do_not_leak",
+        "test_financial_action_context_database_shared_deposit_guard_changes_source_context",
+        "test_financial_action_context_http_selected_targets_captured_exactly",
+        "test_financial_action_context_database_coherent_snapshot_during_new_refund",
+        "TEST-FE-380",
+        "TEST-FE-382",
+        "test_financial_action_context_never_synthesizes_an_action_grant",
+        "test_financial_action_context_database_selected_correction_beyond_max_history_page",
+        "TEST-FE-385",
+        "test_financial_action_context_malformed_projection_fails_closed",
+        "TEST-FE-386",
+        "test_financial_action_context_http_rejects_invalid_queries_before_dispatch",
+        "test_v1052_financial_action_context_preserves_accepted_trace_and_requires_stage_maps",
+        "TEST-FE-375",
+        "test_financial_action_context_database_refund_original_return_and_exact_correction",
+        "test_financial_action_context_http_reversal_cannot_supply_replacement_target",
+        "test_financial_action_context_database_invoice_debit_preserves_original_and_adjusted",
+        "test_financial_action_context_reversal_cannot_replace_original_target_or_refund",
+        "test_financial_action_context_continuation_binds_source_target_and_current_facts",
+        "TEST-FE-384",
+        "test_financial_action_context_database_normal_credit_and_third_party_target_scope",
+        "TEST-FE-383",
+        "test_financial_action_context_database_future_deposit_application_is_explicit",
+        "test_financial_action_context_database_charge_remains_separate_from_invoice",
+        "test_financial_action_context_page_limits_are_strict",
+        "test_financial_action_context_database_allocation_original_and_current_target",
+        "test_financial_action_context_database_credit_recognition_and_reversal_position",
+        "test_financial_action_context_sole_action_grant_uses_one_bounded_read_snapshot",
+        "test_financial_action_context_database_fresh_human_before_source",
+        "test_financial_action_context_database_historical_void_target_is_zero",
+        "test_financial_action_context_database_actual_utf8_projection_budget",
+        "TEST-FE-389",
+        "test_financial_action_context_http_safe_correlated_failure",
+    }
+    registered = {
+        entry["test_id"]: entry for entry in entries[1644:] if entry["test_id"] in required
+    }
+    assert set(registered) == required
+    assert all(entry["status"] == "implemented" for entry in registered.values())
+    assert all(
+        {"API-011", "API-012", "SEC-022"} <= set(entry["upstream_ids"])
+        for entry in registered.values()
+    )

@@ -1,3 +1,12 @@
+import { FinancialActionContextSequence } from "./financialActionContextSequence";
+import {
+  FINANCIAL_ACTION_PURPOSES,
+  type FinancialActionContextInput,
+} from "./financialActionContext";
+import {
+  actionContextFixtures,
+  type FinancialActionFixture,
+} from "./test/financialActionContextFixtures";
 import {
   ids as contextIds,
   fixture as financialFixture,
@@ -1465,4 +1474,480 @@ describe("Payment reversal context correction1", () => {
       expect(sequence.complete).toBe(false);
     },
   );
+});
+
+function actionCopy(sample: FinancialActionFixture): FinancialActionFixture {
+  return structuredClone(sample);
+}
+function actionResponse(
+  sample: FinancialActionFixture,
+  init: RequestInit,
+  mutate?: (envelope: FinancialObject) => void,
+  status = 200,
+): Response {
+  const requestId = new Headers(init.headers).get("X-Request-ID") ?? "";
+  const envelope: FinancialObject = {
+    data: actionCopy(sample).data,
+    page: { ...sample.page },
+    meta: {
+      actor_id: sample.actorId,
+      property_id: sample.propertyId,
+      request_id: requestId,
+    },
+  };
+  mutate?.(envelope);
+  return new Response(
+    stringifyFinancialJson(envelope, FINANCIAL_REFERENCE_REPLY_BYTES),
+    {
+      status,
+      headers: {
+        "Content-Type": "application/json",
+        "X-Request-ID": requestId,
+      },
+    },
+  );
+}
+function actionClient(
+  sample: FinancialActionFixture,
+  mutate?: (envelope: FinancialObject) => void,
+) {
+  const fetcher = vi.fn<typeof fetch>((_url, init) =>
+    Promise.resolve(actionResponse(sample, init ?? {}, mutate)),
+  );
+  return { fetcher, client: createFinancialReferenceClient(fetcher) };
+}
+function actionScope(
+  sample: FinancialActionFixture,
+  signal = new AbortController().signal,
+) {
+  return { actorId: sample.actorId, propertyId: sample.propertyId, signal };
+}
+function actionSequence(sample: FinancialActionFixture) {
+  return new FinancialActionContextSequence(
+    sample.actorId,
+    sample.propertyId,
+    sample.request,
+  );
+}
+const actionCases = actionContextFixtures.map((sample, index) => ({
+  sample,
+  name: `${index.toString()} ${sample.request.purpose}`,
+}));
+function postingSample(): FinancialActionFixture {
+  const original = actionContextFixtures.find(
+    (sample) =>
+      sample.request.purpose === "allocation" &&
+      sample.request.target_kind === "INVOICE",
+  );
+  if (!original) throw new Error("Synthetic Invoice fixture missing");
+  const sample = actionCopy(original);
+  sample.request.limit = 1;
+  sample.page.limit = 1;
+  return sample;
+}
+describe("selected financial action context", () => {
+  it.each(actionCases)(
+    "TEST-FE-374 accepts actual synthetic PostgreSQL context $name and preserves read-only routing",
+    async ({ sample }) => {
+      const { client, fetcher } = actionClient(sample);
+      const reply = await client.read(actionScope(sample), sample.request);
+      const sequence = actionSequence(sample);
+      sequence.append(reply);
+      expect(sequence.complete).toBe(true);
+      expect(sequence.data).toEqual(sample.data);
+      const [url, init] = fetcher.mock.calls[0] ?? [];
+      const paths = {
+        allocation: `/payments/${sample.request.source_id}/allocation-context`,
+        allocation_reversal: `/payment-allocations/${sample.request.source_id}/reversal-context`,
+        receipt_reprint: `/receipts/${sample.request.source_id}/reprint-context`,
+        credit_recognition: `/payments/${sample.request.source_id}/credit-recognition-context`,
+        credit_reversal: `/customer-credits/${sample.request.source_id}/reversal-context`,
+        credit_application: `/customer-credits/${sample.request.source_id}/application-context`,
+        credit_application_reversal: `/credit-applications/${sample.request.source_id}/reversal-context`,
+        refund_return: `/refunds/${sample.request.source_id}/verified-return-context`,
+        refund_correction_reversal: `/refunds/${sample.request.refund_id ?? ""}/corrections/${sample.request.source_id}/reversal-context`,
+      };
+      const parsed = new URL(url as string, "https://synthetic.invalid");
+      expect(parsed.pathname).toBe(
+        `/api/v1/properties/${sample.propertyId}${paths[sample.request.purpose]}`,
+      );
+      expect(parsed.searchParams.get("target_id")).toBe(
+        sample.request.target_id ?? null,
+      );
+      expect(parsed.searchParams.get("target_kind")).toBe(
+        sample.request.target_kind ?? null,
+      );
+      expect(init).toMatchObject({
+        method: "GET",
+        cache: "no-store",
+        credentials: "include",
+        redirect: "error",
+      });
+      expect(init?.body).toBeUndefined();
+      const headers = new Headers(init?.headers);
+      expect(headers.get("Idempotency-Key")).toBeNull();
+      expect(headers.get("X-CSRF-Token")).toBeNull();
+      expect(headers.get("X-Billing-Actor-ID")).toBe(sample.actorId);
+      expect(headers.get("X-Financial-Property-ID")).toBe(sample.propertyId);
+    },
+  );
+  it.each(FINANCIAL_ACTION_PURPOSES)(
+    "TEST-FE-375 rejects malformed %s requests before transport",
+    async (purpose) => {
+      const sample = actionContextFixtures.find(
+        (row) => row.request.purpose === purpose,
+      );
+      expect(sample).toBeDefined();
+      if (!sample) return;
+      for (const patch of [
+        { source_id: "" },
+        { source_id: "00000000-0000-0000-0000-000000000000" },
+        { target_kind: "INVOICE", target_id: undefined },
+        { target_kind: "SETTLEMENT", target_id: contextIds.other },
+        { limit: 0 },
+        { limit: 101 },
+        { cursor: "a:1:bad" },
+        { extra: true },
+        {
+          refund_id:
+            purpose === "refund_correction_reversal"
+              ? undefined
+              : contextIds.other,
+        },
+      ]) {
+        const { client, fetcher } = actionClient(sample);
+        await expect(
+          client.read(actionScope(sample), {
+            ...sample.request,
+            ...patch,
+          } as FinancialActionContextInput),
+        ).rejects.toMatchObject({ code: "INVALID_REQUEST" });
+        expect(fetcher).not.toHaveBeenCalled();
+      }
+    },
+  );
+  it.each(actionCases)(
+    "TEST-FE-376 rejects substituted binding or malformed context $name",
+    async ({ sample }) => {
+      for (const mutate of [
+        (row: FinancialObject) => {
+          financialObject(row.meta).actor_id = contextIds.other;
+        },
+        (row: FinancialObject) => {
+          financialObject(row.data).property_id = contextIds.other;
+        },
+        (row: FinancialObject) => {
+          financialObject(row.data).source_id = contextIds.other;
+        },
+        (row: FinancialObject) => {
+          financialObject(row.data).purpose = "future_settlement";
+        },
+        (row: FinancialObject) => {
+          financialObject(row.data).refund_id = contextIds.other;
+        },
+        (row: FinancialObject) => {
+          financialObject(row.data).requested_target_id = contextIds.other;
+        },
+        (row: FinancialObject) => {
+          financialObject(row.data).revision = "invalid";
+        },
+        (row: FinancialObject) => {
+          financialObject(row.data).context = {};
+        },
+        (row: FinancialObject) => {
+          financialObject(row.page).next_cursor =
+            "b".repeat(64) + ":1:" + contextIds.other;
+        },
+      ].filter(
+        (_mutate, index) =>
+          !(index === 7 && sample.request.purpose === "allocation"),
+      )) {
+        const { client } = actionClient(sample, mutate);
+        await expect(
+          client.read(actionScope(sample), sample.request),
+        ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+      }
+    },
+  );
+  it("TEST-FE-377 rejects wrong original event, receipt, refund and credit amounts", async () => {
+    for (const sample of actionContextFixtures) {
+      const { client } = actionClient(sample, (envelope) => {
+        const row = financialObject(envelope.data),
+          context = financialObject(row.context);
+        if (context.refund)
+          financialObject(
+            financialObject(context.refund).refund,
+          ).refund_currency = "KHR";
+        else if (context.application)
+          financialObject(context.application).customer_credit_id =
+            contextIds.other;
+        else if (context.allocation)
+          financialObject(context.allocation).payment_id = contextIds.other;
+        else if (context.receipt)
+          financialObject(context.receipt).payment_id = contextIds.other;
+        else if (context.credit)
+          financialObject(
+            financialObject(context.credit).position,
+          ).available_usd_cents = 1;
+        else
+          financialObject(
+            financialObject(row.payment_resource).payment,
+          ).usd_accounting_value_cents = -1;
+      });
+      await expect(
+        client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    }
+  });
+  it("TEST-FE-378 requires actual initial page and complete Invoice totals across continuation", async () => {
+    const sample = postingSample(),
+      cursor = `${sample.data.revision as string}:1:${contextIds.event}`;
+    const item = financialObject((sample.data.items as FinancialObject[])[0]);
+    const amount = BigInt(
+      financialObject(item.data).outstanding_usd_cents as number,
+    );
+    const firstAmount = amount / 2n,
+      secondAmount = amount - firstAmount;
+    const client = createFinancialReferenceClient((url, init) =>
+      Promise.resolve(
+        actionResponse(sample, init ?? {}, (envelope) => {
+          const next = new URL(
+            url as string,
+            "https://synthetic.invalid",
+          ).searchParams.has("cursor");
+          const row = financialObject(envelope.data);
+          row.items = [
+            {
+              ...item,
+              sequence: next ? 2 : 1,
+              id: next ? contextIds.other : contextIds.event,
+              data: {
+                ...financialObject(item.data),
+                outstanding_usd_cents: next ? secondAmount : firstAmount,
+              },
+            },
+          ];
+          financialObject(envelope.page).next_cursor = next ? null : cursor;
+        }),
+      ),
+    );
+    const first = await client.read(actionScope(sample), sample.request),
+      last = await client.read(actionScope(sample), {
+        ...sample.request,
+        cursor,
+      });
+    const sequence = actionSequence(sample);
+    sequence.append(first);
+    expect(sequence.complete).toBe(false);
+    expect(sequence.data).toBeNull();
+    expect(sequence.nextCursor).toBe(cursor);
+    sequence.append(last);
+    expect(sequence.complete).toBe(true);
+    expect(sequence.data?.items).toHaveLength(2);
+    const isolated = actionSequence(sample);
+    expect(() => {
+      isolated.append(last);
+    }).toThrow();
+    expect(isolated.complete).toBe(false);
+  });
+  it.each([
+    "copy",
+    "data",
+    "page",
+    "actor",
+    "property",
+    "operation",
+    "request",
+  ] as const)(
+    "TEST-FE-379 rejects forged or mutated reply provenance %s",
+    async (kind) => {
+      const sample = postingSample(),
+        { client } = actionClient(sample);
+      let reply = await client.read(actionScope(sample), sample.request);
+      if (kind === "copy") reply = { ...reply };
+      if (kind === "data")
+        financialObject(reply.data).revision = "b".repeat(64);
+      if (kind === "page" && reply.page) reply.page.limit = 2;
+      if (kind === "actor") reply.actorId = contextIds.other;
+      if (kind === "property") reply.propertyId = contextIds.other;
+      if (kind === "operation") reply.operation = "paymentReversalContext";
+      if (kind === "request") reply.requestId = contextIds.other;
+      const sequence = actionSequence(sample);
+      expect(() => {
+        sequence.append(reply);
+      }).toThrow();
+      expect(sequence.complete).toBe(false);
+      expect(sequence.data).toBeNull();
+    },
+  );
+  it("TEST-FE-380 prevents actor, source, target and Refund scope bridges", async () => {
+    for (const sample of actionContextFixtures) {
+      const { client } = actionClient(sample),
+        reply = await client.read(actionScope(sample), sample.request);
+      for (const request of [
+        { ...sample.request, source_id: contextIds.other },
+        ...(sample.request.target_id
+          ? [{ ...sample.request, target_id: contextIds.other }]
+          : []),
+        ...(sample.request.refund_id
+          ? [{ ...sample.request, refund_id: contextIds.other }]
+          : []),
+      ]) {
+        const sequence = new FinancialActionContextSequence(
+          sample.actorId,
+          sample.propertyId,
+          request,
+        );
+        expect(() => {
+          sequence.append(reply);
+        }).toThrow();
+        expect(sequence.complete).toBe(false);
+      }
+      const sequence = new FinancialActionContextSequence(
+        contextIds.other,
+        sample.propertyId,
+        sample.request,
+      );
+      expect(() => {
+        sequence.append(reply);
+      }).toThrow();
+      expect(sequence.complete).toBe(false);
+    }
+  });
+  it("TEST-FE-381 runtime scope cannot be assigned, shadowed, rebound or mutated through request and result copies", async () => {
+    const sample = postingSample(),
+      sequence = actionSequence(sample),
+      original = { ...sample.request };
+    sample.request.source_id = contextIds.other;
+    expect(sequence.request).toEqual(original);
+    for (const mutation of [
+      () => Object.assign(sequence, { actorId: contextIds.other }),
+      () =>
+        Object.defineProperty(sequence, "propertyId", {
+          value: contextIds.other,
+        }),
+      () => {
+        Object.setPrototypeOf(sequence, {});
+      },
+      () => Object.assign(sequence.request, { source_id: contextIds.other }),
+    ])
+      expect(mutation).toThrow();
+    sample.request = original;
+    const { client } = actionClient(sample);
+    sequence.append(await client.read(actionScope(sample), original));
+    const detached = sequence.data;
+    expect(detached).not.toBeNull();
+    if (detached) detached.items = [];
+    expect(sequence.data?.items).toHaveLength(1);
+    expect(sequence.complete).toBe(true);
+  });
+  it.each([
+    "allocation",
+    "allocation_reversal",
+    "credit_application",
+    "credit_application_reversal",
+  ] as const)(
+    "TEST-FE-382 incomplete %s details never establish complete action context",
+    async (purpose) => {
+      const sample = actionContextFixtures.find(
+        (row) =>
+          row.request.purpose === purpose &&
+          Array.isArray(row.data.items) &&
+          row.data.items.length &&
+          financialObject(row.data.target).kind === "INVOICE",
+      );
+      expect(sample).toBeDefined();
+      if (!sample) return;
+      const { client } = actionClient(sample, (envelope) => {
+        financialObject(envelope.data).items = [];
+      });
+      const reply = await client.read(actionScope(sample), sample.request),
+        sequence = actionSequence(sample);
+      expect(() => {
+        sequence.append(reply);
+      }).toThrow();
+      expect(sequence.complete).toBe(false);
+      expect(sequence.data).toBeNull();
+    },
+  );
+  it.each(FINANCIAL_ACTION_PURPOSES)(
+    "TEST-FE-383 aborting %s invalidates the read before transport",
+    async (purpose) => {
+      const sample = actionContextFixtures.find(
+        (row) => row.request.purpose === purpose,
+      );
+      expect(sample).toBeDefined();
+      if (!sample) return;
+      const controller = new AbortController();
+      controller.abort();
+      const { client, fetcher } = actionClient(sample);
+      await expect(
+        client.read(actionScope(sample, controller.signal), sample.request),
+      ).rejects.toMatchObject({ code: "WORKSPACE_INVALIDATED" });
+      expect(fetcher).not.toHaveBeenCalled();
+    },
+  );
+});
+
+describe("financial action context adjusted and coherent values", () => {
+  it("TEST-FE-384 accepts authoritative Invoice debit increases without imposing the original line ceiling", async () => {
+    const sample = postingSample();
+    const { client } = actionClient(sample, (envelope) => {
+      const row = financialObject(envelope.data),
+        target = financialObject(row.target),
+        detail = financialObject(
+          financialObject((row.items as FinancialObject[])[0]).data,
+        );
+      detail.adjusted_amount_usd_cents =
+        BigInt(detail.original_amount_usd_cents as number) + 100n;
+      detail.outstanding_usd_cents = detail.adjusted_amount_usd_cents;
+      target.outstanding_usd_cents = detail.adjusted_amount_usd_cents;
+    });
+    const reply = await client.read(actionScope(sample), sample.request),
+      sequence = actionSequence(sample);
+    sequence.append(reply);
+    expect(sequence.complete).toBe(true);
+  });
+  it.each(["available", "original", "disposition", "currency"] as const)(
+    "TEST-FE-385 rejects inconsistent Payment position %s",
+    async (field) => {
+      const sample = postingSample(),
+        { client } = actionClient(sample, (envelope) => {
+          const resource = financialObject(
+              financialObject(envelope.data).payment_resource,
+            ),
+            position = financialObject(resource.position);
+          if (field === "available") position.available_usd_cents = 1;
+          if (field === "original") position.original_usd_cents = 1;
+          if (field === "disposition")
+            financialObject(position.dispositions).credit_usd_cents = 1;
+          if (field === "currency") position.currency = "KHR";
+        });
+      await expect(
+        client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+  it("TEST-FE-386 rejects mismatched Credit source currency and original Payment value", async () => {
+    const sample = actionContextFixtures.find(
+      (row) => row.request.purpose === "credit_application",
+    );
+    expect(sample).toBeDefined();
+    if (!sample) return;
+    for (const change of [
+      { received_currency: "KHR" },
+      { received_amount_minor: 1 },
+      { payer_customer_id: contextIds.other },
+    ]) {
+      const { client } = actionClient(sample, (envelope) => {
+        const credit = financialObject(
+          financialObject(financialObject(envelope.data).context).credit,
+        );
+        Object.assign(financialObject(credit.source_payment), change);
+      });
+      await expect(
+        client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    }
+  });
 });

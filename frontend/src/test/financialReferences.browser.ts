@@ -1,3 +1,6 @@
+import { FinancialActionContextSequence } from "../financialActionContextSequence";
+import { actionContextFixtures } from "./financialActionContextFixtures";
+import type { FinancialObject } from "../financialContracts";
 import {
   ids as contextIds,
   fixture as financialFixture,
@@ -737,5 +740,247 @@ async function contextProvenanceBrowserChecks(
       mixed.append(foreign, cursor);
     }, "Foreign actor continuation rejected");
     check(!mixed.complete, "Mixed actor sequence incomplete");
+  }
+}
+
+export async function runFinancialActionContextBrowserChecks(): Promise<
+  string[]
+> {
+  const actor = crypto.randomUUID(),
+    key = crypto.randomUUID(),
+    plaintext =
+      '{"synthetic_pending":"action context never retires an unknown command"}';
+  await sealedIntentStore.begin(actor, { requestKey: key, plaintext });
+  let calls = 0;
+  try {
+    for (const fixture of actionContextFixtures) {
+      const sample = structuredClone(fixture),
+        controller = new AbortController();
+      const scope = {
+        actorId: actor,
+        propertyId: sample.propertyId,
+        signal: controller.signal,
+      };
+      const client = createFinancialReferenceClient((url, init) => {
+        check(typeof url === "string", "Action context finite URL");
+        const headers = new Headers(init?.headers),
+          requestId = headers.get("X-Request-ID");
+        check(
+          requestId &&
+            headers.get("X-Billing-Actor-ID") === actor &&
+            headers.get("X-Financial-Property-ID") === sample.propertyId,
+          "Action read scope",
+        );
+        check(
+          init?.method === "GET" &&
+            init.body === undefined &&
+            init.cache === "no-store" &&
+            headers.get("Idempotency-Key") === null &&
+            headers.get("X-CSRF-Token") === null,
+          "Read never creates a command",
+        );
+        calls += 1;
+        return Promise.resolve(
+          new Response(
+            stringifyFinancialJson(
+              {
+                data: sample.data,
+                page: sample.page,
+                meta: {
+                  actor_id: actor,
+                  property_id: sample.propertyId,
+                  request_id: requestId,
+                },
+              },
+              1_048_576,
+            ),
+            {
+              headers: {
+                "Content-Type": "application/json",
+                "X-Request-ID": requestId,
+              },
+            },
+          ),
+        );
+      });
+      const reply = await client.read(scope, sample.request);
+      const sequence = new FinancialActionContextSequence(
+        actor,
+        sample.propertyId,
+        sample.request,
+      );
+      sequence.append(reply);
+      check(
+        sequence.complete && sequence.data !== null,
+        "Actual PostgreSQL source becomes complete in Chromium",
+      );
+      let rejected = false;
+      try {
+        new FinancialActionContextSequence(
+          actor,
+          sample.propertyId,
+          sample.request,
+        ).append({ ...reply });
+      } catch {
+        rejected = true;
+      }
+      check(rejected, "Copied response cannot establish request provenance");
+      rejected = false;
+      try {
+        Object.defineProperty(sequence, "actorId", {
+          value: crypto.randomUUID(),
+        });
+      } catch {
+        rejected = true;
+      }
+      check(
+        rejected && sequence.actorId === actor,
+        "Runtime context binding cannot change",
+      );
+      const before = calls;
+      controller.abort();
+      const failure: unknown = await client
+        .read(scope, sample.request)
+        .catch((error: unknown) => error);
+      check(
+        failure instanceof FinancialReferenceError &&
+          failure.code === "WORKSPACE_INVALIDATED" &&
+          calls === before,
+        "Aborted scope sends no request",
+      );
+    }
+    const fixture = actionContextFixtures.find(
+      (sample) =>
+        sample.request.purpose === "allocation" &&
+        sample.request.target_kind === "INVOICE",
+    );
+    check(fixture, "Synthetic Invoice posting source");
+    const sample = structuredClone(fixture),
+      revision = sample.data.revision;
+    check(typeof revision === "string", "Revision is exact");
+    const cursor = `${revision}:1:${contextIds.event}`,
+      originalItem = financialObject(
+        (sample.data.items as FinancialObject[])[0],
+      );
+    const scope = {
+      actorId: actor,
+      propertyId: sample.propertyId,
+      signal: new AbortController().signal,
+    };
+    const request = { ...sample.request, limit: 1 };
+    const large = 9007199254740993n;
+    financialObject(sample.data.target).outstanding_usd_cents = large;
+    const client = createFinancialReferenceClient((url, init) => {
+      check(typeof url === "string", "Finite continuation URL");
+      const last = new URL(url, "https://synthetic.invalid").searchParams.has(
+          "cursor",
+        ),
+        headers = new Headers(init?.headers),
+        requestId = headers.get("X-Request-ID");
+      check(requestId, "Actual browser correlation");
+      const amount = last ? large - 1n : 1n;
+      const data = {
+        ...sample.data,
+        items: [
+          {
+            ...originalItem,
+            sequence: last ? 2 : 1,
+            id: last ? contextIds.other : contextIds.event,
+            data: {
+              ...financialObject(originalItem.data),
+              original_amount_usd_cents: amount,
+              adjusted_amount_usd_cents: amount,
+              outstanding_usd_cents: amount,
+            },
+          },
+        ],
+      };
+      return Promise.resolve(
+        new Response(
+          stringifyFinancialJson(
+            {
+              data,
+              page: { limit: 1, next_cursor: last ? null : cursor },
+              meta: {
+                actor_id: actor,
+                property_id: sample.propertyId,
+                request_id: requestId,
+              },
+            },
+            1_048_576,
+          ),
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "X-Request-ID": requestId,
+            },
+          },
+        ),
+      );
+    });
+    const first = await client.read(scope, request),
+      last = await client.read(scope, { ...request, cursor });
+    const sequence = new FinancialActionContextSequence(
+      actor,
+      sample.propertyId,
+      request,
+    );
+    sequence.append(first);
+    const firstProgress = {
+      complete: sequence.complete,
+      data: sequence.data,
+      nextCursor: sequence.nextCursor,
+    };
+    check(
+      !firstProgress.complete &&
+        firstProgress.data === null &&
+        firstProgress.nextCursor === cursor,
+      "First page never implies completion",
+    );
+    sequence.append(last);
+    const snapshot = sequence.data;
+    check(
+      sequence.complete &&
+        snapshot !== null &&
+        Array.isArray(snapshot.items) &&
+        snapshot.items.length === 2 &&
+        financialObject(snapshot.target).outstanding_usd_cents === large,
+      "Complete exact large integer target survives real-browser transport",
+    );
+    let rejected = false;
+    try {
+      new FinancialActionContextSequence(
+        actor,
+        sample.propertyId,
+        request,
+      ).append(last);
+    } catch {
+      rejected = true;
+    }
+    check(rejected, "Actual continuation cannot be substituted for first page");
+    snapshot.items = [];
+    const detachedAgain = sequence.data;
+    check(
+      detachedAgain !== null &&
+        Array.isArray(detachedAgain.items) &&
+        detachedAgain.items.length === 2,
+      "Detached snapshot cannot mutate completed facts",
+    );
+    const preserved = await sealedIntentStore.read(actor);
+    check(
+      preserved?.requestKey === key && preserved.plaintext === plaintext,
+      "Action reads preserve actual IndexedDB encrypted pending command",
+    );
+    check(
+      calls === actionContextFixtures.length,
+      "All actual PostgreSQL examples checked exactly once",
+    );
+    const passed: string[] = [];
+    passed.push("TEST-FE-387");
+    passed.push("TEST-FE-388");
+    passed.push("TEST-FE-389");
+    return passed;
+  } finally {
+    await sealedIntentStore.clear(actor, key);
   }
 }

@@ -23655,6 +23655,841 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "Preserves all1636 rejected-candidate mappings and requires the bounded provenance/runtime-binding regressions without blocking future additive stages."
+    },
+    {
+      "test_id": "test_financial_action_context_sole_action_grant_uses_one_bounded_read_snapshot",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_action_context.py",
+      "status": "implemented",
+      "notes": "Sole action grant uses one bounded read snapshot. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_never_synthesizes_an_action_grant",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_action_context.py",
+      "status": "implemented",
+      "notes": "Never synthesizes an action grant. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_page_limits_are_strict",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_action_context.py",
+      "status": "implemented",
+      "notes": "Page limits are strict. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_purpose_is_finite",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_action_context.py",
+      "status": "implemented",
+      "notes": "Purpose is finite. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_rejects_invalid_identity_target_and_cursor",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_action_context.py",
+      "status": "implemented",
+      "notes": "Rejects invalid identity target and cursor. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_reversal_cannot_replace_original_target_or_refund",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040",
+        "API-064",
+        "API-065",
+        "API-066",
+        "UI-071",
+        "UI-072"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_action_context.py",
+      "status": "implemented",
+      "notes": "Reversal cannot replace original target or refund. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_continuation_binds_source_target_and_current_facts",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_action_context.py",
+      "status": "implemented",
+      "notes": "Continuation binds source target and current facts. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_malformed_projection_fails_closed",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_action_context.py",
+      "status": "implemented",
+      "notes": "Malformed projection fails closed. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_utf8_budget_counts_combined_source_and_context",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_action_context.py",
+      "status": "implemented",
+      "notes": "Utf8 budget counts combined source and context. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_deposit_refund_has_no_invented_payment",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040",
+        "API-064",
+        "API-065",
+        "API-066",
+        "UI-071",
+        "UI-072"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_financial_action_context.py",
+      "status": "implemented",
+      "notes": "Deposit refund has no invented payment. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_http_only_own_action_needed",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_action_context_api.py",
+      "status": "implemented",
+      "notes": "Http only own action needed. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_http_general_read_never_implies_action",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_action_context_api.py",
+      "status": "implemented",
+      "notes": "Http general read never implies action. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_http_rejects_invalid_queries_before_dispatch",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_action_context_api.py",
+      "status": "implemented",
+      "notes": "Http rejects invalid queries before dispatch. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_http_selected_targets_captured_exactly",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_action_context_api.py",
+      "status": "implemented",
+      "notes": "Http selected targets captured exactly. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_http_reversal_cannot_supply_replacement_target",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_action_context_api.py",
+      "status": "implemented",
+      "notes": "Http reversal cannot supply replacement target. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_http_actor_property_and_read_only_headers",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_action_context_api.py",
+      "status": "implemented",
+      "notes": "Http actor property and read only headers. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_http_safe_correlated_failure",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_action_context_api.py",
+      "status": "implemented",
+      "notes": "Http safe correlated failure. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_http_unauthenticated_and_default_flow_fail_closed",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_action_context_api.py",
+      "status": "implemented",
+      "notes": "Http unauthenticated and default flow fail closed. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_payment_receipt_fx_and_no_writes",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040",
+        "API-092",
+        "UI-106"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database payment receipt fx and no writes. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_credit_recognition_and_reversal_position",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040",
+        "API-061",
+        "API-062",
+        "API-063",
+        "UI-068",
+        "UI-069",
+        "UI-070"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database credit recognition and reversal position. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_allocation_original_and_current_target",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040",
+        "API-059",
+        "API-060",
+        "UI-066",
+        "UI-067",
+        "DB-PAY-006"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database allocation original and current target. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_credit_application_original_and_reversal",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040",
+        "API-061",
+        "API-062",
+        "API-063",
+        "UI-068",
+        "UI-069",
+        "UI-070"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database credit application original and reversal. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_refund_original_return_and_exact_correction",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040",
+        "API-064",
+        "API-065",
+        "API-066",
+        "UI-071",
+        "UI-072"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database refund original return and exact correction. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_missing_sources_do_not_leak",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database missing sources do not leak. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_migration_privileges_and_forward_only",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database migration privileges and forward only. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_complete_500_line_sources_and_stale_pages",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database complete 500 line sources and stale pages. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_selected_correction_beyond_max_history_page",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database selected correction beyond max history page. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_fresh_human_before_source",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database fresh human before source. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_normal_credit_and_third_party_target_scope",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040",
+        "API-061",
+        "API-062",
+        "API-063",
+        "UI-068",
+        "UI-069",
+        "UI-070"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database normal credit and third party target scope. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_shared_deposit_guard_changes_source_context",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database shared deposit guard changes source context. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_coherent_snapshot_during_new_refund",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040",
+        "API-064",
+        "API-065",
+        "API-066",
+        "UI-071",
+        "UI-072"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database coherent snapshot during new refund. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_statement_deadline_is_unavailable",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database statement deadline is unavailable. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_historical_void_target_is_zero",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database historical void target is zero. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_charge_remains_separate_from_invoice",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database charge remains separate from invoice. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_deposit_refund_return_and_correction_source",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040",
+        "API-064",
+        "API-065",
+        "API-066",
+        "UI-071",
+        "UI-072"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database deposit refund return and correction source. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_direct_sql_rejects_malformed_arguments",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database direct sql rejects malformed arguments. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_future_deposit_application_is_explicit",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database future deposit application is explicit. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_actual_utf8_projection_budget",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database actual utf8 projection budget. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "test_financial_action_context_database_invoice_debit_preserves_original_and_adjusted",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Database invoice debit preserves original and adjusted. Bounded selected-source read evidence; command eligibility and financial mutations remain in accepted services. Synthetic isolated data only."
+    },
+    {
+      "test_id": "TEST-FE-374",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Actual28 synthetic PostgreSQL projections across nine purposes pass browser-client source and current value validation, exact read routes, target query and no command headers."
+    },
+    {
+      "test_id": "TEST-FE-375",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Finite action/source/target/Refund/cursor/page inputs fail before transport."
+    },
+    {
+      "test_id": "TEST-FE-376",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Reject substituted actor/Property/source/purpose/Refund/target/revision and malformed context or continuation."
+    },
+    {
+      "test_id": "TEST-FE-377",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Reject wrong original event/Receipt/Credit/Refund links and monetary facts."
+    },
+    {
+      "test_id": "TEST-FE-378",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Actual-client first and continuation provenance plus complete Invoice totals; a final continuation alone fails."
+    },
+    {
+      "test_id": "TEST-FE-379",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Copied or mutated public replies cannot establish private request provenance."
+    },
+    {
+      "test_id": "TEST-FE-380",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Actor/source/target/Refund sequence scopes cannot be bridged with replies from another captured request."
+    },
+    {
+      "test_id": "TEST-FE-381",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Runtime-private frozen sequence scope and detached snapshots resist assignment, shadowing, prototype changes and consumer mutation."
+    },
+    {
+      "test_id": "TEST-FE-382",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Missing original Allocation/Application or current Invoice details cannot establish complete totals."
+    },
+    {
+      "test_id": "TEST-FE-383",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Aborted workspace for each of the nine purposes settles without dispatch."
+    },
+    {
+      "test_id": "TEST-FE-384",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Accepted Invoice debit increase remains valid above the original line value; preserve original versus adjusted amounts."
+    },
+    {
+      "test_id": "TEST-FE-385",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Reject inconsistent USD Payment original/disposition/available position facts."
+    },
+    {
+      "test_id": "TEST-FE-386",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Credit original source currency, received amount and payer match the joined Payment snapshot."
+    },
+    {
+      "test_id": "TEST-FE-387",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Actual Chromium reads28 synthetic database fixtures across all nine purposes, no command headers/network calls, abort stops dispatch."
+    },
+    {
+      "test_id": "TEST-FE-388",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Actual Chromium rejects copied replies and runtime scope mutation and preserves existing encrypted pending key and bytes in IndexedDB."
+    },
+    {
+      "test_id": "TEST-FE-389",
+      "upstream_ids": [
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Actual Chromium complete page sequence preserves exact integer9007199254740993; continuation alone and mutable snapshot copies cannot falsify completeness."
+    },
+    {
+      "test_id": "test_v1052_financial_action_context_preserves_accepted_trace_and_requires_stage_maps",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "Preserve all1644 accepted and rejected regression mappings and require additive action-context mappings without preventing future stages."
     }
   ]
 }

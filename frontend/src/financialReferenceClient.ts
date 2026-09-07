@@ -24,6 +24,14 @@ import {
   type ReversalContextView,
 } from "./paymentReversalContext";
 
+import {
+  captureFinancialActionContext,
+  financialActionContextPath,
+  validateFinancialActionContext,
+  type FinancialActionContextInput,
+  type FinancialActionPurpose,
+} from "./financialActionContext";
+
 export const FINANCIAL_REFERENCE_REPLY_BYTES = 1_048_576;
 export const FINANCIAL_CAPABILITIES = [
   "payments.read",
@@ -54,6 +62,7 @@ export interface FinancialReferenceScope {
   signal: AbortSignal;
 }
 export type FinancialReferenceRequest =
+  | FinancialActionContextInput
   | { operation: "workspaces" | "methods"; limit?: number; cursor?: string }
   | { operation: "capabilities" }
   | {
@@ -97,6 +106,29 @@ export function reversalContextReplyProvenance(
   reply: object,
 ): Readonly<ReversalContextReplyProvenance> | undefined {
   return reversalContextReceipts.get(reply);
+}
+interface FinancialActionContextReplyProvenance {
+  readonly actorId: string;
+  readonly propertyId: string;
+  readonly purpose: FinancialActionPurpose;
+  readonly sourceId: string;
+  readonly refundId: string | null;
+  readonly targetKind: string | null;
+  readonly targetId: string | null;
+  readonly cursor: string | null;
+  readonly limit: number;
+  readonly nextCursor: string | null;
+  readonly requestId: string;
+  readonly data: string;
+}
+const financialActionContextReceipts = new WeakMap<
+  object,
+  Readonly<FinancialActionContextReplyProvenance>
+>();
+export function financialActionContextReplyProvenance(
+  reply: object,
+): Readonly<FinancialActionContextReplyProvenance> | undefined {
+  return financialActionContextReceipts.get(reply);
 }
 export class FinancialReferenceError extends Error {
   constructor(
@@ -189,6 +221,8 @@ function capture(input: FinancialReferenceRequest): FinancialObject {
     if (row.cursor !== undefined) row.cursor = financialId(row.cursor);
   } else if (row.operation === "paymentReversalContext")
     captureReversalContext(row);
+  else if (row.operation === "financialActionContext")
+    captureFinancialActionContext(row);
   else if (row.operation === "capabilities") exactKeys(row, ["operation"]);
   else if (row.operation === "khrPreview") {
     exactKeys(row, ["operation", "usd_amount_cents"], ["manual_reference"]);
@@ -205,8 +239,10 @@ function validate(
   requestId: string,
 ): FinancialReferenceReply {
   const context = input.operation === "paymentReversalContext";
+  const actionContext = input.operation === "financialActionContext";
   const paged =
     context ||
+    actionContext ||
     input.operation === "workspaces" ||
     input.operation === "methods";
   exactKeys(envelope, ["data", "meta", ...(paged ? ["page"] : [])]);
@@ -225,6 +261,13 @@ function validate(
   let page: FinancialReferenceReply["page"] = null;
   if (context) {
     page = validateReversalContext(
+      envelope,
+      input,
+      financialId(propertyId),
+      requestId,
+    );
+  } else if (actionContext) {
+    page = validateFinancialActionContext(
       envelope,
       input,
       financialId(propertyId),
@@ -378,6 +421,34 @@ function validate(
       }),
     );
   }
+  if (actionContext) {
+    if (!page || !propertyId) invalidFinancial();
+    financialActionContextReceipts.set(
+      reply,
+      Object.freeze({
+        actorId,
+        propertyId,
+        requestId,
+        purpose: input.purpose as FinancialActionPurpose,
+        sourceId: financialId(input.source_id),
+        refundId:
+          input.refund_id === undefined ? null : financialId(input.refund_id),
+        targetKind:
+          input.target_kind === undefined
+            ? null
+            : (input.target_kind as string),
+        targetId:
+          input.target_id === undefined ? null : financialId(input.target_id),
+        cursor: input.cursor === undefined ? null : (input.cursor as string),
+        limit: page.limit,
+        nextCursor: page.nextCursor,
+        data: stringifyFinancialJson(
+          reply.data,
+          FINANCIAL_REFERENCE_REPLY_BYTES,
+        ),
+      }),
+    );
+  }
   return reply;
 }
 export function createFinancialReferenceClient(
@@ -422,12 +493,19 @@ export function createFinancialReferenceClient(
         const path =
           input.operation === "workspaces"
             ? "/api/v1/financial-workspaces"
-            : input.operation === "paymentReversalContext"
-              ? `/api/v1/properties/${financialId(propertyId)}/payments/${financialId(input.payment_id)}/reversal-context`
-              : `/api/v1/properties/${financialId(propertyId)}/${input.operation === "capabilities" ? "financial-capabilities" : input.operation === "methods" ? "payment-methods" : "payments/khr-preview"}`;
+            : input.operation === "financialActionContext"
+              ? financialActionContextPath(financialId(propertyId), input)
+              : input.operation === "paymentReversalContext"
+                ? `/api/v1/properties/${financialId(propertyId)}/payments/${financialId(input.payment_id)}/reversal-context`
+                : `/api/v1/properties/${financialId(propertyId)}/${input.operation === "capabilities" ? "financial-capabilities" : input.operation === "methods" ? "payment-methods" : "payments/khr-preview"}`;
         const query = new URLSearchParams();
         if (
-          ["workspaces", "methods", "paymentReversalContext"].includes(
+          [
+            "workspaces",
+            "methods",
+            "paymentReversalContext",
+            "financialActionContext",
+          ].includes(
             typeof input.operation === "string"
               ? input.operation
               : invalidFinancial(),
@@ -441,7 +519,8 @@ export function createFinancialReferenceClient(
           if (input.cursor !== undefined)
             query.set(
               "cursor",
-              input.operation === "paymentReversalContext"
+              input.operation === "paymentReversalContext" ||
+                input.operation === "financialActionContext"
                 ? typeof input.cursor === "string"
                   ? input.cursor
                   : invalidFinancial()
@@ -455,6 +534,18 @@ export function createFinancialReferenceClient(
               "view",
               typeof input.view === "string" ? input.view : invalidFinancial(),
             );
+        }
+        if (
+          input.operation === "financialActionContext" &&
+          input.target_id !== undefined
+        ) {
+          query.set(
+            "target_kind",
+            typeof input.target_kind === "string"
+              ? input.target_kind
+              : invalidFinancial(),
+          );
+          query.set("target_id", financialId(input.target_id));
         }
         const headers = new Headers({
           Accept: "application/json",

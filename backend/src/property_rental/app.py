@@ -85,6 +85,11 @@ from property_rental.deposit_api import (
     create_deposit_router,
     deposit_idempotency_key_reused_response,
 )
+from property_rental.financial_action_context import FinancialActionContextService
+from property_rental.financial_action_context_api import (
+    FinancialActionContextFlow,
+    create_financial_action_context_router,
+)
 from property_rental.financial_reference import FinancialReferenceService
 from property_rental.financial_reference_api import (
     FinancialReferenceFlow,
@@ -204,7 +209,7 @@ LATE_PAYMENT_API_PATH_PATTERN: Final = re.compile(
 )
 PAYMENT_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:financial-workspaces$|properties/[^/]+/(?:financial-capabilities|payment-methods)$|"
-    r"properties/[^/]+/(?:payments|refunds)(?:/|$)|"
+    r"properties/[^/]+/(?:payments|refunds|payment-allocations|receipts|customer-credits|credit-applications)(?:/|$)|"
     r"customers/[^/]+/credits(?:/|$)|"
     r"(?:payments|payment-allocations|receipts|customer-credits|credit-applications|refunds|refund-sources)(?:/|$))"
 )
@@ -334,6 +339,7 @@ def create_app(
     payment_flow: PaymentFlow | None = None,
     financial_reference_flow: FinancialReferenceFlow | None = None,
     payment_reversal_context_flow: PaymentReversalContextFlow | None = None,
+    financial_action_context_flow: FinancialActionContextFlow | None = None,
     allocation_receipt_flow: AllocationReceiptFlow | None = None,
     credit_refund_flow: CreditRefundFlow | None = None,
 ) -> FastAPI:
@@ -851,6 +857,17 @@ def create_app(
                 exchange_rate_provider or UnavailableExchangeRateProvider(),
             ),
             resolved_settings,
+        )
+    )
+    app.include_router(
+        create_financial_action_context_router(
+            actor_resolver,
+            financial_action_context_flow
+            or FinancialActionContextService(
+                resolved_settings.database_url.get_secret_value()
+                if resolved_settings.database_url is not None
+                else None
+            ),
         )
     )
     app.include_router(

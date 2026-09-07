@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "V1-052 Payment reversal context correction1 focused verified; normal successor freeze pending",
+    "phase": "V1-052 financial action context focused verified; containing candidate pending",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2057,8 +2057,8 @@
     "scope_sha256": "4ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363",
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
-    "candidate_resolution": "Normal correction1 containing commit; resolved externally with immutable candidate SHA/tree.",
-    "candidate_status": "payment_reversal_context_correction1_containing_candidate_pending",
+    "candidate_resolution": "Normal containing31-path commit resolved externally; immutable exact candidate remains frozen through full gates/review.",
+    "candidate_status": "financial_action_context_containing_candidate_pending",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2087,7 +2087,7 @@
       "schedulers": "SAME nativeACTIVE/OpenClawdisabled"
     },
     "owner_action_required": false,
-    "next_action": "Freeze normal11-path correction1 successor of rejectedf48; run fresh exact953PostgreSQL/2358backend930DB-onlyskips/737frontend/182static/build/import/189automation/config/trace/guard/preservation and9reference/context plus6command Chromium groups. Then ONE fresh complete431-base two-commit29-path Astra/max/Standard/enforced-read-only independent zero review under standing through53 authority. Preserve all rejected candidates/reports and red-green evidence. Continue necessary action reads/staff UI/full52 cumulative release/publication/exactCI/refs/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+    "next_action": "Create the normal31-path financial action-context candidate from acceptedc65; run fresh exact full PostgreSQL/backend/frontend/static/migration/build/import/automation/configuration/trace/guard/preservation and12reference/context plus6command Chromium groups. Then ONE completec65-base Astra/max/Standard/enforced-read-only zero review under standing through53 authority. Preserve all accepted/rejected candidates/reports and every failed check. Continue staff UI/full52 cumulative release/publication/exactCI/ref/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2112,23 +2112,24 @@
       "exact_tests": "189 PASS and all activation gates; execution78277 EXIT0; do not repeat"
     },
     "active_slice": {
-      "id": "V1-052-payment-reversal-context",
+      "id": "V1-052-financial-action-context",
       "status": "focused_verified_freeze_pending",
-      "base": "431f23afbe9d35a0a6479218c4782f21337b14fe",
-      "started_at": "2026-09-07T19:53:22.780447+00:00",
+      "base": "c65a7cb240ca3e0e67b6802e1ea25b668ae82e3a",
+      "started_at": "2026-09-07T22:13:41.266133+00:00",
       "affected_paths": [
-        "backend/migrations/versions/20260908_46_payment_reversal_context.py",
-        "backend/src/property_rental/payment_reversal_context.py",
-        "backend/src/property_rental/payment_reversal_context_api.py",
+        "backend/migrations/versions/20260908_47_financial_action_context.py",
+        "backend/src/property_rental/financial_action_context.py",
+        "backend/src/property_rental/financial_action_context_api.py",
         "backend/src/property_rental/app.py",
-        "backend/tests/test_payment_reversal_context.py",
-        "backend/tests/test_payment_reversal_context_api.py",
-        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_financial_action_context.py",
+        "backend/tests/test_financial_action_context_api.py",
+        "backend/tests/test_financial_action_context_migration.py",
         "backend/tests/test_initial_owner_bootstrap_cli.py",
         "backend/tests/test_migrations.py",
         "backend/tests/test_traceability.py",
         "scripts/database-test.sh",
-        "frontend/src/paymentReversalContext.ts",
+        "frontend/src/financialActionContext.ts",
+        "frontend/src/financialActionContextSequence.ts",
         "frontend/src/financialReferenceClient.ts",
         "frontend/src/financialReferenceClient.test.ts",
         "frontend/src/test/financialReferences.browser.ts",
@@ -2136,7 +2137,7 @@
         "ops/STATE.json",
         "ops/QUEUE.md",
         "ops/traceability.json",
-        "ops/V1_052_PAYMENT_REVERSAL_CONTEXT.md",
+        "ops/V1_052_FINANCIAL_ACTION_CONTEXT.md",
         "backend/tests/test_credit_refund_read_migration.py",
         "backend/tests/test_lease_api_migration.py",
         "backend/tests/test_utility_meter_migration.py",
@@ -2145,9 +2146,10 @@
         "backend/tests/test_utility_api_migration.py",
         "backend/tests/test_utility_consumption_migration.py",
         "backend/tests/test_invoice_migration.py",
-        "frontend/src/paymentReversalContextSequence.ts"
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "frontend/src/test/financialActionContextFixtures.ts"
       ],
-      "scope": "Original complete28-path Payment reversal context plus one sequence-module extraction; correction1 only protects actual request provenance and runtime scope bindings with regressions/trace/durable records. No backend runtime, migration, financial command/guard, dependency, canonical, general action-reference or UI implementation change.",
+      "scope": "Nine necessary selected-source action contexts for Allocation posting/reversal, Receipt reprint, Credit recognition/reversal/application/application-reversal, Refund verified-return/correction-reversal. Current original/source/target facts and bounded detail pages under each existing action grant. New narrow read-only migration47; no write guard, financial rule, general read grant, dependency, canonical or staff UI change in this stage.",
       "docs": [
         "002_BUSINESS_RULES.md",
         "004_DATABASE_MODEL.md",
@@ -2157,8 +2159,8 @@
         "008_SECURITY_MODEL.md"
       ],
       "plan": [
-        "Verify every relevant revision guard and active/source graph against actual schemas.",
-        "Add narrow read-only projection with bounded keysets and fixed revision evidence.",
+        "Verify finite source schemas, action grants, exact targets and revision coverage against actual tables and canonical requirements.",
+        "Add nine narrow read-only selected-source projections with bounded detail keysets and coherent current revisions; never invoke locking resource or excess-write helpers.",
         "Add strict exact-Property/action-authorized HTTP route and source-compatible exact client.",
         "Add unit/API/isolatedPostgreSQL/concurrency/authorization/pagination/no-write/browser regressions and traceability.",
         "Freeze normal candidate; exact full gates and complete-base independent zero review."
@@ -2168,177 +2170,168 @@
       "mode": "Standard/default",
       "reasoning_reason": "Financial authorization, cross-domain concurrency and new narrow database privilege require xhigh under existing policy.",
       "implementation_owner": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-      "correction_attempt": 1,
+      "correction_attempt": 0,
       "standing_authorization": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
         "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
       },
-      "migration_inventory_extension": {
-        "at": "2026-09-07T20:06:32.439802+00:00",
-        "paths": [
-          "backend/tests/test_credit_refund_read_migration.py",
-          "backend/tests/test_lease_api_migration.py",
-          "backend/tests/test_utility_meter_migration.py",
-          "backend/tests/test_late_payment_migration.py",
-          "backend/tests/test_billing_service_migration.py",
-          "backend/tests/test_utility_api_migration.py",
-          "backend/tests/test_utility_consumption_migration.py",
-          "backend/tests/test_invoice_migration.py"
-        ],
-        "reason": "Only existing current-head expectations must advance to46. Pinned45 migration identity/down-revision/privilege tests remain45; all financial/data assertions retained."
+      "scope_refinements": [
+        {
+          "at": "2026-09-07T22:23:57.710715+00:00",
+          "reason": "Migration47 advances sole current head in the retained46 test; preserve its explicit46 identity, parent45 and privilege checks.",
+          "path": "backend/tests/test_payment_reversal_context_migration.py"
+        }
+      ],
+      "phase": "focused_verified_freeze_pending",
+      "focused_checks": {
+        "backend-corrected": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-backend-corrected.json",
+          "sha256": "d58b2a6cb08a5efbd816cd1a1d47463c593b45cb3276369e4ce826165d52f170"
+        },
+        "postgresql-first": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-postgresql-first.json",
+          "sha256": "ae6b3a82af56b3f097ed31e2dfe406979cf00473187796a672846a1c72ba3e30"
+        },
+        "format-test-types-corrected": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-format-test-types-corrected.json",
+          "sha256": "c5768ac23006a428cdb1543b19cc8b9a67300ae1c9840e911ba3729c47f2e1bb"
+        }
+      },
+      "focused_results": "215backend/API/inventory;225client;28PGfullmodule then5newPGcases=33covered;25trace;12Chromiumgroups;backend6type/source checks andfrontend actual project types/lint/format PASS.56newmaps preserve1644=1700. Every draft failure retained.",
+      "draft_corrections": {
+        "private_headers_and_empty_collection": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-initial-correction.json",
+          "sha256": "70823705f3f70b37c4e4926d211dbb043899bc9614e4b017ecca516a8151fe2b"
+        }
+      },
+      "next_action": "Create the normal31-path financial action-context candidate from acceptedc65; run fresh exact full PostgreSQL/backend/frontend/static/migration/build/import/automation/configuration/trace/guard/preservation and12reference/context plus6command Chromium groups. Then ONE completec65-base Astra/max/Standard/enforced-read-only zero review under standing through53 authority. Preserve all accepted/rejected candidates/reports and every failed check. Continue staff UI/full52 cumulative release/publication/exactCI/ref/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+      "synthetic_fixture_scope": {
+        "path": "frontend/src/test/financialActionContextFixtures.ts",
+        "purpose": "28 actual synthetic PostgreSQL projection examples support actual-client and browser contract regressions; no customer/production data or credentials.",
+        "capture": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/financial-action-context-synthetic-database-fixtures-corrected.json",
+        "sha256": "d698efe3dfa3d0edc85f743f11d821da6af28b75ccf2039feb34356a93b6fe28"
       },
       "focused_evidence": {
-        "frontend-correction1-browser-added": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-correction1-browser-added.json",
-          "sha256": "c9b7283b30a74eb3cf7272e33f4d6317d4092af0343b7adeb3bca925bb91eff9"
+        "backend-corrected": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-backend-corrected.json",
+          "sha256": "d58b2a6cb08a5efbd816cd1a1d47463c593b45cb3276369e4ce826165d52f170"
         },
-        "trace-correction1": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-trace-correction1.json",
-          "sha256": "4b8c9750785ffd3ff8940575004d6bb1fa14e2d887b7894e20a979ef0b9d4f18"
+        "frontend-value-corrected": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-frontend-value-corrected.json",
+          "sha256": "fed96c04fcbf7a829aeaef3ac7a43f3ac90ac958d5708f4b6efb9433735463d8"
         },
-        "browser-correction1-focused": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-browser-correction1-focused.json",
-          "sha256": "3308fc853abc4407c419dc0fbe554ee516e3de95d0f1c00ed41e1ddfaaf2c2ca"
+        "postgresql-client-fixtures-corrected": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-postgresql-client-fixtures-corrected.json",
+          "sha256": "c0d89d07150ec88e7f9168f66a2c7333c68fca53d7521ae2d541f4069c7c9683"
+        },
+        "postgresql-remaining-corrected": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-postgresql-remaining-corrected.json",
+          "sha256": "f811a6125c77b79d072811d3ff155a72384ee5bc78b52e923057c98386aa4f8e"
+        },
+        "format-remaining-pg-signature-corrected": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-format-remaining-pg-signature-corrected.json",
+          "sha256": "1c4f9e890f0ae70bcdbb1524233c49bcd4af16db9f4bd70771e5c904ca516e42"
+        },
+        "frontend-static-browser-observation-corrected": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-frontend-static-browser-observation-corrected.json",
+          "sha256": "be605b3a90aac5ccd34017c9af0171313841e4d7b778d10775659a8352268a88"
+        },
+        "trace-marker-corrected": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-trace-marker-corrected.json",
+          "sha256": "acd19415cbf69f9f6a3b78671944db56855f0e0dadb111eb27baf7382945bcbb"
+        },
+        "browser-marker-corrected": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-browser-marker-corrected.json",
+          "sha256": "16aa2ba49928daf91329b0aeb9ee29f52d7a54402299f8891f10050629e3a271"
         }
       },
       "retained_failed_checks": {
-        "v1052-payment-reversal-context-backend-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-backend-first.json",
-          "sha256": "036f6da89f53d494c03711fc3c27dedaf41d9fe1dbec7d801c1bbba7ae453b2b"
+        "v1052-financial-action-context-backend-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-backend-first.json",
+          "sha256": "d13a4fa54c008514f94e282df0a2bf59ecb1f214a23e6b3343392e217b23a5cb"
         },
-        "v1052-payment-reversal-context-format-backend-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-format-backend-first.json",
-          "sha256": "aaff52d7f764f1155b7fe6fe1d11a8dbe54f761ab88781fc85c9268f358945e7"
+        "v1052-financial-action-context-format-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-format-first.json",
+          "sha256": "ca230347da534e640cef5c6b7953fc343a8a44d1ba783ccbe66e230cabb91414"
         },
-        "v1052-payment-reversal-context-format-pg-additional-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-format-pg-additional-first.json",
-          "sha256": "18151bfa0bf438b68673db9ee3e0c089258ed8ca0094d1c499b9088976d78a4a"
+        "v1052-financial-action-context-format-remaining-pg-corrected.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-format-remaining-pg-corrected.json",
+          "sha256": "9937e2eb150cd64765cdbf389761ff43a293759402c666a455e8dd7d056ff1a4"
         },
-        "v1052-payment-reversal-context-format-pg-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-format-pg-first.json",
-          "sha256": "2c3a50941348085eafaedeccbb4109f244ffd5247b839697273ca5160610db8c"
+        "v1052-financial-action-context-format-remaining-pg.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-format-remaining-pg.json",
+          "sha256": "7a1ae1b74e2d0c2c91462375af718939c005d7fdba73f5328297d9a493c1e0e5"
         },
-        "v1052-payment-reversal-context-format-pg-style-corrected.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-format-pg-style-corrected.json",
-          "sha256": "d6ee36728244e92975ca1fecc8a9ea39ff0660b305e482f4a3703533b365119f"
+        "v1052-financial-action-context-format-style-corrected.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-format-style-corrected.json",
+          "sha256": "6afba3cd6980a6a8a4b5ffd37877388c2e6db7d33b3ad2f7e7c5c92db97b45fc"
         },
-        "v1052-payment-reversal-context-frontend-browser-added.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-browser-added.json",
-          "sha256": "6d406da3ff6586141b0688c59f60d23ff9d28e40a140783949784803d43eff62"
+        "v1052-financial-action-context-frontend-debit-position-red.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-frontend-debit-position-red.json",
+          "sha256": "5a4bed295bd5896a7a771b79c06b9b804c0aa76da6a04e220ec12054cc761dde"
         },
-        "v1052-payment-reversal-context-frontend-context-tests-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-context-tests-first.json",
-          "sha256": "95f3f1bc0dfa3e41ca5746d1fd1e655b1b8e05dd33d916337ce85d0927ddf6da"
+        "v1052-financial-action-context-frontend-static-browser-added.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-frontend-static-browser-added.json",
+          "sha256": "44e215acfb1283abe64ab6282ae12744d7f991150c09357ff79d2ddca80bd9e4"
         },
-        "v1052-payment-reversal-context-frontend-correction1-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-correction1-first.json",
-          "sha256": "93ccb1bd4de61d1ff62919af450220a113f90fc2a36c1bfdf8ff2a91e428d10d"
+        "v1052-financial-action-context-frontend-static-browser-narrowing-corrected.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-frontend-static-browser-narrowing-corrected.json",
+          "sha256": "d2b5cc89c64abdcf74c0678545fd15b4a112da10bb7fae09b2f48734e5f1531d"
         },
-        "v1052-payment-reversal-context-frontend-correction1-red-installed.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-correction1-red-installed.json",
-          "sha256": "32e674bfd25c5f71c7090e10f18bdceb6340dac291168355a40f45d62b4082b4"
+        "v1052-financial-action-context-frontend-static-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-frontend-static-first.json",
+          "sha256": "7bfc9ffbdd2999bbddc7ceaff01d38043f7660e3939dedc609cc4db4c668dc6d"
         },
-        "v1052-payment-reversal-context-frontend-implementation-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-implementation-first.json",
-          "sha256": "d8209098a7ec9765cef1131957dbf3a20f6be2197bc38fc06db07f46afa942ba"
+        "v1052-financial-action-context-frontend-static-value-corrected.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-frontend-static-value-corrected.json",
+          "sha256": "cc36eac7f832cace65b2e5aa4fd8a6cbe4fe7fce2a9e15a7d98536e75ce01930"
         },
-        "v1052-payment-reversal-context-frontend-narrowing-corrected.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-narrowing-corrected.json",
-          "sha256": "4844645e691cbbdbb8baff377c14206f71af7e3faee777680470a447249aa664"
+        "v1052-financial-action-context-frontend-static-with-tests.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-frontend-static-with-tests.json",
+          "sha256": "f32e643b44f47e345ad9c1cf3e7d43f4dbf8c51f8029a7bafc17fd74afb88475"
         },
-        "v1052-payment-reversal-context-frontend-void-red-installed.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-void-red-installed.json",
-          "sha256": "36b2745bebba80652ee698232cbfa505ca062ffa8c673885a914dc2d4e9dc718"
+        "v1052-financial-action-context-postgresql-client-fixtures-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-postgresql-client-fixtures-first.json",
+          "sha256": "ef561a6fe62b9c43a2e664cdca705c1d839a5a02e58fff997a42fa502a1d6aa0"
         },
-        "v1052-payment-reversal-context-postgresql-deposit-fixture-corrected.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-deposit-fixture-corrected.json",
-          "sha256": "2c323dbe644f4257fa28c83db916e130603f9c6cbef0104e8c353ef82157a002"
+        "v1052-financial-action-context-postgresql-remaining-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-postgresql-remaining-first.json",
+          "sha256": "44bc81e8392e1cc2e3499ec9bd4800bb30b0884ca9882d21cb9340afa8976c94"
         },
-        "v1052-payment-reversal-context-postgresql-expanded-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-expanded-first.json",
-          "sha256": "1a769748901acbaac52f1b096063c5efe319e4f0592b59998360e2eef4a82121"
-        },
-        "v1052-payment-reversal-context-postgresql-focused-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-focused-first.json",
-          "sha256": "4750a8ce8a68b63044f0ff72ef027bad865cd7f3b726bb117c82782d75de40c2"
-        },
-        "v1052-payment-reversal-context-postgresql-void-red.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-void-red.json",
-          "sha256": "aa9f61698f792650032ca659426436f890c8f4400367bd253e5f913e0f3e042a"
-        },
-        "v1052-payment-reversal-context-trace-first.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-trace-first.json",
-          "sha256": "99948ec8544e68d24e57f59efe3032d7b1e7b1bd6c6b3bf3b1284804e5cdd02a"
+        "v1052-financial-action-context-trace-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-trace-first.json",
+          "sha256": "2f31bf82a3b8773ae6aa0f36a1e6e285802adff0b1b68d2477c5deff77fc29de"
         }
       },
-      "helper_failure_evidence": {
-        "finish_payment_reversal_context_inventory.py": {
-          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/finish_payment_reversal_context_inventory.py",
-          "sha256": "42c715f9feedae3ee7b9bd8c61bb67e2978513d4be70904066bff940eddb0571",
-          "qualification": "Updated only declared head expectations/route inventory/PG registration and scope; stopped before writing migration due unterminated intermediate literal. Format recovery independently verified identical emitted SQL tokens."
+      "retained_helper_evidence": {
+        "financial-action-context-prefreeze-helper-failure.json": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/financial-action-context-prefreeze-helper-failure.json",
+          "sha256": "58a81ee64f3b7015ffd18ed37abe7d5fa9629ce75abe5a65e4293d2b58678534"
         },
-        "add_context_void_regression.py": {
-          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/add_context_void_regression.py",
-          "sha256": "66ebece1ee602eeff3a20a5b341f17be65844a42ce1d730318605c5ab64668af",
-          "qualification": "Installed backend test then stopped before frontend edit because formatted whitespace did not match. The following frontend targeted run skipped112tests and is not a passing regression result. Separate completed install produced the retained actual red1FAIL112skips."
+        "financial-action-context-helper-preflight-failure.json": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/financial-action-context-helper-preflight-failure.json",
+          "sha256": "241a49d35e919facb0bb5f90200028bd474ebc7f9a21123c875481f08d56d9cd"
         },
-        "register_context_void_trace.py": {
-          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/register_context_void_trace.py",
-          "sha256": "d4d1a463bdf86dae762eeb3c613f62473ccb6f0760c049581255fb170a3c518b",
-          "qualification": "Registered the new database mapping then stopped before the expected-ID assertion because formatter split a long line. Separate completion retained the mapping and finished the assertion;23tracePASS."
+        "financial-action-context-remaining-runner-correction.json": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/financial-action-context-remaining-runner-correction.json",
+          "sha256": "0006d51f2e46dc83d0b2f55d1f1c96dffeb1ec201d52b198de7912e934181d01"
+        },
+        "financial-action-context-synthetic-database-fixtures.json": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/financial-action-context-synthetic-database-fixtures.json",
+          "sha256": "9285948373076ecf86a2bf49839ad973359beb6ea4100cd32e852dfe44281c1d"
+        },
+        "financial-action-context-synthetic-database-fixtures-corrected.json": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/financial-action-context-synthetic-database-fixtures-corrected.json",
+          "sha256": "d698efe3dfa3d0edc85f743f11d821da6af28b75ccf2039feb34356a93b6fe28"
+        },
+        "financial-action-context-remaining-postgresql.sh": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/financial-action-context-remaining-postgresql.sh",
+          "sha256": "e51a80a12169f5b9ce456f9a8e93c1f61f68cd13c53e7ff8ff6361458785fac1"
         }
       },
-      "focused_results": "130client including17new correction cases,24trace,9Chromiumgroups and actual TypeScript-project/lint/format PASS.17failed-check receipts retained including actual rejected-runtime15FAIL2PASS113skips and two corrected lint diagnostics.",
-      "remaining_exact_gates": "Fresh successor full exact gates plus complete431-base zero review; no bounded acceptance.",
-      "draft_regression_corrections": [
-        "New migration CASE cursor syntax corrected;12focusedPGPASS.",
-        "New fixture corrected to respect unique Deposit/Payment receipt; all history/guards retained.",
-        "Historical Deposit result unsupported active application gap reproduced then fixed;19focusedPGPASS.",
-        "Historical VOID Invoice incorrectly retained80000 outstanding instead of0; actual backend and client reds reproduced, corrected to existing authoritative snapshot behavior;20PG/113clientPASS."
-      ],
-      "browser_applicability": "Final7groups PASS with exact current source hashes.6existingcommand groups also required at exact candidate. Browser/server stopped after focused verification.",
-      "evidence_qualifications": [
-        "Early root tsconfig --noEmit invocation checked no referenced projects; final recorded frontend gates use actual tsc -b.",
-        "Initial statement-timeout draft used an unmatched parameter query and only proved unavailable; corrected test executes pg_sleep with two typed parameters and proves4.5..8s deadline.",
-        "One targeted frontend red ran before its helper completed and skipped112; not regression evidence. Actual installed red1FAIL112skips retained.",
-        "No full PostgreSQL run after final VOID correction yet; prior full952 and focused20 are distinct evidence."
-      ],
-      "rejected_candidate": "f48f4c4ea25cfd8df0a8d966f60249eeff12b9bb",
-      "rejected_review": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-rejected-f48f4c4.json",
-        "sha256": "1d1bf87da32b52892a4c3f184b8148599888782b737d97b3d603270a364c852e"
-      },
-      "correction_plan": [
-        {
-          "id": "PRC-F48-M1",
-          "severity": "MEDIUM",
-          "fingerprint": "A continuation reply loses its originating cursor and can be accepted as a complete first/final page",
-          "approach": "Bind each actual client reply to an immutable module-private WeakMap receipt containing normalized captured actor/Property/Payment/view/cursor/limit/request identity and original validated data/page. Sequence obtains provenance from that receipt; omitted or falsified caller cursor cannot replace actual request provenance. Reject copies, fabricated or mutated replies. Separate sequence into a module importing the client and validators to avoid an import cycle. Add actual-client impact/result red-green tests and browser continuation controls."
-        },
-        {
-          "id": "PRC-F48-M2",
-          "severity": "MEDIUM",
-          "fingerprint": "TypeScript readonly constructor properties are mutable at runtime and can reattribute completed or multi-page context",
-          "approach": "Use private scope fields and read-only accessors, freeze the sequence public object against assignment/definition/prototype changes, and use private bindings during all validation. Private progression remains mutable. Verify attempted mutations before/during/after completion and mixed-actor continuation with Object.assign and property-definition probes."
-        }
-      ],
-      "correction_started_at": "2026-09-07T21:34:30.158850+00:00",
-      "correction_paths": [
-        "frontend/src/paymentReversalContext.ts",
-        "frontend/src/paymentReversalContextSequence.ts",
-        "frontend/src/financialReferenceClient.ts",
-        "frontend/src/financialReferenceClient.test.ts",
-        "frontend/src/test/financialReferences.browser.ts",
-        "backend/tests/test_traceability.py",
-        "ops/NOW.md",
-        "ops/STATE.json",
-        "ops/QUEUE.md",
-        "ops/traceability.json",
-        "ops/V1_052_PAYMENT_REVERSAL_CONTEXT.md"
-      ],
       "reconciliation": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-correction1-reconciliation.json",
-        "sha256": "e767f0b27cdbc7877f09aa82b4d99acbcfb5319bc3811c79320be06c7e2d5335"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-action-context-prefreeze-reconciliation.json",
+        "sha256": "60c06ecc1a489eb62934cbe9275d37357fc99dc2e5483d165881d12427ca353a"
       }
     },
     "accepted_read_slice": {
@@ -5118,6 +5111,251 @@
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-references-rejected-456910f.json",
         "sha256": "8f27e1fcfe5fa1c5db30093dfed15719c3a1579f54d713f162c3f2f78782a221"
       }
+    },
+    "accepted_payment_reversal_context_slice": {
+      "id": "V1-052-payment-reversal-context",
+      "status": "accepted",
+      "base": "431f23afbe9d35a0a6479218c4782f21337b14fe",
+      "started_at": "2026-09-07T19:53:22.780447+00:00",
+      "affected_paths": [
+        "backend/migrations/versions/20260908_46_payment_reversal_context.py",
+        "backend/src/property_rental/payment_reversal_context.py",
+        "backend/src/property_rental/payment_reversal_context_api.py",
+        "backend/src/property_rental/app.py",
+        "backend/tests/test_payment_reversal_context.py",
+        "backend/tests/test_payment_reversal_context_api.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_initial_owner_bootstrap_cli.py",
+        "backend/tests/test_migrations.py",
+        "backend/tests/test_traceability.py",
+        "scripts/database-test.sh",
+        "frontend/src/paymentReversalContext.ts",
+        "frontend/src/financialReferenceClient.ts",
+        "frontend/src/financialReferenceClient.test.ts",
+        "frontend/src/test/financialReferences.browser.ts",
+        "ops/NOW.md",
+        "ops/STATE.json",
+        "ops/QUEUE.md",
+        "ops/traceability.json",
+        "ops/V1_052_PAYMENT_REVERSAL_CONTEXT.md",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_utility_meter_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_invoice_migration.py",
+        "frontend/src/paymentReversalContextSequence.ts"
+      ],
+      "scope": "Original complete28-path Payment reversal context plus one sequence-module extraction; correction1 only protects actual request provenance and runtime scope bindings with regressions/trace/durable records. No backend runtime, migration, financial command/guard, dependency, canonical, general action-reference or UI implementation change.",
+      "docs": [
+        "002_BUSINESS_RULES.md",
+        "004_DATABASE_MODEL.md",
+        "005_API_SPECIFICATION.md",
+        "006_UI_SPECIFICATION.md",
+        "007_TESTING_STRATEGY.md",
+        "008_SECURITY_MODEL.md"
+      ],
+      "plan": [
+        "Verify every relevant revision guard and active/source graph against actual schemas.",
+        "Add narrow read-only projection with bounded keysets and fixed revision evidence.",
+        "Add strict exact-Property/action-authorized HTTP route and source-compatible exact client.",
+        "Add unit/API/isolatedPostgreSQL/concurrency/authorization/pagination/no-write/browser regressions and traceability.",
+        "Freeze normal candidate; exact full gates and complete-base independent zero review."
+      ],
+      "model": "gpt-6-astra",
+      "reasoning": "xhigh",
+      "mode": "Standard/default",
+      "reasoning_reason": "Financial authorization, cross-domain concurrency and new narrow database privilege require xhigh under existing policy.",
+      "implementation_owner": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "correction_attempt": 1,
+      "standing_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
+        "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
+      },
+      "migration_inventory_extension": {
+        "at": "2026-09-07T20:06:32.439802+00:00",
+        "paths": [
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_utility_meter_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_invoice_migration.py"
+        ],
+        "reason": "Only existing current-head expectations must advance to46. Pinned45 migration identity/down-revision/privilege tests remain45; all financial/data assertions retained."
+      },
+      "focused_evidence": {
+        "frontend-correction1-browser-added": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-correction1-browser-added.json",
+          "sha256": "c9b7283b30a74eb3cf7272e33f4d6317d4092af0343b7adeb3bca925bb91eff9"
+        },
+        "trace-correction1": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-trace-correction1.json",
+          "sha256": "4b8c9750785ffd3ff8940575004d6bb1fa14e2d887b7894e20a979ef0b9d4f18"
+        },
+        "browser-correction1-focused": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-browser-correction1-focused.json",
+          "sha256": "3308fc853abc4407c419dc0fbe554ee516e3de95d0f1c00ed41e1ddfaaf2c2ca"
+        }
+      },
+      "retained_failed_checks": {
+        "v1052-payment-reversal-context-backend-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-backend-first.json",
+          "sha256": "036f6da89f53d494c03711fc3c27dedaf41d9fe1dbec7d801c1bbba7ae453b2b"
+        },
+        "v1052-payment-reversal-context-format-backend-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-format-backend-first.json",
+          "sha256": "aaff52d7f764f1155b7fe6fe1d11a8dbe54f761ab88781fc85c9268f358945e7"
+        },
+        "v1052-payment-reversal-context-format-pg-additional-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-format-pg-additional-first.json",
+          "sha256": "18151bfa0bf438b68673db9ee3e0c089258ed8ca0094d1c499b9088976d78a4a"
+        },
+        "v1052-payment-reversal-context-format-pg-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-format-pg-first.json",
+          "sha256": "2c3a50941348085eafaedeccbb4109f244ffd5247b839697273ca5160610db8c"
+        },
+        "v1052-payment-reversal-context-format-pg-style-corrected.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-format-pg-style-corrected.json",
+          "sha256": "d6ee36728244e92975ca1fecc8a9ea39ff0660b305e482f4a3703533b365119f"
+        },
+        "v1052-payment-reversal-context-frontend-browser-added.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-browser-added.json",
+          "sha256": "6d406da3ff6586141b0688c59f60d23ff9d28e40a140783949784803d43eff62"
+        },
+        "v1052-payment-reversal-context-frontend-context-tests-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-context-tests-first.json",
+          "sha256": "95f3f1bc0dfa3e41ca5746d1fd1e655b1b8e05dd33d916337ce85d0927ddf6da"
+        },
+        "v1052-payment-reversal-context-frontend-correction1-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-correction1-first.json",
+          "sha256": "93ccb1bd4de61d1ff62919af450220a113f90fc2a36c1bfdf8ff2a91e428d10d"
+        },
+        "v1052-payment-reversal-context-frontend-correction1-red-installed.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-correction1-red-installed.json",
+          "sha256": "32e674bfd25c5f71c7090e10f18bdceb6340dac291168355a40f45d62b4082b4"
+        },
+        "v1052-payment-reversal-context-frontend-implementation-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-implementation-first.json",
+          "sha256": "d8209098a7ec9765cef1131957dbf3a20f6be2197bc38fc06db07f46afa942ba"
+        },
+        "v1052-payment-reversal-context-frontend-narrowing-corrected.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-narrowing-corrected.json",
+          "sha256": "4844645e691cbbdbb8baff377c14206f71af7e3faee777680470a447249aa664"
+        },
+        "v1052-payment-reversal-context-frontend-void-red-installed.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-frontend-void-red-installed.json",
+          "sha256": "36b2745bebba80652ee698232cbfa505ca062ffa8c673885a914dc2d4e9dc718"
+        },
+        "v1052-payment-reversal-context-postgresql-deposit-fixture-corrected.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-deposit-fixture-corrected.json",
+          "sha256": "2c323dbe644f4257fa28c83db916e130603f9c6cbef0104e8c353ef82157a002"
+        },
+        "v1052-payment-reversal-context-postgresql-expanded-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-expanded-first.json",
+          "sha256": "1a769748901acbaac52f1b096063c5efe319e4f0592b59998360e2eef4a82121"
+        },
+        "v1052-payment-reversal-context-postgresql-focused-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-focused-first.json",
+          "sha256": "4750a8ce8a68b63044f0ff72ef027bad865cd7f3b726bb117c82782d75de40c2"
+        },
+        "v1052-payment-reversal-context-postgresql-void-red.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-postgresql-void-red.json",
+          "sha256": "aa9f61698f792650032ca659426436f890c8f4400367bd253e5f913e0f3e042a"
+        },
+        "v1052-payment-reversal-context-trace-first.json": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-trace-first.json",
+          "sha256": "99948ec8544e68d24e57f59efe3032d7b1e7b1bd6c6b3bf3b1284804e5cdd02a"
+        }
+      },
+      "helper_failure_evidence": {
+        "finish_payment_reversal_context_inventory.py": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/finish_payment_reversal_context_inventory.py",
+          "sha256": "42c715f9feedae3ee7b9bd8c61bb67e2978513d4be70904066bff940eddb0571",
+          "qualification": "Updated only declared head expectations/route inventory/PG registration and scope; stopped before writing migration due unterminated intermediate literal. Format recovery independently verified identical emitted SQL tokens."
+        },
+        "add_context_void_regression.py": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/add_context_void_regression.py",
+          "sha256": "66ebece1ee602eeff3a20a5b341f17be65844a42ce1d730318605c5ab64668af",
+          "qualification": "Installed backend test then stopped before frontend edit because formatted whitespace did not match. The following frontend targeted run skipped112tests and is not a passing regression result. Separate completed install produced the retained actual red1FAIL112skips."
+        },
+        "register_context_void_trace.py": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/register_context_void_trace.py",
+          "sha256": "d4d1a463bdf86dae762eeb3c613f62473ccb6f0760c049581255fb170a3c518b",
+          "qualification": "Registered the new database mapping then stopped before the expected-ID assertion because formatter split a long line. Separate completion retained the mapping and finished the assertion;23tracePASS."
+        }
+      },
+      "focused_results": "130client including17new correction cases,24trace,9Chromiumgroups and actual TypeScript-project/lint/format PASS.17failed-check receipts retained including actual rejected-runtime15FAIL2PASS113skips and two corrected lint diagnostics.",
+      "remaining_exact_gates": "Fresh successor full exact gates plus complete431-base zero review; no bounded acceptance.",
+      "draft_regression_corrections": [
+        "New migration CASE cursor syntax corrected;12focusedPGPASS.",
+        "New fixture corrected to respect unique Deposit/Payment receipt; all history/guards retained.",
+        "Historical Deposit result unsupported active application gap reproduced then fixed;19focusedPGPASS.",
+        "Historical VOID Invoice incorrectly retained80000 outstanding instead of0; actual backend and client reds reproduced, corrected to existing authoritative snapshot behavior;20PG/113clientPASS."
+      ],
+      "browser_applicability": "Final7groups PASS with exact current source hashes.6existingcommand groups also required at exact candidate. Browser/server stopped after focused verification.",
+      "evidence_qualifications": [
+        "Early root tsconfig --noEmit invocation checked no referenced projects; final recorded frontend gates use actual tsc -b.",
+        "Initial statement-timeout draft used an unmatched parameter query and only proved unavailable; corrected test executes pg_sleep with two typed parameters and proves4.5..8s deadline.",
+        "One targeted frontend red ran before its helper completed and skipped112; not regression evidence. Actual installed red1FAIL112skips retained.",
+        "No full PostgreSQL run after final VOID correction yet; prior full952 and focused20 are distinct evidence."
+      ],
+      "rejected_candidate": "f48f4c4ea25cfd8df0a8d966f60249eeff12b9bb",
+      "rejected_review": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-rejected-f48f4c4.json",
+        "sha256": "1d1bf87da32b52892a4c3f184b8148599888782b737d97b3d603270a364c852e"
+      },
+      "correction_plan": [
+        {
+          "id": "PRC-F48-M1",
+          "severity": "MEDIUM",
+          "fingerprint": "A continuation reply loses its originating cursor and can be accepted as a complete first/final page",
+          "approach": "Bind each actual client reply to an immutable module-private WeakMap receipt containing normalized captured actor/Property/Payment/view/cursor/limit/request identity and original validated data/page. Sequence obtains provenance from that receipt; omitted or falsified caller cursor cannot replace actual request provenance. Reject copies, fabricated or mutated replies. Separate sequence into a module importing the client and validators to avoid an import cycle. Add actual-client impact/result red-green tests and browser continuation controls."
+        },
+        {
+          "id": "PRC-F48-M2",
+          "severity": "MEDIUM",
+          "fingerprint": "TypeScript readonly constructor properties are mutable at runtime and can reattribute completed or multi-page context",
+          "approach": "Use private scope fields and read-only accessors, freeze the sequence public object against assignment/definition/prototype changes, and use private bindings during all validation. Private progression remains mutable. Verify attempted mutations before/during/after completion and mixed-actor continuation with Object.assign and property-definition probes."
+        }
+      ],
+      "correction_started_at": "2026-09-07T21:34:30.158850+00:00",
+      "correction_paths": [
+        "frontend/src/paymentReversalContext.ts",
+        "frontend/src/paymentReversalContextSequence.ts",
+        "frontend/src/financialReferenceClient.ts",
+        "frontend/src/financialReferenceClient.test.ts",
+        "frontend/src/test/financialReferences.browser.ts",
+        "backend/tests/test_traceability.py",
+        "ops/NOW.md",
+        "ops/STATE.json",
+        "ops/QUEUE.md",
+        "ops/traceability.json",
+        "ops/V1_052_PAYMENT_REVERSAL_CONTEXT.md"
+      ],
+      "reconciliation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-correction1-reconciliation.json",
+        "sha256": "e767f0b27cdbc7877f09aa82b4d99acbcfb5319bc3811c79320be06c7e2d5335"
+      },
+      "candidate": "c65a7cb240ca3e0e67b6802e1ea25b668ae82e3a",
+      "acceptance_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-accepted-c65a7cb.json",
+      "acceptance_sha256": "8257d9b2430d1b41de5f3b6094f63b58f06d3d9a613cec6aa7077658a3330a3c",
+      "review_findings": {
+        "HIGH": 0,
+        "MEDIUM": 0,
+        "LOW": 0
+      },
+      "report": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-review-c65a7cb.md",
+      "report_sha256": "c87c3d0a12785a012f0d66d3940927e529fe2f95ea6b3a632f8ce2296891d8cc",
+      "completed_at": "2026-09-07T22:11:18.258375+00:00",
+      "rejectedf48_preserved": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-rejected-f48f4c4.json",
+        "sha256": "1d1bf87da32b52892a4c3f184b8148599888782b737d97b3d603270a364c852e"
+      }
     }
   },
   "historical_v1_048_takeover": {
@@ -5870,9 +6108,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "f48f4c4ea25cfd8df0a8d966f60249eeff12b9bb",
+  "commit": "c65a7cb240ca3e0e67b6802e1ea25b668ae82e3a",
   "idle_reason": null,
-  "next_action": "Freeze normal11-path correction1 successor of rejectedf48; run fresh exact953PostgreSQL/2358backend930DB-onlyskips/737frontend/182static/build/import/189automation/config/trace/guard/preservation and9reference/context plus6command Chromium groups. Then ONE fresh complete431-base two-commit29-path Astra/max/Standard/enforced-read-only independent zero review under standing through53 authority. Preserve all rejected candidates/reports and red-green evidence. Continue necessary action reads/staff UI/full52 cumulative release/publication/exactCI/refs/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+  "next_action": "Create the normal31-path financial action-context candidate from acceptedc65; run fresh exact full PostgreSQL/backend/frontend/static/migration/build/import/automation/configuration/trace/guard/preservation and12reference/context plus6command Chromium groups. Then ONE completec65-base Astra/max/Standard/enforced-read-only zero review under standing through53 authority. Preserve all accepted/rejected candidates/reports and every failed check. Continue staff UI/full52 cumulative release/publication/exactCI/ref/SAME-card/durable closure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -5880,8 +6118,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Normal correction1 containing commit; resolved externally with immutable candidate SHA/tree.",
-  "candidate_parent": "f48f4c4ea25cfd8df0a8d966f60249eeff12b9bb",
+  "candidate_resolution": "Normal containing31-path commit resolved externally; immutable exact candidate remains frozen through full gates/review.",
+  "candidate_parent": "c65a7cb240ca3e0e67b6802e1ea25b668ae82e3a",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -5944,7 +6182,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 Payment reversal context correction1 focused verified; normal successor freeze pending",
+  "phase": "V1-052 financial action context focused verified; containing candidate pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -7055,7 +7293,8 @@
     "Financial references focused183backend/API/KHR/inventory/933PG/42frontend/22trace/3browser/changedstaticPASS. PGfixture1FAIL932PASS then933PASS after retiring only105owned methods; cursor2FAIL1PASS targeted then42PASS after normalization; all formatting/type/helper failures retained.37newmaps1549preserved=1586. Full exact containing-candidate gates and zero review pending.",
     "456REJECT0HIGH1MEDIUM2LOW;correction1 red6backendFAIL18PASS and16frontendFAIL6PASS. Focused207backend/API/KHR/inventory,197frontend/recovery,22trace,177static unchanged inventory,11actualbrowsergroupsPASS. Shared-fixture1FAIL196PASS retained then197PASS after isolated boolean copies. Two PG932PASS1NOWAIT failures retained; actual-test-database diagnostic full933PASS with unchanged assertions/settings/source, original holder not proven. Exact successor gates/review pending; no tests repeated for approval.",
     "Payment reversal context focused87unit/API/inventory,20PG,113client,23trace,7Chromiumgroups/staticPASS. Full952PG passed before final voided-Invoice projection correction; exact953PG pending. Historical Deposit unsupported-application and VOID Invoice result gaps reproduced/corrected. All parser/fixture/lint/type/trace/helper failures retained;112-skipped premature frontend red explicitly not evidence.38newmaps preserve1598prior=1636. Exact containing-candidate full gates and independent zero review remain required.",
-    "Payment reversal context correction1: actual rejected runtime15FAIL2PASS113skips preserved; corrected130client/24trace/9Chromiumgroups/TypeScript-project/lint/formatPASS. Actual client provenance rejects final-only/copied/mutated replies and immutable runtime scope rejects assignment/shadowing/prototype and mixed-actor pages.8newmaps preserve1636parent/1598base=1644. All backend runtime/migrations/financial commands/dependencies unchanged. Successor exact gates and complete431-base zero review pending."
+    "Payment reversal context correction1: actual rejected runtime15FAIL2PASS113skips preserved; corrected130client/24trace/9Chromiumgroups/TypeScript-project/lint/formatPASS. Actual client provenance rejects final-only/copied/mutated replies and immutable runtime scope rejects assignment/shadowing/prototype and mixed-actor pages.8newmaps preserve1636parent/1598base=1644. All backend runtime/migrations/financial commands/dependencies unchanged. Successor exact gates and complete431-base zero review pending.",
+    "215backend/API/inventory;225client;28PGfullmodule then5newPGcases=33covered;25trace;12Chromiumgroups;backend6type/source checks andfrontend actual project types/lint/format PASS.56newmaps preserve1644=1700. Every draft failure retained."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -7077,7 +7316,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-07T21:44:57.850115+00:00",
+  "timestamp": "2026-09-07T23:29:25.898465+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -7309,7 +7548,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-07T21:44:57.850115+00:00",
+  "updated_at": "2026-09-07T23:29:25.898465+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -8491,9 +8730,9 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_exact_correction1_gates_and_complete_base_review",
-    "base_sha": "431f23afbe9d35a0a6479218c4782f21337b14fe",
-    "parent_sha": "f48f4c4ea25cfd8df0a8d966f60249eeff12b9bb",
+    "status": "pending_exact_gates_and_complete_base_review",
+    "base_sha": "c65a7cb240ca3e0e67b6802e1ea25b668ae82e3a",
+    "parent_sha": "c65a7cb240ca3e0e67b6802e1ea25b668ae82e3a",
     "exact_sha": null,
     "model": "gpt-6-astra",
     "reasoning_effort": "max",
@@ -8503,9 +8742,9 @@
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
       "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
     },
-    "rejected_review": {
-      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-rejected-f48f4c4.json",
-      "sha256": "1d1bf87da32b52892a4c3f184b8148599888782b737d97b3d603270a364c852e"
+    "accepted_base": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-reversal-context-accepted-c65a7cb.json",
+      "sha256": "8257d9b2430d1b41de5f3b6094f63b58f06d3d9a613cec6aa7077658a3330a3c"
     },
     "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6"
   },
