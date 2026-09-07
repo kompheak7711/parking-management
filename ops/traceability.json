@@ -2,6 +2,534 @@
   "schema_version": 1,
   "entries": [
     {
+      "test_id": "test_credit_refund_http_exact_service_dispatch_and_private_response",
+      "upstream_ids": [
+        "API-061",
+        "API-062",
+        "API-063",
+        "API-064",
+        "API-065",
+        "API-066"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "All 15 routes dispatch the exact Property, actor and accepted service; responses retain private no-store, correlation, creation links and decimal KHR source facts."
+    },
+    {
+      "test_id": "test_credit_refund_http_denied_actor_or_grant_never_calls_financial_service",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-022",
+        "SEC-038"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Missing actors, unrelated capabilities and foreign Properties fail before any financial service call across all routes."
+    },
+    {
+      "test_id": "test_credit_refund_http_browser_and_idempotency_boundaries",
+      "upstream_ids": [
+        "SEC-028",
+        "SEC-036"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Every command rejects missing keys or CSRF/cookie, wrong origin and duplicate key/CSRF/origin/actor headers before financial dispatch."
+    },
+    {
+      "test_id": "test_credit_refund_http_strict_json_and_text_before_financial_dispatch",
+      "upstream_ids": [
+        "SEC-036",
+        "API-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Duplicate/nonfinite/invalid UTF8 bodies, surplus fields, oversized envelopes, whitespace and NUL evidence fail before financial dispatch."
+    },
+    {
+      "test_id": "test_credit_refund_http_requires_explicit_usd_currency",
+      "upstream_ids": [
+        "API-063",
+        "API-065",
+        "API-066",
+        "BR-CREDIT-011"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Credit and Refund financial bodies require explicit USD; missing, KHR and malformed currency cannot dispatch."
+    },
+    {
+      "test_id": "test_credit_refund_http_rejects_nonexact_or_out_of_range_amounts",
+      "upstream_ids": [
+        "BR-MONEY-001",
+        "SEC-036"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Fractional, boolean, string, nonpositive and out-of-bound scalar amounts fail before dispatch."
+    },
+    {
+      "test_id": "test_credit_refund_http_return_timestamp_must_be_exact_rfc3339",
+      "upstream_ids": [
+        "API-066",
+        "SEC-036"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Verified-return timestamps reject missing zone, invalid or non-exact precision and non-string values."
+    },
+    {
+      "test_id": "test_credit_refund_http_unknown_or_duplicate_query_rejected",
+      "upstream_ids": [
+        "API-020"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Unknown and duplicate query filters return 400 across every route without service calls."
+    },
+    {
+      "test_id": "test_credit_refund_http_page_limits_are_bounded_and_canonical",
+      "upstream_ids": [
+        "API-019",
+        "SEC-036"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "All four paged endpoints reject out-of-range and noncanonical page sizes."
+    },
+    {
+      "test_id": "test_credit_refund_http_cursor_binds_collection_resource_property_filter_and_event",
+      "upstream_ids": [
+        "API-019",
+        "SEC-019"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Opaque pagination retains exact microseconds and event identity; changed collection, Property, resource, Customer filter and malformed timestamp/id fail before reads."
+    },
+    {
+      "test_id": "test_credit_refund_http_cursor_malformed_encoding_is_not_an_empty_page",
+      "upstream_ids": [
+        "API-019",
+        "SEC-036"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Malformed, oversized, non-ASCII and missing-field cursor tokens return 400 rather than an empty history."
+    },
+    {
+      "test_id": "test_credit_refund_http_service_failures_keep_safe_unknown_outcome_and_key_reuse",
+      "upstream_ids": [
+        "API-013",
+        "SEC-028",
+        "SEC-039"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Financial absence, invalidity, conflict, key reuse and uncertain availability map to safe no-store errors with correlation and no SQL evidence."
+    },
+    {
+      "test_id": "test_credit_refund_http_scope_failure_prevents_financial_dispatch",
+      "upstream_ids": [
+        "SEC-038",
+        "SEC-039"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Failed runtime scope resolution prevents financial dispatch and hides private scope details."
+    },
+    {
+      "test_id": "test_credit_refund_http_unsupported_sources_and_mismatched_pet_review_fail_closed",
+      "upstream_ids": [
+        "API-065",
+        "BR-REFUND-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Unsupported KHR, active Security and Final Settlement sources and missing/extraneous Pet review links are rejected."
+    },
+    {
+      "test_id": "test_credit_refund_http_pet_creation_uses_only_qualified_existing_service",
+      "upstream_ids": [
+        "API-065",
+        "BR-REFUND-013"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Pet creation carries matching Deposit/review identities to the accepted Pet service, without the generic USD source command."
+    },
+    {
+      "test_id": "test_credit_refund_http_runtime_readers_never_borrow_writer_and_mutations_require_it",
+      "upstream_ids": [
+        "SEC-045",
+        "SEC-046"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Reads retain only runtime credentials; every mutation requires the financial identity; scope resolution uses the narrow runtime reader."
+    },
+    {
+      "test_id": "test_credit_refund_http_actual_stream_bound_precedes_financial_dispatch",
+      "upstream_ids": [
+        "SEC-036"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "All seven commands stop an oversized real ASGI stream at the third chunk despite a false Content-Length, without scope or financial calls."
+    },
+    {
+      "test_id": "test_credit_refund_http_application_detail_bound_and_immutable_intent",
+      "upstream_ids": [
+        "API-063",
+        "BR-CREDIT-007"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "One and 500 designated details reach an immutable exact intent; 501 fails before application; mutation of a detached intent cannot alter the command."
+    },
+    {
+      "test_id": "test_credit_refund_http_nested_application_money_is_exact_before_dispatch",
+      "upstream_ids": [
+        "API-063",
+        "BR-MONEY-001"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_api.py",
+      "status": "implemented",
+      "notes": "Nested application detail amounts reject boolean, fractional, string, nonpositive and out-of-bound values before financial dispatch."
+    },
+    {
+      "test_id": "test_credit_refund_http_real_recognition_read_pages_reverse_and_original_replay",
+      "upstream_ids": [
+        "API-061",
+        "API-062",
+        "SEC-028",
+        "BR-CREDIT-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_api_migration.py",
+      "status": "implemented",
+      "notes": "Real recognition list/detail/ledger pagination has no read effects; reversal preserves original replies, and changed-key payload conflicts."
+    },
+    {
+      "test_id": "test_credit_refund_http_real_proposal_application_details_reversal_and_replay",
+      "upstream_ids": [
+        "API-063",
+        "BR-CREDIT-009",
+        "SEC-028"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_api_migration.py",
+      "status": "implemented",
+      "notes": "Real proposal and application preserve exact target details; linked reversal restores target balance and exact replay returns each original reply."
+    },
+    {
+      "test_id": "test_credit_refund_http_real_usd_refund_return_reversal_original_fx_and_replays",
+      "upstream_ids": [
+        "API-064",
+        "API-065",
+        "API-066",
+        "BR-REFUND-005",
+        "BR-REFUND-010"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_api_migration.py",
+      "status": "implemented",
+      "notes": "USD and KHR Payment/Credit source matrices preserve original FX, USD payout/return values, correction paging, Customer filter and original command replies."
+    },
+    {
+      "test_id": "test_credit_refund_http_real_pet_requires_matching_review_and_preserves_lease",
+      "upstream_ids": [
+        "API-065",
+        "BR-REFUND-013"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_api_migration.py",
+      "status": "implemented",
+      "notes": "Real qualifying Pet review creates one matching Refund with exact replay, rejects unsupported Settlement fields and preserves the signed Lease."
+    },
+    {
+      "test_id": "test_credit_refund_http_real_fresh_actor_scope_and_nul_denial_have_no_effects",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-022",
+        "SEC-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_api_migration.py",
+      "status": "implemented",
+      "notes": "Fresh persisted actor disablement, wrong Property/capability and NUL denial produce no financial effects."
+    },
+    {
+      "test_id": "test_credit_refund_http_real_runtime_reads_need_no_writer_and_never_fall_back",
+      "upstream_ids": [
+        "SEC-045",
+        "SEC-046"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_api_migration.py",
+      "status": "implemented",
+      "notes": "Runtime-only HTTP reads succeed; creation and reversal without financial credentials fail unavailable without alternate execution."
+    },
+    {
+      "test_id": "test_credit_refund_http_real_competing_refunds_cannot_double_consume_credit",
+      "upstream_ids": [
+        "SEC-029",
+        "BR-REFUND-003"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_api_migration.py",
+      "status": "implemented",
+      "notes": "Competing 800-cent Refunds against 1000-cent Credit commit one payout, retain 200 cents and replay the winner without duplication."
+    },
+    {
+      "test_id": "test_credit_refund_http_real_correction_identity_cannot_cross_refunds",
+      "upstream_ids": [
+        "API-066",
+        "SEC-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_api_migration.py",
+      "status": "implemented",
+      "notes": "A correction belonging to another Refund cannot be reversed through a mismatched parent route and leaves both sources unchanged."
+    },
+    {
+      "test_id": "test_credit_refund_http_ledger_pages_preserve_all_seven_event_families",
+      "upstream_ids": [
+        "API-061",
+        "API-019",
+        "BR-CREDIT-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_api_migration.py",
+      "status": "implemented",
+      "notes": "Eight real events across all seven families survive one-event HTTP pages with exact running USD balances, actor identity and unchanged source facts."
+    },
+    {
+      "test_id": "test_credit_refund_http_large_ledger_keeps_cross_family_event_identity",
+      "upstream_ids": [
+        "API-061",
+        "API-019",
+        "BR-CREDIT-012"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_api_migration.py",
+      "status": "implemented",
+      "notes": "106 real events page 100 then six with no omissions; reused Credit/Refund UUIDs remain distinct family identities and reads preserve exact availability."
+    },
+    {
+      "test_id": "test_credit_refund_scope_runtime_readonly_exact_capability_and_uuid",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-022",
+        "SEC-045"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_read.py",
+      "status": "implemented",
+      "notes": "Only the exact endpoint grant reaches a runtime-only repeatable-read read-only transaction; resource/actor/Property parameters remain exact UUIDs."
+    },
+    {
+      "test_id": "test_credit_refund_scope_denies_missing_exact_grant_before_connection",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-022"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_read.py",
+      "status": "implemented",
+      "notes": "Unrelated read and command grants cannot establish Credit read scope or open a connection."
+    },
+    {
+      "test_id": "test_credit_refund_scope_malformed_actor_and_property_fail_before_connection",
+      "upstream_ids": [
+        "SEC-036",
+        "SEC-038"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_read.py",
+      "status": "implemented",
+      "notes": "Malformed and nil actor or Property identities fail before database access, including a malformed grant beside a valid grant."
+    },
+    {
+      "test_id": "test_credit_refund_scope_rejects_invalid_resource",
+      "upstream_ids": [
+        "SEC-036",
+        "SEC-037"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_read.py",
+      "status": "implemented",
+      "notes": "Resource allowlist and non-nil UUID validation reject invalid scope arguments before connection."
+    },
+    {
+      "test_id": "test_credit_refund_scope_safe_error_mapping",
+      "upstream_ids": [
+        "API-013",
+        "SEC-039"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_read.py",
+      "status": "implemented",
+      "notes": "Authorization, absence, input, timeout, serialization and connection errors map safely without private SQL evidence."
+    },
+    {
+      "test_id": "test_credit_refund_scope_rejects_malformed_or_foreign_result",
+      "upstream_ids": [
+        "SEC-038",
+        "SEC-039"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_read.py",
+      "status": "implemented",
+      "notes": "Malformed database results and Properties outside the exact grant fail closed."
+    },
+    {
+      "test_id": "test_credit_refund_scope_missing_resource",
+      "upstream_ids": [
+        "SEC-038"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_read.py",
+      "status": "implemented",
+      "notes": "Absent or null resource results report not-found."
+    },
+    {
+      "test_id": "test_credit_refund_read_missing_runtime_has_no_financial_fallback",
+      "upstream_ids": [
+        "SEC-045"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_read.py",
+      "status": "implemented",
+      "notes": "No runtime credential means unavailable; a read never opens a financial connection."
+    },
+    {
+      "test_id": "test_credit_refund_source_audit_exact_json_and_command_permission",
+      "upstream_ids": [
+        "BR-MONEY-001",
+        "SEC-022",
+        "SEC-045"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_read.py",
+      "status": "implemented",
+      "notes": "Source audit requires refunds.create for the exact Property; the connection loader retains bigint cents and decimal-string FX exactly."
+    },
+    {
+      "test_id": "test_credit_refund_source_audit_bounds_and_scope",
+      "upstream_ids": [
+        "SEC-038",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_credit_refund_read.py",
+      "status": "implemented",
+      "notes": "Cross-Property/source, malformed, nonfinite, invalid-Unicode and oversized source evidence fails closed without dropping evidence."
+    },
+    {
+      "test_id": "test_credit_refund_read_all_resource_scopes_and_no_side_effects",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-038",
+        "BR-CREDIT-001",
+        "BR-REFUND-003"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_read_migration.py",
+      "status": "implemented",
+      "notes": "Real resource resolution and immutable Payment/Credit audit preserve Payment, Receipt, serialization guard, Credit/Refund counts and audit rows; missing and wrong-Property resources fail closed."
+    },
+    {
+      "test_id": "test_credit_refund_read_application_and_deposit_scopes",
+      "upstream_ids": [
+        "SEC-019",
+        "SEC-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_read_migration.py",
+      "status": "implemented",
+      "notes": "Runtime scope resolves an accepted Credit application and qualified Pet Deposit to their actual Property."
+    },
+    {
+      "test_id": "test_credit_refund_read_fresh_human_and_missing_scope_fail_closed",
+      "upstream_ids": [
+        "SEC-023",
+        "SEC-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_read_migration.py",
+      "status": "implemented",
+      "notes": "A persisted disabled human, missing actor and registered SERVICE identity cannot resolve existing or missing sources or read source audit; no financial/audit side effects."
+    },
+    {
+      "test_id": "test_credit_refund_read_khr_audit_remains_original_exact_and_private",
+      "upstream_ids": [
+        "BR-MONEY-001",
+        "BR-MONEY-002",
+        "DB-PAY-003",
+        "SEC-045"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_read_migration.py",
+      "status": "implemented",
+      "notes": "Original KHR Payment and six-decimal channel rate are identical through Payment/Credit audit reads; no command fields or financial mutations."
+    },
+    {
+      "test_id": "test_credit_refund_read_sql_scope_rejects_invalid_boundaries",
+      "upstream_ids": [
+        "SEC-036",
+        "SEC-037",
+        "SEC-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_read_migration.py",
+      "status": "implemented",
+      "notes": "Runtime SQL rejects unknown resource kinds, nil identifiers, nil/null/nested Property values and empty/null grants with the expected safe SQLSTATE."
+    },
+    {
+      "test_id": "test_credit_refund_read_migration_graph_and_execute_only_privileges",
+      "upstream_ids": [
+        "SEC-045",
+        "SEC-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_read_migration.py",
+      "status": "implemented",
+      "notes": "Revision45 has only revision44 as parent and rejects downgrade; STABLE SECURITY DEFINER functions pin search_path and grant runtime EXECUTE only, while Credit/private command tables remain inaccessible."
+    },
+    {
+      "test_id": "test_credit_refund_read_confirmed_receipt_evidence_is_original_and_not_command_response",
+      "upstream_ids": [
+        "DB-PAY-002",
+        "DB-PAY-003",
+        "SEC-045",
+        "BR-MONEY-002"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_credit_refund_read_migration.py",
+      "status": "implemented",
+      "notes": "USD and KHR confirmations expose their original received time/evidence through Payment and Credit source reads, never the private idempotency key or command response; histories and guards remain unchanged."
+    },
+    {
       "test_id": "test_allocation_history_rejects_unbounded_or_coerced_pages",
       "upstream_ids": [
         "API-019",

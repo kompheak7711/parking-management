@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "V1-052 Allocation/Receipt HTTP inventory correction focused PASS; exact successor pending",
+    "phase": "V1-052 Credit/USDRefund HTTP all15 routes focused verified; normal freeze and full exact gates pending",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2048,7 +2048,7 @@
     "workboard_block_reason": "Tracking/evidence only, blocked solely against OpenClaw admission; no direct Codex policy blocker.",
     "worker_kind": "direct_root_codex",
     "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-    "worker_status": "sole_direct_coordinator_exact_verification_preparation",
+    "worker_status": "sole_direct_coordinator_full_exact_verification_preparation",
     "branch": "codex/v1-052-direct",
     "worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
     "planned_branch": "codex/v1-052-direct",
@@ -2057,8 +2057,8 @@
     "scope_sha256": "4ea866dfc9bd53de3f2ff52808891b6fc60d05f73283c2c3f0cea245d36c6363",
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
-    "candidate_resolution": "Containing normal inventory correction successor of retainedd3ae2d1; external exact receipt resolves after freeze",
-    "candidate_status": "retained_d3ae2d1_failed_inventory_successor_pending",
+    "candidate_resolution": "Containing normal23path Credit/USDRefund HTTP commit; resolve immutable exact SHA/tree from Git and external verification receipt after freeze. Accepted5f4bd41 remains the complete review base.",
+    "candidate_status": "focused_verified_normal_freeze_pending",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2070,7 +2070,7 @@
     "followup_prompt_sha256": "965b73fcae9e4719161566f3468bf856c533c4d6ce45e8e7c2ad960c4b8a4220",
     "live_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1052-v1053-live.md",
     "last_model_configuration_check": {
-      "timestamp": "2026-09-07T02:08:54.010751+00:00",
+      "timestamp": "2026-09-07T03:32:29.445027+00:00",
       "model": "gpt-6-astra",
       "reasoning_effort": "xhigh",
       "service_tier": "default",
@@ -2078,7 +2078,7 @@
       "provider_attestation": "unavailable"
     },
     "last_reconciliation": {
-      "checked_cycle": "released successor implementation cycle through 2026-09-07T02:49:10.644881+00:00",
+      "checked_cycle": "explicit owner review-approval cycle through 2026-09-07T03:32:29.445027+00:00",
       "main_sha": "a5dd97c8cde26008dcecf02be847561771092fe1",
       "published_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
       "ci_run": 34030703203,
@@ -2087,16 +2087,17 @@
       "main_clean": true,
       "worktrees": 127,
       "coordinator_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-      "workers": "sole root implementation; no running tests/reviewers at prefreeze record",
+      "workers": "review2607 COMPLETED EXIT0; no active reviewer/test or implementation worker beyond root",
       "native_followup": "same property-rental-v1-047-closure-follow-up ACTIVE10min on released successor",
       "native_prompt_sha256": "965b73fcae9e4719161566f3468bf856c533c4d6ce45e8e7c2ad960c4b8a4220",
       "openclaw": "singleton658ffdaf disabled30min/no nextRun; never dispatched",
-      "card": "74197a0e tracking-only blocked; null execution/claim/attempt; handoff comment93b18202 reconciles review",
+      "card": "74197a0e tracking-onlyblocked; bounded5facceptance in notes; all17priorcomments/events retained; no execution/claim/attempt",
       "predecessor_card": "c5621f97 done",
-      "provider_attestation": "unavailable; actual local Astra/xhigh/default Standard verified"
+      "provider_attestation": "unavailable; actual local Astra/xhigh/default Standard verified",
+      "review2607": "complete14paths/3commits0HIGH0MEDIUM0LOW"
     },
     "owner_action_required": false,
-    "next_action": "Finish API inventory correction1 by enumerating exactly7newcanonicalpaths/8methods while preserving exact OpenAPI/runtime equality and all bootstrap/security absence assertions. Focused inventory/static/trace checks, normal successor of retainedd3ae2d1, then fresh903PG/fullbackend/189automation/static-build-import/config gates and ONE Astra max Standard read-only COMPLETE14path1e79851-to-successor zero review. No source changes during review; remaining52 before53.",
+    "next_action": "Resolve the normal containing Credit/USDRefund HTTP commit from Git and immutable receipts. Run fresh full exact PostgreSQL/backend/170-file static/build-import/frontend/189-automation/config/traceability/preservation/guard gates, then one fresh independent Astra/max/Standard enforced read-only review of the complete23path base5f4bd41-to-candidate diff. Require zero findings before acceptance. Preserve all failures and approvals; remaining full52 lifecycle before53, at53closed pause SAME follow-up/no54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2121,112 +2122,104 @@
       "exact_tests": "189 PASS and all activation gates; execution78277 EXIT0; do not repeat"
     },
     "active_slice": {
-      "id": "V1-052-allocation-receipt-http",
-      "status": "api_inventory_correction1_active",
-      "started_at": "2026-09-06T20:12:00Z",
-      "base_sha": "1e79851ec5e8530d35927fe93ed2346c407a5820",
-      "scope": "Canonical API059/060/092 Allocation/proposal/history/post/linked reversal, coordinated Payment reversal and unique Receipt/detail/reprint/history HTTP; necessary fresh-authorized bounded read adapters, app wiring, focused unit/API/isolatedPG tests. Credit/Refund HTTP and UI remain subsequent slices.",
+      "id": "V1-052-credit-usd-refund-http",
+      "status": "focused_verified_exact_gates_and_review_pending",
+      "started_at": "2026-09-07T03:32:29.445027+00:00",
+      "base_sha": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
+      "scope": "API061\u2013066 Credit list/detail/ledger/recognition/application/approved linked reversals; Refund resource/source/create/verified-return/correction links over accepted services; preserve existing qualifyingPet and Reservation full-refund lifecycle. Frontend and wholeversion closure remain subsequent required work.",
       "model": "gpt-6-astra",
       "reasoning": "xhigh",
       "mode": "Standard",
       "no_policy_change": true,
-      "preparation_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-preparation.md",
-      "preparation_sha256": "41bfc8bfa8e74125036fa7f276098627a54cf4ecc164392b42b945c73f884074",
+      "preparation_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-usd-refund-http-preparation.md",
+      "preparation_sha256": "f1f4f5085c774771318d5f9d6c8faeacec72bf24950daef6c9f09aaf0aaa6703",
       "plan": [
-        "Read only affected canonical financial/security/commonAPI sections and existing accepted service/SQL/tests before edits.",
-        "Preserve accepted39/40 mutation services and fresh SQL guards; bounded read adapter verifies fresh active HUMAN and exactProperty in consistent read-only snapshot. No runtime-to-financial fallback or whole private idempotency response leak.",
-        "Expose only API059/060/092 routes; strict exactintent/schema/UTF8/streaming limits/duplicate rejection/cursors/capability/Origin-CSRF-actor-key/safe errors/correlation/no-store and explicit consequences.",
-        "Prove read-only proposals/no implicitmoney, exact source/value/FX/history/replay and current constraints, receipts oneidentity/reprints/no mutation on denied/unknownoutcome; isolatedPG+unitAPI tests and assertion-level traceability.",
-        "Normal candidate then fresh full applicable gates and ONE independent Astra max Standard read-only exact complete-diff zero review before bounded acceptance; full52publication/closure remains later."
+        "Reconcile exact canonical route/source/cursor/permission contracts and Reservation correction links before product edits.",
+        "Reuse accepted financial services and fresh HUMAN/exactProperty runtime resolution, no credential fallback or historical migration edits.",
+        "Strict UTF8 bounded command envelopes, exact USD money/KHRsourceaudit, CSRF/actor/key binding, safe errors/no-store, explicit replay only.",
+        "Unit/API/isolatedPostgreSQL source bounds, races, complete history and denied/unknown outcome regressions; exact route inventory and traceability immediately.",
+        "Normal freeze; all applicable fresh exact checks and ONE independent Astra max Standard enforced read-only complete-base zero review. Full52 release gates before53."
       ],
-      "remaining_version_scope": "Credit/USDRefund HTTP; financial staff clients/encrypted actorbound recovery/UI, frontend/browser/audits and fullproduct exactreview/publication/CI/refs/card/durableclosure before53",
-      "focused_foundation": {
-        "status": "PASS_NOT_SLICE_ACCEPTANCE",
-        "receipt_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-proposal-read-focused-verification.md",
-        "receipt_sha256": "61fad31e8469a238bfc58bea7cda6ab4b7eb73768474b4645a1dfc20f48d0948",
-        "tests": "22 unit,3 isolated PostgreSQL,161-file format/lint/mypy,22 traceability,0 new IDs; sessions32844/24618 COMPLETED EXIT0",
-        "public_routes_implemented": false,
-        "independently_reviewed": false,
-        "committed": false,
-        "engineering_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-next-after-proposal-read.md",
-        "engineering_handoff_sha256": "2d136ca1a0776726e2080c675c6fda93317d73fe497d64897b4ee0efec5f4a69"
-      },
-      "resumed_at": "2026-09-07T02:08:54.010751+00:00",
-      "coordinator_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-      "current_bounded_step": {
-        "status": "focused_verified_complete_in_candidate",
-        "scope": "Allocation history summaries and focused original evidence/detail pagination; fresh HUMAN/exact Property/read capability; preserve proposal and accepted commands",
-        "plan": [
-          "Bound summary pages without multiplying original proposal traces.",
-          "Expose focused full original header/proposal and paginated allocation details on the existing canonical history resource.",
-          "Bind cursor identity to exact Payment/allocation; validate before connection; fresh persisted human check before finance reads in one repeatable-read read-only snapshot.",
-          "Verify exact values, complete history including linked reversals, deny cases, pagination/worst-case byte bounds and no mutations in unit/isolated PostgreSQL tests."
+      "remaining_version_scope": "financialstaffclients/UI/encryptedactorboundrecovery/frontend/browser/audits/fullcumulativeexactreview/normalpublication/exactCI/refs/samecard/durableclosure before53",
+      "active_step": {
+        "id": "narrow_scope_and_source_audit_read_boundary",
+        "status": "verified_working_tree_no_acceptance",
+        "started_at": "2026-09-07T04:01:36.777242+00:00",
+        "contract_path": "ops/V1_052_CREDIT_REFUND_HTTP.md",
+        "contract_sha256": "d761437f4c3433674a30a8f559407feaf7c222c7a873065d4203b66336d2b1e5",
+        "purpose": "New forward-only revision45 adds two runtime-executable read-only SECURITY DEFINER functions for fresh active HUMAN resource-to-Property resolution and immutable Payment/Credit source audit. Existing Credit table restrictions, financial services and historical migrations remain unchanged.",
+        "checks": [
+          "Exact-capability/malformed scope/UUID denial before connection",
+          "Real PostgreSQL fresh HUMAN/exact Property/no side effects and unchanged runtime table restrictions",
+          "Exact KHR source audit and receipt evidence; forward-only 45-to-44 migration graph",
+          "Focused unit/PG/static first; full HTTP slice gates/review remain pending"
         ],
-        "acceptance": "Focused read tests first; no bounded-slice acceptance until complete HTTP/app tests, full exact candidate checks and fresh Astra max Standard zero complete-base review.",
-        "focused_initial_result": "161-file static PASS;39unit PASS; PostgreSQL5PASS2FAIL (test fixture/size assumptions); no slice acceptance",
-        "correction1": {
-          "status": "resolved_focused_postgresql_pass",
-          "fingerprints": [
-            "history cross-resource test assumed two Properties but canonical fixture uses singleton Property",
-            "500-detail real proposal95326bytes below arbitrary100000byte test expectation"
-          ],
-          "cause": "New test assumptions inconsistent with canonical fixture/data shape; no runtime issue established",
-          "changed_approach": "Assert legitimate same-Property cross-Customer read; add nonexistent exact Property and absent actual Property grant denials; assert actual500detail producer ceiling and payload larger than existing32768Payment cap, preserve all500details/page/byte/no-mutation checks",
-          "failed_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-history-read-focused-database.log",
-          "failed_log_sha256": "4efa096a14b9b10e09b9623eeb6a38d00fa93f82afe6d21fc7d781108281e0f1",
-          "failed_test_bytes": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-history-read-failed-fixture-tests.py"
-        },
-        "focused_final_result": "39unit PASS;161-file static PASS;7 isolatedPG PASS3.76s (6AllocationRead,1accepted historical regression); sessions84384/76975 COMPLETED EXIT0; initial63880 COMPLETED5PASS2FAIL retained"
+        "completed_at": "2026-09-07T04:24:15.636945+00:00"
       },
-      "http_completion_plan": {
+      "read_boundary_verification": {
+        "status": "verified_working_tree_no_acceptance",
+        "unit_traceability": "64PASS; 17new mappings,1421prior preserved",
+        "static": "167files formatting/lint/mypyPASS",
+        "backend": "1461PASS894DB-onlySKIP",
+        "build_import_config_traceability": "PASS",
+        "full_pg": "917PASS0skip serial diagnosis1 after retained916PASS1NOWAIT failure; original blocker unknown; no retry, skip, source change or claimed cause.",
+        "failed_pg_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-expanded-pgfull.json",
+        "next": "Implement all15 canonical Credit/USDRefund HTTP operations in ops/V1_052_CREDIT_REFUND_HTTP.md over the verified narrow reader and unchanged accepted services; wire app/no-store/error handlers and exact API inventory, add full unit/API/isolatedPG regressions and traceability. Freeze normal candidate from accepted5f4bd41, fresh applicable exact gates and independent Astra/max/Standard enforced read-only complete-base zero review. Then remaining full52 lifecycle before53; at53closed pause SAME follow-up/no54.",
+        "guard": "65fromtwoadditivecanonicalnotes; notes withdrawn and exactspecbytes restored; guardPASS, patch/receiptretained.",
+        "canonical_guard_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-canonical-guard-correction1.json",
+        "focused_recovery_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-focused-correction1.json",
+        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-working-tree-verification.json",
+        "receipt_sha256": "7247b6200d2018d9d414c688c00b86f13098527593350f18ea78efb2c3f84631",
+        "active_sessions": [],
+        "test_sessions_completed": [
+          5709,
+          80639,
+          89271,
+          34220,
+          76545,
+          89520,
+          83734,
+          60670
+        ]
+      },
+      "pre_read_boundary_root_tests": [
+        "883PG0skip/1248backend860DB-onlyskips/189automation/158static-build-import/all applicable config PASS;28585/67433/95329 COMPLETED EXIT0",
+        "ACCEPTED independent49722 completed19:58:46.444Z zero21paths/all7commits;315tests/61probes/static/preservationPASS, report73a8c404/acceptance0ad91c77. No independentlivePG; completed tests/review never repeated solely for stale pending records.",
+        "CURRENT Allocation/Receipt HTTP: final171HTTP/read +22traceability PASS; earlier287unit including acceptedPaymentHTTP and21isolatedPG PASS;164staticPASS. All failures retained; fresh full exact candidate checks and review pending. Focused receipt54b1bc883cd015801885c993d4994594fe998f5db27cd676e2f9d26f2e1c9ee2.",
+        "FAILED exactd3ae2d1 inventory1FAIL/1418PASS880DB-onlyskips;903PG0skip/189automation/staticPASS. All completed logs retained; inventorycorrection1 active, no reviewer.",
+        "ACCEPTED complete14path Allocation/Receipt5f4bd41:903PG/1419backend/189automation/164static-build-import/configPASS; independent2607COMPLETED0/0/0 (194tests/147HTTP/24ASGIprobes). Receipt9735754b024d84239c92bd739fe9c6f375fc2edb65312a6accb0265f2987ae29. No full52acceptance/publication; CreditUSDRefundHTTP next."
+      ],
+      "workboard_progress_note": {
+        "status": "approval_required_not_posted",
+        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-workboard-note-approval-block.json",
+        "prepared_note": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/outputs/workboard-progress-note.md",
+        "sha256": "c6b356b623ce4f8b2cfc81e7ca68c66f19c0c0a74efa336ee7d5523a683973fe",
+        "blocks_implementation": false,
+        "retry_only_after_explicit_payload_destination_approval": true
+      },
+      "http_step": {
+        "id": "canonical_credit_usd_refund_http_adapters",
         "status": "implemented_focused_verified",
-        "scope": "Canonical eight API059/060/092 endpoints and app wiring, exact source resolution, separate capabilities, CSRF/actor/idempotency, body cap262144 with canonical intent250000, UTF8, safe errors and bound cursors",
-        "contract": "Allocation history default/max50/100 sorted posted_at/id descending; allocation_id selects one original header/proposal plus details ascending sequence/id; opaque cursors bind Payment/allocation. Receipt reads embed original receipt/current context and paginated reprints with receipt-bound opaque cursor. Allocation creation201+historyLocation; reversals and reprints200 original command resource/replay."
-      },
-      "http_reason_validator_correction1": {
-        "status": "resolved_focused_unit_and_postgresql_pass",
-        "fingerprint": "Void service validator used as Pydantic AfterValidator erases valid reason; three valid reverse/reprint routes return422",
-        "cause": "_reason validates in place and returnsNone; AfterValidator requires returning the accepted field value",
-        "changed_approach": "Wrap the unchanged normalized bounded service validation and return the identical original reason; assert full HTTP dispatch preserves exact command reason",
-        "failed_result": "48368 COMPLETED:163-file mypy PASS;245HTTP PASS/3FAIL",
-        "failed_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-focused-unit-initial.log",
-        "failed_log_sha256": "ba1b0e096a2a5010f9cf32c92ca48dacb801a4a4faee17a5eb329778b5f24e34",
-        "failed_runtime": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-reason-validator-failed.py"
-      },
-      "focused_http_progress": {
-        "status": "focused_pass_exact_gates_and_review_pending",
-        "unit": "8796 COMPLETED287PASS28.93s;164-file mypyPASS. Later73215 COMPLETED newAPI/read171PASS and21tracePASS/1traceFAIL due manifest enum capitalization; test source and runtime unchanged after enum-only correction.",
-        "database": "93935 COMPLETED21isolatedPGPASS11.33s,0skips; new14HTTPcases plus6reader and1accepted history case. New cursor/concurrency-test refinements will be covered again by full exact PG gate.",
-        "traceability_correction": {
-          "fingerprint": "New manifest entries used api rather than required API enum",
-          "correction": 1,
-          "changed_approach": "Correct only fourteen new manifest enum values to existing schema API; preserve mapping IDs and all assertions",
-          "failed_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-prefreeze-unit-trace.log",
-          "failed_log_sha256": "f27a53f65b3c90f06f9b718a5ab3b70e18eba1803f42ee799b6d9ba55a963d21",
-          "status": "resolved_22_traceability_pass_session15326"
-        },
-        "type_fix_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-focused-correction1-unit.log",
-        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-focused-prefreeze.md",
-        "receipt_sha256": "54b1bc883cd015801885c993d4994594fe998f5db27cd676e2f9d26f2e1c9ee2",
-        "public_routes_implemented": 8
-      },
-      "api_inventory_correction1": {
-        "attempt": 1,
-        "status": "resolved_focused_pass_exact_successor_pending",
-        "fingerprint": "Exact backend API inventory expected set omits seven new canonical paths/eight methods",
-        "cause": "Existing explicit OpenAPI/runtime inventory was not extended when eight routes were added",
-        "changed_approach": "Add exact seven canonical resource paths and eight method set; preserve all88existing path operations, both exact inventory equalities and bootstrap/owner reset negative assertions; no production route changes",
-        "failed_sha": "d3ae2d1d80ef3ac5fc5a5e3f539834a445af4a6d",
-        "failed_tree": "6aada081b3ca13c3395ba909bd38c96c4ad1f4df",
-        "failed_result": "99461 COMPLETED1418PASS1FAIL880DB-onlyskips92.96s;164staticPASS; build/import not run after test failure",
-        "failed_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-exact-d3ae2d1-backend.log",
-        "failed_log_sha256": "f4f17697fb74d3f23dc8ffffcb3946e74260175741042a7bcf889242e367186d",
-        "other_exact_results": "12074 COMPLETED903PGPASS0skip156.61s;45351 COMPLETED189automation/config/traceability/guard/diffPASS; all source frozen clean and retained; no reviewer dispatched",
-        "started_at": "2026-09-07T02:55:37.138333+00:00",
-        "next_action": "Finish API inventory correction1 by enumerating exactly7newcanonicalpaths/8methods while preserving exact OpenAPI/runtime equality and all bootstrap/security absence assertions. Focused inventory/static/trace checks, normal successor of retainedd3ae2d1, then fresh903PG/fullbackend/189automation/static-build-import/config gates and ONE Astra max Standard read-only COMPLETE14path1e79851-to-successor zero review. No source changes during review; remaining52 before53.",
-        "focused_result": "4718 COMPLETED23PASS7.59s;164staticPASS/traceability0newIDs/diffPASS; see raw log for exact duration",
-        "focused_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-inventory-correction1-focused.log",
-        "focused_log_sha256": "5f2276fe5f41fef650d03deb3ca7772ee60c0d6cff40af9113ab0c5f70b93d3a"
+        "started_at": "2026-09-07T04:45:30.123021+00:00",
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard locally configured",
+        "reason": "financial commands and authorization",
+        "scope": "15 operations in ops/V1_052_CREDIT_REFUND_HTTP.md; reuse accepted services, strict input/transport, bounded opaque cursor binding, no policy or historical migration/service changes",
+        "response_contract": "List endpoints return data items plus top-level page. Credit ledger history and Refund correction histories retain nested items plus a nested page object with opaque next_cursor; command replies adapt the original stored response only. Cursor binds collection, Property, resource, customer filter and original timestamp/id/event kind.",
+        "next_checks": "Resolve the normal containing Credit/USDRefund HTTP commit from Git and immutable receipts. Run fresh full exact PostgreSQL/backend/170-file static/build-import/frontend/189-automation/config/traceability/preservation/guard gates, then one fresh independent Astra/max/Standard enforced read-only review of the complete23path base5f4bd41-to-candidate diff. Require zero findings before acceptance. Preserve all failures and approvals; remaining full52 lifecycle before53, at53closed pause SAME follow-up/no54.",
+        "installed_at": "2026-09-07T04:50:57.061994+00:00",
+        "contract_sha256": "fc2eaf98206ee424ab22da3aa051fdca725f57a1f4ef3b717ba6e3cb02630cb5",
+        "focused_verification": {
+          "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-focused-prefreeze.json",
+          "sha256": "fa0b2973a2d24a911c2bdb53ba5ebab0a16e83755b779db16582af1a75c26f00",
+          "http_inventory": 329,
+          "isolated_pg": 27,
+          "static_files": 170,
+          "raw_failures_preserved": true,
+          "new_http_traceability": 29,
+          "full_exact_pending": true
+        }
       }
     },
     "accepted_read_slice": {
@@ -2877,6 +2870,159 @@
       "native_followup": "ACTIVE10min/same task/prompt49baafc5 unchanged",
       "card": "74197a0e tracking-onlyblocked/null executionclaimattempt",
       "predecessor_card": "c5621f97 done"
+    },
+    "accepted_allocation_receipt_http_slice": {
+      "id": "V1-052-allocation-receipt-http",
+      "status": "accepted",
+      "started_at": "2026-09-06T20:12:00Z",
+      "base_sha": "1e79851ec5e8530d35927fe93ed2346c407a5820",
+      "scope": "Canonical API059/060/092 Allocation/proposal/history/post/linked reversal, coordinated Payment reversal and unique Receipt/detail/reprint/history HTTP; necessary fresh-authorized bounded read adapters, app wiring, focused unit/API/isolatedPG tests. Credit/Refund HTTP and UI remain subsequent slices.",
+      "model": "gpt-6-astra",
+      "reasoning": "xhigh",
+      "mode": "Standard",
+      "no_policy_change": true,
+      "preparation_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-preparation.md",
+      "preparation_sha256": "41bfc8bfa8e74125036fa7f276098627a54cf4ecc164392b42b945c73f884074",
+      "plan": [
+        "Read only affected canonical financial/security/commonAPI sections and existing accepted service/SQL/tests before edits.",
+        "Preserve accepted39/40 mutation services and fresh SQL guards; bounded read adapter verifies fresh active HUMAN and exactProperty in consistent read-only snapshot. No runtime-to-financial fallback or whole private idempotency response leak.",
+        "Expose only API059/060/092 routes; strict exactintent/schema/UTF8/streaming limits/duplicate rejection/cursors/capability/Origin-CSRF-actor-key/safe errors/correlation/no-store and explicit consequences.",
+        "Prove read-only proposals/no implicitmoney, exact source/value/FX/history/replay and current constraints, receipts oneidentity/reprints/no mutation on denied/unknownoutcome; isolatedPG+unitAPI tests and assertion-level traceability.",
+        "Normal candidate then fresh full applicable gates and ONE independent Astra max Standard read-only exact complete-diff zero review before bounded acceptance; full52publication/closure remains later."
+      ],
+      "remaining_version_scope": "Credit/USDRefund HTTP; financial staff clients/encrypted actorbound recovery/UI, frontend/browser/audits and fullproduct exactreview/publication/CI/refs/card/durableclosure before53",
+      "focused_foundation": {
+        "status": "PASS_NOT_SLICE_ACCEPTANCE",
+        "receipt_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-proposal-read-focused-verification.md",
+        "receipt_sha256": "61fad31e8469a238bfc58bea7cda6ab4b7eb73768474b4645a1dfc20f48d0948",
+        "tests": "22 unit,3 isolated PostgreSQL,161-file format/lint/mypy,22 traceability,0 new IDs; sessions32844/24618 COMPLETED EXIT0",
+        "public_routes_implemented": false,
+        "independently_reviewed": false,
+        "committed": false,
+        "engineering_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-next-after-proposal-read.md",
+        "engineering_handoff_sha256": "2d136ca1a0776726e2080c675c6fda93317d73fe497d64897b4ee0efec5f4a69"
+      },
+      "resumed_at": "2026-09-07T02:08:54.010751+00:00",
+      "coordinator_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "current_bounded_step": {
+        "status": "focused_verified_complete_in_candidate",
+        "scope": "Allocation history summaries and focused original evidence/detail pagination; fresh HUMAN/exact Property/read capability; preserve proposal and accepted commands",
+        "plan": [
+          "Bound summary pages without multiplying original proposal traces.",
+          "Expose focused full original header/proposal and paginated allocation details on the existing canonical history resource.",
+          "Bind cursor identity to exact Payment/allocation; validate before connection; fresh persisted human check before finance reads in one repeatable-read read-only snapshot.",
+          "Verify exact values, complete history including linked reversals, deny cases, pagination/worst-case byte bounds and no mutations in unit/isolated PostgreSQL tests."
+        ],
+        "acceptance": "Focused read tests first; no bounded-slice acceptance until complete HTTP/app tests, full exact candidate checks and fresh Astra max Standard zero complete-base review.",
+        "focused_initial_result": "161-file static PASS;39unit PASS; PostgreSQL5PASS2FAIL (test fixture/size assumptions); no slice acceptance",
+        "correction1": {
+          "status": "resolved_focused_postgresql_pass",
+          "fingerprints": [
+            "history cross-resource test assumed two Properties but canonical fixture uses singleton Property",
+            "500-detail real proposal95326bytes below arbitrary100000byte test expectation"
+          ],
+          "cause": "New test assumptions inconsistent with canonical fixture/data shape; no runtime issue established",
+          "changed_approach": "Assert legitimate same-Property cross-Customer read; add nonexistent exact Property and absent actual Property grant denials; assert actual500detail producer ceiling and payload larger than existing32768Payment cap, preserve all500details/page/byte/no-mutation checks",
+          "failed_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-history-read-focused-database.log",
+          "failed_log_sha256": "4efa096a14b9b10e09b9623eeb6a38d00fa93f82afe6d21fc7d781108281e0f1",
+          "failed_test_bytes": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-history-read-failed-fixture-tests.py"
+        },
+        "focused_final_result": "39unit PASS;161-file static PASS;7 isolatedPG PASS3.76s (6AllocationRead,1accepted historical regression); sessions84384/76975 COMPLETED EXIT0; initial63880 COMPLETED5PASS2FAIL retained"
+      },
+      "http_completion_plan": {
+        "status": "implemented_focused_verified",
+        "scope": "Canonical eight API059/060/092 endpoints and app wiring, exact source resolution, separate capabilities, CSRF/actor/idempotency, body cap262144 with canonical intent250000, UTF8, safe errors and bound cursors",
+        "contract": "Allocation history default/max50/100 sorted posted_at/id descending; allocation_id selects one original header/proposal plus details ascending sequence/id; opaque cursors bind Payment/allocation. Receipt reads embed original receipt/current context and paginated reprints with receipt-bound opaque cursor. Allocation creation201+historyLocation; reversals and reprints200 original command resource/replay."
+      },
+      "http_reason_validator_correction1": {
+        "status": "resolved_focused_unit_and_postgresql_pass",
+        "fingerprint": "Void service validator used as Pydantic AfterValidator erases valid reason; three valid reverse/reprint routes return422",
+        "cause": "_reason validates in place and returnsNone; AfterValidator requires returning the accepted field value",
+        "changed_approach": "Wrap the unchanged normalized bounded service validation and return the identical original reason; assert full HTTP dispatch preserves exact command reason",
+        "failed_result": "48368 COMPLETED:163-file mypy PASS;245HTTP PASS/3FAIL",
+        "failed_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-focused-unit-initial.log",
+        "failed_log_sha256": "ba1b0e096a2a5010f9cf32c92ca48dacb801a4a4faee17a5eb329778b5f24e34",
+        "failed_runtime": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-reason-validator-failed.py"
+      },
+      "focused_http_progress": {
+        "status": "focused_pass_exact_gates_and_review_pending",
+        "unit": "8796 COMPLETED287PASS28.93s;164-file mypyPASS. Later73215 COMPLETED newAPI/read171PASS and21tracePASS/1traceFAIL due manifest enum capitalization; test source and runtime unchanged after enum-only correction.",
+        "database": "93935 COMPLETED21isolatedPGPASS11.33s,0skips; new14HTTPcases plus6reader and1accepted history case. New cursor/concurrency-test refinements will be covered again by full exact PG gate.",
+        "traceability_correction": {
+          "fingerprint": "New manifest entries used api rather than required API enum",
+          "correction": 1,
+          "changed_approach": "Correct only fourteen new manifest enum values to existing schema API; preserve mapping IDs and all assertions",
+          "failed_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-prefreeze-unit-trace.log",
+          "failed_log_sha256": "f27a53f65b3c90f06f9b718a5ab3b70e18eba1803f42ee799b6d9ba55a963d21",
+          "status": "resolved_22_traceability_pass_session15326"
+        },
+        "type_fix_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-focused-correction1-unit.log",
+        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-focused-prefreeze.md",
+        "receipt_sha256": "54b1bc883cd015801885c993d4994594fe998f5db27cd676e2f9d26f2e1c9ee2",
+        "public_routes_implemented": 8
+      },
+      "api_inventory_correction1": {
+        "attempt": 1,
+        "status": "resolved_focused_pass_exact_successor_pending",
+        "fingerprint": "Exact backend API inventory expected set omits seven new canonical paths/eight methods",
+        "cause": "Existing explicit OpenAPI/runtime inventory was not extended when eight routes were added",
+        "changed_approach": "Add exact seven canonical resource paths and eight method set; preserve all88existing path operations, both exact inventory equalities and bootstrap/owner reset negative assertions; no production route changes",
+        "failed_sha": "d3ae2d1d80ef3ac5fc5a5e3f539834a445af4a6d",
+        "failed_tree": "6aada081b3ca13c3395ba909bd38c96c4ad1f4df",
+        "failed_result": "99461 COMPLETED1418PASS1FAIL880DB-onlyskips92.96s;164staticPASS; build/import not run after test failure",
+        "failed_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-exact-d3ae2d1-backend.log",
+        "failed_log_sha256": "f4f17697fb74d3f23dc8ffffcb3946e74260175741042a7bcf889242e367186d",
+        "other_exact_results": "12074 COMPLETED903PGPASS0skip156.61s;45351 COMPLETED189automation/config/traceability/guard/diffPASS; all source frozen clean and retained; no reviewer dispatched",
+        "started_at": "2026-09-07T02:55:37.138333+00:00",
+        "next_action": "Finish API inventory correction1 by enumerating exactly7newcanonicalpaths/8methods while preserving exact OpenAPI/runtime equality and all bootstrap/security absence assertions. Focused inventory/static/trace checks, normal successor of retainedd3ae2d1, then fresh903PG/fullbackend/189automation/static-build-import/config gates and ONE Astra max Standard read-only COMPLETE14path1e79851-to-successor zero review. No source changes during review; remaining52 before53.",
+        "focused_result": "4718 COMPLETED23PASS7.59s;164staticPASS/traceability0newIDs/diffPASS; see raw log for exact duration",
+        "focused_log": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-inventory-correction1-focused.log",
+        "focused_log_sha256": "5f2276fe5f41fef650d03deb3ca7772ee60c0d6cff40af9113ab0c5f70b93d3a"
+      },
+      "acceptance": {
+        "sha": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
+        "tree": "fd97fd1d2c8b340ee6a473c6b75d33110fee5bd2",
+        "base_sha": "1e79851ec5e8530d35927fe93ed2346c407a5820",
+        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-accepted-5f4bd41.md",
+        "receipt_sha256": "9735754b024d84239c92bd739fe9c6f375fc2edb65312a6accb0265f2987ae29",
+        "review_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-review-5f4bd41.md",
+        "review_sha256": "61832d56eb1a2ab169df087445cd484f91ba57e3a0814c4b7075b040e3c82ee4",
+        "review_exec": 2607,
+        "review_status": "COMPLETED_EXIT0_0HIGH_0MEDIUM_0LOW",
+        "review_completed_at": "2026-09-07T03:29:01.013153+00:00",
+        "reviewer_child": "01a079de-9c68-7712-be9f-dd0936abf692",
+        "model": "gpt-6-astra",
+        "reasoning": "max",
+        "mode": "Standard locally configured",
+        "read_only": true,
+        "provider_attestation": "unavailable",
+        "independent_checks": "194tests/147HTTPprobes/24ASGIprobes/changedstatic/44revisiongraph/shell/diff/traceability/14rawloghashes/preservationPASS; no independentlivePG/fullgates/build/frontend/browser/audits",
+        "exact_tests": "903PG0skip/1419backend880DB-onlyskips/189automation/164static/standardbuild-import/configPASS;20400/61799/55847/17293COMPLETED",
+        "exact_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-exact-verification-5f4bd41.md",
+        "exact_receipt_sha256": "2f9c84d3ba3b1e85c74b4ca437b67c7d9d5973c1a0faea2989df3d9b5d5629bd",
+        "not_whole_version_acceptance": true,
+        "owner_source_transmission_approval": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-review-owner-approval-5f4bd41.json",
+        "prior_auto_review_rejection_preserved": true,
+        "workboard_acceptance_note": "d0c0eb54-450c-415d-9f0d-020ccb6ecc52 retained in notes; original17comments/allprior events preserved",
+        "workboard_reconciliation": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-workboard-allocation-receipt-acceptance-verification.json",
+        "workboard_reconciliation_sha256": "855133e118e4b4be87dbc44851571e9a4e8ddedf79f5adb63096d22afeb07f0a",
+        "workboard_card_status": "blocked_tracking_only_whole52_not_closed"
+      }
+    },
+    "workboard_comment_budget_correction1": {
+      "status": "resolved_verified",
+      "timestamp": "2026-09-07T03:35:22.176833+00:00",
+      "card_id": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
+      "fingerprint": "Workboard addComment metadata-byte budget evicted oldest comment despite only17comments; preservation assertion caught it",
+      "cause": "Supported store trims comment metadata to budget, not only50-count limit",
+      "correction": 1,
+      "changed_approach": "Supported cards.update with expectedUpdatedAt restores all17exact prior comments and preserves new acceptance comment ID/body in appended notes; no dispatch/status change",
+      "temporarily_evicted_id": "9ee3cf01-c74c-4f9f-a5ec-d87a95a97753",
+      "restored_original_comments": 17,
+      "new_acceptance_retained_in_notes": "d0c0eb54-450c-415d-9f0d-020ccb6ecc52",
+      "all_prior_events_retained": true,
+      "original_snapshot_sha256": "543f7f2b54afb0629da1b7f352d9266443b91e298d28fae9ff55f7ba2566190e",
+      "new_acceptance": "9735754b024d84239c92bd739fe9c6f375fc2edb65312a6accb0265f2987ae29"
     }
   },
   "historical_v1_048_takeover": {
@@ -3629,9 +3775,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "1e79851ec5e8530d35927fe93ed2346c407a5820",
+  "commit": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
   "idle_reason": null,
-  "next_action": "Finish API inventory correction1 by enumerating exactly7newcanonicalpaths/8methods while preserving exact OpenAPI/runtime equality and all bootstrap/security absence assertions. Focused inventory/static/trace checks, normal successor of retainedd3ae2d1, then fresh903PG/fullbackend/189automation/static-build-import/config gates and ONE Astra max Standard read-only COMPLETE14path1e79851-to-successor zero review. No source changes during review; remaining52 before53.",
+  "next_action": "Resolve the normal containing Credit/USDRefund HTTP commit from Git and immutable receipts. Run fresh full exact PostgreSQL/backend/170-file static/build-import/frontend/189-automation/config/traceability/preservation/guard gates, then one fresh independent Astra/max/Standard enforced read-only review of the complete23path base5f4bd41-to-candidate diff. Require zero findings before acceptance. Preserve all failures and approvals; remaining full52 lifecycle before53, at53closed pause SAME follow-up/no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -3639,8 +3785,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Containing normal inventory correction successor of retainedd3ae2d1; external exact receipt resolves after freeze",
-  "candidate_parent": "d3ae2d1d80ef3ac5fc5a5e3f539834a445af4a6d",
+  "candidate_resolution": "Containing normal23path Credit/USDRefund HTTP commit; resolve immutable exact SHA/tree from Git and external verification receipt after freeze. Accepted5f4bd41 remains the complete review base.",
+  "candidate_parent": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -3703,7 +3849,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 Allocation/Receipt HTTP inventory correction focused PASS; exact successor pending",
+  "phase": "V1-052 Credit/USDRefund HTTP all15 routes focused verified; normal freeze and full exact gates pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4797,10 +4943,9 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "883PG0skip/1248backend860DB-onlyskips/189automation/158static-build-import/all applicable config PASS;28585/67433/95329 COMPLETED EXIT0",
-    "ACCEPTED independent49722 completed19:58:46.444Z zero21paths/all7commits;315tests/61probes/static/preservationPASS, report73a8c404/acceptance0ad91c77. No independentlivePG; completed tests/review never repeated solely for stale pending records.",
-    "CURRENT Allocation/Receipt HTTP: final171HTTP/read +22traceability PASS; earlier287unit including acceptedPaymentHTTP and21isolatedPG PASS;164staticPASS. All failures retained; fresh full exact candidate checks and review pending. Focused receipt54b1bc883cd015801885c993d4994594fe998f5db27cd676e2f9d26f2e1c9ee2.",
-    "FAILED exactd3ae2d1 inventory1FAIL/1418PASS880DB-onlyskips;903PG0skip/189automation/staticPASS. All completed logs retained; inventorycorrection1 active, no reviewer."
+    "Accepted Allocation/Receipt exact5f4bd41 retains903PG/1419backend/189automation/static-build-import and independent0HIGH0MEDIUM0LOW; see accepted_allocation_receipt_http_slice.",
+    "CURRENT UNCOMMITTED Credit/USDRefund read foundation:917PG0skip/1461backend894DB-onlyskipscoveredbyPG/42unit+22trace/167static/build-import/config/trace/guardPASS. Retained focused fixture/style/type failures, canonical-note guard65, and initial fullPG916PASS1NOWAIT failure; no acceptance/publication. /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-read-working-tree-verification.json",
+    "CURRENT complete23path Credit/USDRefund HTTP:329HTTP/inventory +27isolatedPG0skip +170static PASS;29HTTP assertion entries preserve all1438prior. Prefreeze receipt /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-credit-refund-http-focused-prefreeze.json SHA256fa0b2973a2d24a911c2bdb53ba5ebab0a16e83755b779db16582af1a75c26f00. Full exact frozen-candidate gates/review pending, no acceptance/publication."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4822,7 +4967,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-07T02:55:37.138333+00:00",
+  "timestamp": "2026-09-07T05:28:48.563877+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4849,18 +4994,27 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
-    "backend/src/property_rental/allocation_read.py",
-    "backend/src/property_rental/allocation_receipt_api.py",
+    "backend/migrations/versions/20260907_45_credit_refund_http_reads.py",
     "backend/src/property_rental/app.py",
-    "backend/tests/test_allocation_read.py",
-    "backend/tests/test_allocation_read_migration.py",
-    "backend/tests/test_allocation_receipt_api.py",
-    "backend/tests/test_allocation_receipt_api_migration.py",
+    "backend/src/property_rental/credit_refund_api.py",
+    "backend/src/property_rental/credit_refund_read.py",
+    "backend/tests/test_billing_service_migration.py",
+    "backend/tests/test_credit_refund_api.py",
+    "backend/tests/test_credit_refund_api_migration.py",
+    "backend/tests/test_credit_refund_read.py",
+    "backend/tests/test_credit_refund_read_migration.py",
     "backend/tests/test_initial_owner_bootstrap_cli.py",
+    "backend/tests/test_invoice_migration.py",
+    "backend/tests/test_late_payment_migration.py",
+    "backend/tests/test_lease_api_migration.py",
+    "backend/tests/test_migrations.py",
+    "backend/tests/test_utility_api_migration.py",
+    "backend/tests/test_utility_consumption_migration.py",
+    "backend/tests/test_utility_meter_migration.py",
     "ops/NOW.md",
     "ops/QUEUE.md",
     "ops/STATE.json",
-    "ops/V1_052_ALLOCATION_RECEIPT_HTTP.md",
+    "ops/V1_052_CREDIT_REFUND_HTTP.md",
     "ops/traceability.json",
     "scripts/database-test.sh"
   ],
@@ -5050,7 +5204,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-07T02:55:37.138333+00:00",
+  "updated_at": "2026-09-07T05:28:48.563877+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -6232,9 +6386,9 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "not_dispatched_failed_exact_inventory_correction_pending",
+    "status": "pending_frozen_candidate_full_exact_gates",
     "tranche_id": "V1-052",
-    "base_sha": "1e79851ec5e8530d35927fe93ed2346c407a5820",
+    "base_sha": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
     "whole_version_base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "exact_sha": null,
     "model": "gpt-6-astra",
@@ -6242,27 +6396,29 @@
     "mode": "Standard",
     "read_only": true,
     "previous_slice_acceptance": {
-      "sha": "1e79851ec5e8530d35927fe93ed2346c407a5820",
-      "tree": "f3403e5481166bd2623f850c99bb036678871261",
-      "base_sha": "5263218f7f7deafc05b2d9f524f138761e05c850",
-      "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-accepted-1e79851.md",
-      "receipt_sha256": "0ad91c775655db40696287c1d81ffc561ae24c8a361f65651240b8cbcdd56215",
-      "review_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-review-1e79851.md",
-      "review_sha256": "73a8c40444f87e319a98326071b195945b2a184bb0460089c171ea3c2edbe3a9",
-      "review_exec": 49722,
+      "sha": "5f4bd4160eb37f01bb9fc155076e5223b56f2802",
+      "tree": "fd97fd1d2c8b340ee6a473c6b75d33110fee5bd2",
+      "base_sha": "1e79851ec5e8530d35927fe93ed2346c407a5820",
+      "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-accepted-5f4bd41.md",
+      "receipt_sha256": "9735754b024d84239c92bd739fe9c6f375fc2edb65312a6accb0265f2987ae29",
+      "review_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-review-5f4bd41.md",
+      "review_sha256": "61832d56eb1a2ab169df087445cd484f91ba57e3a0814c4b7075b040e3c82ee4",
+      "review_exec": 2607,
       "review_status": "COMPLETED_EXIT0_0HIGH_0MEDIUM_0LOW",
-      "review_completed_at": "2026-09-06T19:58:46.444Z",
-      "reviewer_child": "01a07843-fc2e-73f1-b5ec-f8ffb536e483",
+      "review_completed_at": "2026-09-07T03:29:01.013153+00:00",
+      "reviewer_child": "01a079de-9c68-7712-be9f-dd0936abf692",
       "model": "gpt-6-astra",
       "reasoning": "max",
-      "mode": "Standard",
+      "mode": "Standard locally configured",
       "read_only": true,
       "provider_attestation": "unavailable",
-      "independent_checks": "315tests/61probes/changedstatic/scopedmypy/migrationgraph/shell/preservation/diff/19hashesPASS; no independentlivePG/fullgates/build/frontend/browser/audits",
-      "exact_tests": "883PG0skip/1248backend860DB-onlyskips/189automation/158static-build-import/all applicable config PASS;28585/67433/95329 COMPLETED EXIT0",
-      "exact_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-payment-http-exact-verification-1e79851.md",
-      "exact_receipt_sha256": "319202514bddc9a1d91563dddc748a31f4fa43c8ea458ca9a264bc841ed89b85",
-      "not_whole_version_acceptance": true
+      "independent_checks": "194tests/147HTTPprobes/24ASGIprobes/changedstatic/44revisiongraph/shell/diff/traceability/14rawloghashes/preservationPASS; no independentlivePG/fullgates/build/frontend/browser/audits",
+      "exact_tests": "903PG0skip/1419backend880DB-onlyskips/189automation/164static/standardbuild-import/configPASS;20400/61799/55847/17293COMPLETED",
+      "exact_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-exact-verification-5f4bd41.md",
+      "exact_receipt_sha256": "2f9c84d3ba3b1e85c74b4ca437b67c7d9d5973c1a0faea2989df3d9b5d5629bd",
+      "not_whole_version_acceptance": true,
+      "owner_source_transmission_approval": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-allocation-receipt-http-review-owner-approval-5f4bd41.json",
+      "prior_auto_review_rejection_preserved": true
     }
   },
   "historical_v1_047_review": {
@@ -6276,7 +6432,7 @@
   },
   "evidence_applicability": {
     "tranche_id": "V1-052",
-    "status": "activation_read_usd_khr_accepted_payment_http_unaccepted_product_in_progress",
+    "status": "allocation_receipt_accepted_credit_refund_http_focused_verified_exact_gates_pending",
     "predecessor_closed": true,
     "predecessor_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "product_tests_pending": true

@@ -58,6 +58,12 @@ from property_rental.configuration_api import (
     UnavailableConfigurationFlow,
     create_configuration_router,
 )
+from property_rental.credit import CreditIdempotencyKeyReused
+from property_rental.credit_refund_api import (
+    CreditRefundFlow,
+    PostgresCreditRefundFlow,
+    create_credit_refund_router,
+)
 from property_rental.customer import CustomerVersionConflict
 from property_rental.customer_api import (
     CustomerIdempotencyKeyReused,
@@ -125,6 +131,7 @@ from property_rental.property_api import (
     create_property_router,
 )
 from property_rental.receipt import ReceiptIdempotencyKeyReused
+from property_rental.refund import RefundIdempotencyKeyReused
 from property_rental.reservation_api import (
     PostgresReservationResourceFlow,
     ReservationResourceFlow,
@@ -185,7 +192,9 @@ LATE_PAYMENT_API_PATH_PATTERN: Final = re.compile(
     r"late-payment-charges(?:/|$))"
 )
 PAYMENT_API_PATH_PATTERN: Final = re.compile(
-    r"^/api/v1/(?:properties/[^/]+/payments(?:/|$)|(?:payments|payment-allocations|receipts)(?:/|$))"
+    r"^/api/v1/(?:properties/[^/]+/(?:payments|refunds)(?:/|$)|"
+    r"customers/[^/]+/credits(?:/|$)|"
+    r"(?:payments|payment-allocations|receipts|customer-credits|credit-applications|refunds|refund-sources)(?:/|$))"
 )
 DATABASE_TIMEOUT_SECONDS: Final = 2
 ERROR_STATUS_DETAILS: Final = {
@@ -312,6 +321,7 @@ def create_app(
     late_payment_flow: LatePaymentFlow | None = None,
     payment_flow: PaymentFlow | None = None,
     allocation_receipt_flow: AllocationReceiptFlow | None = None,
+    credit_refund_flow: CreditRefundFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -366,6 +376,13 @@ def create_app(
     @app.exception_handler(ReceiptIdempotencyKeyReused)
     async def allocation_receipt_key_reused(
         request: Request, _: AllocationIdempotencyKeyReused | ReceiptIdempotencyKeyReused
+    ) -> JSONResponse:
+        return payment_key_reused_response(request)
+
+    @app.exception_handler(CreditIdempotencyKeyReused)
+    @app.exception_handler(RefundIdempotencyKeyReused)
+    async def credit_refund_key_reused(
+        request: Request, _: CreditIdempotencyKeyReused | RefundIdempotencyKeyReused
     ) -> JSONResponse:
         return payment_key_reused_response(request)
 
@@ -830,6 +847,21 @@ def create_app(
             actor_resolver,
             allocation_receipt_flow
             or PostgresAllocationReceiptFlow(
+                resolved_settings.database_url.get_secret_value()
+                if resolved_settings.database_url is not None
+                else None,
+                resolved_settings.financial_database_url.get_secret_value()
+                if resolved_settings.financial_database_url is not None
+                else None,
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_credit_refund_router(
+            actor_resolver,
+            credit_refund_flow
+            or PostgresCreditRefundFlow(
                 resolved_settings.database_url.get_secret_value()
                 if resolved_settings.database_url is not None
                 else None,

@@ -141,6 +141,8 @@ database_test_suites='
   tests/test_credit_history_migration.py
   tests/test_refund_migration.py
   tests/test_refund_service_migration.py
+  tests/test_credit_refund_read_migration.py
+  tests/test_credit_refund_api_migration.py
   tests/test_pet_refund_migration.py
   tests/test_billing_service_migration.py
   tests/test_utility_meter_migration.py
