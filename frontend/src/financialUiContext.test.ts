@@ -625,15 +625,15 @@ describe("scope-bound financial draft acknowledgement", () => {
       supplied = scope();
     const h = renderHook(() => useFinancialDraft(supplied, changed));
     act(() => {
-      h.result.current.edited();
+      h.result.current.edited("amount");
     });
-    const previous = h.result.current.captureRecorded();
+    const previous = h.result.current.captureRecorded(["amount"]);
     act(() => {
-      h.result.current.edited();
+      h.result.current.edited("amount");
     });
     act(previous);
     expect(changed).toHaveBeenLastCalledWith(true);
-    const current = h.result.current.captureRecorded();
+    const current = h.result.current.captureRecorded(["amount"]);
     act(current);
     expect(changed).toHaveBeenLastCalledWith(false);
     const calls = changed.mock.calls.length;
@@ -649,8 +649,10 @@ describe("scope-bound financial draft acknowledgement", () => {
         initialProps: { value: supplied },
       });
       const old = h.result.current;
-      act(old.edited);
-      const acknowledged = old.captureRecorded();
+      act(() => {
+        old.edited("amount");
+      });
+      const acknowledged = old.captureRecorded(["amount"]);
       h.rerender({
         value: {
           ...supplied,
@@ -663,11 +665,11 @@ describe("scope-bound financial draft acknowledgement", () => {
       });
       expect(changed).toHaveBeenLastCalledWith(false);
       act(() => {
-        h.result.current.edited();
+        h.result.current.edited("amount");
       });
       const calls = changed.mock.calls.length;
       act(() => {
-        old.edited();
+        old.edited("amount");
         old.clear();
         acknowledged();
       });
@@ -685,7 +687,7 @@ describe("scope-bound financial draft acknowledgement", () => {
         useFinancialDraft(scope(undefined, controller.signal), changed),
       );
       act(() => {
-        h.result.current.edited();
+        h.result.current.edited("amount");
       });
       const current = h.result.current;
       act(() => {
@@ -693,7 +695,9 @@ describe("scope-bound financial draft acknowledgement", () => {
       });
       expect(changed).toHaveBeenLastCalledWith(false);
       expect(current.confirmDiscard()).toBe(false);
-      act(current.edited);
+      act(() => {
+        current.edited("amount");
+      });
       expect(changed).toHaveBeenLastCalledWith(false);
       expect(discard).not.toHaveBeenCalled();
     } finally {
@@ -708,11 +712,79 @@ describe("scope-bound financial draft acknowledgement", () => {
       initialProps: { notify: first },
     });
     act(() => {
-      h.result.current.edited();
+      h.result.current.edited("amount");
     });
     h.rerender({ notify: next });
     expect(next).toHaveBeenLastCalledWith(true);
-    act(h.result.current.captureRecorded());
+    act(h.result.current.captureRecorded(["amount"]));
     expect(next).toHaveBeenLastCalledWith(false);
+  });
+});
+
+describe("field-owned draft generations", () => {
+  it("TEST-FE-533 acknowledges matching fields while retaining unrelated and later edits", () => {
+    const changed = vi.fn(),
+      supplied = scope();
+    const h = renderHook(() =>
+      useFinancialDraft<"source" | "amount" | "reason" | "selection">(
+        supplied,
+        changed,
+      ),
+    );
+    act(() => {
+      h.result.current.edited("source", "amount", "reason");
+    });
+    const correction = h.result.current.captureRecorded(["reason"]);
+    act(correction);
+    expect(h.result.current.hasEdits(["reason"])).toBe(false);
+    expect(h.result.current.hasEdits(["source", "amount"])).toBe(true);
+    expect(changed).toHaveBeenLastCalledWith(true);
+    const original = h.result.current.captureRecorded([
+      "source",
+      "amount",
+      "selection",
+    ]);
+    act(() => {
+      h.result.current.edited("amount", "selection");
+    });
+    act(original);
+    expect(h.result.current.hasEdits(["source"])).toBe(false);
+    expect(h.result.current.hasEdits(["amount"])).toBe(true);
+    expect(h.result.current.hasEdits(["selection"])).toBe(true);
+    act(h.result.current.captureRecorded(["amount", "selection"]));
+    expect(changed).toHaveBeenLastCalledWith(false);
+  });
+  it("TEST-FE-534 scopes discard consent and never lets an old acknowledgement clear a replacement", () => {
+    const changed = vi.fn(),
+      supplied = scope(),
+      discard = vi.spyOn(window, "confirm").mockReturnValue(false);
+    try {
+      const h = renderHook(() =>
+        useFinancialDraft<"amount" | "reason">(supplied, changed),
+      );
+      act(() => {
+        h.result.current.edited("amount");
+      });
+      const original = h.result.current.captureRecorded(["amount"]);
+      expect(h.result.current.confirmDiscard(["reason"])).toBe(true);
+      expect(discard).not.toHaveBeenCalled();
+      expect(h.result.current.confirmDiscard(["amount"])).toBe(false);
+      expect(h.result.current.hasEdits(["amount"])).toBe(true);
+      discard.mockReturnValue(true);
+      expect(h.result.current.confirmDiscard(["amount"])).toBe(true);
+      act(() => {
+        h.result.current.clear(["amount"]);
+        h.result.current.edited("amount", "reason");
+      });
+      act(original);
+      expect(h.result.current.hasEdits(["amount"])).toBe(true);
+      act(() => {
+        h.result.current.clear(["amount"]);
+      });
+      expect(h.result.current.hasEdits(["reason"])).toBe(true);
+      expect(changed).toHaveBeenLastCalledWith(true);
+    } finally {
+      discard.mockRestore();
+    }
   });
 });

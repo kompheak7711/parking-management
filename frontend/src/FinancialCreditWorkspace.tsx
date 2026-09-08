@@ -88,7 +88,12 @@ export function FinancialCreditWorkspace({
   const [readKind, setReadKind] = useState<"credit" | "application">("credit");
   const [targetKind, setTargetKind] = useState<Target>("INVOICE");
   const [basis, setBasis] = useState<Basis>("PROPOSAL");
-  const draft = useFinancialDraft(scope, onDirtyStateChange);
+  type DraftField =
+    | keyof typeof initial
+    | "basis"
+    | "targetKind"
+    | "lineAmounts";
+  const draft = useFinancialDraft<DraftField>(scope, onDirtyStateChange);
   const [fields, setFields] = useState(initial);
   const [lineAmounts, setLineAmounts] = useState<Record<string, string>>({});
   const [linePage, setLinePage] = useState(0);
@@ -107,20 +112,25 @@ export function FinancialCreditWorkspace({
     setContext(null);
     setProposal(null);
   }, [revision, cancel]);
-  function edit(values: Partial<typeof initial>, sourceChanged = false) {
-    if (
-      sourceChanged &&
-      Object.values(lineAmounts).some((value) => value !== "") &&
-      !draft.confirmDiscard()
-    )
-      return false;
-    if (
-      mode !== "read" &&
-      Object.entries(values).some(
-        ([key, value]) => value !== fields[key as keyof typeof initial],
-      )
-    )
-      draft.edited();
+  function edit(
+    values: Partial<typeof initial>,
+    sourceChanged = false,
+    discarded: DraftField[] = [],
+    selections: DraftField[] = [],
+  ) {
+    const cleared: DraftField[] = [
+      ...discarded,
+      ...(sourceChanged ? ["lineAmounts" as const] : []),
+    ];
+    if (!draft.confirmDiscard(cleared)) return false;
+    for (const [name, value] of Object.entries(values)) {
+      const key = name as keyof typeof initial;
+      if (value !== fields[key] && (mode !== "read" || draft.hasEdits([key])))
+        draft.edited(key);
+    }
+    draft.clear(cleared);
+    for (const key of selections)
+      if (mode !== "read" || draft.hasEdits([key])) draft.edited(key);
     cancel();
     invalidate();
     setProposal(null);
@@ -139,7 +149,9 @@ export function FinancialCreditWorkspace({
     setMode(value);
   }
   function chooseTarget(value: Target) {
-    if (!edit({ target: "" }, true)) return;
+    if (value === targetKind) return;
+    if (!edit({ target: "" }, true, ["target"], ["targetKind", "basis"]))
+      return;
     setTargetKind(value);
     setBasis(value === "INVOICE" ? "PROPOSAL" : "DIRECT_CHARGE");
   }
@@ -168,6 +180,7 @@ export function FinancialCreditWorkspace({
     kind = readKind,
   ) {
     if (!capabilities["credits.read"]) return;
+    if (id !== fields.source && !draft.confirmDiscard(["source"])) return;
     setDetail(null);
     void task.run(
       async (s) =>
@@ -190,6 +203,7 @@ export function FinancialCreditWorkspace({
       (reply) => {
         setReadKind(kind);
         setDetail(reply);
+        if (id !== fields.source) draft.clear(["source"]);
         setFields((old) => ({ ...old, source: id }));
       },
     );
@@ -365,7 +379,24 @@ export function FinancialCreditWorkspace({
         setProposal(selectedProposal);
         if (request)
           preparation?.review(request, {
-            onRecorded: draft.captureRecorded(),
+            onRecorded: draft.captureRecorded(
+              mode === "recognize"
+                ? ["source", "amount", "authorization", "reason"]
+                : mode === "apply"
+                  ? [
+                      "source",
+                      "target",
+                      "targetKind",
+                      "basis",
+                      ...(targetKind === "INVOICE" && basis === "DESIGNATED"
+                        ? (["lineAmounts"] as const)
+                        : (["amount"] as const)),
+                      ...(basis === "DESIGNATED"
+                        ? (["designation"] as const)
+                        : []),
+                    ]
+                  : ["source", "reason"],
+            ),
             consequence:
               mode === "recognize"
                 ? "Recognize explicitly authorized Customer Credit in USD from the eligible excess Payment. This is separate from Payment Allocation and Deposit value."
@@ -453,7 +484,7 @@ export function FinancialCreditWorkspace({
                 <select
                   value={readKind}
                   onChange={(e) => {
-                    if (!edit({ source: "" }, true)) return;
+                    if (!edit({ source: "" }, true, ["source"])) return;
                     setReadKind(
                       e.target.value === "application"
                         ? "application"
@@ -519,8 +550,9 @@ export function FinancialCreditWorkspace({
                 <select
                   value={basis}
                   onChange={(e) => {
-                    if (!edit({}, true)) return;
                     const value = e.target.value;
+                    if (value === basis) return;
+                    if (!edit({}, true, [], ["basis"])) return;
                     if (
                       value === "PROPOSAL" ||
                       value === "DESIGNATED" ||
@@ -657,7 +689,7 @@ export function FinancialCreditWorkspace({
                                           setProposal(null);
                                           const value = e.target.value;
                                           if (value !== (lineAmounts[id] ?? ""))
-                                            draft.edited();
+                                            draft.edited("lineAmounts");
                                           setLineAmounts((old) => ({
                                             ...old,
                                             [id]: value,

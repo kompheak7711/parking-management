@@ -123,7 +123,13 @@ export function FinancialPaymentWorkspace({
   const [mode, setMode] = useState<"read" | "record">(
     canRead ? "read" : "record",
   );
-  const draft = useFinancialDraft(scope, onDirtyStateChange);
+  type DraftField =
+    | keyof typeof initial
+    | "currency"
+    | "payerScope"
+    | "manual"
+    | "channel";
+  const draft = useFinancialDraft<DraftField>(scope, onDirtyStateChange);
   const [fields, setFields] = useState(initial);
   const [currency, setCurrency] = useState<"USD" | "KHR">("USD");
   const [payerScope, setPayerScope] = useState<
@@ -149,23 +155,19 @@ export function FinancialPaymentWorkspace({
     cancel();
     setPreview(null);
     setManualAllowed(false);
-    setManual(false);
   }, [revision, cancel]);
   function edit(values: Partial<typeof initial>, rateChanged = false) {
-    if (
-      mode === "record" &&
-      Object.entries(values).some(
-        ([key, value]) => value !== fields[key as keyof typeof initial],
-      )
-    )
-      draft.edited();
+    for (const [name, value] of Object.entries(values)) {
+      const key = name as keyof typeof initial;
+      if (value !== fields[key] && (mode === "record" || draft.hasEdits([key])))
+        draft.edited(key);
+    }
     cancel();
     invalidate();
     setPreview(null);
     setFields((old) => ({ ...old, ...values }));
     if (rateChanged) {
       setManualAllowed(false);
-      setManual(false);
     }
   }
   function choose(value: "read" | "record") {
@@ -176,7 +178,6 @@ export function FinancialPaymentWorkspace({
     setDetail(null);
     setList(null);
     setManualAllowed(false);
-    setManual(false);
   }
   async function acceptedMethods(s: FinancialScope) {
     const rows: FinancialObject[] = [];
@@ -343,7 +344,39 @@ export function FinancialPaymentWorkspace({
           );
         if (request)
           preparation?.review(request, {
-            onRecorded: draft.captureRecorded(),
+            onRecorded: draft.captureRecorded([
+              "payer",
+              "method",
+              "receivedAt",
+              "evidence",
+              "amount",
+              "currency",
+              "payerScope",
+              "lease",
+              "invoice",
+              "charge",
+              "memo",
+              "channelReference",
+              ...(currency === "KHR"
+                ? (["usd", "manual", "channel"] as const)
+                : []),
+              ...(currency === "KHR" && manual
+                ? ([
+                    "manualRate",
+                    "manualSource",
+                    "manualAt",
+                    "manualReason",
+                  ] as const)
+                : []),
+              ...(currency === "KHR" && channel
+                ? ([
+                    "channelConfirmedAt",
+                    "channelAmount",
+                    "channelUsd",
+                    "channelRate",
+                  ] as const)
+                : []),
+            ]),
             consequence:
               "Confirm this original incoming Payment and issue its one Receipt. This action does not allocate Payment value, recognize Customer Credit, create a Deposit or settle an Invoice. The server selects and verifies the final exchange rate and any original channel evidence.",
             evidence: (
@@ -593,14 +626,13 @@ export function FinancialPaymentWorkspace({
                 <select
                   value={currency}
                   onChange={(e) => {
-                    if (
-                      (fields.amount !== "" || fields.usd !== "") &&
-                      !draft.confirmDiscard()
-                    )
-                      return;
+                    const value = e.target.value === "KHR" ? "KHR" : "USD";
+                    if (value === currency) return;
+                    if (!draft.confirmDiscard(["amount", "usd"])) return;
                     edit({ amount: "", usd: "" }, true);
-                    setCurrency(e.target.value === "KHR" ? "KHR" : "USD");
-                    setChannel(false);
+                    draft.clear(["amount", "usd"]);
+                    draft.edited("currency");
+                    setCurrency(value);
                   }}
                 >
                   <option value="USD">USD</option>
@@ -640,13 +672,14 @@ export function FinancialPaymentWorkspace({
                   >
                     Load provisional KHR preview
                   </button>
-                  {manualAllowed && (
+                  {(manualAllowed || manual) && (
                     <label>
                       <input
                         type="checkbox"
                         checked={manual}
                         onChange={(e) => {
                           edit({});
+                          draft.edited("manual");
                           setManual(e.target.checked);
                         }}
                       />
@@ -709,6 +742,7 @@ export function FinancialPaymentWorkspace({
                       checked={channel}
                       onChange={(e) => {
                         edit({});
+                        draft.edited("channel");
                         setChannel(e.target.checked);
                       }}
                     />
@@ -769,6 +803,7 @@ export function FinancialPaymentWorkspace({
                   value={payerScope}
                   onChange={(e) => {
                     edit({});
+                    draft.edited("payerScope");
                     setPayerScope(
                       e.target.value === "THIRD_PARTY_IDENTIFIED"
                         ? "THIRD_PARTY_IDENTIFIED"

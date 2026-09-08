@@ -76,7 +76,13 @@ export function FinancialAllocationReceiptWorkspace({
       "INVOICE",
     ),
     [receiptByPayment, setReceiptByPayment] = useState(false);
-  const draft = useFinancialDraft(scope, onDirtyStateChange);
+  type DraftField =
+    | keyof typeof initial
+    | "basis"
+    | "targetKind"
+    | "receiptByPayment"
+    | "lineAmounts";
+  const draft = useFinancialDraft<DraftField>(scope, onDirtyStateChange);
   const [fields, setFields] = useState(initial),
     [lineAmounts, setLineAmounts] = useState<Record<string, string>>({}),
     [linePage, setLinePage] = useState(0);
@@ -165,20 +171,25 @@ export function FinancialAllocationReceiptWorkspace({
     services,
     setRecord,
   ]);
-  function edit(values: Partial<typeof initial>, sourceChanged = false) {
-    if (
-      sourceChanged &&
-      Object.values(lineAmounts).some((value) => value !== "") &&
-      !draft.confirmDiscard()
-    )
-      return false;
-    if (
-      !readMode &&
-      Object.entries(values).some(
-        ([key, value]) => value !== fields[key as keyof typeof initial],
-      )
-    )
-      draft.edited();
+  function edit(
+    values: Partial<typeof initial>,
+    sourceChanged = false,
+    discarded: DraftField[] = [],
+    selections: DraftField[] = [],
+  ) {
+    const cleared: DraftField[] = [
+      ...discarded,
+      ...(sourceChanged ? ["lineAmounts" as const] : []),
+    ];
+    if (!draft.confirmDiscard(cleared)) return false;
+    for (const [name, value] of Object.entries(values)) {
+      const key = name as keyof typeof initial;
+      if (value !== fields[key] && (!readMode || draft.hasEdits([key])))
+        draft.edited(key);
+    }
+    draft.clear(cleared);
+    for (const key of selections)
+      if (!readMode || draft.hasEdits([key])) draft.edited(key);
     cancel();
     invalidate();
     setProposal(null);
@@ -428,7 +439,28 @@ export function FinancialAllocationReceiptWorkspace({
         setProposal(returned);
         if (request)
           preparation?.review(request, {
-            onRecorded: draft.captureRecorded(),
+            onRecorded: draft.captureRecorded(
+              mode === "allocate"
+                ? [
+                    "source",
+                    "basis",
+                    ...(basis !== "PROPOSAL"
+                      ? ([
+                          "targetKind",
+                          "target",
+                          ...(targetKind === "INVOICE"
+                            ? (["lineAmounts"] as const)
+                            : (["amount"] as const)),
+                        ] as const)
+                      : []),
+                    ...(basis === "DESIGNATED"
+                      ? (["designation"] as const)
+                      : []),
+                  ]
+                : mode === "reprint"
+                  ? ["source", "receiptByPayment", "reason", "delivery"]
+                  : ["source", "reason"],
+            ),
             consequence:
               mode === "allocate"
                 ? "Post only the exact displayed Payment Allocation batch or designated target and lines. Payment value, Customer Credit and Deposit value remain separate. Any further eligible batch needs a new explicit proposal and confirmation."
@@ -497,7 +529,15 @@ export function FinancialAllocationReceiptWorkspace({
               <select
                 value={receiptByPayment ? "payment" : "receipt"}
                 onChange={(e) => {
-                  if (!edit({ source: "" }, true)) return;
+                  if (
+                    !edit(
+                      { source: "" },
+                      true,
+                      ["source"],
+                      ["receiptByPayment"],
+                    )
+                  )
+                    return;
                   setReceiptByPayment(e.target.value === "payment");
                 }}
               >
@@ -538,8 +578,23 @@ export function FinancialAllocationReceiptWorkspace({
                 <select
                   value={basis}
                   onChange={(e) => {
-                    if (!edit({}, true)) return;
                     const value = e.target.value;
+                    if (value === basis) return;
+                    if (
+                      !edit(
+                        {},
+                        true,
+                        [],
+                        [
+                          "basis",
+                          ...(value === "DIRECT_CHARGE" &&
+                          targetKind !== "LATE_PAYMENT_CHARGE"
+                            ? (["targetKind"] as const)
+                            : []),
+                        ],
+                      )
+                    )
+                      return;
                     setBasis(
                       value === "PROPOSAL"
                         ? "PROPOSAL"
@@ -566,7 +621,15 @@ export function FinancialAllocationReceiptWorkspace({
                       <select
                         value={targetKind}
                         onChange={(e) => {
-                          if (!edit({ target: "" }, true)) return;
+                          if (
+                            !edit(
+                              { target: "" },
+                              true,
+                              ["target"],
+                              ["targetKind"],
+                            )
+                          )
+                            return;
                           setTargetKind(
                             e.target.value === "INVOICE"
                               ? "INVOICE"
@@ -686,7 +749,7 @@ export function FinancialAllocationReceiptWorkspace({
                                     invalidate();
                                     const value = e.target.value;
                                     if (value !== (lineAmounts[id] ?? ""))
-                                      draft.edited();
+                                      draft.edited("lineAmounts");
                                     setLineAmounts((old) => ({
                                       ...old,
                                       [id]: value,

@@ -26526,6 +26526,180 @@
       "test_path": "frontend/src/test/financialWorkflows.browser.ts",
       "status": "implemented",
       "notes": "Real Chromium native Property-discard dialog cancellation retains source/amount/reason and request count; acceptance resets the new Property form and returning cannot restore discarded values. GET-only synthetic calls, no saved intent or automatic replay."
+    },
+    {
+      "test_id": "TEST-FE-529",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "API-085"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Confirming a selected Refund return-correction reversal acknowledges only its fields; an unsent Pet payout source, qualification and USD123.45 remain dirty and populated."
+    },
+    {
+      "test_id": "TEST-FE-530",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "API-066"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Refund source cancellation preserves source kind, both exact dependent references, amount and invalidation/request count; explicit consent clears only the dependent references."
+    },
+    {
+      "test_id": "TEST-FE-531",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "API-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "A payer-scope selection alone marks Payment draft state without loading or sending financial requests."
+    },
+    {
+      "test_id": "TEST-FE-532",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "API-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Acknowledging an earlier ordinary Payment review preserves a later unsent third-party selection and leaves original request scope unchanged."
+    },
+    {
+      "test_id": "TEST-FE-533",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "UI-103"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "Field-key/generation ownership clears only submitted matching edits, retaining unrelated fields, later same-field changes and fields first edited after review."
+    },
+    {
+      "test_id": "TEST-FE-534",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "Discard consent and clearing are scoped to affected fields; cancellation retains edits, unaffected fields do not prompt, and an old acknowledgement cannot clear a replacement generation."
+    },
+    {
+      "test_id": "TEST-FE-535",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "API-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Later manual/channel checkbox edits retain dirty protection after original acknowledgement; immutable reviewed request bytes stay identical. Synthetic manual tests use the existing required grant."
+    },
+    {
+      "test_id": "TEST-FE-536",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "API-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Unsent manual/channel choices and channel values survive voluntary mode/currency changes and revision invalidation; current manual eligibility is still invalidated and fresh authorization checks remain required."
+    },
+    {
+      "test_id": "TEST-FE-537",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "API-058",
+        "API-064"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Credit and Allocation attribution selections alone mark unsent draft state without any financial request."
+    },
+    {
+      "test_id": "TEST-FE-538",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "UI-103",
+        "API-057",
+        "API-066"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Actual controller/transport/recovery preserves selection-only Payment drafts across an explicitly confirmed Refund or original-key replay. Beforeunload remains protected; cancelled Property change keeps exact selection/scope with no extra requests and an empty confirmed journal."
+    },
+    {
+      "test_id": "TEST-FE-539",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "API-058",
+        "API-064"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Credit and Allocation target-type changes warn before clearing a pending target reference; cancellation preserves reference, selected type and invalidation/request count, while consent clears the dependent target."
+    },
+    {
+      "test_id": "TEST-FE-540",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "API-066"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium native Refund source cancellation retains exact Pet references and live finite source context with no request; explicit consent clears only dependent references. Synthetic contexts and zero financial network."
+    },
+    {
+      "test_id": "TEST-FE-541",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "UI-103",
+        "API-085"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium actual controller/transport/encrypted recovery confirms a return-correction reversal directly and through original-key replay while retaining an unrelated USD123.45 Pet payout draft. Unload/Property cancellation still warns and preserves it; consent resets. Identical replay key/bytes and zero financial network."
+    },
+    {
+      "test_id": "TEST-FE-542",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "UI-103",
+        "API-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium payer selection alone and a later selection after an unknown original Payment retain unload/Property warnings. Explicit original-key replay sends unchanged NORMAL_CUSTOMER bytes, clears only the journal and leaves later THIRD_PARTY_IDENTIFIED draft unsent. No financial network."
     }
   ]
 }

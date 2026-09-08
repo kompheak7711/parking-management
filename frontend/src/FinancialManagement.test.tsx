@@ -1047,3 +1047,70 @@ describe("financial draft boundaries around explicit confirmation", () => {
     }
   });
 });
+
+describe("selection-only financial drafts around actual recovery", () => {
+  it.each([false, true])(
+    "TEST-FE-538 preserves a Payment selection after Refund confirmation and original-key replay %s",
+    async (replay) => {
+      const h = harness(true),
+        discard = vi.spyOn(window, "confirm").mockReturnValue(false);
+      try {
+        if (replay) h.setOutcome("unknown");
+        render(
+          <FinancialManagement actorId={ids.actor} services={h.services} />,
+        );
+        await openProperty();
+        if (!replay)
+          fireEvent.change(screen.getByLabelText("Payment payer scope"), {
+            target: { value: "THIRD_PARTY_IDENTIFIED" },
+          });
+        const dialog = await prepareRefund();
+        fireEvent.click(
+          within(dialog).getByRole("button", { name: "Record USD refund" }),
+        );
+        if (replay) {
+          const review = await screen.findByRole("button", {
+            name: "Review original action",
+          });
+          fireEvent.change(screen.getByLabelText("Payment payer scope"), {
+            target: { value: "THIRD_PARTY_IDENTIFIED" },
+          });
+          h.setOutcome("success");
+          fireEvent.click(review);
+          const pending = await screen.findByRole("dialog", {
+            name: "Review original unresolved action",
+          });
+          fireEvent.click(
+            within(pending).getByRole("button", {
+              name: "Send original action again",
+            }),
+          );
+        }
+        await recorded();
+        const dirty = new Event("beforeunload", { cancelable: true });
+        window.dispatchEvent(dirty);
+        expect(dirty.defaultPrevented).toBe(true);
+        const before = h.calls.length;
+        fireEvent.change(screen.getByLabelText("Financial Property"), {
+          target: { value: ids.other },
+        });
+        expect(discard).toHaveBeenCalledOnce();
+        expect(screen.getByLabelText("Financial Property")).toHaveValue(
+          ids.property,
+        );
+        expect(screen.getByLabelText("Payment payer scope")).toHaveValue(
+          "THIRD_PARTY_IDENTIFIED",
+        );
+        expect(h.calls).toHaveLength(before);
+        expect(posts(h)).toHaveLength(replay ? 2 : 1);
+        expect(h.records.size).toBe(0);
+        if (replay) {
+          expect(posts(h)[1]?.key).toBe(posts(h)[0]?.key);
+          expect(posts(h)[1]?.body).toBe(posts(h)[0]?.body);
+        }
+      } finally {
+        discard.mockRestore();
+      }
+    },
+  );
+});

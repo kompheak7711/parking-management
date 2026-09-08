@@ -81,7 +81,8 @@ export function FinancialRefundWorkspace({
   const allowed = modes.filter(([, , capability]) => capabilities[capability]);
   const [mode, setMode] = useState<Mode>(allowed[0]?.[0] ?? "read");
   const [source, setSource] = useState<Source>("PAYMENT");
-  const draft = useFinancialDraft(scope, onDirtyStateChange);
+  type DraftField = keyof typeof initial | "sourceKind";
+  const draft = useFinancialDraft<DraftField>(scope, onDirtyStateChange);
   const [fields, setFields] = useState(initial);
   const [context, setContext] = useState<FinancialObject | null>(null);
   const [list, setList, listCurrent] = useFinancialSnapshot<FinancialReply>(
@@ -97,13 +98,11 @@ export function FinancialRefundWorkspace({
     setContext(null);
   }, [revision, cancel]);
   function edit(values: Partial<typeof initial>) {
-    if (
-      mode !== "read" &&
-      Object.entries(values).some(
-        ([key, value]) => value !== fields[key as keyof typeof initial],
-      )
-    )
-      draft.edited();
+    for (const [name, value] of Object.entries(values)) {
+      const key = name as keyof typeof initial;
+      if (value !== fields[key] && (mode !== "read" || draft.hasEdits([key])))
+        draft.edited(key);
+    }
     cancel();
     invalidate();
     setContext(null);
@@ -145,6 +144,7 @@ export function FinancialRefundWorkspace({
   }
   function readDetail(id = fields.refund, cursor?: string) {
     if (!capabilities["refunds.read"]) return;
+    if (id !== fields.refund && !draft.confirmDiscard(["refund"])) return;
     setDetail(null);
     void task.run(
       async (s) =>
@@ -159,6 +159,7 @@ export function FinancialRefundWorkspace({
         ),
       (reply) => {
         setDetail(reply);
+        if (id !== fields.refund) draft.clear(["refund"]);
         setFields((old) => ({ ...old, refund: id }));
       },
     );
@@ -293,7 +294,26 @@ export function FinancialRefundWorkspace({
         setContext(data);
         if (request)
           preparation?.review(request, {
-            onRecorded: draft.captureRecorded(),
+            onRecorded: draft.captureRecorded(
+              mode === "create"
+                ? [
+                    "sourceKind",
+                    "sourceId",
+                    "amount",
+                    "reason",
+                    ...(source === "PET_DEPOSIT" ? ["reviewId" as const] : []),
+                  ]
+                : mode === "return"
+                  ? [
+                      "refund",
+                      "amount",
+                      "returnedAt",
+                      "method",
+                      "evidence",
+                      "reason",
+                    ]
+                  : ["refund", "correction", "evidence", "reason"],
+            ),
             consequence:
               mode === "create"
                 ? "Record a completed USD payout from this exact source. The original payout and its audit history are permanent."
@@ -386,7 +406,12 @@ export function FinancialRefundWorkspace({
                       value === "CREDIT" ||
                       value === "PET_DEPOSIT"
                     ) {
+                      if (value === source) return;
+                      if (!draft.confirmDiscard(["sourceId", "reviewId"]))
+                        return;
                       edit({ sourceId: "", reviewId: "" });
+                      draft.clear(["sourceId", "reviewId"]);
+                      draft.edited("sourceKind");
                       setSource(value);
                     }
                   }}

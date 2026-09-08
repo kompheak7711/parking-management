@@ -255,13 +255,13 @@ export async function loadPaymentReversalContext(
   }
 }
 
-/** Keep only dirty state and an edit generation; draft values never leave their form. */
-export function useFinancialDraft(
+/** Track finite field keys and edit generations; draft values stay in their form. */
+export function useFinancialDraft<Field extends string>(
   scope: FinancialScope,
   onDirtyStateChange?: (dirty: boolean) => void,
 ) {
   const { actorId, propertyId, signal } = scope;
-  const dirty = useRef(false),
+  const edits = useRef(new Map<Field, number>()),
     generation = useRef(0);
   const identity = useRef<{
     actorId: string;
@@ -271,15 +271,16 @@ export function useFinancialDraft(
   const notify = useRef(onDirtyStateChange);
   useLayoutEffect(() => {
     notify.current = onDirtyStateChange;
-    onDirtyStateChange?.(dirty.current);
+    onDirtyStateChange?.(edits.current.size > 0);
   }, [onDirtyStateChange]);
-  const reset = useCallback(() => {
-    generation.current++;
-    if (dirty.current) {
-      dirty.current = false;
-      notify.current?.(false);
-    }
+  const remove = useCallback((keys: readonly Field[]) => {
+    const wasDirty = edits.current.size > 0;
+    for (const key of keys) edits.current.delete(key);
+    if (wasDirty && edits.current.size === 0) notify.current?.(false);
   }, []);
+  const reset = useCallback(() => {
+    remove([...edits.current.keys()]);
+  }, [remove]);
   useLayoutEffect(() => {
     const origin = { actorId, propertyId, signal };
     identity.current = origin;
@@ -303,32 +304,56 @@ export function useFinancialDraft(
       identity.current.signal === signal,
     [actorId, propertyId, signal],
   );
-  const clear = useCallback(() => {
-    if (isCurrent()) reset();
-  }, [isCurrent, reset]);
-  const edited = useCallback(() => {
-    if (!isCurrent()) return;
-    generation.current++;
-    if (!dirty.current) {
-      dirty.current = true;
-      notify.current?.(true);
-    }
-  }, [isCurrent]);
-  const captureRecorded = useCallback(() => {
-    const captured = generation.current;
-    return () => {
-      if (isCurrent() && generation.current === captured) reset();
-    };
-  }, [isCurrent, reset]);
-  const confirmDiscard = useCallback(
-    () =>
-      isCurrent() &&
-      (!dirty.current ||
-        window.confirm("Discard unsaved financial form values?")),
+  const clear = useCallback(
+    (keys?: readonly Field[]) => {
+      if (isCurrent()) remove(keys ?? [...edits.current.keys()]);
+    },
+    [isCurrent, remove],
+  );
+  const edited = useCallback(
+    (key: Field, ...additional: Field[]) => {
+      if (!isCurrent()) return;
+      const wasDirty = edits.current.size > 0;
+      for (const field of [key, ...additional])
+        edits.current.set(field, ++generation.current);
+      if (!wasDirty) notify.current?.(true);
+    },
     [isCurrent],
   );
+  const captureRecorded = useCallback(
+    (keys: readonly Field[]) => {
+      const captured = keys.flatMap((key) => {
+        const value = edits.current.get(key);
+        return value === undefined ? [] : [[key, value] as const];
+      });
+      return () => {
+        if (isCurrent())
+          remove(
+            captured
+              .filter(([key, value]) => edits.current.get(key) === value)
+              .map(([key]) => key),
+          );
+      };
+    },
+    [isCurrent, remove],
+  );
+  const hasEdits = useCallback(
+    (keys?: readonly Field[]) =>
+      isCurrent() &&
+      (keys
+        ? keys.some((key) => edits.current.has(key))
+        : edits.current.size > 0),
+    [isCurrent],
+  );
+  const confirmDiscard = useCallback(
+    (keys?: readonly Field[]) =>
+      isCurrent() &&
+      (!hasEdits(keys) ||
+        window.confirm("Discard unsaved financial form values?")),
+    [isCurrent, hasEdits],
+  );
   return useMemo(
-    () => ({ edited, captureRecorded, confirmDiscard, clear }),
-    [edited, captureRecorded, confirmDiscard, clear],
+    () => ({ edited, captureRecorded, confirmDiscard, clear, hasEdits }),
+    [edited, captureRecorded, confirmDiscard, clear, hasEdits],
   );
 }

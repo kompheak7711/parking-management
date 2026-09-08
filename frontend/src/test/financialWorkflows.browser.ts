@@ -141,6 +141,7 @@ export async function startFinancialWorkflowBrowserScenario(
     readOnly?: boolean;
     staffReview?: boolean;
     reviewCorrection2?: boolean;
+    draftCorrection2?: boolean;
   } = {},
 ) {
   const input = command(index);
@@ -175,6 +176,9 @@ export async function startFinancialWorkflowBrowserScenario(
                 "payments.record",
                 "refunds.create",
                 "receipts.read",
+                ...(options.draftCorrection2
+                  ? ["refunds.corrections.reverse"]
+                  : []),
                 ...(options.reviewCorrection2
                   ? [
                       "payments.allocate",
@@ -256,6 +260,36 @@ export async function startFinancialWorkflowBrowserScenario(
         limit: 50,
         next_cursor: null,
       });
+    }
+    if (options.draftCorrection2 && call.method === "GET") {
+      const path = new URL(call.url, "https://synthetic.invalid").pathname;
+      if (
+        path.endsWith(
+          `/refunds/${ids.refund}/corrections/${ids.event}/reversal-context`,
+        )
+      )
+        return response(draftReversalBrowserContext(actorId), init, {
+          limit: 50,
+          next_cursor: null,
+        });
+      if (path.endsWith(`/refund-sources/PET_DEPOSIT/${ids.payment}`))
+        return response(
+          {
+            source_type: "PET_DEPOSIT",
+            source_id: ids.payment,
+            property_id: ids.property,
+            recipient_customer_id: ids.customer,
+            refund_currency: "USD",
+            available_usd_cents: 20000,
+            eligible: true,
+            pet_refund_review_id: ids.event,
+            pet_departure_id: ids.other,
+            pet_approval_id: ids.application,
+            lease_id: ids.invoice,
+            qualified_at: "2026-09-01T12:00:00+07:00",
+          },
+          init,
+        );
     }
     if (call.method === "GET") {
       if (options.staffReview) {
@@ -992,4 +1026,101 @@ export async function verifyFinancialDraftDiscardBrowser() {
     "Unsent drafts are never persisted as encrypted command intents or automatically replayed",
   );
   return "TEST-FE-528";
+}
+
+function draftReversalBrowserContext(actorId: string): FinancialObject {
+  const sample = [...actionContextFixtures]
+    .reverse()
+    .find(
+      (item) =>
+        item.request.purpose === "refund_correction_reversal" &&
+        financialObject(item.data.context).reversal === null &&
+        financialObject(
+          financialObject(financialObject(item.data.context).refund).refund,
+        ).source_lifecycle_event_id === null,
+    );
+  check(
+    sample?.request.refund_id,
+    "Synthetic reversible USD Refund context required",
+  );
+  let serialized = stringifyFinancialJson(sample.data);
+  for (const [from, to] of [
+    [sample.actorId, actorId],
+    [sample.propertyId, ids.property],
+    [sample.request.source_id, ids.event],
+    [sample.request.refund_id, ids.refund],
+  ])
+    serialized = serialized.replaceAll(
+      JSON.stringify(from),
+      JSON.stringify(to),
+    );
+  return financialObject(parseFinancialJson(serialized));
+}
+
+export function verifyFinancialSourceDraftBrowser() {
+  const s = current(),
+    region = s.host.querySelector("#financial-refund-workspace");
+  check(
+    region?.textContent.includes("Selected Refund source"),
+    "Cancelled source change retains loaded finite source facts",
+  );
+  check(
+    s.calls.every((call) => call.method === "GET"),
+    "Source cancellation cannot submit a command",
+  );
+  return "TEST-FE-540";
+}
+export async function verifyFinancialOperationDraftBrowser(posts: number) {
+  const s = current(),
+    sent = s.calls.filter((call) => call.method === "POST");
+  check(
+    sent.length === posts &&
+      sent.every((call) =>
+        call.url.endsWith(
+          `/refunds/${ids.refund}/verified-returns/${ids.event}/reverse`,
+        ),
+      ),
+    "Only the explicitly confirmed correction may be sent",
+  );
+  if (posts === 2)
+    check(
+      sent[0]?.key === sent[1]?.key && sent[0]?.body === sent[1]?.body,
+      "Replay retains its original key and exact bytes",
+    );
+  check(
+    (await sealedIntentStore.read(s.actorId)) === null,
+    "Confirmed correction clears only its encrypted recovery journal",
+  );
+  const event = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(event);
+  check(
+    event.defaultPrevented,
+    "Unrelated unsent payout still warns on unload",
+  );
+  return "TEST-FE-541";
+}
+export async function verifyFinancialSelectionDraftBrowser(posts: number) {
+  const s = current(),
+    sent = s.calls.filter((call) => call.method === "POST");
+  check(sent.length === posts, "Selection edits never send another action");
+  if (posts === 2) {
+    check(
+      sent[0]?.key === sent[1]?.key && sent[0]?.body === sent[1]?.body,
+      "Original Payment replay must retain key and bytes",
+    );
+    check(
+      sent[0]?.body &&
+        financialObject(parseFinancialJson(sent[0].body)).payment_scope_kind ===
+          "NORMAL_CUSTOMER",
+      "Later payer selection cannot change the original Payment",
+    );
+  }
+  check(
+    (await sealedIntentStore.read(s.actorId)) === null,
+    "No unresolved journal remains",
+  );
+  const event = new Event("beforeunload", { cancelable: true });
+  window.dispatchEvent(event);
+  check(event.defaultPrevented, "Unsent payer selection still warns on unload");
+  return "TEST-FE-542";
 }

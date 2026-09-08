@@ -3247,3 +3247,315 @@ describe("retained proposal history and complete amount alignment", () => {
     }
   });
 });
+
+describe("operation-owned unsent financial drafts", () => {
+  it("TEST-FE-529 retains an unsent payout after another Refund operation is acknowledged", async () => {
+    const sample = currentRefund("refund_correction_reversal"),
+      h = refundProps(sample, "refunds.create"),
+      changed = vi.fn();
+    h.props.capabilities["refunds.corrections.reverse"] = true;
+    render(
+      <FinancialRefundWorkspace {...h.props} onDirtyStateChange={changed} />,
+    );
+    fill("Refund source", "PET_DEPOSIT");
+    fill("Source reference", ids.payment);
+    fill("Qualifying Pet review reference", ids.event);
+    fill("Refund amount (USD)", "123.45");
+    fill("Reason", "Synthetic unsent payout");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Reverse return correction" }),
+    );
+    fill("Refund reference", sample.request.refund_id ?? "");
+    fill("Original return correction reference", sample.request.source_id);
+    fill("Evidence reference", "Synthetic correction evidence");
+    fill("Reason", "Correct erroneous return evidence");
+    reviewRefund();
+    await waitFor(() => {
+      expect(h.review).toHaveBeenCalledOnce();
+    });
+    const review = h.review.mock.calls[0];
+    expect(review?.[0].operation).toBe("refundReturnReverse");
+    if (!review?.[1].onRecorded)
+      throw new Error("Expected exact acknowledgement");
+    act(review[1].onRecorded);
+    expect(changed).toHaveBeenLastCalledWith(true);
+    fireEvent.click(screen.getByRole("button", { name: "Record USD Refund" }));
+    expect(screen.getByLabelText("Source reference")).toHaveValue(ids.payment);
+    expect(
+      screen.getByLabelText("Qualifying Pet review reference"),
+    ).toHaveValue(ids.event);
+    expect(screen.getByLabelText("Refund amount (USD)")).toHaveValue("123.45");
+    expect(h.calls.every((c) => c.method === "GET")).toBe(true);
+  });
+  it("TEST-FE-530 cancels Refund source loss before resetting references or invalidating", () => {
+    const h = refundProps(currentRefund("refund_return"), "refunds.create"),
+      discard = vi.spyOn(window, "confirm").mockReturnValue(false);
+    try {
+      render(<FinancialRefundWorkspace {...h.props} />);
+      fill("Refund source", "PET_DEPOSIT");
+      fill("Source reference", ids.payment);
+      fill("Qualifying Pet review reference", ids.event);
+      fill("Refund amount (USD)", "123.45");
+      fill("Reason", "Synthetic unsent payout");
+      const invalidations = vi.mocked(h.props.commands.invalidate).mock.calls
+        .length;
+      fill("Refund source", "PAYMENT");
+      expect(discard).toHaveBeenCalledOnce();
+      expect(screen.getByLabelText("Refund source")).toHaveValue("PET_DEPOSIT");
+      expect(screen.getByLabelText("Source reference")).toHaveValue(
+        ids.payment,
+      );
+      expect(
+        screen.getByLabelText("Qualifying Pet review reference"),
+      ).toHaveValue(ids.event);
+      expect(screen.getByLabelText("Refund amount (USD)")).toHaveValue(
+        "123.45",
+      );
+      expect(h.props.commands.invalidate).toHaveBeenCalledTimes(invalidations);
+      expect(h.calls).toHaveLength(0);
+      discard.mockReturnValue(true);
+      fill("Refund source", "PAYMENT");
+      expect(screen.getByLabelText("Source reference")).toHaveValue("");
+      expect(screen.getByLabelText("Refund amount (USD)")).toHaveValue(
+        "123.45",
+      );
+      fill("Refund source", "PET_DEPOSIT");
+      expect(
+        screen.getByLabelText("Qualifying Pet review reference"),
+      ).toHaveValue("");
+    } finally {
+      discard.mockRestore();
+    }
+  });
+  it("TEST-FE-531 marks a selection-only Payment draft dirty", () => {
+    const h = paymentHarness("payments.record"),
+      changed = vi.fn();
+    render(
+      <FinancialPaymentWorkspace {...h.props} onDirtyStateChange={changed} />,
+    );
+    expect(changed).toHaveBeenLastCalledWith(false);
+    fill("Payment payer scope", "THIRD_PARTY_IDENTIFIED");
+    expect(screen.getByLabelText("Payment payer scope")).toHaveValue(
+      "THIRD_PARTY_IDENTIFIED",
+    );
+    expect(changed).toHaveBeenLastCalledWith(true);
+    expect(h.calls).toHaveLength(0);
+  });
+  it("TEST-FE-532 retains a later Payment selection after the original review is acknowledged", async () => {
+    const h = paymentHarness("payments.record"),
+      changed = vi.fn();
+    render(
+      <FinancialPaymentWorkspace {...h.props} onDirtyStateChange={changed} />,
+    );
+    await paymentInput(h);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review incoming Payment" }),
+    );
+    await waitFor(() => {
+      expect(h.review).toHaveBeenCalledOnce();
+    });
+    const review = h.review.mock.calls[0];
+    expect(review?.[0].body.payment_scope_kind).toBe("NORMAL_CUSTOMER");
+    if (!review?.[1].onRecorded)
+      throw new Error("Expected exact acknowledgement");
+    fill("Payment payer scope", "THIRD_PARTY_IDENTIFIED");
+    act(review[1].onRecorded);
+    expect(changed).toHaveBeenLastCalledWith(true);
+    expect(screen.getByLabelText("Payment payer scope")).toHaveValue(
+      "THIRD_PARTY_IDENTIFIED",
+    );
+    expect(review[0].body.payment_scope_kind).toBe("NORMAL_CUSTOMER");
+    expect(h.recovery.submit).not.toHaveBeenCalled();
+  });
+});
+
+describe("command selections and conditional Payment draft ownership", () => {
+  it.each(["channel", "manual"] as const)(
+    "TEST-FE-535 retains a later %s choice after acknowledgement of the original Payment",
+    async (choice) => {
+      const h = paymentHarness("payments.record"),
+        changed = vi.fn();
+      if (choice === "manual") {
+        h.outage();
+        h.props.capabilities["exchange_rates.manage"] = true;
+      }
+      const view = render(
+        <FinancialPaymentWorkspace {...h.props} onDirtyStateChange={changed} />,
+      );
+      await paymentInput(h, "KHR");
+      if (choice === "manual") {
+        fireEvent.click(
+          screen.getByRole("button", { name: "Load provisional KHR preview" }),
+        );
+        fireEvent.click(
+          await screen.findByLabelText("Use authorized manual fallback"),
+        );
+        fill("Manual reference KHR per USD", "4000.000000");
+        fill("Manual source reference", "Synthetic approved equivalent source");
+        fill(/Manual reference applicable at/, "2026-09-08T10:00:00.123");
+        fill("Manual fallback reason", "Synthetic automatic-source outage");
+      }
+      fireEvent.click(
+        screen.getByRole("button", { name: "Review incoming Payment" }),
+      );
+      await waitFor(() => {
+        expect(h.review).toHaveBeenCalledOnce();
+      });
+      const review = h.review.mock.calls[0];
+      if (!review?.[1].onRecorded)
+        throw new Error("Expected original acknowledgement");
+      const bytes = captureFinancialRequest(review[0]).wireBody;
+      const label =
+        choice === "manual"
+          ? "Use authorized manual fallback"
+          : "Include actual channel confirmation evidence";
+      fireEvent.click(screen.getByLabelText(label));
+      act(review[1].onRecorded);
+      expect(changed).toHaveBeenLastCalledWith(true);
+      expect(screen.getByLabelText(label)).toHaveProperty(
+        "checked",
+        choice === "channel",
+      );
+      expect(captureFinancialRequest(review[0]).wireBody).toBe(bytes);
+      view.rerender(
+        <FinancialPaymentWorkspace
+          {...h.props}
+          commands={{ ...h.props.commands, revision: 1 }}
+          onDirtyStateChange={changed}
+        />,
+      );
+      if (choice === "channel")
+        expect(screen.getByLabelText(label)).toBeChecked();
+      expect(changed).toHaveBeenLastCalledWith(true);
+      expect(h.recovery.submit).not.toHaveBeenCalled();
+    },
+  );
+  it("TEST-FE-536 retains unsent manual evidence and choices across voluntary mode/currency changes and revisions", async () => {
+    const h = paymentHarness("payments.record"),
+      changed = vi.fn(),
+      discard = vi.spyOn(window, "confirm").mockReturnValue(true);
+    h.props.capabilities["payments.read"] = true;
+    h.props.capabilities["exchange_rates.manage"] = true;
+    h.outage();
+    try {
+      const view = render(
+        <FinancialPaymentWorkspace {...h.props} onDirtyStateChange={changed} />,
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Record Payment" }));
+      await paymentInput(h, "KHR");
+      fireEvent.click(
+        screen.getByRole("button", { name: "Load provisional KHR preview" }),
+      );
+      fireEvent.click(
+        await screen.findByLabelText("Use authorized manual fallback"),
+      );
+      fill("Manual source reference", "Synthetic unsent manual evidence");
+      fireEvent.click(
+        screen.getByLabelText("Include actual channel confirmation evidence"),
+      );
+      fill("Actual channel USD value", "12.34");
+      fireEvent.click(screen.getByRole("button", { name: "View Payments" }));
+      fireEvent.click(screen.getByRole("button", { name: "Record Payment" }));
+      expect(
+        screen.getByLabelText("Use authorized manual fallback"),
+      ).toBeChecked();
+      expect(
+        screen.getByLabelText("Include actual channel confirmation evidence"),
+      ).toBeChecked();
+      fill("Incoming currency", "USD");
+      fill("Incoming currency", "KHR");
+      expect(
+        screen.getByLabelText("Include actual channel confirmation evidence"),
+      ).toBeChecked();
+      expect(screen.getByLabelText("Actual channel USD value")).toHaveValue(
+        "12.34",
+      );
+      view.rerender(
+        <FinancialPaymentWorkspace
+          {...h.props}
+          commands={{ ...h.props.commands, revision: 1 }}
+          onDirtyStateChange={changed}
+        />,
+      );
+      expect(
+        screen.getByLabelText("Use authorized manual fallback"),
+      ).toBeChecked();
+      expect(changed).toHaveBeenLastCalledWith(true);
+      expect(h.review).not.toHaveBeenCalled();
+    } finally {
+      discard.mockRestore();
+    }
+  });
+  it.each(["Credit", "Allocation"] as const)(
+    "TEST-FE-537 tracks selection-only %s attribution",
+    (kind) => {
+      const sample =
+          kind === "Credit"
+            ? creditSample("credit_application", "INVOICE")
+            : allocationSample("INVOICE"),
+        h = creditHarness(
+          sample,
+          kind === "Credit" ? "credits.apply" : "payments.allocate",
+        ),
+        changed = vi.fn();
+      render(
+        kind === "Credit" ? (
+          <FinancialCreditWorkspace {...h.props} onDirtyStateChange={changed} />
+        ) : (
+          <FinancialAllocationReceiptWorkspace
+            {...h.props}
+            onDirtyStateChange={changed}
+          />
+        ),
+      );
+      expect(changed).toHaveBeenLastCalledWith(false);
+      fill(kind + " attribution", "DESIGNATED");
+      expect(changed).toHaveBeenLastCalledWith(true);
+      expect(h.calls).toHaveLength(0);
+    },
+  );
+});
+
+it.each(["Credit", "Allocation"] as const)(
+  "TEST-FE-539 cancels %s target changes before clearing a pending target reference",
+  (kind) => {
+    const sample =
+        kind === "Credit"
+          ? creditSample("credit_application", "INVOICE")
+          : allocationSample("INVOICE"),
+      h = creditHarness(
+        sample,
+        kind === "Credit" ? "credits.apply" : "payments.allocate",
+      ),
+      discard = vi.spyOn(window, "confirm").mockReturnValue(false);
+    try {
+      render(
+        kind === "Credit" ? (
+          <FinancialCreditWorkspace {...h.props} />
+        ) : (
+          <FinancialAllocationReceiptWorkspace {...h.props} />
+        ),
+      );
+      if (kind === "Allocation") fill("Allocation attribution", "DESIGNATED");
+      const reference =
+          kind === "Credit"
+            ? "Target reference"
+            : "Allocation target reference",
+        selection =
+          kind === "Credit" ? "Credit target" : "Designated Allocation target";
+      fill(reference, ids.invoice);
+      const before = vi.mocked(h.props.commands.invalidate).mock.calls.length;
+      fill(selection, "LATE_PAYMENT_CHARGE");
+      expect(discard).toHaveBeenCalledOnce();
+      expect(screen.getByLabelText(reference)).toHaveValue(ids.invoice);
+      expect(screen.getByLabelText(selection)).toHaveValue("INVOICE");
+      expect(h.props.commands.invalidate).toHaveBeenCalledTimes(before);
+      expect(h.calls).toHaveLength(0);
+      discard.mockReturnValue(true);
+      fill(selection, "LATE_PAYMENT_CHARGE");
+      expect(screen.getByLabelText(reference)).toHaveValue("");
+    } finally {
+      discard.mockRestore();
+    }
+  },
+);
