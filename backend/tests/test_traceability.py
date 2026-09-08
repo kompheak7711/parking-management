@@ -1294,3 +1294,41 @@ def test_v1052_action_context_review_correction_preserves_all_prior_trace() -> N
         {"API-011", "API-012", "SEC-022"} <= set(entry["upstream_ids"])
         for entry in registered.values()
     )
+
+
+def test_v1052_action_context_review_aa_preserves_all_prior_trace() -> None:
+    import hashlib
+
+    entries = json.loads(MANIFEST_PATH.read_text())["entries"]
+    original = json.dumps(entries[:1717], sort_keys=True, separators=(",", ":")).encode()
+    assert (
+        hashlib.sha256(original).hexdigest()
+        == "91d34416a20b699bf8a695c0c801dc8a42e278f695e3bb1bc2c2550ddff00858"
+    )
+    required = {
+        "TEST-FE-408",
+        "test_financial_action_context_database_review_aa_refund_multiple_and_parent_reversal",
+        "TEST-FE-410",
+        "test_financial_action_context_database_review_aa_historical_receipt_identity",
+        "test_v1052_action_context_review_aa_preserves_all_prior_trace",
+        "test_financial_action_context_database_review_aa_legacy_reservation_null_evidence",
+        "TEST-FE-412",
+        "TEST-FE-403",
+        "TEST-FE-411",
+        "test_financial_action_context_database_review_aa_multiple_applications",
+        "TEST-FE-404",
+        "TEST-FE-406",
+        "TEST-FE-409",
+        "TEST-FE-402",
+        "TEST-FE-407",
+        "TEST-FE-405",
+    }
+    registered = {
+        entry["test_id"]: entry for entry in entries[1717:] if entry["test_id"] in required
+    }
+    assert set(registered) == required
+    assert all(entry["status"] == "implemented" for entry in registered.values())
+    assert all(
+        {"API-011", "API-012", "SEC-022"} <= set(entry["upstream_ids"])
+        for entry in registered.values()
+    )

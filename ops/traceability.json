@@ -24728,6 +24728,230 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "Preserve all1700 prior trace entries and require every new correction regression."
+    },
+    {
+      "test_id": "TEST-FE-402",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Selected active Allocation/application/net Refund fits conserved source aggregate."
+    },
+    {
+      "test_id": "TEST-FE-403",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Selected original never exceeds immutable Payment or recognized Credit."
+    },
+    {
+      "test_id": "TEST-FE-404",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Active selected return fits original payout minus current net Refund."
+    },
+    {
+      "test_id": "TEST-FE-405",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Current Payment/Credit/Pet return has exact evidence, originalUSD effect and bounded chronology."
+    },
+    {
+      "test_id": "TEST-FE-406",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Current reversal retains exact source effect, authorization and later recorded chronology."
+    },
+    {
+      "test_id": "TEST-FE-407",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Receipt and historical payer snapshot have finite fields and original issuance identity."
+    },
+    {
+      "test_id": "TEST-FE-408",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Multiple contributing events, reversed originals and full returns after parent reversal remain readable."
+    },
+    {
+      "test_id": "TEST-FE-409",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Legacy Reservation null return evidence is retained and invented evidence rejected."
+    },
+    {
+      "test_id": "TEST-FE-410",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Historical Receipt name/current reader separation and microsecond issuance order."
+    },
+    {
+      "test_id": "TEST-FE-411",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Selected financial events cannot precede their immutable recorded source."
+    },
+    {
+      "test_id": "TEST-FE-412",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Actual Chromium rejects contradictory source, Refund and Receipt contexts while retaining encrypted recovery intent."
+    },
+    {
+      "test_id": "test_financial_action_context_database_review_aa_multiple_applications",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Actual multiple applications retain selected original and remaining aggregate after reversal."
+    },
+    {
+      "test_id": "test_financial_action_context_database_review_aa_refund_multiple_and_parent_reversal",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Actual Payment/Credit Refunds, multiple returns/reversal and full return before parent reversal preserve original facts."
+    },
+    {
+      "test_id": "test_financial_action_context_database_review_aa_historical_receipt_identity",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Actual Customer name change and Payment reversal leave Receipt issuance identity unchanged."
+    },
+    {
+      "test_id": "test_financial_action_context_database_review_aa_legacy_reservation_null_evidence",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Actual coordinated Reservation replacement retains null original/returned evidence without invention."
+    },
+    {
+      "test_id": "test_v1052_action_context_review_aa_preserves_all_prior_trace",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "Preserve all1717 prior entries and register every AA correction regression."
     }
   ]
 }

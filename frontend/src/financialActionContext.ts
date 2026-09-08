@@ -359,7 +359,11 @@ function sourcePaymentFacts(
     id(reversed.actor_id);
     label(reversed.reason);
     label(reversed.authorization_reference);
-    financialInstant(reversed.occurred_at);
+    if (
+      financialInstant(reversed.occurred_at) <
+      financialInstant(payment.confirmed_at)
+    )
+      invalidFinancial();
   }
   if (payment.received_currency === "USD") {
     if (
@@ -494,7 +498,11 @@ function credit(
     (payment.status === "REVERSED" && active !== 0n)
   )
     invalidFinancial();
-  financialInstant(item.recognized_at);
+  if (
+    financialInstant(item.recognized_at) <
+    financialInstant(payment.confirmed_at)
+  )
+    invalidFinancial();
   id(item.recognized_by);
   label(item.reason);
   label(item.customer_authorization_reference);
@@ -657,7 +665,10 @@ function originalEvent(
   if (allocation) {
     same(row.payment_id, payment.id);
     same(row.target_customer_id, selected.customer_id);
-    financialInstant(row.posted_at);
+    if (
+      financialInstant(row.posted_at) < financialInstant(payment.confirmed_at)
+    )
+      invalidFinancial();
     id(row.posted_by);
     if (row.authorization_reference !== "payments.allocate") invalidFinancial();
     const basis = choice(row.between_invoice_basis, [
@@ -700,7 +711,11 @@ function originalEvent(
       invalidFinancial();
   } else {
     same(row.customer_credit_id, financialObject(creditRow?.credit).id);
-    financialInstant(row.occurred_at);
+    if (
+      financialInstant(row.occurred_at) <=
+      financialInstant(financialObject(creditRow?.credit).recognized_at)
+    )
+      invalidFinancial();
     id(row.actor_id);
     if (
       row.authorization_reference !== "credits.apply" ||
@@ -727,12 +742,30 @@ function refundSummary(
   expected: string,
   payment: FinancialObject | null,
   creditRow: FinancialObject | null,
+  paymentResource: FinancialObject | null,
 ): FinancialObject {
   const summary = financialObject(context.refund),
     row = financialObject(summary.refund),
     source = financialObject(summary.source);
   exactKeys(summary, ["refund", "source", "net_refund_usd_cents"]);
   exactKeys(source, ["type", "id", "property_id"]);
+  exactKeys(row, [
+    "id",
+    "refund_number",
+    "source_payment_id",
+    "source_customer_credit_id",
+    "source_deposit_id",
+    "source_lifecycle_event_id",
+    "pet_refund_review_id",
+    "recipient_customer_id",
+    "refund_amount_minor",
+    "refund_currency",
+    "usd_accounting_value_cents",
+    "processed_at",
+    "processed_by",
+    "reason",
+    "authorization_reference",
+  ]);
   same(source.property_id, property);
   same(row.id, expected);
   id(row.recipient_customer_id);
@@ -771,7 +804,7 @@ function refundSummary(
     const deposit = financialObject(context.deposit_source);
     exactKeys(deposit, ["id", "deposit_type", "held_usd_cents"]);
     same(deposit.id, source.id);
-    choice(deposit.deposit_type, ["RESERVATION", "PET"]);
+    choice(deposit.deposit_type, ["SECURITY", "PET"]);
     money(deposit.held_usd_cents);
     if (
       (deposit.deposit_type === "PET") !==
@@ -791,6 +824,27 @@ function refundSummary(
       if (creditRow !== null) invalidFinancial();
       same(source.id, payment.id);
     } else same(source.id, financialObject(creditRow?.credit).id);
+    const originalSource =
+      kind === "PAYMENT"
+        ? payment.usd_accounting_value_cents
+        : financialObject(creditRow?.credit).recognized_usd_cents;
+    const currentRefunded =
+      kind === "PAYMENT"
+        ? financialObject(
+            financialObject(paymentResource?.position).dispositions,
+          ).refund_usd_cents
+        : financialObject(creditRow?.position).refunded_usd_cents;
+    if (
+      payout > money(originalSource, 1n, maximumEvent) ||
+      money(summary.net_refund_usd_cents) > money(currentRefunded) ||
+      financialInstant(row.processed_at) <=
+        financialInstant(
+          kind === "PAYMENT"
+            ? payment.confirmed_at
+            : financialObject(creditRow?.credit).recognized_at,
+        )
+    )
+      invalidFinancial();
   }
   return row;
 }
@@ -801,6 +855,25 @@ function correction(
   original: FinancialObject | null,
 ): FinancialObject {
   const row = financialObject(value);
+  exactKeys(row, [
+    "id",
+    "refund_id",
+    "correction_kind",
+    "reverses_correction_id",
+    "source_balance_effect_usd_cents",
+    "source_balance_effect_original_minor",
+    "previous_net_refund_usd_cents",
+    "resulting_net_refund_usd_cents",
+    "reason",
+    "evidence_reference",
+    "occurred_at",
+    "actor_id",
+    "authorization_reference",
+    "verified_return_amount_minor",
+    "verified_return_currency",
+    "verified_returned_at",
+    "return_method_reference",
+  ]);
   same(row.id, expected);
   same(row.refund_id, refund.id);
   const ceiling = money(refund.refund_amount_minor, 1n);
@@ -814,14 +887,8 @@ function correction(
   label(row.reason);
   label(row.evidence_reference);
   label(row.authorization_reference);
-  financialInstant(row.occurred_at);
+  const occurred = financialInstant(row.occurred_at);
   id(row.actor_id);
-  if (
-    row.source_balance_effect_original_minor !== null &&
-    money(row.source_balance_effect_original_minor, -ceiling, ceiling) !==
-      effect
-  )
-    invalidFinancial();
   if (original === null) {
     if (
       row.correction_kind !== "VALUE_CORRECTION" ||
@@ -843,17 +910,38 @@ function correction(
     row.verified_returned_at,
     row.return_method_reference,
   ];
-  if (returned.some((v) => v !== null)) {
+  // Only the retained Reservation lifecycle path predates demonstrated-return evidence.
+  if (refund.source_lifecycle_event_id !== null) {
     if (
-      original !== null ||
+      row.source_balance_effect_original_minor !== null ||
+      returned.some((v) => v !== null)
+    )
+      invalidFinancial();
+    return row;
+  }
+  const payoutAt = financialInstant(refund.processed_at);
+  if (
+    money(row.source_balance_effect_original_minor, -ceiling, ceiling) !==
+      effect ||
+    occurred <= payoutAt ||
+    row.authorization_reference !==
+      (original === null ? "refunds.correct" : "refunds.corrections.reverse")
+  )
+    invalidFinancial();
+  if (original === null) {
+    if (
       returned.some((v) => v === null) ||
       row.verified_return_currency !== "USD" ||
       money(row.verified_return_amount_minor, 1n, ceiling) !== effect
     )
       invalidFinancial();
-    financialInstant(row.verified_returned_at);
+    const returnedAt = financialInstant(row.verified_returned_at);
+    if (returnedAt < payoutAt || returnedAt > occurred) invalidFinancial();
     label(row.return_method_reference);
-  } else if (original === null && refund.source_deposit_id === null)
+  } else if (
+    returned.some((v) => v !== null) ||
+    occurred <= financialInstant(original.occurred_at)
+  )
     invalidFinancial();
   return row;
 }
@@ -1075,13 +1163,28 @@ export function validateFinancialActionContext(
   } else if (purpose === "receipt_reprint") {
     exactKeys(context, ["receipt"]);
     const receipt = financialObject(context.receipt);
+    exactKeys(receipt, [
+      "id",
+      "receipt_number",
+      "payment_id",
+      "payer_customer_id",
+      "issued_at",
+      "issued_by",
+      "identity_snapshot",
+    ]);
     same(receipt.id, source);
     same(receipt.payment_id, payment?.id);
     same(receipt.payer_customer_id, payment?.payer_customer_id);
-    label(receipt.receipt_number);
-    financialInstant(receipt.issued_at);
-    id(receipt.issued_by);
-    financialObject(receipt.identity_snapshot);
+    if (
+      receipt.receipt_number !== `R-${source}` ||
+      financialInstant(receipt.issued_at) <
+        financialInstant(payment?.confirmed_at)
+    )
+      invalidFinancial();
+    same(receipt.issued_by, payment?.confirmed_by);
+    const identity = financialObject(receipt.identity_snapshot);
+    exactKeys(identity, ["payer_legal_name"]);
+    label(identity.payer_legal_name);
     const linked = financialObject(paymentResource?.receipt);
     same(linked.id, source);
     if (linked.receipt_number !== receipt.receipt_number) invalidFinancial();
@@ -1101,6 +1204,12 @@ export function validateFinancialActionContext(
         source,
         "credits.reverse",
       );
+      if (
+        context.reversal !== null &&
+        financialInstant(financialObject(context.reversal).occurred_at) <=
+          financialInstant(financialObject(creditRow?.credit).recognized_at)
+      )
+        invalidFinancial();
       const creditPosition = financialObject(creditRow?.position);
       if (
         (context.reversal !== null) !==
@@ -1132,6 +1241,28 @@ export function validateFinancialActionContext(
         ? "payments.allocations.reverse"
         : "credits.applications.reverse",
     );
+    if (
+      context.reversal !== null &&
+      financialInstant(financialObject(context.reversal).occurred_at) <=
+        financialInstant(original[allocation ? "posted_at" : "occurred_at"])
+    )
+      invalidFinancial();
+    const sourceCeiling = allocation
+      ? payment?.usd_accounting_value_cents
+      : financialObject(creditRow?.credit).recognized_usd_cents;
+    const selectedAmount = money(
+      original.amount_usd_cents,
+      1n,
+      money(sourceCeiling, 1n, maximumEvent),
+    );
+    if (context.reversal === null) {
+      const activeAmount = allocation
+        ? financialObject(
+            financialObject(paymentResource?.position).dispositions,
+          ).allocation_usd_cents
+        : financialObject(creditRow?.position).applied_usd_cents;
+      if (selectedAmount > money(activeAmount)) invalidFinancial();
+    }
   } else {
     exactKeys(context, [
       "refund",
@@ -1147,6 +1278,7 @@ export function validateFinancialActionContext(
       purpose === "refund_return" ? source : id(input.refund_id),
       payment,
       creditRow,
+      paymentResource,
     );
     if (purpose === "refund_correction_reversal") {
       const originalCorrection = correction(
@@ -1162,6 +1294,12 @@ export function validateFinancialActionContext(
           id(financialObject(context.reversal).id),
           originalCorrection,
         );
+      else if (
+        money(originalCorrection.source_balance_effect_usd_cents, 1n) >
+        money(refund.refund_amount_minor, 1n) -
+          money(financialObject(context.refund).net_refund_usd_cents)
+      )
+        invalidFinancial();
     }
   }
   const page = financialObject(envelope.page);

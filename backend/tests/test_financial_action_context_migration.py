@@ -68,12 +68,14 @@ from test_late_payment_migration import service as late_service
 from test_payment_allocation_migration import actor as allocation_actor
 from test_payment_allocation_migration import service as allocations
 from test_payment_allocation_migration import source as allocation_source
-from test_payment_migration import fx_payment
+from test_payment_migration import fx_payment, reverse
 from test_payment_reversal_context_migration import deposit_source, snapshot
 from test_pet_refund_migration import command as pet_refund
 from test_pet_refund_migration import qualified
+from test_receipt_migration import source as receipt_source
 from test_refund_service_migration import corrections, create, refund_id, returned
 from test_refund_service_migration import service as refunds
+from test_reservation_lifecycle_migration import active_reservation, cancel
 from test_reservation_migration import migrated_database_url  # noqa: F401
 
 
@@ -1241,4 +1243,218 @@ def test_financial_action_context_database_zero_balance_retains_invoice_cardinal
         items = cast(list[dict[str, object]], row["items"])
         assert len(items) == 1 and result["next_cursor"] is None
         assert cast(dict[str, object], items[0]["data"])["outstanding_usd_cents"] == 0
+    assert snapshot(migrated_database_url) == before
+
+
+def test_financial_action_context_database_review_aa_multiple_applications(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, credit, invoice, line, _ = application_source(migrated_database_url)
+    staff = actor(human, prop, "credits.apply", "credits.applications.reverse")
+    first = application_id(
+        credits().apply(prop, credit, designated(invoice, line, 30000), actor=staff)
+    )
+    credits().apply(prop, credit, designated(invoice, line, 20000), actor=staff)
+    before = snapshot(migrated_database_url)
+    selected = context(get(human, prop, "credit_application_reversal", first))
+    assert cast(dict[str, object], selected["application"])["amount_usd_cents"] == 30000
+    assert (
+        cast(dict[str, object], cast(dict[str, object], selected["credit"])["position"])[
+            "applied_usd_cents"
+        ]
+        == 50000
+    )
+    assert selected["reversal"] is None and snapshot(migrated_database_url) == before
+    credits().reverse_application(
+        prop,
+        first,
+        ReverseCreditApplicationCommand(uuid4(), "Correct selected application"),
+        actor=staff,
+    )
+    before = snapshot(migrated_database_url)
+    after = context(get(human, prop, "credit_application_reversal", first))
+    assert after["application"] == selected["application"] and after["reversal"] is not None
+    assert (
+        cast(dict[str, object], cast(dict[str, object], after["credit"])["position"])[
+            "applied_usd_cents"
+        ]
+        == 20000
+    )
+    assert snapshot(migrated_database_url) == before
+
+
+@pytest.mark.parametrize("kind", ["PAYMENT", "CREDIT"])
+def test_financial_action_context_database_review_aa_refund_multiple_and_parent_reversal(
+    migrated_database_url: str,  # noqa: F811
+    kind: str,
+) -> None:
+    human, prop, _, payment = source(migrated_database_url)
+    identity = credit_id(recognize(prop, payment, human)) if kind == "CREDIT" else payment
+    staff = actor(human, prop, "refunds.create", "refunds.correct", "refunds.corrections.reverse")
+    first = refund_id(refunds().create_usd(prop, create(identity, 3000, kind), actor=staff))
+    second = refund_id(refunds().create_usd(prop, create(identity, 2000, kind), actor=staff))
+    before = snapshot(migrated_database_url)
+    original = get(human, prop, "refund_return", first)
+    assert cast(dict[str, object], context(original)["refund"])["net_refund_usd_cents"] == 3000
+    if kind == "PAYMENT":
+        position = cast(
+            dict[str, object],
+            cast(dict[str, object], data(original)["payment_resource"])["position"],
+        )
+        assert cast(dict[str, object], position["dispositions"])["refund_usd_cents"] == 5000
+    else:
+        position = cast(
+            dict[str, object], cast(dict[str, object], context(original)["credit"])["position"]
+        )
+        assert position["refunded_usd_cents"] == 5000
+    assert snapshot(migrated_database_url) == before
+    returned_first = refunds().verify_usd_return(prop, first, returned(1000), actor=staff)
+    selected_id = UUID(str(corrections(returned_first)[0]["id"]))
+    refunds().verify_usd_return(prop, first, returned(1000), actor=staff)
+    before = snapshot(migrated_database_url)
+    selected = context(get(human, prop, "refund_correction_reversal", selected_id, refund=first))
+    assert (
+        cast(dict[str, object], selected["correction"])["source_balance_effect_usd_cents"] == 1000
+    )
+    assert cast(dict[str, object], selected["refund"])["net_refund_usd_cents"] == 1000
+    assert selected["reversal"] is None and snapshot(migrated_database_url) == before
+    refunds().reverse_correction(
+        prop,
+        first,
+        selected_id,
+        ReverseRefundCorrectionCommand(
+            uuid4(), "Reviewed selected evidence", "Correct selected return"
+        ),
+        actor=staff,
+    )
+    before = snapshot(migrated_database_url)
+    reversed_context = context(
+        get(human, prop, "refund_correction_reversal", selected_id, refund=first)
+    )
+    assert reversed_context["reversal"] is not None
+    assert cast(dict[str, object], reversed_context["refund"])["net_refund_usd_cents"] == 2000
+    assert snapshot(migrated_database_url) == before
+    refunds().verify_usd_return(prop, first, returned(2000), actor=staff)
+    refunds().verify_usd_return(prop, second, returned(2000), actor=staff)
+    if kind == "CREDIT":
+        credits().reverse(
+            prop,
+            identity,
+            ReverseCreditCommand(uuid4(), "Reverse fully restored Credit"),
+            actor=actor(human, prop, "credits.reverse"),
+        )
+    with psycopg.connect(migrated_database_url) as connection:
+        reverse(connection, payment, human)
+    before = snapshot(migrated_database_url)
+    for purpose, selected_source in [
+        ("refund_return", first),
+        ("refund_correction_reversal", selected_id),
+    ]:
+        final = get(
+            human,
+            prop,
+            purpose,
+            selected_source,
+            refund=first if purpose == "refund_correction_reversal" else None,
+        )
+        assert cast(dict[str, object], context(final)["refund"])["net_refund_usd_cents"] == 0
+        resource = cast(dict[str, object], data(final)["payment_resource"])
+        assert cast(dict[str, object], resource["payment"])["status"] == "REVERSED"
+        assert cast(dict[str, object], resource["position"])["available_usd_cents"] == 0
+        assert (
+            cast(dict[str, object], context(final)["refund"])["refund"]
+            == cast(dict[str, object], context(original)["refund"])["refund"]
+        )
+    assert snapshot(migrated_database_url) == before
+
+
+def test_financial_action_context_database_review_aa_historical_receipt_identity(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, customer, payment, receipt = receipt_source(migrated_database_url)
+    original = context(get(human, prop, "receipt_reprint", receipt))["receipt"]
+    with psycopg.connect(migrated_database_url) as connection:
+        connection.execute(
+            "SELECT * FROM app.update_customer(%s,'Changed synthetic name',"
+            "'012345678',NULL,NULL,NULL,1,%s,%s)",
+            (customer, human, uuid4()),
+        )
+        reverse(connection, payment, human)
+    before = snapshot(migrated_database_url)
+    final = get(human, prop, "receipt_reprint", receipt)
+    assert context(final)["receipt"] == original
+    assert (
+        cast(dict[str, object], cast(dict[str, object], original)["identity_snapshot"])[
+            "payer_legal_name"
+        ]
+        != "Changed synthetic name"
+    )
+    assert (
+        cast(
+            dict[str, object], cast(dict[str, object], data(final)["payment_resource"])["payment"]
+        )["status"]
+        == "REVERSED"
+    )
+    assert snapshot(migrated_database_url) == before
+
+
+def test_financial_action_context_database_review_aa_legacy_reservation_null_evidence(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, _, _, reservation = active_reservation(connection)
+    original, correction_id, replacement = uuid4(), uuid4(), uuid4()
+    with psycopg.connect(financial_database_url()) as connection:
+        cancelled = cancel(
+            connection,
+            actor_id=human,
+            property_id=prop,
+            reservation_id=reservation,
+            idempotency_key=uuid4(),
+            event_id=uuid4(),
+            outcome_id=original,
+            responsibility="PROPERTY",
+            property_could_provide_unit=False,
+            coordination_reference="Synthetic reviewed case",
+            refund_number="RF-" + str(original),
+        )
+    with psycopg.connect(financial_database_url()) as connection:
+        corrected = connection.execute(
+            "SELECT * FROM app.correct_reservation_deposit_outcome("
+            "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+            (
+                prop,
+                uuid4(),
+                "a" * 64,
+                correction_id,
+                original,
+                replacement,
+                "RF-" + str(replacement),
+                reservation,
+                cancelled[6],
+                "Correct synthetic processing reference",
+                "Synthetic review evidence",
+                "reservation_deposits.correct",
+                "reservation_deposits.refund",
+                human,
+            ),
+        ).fetchone()
+        assert corrected is not None and corrected[12] == replacement
+    before = snapshot(migrated_database_url)
+    selected = context(
+        get(human, prop, "refund_correction_reversal", correction_id, refund=original)
+    )
+    summary = cast(dict[str, object], selected["refund"])
+    assert summary["net_refund_usd_cents"] == 0
+    assert cast(dict[str, object], summary["refund"])["source_lifecycle_event_id"] is not None
+    correction_row = cast(dict[str, object], selected["correction"])
+    for field in [
+        "source_balance_effect_original_minor",
+        "verified_return_amount_minor",
+        "verified_return_currency",
+        "verified_returned_at",
+        "return_method_reference",
+    ]:
+        assert correction_row[field] is None
+    assert correction_row["authorization_reference"] == "reservation_deposits.correct"
     assert snapshot(migrated_database_url) == before

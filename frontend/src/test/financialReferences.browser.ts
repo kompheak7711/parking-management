@@ -987,6 +987,7 @@ export async function runFinancialActionContextBrowserChecks(): Promise<
     passed.push("TEST-FE-389");
     passed.push("TEST-FE-400");
     passed.push("TEST-FE-401");
+    passed.push("TEST-FE-412");
     return passed;
   } finally {
     await sealedIntentStore.clear(actor, key);
@@ -996,6 +997,92 @@ export async function runFinancialActionContextBrowserChecks(): Promise<
 async function checkActionContextReviewBoundaries(
   actor: string,
 ): Promise<void> {
+  for (const index of [7, 11, 13, 16, 15, 26, 2]) {
+    const fixture = actionContextFixtures[index];
+    check(fixture, "Required AA regression fixture exists");
+    const sample = structuredClone(fixture),
+      context = financialObject(sample.data.context);
+    if ([7, 11, 13, 16].includes(index)) {
+      const creditSource = index === 11 || index === 16;
+      const position = financialObject(
+        creditSource
+          ? financialObject(context.credit).position
+          : financialObject(sample.data.payment_resource).position,
+      );
+      const aggregate = creditSource
+        ? position
+        : financialObject(position.dispositions);
+      const field =
+        index === 7
+          ? "allocation_usd_cents"
+          : index === 11
+            ? "applied_usd_cents"
+            : index === 13
+              ? "refund_usd_cents"
+              : "refunded_usd_cents";
+      position.available_usd_cents =
+        BigInt(position.available_usd_cents as number) +
+        BigInt(aggregate[field] as number);
+      aggregate[field] = 0;
+    } else if (index === 15) context.reversal = null;
+    else if (index === 26) {
+      const correction = financialObject(context.correction);
+      for (const field of [
+        "source_balance_effect_original_minor",
+        "verified_return_amount_minor",
+        "verified_return_currency",
+        "verified_returned_at",
+        "return_method_reference",
+      ])
+        correction[field] = null;
+    } else financialObject(context.receipt).identity_snapshot = {};
+    const scope = {
+      actorId: actor,
+      propertyId: sample.propertyId,
+      signal: new AbortController().signal,
+    };
+    const client = createFinancialReferenceClient((_url, init) => {
+      const requestId = new Headers(init?.headers).get("X-Request-ID");
+      check(requestId, "AA regression uses actual correlation");
+      return Promise.resolve(
+        new Response(
+          stringifyFinancialJson(
+            {
+              data: sample.data,
+              page: sample.page,
+              meta: {
+                actor_id: actor,
+                property_id: sample.propertyId,
+                request_id: requestId,
+              },
+            },
+            1_048_576,
+          ),
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "X-Request-ID": requestId,
+            },
+          },
+        ),
+      );
+    });
+    const sequence = new FinancialActionContextSequence(
+      actor,
+      sample.propertyId,
+      sample.request,
+    );
+    let rejected = false;
+    try {
+      sequence.append(await client.read(scope, sample.request));
+    } catch {
+      rejected = true;
+    }
+    check(
+      rejected && !sequence.complete && sequence.data === null,
+      "Contradictory source/Refund/Receipt facts never complete in Chromium",
+    );
+  }
   const invoice = actionContextFixtures.find(
     (sample) =>
       sample.request.purpose === "allocation" &&

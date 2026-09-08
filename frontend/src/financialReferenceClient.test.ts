@@ -2450,3 +2450,430 @@ describe("financial action context review correction boundaries", () => {
     expect(sequence.data).toBeNull();
   });
 });
+
+function reviewAAValue(row: FinancialObject, key: string): FinancialJson {
+  const value = row[key];
+  if (value === undefined)
+    throw new Error("Required synthetic original field missing");
+  return value;
+}
+function reviewAASample(index: number): FinancialActionFixture {
+  const sample = actionContextFixtures[index];
+  if (!sample)
+    throw new Error("Required immutable AA synthetic projection missing");
+  return actionCopy(sample);
+}
+function reviewAAPosition(
+  sample: FinancialActionFixture,
+  creditSource: boolean,
+) {
+  const resource = financialObject(sample.data.payment_resource);
+  const context = financialObject(sample.data.context);
+  const position = financialObject(
+    creditSource ? financialObject(context.credit).position : resource.position,
+  );
+  return {
+    position,
+    aggregate: creditSource ? position : financialObject(position.dispositions),
+  };
+}
+function reviewAAAggregate(
+  sample: FinancialActionFixture,
+  creditSource: boolean,
+  field: string,
+  amount: bigint,
+) {
+  const { position, aggregate } = reviewAAPosition(sample, creditSource);
+  const old = BigInt(aggregate[field] as number);
+  aggregate[field] = amount;
+  position.available_usd_cents =
+    BigInt(position.available_usd_cents as number) + old - amount;
+}
+function reviewAAReversePayment(sample: FinancialActionFixture) {
+  const resource = financialObject(sample.data.payment_resource),
+    payment = financialObject(resource.payment);
+  if (
+    typeof payment.id !== "string" ||
+    typeof payment.confirmed_at !== "string"
+  )
+    throw new Error("Original Payment required");
+  payment.status = "REVERSED";
+  const position = financialObject(resource.position),
+    dispositions = financialObject(position.dispositions);
+  for (const key of Object.keys(dispositions)) dispositions[key] = 0;
+  position.available_usd_cents = 0;
+  resource.reversal = {
+    id: crypto.randomUUID(),
+    payment_id: payment.id,
+    reason: "Historical full reversal",
+    occurred_at: "2099-01-01T00:00:00Z",
+    actor_id: sample.actorId,
+    authorization_reference: "Legacy approved reversal reference",
+  };
+}
+async function reviewAAComplete(sample: FinancialActionFixture) {
+  const sequence = actionSequence(sample);
+  sequence.append(
+    await actionClient(sample).client.read(actionScope(sample), sample.request),
+  );
+  expect(sequence.complete).toBe(true);
+  expect(sequence.data).not.toBeNull();
+}
+const reviewAAReturnFields = [
+  "verified_return_amount_minor",
+  "verified_return_currency",
+  "verified_returned_at",
+  "return_method_reference",
+] as const;
+
+describe("independent reviewAA finite selected facts", () => {
+  it.each([
+    [7, false, "allocation_usd_cents"],
+    [11, true, "applied_usd_cents"],
+    [13, false, "refund_usd_cents"],
+    [16, true, "refunded_usd_cents"],
+  ] as const)(
+    "TEST-FE-402 rejects selected event below conserved source aggregate %i",
+    async (index, creditSource, field) => {
+      for (const below of [0n, 1n]) {
+        const sample = reviewAASample(index);
+        await reviewAAComplete(sample);
+        const context = financialObject(sample.data.context);
+        const amount =
+          index === 7 || index === 11
+            ? BigInt(
+                financialObject(
+                  context[index === 7 ? "allocation" : "application"],
+                ).amount_usd_cents as number,
+              )
+            : BigInt(
+                financialObject(context.refund).net_refund_usd_cents as number,
+              );
+        reviewAAAggregate(
+          sample,
+          creditSource,
+          field,
+          below === 0n ? 0n : amount - 1n,
+        );
+        await expect(
+          actionClient(sample).client.read(actionScope(sample), sample.request),
+        ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+      }
+    },
+  );
+  it.each([8, 12, 13, 16])(
+    "TEST-FE-403 rejects original selected amount above immutable source %i",
+    async (index) => {
+      const sample = reviewAASample(index),
+        context = financialObject(sample.data.context);
+      const ceiling = BigInt(
+        index === 12 || index === 16
+          ? (financialObject(financialObject(context.credit).credit)
+              .recognized_usd_cents as number)
+          : (financialObject(
+              financialObject(sample.data.payment_resource).payment,
+            ).usd_accounting_value_cents as number),
+      );
+      if (index === 8 || index === 12) {
+        const event = financialObject(
+            context[index === 8 ? "allocation" : "application"],
+          ),
+          old = BigInt(event.amount_usd_cents as number);
+        event.amount_usd_cents = ceiling + 1n;
+        const first = financialObject(
+            (sample.data.items as FinancialObject[])[0]?.data,
+          ),
+          key =
+            index === 8
+              ? "posted_amount_usd_cents"
+              : "applied_amount_usd_cents";
+        first[key] = BigInt(first[key] as number) + ceiling + 1n - old;
+      } else {
+        const refund = financialObject(financialObject(context.refund).refund);
+        refund.refund_amount_minor = ceiling + 1n;
+        refund.usd_accounting_value_cents = ceiling + 1n;
+      }
+      await expect(
+        actionClient(sample).client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+  it.each([15, 18, 27])(
+    "TEST-FE-404 rejects active selected return exceeding current total returned %i",
+    async (index) => {
+      const sample = reviewAASample(index);
+      await reviewAAComplete(sample);
+      financialObject(sample.data.context).reversal = null;
+      await expect(
+        actionClient(sample).client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+  it.each(
+    [14, 17, 26].flatMap((index) =>
+      [
+        "all_null",
+        "original_null",
+        "wrong_auth",
+        "before_payout",
+        "after_correction",
+        "correction_at_payout",
+        "extra",
+        "missing",
+      ].map((fault) => ({ index, fault })),
+    ),
+  )(
+    "TEST-FE-405 rejects current return evidence $index $fault",
+    async ({ index, fault }) => {
+      const sample = reviewAASample(index),
+        context = financialObject(sample.data.context),
+        correction = financialObject(context.correction),
+        refund = financialObject(financialObject(context.refund).refund);
+      await reviewAAComplete(sample);
+      if (fault === "all_null") {
+        for (const key of reviewAAReturnFields) correction[key] = null;
+        correction.source_balance_effect_original_minor = null;
+      } else if (fault === "original_null")
+        correction.source_balance_effect_original_minor = null;
+      else if (fault === "wrong_auth")
+        correction.authorization_reference = "refunds.create";
+      else if (fault === "before_payout")
+        correction.verified_returned_at = "2000-01-01T00:00:00Z";
+      else if (fault === "after_correction")
+        correction.verified_returned_at = "2099-01-01T00:00:00Z";
+      else if (fault === "correction_at_payout") {
+        correction.occurred_at = reviewAAValue(refund, "processed_at");
+        correction.verified_returned_at = reviewAAValue(refund, "processed_at");
+      } else if (fault === "extra") correction.invented_amount_usd_cents = 123;
+      else delete correction.return_method_reference;
+      await expect(
+        actionClient(sample).client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+  it.each(
+    [15, 18, 27].flatMap((index) =>
+      ["original_null", "wrong_auth", "same_instant", "extra"].map((fault) => ({
+        index,
+        fault,
+      })),
+    ),
+  )(
+    "TEST-FE-406 rejects current reversal evidence $index $fault",
+    async ({ index, fault }) => {
+      const sample = reviewAASample(index),
+        context = financialObject(sample.data.context),
+        reversal = financialObject(context.reversal);
+      await reviewAAComplete(sample);
+      if (fault === "original_null")
+        reversal.source_balance_effect_original_minor = null;
+      else if (fault === "wrong_auth")
+        reversal.authorization_reference = "refunds.correct";
+      else if (fault === "same_instant")
+        reversal.occurred_at = reviewAAValue(
+          financialObject(context.correction),
+          "occurred_at",
+        );
+      else reversal.invented_amount_usd_cents = 123;
+      await expect(
+        actionClient(sample).client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+  it.each([
+    "empty",
+    "missing_name",
+    "null_name",
+    "blank_name",
+    "unknown_snapshot",
+    "unknown_receipt",
+    "wrong_issuer",
+    "before_confirmation",
+    "wrong_number",
+    "missing_issuance",
+  ])(
+    "TEST-FE-407 rejects immutable Receipt contradictions %s",
+    async (fault) => {
+      const sample = reviewAASample(2),
+        receipt = financialObject(financialObject(sample.data.context).receipt),
+        snapshot = financialObject(receipt.identity_snapshot);
+      await reviewAAComplete(sample);
+      if (fault === "empty") receipt.identity_snapshot = {};
+      else if (fault === "missing_name") delete snapshot.payer_legal_name;
+      else if (fault === "null_name") snapshot.payer_legal_name = null;
+      else if (fault === "blank_name") snapshot.payer_legal_name = "   ";
+      else if (fault === "unknown_snapshot")
+        snapshot.current_payer_name = "Synthetic later name";
+      else if (fault === "unknown_receipt") receipt.amount_usd_cents = 999;
+      else if (fault === "wrong_issuer")
+        receipt.issued_by = crypto.randomUUID();
+      else if (fault === "before_confirmation")
+        receipt.issued_at = "2000-01-01T00:00:00Z";
+      else if (fault === "wrong_number") {
+        receipt.receipt_number = "Fabricated receipt number";
+        financialObject(
+          financialObject(sample.data.payment_resource).receipt,
+        ).receipt_number = receipt.receipt_number;
+      } else delete receipt.issued_at;
+      await expect(
+        actionClient(sample).client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+  it("TEST-FE-408 preserves multiple contributing sources, reversed originals and full returns after parent reversal", async () => {
+    for (const [index, creditSource, field] of [
+      [7, false, "allocation_usd_cents"],
+      [11, true, "applied_usd_cents"],
+      [13, false, "refund_usd_cents"],
+      [16, true, "refunded_usd_cents"],
+    ] as const) {
+      const sample = reviewAASample(index);
+      // Give CREDIT Refund a second contribution by increasing recognized/source disposition consistently.
+      if (index === 16) {
+        const context = financialObject(sample.data.context),
+          credit = financialObject(context.credit),
+          position = financialObject(credit.position);
+        financialObject(credit.credit).recognized_usd_cents = 9000;
+        position.recognized_usd_cents = 9000;
+        position.available_usd_cents = 1000;
+        reviewAAAggregate(sample, false, "credit_usd_cents", 9000n);
+      }
+      const { aggregate, position } = reviewAAPosition(sample, creditSource);
+      if (BigInt(position.available_usd_cents as number) > 0n)
+        reviewAAAggregate(
+          sample,
+          creditSource,
+          field,
+          BigInt(aggregate[field] as number) + 1n,
+        );
+      await reviewAAComplete(sample);
+    }
+    for (const index of [8, 12]) await reviewAAComplete(reviewAASample(index));
+    const invalid = reviewAASample(7);
+    reviewAAReversePayment(invalid);
+    await expect(
+      actionClient(invalid).client.read(actionScope(invalid), invalid.request),
+    ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    for (const index of [13, 16]) {
+      const sample = reviewAASample(index),
+        context = financialObject(sample.data.context);
+      financialObject(context.refund).net_refund_usd_cents = 0;
+      if (index === 16) {
+        const position = financialObject(
+          financialObject(context.credit).position,
+        );
+        position.refunded_usd_cents = 0;
+        position.reversed_usd_cents = reviewAAValue(
+          position,
+          "recognized_usd_cents",
+        );
+        position.available_usd_cents = 0;
+      }
+      reviewAAReversePayment(sample);
+      await reviewAAComplete(sample);
+    }
+  });
+  it.each([26, 27])(
+    "TEST-FE-409 preserves legacy Reservation null evidence and rejects invented evidence %i",
+    async (index) => {
+      const sample = reviewAASample(index),
+        context = financialObject(sample.data.context),
+        refund = financialObject(financialObject(context.refund).refund);
+      refund.source_lifecycle_event_id = crypto.randomUUID();
+      refund.pet_refund_review_id = null;
+      financialObject(context.deposit_source).deposit_type = "SECURITY";
+      for (const value of [context.correction, context.reversal])
+        if (value !== null) {
+          const row = financialObject(value);
+          row.source_balance_effect_original_minor = null;
+          for (const key of reviewAAReturnFields) row[key] = null;
+          row.authorization_reference =
+            "Legacy coordinated Reservation correction reference";
+        }
+      await reviewAAComplete(sample);
+      const correction = financialObject(context.correction);
+      correction.source_balance_effect_original_minor = reviewAAValue(
+        correction,
+        "source_balance_effect_usd_cents",
+      );
+      await expect(
+        actionClient(sample).client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+  it("TEST-FE-410 preserves historical Receipt identity for a different reader and microsecond issuance ordering", async () => {
+    const sample = reviewAASample(2),
+      receipt = financialObject(financialObject(sample.data.context).receipt),
+      payment = financialObject(
+        financialObject(sample.data.payment_resource).payment,
+      );
+    sample.actorId = crypto.randomUUID();
+    financialObject(receipt.identity_snapshot).payer_legal_name =
+      "Original historical synthetic name";
+    receipt.issued_at = reviewAAValue(payment, "confirmed_at");
+    await reviewAAComplete(sample);
+    if (typeof payment.confirmed_at !== "string")
+      throw new Error("Original confirmation instant required");
+    const confirmed = payment.confirmed_at,
+      match = /^(.*T\d\d:\d\d:\d\d)\.(\d{1,6})([+-]\d\d:\d\d|Z)$/.exec(
+        confirmed,
+      );
+    if (!match?.[1] || !match[2] || !match[3])
+      throw new Error("Microsecond fixture instant required");
+    const micros = Number(match[2].padEnd(6, "0"));
+    if (micros === 0)
+      throw new Error("Nonzero microsecond fixture instant required");
+    receipt.issued_at = `${match[1]}.${String(micros - 1).padStart(6, "0")}${match[3]}`;
+    await expect(
+      actionClient(sample).client.read(actionScope(sample), sample.request),
+    ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+  });
+});
+
+describe("selected financial source chronology", () => {
+  it.each([
+    [7, "allocation"],
+    [8, "allocation_reversal"],
+    [11, "application"],
+    [12, "application_reversal"],
+    [3, "recognition"],
+    [5, "recognition_reversal"],
+    [13, "payment_refund"],
+    [16, "credit_refund"],
+    [8, "payment_reversal"],
+  ] as const)(
+    "TEST-FE-411 rejects a selected event preceding its immutable source %s %s",
+    async (index, fault) => {
+      const sample = reviewAASample(index),
+        context = financialObject(sample.data.context);
+      await reviewAAComplete(sample);
+      const earlier = "2000-01-01T00:00:00Z";
+      if (fault === "allocation")
+        financialObject(context.allocation).posted_at = earlier;
+      else if (fault === "application")
+        financialObject(context.application).occurred_at = earlier;
+      else if (
+        [
+          "allocation_reversal",
+          "application_reversal",
+          "recognition_reversal",
+        ].includes(fault)
+      )
+        financialObject(context.reversal).occurred_at = earlier;
+      else if (fault === "recognition")
+        financialObject(financialObject(context.credit).credit).recognized_at =
+          earlier;
+      else if (fault === "payment_reversal") {
+        reviewAAReversePayment(sample);
+        financialObject(
+          financialObject(sample.data.payment_resource).reversal,
+        ).occurred_at = earlier;
+      } else
+        financialObject(financialObject(context.refund).refund).processed_at =
+          earlier;
+      await expect(
+        actionClient(sample).client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+});
