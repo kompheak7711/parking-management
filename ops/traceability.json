@@ -26765,6 +26765,19 @@
       "test_path": "frontend/src/test/financialWorkflows.browser.ts",
       "status": "implemented",
       "notes": "Real Chromium original Refund response loss, intervening full verified return, unmount/remount and explicit original-key replay preserve savedUSD1.00 separately from freshly read Current netUSD0.00. Both successful and failed current-read variants retain encrypted journal, request-count and key/byte assertions; zero financial network."
+    },
+    {
+      "test_id": "test_usd_refund_historical_fixture_waits_for_unrelated_table_lock",
+      "upstream_ids": [
+        "BR-REFUND-003",
+        "DB-DER-002",
+        "DB-TXN-004",
+        "SEC-029"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_refund_migration.py",
+      "status": "implemented",
+      "notes": "Controlled owned ShareUpdateExclusive table holder: raw Refund still fails closed, while successful historical fixture preparation waits for the same SHARE obligation-set locks before obtaining a Payment source lock. Holder release follows a real observed waiting SHARE lock; both original non-overlap acceptance and overlap rejection assertions run unchanged. No production guard/global DB setting change; original gate failure holder remains unproven."
     }
   ]
 }

@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "cumulative_outcome_label_correction1_verified",
+    "phase": "refund_history_fixture_lock_correction1_verified",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2087,7 +2087,7 @@
       "schedulers": "SAME nativeACTIVE/OpenClawdisabled"
     },
     "owner_action_required": false,
-    "next_action": "Create a normal nine-file successor of preserved bf1afe0 for REL-BF-F1 correction1; run the required exact candidate checks and fresh independent review of all122 paths from published f8a33ba. Astra/max/Standard/enforced read-only under standing authority through53. Keep earlier closed findings and their attempt2 counters unchanged; independently reassess the distinct command-result classification. Preserve all rejected candidates, reports and65failed receipts. Future reviewers must use a positive evidence-path inventory excluding rawtracking payloads. Only zero-findings review allows product publication; then exactCI/ref proof, reviewed terminal records and their own publication/CI, final concrete Workboard hold resolution and supported card completion, durable52closure, then53. Keep SAMEfollowup active/OpenClaw disabled; closed53pause/no54.",
+    "next_action": "Freeze normal6path successor of0a0fc4a with one test-only fixture preparation correction and two controlled-lock cases; completef8base122paths/432protected/40immutable/28history/1871trace.35RefundDB/28trace/formatlint187types PASS; all14original definitions preserved except two bounded setup statements, every original assertion unchanged. Run required exact successor gates sequentially for fullautomation/frontend/PostgreSQL and backend, then47browsergroups, scope/migration/audits, fresh reconciliation and one completef8-base Astra/max/Standard/enforced-read-only review under standingthrough53authority. Preserve68failedreceipts and allpriorcandidates/reports; original lock holder remains unproven. No waiver using the earlier overlapping0a pass. REL-BF-F1 remains correction1 pending review, old UIattempt2 counters unchanged. No publication beforezero; product+terminal proofs and Workboardhold resolution/cardacceptance/durable52closure before53; closed53pauseSAME/OpenClawdisabled/no54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2112,16 +2112,13 @@
       "exact_tests": "189 PASS and all activation gates; execution78277 EXIT0; do not repeat"
     },
     "active_slice": {
-      "id": "V1-052-cumulative-outcome-label-correction1",
+      "id": "V1-052-refund-history-fixture-lock-correction1",
       "status": "focused_verified_freeze_pending",
       "base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
-      "parent": "bf1afe03f5c04604504e8e8d62db526ca774d904",
-      "started_at": "2026-09-08T14:18:49.163055+00:00",
+      "parent": "0a0fc4a90df45352234f169ddbf732b910d86d6a",
+      "started_at": "2026-09-08T15:16:58.934248+00:00",
       "affected_paths": [
-        "frontend/src/FinancialEvidence.tsx",
-        "frontend/src/FinancialWorkspaces.test.tsx",
-        "frontend/src/FinancialManagement.test.tsx",
-        "frontend/src/test/financialWorkflows.browser.ts",
+        "backend/tests/test_refund_migration.py",
         "ops/NOW.md",
         "ops/QUEUE.md",
         "ops/STATE.json",
@@ -2253,157 +2250,203 @@
         "scripts/test_openclaw_automation.py"
       ],
       "scope": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-scope.json",
-        "sha256": "19391e1c2585b46c1dd0a86e8a8efeef78d6e980dcca70c43f2f106c2d4fe98d"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-history-lock-correction1-scope.json",
+        "sha256": "412c2b6a406065847cefeed5051fa8f7ad44778cbfca3f7e7818c5fb87ddfed8"
       },
       "reconciliation": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-bf1afe0-outcome-correction1-admission1-reconciliation.json",
-        "sha256": "25084b7e60c73f2cffb28f99e95f3c1b9dca79be0ca5f180ea66a29c4e8db231"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-0a0fc4a-gate-lock-admission1-reconciliation.json",
+        "sha256": "88c5478970808fc49da317eba26f56e5e56275f63f95710f6a9c173ed73921c2"
       },
-      "docs": [
-        "docs/006_UI_SPECIFICATION.md:UI-069-072",
-        "docs/005_API_SPECIFICATION.md:API-061-066",
-        "ops/V1_052_SCOPE.md",
-        "ops/V1_052_FINANCIAL_STAFF_UI.md"
-      ],
-      "plan": [
-        "Fresh current state/external/scheduler reconciliation, then record9-path phaseactive before source/test edits.",
-        "Reproduce7frozenoutcome labels and delayedreplay+interveningchanges+failedcurrentread on unchanged implementation.",
-        "Extend existing atConfirmation display context to CreditEvidence/RefundEvidence and propagate through all7outcomes/nestedCreditapplication; retainCurrent onlyforauthorizedfreshreads, alloldshowPosition anddata unchanged.",
-        "Retain red evidence and addgreen focusedtests/currentreadcontrols, real syntheticbrowser delayedreplay withfailedrefresh, trace/contractupdates.",
-        "Normal successor; requiredfullapplicable exactgates and45plusnewbrowsergroups; freshcompletef8base Astra/max/Standard/enforcedread-onlyreview carrying standingauthorization andexplicitnewfindingclassification. Preserve alloldallowances."
-      ],
       "model": "gpt-6-astra",
       "reasoning": "xhigh",
       "mode": "Standard",
-      "reasoning_reason": "Financial result provenance, original-key recovery and preservation across a qualified complete release review.",
+      "reasoning_reason": "Controlled concurrency and exact historical financial fixture preparation; retain all production locking and historical-budget behavior.",
       "implementation_owner": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-      "correction_attempt": 1,
       "per_finding_correction_attempt": 1,
-      "unresolved_finding": "REL-BF-F1",
-      "independent_review_round": 2,
-      "per_finding_classification": {
-        "new_finding": "REL-BF-F1",
-        "attempt": 1,
-        "related_prior_findings": [
-          "UI030-M2",
-          "UI3A-F1"
-        ],
-        "reason": "The earlier documented scope covered already-loaded authorized READ projections on commands.revision and immutable proposal_trace inside those read histories; correction1 explicitly preserved confirmed outcomes, and correction2 targeted at-proposal history. The current finding is the distinct saved COMMAND-result rendering path, triggered by original-key replay after another actor changes the balance, plus missing propagation of an already-existing atConfirmation flag. It does not recur in the corrected read/proposal branches. Root compared030->3a->6a outcome source: atConfirmation and the problematic direct outcome calls predate those corrections; the main added read behavior was showPosition handling. Keep earlier findings closed with their existing attempt2; do not reset or reassign their counts. Future independent reviewer must assess this classification explicitly.",
-        "prior_counters_unchanged": {
-          "UI030-M2/UI3A-F1": 2,
-          "UI030-L2/UI3A-F2": 2,
-          "UI3A-F3/UI6A-F1-F2-F3": 2
-        },
-        "prior_regressions_must_remain": true
+      "unresolved_finding": "GATE-0A-PG-F1",
+      "prior_ui_counters_unchanged": {
+        "UI030-M2/UI3A-F1": 2,
+        "UI030-L2/UI3A-F2": 2,
+        "UI3A-F3/UI6A-F1-F2-F3": 2
       },
-      "rejected_candidate": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-rejected-bf1afe0.json",
-        "sha256": "3a104f2db4cc6858acd6e9190c325d1494e4c698edafbb70e114b1cd4895f642"
+      "pending_display_correction_attempt": 1,
+      "failed_candidate": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-failed-gate-0a0fc4a.json",
+        "sha256": "685a9315efe9fa9b8ef898277a663ece6d158ce09a050bf53e7c2c7de365cc3d"
       },
-      "review_process_qualification": {
-        "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1052-cumulative-release-review-bf1afe0-tracking-read-qualification.json",
-        "sha256": "85123d19a058a48f83d9c73e264d3a5481d3c5367871fd5ac43090cbbc03b60b"
+      "controlled_red": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-0a0fc4a-controlled-refund-lock-red1.json",
+        "sha256": "05415cc7def1ce62c4e8a30b1aa8f7ca6f77d63d224258dbdec63d78d367184c"
       },
       "standing_authorization": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
         "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
       },
-      "trace_entries_before": 1865,
-      "immutable_root_object_count": 40,
+      "trace_entries_before": 1870,
+      "protected_files": 432,
+      "immutable_root_objects": 40,
       "historical_root_objects": 28,
-      "protected_files": 429,
-      "next_action": "Create a normal nine-file successor of preserved bf1afe0 for REL-BF-F1 correction1; run the required exact candidate checks and fresh independent review of all122 paths from published f8a33ba. Astra/max/Standard/enforced read-only under standing authority through53. Keep earlier closed findings and their attempt2 counters unchanged; independently reassess the distinct command-result classification. Preserve all rejected candidates, reports and65failed receipts. Future reviewers must use a positive evidence-path inventory excluding rawtracking payloads. Only zero-findings review allows product publication; then exactCI/ref proof, reviewed terminal records and their own publication/CI, final concrete Workboard hold resolution and supported card completion, durable52closure, then53. Keep SAMEfollowup active/OpenClaw disabled; closed53pause/no54.",
+      "next_action": "Freeze normal6path successor of0a0fc4a with one test-only fixture preparation correction and two controlled-lock cases; completef8base122paths/432protected/40immutable/28history/1871trace.35RefundDB/28trace/formatlint187types PASS; all14original definitions preserved except two bounded setup statements, every original assertion unchanged. Run required exact successor gates sequentially for fullautomation/frontend/PostgreSQL and backend, then47browsergroups, scope/migration/audits, fresh reconciliation and one completef8-base Astra/max/Standard/enforced-read-only review under standingthrough53authority. Preserve68failedreceipts and allpriorcandidates/reports; original lock holder remains unproven. No waiver using the earlier overlapping0a pass. REL-BF-F1 remains correction1 pending review, old UIattempt2 counters unchanged. No publication beforezero; product+terminal proofs and Workboardhold resolution/cardacceptance/durable52closure before53; closed53pauseSAME/OpenClawdisabled/no54.",
       "focused_evidence": {
-        "focused-final2": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-focused-final2.json",
-          "sha256": "9e270c645fea5f53cc16e0b1718fdebfef395370b2eda1a6508f363046887234"
+        "format-write1": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-history-lock-correction1-format-write1.json",
+          "sha256": "4813fe38750eeefde19e21375161840a24524d85d1b2a36a017177e7d43e63c5"
         },
-        "types-build2": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-types-build2.json",
-          "sha256": "ec9429bb718bd7fa702e54ecec17fca8953c4b0fee78c9898e0482010860ad04"
+        "lint1": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-history-lock-correction1-lint1.json",
+          "sha256": "7fd117f071e0594fa56d0844f6b7ba38bc19fc9f5e71fd2392b90d238bdd53fe"
         },
-        "lint-final2": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-lint-final2.json",
-          "sha256": "ff1640b4d9934f62f994d1217545102f9924f04643f09778d48d83ff3c6ef680"
+        "types1": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-history-lock-correction1-types1.json",
+          "sha256": "3c43eca92f88f80d0222e663f0fbb29cf7be5d2ab9d4f63a733258a3a7d561e6"
         },
-        "format-final1": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-format-final1.json",
-          "sha256": "8597747c28191ffa1c3f0534b62ffcfc45fc171f6064140cbc7a40eb41a350eb"
+        "focused1": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-history-lock-correction1-focused1.json",
+          "sha256": "590d313db073ea09d04df5ea8221db307546825728917c9e94afab17811c0945"
         },
         "trace": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-trace2.json",
-          "sha256": "2f4f2ab5ef6da41028c106919ff201f92fa7937905ed76aab244dccf629b1af4"
-        },
-        "browser17": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-browser-focused1.json",
-          "sha256": "ce105dbe4efcfb89c1c7bfd39ff783fa8be37c84300b70eb3d49e11da809298f"
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-history-lock-correction1-trace1.json",
+          "sha256": "65fcde3c30ffe31959ee90c20eba9d19989c75d9d993f423e7da6e6b3ba6cd4f"
         }
       },
       "verification_qualification": {
-        "finding": "REL-BF-F1",
+        "finding": "GATE-0A-PG-F1",
         "per_finding_attempt": 1,
-        "complete_release_review_round": 2,
-        "implementation": "Only FinancialEvidence.tsx runtime changes: add atConfirmation context to Credit/Refund evidence, pass it from all seven affected outcomes, and propagate through nested Credit application positions. Saved amounts retain original-confirmation attribution; live read defaults and stale-position guards remain unchanged. No backend, contracts, grants, transport, recovery, storage, controller or draft runtime edits.",
-        "red": "Nine expected failures on unchanged bf runtime: seven command outcomes and two real-controller delayed replay variants after a full synthetic return. All original key/bytes, current-read success/failure and journal assertions passed before the obsolete Current label assertion. Three live/stale read controls already passed. Full red logs and source snapshots preserved.",
-        "focused": "348 tests pass across six verified files; actual TypeScript referenced-project build, lint, formatting and28traceability checks pass. All1865 prior trace entries preserved, five added=1870.",
-        "browser": "17 real Chromium groups/28listedcases pass, retaining all15prior groups and adding seven frozen outcome assertions plus two intervening-return replay/remount cases. Actual IndexedDB/WebCrypto/WebLocks/native dialogs; zero financial network. After this browser run only test-only Management fixture typing/RTL options changed, not browser code or product runtime; exact post-commit browser gate remains required.",
-        "check_qualifications": [
-          {
-            "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-check-scope-qualification.json",
-            "sha256": "ca7b3717d18351eab1c29a7b30df3ee651d31e338b1896b7bca3e8150793f11f"
+        "implementation": "Only test_refund_migration.py changes outside ops. Two setup statements set a local3second lock bound and acquire the same12table SHARE locks before the historical fixture obtains a Payment source lock. Original raw Refund helper, runtime NOWAIT guards, negative/concurrent tests and every original history assertion remain unchanged. All14 original top-level definitions match their AST after removing exactly those two new setup statements.",
+        "regression": "Two parameterized cases hold an owned ShareUpdateExclusive table lock. An unprepared raw Refund must still raise LockNotAvailable. The same complete original historical-budget test then waits on its SHARE acquisition; a read-only observer verifies an actual waiting SHARE lock blocked by the owned holder before releasing it. Both non-overlap acceptance and overlap rejection execute unchanged. The added regression produced2RED on unchanged preparation and now passes with all35 Refund module cases.",
+        "cause_limit": "The original standalone1004PASS1FAIL holder was not captured; controlled reproduction proves this lock-conflict class, not retrospective autovacuum or other holder identity. A related earlier reviewed serial recovery does not waive this failure.",
+        "evidence": {
+          "format-write1": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-history-lock-correction1-format-write1.json",
+            "sha256": "4813fe38750eeefde19e21375161840a24524d85d1b2a36a017177e7d43e63c5"
           },
-          {
-            "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-type-trace-qualification.json",
-            "sha256": "e42a22ebffd645dd3a0f5f2484f227047926805dce91d99937aa59f89e2f770c"
+          "lint1": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-history-lock-correction1-lint1.json",
+            "sha256": "7fd117f071e0594fa56d0844f6b7ba38bc19fc9f5e71fd2392b90d238bdd53fe"
           },
-          {
-            "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-red1-source-snapshots.json",
-            "sha256": "8e66efac751a1bad3a3d5941c941a8843c816aaa67f971ccdf79097eadcb74cb"
+          "types1": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-history-lock-correction1-types1.json",
+            "sha256": "3c43eca92f88f80d0222e663f0fbb29cf7be5d2ab9d4f63a733258a3a7d561e6"
           },
-          {
-            "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-prefreeze-checksum-qualification.json",
-            "sha256": "031256b6bf25ecc46bdd65a21189e5da4852bdafa4bfb7a25ebab49ecc6e9eda"
-          }
-        ],
-        "failures": {
-          "v1052-cumulative-release-outcome-correction1-lint1.json": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-lint1.json",
-            "sha256": "71175d2c5cb78dbd5eedc9763f34c6d87d98bf8d3280f70bd322bc649e079c68"
+          "focused1": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-history-lock-correction1-focused1.json",
+            "sha256": "590d313db073ea09d04df5ea8221db307546825728917c9e94afab17811c0945"
           },
-          "v1052-cumulative-release-outcome-correction1-red1.json": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-red1.json",
-            "sha256": "9b4e5a332ff89a0496e42a0ac6e21f488b627270d491ab30727917ac27766818"
-          },
-          "v1052-cumulative-release-outcome-correction1-trace1.json": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-trace1.json",
-            "sha256": "c737535b445a8d853169f1daebb0ec89d2950b587ae75944551b6811e1cf38ac"
-          },
-          "v1052-cumulative-release-outcome-correction1-types-build1.json": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-types-build1.json",
-            "sha256": "c1637e8f89fa689d239e6015b5fce969836df1ebda81a7482db128f3a6b73623"
+          "trace": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-history-lock-correction1-trace1.json",
+            "sha256": "65fcde3c30ffe31959ee90c20eba9d19989c75d9d993f423e7da6e6b3ba6cd4f"
           }
         },
-        "old_review_process_qualification": {
+        "controlled_probe": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-0a0fc4a-controlled-refund-lock-red1.json",
+          "sha256": "05415cc7def1ce62c4e8a30b1aa8f7ca6f77d63d224258dbdec63d78d367184c"
+        },
+        "implementation_proof": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-history-lock-correction1-implementation.json",
+          "sha256": "c7deb063cf06940c809a3ec2c9dd1bdf0989c4926bb82fbeefdccef2fa1261ab"
+        },
+        "failed_candidate": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-failed-gate-0a0fc4a.json",
+          "sha256": "685a9315efe9fa9b8ef898277a663ece6d158ce09a050bf53e7c2c7de365cc3d"
+        },
+        "new_failed_receipts": {
+          "v1052-cumulative-release-0a0fc4a-controlled-refund-lock-red1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-0a0fc4a-controlled-refund-lock-red1.json",
+            "sha256": "05415cc7def1ce62c4e8a30b1aa8f7ca6f77d63d224258dbdec63d78d367184c"
+          },
+          "v1052-cumulative-release-exact-0a0fc4a-postgresql-standalone1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-exact-0a0fc4a-postgresql-standalone1.json",
+            "sha256": "22fcefa4d7f6681e81580661f558c2e52fc56fdf42da9e7f6ea222bb6e886d4f"
+          },
+          "v1052-refund-history-lock-correction1-regression-red1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-refund-history-lock-correction1-regression-red1.json",
+            "sha256": "f4a95c89231d15130cc516cb9fb255085b504ea6c8610aa0ab740163211ecd42"
+          }
+        },
+        "source_snapshots": [
+          {
+            "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/refund-history-lock-original-0a0fc4a.py",
+            "sha256": "340e2367c7a698d3363a9485ab6d9f1bac9bb44051e7ccf891ed8aab5ef9137a"
+          },
+          {
+            "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/refund-history-lock-regression-red1.py",
+            "sha256": "fd3f0184bfca2e96f636842b370336119b991dd229c4f1d37e0a8b31c7e71231"
+          }
+        ],
+        "pending_display_correction": {
+          "finding": "REL-BF-F1",
+          "per_finding_attempt": 1,
+          "complete_release_review_round": 2,
+          "implementation": "Only FinancialEvidence.tsx runtime changes: add atConfirmation context to Credit/Refund evidence, pass it from all seven affected outcomes, and propagate through nested Credit application positions. Saved amounts retain original-confirmation attribution; live read defaults and stale-position guards remain unchanged. No backend, contracts, grants, transport, recovery, storage, controller or draft runtime edits.",
+          "red": "Nine expected failures on unchanged bf runtime: seven command outcomes and two real-controller delayed replay variants after a full synthetic return. All original key/bytes, current-read success/failure and journal assertions passed before the obsolete Current label assertion. Three live/stale read controls already passed. Full red logs and source snapshots preserved.",
+          "focused": "348 tests pass across six verified files; actual TypeScript referenced-project build, lint, formatting and28traceability checks pass. All1865 prior trace entries preserved, five added=1870.",
+          "browser": "17 real Chromium groups/28listedcases pass, retaining all15prior groups and adding seven frozen outcome assertions plus two intervening-return replay/remount cases. Actual IndexedDB/WebCrypto/WebLocks/native dialogs; zero financial network. After this browser run only test-only Management fixture typing/RTL options changed, not browser code or product runtime; exact post-commit browser gate remains required.",
+          "check_qualifications": [
+            {
+              "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-check-scope-qualification.json",
+              "sha256": "ca7b3717d18351eab1c29a7b30df3ee651d31e338b1896b7bca3e8150793f11f"
+            },
+            {
+              "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-type-trace-qualification.json",
+              "sha256": "e42a22ebffd645dd3a0f5f2484f227047926805dce91d99937aa59f89e2f770c"
+            },
+            {
+              "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-red1-source-snapshots.json",
+              "sha256": "8e66efac751a1bad3a3d5941c941a8843c816aaa67f971ccdf79097eadcb74cb"
+            },
+            {
+              "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-prefreeze-checksum-qualification.json",
+              "sha256": "031256b6bf25ecc46bdd65a21189e5da4852bdafa4bfb7a25ebab49ecc6e9eda"
+            }
+          ],
+          "failures": {
+            "v1052-cumulative-release-outcome-correction1-lint1.json": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-lint1.json",
+              "sha256": "71175d2c5cb78dbd5eedc9763f34c6d87d98bf8d3280f70bd322bc649e079c68"
+            },
+            "v1052-cumulative-release-outcome-correction1-red1.json": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-red1.json",
+              "sha256": "9b4e5a332ff89a0496e42a0ac6e21f488b627270d491ab30727917ac27766818"
+            },
+            "v1052-cumulative-release-outcome-correction1-trace1.json": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-trace1.json",
+              "sha256": "c737535b445a8d853169f1daebb0ec89d2950b587ae75944551b6811e1cf38ac"
+            },
+            "v1052-cumulative-release-outcome-correction1-types-build1.json": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-types-build1.json",
+              "sha256": "c1637e8f89fa689d239e6015b5fce969836df1ebda81a7482db128f3a6b73623"
+            }
+          },
+          "old_review_process_qualification": {
+            "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1052-cumulative-release-review-bf1afe0-tracking-read-qualification.json",
+            "sha256": "85123d19a058a48f83d9c73e264d3a5481d3c5367871fd5ac43090cbbc03b60b"
+          },
+          "per_finding_classification": {
+            "new_finding": "REL-BF-F1",
+            "attempt": 1,
+            "related_prior_findings": [
+              "UI030-M2",
+              "UI3A-F1"
+            ],
+            "reason": "The earlier documented scope covered already-loaded authorized READ projections on commands.revision and immutable proposal_trace inside those read histories; correction1 explicitly preserved confirmed outcomes, and correction2 targeted at-proposal history. The current finding is the distinct saved COMMAND-result rendering path, triggered by original-key replay after another actor changes the balance, plus missing propagation of an already-existing atConfirmation flag. It does not recur in the corrected read/proposal branches. Root compared030->3a->6a outcome source: atConfirmation and the problematic direct outcome calls predate those corrections; the main added read behavior was showPosition handling. Keep earlier findings closed with their existing attempt2; do not reset or reassign their counts. Future independent reviewer must assess this classification explicitly.",
+            "prior_counters_unchanged": {
+              "UI030-M2/UI3A-F1": 2,
+              "UI030-L2/UI3A-F2": 2,
+              "UI3A-F3/UI6A-F1-F2-F3": 2
+            },
+            "prior_regressions_must_remain": true
+          },
+          "publication": "Not started. bf whole-release rejection remains preserved; this is focused verification only."
+        },
+        "schedule_qualification": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-exact-scheduling-qualification.json",
+          "sha256": "f564b316dce2367ff40df324a0be582ba92451cb6985c6db2a18a9f98ffede08"
+        },
+        "prior_review_read_boundary_qualification": {
           "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1052-cumulative-release-review-bf1afe0-tracking-read-qualification.json",
           "sha256": "85123d19a058a48f83d9c73e264d3a5481d3c5367871fd5ac43090cbbc03b60b"
         },
-        "per_finding_classification": {
-          "new_finding": "REL-BF-F1",
-          "attempt": 1,
-          "related_prior_findings": [
-            "UI030-M2",
-            "UI3A-F1"
-          ],
-          "reason": "The earlier documented scope covered already-loaded authorized READ projections on commands.revision and immutable proposal_trace inside those read histories; correction1 explicitly preserved confirmed outcomes, and correction2 targeted at-proposal history. The current finding is the distinct saved COMMAND-result rendering path, triggered by original-key replay after another actor changes the balance, plus missing propagation of an already-existing atConfirmation flag. It does not recur in the corrected read/proposal branches. Root compared030->3a->6a outcome source: atConfirmation and the problematic direct outcome calls predate those corrections; the main added read behavior was showPosition handling. Keep earlier findings closed with their existing attempt2; do not reset or reassign their counts. Future independent reviewer must assess this classification explicitly.",
-          "prior_counters_unchanged": {
-            "UI030-M2/UI3A-F1": 2,
-            "UI030-L2/UI3A-F2": 2,
-            "UI3A-F3/UI6A-F1-F2-F3": 2
-          },
-          "prior_regressions_must_remain": true
-        },
-        "publication": "Not started. bf whole-release rejection remains preserved; this is focused verification only."
+        "status": "Focused only; normal successor/exactgates/fresh complete review pending. No product acceptance/publication."
       }
     },
     "accepted_read_slice": {
@@ -6988,6 +7031,311 @@
         ]
       },
       "qualification": "Bounded30path UI acceptance only; complete122path release review separately rejected saved command-result labels. Preserve original frozen fields/history; their old pending statuses are discharged only by the cited exact acceptance."
+    },
+    "pending_outcome_label_phase": {
+      "candidate": "0a0fc4a90df45352234f169ddbf732b910d86d6a",
+      "tree": "373ef9b654a283a1b2c4589fc7c9c42e7d7c69f0",
+      "frozen_active_slice": {
+        "id": "V1-052-cumulative-outcome-label-correction1",
+        "status": "focused_verified_freeze_pending",
+        "base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
+        "parent": "bf1afe03f5c04604504e8e8d62db526ca774d904",
+        "started_at": "2026-09-08T14:18:49.163055+00:00",
+        "affected_paths": [
+          "frontend/src/FinancialEvidence.tsx",
+          "frontend/src/FinancialWorkspaces.test.tsx",
+          "frontend/src/FinancialManagement.test.tsx",
+          "frontend/src/test/financialWorkflows.browser.ts",
+          "ops/NOW.md",
+          "ops/QUEUE.md",
+          "ops/STATE.json",
+          "ops/V1_052_FINANCIAL_STAFF_UI.md",
+          "ops/traceability.json"
+        ],
+        "complete_paths": [
+          "backend/migrations/versions/20260906_42_payment_confirmation.py",
+          "backend/migrations/versions/20260906_43_khr_payment_confirmation.py",
+          "backend/migrations/versions/20260907_44_payment_receipt_evidence.py",
+          "backend/migrations/versions/20260907_45_credit_refund_http_reads.py",
+          "backend/migrations/versions/20260908_46_payment_reversal_context.py",
+          "backend/migrations/versions/20260908_47_financial_action_context.py",
+          "backend/src/property_rental/allocation_read.py",
+          "backend/src/property_rental/allocation_receipt_api.py",
+          "backend/src/property_rental/app.py",
+          "backend/src/property_rental/credit_refund_api.py",
+          "backend/src/property_rental/credit_refund_read.py",
+          "backend/src/property_rental/financial_action_context.py",
+          "backend/src/property_rental/financial_action_context_api.py",
+          "backend/src/property_rental/financial_context.py",
+          "backend/src/property_rental/financial_reference.py",
+          "backend/src/property_rental/financial_reference_api.py",
+          "backend/src/property_rental/khr_payment_confirmation.py",
+          "backend/src/property_rental/payment_api.py",
+          "backend/src/property_rental/payment_confirmation.py",
+          "backend/src/property_rental/payment_read.py",
+          "backend/src/property_rental/payment_reversal_context.py",
+          "backend/src/property_rental/payment_reversal_context_api.py",
+          "backend/tests/payment_test_support.py",
+          "backend/tests/test_allocation_read.py",
+          "backend/tests/test_allocation_read_migration.py",
+          "backend/tests/test_allocation_receipt_api.py",
+          "backend/tests/test_allocation_receipt_api_migration.py",
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_credit_refund_api.py",
+          "backend/tests/test_credit_refund_api_migration.py",
+          "backend/tests/test_credit_refund_read.py",
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_financial_action_context.py",
+          "backend/tests/test_financial_action_context_api.py",
+          "backend/tests/test_financial_action_context_migration.py",
+          "backend/tests/test_financial_context.py",
+          "backend/tests/test_financial_fixture_clock_migration.py",
+          "backend/tests/test_financial_reference.py",
+          "backend/tests/test_financial_reference_api.py",
+          "backend/tests/test_financial_reference_migration.py",
+          "backend/tests/test_initial_owner_bootstrap_cli.py",
+          "backend/tests/test_invoice_migration.py",
+          "backend/tests/test_khr_payment_confirmation.py",
+          "backend/tests/test_khr_payment_confirmation_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_migrations.py",
+          "backend/tests/test_payment_api.py",
+          "backend/tests/test_payment_api_migration.py",
+          "backend/tests/test_payment_confirmation.py",
+          "backend/tests/test_payment_confirmation_migration.py",
+          "backend/tests/test_payment_read.py",
+          "backend/tests/test_payment_read_migration.py",
+          "backend/tests/test_payment_reversal_context.py",
+          "backend/tests/test_payment_reversal_context_api.py",
+          "backend/tests/test_payment_reversal_context_migration.py",
+          "backend/tests/test_refund_migration.py",
+          "backend/tests/test_refund_service_migration.py",
+          "backend/tests/test_traceability.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_utility_meter_migration.py",
+          "frontend/src/App.test.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/FinancialAllocationReceiptWorkspace.tsx",
+          "frontend/src/FinancialConfirmation.test.tsx",
+          "frontend/src/FinancialConfirmation.tsx",
+          "frontend/src/FinancialCreditWorkspace.tsx",
+          "frontend/src/FinancialEvidence.tsx",
+          "frontend/src/FinancialManagement.test.tsx",
+          "frontend/src/FinancialManagement.tsx",
+          "frontend/src/FinancialPaymentWorkspace.tsx",
+          "frontend/src/FinancialRecoveryNotice.tsx",
+          "frontend/src/FinancialRefundWorkspace.tsx",
+          "frontend/src/FinancialWorkspaces.test.tsx",
+          "frontend/src/billingJournal.test.ts",
+          "frontend/src/financialActionContext.ts",
+          "frontend/src/financialActionContextSequence.ts",
+          "frontend/src/financialClient.test.ts",
+          "frontend/src/financialClient.ts",
+          "frontend/src/financialContracts.test.ts",
+          "frontend/src/financialContracts.ts",
+          "frontend/src/financialJson.test.ts",
+          "frontend/src/financialJson.ts",
+          "frontend/src/financialRecovery.test.ts",
+          "frontend/src/financialRecovery.ts",
+          "frontend/src/financialReferenceClient.test.ts",
+          "frontend/src/financialReferenceClient.ts",
+          "frontend/src/financialResponse.ts",
+          "frontend/src/financialUi.test.ts",
+          "frontend/src/financialUi.ts",
+          "frontend/src/financialUiContext.test.ts",
+          "frontend/src/financialUiContext.ts",
+          "frontend/src/invoiceClient.ts",
+          "frontend/src/paymentReversalContext.ts",
+          "frontend/src/paymentReversalContextSequence.ts",
+          "frontend/src/sealedIntentStore.test.ts",
+          "frontend/src/sealedIntentStore.ts",
+          "frontend/src/styles.css",
+          "frontend/src/test/financialActionContextFixtures.ts",
+          "frontend/src/test/financialCommands.browser.ts",
+          "frontend/src/test/financialFixtures.ts",
+          "frontend/src/test/financialRecovery.browser.ts",
+          "frontend/src/test/financialReferences.browser.ts",
+          "frontend/src/test/financialWorkflows.browser.ts",
+          "ops/NOW.md",
+          "ops/QUEUE.md",
+          "ops/STATE.json",
+          "ops/V1_052_ALLOCATION_RECEIPT_HTTP.md",
+          "ops/V1_052_CREDIT_REFUND_HTTP.md",
+          "ops/V1_052_FINANCIAL_ACTION_CONTEXT.md",
+          "ops/V1_052_FINANCIAL_CLIENT_RECOVERY.md",
+          "ops/V1_052_FINANCIAL_HTTP_CONTEXT.md",
+          "ops/V1_052_FINANCIAL_REFERENCES.md",
+          "ops/V1_052_FINANCIAL_STAFF_UI.md",
+          "ops/V1_052_FINANCIAL_WIRE_RECOVERY.md",
+          "ops/V1_052_PAYMENT_REVERSAL_CONTEXT.md",
+          "ops/V1_052_SCOPE.md",
+          "ops/V1_ROADMAP.json",
+          "ops/traceability.json",
+          "scripts/database-test.sh",
+          "scripts/test_openclaw_automation.py"
+        ],
+        "scope": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-scope.json",
+          "sha256": "19391e1c2585b46c1dd0a86e8a8efeef78d6e980dcca70c43f2f106c2d4fe98d"
+        },
+        "reconciliation": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-bf1afe0-outcome-correction1-admission1-reconciliation.json",
+          "sha256": "25084b7e60c73f2cffb28f99e95f3c1b9dca79be0ca5f180ea66a29c4e8db231"
+        },
+        "docs": [
+          "docs/006_UI_SPECIFICATION.md:UI-069-072",
+          "docs/005_API_SPECIFICATION.md:API-061-066",
+          "ops/V1_052_SCOPE.md",
+          "ops/V1_052_FINANCIAL_STAFF_UI.md"
+        ],
+        "plan": [
+          "Fresh current state/external/scheduler reconciliation, then record9-path phaseactive before source/test edits.",
+          "Reproduce7frozenoutcome labels and delayedreplay+interveningchanges+failedcurrentread on unchanged implementation.",
+          "Extend existing atConfirmation display context to CreditEvidence/RefundEvidence and propagate through all7outcomes/nestedCreditapplication; retainCurrent onlyforauthorizedfreshreads, alloldshowPosition anddata unchanged.",
+          "Retain red evidence and addgreen focusedtests/currentreadcontrols, real syntheticbrowser delayedreplay withfailedrefresh, trace/contractupdates.",
+          "Normal successor; requiredfullapplicable exactgates and45plusnewbrowsergroups; freshcompletef8base Astra/max/Standard/enforcedread-onlyreview carrying standingauthorization andexplicitnewfindingclassification. Preserve alloldallowances."
+        ],
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard",
+        "reasoning_reason": "Financial result provenance, original-key recovery and preservation across a qualified complete release review.",
+        "implementation_owner": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "correction_attempt": 1,
+        "per_finding_correction_attempt": 1,
+        "unresolved_finding": "REL-BF-F1",
+        "independent_review_round": 2,
+        "per_finding_classification": {
+          "new_finding": "REL-BF-F1",
+          "attempt": 1,
+          "related_prior_findings": [
+            "UI030-M2",
+            "UI3A-F1"
+          ],
+          "reason": "The earlier documented scope covered already-loaded authorized READ projections on commands.revision and immutable proposal_trace inside those read histories; correction1 explicitly preserved confirmed outcomes, and correction2 targeted at-proposal history. The current finding is the distinct saved COMMAND-result rendering path, triggered by original-key replay after another actor changes the balance, plus missing propagation of an already-existing atConfirmation flag. It does not recur in the corrected read/proposal branches. Root compared030->3a->6a outcome source: atConfirmation and the problematic direct outcome calls predate those corrections; the main added read behavior was showPosition handling. Keep earlier findings closed with their existing attempt2; do not reset or reassign their counts. Future independent reviewer must assess this classification explicitly.",
+          "prior_counters_unchanged": {
+            "UI030-M2/UI3A-F1": 2,
+            "UI030-L2/UI3A-F2": 2,
+            "UI3A-F3/UI6A-F1-F2-F3": 2
+          },
+          "prior_regressions_must_remain": true
+        },
+        "rejected_candidate": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-rejected-bf1afe0.json",
+          "sha256": "3a104f2db4cc6858acd6e9190c325d1494e4c698edafbb70e114b1cd4895f642"
+        },
+        "review_process_qualification": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1052-cumulative-release-review-bf1afe0-tracking-read-qualification.json",
+          "sha256": "85123d19a058a48f83d9c73e264d3a5481d3c5367871fd5ac43090cbbc03b60b"
+        },
+        "standing_authorization": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
+          "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
+        },
+        "trace_entries_before": 1865,
+        "immutable_root_object_count": 40,
+        "historical_root_objects": 28,
+        "protected_files": 429,
+        "next_action": "Create a normal nine-file successor of preserved bf1afe0 for REL-BF-F1 correction1; run the required exact candidate checks and fresh independent review of all122 paths from published f8a33ba. Astra/max/Standard/enforced read-only under standing authority through53. Keep earlier closed findings and their attempt2 counters unchanged; independently reassess the distinct command-result classification. Preserve all rejected candidates, reports and65failed receipts. Future reviewers must use a positive evidence-path inventory excluding rawtracking payloads. Only zero-findings review allows product publication; then exactCI/ref proof, reviewed terminal records and their own publication/CI, final concrete Workboard hold resolution and supported card completion, durable52closure, then53. Keep SAMEfollowup active/OpenClaw disabled; closed53pause/no54.",
+        "focused_evidence": {
+          "focused-final2": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-focused-final2.json",
+            "sha256": "9e270c645fea5f53cc16e0b1718fdebfef395370b2eda1a6508f363046887234"
+          },
+          "types-build2": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-types-build2.json",
+            "sha256": "ec9429bb718bd7fa702e54ecec17fca8953c4b0fee78c9898e0482010860ad04"
+          },
+          "lint-final2": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-lint-final2.json",
+            "sha256": "ff1640b4d9934f62f994d1217545102f9924f04643f09778d48d83ff3c6ef680"
+          },
+          "format-final1": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-format-final1.json",
+            "sha256": "8597747c28191ffa1c3f0534b62ffcfc45fc171f6064140cbc7a40eb41a350eb"
+          },
+          "trace": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-trace2.json",
+            "sha256": "2f4f2ab5ef6da41028c106919ff201f92fa7937905ed76aab244dccf629b1af4"
+          },
+          "browser17": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-browser-focused1.json",
+            "sha256": "ce105dbe4efcfb89c1c7bfd39ff783fa8be37c84300b70eb3d49e11da809298f"
+          }
+        },
+        "verification_qualification": {
+          "finding": "REL-BF-F1",
+          "per_finding_attempt": 1,
+          "complete_release_review_round": 2,
+          "implementation": "Only FinancialEvidence.tsx runtime changes: add atConfirmation context to Credit/Refund evidence, pass it from all seven affected outcomes, and propagate through nested Credit application positions. Saved amounts retain original-confirmation attribution; live read defaults and stale-position guards remain unchanged. No backend, contracts, grants, transport, recovery, storage, controller or draft runtime edits.",
+          "red": "Nine expected failures on unchanged bf runtime: seven command outcomes and two real-controller delayed replay variants after a full synthetic return. All original key/bytes, current-read success/failure and journal assertions passed before the obsolete Current label assertion. Three live/stale read controls already passed. Full red logs and source snapshots preserved.",
+          "focused": "348 tests pass across six verified files; actual TypeScript referenced-project build, lint, formatting and28traceability checks pass. All1865 prior trace entries preserved, five added=1870.",
+          "browser": "17 real Chromium groups/28listedcases pass, retaining all15prior groups and adding seven frozen outcome assertions plus two intervening-return replay/remount cases. Actual IndexedDB/WebCrypto/WebLocks/native dialogs; zero financial network. After this browser run only test-only Management fixture typing/RTL options changed, not browser code or product runtime; exact post-commit browser gate remains required.",
+          "check_qualifications": [
+            {
+              "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-check-scope-qualification.json",
+              "sha256": "ca7b3717d18351eab1c29a7b30df3ee651d31e338b1896b7bca3e8150793f11f"
+            },
+            {
+              "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-type-trace-qualification.json",
+              "sha256": "e42a22ebffd645dd3a0f5f2484f227047926805dce91d99937aa59f89e2f770c"
+            },
+            {
+              "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-red1-source-snapshots.json",
+              "sha256": "8e66efac751a1bad3a3d5941c941a8843c816aaa67f971ccdf79097eadcb74cb"
+            },
+            {
+              "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-prefreeze-checksum-qualification.json",
+              "sha256": "031256b6bf25ecc46bdd65a21189e5da4852bdafa4bfb7a25ebab49ecc6e9eda"
+            }
+          ],
+          "failures": {
+            "v1052-cumulative-release-outcome-correction1-lint1.json": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-lint1.json",
+              "sha256": "71175d2c5cb78dbd5eedc9763f34c6d87d98bf8d3280f70bd322bc649e079c68"
+            },
+            "v1052-cumulative-release-outcome-correction1-red1.json": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-red1.json",
+              "sha256": "9b4e5a332ff89a0496e42a0ac6e21f488b627270d491ab30727917ac27766818"
+            },
+            "v1052-cumulative-release-outcome-correction1-trace1.json": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-trace1.json",
+              "sha256": "c737535b445a8d853169f1daebb0ec89d2950b587ae75944551b6811e1cf38ac"
+            },
+            "v1052-cumulative-release-outcome-correction1-types-build1.json": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-types-build1.json",
+              "sha256": "c1637e8f89fa689d239e6015b5fce969836df1ebda81a7482db128f3a6b73623"
+            }
+          },
+          "old_review_process_qualification": {
+            "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1052-cumulative-release-review-bf1afe0-tracking-read-qualification.json",
+            "sha256": "85123d19a058a48f83d9c73e264d3a5481d3c5367871fd5ac43090cbbc03b60b"
+          },
+          "per_finding_classification": {
+            "new_finding": "REL-BF-F1",
+            "attempt": 1,
+            "related_prior_findings": [
+              "UI030-M2",
+              "UI3A-F1"
+            ],
+            "reason": "The earlier documented scope covered already-loaded authorized READ projections on commands.revision and immutable proposal_trace inside those read histories; correction1 explicitly preserved confirmed outcomes, and correction2 targeted at-proposal history. The current finding is the distinct saved COMMAND-result rendering path, triggered by original-key replay after another actor changes the balance, plus missing propagation of an already-existing atConfirmation flag. It does not recur in the corrected read/proposal branches. Root compared030->3a->6a outcome source: atConfirmation and the problematic direct outcome calls predate those corrections; the main added read behavior was showPosition handling. Keep earlier findings closed with their existing attempt2; do not reset or reassign their counts. Future independent reviewer must assess this classification explicitly.",
+            "prior_counters_unchanged": {
+              "UI030-M2/UI3A-F1": 2,
+              "UI030-L2/UI3A-F2": 2,
+              "UI3A-F3/UI6A-F1-F2-F3": 2
+            },
+            "prior_regressions_must_remain": true
+          },
+          "publication": "Not started. bf whole-release rejection remains preserved; this is focused verification only."
+        }
+      },
+      "status": "display_correction_verified_but_full_gate_failed_no_independent_review",
+      "failed_gate": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-failed-gate-0a0fc4a.json",
+        "sha256": "685a9315efe9fa9b8ef898277a663ece6d158ce09a050bf53e7c2c7de365cc3d"
+      },
+      "qualification": "Do not mark REL-BF-F1 accepted or increment its first correction solely for a test-only successor. Complete final release review must assess both changes and original classification."
     }
   },
   "historical_v1_048_takeover": {
@@ -7740,9 +8088,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "bf1afe03f5c04604504e8e8d62db526ca774d904",
+  "commit": "0a0fc4a90df45352234f169ddbf732b910d86d6a",
   "idle_reason": null,
-  "next_action": "Create a normal nine-file successor of preserved bf1afe0 for REL-BF-F1 correction1; run the required exact candidate checks and fresh independent review of all122 paths from published f8a33ba. Astra/max/Standard/enforced read-only under standing authority through53. Keep earlier closed findings and their attempt2 counters unchanged; independently reassess the distinct command-result classification. Preserve all rejected candidates, reports and65failed receipts. Future reviewers must use a positive evidence-path inventory excluding rawtracking payloads. Only zero-findings review allows product publication; then exactCI/ref proof, reviewed terminal records and their own publication/CI, final concrete Workboard hold resolution and supported card completion, durable52closure, then53. Keep SAMEfollowup active/OpenClaw disabled; closed53pause/no54.",
+  "next_action": "Freeze normal6path successor of0a0fc4a with one test-only fixture preparation correction and two controlled-lock cases; completef8base122paths/432protected/40immutable/28history/1871trace.35RefundDB/28trace/formatlint187types PASS; all14original definitions preserved except two bounded setup statements, every original assertion unchanged. Run required exact successor gates sequentially for fullautomation/frontend/PostgreSQL and backend, then47browsergroups, scope/migration/audits, fresh reconciliation and one completef8-base Astra/max/Standard/enforced-read-only review under standingthrough53authority. Preserve68failedreceipts and allpriorcandidates/reports; original lock holder remains unproven. No waiver using the earlier overlapping0a pass. REL-BF-F1 remains correction1 pending review, old UIattempt2 counters unchanged. No publication beforezero; product+terminal proofs and Workboardhold resolution/cardacceptance/durable52closure before53; closed53pauseSAME/OpenClawdisabled/no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -7750,8 +8098,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Working9path saved-command-result display correction; rejectedbf remains immutable in normal history and fullf8base review is required.",
-  "candidate_parent": "bf1afe03f5c04604504e8e8d62db526ca774d904",
+  "candidate_resolution": "Six existing-path test-only historical Refund setup correction; fullf8 release review remains pending and prior display correction is not yet accepted.",
+  "candidate_parent": "0a0fc4a90df45352234f169ddbf732b910d86d6a",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -7814,7 +8162,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 saved-result correction1 verified; normal successor pending",
+  "phase": "V1-052 historical Refund fixture correction verified; normal successor pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -8936,7 +9284,8 @@
     "Staff UI review correction1:243focused/28trace PASS, finaltypes/scopedlint/format PASS.1827priortrace preserved+11=1838.3new realChromium groups PASS/0financialnetwork;6original groups alsoPASS in retained wrapper result. Final source adds obsolete-run guard/focus cleanup after browser proof; frozen successor will run9UIgroups. All expected red regressions, new harness setup errors, initial type/lint failures and both browser wrapper failures retained with exact logs.030remains independently rejected0HIGH3MEDIUM2LOW; successor review pending.",
     "Staff UI correction2:321focused/28trace/12real-browsergroups PASS; finaltypes/lint/format PASS.1838priortrace preserved+13=1851;408protected/28historicalobjects unchanged. Historical saved proposal, complete monetary input/header alignment and scope-bound unsaved draft protection verified.16new failed receipts retained (including browser harness/fixture/selector failures and three pre-existing expired-session fixture races). New browser runner uses installed Playwright API to handle native dialogs; zero financial network.3a remains rejected0HIGH1MEDIUM2LOW; normal successor/exactgates/freshreview pending.",
     "Second UI3A-F3 correction:336focused/28trace/15native-browsergroups/finaltypeslintformat PASS.14newtrace groups preserve1851prior mappings;1865total.408protected/16othercandidatepaths/28historicalobjects unchanged. Five new failed receipts retained: four behavioral red failures; two missing synthetic manual-grant cases; two browser path/timestamp fixture failures; two browser-only lint diagnostics.6a remains rejected0H0M3L; normal successor/exactgates/fresh complete013-base review pending. Samefindingattempt2, overallreviewround3; no allowance reset.",
-    "REL-BF-F1 correction1:348focused/28trace/17nativebrowsergroups/actual TypeScript project build/lint/format PASS. Nine red behavioral failures and test-only lint/type/helper failures retained.9existingpaths/429protected/40immutableobjects/28history/1870trace;65totalfailedreceipts retained. Exact successor gates and fresh completef8-base122path review pending; previous closed findings and counters unchanged."
+    "REL-BF-F1 correction1:348focused/28trace/17nativebrowsergroups/actual TypeScript project build/lint/format PASS. Nine red behavioral failures and test-only lint/type/helper failures retained.9existingpaths/429protected/40immutableobjects/28history/1870trace;65totalfailedreceipts retained. Exact successor gates and fresh completef8-base122path review pending; previous closed findings and counters unchanged.",
+    "GATE-0A-PG-F1 correction1:35RefundDB/28trace/formatlint187types PASS. Controlled external2RED and tracked2RED retained. Two setup statements preserve all14originaldefinitions after removal and all historical assertions; unpreparedRefund still fails NOWAIT, preparation waits before source locks and holder release is observed.6paths/432protected/40immutable/28history/1871trace;68failedreceipts preserved. Full successor checks/review pending; originalholderunproven; no prior counter reset."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -8958,7 +9307,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-08T14:46:02.932717+00:00",
+  "timestamp": "2026-09-08T15:26:30.789788+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -9190,7 +9539,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-08T14:46:02.932717+00:00",
+  "updated_at": "2026-09-08T15:26:30.789788+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -10313,7 +10662,7 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Preserved rejected complete product candidate; normal corrected successor will resolve from containing HEAD after verification.",
+  "commit_role": "Preserved failed0a candidate; the normal6path test-only successor will resolve externally after commit.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
     "4e3d2a1180b79a18c9208aad7f9386219726bbd1"

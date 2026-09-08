@@ -1,8 +1,10 @@
 """Private USD-only Refund source/correction substrate and immutable source evidence."""
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
+from contextlib import ExitStack
 from datetime import UTC, datetime
-from threading import Barrier
+from threading import Barrier, Event
+from time import monotonic, sleep
 from uuid import UUID, uuid4
 
 import psycopg
@@ -420,6 +422,16 @@ def test_usd_refund_historical_budget_rejects_backdated_deposit_overlap(
 ) -> None:
     human, _, customer, payment = source(migrated_database_url, 10000 if overlap else 20000)
     with psycopg.connect(migrated_database_url) as connection:
+        # Prepare stable history before taking the Refund source lock.
+        connection.execute("SET LOCAL lock_timeout='3s'")
+        connection.execute(
+            "LOCK TABLE app.invoices,app.invoice_lines,app.invoice_adjustments,"
+            "app.invoice_adjustment_reversals,app.invoice_void_events,"
+            "app.late_payment_charges,app.late_payment_charge_corrections,"
+            "app.late_payment_decisions,app.payment_allocations,"
+            "app.payment_allocation_reversals,app.customer_credit_applications,"
+            "app.customer_credit_application_reversals IN SHARE MODE"
+        )
         identity = refund(connection, human, customer, payment=payment, amount=10000)
         correct(connection, human, identity, 10000)
         row = connection.execute(
@@ -526,3 +538,66 @@ def test_usd_refund_khr_origin_uses_recorded_usd_without_repricing(
             ).fetchone()
             == before
         )
+
+
+@pytest.mark.parametrize("overlap", [False, True])
+def test_usd_refund_historical_fixture_waits_for_unrelated_table_lock(
+    migrated_database_url: str,  # noqa: F811
+    monkeypatch: pytest.MonkeyPatch,
+    overlap: bool,
+) -> None:
+    original_source = source
+    stop = Event()
+    waiter: Future[bool] | None = None
+
+    with ExitStack() as stack, ThreadPoolExecutor(max_workers=1) as pool:
+
+        def controlled_source(url: str, amount: int = 10000) -> tuple[UUID, UUID, UUID, UUID]:
+            nonlocal waiter
+            result = original_source(url, amount)
+            human, _, customer, payment = result
+            blocker = stack.enter_context(psycopg.connect(url))
+            blocker.execute("SET LOCAL lock_timeout='3s'")
+            blocker.execute("LOCK TABLE app.invoice_lines IN SHARE UPDATE EXCLUSIVE MODE")
+            # The real guard must still refuse a raw Refund while the table is held.
+            with pytest.raises(psycopg.errors.LockNotAvailable), psycopg.connect(url) as raw:
+                refund(raw, human, customer, payment=payment, amount=10000)
+
+            def release_when_fixture_waits() -> bool:
+                try:
+                    with psycopg.connect(
+                        url,
+                        autocommit=True,
+                        options="-c default_transaction_read_only=on -c statement_timeout=1000",
+                    ) as observer:
+                        deadline = monotonic() + 2
+                        while not stop.is_set() and monotonic() < deadline:
+                            row = observer.execute(
+                                "SELECT EXISTS(SELECT 1 FROM pg_locks l "
+                                "WHERE l.database=(SELECT oid FROM pg_database "
+                                "WHERE datname=current_database()) "
+                                "AND l.relation='app.invoice_lines'::regclass "
+                                "AND l.mode='ShareLock' AND NOT l.granted "
+                                "AND %s=ANY(pg_blocking_pids(l.pid)))",
+                                (blocker.info.backend_pid,),
+                            ).fetchone()
+                            if row == (True,):
+                                return True
+                            sleep(0.005)
+                        return False
+                finally:
+                    blocker.rollback()
+
+            waiter = pool.submit(release_when_fixture_waits)
+            return result
+
+        monkeypatch.setattr(f"{__name__}.source", controlled_source)
+        try:
+            # Exercise the complete original two-outcome history test and all of its assertions.
+            test_usd_refund_historical_budget_rejects_backdated_deposit_overlap(
+                migrated_database_url, overlap
+            )
+        finally:
+            stop.set()
+        assert waiter is not None
+        assert waiter.result(timeout=4), "Release must follow an observed waiting SHARE lock"
