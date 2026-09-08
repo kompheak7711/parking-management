@@ -40,10 +40,10 @@ export async function readFinancialRecord(
 }
 
 /** Publish only into the mounted actor, Property and record generation that started a read. */
-export function useFinancialTask(scope: FinancialScope) {
+export function useFinancialTask(scope: FinancialScope, revision = 0) {
   const { actorId, propertyId, signal } = scope;
   const mounted = useRef(false);
-  const identity = useRef<FinancialScope | null>(null);
+  const identity = useRef<(FinancialScope & { revision: number }) | null>(null);
   const generation = useRef(0);
   const active = useRef<{
     controller: AbortController;
@@ -60,7 +60,7 @@ export function useFinancialTask(scope: FinancialScope) {
   }, []);
   useLayoutEffect(() => {
     mounted.current = true;
-    identity.current = { actorId, propertyId, signal };
+    identity.current = { actorId, propertyId, signal, revision };
     setBusy(false);
     setError(null);
     return () => {
@@ -68,7 +68,7 @@ export function useFinancialTask(scope: FinancialScope) {
       identity.current = null;
       stop();
     };
-  }, [actorId, propertyId, signal, stop]);
+  }, [actorId, propertyId, signal, revision, stop]);
   const cancel = useCallback(() => {
     stop();
     if (mounted.current) {
@@ -87,7 +87,8 @@ export function useFinancialTask(scope: FinancialScope) {
         signal.aborted ||
         currentScope?.actorId !== actorId ||
         currentScope.propertyId !== propertyId ||
-        currentScope.signal !== signal
+        currentScope.signal !== signal ||
+        currentScope.revision !== revision
       )
         return;
       stop();
@@ -130,10 +131,29 @@ export function useFinancialTask(scope: FinancialScope) {
         }
       }
     },
-    [actorId, propertyId, signal, stop],
+    [actorId, propertyId, signal, revision, stop],
   );
   return { run, cancel, busy, error };
 }
+/** Retain original read evidence while separately tracking whether its mutable projection is current. */
+export function useFinancialSnapshot<T>(revision: number) {
+  const [snapshot, setSnapshot] = useState<{
+    value: T;
+    revision: number;
+  } | null>(null);
+  const setValue = useCallback(
+    (value: T | null) => {
+      setSnapshot(value === null ? null : { value, revision });
+    },
+    [revision],
+  );
+  return [
+    snapshot?.value ?? null,
+    setValue,
+    snapshot === null || snapshot.revision === revision,
+  ] as const;
+}
+
 function current(scope: FinancialScope): void {
   if (scope.signal.aborted)
     throw new FinancialClientError("WORKSPACE_INVALIDATED", false);

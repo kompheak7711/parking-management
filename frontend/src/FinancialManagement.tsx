@@ -47,6 +47,7 @@ import {
   FinancialOutcomeEvidence,
 } from "./FinancialEvidence";
 import { FinancialAllocationReceiptWorkspace } from "./FinancialAllocationReceiptWorkspace";
+import type { FinancialReceiptHandoff } from "./financialUi";
 import { FinancialPaymentWorkspace } from "./FinancialPaymentWorkspace";
 import { FinancialCreditWorkspace } from "./FinancialCreditWorkspace";
 import { FinancialRefundWorkspace } from "./FinancialRefundWorkspace";
@@ -285,11 +286,14 @@ function FinancialPropertyWorkspace({
   const [busy, setBusy] = useState(false),
     busyRef = useRef(false);
   const [revision, setRevision] = useState(0);
+  const [receiptHandoff, setReceiptHandoff] =
+    useState<FinancialReceiptHandoff | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState<ConfirmedFinancialAction | null>(
     null,
   );
   const mounted = useRef(false);
+  const preparationGeneration = useRef(0);
   const current = useRef({ capabilities, recovery });
   useLayoutEffect(() => {
     current.current = { capabilities, recovery };
@@ -298,6 +302,7 @@ function FinancialPropertyWorkspace({
     mounted.current = true;
     return () => {
       mounted.current = false;
+      preparationGeneration.current++;
     };
   }, []);
   const accessTask = useFinancialTask(scope),
@@ -306,7 +311,9 @@ function FinancialPropertyWorkspace({
     { run: readRecovery } = recoveryTask;
   const refresh = useCallback(() => {
     if (busyRef.current) return;
+    preparationGeneration.current++;
     setConfirmation(null);
+    setReceiptHandoff(null);
     setCapabilities(null);
     setRecovery(null);
     setRevision((n) => n + 1);
@@ -332,39 +339,74 @@ function FinancialPropertyWorkspace({
     refresh();
   }, [refresh]);
   const invalidate = useCallback(() => {
+    preparationGeneration.current++;
     if (!busyRef.current) setConfirmation(null);
   }, []);
-  const review = useCallback<FinancialWorkspaceProps["commands"]["review"]>(
-    (request, details) => {
+  const openReceipt = useCallback(
+    (receiptId: string) => {
       if (
         busyRef.current ||
-        current.current.recovery?.kind !== "ready" ||
-        !current.current.capabilities?.[
-          FINANCIAL_COMMAND_CAPABILITIES[request.operation]
-        ]
+        !mounted.current ||
+        scope.signal.aborted ||
+        (!current.current.capabilities?.["receipts.read"] &&
+          !current.current.capabilities?.["receipts.reprint"])
       )
-        throw new FinancialInputError(
-          "Review the current access and unresolved financial action before continuing.",
-        );
-      const prepared = prepareFinancialCommand(scope, request);
-      setConfirmation({ kind: "new", prepared, review: details });
+        return;
+      invalidate();
+      setReceiptHandoff(
+        Object.freeze({ scope, receiptId: financialId(receiptId) }),
+      );
     },
-    [scope],
+    [scope, invalidate],
   );
+  const beginReview = useCallback<
+    FinancialWorkspaceProps["commands"]["beginReview"]
+  >(() => {
+    invalidate();
+    const generation = preparationGeneration.current;
+    const isCurrent = () =>
+      mounted.current &&
+      !scope.signal.aborted &&
+      generation === preparationGeneration.current &&
+      !busyRef.current;
+    return Object.freeze<
+      ReturnType<FinancialWorkspaceProps["commands"]["beginReview"]>
+    >({
+      isCurrent,
+      review: (request, details) => {
+        if (!isCurrent()) return;
+        if (
+          current.current.recovery?.kind !== "ready" ||
+          !current.current.capabilities?.[
+            FINANCIAL_COMMAND_CAPABILITIES[request.operation]
+          ]
+        )
+          throw new FinancialInputError(
+            "Review the current access and unresolved financial action before continuing.",
+          );
+        const prepared = prepareFinancialCommand(scope, request);
+        // A completed preparation cannot publish a second confirmation.
+        preparationGeneration.current++;
+        setConfirmation({ kind: "new", prepared, review: details });
+      },
+    });
+  }, [scope, invalidate]);
   const commands = useMemo(
     () => ({
       ready: recovery?.kind === "ready" && !busy,
       busy,
       revision,
-      review,
+      beginReview,
       invalidate,
     }),
-    [recovery, busy, revision, review, invalidate],
+    [recovery, busy, revision, beginReview, invalidate],
   );
   const alive = () => mounted.current && !scope.signal.aborted;
   async function confirm() {
     if (busyRef.current || !confirmation || !alive()) return;
     const selected = confirmation;
+    preparationGeneration.current++;
+    setReceiptHandoff(null);
     const operation =
       selected.kind === "new"
         ? selected.prepared.request.operation
@@ -444,6 +486,7 @@ function FinancialPropertyWorkspace({
   }
   function reviewPending() {
     if (busyRef.current || recovery?.kind !== "pending") return;
+    preparationGeneration.current++;
     setConfirmation({ kind: "replay", command: recovery.command });
   }
   const pending = confirmation?.kind === "replay" ? confirmation.command : null;
@@ -501,12 +544,14 @@ function FinancialPropertyWorkspace({
       {capabilities && (
         <>
           <FinancialPaymentWorkspace
+            onOpenReceipt={openReceipt}
             scope={scope}
             capabilities={capabilities}
             services={services}
             commands={commands}
           />
           <FinancialAllocationReceiptWorkspace
+            receiptHandoff={receiptHandoff}
             scope={scope}
             capabilities={capabilities}
             services={services}

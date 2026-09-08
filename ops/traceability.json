@@ -26221,6 +26221,158 @@
       "test_path": "backend/tests/test_financial_fixture_clock_migration.py",
       "status": "implemented",
       "notes": "Runs the original Refund correction rollback proof with synthetic host clock shifted -60 and +60 seconds. The raw fixture uses the existing database_instant helper; event, command receipt and audit rollback assertions remain intact. Real clocks and production chronology guards are unchanged. Original failed74 API503 remains cause-unproven."
+    },
+    {
+      "test_id": "TEST-FE-505",
+      "upstream_ids": [
+        "TEST-117",
+        "API-057",
+        "API-065",
+        "UI-002",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Cross-form delayed Payment preparation cannot replace a newer Refund review or reopen it after cancellation; no POST or stored intent is created."
+    },
+    {
+      "test_id": "TEST-FE-506",
+      "upstream_ids": [
+        "TEST-117",
+        "API-057",
+        "API-061",
+        "API-064",
+        "API-092",
+        "UI-001",
+        "UI-006"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Payment, Credit, Refund and Receipt views preserve original facts across a command revision but withdraw current positions, require a fresh authorized GET and never restore old current labels after failed reload."
+    },
+    {
+      "test_id": "TEST-FE-507",
+      "upstream_ids": [
+        "TEST-117",
+        "API-059",
+        "UI-005",
+        "UI-066"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Each proposed Invoice renders one Customer reference row and no duplicate React sibling key."
+    },
+    {
+      "test_id": "TEST-FE-508",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-009",
+        "UI-012"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "A command revision aborts the earlier read; late completion cannot replace retained original evidence or mark its snapshot current. Only the fresh read can restore current status."
+    },
+    {
+      "test_id": "TEST-FE-509",
+      "upstream_ids": [
+        "TEST-117",
+        "API-057",
+        "API-092",
+        "UI-065",
+        "UI-106"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Original Payment received time retains six fractional digits and timezone offset; receipt evidence reference/number/ID remain distinct, and legacy-null receipt evidence reads Not recorded."
+    },
+    {
+      "test_id": "TEST-FE-510",
+      "upstream_ids": [
+        "TEST-117",
+        "API-092",
+        "UI-004",
+        "UI-106"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Integrated Payment-to-original-Receipt handoff uses the separate receipts.read or receipts.reprint grant and exact actor/Property/Receipt-bound GET only; no inferred grant or automatic command."
+    },
+    {
+      "test_id": "TEST-FE-511",
+      "upstream_ids": [
+        "TEST-117",
+        "API-092",
+        "UI-004",
+        "UI-009",
+        "UI-106"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Receipt handoff rejects wrong actor, Property, lifecycle signal, aborted scope or absent Receipt grant before any read/review/command."
+    },
+    {
+      "test_id": "TEST-FE-512",
+      "upstream_ids": [
+        "TEST-117",
+        "API-092",
+        "UI-106"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialUi.test.ts",
+      "status": "implemented",
+      "notes": "Original Receipt navigation accepts a valid linked UUID and safely omits absent/null/legacy/malformed receipt references."
+    },
+    {
+      "test_id": "TEST-FE-513",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-020",
+        "UI-007",
+        "API-057"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium computed styles prove both Payment amount headers and every USD/KHR monetary cell align right at 360px with exact currency values and bounded overflow. Synthetic injected responses; zero financial network requests."
+    },
+    {
+      "test_id": "TEST-FE-514",
+      "upstream_ids": [
+        "TEST-117",
+        "API-057",
+        "API-065",
+        "UI-002",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium delays accepted-method preparation, opens a newer Refund review and releases the old response; chosen Refund confirmation remains and no command is sent."
+    },
+    {
+      "test_id": "TEST-FE-515",
+      "upstream_ids": [
+        "TEST-117",
+        "API-057",
+        "API-065",
+        "API-092",
+        "UI-001",
+        "UI-006",
+        "UI-106"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real browser original Receipt handoff reads exact identity under its own grant; confirmed Refund invalidates previously loaded Payment/Receipt current positions while preserving originals. Explicit reload displays updated balance with no second command."
     }
   ]
 }

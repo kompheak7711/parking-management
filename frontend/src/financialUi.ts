@@ -190,6 +190,25 @@ export interface FinancialCommandReview {
   consequence: string;
   evidence: ReactNode;
 }
+/** A shared, scope-bound preparation may publish only while it still owns the review. */
+export interface FinancialReviewPreparation {
+  isCurrent: () => boolean;
+  review: (
+    request: FinancialCommandRequest,
+    review: FinancialCommandReview,
+  ) => void;
+}
+export function originalFinancialReceiptId(resource: unknown): string | null {
+  try {
+    return financialId(financialObject(financialObject(resource).receipt).id);
+  } catch {
+    return null;
+  }
+}
+export interface FinancialReceiptHandoff {
+  readonly scope: FinancialScope;
+  readonly receiptId: string;
+}
 export interface FinancialWorkspaceProps {
   scope: FinancialScope;
   capabilities: FinancialCapabilities;
@@ -198,10 +217,7 @@ export interface FinancialWorkspaceProps {
     ready: boolean;
     busy: boolean;
     revision: number;
-    review: (
-      request: FinancialCommandRequest,
-      review: FinancialCommandReview,
-    ) => void;
+    beginReview: () => FinancialReviewPreparation;
     invalidate: () => void;
   };
 }

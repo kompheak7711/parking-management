@@ -10,6 +10,7 @@ import type { FinancialReply } from "./financialResponse";
 import { FinancialFacts, PaymentEvidence } from "./FinancialEvidence";
 import {
   FinancialInputError,
+  originalFinancialReceiptId,
   financialLabel,
   financialLocalInstant,
   financialMoney,
@@ -23,6 +24,7 @@ import {
   FINANCIAL_UI_CONTEXT_BYTES,
   readFinancialRecord,
   useFinancialTask,
+  useFinancialSnapshot,
 } from "./financialUiContext";
 
 const initial = {
@@ -112,7 +114,8 @@ export function FinancialPaymentWorkspace({
   capabilities,
   services,
   commands,
-}: FinancialWorkspaceProps) {
+  onOpenReceipt,
+}: FinancialWorkspaceProps & { onOpenReceipt?: (receiptId: string) => void }) {
   const canRead = capabilities["payments.read"],
     canRecord = capabilities["payments.record"];
   const [mode, setMode] = useState<"read" | "record">(
@@ -130,9 +133,13 @@ export function FinancialPaymentWorkspace({
     [preview, setPreview] = useState<FinancialObject | null>(null);
   const [filters, setFilters] = useState({ payer: "", method: "", status: "" }),
     [selected, setSelected] = useState("");
-  const [list, setList] = useState<FinancialReply | null>(null),
-    [detail, setDetail] = useState<FinancialReply | null>(null);
-  const task = useFinancialTask(scope),
+  const [list, setList, listCurrent] = useFinancialSnapshot<FinancialReply>(
+      commands.revision,
+    ),
+    [detail, setDetail, detailCurrent] = useFinancialSnapshot<FinancialReply>(
+      commands.revision,
+    );
+  const task = useFinancialTask(scope, commands.revision),
     { cancel } = task,
     { invalidate, revision } = commands;
   useEffect(() => {
@@ -200,7 +207,8 @@ export function FinancialPaymentWorkspace({
   }
   function previewOrReview(confirmation: boolean) {
     if (!canRecord || (confirmation && !commands.ready)) return;
-    invalidate();
+    const preparation = confirmation ? commands.beginReview() : null;
+    if (!confirmation) invalidate();
     setPreview(null);
     void task.run(
       async (s) => {
@@ -314,6 +322,7 @@ export function FinancialPaymentWorkspace({
         return { request, selectedPreview, freshMethods };
       },
       ({ request, selectedPreview, freshMethods }) => {
+        if (preparation && !preparation.isCurrent()) return;
         setPreview(selectedPreview);
         if (freshMethods) setMethods(freshMethods);
         if (!manual)
@@ -323,7 +332,7 @@ export function FinancialPaymentWorkspace({
               capabilities["exchange_rates.manage"],
           );
         if (request)
-          commands.review(request, {
+          preparation?.review(request, {
             consequence:
               "Confirm this original incoming Payment and issue its one Receipt. This action does not allocate Payment value, recognize Customer Credit, create a Deposit or settle an Invoice. The server selects and verifies the final exchange rate and any original channel evidence.",
             evidence: (
@@ -394,6 +403,7 @@ export function FinancialPaymentWorkspace({
     if (mode === "read") readDetail();
     else previewOrReview(true);
   }
+  const receiptId = originalFinancialReceiptId(detail?.data);
   if (!canRead && !canRecord) return null;
   return (
     <section aria-label="Payment workspace">
@@ -813,6 +823,13 @@ export function FinancialPaymentWorkspace({
       </form>
       {task.busy && <p role="status">Loading current Payment facts…</p>}
       {task.error && <p role="alert">{task.error}</p>}
+      {(!listCurrent || !detailCurrent) && (
+        <p role="status">
+          Loaded financial facts are out of date after another action. Original
+          facts remain below. Reload the record or history for current balances,
+          status and complete history.
+        </p>
+      )}
       {preview && <KhrPreviewEvidence value={preview} />}
       {list && (
         <section aria-label="Payment list page">
@@ -827,8 +844,8 @@ export function FinancialPaymentWorkspace({
                   <tr>
                     <th>Payment / date</th>
                     <th>Payer / method</th>
-                    <th>Original received</th>
-                    <th>USD accounting value</th>
+                    <th className="financial-money">Original received</th>
+                    <th className="financial-money">USD accounting value</th>
                     <th>Status</th>
                   </tr>
                 </thead>
@@ -862,16 +879,20 @@ export function FinancialPaymentWorkspace({
                                 row.payment_method,
                             )}
                           </td>
-                          <td>
+                          <td className="financial-money">
                             {financialMoney(
                               row.received_amount_minor,
                               row.received_currency === "KHR" ? "KHR" : "USD",
                             )}
                           </td>
-                          <td>
+                          <td className="financial-money">
                             {financialMoney(row.usd_accounting_value_cents)}
                           </td>
-                          <td>{financialLabel(row.status)}</td>
+                          <td>
+                            {listCurrent
+                              ? financialLabel(row.status)
+                              : "Reload for current status"}
+                          </td>
                         </tr>
                       );
                     })}
@@ -879,7 +900,7 @@ export function FinancialPaymentWorkspace({
               </table>
             </div>
           )}
-          {list.page && cursor(list.page) && (
+          {listCurrent && list.page && cursor(list.page) && (
             <button
               type="button"
               disabled={task.busy}
@@ -894,7 +915,24 @@ export function FinancialPaymentWorkspace({
       )}
       {detail && (
         <section aria-label="Selected Payment record">
-          <PaymentEvidence resource={detail.data} />
+          <PaymentEvidence
+            resource={detail.data}
+            showPosition={detailCurrent}
+          />
+          {onOpenReceipt &&
+            !commands.busy &&
+            (capabilities["receipts.read"] ||
+              capabilities["receipts.reprint"]) &&
+            receiptId !== null && (
+              <button
+                type="button"
+                onClick={() => {
+                  onOpenReceipt(receiptId);
+                }}
+              >
+                Open original Receipt
+              </button>
+            )}
           <p>
             Use the separate Allocation, Credit, Refund, Deposit and Receipt
             workspaces for their authorized actions.

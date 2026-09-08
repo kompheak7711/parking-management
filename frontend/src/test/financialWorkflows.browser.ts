@@ -54,6 +54,7 @@ interface Scenario {
   grant: boolean;
   originalPrint: typeof window.print;
   prints: number;
+  preparation?: { promise: Promise<void>; release: () => void };
 }
 let scenario: Scenario | null = null;
 const ownedActors = new Set<string>();
@@ -136,6 +137,7 @@ export async function startFinancialWorkflowBrowserScenario(
     seedPending?: boolean;
     outcome?: "success" | "unknown";
     readOnly?: boolean;
+    staffReview?: boolean;
   } = {},
 ) {
   const input = command(index);
@@ -159,6 +161,21 @@ export async function startFinancialWorkflowBrowserScenario(
   const grant = options.readOnly
     ? "payments.read"
     : FINANCIAL_COMMAND_CAPABILITIES[operation];
+  const grants = (enabled = true) =>
+    options.staffReview
+      ? Object.fromEntries(
+          FINANCIAL_CAPABILITIES.map((c) => [
+            c,
+            enabled &&
+              [
+                "payments.read",
+                "payments.record",
+                "refunds.create",
+                "receipts.read",
+              ].includes(c),
+          ]),
+        )
+      : grantSet(grant, enabled);
   const fetcher: typeof fetch = async (url, init) => {
     const call = callEvidence(url, init);
     s.calls.push(call);
@@ -169,13 +186,13 @@ export async function startFinancialWorkflowBrowserScenario(
             property_id: ids.property,
             name: "Synthetic River Property",
             timezone: "Asia/Phnom_Penh",
-            capabilities: grantSet(grant),
+            capabilities: grants(),
           },
           {
             property_id: ids.other,
             name: "Synthetic Garden Property",
             timezone: "Asia/Phnom_Penh",
-            capabilities: grantSet(grant),
+            capabilities: grants(),
           },
         ],
         init,
@@ -183,10 +200,108 @@ export async function startFinancialWorkflowBrowserScenario(
       );
     if (call.url.includes("financial-capabilities"))
       return response(
-        { property_id: call.property, capabilities: grantSet(grant, s.grant) },
+        { property_id: call.property, capabilities: grants(s.grant) },
         init,
       );
     if (call.method === "GET") {
+      if (options.staffReview) {
+        const path = new URL(call.url, "https://synthetic.invalid").pathname;
+        if (path.endsWith("/payment-methods")) {
+          if (s.preparation) await s.preparation.promise;
+          return response(
+            [
+              {
+                id: ids.method,
+                property_id: ids.property,
+                code: "CASH",
+                display_name: "Synthetic accepted cash",
+              },
+            ],
+            init,
+            { limit: 100, next_cursor: null },
+          );
+        }
+        const payment = {
+          id: ids.payment,
+          property_id: ids.property,
+          payer_customer_id: ids.customer,
+          payment_number: "PAY-ORIGINAL-SYNTHETIC",
+          payment_method_id: ids.method,
+          payment_method_name_snapshot: "Synthetic accepted cash",
+          received_currency: "USD",
+          received_amount_minor: 200,
+          usd_accounting_value_cents: 200,
+          payment_date: "2026-09-01",
+          status: "RECEIVED",
+          confirmed_at: "2026-09-01T12:00:00+07:00",
+          confirmed_by: actorId,
+        };
+        const receipt = {
+          id: ids.receipt,
+          property_id: ids.property,
+          payment_id: ids.payment,
+          payer_customer_id: ids.customer,
+          receipt_number: "R-ORIGINAL-SYNTHETIC",
+          issued_at: "2026-09-01T12:00:00.123456+07:00",
+          issued_by: actorId,
+          identity_snapshot: { payer_legal_name: "Synthetic original payer" },
+        };
+        const posted = s.calls.some((c) => c.method === "POST");
+        const resource = {
+          payment,
+          receipt,
+          exchange_rate: null,
+          confirmation_evidence: {
+            received_at: "2026-09-01T11:59:00.123456+07:00",
+            evidence_reference: "Synthetic original receipt evidence",
+          },
+          position: {
+            available_usd_cents: posted ? 100 : 200,
+            dispositions: {
+              allocation_usd_cents: 0,
+              deposit_usd_cents: 0,
+              credit_usd_cents: 0,
+              refund_usd_cents: posted ? 100 : 0,
+            },
+          },
+        };
+        if (path.endsWith("/payments"))
+          return response(
+            [
+              resource,
+              {
+                ...resource,
+                payment: {
+                  ...payment,
+                  id: ids.other,
+                  payment_number: "PAY-KHR-SYNTHETIC",
+                  received_currency: "KHR",
+                  received_amount_minor: 4143,
+                  usd_accounting_value_cents: 101,
+                },
+              },
+            ],
+            init,
+            { limit: 50, next_cursor: null },
+          );
+        if (path.endsWith(`/payments/${ids.payment}`))
+          return response(resource, init);
+        if (path.endsWith(`/receipts/${ids.receipt}`))
+          return response(
+            {
+              ...resource,
+              financial_position: {
+                status: "RECEIVED",
+                allocated_usd_cents: 0,
+                deposit_directed_usd_cents: 0,
+                available_usd_cents: posted ? 100 : 200,
+              },
+              reprints: { items: [], page: { limit: 50, next_cursor: null } },
+            },
+            init,
+          );
+      }
+
       if (call.url.includes("refund-sources") && operation === "refundCreate")
         return response(
           {
@@ -306,6 +421,8 @@ export function controlFinancialWorkflowBrowserScenario(
     | "success"
     | "pause-post"
     | "release-post"
+    | "pause-methods"
+    | "release-methods"
     | "revoke"
     | "unmount"
     | "new-actor"
@@ -313,7 +430,16 @@ export function controlFinancialWorkflowBrowserScenario(
 ) {
   const s = current();
   if (action === "unknown" || action === "success") s.outcome = action;
-  else if (action === "pause-post") s.release = () => undefined;
+  else if (action === "pause-methods") {
+    let release!: () => void;
+    const promise = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    s.preparation = { promise, release };
+  } else if (action === "release-methods") {
+    s.preparation?.release();
+    delete s.preparation;
+  } else if (action === "pause-post") s.release = () => undefined;
   else if (action === "release-post") {
     s.release?.();
     s.release = null;
@@ -433,6 +559,7 @@ export async function cleanupFinancialWorkflowBrowserScenario() {
   const s = current();
   releaseFinancialWorkflowBrowserAttempt();
   s.release?.();
+  s.preparation?.release();
   s.root.unmount();
   s.host.remove();
   window.print = s.originalPrint;
@@ -583,4 +710,77 @@ export function verifyFinancialWorkflowBrowserReceipt() {
     "Original confirmed reprint reference is preserved in print layout",
   );
   return "TEST-FE-504";
+}
+
+export function verifyFinancialMoneyBrowser() {
+  const table = document.querySelector(
+    '[aria-label="Payment list page"] table',
+  );
+  check(table, "Payment table must be loaded");
+  const cells = Array.from(table.querySelectorAll(".financial-money"));
+  check(
+    cells.length === 6 &&
+      cells.every((c) => getComputedStyle(c).textAlign === "right"),
+    "Both amount headers and all USD/KHR cells must align right",
+  );
+  check(
+    table.textContent.includes("USD 2.00") &&
+      table.textContent.includes("KHR 4,143"),
+    "Exact currency labels and amounts must remain visible",
+  );
+  const wrapper = table.closest(".financial-table-scroll");
+  check(
+    wrapper &&
+      getComputedStyle(wrapper).overflowX === "auto" &&
+      wrapper.getBoundingClientRect().width <= window.innerWidth,
+    "Financial table keeps bounded narrow-screen overflow",
+  );
+  return "TEST-FE-513";
+}
+export function verifyFinancialReviewOwnershipBrowser() {
+  const dialog = document.querySelector('[role="dialog"]');
+  check(
+    dialog?.textContent.includes("Confirm: Record USD refund") &&
+      !dialog.textContent.includes("Confirm: Record payment"),
+    "Late cross-form preparation cannot replace the chosen Refund review",
+  );
+  check(
+    current().calls.every((c) => c.method === "GET"),
+    "Preparing or superseding an action cannot submit it",
+  );
+  return "TEST-FE-514";
+}
+export function verifyFinancialStaleReadsBrowser() {
+  check(
+    document.querySelector(
+      '[aria-label="Selected Payment record"] [aria-label="Original payment facts"]',
+    ),
+    "Original Payment facts remain after a Refund",
+  );
+  check(
+    document.querySelector(
+      '[aria-label="Original Receipt record"] [aria-label="Original Receipt identity"]',
+    ),
+    "Original Receipt identity remains after a Refund",
+  );
+  check(
+    !document.querySelector(
+      '[aria-label="Selected Payment record"] [aria-label="Current payment position"]',
+    ) &&
+      !document.querySelector(
+        '[aria-label="Original Receipt record"] [aria-label="Current Receipt-linked Payment context"]',
+      ),
+    "The earlier Payment and Receipt positions cannot remain labelled current",
+  );
+  check(
+    document.body.textContent.includes(
+      "Loaded financial facts are out of date",
+    ),
+    "Stale reads must explain the required reload",
+  );
+  check(
+    current().calls.filter((c) => c.method === "POST").length === 1,
+    "Only the explicitly confirmed Refund is sent",
+  );
+  return "TEST-FE-515";
 }

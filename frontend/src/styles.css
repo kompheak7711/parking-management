@@ -598,6 +598,11 @@ h1 {
   overflow-wrap: anywhere;
 }
 
+.financial-management .financial-money,
+.financial-management .financial-money input {
+  text-align: right;
+}
+
 .financial-management th {
   background: #edf2f7;
 }

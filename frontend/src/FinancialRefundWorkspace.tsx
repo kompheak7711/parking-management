@@ -16,6 +16,7 @@ import {
   loadFinancialActionContext,
   readFinancialRecord,
   useFinancialTask,
+  useFinancialSnapshot,
 } from "./financialUiContext";
 import {
   FinancialInputError,
@@ -80,9 +81,12 @@ export function FinancialRefundWorkspace({
   const [source, setSource] = useState<Source>("PAYMENT");
   const [fields, setFields] = useState(initial);
   const [context, setContext] = useState<FinancialObject | null>(null);
-  const [list, setList] = useState<FinancialReply | null>(null);
-  const [detail, setDetail] = useState<FinancialReply | null>(null);
-  const task = useFinancialTask(scope);
+  const [list, setList, listCurrent] = useFinancialSnapshot<FinancialReply>(
+    commands.revision,
+  );
+  const [detail, setDetail, detailCurrent] =
+    useFinancialSnapshot<FinancialReply>(commands.revision);
+  const task = useFinancialTask(scope, commands.revision);
   const { cancel } = task;
   const { revision, invalidate } = commands;
   useEffect(() => {
@@ -158,7 +162,8 @@ export function FinancialRefundWorkspace({
       (confirmation && !commands.ready)
     )
       return;
-    invalidate();
+    const preparation = confirmation ? commands.beginReview() : null;
+    if (!confirmation) invalidate();
     setContext(null);
     void task.run(
       async (s) => {
@@ -274,9 +279,10 @@ export function FinancialRefundWorkspace({
         return { data, request };
       },
       ({ data, request }) => {
+        if (preparation && !preparation.isCurrent()) return;
         setContext(data);
         if (request)
-          commands.review(request, {
+          preparation?.review(request, {
             consequence:
               mode === "create"
                 ? "Record a completed USD payout from this exact source. The original payout and its audit history are permanent."
@@ -522,6 +528,13 @@ export function FinancialRefundWorkspace({
       </form>
       {task.busy && <p role="status">Loading complete financial facts…</p>}
       {task.error && <p role="alert">{task.error}</p>}
+      {(!listCurrent || !detailCurrent) && (
+        <p role="status">
+          Loaded financial facts are out of date after another action. Original
+          facts remain below. Reload the record or history for current balances,
+          status and complete history.
+        </p>
+      )}
       {legacy && (
         <p>
           This historical Refund uses the{" "}
@@ -567,10 +580,10 @@ export function FinancialRefundWorkspace({
             </ul>
           )}
           <p>
-            This is one page. Current net values retain all original payouts and
-            linked corrections.
+            This is one loaded page of original payouts. Reload after another
+            action for a current list.
           </p>
-          {nextCursor(list) && (
+          {listCurrent && nextCursor(list) && (
             <button
               type="button"
               disabled={task.busy}
@@ -585,36 +598,40 @@ export function FinancialRefundWorkspace({
       )}
       {detailData && (
         <section aria-label="Selected Refund result or record">
-          <RefundEvidence resource={detailData} />
-          <h4>Refund correction history page</h4>
-          {corrections.length === 0 ? (
-            <p>No corrections on this page.</p>
-          ) : (
-            corrections.map((item) => (
-              <RefundCorrectionEvidence
-                key={financialId(financialObject(item).id)}
-                value={item}
-              />
-            ))
-          )}
-          {detail && nextCursor(detail, true) && (
-            <p>
-              More correction history exists.
-              {capabilities["refunds.read"] && (
-                <button
-                  type="button"
-                  disabled={task.busy}
-                  onClick={() => {
-                    readDetail(
-                      financialId(financialObject(detailData.refund).id),
-                      nextCursor(detail, true) ?? undefined,
-                    );
-                  }}
-                >
-                  Next correction page
-                </button>
+          <RefundEvidence resource={detailData} showPosition={detailCurrent} />
+          {detailCurrent && (
+            <>
+              <h4>Refund correction history page</h4>
+              {corrections.length === 0 ? (
+                <p>No corrections on this page.</p>
+              ) : (
+                corrections.map((item) => (
+                  <RefundCorrectionEvidence
+                    key={financialId(financialObject(item).id)}
+                    value={item}
+                  />
+                ))
               )}
-            </p>
+              {detail && nextCursor(detail, true) && (
+                <p>
+                  More correction history exists.
+                  {capabilities["refunds.read"] && (
+                    <button
+                      type="button"
+                      disabled={task.busy}
+                      onClick={() => {
+                        readDetail(
+                          financialId(financialObject(detailData.refund).id),
+                          nextCursor(detail, true) ?? undefined,
+                        );
+                      }}
+                    >
+                      Next correction page
+                    </button>
+                  )}
+                </p>
+              )}
+            </>
           )}
         </section>
       )}

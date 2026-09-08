@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   confirmedFinancialRequest,
+  originalFinancialReceiptId,
   financialLocalInstant,
   financialMoney,
   financialTimestamp,
@@ -200,3 +201,17 @@ it.each([false, true])(
     expect(() => confirmedFinancialRequest(scope(), prepared)).toThrow();
   },
 );
+
+it("TEST-FE-512 exposes only a valid original Receipt reference and tolerates legacy or missing read projections", () => {
+  expect(originalFinancialReceiptId({ receipt: { id: source } })).toBe(source);
+  for (const resource of [
+    undefined,
+    null,
+    {},
+    { receipt: null },
+    { receipt: {} },
+    { receipt: { id: "legacy" } },
+    { receipt: [] },
+  ])
+    expect(originalFinancialReceiptId(resource)).toBeNull();
+});

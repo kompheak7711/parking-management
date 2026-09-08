@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useRef, type FormEvent } from "react";
 import {
   financialId,
   financialInteger,
@@ -19,6 +19,7 @@ import {
   loadPaymentReversalContext,
   readFinancialRecord,
   useFinancialTask,
+  useFinancialSnapshot,
 } from "./financialUiContext";
 import {
   FinancialInputError,
@@ -28,6 +29,7 @@ import {
   selectedFinancialLineIntent,
   type FinancialCommandRequest,
   type FinancialWorkspaceProps,
+  type FinancialReceiptHandoff,
 } from "./financialUi";
 const modes = [
   ["allocationRead", "View Payment Allocations", "payments.read"],
@@ -61,7 +63,10 @@ export function FinancialAllocationReceiptWorkspace({
   capabilities,
   services,
   commands,
-}: FinancialWorkspaceProps) {
+  receiptHandoff,
+}: FinancialWorkspaceProps & {
+  receiptHandoff?: FinancialReceiptHandoff | null;
+}) {
   const allowed = modes.filter(([, , grant]) => capabilities[grant]);
   const [mode, setMode] = useState<Mode>(allowed[0]?.[0] ?? "allocationRead");
   const [basis, setBasis] = useState<Basis>("PROPOSAL"),
@@ -74,8 +79,10 @@ export function FinancialAllocationReceiptWorkspace({
     [linePage, setLinePage] = useState(0);
   const [context, setContext] = useState<FinancialObject | null>(null),
     [proposal, setProposal] = useState<FinancialObject | null>(null),
-    [record, setRecord] = useState<FinancialReply | null>(null);
-  const task = useFinancialTask(scope),
+    [record, setRecord, recordCurrent] = useFinancialSnapshot<FinancialReply>(
+      commands.revision,
+    );
+  const task = useFinancialTask(scope, commands.revision),
     { cancel } = task,
     { invalidate, revision } = commands;
   useEffect(() => {
@@ -83,6 +90,75 @@ export function FinancialAllocationReceiptWorkspace({
     setContext(null);
     setProposal(null);
   }, [revision, cancel]);
+  const receiptRegion = useRef<HTMLElement>(null);
+  const consumedHandoff = useRef<FinancialReceiptHandoff | null>(null);
+  const readReceipt = capabilities["receipts.read"],
+    reprintReceipt = capabilities["receipts.reprint"];
+  const { run } = task;
+  useEffect(() => {
+    if (!receiptHandoff || consumedHandoff.current === receiptHandoff) return;
+    consumedHandoff.current = receiptHandoff;
+    const origin = receiptHandoff.scope;
+    if (
+      origin.actorId !== scope.actorId ||
+      origin.propertyId !== scope.propertyId ||
+      origin.signal !== scope.signal ||
+      origin.signal.aborted ||
+      (!readReceipt && !reprintReceipt)
+    )
+      return;
+    cancel();
+    invalidate();
+    setContext(null);
+    setProposal(null);
+    setRecord(null);
+    setLineAmounts({});
+    setLinePage(0);
+    setReceiptByPayment(false);
+    setMode(readReceipt ? "receiptRead" : "reprint");
+    setFields({ ...initial, source: receiptHandoff.receiptId });
+    receiptRegion.current?.focus();
+    // This explicit handoff reads only through the independently granted Receipt route.
+    // Reprinting still requires a separate review and confirmation.
+    if (readReceipt)
+      void run(
+        async (s) =>
+          await readFinancialRecord(
+            s,
+            {
+              operation: "receiptGet",
+              target: { id: financialId(receiptHandoff.receiptId) },
+              query: { limit: 50 },
+            },
+            services.transport,
+          ),
+        setRecord,
+      );
+    else
+      void run(
+        async (s) =>
+          await loadFinancialActionContext(
+            s,
+            {
+              operation: "financialActionContext",
+              purpose: "receipt_reprint",
+              source_id: financialId(receiptHandoff.receiptId),
+            },
+            services.references,
+          ),
+        setContext,
+      );
+  }, [
+    receiptHandoff,
+    scope,
+    readReceipt,
+    reprintReceipt,
+    cancel,
+    invalidate,
+    run,
+    services,
+    setRecord,
+  ]);
   function edit(values: Partial<typeof initial>, sourceChanged = false) {
     cancel();
     invalidate();
@@ -147,7 +223,8 @@ export function FinancialAllocationReceiptWorkspace({
       (confirmation && !commands.ready)
     )
       return;
-    invalidate();
+    const preparation = confirmation ? commands.beginReview() : null;
+    if (!confirmation) invalidate();
     setContext(null);
     setProposal(null);
     void task.run(
@@ -326,10 +403,11 @@ export function FinancialAllocationReceiptWorkspace({
         return { data, request, returned };
       },
       ({ data, request, returned }) => {
+        if (preparation && !preparation.isCurrent()) return;
         setContext(data);
         setProposal(returned);
         if (request)
-          commands.review(request, {
+          preparation?.review(request, {
             consequence:
               mode === "allocate"
                 ? "Post only the exact displayed Payment Allocation batch or designated target and lines. Payment value, Customer Credit and Deposit value remain separate. Any further eligible batch needs a new explicit proposal and confirmation."
@@ -369,6 +447,8 @@ export function FinancialAllocationReceiptWorkspace({
   return (
     <section
       id="financial-allocation-receipt-workspace"
+      ref={receiptRegion}
+      tabIndex={-1}
       aria-label="Allocation, Receipt and Payment reversal workspace"
     >
       <h3>Allocations, Receipts and Payment reversals</h3>
@@ -556,8 +636,8 @@ export function FinancialAllocationReceiptWorkspace({
                     <thead>
                       <tr>
                         <th>Original line / description</th>
-                        <th>Current outstanding</th>
-                        <th>Designated USD</th>
+                        <th className="financial-money">Current outstanding</th>
+                        <th className="financial-money">Designated USD</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -571,10 +651,10 @@ export function FinancialAllocationReceiptWorkspace({
                               <br />
                               {id}
                             </td>
-                            <td>
+                            <td className="financial-money">
                               {financialMoney(data.outstanding_usd_cents)}
                             </td>
-                            <td>
+                            <td className="financial-money">
                               <label>
                                 Allocation USD for line {id}
                                 <input
@@ -664,6 +744,13 @@ export function FinancialAllocationReceiptWorkspace({
       </form>
       {task.busy && <p role="status">Loading complete financial context…</p>}
       {task.error && <p role="alert">{task.error}</p>}
+      {!recordCurrent && (
+        <p role="status">
+          Loaded financial facts are out of date after another action. Original
+          facts remain below. Reload the record or history for current balances,
+          status and complete history.
+        </p>
+      )}
       {context &&
         (mode === "paymentReverse" ? (
           <>
@@ -719,9 +806,12 @@ export function FinancialAllocationReceiptWorkspace({
               </ul>
             )
           ) : (
-            <AllocationRecordEvidence resource={record.data} />
+            <AllocationRecordEvidence
+              resource={record.data}
+              showPosition={recordCurrent}
+            />
           )}
-          {record.page && nextCursor(record.page) && (
+          {recordCurrent && record.page && nextCursor(record.page) && (
             <button
               type="button"
               disabled={task.busy}
@@ -736,8 +826,8 @@ export function FinancialAllocationReceiptWorkspace({
       )}
       {recordData && mode === "receiptRead" && (
         <section aria-label="Original Receipt record">
-          <ReceiptEvidence resource={recordData} />
-          {reprints && (
+          <ReceiptEvidence resource={recordData} showPosition={recordCurrent} />
+          {recordCurrent && reprints && (
             <>
               <ReceiptHistoryEvidence items={reprints.items} />
               {nextCursor(reprints.page) && (

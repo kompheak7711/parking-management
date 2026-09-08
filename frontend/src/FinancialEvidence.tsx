@@ -188,6 +188,36 @@ export function PaymentEvidence({
               money(payment.usd_accounting_value_cents),
             ],
             ["Payment date", financialLabel(payment.payment_date)],
+            ...(row.confirmation_evidence === undefined
+              ? []
+              : [
+                  [
+                    "Original received time",
+                    record(row.confirmation_evidence).received_at == null
+                      ? "Not recorded"
+                      : financialTimestamp(
+                          record(row.confirmation_evidence).received_at,
+                        ),
+                  ] as const,
+                  [
+                    "Original receipt evidence reference",
+                    optional(
+                      record(row.confirmation_evidence).evidence_reference,
+                    ),
+                  ] as const,
+                ]),
+            ...(row.receipt === undefined
+              ? []
+              : [
+                  [
+                    "Original Receipt number",
+                    optional(record(row.receipt).receipt_number),
+                  ] as const,
+                  [
+                    "Original Receipt reference",
+                    optional(record(row.receipt).id),
+                  ] as const,
+                ]),
             ...(payment.confirmed_at === undefined
               ? []
               : [
@@ -322,39 +352,56 @@ export function ReceiptIdentityEvidence({ value }: { value: unknown }) {
   );
 }
 
-export function ReceiptEvidence({ resource }: { resource: unknown }) {
+export function ReceiptEvidence({
+  resource,
+  showPosition = true,
+}: {
+  resource: unknown;
+  showPosition?: boolean;
+}) {
   const row = record(resource),
     position = record(row.financial_position);
   return (
     <>
       <ReceiptIdentityEvidence value={row.receipt} />
       <PaymentEvidence resource={row} showPosition={false} />
-      <section aria-label="Current Receipt-linked Payment context">
-        <h4>Current Receipt-linked Payment context</h4>
-        <FinancialFacts
-          rows={[
-            [
-              "Current Payment status",
-              financialLabel(position.status ?? record(row.payment).status),
-            ],
-            ["Allocated USD", money(position.allocated_usd_cents)],
-            [
-              "Directed to Deposits",
-              money(position.deposit_directed_usd_cents),
-            ],
-            ["Available unallocated USD", money(position.available_usd_cents)],
-          ]}
-        />
-        <p>
-          Current balances are separate from the original Receipt. This view
-          does not claim a complete breakdown of other dispositions.
-        </p>
-      </section>
+      {showPosition && (
+        <section aria-label="Current Receipt-linked Payment context">
+          <h4>Current Receipt-linked Payment context</h4>
+          <FinancialFacts
+            rows={[
+              [
+                "Current Payment status",
+                financialLabel(position.status ?? record(row.payment).status),
+              ],
+              ["Allocated USD", money(position.allocated_usd_cents)],
+              [
+                "Directed to Deposits",
+                money(position.deposit_directed_usd_cents),
+              ],
+              [
+                "Available unallocated USD",
+                money(position.available_usd_cents),
+              ],
+            ]}
+          />
+          <p>
+            Current balances are separate from the original Receipt. This view
+            does not claim a complete breakdown of other dispositions.
+          </p>
+        </section>
+      )}
     </>
   );
 }
 
-export function CreditEvidence({ resource }: { resource: unknown }) {
+export function CreditEvidence({
+  resource,
+  showPosition = true,
+}: {
+  resource: unknown;
+  showPosition?: boolean;
+}) {
   const row = record(resource),
     credit = record(row.credit),
     position = record(row.position),
@@ -390,42 +437,53 @@ export function CreditEvidence({ resource }: { resource: unknown }) {
         />
       </section>
       <ExchangeRateEvidence value={row.exchange_rate} />
-      <section aria-label="Current Credit position">
-        <h4>Current Credit position</h4>
-        <FinancialFacts
-          rows={[
-            [
-              "Recognized USD",
-              money(
-                position.recognized_usd_cents ?? credit.recognized_usd_cents,
-              ),
-            ],
-            ...(row.position === undefined
-              ? []
-              : [
-                  ["Applied USD", money(position.applied_usd_cents)] as const,
-                  ["Refunded USD", money(position.refunded_usd_cents)] as const,
-                  [
-                    "Reversed recognition USD",
-                    money(position.reversed_usd_cents),
-                  ] as const,
-                ]),
-            [
-              "Available Credit USD",
-              money(position.available_usd_cents ?? row.available_usd_cents),
-            ],
-          ]}
-        />
-        <p>
-          Credit applications are separate from Payment Allocations and Deposit
-          receipts.
-        </p>
-      </section>
+      {showPosition && (
+        <section aria-label="Current Credit position">
+          <h4>Current Credit position</h4>
+          <FinancialFacts
+            rows={[
+              [
+                "Recognized USD",
+                money(
+                  position.recognized_usd_cents ?? credit.recognized_usd_cents,
+                ),
+              ],
+              ...(row.position === undefined
+                ? []
+                : [
+                    ["Applied USD", money(position.applied_usd_cents)] as const,
+                    [
+                      "Refunded USD",
+                      money(position.refunded_usd_cents),
+                    ] as const,
+                    [
+                      "Reversed recognition USD",
+                      money(position.reversed_usd_cents),
+                    ] as const,
+                  ]),
+              [
+                "Available Credit USD",
+                money(position.available_usd_cents ?? row.available_usd_cents),
+              ],
+            ]}
+          />
+          <p>
+            Credit applications are separate from Payment Allocations and
+            Deposit receipts.
+          </p>
+        </section>
+      )}
     </>
   );
 }
 
-export function RefundEvidence({ resource }: { resource: unknown }) {
+export function RefundEvidence({
+  resource,
+  showPosition = true,
+}: {
+  resource: unknown;
+  showPosition?: boolean;
+}) {
   const row = record(resource),
     refund = record(row.refund),
     source = record(row.source);
@@ -456,23 +514,25 @@ export function RefundEvidence({ resource }: { resource: unknown }) {
           ]}
         />
       </section>
-      <section aria-label="Current Refund value">
-        <h4>Current Refund value</h4>
-        <FinancialFacts
-          rows={[["Current net Refund USD", money(row.net_refund_usd_cents)]]}
-        />
-        <p>
-          The original payout remains recorded when later verified returns
-          change its net value.
-        </p>
-        {legacy && (
+      {showPosition && (
+        <section aria-label="Current Refund value">
+          <h4>Current Refund value</h4>
+          <FinancialFacts
+            rows={[["Current net Refund USD", money(row.net_refund_usd_cents)]]}
+          />
           <p>
-            This retained Reservation Refund uses its coordinated Reservation
-            outcome workflow. Null historical correction fields are not proof of
-            a returned payment.
+            The original payout remains recorded when later verified returns
+            change its net value.
           </p>
-        )}
-      </section>
+          {legacy && (
+            <p>
+              This retained Reservation Refund uses its coordinated Reservation
+              outcome workflow. Null historical correction fields are not proof
+              of a returned payment.
+            </p>
+          )}
+        </section>
+      )}
       {row.source_payment !== undefined && row.source_payment !== null && (
         <PaymentEvidence
           resource={{
@@ -683,9 +743,9 @@ export function TargetEvidence({
                 <tr>
                   <th>Line reference</th>
                   <th>Category / description</th>
-                  <th>Original amount</th>
-                  <th>Adjusted amount</th>
-                  <th>Current outstanding</th>
+                  <th className="financial-money">Original amount</th>
+                  <th className="financial-money">Adjusted amount</th>
+                  <th className="financial-money">Current outstanding</th>
                   <th>Original attribution / proposal</th>
                 </tr>
               </thead>
@@ -720,7 +780,7 @@ export function TargetEvidence({
                           </>
                         )}
                       </td>
-                      <td>
+                      <td className="financial-money">
                         {money(
                           isLine
                             ? data.original_amount_usd_cents
@@ -729,19 +789,19 @@ export function TargetEvidence({
                               : data.applied_amount_usd_cents,
                         )}
                       </td>
-                      <td>
+                      <td className="financial-money">
                         {isLine
                           ? money(data.adjusted_amount_usd_cents)
                           : "Original selected event"}
                       </td>
-                      <td>
+                      <td className="financial-money">
                         {money(
                           isLine
                             ? data.outstanding_usd_cents
                             : data.current_outstanding_usd_cents,
                         )}
                       </td>
-                      <td>
+                      <td className="financial-money">
                         {isLine ? (
                           "Current Invoice line"
                         ) : (
@@ -1062,8 +1122,8 @@ function IntentLines({ value }: { value: unknown }) {
           <tr>
             <th>Invoice line reference</th>
             <th>Category / basis</th>
-            <th>Current outstanding</th>
-            <th>Selected USD</th>
+            <th className="financial-money">Current outstanding</th>
+            <th className="financial-money">Selected USD</th>
           </tr>
         </thead>
         <tbody>
@@ -1080,12 +1140,14 @@ function IntentLines({ value }: { value: unknown }) {
                   <> · {financialLabel(line.attribution_basis)}</>
                 )}
               </td>
-              <td>
+              <td className="financial-money">
                 {line.outstanding_usd_cents === undefined
                   ? "See complete source context"
                   : money(line.outstanding_usd_cents)}
               </td>
-              <td>{money(line.amount_usd_cents)}</td>
+              <td className="financial-money">
+                {money(line.amount_usd_cents)}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -1188,10 +1250,6 @@ export function FinancialProposalEvidence({ value }: { value: unknown }) {
                 ["Due date", financialLabel(target.due_date)],
                 ["Original issue time", financialTimestamp(target.issued_at)],
                 ["Invoice version at proposal", exact(target.version)],
-                [
-                  "Target Customer reference",
-                  financialLabel(target.target_customer_id),
-                ],
                 ["This target USD", money(target.amount_usd_cents)],
               ]}
             />
@@ -1591,9 +1649,11 @@ export function FinancialOutcomeEvidence({
 export function CreditApplicationRecordEvidence({
   resource,
   atConfirmation = false,
+  showPosition = true,
 }: {
   resource: unknown;
   atConfirmation?: boolean;
+  showPosition?: boolean;
 }) {
   const row = record(resource),
     application = record(row.application);
@@ -1610,26 +1670,33 @@ export function CreditApplicationRecordEvidence({
             null,
         }}
       />
-      <FinancialFacts
-        rows={[
-          [
-            atConfirmation
-              ? "Selected target balance at confirmation"
-              : "Current selected target balance",
-            money(row.target_balance_usd_cents),
-          ],
-          [
-            atConfirmation
-              ? "Selected target status at confirmation"
-              : "Current target Invoice status",
-            row.target_invoice_status === null
-              ? "Separate Charge"
-              : financialLabel(row.target_invoice_status),
-          ],
-        ]}
+      {showPosition && (
+        <FinancialFacts
+          rows={[
+            [
+              atConfirmation
+                ? "Selected target balance at confirmation"
+                : "Current selected target balance",
+              money(row.target_balance_usd_cents),
+            ],
+            [
+              atConfirmation
+                ? "Selected target status at confirmation"
+                : "Current target Invoice status",
+              row.target_invoice_status === null
+                ? "Separate Charge"
+                : financialLabel(row.target_invoice_status),
+            ],
+          ]}
+        />
+      )}
+      <CreditEvidence
+        resource={row.credit_position}
+        showPosition={showPosition}
       />
-      <CreditEvidence resource={row.credit_position} />
-      <LinkedReversalEvidence value={row.reversal} />
+      {(showPosition || row.reversal != null) && (
+        <LinkedReversalEvidence value={row.reversal} />
+      )}
       {details.length > 0 && (
         <div className="financial-table-scroll">
           <table>
@@ -1638,8 +1705,8 @@ export function CreditApplicationRecordEvidence({
               <tr>
                 <th>Sequence / reference</th>
                 <th>Original target</th>
-                <th>Original proposed USD</th>
-                <th>Original applied USD</th>
+                <th className="financial-money">Original proposed USD</th>
+                <th className="financial-money">Original applied USD</th>
                 <th>Attribution</th>
               </tr>
             </thead>
@@ -1654,8 +1721,12 @@ export function CreditApplicationRecordEvidence({
                       line.invoice_line_id ?? line.late_payment_charge_id,
                     )}
                   </td>
-                  <td>{money(line.proposed_amount_usd_cents)}</td>
-                  <td>{money(line.applied_amount_usd_cents)}</td>
+                  <td className="financial-money">
+                    {money(line.proposed_amount_usd_cents)}
+                  </td>
+                  <td className="financial-money">
+                    {money(line.applied_amount_usd_cents)}
+                  </td>
                   <td>{financialLabel(line.attribution_basis)}</td>
                 </tr>
               ))}
@@ -1677,7 +1748,7 @@ export function CreditHistoryEvidence({ items }: { items: unknown }) {
           <tr>
             <th>Event / reference</th>
             <th>Recorded time</th>
-            <th>Effect / available after USD</th>
+            <th className="financial-money">Effect / available after USD</th>
             <th>Original source / links</th>
             <th>Reason / actor</th>
           </tr>
@@ -1695,7 +1766,7 @@ export function CreditHistoryEvidence({ items }: { items: unknown }) {
                   {financialLabel(event.event_id)}
                 </td>
                 <td>{financialTimestamp(event.occurred_at)}</td>
-                <td>
+                <td className="financial-money">
                   {money(event.balance_effect_usd_cents)}
                   <br />
                   {money(event.available_after_usd_cents)}
@@ -1786,12 +1857,12 @@ export function PaymentReversalEvidence({ value }: { value: unknown }) {
               <thead>
                 <tr>
                   <th>Record kind / reference</th>
-                  <th>
+                  <th className="financial-money">
                     {result
                       ? "Current related facts"
                       : "Source and target relationship"}
                   </th>
-                  <th>
+                  <th className="financial-money">
                     {result
                       ? "Original values / status"
                       : "Original amount / recorded time"}
@@ -1811,7 +1882,7 @@ export function PaymentReversalEvidence({ value }: { value: unknown }) {
                       </td>
                       {result ? (
                         <>
-                          <td>
+                          <td className="financial-money">
                             {kind === "INVOICE" ? (
                               <FinancialFacts
                                 rows={[
@@ -1878,7 +1949,7 @@ export function PaymentReversalEvidence({ value }: { value: unknown }) {
                               />
                             )}
                           </td>
-                          <td>
+                          <td className="financial-money">
                             {kind === "INVOICE" ? (
                               <>
                                 {financialLabel(data.invoice_number)}
@@ -1906,7 +1977,7 @@ export function PaymentReversalEvidence({ value }: { value: unknown }) {
                         </>
                       ) : (
                         <>
-                          <td>
+                          <td className="financial-money">
                             Source: {financialLabel(data.source_kind)} ·{" "}
                             {financialLabel(data.source_id)}
                             <br />
@@ -1924,7 +1995,7 @@ export function PaymentReversalEvidence({ value }: { value: unknown }) {
                               </>
                             )}
                           </td>
-                          <td>
+                          <td className="financial-money">
                             {money(data.amount_usd_cents)}
                             <br />
                             {financialTimestamp(data.occurred_at)}
@@ -1964,7 +2035,13 @@ export function PaymentReversalEvidence({ value }: { value: unknown }) {
     </section>
   );
 }
-export function AllocationRecordEvidence({ resource }: { resource: unknown }) {
+export function AllocationRecordEvidence({
+  resource,
+  showPosition = true,
+}: {
+  resource: unknown;
+  showPosition?: boolean;
+}) {
   const row = record(resource),
     allocation = record(row.allocation),
     details = Array.isArray(row.details) ? row.details.map(record) : [];
@@ -1978,7 +2055,9 @@ export function AllocationRecordEvidence({ resource }: { resource: unknown }) {
             allocation.invoice_id ?? allocation.late_payment_charge_id ?? null,
         }}
       />
-      <LinkedReversalEvidence value={allocation.reversal} />
+      {(showPosition || allocation.reversal != null) && (
+        <LinkedReversalEvidence value={allocation.reversal} />
+      )}
       {allocation.proposal_trace != null && (
         <FinancialProposalEvidence value={allocation.proposal_trace} />
       )}
@@ -1989,8 +2068,8 @@ export function AllocationRecordEvidence({ resource }: { resource: unknown }) {
             <tr>
               <th>Sequence / reference</th>
               <th>Original target / category</th>
-              <th>Original proposed USD</th>
-              <th>Posted USD / attribution</th>
+              <th className="financial-money">Original proposed USD</th>
+              <th className="financial-money">Posted USD / attribution</th>
             </tr>
           </thead>
           <tbody>
@@ -2008,8 +2087,10 @@ export function AllocationRecordEvidence({ resource }: { resource: unknown }) {
                     ? "Separate Charge"
                     : financialLabel(line.invoice_line_category_snapshot)}
                 </td>
-                <td>{money(line.proposed_amount_usd_cents)}</td>
-                <td>
+                <td className="financial-money">
+                  {money(line.proposed_amount_usd_cents)}
+                </td>
+                <td className="financial-money">
                   {money(line.posted_amount_usd_cents)}
                   <br />
                   {financialLabel(line.attribution_basis)}

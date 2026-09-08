@@ -8,7 +8,12 @@ import {
   within,
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ActionContextEvidence, TargetEvidence } from "./FinancialEvidence";
+import {
+  ActionContextEvidence,
+  TargetEvidence,
+  FinancialProposalEvidence,
+  PaymentEvidence,
+} from "./FinancialEvidence";
 import {
   financialObject,
   financialInteger,
@@ -24,6 +29,7 @@ import {
 } from "./test/financialActionContextFixtures";
 import {
   FinancialCurrentAfterConfirmation,
+  FinancialManagement,
   type ConfirmedFinancialAction,
 } from "./FinancialManagement";
 import { FinancialAllocationReceiptWorkspace } from "./FinancialAllocationReceiptWorkspace";
@@ -396,7 +402,10 @@ function refundProps(
       },
     );
   };
-  const review = vi.fn<FinancialWorkspaceProps["commands"]["review"]>();
+  const review =
+    vi.fn<
+      ReturnType<FinancialWorkspaceProps["commands"]["beginReview"]>["review"]
+    >();
   const recovery = {
     load: vi.fn(() => Promise.resolve({ kind: "unavailable" } as const)),
     submit: vi.fn(() => Promise.resolve({ kind: "invalidated" } as const)),
@@ -420,7 +429,7 @@ function refundProps(
       ready: true,
       busy: false,
       revision: 0,
-      review,
+      beginReview: () => ({ isCurrent: () => true, review }),
       invalidate: vi.fn(),
     },
   };
@@ -2706,3 +2715,341 @@ describe("authorized current facts after confirmed financial actions", () => {
     },
   );
 });
+
+describe("financial reads after another confirmed action", () => {
+  it.each(["Payment", "Credit", "Refund", "Receipt"] as const)(
+    "TEST-FE-506 preserves original %s facts but withdraws current positions until a fresh authorized read",
+    async (kind) => {
+      const sample =
+        kind === "Receipt"
+          ? selected((s) => s.request.purpose === "receipt_reprint")
+          : kind === "Refund"
+            ? currentRefund("refund_return")
+            : kind === "Credit"
+              ? creditSample("credit_reversal")
+              : creditSample("credit_recognition");
+      const data =
+        kind === "Receipt"
+          ? receiptReadResource(sample)
+          : kind === "Refund"
+            ? financialObject(financialObject(sample.data.context).refund)
+            : kind === "Credit"
+              ? financialObject(financialObject(sample.data.context).credit)
+              : financialObject(sample.data.payment_resource);
+      const grant =
+        kind === "Receipt"
+          ? "receipts.read"
+          : kind === "Refund"
+            ? "refunds.read"
+            : kind === "Credit"
+              ? "credits.read"
+              : "payments.read";
+      const h = creditHarness(sample, grant);
+      if (kind === "Refund")
+        data.corrections = {
+          items: [],
+          page: { limit: 50, next_cursor: null },
+        };
+      h.reply(() => data);
+      const Component =
+        kind === "Receipt"
+          ? FinancialAllocationReceiptWorkspace
+          : kind === "Refund"
+            ? FinancialRefundWorkspace
+            : kind === "Credit"
+              ? FinancialCreditWorkspace
+              : FinancialPaymentWorkspace;
+      const view = render(<Component {...h.props} />);
+      const input =
+        kind === "Receipt" ? "Original Receipt reference" : `${kind} reference`;
+      const entity = financialObject(data[kind.toLowerCase()]);
+      fill(input, financialId(entity.id));
+      const submitRead = () => {
+        const form = screen.getByLabelText(input).closest("form");
+        if (!form) throw new Error("Synthetic read form missing");
+        fireEvent.submit(form);
+      };
+      submitRead();
+      const original =
+        kind === "Receipt"
+          ? "Original Receipt identity"
+          : kind === "Refund"
+            ? "Original completed Refund"
+            : kind === "Credit"
+              ? "Original Credit recognition"
+              : "Original payment facts";
+      const current =
+        kind === "Receipt"
+          ? "Current Receipt-linked Payment context"
+          : kind === "Refund"
+            ? "Current Refund value"
+            : kind === "Credit"
+              ? "Current Credit position"
+              : "Current payment position";
+      const region = await screen.findByRole("region", { name: original });
+      const facts = region.textContent;
+      expect(screen.getByRole("region", { name: current })).toBeVisible();
+      const before = h.calls.length;
+      view.rerender(
+        <Component
+          {...h.props}
+          commands={{ ...h.props.commands, revision: 1 }}
+        />,
+      );
+      expect(screen.queryByRole("region", { name: current })).toBeNull();
+      expect(screen.getByRole("region", { name: original }).textContent).toBe(
+        facts,
+      );
+      expect(
+        screen.getByText(/Loaded financial facts are out of date/),
+      ).toBeVisible();
+      expect(h.calls).toHaveLength(before);
+      h.reply(() => {
+        throw new Error("Synthetic fresh read unavailable");
+      });
+      submitRead();
+      await screen.findByRole("alert");
+      expect(screen.queryByRole("region", { name: current })).toBeNull();
+      h.reply(() => data);
+      submitRead();
+      expect(
+        await screen.findByRole("region", { name: current }),
+      ).toBeVisible();
+      expect(
+        screen.queryByText(/Loaded financial facts are out of date/),
+      ).toBeNull();
+      expect(h.calls.every((c) => c.method === "GET")).toBe(true);
+      expect(h.recovery.submit).not.toHaveBeenCalled();
+    },
+  );
+  it("TEST-FE-507 shows each proposed Invoice Customer once without duplicate React keys", () => {
+    const sample = allocationSample("INVOICE"),
+      proposal = allocationProposal(sample);
+    const errors = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    try {
+      render(<FinancialProposalEvidence value={proposal} />);
+      const targets = screen.getAllByRole("region", {
+        name: /^Proposed Invoice/,
+      });
+      for (const target of targets)
+        expect(
+          within(target).getAllByText("Target Customer reference", {
+            selector: "dt",
+          }),
+        ).toHaveLength(1);
+      expect(errors.mock.calls.flat().join(" ")).not.toMatch(/same key/);
+    } finally {
+      errors.mockRestore();
+    }
+  });
+});
+
+describe("original Payment receipt evidence and authorized handoff", () => {
+  it.each([false, true])(
+    "TEST-FE-509 preserves exact original received and Receipt facts with explicit legacy-null evidence %s",
+    (legacy) => {
+      const resource = financialObject(
+        creditSample("credit_recognition").data.payment_resource,
+      );
+      render(
+        <PaymentEvidence
+          resource={{
+            ...resource,
+            confirmation_evidence: {
+              received_at: legacy ? null : "2026-09-01T11:59:00.123456+07:00",
+              evidence_reference: legacy
+                ? null
+                : "Synthetic immutable receipt evidence",
+            },
+            receipt: {
+              id: ids.receipt,
+              receipt_number: "RECEIPT-ORIGINAL-SYNTHETIC",
+            },
+          }}
+          showPosition={false}
+        />,
+      );
+      const original = screen.getByRole("region", {
+        name: "Original payment facts",
+      });
+      expect(value(original, "Original received time")).toBe(
+        legacy ? "Not recorded" : "2026-09-01 11:59:00.123456+07:00",
+      );
+      expect(value(original, "Original receipt evidence reference")).toBe(
+        legacy ? "Not recorded" : "Synthetic immutable receipt evidence",
+      );
+      expect(value(original, "Original Receipt number")).toBe(
+        "RECEIPT-ORIGINAL-SYNTHETIC",
+      );
+      expect(value(original, "Original Receipt reference")).toBe(ids.receipt);
+      expect(
+        screen.queryByRole("region", { name: "Current payment position" }),
+      ).toBeNull();
+    },
+  );
+  it.each(["receipts.read", "receipts.reprint", null] as const)(
+    "TEST-FE-510 hands off the exact original Receipt under its separate %s grant without posting",
+    async (grant) => {
+      const sample = selected((s) => s.request.purpose === "receipt_reprint");
+      const h = creditHarness(sample, "payments.read");
+      const receiptResource = receiptReadResource(sample),
+        receipt = financialObject(receiptResource.receipt);
+      const paymentResource: FinancialObject = {
+        ...financialObject(sample.data.payment_resource),
+        receipt: {
+          id: financialId(receipt.id),
+          receipt_number: creditFixtureText(receipt.receipt_number),
+        },
+      };
+      const grants = Object.fromEntries(
+        FINANCIAL_CAPABILITIES.map((c) => [
+          c,
+          c === "payments.read" || c === grant,
+        ]),
+      );
+      const calls: {
+        url: string;
+        method: string;
+        actor: string | null;
+        property: string | null;
+      }[] = [];
+      const fetcher: typeof fetch = (url, init) => {
+        if (typeof url !== "string")
+          throw new Error("Expected synthetic Receipt URL");
+        const headers = new Headers(init?.headers),
+          requestId = headers.get("X-Request-ID");
+        calls.push({
+          url,
+          method: init?.method ?? "",
+          actor: headers.get("X-Billing-Actor-ID"),
+          property: headers.get("X-Financial-Property-ID"),
+        });
+        const discovery = url.includes("financial-workspaces"),
+          context = url.includes("reprint-context");
+        const data = discovery
+          ? [
+              {
+                property_id: sample.propertyId,
+                name: "Synthetic Receipt Property",
+                timezone: "Asia/Phnom_Penh",
+                capabilities: grants,
+              },
+            ]
+          : url.includes("financial-capabilities")
+            ? { property_id: sample.propertyId, capabilities: grants }
+            : context
+              ? sample.data
+              : url.includes("/receipts/")
+                ? receiptResource
+                : paymentResource;
+        return Promise.resolve(
+          new Response(
+            stringifyFinancialJson({
+              data,
+              ...(discovery || context
+                ? { page: { limit: discovery ? 100 : 50, next_cursor: null } }
+                : {}),
+              meta: {
+                request_id: requestId,
+                actor_id: sample.actorId,
+                ...(discovery ? {} : { property_id: sample.propertyId }),
+              },
+            }),
+            {
+              headers: {
+                "Content-Type": "application/json",
+                "X-Request-ID": requestId ?? "",
+              },
+            },
+          ),
+        );
+      };
+      h.props.services.references = createFinancialReferenceClient(fetcher);
+      h.props.services.transport = createFinancialTransport(fetcher);
+      render(
+        <FinancialManagement
+          actorId={sample.actorId}
+          services={h.props.services}
+        />,
+      );
+      await screen.findByRole("option", { name: "Synthetic Receipt Property" });
+      fill("Financial Property", sample.propertyId);
+      await screen.findByLabelText("Payment reference");
+      fill(
+        "Payment reference",
+        financialId(financialObject(paymentResource.payment).id),
+      );
+      fireEvent.click(
+        screen.getByRole("button", { name: "Load Payment record" }),
+      );
+      await screen.findByRole("region", { name: "Selected Payment record" });
+      const handoff = screen.queryByRole("button", {
+        name: "Open original Receipt",
+      });
+      if (grant === null) {
+        expect(handoff).toBeNull();
+        expect(calls.some((c) => c.url.includes("/receipts/"))).toBe(false);
+      } else {
+        if (!handoff) throw new Error("Original Receipt handoff missing");
+        expect(handoff).toBeEnabled();
+        fireEvent.click(handoff);
+        expect(
+          await screen.findByLabelText("Original Receipt reference"),
+        ).toHaveValue(financialId(receipt.id));
+        expect(
+          await screen.findByRole("region", {
+            name: "Original Receipt identity",
+          }),
+        ).toBeVisible();
+        const receiptCalls = calls.filter((c) => c.url.includes("/receipts/"));
+        expect(receiptCalls).toHaveLength(1);
+        const receiptCall = receiptCalls[0];
+        if (!receiptCall)
+          throw new Error("Expected exact original Receipt GET");
+        expect(receiptCall.url).toContain(
+          `/receipts/${financialId(receipt.id)}${grant === "receipts.reprint" ? "/reprint-context" : ""}`,
+        );
+        expect(receiptCall.method).toBe("GET");
+        expect(receiptCall.actor).toBe(sample.actorId);
+        expect(receiptCall.property).toBe(sample.propertyId);
+        expect(screen.queryByRole("dialog")).toBeNull();
+      }
+      expect(calls.every((c) => c.method === "GET")).toBe(true);
+      expect(h.recovery.submit).not.toHaveBeenCalled();
+      expect(h.recovery.replay).not.toHaveBeenCalled();
+    },
+  );
+});
+
+it.each(["actor", "property", "signal", "aborted", "no-grant"] as const)(
+  "TEST-FE-511 refuses a Receipt handoff with %s mismatch before any read or command",
+  async (mismatch) => {
+    const sample = selected((s) => s.request.purpose === "receipt_reprint"),
+      h = creditHarness(sample, "receipts.read");
+    const origin = { ...h.props.scope };
+    if (mismatch === "actor") origin.actorId = ids.other;
+    if (mismatch === "property") origin.propertyId = ids.other;
+    if (mismatch === "signal") origin.signal = new AbortController().signal;
+    if (mismatch === "aborted") {
+      const controller = new AbortController();
+      controller.abort();
+      origin.signal = controller.signal;
+      h.props.scope = origin;
+    }
+    if (mismatch === "no-grant") h.props.capabilities["receipts.read"] = false;
+    render(
+      <FinancialAllocationReceiptWorkspace
+        {...h.props}
+        receiptHandoff={{ scope: origin, receiptId: sample.request.source_id }}
+      />,
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(h.calls).toHaveLength(0);
+    expect(h.review).not.toHaveBeenCalled();
+    expect(h.recovery.submit).not.toHaveBeenCalled();
+  },
+);

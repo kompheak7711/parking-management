@@ -11,6 +11,7 @@ import {
   loadFinancialActionContext,
   loadPaymentReversalContext,
   useFinancialTask,
+  useFinancialSnapshot,
 } from "./financialUiContext";
 import {
   actionContextFixtures,
@@ -564,4 +565,55 @@ describe("financial read task ownership", () => {
     expect(result.current.error).toBeNull();
     expect(accept).toHaveBeenCalledExactlyOnceWith("recovered");
   });
+});
+
+it("TEST-FE-508 cancels a pre-command read and cannot promote its retained snapshot into a newer revision", async () => {
+  const captured = scope();
+  let release!: (value: string) => void;
+  const delayed = new Promise<string>((resolve) => {
+    release = resolve;
+  });
+  const { result, rerender } = renderHook(
+    ({ revision }) => {
+      const task = useFinancialTask(captured, revision);
+      const [value, setValue, current] = useFinancialSnapshot<string>(revision);
+      return { ...task, value, setValue, current };
+    },
+    { initialProps: { revision: 0 } },
+  );
+  act(() => {
+    result.current.setValue("Original facts");
+  });
+  let completion!: Promise<void>;
+  let signal!: AbortSignal;
+  act(() => {
+    completion = result.current.run(async (s) => {
+      signal = s.signal;
+      return await delayed;
+    }, result.current.setValue);
+  });
+  const oldRun = result.current.run;
+  rerender({ revision: 1 });
+  expect(signal.aborted).toBe(true);
+  expect(result.current.value).toBe("Original facts");
+  expect(result.current.current).toBe(false);
+  const obsoleteWork = vi.fn(() => Promise.resolve("Old revision request"));
+  await act(async () => {
+    await oldRun(obsoleteWork, result.current.setValue);
+  });
+  expect(obsoleteWork).not.toHaveBeenCalled();
+  await act(async () => {
+    release("Obsolete balance");
+    await completion;
+  });
+  expect(result.current.value).toBe("Original facts");
+  expect(result.current.current).toBe(false);
+  await act(async () => {
+    await result.current.run(
+      () => Promise.resolve("Fresh authorized facts"),
+      result.current.setValue,
+    );
+  });
+  expect(result.current.value).toBe("Fresh authorized facts");
+  expect(result.current.current).toBe(true);
 });

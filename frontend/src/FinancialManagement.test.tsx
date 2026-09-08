@@ -41,7 +41,7 @@ function deferred() {
   });
   return { promise, release };
 }
-function harness() {
+function harness(paymentGrant = false) {
   const records = new Map<string, OpenIntent>();
   let outcome: "success" | "unknown" | 400 | 409 | 412 | 422 = "success";
   let sourceUnavailable = false,
@@ -50,7 +50,13 @@ function harness() {
   let denyAttempt = false,
     grant = true;
   let barrier: {
-    phase: "discovery" | "capabilities" | "source" | "post" | "begin";
+    phase:
+      | "discovery"
+      | "capabilities"
+      | "source"
+      | "methods"
+      | "post"
+      | "begin";
     promise: Promise<void>;
   } | null = null;
   const calls: {
@@ -100,7 +106,8 @@ function harness() {
     return Object.fromEntries(
       FINANCIAL_CAPABILITIES.map((name) => [
         name,
-        name === "refunds.create" && grant,
+        (name === "refunds.create" && grant) ||
+          (name === "payments.record" && paymentGrant),
       ]),
     );
   }
@@ -125,9 +132,11 @@ function harness() {
       ? "discovery"
       : url.includes("financial-capabilities")
         ? "capabilities"
-        : call.method === "POST"
-          ? "post"
-          : "source";
+        : url.includes("/payment-methods")
+          ? "methods"
+          : call.method === "POST"
+            ? "post"
+            : "source";
     if (barrier?.phase === phase) await barrier.promise;
     const reply = (
       data: FinancialObject | FinancialObject[],
@@ -172,6 +181,18 @@ function harness() {
       );
     if (phase === "capabilities")
       return reply({ property_id: property, capabilities: grants() });
+    if (phase === "methods")
+      return reply(
+        [
+          {
+            id: ids.method,
+            property_id: property,
+            code: "CASH",
+            display_name: "Synthetic accepted cash",
+          },
+        ],
+        { limit: 100, next_cursor: null },
+      );
     const payment: FinancialObject = {
       id: ids.payment,
       property_id: property,
@@ -765,4 +786,64 @@ describe("confirmed results and independent current-fact refresh", () => {
       screen.queryByRole("button", { name: "Review original action" }),
     ).toBeNull();
   });
+});
+
+describe("shared preparation ownership across financial forms", () => {
+  it.each([false, true])(
+    "TEST-FE-505 ignores a delayed Payment preparation after a newer Refund review, including cancellation %s",
+    async (cancel) => {
+      const h = harness(true);
+      render(<FinancialManagement actorId={ids.actor} services={h.services} />);
+      await openProperty();
+      fireEvent.click(
+        screen.getByRole("button", { name: "Load accepted Payment methods" }),
+      );
+      await screen.findByRole("option", {
+        name: "Synthetic accepted cash · CASH",
+      });
+      for (const [label, value] of [
+        ["Payer Customer reference", ids.customer],
+        ["Accepted Payment method", ids.method],
+        [
+          "Payment received at (Asia/Phnom_Penh, +07:00)",
+          "2026-09-08T11:00:00.123",
+        ],
+        ["Payment evidence reference", "Synthetic original incoming evidence"],
+        ["Original received amount (USD)", "1.01"],
+      ] as const)
+        fireEvent.change(screen.getByLabelText(label), { target: { value } });
+      const waiting = deferred();
+      h.pause("methods", waiting.promise);
+      fireEvent.click(
+        screen.getByRole("button", { name: "Review incoming Payment" }),
+      );
+      await waitFor(() => {
+        expect(
+          h.calls.filter((c) => c.url.includes("/payment-methods")),
+        ).toHaveLength(2);
+      });
+      const dialog = await prepareRefund();
+      expect(dialog).toHaveTextContent("USD 1.01");
+      if (cancel)
+        fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+      act(() => {
+        waiting.release();
+      });
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: "Review incoming Payment" }),
+        ).toBeEnabled();
+      });
+      expect(
+        screen.queryByRole("dialog", { name: "Confirm: Record payment" }),
+      ).toBeNull();
+      if (cancel) expect(screen.queryByRole("dialog")).toBeNull();
+      else
+        expect(
+          screen.getByRole("dialog", { name: "Confirm: Record USD refund" }),
+        ).toBeVisible();
+      expect(posts(h)).toHaveLength(0);
+      expect(h.records.size).toBe(0);
+    },
+  );
 });

@@ -17,6 +17,7 @@ import {
   loadFinancialActionContext,
   readFinancialRecord,
   useFinancialTask,
+  useFinancialSnapshot,
 } from "./financialUiContext";
 import {
   FinancialInputError,
@@ -90,9 +91,12 @@ export function FinancialCreditWorkspace({
   const [linePage, setLinePage] = useState(0);
   const [context, setContext] = useState<FinancialObject | null>(null);
   const [proposal, setProposal] = useState<FinancialObject | null>(null);
-  const [list, setList] = useState<FinancialReply | null>(null);
-  const [detail, setDetail] = useState<FinancialReply | null>(null);
-  const task = useFinancialTask(scope),
+  const [list, setList, listCurrent] = useFinancialSnapshot<FinancialReply>(
+    commands.revision,
+  );
+  const [detail, setDetail, detailCurrent] =
+    useFinancialSnapshot<FinancialReply>(commands.revision);
+  const task = useFinancialTask(scope, commands.revision),
     { cancel } = task;
   const { revision, invalidate } = commands;
   useEffect(() => {
@@ -182,7 +186,8 @@ export function FinancialCreditWorkspace({
       (confirmation && !commands.ready)
     )
       return;
-    invalidate();
+    const preparation = confirmation ? commands.beginReview() : null;
+    if (!confirmation) invalidate();
     setContext(null);
     setProposal(null);
     void task.run(
@@ -338,10 +343,11 @@ export function FinancialCreditWorkspace({
         return { data, request, selectedProposal };
       },
       ({ data, request, selectedProposal }) => {
+        if (preparation && !preparation.isCurrent()) return;
         setContext(data);
         setProposal(selectedProposal);
         if (request)
-          commands.review(request, {
+          preparation?.review(request, {
             consequence:
               mode === "recognize"
                 ? "Recognize explicitly authorized Customer Credit in USD from the eligible excess Payment. This is separate from Payment Allocation and Deposit value."
@@ -599,8 +605,10 @@ export function FinancialCreditWorkspace({
                         <thead>
                           <tr>
                             <th>Line / description</th>
-                            <th>Current outstanding USD</th>
-                            <th>Designated USD</th>
+                            <th className="financial-money">
+                              Current outstanding USD
+                            </th>
+                            <th className="financial-money">Designated USD</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -616,10 +624,10 @@ export function FinancialCreditWorkspace({
                                     <br />
                                     {id}
                                   </td>
-                                  <td>
+                                  <td className="financial-money">
                                     {financialMoney(data.outstanding_usd_cents)}
                                   </td>
-                                  <td>
+                                  <td className="financial-money">
                                     <label>
                                       Designated USD for line {id}
                                       <input
@@ -698,6 +706,13 @@ export function FinancialCreditWorkspace({
       </form>
       {task.busy && <p role="status">Loading complete Credit facts…</p>}
       {task.error && <p role="alert">{task.error}</p>}
+      {(!listCurrent || !detailCurrent) && (
+        <p role="status">
+          Loaded financial facts are out of date after another action. Original
+          facts remain below. Reload the record or history for current balances,
+          status and complete history.
+        </p>
+      )}
       {context && <ActionContextEvidence value={context} />}
       {proposal && <FinancialProposalEvidence value={proposal} />}
       {list && (
@@ -728,7 +743,7 @@ export function FinancialCreditWorkspace({
                 })}
             </ul>
           )}
-          {list.page && pageCursor(list.page) && (
+          {listCurrent && list.page && pageCursor(list.page) && (
             <button
               type="button"
               disabled={task.busy}
@@ -744,10 +759,16 @@ export function FinancialCreditWorkspace({
       {detailData && (
         <section aria-label="Selected Credit record">
           {readKind === "application" ? (
-            <CreditApplicationRecordEvidence resource={detailData} />
+            <CreditApplicationRecordEvidence
+              resource={detailData}
+              showPosition={detailCurrent}
+            />
           ) : (
             <>
-              <CreditEvidence resource={detailData} />
+              <CreditEvidence
+                resource={detailData}
+                showPosition={detailCurrent}
+              />
               <button
                 type="button"
                 disabled={task.busy}
@@ -757,7 +778,7 @@ export function FinancialCreditWorkspace({
               >
                 Load Credit event history
               </button>
-              {history && (
+              {detailCurrent && history && (
                 <>
                   <CreditHistoryEvidence items={history.items} />
                   {pageCursor(history.page) && (
