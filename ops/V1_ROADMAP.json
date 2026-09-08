@@ -1458,7 +1458,28 @@
       "risk_class": "high",
       "acceptance_profile": "api_ui",
       "authorization": "durable_v1",
-      "status": "approved_ready"
+      "status": "approved_ready",
+      "closure_gate": {
+        "status": "product_verified_terminal_and_workboard_pending",
+        "product_sha": "fba87feba842837f7cc7c068477670bfdb4c08f8",
+        "product_ci_run": 34253440448,
+        "product_acceptance": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-accepted-fba87fe.json",
+          "sha256": "6c62611a07f2b57eacdfa5a3a85dcaa07d1a93c32d9b361faa7caf1a8f2587f4"
+        },
+        "product_publication": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-product-publication-fba87fe.json",
+          "sha256": "e4c1a83a2e65067784f1ab1f74dba22c79aa3adff0eb584b7d7bab9adfbd082a"
+        },
+        "terminal_sha": null,
+        "terminal_proof": "pending exact verification/review/publication/ownCI/ref equality",
+        "workboard_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
+        "workboard_status": "blocked",
+        "workboard_acceptance": "pending separate concrete private-payload/destination authorization and supported completion after all terminal proof",
+        "full_version_closed": false,
+        "successor_activation_allowed": false,
+        "external_discharge": "After exact terminal gates/review/publication/CI/refs and actual supported card acceptance, a verified external closure receipt discharges these frozen pending fields. The next independently reviewed transition materializes52complete before53activation."
+      }
     },
     {
       "id": "V1-053",
