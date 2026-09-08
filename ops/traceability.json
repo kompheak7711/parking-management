@@ -26700,6 +26700,71 @@
       "test_path": "frontend/src/test/financialWorkflows.browser.ts",
       "status": "implemented",
       "notes": "Real Chromium payer selection alone and a later selection after an unknown original Payment retain unload/Property warnings. Explicit original-key replay sends unchanged NORMAL_CUSTOMER bytes, clears only the journal and leaves later THIRD_PARTY_IDENTIFIED draft unsent. No financial network."
+    },
+    {
+      "test_id": "TEST-FE-543",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-069",
+        "UI-072",
+        "API-061",
+        "API-066"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Seven immutable Credit/Refund command-result variants, including nested Credit application positions, identify balances at original confirmation and preserve exact saved values. No saved position claims Current."
+    },
+    {
+      "test_id": "TEST-FE-544",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-069",
+        "UI-072"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Separately read Credit, Credit application and Refund projections retain Current labels; invalidation still hides each current position and never changes the underlying resource."
+    },
+    {
+      "test_id": "TEST-FE-545",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-072",
+        "UI-103",
+        "API-066"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Actual controller, transport and recovery replay an original lost USD1.01 Refund response after another synthetic actor fully returns the payout. Exact original key/bytes and saved values persist, confirmed journal clears, and a fresh authorized read shows Current netUSD0.00 separately. Failed source/detail reads cannot make the old result Current."
+    },
+    {
+      "test_id": "TEST-FE-546",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-069",
+        "UI-072",
+        "UI-103"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium checks all seven affected saved Credit/Refund command outcomes through the established twelve-command encrypted replay lane. Original-confirmation labels preserve original USD values and never claim Current; existing replay assertions remain."
+    },
+    {
+      "test_id": "TEST-FE-547",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-072",
+        "UI-103",
+        "API-066"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium original Refund response loss, intervening full verified return, unmount/remount and explicit original-key replay preserve savedUSD1.00 separately from freshly read Current netUSD0.00. Both successful and failed current-read variants retain encrypted journal, request-count and key/byte assertions; zero financial network."
     }
   ]
 }

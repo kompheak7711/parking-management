@@ -41,7 +41,9 @@ function deferred() {
   });
   return { promise, release };
 }
-function harness(paymentGrant = false) {
+function harness(paymentGrant = false, delayedRefund = false) {
+  let originalRefund: FinancialObject | null = null;
+  let currentRefund: FinancialObject | null = null;
   const records = new Map<string, OpenIntent>();
   let outcome: "success" | "unknown" | 400 | 409 | 412 | 422 = "success";
   let sourceUnavailable = false,
@@ -107,6 +109,7 @@ function harness(paymentGrant = false) {
       FINANCIAL_CAPABILITIES.map((name) => [
         name,
         (name === "refunds.create" && grant) ||
+          (name === "refunds.read" && delayedRefund) ||
           (name === "payments.record" && paymentGrant),
       ]),
     );
@@ -210,6 +213,14 @@ function harness(paymentGrant = false) {
     };
     if (phase === "source" && sourceUnavailable)
       throw new Error("Synthetic related read unavailable");
+    if (
+      phase === "source" &&
+      delayedRefund &&
+      url.includes(`/refunds/${ids.refund}`)
+    ) {
+      if (!currentRefund) throw new Error("Synthetic Refund not recorded");
+      return reply(currentRefund);
+    }
     if (phase === "source")
       return reply({
         property_id: property,
@@ -226,7 +237,8 @@ function harness(paymentGrant = false) {
           evidence_reference: "Synthetic original receipt",
         },
       });
-    if (outcome === "unknown") throw new Error("Synthetic lost reply");
+    if (outcome === "unknown" && !delayedRefund)
+      throw new Error("Synthetic lost reply");
     if (typeof outcome === "number")
       return new Response(
         stringifyFinancialJson({
@@ -255,33 +267,40 @@ function harness(paymentGrant = false) {
     const saved = records.get(actor ?? "");
     expect(saved?.requestKey).toBe(call.key);
     expect(saved?.plaintext).not.toContain("synthetic-csrf");
-    return reply(
-      {
-        refund: {
-          id: ids.refund,
-          refund_number: "REF-SYNTHETIC",
-          recipient_customer_id: ids.customer,
-          refund_currency: "USD",
-          refund_amount_minor: body.amount_usd_cents ?? null,
-          usd_accounting_value_cents: body.amount_usd_cents ?? null,
-          source_payment_id: ids.payment,
-          source_customer_credit_id: null,
-          source_deposit_id: null,
-          source_lifecycle_event_id: null,
-          pet_refund_review_id: null,
-          reason: body.reason ?? null,
-          processed_at: "2026-09-08T11:00:00+07:00",
-          processed_by: actor,
-          authorization_reference: "refunds.create",
-        },
-        source: { type: "PAYMENT", id: ids.payment, property_id: property },
-        net_refund_usd_cents: body.amount_usd_cents ?? null,
-        source_payment: payment,
-        source_exchange_rate: null,
-        pet_refund_review: null,
-        pet_departure: null,
-        corrections: { items: [], page: { limit: 50, next_cursor: null } },
+    const refundResult: FinancialObject = {
+      refund: {
+        id: ids.refund,
+        refund_number: "REF-SYNTHETIC",
+        recipient_customer_id: ids.customer,
+        refund_currency: "USD",
+        refund_amount_minor: body.amount_usd_cents ?? null,
+        usd_accounting_value_cents: body.amount_usd_cents ?? null,
+        source_payment_id: ids.payment,
+        source_customer_credit_id: null,
+        source_deposit_id: null,
+        source_lifecycle_event_id: null,
+        pet_refund_review_id: null,
+        reason: body.reason ?? null,
+        processed_at: "2026-09-08T11:00:00+07:00",
+        processed_by: actor,
+        authorization_reference: "refunds.create",
       },
+      source: { type: "PAYMENT", id: ids.payment, property_id: property },
+      net_refund_usd_cents: body.amount_usd_cents ?? null,
+      source_payment: payment,
+      source_exchange_rate: null,
+      pet_refund_review: null,
+      pet_departure: null,
+      corrections: { items: [], page: { limit: 50, next_cursor: null } },
+    };
+    if (delayedRefund) {
+      originalRefund ??= refundResult;
+      currentRefund ??= refundResult;
+      if (outcome === "unknown")
+        throw new Error("Synthetic saved payout reply lost");
+    }
+    return reply(
+      delayedRefund ? (originalRefund ?? refundResult) : refundResult,
       undefined,
       201,
     );
@@ -299,6 +318,42 @@ function harness(paymentGrant = false) {
   };
   return {
     services,
+    savedRefundBytes: () =>
+      originalRefund ? stringifyFinancialJson(originalRefund) : null,
+    recordInterveningReturn: (unavailable: boolean) => {
+      if (!delayedRefund || !originalRefund)
+        throw new Error("Original synthetic payout required");
+      const amount = originalRefund.net_refund_usd_cents;
+      if (typeof amount !== "number")
+        throw new Error("Synthetic integer payout required");
+      currentRefund = {
+        ...originalRefund,
+        net_refund_usd_cents: 0,
+        corrections: {
+          items: [
+            {
+              id: ids.event,
+              refund_id: ids.refund,
+              correction_kind: "VALUE_CORRECTION",
+              reverses_correction_id: null,
+              source_balance_effect_usd_cents: amount,
+              source_balance_effect_original_minor: amount,
+              previous_net_refund_usd_cents: amount,
+              resulting_net_refund_usd_cents: 0,
+              verified_return_amount_minor: amount,
+              verified_return_currency: "USD",
+              verified_returned_at: "2026-09-08T12:00:00+07:00",
+              return_method_reference: "Synthetic returned cash",
+              reason: "Synthetic full verified return",
+              evidence_reference: "Synthetic intervening actor evidence",
+            },
+          ],
+          page: { limit: 50, next_cursor: null },
+        },
+      };
+      sourceAvailable = 200;
+      sourceUnavailable = unavailable;
+    },
     records,
     store,
     calls,
@@ -1111,6 +1166,114 @@ describe("selection-only financial drafts around actual recovery", () => {
       } finally {
         discard.mockRestore();
       }
+    },
+  );
+});
+
+describe("delayed original Refund confirmation after a later verified return", () => {
+  it.each([false, true])(
+    "TEST-FE-545 keeps original confirmation distinct after intervening full return, current reads unavailable %s",
+    async (unavailable) => {
+      const h = harness(false, true);
+      h.setOutcome("unknown");
+      render(<FinancialManagement actorId={ids.actor} services={h.services} />);
+      await screen.findByRole("option", { name: "Synthetic River Property" });
+      fireEvent.change(screen.getByLabelText("Financial Property"), {
+        target: { value: ids.property },
+      });
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name: "Record USD Refund",
+        }),
+      );
+      await screen.findByLabelText("Source reference");
+      const dialog = await prepareRefund();
+      fireEvent.click(
+        within(dialog).getByRole("button", {
+          name: "Record USD refund",
+        }),
+      );
+      const review = await screen.findByRole("button", {
+        name: "Review original action",
+      });
+      expect(h.records.size).toBe(1);
+      const original = h.savedRefundBytes();
+      expect(original).not.toBeNull();
+      // Another actor has fully returned this already recorded payout before the lost reply is replayed.
+      h.recordInterveningReturn(unavailable);
+      h.setOutcome("success");
+      fireEvent.click(review);
+      fireEvent.click(
+        within(
+          await screen.findByRole("dialog", {
+            name: "Review original unresolved action",
+          }),
+        ).getByRole("button", { name: "Send original action again" }),
+      );
+      const result = await recorded();
+      const current = await screen.findByRole("region", {
+        name: "Related facts refreshed after confirmation",
+      });
+      if (unavailable) {
+        await waitFor(() => {
+          expect(within(current).getByRole("alert")).toHaveTextContent(
+            "The action is recorded. Current related facts could not be loaded.",
+          );
+        });
+      } else {
+        await waitFor(() => {
+          expect(
+            within(current).getByRole("region", {
+              name: "Selected Refund source",
+            }),
+          ).toHaveTextContent("USD 2.00");
+        });
+      }
+      fireEvent.click(screen.getByRole("button", { name: "View Refunds" }));
+      fireEvent.change(screen.getByLabelText("Refund reference"), {
+        target: { value: ids.refund },
+      });
+      fireEvent.click(
+        screen.getByRole("button", { name: "Load original Refund" }),
+      );
+      const workspace = screen.getByRole("region", {
+        name: "Refund workspace",
+      });
+      if (unavailable) {
+        await waitFor(() => {
+          expect(within(workspace).getByRole("alert")).toBeVisible();
+        });
+        expect(
+          within(workspace).queryByRole("region", {
+            name: "Current Refund value",
+          }),
+        ).toBeNull();
+      } else {
+        expect(
+          await within(workspace).findByRole("region", {
+            name: "Current Refund value",
+          }),
+        ).toHaveTextContent("USD 0.00");
+      }
+      expect(
+        h.calls.filter(
+          (c) => c.method === "GET" && c.url.includes(`/refunds/${ids.refund}`),
+        ),
+      ).toHaveLength(1);
+      expect(posts(h)).toHaveLength(2);
+      expect(posts(h)[0]?.key).toBe(posts(h)[1]?.key);
+      expect(posts(h)[0]?.body).toBe(posts(h)[1]?.body);
+      expect(h.savedRefundBytes()).toBe(original);
+      expect(h.records.size).toBe(0);
+      expect(h.store.clear).toHaveBeenCalledOnce();
+      expect(
+        within(result).queryByRole("region", { name: "Current Refund value" }),
+      ).toBeNull();
+      expect(
+        within(result).getByRole("region", {
+          name: "Refund value at original confirmation",
+        }),
+      ).toHaveTextContent("Net Refund USD at original confirmationUSD 1.01");
     },
   );
 });

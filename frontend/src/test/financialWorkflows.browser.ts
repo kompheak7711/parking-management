@@ -56,6 +56,9 @@ interface Scenario {
   originalPrint: typeof window.print;
   prints: number;
   historyUnavailable?: boolean;
+  savedOutcome?: FinancialObject;
+  currentOutcomeRefund?: FinancialObject;
+  outcomeReadsUnavailable?: boolean;
   preparation?: { promise: Promise<void>; release: () => void };
 }
 let scenario: Scenario | null = null;
@@ -142,6 +145,7 @@ export async function startFinancialWorkflowBrowserScenario(
     staffReview?: boolean;
     reviewCorrection2?: boolean;
     draftCorrection2?: boolean;
+    outcomeCorrection1?: boolean;
   } = {},
 ) {
   const input = command(index);
@@ -190,7 +194,10 @@ export async function startFinancialWorkflowBrowserScenario(
               ].includes(c),
           ]),
         )
-      : grantSet(grant, enabled);
+      : {
+          ...grantSet(grant, enabled),
+          ...(options.outcomeCorrection1 ? { "refunds.read": enabled } : {}),
+        };
   const fetcher: typeof fetch = async (url, init) => {
     const call = callEvidence(url, init);
     s.calls.push(call);
@@ -292,6 +299,19 @@ export async function startFinancialWorkflowBrowserScenario(
         );
     }
     if (call.method === "GET") {
+      if (options.outcomeCorrection1) {
+        if (s.outcomeReadsUnavailable)
+          throw new Error(
+            "Synthetic current read unavailable after intervening return",
+          );
+        if (call.url.includes(`/refunds/${ids.refund}`)) {
+          check(
+            s.currentOutcomeRefund,
+            "Synthetic Refund read requires a recorded payout",
+          );
+          return response(s.currentOutcomeRefund, init);
+        }
+      }
       if (options.staffReview) {
         const path = new URL(call.url, "https://synthetic.invalid").pathname;
         if (path.endsWith("/payment-methods")) {
@@ -431,8 +451,17 @@ export async function startFinancialWorkflowBrowserScenario(
       await new Promise<void>((resolve) => {
         s.release = resolve;
       });
-    if (s.outcome === "unknown") throw new Error("Synthetic lost response");
     const result = fixture(operation);
+    if (options.outcomeCorrection1) {
+      check(
+        operation === "refundCreate",
+        "Intervening-return fixture is limited to Refund creation",
+      );
+      s.savedOutcome ??= financialObject(result.data);
+      s.currentOutcomeRefund ??= s.savedOutcome;
+      result.data = s.savedOutcome;
+    }
+    if (s.outcome === "unknown") throw new Error("Synthetic lost response");
     result.meta = {
       actor_id: call.actor,
       property_id: call.property,
@@ -1123,4 +1152,93 @@ export async function verifyFinancialSelectionDraftBrowser(posts: number) {
   window.dispatchEvent(event);
   check(event.defaultPrevented, "Unsent payer selection still warns on unload");
   return "TEST-FE-542";
+}
+
+export function verifyFinancialFrozenOutcomeBrowser(operation: string) {
+  if (
+    ![
+      "creditRecognize",
+      "creditReverse",
+      "creditApply",
+      "creditApplicationReverse",
+      "refundCreate",
+      "refundReturn",
+      "refundReturnReverse",
+    ].includes(operation)
+  )
+    return null;
+  const result = current().host.querySelector(
+    '[aria-label="Confirmed financial result"]',
+  );
+  check(result, "Confirmed saved result required");
+  const refund = operation.startsWith("refund");
+  const position = result.querySelector(
+    `[aria-label="${refund ? "Refund value" : "Credit position"} at original confirmation"]`,
+  );
+  check(
+    position?.textContent.includes(
+      operation === "refundReturn" ? "USD 0.00" : "USD 1.00",
+    ),
+    "Frozen amounts remain attributed to their original confirmation",
+  );
+  check(
+    !result.querySelector('[aria-label^="Current "]'),
+    "No saved command position may claim Current",
+  );
+  return "TEST-FE-546";
+}
+
+export function recordFinancialOutcomeBrowserReturn(unavailable: boolean) {
+  const s = current();
+  check(
+    s.savedOutcome && s.outcome === "unknown",
+    "Original synthetic payout must be saved before intervening return",
+  );
+  s.currentOutcomeRefund = financialObject(fixture("refundReturn").data);
+  s.outcomeReadsUnavailable = unavailable;
+}
+
+export async function verifyFinancialInterveningReturnBrowser(
+  unavailable: boolean,
+) {
+  const s = current(),
+    posts = s.calls.filter((call) => call.method === "POST");
+  check(
+    posts.length === 2 &&
+      posts[0]?.key === posts[1]?.key &&
+      posts[0]?.body === posts[1]?.body,
+    "Delayed replay must retain original key and bytes with no extra action",
+  );
+  check(
+    s.savedOutcome?.net_refund_usd_cents === 100 &&
+      s.currentOutcomeRefund?.net_refund_usd_cents === 0,
+    "Original saved payout and later fully returned value remain separate",
+  );
+  check(
+    (await sealedIntentStore.read(s.actorId)) === null,
+    "Validated original replay clears only its encrypted journal",
+  );
+  verifyFinancialFrozenOutcomeBrowser("refundCreate");
+  const workspace = s.host.querySelector('[aria-label="Refund workspace"]');
+  const currentValue = workspace?.querySelector(
+    '[aria-label="Current Refund value"]',
+  );
+  if (unavailable)
+    check(
+      !currentValue && workspace?.querySelector('[role="alert"]'),
+      "Failed read cannot relabel saved payout as current",
+    );
+  else
+    check(
+      currentValue?.textContent.includes("Current net Refund USDUSD 0.00"),
+      "Authorized fresh read reports the later zero net Refund as Current",
+    );
+  check(
+    s.calls.filter(
+      (call) =>
+        call.method === "GET" && call.url.includes(`/refunds/${ids.refund}`),
+    ).length === 1,
+    "Fresh Refund must use the authorized read route once",
+  );
+  return "TEST-FE-547";
 }

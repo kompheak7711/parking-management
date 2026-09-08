@@ -15,6 +15,10 @@ import {
   TargetEvidence,
   FinancialProposalEvidence,
   PaymentEvidence,
+  CreditEvidence,
+  RefundEvidence,
+  CreditApplicationRecordEvidence,
+  FinancialOutcomeEvidence,
 } from "./FinancialEvidence";
 import {
   financialObject,
@@ -45,7 +49,7 @@ import {
 } from "./financialReferenceClient";
 import { captureFinancialRequest, financialId } from "./financialContracts";
 import type { FinancialWorkspaceProps } from "./financialUi";
-import { ids } from "./test/financialFixtures";
+import { fixture, ids } from "./test/financialFixtures";
 
 afterEach(cleanup);
 async function loadSample(
@@ -3559,3 +3563,81 @@ it.each(["Credit", "Allocation"] as const)(
     }
   },
 );
+
+describe("immutable command results and separately current positions", () => {
+  it.each([
+    "creditRecognize",
+    "creditReverse",
+    "creditApply",
+    "creditApplicationReverse",
+    "refundCreate",
+    "refundReturn",
+    "refundReturnReverse",
+  ] as const)(
+    "TEST-FE-543 identifies %s balances as the original confirmation without changing saved values",
+    (operation) => {
+      const data = fixture(operation).data;
+      const before = stringifyFinancialJson(data);
+      render(
+        <FinancialOutcomeEvidence
+          operation={operation}
+          reply={{ data, requestId: ids.key, propertyId: ids.property }}
+        />,
+      );
+      const result = screen.getByRole("region", {
+        name: "Confirmed financial result",
+      });
+      const refund = operation.startsWith("refund");
+      const position = within(result).getByRole("region", {
+        name: refund
+          ? "Refund value at original confirmation"
+          : "Credit position at original confirmation",
+      });
+      expect(position).toHaveTextContent(
+        operation === "refundReturn" ? "USD 0.00" : "USD 1.00",
+      );
+      if (refund)
+        expect(position).toHaveTextContent(
+          "Net Refund USD at original confirmation",
+        );
+      expect(within(result).queryByText(/^Current /)).toBeNull();
+      expect(
+        within(result).queryByRole("region", { name: /^Current / }),
+      ).toBeNull();
+      expect(stringifyFinancialJson(data)).toBe(before);
+      if (
+        operation === "creditApply" ||
+        operation === "creditApplicationReverse"
+      )
+        expect(result).toHaveTextContent(
+          "Selected target balance at confirmation",
+        );
+    },
+  );
+
+  it.each(["creditGet", "creditApplication", "refundGet"] as const)(
+    "TEST-FE-544 retains Current labels for a separately loaded %s and hides invalidated positions",
+    (operation) => {
+      const data = fixture(operation).data;
+      const Component =
+        operation === "creditGet"
+          ? CreditEvidence
+          : operation === "creditApplication"
+            ? CreditApplicationRecordEvidence
+            : RefundEvidence;
+      const title =
+        operation === "refundGet"
+          ? "Current Refund value"
+          : "Current Credit position";
+      const before = stringifyFinancialJson(data);
+      const view = render(<Component resource={data} />);
+      expect(screen.getByRole("region", { name: title })).toHaveTextContent(
+        "USD 1.00",
+      );
+      expect(screen.queryByText(/at original confirmation/)).toBeNull();
+      view.rerender(<Component resource={data} showPosition={false} />);
+      expect(screen.queryByRole("region", { name: title })).toBeNull();
+      expect(stringifyFinancialJson(data)).toBe(before);
+    },
+  );
+});

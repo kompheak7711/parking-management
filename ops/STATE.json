@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "financial_staff_ui_draft_correction2_verified",
+    "phase": "cumulative_outcome_label_correction1_verified",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2058,7 +2058,7 @@
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
     "candidate_resolution": "Normal containing31-path commit resolved externally; immutable exact candidate remains frozen through full gates/review.",
-    "candidate_status": "013accepted_staff_ui_active",
+    "candidate_status": "bf_preserved_cumulative_release_rejected_correction1_active",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2087,7 +2087,7 @@
       "schedulers": "SAME nativeACTIVE/OpenClawdisabled"
     },
     "owner_action_required": false,
-    "next_action": "Freeze normal14path successor of preserved6a651dc for the second and last materially different UI3A-F3 correction; overallreviewround3. Complete013base30paths/408protected.336focused/28trace/15UIbrowser/finalstatic PASS;1865trace/28history preserved. Run required exact gates, fullautomation/frontend/PostgreSQL separately, and15staff+15reference+6command browsergroups. Fresh complete013-base Astra/max/Standard/enforced-read-only zero review under standingthrough53authority is mandatory. Preserve all candidates/reports/61failedreceipts. No third automatic correction for the same unresolved UI3A-F3. Historical-label/alignment findings are closed. Then cumulative52release/publication/exactCI/ref/SAMEcard/durableclosurebefore53; Workboardhold/no retry; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+    "next_action": "Create a normal nine-file successor of preserved bf1afe0 for REL-BF-F1 correction1; run the required exact candidate checks and fresh independent review of all122 paths from published f8a33ba. Astra/max/Standard/enforced read-only under standing authority through53. Keep earlier closed findings and their attempt2 counters unchanged; independently reassess the distinct command-result classification. Preserve all rejected candidates, reports and65failed receipts. Future reviewers must use a positive evidence-path inventory excluding rawtracking payloads. Only zero-findings review allows product publication; then exactCI/ref proof, reviewed terminal records and their own publication/CI, final concrete Workboard hold resolution and supported card completion, durable52closure, then53. Keep SAMEfollowup active/OpenClaw disabled; closed53pause/no54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2112,14 +2112,85 @@
       "exact_tests": "189 PASS and all activation gates; execution78277 EXIT0; do not repeat"
     },
     "active_slice": {
-      "id": "V1-052-financial-staff-ui",
+      "id": "V1-052-cumulative-outcome-label-correction1",
       "status": "focused_verified_freeze_pending",
-      "base": "013851d02b6712f949293db82ced82d2afb82ff9",
-      "started_at": "2026-09-08T03:12:47.819339+00:00",
+      "base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
+      "parent": "bf1afe03f5c04604504e8e8d62db526ca774d904",
+      "started_at": "2026-09-08T14:18:49.163055+00:00",
       "affected_paths": [
+        "frontend/src/FinancialEvidence.tsx",
+        "frontend/src/FinancialWorkspaces.test.tsx",
+        "frontend/src/FinancialManagement.test.tsx",
+        "frontend/src/test/financialWorkflows.browser.ts",
+        "ops/NOW.md",
+        "ops/QUEUE.md",
+        "ops/STATE.json",
+        "ops/V1_052_FINANCIAL_STAFF_UI.md",
+        "ops/traceability.json"
+      ],
+      "complete_paths": [
+        "backend/migrations/versions/20260906_42_payment_confirmation.py",
+        "backend/migrations/versions/20260906_43_khr_payment_confirmation.py",
+        "backend/migrations/versions/20260907_44_payment_receipt_evidence.py",
+        "backend/migrations/versions/20260907_45_credit_refund_http_reads.py",
+        "backend/migrations/versions/20260908_46_payment_reversal_context.py",
+        "backend/migrations/versions/20260908_47_financial_action_context.py",
+        "backend/src/property_rental/allocation_read.py",
+        "backend/src/property_rental/allocation_receipt_api.py",
+        "backend/src/property_rental/app.py",
+        "backend/src/property_rental/credit_refund_api.py",
+        "backend/src/property_rental/credit_refund_read.py",
+        "backend/src/property_rental/financial_action_context.py",
+        "backend/src/property_rental/financial_action_context_api.py",
+        "backend/src/property_rental/financial_context.py",
+        "backend/src/property_rental/financial_reference.py",
+        "backend/src/property_rental/financial_reference_api.py",
+        "backend/src/property_rental/khr_payment_confirmation.py",
+        "backend/src/property_rental/payment_api.py",
+        "backend/src/property_rental/payment_confirmation.py",
+        "backend/src/property_rental/payment_read.py",
+        "backend/src/property_rental/payment_reversal_context.py",
+        "backend/src/property_rental/payment_reversal_context_api.py",
+        "backend/tests/payment_test_support.py",
+        "backend/tests/test_allocation_read.py",
+        "backend/tests/test_allocation_read_migration.py",
+        "backend/tests/test_allocation_receipt_api.py",
+        "backend/tests/test_allocation_receipt_api_migration.py",
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_credit_refund_api.py",
+        "backend/tests/test_credit_refund_api_migration.py",
+        "backend/tests/test_credit_refund_read.py",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_financial_action_context.py",
+        "backend/tests/test_financial_action_context_api.py",
+        "backend/tests/test_financial_action_context_migration.py",
+        "backend/tests/test_financial_context.py",
         "backend/tests/test_financial_fixture_clock_migration.py",
+        "backend/tests/test_financial_reference.py",
+        "backend/tests/test_financial_reference_api.py",
+        "backend/tests/test_financial_reference_migration.py",
+        "backend/tests/test_initial_owner_bootstrap_cli.py",
+        "backend/tests/test_invoice_migration.py",
+        "backend/tests/test_khr_payment_confirmation.py",
+        "backend/tests/test_khr_payment_confirmation_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_migrations.py",
+        "backend/tests/test_payment_api.py",
+        "backend/tests/test_payment_api_migration.py",
+        "backend/tests/test_payment_confirmation.py",
+        "backend/tests/test_payment_confirmation_migration.py",
+        "backend/tests/test_payment_read.py",
+        "backend/tests/test_payment_read_migration.py",
+        "backend/tests/test_payment_reversal_context.py",
+        "backend/tests/test_payment_reversal_context_api.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_refund_migration.py",
         "backend/tests/test_refund_service_migration.py",
         "backend/tests/test_traceability.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_utility_meter_migration.py",
         "frontend/src/App.test.tsx",
         "frontend/src/App.tsx",
         "frontend/src/FinancialAllocationReceiptWorkspace.tsx",
@@ -2133,408 +2204,207 @@
         "frontend/src/FinancialRecoveryNotice.tsx",
         "frontend/src/FinancialRefundWorkspace.tsx",
         "frontend/src/FinancialWorkspaces.test.tsx",
+        "frontend/src/billingJournal.test.ts",
+        "frontend/src/financialActionContext.ts",
+        "frontend/src/financialActionContextSequence.ts",
         "frontend/src/financialClient.test.ts",
+        "frontend/src/financialClient.ts",
+        "frontend/src/financialContracts.test.ts",
+        "frontend/src/financialContracts.ts",
+        "frontend/src/financialJson.test.ts",
+        "frontend/src/financialJson.ts",
+        "frontend/src/financialRecovery.test.ts",
+        "frontend/src/financialRecovery.ts",
+        "frontend/src/financialReferenceClient.test.ts",
+        "frontend/src/financialReferenceClient.ts",
         "frontend/src/financialResponse.ts",
         "frontend/src/financialUi.test.ts",
         "frontend/src/financialUi.ts",
         "frontend/src/financialUiContext.test.ts",
         "frontend/src/financialUiContext.ts",
+        "frontend/src/invoiceClient.ts",
+        "frontend/src/paymentReversalContext.ts",
+        "frontend/src/paymentReversalContextSequence.ts",
+        "frontend/src/sealedIntentStore.test.ts",
+        "frontend/src/sealedIntentStore.ts",
         "frontend/src/styles.css",
+        "frontend/src/test/financialActionContextFixtures.ts",
+        "frontend/src/test/financialCommands.browser.ts",
+        "frontend/src/test/financialFixtures.ts",
+        "frontend/src/test/financialRecovery.browser.ts",
+        "frontend/src/test/financialReferences.browser.ts",
         "frontend/src/test/financialWorkflows.browser.ts",
         "ops/NOW.md",
         "ops/QUEUE.md",
         "ops/STATE.json",
+        "ops/V1_052_ALLOCATION_RECEIPT_HTTP.md",
+        "ops/V1_052_CREDIT_REFUND_HTTP.md",
+        "ops/V1_052_FINANCIAL_ACTION_CONTEXT.md",
+        "ops/V1_052_FINANCIAL_CLIENT_RECOVERY.md",
+        "ops/V1_052_FINANCIAL_HTTP_CONTEXT.md",
+        "ops/V1_052_FINANCIAL_REFERENCES.md",
         "ops/V1_052_FINANCIAL_STAFF_UI.md",
+        "ops/V1_052_FINANCIAL_WIRE_RECOVERY.md",
+        "ops/V1_052_PAYMENT_REVERSAL_CONTEXT.md",
+        "ops/V1_052_SCOPE.md",
+        "ops/V1_ROADMAP.json",
         "ops/traceability.json",
+        "scripts/database-test.sh",
         "scripts/test_openclaw_automation.py"
       ],
-      "scope": "Staff Payment/KHR, Allocation/reversal, original Receipt/reprint, Credit recognition/application/reversals, supported USD Refund/verified return/correction reversal, complete Payment reversal impact/results, capability navigation, explicit captured confirmation and actor-bound recovery. No new backend runtime/SQL/grants/dependencies/canonical policy. Accepted client changes are limited to the separately recorded Credit proposal continuation response correction; no convenience changes.",
+      "scope": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-scope.json",
+        "sha256": "19391e1c2585b46c1dd0a86e8a8efeef78d6e980dcca70c43f2f106c2d4fe98d"
+      },
+      "reconciliation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-bf1afe0-outcome-correction1-admission1-reconciliation.json",
+        "sha256": "25084b7e60c73f2cffb28f99e95f3c1b9dca79be0ca5f180ea66a29c4e8db231"
+      },
       "docs": [
-        "002_BUSINESS_RULES.md",
-        "004_DATABASE_MODEL.md",
-        "005_API_SPECIFICATION.md",
-        "006_UI_SPECIFICATION.md",
-        "007_TESTING_STRATEGY.md",
-        "008_SECURITY_MODEL.md"
+        "docs/006_UI_SPECIFICATION.md:UI-069-072",
+        "docs/005_API_SPECIFICATION.md:API-061-066",
+        "ops/V1_052_SCOPE.md",
+        "ops/V1_052_FINANCIAL_STAFF_UI.md"
       ],
       "plan": [
-        "Implement exact display/input and bounded abort-safe context helpers.",
-        "Implement accessible captured confirmation and all recovery states without automatic sending.",
-        "Implement all domain forms and finite original/current evidence using existing grants and clients.",
-        "Integrate actor-keyed logout-safe navigation and keyboard/real-client/synthetic-browser regressions with append-only traceability.",
-        "Freeze a normal candidate; full exact gates and fresh complete-base independent zero review."
+        "Fresh current state/external/scheduler reconciliation, then record9-path phaseactive before source/test edits.",
+        "Reproduce7frozenoutcome labels and delayedreplay+interveningchanges+failedcurrentread on unchanged implementation.",
+        "Extend existing atConfirmation display context to CreditEvidence/RefundEvidence and propagate through all7outcomes/nestedCreditapplication; retainCurrent onlyforauthorizedfreshreads, alloldshowPosition anddata unchanged.",
+        "Retain red evidence and addgreen focusedtests/currentreadcontrols, real syntheticbrowser delayedreplay withfailedrefresh, trace/contractupdates.",
+        "Normal successor; requiredfullapplicable exactgates and45plusnewbrowsergroups; freshcompletef8base Astra/max/Standard/enforcedread-onlyreview carrying standingauthorization andexplicitnewfindingclassification. Preserve alloldallowances."
       ],
       "model": "gpt-6-astra",
       "reasoning": "xhigh",
-      "mode": "Standard/default",
-      "reasoning_reason": "Financial confirmation, recovery concurrency, exact amounts and authorization boundaries require xhigh under the existing project policy.",
+      "mode": "Standard",
+      "reasoning_reason": "Financial result provenance, original-key recovery and preservation across a qualified complete release review.",
       "implementation_owner": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-      "correction_attempt": 0,
+      "correction_attempt": 1,
+      "per_finding_correction_attempt": 1,
+      "unresolved_finding": "REL-BF-F1",
+      "independent_review_round": 2,
+      "per_finding_classification": {
+        "new_finding": "REL-BF-F1",
+        "attempt": 1,
+        "related_prior_findings": [
+          "UI030-M2",
+          "UI3A-F1"
+        ],
+        "reason": "The earlier documented scope covered already-loaded authorized READ projections on commands.revision and immutable proposal_trace inside those read histories; correction1 explicitly preserved confirmed outcomes, and correction2 targeted at-proposal history. The current finding is the distinct saved COMMAND-result rendering path, triggered by original-key replay after another actor changes the balance, plus missing propagation of an already-existing atConfirmation flag. It does not recur in the corrected read/proposal branches. Root compared030->3a->6a outcome source: atConfirmation and the problematic direct outcome calls predate those corrections; the main added read behavior was showPosition handling. Keep earlier findings closed with their existing attempt2; do not reset or reassign their counts. Future independent reviewer must assess this classification explicitly.",
+        "prior_counters_unchanged": {
+          "UI030-M2/UI3A-F1": 2,
+          "UI030-L2/UI3A-F2": 2,
+          "UI3A-F3/UI6A-F1-F2-F3": 2
+        },
+        "prior_regressions_must_remain": true
+      },
+      "rejected_candidate": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-rejected-bf1afe0.json",
+        "sha256": "3a104f2db4cc6858acd6e9190c325d1494e4c698edafbb70e114b1cd4895f642"
+      },
+      "review_process_qualification": {
+        "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1052-cumulative-release-review-bf1afe0-tracking-read-qualification.json",
+        "sha256": "85123d19a058a48f83d9c73e264d3a5481d3c5367871fd5ac43090cbbc03b60b"
+      },
       "standing_authorization": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
         "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
       },
-      "trace_entries_before": 1733,
-      "trace_entries_before_canonical_sha256": "236f98a553757325765189177ebe9d3154ca3e18b261e9a826d8a42405784441",
-      "helpers_verified": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-helpers-verified.json",
-        "sha256": "58c996776724ff7d174af7a59b1f9fe9cbf64ecaf5259cb9b90565de91890789"
-      },
-      "local_recovery": {
-        "workspace_instance_binding": {
-          "attempt": 1,
-          "status": "resolved",
-          "evidence": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-helpers-verified.json",
-            "sha256": "58c996776724ff7d174af7a59b1f9fe9cbf64ecaf5259cb9b90565de91890789"
-          }
-        },
-        "trace_suite_registration": {
-          "attempt": 1,
-          "status": "resolved",
-          "evidence": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-helpers-verified.json",
-            "sha256": "58c996776724ff7d174af7a59b1f9fe9cbf64ecaf5259cb9b90565de91890789"
-          }
-        }
-      },
-      "confirmation_verified": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-confirmation-verified.json",
-        "sha256": "e68ea34a008861cc387286c8c7c75ccc4f375950462953dba6f4d58bfc8c13eb"
-      },
-      "evidence_verified": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-evidence-verified.json",
-        "sha256": "0e3fe2b59fa5e327a3c956a3607a99e63b8d883db873a5150276fe8fe1b6d359"
-      },
-      "read_task_verified": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-read-task-verified.json",
-        "sha256": "d7267b6c18ae7d5078ea61c7e4168c28d6307bfea2adf7746a73d34d88245d43"
-      },
-      "refund_verified": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-refund-verified.json",
-        "sha256": "bcd4eff4182f5fc6a516e9a3dd3ec5d208f840c22680e9b24fe5c6d2f184a077"
-      },
-      "management_verified": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-management-verified.json",
-        "sha256": "78a9917d4156f7786c765dc969ef11ee9e7c15f49875741a18b8c04533fe5fe5"
-      },
-      "scope_amendments": [
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-proposal-scope.json",
-          "sha256": "28ef3e606ec4d3b6a8a15c34cd5ceb1acfe237f8875a0542483ba87e696df448"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-scope.json",
-          "sha256": "4e479f9fc8e3a0bd60b5d676f95c0dd72ec9aca721c29092b331bcfc09a8242e"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-automation-correction1-scope.json",
-          "sha256": "ac088cc664d40a9ba0c6f0557d3fb416ba66e865a118f3064b124c687ff9af8e"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction1-scope.json",
-          "sha256": "14c1d3805399cece1168821f2fd24e31a7e0b3e89001313cb2c1604b1e27306f"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction2-scope.json",
-          "sha256": "130b6fdf3bda3932fd9df33e34fddb9a766f6187ab2a2a9fc6b7fcea328a33db"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-scope.json",
-          "sha256": "42f819de26c603f55642a8ab3134785cc0c82963c29da41195f6f6a7a2834ec4"
-        }
-      ],
-      "credit_proposal_correction": {
-        "status": "implemented_focused_verified_immutable_review_pending",
-        "attempt": 1,
-        "scope": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-proposal-scope.json",
-          "sha256": "28ef3e606ec4d3b6a8a15c34cd5ceb1acfe237f8875a0542483ba87e696df448"
-        },
-        "red_witness": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-proposal-red-qualified-witness1.json",
-          "sha256": "562f7132b5dd0703bf05819cf8d724c661f3c31f2782f5823be6f9d0d0ae64a0",
-          "result": "2 valid partial batches rejected;1 complete control passed;82 intentionally deselected. Initial witness also had a number-versus-bigint assertion mismatch; its original receipt and source are retained."
-        },
-        "changed_approach": "Accept positive returned batch at most original request only with coherent declared continuation, original request equality, remaining arithmetic, server policy, source availability, finite version/time and unique line totals. Existing complete-response behavior and all command/recovery protections remain.",
-        "verification": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-proposal-verified.json",
-          "sha256": "7fad4f2de0453952a424820c793154bf0b70cc277d77a3f641decc594e762ced"
-        }
-      },
-      "credit_workspace_verified": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-workspace-verified.json",
-        "sha256": "159ca618b47ee7557cf01fac086000a5904e784d3a1c547e575fac71418ff05c"
-      },
-      "next_action": "Freeze normal14path successor of preserved6a651dc for the second and last materially different UI3A-F3 correction; overallreviewround3. Complete013base30paths/408protected.336focused/28trace/15UIbrowser/finalstatic PASS;1865trace/28history preserved. Run required exact gates, fullautomation/frontend/PostgreSQL separately, and15staff+15reference+6command browsergroups. Fresh complete013-base Astra/max/Standard/enforced-read-only zero review under standingthrough53authority is mandatory. Preserve all candidates/reports/61failedreceipts. No third automatic correction for the same unresolved UI3A-F3. Historical-label/alignment findings are closed. Then cumulative52release/publication/exactCI/ref/SAMEcard/durableclosurebefore53; Workboardhold/no retry; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
-      "payment_workspace_verified": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-payment-workspace-verified.json",
-        "sha256": "7e2eb10dcb4ced4242db4721f55f5c5c232538235166c905d9ae52c451305fe4"
-      },
-      "allocation_receipt_verified": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-allocation-receipt-verified.json",
-        "sha256": "fab18a5927eebad79a04774be23a8b8a5e9a93730928adb53c5af8293a8d0cfe"
-      },
-      "app_current_verified": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-app-current-verified.json",
-        "sha256": "2f276c7d3fc74f128c06f2b2c1d6500a54539a6daf711f03dc40d6bd586ef99b"
-      },
-      "phase": "staff_ui_draft_correction2_verified",
+      "trace_entries_before": 1865,
+      "immutable_root_object_count": 40,
+      "historical_root_objects": 28,
+      "protected_files": 429,
+      "next_action": "Create a normal nine-file successor of preserved bf1afe0 for REL-BF-F1 correction1; run the required exact candidate checks and fresh independent review of all122 paths from published f8a33ba. Astra/max/Standard/enforced read-only under standing authority through53. Keep earlier closed findings and their attempt2 counters unchanged; independently reassess the distinct command-result classification. Preserve all rejected candidates, reports and65failed receipts. Future reviewers must use a positive evidence-path inventory excluding rawtracking payloads. Only zero-findings review allows product publication; then exactCI/ref proof, reviewed terminal records and their own publication/CI, final concrete Workboard hold resolution and supported card completion, durable52closure, then53. Keep SAMEfollowup active/OpenClaw disabled; closed53pause/no54.",
       "focused_evidence": {
-        "app_current": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-app-current-verified.json",
-          "sha256": "2f276c7d3fc74f128c06f2b2c1d6500a54539a6daf711f03dc40d6bd586ef99b"
+        "focused-final2": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-focused-final2.json",
+          "sha256": "9e270c645fea5f53cc16e0b1718fdebfef395370b2eda1a6508f363046887234"
         },
-        "browser_registration": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-registration.json",
-          "sha256": "996404edeba711eb3d254a721f5e7b0e008ac9cb2882182afc33396e07a30821"
-        },
-        "browser": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-canonical-http-status1.json",
-          "sha256": "5a20b64df8716677fc1dbe93a4d3d145351a4fc33f0bd327256833d504eb9ba1"
-        },
-        "browser_static": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-workflows-static-canonical-status1.json",
-          "sha256": "e7ba9d280debea5098937f930eb3c944fbc01f5102493f8f997cb8221a845f2f"
-        },
-        "controller_static": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-management-static-dialog-action1.json",
-          "sha256": "630a0462e6956efc4ab2e93a710b68b4e150d4bed57cc43d2bce0263cbc55c6d"
-        },
-        "controller_test": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-management-test-dialog-action1.json",
-          "sha256": "9d89150144039867149d59569cf83c05840f4d06104265b01b9a302edf38e48f"
-        },
-        "confirmation_static": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-confirmation-static-foreign-workflow1.json",
-          "sha256": "36fe812d47dbcfa7fd7066a3a00fde5f2d9bb9eebf39efb85e8eee47c33449b9"
-        },
-        "confirmation_test": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-confirmation-test-foreign-workflow1.json",
-          "sha256": "9b239e5fe62c6636fc5f8eed416516918a1ff2e793936bc0474bbc04da6bf3a4"
-        },
-        "trace": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-trace-browser-registered1.json",
-          "sha256": "af21202ed48c39ae19b13f455c93ce2fc232b41ba97c158d591bea4c0b0ed8fc"
-        }
-      },
-      "evidence_qualification": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-prefreeze-qualification.json",
-        "sha256": "4170583b62ad5d017d63d7fc15ed913b414a64d3ea12489eb0ca527b85592c2a"
-      },
-      "browser_verified": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-registration.json",
-        "sha256": "996404edeba711eb3d254a721f5e7b0e008ac9cb2882182afc33396e07a30821"
-      },
-      "prefreeze_reconciliation": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-prefreeze-reconciliation1.json",
-        "sha256": "1e99eaefaadad6330bb2e52290f4a4334c49c27f668bae728b2ffa00ba67c8ab"
-      },
-      "retained_failed_checks": {
-        "v1052-financial-staff-ui-allocation-receipt-test-initial.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-allocation-receipt-test-initial.json",
-          "sha256": "90a451932180eea606f41e8b2edc9b35c54a3af90f32262c074e7793f25dff7b"
-        },
-        "v1052-financial-staff-ui-browser-dialog-action1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-dialog-action1.json",
-          "sha256": "37c0755a7c35e124894c4987e4914a646e34d243f462cfdfa6f7e28f6a178a1a"
-        },
-        "v1052-financial-staff-ui-browser-initial.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-initial.json",
-          "sha256": "8e5f701eebd867a3656dd95c442e2e1c07cfb07208221ff8131e83ad0d80e3b8"
-        },
-        "v1052-financial-staff-ui-browser-option-attached-correction1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-option-attached-correction1.json",
-          "sha256": "c2b5c9856d692f6af362950ffe20aea532b29e3a98624dbac8b93b40fe082fc0"
-        },
-        "v1052-financial-staff-ui-browser-property-label1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-property-label1.json",
-          "sha256": "397518a632020131907f5114090229d574c0093318e593428c854df4d7763d89"
-        },
-        "v1052-financial-staff-ui-browser-workflows-static-assertions1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-workflows-static-assertions1.json",
-          "sha256": "fb53e16211e758311797b3250b4bd54cc0d60ba6910a3ef3d2b3d4c0f535b706"
-        },
-        "v1052-financial-staff-ui-browser-workflows-static-initial.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-workflows-static-initial.json",
-          "sha256": "ba81f2a514586d4748bc2cb084afb8011dab912788458263bed26310ef9e9d16"
-        },
-        "v1052-financial-staff-ui-confirmed-current-static-initial-forms.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-confirmed-current-static-initial-forms.json",
-          "sha256": "a4c4ef21628094d3f2d6e7687726ea518e7ebe09f2c5ffa92eeab05212797c42"
-        },
-        "v1052-financial-staff-ui-credit-proposal-red-initial.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-proposal-red-initial.json",
-          "sha256": "c3e6b72d60a4601ee144feaf01263a23577322d1f1e8b3ba1cf449ccebed0cab"
-        },
-        "v1052-financial-staff-ui-credit-proposal-red-qualified-witness1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-proposal-red-qualified-witness1.json",
-          "sha256": "562f7132b5dd0703bf05819cf8d724c661f3c31f2782f5823be6f9d0d0ae64a0"
-        },
-        "v1052-financial-staff-ui-credit-workspace-static-harness-correction1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-workspace-static-harness-correction1.json",
-          "sha256": "f0a06dcd0724e41143b494511a39daec6f95a798a9311bf758113c8bacb47784"
-        },
-        "v1052-financial-staff-ui-credit-workspace-static-initial.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-workspace-static-initial.json",
-          "sha256": "126852ba9a73d313bb6455352eb258075988e692409f94dbb5f85111b6785b97"
-        },
-        "v1052-financial-staff-ui-credit-workspace-test-canonical-fixture-correction1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-workspace-test-canonical-fixture-correction1.json",
-          "sha256": "752b065492b232a5bfe8ba3708d291589d2906ea47c987570fe169ff1c01471e"
-        },
-        "v1052-financial-staff-ui-credit-workspace-test-initial.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-workspace-test-initial.json",
-          "sha256": "e7330781cbc80b1051306082e256d187ae423b97a8e8f6b759d3b7f007b2ed4b"
-        },
-        "v1052-financial-staff-ui-evidence-test-initial.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-evidence-test-initial.json",
-          "sha256": "ba97c04d8375cee37aab5fac8541efadfedd4c80e44de396b248486c5b55cbf8"
-        },
-        "v1052-financial-staff-ui-helpers-signal-red-initial.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-helpers-signal-red-initial.json",
-          "sha256": "4564ef37ea9a36ef4d85fcbfccaef5b426b06a1e1d2b240ad543f7c968b590af"
-        },
-        "v1052-financial-staff-ui-helpers-static-initial.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-helpers-static-initial.json",
-          "sha256": "072142001a74ba8fce62ea1088271b7ef3be9b96b2554c8fc811da6e94e80090"
-        },
-        "v1052-financial-staff-ui-management-static-controller1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-management-static-controller1.json",
-          "sha256": "d71fce4ddea89eeb892c7e98964ff93b249133990d0bf40c27d2e6b57b64f2cb"
-        },
-        "v1052-financial-staff-ui-management-static-property-label1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-management-static-property-label1.json",
-          "sha256": "f9e1c3b8c3f829254e1ab4f8e76ac9918dfe24f9bb2cb619262377c63aeec4c9"
-        },
-        "v1052-financial-staff-ui-management-static-with-tests1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-management-static-with-tests1.json",
-          "sha256": "9384bf71ef86dcee5ba95a7896f54aea2ab5ecd0c788c645fb5882b1c51856ba"
-        },
-        "v1052-financial-staff-ui-refund-static-forms1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-refund-static-forms1.json",
-          "sha256": "357e40d5428387bdb4d79cf2ac73bc513dc0b9f4bf7f0020c75651a9f4a01b94"
-        },
-        "v1052-financial-staff-ui-refund-static-native-time-correction1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-refund-static-native-time-correction1.json",
-          "sha256": "eb86488b1816acab8f9396cb261207e6ba1015434016c96ca4c424ff8f750b63"
-        },
-        "v1052-financial-staff-ui-refund-static-with-tests1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-refund-static-with-tests1.json",
-          "sha256": "3b09d5934b589c2c8630ab99185f2e7ecadbb4c647f35c4554d79b82fc73ae8a"
-        },
-        "v1052-financial-staff-ui-refund-test-initial.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-refund-test-initial.json",
-          "sha256": "b1e3185c5c1db55802b2028177c306457c10e15bbf9f2be9d4777c6f9bf0dfaf"
-        },
-        "v1052-financial-staff-ui-trace-app-current1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-trace-app-current1.json",
-          "sha256": "de5d4bf4649b558e160428757df001de885ed8737eb0c18fc52cc0904459105a"
-        },
-        "v1052-financial-staff-ui-trace-helpers1.json": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-trace-helpers1.json",
-          "sha256": "2e0d4c5b5d5dcdc2bfd249ca95bcab0e5f78577d5c7d318be4b27123e33a3da8"
-        }
-      },
-      "gate_correction_attempt": 1,
-      "correction_paths": [
-        "frontend/src/financialUiContext.ts",
-        "frontend/src/FinancialPaymentWorkspace.tsx",
-        "frontend/src/FinancialAllocationReceiptWorkspace.tsx",
-        "frontend/src/FinancialCreditWorkspace.tsx",
-        "frontend/src/FinancialRefundWorkspace.tsx",
-        "frontend/src/financialUiContext.test.ts",
-        "frontend/src/FinancialWorkspaces.test.tsx",
-        "frontend/src/FinancialManagement.test.tsx",
-        "frontend/src/test/financialWorkflows.browser.ts",
-        "ops/NOW.md",
-        "ops/QUEUE.md",
-        "ops/STATE.json",
-        "ops/V1_052_FINANCIAL_STAFF_UI.md",
-        "ops/traceability.json"
-      ],
-      "failed_gate_candidate": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-failed-gate-09bd8e8.json",
-        "sha256": "89f08092ff9246fc49ec38c469f748970d834648e661ae72144bcdbcf4cf5051"
-      },
-      "clock_correction": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-scope.json",
-        "sha256": "4e479f9fc8e3a0bd60b5d676f95c0dd72ec9aca721c29092b331bcfc09a8242e"
-      },
-      "clock_focused_evidence": {
-        "static": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-static-initial.json",
-          "sha256": "0a7d36dd9a6548379a96ca05f561ce1008ea95b73d590384af3bfcc5b4ffac8f"
-        },
-        "focused": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-focused-initial.json",
-          "sha256": "1429bdad1de82005539673e1adb0a63704b6dba071634c93af740291f936ced5"
-        },
-        "trace": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-trace-registered1.json",
-          "sha256": "facc3fb79edaab0e4371795462f9a7fb9d0b1e52d0b16a10ef08c5a9744b482c"
-        }
-      },
-      "automation_correction": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-automation-correction1-scope.json",
-        "sha256": "ac088cc664d40a9ba0c6f0557d3fb416ba66e865a118f3064b124c687ff9af8e"
-      },
-      "automation_focused_evidence": {
-        "scoped-static": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-automation-correction1-scoped-static-baseline1.json",
-          "sha256": "333d7362df9a1eb883b998eccfabc4ea09f240e9781d1256287cfdc5e720261a"
-        },
-        "focused": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-automation-correction1-focused-initial.json",
-          "sha256": "230136b20b3fdf04db2067535d0b60f45307b2db67107a8ef655c47947066f23"
-        },
-        "trace": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-automation-correction1-trace-focused1.json",
-          "sha256": "fa43c499b9c66f9e51a8c83b33636ed5fb3bc9bb562fdf58cacb5046f92540bb"
-        }
-      },
-      "independent_review_correction_attempt": 2,
-      "review_correction": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-scope.json",
-        "sha256": "42f819de26c603f55642a8ab3134785cc0c82963c29da41195f6f6a7a2834ec4"
-      },
-      "rejected_candidate": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-rejected-6a651dc.json",
-        "sha256": "0217ee8303d4a4194f2ad9bf4104d85fbfdb67eecf9dda93d48e5f4512514af3"
-      },
-      "review_correction_focused_evidence": {
-        "types-final2": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-types-final2.json",
-          "sha256": "ad4403b5583dc41c840a8e5ef59e8d90b334aa9dbc1f29d1ce909a920b6f50b9"
+        "types-build2": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-types-build2.json",
+          "sha256": "ec9429bb718bd7fa702e54ecec17fca8953c4b0fee78c9898e0482010860ad04"
         },
         "lint-final2": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-lint-final2.json",
-          "sha256": "52d6cf7649a6c300f38bbe487ad70944dbe9401c6d166b72ee6c15655fc6fdaa"
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-lint-final2.json",
+          "sha256": "ff1640b4d9934f62f994d1217545102f9924f04643f09778d48d83ff3c6ef680"
         },
-        "format-final2": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-format-final2.json",
-          "sha256": "2b0b86e85d4530a51964379944485d2aef7fc61cc64a2c827d1d543305a2a933"
-        },
-        "focused-final1": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-focused-final1.json",
-          "sha256": "1b843cb02ac87d69e9dbb38a5defc915ad136bfdaa1aaf45c64e94d7d9ba06ca"
+        "format-final1": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-format-final1.json",
+          "sha256": "8597747c28191ffa1c3f0534b62ffcfc45fc171f6064140cbc7a40eb41a350eb"
         },
         "trace": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-trace1.json",
-          "sha256": "1283ab4d64b5b3bdd6c2b3e4202a9ff3df63384640c511a921cd6d88139c1769"
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-trace2.json",
+          "sha256": "2f4f2ab5ef6da41028c106919ff201f92fa7937905ed76aab244dccf629b1af4"
         },
-        "browser15": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-review-draft-correction2-focused4.json",
-          "sha256": "81e36fdf934c1141f9ec7121c48b03b85c96a18490ddf55b953b53b0ecebbe22"
+        "browser17": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-browser-focused1.json",
+          "sha256": "ce105dbe4efcfb89c1c7bfd39ff783fa8be37c84300b70eb3d49e11da809298f"
         }
       },
-      "independent_review_round": 3,
-      "unresolved_finding": "UI3A-F3",
-      "per_finding_correction_attempt": 2,
-      "closed_findings": [
-        "UI3A-F1/UI030-M2",
-        "UI3A-F2/UI030-L2"
-      ]
+      "verification_qualification": {
+        "finding": "REL-BF-F1",
+        "per_finding_attempt": 1,
+        "complete_release_review_round": 2,
+        "implementation": "Only FinancialEvidence.tsx runtime changes: add atConfirmation context to Credit/Refund evidence, pass it from all seven affected outcomes, and propagate through nested Credit application positions. Saved amounts retain original-confirmation attribution; live read defaults and stale-position guards remain unchanged. No backend, contracts, grants, transport, recovery, storage, controller or draft runtime edits.",
+        "red": "Nine expected failures on unchanged bf runtime: seven command outcomes and two real-controller delayed replay variants after a full synthetic return. All original key/bytes, current-read success/failure and journal assertions passed before the obsolete Current label assertion. Three live/stale read controls already passed. Full red logs and source snapshots preserved.",
+        "focused": "348 tests pass across six verified files; actual TypeScript referenced-project build, lint, formatting and28traceability checks pass. All1865 prior trace entries preserved, five added=1870.",
+        "browser": "17 real Chromium groups/28listedcases pass, retaining all15prior groups and adding seven frozen outcome assertions plus two intervening-return replay/remount cases. Actual IndexedDB/WebCrypto/WebLocks/native dialogs; zero financial network. After this browser run only test-only Management fixture typing/RTL options changed, not browser code or product runtime; exact post-commit browser gate remains required.",
+        "check_qualifications": [
+          {
+            "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-check-scope-qualification.json",
+            "sha256": "ca7b3717d18351eab1c29a7b30df3ee651d31e338b1896b7bca3e8150793f11f"
+          },
+          {
+            "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-type-trace-qualification.json",
+            "sha256": "e42a22ebffd645dd3a0f5f2484f227047926805dce91d99937aa59f89e2f770c"
+          },
+          {
+            "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-red1-source-snapshots.json",
+            "sha256": "8e66efac751a1bad3a3d5941c941a8843c816aaa67f971ccdf79097eadcb74cb"
+          },
+          {
+            "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/outcome-correction1-prefreeze-checksum-qualification.json",
+            "sha256": "031256b6bf25ecc46bdd65a21189e5da4852bdafa4bfb7a25ebab49ecc6e9eda"
+          }
+        ],
+        "failures": {
+          "v1052-cumulative-release-outcome-correction1-lint1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-lint1.json",
+            "sha256": "71175d2c5cb78dbd5eedc9763f34c6d87d98bf8d3280f70bd322bc649e079c68"
+          },
+          "v1052-cumulative-release-outcome-correction1-red1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-red1.json",
+            "sha256": "9b4e5a332ff89a0496e42a0ac6e21f488b627270d491ab30727917ac27766818"
+          },
+          "v1052-cumulative-release-outcome-correction1-trace1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-trace1.json",
+            "sha256": "c737535b445a8d853169f1daebb0ec89d2950b587ae75944551b6811e1cf38ac"
+          },
+          "v1052-cumulative-release-outcome-correction1-types-build1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-outcome-correction1-types-build1.json",
+            "sha256": "c1637e8f89fa689d239e6015b5fce969836df1ebda81a7482db128f3a6b73623"
+          }
+        },
+        "old_review_process_qualification": {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1052-cumulative-release-review-bf1afe0-tracking-read-qualification.json",
+          "sha256": "85123d19a058a48f83d9c73e264d3a5481d3c5367871fd5ac43090cbbc03b60b"
+        },
+        "per_finding_classification": {
+          "new_finding": "REL-BF-F1",
+          "attempt": 1,
+          "related_prior_findings": [
+            "UI030-M2",
+            "UI3A-F1"
+          ],
+          "reason": "The earlier documented scope covered already-loaded authorized READ projections on commands.revision and immutable proposal_trace inside those read histories; correction1 explicitly preserved confirmed outcomes, and correction2 targeted at-proposal history. The current finding is the distinct saved COMMAND-result rendering path, triggered by original-key replay after another actor changes the balance, plus missing propagation of an already-existing atConfirmation flag. It does not recur in the corrected read/proposal branches. Root compared030->3a->6a outcome source: atConfirmation and the problematic direct outcome calls predate those corrections; the main added read behavior was showPosition handling. Keep earlier findings closed with their existing attempt2; do not reset or reassign their counts. Future independent reviewer must assess this classification explicitly.",
+          "prior_counters_unchanged": {
+            "UI030-M2/UI3A-F1": 2,
+            "UI030-L2/UI3A-F2": 2,
+            "UI3A-F3/UI6A-F1-F2-F3": 2
+          },
+          "prior_regressions_must_remain": true
+        },
+        "publication": "Not started. bf whole-release rejection remains preserved; this is focused verification only."
+      }
     },
     "accepted_read_slice": {
       "id": "V1-052-payment-read",
@@ -6684,6 +6554,440 @@
       "report_sha256": "aeaedc789843ead1a4999706196e551cacd27c30fc79199745194a43456ec43b",
       "completed_at": "2026-09-08T03:08:06.587792+00:00",
       "rejected_candidates_and_evidence_preserved": true
+    },
+    "accepted_financial_staff_ui_phase": {
+      "candidate": "bf1afe03f5c04604504e8e8d62db526ca774d904",
+      "source_tree": "0527dca52380bdf2c9117a60f78502a494851cb0",
+      "acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-accepted-bf1afe0.json",
+        "sha256": "ea9f8219690d637576935405388cef81b160c4946f5ae87ed5dc22502dd398d2"
+      },
+      "frozen_active_slice": {
+        "id": "V1-052-financial-staff-ui",
+        "status": "focused_verified_freeze_pending",
+        "base": "013851d02b6712f949293db82ced82d2afb82ff9",
+        "started_at": "2026-09-08T03:12:47.819339+00:00",
+        "affected_paths": [
+          "backend/tests/test_financial_fixture_clock_migration.py",
+          "backend/tests/test_refund_service_migration.py",
+          "backend/tests/test_traceability.py",
+          "frontend/src/App.test.tsx",
+          "frontend/src/App.tsx",
+          "frontend/src/FinancialAllocationReceiptWorkspace.tsx",
+          "frontend/src/FinancialConfirmation.test.tsx",
+          "frontend/src/FinancialConfirmation.tsx",
+          "frontend/src/FinancialCreditWorkspace.tsx",
+          "frontend/src/FinancialEvidence.tsx",
+          "frontend/src/FinancialManagement.test.tsx",
+          "frontend/src/FinancialManagement.tsx",
+          "frontend/src/FinancialPaymentWorkspace.tsx",
+          "frontend/src/FinancialRecoveryNotice.tsx",
+          "frontend/src/FinancialRefundWorkspace.tsx",
+          "frontend/src/FinancialWorkspaces.test.tsx",
+          "frontend/src/financialClient.test.ts",
+          "frontend/src/financialResponse.ts",
+          "frontend/src/financialUi.test.ts",
+          "frontend/src/financialUi.ts",
+          "frontend/src/financialUiContext.test.ts",
+          "frontend/src/financialUiContext.ts",
+          "frontend/src/styles.css",
+          "frontend/src/test/financialWorkflows.browser.ts",
+          "ops/NOW.md",
+          "ops/QUEUE.md",
+          "ops/STATE.json",
+          "ops/V1_052_FINANCIAL_STAFF_UI.md",
+          "ops/traceability.json",
+          "scripts/test_openclaw_automation.py"
+        ],
+        "scope": "Staff Payment/KHR, Allocation/reversal, original Receipt/reprint, Credit recognition/application/reversals, supported USD Refund/verified return/correction reversal, complete Payment reversal impact/results, capability navigation, explicit captured confirmation and actor-bound recovery. No new backend runtime/SQL/grants/dependencies/canonical policy. Accepted client changes are limited to the separately recorded Credit proposal continuation response correction; no convenience changes.",
+        "docs": [
+          "002_BUSINESS_RULES.md",
+          "004_DATABASE_MODEL.md",
+          "005_API_SPECIFICATION.md",
+          "006_UI_SPECIFICATION.md",
+          "007_TESTING_STRATEGY.md",
+          "008_SECURITY_MODEL.md"
+        ],
+        "plan": [
+          "Implement exact display/input and bounded abort-safe context helpers.",
+          "Implement accessible captured confirmation and all recovery states without automatic sending.",
+          "Implement all domain forms and finite original/current evidence using existing grants and clients.",
+          "Integrate actor-keyed logout-safe navigation and keyboard/real-client/synthetic-browser regressions with append-only traceability.",
+          "Freeze a normal candidate; full exact gates and fresh complete-base independent zero review."
+        ],
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard/default",
+        "reasoning_reason": "Financial confirmation, recovery concurrency, exact amounts and authorization boundaries require xhigh under the existing project policy.",
+        "implementation_owner": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "correction_attempt": 0,
+        "standing_authorization": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
+          "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
+        },
+        "trace_entries_before": 1733,
+        "trace_entries_before_canonical_sha256": "236f98a553757325765189177ebe9d3154ca3e18b261e9a826d8a42405784441",
+        "helpers_verified": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-helpers-verified.json",
+          "sha256": "58c996776724ff7d174af7a59b1f9fe9cbf64ecaf5259cb9b90565de91890789"
+        },
+        "local_recovery": {
+          "workspace_instance_binding": {
+            "attempt": 1,
+            "status": "resolved",
+            "evidence": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-helpers-verified.json",
+              "sha256": "58c996776724ff7d174af7a59b1f9fe9cbf64ecaf5259cb9b90565de91890789"
+            }
+          },
+          "trace_suite_registration": {
+            "attempt": 1,
+            "status": "resolved",
+            "evidence": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-helpers-verified.json",
+              "sha256": "58c996776724ff7d174af7a59b1f9fe9cbf64ecaf5259cb9b90565de91890789"
+            }
+          }
+        },
+        "confirmation_verified": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-confirmation-verified.json",
+          "sha256": "e68ea34a008861cc387286c8c7c75ccc4f375950462953dba6f4d58bfc8c13eb"
+        },
+        "evidence_verified": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-evidence-verified.json",
+          "sha256": "0e3fe2b59fa5e327a3c956a3607a99e63b8d883db873a5150276fe8fe1b6d359"
+        },
+        "read_task_verified": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-read-task-verified.json",
+          "sha256": "d7267b6c18ae7d5078ea61c7e4168c28d6307bfea2adf7746a73d34d88245d43"
+        },
+        "refund_verified": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-refund-verified.json",
+          "sha256": "bcd4eff4182f5fc6a516e9a3dd3ec5d208f840c22680e9b24fe5c6d2f184a077"
+        },
+        "management_verified": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-management-verified.json",
+          "sha256": "78a9917d4156f7786c765dc969ef11ee9e7c15f49875741a18b8c04533fe5fe5"
+        },
+        "scope_amendments": [
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-proposal-scope.json",
+            "sha256": "28ef3e606ec4d3b6a8a15c34cd5ceb1acfe237f8875a0542483ba87e696df448"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-scope.json",
+            "sha256": "4e479f9fc8e3a0bd60b5d676f95c0dd72ec9aca721c29092b331bcfc09a8242e"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-automation-correction1-scope.json",
+            "sha256": "ac088cc664d40a9ba0c6f0557d3fb416ba66e865a118f3064b124c687ff9af8e"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction1-scope.json",
+            "sha256": "14c1d3805399cece1168821f2fd24e31a7e0b3e89001313cb2c1604b1e27306f"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction2-scope.json",
+            "sha256": "130b6fdf3bda3932fd9df33e34fddb9a766f6187ab2a2a9fc6b7fcea328a33db"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-scope.json",
+            "sha256": "42f819de26c603f55642a8ab3134785cc0c82963c29da41195f6f6a7a2834ec4"
+          }
+        ],
+        "credit_proposal_correction": {
+          "status": "implemented_focused_verified_immutable_review_pending",
+          "attempt": 1,
+          "scope": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-proposal-scope.json",
+            "sha256": "28ef3e606ec4d3b6a8a15c34cd5ceb1acfe237f8875a0542483ba87e696df448"
+          },
+          "red_witness": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-proposal-red-qualified-witness1.json",
+            "sha256": "562f7132b5dd0703bf05819cf8d724c661f3c31f2782f5823be6f9d0d0ae64a0",
+            "result": "2 valid partial batches rejected;1 complete control passed;82 intentionally deselected. Initial witness also had a number-versus-bigint assertion mismatch; its original receipt and source are retained."
+          },
+          "changed_approach": "Accept positive returned batch at most original request only with coherent declared continuation, original request equality, remaining arithmetic, server policy, source availability, finite version/time and unique line totals. Existing complete-response behavior and all command/recovery protections remain.",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-proposal-verified.json",
+            "sha256": "7fad4f2de0453952a424820c793154bf0b70cc277d77a3f641decc594e762ced"
+          }
+        },
+        "credit_workspace_verified": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-workspace-verified.json",
+          "sha256": "159ca618b47ee7557cf01fac086000a5904e784d3a1c547e575fac71418ff05c"
+        },
+        "next_action": "Freeze normal14path successor of preserved6a651dc for the second and last materially different UI3A-F3 correction; overallreviewround3. Complete013base30paths/408protected.336focused/28trace/15UIbrowser/finalstatic PASS;1865trace/28history preserved. Run required exact gates, fullautomation/frontend/PostgreSQL separately, and15staff+15reference+6command browsergroups. Fresh complete013-base Astra/max/Standard/enforced-read-only zero review under standingthrough53authority is mandatory. Preserve all candidates/reports/61failedreceipts. No third automatic correction for the same unresolved UI3A-F3. Historical-label/alignment findings are closed. Then cumulative52release/publication/exactCI/ref/SAMEcard/durableclosurebefore53; Workboardhold/no retry; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+        "payment_workspace_verified": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-payment-workspace-verified.json",
+          "sha256": "7e2eb10dcb4ced4242db4721f55f5c5c232538235166c905d9ae52c451305fe4"
+        },
+        "allocation_receipt_verified": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-allocation-receipt-verified.json",
+          "sha256": "fab18a5927eebad79a04774be23a8b8a5e9a93730928adb53c5af8293a8d0cfe"
+        },
+        "app_current_verified": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-app-current-verified.json",
+          "sha256": "2f276c7d3fc74f128c06f2b2c1d6500a54539a6daf711f03dc40d6bd586ef99b"
+        },
+        "phase": "staff_ui_draft_correction2_verified",
+        "focused_evidence": {
+          "app_current": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-app-current-verified.json",
+            "sha256": "2f276c7d3fc74f128c06f2b2c1d6500a54539a6daf711f03dc40d6bd586ef99b"
+          },
+          "browser_registration": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-registration.json",
+            "sha256": "996404edeba711eb3d254a721f5e7b0e008ac9cb2882182afc33396e07a30821"
+          },
+          "browser": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-canonical-http-status1.json",
+            "sha256": "5a20b64df8716677fc1dbe93a4d3d145351a4fc33f0bd327256833d504eb9ba1"
+          },
+          "browser_static": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-workflows-static-canonical-status1.json",
+            "sha256": "e7ba9d280debea5098937f930eb3c944fbc01f5102493f8f997cb8221a845f2f"
+          },
+          "controller_static": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-management-static-dialog-action1.json",
+            "sha256": "630a0462e6956efc4ab2e93a710b68b4e150d4bed57cc43d2bce0263cbc55c6d"
+          },
+          "controller_test": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-management-test-dialog-action1.json",
+            "sha256": "9d89150144039867149d59569cf83c05840f4d06104265b01b9a302edf38e48f"
+          },
+          "confirmation_static": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-confirmation-static-foreign-workflow1.json",
+            "sha256": "36fe812d47dbcfa7fd7066a3a00fde5f2d9bb9eebf39efb85e8eee47c33449b9"
+          },
+          "confirmation_test": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-confirmation-test-foreign-workflow1.json",
+            "sha256": "9b239e5fe62c6636fc5f8eed416516918a1ff2e793936bc0474bbc04da6bf3a4"
+          },
+          "trace": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-trace-browser-registered1.json",
+            "sha256": "af21202ed48c39ae19b13f455c93ce2fc232b41ba97c158d591bea4c0b0ed8fc"
+          }
+        },
+        "evidence_qualification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-prefreeze-qualification.json",
+          "sha256": "4170583b62ad5d017d63d7fc15ed913b414a64d3ea12489eb0ca527b85592c2a"
+        },
+        "browser_verified": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-registration.json",
+          "sha256": "996404edeba711eb3d254a721f5e7b0e008ac9cb2882182afc33396e07a30821"
+        },
+        "prefreeze_reconciliation": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-prefreeze-reconciliation1.json",
+          "sha256": "1e99eaefaadad6330bb2e52290f4a4334c49c27f668bae728b2ffa00ba67c8ab"
+        },
+        "retained_failed_checks": {
+          "v1052-financial-staff-ui-allocation-receipt-test-initial.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-allocation-receipt-test-initial.json",
+            "sha256": "90a451932180eea606f41e8b2edc9b35c54a3af90f32262c074e7793f25dff7b"
+          },
+          "v1052-financial-staff-ui-browser-dialog-action1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-dialog-action1.json",
+            "sha256": "37c0755a7c35e124894c4987e4914a646e34d243f462cfdfa6f7e28f6a178a1a"
+          },
+          "v1052-financial-staff-ui-browser-initial.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-initial.json",
+            "sha256": "8e5f701eebd867a3656dd95c442e2e1c07cfb07208221ff8131e83ad0d80e3b8"
+          },
+          "v1052-financial-staff-ui-browser-option-attached-correction1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-option-attached-correction1.json",
+            "sha256": "c2b5c9856d692f6af362950ffe20aea532b29e3a98624dbac8b93b40fe082fc0"
+          },
+          "v1052-financial-staff-ui-browser-property-label1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-property-label1.json",
+            "sha256": "397518a632020131907f5114090229d574c0093318e593428c854df4d7763d89"
+          },
+          "v1052-financial-staff-ui-browser-workflows-static-assertions1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-workflows-static-assertions1.json",
+            "sha256": "fb53e16211e758311797b3250b4bd54cc0d60ba6910a3ef3d2b3d4c0f535b706"
+          },
+          "v1052-financial-staff-ui-browser-workflows-static-initial.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-workflows-static-initial.json",
+            "sha256": "ba81f2a514586d4748bc2cb084afb8011dab912788458263bed26310ef9e9d16"
+          },
+          "v1052-financial-staff-ui-confirmed-current-static-initial-forms.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-confirmed-current-static-initial-forms.json",
+            "sha256": "a4c4ef21628094d3f2d6e7687726ea518e7ebe09f2c5ffa92eeab05212797c42"
+          },
+          "v1052-financial-staff-ui-credit-proposal-red-initial.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-proposal-red-initial.json",
+            "sha256": "c3e6b72d60a4601ee144feaf01263a23577322d1f1e8b3ba1cf449ccebed0cab"
+          },
+          "v1052-financial-staff-ui-credit-proposal-red-qualified-witness1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-proposal-red-qualified-witness1.json",
+            "sha256": "562f7132b5dd0703bf05819cf8d724c661f3c31f2782f5823be6f9d0d0ae64a0"
+          },
+          "v1052-financial-staff-ui-credit-workspace-static-harness-correction1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-workspace-static-harness-correction1.json",
+            "sha256": "f0a06dcd0724e41143b494511a39daec6f95a798a9311bf758113c8bacb47784"
+          },
+          "v1052-financial-staff-ui-credit-workspace-static-initial.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-workspace-static-initial.json",
+            "sha256": "126852ba9a73d313bb6455352eb258075988e692409f94dbb5f85111b6785b97"
+          },
+          "v1052-financial-staff-ui-credit-workspace-test-canonical-fixture-correction1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-workspace-test-canonical-fixture-correction1.json",
+            "sha256": "752b065492b232a5bfe8ba3708d291589d2906ea47c987570fe169ff1c01471e"
+          },
+          "v1052-financial-staff-ui-credit-workspace-test-initial.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-workspace-test-initial.json",
+            "sha256": "e7330781cbc80b1051306082e256d187ae423b97a8e8f6b759d3b7f007b2ed4b"
+          },
+          "v1052-financial-staff-ui-evidence-test-initial.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-evidence-test-initial.json",
+            "sha256": "ba97c04d8375cee37aab5fac8541efadfedd4c80e44de396b248486c5b55cbf8"
+          },
+          "v1052-financial-staff-ui-helpers-signal-red-initial.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-helpers-signal-red-initial.json",
+            "sha256": "4564ef37ea9a36ef4d85fcbfccaef5b426b06a1e1d2b240ad543f7c968b590af"
+          },
+          "v1052-financial-staff-ui-helpers-static-initial.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-helpers-static-initial.json",
+            "sha256": "072142001a74ba8fce62ea1088271b7ef3be9b96b2554c8fc811da6e94e80090"
+          },
+          "v1052-financial-staff-ui-management-static-controller1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-management-static-controller1.json",
+            "sha256": "d71fce4ddea89eeb892c7e98964ff93b249133990d0bf40c27d2e6b57b64f2cb"
+          },
+          "v1052-financial-staff-ui-management-static-property-label1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-management-static-property-label1.json",
+            "sha256": "f9e1c3b8c3f829254e1ab4f8e76ac9918dfe24f9bb2cb619262377c63aeec4c9"
+          },
+          "v1052-financial-staff-ui-management-static-with-tests1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-management-static-with-tests1.json",
+            "sha256": "9384bf71ef86dcee5ba95a7896f54aea2ab5ecd0c788c645fb5882b1c51856ba"
+          },
+          "v1052-financial-staff-ui-refund-static-forms1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-refund-static-forms1.json",
+            "sha256": "357e40d5428387bdb4d79cf2ac73bc513dc0b9f4bf7f0020c75651a9f4a01b94"
+          },
+          "v1052-financial-staff-ui-refund-static-native-time-correction1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-refund-static-native-time-correction1.json",
+            "sha256": "eb86488b1816acab8f9396cb261207e6ba1015434016c96ca4c424ff8f750b63"
+          },
+          "v1052-financial-staff-ui-refund-static-with-tests1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-refund-static-with-tests1.json",
+            "sha256": "3b09d5934b589c2c8630ab99185f2e7ecadbb4c647f35c4554d79b82fc73ae8a"
+          },
+          "v1052-financial-staff-ui-refund-test-initial.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-refund-test-initial.json",
+            "sha256": "b1e3185c5c1db55802b2028177c306457c10e15bbf9f2be9d4777c6f9bf0dfaf"
+          },
+          "v1052-financial-staff-ui-trace-app-current1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-trace-app-current1.json",
+            "sha256": "de5d4bf4649b558e160428757df001de885ed8737eb0c18fc52cc0904459105a"
+          },
+          "v1052-financial-staff-ui-trace-helpers1.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-trace-helpers1.json",
+            "sha256": "2e0d4c5b5d5dcdc2bfd249ca95bcab0e5f78577d5c7d318be4b27123e33a3da8"
+          }
+        },
+        "gate_correction_attempt": 1,
+        "correction_paths": [
+          "frontend/src/financialUiContext.ts",
+          "frontend/src/FinancialPaymentWorkspace.tsx",
+          "frontend/src/FinancialAllocationReceiptWorkspace.tsx",
+          "frontend/src/FinancialCreditWorkspace.tsx",
+          "frontend/src/FinancialRefundWorkspace.tsx",
+          "frontend/src/financialUiContext.test.ts",
+          "frontend/src/FinancialWorkspaces.test.tsx",
+          "frontend/src/FinancialManagement.test.tsx",
+          "frontend/src/test/financialWorkflows.browser.ts",
+          "ops/NOW.md",
+          "ops/QUEUE.md",
+          "ops/STATE.json",
+          "ops/V1_052_FINANCIAL_STAFF_UI.md",
+          "ops/traceability.json"
+        ],
+        "failed_gate_candidate": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-failed-gate-09bd8e8.json",
+          "sha256": "89f08092ff9246fc49ec38c469f748970d834648e661ae72144bcdbcf4cf5051"
+        },
+        "clock_correction": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-scope.json",
+          "sha256": "4e479f9fc8e3a0bd60b5d676f95c0dd72ec9aca721c29092b331bcfc09a8242e"
+        },
+        "clock_focused_evidence": {
+          "static": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-static-initial.json",
+            "sha256": "0a7d36dd9a6548379a96ca05f561ce1008ea95b73d590384af3bfcc5b4ffac8f"
+          },
+          "focused": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-focused-initial.json",
+            "sha256": "1429bdad1de82005539673e1adb0a63704b6dba071634c93af740291f936ced5"
+          },
+          "trace": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-trace-registered1.json",
+            "sha256": "facc3fb79edaab0e4371795462f9a7fb9d0b1e52d0b16a10ef08c5a9744b482c"
+          }
+        },
+        "automation_correction": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-automation-correction1-scope.json",
+          "sha256": "ac088cc664d40a9ba0c6f0557d3fb416ba66e865a118f3064b124c687ff9af8e"
+        },
+        "automation_focused_evidence": {
+          "scoped-static": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-automation-correction1-scoped-static-baseline1.json",
+            "sha256": "333d7362df9a1eb883b998eccfabc4ea09f240e9781d1256287cfdc5e720261a"
+          },
+          "focused": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-automation-correction1-focused-initial.json",
+            "sha256": "230136b20b3fdf04db2067535d0b60f45307b2db67107a8ef655c47947066f23"
+          },
+          "trace": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-automation-correction1-trace-focused1.json",
+            "sha256": "fa43c499b9c66f9e51a8c83b33636ed5fb3bc9bb562fdf58cacb5046f92540bb"
+          }
+        },
+        "independent_review_correction_attempt": 2,
+        "review_correction": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-scope.json",
+          "sha256": "42f819de26c603f55642a8ab3134785cc0c82963c29da41195f6f6a7a2834ec4"
+        },
+        "rejected_candidate": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-rejected-6a651dc.json",
+          "sha256": "0217ee8303d4a4194f2ad9bf4104d85fbfdb67eecf9dda93d48e5f4512514af3"
+        },
+        "review_correction_focused_evidence": {
+          "types-final2": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-types-final2.json",
+            "sha256": "ad4403b5583dc41c840a8e5ef59e8d90b334aa9dbc1f29d1ce909a920b6f50b9"
+          },
+          "lint-final2": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-lint-final2.json",
+            "sha256": "52d6cf7649a6c300f38bbe487ad70944dbe9401c6d166b72ee6c15655fc6fdaa"
+          },
+          "format-final2": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-format-final2.json",
+            "sha256": "2b0b86e85d4530a51964379944485d2aef7fc61cc64a2c827d1d543305a2a933"
+          },
+          "focused-final1": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-focused-final1.json",
+            "sha256": "1b843cb02ac87d69e9dbb38a5defc915ad136bfdaa1aaf45c64e94d7d9ba06ca"
+          },
+          "trace": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-draft-correction2-trace1.json",
+            "sha256": "1283ab4d64b5b3bdd6c2b3e4202a9ff3df63384640c511a921cd6d88139c1769"
+          },
+          "browser15": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-review-draft-correction2-focused4.json",
+            "sha256": "81e36fdf934c1141f9ec7121c48b03b85c96a18490ddf55b953b53b0ecebbe22"
+          }
+        },
+        "independent_review_round": 3,
+        "unresolved_finding": "UI3A-F3",
+        "per_finding_correction_attempt": 2,
+        "closed_findings": [
+          "UI3A-F1/UI030-M2",
+          "UI3A-F2/UI030-L2"
+        ]
+      },
+      "qualification": "Bounded30path UI acceptance only; complete122path release review separately rejected saved command-result labels. Preserve original frozen fields/history; their old pending statuses are discharged only by the cited exact acceptance."
     }
   },
   "historical_v1_048_takeover": {
@@ -7436,9 +7740,9 @@
   ],
   "blockers": [],
   "branch": "codex/v1-052-direct",
-  "commit": "013851d02b6712f949293db82ced82d2afb82ff9",
+  "commit": "bf1afe03f5c04604504e8e8d62db526ca774d904",
   "idle_reason": null,
-  "next_action": "Freeze normal14path successor of preserved6a651dc for the second and last materially different UI3A-F3 correction; overallreviewround3. Complete013base30paths/408protected.336focused/28trace/15UIbrowser/finalstatic PASS;1865trace/28history preserved. Run required exact gates, fullautomation/frontend/PostgreSQL separately, and15staff+15reference+6command browsergroups. Fresh complete013-base Astra/max/Standard/enforced-read-only zero review under standingthrough53authority is mandatory. Preserve all candidates/reports/61failedreceipts. No third automatic correction for the same unresolved UI3A-F3. Historical-label/alignment findings are closed. Then cumulative52release/publication/exactCI/ref/SAMEcard/durableclosurebefore53; Workboardhold/no retry; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+  "next_action": "Create a normal nine-file successor of preserved bf1afe0 for REL-BF-F1 correction1; run the required exact candidate checks and fresh independent review of all122 paths from published f8a33ba. Astra/max/Standard/enforced read-only under standing authority through53. Keep earlier closed findings and their attempt2 counters unchanged; independently reassess the distinct command-result classification. Preserve all rejected candidates, reports and65failed receipts. Future reviewers must use a positive evidence-path inventory excluding rawtracking payloads. Only zero-findings review allows product publication; then exactCI/ref proof, reviewed terminal records and their own publication/CI, final concrete Workboard hold resolution and supported card completion, durable52closure, then53. Keep SAMEfollowup active/OpenClaw disabled; closed53pause/no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -7446,8 +7750,8 @@
   "active_branch": "codex/v1-052-direct",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
   "candidate_sha": null,
-  "candidate_resolution": "Normal containing31-path commit resolved externally; immutable exact candidate remains frozen through full gates/review.",
-  "candidate_parent": "013851d02b6712f949293db82ced82d2afb82ff9",
+  "candidate_resolution": "Working9path saved-command-result display correction; rejectedbf remains immutable in normal history and fullf8base review is required.",
+  "candidate_parent": "bf1afe03f5c04604504e8e8d62db526ca774d904",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -7510,7 +7814,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 staff UI second draft correction verified; successor pending",
+  "phase": "V1-052 saved-result correction1 verified; normal successor pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -8631,7 +8935,8 @@
     "Automation fixture correction1: original test with12subcases (11retained+controlled delayed second terminalizer) PASS; all original assertions identical by AST comparison, only that test method changed. Scoped formatting/syntax and unchanged4-lint baseline parity PASS; supplemental whole-script lint remains4preexisting findings outside changed method, preserved.28trace/audit checks PASS;1827entries unchanged. Failed09gate/latefakewrite/deterministic1FAIL and diagnostic-loader error retained. Full exact successor gates/review pending.",
     "Staff UI review correction1:243focused/28trace PASS, finaltypes/scopedlint/format PASS.1827priortrace preserved+11=1838.3new realChromium groups PASS/0financialnetwork;6original groups alsoPASS in retained wrapper result. Final source adds obsolete-run guard/focus cleanup after browser proof; frozen successor will run9UIgroups. All expected red regressions, new harness setup errors, initial type/lint failures and both browser wrapper failures retained with exact logs.030remains independently rejected0HIGH3MEDIUM2LOW; successor review pending.",
     "Staff UI correction2:321focused/28trace/12real-browsergroups PASS; finaltypes/lint/format PASS.1838priortrace preserved+13=1851;408protected/28historicalobjects unchanged. Historical saved proposal, complete monetary input/header alignment and scope-bound unsaved draft protection verified.16new failed receipts retained (including browser harness/fixture/selector failures and three pre-existing expired-session fixture races). New browser runner uses installed Playwright API to handle native dialogs; zero financial network.3a remains rejected0HIGH1MEDIUM2LOW; normal successor/exactgates/freshreview pending.",
-    "Second UI3A-F3 correction:336focused/28trace/15native-browsergroups/finaltypeslintformat PASS.14newtrace groups preserve1851prior mappings;1865total.408protected/16othercandidatepaths/28historicalobjects unchanged. Five new failed receipts retained: four behavioral red failures; two missing synthetic manual-grant cases; two browser path/timestamp fixture failures; two browser-only lint diagnostics.6a remains rejected0H0M3L; normal successor/exactgates/fresh complete013-base review pending. Samefindingattempt2, overallreviewround3; no allowance reset."
+    "Second UI3A-F3 correction:336focused/28trace/15native-browsergroups/finaltypeslintformat PASS.14newtrace groups preserve1851prior mappings;1865total.408protected/16othercandidatepaths/28historicalobjects unchanged. Five new failed receipts retained: four behavioral red failures; two missing synthetic manual-grant cases; two browser path/timestamp fixture failures; two browser-only lint diagnostics.6a remains rejected0H0M3L; normal successor/exactgates/fresh complete013-base review pending. Samefindingattempt2, overallreviewround3; no allowance reset.",
+    "REL-BF-F1 correction1:348focused/28trace/17nativebrowsergroups/actual TypeScript project build/lint/format PASS. Nine red behavioral failures and test-only lint/type/helper failures retained.9existingpaths/429protected/40immutableobjects/28history/1870trace;65totalfailedreceipts retained. Exact successor gates and fresh completef8-base122path review pending; previous closed findings and counters unchanged."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -8653,7 +8958,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-08T12:29:57.106737+00:00",
+  "timestamp": "2026-09-08T14:46:02.932717+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -8885,7 +9190,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-08T12:29:57.106737+00:00",
+  "updated_at": "2026-09-08T14:46:02.932717+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -10008,7 +10313,7 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Retained failed-verification Payment HTTP draft; corrected normal successor resolves by containing HEAD",
+  "commit_role": "Preserved rejected complete product candidate; normal corrected successor will resolve from containing HEAD after verification.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
     "4e3d2a1180b79a18c9208aad7f9386219726bbd1"

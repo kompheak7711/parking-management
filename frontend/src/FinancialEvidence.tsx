@@ -398,9 +398,11 @@ export function ReceiptEvidence({
 export function CreditEvidence({
   resource,
   showPosition = true,
+  atConfirmation = false,
 }: {
   resource: unknown;
   showPosition?: boolean;
+  atConfirmation?: boolean;
 }) {
   const row = record(resource),
     credit = record(row.credit),
@@ -438,8 +440,18 @@ export function CreditEvidence({
       </section>
       <ExchangeRateEvidence value={row.exchange_rate} />
       {showPosition && (
-        <section aria-label="Current Credit position">
-          <h4>Current Credit position</h4>
+        <section
+          aria-label={
+            atConfirmation
+              ? "Credit position at original confirmation"
+              : "Current Credit position"
+          }
+        >
+          <h4>
+            {atConfirmation
+              ? "Credit position at original confirmation"
+              : "Current Credit position"}
+          </h4>
           <FinancialFacts
             rows={[
               [
@@ -480,9 +492,11 @@ export function CreditEvidence({
 export function RefundEvidence({
   resource,
   showPosition = true,
+  atConfirmation = false,
 }: {
   resource: unknown;
   showPosition?: boolean;
+  atConfirmation?: boolean;
 }) {
   const row = record(resource),
     refund = record(row.refund),
@@ -515,10 +529,27 @@ export function RefundEvidence({
         />
       </section>
       {showPosition && (
-        <section aria-label="Current Refund value">
-          <h4>Current Refund value</h4>
+        <section
+          aria-label={
+            atConfirmation
+              ? "Refund value at original confirmation"
+              : "Current Refund value"
+          }
+        >
+          <h4>
+            {atConfirmation
+              ? "Refund value at original confirmation"
+              : "Current Refund value"}
+          </h4>
           <FinancialFacts
-            rows={[["Current net Refund USD", money(row.net_refund_usd_cents)]]}
+            rows={[
+              [
+                atConfirmation
+                  ? "Net Refund USD at original confirmation"
+                  : "Current net Refund USD",
+                money(row.net_refund_usd_cents),
+              ],
+            ]}
           />
           <p>
             The original payout remains recorded when later verified returns
@@ -1642,7 +1673,7 @@ export function FinancialOutcomeEvidence({
       )}
       {(operation === "creditRecognize" || operation === "creditReverse") && (
         <>
-          <CreditEvidence resource={row} />
+          <CreditEvidence resource={row} atConfirmation />
           <LinkedReversalEvidence value={row.recognition_reversal} />
         </>
       )}
@@ -1654,7 +1685,7 @@ export function FinancialOutcomeEvidence({
         operation === "refundReturn" ||
         operation === "refundReturnReverse") && (
         <>
-          <RefundEvidence resource={row} />
+          <RefundEvidence resource={row} atConfirmation />
           {Array.isArray(corrections.items) &&
             corrections.items.map((value) => (
               <RefundCorrectionEvidence
@@ -1726,6 +1757,7 @@ export function CreditApplicationRecordEvidence({
       <CreditEvidence
         resource={row.credit_position}
         showPosition={showPosition}
+        atConfirmation={atConfirmation}
       />
       {(showPosition || row.reversal != null) && (
         <LinkedReversalEvidence value={row.reversal} />
