@@ -24490,6 +24490,244 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "Preserve all1644 accepted and rejected regression mappings and require additive action-context mappings without preventing future stages."
+    },
+    {
+      "test_id": "TEST-FE-390",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Recognition reversal and original Payment credit disposition agree with complete Credit position."
+    },
+    {
+      "test_id": "TEST-FE-391",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Original KHR source requires finite coherent exact exchange and channel evidence."
+    },
+    {
+      "test_id": "TEST-FE-392",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Zero outstanding balances cannot hide original Invoice lines."
+    },
+    {
+      "test_id": "TEST-FE-393",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "A missing fully paid line cannot complete an Invoice collection."
+    },
+    {
+      "test_id": "TEST-FE-394",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Cumulative sequence storage is limited to eight MiB and fails without partial completeness."
+    },
+    {
+      "test_id": "TEST-FE-395",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Repeated Credit exchange facts match the original Payment including independent rates and instants."
+    },
+    {
+      "test_id": "TEST-FE-396",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Collection declarations are finite and authoritative original and adjusted totals match all details."
+    },
+    {
+      "test_id": "TEST-FE-397",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Changed collection declarations cannot reuse a prior page snapshot."
+    },
+    {
+      "test_id": "TEST-FE-398",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Legacy Payment authorization references remain valid while reversal/disposition contradictions fail."
+    },
+    {
+      "test_id": "TEST-FE-399",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialReferenceClient.test.ts",
+      "status": "implemented",
+      "notes": "Cumulative budgeting counts multibyte UTF-8 and clears failed sequence state."
+    },
+    {
+      "test_id": "TEST-FE-400",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Actual Chromium rejects contradictory Credit/FX facts and omitted paid Invoice lines while preserving pending encrypted intent."
+    },
+    {
+      "test_id": "TEST-FE-401",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/financialReferences.browser.ts",
+      "status": "implemented",
+      "notes": "Actual Chromium enforces the cumulative UTF-8 budget and failed-context release."
+    },
+    {
+      "test_id": "test_financial_action_context_database_draft_revision_invalidates_old_pages",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Real same-amount draft edits on the first or subsequent page advance revision while existing financial guards remain unchanged."
+    },
+    {
+      "test_id": "test_financial_action_context_database_khr_credit_preserves_exact_original_fx",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Six real synthetic automatic/manual/channel KHR Credits retain original exact FX with read-only snapshots."
+    },
+    {
+      "test_id": "test_financial_action_context_database_zero_balance_retains_invoice_cardinality_and_totals",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_action_context_migration.py",
+      "status": "implemented",
+      "notes": "Paid and adjusted-to-zero Invoice lines remain counted with authoritative original and adjusted totals."
+    },
+    {
+      "test_id": "test_financial_action_context_http_preserves_exact_collection_count_and_invoice_totals",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_financial_action_context_api.py",
+      "status": "implemented",
+      "notes": "HTTP retains exact large integer totals and cardinality without caching or changing action scope."
+    },
+    {
+      "test_id": "test_v1052_action_context_review_correction_preserves_all_prior_trace",
+      "upstream_ids": [
+        "TEST-117",
+        "API-011",
+        "API-012",
+        "SEC-022",
+        "SEC-040"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "Preserve all1700 prior trace entries and require every new correction regression."
     }
   ]
 }

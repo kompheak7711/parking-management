@@ -1255,3 +1255,42 @@ def test_v1052_financial_action_context_preserves_accepted_trace_and_requires_st
         {"API-011", "API-012", "SEC-022"} <= set(entry["upstream_ids"])
         for entry in registered.values()
     )
+
+
+def test_v1052_action_context_review_correction_preserves_all_prior_trace() -> None:
+    import hashlib
+
+    entries = json.loads(MANIFEST_PATH.read_text())["entries"]
+    original = json.dumps(entries[:1700], sort_keys=True, separators=(",", ":")).encode()
+    assert (
+        hashlib.sha256(original).hexdigest()
+        == "a82b06cb07cd4ec11204a484a73ae6712bde97181d057bfa88b8e9e4ebf63e34"
+    )
+    required = {
+        "test_financial_action_context_database_zero_balance_retains_invoice_cardinality_and_totals",
+        "TEST-FE-397",
+        "test_financial_action_context_http_preserves_exact_collection_count_and_invoice_totals",
+        "TEST-FE-394",
+        "TEST-FE-396",
+        "test_v1052_action_context_review_correction_preserves_all_prior_trace",
+        "TEST-FE-392",
+        "TEST-FE-390",
+        "TEST-FE-398",
+        "TEST-FE-399",
+        "TEST-FE-393",
+        "TEST-FE-401",
+        "test_financial_action_context_database_draft_revision_invalidates_old_pages",
+        "test_financial_action_context_database_khr_credit_preserves_exact_original_fx",
+        "TEST-FE-391",
+        "TEST-FE-400",
+        "TEST-FE-395",
+    }
+    registered = {
+        entry["test_id"]: entry for entry in entries[1700:] if entry["test_id"] in required
+    }
+    assert set(registered) == required
+    assert all(entry["status"] == "implemented" for entry in registered.values())
+    assert all(
+        {"API-011", "API-012", "SEC-022"} <= set(entry["upstream_ids"])
+        for entry in registered.values()
+    )

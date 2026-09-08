@@ -29,6 +29,7 @@ class Flow:
         default_factory=list
     )
     error: Exception | None = None
+    result: dict[str, object] | None = None
 
     def get(
         self,
@@ -40,6 +41,8 @@ class Flow:
         self.calls.append((property_id, request, actor))
         if self.error is not None:
             raise self.error
+        if self.result is not None:
+            return self.result
         return {
             "data": {"purpose": request.purpose, "source_id": str(request.source_id)},
             "next_cursor": None,
@@ -256,3 +259,42 @@ def test_financial_action_context_http_unauthenticated_and_default_flow_fail_clo
             ).status_code
             == 503
         )
+
+
+@pytest.mark.parametrize("purpose", ["allocation", "credit_application"])
+def test_financial_action_context_http_preserves_exact_collection_count_and_invoice_totals(
+    purpose: str,
+) -> None:
+    prop, source, human, invoice = uuid4(), uuid4(), uuid4(), uuid4()
+    projection = {
+        "purpose": purpose,
+        "source_id": str(source),
+        "item_count": 32767,
+        "revision": "a" * 64,
+        "target": {
+            "kind": "INVOICE",
+            "id": str(invoice),
+            "line_count": 32767,
+            "original_total_usd_cents": 9007199254740993,
+            "adjusted_total_usd_cents": 9007199254740994,
+            "outstanding_usd_cents": 0,
+        },
+        "items": [],
+    }
+    flow = Flow(result={"data": projection, "next_cursor": None})
+    with TestClient(
+        create_app(
+            actor_resolver=lambda _: actor(human, prop, ACTION_CAPABILITIES[purpose]),
+            financial_action_context_flow=flow,
+        )
+    ) as client:
+        response = client.get(
+            path(prop, source, purpose),
+            params={"target_kind": "INVOICE", "target_id": str(invoice)},
+            headers={"X-Billing-Actor-ID": str(human)},
+        )
+    assert response.status_code == 200 and len(flow.calls) == 1
+    assert response.json()["data"] == projection
+    assert '"original_total_usd_cents":9007199254740993' in response.text
+    assert '"adjusted_total_usd_cents":9007199254740994' in response.text
+    assert response.headers["Cache-Control"] == "private, no-store"

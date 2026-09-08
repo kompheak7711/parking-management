@@ -16,6 +16,8 @@ import {
   type FinancialReferenceReply,
 } from "./financialReferenceClient";
 
+const MAX_CONTEXT_SEQUENCE_BYTES = 8_388_608;
+
 /** Complete selected-source facts in memory. A context never authorizes a command. */
 export class FinancialActionContextSequence {
   #scope: Readonly<{
@@ -28,6 +30,7 @@ export class FinancialActionContextSequence {
   #failed = false;
   #snapshot: string | null = null;
   #items: FinancialObject[] = [];
+  #itemBytes = 0;
   constructor(
     actorId: string,
     propertyId: string,
@@ -118,9 +121,27 @@ export class FinancialActionContextSequence {
       const snapshot = stringifyFinancialJson(facts, 1_048_576);
       if (this.#snapshot !== null && snapshot !== this.#snapshot)
         invalidFinancial();
+      const incoming = items as FinancialObject[];
+      const encoder = new TextEncoder();
+      const headerBytes = encoder.encode(
+        stringifyFinancialJson({ ...facts, items: [] }, 1_048_576),
+      ).byteLength;
+      const incomingBytes =
+        encoder.encode(stringifyFinancialJson(incoming, 1_048_576)).byteLength -
+        2;
+      const itemBytes =
+        this.#itemBytes +
+        incomingBytes +
+        (this.#items.length > 0 && incoming.length > 0 ? 1 : 0);
+      if (
+        headerBytes + itemBytes > MAX_CONTEXT_SEQUENCE_BYTES ||
+        this.#items.length + incoming.length >
+          Number(financialInteger(row.item_count, 0n, 32767n))
+      )
+        invalidFinancial();
       this.#snapshot = snapshot;
-      this.#items.push(...(items as FinancialObject[]));
-      if (this.#items.length > 32767) invalidFinancial();
+      this.#items.push(...incoming);
+      this.#itemBytes = itemBytes;
       this.#next = receipt.nextCursor;
       if (this.#next === null) {
         this.#validateComplete(row);
@@ -129,6 +150,10 @@ export class FinancialActionContextSequence {
     } catch (error) {
       this.#failed = true;
       this.#complete = false;
+      this.#items = [];
+      this.#snapshot = null;
+      this.#itemBytes = 0;
+      this.#next = null;
       throw error;
     }
   }
@@ -145,7 +170,14 @@ export class FinancialActionContextSequence {
     const identities = new Set<string>(),
       sequences = new Set<string>(),
       targets = new Set<string>();
-    let total = 0n;
+    if (
+      this.#items.length !==
+      Number(financialInteger(row.item_count, 0n, 32767n))
+    )
+      invalidFinancial();
+    let total = 0n,
+      originalTotal = 0n,
+      adjustedTotal = 0n;
     for (const item of this.#items) {
       const identity = financialId(item.id),
         sequence = financialInteger(item.sequence, 1n).toString(),
@@ -158,6 +190,14 @@ export class FinancialActionContextSequence {
         const target = financialId(detail.target_id);
         if (targets.has(target)) invalidFinancial();
         targets.add(target);
+      }
+      if (invoice) {
+        originalTotal += BigInt(
+          financialInteger(detail.original_amount_usd_cents, 1n),
+        );
+        adjustedTotal += BigInt(
+          financialInteger(detail.adjusted_amount_usd_cents),
+        );
       }
       total += BigInt(
         financialInteger(
@@ -183,13 +223,18 @@ export class FinancialActionContextSequence {
         )
       )
         invalidFinancial();
-    } else if (
-      invoice &&
-      total !==
-        BigInt(
-          financialInteger(financialObject(row.target).outstanding_usd_cents),
-        )
-    )
-      invalidFinancial();
+    } else if (invoice) {
+      const target = financialObject(row.target);
+      if (
+        this.#items.length !==
+          Number(financialInteger(target.line_count, 0n, 32767n)) ||
+        total !== BigInt(financialInteger(target.outstanding_usd_cents)) ||
+        originalTotal !==
+          BigInt(financialInteger(target.original_total_usd_cents)) ||
+        adjustedTotal !==
+          BigInt(financialInteger(target.adjusted_total_usd_cents))
+      )
+        invalidFinancial();
+    }
   }
 }

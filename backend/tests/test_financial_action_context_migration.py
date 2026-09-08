@@ -12,6 +12,7 @@ import psycopg
 import pytest
 from alembic.config import Config
 from alembic.script import ScriptDirectory
+from psycopg.types.json import Jsonb
 
 from payment_test_support import seed_payment
 from property_rental.credit import (
@@ -59,6 +60,7 @@ from test_invoice_migration import (
     invoice_api_actor,
     register_billing_service_principal,
     runtime_database_url,
+    set_draft_correction_context,
     setup_invoice_api_source,
 )
 from test_late_payment_migration import late_payment_actor
@@ -693,6 +695,9 @@ def test_financial_action_context_database_historical_void_target_is_zero(
     )
     result = get(human, prop, "credit_application_reversal", identity)
     assert cast(dict[str, object], data(result)["target"])["status"] == "VOID"
+    declared = cast(dict[str, object], data(result)["target"])
+    assert declared["line_count"] == 1
+    assert declared["original_total_usd_cents"] == declared["adjusted_total_usd_cents"] == 80000
     assert cast(dict[str, object], data(result)["target"])["outstanding_usd_cents"] == 0
     assert (
         cast(dict[str, object], cast(list[dict[str, object]], data(result)["items"])[0]["data"])[
@@ -1003,4 +1008,237 @@ def test_financial_action_context_database_invoice_debit_preserves_original_and_
         assert item["original_amount_usd_cents"] == 80000
         assert item["adjusted_amount_usd_cents"] == item["outstanding_usd_cents"] == 80100
         assert cast(dict[str, object], row["target"])["outstanding_usd_cents"] == 80100
+        declared = cast(dict[str, object], row["target"])
+        assert row["item_count"] == declared["line_count"] == 1
+        assert declared["original_total_usd_cents"] == 80000
+        assert declared["adjusted_total_usd_cents"] == 80100
+    assert snapshot(migrated_database_url) == before
+
+
+@pytest.mark.parametrize("purpose", ["allocation", "credit_application"])
+@pytest.mark.parametrize("changed_sequence", [1, 2])
+def test_financial_action_context_database_draft_revision_invalidates_old_pages(
+    migrated_database_url: str,  # noqa: F811
+    purpose: str,
+    changed_sequence: int,
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, customer, first_source = setup_invoice_api_source(
+            connection, amount_usd_cents=100, source_reference="draft-context-source"
+        )
+        second_source, replacement = uuid4(), uuid4()
+        for identity, description in [
+            (second_source, "Second original line"),
+            (replacement, "Corrected original description"),
+        ]:
+            connection.execute(
+                "INSERT INTO app.authorized_nonrecurring_obligations "
+                "(id,customer_id,category,description,authorized_amount_usd_cents,"
+                "governing_due_date,due_date_source,source_reference,authorized_at,authorized_by,"
+                "authorization_reference) SELECT %s,customer_id,category,%s,author"
+                "ized_amount_usd_cents,"
+                "governing_due_date,due_date_source,%s,clock_timestamp(),authorized_by,"
+                "authorization_reference FROM app.authorized_nonrecurring_obligations WHERE id=%s",
+                (identity, description, str(identity), first_source),
+            )
+        payment = seed_payment(
+            connection, actor_id=human, property_id=prop, customer_id=customer, amount=1000
+        )
+    credit = credit_id(recognize(prop, payment, human, amount=100))
+    invoice_service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+    draft = invoice_service.create_draft(
+        prop, CreateInvoiceDraftCommand(uuid4(), first_source), actor=invoice_api_actor(human, prop)
+    )
+    invoice = UUID(str(draft["id"]))
+    with psycopg.connect(migrated_database_url) as connection:
+        set_draft_correction_context(
+            connection, actor_id=human, reason="Include second approved source"
+        )
+        connection.execute(
+            "UPDATE app.invoices SET original_total_usd_cents=200,version=vers"
+            "ion+1,updated_at=clock_timestamp(),updated_by=%s WHERE id=%s",
+            (human, invoice),
+        )
+        connection.execute(
+            "INSERT INTO app.invoice_lines(id,invoice_id,line_sequence,categor"
+            "y,description,amount_usd_cents,authorized_obligation_id,calculati"
+            "on_trace,created_by) "
+            "VALUES (%s,%s,2,'MISCELLANEOUS_CHARGES','Second original line',100,%s,%s,%s)",
+            (
+                uuid4(),
+                invoice,
+                second_source,
+                Jsonb(
+                    {
+                        "formula": "authorized_source_exact_amount",
+                        "authorized_obligation_id": str(second_source),
+                        "authorized_amount_usd_cents": 100,
+                    }
+                ),
+                human,
+            ),
+        )
+        connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+    identity = payment if purpose == "allocation" else credit
+    first = get(human, prop, purpose, identity, target_kind="INVOICE", target_id=invoice, limit=1)
+    cursor = str(first["next_cursor"])
+    assert first["next_cursor"] is not None
+    initial = get(
+        human,
+        prop,
+        purpose,
+        identity,
+        target_kind="INVOICE",
+        target_id=invoice,
+        limit=1,
+        cursor=cursor,
+    )
+    assert initial["next_cursor"] is None and data(initial)["revision"] == data(first)["revision"]
+    assert cast(dict[str, object], data(first)["target"])["outstanding_usd_cents"] == 0
+    declared = cast(dict[str, object], data(first)["target"])
+    assert data(first)["item_count"] == data(initial)["item_count"] == declared["line_count"] == 2
+    assert declared["original_total_usd_cents"] == declared["adjusted_total_usd_cents"] == 200
+    guard_sql = (
+        "SELECT COALESCE((SELECT revision FROM app.invoice_serialization_g"
+        "uards WHERE guard_key=%s),0)"
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        old_guard = connection.execute(guard_sql, (f"invoice-financial:{invoice}",)).fetchone()
+        old_version = connection.execute(
+            "SELECT version FROM app.invoices WHERE id=%s", (invoice,)
+        ).fetchone()
+        old_events = connection.execute(
+            "SELECT count(*) FROM app.invoice_draft_revision_events WHERE invoice_id=%s", (invoice,)
+        ).fetchone()
+        set_draft_correction_context(
+            connection, actor_id=human, reason="Correct authorized line source and description"
+        )
+        connection.execute(
+            "UPDATE app.invoices SET version=version+1,updated_at=clock_timest"
+            "amp(),updated_by=%s WHERE id=%s",
+            (human, invoice),
+        )
+        connection.execute(
+            "UPDATE app.invoice_lines SET description='Corrected original desc"
+            "ription',authorized_obligation_id=%s,calculation_trace=%s,last_ch"
+            "anged_by=%s WHERE invoice_id=%s AND line_sequence=%s",
+            (
+                replacement,
+                Jsonb(
+                    {
+                        "formula": "authorized_source_exact_amount",
+                        "authorized_obligation_id": str(replacement),
+                        "authorized_amount_usd_cents": 100,
+                    }
+                ),
+                human,
+                invoice,
+                changed_sequence,
+            ),
+        )
+        connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        assert (
+            connection.execute(guard_sql, (f"invoice-financial:{invoice}",)).fetchone() == old_guard
+        )
+        assert old_version is not None and old_events is not None
+        assert connection.execute(
+            "SELECT version FROM app.invoices WHERE id=%s", (invoice,)
+        ).fetchone() == (old_version[0] + 1,)
+        new_events = connection.execute(
+            "SELECT count(*) FROM app.invoice_draft_revision_events WHERE invoice_id=%s", (invoice,)
+        ).fetchone()
+        assert new_events is not None and new_events[0] > old_events[0]
+    after_correction = snapshot(migrated_database_url)
+    with pytest.raises(FinancialActionContextChanged):
+        get(
+            human,
+            prop,
+            purpose,
+            identity,
+            target_kind="INVOICE",
+            target_id=invoice,
+            limit=1,
+            cursor=cursor,
+        )
+    fresh = get(human, prop, purpose, identity, target_kind="INVOICE", target_id=invoice, limit=1)
+    assert data(fresh)["revision"] != data(first)["revision"]
+    assert snapshot(migrated_database_url) == after_correction
+
+
+@pytest.mark.parametrize("channel_kind", ["none", "manual", "complete", "amount", "usd", "rate"])
+def test_financial_action_context_database_khr_credit_preserves_exact_original_fx(
+    migrated_database_url: str,  # noqa: F811
+    channel_kind: str,
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        payment = fx_payment(
+            connection,
+            manual=channel_kind == "manual",
+            channel=channel_kind in {"complete", "amount", "usd", "rate"},
+            channel_amount_only=channel_kind == "amount",
+            channel_usd_only=channel_kind == "usd",
+            channel_rate_only=channel_kind == "rate",
+            channel_rate=Decimal("4100.123456") if channel_kind == "rate" else None,
+            amount=4142 if channel_kind == "rate" else 4143,
+        )
+        payment_row = connection.execute(
+            "SELECT confirmed_by,property_id FROM app.payments WHERE id=%s", (payment,)
+        ).fetchone()
+        assert payment_row is not None
+        human, prop = payment_row
+    identity = credit_id(recognize(prop, payment, human, 80))
+    before = snapshot(migrated_database_url)
+    result = get(human, prop, "credit_reversal", identity)
+    resource = cast(dict[str, object], data(result)["payment_resource"])
+    credit = cast(dict[str, object], context(result)["credit"])
+    original_fx = cast(dict[str, object], resource["exchange_rate"])
+    assert credit["exchange_rate"] == {k: v for k, v in original_fx.items() if k != "entered_by"}
+    assert data(result)["item_count"] == 0 and data(result)["items"] == []
+    assert cast(dict[str, object], credit["position"])["recognized_usd_cents"] == 80
+    assert snapshot(migrated_database_url) == before
+
+
+@pytest.mark.parametrize("zero_kind", ["paid", "adjusted"])
+def test_financial_action_context_database_zero_balance_retains_invoice_cardinality_and_totals(
+    migrated_database_url: str,  # noqa: F811
+    zero_kind: str,
+) -> None:
+    human, prop, credit, invoice, line, payment = application_source(migrated_database_url)
+    if zero_kind == "paid":
+        credits().apply(
+            prop,
+            credit,
+            designated(invoice, line, 80000),
+            actor=actor(human, prop, "credits.apply"),
+        )
+    else:
+        invoice_service = PostgresInvoiceService(runtime_database_url(), financial_database_url())
+        staff = invoice_api_actor(human, prop)
+        current = invoice_service.get(invoice, actor=staff)
+        invoice_service.adjust(
+            prop,
+            invoice,
+            AdjustInvoiceCommand(
+                uuid4(),
+                line,
+                AdjustmentType.CREDIT,
+                80000,
+                "synthetic-zero",
+                "Approved obligation reduction",
+                int(str(current["version"])),
+            ),
+            actor=staff,
+        )
+    before = snapshot(migrated_database_url)
+    for purpose, identity in [("allocation", payment), ("credit_application", credit)]:
+        result = get(human, prop, purpose, identity, target_kind="INVOICE", target_id=invoice)
+        row = data(result)
+        target = cast(dict[str, object], row["target"])
+        assert row["item_count"] == target["line_count"] == 1
+        assert target["status"] == "PAID" and target["outstanding_usd_cents"] == 0
+        assert target["original_total_usd_cents"] == 80000
+        assert target["adjusted_total_usd_cents"] == (80000 if zero_kind == "paid" else 0)
+        items = cast(list[dict[str, object]], row["items"])
+        assert len(items) == 1 and result["next_cursor"] is None
+        assert cast(dict[str, object], items[0]["data"])["outstanding_usd_cents"] == 0
     assert snapshot(migrated_database_url) == before

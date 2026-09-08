@@ -180,3 +180,63 @@ Exact candidate dc24920 failed only the initial backend formatting gate: four ne
 Candidate99d0b55 preserved: formatting passed187files, then lint found one106character Refund-correction route key. Correction2 uses adjacent string literals with identical fullPythonAST; preview uses the actual repository filename/cwd and passes format/lint without ignores. All backend checks must pass before the next commit. Its986PostgreSQL/189automation/migration gates passed; first frontend attempt timed out in unchanged existingTEST-FE079 with831otherPASS. Isolated same-source probe and full frontend recovery passed; cause is not established, and no assertion/timeout/source was changed. Full checks are scheduled to avoid competing frontend/database/automation runs. Both failed candidates and all raw results are retained; no independent review was submitted for either.
 
 Correction2 full prefreeze backend verification passes:2547tests,963explicit database-only skips,187formatted/linted/typed files,build/import. The route inventory module AST is identical to99d0b55. Preserve both failed gate candidates and original timeout evidence; frontend isolated recovery passed832tests with unchanged assertions/timeouts/source. The next immutable successor still requires its applicable full exact gates and one completec65-base independent review.
+
+## Independent review correction1 after 06aa8ed
+
+The complete31-path, three-commit candidate06aa8ed was independently REJECTED with
+zero HIGH, four MEDIUM and zero LOW findings. Report SHA256
+9e092a38c4f4b8cd02b720c4fe9371a1c9fddae65ca4e3f6bc5023adc1c8c3a7;
+rejection receipt SHA256
+05aafab9a4024d72ab7c44e41d56e797d403b9b01690454d1d9e1ab450add787.
+The candidate, report, all prior exact/focused failures and every regression remain
+preserved. This is correction1 for each new FAC-06-M1–M4 finding, independent of
+the two completed route-inventory formatting corrections. No finding is waived.
+
+- FAC-06-M1-SOURCE-FACTS: validate finite original Payment, position, Receipt link,
+  Credit recognition/position and FX schemas before client provenance registration.
+  Match original currency/FX record identities and repeated rate/channel fields;
+  enforce existing USD/no-FX and KHR/required-FX semantics. Credit reversal is whole
+  recognition or zero, must agree with an included reversal, and active recognized
+  value must fit the source Payment's recognized-Credit disposition. Validate
+  source receipt and immutable reversal references consistently. Preserve actual
+  channel-value precedence, exact rates and accepted original legacy shapes.
+- FAC-06-M2-INVOICE-COMPLETENESS: add a revision-bound total item_count for every
+  context and authoritative Invoice line_count, original_total_usd_cents and
+  adjusted_total_usd_cents. Derive these from the exact selected source/target in
+  the same read-only snapshot. The complete client sequence must match cardinality
+  and original/adjusted/current totals, including paid, adjusted-to-zero, DRAFT
+  and VOID lines. Original/adjusted totals follow existing bigint schema limits;
+  adjusted may exceed original because legitimate DEBIT adjustments are supported.
+- FAC-06-M3-DRAFT-REVISION: include selected Invoice version plus scoped draft
+  revision-event count and maximum identity in read-only revision evidence.
+  Existing draft writes record append-only history and advance header version;
+  new line insertions also affect cardinality. Cover changes outside the requested
+  page and reverted facts without hashing unbounded history payloads. Keep all
+  existing write policies/triggers and migrations through46 unchanged. Prove real
+  PostgreSQL stale-page409 after a permitted draft correction, not only a mock.
+- FAC-06-M4-SEQUENCE-BUDGET: allow at most8MiB of accumulated exact UTF8 context
+  snapshot and item serialization, including structural overhead. This is an
+  explicit availability ceiling, not a claim that all historic evidence fits.
+  Check prospective bytes before retaining new items; on any failure clear retained
+  buffers, poison completeness and return no data. Detached completed-data copies
+  remain bounded by the same limit. Never truncate evidence or raise wire limits.
+
+Use the existing unpublished migration47 and bounded service/client modules only.
+All nine action grants, request routes, keyset-before-payload ordering, existing
+per-response ceilings, financial commands and encrypted recovery remain intact.
+Update synthetic fixtures to actual corrected database projections and add unit,
+API, real PostgreSQL, actual-client and Chromium regressions for all four findings.
+Preserve red results before correcting runtime code and register assertion-level
+trace entries without replacing any of the1700 prior mappings.
+
+Freeze a normal successor of06aa8ed. Run all applicable exact gates, scheduling
+the frontend suite without competing full suites, and one fresh completec65-base
+31-path/four-commit Astra/max/Standard/enforced-read-only independent review under
+the existing non-hash-limited through53 authorization. Source corrections require
+new exact verification; no tests repeat merely because approval was pending.
+Staff UI planning remains outside the checkout and unactivated until this stage
+receives independent zero-finding acceptance. Full52closure precedes53; fully
+closed53pauseSAME native, OpenClawdisabled/no54. The separate Workboard private-note
+restriction remains unresolved and must not be retried.
+
+Correction1 implementation verified: finite original Payment/Credit/FX schemas and repeated source facts; whole recognition reversal consistent with disposition; revision-bound item_count and Invoice line_count/original_total_usd_cents/adjusted_total_usd_cents; Invoice version plus append-only draft history count/max; cumulative8388608UTF8bytes checked before retention and failure clears items/snapshot/cursor. Existing legitimate channel field precedence and legacy Payment/reversal references remain valid.45realPG,278client,14Chromium,26trace tests and full2555backend975DB-onlyskips/187static/build/import pass.1700prior mappings preserved plus17new. Original red evidence and test-helper/static failures remain retained; first Receipt mismatch premise is explicitly qualified. Fresh exact candidate gates and complete-base independent zero review are still required.

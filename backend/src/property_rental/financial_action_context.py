@@ -166,6 +166,7 @@ class FinancialActionContextService:
                 "unsupported_application",
                 "anchor_found",
                 "items",
+                "item_count",
             }:
                 raise _unavailable()
             payment_id = raw["source_payment_id"]
@@ -185,6 +186,9 @@ class FinancialActionContextService:
             raise _unavailable()
         if raw["target"] is not None and not isinstance(raw["target"], dict):
             raise _unavailable()
+        item_count = raw["item_count"]
+        if type(item_count) is not int or not 0 <= item_count <= 32767:
+            raise _unavailable()
         evidence = raw["revision_evidence"]
         counters = {
             "payment_revision",
@@ -192,6 +196,9 @@ class FinancialActionContextService:
             "deposit_revision",
             "target_count",
             "target_revision",
+            "target_invoice_version",
+            "target_draft_event_count",
+            "target_draft_event_max",
         }
         binding = {
             "property": str(property_id),
@@ -214,14 +221,18 @@ class FinancialActionContextService:
         # Include bounded visible source/target facts as well as the complete guard
         # vector, so a changed display or draft target cannot cross a page boundary.
         revision = hashlib.sha256(
-            _encode([evidence, source, raw["context"], raw["target"]])
+            _encode([evidence, source, raw["context"], raw["target"], item_count])
         ).hexdigest()
         if expected is not None and expected != revision:
             raise FinancialActionContextChanged("Financial context changed; reload it")
         if raw["anchor_found"] is not True:
             raise PaymentReadInvalidError("Financial action cursor was not found")
         items = raw["items"]
-        if not isinstance(items, list) or len(items) > checked.limit + 1:
+        if (
+            not isinstance(items, list)
+            or len(items) > min(checked.limit + 1, item_count)
+            or (checked.cursor is None and len(items) != min(checked.limit + 1, item_count))
+        ):
             raise _unavailable()
         kind = {
             "allocation_reversal": "ALLOCATION_LINE",
@@ -232,7 +243,7 @@ class FinancialActionContextService:
             and checked.target_kind == "INVOICE"
         ):
             kind = "INVOICE_LINE"
-        if kind is None and items:
+        if kind is None and (items or item_count):
             raise _unavailable()
         previous = (after_sequence or 0, after_id.int if after_id else 0)
         for item in items:
@@ -270,6 +281,7 @@ class FinancialActionContextService:
             "target": raw["target"],
             "revision": revision,
             "items": visible,
+            "item_count": item_count,
         }
         if len(_encode(result)) > MAX_ACTION_CONTEXT_BYTES:
             raise _unavailable()

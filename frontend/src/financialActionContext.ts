@@ -9,6 +9,7 @@ import {
   type FinancialObject,
 } from "./financialContracts";
 import { validateFinancialReply } from "./financialResponse";
+import { ExactJsonNumber } from "./financialJson";
 
 export const FINANCIAL_ACTION_PURPOSES = [
   "allocation",
@@ -154,16 +155,292 @@ function reversal(
   id(row.actor_id);
   if (row.authorization_reference !== capability) invalidFinancial();
 }
+function rateMillionths(value: unknown): bigint {
+  const literal =
+    value instanceof ExactJsonNumber
+      ? value.literal
+      : typeof value === "string"
+        ? value
+        : typeof value === "bigint" ||
+            (typeof value === "number" && Number.isSafeInteger(value))
+          ? String(value)
+          : invalidFinancial();
+  if (!/^(?:0|[1-9][0-9]{0,13})(?:\.[0-9]{1,6})?$/.test(literal))
+    return invalidFinancial();
+  const [whole = "", fraction = ""] = literal.split(".");
+  const scaled = BigInt(whole) * 1_000_000n + BigInt(fraction.padEnd(6, "0"));
+  if (scaled <= 0n) invalidFinancial();
+  return scaled;
+}
+function ceilRatio(numerator: bigint, denominator: bigint): bigint {
+  return (numerator + denominator - 1n) / denominator;
+}
+function sourceExchangeRate(
+  value: unknown,
+  payment: FinancialObject,
+  includesActor: boolean,
+): FinancialObject | null {
+  if (payment.received_currency === "USD") {
+    if (value !== null) invalidFinancial();
+    return null;
+  }
+  const fx = financialObject(value);
+  exactKeys(fx, [
+    "id",
+    "reference_rate_khr_per_usd",
+    "system_rate_khr_per_usd",
+    "markup_basis_points",
+    "rate_source",
+    "applicable_at",
+    ...(includesActor ? ["entered_by"] : []),
+    "channel_actual_currency",
+    "channel_actual_amount_minor",
+    "channel_actual_usd_value_cents",
+    "channel_actual_rate_khr_per_usd",
+    "channel_confirmed_at",
+  ]);
+  same(fx.id, payment.exchange_rate_record_id);
+  const reference = rateMillionths(fx.reference_rate_khr_per_usd),
+    system = money(fx.system_rate_khr_per_usd, 1n);
+  if (
+    money(fx.markup_basis_points, 50n, 50n) !== 50n ||
+    system !== ceilRatio(reference * 1005n, 1_000_000_000n)
+  )
+    invalidFinancial();
+  choice(fx.rate_source, ["ABA_AUTOMATIC", "ABA_EQUIVALENT_MANUAL"]);
+  if (includesActor) {
+    optionalId(fx.entered_by);
+    if (fx.rate_source === "ABA_EQUIVALENT_MANUAL" && fx.entered_by === null)
+      invalidFinancial();
+  }
+  const confirmed = financialInstant(payment.confirmed_at);
+  if (financialInstant(fx.applicable_at) > confirmed) invalidFinancial();
+  const channel = [
+    "channel_actual_currency",
+    "channel_actual_amount_minor",
+    "channel_actual_usd_value_cents",
+    "channel_actual_rate_khr_per_usd",
+  ].some((key) => fx[key] !== null);
+  if (channel) {
+    label(payment.channel_transaction_reference);
+    if (financialInstant(fx.channel_confirmed_at) > confirmed)
+      invalidFinancial();
+  } else if (fx.channel_confirmed_at !== null) invalidFinancial();
+  if (
+    fx.channel_actual_currency !== null &&
+    fx.channel_actual_currency !== "KHR"
+  )
+    invalidFinancial();
+  const received = money(payment.received_amount_minor, 1n, maximumEvent),
+    accounting = money(payment.usd_accounting_value_cents, 1n, maximumEvent);
+  if (
+    fx.channel_actual_amount_minor !== null &&
+    money(fx.channel_actual_amount_minor, 1n) !== received
+  )
+    invalidFinancial();
+  if (
+    fx.channel_actual_usd_value_cents !== null &&
+    money(fx.channel_actual_usd_value_cents, 1n) !== accounting
+  )
+    invalidFinancial();
+  const usedRate =
+    fx.channel_actual_rate_khr_per_usd === null
+      ? system * 1_000_000n
+      : rateMillionths(fx.channel_actual_rate_khr_per_usd);
+  if (
+    fx.channel_actual_amount_minor === null &&
+    received !== ceilRatio(accounting * usedRate, 100_000_000n)
+  )
+    invalidFinancial();
+  if (
+    fx.channel_actual_amount_minor !== null &&
+    fx.channel_actual_usd_value_cents === null
+  ) {
+    const numerator = received * 100_000_000n;
+    if (
+      accounting !==
+      numerator / usedRate + ((numerator % usedRate) * 2n >= usedRate ? 1n : 0n)
+    )
+      invalidFinancial();
+  }
+  return fx;
+}
+function sourcePaymentFacts(
+  resource: FinancialObject,
+  payment: FinancialObject,
+): void {
+  exactKeys(resource, [
+    "payment",
+    "property_timezone",
+    "position",
+    "receipt",
+    "reversal",
+    "exchange_rate_evidence_id",
+    "exchange_rate",
+  ]);
+  exactKeys(payment, [
+    "id",
+    "status",
+    "lease_id",
+    "property_id",
+    "confirmed_at",
+    "confirmed_by",
+    "payment_date",
+    "payment_number",
+    "payer_customer_id",
+    "payer_intent_memo",
+    "payment_method_id",
+    "received_currency",
+    "payment_scope_kind",
+    "identified_invoice_id",
+    "received_amount_minor",
+    "authorization_reference",
+    "exchange_rate_record_id",
+    "usd_accounting_value_cents",
+    "payment_method_code_snapshot",
+    "payment_method_name_snapshot",
+    "channel_transaction_reference",
+    "identified_late_payment_charge_id",
+  ]);
+  if (resource.property_timezone !== "Asia/Phnom_Penh") invalidFinancial();
+  for (const key of [
+    "id",
+    "property_id",
+    "confirmed_by",
+    "payer_customer_id",
+    "payment_method_id",
+  ])
+    id(payment[key]);
+  for (const key of [
+    "lease_id",
+    "identified_invoice_id",
+    "identified_late_payment_charge_id",
+    "exchange_rate_record_id",
+  ])
+    optionalId(payment[key]);
+  for (const key of [
+    "payment_number",
+    "authorization_reference",
+    "payment_method_code_snapshot",
+    "payment_method_name_snapshot",
+  ])
+    label(payment[key]);
+  for (const key of ["payer_intent_memo", "channel_transaction_reference"])
+    if (payment[key] !== null) label(payment[key]);
+  date(payment.payment_date);
+  financialInstant(payment.confirmed_at);
+  choice(payment.status, ["RECEIVED", "REVERSED"]);
+  choice(payment.payment_scope_kind, [
+    "NORMAL_CUSTOMER",
+    "THIRD_PARTY_IDENTIFIED",
+  ]);
+  choice(payment.received_currency, ["USD", "KHR"]);
+  money(payment.received_amount_minor, 1n, maximumEvent);
+  if (resource.receipt !== null) {
+    const linked = financialObject(resource.receipt);
+    exactKeys(linked, ["id", "receipt_number"]);
+    id(linked.id);
+    label(linked.receipt_number);
+  }
+  if ((resource.reversal !== null) !== (payment.status === "REVERSED"))
+    invalidFinancial();
+  if (resource.reversal !== null) {
+    const reversed = financialObject(resource.reversal);
+    exactKeys(reversed, [
+      "id",
+      "payment_id",
+      "reason",
+      "occurred_at",
+      "actor_id",
+      "authorization_reference",
+    ]);
+    id(reversed.id);
+    same(reversed.payment_id, payment.id);
+    id(reversed.actor_id);
+    label(reversed.reason);
+    label(reversed.authorization_reference);
+    financialInstant(reversed.occurred_at);
+  }
+  if (payment.received_currency === "USD") {
+    if (
+      payment.exchange_rate_record_id !== null ||
+      resource.exchange_rate_evidence_id !== null ||
+      money(payment.received_amount_minor, 1n, maximumEvent) !==
+        money(payment.usd_accounting_value_cents, 1n, maximumEvent)
+    )
+      invalidFinancial();
+  } else
+    same(resource.exchange_rate_evidence_id, payment.exchange_rate_record_id);
+  sourceExchangeRate(resource.exchange_rate, payment, true);
+}
+function repeatedCreditExchangeRate(
+  value: unknown,
+  resource: FinancialObject,
+): void {
+  const payment = financialObject(resource.payment);
+  const creditRate = sourceExchangeRate(value, payment, false);
+  if (creditRate === null) return;
+  const original = financialObject(resource.exchange_rate);
+  for (const [key, value] of Object.entries(creditRate)) {
+    const expected = original[key];
+    if (value === null || expected === null) {
+      if (value !== expected) invalidFinancial();
+    } else if (
+      key === "reference_rate_khr_per_usd" ||
+      key === "channel_actual_rate_khr_per_usd"
+    ) {
+      if (rateMillionths(value) !== rateMillionths(expected))
+        invalidFinancial();
+    } else if (
+      [
+        "system_rate_khr_per_usd",
+        "markup_basis_points",
+        "channel_actual_amount_minor",
+        "channel_actual_usd_value_cents",
+      ].includes(key)
+    ) {
+      if (money(value) !== money(expected)) invalidFinancial();
+    } else if (key === "applicable_at" || key === "channel_confirmed_at") {
+      if (financialInstant(value) !== financialInstant(expected))
+        invalidFinancial();
+    } else if (value !== expected) invalidFinancial();
+  }
+}
+
 function credit(
   value: unknown,
   property: string,
-  payment: FinancialObject,
+  resource: FinancialObject,
   requestId: string,
 ): FinancialObject {
+  const payment = financialObject(resource.payment);
   const row = financialObject(value),
     item = financialObject(row.credit),
     position = financialObject(row.position);
   exactKeys(row, ["credit", "position", "source_payment", "exchange_rate"]);
+  exactKeys(item, [
+    "id",
+    "customer_id",
+    "source_payment_id",
+    "recognized_usd_cents",
+    "recognized_at",
+    "recognized_by",
+    "reason",
+    "customer_authorization_reference",
+    "authorization_reference",
+  ]);
+  exactKeys(position, [
+    "customer_credit_id",
+    "customer_id",
+    "source_payment_id",
+    "property_id",
+    "recognized_usd_cents",
+    "applied_usd_cents",
+    "refunded_usd_cents",
+    "reversed_usd_cents",
+    "available_usd_cents",
+  ]);
+  repeatedCreditExchangeRate(row.exchange_rate, resource);
   validateFinancialReply(
     { data: row, meta: { property_id: property, request_id: requestId } },
     captureFinancialRequest({
@@ -204,6 +481,19 @@ function credit(
   ].map((key) => money(position[key], 0n, recognized));
   if (amounts.reduce((sum, amount) => sum + amount, 0n) !== recognized)
     invalidFinancial();
+  const reversed = money(position.reversed_usd_cents, 0n, recognized);
+  const active = recognized - reversed;
+  if (
+    (reversed !== 0n && reversed !== recognized) ||
+    recognized > money(payment.usd_accounting_value_cents, 1n, maximumEvent) ||
+    active >
+      money(
+        financialObject(financialObject(resource.position).dispositions)
+          .credit_usd_cents,
+      ) ||
+    (payment.status === "REVERSED" && active !== 0n)
+  )
+    invalidFinancial();
   financialInstant(item.recognized_at);
   id(item.recognized_by);
   label(item.reason);
@@ -229,6 +519,9 @@ function target(value: unknown, property: string): FinancialObject {
       "due_date",
       "issued_at",
       "outstanding_usd_cents",
+      "line_count",
+      "original_total_usd_cents",
+      "adjusted_total_usd_cents",
     ]);
     label(row.invoice_number);
     date(row.due_date);
@@ -240,7 +533,15 @@ function target(value: unknown, property: string): FinancialObject {
       "VOID",
     ]);
     if (row.issued_at !== null) financialInstant(row.issued_at);
-    const outstanding = money(row.outstanding_usd_cents);
+    const count = money(row.line_count, 0n, 32767n),
+      originalTotal = money(row.original_total_usd_cents),
+      adjustedTotal = money(row.adjusted_total_usd_cents),
+      outstanding = money(row.outstanding_usd_cents, 0n, adjustedTotal);
+    if (
+      (count === 0n && (originalTotal !== 0n || adjustedTotal !== 0n)) ||
+      (count > 0n && originalTotal < count)
+    )
+      invalidFinancial();
     if (
       (["DRAFT", "VOID", "PAID"].includes(status) && outstanding !== 0n) ||
       (["UNPAID", "PARTIALLY_PAID"].includes(status) && outstanding === 0n)
@@ -655,6 +956,7 @@ export function validateFinancialActionContext(
     "target",
     "revision",
     "items",
+    "item_count",
   ]);
   const purpose = choice(input.purpose, FINANCIAL_ACTION_PURPOSES),
     source = id(input.source_id);
@@ -675,6 +977,7 @@ export function validateFinancialActionContext(
   const payment =
     paymentResource === null ? null : financialObject(paymentResource.payment);
   if (payment !== null) {
+    sourcePaymentFacts(paymentResource ?? invalidFinancial(), payment);
     validateFinancialReply(
       {
         data: paymentResource,
@@ -715,6 +1018,7 @@ export function validateFinancialActionContext(
       position.currency !== "USD" ||
       money(position.original_usd_cents, 1n, maximumEvent) !== original ||
       used > original ||
+      (payment.status === "REVERSED" && used !== 0n) ||
       available !== (payment.status === "REVERSED" ? 0n : original - used)
     )
       invalidFinancial();
@@ -728,7 +1032,12 @@ export function validateFinancialActionContext(
     optionalId(payment.identified_late_payment_charge_id);
   } else if (!purpose.startsWith("refund_")) invalidFinancial();
   const creditRow = Object.hasOwn(context, "credit")
-    ? credit(context.credit, property, payment ?? invalidFinancial(), requestId)
+    ? credit(
+        context.credit,
+        property,
+        paymentResource ?? invalidFinancial(),
+        requestId,
+      )
     : null;
   const selected = row.target === null ? null : target(row.target, property);
   const posting = purpose === "allocation" || purpose === "credit_application";
@@ -785,13 +1094,21 @@ export function validateFinancialActionContext(
       ...(purpose === "credit_reversal" ? ["reversal"] : []),
     ]);
     same(financialObject(creditRow?.credit).id, source);
-    if (purpose === "credit_reversal")
+    if (purpose === "credit_reversal") {
       reversal(
         context.reversal,
         "customer_credit_id",
         source,
         "credits.reverse",
       );
+      const creditPosition = financialObject(creditRow?.position);
+      if (
+        (context.reversal !== null) !==
+        (money(creditPosition.reversed_usd_cents) ===
+          money(creditPosition.recognized_usd_cents, 1n, maximumEvent))
+      )
+        invalidFinancial();
+    }
   } else if (reversing) {
     const allocation = purpose === "allocation_reversal";
     exactKeys(context, [
@@ -850,10 +1167,11 @@ export function validateFinancialActionContext(
   const page = financialObject(envelope.page);
   exactKeys(page, ["limit", "next_cursor"]);
   const limit = Number(financialInteger(input.limit ?? 50, 1n, 100n));
+  const itemCount = Number(financialInteger(row.item_count, 0n, 32767n));
   if (
     page.limit !== limit ||
     !Array.isArray(row.items) ||
-    row.items.length > limit
+    row.items.length > Math.min(limit, itemCount)
   )
     invalidFinancial();
   let previous =
@@ -867,6 +1185,12 @@ export function validateFinancialActionContext(
         : posting && selected?.kind === "INVOICE"
           ? "INVOICE_LINE"
           : null;
+  if (
+    (expectedKind === null && itemCount !== 0) ||
+    (expectedKind === "INVOICE_LINE" &&
+      money(selected?.line_count, 0n, 32767n) !== BigInt(itemCount))
+  )
+    invalidFinancial();
   for (const raw of row.items) {
     const item = financialObject(raw);
     exactKeys(item, ["sequence", "id", "kind", "data"]);

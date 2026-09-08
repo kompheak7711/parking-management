@@ -869,7 +869,12 @@ export async function runFinancialActionContextBrowserChecks(): Promise<
     };
     const request = { ...sample.request, limit: 1 };
     const large = 9007199254740993n;
-    financialObject(sample.data.target).outstanding_usd_cents = large;
+    sample.data.item_count = 2;
+    const declaredTarget = financialObject(sample.data.target);
+    declaredTarget.line_count = 2;
+    declaredTarget.outstanding_usd_cents = large;
+    declaredTarget.original_total_usd_cents = large;
+    declaredTarget.adjusted_total_usd_cents = large;
     const client = createFinancialReferenceClient((url, init) => {
       check(typeof url === "string", "Finite continuation URL");
       const last = new URL(url, "https://synthetic.invalid").searchParams.has(
@@ -966,6 +971,7 @@ export async function runFinancialActionContextBrowserChecks(): Promise<
         detachedAgain.items.length === 2,
       "Detached snapshot cannot mutate completed facts",
     );
+    await checkActionContextReviewBoundaries(actor);
     const preserved = await sealedIntentStore.read(actor);
     check(
       preserved?.requestKey === key && preserved.plaintext === plaintext,
@@ -979,8 +985,200 @@ export async function runFinancialActionContextBrowserChecks(): Promise<
     passed.push("TEST-FE-387");
     passed.push("TEST-FE-388");
     passed.push("TEST-FE-389");
+    passed.push("TEST-FE-400");
+    passed.push("TEST-FE-401");
     return passed;
   } finally {
     await sealedIntentStore.clear(actor, key);
   }
+}
+
+async function checkActionContextReviewBoundaries(
+  actor: string,
+): Promise<void> {
+  const invoice = actionContextFixtures.find(
+    (sample) =>
+      sample.request.purpose === "allocation" &&
+      sample.request.target_kind === "INVOICE",
+  );
+  const reversed = actionContextFixtures.find(
+    (sample) =>
+      sample.request.purpose === "credit_reversal" &&
+      financialObject(sample.data.context).reversal !== null,
+  );
+  const khr = actionContextFixtures.find(
+    (sample) =>
+      sample.request.purpose === "allocation" &&
+      financialObject(financialObject(sample.data.payment_resource).payment)
+        .received_currency === "KHR",
+  );
+  check(
+    invoice && reversed && khr,
+    "Synthetic review regression sources exist",
+  );
+  for (const kind of ["credit", "fx", "omitted"] as const) {
+    const sample = structuredClone(
+      kind === "credit" ? reversed : kind === "fx" ? khr : invoice,
+    );
+    if (kind === "credit") {
+      const credit = financialObject(
+          financialObject(sample.data.context).credit,
+        ),
+        position = financialObject(credit.position);
+      position.reversed_usd_cents = 0;
+      position.available_usd_cents = position.recognized_usd_cents ?? null;
+    } else if (kind === "fx") {
+      financialObject(sample.data.payment_resource).exchange_rate = null;
+    } else {
+      const target = financialObject(sample.data.target);
+      target.status = "PAID";
+      target.outstanding_usd_cents = 0;
+      sample.data.items = [];
+    }
+    const scope = {
+      actorId: actor,
+      propertyId: sample.propertyId,
+      signal: new AbortController().signal,
+    };
+    const client = createFinancialReferenceClient((_url, init) => {
+      const requestId = new Headers(init?.headers).get("X-Request-ID");
+      check(requestId, "Actual regression request correlation");
+      return Promise.resolve(
+        new Response(
+          stringifyFinancialJson(
+            {
+              data: sample.data,
+              page: sample.page,
+              meta: {
+                actor_id: actor,
+                property_id: sample.propertyId,
+                request_id: requestId,
+              },
+            },
+            1_048_576,
+          ),
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "X-Request-ID": requestId,
+            },
+          },
+        ),
+      );
+    });
+    const sequence = new FinancialActionContextSequence(
+      actor,
+      sample.propertyId,
+      sample.request,
+    );
+    let rejected = false;
+    try {
+      sequence.append(await client.read(scope, sample.request));
+    } catch {
+      rejected = true;
+    }
+    check(
+      rejected && !sequence.complete && sequence.data === null,
+      "Inconsistent source or omitted zero line never completes in Chromium",
+    );
+  }
+  const sample = structuredClone(invoice),
+    count = 22;
+  sample.request.limit = 1;
+  sample.data.item_count = count;
+  const target = financialObject(sample.data.target),
+    item = financialObject((sample.data.items as FinancialObject[])[0]),
+    detail = financialObject(item.data);
+  target.status = "PAID";
+  target.line_count = count;
+  target.outstanding_usd_cents = 0;
+  target.original_total_usd_cents =
+    BigInt(detail.original_amount_usd_cents as number) * BigInt(count);
+  target.adjusted_total_usd_cents =
+    BigInt(detail.adjusted_amount_usd_cents as number) * BigInt(count);
+  const identities = Array.from({ length: count }, () => crypto.randomUUID());
+  const cursorFor = (index: number) =>
+    `${sample.data.revision as string}:${(index + 1).toString()}:${identities[index] ?? ""}`;
+  const scope = {
+    actorId: actor,
+    propertyId: sample.propertyId,
+    signal: new AbortController().signal,
+  };
+  const client = createFinancialReferenceClient((url, init) => {
+    check(typeof url === "string", "Bounded continuation URL");
+    const cursor = new URL(url, "https://synthetic.invalid").searchParams.get(
+        "cursor",
+      ),
+      index =
+        cursor === null
+          ? 0
+          : identities.findIndex((_identity, i) => cursorFor(i) === cursor) + 1;
+    check(index >= 0 && index < count, "Known ordered continuation");
+    const requestId = new Headers(init?.headers).get("X-Request-ID");
+    check(requestId, "Actual budget request correlation");
+    return Promise.resolve(
+      new Response(
+        stringifyFinancialJson(
+          {
+            data: {
+              ...sample.data,
+              items: [
+                {
+                  ...item,
+                  sequence: index + 1,
+                  id: identities[index] ?? "",
+                  data: {
+                    ...detail,
+                    outstanding_usd_cents: 0,
+                    description: "😀".repeat(100_000),
+                  },
+                },
+              ],
+            },
+            page: {
+              limit: 1,
+              next_cursor: index + 1 === count ? null : cursorFor(index),
+            },
+            meta: {
+              actor_id: actor,
+              property_id: sample.propertyId,
+              request_id: requestId,
+            },
+          },
+          1_048_576,
+        ),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "X-Request-ID": requestId,
+          },
+        },
+      ),
+    );
+  });
+  const sequence = new FinancialActionContextSequence(
+    actor,
+    sample.propertyId,
+    sample.request,
+  );
+  let rejected = false;
+  for (let index = 0; index < count; index++) {
+    const reply = await client.read(scope, {
+      ...sample.request,
+      ...(index === 0 ? {} : { cursor: cursorFor(index - 1) }),
+    });
+    try {
+      sequence.append(reply);
+    } catch {
+      rejected = true;
+      break;
+    }
+  }
+  check(
+    rejected &&
+      !sequence.complete &&
+      sequence.data === null &&
+      sequence.nextCursor === null,
+    "Chromium rejects cumulative UTF-8 evidence above eight MiB and releases the sequence",
+  );
 }

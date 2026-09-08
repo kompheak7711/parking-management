@@ -1708,6 +1708,15 @@ describe("selected financial action context", () => {
     );
     const firstAmount = amount / 2n,
       secondAmount = amount - firstAmount;
+    sample.data.item_count = 2;
+    const declaredTarget = financialObject(sample.data.target);
+    declaredTarget.line_count = 2;
+    declaredTarget.original_total_usd_cents =
+      BigInt(financialObject(item.data).original_amount_usd_cents as number) *
+      2n;
+    declaredTarget.adjusted_total_usd_cents =
+      BigInt(financialObject(item.data).adjusted_amount_usd_cents as number) *
+      2n;
     const client = createFinancialReferenceClient((url, init) =>
       Promise.resolve(
         actionResponse(sample, init ?? {}, (envelope) => {
@@ -1902,6 +1911,7 @@ describe("financial action context adjusted and coherent values", () => {
         BigInt(detail.original_amount_usd_cents as number) + 100n;
       detail.outstanding_usd_cents = detail.adjusted_amount_usd_cents;
       target.outstanding_usd_cents = detail.adjusted_amount_usd_cents;
+      target.adjusted_total_usd_cents = detail.adjusted_amount_usd_cents;
     });
     const reply = await client.read(actionScope(sample), sample.request),
       sequence = actionSequence(sample);
@@ -1949,5 +1959,494 @@ describe("financial action context adjusted and coherent values", () => {
         client.read(actionScope(sample), sample.request),
       ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
     }
+  });
+});
+
+function selectedCreditSample(reversed = false): FinancialActionFixture {
+  const found = actionContextFixtures.find(
+    (sample) =>
+      sample.request.purpose === "credit_reversal" &&
+      (financialObject(sample.data.context).reversal !== null) === reversed,
+  );
+  if (!found) throw new Error("Synthetic Credit context is required");
+  return actionCopy(found);
+}
+function invoiceCoverageSample(
+  count: number,
+  status = "PAID",
+): FinancialActionFixture {
+  const sample = postingSample();
+  const item = financialObject((sample.data.items as FinancialObject[])[0]);
+  const detail = financialObject(item.data);
+  const target = financialObject(sample.data.target);
+  target.status = status;
+  target.outstanding_usd_cents = 0;
+  if (status === "DRAFT") target.issued_at = null;
+  detail.outstanding_usd_cents = 0;
+  // New authoritative declarations are installed with the corrected PG fixtures.
+  // These controls also run against the preserved pre-correction wire shape.
+  if (Object.hasOwn(sample.data, "item_count")) sample.data.item_count = count;
+  if (Object.hasOwn(target, "line_count")) {
+    target.line_count = count;
+    target.original_total_usd_cents =
+      BigInt(detail.original_amount_usd_cents as number) * BigInt(count);
+    target.adjusted_total_usd_cents =
+      BigInt(detail.adjusted_amount_usd_cents as number) * BigInt(count);
+  }
+  return sample;
+}
+function invoiceCoveragePages(
+  sample: FinancialActionFixture,
+  count: number,
+  descriptionBytes = 20,
+  descriptionCharacter = "x",
+) {
+  const original = financialObject((sample.data.items as FinancialObject[])[0]);
+  const identities = Array.from({ length: count }, () => crypto.randomUUID());
+  const cursorFor = (index: number) =>
+    `${sample.data.revision as string}:${(index + 1).toString()}:${identities[index] ?? ""}`;
+  const client = createFinancialReferenceClient((url, init) => {
+    const cursor = new URL(
+      url as string,
+      "https://synthetic.invalid",
+    ).searchParams.get("cursor");
+    const index =
+      cursor === null
+        ? 0
+        : identities.findIndex((_id, i) => cursorFor(i) === cursor) + 1;
+    if (index < 0 || index >= count)
+      throw new Error("Unexpected synthetic continuation");
+    return Promise.resolve(
+      actionResponse(sample, init ?? {}, (envelope) => {
+        financialObject(envelope.data).items = [
+          {
+            ...original,
+            sequence: index + 1,
+            id: identities[index] ?? "",
+            data: {
+              ...financialObject(original.data),
+              description: descriptionCharacter.repeat(descriptionBytes),
+            },
+          },
+        ];
+        financialObject(envelope.page).next_cursor =
+          index + 1 === count ? null : cursorFor(index);
+      }),
+    );
+  });
+  return { client, cursorFor };
+}
+
+describe("independent review06 financial context regressions", () => {
+  it.each([
+    "reversed_available",
+    "partial_reversal",
+    "missing_reversal",
+    "recognition_above_source",
+    "fabricated_usd_fx",
+  ] as const)(
+    "TEST-FE-390 rejects contradictory Credit facts %s before provenance",
+    async (fault) => {
+      const sample = selectedCreditSample(
+        fault === "reversed_available" || fault === "missing_reversal",
+      );
+      const baseline = actionClient(sample);
+      const original = actionSequence(sample);
+      original.append(
+        await baseline.client.read(actionScope(sample), sample.request),
+      );
+      expect(original.complete).toBe(true);
+      const { client } = actionClient(sample, (envelope) => {
+        const context = financialObject(financialObject(envelope.data).context);
+        const credit = financialObject(context.credit);
+        const position = financialObject(credit.position);
+        const recognized = BigInt(position.recognized_usd_cents as number);
+        if (fault === "reversed_available") {
+          position.available_usd_cents = recognized;
+          position.reversed_usd_cents = 0;
+        } else if (fault === "partial_reversal") {
+          position.reversed_usd_cents = 1;
+          position.available_usd_cents = recognized - 1n;
+        } else if (fault === "missing_reversal") context.reversal = null;
+        else if (fault === "recognition_above_source") {
+          financialObject(credit.credit).recognized_usd_cents = recognized + 1n;
+          position.recognized_usd_cents = recognized + 1n;
+          position.available_usd_cents = recognized + 1n;
+        } else credit.exchange_rate = { fabricated: "FX for USD" };
+      });
+      await expect(
+        client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+  it.each([
+    "missing",
+    "null",
+    "identity",
+    "reference",
+    "system",
+    "channel_amount",
+    "channel_usd",
+    "channel_currency",
+    "timestamp",
+    "receipt_link",
+    "unknown_field",
+  ] as const)(
+    "TEST-FE-391 rejects incoherent original KHR evidence %s",
+    async (fault) => {
+      const fixture = actionContextFixtures[fault === "receipt_link" ? 2 : 0];
+      if (!fixture) throw new Error("Original KHR source fixture is required");
+      const sample = actionCopy(fixture);
+      const { client } = actionClient(sample, (envelope) => {
+        const resource = financialObject(
+          financialObject(envelope.data).payment_resource,
+        );
+        const fx = financialObject(resource.exchange_rate);
+        if (fault === "missing") delete resource.exchange_rate;
+        else if (fault === "null") resource.exchange_rate = null;
+        else if (fault === "identity") fx.id = crypto.randomUUID();
+        else if (fault === "reference")
+          fx.reference_rate_khr_per_usd = "1.000000";
+        else if (fault === "system") fx.system_rate_khr_per_usd = 1;
+        else if (fault === "channel_amount") fx.channel_actual_amount_minor = 1;
+        else if (fault === "channel_usd") fx.channel_actual_usd_value_cents = 1;
+        else if (fault === "channel_currency")
+          fx.channel_actual_currency = "USD";
+        else if (fault === "timestamp")
+          fx.channel_confirmed_at = "2099-01-01T00:00:00Z";
+        else if (fault === "receipt_link")
+          financialObject(resource.receipt).id = crypto.randomUUID();
+        else resource.unverified = "unexpected source field";
+      });
+      await expect(
+        client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+  it.each(["PAID", "DRAFT", "VOID", "ADJUSTED_TO_ZERO"])(
+    "TEST-FE-392 never marks omitted %s Invoice originals complete",
+    async (status) => {
+      const sample = invoiceCoverageSample(
+        1,
+        status === "ADJUSTED_TO_ZERO" ? "PAID" : status,
+      );
+      if (status === "ADJUSTED_TO_ZERO") {
+        financialObject(
+          (sample.data.items as FinancialObject[])[0]?.data,
+        ).adjusted_amount_usd_cents = 0;
+        const target = financialObject(sample.data.target);
+        if (Object.hasOwn(target, "adjusted_total_usd_cents"))
+          target.adjusted_total_usd_cents = 0;
+      }
+      const control = actionSequence(sample);
+      control.append(
+        await actionClient(sample).client.read(
+          actionScope(sample),
+          sample.request,
+        ),
+      );
+      expect(control.complete).toBe(true);
+      const sequence = actionSequence(sample);
+      const broken = actionClient(sample, (envelope) => {
+        financialObject(envelope.data).items = [];
+      });
+      await expect(
+        (async () => {
+          sequence.append(
+            await broken.client.read(actionScope(sample), sample.request),
+          );
+        })(),
+      ).rejects.toThrow();
+      expect(sequence.complete).toBe(false);
+      expect(sequence.data).toBeNull();
+    },
+  );
+  it("TEST-FE-393 rejects a premature final page omitting a fully paid line", async () => {
+    const sample = invoiceCoverageSample(2, "PARTIALLY_PAID");
+    const item = financialObject((sample.data.items as FinancialObject[])[0]);
+    const amount = BigInt(
+      financialObject(item.data).adjusted_amount_usd_cents as number,
+    );
+    financialObject(sample.data.target).outstanding_usd_cents = amount;
+    const firstId = crypto.randomUUID(),
+      lastId = crypto.randomUUID();
+    const cursor = `${sample.data.revision as string}:1:${firstId}`;
+    const makeClient = (omit: boolean) =>
+      createFinancialReferenceClient((url, init) => {
+        const later = new URL(
+          url as string,
+          "https://synthetic.invalid",
+        ).searchParams.has("cursor");
+        return Promise.resolve(
+          actionResponse(sample, init ?? {}, (envelope) => {
+            financialObject(envelope.data).items = [
+              {
+                ...item,
+                sequence: later ? 2 : 1,
+                id: later ? lastId : firstId,
+                data: {
+                  ...financialObject(item.data),
+                  outstanding_usd_cents: later ? 0 : amount,
+                },
+              },
+            ];
+            financialObject(envelope.page).next_cursor =
+              later || omit ? null : cursor;
+          }),
+        );
+      });
+    const client = makeClient(false),
+      control = actionSequence(sample);
+    control.append(await client.read(actionScope(sample), sample.request));
+    expect(control.complete).toBe(false);
+    control.append(
+      await client.read(actionScope(sample), { ...sample.request, cursor }),
+    );
+    expect(control.complete).toBe(true);
+    const broken = actionSequence(sample);
+    await expect(
+      (async () => {
+        broken.append(
+          await makeClient(true).read(actionScope(sample), sample.request),
+        );
+      })(),
+    ).rejects.toThrow();
+    expect(broken.complete).toBe(false);
+    expect(broken.data).toBeNull();
+  });
+  it.each([4, 22])(
+    "TEST-FE-394 enforces cumulative bytes across %i individually bounded pages",
+    async (count) => {
+      const sample = invoiceCoverageSample(count);
+      const { client, cursorFor } = invoiceCoveragePages(
+        sample,
+        count,
+        400_000,
+      );
+      const sequence = actionSequence(sample);
+      let failure: unknown = null;
+      let processed = 0;
+      for (let i = 0; i < count; i++) {
+        const reply = await client.read(actionScope(sample), {
+          ...sample.request,
+          ...(i === 0 ? {} : { cursor: cursorFor(i - 1) }),
+        });
+        try {
+          sequence.append(reply);
+          processed += 1;
+        } catch (error) {
+          failure = error;
+          break;
+        }
+      }
+      if (count === 4) {
+        expect(failure).toBeNull();
+        expect(processed).toBe(4);
+        expect(sequence.complete).toBe(true);
+        expect(sequence.data?.items).toHaveLength(4);
+      } else {
+        expect(failure).not.toBeNull();
+        expect(processed).toBeLessThan(count);
+        expect(sequence.complete).toBe(false);
+        expect(sequence.data).toBeNull();
+        const small = invoiceCoverageSample(1);
+        const reply = await actionClient(small).client.read(
+          actionScope(small),
+          small.request,
+        );
+        expect(() => {
+          sequence.append(reply);
+        }).toThrow();
+        expect(sequence.complete).toBe(false);
+      }
+    },
+  );
+});
+
+describe("financial action context review correction boundaries", () => {
+  it.each([
+    "identity",
+    "rate",
+    "source",
+    "time",
+    "unknown",
+    "missing",
+    "channel_time",
+  ] as const)(
+    "TEST-FE-395 binds repeated Credit FX to the original Payment %s",
+    async (fault) => {
+      const fixture = actionContextFixtures.find((sample) => {
+        const credit = financialObject(sample.data.context).credit;
+        if (!credit) return false;
+        const rate = financialObject(credit).exchange_rate;
+        return (
+          rate !== null &&
+          financialObject(rate).channel_actual_amount_minor !== null &&
+          financialObject(rate).channel_actual_usd_value_cents !== null
+        );
+      });
+      if (!fixture)
+        throw new Error("Real synthetic KHR Credit evidence is required");
+      const sample = actionCopy(fixture);
+      const { client } = actionClient(sample, (envelope) => {
+        const credit = financialObject(
+          financialObject(financialObject(envelope.data).context).credit,
+        );
+        const rate = financialObject(credit.exchange_rate);
+        if (fault === "identity") rate.id = contextIds.other;
+        if (fault === "rate") {
+          rate.reference_rate_khr_per_usd = "4081.000000";
+          rate.system_rate_khr_per_usd = 4102;
+        }
+        if (fault === "source") rate.rate_source = "ABA_EQUIVALENT_MANUAL";
+        if (fault === "time") rate.applicable_at = "2020-01-01T00:00:00Z";
+        if (fault === "channel_time")
+          rate.channel_confirmed_at = "2020-01-01T00:00:00Z";
+        if (fault === "unknown") rate.fabricated = "source";
+        if (fault === "missing") delete rate.reference_rate_khr_per_usd;
+      });
+      await expect(
+        client.read(actionScope(sample), sample.request),
+      ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+    },
+  );
+  it.each([
+    "missing_count",
+    "negative_count",
+    "fractional_count",
+    "huge_count",
+    "boolean_count",
+    "wrong_line_count",
+    "original_total",
+    "adjusted_total",
+  ] as const)(
+    "TEST-FE-396 rejects missing or inconsistent collection declarations %s",
+    async (fault) => {
+      const sample = invoiceCoverageSample(1);
+      const { client } = actionClient(sample, (envelope) => {
+        const data = financialObject(envelope.data),
+          target = financialObject(data.target);
+        if (fault === "missing_count") delete data.item_count;
+        if (fault === "negative_count") data.item_count = -1;
+        if (fault === "fractional_count") data.item_count = "1.5";
+        if (fault === "huge_count") data.item_count = 32768;
+        if (fault === "boolean_count") data.item_count = true;
+        if (fault === "wrong_line_count") target.line_count = 2;
+        if (fault === "original_total")
+          target.original_total_usd_cents =
+            BigInt(target.original_total_usd_cents as number) + 1n;
+        if (fault === "adjusted_total")
+          target.adjusted_total_usd_cents =
+            BigInt(target.adjusted_total_usd_cents as number) + 1n;
+      });
+      const sequence = actionSequence(sample);
+      await expect(
+        (async () => {
+          sequence.append(
+            await client.read(actionScope(sample), sample.request),
+          );
+        })(),
+      ).rejects.toThrow();
+      expect(sequence.complete).toBe(false);
+      expect(sequence.data).toBeNull();
+    },
+  );
+  it("TEST-FE-397 rejects changed cardinality even when a server repeats the prior revision", async () => {
+    const sample = invoiceCoverageSample(2);
+    const { client, cursorFor } = invoiceCoveragePages(sample, 2);
+    const sequence = actionSequence(sample);
+    sequence.append(await client.read(actionScope(sample), sample.request));
+    sample.data.item_count = 3;
+    const target = financialObject(sample.data.target);
+    target.line_count = 3;
+    target.original_total_usd_cents =
+      (BigInt(target.original_total_usd_cents as number) / 2n) * 3n;
+    target.adjusted_total_usd_cents =
+      (BigInt(target.adjusted_total_usd_cents as number) / 2n) * 3n;
+    const last = await client.read(actionScope(sample), {
+      ...sample.request,
+      cursor: cursorFor(0),
+    });
+    expect(() => {
+      sequence.append(last);
+    }).toThrow();
+    expect(sequence.nextCursor).toBeNull();
+    expect(sequence.data).toBeNull();
+  });
+  it("TEST-FE-398 accepts a valid legacy Payment reversal reference and rejects remaining dispositions", async () => {
+    const sample = postingSample();
+    sample.request = {
+      operation: "financialActionContext",
+      purpose: "allocation",
+      source_id: sample.request.source_id,
+    };
+    sample.page.limit = 50;
+    sample.data.requested_target_kind = null;
+    sample.data.requested_target_id = null;
+    sample.data.target = null;
+    sample.data.items = [];
+    sample.data.item_count = 0;
+    const resource = financialObject(sample.data.payment_resource),
+      payment = financialObject(resource.payment);
+    payment.status = "REVERSED";
+    payment.authorization_reference = "Legacy approved receipt reference";
+    const position = financialObject(resource.position);
+    position.available_usd_cents = 0;
+    const dispositions = financialObject(position.dispositions);
+    for (const key of Object.keys(dispositions)) dispositions[key] = 0;
+    if (
+      typeof payment.id !== "string" ||
+      typeof payment.confirmed_at !== "string"
+    )
+      throw new Error(
+        "Legacy control requires original Payment identity and instant",
+      );
+    resource.reversal = {
+      id: contextIds.event,
+      payment_id: payment.id,
+      reason: "Correct recorded source",
+      occurred_at: payment.confirmed_at,
+      actor_id: sample.actorId,
+      authorization_reference: "Legacy reversal review reference",
+    };
+    const sequence = actionSequence(sample);
+    sequence.append(
+      await actionClient(sample).client.read(
+        actionScope(sample),
+        sample.request,
+      ),
+    );
+    expect(sequence.complete).toBe(true);
+    dispositions.allocation_usd_cents = 1;
+    await expect(
+      actionClient(sample).client.read(actionScope(sample), sample.request),
+    ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+  });
+  it("TEST-FE-399 counts UTF-8 bytes across pages and poisons an oversized context", async () => {
+    const sample = invoiceCoverageSample(22);
+    const { client, cursorFor } = invoiceCoveragePages(
+      sample,
+      22,
+      100_000,
+      "😀",
+    );
+    const sequence = actionSequence(sample);
+    let failed = false;
+    for (let index = 0; index < 22; index++) {
+      const reply = await client.read(actionScope(sample), {
+        ...sample.request,
+        ...(index === 0 ? {} : { cursor: cursorFor(index - 1) }),
+      });
+      try {
+        sequence.append(reply);
+      } catch {
+        failed = true;
+        break;
+      }
+    }
+    expect(failed).toBe(true);
+    expect(sequence.complete).toBe(false);
+    expect(sequence.nextCursor).toBeNull();
+    expect(sequence.data).toBeNull();
   });
 });

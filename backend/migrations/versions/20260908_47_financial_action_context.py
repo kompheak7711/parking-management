@@ -194,11 +194,13 @@ def upgrade() -> None:
                     'property_id',p_property,'customer_id',v_invoice.customer_id,
                     'lease_id',v_invoice.lease_id,'invoice_number',v_invoice.invoice_number,
                     'status',v_invoice.status,'due_date',v_invoice.due_date,
-                    'issued_at',v_invoice.issued_at,'outstanding_usd_cents',
-                    CASE WHEN v_invoice.status IN('DRAFT','VOID') THEN 0 ELSE
-                        COALESCE((SELECT sum(app.invoice_line_outstanding(l.id))
-                            FROM app.invoice_lines l WHERE l.invoice_id=v_invoice.id),0) END)
-                    INTO v_target;
+                    'issued_at',v_invoice.issued_at,'line_count',count(*),
+                    'original_total_usd_cents',COALESCE(sum(l.amount_usd_cents),0),
+                    'adjusted_total_usd_cents',
+                        COALESCE(sum(app.invoice_adjusted_line_obligation(l.id)),0),
+                    'outstanding_usd_cents',CASE WHEN v_invoice.status IN('DRAFT','VOID')
+                        THEN 0 ELSE COALESCE(sum(app.invoice_line_outstanding(l.id)),0) END)
+                    INTO v_target FROM app.invoice_lines l WHERE l.invoice_id=v_invoice.id;
             ELSIF v_target_kind='LATE_PAYMENT_CHARGE' THEN
                 SELECT c.* INTO v_charge FROM app.late_payment_charges c
                     WHERE c.id=v_target_id AND
@@ -281,6 +283,7 @@ def upgrade() -> None:
                     v_target_kind='LATE_PAYMENT_CHARGE'
             ) SELECT jsonb_build_object(
                 'source_payment_id',v_payment_id,'context',v_context,'target',v_target,
+                'item_count',(SELECT count(*) FROM entries),
                 'revision_evidence',jsonb_build_object('property',p_property,'purpose',p_purpose,
                     'source',p_source,'refund',p_refund,'requested_target_kind',p_target_kind,
                     'requested_target',p_target,'payment',v_payment_id,'payment_status',
@@ -293,7 +296,13 @@ def upgrade() -> None:
                         JOIN app.deposit_serialization_guards g ON g.deposit_id=d.id),0),
                     'target_count',(SELECT count(*) FROM target_guards),
                     'target_revision',COALESCE((SELECT sum(g.revision) FROM target_guards t
-                        JOIN app.invoice_serialization_guards g ON g.guard_key=t.key),0)),
+                        JOIN app.invoice_serialization_guards g ON g.guard_key=t.key),0),
+                    'target_invoice_version',COALESCE(v_invoice.version,0),
+                    'target_draft_event_count',(SELECT count(*) FROM
+                        app.invoice_draft_revision_events e WHERE e.invoice_id=v_target_invoice),
+                    'target_draft_event_max',COALESCE((SELECT max(e.id) FROM
+                        app.invoice_draft_revision_events e
+                        WHERE e.invoice_id=v_target_invoice),0)),
                 'unsupported_application',EXISTS(SELECT 1 FROM deposits d
                     WHERE app.deposit_has_active_application(d.id)),
                 'anchor_found',p_after_id IS NULL OR EXISTS(SELECT 1 FROM entries

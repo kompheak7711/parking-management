@@ -37,6 +37,7 @@ def projection(
         "context": {},
         "target": None,
         "items": [],
+        "item_count": 0,
         "unsupported_application": False,
         "anchor_found": True,
         "revision_evidence": {
@@ -53,6 +54,9 @@ def projection(
             "deposit_revision": 2,
             "target_count": 0,
             "target_revision": 0,
+            "target_invoice_version": 0,
+            "target_draft_event_count": 0,
+            "target_draft_event_max": 0,
         },
     }
 
@@ -206,6 +210,7 @@ def test_financial_action_context_continuation_binds_source_target_and_current_f
     prop, payment = uuid4(), uuid4()
     req = replace(request(), target_kind="INVOICE", target_id=uuid4(), limit=1)
     raw = projection(prop, req, payment)
+    raw["item_count"] = 2
     raw["items"] = [
         {
             "sequence": n,
@@ -232,13 +237,20 @@ def test_financial_action_context_continuation_binds_source_target_and_current_f
         "deposit_revision",
         "target_count",
         "target_revision",
+        "target_invoice_version",
+        "target_draft_event_count",
+        "target_draft_event_max",
     ):
         changed = deepcopy(second_raw)
         cast(dict[str, object], changed["revision_evidence"])[key] = 99
         changed["anchor_found"] = False
         with pytest.raises(FinancialActionContextChanged):
             read(changed, prop, replace(req, cursor=cursor))
-    for key, value in [("context", {"original": "changed"}), ("target", {"status": "VOID"})]:
+    for key, value in [
+        ("context", {"original": "changed"}),
+        ("target", {"status": "VOID"}),
+        ("item_count", 3),
+    ]:
         changed = deepcopy(second_raw)
         changed[key] = value
         with pytest.raises(FinancialActionContextChanged):
@@ -258,6 +270,11 @@ def test_financial_action_context_continuation_binds_source_target_and_current_f
         ("items", {}),
         ("source_payment_id", "bad"),
         ("revision_evidence", {}),
+        ("item_count", -1),
+        ("item_count", 32768),
+        ("item_count", True),
+        ("item_count", "0"),
+        ("item_count", 1),
         ("items", [{"sequence": 1, "id": str(UUID(int=1)), "kind": None, "data": {}}]),
     ],
 )
