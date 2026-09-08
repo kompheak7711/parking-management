@@ -2025,14 +2025,18 @@ describe("local sign-in", () => {
     const checkStatus = screen.getByRole("button", {
       name: "Check the prior Customer command status",
     });
-    await waitFor(() => expect(checkStatus).toBeEnabled());
+    await waitFor(() => {
+      expect(checkStatus).toBeEnabled();
+    });
     fireEvent.click(checkStatus);
     const reconcile = await screen.findByRole(
       "button",
       { name: "I verified the prior Customer command result" },
       { timeout: 5000 },
     );
-    await waitFor(() => expect(reconcile).toBeEnabled());
+    await waitFor(() => {
+      expect(reconcile).toBeEnabled();
+    });
     window.localStorage.removeItem(customerReconciliationKey);
     fireEvent.click(reconcile);
 
