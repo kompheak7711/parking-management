@@ -1460,7 +1460,7 @@
       "authorization": "durable_v1",
       "status": "approved_ready",
       "closure_gate": {
-        "status": "product_verified_terminal_ci_failed_readiness_correction_pending",
+        "status": "product_verified_records_gate_contract_correction_pending",
         "product_sha": "fba87feba842837f7cc7c068477670bfdb4c08f8",
         "product_ci_run": 34253440448,
         "product_acceptance": {
@@ -1491,6 +1491,10 @@
         "callback_lint_correction": {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-fe135-lint-correction1-preparation.json",
           "sha256": "cc8efe00ce44719b531a1a81959e5ce3a26de086ddd86b0e59b973ff81efdecd"
+        },
+        "record_contract_correction": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-record-contract-correction1-preparation.json",
+          "sha256": "4cc8aecdd1dfbf52db99b75722f0382ad8f847fdb571a4f82fe28ddf6bfd596e"
         }
       }
     },
