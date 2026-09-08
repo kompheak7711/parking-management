@@ -16,6 +16,7 @@ import {
   loadFinancialActionContext,
   readFinancialRecord,
   useFinancialTask,
+  useFinancialDraft,
   useFinancialSnapshot,
 } from "./financialUiContext";
 import {
@@ -75,10 +76,12 @@ export function FinancialRefundWorkspace({
   capabilities,
   services,
   commands,
+  onDirtyStateChange,
 }: FinancialWorkspaceProps) {
   const allowed = modes.filter(([, , capability]) => capabilities[capability]);
   const [mode, setMode] = useState<Mode>(allowed[0]?.[0] ?? "read");
   const [source, setSource] = useState<Source>("PAYMENT");
+  const draft = useFinancialDraft(scope, onDirtyStateChange);
   const [fields, setFields] = useState(initial);
   const [context, setContext] = useState<FinancialObject | null>(null);
   const [list, setList, listCurrent] = useFinancialSnapshot<FinancialReply>(
@@ -94,6 +97,13 @@ export function FinancialRefundWorkspace({
     setContext(null);
   }, [revision, cancel]);
   function edit(values: Partial<typeof initial>) {
+    if (
+      mode !== "read" &&
+      Object.entries(values).some(
+        ([key, value]) => value !== fields[key as keyof typeof initial],
+      )
+    )
+      draft.edited();
     cancel();
     invalidate();
     setContext(null);
@@ -283,6 +293,7 @@ export function FinancialRefundWorkspace({
         setContext(data);
         if (request)
           preparation?.review(request, {
+            onRecorded: draft.captureRecorded(),
             consequence:
               mode === "create"
                 ? "Record a completed USD payout from this exact source. The original payout and its audit history are permanent."

@@ -79,6 +79,7 @@ export const defaultFinancialUiServices: FinancialUiServices = {
 export interface FinancialManagementProps {
   actorId: string;
   services?: FinancialUiServices;
+  onDirtyStateChange?: (dirty: boolean) => void;
 }
 type Confirmation =
   | {
@@ -92,14 +93,49 @@ type Confirmation =
 export function FinancialManagement({
   actorId,
   services = defaultFinancialUiServices,
+  onDirtyStateChange,
 }: FinancialManagementProps) {
-  return <FinancialActor key={actorId} actorId={actorId} services={services} />;
+  return (
+    <FinancialActor
+      key={actorId}
+      actorId={actorId}
+      services={services}
+      onDirtyStateChange={onDirtyStateChange}
+    />
+  );
 }
 function FinancialActor({
   actorId,
   services,
-}: Required<FinancialManagementProps>) {
+  onDirtyStateChange,
+}: FinancialManagementProps & { services: FinancialUiServices }) {
   const propertySelectId = useId();
+  const dirty = useRef(false);
+  const notifyDirty = useRef(onDirtyStateChange);
+  useLayoutEffect(() => {
+    notifyDirty.current = onDirtyStateChange;
+    onDirtyStateChange?.(dirty.current);
+  }, [onDirtyStateChange]);
+  const reportDirty = useCallback((value: boolean) => {
+    dirty.current = value;
+    notifyDirty.current?.(value);
+  }, []);
+  const confirmDiscard = useCallback(
+    () =>
+      !dirty.current ||
+      window.confirm("Discard unsaved financial form values?"),
+    [],
+  );
+  useLayoutEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => {
+      if (dirty.current) event.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      reportDirty(false);
+    };
+  }, [reportDirty]);
   const [properties, setProperties] = useState<FinancialObject[]>([]);
   const [selected, setSelected] = useState("");
   const [cursor, setCursor] = useState<string | null>(null);
@@ -175,7 +211,8 @@ function FinancialActor({
         id={propertySelectId}
         value={selected}
         onChange={(e) => {
-          setSelected(e.target.value);
+          if (e.target.value !== selected && confirmDiscard())
+            setSelected(e.target.value);
         }}
       >
         <option value="">Select an authorized Property</option>
@@ -198,7 +235,7 @@ function FinancialActor({
           type="button"
           disabled={busy}
           onClick={() => {
-            load();
+            if (confirmDiscard()) load();
           }}
         >
           Refresh financial Properties
@@ -221,6 +258,8 @@ function FinancialActor({
           actorId={actorId}
           property={property}
           services={services}
+          onDirtyStateChange={reportDirty}
+          confirmDiscard={confirmDiscard}
         />
       )}
     </section>
@@ -230,10 +269,14 @@ function FinancialProperty({
   actorId,
   property,
   services,
+  onDirtyStateChange,
+  confirmDiscard,
 }: {
   actorId: string;
   property: FinancialObject;
   services: FinancialUiServices;
+  onDirtyStateChange: (dirty: boolean) => void;
+  confirmDiscard: () => boolean;
 }) {
   const propertyId = financialId(property.property_id);
   const [entry, setEntry] = useState<{
@@ -267,6 +310,8 @@ function FinancialProperty({
       scope={scope}
       propertyName={financialLabel(property.name)}
       services={services}
+      onDirtyStateChange={onDirtyStateChange}
+      confirmDiscard={confirmDiscard}
     />
   );
 }
@@ -274,10 +319,14 @@ function FinancialPropertyWorkspace({
   scope,
   propertyName,
   services,
+  onDirtyStateChange,
+  confirmDiscard,
 }: {
   scope: FinancialScope;
   propertyName: string;
   services: FinancialUiServices;
+  onDirtyStateChange: (dirty: boolean) => void;
+  confirmDiscard: () => boolean;
 }) {
   const [capabilities, setCapabilities] =
     useState<FinancialCapabilities | null>(null);
@@ -294,6 +343,23 @@ function FinancialPropertyWorkspace({
   );
   const mounted = useRef(false);
   const preparationGeneration = useRef(0);
+  const dirtyForms = useRef(new Set<string>());
+  const pendingDraft = useRef<{ key: string; onRecorded: () => void } | null>(
+    null,
+  );
+  const draftChanges = useMemo(() => {
+    const update = (name: string) => (value: boolean) => {
+      if (value) dirtyForms.current.add(name);
+      else dirtyForms.current.delete(name);
+      onDirtyStateChange(dirtyForms.current.size > 0);
+    };
+    return {
+      payment: update("payment"),
+      allocation: update("allocation"),
+      credit: update("credit"),
+      refund: update("refund"),
+    };
+  }, [onDirtyStateChange]);
   const current = useRef({ capabilities, recovery });
   useLayoutEffect(() => {
     current.current = { capabilities, recovery };
@@ -352,12 +418,11 @@ function FinancialPropertyWorkspace({
           !current.current.capabilities?.["receipts.reprint"])
       )
         return;
-      invalidate();
       setReceiptHandoff(
         Object.freeze({ scope, receiptId: financialId(receiptId) }),
       );
     },
-    [scope, invalidate],
+    [scope],
   );
   const beginReview = useCallback<
     FinancialWorkspaceProps["commands"]["beginReview"]
@@ -433,6 +498,10 @@ function FinancialPropertyWorkspace({
           : await services.recovery.replay(scope, selected.command.key);
       if (!alive()) return;
       if (result.kind === "success") {
+        if (selected.kind === "new") selected.review.onRecorded?.();
+        else if (pendingDraft.current?.key === selected.command.key)
+          pendingDraft.current.onRecorded();
+        pendingDraft.current = null;
         setConfirmed({
           operation,
           reply: result.reply,
@@ -451,6 +520,11 @@ function FinancialPropertyWorkspace({
           `The new action was rejected before recording. ${financialUiError(result.error)}${result.error.requestId ? ` Reference: ${result.error.requestId}` : ""}`,
         );
       } else if (result.kind === "pending") {
+        if (selected.kind === "new" && selected.review.onRecorded)
+          pendingDraft.current = {
+            key: result.command.key,
+            onRecorded: selected.review.onRecorded,
+          };
         setRecovery({ kind: "pending", command: result.command });
         setNotice(
           `The outcome is unresolved. Review the original action before sending it again.${result.error?.requestId ? ` Reference: ${result.error.requestId}` : ""}`,
@@ -518,7 +592,9 @@ function FinancialPropertyWorkspace({
       <button
         type="button"
         disabled={busy || accessTask.busy || recoveryTask.busy}
-        onClick={refresh}
+        onClick={() => {
+          if (confirmDiscard()) refresh();
+        }}
       >
         Refresh financial access and recovery
       </button>
@@ -544,6 +620,7 @@ function FinancialPropertyWorkspace({
       {capabilities && (
         <>
           <FinancialPaymentWorkspace
+            onDirtyStateChange={draftChanges.payment}
             onOpenReceipt={openReceipt}
             scope={scope}
             capabilities={capabilities}
@@ -551,6 +628,7 @@ function FinancialPropertyWorkspace({
             commands={commands}
           />
           <FinancialAllocationReceiptWorkspace
+            onDirtyStateChange={draftChanges.allocation}
             receiptHandoff={receiptHandoff}
             scope={scope}
             capabilities={capabilities}
@@ -558,12 +636,14 @@ function FinancialPropertyWorkspace({
             commands={commands}
           />
           <FinancialCreditWorkspace
+            onDirtyStateChange={draftChanges.credit}
             scope={scope}
             capabilities={capabilities}
             services={services}
             commands={commands}
           />
           <FinancialRefundWorkspace
+            onDirtyStateChange={draftChanges.refund}
             scope={scope}
             capabilities={capabilities}
             services={services}

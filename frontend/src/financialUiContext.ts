@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { financialUiError, type FinancialReadRequest } from "./financialUi";
 import {
   captureFinancialScope,
@@ -253,4 +253,82 @@ export async function loadPaymentReversalContext(
     itemBytes = 0;
     throw error;
   }
+}
+
+/** Keep only dirty state and an edit generation; draft values never leave their form. */
+export function useFinancialDraft(
+  scope: FinancialScope,
+  onDirtyStateChange?: (dirty: boolean) => void,
+) {
+  const { actorId, propertyId, signal } = scope;
+  const dirty = useRef(false),
+    generation = useRef(0);
+  const identity = useRef<{
+    actorId: string;
+    propertyId: string;
+    signal: AbortSignal;
+  } | null>(null);
+  const notify = useRef(onDirtyStateChange);
+  useLayoutEffect(() => {
+    notify.current = onDirtyStateChange;
+    onDirtyStateChange?.(dirty.current);
+  }, [onDirtyStateChange]);
+  const reset = useCallback(() => {
+    generation.current++;
+    if (dirty.current) {
+      dirty.current = false;
+      notify.current?.(false);
+    }
+  }, []);
+  useLayoutEffect(() => {
+    const origin = { actorId, propertyId, signal };
+    identity.current = origin;
+    const invalidate = () => {
+      if (identity.current !== origin) return;
+      identity.current = null;
+      reset();
+    };
+    if (signal.aborted) invalidate();
+    else signal.addEventListener("abort", invalidate, { once: true });
+    return () => {
+      signal.removeEventListener("abort", invalidate);
+      invalidate();
+    };
+  }, [actorId, propertyId, signal, reset]);
+  const isCurrent = useCallback(
+    () =>
+      !signal.aborted &&
+      identity.current?.actorId === actorId &&
+      identity.current.propertyId === propertyId &&
+      identity.current.signal === signal,
+    [actorId, propertyId, signal],
+  );
+  const clear = useCallback(() => {
+    if (isCurrent()) reset();
+  }, [isCurrent, reset]);
+  const edited = useCallback(() => {
+    if (!isCurrent()) return;
+    generation.current++;
+    if (!dirty.current) {
+      dirty.current = true;
+      notify.current?.(true);
+    }
+  }, [isCurrent]);
+  const captureRecorded = useCallback(() => {
+    const captured = generation.current;
+    return () => {
+      if (isCurrent() && generation.current === captured) reset();
+    };
+  }, [isCurrent, reset]);
+  const confirmDiscard = useCallback(
+    () =>
+      isCurrent() &&
+      (!dirty.current ||
+        window.confirm("Discard unsaved financial form values?")),
+    [isCurrent],
+  );
+  return useMemo(
+    () => ({ edited, captureRecorded, confirmDiscard, clear }),
+    [edited, captureRecorded, confirmDiscard, clear],
+  );
 }

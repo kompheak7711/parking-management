@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "financial_staff_ui_review_correction1_verified",
+    "phase": "financial_staff_ui_review_correction2_verified",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2087,7 +2087,7 @@
       "schedulers": "SAME nativeACTIVE/OpenClawdisabled"
     },
     "owner_action_required": false,
-    "next_action": "Freeze normal19path correction1 successor of preserved0308d33; complete013-base30paths/408protected. Shared preparation generation and current-revision reads, originalReceiptfacts/separate-grant handoff, uniqueCustomerfact/rightmoneyalignment implemented. Run all required exact gates with fullautomation/frontend/PostgreSQL alone and9UI+15reference+6command browsergroups, then fresh complete013-baseAstra/max/Standard/enforced-read-only zero review under standingthrough53authority. Preserve030report/5findings/initialred and all74/09failures. Then cumulative52release/publication/exactCI/ref/SAMEcard/durableclosurebefore53; separateWorkboardhold/no retry; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+    "next_action": "Freeze normal20path correction2 successor of preserved3a9833f; complete013-base30paths/408protected.321focused/28trace/12UIbrowser/finalstatic PASS. Run all required exact gates with fullautomation/frontend/PostgreSQL alone and12UI+15reference+6command browsergroups, then fresh complete013-baseAstra/max/Standard/enforced-read-only zero review under standingthrough53authority. Historical proposal labels and monetary coverage are attempt2 for original findings; draft protection attempt1. Preserve all rejected candidates/reports/failure evidence. Then cumulative52release/publication/exactCI/ref/SAMEcard/durableclosurebefore53; separateWorkboardhold/no retry; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2117,35 +2117,35 @@
       "base": "013851d02b6712f949293db82ced82d2afb82ff9",
       "started_at": "2026-09-08T03:12:47.819339+00:00",
       "affected_paths": [
-        "frontend/src/FinancialManagement.tsx",
-        "frontend/src/financialUi.ts",
-        "frontend/src/financialUiContext.ts",
-        "frontend/src/FinancialConfirmation.tsx",
-        "frontend/src/FinancialRecoveryNotice.tsx",
-        "frontend/src/FinancialPaymentWorkspace.tsx",
+        "backend/tests/test_financial_fixture_clock_migration.py",
+        "backend/tests/test_refund_service_migration.py",
+        "backend/tests/test_traceability.py",
+        "frontend/src/App.test.tsx",
+        "frontend/src/App.tsx",
         "frontend/src/FinancialAllocationReceiptWorkspace.tsx",
+        "frontend/src/FinancialConfirmation.test.tsx",
+        "frontend/src/FinancialConfirmation.tsx",
         "frontend/src/FinancialCreditWorkspace.tsx",
-        "frontend/src/FinancialRefundWorkspace.tsx",
         "frontend/src/FinancialEvidence.tsx",
         "frontend/src/FinancialManagement.test.tsx",
+        "frontend/src/FinancialManagement.tsx",
+        "frontend/src/FinancialPaymentWorkspace.tsx",
+        "frontend/src/FinancialRecoveryNotice.tsx",
+        "frontend/src/FinancialRefundWorkspace.tsx",
         "frontend/src/FinancialWorkspaces.test.tsx",
-        "frontend/src/FinancialConfirmation.test.tsx",
-        "frontend/src/financialUi.test.ts",
-        "frontend/src/financialUiContext.test.ts",
-        "frontend/src/test/financialWorkflows.browser.ts",
-        "frontend/src/App.tsx",
-        "frontend/src/App.test.tsx",
-        "frontend/src/styles.css",
-        "backend/tests/test_traceability.py",
-        "ops/NOW.md",
-        "ops/STATE.json",
-        "ops/QUEUE.md",
-        "ops/traceability.json",
-        "ops/V1_052_FINANCIAL_STAFF_UI.md",
-        "frontend/src/financialResponse.ts",
         "frontend/src/financialClient.test.ts",
-        "backend/tests/test_refund_service_migration.py",
-        "backend/tests/test_financial_fixture_clock_migration.py",
+        "frontend/src/financialResponse.ts",
+        "frontend/src/financialUi.test.ts",
+        "frontend/src/financialUi.ts",
+        "frontend/src/financialUiContext.test.ts",
+        "frontend/src/financialUiContext.ts",
+        "frontend/src/styles.css",
+        "frontend/src/test/financialWorkflows.browser.ts",
+        "ops/NOW.md",
+        "ops/QUEUE.md",
+        "ops/STATE.json",
+        "ops/V1_052_FINANCIAL_STAFF_UI.md",
+        "ops/traceability.json",
         "scripts/test_openclaw_automation.py"
       ],
       "scope": "Staff Payment/KHR, Allocation/reversal, original Receipt/reprint, Credit recognition/application/reversals, supported USD Refund/verified return/correction reversal, complete Payment reversal impact/results, capability navigation, explicit captured confirmation and actor-bound recovery. No new backend runtime/SQL/grants/dependencies/canonical policy. Accepted client changes are limited to the separately recorded Credit proposal continuation response correction; no convenience changes.",
@@ -2234,6 +2234,10 @@
         {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction1-scope.json",
           "sha256": "14c1d3805399cece1168821f2fd24e31a7e0b3e89001313cb2c1604b1e27306f"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction2-scope.json",
+          "sha256": "130b6fdf3bda3932fd9df33e34fddb9a766f6187ab2a2a9fc6b7fcea328a33db"
         }
       ],
       "credit_proposal_correction": {
@@ -2258,7 +2262,7 @@
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-workspace-verified.json",
         "sha256": "159ca618b47ee7557cf01fac086000a5904e784d3a1c547e575fac71418ff05c"
       },
-      "next_action": "Freeze normal19path correction1 successor of preserved0308d33; complete013-base30paths/408protected. Shared preparation generation and current-revision reads, originalReceiptfacts/separate-grant handoff, uniqueCustomerfact/rightmoneyalignment implemented. Run all required exact gates with fullautomation/frontend/PostgreSQL alone and9UI+15reference+6command browsergroups, then fresh complete013-baseAstra/max/Standard/enforced-read-only zero review under standingthrough53authority. Preserve030report/5findings/initialred and all74/09failures. Then cumulative52release/publication/exactCI/ref/SAMEcard/durableclosurebefore53; separateWorkboardhold/no retry; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+      "next_action": "Freeze normal20path correction2 successor of preserved3a9833f; complete013-base30paths/408protected.321focused/28trace/12UIbrowser/finalstatic PASS. Run all required exact gates with fullautomation/frontend/PostgreSQL alone and12UI+15reference+6command browsergroups, then fresh complete013-baseAstra/max/Standard/enforced-read-only zero review under standingthrough53authority. Historical proposal labels and monetary coverage are attempt2 for original findings; draft protection attempt1. Preserve all rejected candidates/reports/failure evidence. Then cumulative52release/publication/exactCI/ref/SAMEcard/durableclosurebefore53; separateWorkboardhold/no retry; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
       "payment_workspace_verified": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-payment-workspace-verified.json",
         "sha256": "7e2eb10dcb4ced4242db4721f55f5c5c232538235166c905d9ae52c451305fe4"
@@ -2271,7 +2275,7 @@
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-app-current-verified.json",
         "sha256": "2f276c7d3fc74f128c06f2b2c1d6500a54539a6daf711f03dc40d6bd586ef99b"
       },
-      "phase": "staff_ui_review_correction1_verified",
+      "phase": "staff_ui_review_correction2_verified",
       "focused_evidence": {
         "app_current": {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-app-current-verified.json",
@@ -2441,8 +2445,9 @@
         "frontend/src/styles.css",
         "frontend/src/FinancialManagement.test.tsx",
         "frontend/src/FinancialWorkspaces.test.tsx",
-        "frontend/src/financialUi.test.ts",
         "frontend/src/financialUiContext.test.ts",
+        "frontend/src/App.tsx",
+        "frontend/src/App.test.tsx",
         "frontend/src/test/financialWorkflows.browser.ts",
         "ops/NOW.md",
         "ops/STATE.json",
@@ -2490,35 +2495,39 @@
           "sha256": "fa43c499b9c66f9e51a8c83b33636ed5fb3bc9bb562fdf58cacb5046f92540bb"
         }
       },
-      "independent_review_correction_attempt": 1,
+      "independent_review_correction_attempt": 2,
       "review_correction": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction1-scope.json",
-        "sha256": "14c1d3805399cece1168821f2fd24e31a7e0b3e89001313cb2c1604b1e27306f"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction2-scope.json",
+        "sha256": "130b6fdf3bda3932fd9df33e34fddb9a766f6187ab2a2a9fc6b7fcea328a33db"
       },
       "rejected_candidate": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-rejected-0308d33.json",
-        "sha256": "5d2b6e20a326ef510639d9f963fe1e24b0e0397f066bad156bf0b42751054024"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-rejected-3a9833f.json",
+        "sha256": "d33757cee9ee7bb8f4871bef408c9af986edd0390a673ec8464f2618289d5396"
       },
       "review_correction_focused_evidence": {
-        "types-final1": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction1-types-final1.json",
-          "sha256": "26251bdeabbe5402d079934803e4f6418985745ea4f1430146741d43f4b58956"
+        "types-final2": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction2-types-final2.json",
+          "sha256": "510773ad178fb9fb6cd4aebbbbee463a0aa86bdbb4e883178e4445b0697bc950"
         },
-        "lint2": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction1-lint2.json",
-          "sha256": "cb16ca476d30d908793fc27332cf3cdb2644a074e945996874c861879fc6a33a"
+        "lint-final2": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction2-lint-final2.json",
+          "sha256": "e7ef8cbfbed6ba3683d63f99c84834b88c6719d565ac4e4015b151ed2fa84cb4"
         },
-        "focused-final1": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction1-focused-final1.json",
-          "sha256": "c922be17c5cbdaa1354773f797737ba0fada96413a5c93314b9177e7da56ba8f"
+        "format-final2": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction2-format-final2.json",
+          "sha256": "6e453d1ce349aaad03ada15c4d4b29de5aa2045d4f8620dac015467f32e608c0"
+        },
+        "focused-final2": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction2-focused-final2.json",
+          "sha256": "d602feb597bd7476892a6896391240dc9ffc22ce2cf295f430b58445b9c700f1"
         },
         "trace": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction1-trace1.json",
-          "sha256": "27a7a4d4e4b926dd4f0c37b94d2a287581de5e7750f4828c6e28f49ec3bd1242"
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-review-correction2-trace1.json",
+          "sha256": "1640cfa10f80dc93f6149e5cbb7dc93eab844717f17dd08f2f911ec3cb87b18b"
         },
-        "browser_new_groups": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-review-correction1-focused1.json",
-          "sha256": "34e6824bb96bbb9d391d8f841cdf4f28e3b204248a61d814aaa24bb17d3abd36"
+        "browser12": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-browser-review-correction2-focused8.json",
+          "sha256": "be9837909eb4d97978d35b7b0b228258fc7ffe00b4fea5c9e62cebcd2de80d0f"
         }
       }
     },
@@ -7424,7 +7433,7 @@
   "branch": "codex/v1-052-direct",
   "commit": "013851d02b6712f949293db82ced82d2afb82ff9",
   "idle_reason": null,
-  "next_action": "Freeze normal19path correction1 successor of preserved0308d33; complete013-base30paths/408protected. Shared preparation generation and current-revision reads, originalReceiptfacts/separate-grant handoff, uniqueCustomerfact/rightmoneyalignment implemented. Run all required exact gates with fullautomation/frontend/PostgreSQL alone and9UI+15reference+6command browsergroups, then fresh complete013-baseAstra/max/Standard/enforced-read-only zero review under standingthrough53authority. Preserve030report/5findings/initialred and all74/09failures. Then cumulative52release/publication/exactCI/ref/SAMEcard/durableclosurebefore53; separateWorkboardhold/no retry; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
+  "next_action": "Freeze normal20path correction2 successor of preserved3a9833f; complete013-base30paths/408protected.321focused/28trace/12UIbrowser/finalstatic PASS. Run all required exact gates with fullautomation/frontend/PostgreSQL alone and12UI+15reference+6command browsergroups, then fresh complete013-baseAstra/max/Standard/enforced-read-only zero review under standingthrough53authority. Historical proposal labels and monetary coverage are attempt2 for original findings; draft protection attempt1. Preserve all rejected candidates/reports/failure evidence. Then cumulative52release/publication/exactCI/ref/SAMEcard/durableclosurebefore53; separateWorkboardhold/no retry; fullyclosed53pauseSAME/OpenClawdisabled/no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -7496,7 +7505,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 staff UI review correction1 verified; successor pending",
+  "phase": "V1-052 staff UI review correction2 verified; successor pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -8615,7 +8624,8 @@
     "StaffUI27paths:74helpers,118domainworkspace,32controller,11confirmation,46App,110Credit-client focusedPASS;6Chromiumgroups20scenarios with realcrypto/storage/locks and0financialnetwork;28trace1826mappings preserving1733. Browser-found accessible Property label and modal original action name fixed. Finalforeign-workflowmessage-only correction11PASS. Fullimmutablegates/reviewpending; allfailedwitnessespreserved.",
     "Staff UI clock correction1: 16 focused PostgreSQL checks PASS (38 deselected), including preserved external +/-60second red cases now green and the registered original rollback regression; 2-file format/ruff and187-file types PASS;28trace checks PASS with1827entries preserving1826. Only2test source files changed; no runtime/SQL/guard changes. Failed74PG1001/2 and passing6probe retained; original API503 cause unproven.",
     "Automation fixture correction1: original test with12subcases (11retained+controlled delayed second terminalizer) PASS; all original assertions identical by AST comparison, only that test method changed. Scoped formatting/syntax and unchanged4-lint baseline parity PASS; supplemental whole-script lint remains4preexisting findings outside changed method, preserved.28trace/audit checks PASS;1827entries unchanged. Failed09gate/latefakewrite/deterministic1FAIL and diagnostic-loader error retained. Full exact successor gates/review pending.",
-    "Staff UI review correction1:243focused/28trace PASS, finaltypes/scopedlint/format PASS.1827priortrace preserved+11=1838.3new realChromium groups PASS/0financialnetwork;6original groups alsoPASS in retained wrapper result. Final source adds obsolete-run guard/focus cleanup after browser proof; frozen successor will run9UIgroups. All expected red regressions, new harness setup errors, initial type/lint failures and both browser wrapper failures retained with exact logs.030remains independently rejected0HIGH3MEDIUM2LOW; successor review pending."
+    "Staff UI review correction1:243focused/28trace PASS, finaltypes/scopedlint/format PASS.1827priortrace preserved+11=1838.3new realChromium groups PASS/0financialnetwork;6original groups alsoPASS in retained wrapper result. Final source adds obsolete-run guard/focus cleanup after browser proof; frozen successor will run9UIgroups. All expected red regressions, new harness setup errors, initial type/lint failures and both browser wrapper failures retained with exact logs.030remains independently rejected0HIGH3MEDIUM2LOW; successor review pending.",
+    "Staff UI correction2:321focused/28trace/12real-browsergroups PASS; finaltypes/lint/format PASS.1838priortrace preserved+13=1851;408protected/28historicalobjects unchanged. Historical saved proposal, complete monetary input/header alignment and scope-bound unsaved draft protection verified.16new failed receipts retained (including browser harness/fixture/selector failures and three pre-existing expired-session fixture races). New browser runner uses installed Playwright API to handle native dialogs; zero financial network.3a remains rejected0HIGH1MEDIUM2LOW; normal successor/exactgates/freshreview pending."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -8637,7 +8647,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-08T09:20:53.084493+00:00",
+  "timestamp": "2026-09-08T11:08:53.729380+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -8869,7 +8879,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-08T09:20:53.084493+00:00",
+  "updated_at": "2026-09-08T11:08:53.729380+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",

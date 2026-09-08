@@ -24,6 +24,7 @@ import {
   FINANCIAL_UI_CONTEXT_BYTES,
   readFinancialRecord,
   useFinancialTask,
+  useFinancialDraft,
   useFinancialSnapshot,
 } from "./financialUiContext";
 
@@ -114,6 +115,7 @@ export function FinancialPaymentWorkspace({
   capabilities,
   services,
   commands,
+  onDirtyStateChange,
   onOpenReceipt,
 }: FinancialWorkspaceProps & { onOpenReceipt?: (receiptId: string) => void }) {
   const canRead = capabilities["payments.read"],
@@ -121,6 +123,7 @@ export function FinancialPaymentWorkspace({
   const [mode, setMode] = useState<"read" | "record">(
     canRead ? "read" : "record",
   );
+  const draft = useFinancialDraft(scope, onDirtyStateChange);
   const [fields, setFields] = useState(initial);
   const [currency, setCurrency] = useState<"USD" | "KHR">("USD");
   const [payerScope, setPayerScope] = useState<
@@ -149,6 +152,13 @@ export function FinancialPaymentWorkspace({
     setManual(false);
   }, [revision, cancel]);
   function edit(values: Partial<typeof initial>, rateChanged = false) {
+    if (
+      mode === "record" &&
+      Object.entries(values).some(
+        ([key, value]) => value !== fields[key as keyof typeof initial],
+      )
+    )
+      draft.edited();
     cancel();
     invalidate();
     setPreview(null);
@@ -333,6 +343,7 @@ export function FinancialPaymentWorkspace({
           );
         if (request)
           preparation?.review(request, {
+            onRecorded: draft.captureRecorded(),
             consequence:
               "Confirm this original incoming Payment and issue its one Receipt. This action does not allocate Payment value, recognize Customer Credit, create a Deposit or settle an Invoice. The server selects and verifies the final exchange rate and any original channel evidence.",
             evidence: (
@@ -582,6 +593,11 @@ export function FinancialPaymentWorkspace({
                 <select
                   value={currency}
                   onChange={(e) => {
+                    if (
+                      (fields.amount !== "" || fields.usd !== "") &&
+                      !draft.confirmDiscard()
+                    )
+                      return;
                     edit({ amount: "", usd: "" }, true);
                     setCurrency(e.target.value === "KHR" ? "KHR" : "USD");
                     setChannel(false);

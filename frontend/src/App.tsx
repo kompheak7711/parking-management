@@ -551,6 +551,7 @@ export function App({
   const [propertyConfigurationAuthorized, setPropertyConfigurationAuthorized] =
     useState(false);
   const [customerDraftsDirty, setCustomerDraftsDirty] = useState(false);
+  const [financialDraftsDirty, setFinancialDraftsDirty] = useState(false);
   const [customerCommandBusy, setCustomerCommandBusy] = useState(false);
   const [customerCoordinationAvailable, setCustomerCoordinationAvailable] =
     useState(true);
@@ -641,6 +642,7 @@ export function App({
   }
 
   function returnToSignIn(message: string | null) {
+    setFinancialDraftsDirty(false);
     setCustomerDraftsDirty(false);
     setCustomerCommandBusy(false);
     setCustomerReconciliationRequirement(null);
@@ -824,6 +826,16 @@ export function App({
       );
       return;
     }
+    if (
+      financialDraftsDirty &&
+      !window.confirm("Discard unsaved financial form values and sign out?")
+    ) {
+      setNotice(
+        "Sign out was cancelled; unsaved financial values were preserved.",
+      );
+      return;
+    }
+    setFinancialDraftsDirty(false);
     setCustomerDraftsDirty(false);
     setLogoutPending(true);
     setSubmissionState("submitting");
@@ -1724,6 +1736,7 @@ export function App({
                 key={session.actor_id}
                 actorId={session.actor_id}
                 services={financialServices}
+                onDirtyStateChange={setFinancialDraftsDirty}
               />
             )}
             <ReservationManagement api={reservationApi} />

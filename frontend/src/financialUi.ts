@@ -187,6 +187,7 @@ export const FINANCIAL_COMMAND_CAPABILITIES: Record<
   refundReturnReverse: "refunds.corrections.reverse",
 };
 export interface FinancialCommandReview {
+  onRecorded?: () => void;
   consequence: string;
   evidence: ReactNode;
 }
@@ -210,6 +211,7 @@ export interface FinancialReceiptHandoff {
   readonly receiptId: string;
 }
 export interface FinancialWorkspaceProps {
+  onDirtyStateChange?: (dirty: boolean) => void;
   scope: FinancialScope;
   capabilities: FinancialCapabilities;
   services: FinancialUiServices;

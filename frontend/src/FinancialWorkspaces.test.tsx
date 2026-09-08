@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+const financialStyles = readFileSync("src/styles.css", "utf8");
 import {
   act,
   cleanup,
@@ -3053,3 +3055,195 @@ it.each(["actor", "property", "signal", "aborted", "no-grant"] as const)(
     expect(h.recovery.submit).not.toHaveBeenCalled();
   },
 );
+
+describe("retained proposal history and complete amount alignment", () => {
+  it("TEST-FE-516 keeps non-null posted proposal balances historical across revision and failed reload", async () => {
+    const sample = creditSample("allocation_reversal", "INVOICE"),
+      h = creditHarness(sample, "payments.read"),
+      raw = rawAllocation(sample),
+      allocation = financialObject(raw.allocation),
+      proposal = allocationProposal(allocationSample("INVOICE"));
+    // Reconstruct a finite original trace from the captured original Allocation facts.
+    const target = financialObject(sample.data.target),
+      line = financialObject(
+        financialObject((sample.data.items as FinancialObject[])[0]).data,
+      ),
+      posted = BigInt(financialInteger(line.posted_amount_usd_cents)),
+      before =
+        posted + BigInt(financialInteger(line.current_outstanding_usd_cents));
+    proposal.payment_id = financialId(allocation.payment_id);
+    proposal.property_id = sample.propertyId;
+    proposal.proposal_batch_id = financialId(allocation.proposal_batch_id);
+    proposal.generated_at = creditFixtureText(allocation.proposal_generated_at);
+    proposal.available_usd_cents = posted;
+    proposal.unallocated_after_usd_cents = 0;
+    proposal.targets = [
+      {
+        invoice_id: financialId(target.id),
+        invoice_number: creditFixtureText(target.invoice_number),
+        version: 1,
+        target_customer_id: financialId(target.customer_id),
+        due_date: creditFixtureText(target.due_date),
+        issued_at: creditFixtureText(target.issued_at),
+        sequence: financialInteger(allocation.between_invoice_sequence),
+        amount_usd_cents: posted,
+        details: [
+          {
+            invoice_line_id: financialId(line.target_id),
+            category: creditFixtureText(line.category),
+            amount_usd_cents: posted,
+            outstanding_usd_cents: before,
+            attribution_basis: creditFixtureText(line.attribution_basis),
+          },
+        ],
+      },
+    ];
+    allocation.proposal_trace = proposal;
+    let unavailable = false;
+    const calls: string[] = [];
+    const reader = scopedReadFetcher(sample, raw, true);
+    h.props.services.transport = createFinancialTransport((url, init) => {
+      calls.push(init?.method ?? "");
+      if (unavailable)
+        return Promise.reject(new Error("Synthetic unavailable refresh"));
+      return reader(url, init);
+    });
+    const view = render(<FinancialAllocationReceiptWorkspace {...h.props} />);
+    fill("Source Payment reference", financialId(allocation.payment_id));
+    fill("Optional selected Allocation reference", financialId(allocation.id));
+    const load = () =>
+      fireEvent.click(
+        screen.getByRole("button", { name: "Load original history page" }),
+      );
+    load();
+    const region = await screen.findByRole("region", {
+      name: "Original Allocation history page",
+    });
+    const assertHistorical = () => {
+      expect(within(region).queryByText("Current outstanding")).toBeNull();
+      const header = within(region).getByRole("columnheader", {
+        name: "Outstanding at proposal",
+      });
+      expect(header.closest("table")).toHaveTextContent(financialMoney(before));
+      expect(region).toHaveTextContent(financialMoney(posted));
+      expect(region).not.toHaveTextContent(
+        "Confirmation posts only the displayed batch",
+      );
+      expect(region).toHaveTextContent("Original recorded proposal");
+    };
+    assertHistorical();
+    const originalProposal = within(region).getByRole("region", {
+      name: "Original recorded proposal",
+    });
+    const originalLines = within(region).getByRole("table", {
+      name: "Original Allocation detail page",
+    });
+    const facts = originalProposal.textContent,
+      lines = originalLines.textContent;
+    view.rerender(
+      <FinancialAllocationReceiptWorkspace
+        {...h.props}
+        commands={{ ...h.props.commands, revision: 1 }}
+      />,
+    );
+    assertHistorical();
+    expect(originalProposal.textContent).toBe(facts);
+    expect(originalLines.textContent).toBe(lines);
+    expect(
+      screen.getByText(/Loaded financial facts are out of date/),
+    ).toBeVisible();
+    unavailable = true;
+    load();
+    await screen.findByRole("alert");
+    const retained = screen.queryByRole("region", {
+      name: "Original Allocation history page",
+    });
+    // Failed refresh may withdraw the record, but must never revive current labels.
+    if (retained) expect(retained).not.toHaveTextContent("Current outstanding");
+    expect(screen.queryByText("Current outstanding")).toBeNull();
+    unavailable = false;
+    load();
+    const reloaded = await screen.findByRole("region", {
+      name: "Original Allocation history page",
+    });
+    expect(reloaded).toHaveTextContent("Outstanding at proposal");
+    expect(reloaded).not.toHaveTextContent("Current outstanding");
+    expect(calls).toEqual(["GET", "GET", "GET"]);
+    expect(h.recovery.submit).not.toHaveBeenCalled();
+  });
+
+  it.each(["Payment", "Credit", "Refund", "Allocation"] as const)(
+    "TEST-FE-517 right-aligns standalone %s amount entry without changing its exact value",
+    async (kind) => {
+      const sample = allocationSample("INVOICE"),
+        grant =
+          kind === "Payment"
+            ? "payments.record"
+            : kind === "Credit"
+              ? "credits.recognize"
+              : kind === "Refund"
+                ? "refunds.create"
+                : "payments.allocate",
+        h = creditHarness(sample, grant),
+        Component =
+          kind === "Payment"
+            ? FinancialPaymentWorkspace
+            : kind === "Credit"
+              ? FinancialCreditWorkspace
+              : kind === "Refund"
+                ? FinancialRefundWorkspace
+                : FinancialAllocationReceiptWorkspace;
+      const style = document.createElement("style");
+      style.textContent = financialStyles;
+      document.head.append(style);
+      try {
+        render(
+          <section className="financial-management">
+            <Component {...h.props} />
+          </section>,
+        );
+        if (kind === "Allocation")
+          fill("Allocation attribution", "DIRECT_CHARGE");
+        const label =
+          kind === "Payment"
+            ? "Original received amount (USD)"
+            : kind === "Credit"
+              ? "Credit amount (USD)"
+              : kind === "Refund"
+                ? "Refund amount (USD)"
+                : "Separate Charge Allocation amount (USD)";
+        const input = await screen.findByLabelText<HTMLInputElement>(label);
+        fireEvent.change(input, { target: { value: "123456789012345.67" } });
+        expect(input).toHaveValue("123456789012345.67");
+        expect(getComputedStyle(input).textAlign).toBe("right");
+        expect(h.recovery.submit).not.toHaveBeenCalled();
+      } finally {
+        style.remove();
+      }
+    },
+  );
+
+  it("TEST-FE-518 right-aligns the proposed-money header alongside its exact cells", () => {
+    const sample = creditSample("allocation_reversal", "INVOICE");
+    const style = document.createElement("style");
+    style.textContent = financialStyles;
+    document.head.append(style);
+    try {
+      render(
+        <section className="financial-management">
+          <TargetEvidence
+            target={sample.data.target}
+            items={sample.data.items}
+          />
+        </section>,
+      );
+      const header = screen.getByRole("columnheader", {
+        name: "Original attribution / proposal",
+      });
+      expect(getComputedStyle(header).textAlign).toBe("right");
+      expect(header.closest("table")).toHaveTextContent("Proposed:");
+    } finally {
+      style.remove();
+    }
+  });
+});

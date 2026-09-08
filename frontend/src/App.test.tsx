@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -15,7 +16,10 @@ import {
 } from "./App";
 import type { CustomerReconciliationRequirement } from "./CustomerManagement";
 import { defaultFinancialUiServices } from "./FinancialManagement";
-import { createFinancialReferenceClient } from "./financialReferenceClient";
+import {
+  FINANCIAL_CAPABILITIES,
+  createFinancialReferenceClient,
+} from "./financialReferenceClient";
 import { AccessAdministrationApi, UserAccount } from "./adminClient";
 import {
   AUTHENTICATION_ERROR_MESSAGE,
@@ -447,6 +451,7 @@ describe("local sign-in", () => {
         environment="development"
         buildId="test-build"
         authenticate={authenticate}
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
       />,
     );
 
@@ -486,6 +491,7 @@ describe("local sign-in", () => {
         environment="development"
         buildId="utility-integration"
         authenticate={authenticate}
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
       />,
     );
     expect(
@@ -587,6 +593,7 @@ describe("local sign-in", () => {
         environment="development"
         buildId="test-build"
         authenticate={authenticate}
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
       />,
     );
 
@@ -2432,6 +2439,173 @@ describe("financial panel session integration", () => {
       releaseLogout();
       await screen.findByLabelText("Username");
       expect(calls).toHaveLength(1);
+    },
+  );
+});
+
+describe("financial drafts during App logout and expiry", () => {
+  it.each([false, true])(
+    "TEST-FE-525 protects voluntary sign-out drafts and immediately clears forced expiry, forced=%s",
+    async (forced) => {
+      const actorId = "70000000-0000-4000-8000-000000000001",
+        propertyId = "70000000-0000-4000-8000-000000000002",
+        sourceId = "70000000-0000-4000-8000-000000000003",
+        signedIn = { ...session, actor_id: actorId },
+        grants = Object.fromEntries(
+          FINANCIAL_CAPABILITIES.map((name) => [
+            name,
+            name === "refunds.create",
+          ]),
+        ),
+        discard = vi.spyOn(window, "confirm").mockReturnValue(false);
+      const calls: {
+        method: string | undefined;
+        signal: AbortSignal | null | undefined;
+      }[] = [];
+      const references = createFinancialReferenceClient((url, init) => {
+        if (typeof url !== "string")
+          throw new Error("Expected finite synthetic financial read");
+        calls.push({ method: init?.method, signal: init?.signal });
+        const headers = new Headers(init?.headers),
+          requestId = headers.get("X-Request-ID"),
+          workspace = url.includes("financial-workspaces");
+        if (!workspace && !url.includes("financial-capabilities"))
+          throw new Error("Unexpected financial request");
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              data: workspace
+                ? [
+                    {
+                      property_id: propertyId,
+                      name: "Synthetic draft Property",
+                      timezone: "Asia/Phnom_Penh",
+                      capabilities: grants,
+                    },
+                  ]
+                : { property_id: propertyId, capabilities: grants },
+              ...(workspace ? { page: { limit: 100, next_cursor: null } } : {}),
+              meta: {
+                actor_id: actorId,
+                request_id: requestId,
+                ...(workspace ? {} : { property_id: propertyId }),
+              },
+            }),
+            {
+              headers: {
+                "Content-Type": "application/json",
+                "X-Request-ID": requestId ?? "",
+              },
+            },
+          ),
+        );
+      });
+      const recovery = {
+        ...defaultFinancialUiServices.recovery,
+        load: vi.fn(() => Promise.resolve({ kind: "ready" as const })),
+        submit: vi.fn(() =>
+          Promise.reject(new Error("Unexpected financial submission")),
+        ),
+      };
+      let releaseLogout!: () => void;
+      const logout = new Promise<void>((resolve) => {
+        releaseLogout = resolve;
+      });
+      const authentication = mockAuthenticationApi({
+        signIn: vi
+          .fn()
+          .mockResolvedValue({ phase: "authenticated", session: signedIn }),
+        inspectSession: vi.fn().mockResolvedValue(signedIn),
+        logout: vi.fn().mockReturnValue(logout),
+      });
+      const props = {
+        api: authentication,
+        buildId: "synthetic-financial-drafts",
+        environment: "development",
+        customerApi: customerApiDouble(),
+        financialServices: {
+          ...defaultFinancialUiServices,
+          references,
+          recovery,
+        },
+      };
+      try {
+        const view = render(
+          <App
+            {...props}
+            now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+          />,
+        );
+        fireEvent.change(screen.getByLabelText("Username"), {
+          target: { value: "synthetic-manager" },
+        });
+        fireEvent.change(screen.getByLabelText("Password"), {
+          target: { value: "synthetic-password" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+        await screen.findByRole("heading", { name: "Financial records" });
+        await screen.findByRole("option", { name: "Synthetic draft Property" });
+        fireEvent.change(screen.getByLabelText("Financial Property"), {
+          target: { value: propertyId },
+        });
+        const region = await screen.findByRole("region", {
+          name: "Refund workspace",
+        });
+        fireEvent.change(within(region).getByLabelText("Source reference"), {
+          target: { value: sourceId },
+        });
+        fireEvent.change(within(region).getByLabelText("Refund amount (USD)"), {
+          target: { value: "123.45" },
+        });
+        fireEvent.change(within(region).getByLabelText("Reason"), {
+          target: { value: "Synthetic unsent financial evidence" },
+        });
+        const signals = calls.map((call) => call.signal?.aborted);
+        if (forced) {
+          view.rerender(
+            <App
+              {...props}
+              now={() => new Date("2026-08-24T10:10:00Z").getTime()}
+            />,
+          );
+          await screen.findByLabelText("Username");
+          expect(discard).not.toHaveBeenCalled();
+          expect(authentication.logout).not.toHaveBeenCalled();
+        } else {
+          fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+          expect(discard).toHaveBeenCalledWith(
+            "Discard unsaved financial form values and sign out?",
+          );
+          expect(authentication.logout).not.toHaveBeenCalled();
+          expect(
+            within(region).getByLabelText("Refund amount (USD)"),
+          ).toHaveValue("123.45");
+          expect(within(region).getByLabelText("Reason")).toHaveValue(
+            "Synthetic unsent financial evidence",
+          );
+          expect(calls.map((call) => call.signal?.aborted)).toEqual(signals);
+          discard.mockReturnValue(true);
+          fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+          expect(authentication.logout).toHaveBeenCalledOnce();
+          expect(
+            screen.queryByRole("heading", { name: "Financial records" }),
+          ).toBeNull();
+          releaseLogout();
+          await screen.findByLabelText("Username");
+        }
+        expect(
+          screen.queryByDisplayValue("Synthetic unsent financial evidence"),
+        ).toBeNull();
+        expect(calls[0]?.signal?.aborted).toBe(true);
+        expect(calls.every((call) => call.method === "GET")).toBe(true);
+        expect(recovery.submit).not.toHaveBeenCalled();
+        const unloaded = new Event("beforeunload", { cancelable: true });
+        window.dispatchEvent(unloaded);
+        expect(unloaded.defaultPrevented).toBe(false);
+      } finally {
+        discard.mockRestore();
+        releaseLogout();
+      }
     },
   );
 });

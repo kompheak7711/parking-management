@@ -19,6 +19,7 @@ import {
   loadPaymentReversalContext,
   readFinancialRecord,
   useFinancialTask,
+  useFinancialDraft,
   useFinancialSnapshot,
 } from "./financialUiContext";
 import {
@@ -63,6 +64,7 @@ export function FinancialAllocationReceiptWorkspace({
   capabilities,
   services,
   commands,
+  onDirtyStateChange,
   receiptHandoff,
 }: FinancialWorkspaceProps & {
   receiptHandoff?: FinancialReceiptHandoff | null;
@@ -74,6 +76,7 @@ export function FinancialAllocationReceiptWorkspace({
       "INVOICE",
     ),
     [receiptByPayment, setReceiptByPayment] = useState(false);
+  const draft = useFinancialDraft(scope, onDirtyStateChange);
   const [fields, setFields] = useState(initial),
     [lineAmounts, setLineAmounts] = useState<Record<string, string>>({}),
     [linePage, setLinePage] = useState(0);
@@ -107,6 +110,8 @@ export function FinancialAllocationReceiptWorkspace({
       (!readReceipt && !reprintReceipt)
     )
       return;
+    if (!draft.confirmDiscard()) return;
+    draft.clear();
     cancel();
     invalidate();
     setContext(null);
@@ -150,6 +155,7 @@ export function FinancialAllocationReceiptWorkspace({
       );
   }, [
     receiptHandoff,
+    draft,
     scope,
     readReceipt,
     reprintReceipt,
@@ -160,6 +166,19 @@ export function FinancialAllocationReceiptWorkspace({
     setRecord,
   ]);
   function edit(values: Partial<typeof initial>, sourceChanged = false) {
+    if (
+      sourceChanged &&
+      Object.values(lineAmounts).some((value) => value !== "") &&
+      !draft.confirmDiscard()
+    )
+      return false;
+    if (
+      !readMode &&
+      Object.entries(values).some(
+        ([key, value]) => value !== fields[key as keyof typeof initial],
+      )
+    )
+      draft.edited();
     cancel();
     invalidate();
     setProposal(null);
@@ -170,9 +189,10 @@ export function FinancialAllocationReceiptWorkspace({
       setLineAmounts({});
       setLinePage(0);
     }
+    return true;
   }
   function choose(value: Mode) {
-    edit({}, true);
+    if (!edit({}, true)) return;
     setMode(value);
   }
   const readMode = mode === "allocationRead" || mode === "receiptRead";
@@ -408,6 +428,7 @@ export function FinancialAllocationReceiptWorkspace({
         setProposal(returned);
         if (request)
           preparation?.review(request, {
+            onRecorded: draft.captureRecorded(),
             consequence:
               mode === "allocate"
                 ? "Post only the exact displayed Payment Allocation batch or designated target and lines. Payment value, Customer Credit and Deposit value remain separate. Any further eligible batch needs a new explicit proposal and confirmation."
@@ -476,7 +497,7 @@ export function FinancialAllocationReceiptWorkspace({
               <select
                 value={receiptByPayment ? "payment" : "receipt"}
                 onChange={(e) => {
-                  edit({ source: "" }, true);
+                  if (!edit({ source: "" }, true)) return;
                   setReceiptByPayment(e.target.value === "payment");
                 }}
               >
@@ -517,7 +538,7 @@ export function FinancialAllocationReceiptWorkspace({
                 <select
                   value={basis}
                   onChange={(e) => {
-                    edit({}, true);
+                    if (!edit({}, true)) return;
                     const value = e.target.value;
                     setBasis(
                       value === "PROPOSAL"
@@ -545,7 +566,7 @@ export function FinancialAllocationReceiptWorkspace({
                       <select
                         value={targetKind}
                         onChange={(e) => {
-                          edit({ target: "" }, true);
+                          if (!edit({ target: "" }, true)) return;
                           setTargetKind(
                             e.target.value === "INVOICE"
                               ? "INVOICE"
@@ -664,6 +685,8 @@ export function FinancialAllocationReceiptWorkspace({
                                     cancel();
                                     invalidate();
                                     const value = e.target.value;
+                                    if (value !== (lineAmounts[id] ?? ""))
+                                      draft.edited();
                                     setLineAmounts((old) => ({
                                       ...old,
                                       [id]: value,

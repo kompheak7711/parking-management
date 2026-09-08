@@ -599,7 +599,9 @@ h1 {
 }
 
 .financial-management .financial-money,
-.financial-management .financial-money input {
+.financial-management .financial-money input,
+.financial-management input[inputmode="decimal"],
+.financial-management input[inputmode="numeric"] {
   text-align: right;
 }
 

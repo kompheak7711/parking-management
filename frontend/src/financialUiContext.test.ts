@@ -12,6 +12,7 @@ import {
   loadPaymentReversalContext,
   useFinancialTask,
   useFinancialSnapshot,
+  useFinancialDraft,
 } from "./financialUiContext";
 import {
   actionContextFixtures,
@@ -616,4 +617,102 @@ it("TEST-FE-508 cancels a pre-command read and cannot promote its retained snaps
   });
   expect(result.current.value).toBe("Fresh authorized facts");
   expect(result.current.current).toBe(true);
+});
+
+describe("scope-bound financial draft acknowledgement", () => {
+  it("TEST-FE-522 acknowledges only the exact edit generation that was confirmed", () => {
+    const changed = vi.fn(),
+      supplied = scope();
+    const h = renderHook(() => useFinancialDraft(supplied, changed));
+    act(() => {
+      h.result.current.edited();
+    });
+    const previous = h.result.current.captureRecorded();
+    act(() => {
+      h.result.current.edited();
+    });
+    act(previous);
+    expect(changed).toHaveBeenLastCalledWith(true);
+    const current = h.result.current.captureRecorded();
+    act(current);
+    expect(changed).toHaveBeenLastCalledWith(false);
+    const calls = changed.mock.calls.length;
+    act(current);
+    expect(changed).toHaveBeenCalledTimes(calls);
+  });
+  it.each(["actor", "Property", "signal"] as const)(
+    "TEST-FE-522 ignores old draft callbacks after a %s transition",
+    (kind) => {
+      const changed = vi.fn(),
+        supplied = scope();
+      const h = renderHook(({ value }) => useFinancialDraft(value, changed), {
+        initialProps: { value: supplied },
+      });
+      const old = h.result.current;
+      act(old.edited);
+      const acknowledged = old.captureRecorded();
+      h.rerender({
+        value: {
+          ...supplied,
+          ...(kind === "actor"
+            ? { actorId: ids.other }
+            : kind === "Property"
+              ? { propertyId: ids.other }
+              : { signal: new AbortController().signal }),
+        },
+      });
+      expect(changed).toHaveBeenLastCalledWith(false);
+      act(() => {
+        h.result.current.edited();
+      });
+      const calls = changed.mock.calls.length;
+      act(() => {
+        old.edited();
+        old.clear();
+        acknowledged();
+      });
+      expect(changed).toHaveBeenCalledTimes(calls);
+      expect(changed).toHaveBeenLastCalledWith(true);
+      expect(old.confirmDiscard()).toBe(false);
+    },
+  );
+  it("TEST-FE-522 immediately drops dirty state on forced abort without a discard prompt", () => {
+    const changed = vi.fn(),
+      controller = new AbortController(),
+      discard = vi.spyOn(window, "confirm").mockReturnValue(false);
+    try {
+      const h = renderHook(() =>
+        useFinancialDraft(scope(undefined, controller.signal), changed),
+      );
+      act(() => {
+        h.result.current.edited();
+      });
+      const current = h.result.current;
+      act(() => {
+        controller.abort();
+      });
+      expect(changed).toHaveBeenLastCalledWith(false);
+      expect(current.confirmDiscard()).toBe(false);
+      act(current.edited);
+      expect(changed).toHaveBeenLastCalledWith(false);
+      expect(discard).not.toHaveBeenCalled();
+    } finally {
+      discard.mockRestore();
+    }
+  });
+  it("TEST-FE-522 preserves dirty state when only its notification callback changes", () => {
+    const first = vi.fn(),
+      next = vi.fn(),
+      supplied = scope();
+    const h = renderHook(({ notify }) => useFinancialDraft(supplied, notify), {
+      initialProps: { notify: first },
+    });
+    act(() => {
+      h.result.current.edited();
+    });
+    h.rerender({ notify: next });
+    expect(next).toHaveBeenLastCalledWith(true);
+    act(h.result.current.captureRecorded());
+    expect(next).toHaveBeenLastCalledWith(false);
+  });
 });

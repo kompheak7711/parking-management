@@ -20,7 +20,8 @@ import {
   isFinancialCommand,
   type FinancialObject,
 } from "../financialContracts";
-import { stringifyFinancialJson } from "../financialJson";
+import { parseFinancialJson, stringifyFinancialJson } from "../financialJson";
+import { TargetEvidence } from "../FinancialEvidence";
 import {
   FINANCIAL_COMMAND_CAPABILITIES,
   type FinancialUiServices,
@@ -54,6 +55,7 @@ interface Scenario {
   grant: boolean;
   originalPrint: typeof window.print;
   prints: number;
+  historyUnavailable?: boolean;
   preparation?: { promise: Promise<void>; release: () => void };
 }
 let scenario: Scenario | null = null;
@@ -138,6 +140,7 @@ export async function startFinancialWorkflowBrowserScenario(
     outcome?: "success" | "unknown";
     readOnly?: boolean;
     staffReview?: boolean;
+    reviewCorrection2?: boolean;
   } = {},
 ) {
   const input = command(index);
@@ -172,6 +175,14 @@ export async function startFinancialWorkflowBrowserScenario(
                 "payments.record",
                 "refunds.create",
                 "receipts.read",
+                ...(options.reviewCorrection2
+                  ? [
+                      "payments.allocate",
+                      "credits.recognize",
+                      "refunds.correct",
+                      "exchange_rates.manage",
+                    ]
+                  : []),
               ].includes(c),
           ]),
         )
@@ -203,6 +214,49 @@ export async function startFinancialWorkflowBrowserScenario(
         { property_id: call.property, capabilities: grants(s.grant) },
         init,
       );
+    if (
+      options.reviewCorrection2 &&
+      call.url.includes("/payments/khr-preview")
+    ) {
+      check(
+        call.method === "POST" && call.body !== null,
+        "Synthetic preview requires its explicit input",
+      );
+      const amount = financialObject(
+        parseFinancialJson(call.body),
+      ).usd_amount_cents;
+      check(
+        typeof amount === "number" || typeof amount === "bigint",
+        "Synthetic exact preview amount is required",
+      );
+      return response(
+        {
+          property_id: ids.property,
+          provisional: true,
+          status: "source_unavailable",
+          usd_amount_cents: amount,
+          manual_fallback_allowed: true,
+        },
+        init,
+      );
+    }
+    if (
+      options.reviewCorrection2 &&
+      call.method === "GET" &&
+      new URL(call.url, "https://synthetic.invalid").pathname.endsWith(
+        `/payments/${ids.payment}/allocations`,
+      ) &&
+      new URL(call.url, "https://synthetic.invalid").searchParams.get(
+        "allocation_id",
+      ) === ids.allocation
+    ) {
+      if (s.historyUnavailable)
+        throw new Error("Synthetic history refresh is unavailable");
+      return response(recordedAllocationBrowserFixture(actorId), init, {
+        limit: 50,
+        next_cursor: null,
+      });
+    }
     if (call.method === "GET") {
       if (options.staffReview) {
         const path = new URL(call.url, "https://synthetic.invalid").pathname;
@@ -367,7 +421,7 @@ export async function startFinancialWorkflowBrowserScenario(
   s.services = {
     transport,
     recovery,
-    references: createFinancialReferenceClient(fetcher),
+    references: createFinancialReferenceClient(fetcher, () => "synthetic-csrf"),
   };
   if (options.seedPending ?? true) {
     const result = await recovery.submit(
@@ -783,4 +837,159 @@ export function verifyFinancialStaleReadsBrowser() {
     "Only the explicitly confirmed Refund is sent",
   );
   return "TEST-FE-515";
+}
+
+function recordedAllocationBrowserFixture(actorId: string): FinancialObject {
+  const instant = "2026-09-01T12:00:00.123456+07:00";
+  return {
+    allocation: {
+      id: ids.allocation,
+      payment_id: ids.payment,
+      property_id: ids.property,
+      target_kind: "INVOICE",
+      target_id: ids.invoice,
+      invoice_id: ids.invoice,
+      late_payment_charge_id: null,
+      target_customer_id: ids.customer,
+      amount_usd_cents: 100,
+      posted_at: instant,
+      posted_by: actorId,
+      authorization_reference: "payments.allocate",
+      reversal: null,
+      within_invoice_basis: "RENT_THEN_RECURRING_SERVICES_PROPOSAL",
+      between_invoice_basis: "FIFO_PROPOSAL",
+      between_invoice_sequence: 1,
+      customer_designation_reference: null,
+      proposal_batch_id: ids.key,
+      proposal_generated_at: instant,
+      selected_invoice_number_snapshot: "INV-ORIGINAL-SYNTHETIC",
+      selected_invoice_due_date: "2026-09-01",
+      selected_invoice_issued_at: instant,
+      proposal_trace: {
+        payment_id: ids.payment,
+        property_id: ids.property,
+        proposal_batch_id: ids.key,
+        generated_at: instant,
+        available_usd_cents: 100,
+        unallocated_after_usd_cents: 0,
+        policy: "DUE_ISSUED_NUMBER_ID/RENT_SERVICE_SOURCE_ORDER",
+        payment_scope: "NORMAL_CUSTOMER",
+        continuation_status: "COMPLETE",
+        designation_reference: null,
+        targets: [
+          {
+            invoice_id: ids.invoice,
+            invoice_number: "INV-ORIGINAL-SYNTHETIC",
+            version: 1,
+            target_customer_id: ids.customer,
+            due_date: "2026-09-01",
+            issued_at: instant,
+            sequence: 1,
+            amount_usd_cents: 100,
+            details: [
+              {
+                invoice_line_id: ids.other,
+                category: "RENT",
+                amount_usd_cents: 100,
+                outstanding_usd_cents: 100,
+                attribution_basis: "RENT_FIRST_PROPOSAL",
+              },
+            ],
+          },
+        ],
+      },
+    },
+    details: [
+      {
+        id: ids.event,
+        detail_sequence: 1,
+        invoice_line_id: ids.other,
+        late_payment_charge_id: null,
+        invoice_line_category_snapshot: "RENT",
+        proposed_amount_usd_cents: 100,
+        posted_amount_usd_cents: 100,
+        attribution_basis: "RENT_FIRST_PROPOSAL",
+      },
+    ],
+  };
+}
+
+export function setFinancialHistoryBrowserUnavailable(value: boolean) {
+  current().historyUnavailable = value;
+}
+
+export function verifyFinancialRecordedProposalBrowser() {
+  const region = current().host.querySelector(
+    '[aria-label="Original recorded proposal"]',
+  );
+  check(
+    region,
+    "Selected Allocation must include its original non-null proposal trace",
+  );
+  check(
+    region.textContent.includes("Outstanding at proposal") &&
+      region.textContent.includes("USD 1.00"),
+    "Original pre-post amount stays explicitly historical",
+  );
+  check(
+    !region.textContent.includes("Current outstanding") &&
+      !region.textContent.includes("Confirmation posts only"),
+    "Saved trace cannot claim a current position or invite confirmation",
+  );
+  return "TEST-FE-526";
+}
+
+export function showFinancialMoneyHeaderBrowser() {
+  const sample = [...actionContextFixtures]
+    .reverse()
+    .find(
+      (s) =>
+        s.request.purpose === "allocation_reversal" &&
+        financialObject(s.data.target).kind === "INVOICE",
+    );
+  check(sample, "Original synthetic Allocation target evidence is required");
+  current().root.render(
+    createElement(
+      "section",
+      { className: "panel financial-management" },
+      createElement(TargetEvidence, {
+        target: sample.data.target,
+        items: sample.data.items,
+      }),
+    ),
+  );
+}
+
+export function verifyFinancialMoneyHeaderBrowser() {
+  const host = current().host;
+  const header = Array.from(host.querySelectorAll("th")).find(
+    (node) => node.textContent === "Original attribution / proposal",
+  );
+  check(
+    header && getComputedStyle(header).textAlign === "right",
+    "Proposed-money header aligns with its exact cells",
+  );
+  const table = header.closest("table"),
+    wrapper = table?.closest(".financial-table-scroll");
+  check(
+    table?.textContent.includes("Proposed: USD") &&
+      wrapper &&
+      getComputedStyle(wrapper).overflowX === "auto" &&
+      wrapper.getBoundingClientRect().width <= innerWidth,
+    "Exact proposed currency and bounded narrow-screen overflow are preserved",
+  );
+  return "TEST-FE-527";
+}
+
+export async function verifyFinancialDraftDiscardBrowser() {
+  const s = current();
+  check(
+    s.calls.every((c) => c.method === "GET"),
+    "Draft navigation must not submit a financial action",
+  );
+  check(
+    (await sealedIntentStore.read(s.actorId)) === null,
+    "Unsent drafts are never persisted as encrypted command intents or automatically replayed",
+  );
+  return "TEST-FE-528";
 }

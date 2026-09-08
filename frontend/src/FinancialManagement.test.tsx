@@ -595,9 +595,15 @@ describe("shared financial confirmation and recovery", () => {
           else expect(h.store.begin).toHaveBeenCalledTimes(1);
         });
       }
-      fireEvent.change(screen.getByLabelText("Financial Property"), {
-        target: { value: ids.other },
-      });
+      const discard = vi.spyOn(window, "confirm").mockReturnValue(true);
+      try {
+        fireEvent.change(screen.getByLabelText("Financial Property"), {
+          target: { value: ids.other },
+        });
+        expect(discard).toHaveBeenCalledOnce();
+      } finally {
+        discard.mockRestore();
+      }
       await screen.findByRole("region", {
         name: "Financial Property Synthetic Garden Property",
       });
@@ -676,11 +682,17 @@ describe("shared financial confirmation and recovery", () => {
     );
     await screen.findByRole("button", { name: "Review original action" });
     h.setGrant(false);
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Refresh financial access and recovery",
-      }),
-    );
+    const discard = vi.spyOn(window, "confirm").mockReturnValue(true);
+    try {
+      fireEvent.click(
+        screen.getByRole("button", {
+          name: "Refresh financial access and recovery",
+        }),
+      );
+      expect(discard).toHaveBeenCalledOnce();
+    } finally {
+      discard.mockRestore();
+    }
     await waitFor(() => {
       expect(screen.queryByLabelText("Source reference")).toBeNull();
     });
@@ -846,4 +858,192 @@ describe("shared preparation ownership across financial forms", () => {
       expect(h.records.size).toBe(0);
     },
   );
+});
+
+describe("unsent financial drafts survive cancelled navigation", () => {
+  it("TEST-FE-519 warns before a Property switch and preserves draft and scope when cancelled", async () => {
+    const h = harness(),
+      discard = vi.spyOn(window, "confirm").mockReturnValue(false);
+    try {
+      render(<FinancialManagement actorId={ids.actor} services={h.services} />);
+      await openProperty();
+      fillRefund();
+      const before = h.calls.length;
+      const signalsBefore = h.calls.map((c) => c.signal?.aborted);
+      fireEvent.change(screen.getByLabelText("Financial Property"), {
+        target: { value: ids.other },
+      });
+      expect(discard).toHaveBeenCalledOnce();
+      expect(screen.getByLabelText("Financial Property")).toHaveValue(
+        ids.property,
+      );
+      expect(screen.getByLabelText("Refund amount (USD)")).toHaveValue("1.01");
+      expect(screen.getByLabelText("Reason")).toHaveValue(
+        "Synthetic completed payout",
+      );
+      expect(h.calls).toHaveLength(before);
+      expect(h.calls.map((c) => c.signal?.aborted)).toEqual(signalsBefore);
+      discard.mockReturnValue(true);
+      fireEvent.change(screen.getByLabelText("Financial Property"), {
+        target: { value: ids.other },
+      });
+      await screen.findByRole("region", {
+        name: "Financial Property Synthetic Garden Property",
+      });
+      expect(screen.getByLabelText("Refund amount (USD)")).toHaveValue("");
+      expect(
+        h.calls
+          .slice(before)
+          .filter((c) => c.property !== null)
+          .every((c) => c.property === ids.other),
+      ).toBe(true);
+      expect(posts(h)).toHaveLength(0);
+      expect(h.records.size).toBe(0);
+    } finally {
+      discard.mockRestore();
+    }
+  });
+  it.each([
+    "Refresh financial Properties",
+    "Refresh financial access and recovery",
+  ])(
+    "TEST-FE-520 preserves unsent values when %s discard is cancelled",
+    async (label) => {
+      const h = harness(),
+        discard = vi.spyOn(window, "confirm").mockReturnValue(false);
+      try {
+        render(
+          <FinancialManagement actorId={ids.actor} services={h.services} />,
+        );
+        await openProperty();
+        fillRefund();
+        const before = h.calls.length;
+        fireEvent.click(screen.getByRole("button", { name: label }));
+        expect(discard).toHaveBeenCalledOnce();
+        expect(screen.getByLabelText("Financial Property")).toHaveValue(
+          ids.property,
+        );
+        expect(screen.getByLabelText("Refund amount (USD)")).toHaveValue(
+          "1.01",
+        );
+        expect(screen.getByLabelText("Reason")).toHaveValue(
+          "Synthetic completed payout",
+        );
+        expect(h.calls).toHaveLength(before);
+        expect(posts(h)).toHaveLength(0);
+      } finally {
+        discard.mockRestore();
+      }
+    },
+  );
+  it("TEST-FE-521 warns on unload only while unsent financial values exist", async () => {
+    const h = harness();
+    const view = render(
+      <FinancialManagement actorId={ids.actor} services={h.services} />,
+    );
+    await openProperty();
+    const pristine = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(pristine);
+    expect(pristine.defaultPrevented).toBe(false);
+    fillRefund();
+    const dirty = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(dirty);
+    expect(dirty.defaultPrevented).toBe(true);
+    view.unmount();
+    const gone = new Event("beforeunload", { cancelable: true });
+    window.dispatchEvent(gone);
+    expect(gone.defaultPrevented).toBe(false);
+    expect(posts(h)).toHaveLength(0);
+    expect(h.records.size).toBe(0);
+  });
+});
+
+describe("financial draft boundaries around explicit confirmation", () => {
+  it.each([false, true])(
+    "TEST-FE-523 acknowledges a confirmed draft without another discard warning, original-key replay %s",
+    async (replay) => {
+      const h = harness(),
+        discard = vi.spyOn(window, "confirm").mockReturnValue(false);
+      try {
+        if (replay) h.setOutcome("unknown");
+        render(
+          <FinancialManagement actorId={ids.actor} services={h.services} />,
+        );
+        await openProperty();
+        const dialog = await prepareRefund();
+        fireEvent.click(
+          within(dialog).getByRole("button", { name: "Record USD refund" }),
+        );
+        if (replay) {
+          const review = await screen.findByRole("button", {
+            name: "Review original action",
+          });
+          const dirty = new Event("beforeunload", { cancelable: true });
+          window.dispatchEvent(dirty);
+          expect(dirty.defaultPrevented).toBe(true);
+          h.setOutcome("success");
+          fireEvent.click(review);
+          const pending = await screen.findByRole("dialog", {
+            name: "Review original unresolved action",
+          });
+          fireEvent.click(
+            within(pending).getByRole("button", {
+              name: "Send original action again",
+            }),
+          );
+        }
+        await recorded();
+        const clean = new Event("beforeunload", { cancelable: true });
+        window.dispatchEvent(clean);
+        expect(clean.defaultPrevented).toBe(false);
+        fireEvent.change(screen.getByLabelText("Financial Property"), {
+          target: { value: ids.other },
+        });
+        await screen.findByRole("region", {
+          name: "Financial Property Synthetic Garden Property",
+        });
+        expect(discard).not.toHaveBeenCalled();
+        expect(posts(h)).toHaveLength(replay ? 2 : 1);
+        expect(h.records.size).toBe(0);
+        if (replay) {
+          expect(posts(h)[1]?.key).toBe(posts(h)[0]?.key);
+          expect(posts(h)[1]?.body).toBe(posts(h)[0]?.body);
+        }
+      } finally {
+        discard.mockRestore();
+      }
+    },
+  );
+  it("TEST-FE-524 preserves a competing Payment draft after a Refund is confirmed", async () => {
+    const h = harness(true),
+      discard = vi.spyOn(window, "confirm").mockReturnValue(false);
+    try {
+      render(<FinancialManagement actorId={ids.actor} services={h.services} />);
+      await openProperty();
+      fireEvent.change(
+        screen.getByLabelText("Original received amount (USD)"),
+        { target: { value: "234.56" } },
+      );
+      const dialog = await prepareRefund();
+      fireEvent.click(
+        within(dialog).getByRole("button", { name: "Record USD refund" }),
+      );
+      await recorded();
+      fireEvent.change(screen.getByLabelText("Financial Property"), {
+        target: { value: ids.other },
+      });
+      expect(discard).toHaveBeenCalledOnce();
+      expect(screen.getByLabelText("Financial Property")).toHaveValue(
+        ids.property,
+      );
+      expect(
+        screen.getByLabelText("Original received amount (USD)"),
+      ).toHaveValue("234.56");
+      expect(posts(h)).toHaveLength(1);
+      expect(posts(h)[0]?.url).toContain("/refunds");
+      expect(h.records.size).toBe(0);
+    } finally {
+      discard.mockRestore();
+    }
+  });
 });

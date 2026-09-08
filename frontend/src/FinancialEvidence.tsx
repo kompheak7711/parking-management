@@ -746,7 +746,9 @@ export function TargetEvidence({
                   <th className="financial-money">Original amount</th>
                   <th className="financial-money">Adjusted amount</th>
                   <th className="financial-money">Current outstanding</th>
-                  <th>Original attribution / proposal</th>
+                  <th className="financial-money">
+                    Original attribution / proposal
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -1112,7 +1114,13 @@ interface DisplayCommand {
   target: Readonly<Record<string, string>>;
   body: FinancialObject;
 }
-function IntentLines({ value }: { value: unknown }) {
+function IntentLines({
+  value,
+  atProposal = false,
+}: {
+  value: unknown;
+  atProposal?: boolean;
+}) {
   const rows = Array.isArray(value) ? value.map(record) : [];
   return rows.length ? (
     <div className="financial-table-scroll">
@@ -1122,7 +1130,9 @@ function IntentLines({ value }: { value: unknown }) {
           <tr>
             <th>Invoice line reference</th>
             <th>Category / basis</th>
-            <th className="financial-money">Current outstanding</th>
+            <th className="financial-money">
+              {atProposal ? "Outstanding at proposal" : "Current outstanding"}
+            </th>
             <th className="financial-money">Selected USD</th>
           </tr>
         </thead>
@@ -1155,7 +1165,13 @@ function IntentLines({ value }: { value: unknown }) {
     </div>
   ) : null;
 }
-export function FinancialProposalEvidence({ value }: { value: unknown }) {
+export function FinancialProposalEvidence({
+  value,
+  recorded = false,
+}: {
+  value: unknown;
+  recorded?: boolean;
+}) {
   const proposal = record(value),
     credit = proposal.credit_id !== undefined;
   const targets = Array.isArray(proposal.targets)
@@ -1164,11 +1180,19 @@ export function FinancialProposalEvidence({ value }: { value: unknown }) {
   return (
     <section
       aria-label={
-        credit ? "Credit application proposal" : "Payment Allocation proposal"
+        recorded
+          ? "Original recorded proposal"
+          : credit
+            ? "Credit application proposal"
+            : "Payment Allocation proposal"
       }
     >
       <h4>
-        {credit ? "Credit application proposal" : "Payment Allocation proposal"}
+        {recorded
+          ? "Original recorded proposal"
+          : credit
+            ? "Credit application proposal"
+            : "Payment Allocation proposal"}
       </h4>
       <FinancialFacts
         rows={[
@@ -1183,7 +1207,7 @@ export function FinancialProposalEvidence({ value }: { value: unknown }) {
           ],
           ["Server ordering policy", financialLabel(proposal.policy)],
           [
-            "Continuation",
+            recorded ? "Continuation at proposal" : "Continuation",
             proposal.continuation_status === "MORE_ELIGIBLE"
               ? "Another explicit batch may remain"
               : proposal.continuation_status === "COMPLETE"
@@ -1224,14 +1248,16 @@ export function FinancialProposalEvidence({ value }: { value: unknown }) {
                   optional(proposal.designation_reference),
                 ] as const,
                 [
-                  "Unallocated after this batch",
+                  recorded
+                    ? "Proposed unallocated USD after this batch"
+                    : "Unallocated after this batch",
                   money(proposal.unallocated_after_usd_cents),
                 ] as const,
               ]),
         ]}
       />
       {credit ? (
-        <IntentLines value={proposal.details} />
+        <IntentLines value={proposal.details} atProposal />
       ) : targets.length ? (
         targets.map((target) => (
           <section
@@ -1253,16 +1279,23 @@ export function FinancialProposalEvidence({ value }: { value: unknown }) {
                 ["This target USD", money(target.amount_usd_cents)],
               ]}
             />
-            <IntentLines value={target.details} />
+            <IntentLines value={target.details} atProposal />
           </section>
         ))
       ) : (
         <p>No eligible targets were returned.</p>
       )}
-      <p>
-        Confirmation posts only the displayed batch. Any remaining eligible
-        amount requires a fresh proposal and a separate explicit confirmation.
-      </p>
+      {recorded ? (
+        <p>
+          These balances, versions and continuation facts were saved at proposal
+          time. Use a fresh authorized read for current balances.
+        </p>
+      ) : (
+        <p>
+          Confirmation posts only the displayed batch. Any remaining eligible
+          amount requires a fresh proposal and a separate explicit confirmation.
+        </p>
+      )}
     </section>
   );
 }
@@ -2059,7 +2092,7 @@ export function AllocationRecordEvidence({
         <LinkedReversalEvidence value={allocation.reversal} />
       )}
       {allocation.proposal_trace != null && (
-        <FinancialProposalEvidence value={allocation.proposal_trace} />
+        <FinancialProposalEvidence value={allocation.proposal_trace} recorded />
       )}
       <div className="financial-table-scroll">
         <table>

@@ -26373,6 +26373,159 @@
       "test_path": "frontend/src/test/financialWorkflows.browser.ts",
       "status": "implemented",
       "notes": "Real browser original Receipt handoff reads exact identity under its own grant; confirmed Refund invalidates previously loaded Payment/Receipt current positions while preserving originals. Explicit reload displays updated balance with no second command."
+    },
+    {
+      "test_id": "TEST-FE-516",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Selected posted Allocation non-null proposal trace labels its saved pre-post outstanding balance as historical on fresh read, after revision, after failed reload and after recovery. Finite synthetic projection reconstructed from captured original facts; actual transport GET validation, no command."
+    },
+    {
+      "test_id": "TEST-FE-517",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-020"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Actual project stylesheet right-aligns exact large Payment, Credit, Refund and separate Charge Allocation inputs without value changes."
+    },
+    {
+      "test_id": "TEST-FE-518",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-020"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "The proposed-money header aligns with its exact monetary cells using the actual project stylesheet."
+    },
+    {
+      "test_id": "TEST-FE-519",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Property switch cancellation preserves unsent Refund fields, scope and request count; explicit discard switches to an empty form, without financial submission or stored intent."
+    },
+    {
+      "test_id": "TEST-FE-520",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Cancelling either voluntary financial Property discovery refresh or access/recovery refresh preserves unsent fields and avoids refresh requests."
+    },
+    {
+      "test_id": "TEST-FE-521",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Before-unload warning exists only while unsent financial edits exist and is removed on forced unmount; no financial submission or intent persistence."
+    },
+    {
+      "test_id": "TEST-FE-522",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "Draft acknowledgement is bound to exact edit generation and actor/Property/lifecycle signal. Old callbacks cannot edit or clear a new draft; forced abort clears immediately without prompting, while notification callback changes retain dirty state."
+    },
+    {
+      "test_id": "TEST-FE-523",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "UI-103",
+        "API-066"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Confirmed Refund clears only its captured draft generation, including explicit original-key replay after an unknown result; pending stays dirty, identical original body/key is used, and acknowledged Property switch does not prompt."
+    },
+    {
+      "test_id": "TEST-FE-524",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "API-057",
+        "API-066"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Confirming a Refund does not acknowledge a competing Payment draft; cancelling Property navigation retains the Payment amount and only the explicitly confirmed Refund is submitted."
+    },
+    {
+      "test_id": "TEST-FE-525",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102",
+        "SEC-036"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Authenticated App voluntary sign-out cancellation retains financial fields and live scope; confirmed sign-out unmounts immediately before logout response. Forced session expiry clears drafts and unload warning without a discard prompt or financial POST."
+    },
+    {
+      "test_id": "TEST-FE-526",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium selected Allocation GET renders a finite synthetic original non-null proposal trace with historical balance labels; command revision preserves saved facts, failed reload cannot restore current labels and explicit recovery remains historical. Only one explicit synthetic Refund command; no financial network."
+    },
+    {
+      "test_id": "TEST-FE-527",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-020",
+        "UI-102"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium at360px checks eleven exact monetary input states including KHR/manual/channel rates and the proposed-money header. Explicit currency discard, preserved exact values and bounded table overflow; only an explicit synthetic provisional preview request, no financial command or network."
+    },
+    {
+      "test_id": "TEST-FE-528",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-102"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium native Property-discard dialog cancellation retains source/amount/reason and request count; acceptance resets the new Property form and returning cannot restore discarded values. GET-only synthetic calls, no saved intent or automatic replay."
     }
   ]
 }
