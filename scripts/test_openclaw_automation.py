@@ -9667,18 +9667,20 @@ raise SystemExit(9)
             notification_hang,
             unload_failure,
             terminate_source_on_unload,
+            delayed_second_terminalizer,
         ) in (
-            ("ok", False, False, False, False),
-            ("ok", True, False, False, False),
-            ("recoverable_then_ok", False, False, False, False),
-            ("recoverable_then_disabled", False, False, False, False),
-            ("exhausted", False, False, False, False),
-            ("error", False, False, False, False),
-            ("ok_no_progress", False, False, False, False),
-            ("protected", False, False, False, False),
-            ("error", False, True, False, False),
-            ("ok", False, False, True, False),
-            ("ok", False, False, False, True),
+            ("ok", False, False, False, False, False),
+            ("ok", True, False, False, False, False),
+            ("recoverable_then_ok", False, False, False, False, False),
+            ("recoverable_then_disabled", False, False, False, False, False),
+            ("exhausted", False, False, False, False, False),
+            ("error", False, False, False, False, False),
+            ("ok_no_progress", False, False, False, False, False),
+            ("protected", False, False, False, False, False),
+            ("error", False, True, False, False, False),
+            ("ok", False, False, True, False, False),
+            ("ok", False, False, False, True, False),
+            ("error", False, True, False, False, True),
         ):
             with (
                 self.subTest(
@@ -9687,6 +9689,7 @@ raise SystemExit(9)
                     notification_hang=notification_hang,
                     unload_failure=unload_failure,
                     terminate_source_on_unload=terminate_source_on_unload,
+                    delayed_second_terminalizer=delayed_second_terminalizer,
                 ),
                 tempfile.TemporaryDirectory() as directory,
             ):
@@ -9992,6 +9995,12 @@ if sys.argv[1] == 'submit':
         start_new_session=True,
     )
     raise SystemExit(0)
+# The delayed regression keeps the second request separate from its completion.
+if os.environ.get('FAKE_DELAY_SECOND_TERMINALIZER') == '1' and sys.argv[-1].endswith('.terminalizer'):
+    previous = pathlib.Path(os.environ['FAKE_LAUNCHCTL_LOG'])
+    if previous.exists() and any(line.endswith('.terminalizer') for line in previous.read_text().splitlines()):
+        import time
+        time.sleep(0.2)
 with pathlib.Path(os.environ['FAKE_LAUNCHCTL_LOG']).open('a') as handle:
     handle.write(' '.join(sys.argv[1:]) + '\\n')
 if os.environ.get('FAKE_UNLOAD_FAIL') == '1' and not sys.argv[-1].endswith('.terminalizer'):
@@ -10062,6 +10071,9 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                         "FAKE_TERMINATE_SOURCE": (
                             "1" if terminate_source_on_unload else "0"
                         ),
+                        "FAKE_DELAY_SECOND_TERMINALIZER": "1"
+                        if delayed_second_terminalizer
+                        else "0",
                         "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
                     },
                     capture_output=True,
@@ -10201,6 +10213,9 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                             "FAKE_NOTIFICATION_HANG": "1" if notification_hang else "0",
                             "FAKE_UNLOAD_FAIL": "1" if unload_failure else "0",
                             "FAKE_TERMINATE_SOURCE": "0",
+                            "FAKE_DELAY_SECOND_TERMINALIZER": "1"
+                            if delayed_second_terminalizer
+                            else "0",
                             "PROPERTY_RENTAL_TEST_PROCESS_ROWS": "",
                         },
                         capture_output=True,
@@ -10212,6 +10227,19 @@ if os.environ.get('FAKE_TERMINATE_SOURCE') == '1' and not sys.argv[-1].endswith(
                         json.loads(evidence.read_text())["status"], "failed_closed"
                     )
                     self.assertNotIn("pending_post_exit", evidence.read_text())
+                    # A requested second unload can precede the fake command's log.
+                    # Keep the existing deadline and exact two-pair assertions.
+                    rerun_terminalizer_deadline = time.monotonic() + 2
+                    while time.monotonic() < rerun_terminalizer_deadline:
+                        if (
+                            sum(
+                                line.endswith(".terminalizer")
+                                for line in launchctl_log.read_text().splitlines()
+                            )
+                            >= 2
+                        ):
+                            break
+                        time.sleep(0.01)
                 final_evidence_text = evidence.read_text()
                 final_evidence = json.loads(final_evidence_text)
                 self.assertEqual(
