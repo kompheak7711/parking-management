@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "financial_staff_ui_focused_verified",
+    "phase": "financial_staff_ui_clock_fixture_verified",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2087,7 +2087,7 @@
       "schedulers": "SAME nativeACTIVE/OpenClawdisabled"
     },
     "owner_action_required": false,
-    "next_action": "Create normal27path local staff-UI commit from accepted013; run immutable full BE/FE/PG/automation/build/import and6new+21retainedChromiumgroups, with fullFE/fullPG alone. Then one complete013-baseAstra/max/Standard/enforced-read-only zero review under standingthrough53authorization. Preserve all failed candidates/reports/regressions,28historicalobjects,original1733trace. After boundedUIacceptance perform cumulative52release/fullgates/freshreview/publication/exactSHA CI/ref/SAMEcard/durableclosure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54. Workboardnotehold separate unresolved; no retry.",
+    "next_action": "Freeze the normal 7-path clock-fixture successor of preserved74; verify all exact gates and obtain a complete013-base29-path Astra/max/Standard/enforced-read-only independent review with zero HIGH/MEDIUM/LOW findings. Original API503 cause remains unproven. Preserve all failure evidence and standing authority across hashes. Then cumulative52release/gates/review/publication/CI/ref/SAMEcard/durableclosure before53; Workboard private-note hold remains separate, no retry; fullyclosed53pauseSAME/native and keepOpenClawdisabled/no54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -2143,7 +2143,9 @@
         "ops/traceability.json",
         "ops/V1_052_FINANCIAL_STAFF_UI.md",
         "frontend/src/financialResponse.ts",
-        "frontend/src/financialClient.test.ts"
+        "frontend/src/financialClient.test.ts",
+        "backend/tests/test_refund_service_migration.py",
+        "backend/tests/test_financial_fixture_clock_migration.py"
       ],
       "scope": "Staff Payment/KHR, Allocation/reversal, original Receipt/reprint, Credit recognition/application/reversals, supported USD Refund/verified return/correction reversal, complete Payment reversal impact/results, capability navigation, explicit captured confirmation and actor-bound recovery. No new backend runtime/SQL/grants/dependencies/canonical policy. Accepted client changes are limited to the separately recorded Credit proposal continuation response correction; no convenience changes.",
       "docs": [
@@ -2219,6 +2221,10 @@
         {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-proposal-scope.json",
           "sha256": "28ef3e606ec4d3b6a8a15c34cd5ceb1acfe237f8875a0542483ba87e696df448"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-scope.json",
+          "sha256": "4e479f9fc8e3a0bd60b5d676f95c0dd72ec9aca721c29092b331bcfc09a8242e"
         }
       ],
       "credit_proposal_correction": {
@@ -2243,7 +2249,7 @@
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-credit-workspace-verified.json",
         "sha256": "159ca618b47ee7557cf01fac086000a5904e784d3a1c547e575fac71418ff05c"
       },
-      "next_action": "Create normal27path local staff-UI commit from accepted013; run immutable full BE/FE/PG/automation/build/import and6new+21retainedChromiumgroups, with fullFE/fullPG alone. Then one complete013-baseAstra/max/Standard/enforced-read-only zero review under standingthrough53authorization. Preserve all failed candidates/reports/regressions,28historicalobjects,original1733trace. After boundedUIacceptance perform cumulative52release/fullgates/freshreview/publication/exactSHA CI/ref/SAMEcard/durableclosure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54. Workboardnotehold separate unresolved; no retry.",
+      "next_action": "Freeze the normal 7-path clock-fixture successor of preserved74; verify all exact gates and obtain a complete013-base29-path Astra/max/Standard/enforced-read-only independent review with zero HIGH/MEDIUM/LOW findings. Original API503 cause remains unproven. Preserve all failure evidence and standing authority across hashes. Then cumulative52release/gates/review/publication/CI/ref/SAMEcard/durableclosure before53; Workboard private-note hold remains separate, no retry; fullyclosed53pauseSAME/native and keepOpenClawdisabled/no54.",
       "payment_workspace_verified": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-payment-workspace-verified.json",
         "sha256": "7e2eb10dcb4ced4242db4721f55f5c5c232538235166c905d9ae52c451305fe4"
@@ -2256,7 +2262,7 @@
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-app-current-verified.json",
         "sha256": "2f276c7d3fc74f128c06f2b2c1d6500a54539a6daf711f03dc40d6bd586ef99b"
       },
-      "phase": "staff_ui_focused_verified",
+      "phase": "staff_ui_clock_fixture_verified",
       "focused_evidence": {
         "app_current": {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-app-current-verified.json",
@@ -2411,6 +2417,38 @@
         "v1052-financial-staff-ui-trace-helpers1.json": {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-trace-helpers1.json",
           "sha256": "2e0d4c5b5d5dcdc2bfd249ca95bcab0e5f78577d5c7d318be4b27123e33a3da8"
+        }
+      },
+      "gate_correction_attempt": 1,
+      "correction_paths": [
+        "backend/tests/test_refund_service_migration.py",
+        "backend/tests/test_financial_fixture_clock_migration.py",
+        "ops/NOW.md",
+        "ops/STATE.json",
+        "ops/QUEUE.md",
+        "ops/traceability.json",
+        "ops/V1_052_FINANCIAL_STAFF_UI.md"
+      ],
+      "failed_gate_candidate": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-failed-gate-74ee3bb.json",
+        "sha256": "a1667536c53e6a2ff2d39a6baf30fe647764260ed42ab3b1aab9ebadab3d1afa"
+      },
+      "clock_correction": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-scope.json",
+        "sha256": "4e479f9fc8e3a0bd60b5d676f95c0dd72ec9aca721c29092b331bcfc09a8242e"
+      },
+      "clock_focused_evidence": {
+        "static": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-static-initial.json",
+          "sha256": "0a7d36dd9a6548379a96ca05f561ce1008ea95b73d590384af3bfcc5b4ffac8f"
+        },
+        "focused": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-focused-initial.json",
+          "sha256": "1429bdad1de82005539673e1adb0a63704b6dba071634c93af740291f936ced5"
+        },
+        "trace": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-financial-staff-ui-clock-correction1-trace-registered1.json",
+          "sha256": "facc3fb79edaab0e4371795462f9a7fb9d0b1e52d0b16a10ef08c5a9744b482c"
         }
       }
     },
@@ -7316,7 +7354,7 @@
   "branch": "codex/v1-052-direct",
   "commit": "013851d02b6712f949293db82ced82d2afb82ff9",
   "idle_reason": null,
-  "next_action": "Create normal27path local staff-UI commit from accepted013; run immutable full BE/FE/PG/automation/build/import and6new+21retainedChromiumgroups, with fullFE/fullPG alone. Then one complete013-baseAstra/max/Standard/enforced-read-only zero review under standingthrough53authorization. Preserve all failed candidates/reports/regressions,28historicalobjects,original1733trace. After boundedUIacceptance perform cumulative52release/fullgates/freshreview/publication/exactSHA CI/ref/SAMEcard/durableclosure before53; fullyclosed53pauseSAME/OpenClawdisabled/no54. Workboardnotehold separate unresolved; no retry.",
+  "next_action": "Freeze the normal 7-path clock-fixture successor of preserved74; verify all exact gates and obtain a complete013-base29-path Astra/max/Standard/enforced-read-only independent review with zero HIGH/MEDIUM/LOW findings. Original API503 cause remains unproven. Preserve all failure evidence and standing authority across hashes. Then cumulative52release/gates/review/publication/CI/ref/SAMEcard/durableclosure before53; Workboard private-note hold remains separate, no retry; fullyclosed53pauseSAME/native and keepOpenClawdisabled/no54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -7388,7 +7426,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 staff financial UI verified; normal candidate pending",
+  "phase": "V1-052 staff UI clock-fixture correction verified; successor pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -8504,7 +8542,8 @@
     "Correction2 route literal: fullPythonAST unchanged;187format/lint/types and 2547backendPASS963DB-onlyskips/build/import passed. Prior99 exact986PG and isolated832frontend/189automation retained; fresh successor exact gates and completec65-base review pending.",
     "Review correction1:21qualified client and4realPG reds preserved; focused278client/45PG/14Chromium/26trace PASS;1717maps preserve1700;2555backend975DB-onlyskips/187static/build/import PASS. Fresh exact successor gates and completec65-base review remain required.",
     "Review correction2:53qualified originalAA client reds plus9sourcechronology reds preserved;2initiallegacyenum premises qualified with actualPG SECURITY fixture. Final378client/50PG/15Chromium/27trace/187static PASS;49actualsyntheticprojections;1733maps preserve1717. Full immutable-successor gates and fresh completec65 review pending.",
-    "StaffUI27paths:74helpers,118domainworkspace,32controller,11confirmation,46App,110Credit-client focusedPASS;6Chromiumgroups20scenarios with realcrypto/storage/locks and0financialnetwork;28trace1826mappings preserving1733. Browser-found accessible Property label and modal original action name fixed. Finalforeign-workflowmessage-only correction11PASS. Fullimmutablegates/reviewpending; allfailedwitnessespreserved."
+    "StaffUI27paths:74helpers,118domainworkspace,32controller,11confirmation,46App,110Credit-client focusedPASS;6Chromiumgroups20scenarios with realcrypto/storage/locks and0financialnetwork;28trace1826mappings preserving1733. Browser-found accessible Property label and modal original action name fixed. Finalforeign-workflowmessage-only correction11PASS. Fullimmutablegates/reviewpending; allfailedwitnessespreserved.",
+    "Staff UI clock correction1: 16 focused PostgreSQL checks PASS (38 deselected), including preserved external +/-60second red cases now green and the registered original rollback regression; 2-file format/ruff and187-file types PASS;28trace checks PASS with1827entries preserving1826. Only2test source files changed; no runtime/SQL/guard changes. Failed74PG1001/2 and passing6probe retained; original API503 cause unproven."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -8526,7 +8565,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-08T06:56:22.858455+00:00",
+  "timestamp": "2026-09-08T07:30:23.630055+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -8758,7 +8797,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-08T06:56:22.858455+00:00",
+  "updated_at": "2026-09-08T07:30:23.630055+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",

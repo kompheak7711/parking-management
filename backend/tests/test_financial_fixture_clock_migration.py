@@ -177,3 +177,21 @@ def test_financial_clock_fixture_isolates_shared_relation_contention_without_wea
         assert shared.execute(
             "SELECT count(*) FROM app.refunds WHERE source_payment_id=%s", (shared_payment,)
         ).fetchone() == (0,)
+
+
+@pytest.mark.parametrize("host_offset_seconds", [-60, 60])
+def test_financial_return_rollback_fixture_uses_database_time_under_host_skew(
+    clock_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+    host_offset_seconds: int,
+) -> None:
+    class ShiftedDateTime(datetime):
+        @classmethod
+        def now(cls, tz: tzinfo | None = None) -> Self:
+            return super().now(tz) + timedelta(seconds=host_offset_seconds)
+
+    # Exercise the original rollback proof; only its synthetic host clock changes.
+    monkeypatch.setattr(return_fixtures, "datetime", ShiftedDateTime)
+    return_fixtures.test_refund_service_correction_rollback_removes_event_receipt_and_audit(
+        clock_database_url, "return"
+    )

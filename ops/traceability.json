@@ -26209,6 +26209,18 @@
       "test_path": "frontend/src/test/financialWorkflows.browser.ts",
       "status": "implemented",
       "notes": "Actual historical Receipt contexts before/after Payment reversal preserve original payer snapshot/number and confirmed reprint identity; one explicit print click only, print-media CSS excludes all other screen content. Executed through retained run-staff-financial-workflows.js; only injected synthetic responses, zero financial API network requests."
+    },
+    {
+      "test_id": "test_financial_return_rollback_fixture_uses_database_time_under_host_skew",
+      "upstream_ids": [
+        "TEST-066",
+        "API-066",
+        "SEC-029"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_financial_fixture_clock_migration.py",
+      "status": "implemented",
+      "notes": "Runs the original Refund correction rollback proof with synthetic host clock shifted -60 and +60 seconds. The raw fixture uses the existing database_instant helper; event, command receipt and audit rollback assertions remain intact. Real clocks and production chronology guards are unchanged. Original failed74 API503 remains cause-unproven."
     }
   ]
 }

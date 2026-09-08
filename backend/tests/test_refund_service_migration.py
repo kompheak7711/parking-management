@@ -646,7 +646,7 @@ def test_refund_service_correction_rollback_removes_event_receipt_and_audit(
                 row = connection.execute(
                     "SELECT app.verify_usd_refund_return(%s,%s,%s,%s,100,%s,"
                     "'Method','Evidence','Reason')",
-                    (prop, identity, human, key, datetime.now(UTC)),
+                    (prop, identity, human, key, database_instant(connection)),
                 ).fetchone()
             else:
                 row = connection.execute(
