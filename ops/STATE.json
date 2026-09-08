@@ -2016,7 +2016,7 @@
     "authorization_from": "V1-048",
     "authorization_through": "V1-053",
     "current_version": "V1-052",
-    "phase": "terminal_records_prepared_product_published_closure_pending",
+    "phase": "fe135_readiness_correction1_prepared",
     "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
     "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
     "coordinator": {
@@ -2048,7 +2048,7 @@
     "workboard_block_reason": "Tracking/evidence only, blocked solely against OpenClaw admission; no direct Codex policy blocker.",
     "worker_kind": "direct_root_codex",
     "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-    "worker_status": "terminal_freeze_pending",
+    "worker_status": "correction_freeze_pending",
     "branch": "implementation/foundation",
     "worktree": "/Users/sokompheak/Development/property-rental-management",
     "planned_branch": "codex/v1-052-direct",
@@ -2058,7 +2058,7 @@
     "cumulative_review_base": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "candidate_sha": null,
     "candidate_resolution": "Resolve the immutable containing commit externally after normal commit; no self-referential accepted SHA.",
-    "candidate_status": "product_accepted_published_terminal_pending",
+    "candidate_status": "failed_terminal_ci_successor_pending",
     "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
     "publication_branch": "implementation/foundation",
     "openclaw_enabled": false,
@@ -2078,18 +2078,18 @@
       "provider_attestation": "unavailable"
     },
     "last_reconciliation": {
-      "at": "2026-09-08T17:04:18.775826+00:00",
+      "at": "2026-09-08T17:54:13.222221+00:00",
       "receipt": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-fba87fe-terminal-admission1-reconciliation.json",
-        "sha256": "a48e84746365c0f3e16ab97d40f0437f6a174bb8b25646ddff2a7364bae6f160"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-fba87fe-fe135-correction-admission1-reconciliation.json",
+        "sha256": "e48f940df4d629eecb3b645a3046447cfedd2767ac1c071f100b20b70e27b794"
       },
-      "refs": "reviewed/CI/main/tracking/FETCH/live fba87fe",
+      "refs": "main/tracking/FETCH/live1ce2a7a; retained productfba87fe",
       "reviewers": "none",
-      "card": "SAME52blocked17comments/nullclaims; separate Workboard hold",
+      "card": "SAME52blocked17comments unchanged/nullclaims",
       "schedulers": "SAME native ACTIVE/OpenClaw disabled"
     },
     "owner_action_required": false,
-    "next_action": "Freeze the four-path V1-052 terminal checkpoint as a normal child of published fba87fe. Run its applicable exact automation, routing, configuration, roadmap, traceability, preservation and guard checks; obtain one complete product-base GPT-6 Astra/max/Standard/enforced-read-only review under the standing grant. Only zero findings allow a normal push under the standing GitHub grant, then own exact four-job CI and ref equality. After product AND terminal proof, prepare the actual final Workboard payload, resolve its separate private-payload/destination hold, complete the preserved card through the supported interface with all17comments retained, and record external V1-052 closure. Only verified full52closure permits the next reviewed transition to materialize52complete and activate53. Keep SAME native follow-up ACTIVE/OpenClaw disabled; at fullyclosed53 pause SAME, never54. Preserve every rejected candidate, report and regression receipt; never repeat completed product tests for approval delay.",
+    "next_action": "Freeze a normal five-path successor of preserved terminal1ce2a7a for GATE-1CE-FE-F1 correction1: TEST-FE-135 waits for enabled controls before its existing clicks. Keep all original assertions, mocks and 5s/15s deadlines; no runtime, dependency, workflow, canonical or trace mapping changes. Run exact Node22.12 frontend quality/full1317tests/build, automation189, configuration/traceability/preservation/guards sequentially; unchanged backend/PG/migration/security/browser evidence remains bound to published product and three successful terminal CI jobs. Obtain one complete five-path product-base Astra/max/Standard/enforced-read-only review under the standing authority, including controlled red/green and recovery classification. Only zero findings permit a normal reviewed push to the authorized GitHub foundation branch, then own exact four-job CI/ref equality. Never rerun the failed CI or waive it using inherited evidence. Preserve both legacy V1-026 timing corrections and all52 failures/counters; this evidenced readiness defect is correction1, at most2 for this unresolved finding. Finish final terminal proof before concrete Workboard hold clarification/card completion/durable52closure, then53; closed53pauseSAME/OpenClawdisabled/never54.",
     "activation_correction1": {
       "status": "resolved_exact_tests_and_independent_review_pass",
       "failed_sha": "07636249632fa6e00308c7db815312edace32e26",
@@ -7352,11 +7352,12 @@
       "sha256": "45dbdbe2951acef2cecc381252bbbca0afacada804a775e6554607b4d626fdc2"
     },
     "terminal_checkpoint": {
-      "status": "prepared_uncommitted",
+      "status": "test_readiness_correction_prepared_uncommitted",
       "base_sha": "fba87feba842837f7cc7c068477670bfdb4c08f8",
       "candidate_sha": null,
       "candidate_resolution": "Resolve the immutable containing commit externally after normal commit; no self-referential accepted SHA.",
       "paths": [
+        "frontend/src/App.test.tsx",
         "ops/NOW.md",
         "ops/QUEUE.md",
         "ops/STATE.json",
@@ -7371,10 +7372,26 @@
       "full_version_closed": false,
       "successor_activation_allowed": false,
       "preparation": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-terminal-records-fba87fe-preparation.json",
-        "sha256": "6fb4e24696a9df2dd322126bce3a6cd3fa30f700522b9ee9f4da70054bee03b6"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-fe135-correction1-preparation.json",
+        "sha256": "71286a909dacd78659cf76b09181c9e3d5e8b0301d97b14cc0e2b96ff4f2f221"
       },
-      "external_discharge": "After exact terminal gates/review/publication/CI/refs and actual supported card acceptance, a verified external closure receipt discharges these frozen pending fields. The next independently reviewed transition materializes52complete before53activation."
+      "external_discharge": "Containing successor needs exact applicable tests/review/normal publication/own all-green CI/ref equality and supported card acceptance before external52closure; the failed predecessor CI is retained, never discharged as a pass.",
+      "parent_sha": "1ce2a7a8fd2b82cd78fd71bc2d1259613cc167fa"
+    },
+    "fe135_readiness_correction": {
+      "status": "prepared_exact_gates_review_pending",
+      "finding": "GATE-1CE-FE-F1",
+      "attempt": 1,
+      "maximum_attempts": 2,
+      "preparation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-fe135-correction1-preparation.json",
+        "sha256": "71286a909dacd78659cf76b09181c9e3d5e8b0301d97b14cc0e2b96ff4f2f221"
+      },
+      "original_ci_cause": "unproven",
+      "diagnostic": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-terminal-fe135-readiness-diagnostic2.json",
+        "sha256": "45dbbe5f64cb3091a15bea1c4041b64a1ea14b3401c2bb159874ab331f543f2a"
+      }
     }
   },
   "historical_v1_048_takeover": {
@@ -8127,9 +8144,9 @@
   ],
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "fba87feba842837f7cc7c068477670bfdb4c08f8",
+  "commit": "1ce2a7a8fd2b82cd78fd71bc2d1259613cc167fa",
   "idle_reason": "Current V1-052 closure is owned by direct Codex; no OpenClaw dispatch or successor activation.",
-  "next_action": "Freeze the four-path V1-052 terminal checkpoint as a normal child of published fba87fe. Run its applicable exact automation, routing, configuration, roadmap, traceability, preservation and guard checks; obtain one complete product-base GPT-6 Astra/max/Standard/enforced-read-only review under the standing grant. Only zero findings allow a normal push under the standing GitHub grant, then own exact four-job CI and ref equality. After product AND terminal proof, prepare the actual final Workboard payload, resolve its separate private-payload/destination hold, complete the preserved card through the supported interface with all17comments retained, and record external V1-052 closure. Only verified full52closure permits the next reviewed transition to materialize52complete and activate53. Keep SAME native follow-up ACTIVE/OpenClaw disabled; at fullyclosed53 pause SAME, never54. Preserve every rejected candidate, report and regression receipt; never repeat completed product tests for approval delay.",
+  "next_action": "Freeze a normal five-path successor of preserved terminal1ce2a7a for GATE-1CE-FE-F1 correction1: TEST-FE-135 waits for enabled controls before its existing clicks. Keep all original assertions, mocks and 5s/15s deadlines; no runtime, dependency, workflow, canonical or trace mapping changes. Run exact Node22.12 frontend quality/full1317tests/build, automation189, configuration/traceability/preservation/guards sequentially; unchanged backend/PG/migration/security/browser evidence remains bound to published product and three successful terminal CI jobs. Obtain one complete five-path product-base Astra/max/Standard/enforced-read-only review under the standing authority, including controlled red/green and recovery classification. Only zero findings permit a normal reviewed push to the authorized GitHub foundation branch, then own exact four-job CI/ref equality. Never rerun the failed CI or waive it using inherited evidence. Preserve both legacy V1-026 timing corrections and all52 failures/counters; this evidenced readiness defect is correction1, at most2 for this unresolved finding. Finish final terminal proof before concrete Workboard hold clarification/card completion/durable52closure, then53; closed53pauseSAME/OpenClawdisabled/never54.",
   "active_worker": null,
   "active_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
   "active_claim": null,
@@ -8137,8 +8154,8 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Resolve the immutable containing commit externally after normal commit; no self-referential accepted SHA.",
-  "candidate_parent": "fba87feba842837f7cc7c068477670bfdb4c08f8",
+  "candidate_resolution": "Resolve containing immutable successor SHA externally after normal commit.",
+  "candidate_parent": "1ce2a7a8fd2b82cd78fd71bc2d1259613cc167fa",
   "next_candidate": {
     "id": "V1-052",
     "order": 52,
@@ -8201,7 +8218,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-052 product published; terminal records active, closure pending",
+  "phase": "V1-052 terminal CI test readiness correction1 prepared",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -9229,7 +9246,7 @@
   },
   "schema_version": 1,
   "secrets_present": false,
-  "status": "published",
+  "status": "complete_uncommitted",
   "task": "V1-052 Payment, allocation, receipt, Credit and USD-Refund API/UI",
   "prior_v1_040_tests": [
     "PASS: V1-040 preflight confirmed synchronized V1-039 baseline d1994fb703fd6e34b50e919cfc98898949caa8ca, disabled supervisor, no overlapping repository worker, exact approved successor, and V1-041 held",
@@ -9298,7 +9315,10 @@
     "Exact accepted product fba87fe: 1007 isolated PostgreSQL tests/no skips;2557backend/984registeredDBskips;1317frontend/31files;189automation;187static;47syntheticbrowsergroups/28staffcases, zero financial network requests.",
     "All full local product suites ran sequentially. Formatting/lint/types/builds/imports/47migrations/traceability/diff/guards and official dependency audits passed;11groups/32rawlogs bound by current_product_acceptance.verification.",
     "Own exact product GitHub CI34253440448 attempt1 all4jobs success; reviewed/CI/main/tracking/FETCH/live equalfba87fe, retained product checkout clean.",
-    "Records-only containing terminal checkpoint still requires fresh applicable exact automation/routing/configuration/roadmap/traceability/preservation/guards and independent review, then its own normal publication/CI/refs. Unchanged full product gates remain applicable and are not repeated."
+    "Records-only containing terminal checkpoint still requires fresh applicable exact automation/routing/configuration/roadmap/traceability/preservation/guards and independent review, then its own normal publication/CI/refs. Unchanged full product gates remain applicable and are not repeated.",
+    "Terminal1ce2a7a CI34257629474 attempt1 failed TEST-FE-135 at proof-button wait;1316frontendpassed;other3jobsSUCCESS. No rerun or waiver.",
+    "External exact Node22.12 diagnostic: baselinePASS; held-create-cleanup original clickRED with no status API invocation; enabled-state-waitGREEN with original cross-tab assertions. First harness collected no tests and is preserved. Original CI cause unproven.",
+    "Containing test correction requires fresh full frontend/static/build and automation/config/trace/preservation/guard gates. Unchanged backend/PG/migrations/security/browser evidence reused by byte identity; no unchanged full local product repeats."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -9320,7 +9340,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-052",
-  "timestamp": "2026-09-08T17:04:43.767252+00:00",
+  "timestamp": "2026-09-08T17:56:56.957733+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -9347,6 +9367,7 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
+    "frontend/src/App.test.tsx",
     "ops/NOW.md",
     "ops/QUEUE.md",
     "ops/STATE.json",
@@ -9538,7 +9559,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-08T17:04:43.767252+00:00",
+  "updated_at": "2026-09-08T17:56:56.957733+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -10661,10 +10682,10 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Records-only terminal child of accepted published product; containing checkpoint gates remain pending.",
+  "commit_role": "Test synchronization correction and terminal evidence child of published but CI-failed1ce2a7a.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "fba87feba842837f7cc7c068477670bfdb4c08f8"
+    "1ce2a7a8fd2b82cd78fd71bc2d1259613cc167fa"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
@@ -10690,7 +10711,11 @@
     "workboard_status": "blocked",
     "workboard_acceptance_completed": false,
     "production_deployment": false,
-    "terminal_metadata_publication": "pending its own exact gates, independent review, publication, CI and ref proof"
+    "terminal_metadata_publication": "1ce2a7a normally published but own frontend CI failed; correction successor requires its own zero review/publication/all-green CI/refs",
+    "failed_terminal": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-terminal-1ce2a7a-publication-observation2.json",
+      "sha256": "22e09833b41900e13ef8e8214a1e17331f7316e448329c3778bef6133612aee4"
+    }
   },
   "historical_v1_047_publication": {
     "tranche_id": "V1-047",
@@ -10729,7 +10754,7 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "complete_product_accepted_zero_terminal_review_pending",
+    "status": "product_accepted_failed_terminal_review_preserved_successor_pending",
     "base_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "exact_sha": "fba87feba842837f7cc7c068477670bfdb4c08f8",
     "model": "gpt-6-astra",
@@ -10753,7 +10778,19 @@
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
       "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
     },
-    "terminal_review_completed": false
+    "terminal_review_completed": false,
+    "failed_terminal_accepted_review": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-terminal-accepted-1ce2a7a.json",
+      "sha256": "ef6a5e8a7b7c16113dc34d24cddda5cdd929c63d0216c61900d38b3c2fd8efb7"
+    },
+    "successor_review_base": "fba87feba842837f7cc7c068477670bfdb4c08f8",
+    "successor_paths": [
+      "frontend/src/App.test.tsx",
+      "ops/NOW.md",
+      "ops/QUEUE.md",
+      "ops/STATE.json",
+      "ops/V1_ROADMAP.json"
+    ]
   },
   "historical_v1_047_review": {
     "status": "PASS",
@@ -10766,7 +10803,7 @@
   },
   "evidence_applicability": {
     "tranche_id": "V1-052",
-    "status": "published_product_verified_records_only_terminal_pending",
+    "status": "test_readiness_successor_fresh_frontend_and_records_gates_pending",
     "predecessor_closed": true,
     "predecessor_sha": "f8a33bad25a7993952ec1ccece1b9c2df942b3d6",
     "product_tests_pending": false,
@@ -10786,7 +10823,12 @@
       "New exact terminal candidate review from product base through any preserved corrections;0HIGH0MEDIUM0LOW before normal publication/own4CI/refequality."
     ],
     "complete_product_profile_repeat_required": false,
-    "root_approval_snapshot": "Preserved immutable root approval records the earlier implementation checkpoint; current_product_acceptance records completed product truth. No claim of full-version closure."
+    "root_approval_snapshot": "Preserved immutable root approval records the earlier implementation checkpoint; current_product_acceptance records completed product truth. No claim of full-version closure.",
+    "correction_preparation": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-fe135-correction1-preparation.json",
+      "sha256": "71286a909dacd78659cf76b09181c9e3d5e8b0301d97b14cc0e2b96ff4f2f221"
+    },
+    "unchanged_product_evidence": "All433paths outside the five-path successor remain identical to accepted published product; terminal1ce2a7a backend/PG/dependency CI succeeded; use fresh successor frontend and records gates and require own four-job CI, without waiving old failure."
   },
   "historical_v1_047_evidence_applicability": {
     "tranche_id": "V1-047",
@@ -10957,11 +10999,12 @@
     "whole_version_closed": false
   },
   "terminal_checkpoint": {
-    "status": "prepared_uncommitted",
+    "status": "test_readiness_correction_prepared_uncommitted",
     "base_sha": "fba87feba842837f7cc7c068477670bfdb4c08f8",
     "candidate_sha": null,
     "candidate_resolution": "Resolve the immutable containing commit externally after normal commit; no self-referential accepted SHA.",
     "paths": [
+      "frontend/src/App.test.tsx",
       "ops/NOW.md",
       "ops/QUEUE.md",
       "ops/STATE.json",
@@ -10976,10 +11019,11 @@
     "full_version_closed": false,
     "successor_activation_allowed": false,
     "preparation": {
-      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-terminal-records-fba87fe-preparation.json",
-      "sha256": "6fb4e24696a9df2dd322126bce3a6cd3fa30f700522b9ee9f4da70054bee03b6"
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-fe135-correction1-preparation.json",
+      "sha256": "71286a909dacd78659cf76b09181c9e3d5e8b0301d97b14cc0e2b96ff4f2f221"
     },
-    "external_discharge": "After exact terminal gates/review/publication/CI/refs and actual supported card acceptance, a verified external closure receipt discharges these frozen pending fields. The next independently reviewed transition materializes52complete before53activation."
+    "external_discharge": "Containing successor needs exact applicable tests/review/normal publication/own all-green CI/ref equality and supported card acceptance before external52closure; the failed predecessor CI is retained, never discharged as a pass.",
+    "parent_sha": "1ce2a7a8fd2b82cd78fd71bc2d1259613cc167fa"
   },
   "current_authorization": {
     "standing_independent_reviews": {
@@ -11008,5 +11052,72 @@
       "force pushes",
       "retained worktree deletion"
     ]
+  },
+  "v1_052_failed_terminal_checkpoint": {
+    "candidate": "1ce2a7a8fd2b82cd78fd71bc2d1259613cc167fa",
+    "tree": "d552cb933147622141a3ec3db42187e1168cb06c",
+    "accepted_review": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-terminal-accepted-1ce2a7a.json",
+      "sha256": "ef6a5e8a7b7c16113dc34d24cddda5cdd929c63d0216c61900d38b3c2fd8efb7"
+    },
+    "publication": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-terminal-1ce2a7a-publication1-publish.json",
+      "sha256": "dc8f1add55a02b540da81980526ccdb4105ef03cc43d41d20386e5efe7e77ec6"
+    },
+    "failed_ci": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-terminal-1ce2a7a-publication-observation2.json",
+      "sha256": "22e09833b41900e13ef8e8214a1e17331f7316e448329c3778bef6133612aee4"
+    },
+    "root_terminal_checkpoint": {
+      "status": "prepared_uncommitted",
+      "base_sha": "fba87feba842837f7cc7c068477670bfdb4c08f8",
+      "candidate_sha": null,
+      "candidate_resolution": "Resolve the immutable containing commit externally after normal commit; no self-referential accepted SHA.",
+      "paths": [
+        "ops/NOW.md",
+        "ops/QUEUE.md",
+        "ops/STATE.json",
+        "ops/V1_ROADMAP.json"
+      ],
+      "verification_completed": false,
+      "review_completed": false,
+      "publication_completed": false,
+      "ci_completed": false,
+      "refs_reconciled": false,
+      "workboard_acceptance_completed": false,
+      "full_version_closed": false,
+      "successor_activation_allowed": false,
+      "preparation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-terminal-records-fba87fe-preparation.json",
+        "sha256": "6fb4e24696a9df2dd322126bce3a6cd3fa30f700522b9ee9f4da70054bee03b6"
+      },
+      "external_discharge": "After exact terminal gates/review/publication/CI/refs and actual supported card acceptance, a verified external closure receipt discharges these frozen pending fields. The next independently reviewed transition materializes52complete before53activation."
+    },
+    "takeover_terminal_checkpoint": {
+      "status": "prepared_uncommitted",
+      "base_sha": "fba87feba842837f7cc7c068477670bfdb4c08f8",
+      "candidate_sha": null,
+      "candidate_resolution": "Resolve the immutable containing commit externally after normal commit; no self-referential accepted SHA.",
+      "paths": [
+        "ops/NOW.md",
+        "ops/QUEUE.md",
+        "ops/STATE.json",
+        "ops/V1_ROADMAP.json"
+      ],
+      "verification_completed": false,
+      "review_completed": false,
+      "publication_completed": false,
+      "ci_completed": false,
+      "refs_reconciled": false,
+      "workboard_acceptance_completed": false,
+      "full_version_closed": false,
+      "successor_activation_allowed": false,
+      "preparation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-terminal-records-fba87fe-preparation.json",
+        "sha256": "6fb4e24696a9df2dd322126bce3a6cd3fa30f700522b9ee9f4da70054bee03b6"
+      },
+      "external_discharge": "After exact terminal gates/review/publication/CI/refs and actual supported card acceptance, a verified external closure receipt discharges these frozen pending fields. The next independently reviewed transition materializes52complete before53activation."
+    },
+    "meaning": "Review/publication passed; exact terminal frontend CI failed. Preserved checkpoint is never treated as fully accepted or closed."
   }
 }

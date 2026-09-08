@@ -1460,7 +1460,7 @@
       "authorization": "durable_v1",
       "status": "approved_ready",
       "closure_gate": {
-        "status": "product_verified_terminal_and_workboard_pending",
+        "status": "product_verified_terminal_ci_failed_readiness_correction_pending",
         "product_sha": "fba87feba842837f7cc7c068477670bfdb4c08f8",
         "product_ci_run": 34253440448,
         "product_acceptance": {
@@ -1472,13 +1472,22 @@
           "sha256": "e4c1a83a2e65067784f1ab1f74dba22c79aa3adff0eb584b7d7bab9adfbd082a"
         },
         "terminal_sha": null,
-        "terminal_proof": "pending exact verification/review/publication/ownCI/ref equality",
+        "terminal_proof": "pending test-readiness correction exact gates/review/publication/ownallgreenCI/refs",
         "workboard_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
         "workboard_status": "blocked",
         "workboard_acceptance": "pending separate concrete private-payload/destination authorization and supported completion after all terminal proof",
         "full_version_closed": false,
         "successor_activation_allowed": false,
-        "external_discharge": "After exact terminal gates/review/publication/CI/refs and actual supported card acceptance, a verified external closure receipt discharges these frozen pending fields. The next independently reviewed transition materializes52complete before53activation."
+        "external_discharge": "After exact terminal gates/review/publication/CI/refs and actual supported card acceptance, a verified external closure receipt discharges these frozen pending fields. The next independently reviewed transition materializes52complete before53activation.",
+        "failed_terminal_sha": "1ce2a7a8fd2b82cd78fd71bc2d1259613cc167fa",
+        "failed_terminal_ci": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-terminal-1ce2a7a-publication-observation2.json",
+          "sha256": "22e09833b41900e13ef8e8214a1e17331f7316e448329c3778bef6133612aee4"
+        },
+        "correction_preparation": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-fe135-correction1-preparation.json",
+          "sha256": "71286a909dacd78659cf76b09181c9e3d5e8b0301d97b14cc0e2b96ff4f2f221"
+        }
       }
     },
     {
