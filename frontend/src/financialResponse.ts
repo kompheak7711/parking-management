@@ -141,6 +141,74 @@ function exactEvidence(data: FinancialJson, prop: string): void {
     }
   }
 }
+function validateCreditProposalBatch(
+  row: FinancialObject,
+  request: CapturedFinancialRequest,
+): void {
+  const requested = BigInt(
+    financialInteger(
+      request.query.amount_usd_cents,
+      1n,
+      9_000_000_000_000_000n,
+    ),
+  );
+  const batch = BigInt(financialInteger(row.amount_usd_cents, 1n, requested));
+  const details = array(row.details);
+  const continuationFields = [
+    "requested_amount_usd_cents",
+    "remaining_requested_usd_cents",
+    "continuation_status",
+    "continuation",
+  ];
+  // Retain the accepted complete-response contract. Partial batches, and every
+  // response declaring continuation, must prove the complete continuation tuple.
+  if (
+    batch === requested &&
+    !continuationFields.some((key) => Object.hasOwn(row, key))
+  )
+    return;
+  if (
+    BigInt(financialInteger(row.requested_amount_usd_cents, 1n, requested)) !==
+      requested ||
+    BigInt(
+      financialInteger(row.remaining_requested_usd_cents, 0n, requested),
+    ) !==
+      requested - batch ||
+    row.continuation_status !==
+      (batch === requested ? "COMPLETE" : "MORE_ELIGIBLE") ||
+    row.continuation !== "CONFIRM_PAGE_THEN_REQUEST_FRESH_PROPOSAL" ||
+    row.policy !== "RENT_SERVICE_SOURCE_ORDER" ||
+    details.length < 1 ||
+    details.length > 500
+  )
+    invalidFinancial();
+  financialInteger(row.available_usd_cents, requested);
+  financialId(row.customer_id);
+  financialInteger(row.invoice_version, 1n);
+  financialInstant(row.generated_at);
+  const seen = new Set<string>();
+  let total = 0n;
+  for (const value of details) {
+    const line = financialObject(value),
+      id = financialId(line.invoice_line_id);
+    if (seen.has(id)) invalidFinancial();
+    seen.add(id);
+    const amount = BigInt(financialInteger(line.amount_usd_cents, 1n, batch));
+    financialInteger(line.outstanding_usd_cents, amount);
+    nonempty(line.category);
+    if (
+      typeof line.attribution_basis !== "string" ||
+      !["RENT_FIRST_PROPOSAL", "SERVICE_PROPOSAL", "OTHER_CONFIRMED"].includes(
+        line.attribution_basis,
+      )
+    )
+      invalidFinancial();
+    total += amount;
+    if (total > batch) invalidFinancial();
+  }
+  if (total !== batch) invalidFinancial();
+}
+
 export function validateFinancialReply(
   envelope: FinancialObject,
   request: CapturedFinancialRequest,
@@ -298,12 +366,7 @@ export function validateFinancialReply(
         same(row.credit_id, id);
         same(row.property_id, prop);
         same(row.invoice_id, request.query.invoice_id as string);
-        if (
-          BigInt(financialInteger(row.amount_usd_cents)) !==
-          BigInt(financialInteger(request.query.amount_usd_cents))
-        )
-          invalidFinancial();
-        array(row.details);
+        validateCreditProposalBatch(row, request);
         break;
       case "creditApply":
       case "creditApplication":

@@ -209,6 +209,12 @@ def test_traceability_manifest_covers_executable_tests() -> None:
         "financialClient.test.ts",
         "financialRecovery.test.ts",
         "financialReferenceClient.test.ts",
+        "financialUi.test.ts",
+        "financialUiContext.test.ts",
+        "FinancialWorkspaces.test.tsx",
+        "FinancialManagement.test.tsx",
+        "App.test.tsx",
+        "FinancialConfirmation.test.tsx",
     ):
         executable_ids.update(collect_financial_unit_test_ids(FRONTEND_TEST_DIRECTORY / name))
     executable_ids.update(
@@ -226,6 +232,12 @@ def test_traceability_manifest_covers_executable_tests() -> None:
     executable_ids.update(
         collect_financial_browser_test_ids(
             FRONTEND_TEST_DIRECTORY / "test" / "financialReferences.browser.ts"
+        )
+    )
+
+    executable_ids.update(
+        collect_financial_browser_test_ids(
+            FRONTEND_TEST_DIRECTORY / "test" / "financialWorkflows.browser.ts"
         )
     )
 
@@ -1332,3 +1344,34 @@ def test_v1052_action_context_review_aa_preserves_all_prior_trace() -> None:
         {"API-011", "API-012", "SEC-022"} <= set(entry["upstream_ids"])
         for entry in registered.values()
     )
+
+
+def test_v1052_financial_staff_ui_preserves_accepted_trace_and_requires_helper_maps() -> None:
+    import hashlib
+
+    entries = json.loads(MANIFEST_PATH.read_text())["entries"]
+    original = json.dumps(entries[:1733], sort_keys=True, separators=(",", ":")).encode()
+    assert (
+        hashlib.sha256(original).hexdigest()
+        == "236f98a553757325765189177ebe9d3154ca3e18b261e9a826d8a42405784441"
+    )
+    required = {
+        "TEST-FE-415",
+        "TEST-FE-421",
+        "test_v1052_financial_staff_ui_preserves_accepted_trace_and_requires_helper_maps",
+        "TEST-FE-417",
+        "TEST-FE-418",
+        "TEST-FE-413",
+        "TEST-FE-414",
+        "TEST-FE-416",
+        "TEST-FE-420",
+        "TEST-FE-422",
+        "TEST-FE-419",
+        "TEST-FE-423",
+    }
+    registered = {
+        entry["test_id"]: entry for entry in entries[1733:] if entry["test_id"] in required
+    }
+    assert set(registered) == required
+    assert all(entry["status"] == "implemented" for entry in registered.values())
+    assert all("TEST-117" in entry["upstream_ids"] for entry in registered.values())

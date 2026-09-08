@@ -6,7 +6,12 @@ import {
   FINANCIAL_REPLY_BYTES,
   readFinancial,
 } from "./financialClient";
-import { captureFinancialRequest, financialObject } from "./financialContracts";
+import {
+  captureFinancialRequest,
+  financialObject,
+  financialInteger,
+  type FinancialObject,
+} from "./financialContracts";
 import { ExactJsonNumber, stringifyFinancialJson } from "./financialJson";
 import {
   commands,
@@ -537,4 +542,279 @@ describe("shared late-body cleanup regression", () => {
       expect(cancel).toHaveBeenCalledOnce();
     },
   );
+});
+
+function continuedCreditProposal(requested = 501n, batch = 500n, count = 500) {
+  // Matches migration41's canonical bounded proposal and its retained501/500/1 database regression.
+  return {
+    property_id: ids.property,
+    credit_id: ids.credit,
+    invoice_id: ids.invoice,
+    customer_id: ids.customer,
+    invoice_version: 2,
+    requested_amount_usd_cents: requested,
+    amount_usd_cents: batch,
+    remaining_requested_usd_cents: requested - batch,
+    available_usd_cents: requested,
+    generated_at: "2026-09-08T10:00:00+07:00",
+    details: Array.from({ length: count }, (_, index) => ({
+      invoice_line_id: `00000000-0000-4000-8000-${(index + 1).toString().padStart(12, "0")}`,
+      category: "SERVICE_CHARGES",
+      outstanding_usd_cents: index === 0 ? batch - BigInt(count) + 1n : 1n,
+      amount_usd_cents: index === 0 ? batch - BigInt(count) + 1n : 1n,
+      attribution_basis: "SERVICE_PROPOSAL",
+    })),
+    continuation_status: requested === batch ? "COMPLETE" : "MORE_ELIGIBLE",
+    continuation: "CONFIRM_PAGE_THEN_REQUEST_FRESH_PROPOSAL",
+    policy: "RENT_SERVICE_SOURCE_ORDER",
+  };
+}
+
+describe("canonical bounded Credit proposals", () => {
+  it.each([
+    { requested: 501n, batch: 500n, count: 500 },
+    { requested: 1n, batch: 1n, count: 1 },
+    {
+      requested: 9_000_000_000_000_000n,
+      batch: 8_999_999_999_999_999n,
+      count: 500,
+    },
+  ])(
+    "TEST-FE-459 retains requested $requested, returned $batch and exact continuation without changing the original request",
+    async ({ requested, batch, count }) => {
+      const input = {
+        operation: "creditProposal" as const,
+        target: { id: ids.credit },
+        query: { invoice_id: ids.invoice, amount_usd_cents: requested },
+      };
+      const proposal = continuedCreditProposal(requested, batch, count);
+      const fetcher = vi.fn<typeof fetch>((_url, init) =>
+        Promise.resolve(
+          response(input, init ?? {}, (row) => {
+            row.data = proposal;
+          }),
+        ),
+      );
+      const captured = captureFinancialRequest(input);
+      const reply = await createFinancialTransport(fetcher).send(
+        scope(),
+        captured,
+      );
+      const data = financialObject(reply.data);
+      expect(BigInt(financialInteger(data.requested_amount_usd_cents))).toBe(
+        requested,
+      );
+      expect(BigInt(financialInteger(data.amount_usd_cents))).toBe(batch);
+      expect(BigInt(financialInteger(data.remaining_requested_usd_cents))).toBe(
+        requested - batch,
+      );
+      expect(data.continuation_status).toBe(
+        batch === requested ? "COMPLETE" : "MORE_ELIGIBLE",
+      );
+      expect(BigInt(financialInteger(captured.query.amount_usd_cents))).toBe(
+        requested,
+      );
+      expect(fetcher.mock.calls[0]?.[1]?.method).toBe("GET");
+      expect(
+        new Headers(fetcher.mock.calls[0]?.[1]?.headers).get("Idempotency-Key"),
+      ).toBeNull();
+    },
+  );
+});
+
+const malformedCreditBatches: [string, (row: FinancialObject) => void][] = [
+  [
+    "missing original requested amount",
+    (row) => {
+      delete row.requested_amount_usd_cents;
+    },
+  ],
+  [
+    "wrong original requested amount",
+    (row) => {
+      row.requested_amount_usd_cents = 500;
+    },
+  ],
+  [
+    "missing remaining amount",
+    (row) => {
+      delete row.remaining_requested_usd_cents;
+    },
+  ],
+  [
+    "wrong remaining amount",
+    (row) => {
+      row.remaining_requested_usd_cents = 2;
+    },
+  ],
+  [
+    "negative remaining amount",
+    (row) => {
+      row.remaining_requested_usd_cents = -1;
+    },
+  ],
+  [
+    "premature complete status",
+    (row) => {
+      row.continuation_status = "COMPLETE";
+    },
+  ],
+  [
+    "missing continuation action",
+    (row) => {
+      delete row.continuation;
+    },
+  ],
+  [
+    "automatic continuation action",
+    (row) => {
+      row.continuation = "AUTO_POST_REMAINDER";
+    },
+  ],
+  [
+    "wrong ordering policy",
+    (row) => {
+      row.policy = "UNSPECIFIED";
+    },
+  ],
+  [
+    "source availability below original request",
+    (row) => {
+      row.available_usd_cents = 500;
+    },
+  ],
+  [
+    "zero returned batch",
+    (row) => {
+      row.amount_usd_cents = 0;
+    },
+  ],
+  [
+    "returned batch above request",
+    (row) => {
+      row.amount_usd_cents = 502;
+    },
+  ],
+  [
+    "missing selected lines",
+    (row) => {
+      row.details = [];
+    },
+  ],
+  [
+    "line sum below returned batch",
+    (row) => {
+      if (Array.isArray(row.details)) row.details.pop();
+    },
+  ],
+  [
+    "duplicate selected line",
+    (row) => {
+      if (Array.isArray(row.details)) row.details[1] = row.details[0] ?? null;
+    },
+  ],
+  [
+    "line amount above current outstanding",
+    (row) => {
+      if (Array.isArray(row.details))
+        financialObject(row.details[0]).outstanding_usd_cents = 0;
+    },
+  ],
+  [
+    "line amount above returned batch",
+    (row) => {
+      if (Array.isArray(row.details))
+        financialObject(row.details[0]).amount_usd_cents = 501;
+    },
+  ],
+  [
+    "line invalid attribution",
+    (row) => {
+      if (Array.isArray(row.details))
+        financialObject(row.details[0]).attribution_basis = "AUTO_OVERRIDE";
+    },
+  ],
+  [
+    "cross-Property source",
+    (row) => {
+      row.property_id = ids.other;
+    },
+  ],
+  [
+    "different Invoice",
+    (row) => {
+      row.invoice_id = ids.other;
+    },
+  ],
+  [
+    "different Credit",
+    (row) => {
+      row.credit_id = ids.other;
+    },
+  ],
+  [
+    "invalid generated time",
+    (row) => {
+      row.generated_at = "yesterday";
+    },
+  ],
+  [
+    "invalid Invoice version",
+    (row) => {
+      row.invoice_version = 0;
+    },
+  ],
+  [
+    "missing Customer identity",
+    (row) => {
+      delete row.customer_id;
+    },
+  ],
+];
+it.each(malformedCreditBatches)(
+  "TEST-FE-460 rejects partial Credit proposal with %s",
+  async (_name, mutate) => {
+    const input = {
+      operation: "creditProposal" as const,
+      target: { id: ids.credit },
+      query: { invoice_id: ids.invoice, amount_usd_cents: 501 },
+    };
+    const fetcher: typeof fetch = (_url, init) =>
+      Promise.resolve(
+        response(input, init ?? {}, (row) => {
+          const data: FinancialObject = continuedCreditProposal();
+          mutate(data);
+          row.data = data;
+        }),
+      );
+    await expect(
+      createFinancialTransport(fetcher).send(
+        scope(),
+        captureFinancialRequest(input),
+      ),
+    ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+  },
+);
+it("TEST-FE-461 rejects contradictory continuation metadata on an otherwise complete Credit batch", async () => {
+  const input = {
+    operation: "creditProposal" as const,
+    target: { id: ids.credit },
+    query: { invoice_id: ids.invoice, amount_usd_cents: 1 },
+  };
+  const fetcher: typeof fetch = (_url, init) =>
+    Promise.resolve(
+      response(input, init ?? {}, (row) => {
+        row.data = {
+          ...continuedCreditProposal(1n, 1n, 1),
+          remaining_requested_usd_cents: 1,
+          continuation_status: "MORE_ELIGIBLE",
+        };
+      }),
+    );
+  await expect(
+    createFinancialTransport(fetcher).send(
+      scope(),
+      captureFinancialRequest(input),
+    ),
+  ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
 });

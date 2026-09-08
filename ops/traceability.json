@@ -24952,6 +24952,1263 @@
       "test_path": "backend/tests/test_traceability.py",
       "status": "implemented",
       "notes": "Preserve all1717 prior entries and register every AA correction regression."
+    },
+    {
+      "test_id": "TEST-FE-413",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-005",
+        "UI-064",
+        "API-011"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialUi.test.ts",
+      "status": "implemented",
+      "notes": "Exact USD cents and whole KHR input limits, positive six-decimal source rates and invalid-format rejection."
+    },
+    {
+      "test_id": "TEST-FE-414",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-009"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialUi.test.ts",
+      "status": "implemented",
+      "notes": "Exact signed aggregate formatting, explicit Property-local form timestamps, leap-date rejection and retained microsecond evidence."
+    },
+    {
+      "test_id": "TEST-FE-415",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-002",
+        "UI-012",
+        "API-012",
+        "SEC-022"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialUi.test.ts",
+      "status": "implemented",
+      "notes": "Detached frozen command input retains exact bytes and rejects changed actors, Properties, copied confirmations and aborted scopes."
+    },
+    {
+      "test_id": "TEST-FE-416",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-014",
+        "UI-015",
+        "UI-016",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialUi.test.ts",
+      "status": "implemented",
+      "notes": "Finite field, permission, unavailable and outcome summaries never disclose arbitrary error bodies."
+    },
+    {
+      "test_id": "TEST-FE-417",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-006",
+        "API-012",
+        "SEC-022"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "All49 retained actual synthetic histories load through the unchanged client without a financial command, idempotency header or CSRF read."
+    },
+    {
+      "test_id": "TEST-FE-418",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-006",
+        "API-011",
+        "API-012",
+        "SEC-022"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "Exact sequential Invoice action context returns both complete lines only after valid continuation."
+    },
+    {
+      "test_id": "TEST-FE-419",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-015",
+        "API-012",
+        "SEC-022"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "Stale revisions, forged provenance and interrupted/aborted reads cannot expose partial completed action evidence."
+    },
+    {
+      "test_id": "TEST-FE-420",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-014",
+        "API-011",
+        "API-012"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "Actual-client Payment reversal display and graph accept exactly8MiB UTF-8 and reject one additional byte before retaining another page."
+    },
+    {
+      "test_id": "TEST-FE-421",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-015",
+        "API-012"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "Changed immutable Payment headers across same-revision result pages fail closed."
+    },
+    {
+      "test_id": "TEST-FE-422",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-073",
+        "API-060",
+        "API-012"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "Payment reversal impact requires the original Allocation dependency line graph; missing details fail closed."
+    },
+    {
+      "test_id": "TEST-FE-423",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-012",
+        "API-012",
+        "SEC-022"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/financialUi.test.ts",
+      "status": "implemented",
+      "notes": "A confirmation is bound to its original workspace AbortSignal and cannot be reused by another same-actor same-Property workspace."
+    },
+    {
+      "test_id": "test_v1052_financial_staff_ui_preserves_accepted_trace_and_requires_helper_maps",
+      "upstream_ids": [
+        "TEST-117"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_traceability.py",
+      "status": "implemented",
+      "notes": "All1733 accepted trace entries remain byte-equivalent under canonical serialization; every implemented helper regression remains mapped."
+    },
+    {
+      "test_id": "TEST-FE-424",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-007",
+        "UI-012",
+        "UI-014",
+        "API-012"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialConfirmation.test.tsx",
+      "status": "implemented",
+      "notes": "Dialog keyboard focus remains inside, Escape cancels without confirmation, and close restores the opener."
+    },
+    {
+      "test_id": "TEST-FE-425",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-007",
+        "UI-012",
+        "UI-014",
+        "API-012"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialConfirmation.test.tsx",
+      "status": "implemented",
+      "notes": "Only explicit confirmation invokes the action once; repeated clicks and busy Escape cannot duplicate or dismiss it."
+    },
+    {
+      "test_id": "TEST-FE-426",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-007",
+        "UI-012",
+        "UI-014",
+        "API-012"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialConfirmation.test.tsx",
+      "status": "implemented",
+      "notes": "A disabled old opener falls back to the financial notice; busy controls cannot dispatch."
+    },
+    {
+      "test_id": "TEST-FE-427",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-007",
+        "UI-012",
+        "UI-014",
+        "API-012"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialConfirmation.test.tsx",
+      "status": "implemented",
+      "notes": "All six recovery states and initial loading are visible without automatic replay, destructive controls or exposing another pending request identity."
+    },
+    {
+      "test_id": "TEST-FE-428",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "All49 actual PostgreSQL-derived histories render complete finite original and current fields through the accepted client and sequence, without invented missing values."
+    },
+    {
+      "test_id": "TEST-FE-429",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Original Receipt identity and issuer remain distinct from a synthetic authorized viewing actor; this is a component/client assertion, not a new PostgreSQL authorization claim."
+    },
+    {
+      "test_id": "TEST-FE-430",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Legacy SECURITY Reservation corrections preserve absent historical return fields, original Deposit source and coordinated workflow guidance."
+    },
+    {
+      "test_id": "TEST-FE-431",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Selected original Credit application is displayed separately from multiple-contributor current applied totals."
+    },
+    {
+      "test_id": "TEST-FE-432",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "All102 coherent Invoice lines are fully loaded in three accepted-client pages before local50/50/2 display pagination; totals remain exact and target changes reset the page."
+    },
+    {
+      "test_id": "TEST-FE-433",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "Older successful or failed responses cannot replace a newer accepted record."
+    },
+    {
+      "test_id": "TEST-FE-434",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "Explicit source cancellation clears busy state immediately and aborts the child only, even if transport ignores abort."
+    },
+    {
+      "test_id": "TEST-FE-435",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "Actor, Property and workspace signal changes discard old responses and refuse retained old callbacks."
+    },
+    {
+      "test_id": "TEST-FE-436",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "Parent abort or unmount prevents publication and future work and releases the abort listener."
+    },
+    {
+      "test_id": "TEST-FE-437",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "StrictMode cleanup/setup retains current work and releases successful read listeners."
+    },
+    {
+      "test_id": "TEST-FE-438",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialUiContext.test.ts",
+      "status": "implemented",
+      "notes": "Only finite current errors are displayed; a new explicit read clears the old error and can succeed."
+    },
+    {
+      "test_id": "TEST-FE-439",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "No automatic financial access or send; an action-only grant reads only its exact Refund context."
+    },
+    {
+      "test_id": "TEST-FE-440",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Fresh context precedes the exact USD return request, original target, verified millisecond time and evidence; domain review alone never sends."
+    },
+    {
+      "test_id": "TEST-FE-441",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Correction reversal resolves the exact original Refund/correction pair without substituting history-page selection."
+    },
+    {
+      "test_id": "TEST-FE-442",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Legacy Reservation Refunds remain readable under action contexts but both general correction commands are excluded; return fixture is an explicit validated projection of retained legacy history."
+    },
+    {
+      "test_id": "TEST-FE-443",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Only PAYMENT, CREDIT and qualified PET_DEPOSIT source forms prepare USD payouts with exact source/review references."
+    },
+    {
+      "test_id": "TEST-FE-444",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "A demonstrated return cannot exceed the exact current net USD payout."
+    },
+    {
+      "test_id": "TEST-FE-445",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Editing source fields aborts the old actual-client response and prevents stale context or review publication."
+    },
+    {
+      "test_id": "TEST-FE-446",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Authorized original Refund reads do not require command recovery availability or call its storage."
+    },
+    {
+      "test_id": "TEST-FE-447",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Native invalid or unsupported date-time input cannot dispatch; accepted millisecond entry is explicit while historical display retains microseconds."
+    },
+    {
+      "test_id": "TEST-FE-448",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialConfirmation.test.tsx",
+      "status": "implemented",
+      "notes": "Permission-disabled confirmation leaves Cancel, Escape and focus navigation available without claiming an operation is in progress."
+    },
+    {
+      "test_id": "TEST-FE-449",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "All12 finite command summaries retain their captured original bytes, source references, reason and exact money without editable raw data."
+    },
+    {
+      "test_id": "TEST-FE-450",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Property discovery and fresh capability reads are financial-only, actor bound and perform no automatic command."
+    },
+    {
+      "test_id": "TEST-FE-451",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Actual transport/recovery sends only after explicit confirmation, preserves USD cents, refuses duplicate clicks and retains confirmed result."
+    },
+    {
+      "test_id": "TEST-FE-452",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Unknown outcome survives remount; explicit replay retains original bytes/key and never creates a second storage reservation."
+    },
+    {
+      "test_id": "TEST-FE-453",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Fresh canonical400/412/422 can retire rejection;409 remains unresolved and no failure is shown as confirmed success."
+    },
+    {
+      "test_id": "TEST-FE-454",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Recovery read, reservation and attempt-coordination failures prevent financial transmission."
+    },
+    {
+      "test_id": "TEST-FE-455",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Property changes during source reads, transmission and intent reservation discard old UI completion while preserving unresolved evidence."
+    },
+    {
+      "test_id": "TEST-FE-456",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Actor change or unmount aborts discovery; late old responses cannot repopulate a new screen."
+    },
+    {
+      "test_id": "TEST-FE-457",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "StrictMode recreates a live scope and permits exactly one explicit financial send."
+    },
+    {
+      "test_id": "TEST-FE-458",
+      "upstream_ids": [
+        "TEST-117",
+        "UI-001",
+        "UI-005",
+        "UI-006",
+        "UI-013"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Revoked command permission retains original unresolved evidence but disables sending while permitting review dismissal."
+    },
+    {
+      "test_id": "TEST-FE-459",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialClient.test.ts",
+      "status": "implemented",
+      "notes": "Canonical bounded Credit proposal retains original requested amount, returned500-line batch, exact remainder and explicit continuation, including maximum event amount; one complete control and two qualified partial red cases are retained."
+    },
+    {
+      "test_id": "TEST-FE-460",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialClient.test.ts",
+      "status": "implemented",
+      "notes": "Reject24 incoherent partial proposals covering missing/mismatched request and remainder, invalid continuation/policy/budgets, duplicate or inconsistent lines, source/Property/target binding and time/version identity."
+    },
+    {
+      "test_id": "TEST-FE-461",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/financialClient.test.ts",
+      "status": "implemented",
+      "notes": "Reject contradictory continuation metadata even when the returned batch equals the complete original request."
+    },
+    {
+      "test_id": "TEST-FE-462",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Three Credit recognition and reversal commands use fresh exact action context with independent action-only grant; retain payer consent, exact USD and reason; never post from the form."
+    },
+    {
+      "test_id": "TEST-FE-463",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Linked Credit recognition/application reversals remain readable while their separate forms reject a new reversal of the same original."
+    },
+    {
+      "test_id": "TEST-FE-464",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Explicit proposal and confirmation each refresh exact Invoice source/target and proposal; preserve canonical wire representation without automatic submission or continuation."
+    },
+    {
+      "test_id": "TEST-FE-465",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Separate Late-payment Charge direct and designated applications capture exact USD, target and designation without Invoice or Payment Allocation intent."
+    },
+    {
+      "test_id": "TEST-FE-466",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Explicit Invoice line designation confirms exact positive USD and complete target after a fresh reload."
+    },
+    {
+      "test_id": "TEST-FE-467",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Current-line overspend blocks designation before any proposal or command send."
+    },
+    {
+      "test_id": "TEST-FE-468",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Editing the target aborts a delayed Credit context and prevents stale facts, downstream proposal and confirmation."
+    },
+    {
+      "test_id": "TEST-FE-469",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Read-only Credit Customer list overrides old application selection correctly; original recognition and flattened ledger events display source/actor/reason without recovery availability."
+    },
+    {
+      "test_id": "TEST-FE-470",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "501 coherent synthetic Invoice lines load over11 actual-client context pages; only the returned500-line500-cent batch from501requested is reviewed, retaining1cent continuation and no automatic send."
+    },
+    {
+      "test_id": "TEST-FE-471",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "102 coherent Invoice lines load over3pages and designated amounts survive local50-line paging; refresh all3pages then confirm exact2-cent combined intent."
+    },
+    {
+      "test_id": "TEST-FE-472",
+      "upstream_ids": [
+        "TEST-117",
+        "API-063",
+        "UI-070",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Raw original application details preserve unrecorded proposal values separately from actual multi-contributor Credit current aggregates; no command/recovery needed."
+    },
+    {
+      "test_id": "TEST-FE-473",
+      "upstream_ids": [
+        "TEST-117",
+        "API-057",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Action-only Payment form refreshes accepted methods before exact USD review, preserving original payer scope, identified Invoice, evidence and explicit Phnom Penh time without command submission."
+    },
+    {
+      "test_id": "TEST-FE-474",
+      "upstream_ids": [
+        "TEST-117",
+        "API-057",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Original actual channel KHR and USD evidence remain distinct from provisional system-payable KHR; accept the valid canonical actual-USD-precedence case without replacing it or posting a financial command."
+    },
+    {
+      "test_id": "TEST-FE-475",
+      "upstream_ids": [
+        "TEST-117",
+        "API-057",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Manual fallback UI requires server-confirmed approved-source outage, server permission flag and scoped exchange-rate permission; three missing-condition cases expose no manual inputs."
+    },
+    {
+      "test_id": "TEST-FE-476",
+      "upstream_ids": [
+        "TEST-117",
+        "API-057",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Authorized manual fallback refreshes automatic outage before manual preview and preserves exact source/rate/time/reason in explicit Payment review."
+    },
+    {
+      "test_id": "TEST-FE-477",
+      "upstream_ids": [
+        "TEST-117",
+        "API-057",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Freshly unaccepted selected method blocks Payment review before financial submission."
+    },
+    {
+      "test_id": "TEST-FE-478",
+      "upstream_ids": [
+        "TEST-117",
+        "API-057",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Changed USD accounting input aborts delayed preview and prevents stale rate/manual state or confirmation."
+    },
+    {
+      "test_id": "TEST-FE-479",
+      "upstream_ids": [
+        "TEST-117",
+        "API-057",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Read-only original Payment list and detail use independent Payment read permission without method or Customer discovery and without command recovery availability."
+    },
+    {
+      "test_id": "TEST-FE-480",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Unselected Payment context and fresh canonical FIFO proposal are loaded explicitly and again at review; preserve exact complete proposal including source scope, designation and target ordering without send."
+    },
+    {
+      "test_id": "TEST-FE-481",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Payment Invoice designation reloads complete target and retains exact positive line amounts and Customer instruction; uses the same bounded exact line helper as Credit."
+    },
+    {
+      "test_id": "TEST-FE-482",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Direct and designated separate Charge Allocations preserve target-specific exact intent and do not redirect value to Invoice principal."
+    },
+    {
+      "test_id": "TEST-FE-483",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Exact original Allocation/current context remains separate from linked reversal evidence; already reversed originals cannot prepare another reversal and no replacement target is requested."
+    },
+    {
+      "test_id": "TEST-FE-484",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Own reprint grant can prepare same immutable Receipt identity with reason/delivery evidence both before and after Payment reversal; no printing or command send before confirmation."
+    },
+    {
+      "test_id": "TEST-FE-485",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Selected original Allocation detail read preserves Charge category distinction, unrecorded proposal amount and original attribution without invented evidence."
+    },
+    {
+      "test_id": "TEST-FE-486",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Original Receipt and Payment-reference lookup both retain original identity and reprint history independently of command/recovery authority."
+    },
+    {
+      "test_id": "TEST-FE-487",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Complete empty Payment impact permits exact original reversal review with expectedRECEIVED status and explicit reason, without posting or cascade."
+    },
+    {
+      "test_id": "TEST-FE-488",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "All101 active Credit dependencies load over2 validated pages before display; local50-row paging retains the finalrecord and new reversal remains blocked after a fresh complete reload."
+    },
+    {
+      "test_id": "TEST-FE-489",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Complete reversal result shows separate recomputed Invoice, Charge, Credit and Deposit balances with original values and status, without summing overlapping categories."
+    },
+    {
+      "test_id": "TEST-FE-490",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Validated new and exact original-key replay success keep original confirmed Refund evidence while separately refreshing current source position; replay preserves original bytes and key."
+    },
+    {
+      "test_id": "TEST-FE-491",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Current source read failure after confirmed Refund never removes the recorded result or recreates a cleared recovery journal."
+    },
+    {
+      "test_id": "TEST-FE-492",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Original Receipt identity refresh follows confirmed reasoned reprint, including reversed Payment; explicit print click is required and no second financial command is sent."
+    },
+    {
+      "test_id": "TEST-FE-493",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Revoked reprint permission exposes neither current source GET nor printable action; general read alone is insufficient."
+    },
+    {
+      "test_id": "TEST-FE-494",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Unmount aborts delayed post-confirmation Receipt identity read and exposes no stale print action."
+    },
+    {
+      "test_id": "TEST-FE-495",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Confirmed Payment reversal automatically loads complete result with distinct Invoice, Charge, Credit and Deposit balances, without another command."
+    },
+    {
+      "test_id": "TEST-FE-496",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Eight financial command outcomes route only to exact original source context under the command grant; correction reversal retains both original Refund and correction bindings."
+    },
+    {
+      "test_id": "TEST-FE-497",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/FinancialWorkspaces.test.tsx",
+      "status": "implemented",
+      "notes": "Post-Payment result GET requires payments.read and exact current Property; record-only grant or wrong Property performs no read."
+    },
+    {
+      "test_id": "TEST-FE-498",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-059",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "App renders actor-bound financial access only after sign-in and removes it immediately during pending logout, aborting completed or delayed discovery without late restoration."
+    },
+    {
+      "test_id": "TEST-FE-499",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real Chromium UI explicitly reviews/replays all12 command types through actual clients and real sealed IndexedDB/WebCrypto; original bytes/key/operation/actor/Property preserved, no automatic send, validated success clears original. Native Tab/Shift-Tab/Escape/opener focus and narrow360px dialog verified. Executed through retained run-staff-financial-workflows.js; only injected synthetic responses, zero financial API network requests."
+    },
+    {
+      "test_id": "TEST-FE-500",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real browser new Refund form loads actual validated source and requires explicit confirmation; unknown reply survives unmount/remount without automatic send, then explicit original-key replay confirms and retires exact original encrypted intent. Executed through retained run-staff-financial-workflows.js; only injected synthetic responses, zero financial API network requests."
+    },
+    {
+      "test_id": "TEST-FE-501",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Fresh permission revocation removes source actions and disables original replay while keeping Cancel available and original encrypted pending evidence intact. Executed through retained run-staff-financial-workflows.js; only injected synthetic responses, zero financial API network requests."
+    },
+    {
+      "test_id": "TEST-FE-502",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Real browser Property/actor/unmount changes during paused replay abort old scope, preserve original encrypted uncertainty and prevent late confirmed results from populating changed screens. Executed through retained run-staff-financial-workflows.js; only injected synthetic responses, zero financial API network requests."
+    },
+    {
+      "test_id": "TEST-FE-503",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Actual navigator.locks contention on the original actor attempt key prevents UI replay transmission and preserves pending encrypted evidence without replacement or clearing. Executed through retained run-staff-financial-workflows.js; only injected synthetic responses, zero financial API network requests."
+    },
+    {
+      "test_id": "TEST-FE-504",
+      "upstream_ids": [
+        "TEST-117",
+        "API-058",
+        "API-060",
+        "UI-005"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/test/financialWorkflows.browser.ts",
+      "status": "implemented",
+      "notes": "Actual historical Receipt contexts before/after Payment reversal preserve original payer snapshot/number and confirmed reprint identity; one explicit print click only, print-media CSS excludes all other screen content. Executed through retained run-staff-financial-workflows.js; only injected synthetic responses, zero financial API network requests."
     }
   ]
 }

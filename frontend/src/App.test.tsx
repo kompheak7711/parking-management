@@ -14,6 +14,8 @@ import {
   reserveCustomerReconciliation,
 } from "./App";
 import type { CustomerReconciliationRequirement } from "./CustomerManagement";
+import { defaultFinancialUiServices } from "./FinancialManagement";
+import { createFinancialReferenceClient } from "./financialReferenceClient";
 import { AccessAdministrationApi, UserAccount } from "./adminClient";
 import {
   AUTHENTICATION_ERROR_MESSAGE,
@@ -2340,4 +2342,96 @@ describe("local sign-in", () => {
 
     expectPropertyManagementHidden();
   });
+});
+
+describe("financial panel session integration", () => {
+  it.each([false, true])(
+    "TEST-FE-498 removes financial access and aborts discovery during logout, delayed=%s",
+    async (delayed) => {
+      const actorId = "70000000-0000-4000-8000-000000000001",
+        signedIn = { ...session, actor_id: actorId };
+      let releaseDiscovery!: () => void, releaseLogout!: () => void;
+      const discoveryGate = new Promise<void>((resolve) => {
+          releaseDiscovery = resolve;
+        }),
+        logoutGate = new Promise<void>((resolve) => {
+          releaseLogout = resolve;
+        }),
+        calls: {
+          method: string | undefined;
+          headers: Headers;
+          signal: AbortSignal | null | undefined;
+        }[] = [];
+      const references = createFinancialReferenceClient(async (_url, init) => {
+        const headers = new Headers(init?.headers);
+        calls.push({ method: init?.method, headers, signal: init?.signal });
+        if (delayed) await discoveryGate;
+        const requestId = headers.get("X-Request-ID");
+        return new Response(
+          JSON.stringify({
+            data: [],
+            page: { limit: 100, next_cursor: null },
+            meta: { actor_id: actorId, request_id: requestId },
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "X-Request-ID": requestId ?? "",
+            },
+          },
+        );
+      });
+      const authentication = mockAuthenticationApi({
+        signIn: vi
+          .fn()
+          .mockResolvedValue({ phase: "authenticated", session: signedIn }),
+        inspectSession: vi.fn().mockResolvedValue(signedIn),
+        logout: vi.fn().mockReturnValue(logoutGate),
+      });
+      render(
+        <App
+          api={authentication}
+          buildId="synthetic-financial-integration"
+          environment="development"
+          customerApi={customerApiDouble()}
+          financialServices={{ ...defaultFinancialUiServices, references }}
+          now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+        />,
+      );
+      expect(
+        screen.queryByRole("heading", { name: "Financial records" }),
+      ).toBeNull();
+      fireEvent.change(screen.getByLabelText("Username"), {
+        target: { value: "synthetic-manager" },
+      });
+      fireEvent.change(screen.getByLabelText("Password"), {
+        target: { value: "synthetic-password" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+      await screen.findByRole("heading", { name: "Financial records" });
+      await waitFor(() => {
+        expect(calls).toHaveLength(1);
+      });
+      expect(calls[0]?.headers.get("X-Billing-Actor-ID")).toBe(actorId);
+      expect(calls[0]?.method).toBe("GET");
+      if (!delayed)
+        await screen.findByText(
+          "No financial Property access is available for this account.",
+        );
+      fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+      expect(authentication.logout).toHaveBeenCalledOnce();
+      expect(
+        screen.queryByRole("heading", { name: "Financial records" }),
+      ).toBeNull();
+      expect(calls[0]?.signal?.aborted).toBe(true);
+      await act(async () => {
+        releaseDiscovery();
+        await Promise.resolve();
+      });
+      expect(screen.queryByLabelText("Financial Property")).toBeNull();
+      releaseLogout();
+      await screen.findByLabelText("Username");
+      expect(calls).toHaveLength(1);
+    },
+  );
 });
