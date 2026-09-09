@@ -2225,6 +2225,10 @@
         {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-types-correction1.json",
           "sha256": "3e4d464dc06641d342f207b4c4794ad8920d632f78705c753f87fce4889a4135"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-lint-correction1.json",
+          "sha256": "6adbbcd580a4eebb7514bf735e33e876c1d456835163c590aead2bd399bda855"
         }
       ],
       "correction_limits": {
@@ -2246,7 +2250,8 @@
         "LEDGER-UI-FORMATTER-PROBE-F1": 1,
         "LEDGER-UI-SIBLING-KEY-F1": 1,
         "LEDGER-UI-VOID-AMOUNT-F1": 1,
-        "LEDGER-UI-VOID-TEST-TYPES-F1": 1
+        "LEDGER-UI-VOID-TEST-TYPES-F1": 1,
+        "LEDGER-UI-VOID-TEST-LINT-F1": 1
       },
       "checks": [
         {
@@ -2288,6 +2293,10 @@
         {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-void-verified1.json",
           "sha256": "fdea4c1116f405426ed6f14e0581ddfec56fed70ceb6282bffa91a9e07d61122"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-lint1-green.json",
+          "sha256": "0a4d44c5a6e633d35c9ee3493a825e7c500d2f56f65dea8d7aa1cd973abe642d"
         }
       ],
       "heartbeat_reconciliation": {
@@ -2384,6 +2393,10 @@
           "TEST-FE-586"
         ],
         "trace_entries": 1985
+      },
+      "test_lint_correction": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-lint1-green.json",
+        "sha256": "0a4d44c5a6e633d35c9ee3493a825e7c500d2f56f65dea8d7aa1cd973abe642d"
       }
     },
     "prior_version_history": "historical_v1_052_closed_current_fields.direct_codex_takeover",
@@ -3154,8 +3167,8 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Normal bounded nullable void amount successor; rejected0ca4c53 and every earlier candidate/report/regression preserved.",
-  "candidate_parent": "0ca4c53d12caed295ffb23fe7eba5b7d9d1e1043",
+  "candidate_resolution": "Normal test-only successor of preservedc7ff76b; product/browser unchanged from verified nullable void correction.",
+  "candidate_parent": "c7ff76b42f2ca0459d7d8799f147f8084d6ceecf",
   "next_candidate": {
     "id": "V1-053",
     "order": 53,
@@ -3214,7 +3227,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-053 ledger UI nullable void amount successor prepared; exact gates and cumulative review pending",
+  "phase": "V1-053 ledger UI void test-lint successor prepared; exact gates and review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4339,7 +4352,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-053",
-  "timestamp": "2026-09-09T15:21:47.384066+00:00",
+  "timestamp": "2026-09-09T15:25:01.795184+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4581,7 +4594,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-09T15:21:47.384066+00:00",
+  "updated_at": "2026-09-09T15:25:01.795184+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -20371,6 +20384,10 @@
       {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-types-correction1.json",
         "sha256": "3e4d464dc06641d342f207b4c4794ad8920d632f78705c753f87fce4889a4135"
+      },
+      {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-lint-correction1.json",
+        "sha256": "6adbbcd580a4eebb7514bf735e33e876c1d456835163c590aead2bd399bda855"
       }
     ],
     "correction_limits": {
@@ -20392,7 +20409,8 @@
       "LEDGER-UI-FORMATTER-PROBE-F1": 1,
       "LEDGER-UI-SIBLING-KEY-F1": 1,
       "LEDGER-UI-VOID-AMOUNT-F1": 1,
-      "LEDGER-UI-VOID-TEST-TYPES-F1": 1
+      "LEDGER-UI-VOID-TEST-TYPES-F1": 1,
+      "LEDGER-UI-VOID-TEST-LINT-F1": 1
     },
     "checks": [
       {
@@ -20434,6 +20452,10 @@
       {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-void-verified1.json",
         "sha256": "fdea4c1116f405426ed6f14e0581ddfec56fed70ceb6282bffa91a9e07d61122"
+      },
+      {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-lint1-green.json",
+        "sha256": "0a4d44c5a6e633d35c9ee3493a825e7c500d2f56f65dea8d7aa1cd973abe642d"
       }
     ],
     "heartbeat_reconciliation": {
@@ -20530,6 +20552,10 @@
         "TEST-FE-586"
       ],
       "trace_entries": 1985
+    },
+    "test_lint_correction": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-lint1-green.json",
+      "sha256": "0a4d44c5a6e633d35c9ee3493a825e7c500d2f56f65dea8d7aa1cd973abe642d"
     }
   },
   "historical_v1_053_ledger_api_4b7b320_fields": {
@@ -22695,5 +22721,663 @@
   "historical_v1_053_ledger_ui_void_freeze_parent_fields": {
     "candidate_resolution": "Normal one-line UI key correction successor of preservedf8f1e52; all failed candidates/tests/reports retained.",
     "timestamp": "2026-09-09T14:41:36.751345+00:00"
+  },
+  "historical_v1_053_ledger_ui_c7ff76b_fields": {
+    "direct_codex_takeover": {
+      "execution_owner": "direct_codex",
+      "authorization_from": "V1-048",
+      "authorization_through": "V1-053",
+      "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
+      "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
+      "coordinator": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard"
+      },
+      "implementation": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard",
+        "escalation_reason": "Financial confirmation/FX, authorization, concurrency, forward-only migration and permanent history"
+      },
+      "reviewer": {
+        "model": "gpt-6-astra",
+        "reasoning": "max",
+        "mode": "Standard",
+        "read_only": true
+      },
+      "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
+      "publication_branch": "implementation/foundation",
+      "openclaw_enabled": false,
+      "openclaw_dispatch_allowed": false,
+      "openclaw_supervisor_job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+      "followup_id": "property-rental-v1-047-closure-follow-up",
+      "live_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1052-v1053-live.md",
+      "standing_independent_review_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
+        "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
+      },
+      "standing_github_publication_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-github-publication-authorization.json",
+        "sha256": "45dbdbe2951acef2cecc381252bbbca0afacada804a775e6554607b4d626fdc2"
+      },
+      "coordinator_transfer": {
+        "schema_version": 1,
+        "status": "released",
+        "old_thread_id": "01a04961-4270-7802-9418-e08203784a8c",
+        "new_thread_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "implementation_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
+        "branch": "codex/v1-052-direct",
+        "head": "1e79851ec5e8530d35927fe93ed2346c407a5820",
+        "handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1052-v1053-fresh-task-handoff.md",
+        "followup_id": "property-rental-v1-047-closure-follow-up",
+        "followup_status": "ACTIVE",
+        "openclaw_enabled": false,
+        "owner_authorized_transfer": true,
+        "old_coordinator_may_implement": false,
+        "new_coordinator_may_implement": true,
+        "updated_at": "2026-09-07T02:00:00Z",
+        "next_action": "Successor 01a07991-38a6-7f33-b84d-0ad0620e2997 must verify this released gate and explicit transfer-complete message, then continue existing partial Allocation/Receipt HTTP in preserved checkout; full52closure then53; at53closed pause same follow-up/no54. Source task is historical/read-only.",
+        "handoff_sha256": "7b07947d9b8f806ba17baa77c7b21ee02c0c86d82818d95951a1bfa2a3f43be7",
+        "followup_target_thread_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "followup_prompt_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-codex-followup-policy.md",
+        "followup_prompt_sha256": "965b73fcae9e4719161566f3468bf856c533c4d6ce45e8e7c2ad960c4b8a4220",
+        "released_at": "2026-09-07T02:00:00Z",
+        "admission": {
+          "status": "completed_read_only_ready",
+          "turn_id": "01a07991-3918-7ac1-8b91-06abd0921f4c",
+          "model": "gpt-6-astra",
+          "reasoning": "xhigh",
+          "mode": "Standard locally configured; provider attestation unavailable",
+          "hashes_verified": 15,
+          "retained_worktrees": 127,
+          "dirty_paths_preserved": 8,
+          "no_admission_mutations": true
+        },
+        "verification": {
+          "automation_tests": "189 PASS in70.328s; session87433 COMPLETED EXIT0",
+          "configuration": "state-routing/watchdog/roadmap/deployment/traceability/publicationguard/diff PASS",
+          "log_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-fresh-task-transfer-config.log",
+          "log_sha256": "9170e853de1264e47528d2f4b5aeb1dd394fefb551b90c85c8396a68404ada2c",
+          "admission_assertions": "40 PASS",
+          "helper_failures_preserved": "Default Python lacked tomllib; used existing project Python3.12 without install. First byte-identity assertion caught app stripping trailing newline; normalized only saved policy final newline and rebound exact actual payload hash. Product bytes unchanged.",
+          "final_readback": "PASS2026-09-07T02:03Z:40 released-transfer assertions, actual Astra/xhigh/local Standard, exact saved-payload identity, one ACTIVE10minute follow-up on successor, eight retained dirty paths and127worktrees; final state-routing/watchdog/roadmap/deployment/traceability/publicationguard/diff PASS. Product bytes unchanged."
+        },
+        "workboard_card_id": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
+        "workboard_handoff_comment_id": "93b18202-6ce0-444e-a740-4a609fb08ce2"
+      },
+      "current_version": "V1-053",
+      "phase": "ledger_ui_exact_checks_review_pending",
+      "activated_at": "2026-09-09T02:49:35.779645+00:00",
+      "predecessor_closed": true,
+      "predecessor_sha": "0926300c5c91b26deedb682e454622065826b0ad",
+      "predecessor_closure_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-closure-verification-0926300.json",
+      "predecessor_closure_receipt_sha256": "d51d90cec48d8d5fe2da707183b63c2c20f5a9922144217999ab66a4cc13b351",
+      "predecessor_ci_run": 34265209149,
+      "predecessor_ci_attempt": 1,
+      "card_id": "d362ed27-0bdb-4318-9c8a-0976c931d706",
+      "workboard_status": "blocked",
+      "workboard_block_reason": "Tracking-only blocked prevents OpenClaw admission; direct Codex projection is authorized and active.",
+      "worker_kind": "direct_root_codex",
+      "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "worker_status": "prepared_root_no_review_or_suite_running",
+      "branch": "implementation/foundation",
+      "worktree": "/Users/sokompheak/Development/property-rental-management",
+      "scope_path": "ops/V1_053_SCOPE.md",
+      "scope_sha256": "e0216c0688b283ec397ce93d927ad206869c818a59045f43b9a5a08b799cf2ae",
+      "cumulative_review_base": "0926300c5c91b26deedb682e454622065826b0ad",
+      "candidate_sha": null,
+      "candidate_resolution": "Resolve containing normal commit externally; never edit frozen candidate to insert its own hash.",
+      "candidate_status": "ledger_ui_exact_gates_review_pending",
+      "followup_status": "ACTIVE",
+      "followup_prompt_characters": 17370,
+      "followup_prompt_sha256": "5fb0fc3ec89c1450e2f9f316d1b28105fb3c2d53a6508aa277d3e7b1f7cb4fbc",
+      "owner_action_required": false,
+      "next_action": "Freeze normal UI candidate; fresh full frontend format/lint/explicit app types/tests/build, automation and exact preservation/configuration/traceability/guard/routing checks. Reuse accepted4b7b320 backend/1053PG/standardbuild by complete source/config identity; unchanged dependency install/security evidence only. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal authorized publication, ownall4CI and allrefs; full53release/card/durable closure. Pause SAMEfollow-up only once53fullyclosed, OpenClawdisabled, never54.",
+      "active_slice": {
+        "id": "V1-053-ledger-ui",
+        "status": "prepared_exact_checks_and_review_pending",
+        "base": "4b7b32056f2fe720ae35928595a301500bb5b8d3",
+        "review_base": "0926300c5c91b26deedb682e454622065826b0ad",
+        "worker": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "worktree": "/Users/sokompheak/Development/property-rental-management",
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard",
+        "reason": "Financial interpretation, authorization, asynchronous privacy and exact money",
+        "paths": [
+          "frontend/src/customerLedgerClient.ts",
+          "frontend/src/customerLedgerClient.test.ts",
+          "frontend/src/CustomerAccountLedger.tsx",
+          "frontend/src/CustomerAccountLedger.test.tsx",
+          "frontend/src/CustomerLedgerEvidence.tsx",
+          "frontend/src/customerLedgerFixtures.ts",
+          "frontend/src/App.tsx",
+          "frontend/src/App.test.tsx",
+          "frontend/src/CustomerManagement.tsx",
+          "frontend/src/CustomerManagement.test.tsx",
+          "frontend/src/styles.css",
+          "ops/NOW.md",
+          "ops/STATE.json",
+          "ops/QUEUE.md",
+          "ops/traceability.json",
+          "ops/V1_053_LEDGER_UI.md",
+          "frontend/src/test/customerLedger.browser.tsx"
+        ],
+        "contract_path": "ops/V1_053_LEDGER_UI.md",
+        "contract_sha256": "1c29e87c033482b1688b172d8d2644d427a82ad6e839a60acfa62dfd0f7bcd2b",
+        "predecessor_publication": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-publication-verified-4b7b320.json",
+          "sha256": "2dbf55db6c83d44caf75cd64132488eef6a60bf6fe70d453db283a25206b49b5"
+        },
+        "implementation_completed": true,
+        "whole_v1_053_completed": false,
+        "next_action": "Freeze normal UI candidate; fresh full frontend format/lint/explicit app types/tests/build, automation and exact preservation/configuration/traceability/guard/routing checks. Reuse accepted4b7b320 backend/1053PG/standardbuild by complete source/config identity; unchanged dependency install/security evidence only. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal authorized publication, ownall4CI and allrefs; full53release/card/durable closure. Pause SAMEfollow-up only once53fullyclosed, OpenClawdisabled, never54.",
+        "corrections": [
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-initial-correction1.json",
+            "sha256": "5cbfe44e2f273d302bb5b16687c062c1099c0e709f1ff932bbac1b47c8206a39"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-style-correction2.json",
+            "sha256": "f5a1dddea0c9721ec7ff4e01421ea0cf9d830580e3337777817991c0a3c1823c"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-tests-correction1.json",
+            "sha256": "fd44f86a9a2c39fbd69c4677e7c158a8f5eae8f01dfd3ceabd054c3fb10e2080"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-source-retention-correction1.json",
+            "sha256": "1192d7dc1dee35678df36b5ace485855b7c79c254b7db5e48dc3c36d8e9b1eff"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-layout-correction1.json",
+            "sha256": "e3ec46ecbc296dd272fe9c85d2ec57998231a47d143d223f563156ee5ad2edcb"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-selector-correction1.json",
+            "sha256": "44ffc154e54f2059db7f7bf720960ce699500c27cb9dd1184a11cb78a87a4373"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-selector-correction2.json",
+            "sha256": "a9f4f14633411847764c6733a0946938536ff7bf2ad14f567651368796b4cf76"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-label-correction1.json",
+            "sha256": "470f503549903293535cadff4b2b7ececae4c3dfe6bde151143df3a550f775be"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-validation-correction1.json",
+            "sha256": "e513aae2372400ca0afedd9cd9d3b91ff7c2e8a9f7dc667c371c716b6fe3732e"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-fixture-layout-corrections.json",
+            "sha256": "a688561c9904055896980d497680260e470437d72e0bb440a09023eaea9ad879"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-khr-correction2.json",
+            "sha256": "eec2ec880688db80080d5bbb400d8a5c7edf39ad297d05824b178d176f2a8006"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-state-preservation-correction1.json",
+            "sha256": "802b1ec0d3fd19f271be939d5317f4a683cc3e6885f96678ff2a6b8ca08edf95"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-format-stability-correction1.json",
+            "sha256": "752496fc9e1fe5d12b078bf51557f8e38c503a9d38edec8c37c35b238828eace"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-sibling-key-correction1.json",
+            "sha256": "330d56432ddc50bd0c407fc4f659256d63599dc1a5a5dda352d901b25b3903a3"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-amount-correction1.json",
+            "sha256": "230948989c9d466dd2bcbfa02a49789bd951986f717b3631ecc719b80d46c5ee"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-types-correction1.json",
+            "sha256": "3e4d464dc06641d342f207b4c4794ad8920d632f78705c753f87fce4889a4135"
+          }
+        ],
+        "correction_limits": {
+          "LEDGER-UI-STYLE-F1": 2,
+          "LEDGER-UI-CUSTOMER-HANDOFF-F1": 1,
+          "LEDGER-UI-TYPE-HARNESS-F1": 1,
+          "LEDGER-UI-TEST-CLEANUP-F1": 1,
+          "LEDGER-UI-TEST-STYLE-F1": 1,
+          "LEDGER-UI-SOURCE-RETENTION-F1": 1,
+          "LEDGER-UI-LAYOUT-F1": 2,
+          "LEDGER-UI-BROWSER-SELECTOR-F1": 2,
+          "LEDGER-UI-BROWSER-LABEL-F1": 1,
+          "LEDGER-UI-SOURCE-COUNT-F1": 1,
+          "LEDGER-UI-AUDIT-MONEY-F1": 1,
+          "LEDGER-UI-KHR-FIXTURE-F1": 2,
+          "LEDGER-UI-CLI-NETWORK-ALIAS-F1": 1,
+          "LEDGER-UI-STATE-PRESERVATION-F1": 1,
+          "LEDGER-UI-FORMAT-STABILITY-F1": 1,
+          "LEDGER-UI-FORMATTER-PROBE-F1": 1,
+          "LEDGER-UI-SIBLING-KEY-F1": 1,
+          "LEDGER-UI-VOID-AMOUNT-F1": 1,
+          "LEDGER-UI-VOID-TEST-TYPES-F1": 1
+        },
+        "checks": [
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-quality-and-focused2.json",
+            "sha256": "4e4527989192b103f0dcb9c47e96d6f492cb76109a51b61f0eecadb75da5852f"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-source1-quality.json",
+            "sha256": "2fed961b93859fd7ed7030ffffbc1ea21326a5b406e66cd14cc0f3000504a8d5"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-filter-continuation1.json",
+            "sha256": "89b4336da7f906127e0e42190c7b276f64105c3bfd92bcfd8cff7f773c0dccb2"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-validation1-green.json",
+            "sha256": "d6375454aa251e4e73bc5b90ea6fcab159329a1d35225bfb1d3dcf605dbb5f8d"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-khr2-quality.json",
+            "sha256": "1608a359ebf3460f719eb14228314d02320b63b9980997b567d8f1b8f334d238"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-verified.json",
+            "sha256": "f52465cc8a8df46437005a0015b131a22d2037ec4b4ffb40b402289bc455b2e1"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-sibling-key1-green.json",
+            "sha256": "c3645e3eef98c041394f9cb18c572e44813a1af20c92aee82645ca1f29a6cd06"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void1-green.json",
+            "sha256": "e1ef116c3e974599de7bdf1301a3c389f2242ba27eccd26e581f7d299da03f79"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-types1-green.json",
+            "sha256": "61a5193dd77aa438db5af856a81f9b3b9b62b6f5807c287a52958254e9b45e9e"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-void-verified1.json",
+            "sha256": "fdea4c1116f405426ed6f14e0581ddfec56fed70ceb6282bffa91a9e07d61122"
+          }
+        ],
+        "heartbeat_reconciliation": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-heartbeat1-reconciliation.json",
+          "sha256": "4803ed7591332d0dd74b7f9b5661d9189cebd8e2a8775979290e86309ce66136"
+        },
+        "browser_scope": "One opt-in synthetic real-browser harness, no production entry import, no financial network requests. Existing CLI and owned loopback Vite server; exact product source imports.",
+        "pending_root_inspection_findings": [],
+        "validation_regressions_active": {
+          "stage": "verified_red_green_and104focused",
+          "findings": [
+            "LEDGER-UI-SOURCE-COUNT-F1",
+            "LEDGER-UI-AUDIT-MONEY-F1"
+          ],
+          "tests": "TEST-FE-581 through583",
+          "before": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-before-validation1-customerLedgerClient.ts",
+            "sha256": "6dc19c8f00877315a19f20ac217cab21b98cff3bca7b74759b7d0f19b766bf70"
+          },
+          "original_tests": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-before-validation1-customerLedgerClient.test.ts",
+            "sha256": "ea1df9cb630fdab3aaf2976a88c46a939f18316d859c376303eddbbf17b433a8"
+          },
+          "red": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-validation1-red.json",
+            "sha256": "b90f45ec5f158e075d9e53ae20a4ab08b301309cf07d6a38b28a7802e0395d4e"
+          },
+          "green": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-validation1-green.json",
+            "sha256": "d6375454aa251e4e73bc5b90ea6fcab159329a1d35225bfb1d3dcf605dbb5f8d"
+          }
+        },
+        "browser_verification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-verified.json",
+          "sha256": "f52465cc8a8df46437005a0015b131a22d2037ec4b4ffb40b402289bc455b2e1"
+        },
+        "candidate_sha": null,
+        "focused_tests": 104,
+        "integration_tests": 2,
+        "traceability_entries_added": 38,
+        "traceability_entries_total": 1982,
+        "browser_trace_comment_only": {
+          "executed_harness_sha256": "e7346021b52ad710293ad415d84eeadd1e56a438a331ce22fa455b0a13937e51",
+          "prepared_harness_sha256": "511889284f2f499babcf091175b7b782665f7501293bae250765aa52d52b8700",
+          "change": "One leading TEST-FE-580 comment; every executed source statement unchanged."
+        },
+        "preservation": "All preexisting App/Customer test bytes preserved as exact prefixes, including TEST-FE-135. Backend/runtime/migrations/dependencies/specifications/source commands unchanged from accepted4b7b320. Every failed run retained.",
+        "format_correction": {
+          "parent": "944e8837962c6b40eec6e1344650a1879af458b4",
+          "receipt": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-format-stability-correction1.json",
+            "sha256": "752496fc9e1fe5d12b078bf51557f8e38c503a9d38edec8c37c35b238828eace"
+          },
+          "test_AST_unchanged": true,
+          "runtime_browser_inputs_unchanged": true
+        },
+        "sibling_key_correction": {
+          "parent": "f8f1e52811521150debafe3d1205b6d4eaa3f208",
+          "green": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-sibling-key1-green.json",
+            "sha256": "c3645e3eef98c041394f9cb18c572e44813a1af20c92aee82645ca1f29a6cd06"
+          },
+          "exact_old_test_source_preserved": true,
+          "scope": "Only namespace CustomerAccountLedger sibling key; existing FinancialManagement identity/commands/session logic untouched."
+        },
+        "void_amount_correction": {
+          "parent": "0ca4c53d12caed295ffb23fe7eba5b7d9d1e1043",
+          "finding": "LEDGER-UI-VOID-AMOUNT-F1",
+          "attempt": 1,
+          "red": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void1-red.json",
+            "sha256": "6e2ec1dd679654ef6b92269dc133c2736ce22671958470de8ee65db850659a75"
+          },
+          "green": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void1-green.json",
+            "sha256": "e1ef116c3e974599de7bdf1301a3c389f2242ba27eccd26e581f7d299da03f79"
+          },
+          "test_type_correction": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-types1-green.json",
+            "sha256": "61a5193dd77aa438db5af856a81f9b3b9b62b6f5807c287a52958254e9b45e9e"
+          },
+          "browser": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-void-verified1.json",
+            "sha256": "fdea4c1116f405426ed6f14e0581ddfec56fed70ceb6282bffa91a9e07d61122"
+          },
+          "rejected_review": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-rejected-0ca4c53.json",
+            "sha256": "062fa8d0ff9c989bb06efc5de3f388694e54b328fdb7fd63a12017cb76c1e69c"
+          },
+          "scope": "Nullable recorded amount and explicit absent label only; financial effects/backend/API/migrations untouched.",
+          "new_tests": [
+            "TEST-FE-584",
+            "TEST-FE-585",
+            "TEST-FE-586"
+          ],
+          "trace_entries": 1985
+        }
+      },
+      "prior_version_history": "historical_v1_052_closed_current_fields.direct_codex_takeover",
+      "last_model_configuration_check": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "xhigh",
+        "mode": "Standard",
+        "service_tier": "default",
+        "provider_attestation": "unavailable"
+      }
+    },
+    "phase": "V1-053 ledger UI nullable void amount successor prepared; exact gates and cumulative review pending",
+    "status": "complete_uncommitted",
+    "v1_053_ledger_ui": {
+      "id": "V1-053-ledger-ui",
+      "status": "prepared_exact_checks_and_review_pending",
+      "base": "4b7b32056f2fe720ae35928595a301500bb5b8d3",
+      "review_base": "0926300c5c91b26deedb682e454622065826b0ad",
+      "worker": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "worktree": "/Users/sokompheak/Development/property-rental-management",
+      "model": "gpt-6-astra",
+      "reasoning": "xhigh",
+      "mode": "Standard",
+      "reason": "Financial interpretation, authorization, asynchronous privacy and exact money",
+      "paths": [
+        "frontend/src/customerLedgerClient.ts",
+        "frontend/src/customerLedgerClient.test.ts",
+        "frontend/src/CustomerAccountLedger.tsx",
+        "frontend/src/CustomerAccountLedger.test.tsx",
+        "frontend/src/CustomerLedgerEvidence.tsx",
+        "frontend/src/customerLedgerFixtures.ts",
+        "frontend/src/App.tsx",
+        "frontend/src/App.test.tsx",
+        "frontend/src/CustomerManagement.tsx",
+        "frontend/src/CustomerManagement.test.tsx",
+        "frontend/src/styles.css",
+        "ops/NOW.md",
+        "ops/STATE.json",
+        "ops/QUEUE.md",
+        "ops/traceability.json",
+        "ops/V1_053_LEDGER_UI.md",
+        "frontend/src/test/customerLedger.browser.tsx"
+      ],
+      "contract_path": "ops/V1_053_LEDGER_UI.md",
+      "contract_sha256": "1c29e87c033482b1688b172d8d2644d427a82ad6e839a60acfa62dfd0f7bcd2b",
+      "predecessor_publication": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-publication-verified-4b7b320.json",
+        "sha256": "2dbf55db6c83d44caf75cd64132488eef6a60bf6fe70d453db283a25206b49b5"
+      },
+      "implementation_completed": true,
+      "whole_v1_053_completed": false,
+      "next_action": "Freeze normal UI candidate; fresh full frontend format/lint/explicit app types/tests/build, automation and exact preservation/configuration/traceability/guard/routing checks. Reuse accepted4b7b320 backend/1053PG/standardbuild by complete source/config identity; unchanged dependency install/security evidence only. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal authorized publication, ownall4CI and allrefs; full53release/card/durable closure. Pause SAMEfollow-up only once53fullyclosed, OpenClawdisabled, never54.",
+      "corrections": [
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-initial-correction1.json",
+          "sha256": "5cbfe44e2f273d302bb5b16687c062c1099c0e709f1ff932bbac1b47c8206a39"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-style-correction2.json",
+          "sha256": "f5a1dddea0c9721ec7ff4e01421ea0cf9d830580e3337777817991c0a3c1823c"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-tests-correction1.json",
+          "sha256": "fd44f86a9a2c39fbd69c4677e7c158a8f5eae8f01dfd3ceabd054c3fb10e2080"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-source-retention-correction1.json",
+          "sha256": "1192d7dc1dee35678df36b5ace485855b7c79c254b7db5e48dc3c36d8e9b1eff"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-layout-correction1.json",
+          "sha256": "e3ec46ecbc296dd272fe9c85d2ec57998231a47d143d223f563156ee5ad2edcb"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-selector-correction1.json",
+          "sha256": "44ffc154e54f2059db7f7bf720960ce699500c27cb9dd1184a11cb78a87a4373"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-selector-correction2.json",
+          "sha256": "a9f4f14633411847764c6733a0946938536ff7bf2ad14f567651368796b4cf76"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-label-correction1.json",
+          "sha256": "470f503549903293535cadff4b2b7ececae4c3dfe6bde151143df3a550f775be"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-validation-correction1.json",
+          "sha256": "e513aae2372400ca0afedd9cd9d3b91ff7c2e8a9f7dc667c371c716b6fe3732e"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-fixture-layout-corrections.json",
+          "sha256": "a688561c9904055896980d497680260e470437d72e0bb440a09023eaea9ad879"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-khr-correction2.json",
+          "sha256": "eec2ec880688db80080d5bbb400d8a5c7edf39ad297d05824b178d176f2a8006"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-state-preservation-correction1.json",
+          "sha256": "802b1ec0d3fd19f271be939d5317f4a683cc3e6885f96678ff2a6b8ca08edf95"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-format-stability-correction1.json",
+          "sha256": "752496fc9e1fe5d12b078bf51557f8e38c503a9d38edec8c37c35b238828eace"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-sibling-key-correction1.json",
+          "sha256": "330d56432ddc50bd0c407fc4f659256d63599dc1a5a5dda352d901b25b3903a3"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-amount-correction1.json",
+          "sha256": "230948989c9d466dd2bcbfa02a49789bd951986f717b3631ecc719b80d46c5ee"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-types-correction1.json",
+          "sha256": "3e4d464dc06641d342f207b4c4794ad8920d632f78705c753f87fce4889a4135"
+        }
+      ],
+      "correction_limits": {
+        "LEDGER-UI-STYLE-F1": 2,
+        "LEDGER-UI-CUSTOMER-HANDOFF-F1": 1,
+        "LEDGER-UI-TYPE-HARNESS-F1": 1,
+        "LEDGER-UI-TEST-CLEANUP-F1": 1,
+        "LEDGER-UI-TEST-STYLE-F1": 1,
+        "LEDGER-UI-SOURCE-RETENTION-F1": 1,
+        "LEDGER-UI-LAYOUT-F1": 2,
+        "LEDGER-UI-BROWSER-SELECTOR-F1": 2,
+        "LEDGER-UI-BROWSER-LABEL-F1": 1,
+        "LEDGER-UI-SOURCE-COUNT-F1": 1,
+        "LEDGER-UI-AUDIT-MONEY-F1": 1,
+        "LEDGER-UI-KHR-FIXTURE-F1": 2,
+        "LEDGER-UI-CLI-NETWORK-ALIAS-F1": 1,
+        "LEDGER-UI-STATE-PRESERVATION-F1": 1,
+        "LEDGER-UI-FORMAT-STABILITY-F1": 1,
+        "LEDGER-UI-FORMATTER-PROBE-F1": 1,
+        "LEDGER-UI-SIBLING-KEY-F1": 1,
+        "LEDGER-UI-VOID-AMOUNT-F1": 1,
+        "LEDGER-UI-VOID-TEST-TYPES-F1": 1
+      },
+      "checks": [
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-quality-and-focused2.json",
+          "sha256": "4e4527989192b103f0dcb9c47e96d6f492cb76109a51b61f0eecadb75da5852f"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-source1-quality.json",
+          "sha256": "2fed961b93859fd7ed7030ffffbc1ea21326a5b406e66cd14cc0f3000504a8d5"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-filter-continuation1.json",
+          "sha256": "89b4336da7f906127e0e42190c7b276f64105c3bfd92bcfd8cff7f773c0dccb2"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-validation1-green.json",
+          "sha256": "d6375454aa251e4e73bc5b90ea6fcab159329a1d35225bfb1d3dcf605dbb5f8d"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-khr2-quality.json",
+          "sha256": "1608a359ebf3460f719eb14228314d02320b63b9980997b567d8f1b8f334d238"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-verified.json",
+          "sha256": "f52465cc8a8df46437005a0015b131a22d2037ec4b4ffb40b402289bc455b2e1"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-sibling-key1-green.json",
+          "sha256": "c3645e3eef98c041394f9cb18c572e44813a1af20c92aee82645ca1f29a6cd06"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void1-green.json",
+          "sha256": "e1ef116c3e974599de7bdf1301a3c389f2242ba27eccd26e581f7d299da03f79"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-types1-green.json",
+          "sha256": "61a5193dd77aa438db5af856a81f9b3b9b62b6f5807c287a52958254e9b45e9e"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-void-verified1.json",
+          "sha256": "fdea4c1116f405426ed6f14e0581ddfec56fed70ceb6282bffa91a9e07d61122"
+        }
+      ],
+      "heartbeat_reconciliation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-heartbeat1-reconciliation.json",
+        "sha256": "4803ed7591332d0dd74b7f9b5661d9189cebd8e2a8775979290e86309ce66136"
+      },
+      "browser_scope": "One opt-in synthetic real-browser harness, no production entry import, no financial network requests. Existing CLI and owned loopback Vite server; exact product source imports.",
+      "pending_root_inspection_findings": [],
+      "validation_regressions_active": {
+        "stage": "verified_red_green_and104focused",
+        "findings": [
+          "LEDGER-UI-SOURCE-COUNT-F1",
+          "LEDGER-UI-AUDIT-MONEY-F1"
+        ],
+        "tests": "TEST-FE-581 through583",
+        "before": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-before-validation1-customerLedgerClient.ts",
+          "sha256": "6dc19c8f00877315a19f20ac217cab21b98cff3bca7b74759b7d0f19b766bf70"
+        },
+        "original_tests": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-before-validation1-customerLedgerClient.test.ts",
+          "sha256": "ea1df9cb630fdab3aaf2976a88c46a939f18316d859c376303eddbbf17b433a8"
+        },
+        "red": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-validation1-red.json",
+          "sha256": "b90f45ec5f158e075d9e53ae20a4ab08b301309cf07d6a38b28a7802e0395d4e"
+        },
+        "green": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-validation1-green.json",
+          "sha256": "d6375454aa251e4e73bc5b90ea6fcab159329a1d35225bfb1d3dcf605dbb5f8d"
+        }
+      },
+      "browser_verification": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-verified.json",
+        "sha256": "f52465cc8a8df46437005a0015b131a22d2037ec4b4ffb40b402289bc455b2e1"
+      },
+      "candidate_sha": null,
+      "focused_tests": 104,
+      "integration_tests": 2,
+      "traceability_entries_added": 38,
+      "traceability_entries_total": 1982,
+      "browser_trace_comment_only": {
+        "executed_harness_sha256": "e7346021b52ad710293ad415d84eeadd1e56a438a331ce22fa455b0a13937e51",
+        "prepared_harness_sha256": "511889284f2f499babcf091175b7b782665f7501293bae250765aa52d52b8700",
+        "change": "One leading TEST-FE-580 comment; every executed source statement unchanged."
+      },
+      "preservation": "All preexisting App/Customer test bytes preserved as exact prefixes, including TEST-FE-135. Backend/runtime/migrations/dependencies/specifications/source commands unchanged from accepted4b7b320. Every failed run retained.",
+      "format_correction": {
+        "parent": "944e8837962c6b40eec6e1344650a1879af458b4",
+        "receipt": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-format-stability-correction1.json",
+          "sha256": "752496fc9e1fe5d12b078bf51557f8e38c503a9d38edec8c37c35b238828eace"
+        },
+        "test_AST_unchanged": true,
+        "runtime_browser_inputs_unchanged": true
+      },
+      "sibling_key_correction": {
+        "parent": "f8f1e52811521150debafe3d1205b6d4eaa3f208",
+        "green": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-sibling-key1-green.json",
+          "sha256": "c3645e3eef98c041394f9cb18c572e44813a1af20c92aee82645ca1f29a6cd06"
+        },
+        "exact_old_test_source_preserved": true,
+        "scope": "Only namespace CustomerAccountLedger sibling key; existing FinancialManagement identity/commands/session logic untouched."
+      },
+      "void_amount_correction": {
+        "parent": "0ca4c53d12caed295ffb23fe7eba5b7d9d1e1043",
+        "finding": "LEDGER-UI-VOID-AMOUNT-F1",
+        "attempt": 1,
+        "red": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void1-red.json",
+          "sha256": "6e2ec1dd679654ef6b92269dc133c2736ce22671958470de8ee65db850659a75"
+        },
+        "green": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void1-green.json",
+          "sha256": "e1ef116c3e974599de7bdf1301a3c389f2242ba27eccd26e581f7d299da03f79"
+        },
+        "test_type_correction": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-void-test-types1-green.json",
+          "sha256": "61a5193dd77aa438db5af856a81f9b3b9b62b6f5807c287a52958254e9b45e9e"
+        },
+        "browser": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-browser-void-verified1.json",
+          "sha256": "fdea4c1116f405426ed6f14e0581ddfec56fed70ceb6282bffa91a9e07d61122"
+        },
+        "rejected_review": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-rejected-0ca4c53.json",
+          "sha256": "062fa8d0ff9c989bb06efc5de3f388694e54b328fdb7fd63a12017cb76c1e69c"
+        },
+        "scope": "Nullable recorded amount and explicit absent label only; financial effects/backend/API/migrations untouched.",
+        "new_tests": [
+          "TEST-FE-584",
+          "TEST-FE-585",
+          "TEST-FE-586"
+        ],
+        "trace_entries": 1985
+      }
+    }
+  },
+  "historical_v1_053_ledger_ui_void_lint_freeze_parent_fields": {
+    "candidate_resolution": "Normal bounded nullable void amount successor; rejected0ca4c53 and every earlier candidate/report/regression preserved.",
+    "candidate_parent": "0ca4c53d12caed295ffb23fe7eba5b7d9d1e1043",
+    "timestamp": "2026-09-09T15:21:47.384066+00:00",
+    "updated_at": "2026-09-09T15:21:47.384066+00:00"
   }
 }

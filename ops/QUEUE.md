@@ -1,3 +1,9 @@
+# Current queue — V1-053 void test lint successor
+
+Freeze normal test-only correction, run exact gates and full independent review. Preservec7ff76b failed lint and all earlier evidence. Reviewed publication/ownCI/refs/full53release/card/closure remain required. Never54.
+
+Preserved earlier entries:
+
 # Current queue — V1-053 nullable Invoice void correction
 
 Freeze/test/review normal corrected UI successor. Preserve0ca4c53 rejected one-MEDIUM review and4RED/8GREEN, type-only guard failure/correction and both new browser cases. Reuse unchanged backend/PG by complete identity. ONEfull0926300-base Astra/max/Standard/enforced-read-only zero review, authorized publication/ownall4CI/allrefs, then full53release/card/durable closure. Never54.

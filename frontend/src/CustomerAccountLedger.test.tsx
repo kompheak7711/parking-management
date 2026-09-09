@@ -520,7 +520,7 @@ it.each([false, true])(
     });
     expect(heading).toHaveFocus();
     const source = screen.getByRole("region", {
-      name: heading.textContent ?? "",
+      name: heading.textContent,
     });
     expect(source).toHaveTextContent("Recorded amount: Not recorded");
     const components = await within(source).findByRole("table", {
