@@ -1645,8 +1645,9 @@ def test_customer_financial_summary_is_truthful_and_exposes_no_export_or_ledger_
         ).status_code
         == 400
     )
+    # The separate ledger now exists, but Customer read never grants ledger access.
     assert (
         client.get(f"/api/v1/customers/{record.customer.customer_id}/account-ledger").status_code
-        == 404
+        == 403
     )
     assert client.get(f"/api/v1/customers/{record.customer.customer_id}/export").status_code == 404

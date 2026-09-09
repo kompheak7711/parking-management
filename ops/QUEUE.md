@@ -1,3 +1,15 @@
+# Current queue — V1-053 corrected ledger API exact gates
+
+Latest 2026-09-09T07:10:37.721454+00:00: Run fresh exact successor backend/automation and required static/build/import/traceability/preservation/routing gates; reuse f17a38b full1053PASS PostgreSQL only through unchanged runtime/migrations/PG suite and environment source proof. Preserve its one failed legacy inventory result and all previous failures. Then one complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal publication/ownCI/allrefs, dedicatedCustomerUI and full53release/card/closure. Pause SAMEfollow-up only at closed53; OpenClawdisabled, never54.
+
+Preserved earlier entries:
+
+# Current queue — V1-053 legacy Customer ledger inventory correction1
+
+Latest 2026-09-09T07:07:26.626604+00:00: Apply legacy Customer-only ledger denial expectation correction1, preserving rejected f17a38b and its1failed/2734passed backend plus1053PASS PostgreSQL. Freeze normal successor; prove unchanged PG/runtime/migration inputs for DB reuse, run fresh full backend and required remaining gates, complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal publication/ownCI/refs, then dedicatedUI/full53release/card/closure. SAMEfollow-upACTIVE/OpenClawdisabled/never54.
+
+Preserved earlier entries:
+
 # Current queue — V1-053 ledger API exact checks and review
 
 Latest 2026-09-09T06:52:36.885347+00:00: Freeze this prepared ledger read API in a normal commit; run fresh applicable exact PostgreSQL/backend/automation suites sequentially plus static/build/import/traceability/security/preservation/routing gates. Then obtain one fresh GPT-6 Astra max Standard enforced-read-only zero-finding review of the complete0926300-base diff, publish normally to the authorized branch, verify own exact-commit CI and all refs, and activate the dedicated Customer ledger UI. Full V1-053 release/card/closure remains pending; pause SAME follow-up only when fully closed53; OpenClaw stays disabled, never54.

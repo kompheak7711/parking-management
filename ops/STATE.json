@@ -2095,7 +2095,7 @@
       "workboard_handoff_comment_id": "93b18202-6ce0-444e-a740-4a609fb08ce2"
     },
     "current_version": "V1-053",
-    "phase": "ledger_read_api_checks_review_pending",
+    "phase": "ledger_api_successor_checks_review_pending",
     "activated_at": "2026-09-09T02:49:35.779645+00:00",
     "predecessor_closed": true,
     "predecessor_sha": "0926300c5c91b26deedb682e454622065826b0ad",
@@ -2108,7 +2108,7 @@
     "workboard_block_reason": "Tracking-only blocked prevents OpenClaw admission; direct Codex projection is authorized and active.",
     "worker_kind": "direct_root_codex",
     "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-    "worker_status": "prepared_root_ledger_api_no_reviewer_running",
+    "worker_status": "prepared_root_successor_no_reviewer_running",
     "branch": "implementation/foundation",
     "worktree": "/Users/sokompheak/Development/property-rental-management",
     "scope_path": "ops/V1_053_SCOPE.md",
@@ -2116,12 +2116,12 @@
     "cumulative_review_base": "0926300c5c91b26deedb682e454622065826b0ad",
     "candidate_sha": null,
     "candidate_resolution": "Resolve containing normal commit externally; never edit frozen candidate to insert its own hash.",
-    "candidate_status": "ledger_api_exact_gates_review_pending",
+    "candidate_status": "ledger_api_successor_exact_gates_review_pending",
     "followup_status": "ACTIVE",
     "followup_prompt_characters": 17370,
     "followup_prompt_sha256": "5fb0fc3ec89c1450e2f9f316d1b28105fb3c2d53a6508aa277d3e7b1f7cb4fbc",
     "owner_action_required": false,
-    "next_action": "Freeze this prepared ledger read API in a normal commit; run fresh applicable exact PostgreSQL/backend/automation suites sequentially plus static/build/import/traceability/security/preservation/routing gates. Then obtain one fresh GPT-6 Astra max Standard enforced-read-only zero-finding review of the complete0926300-base diff, publish normally to the authorized branch, verify own exact-commit CI and all refs, and activate the dedicated Customer ledger UI. Full V1-053 release/card/closure remains pending; pause SAME follow-up only when fully closed53; OpenClaw stays disabled, never54.",
+    "next_action": "Run fresh exact successor backend/automation and required static/build/import/traceability/preservation/routing gates; reuse f17a38b full1053PASS PostgreSQL only through unchanged runtime/migrations/PG suite and environment source proof. Preserve its one failed legacy inventory result and all previous failures. Then one complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal publication/ownCI/allrefs, dedicatedCustomerUI and full53release/card/closure. Pause SAMEfollow-up only at closed53; OpenClawdisabled, never54.",
     "active_slice": {
       "id": "V1-053-ledger-read-api",
       "status": "prepared_exact_checks_and_review_pending",
@@ -2141,6 +2141,7 @@
         "backend/src/property_rental/customer_ledger_read.py",
         "backend/tests/test_billing_service_migration.py",
         "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_customer_api.py",
         "backend/tests/test_customer_ledger_api.py",
         "backend/tests/test_customer_ledger_migration.py",
         "backend/tests/test_customer_ledger_query.py",
@@ -2164,7 +2165,7 @@
       ],
       "additional_bounded_paths": "Existing migration tests may update only actual current-head expectations48to49; historical48/source assertions remain. Record exact expanded inventory before freeze.",
       "implementation_completed": true,
-      "next_action": "Freeze this prepared ledger read API in a normal commit; run fresh applicable exact PostgreSQL/backend/automation suites sequentially plus static/build/import/traceability/security/preservation/routing gates. Then obtain one fresh GPT-6 Astra max Standard enforced-read-only zero-finding review of the complete0926300-base diff, publish normally to the authorized branch, verify own exact-commit CI and all refs, and activate the dedicated Customer ledger UI. Full V1-053 release/card/closure remains pending; pause SAME follow-up only when fully closed53; OpenClaw stays disabled, never54.",
+      "next_action": "Run fresh exact successor backend/automation and required static/build/import/traceability/preservation/routing gates; reuse f17a38b full1053PASS PostgreSQL only through unchanged runtime/migrations/PG suite and environment source proof. Preserve its one failed legacy inventory result and all previous failures. Then one complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal publication/ownCI/allrefs, dedicatedCustomerUI and full53release/card/closure. Pause SAMEfollow-up only at closed53; OpenClawdisabled, never54.",
       "corrections": [
         {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-initial-correction1.json",
@@ -2202,6 +2203,17 @@
             "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-boundaries1.json",
             "sha256": "995ab38f93bee11b7fe0e4697bb7b02b9c14702a40efb1f5a316270ccada8894"
           }
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-legacy-inventory-correction1.json",
+          "sha256": "95e268c0fdefb198f7f1d3c6a8159d8820ddb198f2bdc69a6a8a519b4b54798a",
+          "finding": "LEDGER-API-LEGACY-INVENTORY-F1",
+          "attempt": 1,
+          "status": "verified_focused_pending_exact_full_backend",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-legacy-inventory-quality1.json",
+            "sha256": "896a4ceaf4d70928cf87113d0fc622820db46e936ee0a80a5ccc2e3d94b84240"
+          }
         }
       ],
       "initial_quality": {
@@ -2231,6 +2243,10 @@
         {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-boundaries1.json",
           "sha256": "995ab38f93bee11b7fe0e4697bb7b02b9c14702a40efb1f5a316270ccada8894"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-legacy-inventory-quality1.json",
+          "sha256": "896a4ceaf4d70928cf87113d0fc622820db46e936ee0a80a5ccc2e3d94b84240"
         }
       ],
       "preparation_reconciliation": {
@@ -2248,7 +2264,8 @@
         "LEDGER-API-STYLE-F1": 1,
         "LEDGER-API-PG-STYLE-F1": 2,
         "LEDGER-API-PG-DEPOSIT-FIXTURE-F1": 1,
-        "LEDGER-API-PG-CUSTOMER-PRIVACY-F1": 1
+        "LEDGER-API-PG-CUSTOMER-PRIVACY-F1": 1,
+        "LEDGER-API-LEGACY-INVENTORY-F1": 1
       },
       "contract_path": "ops/V1_053_LEDGER_API.md",
       "contract_sha256": "74cbd9680e95d3554430d0f68756fa346d1d156914d3ffb83c303271f5c19a76",
@@ -2265,7 +2282,9 @@
         "backend/tests/test_utility_api_migration.py",
         "backend/tests/test_utility_consumption_migration.py",
         "backend/tests/test_utility_meter_migration.py"
-      ]
+      ],
+      "failed_candidate": "f17a38b760f2d211062c59f2767d2e1b8aa6e321",
+      "correction_parent": "f17a38b760f2d211062c59f2767d2e1b8aa6e321"
     },
     "prior_version_history": "historical_v1_052_closed_current_fields.direct_codex_takeover",
     "last_model_configuration_check": {
@@ -3027,7 +3046,7 @@
   "branch": "implementation/foundation",
   "commit": "a45552e3e8a8c44cfd1cbf0685e1dd7e880fad2f",
   "idle_reason": "",
-  "next_action": "Freeze this prepared ledger read API in a normal commit; run fresh applicable exact PostgreSQL/backend/automation suites sequentially plus static/build/import/traceability/security/preservation/routing gates. Then obtain one fresh GPT-6 Astra max Standard enforced-read-only zero-finding review of the complete0926300-base diff, publish normally to the authorized branch, verify own exact-commit CI and all refs, and activate the dedicated Customer ledger UI. Full V1-053 release/card/closure remains pending; pause SAME follow-up only when fully closed53; OpenClaw stays disabled, never54.",
+  "next_action": "Run fresh exact successor backend/automation and required static/build/import/traceability/preservation/routing gates; reuse f17a38b full1053PASS PostgreSQL only through unchanged runtime/migrations/PG suite and environment source proof. Preserve its one failed legacy inventory result and all previous failures. Then one complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal publication/ownCI/allrefs, dedicatedCustomerUI and full53release/card/closure. Pause SAMEfollow-up only at closed53; OpenClawdisabled, never54.",
   "active_worker": null,
   "active_card": "d362ed27-0bdb-4318-9c8a-0976c931d706",
   "active_claim": null,
@@ -3035,8 +3054,8 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Resolve containing normal commit externally; never edit frozen candidate to insert its own hash.",
-  "candidate_parent": "a45552e3e8a8c44cfd1cbf0685e1dd7e880fad2f",
+  "candidate_resolution": "Resolve containing normal successor externally; rejected f17a38b preserved.",
+  "candidate_parent": "f17a38b760f2d211062c59f2767d2e1b8aa6e321",
   "next_candidate": {
     "id": "V1-053",
     "order": 53,
@@ -3095,7 +3114,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-053 ledger read API prepared; exact gates and independent review pending",
+  "phase": "V1-053 ledger API legacy inventory successor prepared; exact gates/review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4195,7 +4214,8 @@
     "Real PG fresh49/populated48→49 sourcepreservation, six balances and per-source reconciliation, 105event paging, all3sections/cursors/ties/filter/stale/concurrentRefund, actualruntime privileges/freshactor and supported source branchesPASS.",
     "Initial duplicateactorheader and draftstyle/fixture/privacy failures preserved with bounded corrections; no assertion removed to bypass a product failure.",
     "Exact frozen full changed backend/PG/automation and static/build/import/trace/security/records gates pending; frontend and dependencies remain byte-identical to accepted a45552e. No repeat solely for approval.",
-    "API review/publication/ownCI/ref verification and dedicated UI/full53 release/card/closure remain pending."
+    "API review/publication/ownCI/ref verification and dedicated UI/full53 release/card/closure remain pending.",
+    "Rejected f17a38b: exact contract/format/lint/types and1053realPG/no skips PASS; fullbackend2734PASS1FAIL1030DB-only skips. The one legacy absent-ledger expectation is corrected to separatecapability403; no product code changes. Preserve all logs and pending gates."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4217,7 +4237,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-053",
-  "timestamp": "2026-09-09T06:52:36.885347+00:00",
+  "timestamp": "2026-09-09T07:10:37.721454+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4251,6 +4271,7 @@
     "backend/src/property_rental/customer_ledger_read.py",
     "backend/tests/test_billing_service_migration.py",
     "backend/tests/test_credit_refund_read_migration.py",
+    "backend/tests/test_customer_api.py",
     "backend/tests/test_customer_ledger_api.py",
     "backend/tests/test_customer_ledger_migration.py",
     "backend/tests/test_customer_ledger_query.py",
@@ -4458,7 +4479,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-09T06:52:36.885347+00:00",
+  "updated_at": "2026-09-09T07:10:37.721454+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5591,7 +5612,7 @@
     "e7a82f7f034c17390f1de26b1196b0f777dd3ca0"
   ],
   "publication": {
-    "status": "ledger_api_unpublished_exact_gates_and_review_pending",
+    "status": "ledger_api_successor_unpublished_checks_review_pending",
     "tranche_id": "V1-053",
     "candidate_sha": null,
     "commit_completed": false,
@@ -5644,7 +5665,7 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "ledger_api_exact_gates_and_review_pending",
+    "status": "ledger_api_exact_successor_gates_and_review_pending",
     "tranche_id": "V1-053",
     "base_sha": "0926300c5c91b26deedb682e454622065826b0ad",
     "exact_sha": null,
@@ -5671,7 +5692,7 @@
     "report_sha256": "28013545bae13493b75f9af0c3f1c5f9d5c311f5584ee339e3aa3d4680652ba5"
   },
   "evidence_applicability": {
-    "scope": "Prepared ledger read API. Fresh exact full changed PG/backend/automation and static/build/import/trace/security/preservation gates required before independent review.",
+    "scope": "Exact successor: only legacy Customer-only ledger denial test and ops metadata differ from f17a38b; fresh fullbackend/remaininggates, source-identical1053PGreuse required.",
     "preliminary_quality": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-boundary-tests-quality1.json",
       "sha256": "c0cbb4b829f899c3823d15f9a340b57b90b6d9b90a28c70aaad7e10098a727ff"
@@ -5692,7 +5713,20 @@
     "foundation_publication_verification": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-security-publication-verified-a45552e.json",
       "sha256": "223a1d765da6608a24b4ca1d139fd24bab3ad0793afbe0574e3aef989415befa"
-    }
+    },
+    "failed_ledger_api_verification": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-verification-f17a38b.json",
+      "sha256": "75a803e661416fd081789811159508158b7c49514d352deceb2cd8a57dd5610f"
+    },
+    "legacy_inventory_correction": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-legacy-inventory-correction1.json",
+      "sha256": "95e268c0fdefb198f7f1d3c6a8159d8820ddb198f2bdc69a6a8a519b4b54798a"
+    },
+    "legacy_inventory_quality": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-legacy-inventory-quality1.json",
+      "sha256": "896a4ceaf4d70928cf87113d0fc622820db46e936ee0a80a5ccc2e3d94b84240"
+    },
+    "postgresql_reuse_from": "f17a38b760f2d211062c59f2767d2e1b8aa6e321"
   },
   "historical_v1_047_evidence_applicability": {
     "tranche_id": "V1-047",
@@ -5824,7 +5858,7 @@
     }
   },
   "current_product_acceptance": {
-    "status": "Ledger read API implemented and focused tests passed, awaiting frozen exact gates and independent acceptance/publication. Dedicated UI/full53 remain pending; foundation a45552e accepted/published/ownCI verified; V1-052 closed.",
+    "status": "Ledger API successor prepared: one obsolete absent-route assertion now verifies separate ledger capability403. Focused correction PASS; full exact backend/remaining gates/review/publication pending. f17a38b fullPG1053PASS preserved; UI/full53pending.",
     "predecessor_closure": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-closure-verification-0926300.json",
       "sha256": "d51d90cec48d8d5fe2da707183b63c2c20f5a9922144217999ab66a4cc13b351"
@@ -17074,6 +17108,7 @@
       "backend/src/property_rental/customer_ledger_read.py",
       "backend/tests/test_billing_service_migration.py",
       "backend/tests/test_credit_refund_read_migration.py",
+      "backend/tests/test_customer_api.py",
       "backend/tests/test_customer_ledger_api.py",
       "backend/tests/test_customer_ledger_migration.py",
       "backend/tests/test_customer_ledger_query.py",
@@ -17097,7 +17132,7 @@
     ],
     "additional_bounded_paths": "Existing migration tests may update only actual current-head expectations48to49; historical48/source assertions remain. Record exact expanded inventory before freeze.",
     "implementation_completed": true,
-    "next_action": "Freeze this prepared ledger read API in a normal commit; run fresh applicable exact PostgreSQL/backend/automation suites sequentially plus static/build/import/traceability/security/preservation/routing gates. Then obtain one fresh GPT-6 Astra max Standard enforced-read-only zero-finding review of the complete0926300-base diff, publish normally to the authorized branch, verify own exact-commit CI and all refs, and activate the dedicated Customer ledger UI. Full V1-053 release/card/closure remains pending; pause SAME follow-up only when fully closed53; OpenClaw stays disabled, never54.",
+    "next_action": "Run fresh exact successor backend/automation and required static/build/import/traceability/preservation/routing gates; reuse f17a38b full1053PASS PostgreSQL only through unchanged runtime/migrations/PG suite and environment source proof. Preserve its one failed legacy inventory result and all previous failures. Then one complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal publication/ownCI/allrefs, dedicatedCustomerUI and full53release/card/closure. Pause SAMEfollow-up only at closed53; OpenClawdisabled, never54.",
     "corrections": [
       {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-initial-correction1.json",
@@ -17135,6 +17170,17 @@
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-boundaries1.json",
           "sha256": "995ab38f93bee11b7fe0e4697bb7b02b9c14702a40efb1f5a316270ccada8894"
         }
+      },
+      {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-legacy-inventory-correction1.json",
+        "sha256": "95e268c0fdefb198f7f1d3c6a8159d8820ddb198f2bdc69a6a8a519b4b54798a",
+        "finding": "LEDGER-API-LEGACY-INVENTORY-F1",
+        "attempt": 1,
+        "status": "verified_focused_pending_exact_full_backend",
+        "verification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-legacy-inventory-quality1.json",
+          "sha256": "896a4ceaf4d70928cf87113d0fc622820db46e936ee0a80a5ccc2e3d94b84240"
+        }
       }
     ],
     "initial_quality": {
@@ -17164,6 +17210,10 @@
       {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-boundaries1.json",
         "sha256": "995ab38f93bee11b7fe0e4697bb7b02b9c14702a40efb1f5a316270ccada8894"
+      },
+      {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-legacy-inventory-quality1.json",
+        "sha256": "896a4ceaf4d70928cf87113d0fc622820db46e936ee0a80a5ccc2e3d94b84240"
       }
     ],
     "preparation_reconciliation": {
@@ -17181,7 +17231,8 @@
       "LEDGER-API-STYLE-F1": 1,
       "LEDGER-API-PG-STYLE-F1": 2,
       "LEDGER-API-PG-DEPOSIT-FIXTURE-F1": 1,
-      "LEDGER-API-PG-CUSTOMER-PRIVACY-F1": 1
+      "LEDGER-API-PG-CUSTOMER-PRIVACY-F1": 1,
+      "LEDGER-API-LEGACY-INVENTORY-F1": 1
     },
     "contract_path": "ops/V1_053_LEDGER_API.md",
     "contract_sha256": "74cbd9680e95d3554430d0f68756fa346d1d156914d3ffb83c303271f5c19a76",
@@ -17198,7 +17249,9 @@
       "backend/tests/test_utility_api_migration.py",
       "backend/tests/test_utility_consumption_migration.py",
       "backend/tests/test_utility_meter_migration.py"
-    ]
+    ],
+    "failed_candidate": "f17a38b760f2d211062c59f2767d2e1b8aa6e321",
+    "correction_parent": "f17a38b760f2d211062c59f2767d2e1b8aa6e321"
   },
   "historical_v1_053_security_a45552e_fields": {
     "direct_codex_takeover": {
@@ -18990,6 +19043,527 @@
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-before-correction1-STATE.json",
         "sha256": "c2c44adbdd2eee1a51698fff7d0054794295a20947a0bef92961a58ffe25437b"
       }
+    }
+  },
+  "historical_v1_053_ledger_api_f17a38b_fields": {
+    "direct_codex_takeover": {
+      "execution_owner": "direct_codex",
+      "authorization_from": "V1-048",
+      "authorization_through": "V1-053",
+      "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
+      "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
+      "coordinator": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard"
+      },
+      "implementation": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard",
+        "escalation_reason": "Financial confirmation/FX, authorization, concurrency, forward-only migration and permanent history"
+      },
+      "reviewer": {
+        "model": "gpt-6-astra",
+        "reasoning": "max",
+        "mode": "Standard",
+        "read_only": true
+      },
+      "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
+      "publication_branch": "implementation/foundation",
+      "openclaw_enabled": false,
+      "openclaw_dispatch_allowed": false,
+      "openclaw_supervisor_job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+      "followup_id": "property-rental-v1-047-closure-follow-up",
+      "live_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1052-v1053-live.md",
+      "standing_independent_review_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
+        "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
+      },
+      "standing_github_publication_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-github-publication-authorization.json",
+        "sha256": "45dbdbe2951acef2cecc381252bbbca0afacada804a775e6554607b4d626fdc2"
+      },
+      "coordinator_transfer": {
+        "schema_version": 1,
+        "status": "released",
+        "old_thread_id": "01a04961-4270-7802-9418-e08203784a8c",
+        "new_thread_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "implementation_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
+        "branch": "codex/v1-052-direct",
+        "head": "1e79851ec5e8530d35927fe93ed2346c407a5820",
+        "handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1052-v1053-fresh-task-handoff.md",
+        "followup_id": "property-rental-v1-047-closure-follow-up",
+        "followup_status": "ACTIVE",
+        "openclaw_enabled": false,
+        "owner_authorized_transfer": true,
+        "old_coordinator_may_implement": false,
+        "new_coordinator_may_implement": true,
+        "updated_at": "2026-09-07T02:00:00Z",
+        "next_action": "Successor 01a07991-38a6-7f33-b84d-0ad0620e2997 must verify this released gate and explicit transfer-complete message, then continue existing partial Allocation/Receipt HTTP in preserved checkout; full52closure then53; at53closed pause same follow-up/no54. Source task is historical/read-only.",
+        "handoff_sha256": "7b07947d9b8f806ba17baa77c7b21ee02c0c86d82818d95951a1bfa2a3f43be7",
+        "followup_target_thread_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "followup_prompt_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-codex-followup-policy.md",
+        "followup_prompt_sha256": "965b73fcae9e4719161566f3468bf856c533c4d6ce45e8e7c2ad960c4b8a4220",
+        "released_at": "2026-09-07T02:00:00Z",
+        "admission": {
+          "status": "completed_read_only_ready",
+          "turn_id": "01a07991-3918-7ac1-8b91-06abd0921f4c",
+          "model": "gpt-6-astra",
+          "reasoning": "xhigh",
+          "mode": "Standard locally configured; provider attestation unavailable",
+          "hashes_verified": 15,
+          "retained_worktrees": 127,
+          "dirty_paths_preserved": 8,
+          "no_admission_mutations": true
+        },
+        "verification": {
+          "automation_tests": "189 PASS in70.328s; session87433 COMPLETED EXIT0",
+          "configuration": "state-routing/watchdog/roadmap/deployment/traceability/publicationguard/diff PASS",
+          "log_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-fresh-task-transfer-config.log",
+          "log_sha256": "9170e853de1264e47528d2f4b5aeb1dd394fefb551b90c85c8396a68404ada2c",
+          "admission_assertions": "40 PASS",
+          "helper_failures_preserved": "Default Python lacked tomllib; used existing project Python3.12 without install. First byte-identity assertion caught app stripping trailing newline; normalized only saved policy final newline and rebound exact actual payload hash. Product bytes unchanged.",
+          "final_readback": "PASS2026-09-07T02:03Z:40 released-transfer assertions, actual Astra/xhigh/local Standard, exact saved-payload identity, one ACTIVE10minute follow-up on successor, eight retained dirty paths and127worktrees; final state-routing/watchdog/roadmap/deployment/traceability/publicationguard/diff PASS. Product bytes unchanged."
+        },
+        "workboard_card_id": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
+        "workboard_handoff_comment_id": "93b18202-6ce0-444e-a740-4a609fb08ce2"
+      },
+      "current_version": "V1-053",
+      "phase": "ledger_read_api_checks_review_pending",
+      "activated_at": "2026-09-09T02:49:35.779645+00:00",
+      "predecessor_closed": true,
+      "predecessor_sha": "0926300c5c91b26deedb682e454622065826b0ad",
+      "predecessor_closure_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-closure-verification-0926300.json",
+      "predecessor_closure_receipt_sha256": "d51d90cec48d8d5fe2da707183b63c2c20f5a9922144217999ab66a4cc13b351",
+      "predecessor_ci_run": 34265209149,
+      "predecessor_ci_attempt": 1,
+      "card_id": "d362ed27-0bdb-4318-9c8a-0976c931d706",
+      "workboard_status": "blocked",
+      "workboard_block_reason": "Tracking-only blocked prevents OpenClaw admission; direct Codex projection is authorized and active.",
+      "worker_kind": "direct_root_codex",
+      "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "worker_status": "prepared_root_ledger_api_no_reviewer_running",
+      "branch": "implementation/foundation",
+      "worktree": "/Users/sokompheak/Development/property-rental-management",
+      "scope_path": "ops/V1_053_SCOPE.md",
+      "scope_sha256": "e0216c0688b283ec397ce93d927ad206869c818a59045f43b9a5a08b799cf2ae",
+      "cumulative_review_base": "0926300c5c91b26deedb682e454622065826b0ad",
+      "candidate_sha": null,
+      "candidate_resolution": "Resolve containing normal commit externally; never edit frozen candidate to insert its own hash.",
+      "candidate_status": "ledger_api_exact_gates_review_pending",
+      "followup_status": "ACTIVE",
+      "followup_prompt_characters": 17370,
+      "followup_prompt_sha256": "5fb0fc3ec89c1450e2f9f316d1b28105fb3c2d53a6508aa277d3e7b1f7cb4fbc",
+      "owner_action_required": false,
+      "next_action": "Freeze this prepared ledger read API in a normal commit; run fresh applicable exact PostgreSQL/backend/automation suites sequentially plus static/build/import/traceability/security/preservation/routing gates. Then obtain one fresh GPT-6 Astra max Standard enforced-read-only zero-finding review of the complete0926300-base diff, publish normally to the authorized branch, verify own exact-commit CI and all refs, and activate the dedicated Customer ledger UI. Full V1-053 release/card/closure remains pending; pause SAME follow-up only when fully closed53; OpenClaw stays disabled, never54.",
+      "active_slice": {
+        "id": "V1-053-ledger-read-api",
+        "status": "prepared_exact_checks_and_review_pending",
+        "base": "a45552e3e8a8c44cfd1cbf0685e1dd7e880fad2f",
+        "review_base": "0926300c5c91b26deedb682e454622065826b0ad",
+        "worker": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "worktree": "/Users/sokompheak/Development/property-rental-management",
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard",
+        "reason": "Financial reconciliation, capability scoping, concurrent reads and forward migration",
+        "paths": [
+          "backend/migrations/versions/20260909_49_customer_ledger_reads.py",
+          "backend/src/property_rental/app.py",
+          "backend/src/property_rental/customer_ledger_api.py",
+          "backend/src/property_rental/customer_ledger_query.py",
+          "backend/src/property_rental/customer_ledger_read.py",
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_customer_ledger_api.py",
+          "backend/tests/test_customer_ledger_migration.py",
+          "backend/tests/test_customer_ledger_query.py",
+          "backend/tests/test_customer_ledger_read_migration.py",
+          "backend/tests/test_financial_action_context_migration.py",
+          "backend/tests/test_initial_owner_bootstrap_cli.py",
+          "backend/tests/test_invoice_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_migrations.py",
+          "backend/tests/test_payment_reversal_context_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_utility_meter_migration.py",
+          "ops/NOW.md",
+          "ops/QUEUE.md",
+          "ops/STATE.json",
+          "ops/V1_053_LEDGER_API.md",
+          "ops/traceability.json",
+          "scripts/database-test.sh"
+        ],
+        "additional_bounded_paths": "Existing migration tests may update only actual current-head expectations48to49; historical48/source assertions remain. Record exact expanded inventory before freeze.",
+        "implementation_completed": true,
+        "next_action": "Freeze this prepared ledger read API in a normal commit; run fresh applicable exact PostgreSQL/backend/automation suites sequentially plus static/build/import/traceability/security/preservation/routing gates. Then obtain one fresh GPT-6 Astra max Standard enforced-read-only zero-finding review of the complete0926300-base diff, publish normally to the authorized branch, verify own exact-commit CI and all refs, and activate the dedicated Customer ledger UI. Full V1-053 release/card/closure remains pending; pause SAME follow-up only when fully closed53; OpenClaw stays disabled, never54.",
+        "corrections": [
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-initial-correction1.json",
+            "pending_result": false,
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-correction1-quality.json",
+              "sha256": "ddd66bbcb7f03ee342cff1a4c69ef0abfd71352cbdca69d23da9a13c295bb555"
+            },
+            "status": "verified_fixed_pending_independent_review"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-style-correction1.json",
+            "sha256": "6c67804bc7c9c3a8826d3215eb541d5adcd1e778fc3569d4ebcbdd92d1fdc5c3",
+            "finding": "LEDGER-API-PG-STYLE-F1",
+            "attempt": 1,
+            "status": "draft_pass_then_installed_import_discovery_difference"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-style2-quality.json",
+            "sha256": "42921690e537fbcc4430b051efa17ff7ff678813c5751c0d5884f43010121983",
+            "finding": "LEDGER-API-PG-STYLE-F1",
+            "attempt": 2,
+            "status": "verified_fixed_pending_independent_review"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-fixtures-correction1.json",
+            "sha256": "6537a0450a3d209e07bccc11c8fc60dfc4d001464d1c06db788d59094c8ce8e9",
+            "findings": [
+              "LEDGER-API-PG-DEPOSIT-FIXTURE-F1",
+              "LEDGER-API-PG-CUSTOMER-PRIVACY-F1"
+            ],
+            "attempt": 1,
+            "status": "verified_fixed_pending_independent_review",
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-boundaries1.json",
+              "sha256": "995ab38f93bee11b7fe0e4697bb7b02b9c14702a40efb1f5a316270ccada8894"
+            }
+          }
+        ],
+        "initial_quality": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-initial-quality.json",
+          "sha256": "a541b74e0c983894c431ff824a1d1f34f9ad97d4545f748cb2e4ac5295631564"
+        },
+        "before_correction_state": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-before-correction1-STATE.json",
+          "sha256": "c2c44adbdd2eee1a51698fff7d0054794295a20947a0bef92961a58ffe25437b"
+        },
+        "whole_v1_053_completed": false,
+        "candidate_sha": null,
+        "candidate_resolution": "Resolve containing normal commit externally; never edit frozen candidate to insert its own hash.",
+        "checks": [
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-correction1-quality.json",
+            "sha256": "ddd66bbcb7f03ee342cff1a4c69ef0abfd71352cbdca69d23da9a13c295bb555"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-style2-quality.json",
+            "sha256": "42921690e537fbcc4430b051efa17ff7ff678813c5751c0d5884f43010121983"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-boundary-tests-quality1.json",
+            "sha256": "c0cbb4b829f899c3823d15f9a340b57b90b6d9b90a28c70aaad7e10098a727ff"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-boundaries1.json",
+            "sha256": "995ab38f93bee11b7fe0e4697bb7b02b9c14702a40efb1f5a316270ccada8894"
+          }
+        ],
+        "preparation_reconciliation": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-prefreeze1-reconciliation.json",
+          "sha256": "ce89dbb50d016c35ce862f49d30c8bcfc284ac0c1bf435e3308823c96909ba7f"
+        },
+        "preliminary_counts": {
+          "pure_query": 64,
+          "http": 70,
+          "real_postgresql": 21,
+          "postgresql_skips": 0
+        },
+        "correction_limits": {
+          "LEDGER-API-HEADER-F1": 1,
+          "LEDGER-API-STYLE-F1": 1,
+          "LEDGER-API-PG-STYLE-F1": 2,
+          "LEDGER-API-PG-DEPOSIT-FIXTURE-F1": 1,
+          "LEDGER-API-PG-CUSTOMER-PRIVACY-F1": 1
+        },
+        "contract_path": "ops/V1_053_LEDGER_API.md",
+        "contract_sha256": "74cbd9680e95d3554430d0f68756fa346d1d156914d3ffb83c303271f5c19a76",
+        "expanded_current_head_test_paths": [
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_customer_ledger_migration.py",
+          "backend/tests/test_financial_action_context_migration.py",
+          "backend/tests/test_invoice_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_migrations.py",
+          "backend/tests/test_payment_reversal_context_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_utility_meter_migration.py"
+        ]
+      },
+      "prior_version_history": "historical_v1_052_closed_current_fields.direct_codex_takeover",
+      "last_model_configuration_check": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "xhigh",
+        "mode": "Standard",
+        "service_tier": "default",
+        "provider_attestation": "unavailable"
+      }
+    },
+    "next_action": "Freeze this prepared ledger read API in a normal commit; run fresh applicable exact PostgreSQL/backend/automation suites sequentially plus static/build/import/traceability/security/preservation/routing gates. Then obtain one fresh GPT-6 Astra max Standard enforced-read-only zero-finding review of the complete0926300-base diff, publish normally to the authorized branch, verify own exact-commit CI and all refs, and activate the dedicated Customer ledger UI. Full V1-053 release/card/closure remains pending; pause SAME follow-up only when fully closed53; OpenClaw stays disabled, never54.",
+    "candidate_resolution": "Resolve containing normal commit externally; never edit frozen candidate to insert its own hash.",
+    "candidate_parent": "a45552e3e8a8c44cfd1cbf0685e1dd7e880fad2f",
+    "phase": "V1-053 ledger read API prepared; exact gates and independent review pending",
+    "tests": [
+      "Preliminary64pure-query +70HTTP +21real-PostgreSQL casesPASS; 196-filetypes and new source/migration/testformat/lintPASS. Existing API70cases remain unchanged since accepted preliminary118run.",
+      "Real PG fresh49/populated48→49 sourcepreservation, six balances and per-source reconciliation, 105event paging, all3sections/cursors/ties/filter/stale/concurrentRefund, actualruntime privileges/freshactor and supported source branchesPASS.",
+      "Initial duplicateactorheader and draftstyle/fixture/privacy failures preserved with bounded corrections; no assertion removed to bypass a product failure.",
+      "Exact frozen full changed backend/PG/automation and static/build/import/trace/security/records gates pending; frontend and dependencies remain byte-identical to accepted a45552e. No repeat solely for approval.",
+      "API review/publication/ownCI/ref verification and dedicated UI/full53 release/card/closure remain pending."
+    ],
+    "timestamp": "2026-09-09T06:52:36.885347+00:00",
+    "touched_areas": [
+      "backend/migrations/versions/20260909_49_customer_ledger_reads.py",
+      "backend/src/property_rental/app.py",
+      "backend/src/property_rental/customer_ledger_api.py",
+      "backend/src/property_rental/customer_ledger_query.py",
+      "backend/src/property_rental/customer_ledger_read.py",
+      "backend/tests/test_billing_service_migration.py",
+      "backend/tests/test_credit_refund_read_migration.py",
+      "backend/tests/test_customer_ledger_api.py",
+      "backend/tests/test_customer_ledger_migration.py",
+      "backend/tests/test_customer_ledger_query.py",
+      "backend/tests/test_customer_ledger_read_migration.py",
+      "backend/tests/test_financial_action_context_migration.py",
+      "backend/tests/test_initial_owner_bootstrap_cli.py",
+      "backend/tests/test_invoice_migration.py",
+      "backend/tests/test_late_payment_migration.py",
+      "backend/tests/test_lease_api_migration.py",
+      "backend/tests/test_migrations.py",
+      "backend/tests/test_payment_reversal_context_migration.py",
+      "backend/tests/test_utility_api_migration.py",
+      "backend/tests/test_utility_consumption_migration.py",
+      "backend/tests/test_utility_meter_migration.py",
+      "ops/NOW.md",
+      "ops/QUEUE.md",
+      "ops/STATE.json",
+      "ops/V1_053_LEDGER_API.md",
+      "ops/traceability.json",
+      "scripts/database-test.sh"
+    ],
+    "updated_at": "2026-09-09T06:52:36.885347+00:00",
+    "publication": {
+      "status": "ledger_api_unpublished_exact_gates_and_review_pending",
+      "tranche_id": "V1-053",
+      "candidate_sha": null,
+      "commit_completed": false,
+      "push_completed": false,
+      "ci_completed": false,
+      "workboard_card": "d362ed27-0bdb-4318-9c8a-0976c931d706",
+      "workboard_status": "blocked",
+      "workboard_acceptance_completed": false,
+      "production_deployment": false,
+      "product_implementation_started": true,
+      "foundation_publication_verification": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-security-publication-verified-a45552e.json",
+        "sha256": "223a1d765da6608a24b4ca1d139fd24bab3ad0793afbe0574e3aef989415befa"
+      }
+    },
+    "review": {
+      "status": "ledger_api_exact_gates_and_review_pending",
+      "tranche_id": "V1-053",
+      "base_sha": "0926300c5c91b26deedb682e454622065826b0ad",
+      "exact_sha": null,
+      "model": "gpt-6-astra",
+      "reasoning_effort": "max",
+      "mode": "Standard",
+      "read_only": true,
+      "standing_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
+        "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
+      },
+      "foundation_security_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-security-accepted-a45552e.json",
+        "sha256": "4a7fdfa11749753ef2abbb334838af112f8e37fedbafc8d98c01ec71e750276c"
+      }
+    },
+    "evidence_applicability": {
+      "scope": "Prepared ledger read API. Fresh exact full changed PG/backend/automation and static/build/import/trace/security/preservation gates required before independent review.",
+      "preliminary_quality": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-boundary-tests-quality1.json",
+        "sha256": "c0cbb4b829f899c3823d15f9a340b57b90b6d9b90a28c70aaad7e10098a727ff"
+      },
+      "preliminary_postgresql": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-boundaries1.json",
+        "sha256": "995ab38f93bee11b7fe0e4697bb7b02b9c14702a40efb1f5a316270ccada8894"
+      },
+      "prior_api_quality": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-correction1-quality.json",
+        "sha256": "ddd66bbcb7f03ee342cff1a4c69ef0abfd71352cbdca69d23da9a13c295bb555"
+      },
+      "product_tests_repeated_for_approval": false,
+      "full_suites_sequential": true,
+      "source_commands_and_published_migrations_unchanged": true,
+      "frontend_dependency_identity_reuse_allowed": true,
+      "frontend_reuse_from": "a45552e3e8a8c44cfd1cbf0685e1dd7e880fad2f",
+      "foundation_publication_verification": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-security-publication-verified-a45552e.json",
+        "sha256": "223a1d765da6608a24b4ca1d139fd24bab3ad0793afbe0574e3aef989415befa"
+      }
+    },
+    "current_product_acceptance": {
+      "status": "Ledger read API implemented and focused tests passed, awaiting frozen exact gates and independent acceptance/publication. Dedicated UI/full53 remain pending; foundation a45552e accepted/published/ownCI verified; V1-052 closed.",
+      "predecessor_closure": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-closure-verification-0926300.json",
+        "sha256": "d51d90cec48d8d5fe2da707183b63c2c20f5a9922144217999ab66a4cc13b351"
+      },
+      "historical_values": "historical_v1_052_closed_current_fields"
+    },
+    "v1_053_ledger_api": {
+      "id": "V1-053-ledger-read-api",
+      "status": "prepared_exact_checks_and_review_pending",
+      "base": "a45552e3e8a8c44cfd1cbf0685e1dd7e880fad2f",
+      "review_base": "0926300c5c91b26deedb682e454622065826b0ad",
+      "worker": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "worktree": "/Users/sokompheak/Development/property-rental-management",
+      "model": "gpt-6-astra",
+      "reasoning": "xhigh",
+      "mode": "Standard",
+      "reason": "Financial reconciliation, capability scoping, concurrent reads and forward migration",
+      "paths": [
+        "backend/migrations/versions/20260909_49_customer_ledger_reads.py",
+        "backend/src/property_rental/app.py",
+        "backend/src/property_rental/customer_ledger_api.py",
+        "backend/src/property_rental/customer_ledger_query.py",
+        "backend/src/property_rental/customer_ledger_read.py",
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_customer_ledger_api.py",
+        "backend/tests/test_customer_ledger_migration.py",
+        "backend/tests/test_customer_ledger_query.py",
+        "backend/tests/test_customer_ledger_read_migration.py",
+        "backend/tests/test_financial_action_context_migration.py",
+        "backend/tests/test_initial_owner_bootstrap_cli.py",
+        "backend/tests/test_invoice_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_migrations.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_utility_meter_migration.py",
+        "ops/NOW.md",
+        "ops/QUEUE.md",
+        "ops/STATE.json",
+        "ops/V1_053_LEDGER_API.md",
+        "ops/traceability.json",
+        "scripts/database-test.sh"
+      ],
+      "additional_bounded_paths": "Existing migration tests may update only actual current-head expectations48to49; historical48/source assertions remain. Record exact expanded inventory before freeze.",
+      "implementation_completed": true,
+      "next_action": "Freeze this prepared ledger read API in a normal commit; run fresh applicable exact PostgreSQL/backend/automation suites sequentially plus static/build/import/traceability/security/preservation/routing gates. Then obtain one fresh GPT-6 Astra max Standard enforced-read-only zero-finding review of the complete0926300-base diff, publish normally to the authorized branch, verify own exact-commit CI and all refs, and activate the dedicated Customer ledger UI. Full V1-053 release/card/closure remains pending; pause SAME follow-up only when fully closed53; OpenClaw stays disabled, never54.",
+      "corrections": [
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-initial-correction1.json",
+          "pending_result": false,
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-correction1-quality.json",
+            "sha256": "ddd66bbcb7f03ee342cff1a4c69ef0abfd71352cbdca69d23da9a13c295bb555"
+          },
+          "status": "verified_fixed_pending_independent_review"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-style-correction1.json",
+          "sha256": "6c67804bc7c9c3a8826d3215eb541d5adcd1e778fc3569d4ebcbdd92d1fdc5c3",
+          "finding": "LEDGER-API-PG-STYLE-F1",
+          "attempt": 1,
+          "status": "draft_pass_then_installed_import_discovery_difference"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-style2-quality.json",
+          "sha256": "42921690e537fbcc4430b051efa17ff7ff678813c5751c0d5884f43010121983",
+          "finding": "LEDGER-API-PG-STYLE-F1",
+          "attempt": 2,
+          "status": "verified_fixed_pending_independent_review"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-fixtures-correction1.json",
+          "sha256": "6537a0450a3d209e07bccc11c8fc60dfc4d001464d1c06db788d59094c8ce8e9",
+          "findings": [
+            "LEDGER-API-PG-DEPOSIT-FIXTURE-F1",
+            "LEDGER-API-PG-CUSTOMER-PRIVACY-F1"
+          ],
+          "attempt": 1,
+          "status": "verified_fixed_pending_independent_review",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-boundaries1.json",
+            "sha256": "995ab38f93bee11b7fe0e4697bb7b02b9c14702a40efb1f5a316270ccada8894"
+          }
+        }
+      ],
+      "initial_quality": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-initial-quality.json",
+        "sha256": "a541b74e0c983894c431ff824a1d1f34f9ad97d4545f748cb2e4ac5295631564"
+      },
+      "before_correction_state": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-before-correction1-STATE.json",
+        "sha256": "c2c44adbdd2eee1a51698fff7d0054794295a20947a0bef92961a58ffe25437b"
+      },
+      "whole_v1_053_completed": false,
+      "candidate_sha": null,
+      "candidate_resolution": "Resolve containing normal commit externally; never edit frozen candidate to insert its own hash.",
+      "checks": [
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-correction1-quality.json",
+          "sha256": "ddd66bbcb7f03ee342cff1a4c69ef0abfd71352cbdca69d23da9a13c295bb555"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-style2-quality.json",
+          "sha256": "42921690e537fbcc4430b051efa17ff7ff678813c5751c0d5884f43010121983"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-boundary-tests-quality1.json",
+          "sha256": "c0cbb4b829f899c3823d15f9a340b57b90b6d9b90a28c70aaad7e10098a727ff"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-pg-boundaries1.json",
+          "sha256": "995ab38f93bee11b7fe0e4697bb7b02b9c14702a40efb1f5a316270ccada8894"
+        }
+      ],
+      "preparation_reconciliation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-api-prefreeze1-reconciliation.json",
+        "sha256": "ce89dbb50d016c35ce862f49d30c8bcfc284ac0c1bf435e3308823c96909ba7f"
+      },
+      "preliminary_counts": {
+        "pure_query": 64,
+        "http": 70,
+        "real_postgresql": 21,
+        "postgresql_skips": 0
+      },
+      "correction_limits": {
+        "LEDGER-API-HEADER-F1": 1,
+        "LEDGER-API-STYLE-F1": 1,
+        "LEDGER-API-PG-STYLE-F1": 2,
+        "LEDGER-API-PG-DEPOSIT-FIXTURE-F1": 1,
+        "LEDGER-API-PG-CUSTOMER-PRIVACY-F1": 1
+      },
+      "contract_path": "ops/V1_053_LEDGER_API.md",
+      "contract_sha256": "74cbd9680e95d3554430d0f68756fa346d1d156914d3ffb83c303271f5c19a76",
+      "expanded_current_head_test_paths": [
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_customer_ledger_migration.py",
+        "backend/tests/test_financial_action_context_migration.py",
+        "backend/tests/test_invoice_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_migrations.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_utility_meter_migration.py"
+      ]
     }
   }
 }
