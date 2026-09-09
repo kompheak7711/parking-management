@@ -1,0 +1,932 @@
+"""Synthetic PostgreSQL invariants for separate warnings and Rent nonpayment."""
+
+import time
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
+from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
+from threading import Barrier
+from typing import cast
+from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
+
+import psycopg
+import pytest
+from alembic import command as alembic_command
+from alembic.config import Config
+from psycopg.types.json import Jsonb
+
+from payment_test_support import seed_payment
+from property_rental.billing import PostgresRentBillingService
+from property_rental.credit import ReverseCreditApplicationCommand
+from property_rental.identity import AuthenticatedActor, CapabilityGrant
+from property_rental.invoice import PostgresInvoiceService, VoidInvoiceCommand
+from property_rental.lease_enforcement import (
+    NONPAYMENT_EVENT,
+    NONPAYMENT_OPEN,
+    NONPAYMENT_READ,
+    WARNING_CREATE,
+    WARNING_READ,
+    LeaseEnforcementAuthorizationError,
+    LeaseEnforcementConflictError,
+    LeaseEnforcementKeyReused,
+    LeaseEnforcementNotFoundError,
+    LeaseEnforcementUnavailableError,
+    NonpaymentEventKind,
+    OpenRentNonpaymentCase,
+    PostgresLeaseEnforcementService,
+    RecordLeaseWarning,
+    RecordRentNonpaymentEvent,
+)
+from property_rental.payment_allocation import PostAllocationsCommand, ReverseAllocationCommand
+from test_billing_service_migration import (
+    admin_database_url,
+    authenticated,
+    initial_command,
+    setup_billing_source,
+)
+from test_credit_application_migration import application_id, designated
+from test_credit_application_migration import source as credit_source
+from test_credit_migration import actor as credit_actor
+from test_credit_migration import service as credit_service
+from test_invoice_migration import (
+    create_recurring_rent_invoice,
+    financial_database_url,
+    invoice_api_actor,
+    runtime_database_url,
+    setup_signed_lease,
+)
+from test_migrations import _temporary_migration_database
+from test_payment_allocation_migration import actor as allocation_actor
+from test_payment_allocation_migration import service as allocation_service
+from test_reservation_migration import migrated_database_url  # noqa: F401
+
+
+def service() -> PostgresLeaseEnforcementService:
+    return PostgresLeaseEnforcementService(runtime_database_url(), financial_database_url())
+
+
+def staff(human: UUID, prop: UUID, *caps: str) -> AuthenticatedActor:
+    return AuthenticatedActor(
+        str(human),
+        frozenset(
+            CapabilityGrant(cap, frozenset({str(prop)}))
+            for cap in (
+                caps
+                or (
+                    WARNING_READ,
+                    WARNING_CREATE,
+                    NONPAYMENT_READ,
+                    NONPAYMENT_OPEN,
+                    NONPAYMENT_EVENT,
+                )
+            )
+        ),
+    )
+
+
+def source(url: str) -> tuple[UUID, UUID, UUID, UUID, UUID, UUID]:
+    with psycopg.connect(url) as connection:
+        today_row = connection.execute(
+            "SELECT timezone('Asia/Phnom_Penh',clock_timestamp())::date"
+        ).fetchone()
+        assert today_row is not None and isinstance(today_row[0], date)
+        today = today_row[0]
+        period = (today.replace(day=1) - timedelta(days=40)).replace(day=1)
+        human, prop, customer, lease = setup_signed_lease(
+            connection,
+            start_date=period.replace(month=1, day=1),
+            end_date=today.replace(year=today.year + 1, month=12, day=31),
+        )
+        invoice, line = create_recurring_rent_invoice(
+            connection, actor_id=human, customer_id=customer, lease_id=lease, period_start=period
+        )
+    return human, prop, customer, lease, invoice, line
+
+
+def opened(url: str) -> tuple[UUID, UUID, UUID, UUID, UUID, UUID, UUID]:
+    human, prop, customer, lease, invoice, line = source(url)
+    result = service().open_case(
+        prop,
+        lease,
+        OpenRentNonpaymentCase(uuid4(), line, "Open Rent case"),
+        actor=staff(human, prop),
+        request_id="open",
+    )
+    data = cast(dict[str, object], result.body["data"])
+    return human, prop, customer, lease, invoice, line, UUID(str(data["id"]))
+
+
+def event(
+    prop: UUID, lease: UUID, case: UUID, human: UUID, kind: NonpaymentEventKind
+) -> dict[str, object]:
+    request = RecordRentNonpaymentEvent(
+        uuid4(),
+        kind,
+        "Authorized documented action",
+        "Notice-001" if kind is NonpaymentEventKind.TWENTY_DAY_WARNING else None,
+        "Delivered to Customer",
+        "Management instruction" if kind is NonpaymentEventKind.AUTHORIZED_FOLLOW_UP else None,
+    )
+    result = service().record_event(
+        prop, lease, case, request, actor=staff(human, prop), request_id="event"
+    )
+    return cast(dict[str, object], result.body["data"])
+
+
+def test_warning_case_and_events_preserve_all_tenancy_and_financial_sources(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, customer, lease, invoice, line = source(migrated_database_url)
+    flow, actor = service(), staff(human, prop)
+    with psycopg.connect(migrated_database_url) as connection:
+        before = connection.execute(
+            (
+                "SELECT to_jsonb(l),to_jsonb(u),to_jsonb(i),to_jsonb(il),to_jsonb(o) "
+                "FROM app.leases l JOIN app.units u ON u.id=l.unit_id JOIN app.invoic"
+                "es i ON i.lease_id=l.id JOIN app.invoice_lines il ON il.invoice_id=i"
+                ".id JOIN app.occupancies o ON o.lease_id=l.id WHERE i.id=%s"
+            ),
+            (invoice,),
+        ).fetchall()
+    warning = RecordLeaseWarning(
+        uuid4(),
+        1,
+        date(2026, 1, 1),
+        date(2026, 1, 2),
+        "Documented violation",
+        "Signed Lease clause",
+        "Letter delivered",
+        "Document history",
+    )
+    result = flow.record_warning(prop, lease, warning, actor=actor, request_id="warning")
+    assert flow.record_warning(prop, lease, warning, actor=actor, request_id="replay") == result
+    with pytest.raises(LeaseEnforcementKeyReused):
+        flow.record_warning(
+            prop,
+            lease,
+            replace(warning, reason="Different intent"),
+            actor=actor,
+            request_id="changed",
+        )
+    with pytest.raises(LeaseEnforcementConflictError):
+        flow.record_warning(
+            prop,
+            lease,
+            replace(warning, idempotency_key=uuid4()),
+            actor=actor,
+            request_id="duplicate",
+        )
+    request = OpenRentNonpaymentCase(uuid4(), line, "Open case")
+    opened_case = flow.open_case(prop, lease, request, actor=actor, request_id="case")
+    assert (
+        flow.open_case(prop, lease, request, actor=actor, request_id="case-replay") == opened_case
+    )
+    case = UUID(str(cast(dict[str, object], opened_case.body["data"])["id"]))
+    notice = event(prop, lease, case, human, NonpaymentEventKind.TWENTY_DAY_WARNING)
+    default = event(prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT)
+    event(prop, lease, case, human, NonpaymentEventKind.AUTHORIZED_FOLLOW_UP)
+    assert notice["remaining_rent_usd_cents"] == default["remaining_rent_usd_cents"] == 80000
+    assert default["customer_id"] == str(customer) and default["rent_invoice_line_id"] == str(line)
+    assert flow.read(prop, lease, "WARNINGS", actor=actor)["total"] == 1
+    assert flow.read(prop, lease, "EVENTS", case_id=case, actor=actor)["total"] == 3
+    assert (
+        len(
+            cast(
+                list[object],
+                flow.read(prop, lease, "EVENTS", case_id=case, actor=actor, limit=1, offset=1)[
+                    "items"
+                ],
+            )
+        )
+        == 1
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        after = connection.execute(
+            (
+                "SELECT to_jsonb(l),to_jsonb(u),to_jsonb(i),to_jsonb(il),to_jsonb(o) "
+                "FROM app.leases l JOIN app.units u ON u.id=l.unit_id JOIN app.invoic"
+                "es i ON i.lease_id=l.id JOIN app.invoice_lines il ON il.invoice_id=i"
+                ".id JOIN app.occupancies o ON o.lease_id=l.id WHERE i.id=%s"
+            ),
+            (invoice,),
+        ).fetchall()
+        assert before == after
+        assert connection.execute(
+            "SELECT count(*) FROM app.audit_events WHERE lease_id=%s AND action=ANY(%s)",
+            (lease, [WARNING_CREATE, NONPAYMENT_OPEN, NONPAYMENT_EVENT]),
+        ).fetchone() == (5,)
+
+
+@pytest.mark.parametrize(
+    "day,warning,default",
+    [
+        (0, False, False),
+        (1, False, False),
+        (19, False, False),
+        (20, True, False),
+        (29, True, False),
+        (30, True, True),
+        (31, True, True),
+    ],
+)
+def test_calendar_thresholds_use_rent_due_date_and_phnom_penh_midnight(
+    migrated_database_url: str,  # noqa: F811
+    day: int,
+    warning: bool,
+    default: bool,
+) -> None:
+    due = date(2026, 8, 5)
+    instant = datetime(2026, 8, 4, 17, tzinfo=UTC) + timedelta(days=day)
+    with psycopg.connect(migrated_database_url) as connection:
+        for kind, expected in [
+            ("TWENTY_DAY_WARNING", warning),
+            ("THIRTY_DAY_SERIOUS_DEFAULT", default),
+        ]:
+            query = "SELECT app.rent_nonpayment_milestone_eligible(%s,%s,%s,%s,false)"
+            assert connection.execute(query, (kind, due, instant, 1)).fetchone() == (expected,)
+            assert connection.execute(query, (kind, due, instant, 0)).fetchone() == (False,)
+            if day in (20, 30) and kind == (
+                "TWENTY_DAY_WARNING" if day == 20 else "THIRTY_DAY_SERIOUS_DEFAULT"
+            ):
+                assert connection.execute(
+                    query, (kind, due, instant - timedelta(microseconds=1), 1)
+                ).fetchone() == (False,)
+
+
+def test_payment_and_credit_applications_cure_rent_and_reversal_keeps_default_history(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        today_row = connection.execute(
+            "SELECT timezone('Asia/Phnom_Penh',clock_timestamp())::date"
+        ).fetchone()
+        assert today_row is not None and isinstance(today_row[0], date)
+        period = (today_row[0].replace(day=1) - timedelta(days=40)).replace(day=1)
+    # Recognize actual excess before this Invoice exists; preserve the existing
+    # prohibition on recognizing credit while payable obligations remain.
+    human, prop, credit, invoice, line, _ = credit_source(
+        migrated_database_url, amount=50000, period_start=period
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        ids = connection.execute(
+            "SELECT lease_id,customer_id FROM app.invoices WHERE id=%s", (invoice,)
+        ).fetchone()
+        assert ids is not None
+        lease, customer = UUID(str(ids[0])), UUID(str(ids[1]))
+    opened_case = service().open_case(
+        prop,
+        lease,
+        OpenRentNonpaymentCase(uuid4(), line, "Open case"),
+        actor=staff(human, prop),
+        request_id="open",
+    )
+    case = UUID(str(cast(dict[str, object], opened_case.body["data"])["id"]))
+    event(prop, lease, case, human, NonpaymentEventKind.TWENTY_DAY_WARNING)
+    event(prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT)
+    with psycopg.connect(migrated_database_url) as connection:
+        pay = seed_payment(
+            connection, actor_id=human, property_id=prop, customer_id=customer, amount=30000
+        )
+    allocation_service().post(
+        prop,
+        pay,
+        PostAllocationsCommand(
+            uuid4(),
+            {
+                "mode": "DESIGNATED",
+                "designation_reference": "Customer identified Rent",
+                "targets": [
+                    {
+                        "invoice_id": str(invoice),
+                        "amount_usd_cents": 30000,
+                        "details": [{"invoice_line_id": str(line), "amount_usd_cents": 30000}],
+                    }
+                ],
+            },
+        ),
+        actor=allocation_actor(human, prop),
+    )
+    posted = credit_service().apply(
+        prop,
+        credit,
+        designated(invoice, line, 50000),
+        actor=credit_actor(human, prop, "credits.apply"),
+    )
+    cure = event(prop, lease, case, human, NonpaymentEventKind.CURE)
+    assert cure["remaining_rent_usd_cents"] == 0
+    credit_service().reverse_application(
+        prop,
+        application_id(posted),
+        ReverseCreditApplicationCommand(uuid4(), "Correct application"),
+        actor=credit_actor(human, prop, "credits.applications.reverse"),
+    )
+    read = service().read(prop, lease, "CASE", case_id=case, actor=staff(human, prop))
+    assessment = cast(dict[str, object], read["assessment"])
+    assert assessment["remaining_rent"] == {"currency": "USD", "minor_units": 50000}
+    assert assessment["serious_default_recorded"] is True
+    assert assessment["thirty_day_default_eligible"] is False
+    assert read["event_count"] == 3
+
+
+@pytest.mark.parametrize(
+    "kind", [NonpaymentEventKind.TWENTY_DAY_WARNING, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT]
+)
+@pytest.mark.parametrize("same_key", [True, False])
+def test_same_key_and_different_key_concurrency_preserve_one_milestone(
+    migrated_database_url: str,  # noqa: F811
+    kind: NonpaymentEventKind,
+    same_key: bool,
+) -> None:
+    human, prop, _, lease, _, _, case = opened(migrated_database_url)
+    request = RecordRentNonpaymentEvent(
+        uuid4(),
+        kind,
+        "Concurrent milestone",
+        "Notice" if kind is NonpaymentEventKind.TWENTY_DAY_WARNING else None,
+    )
+
+    barrier = Barrier(2)
+
+    def post(key: UUID) -> object:
+        barrier.wait(timeout=5)
+        try:
+            return service().record_event(
+                prop,
+                lease,
+                case,
+                replace(request, idempotency_key=key),
+                actor=staff(human, prop),
+                request_id="race",
+            )
+        except LeaseEnforcementConflictError as exc:
+            return type(exc).__name__
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(
+            pool.map(
+                post, [request.idempotency_key, request.idempotency_key if same_key else uuid4()]
+            )
+        )
+    if same_key:
+        assert results[0] == results[1] and not isinstance(results[0], str)
+    else:
+        assert sum(isinstance(result, str) for result in results) == 1
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        conflicts = list(pool.map(post, [uuid4(), uuid4()]))
+    assert conflicts == ["LeaseEnforcementConflictError"] * 2
+    assert (
+        service().read(prop, lease, "EVENTS", case_id=case, actor=staff(human, prop))["total"] == 1
+    )
+
+
+def test_stale_actor_replay_and_wrong_lease_fail_closed(migrated_database_url: str) -> None:  # noqa: F811
+    human, prop, _, lease, _, line = source(migrated_database_url)
+    request = OpenRentNonpaymentCase(uuid4(), line, "Open case")
+    actor = staff(human, prop)
+    service().open_case(prop, lease, request, actor=actor, request_id="first")
+    with pytest.raises(LeaseEnforcementNotFoundError):
+        service().open_case(prop, uuid4(), request, actor=actor, request_id="wrong")
+    with psycopg.connect(migrated_database_url) as connection:
+        connection.execute(
+            "UPDATE app.user_accounts SET lifecycle_state='disabled' WHERE actor_id=%s", (human,)
+        )
+    with pytest.raises(LeaseEnforcementAuthorizationError):
+        service().open_case(prop, lease, request, actor=actor, request_id="disabled")
+    with pytest.raises(LeaseEnforcementAuthorizationError):
+        service().read(prop, lease, "CASES", actor=actor)
+
+
+@pytest.mark.parametrize(
+    "table", ["rent_nonpayment_cases", "rent_nonpayment_events", "lease_enforcement_commands"]
+)
+@pytest.mark.parametrize("operation", ["UPDATE", "DELETE", "TRUNCATE"])
+def test_new_history_is_immutable_and_runtime_has_no_direct_mutation(
+    migrated_database_url: str,  # noqa: F811
+    table: str,
+    operation: str,
+) -> None:
+    human, prop, _, lease, _, _, case = opened(migrated_database_url)
+    event(prop, lease, case, human, NonpaymentEventKind.TWENTY_DAY_WARNING)
+    from psycopg import sql
+
+    query = sql.SQL(
+        "TRUNCATE app.{}"
+        if operation == "TRUNCATE"
+        else "DELETE FROM app.{}"
+        if operation == "DELETE"
+        else "UPDATE app.{} SET "
+        + (
+            "reason=reason"
+            if table == "rent_nonpayment_events"
+            else "request_digest=request_digest"
+            if table == "lease_enforcement_commands"
+            else "opened_at=opened_at"
+        )
+    ).format(sql.Identifier(table))
+    with psycopg.connect(migrated_database_url) as connection:
+        with pytest.raises(psycopg.Error):
+            connection.execute(query)
+    with psycopg.connect(runtime_database_url()) as connection:
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            connection.execute(query)
+
+
+def test_runtime_cannot_execute_commands_or_internal_unscoped_reads(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    with psycopg.connect(runtime_database_url()) as connection:
+        assert connection.execute(
+            "SELECT has_function_privilege(current_user,'app.lease_enforcement_co"
+            "mmand(uuid,uuid,uuid,uuid,text,uuid,text,jsonb,text)','EXECUTE'),has"
+            "_function_privilege(current_user,'app.rent_nonpayment_case_snapshot("
+            "uuid,timestamptz)','EXECUTE')"
+        ).fetchone() == (False, False)
+
+
+def test_forward_upgrade_preserves_existing_warning_and_refuses_downgrade(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    assert migrated_database_url
+    with _temporary_migration_database("lease_enforcement_upgrade") as temporary:
+        config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
+        alembic_command.upgrade(config, "20260909_49")
+        human, _, _, lease, invoice, _ = source(temporary)
+        warning_id = uuid4()
+        with psycopg.connect(temporary) as connection:
+            connection.execute(
+                (
+                    "INSERT INTO app.lease_violation_warnings VALUES(%s,%s,1,'2026-01-01'"
+                    ",'2026-01-02','Violation','Signed clause','Letter evidence',clock_ti"
+                    "mestamp(),%s)"
+                ),
+                (warning_id, lease, human),
+            )
+            before = connection.execute(
+                (
+                    "SELECT to_jsonb(w),to_jsonb(i) FROM app.lease_violation_warnings w C"
+                    "ROSS JOIN app.invoices i WHERE w.id=%s AND i.id=%s"
+                ),
+                (warning_id, invoice),
+            ).fetchone()
+        alembic_command.upgrade(config, "head")
+        with psycopg.connect(temporary) as connection:
+            assert (
+                connection.execute(
+                    (
+                        "SELECT to_jsonb(w),to_jsonb(i) FROM app.lease_violation_warnings w C"
+                        "ROSS JOIN app.invoices i WHERE w.id=%s AND i.id=%s"
+                    ),
+                    (warning_id, invoice),
+                ).fetchone()
+                == before
+            )
+        with pytest.raises(RuntimeError, match="forward-only"):
+            alembic_command.downgrade(config, "20260909_49")
+
+
+def test_mixed_service_balance_cannot_trigger_rent_default_after_rent_cure(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        human, prop, customer, lease, occupancy = setup_billing_source(connection)
+    issued = PostgresRentBillingService(financial_database_url(), prop, human).generate(
+        initial_command(lease, occupancy), actor=authenticated(human, prop)
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        lines: dict[str, UUID] = dict(
+            connection.execute(
+                "SELECT category,id FROM app.invoice_lines "
+                "WHERE invoice_id=%s ORDER BY line_sequence",
+                (issued.invoice_id,),
+            ).fetchall()
+        )
+        payment = seed_payment(
+            connection,
+            actor_id=human,
+            property_id=prop,
+            customer_id=customer,
+            amount=issued.rent_usd_cents,
+        )
+    flow, actor = service(), staff(human, prop)
+    with pytest.raises(LeaseEnforcementConflictError):
+        flow.open_case(
+            prop,
+            lease,
+            OpenRentNonpaymentCase(uuid4(), lines["SERVICE_CHARGES"], "Wrong source"),
+            actor=actor,
+            request_id="service",
+        )
+    created = flow.open_case(
+        prop,
+        lease,
+        OpenRentNonpaymentCase(uuid4(), lines["RENT"], "Rent only"),
+        actor=actor,
+        request_id="rent",
+    )
+    case = UUID(str(cast(dict[str, object], created.body["data"])["id"]))
+    event(prop, lease, case, human, NonpaymentEventKind.TWENTY_DAY_WARNING)
+    allocation_service().post(
+        prop,
+        payment,
+        PostAllocationsCommand(
+            uuid4(),
+            {
+                "mode": "DESIGNATED",
+                "designation_reference": "Rent instruction",
+                "targets": [
+                    {
+                        "invoice_id": str(issued.invoice_id),
+                        "amount_usd_cents": issued.rent_usd_cents,
+                        "details": [
+                            {
+                                "invoice_line_id": str(lines["RENT"]),
+                                "amount_usd_cents": issued.rent_usd_cents,
+                            }
+                        ],
+                    }
+                ],
+            },
+        ),
+        actor=allocation_actor(human, prop),
+    )
+    assessment = cast(
+        dict[str, object], flow.read(prop, lease, "CASE", case_id=case, actor=actor)["assessment"]
+    )
+    assert assessment["remaining_rent"] == {"currency": "USD", "minor_units": 0}
+    assert (
+        assessment["cure_eligible"] is True and assessment["thirty_day_default_eligible"] is False
+    )
+    event(prop, lease, case, human, NonpaymentEventKind.CURE)
+    with pytest.raises(LeaseEnforcementConflictError):
+        event(prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT)
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT status FROM app.invoices WHERE id=%s", (issued.invoice_id,)
+        ).fetchone() == ("PARTIALLY_PAID",)
+        position = connection.execute(
+            "SELECT app.invoice_line_outstanding(%s)", (lines["SERVICE_CHARGES"],)
+        ).fetchone()
+        assert position is not None and position[0] > 0
+
+
+def test_event_waits_for_financial_lock_and_rechecks_committed_zero_rent(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, customer, lease, invoice, line, case = opened(migrated_database_url)
+    with psycopg.connect(migrated_database_url) as connection:
+        payment = seed_payment(
+            connection, actor_id=human, property_id=prop, customer_id=customer, amount=80000
+        )
+    intent = {
+        "mode": "DESIGNATED",
+        "designation_reference": "Pay identified Rent",
+        "targets": [
+            {
+                "invoice_id": str(invoice),
+                "amount_usd_cents": 80000,
+                "details": [{"invoice_line_id": str(line), "amount_usd_cents": 80000}],
+            }
+        ],
+    }
+    with psycopg.connect(migrated_database_url) as holding:
+        holding.execute("SELECT id FROM app.invoices WHERE id=%s FOR UPDATE", (invoice,))
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(
+                event, prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT
+            )
+            observed = False
+            try:
+                with psycopg.connect(admin_database_url(), autocommit=True) as observer:
+                    deadline = time.monotonic() + 2
+                    while time.monotonic() < deadline:
+                        waiting = observer.execute(
+                            "SELECT EXISTS(SELECT 1 FROM pg_stat_activity "
+                            "WHERE pid<>pg_backend_pid() AND datname=current_database() "
+                            "AND wait_event_type='Lock' "
+                            "AND query LIKE 'SELECT app.lease_enforcement_command%%')"
+                        ).fetchone()
+                        if waiting == (True,):
+                            observed = True
+                            break
+                        time.sleep(0.01)
+                assert observed, "The event transaction must wait on the shared Invoice lock"
+                # A complete Payment application, not a prohibited zero-principal Adjustment,
+                # settles the Invoice while the nonpayment request waits.
+                holding.execute(
+                    "SELECT app.post_payment_allocations(%s,%s,%s,%s,%s,%s)",
+                    (prop, payment, human, uuid4(), "a" * 64, Jsonb(intent)),
+                )
+                holding.execute("SET CONSTRAINTS ALL IMMEDIATE")
+                holding.commit()
+                with pytest.raises(LeaseEnforcementConflictError):
+                    future.result(timeout=5)
+            finally:
+                holding.rollback()
+    assert (
+        service().read(prop, lease, "EVENTS", case_id=case, actor=staff(human, prop))["total"] == 0
+    )
+
+
+def test_case_receipt_rolls_back_when_audit_cannot_be_written(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, _, lease, _, line = source(migrated_database_url)
+    key = uuid4()
+    request = OpenRentNonpaymentCase(key, line, "Audited action")
+    with psycopg.connect(migrated_database_url) as connection:
+        connection.execute(
+            "CREATE FUNCTION app.test_enforcement_audit_failure() RETURNS trigger"
+            " LANGUAGE plpgsql AS $$ BEGIN IF NEW.action='rent_nonpayment.case_ma"
+            "nage' THEN RAISE EXCEPTION 'Synthetic audit failure'; END IF; RETURN"
+            " NEW; END $$"
+        )
+        connection.execute(
+            "CREATE TRIGGER test_enforcement_audit_failure BEFORE INSERT ON app.a"
+            "udit_events FOR EACH ROW EXECUTE FUNCTION app.test_enforcement_audit"
+            "_failure()"
+        )
+    try:
+        with pytest.raises(LeaseEnforcementUnavailableError):
+            service().open_case(
+                prop, lease, request, actor=staff(human, prop), request_id="audit-failure"
+            )
+        with psycopg.connect(migrated_database_url) as connection:
+            assert connection.execute(
+                ("SELECT count(*) FROM app.rent_nonpayment_cases WHERE rent_invoice_line_id=%s"),
+                (line,),
+            ).fetchone() == (0,)
+            assert connection.execute(
+                ("SELECT count(*) FROM app.lease_enforcement_commands WHERE idempotency_key=%s"),
+                (key,),
+            ).fetchone() == (0,)
+    finally:
+        with psycopg.connect(migrated_database_url) as connection:
+            connection.execute("DROP TRIGGER test_enforcement_audit_failure ON app.audit_events")
+            connection.execute("DROP FUNCTION app.test_enforcement_audit_failure()")
+    recovered = service().open_case(
+        prop, lease, request, actor=staff(human, prop), request_id="recover"
+    )
+    assert (
+        service().open_case(prop, lease, request, actor=staff(human, prop), request_id="replay")
+        == recovered
+    )
+
+
+def test_direct_case_source_snapshot_and_future_timestamp_constraints(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, customer, lease, invoice, line = source(migrated_database_url)
+    for change in ("future", "due", "customer", "line"):
+        with psycopg.connect(migrated_database_url) as connection:
+            with pytest.raises(psycopg.Error):
+                connection.execute(
+                    (
+                        "INSERT INTO app.rent_nonpayment_cases SELECT %s,%s,%s,id,%s,due_date"
+                        "+%s,clock_timestamp()+(%s||' seconds')::interval,%s FROM app.invoice"
+                        "s WHERE id=%s"
+                    ),
+                    (
+                        uuid4(),
+                        lease,
+                        uuid4() if change == "customer" else customer,
+                        uuid4() if change == "line" else line,
+                        1 if change == "due" else 0,
+                        3600 if change == "future" else 0,
+                        human,
+                        invoice,
+                    ),
+                )
+    assert service().read(prop, lease, "CASES", actor=staff(human, prop))["total"] == 0
+
+
+def test_cure_requires_prior_milestone_and_zero_balance_and_events_reject_void_source(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, customer, lease, invoice, line, case = opened(migrated_database_url)
+    with pytest.raises(LeaseEnforcementConflictError):
+        event(prop, lease, case, human, NonpaymentEventKind.CURE)
+    adjustment = uuid4()
+    with psycopg.connect(migrated_database_url) as connection:
+        connection.execute(
+            "INSERT INTO app.invoice_adjustments(id,invoice_id,invoice_line_id,"
+            "adjustment_type,amount_usd_cents,source_reference,reason,occurred_at,"
+            "actor_id,authorization_reference) VALUES(%s,%s,%s,'CREDIT',10000,"
+            "'correction','Documented correction',clock_timestamp(),%s,'invoices.adjust')",
+            (adjustment, invoice, line, human),
+        )
+        payment = seed_payment(
+            connection, actor_id=human, property_id=prop, customer_id=customer, amount=70000
+        )
+    snapshot = service().read(prop, lease, "CASE", case_id=case, actor=staff(human, prop))
+    assert cast(dict[str, object], snapshot["assessment"])["remaining_rent"] == {
+        "currency": "USD",
+        "minor_units": 70000,
+    }
+    posted = allocation_service().post(
+        prop,
+        payment,
+        PostAllocationsCommand(
+            uuid4(),
+            {
+                "mode": "DESIGNATED",
+                "designation_reference": "Rent instruction",
+                "targets": [
+                    {
+                        "invoice_id": str(invoice),
+                        "amount_usd_cents": 70000,
+                        "details": [{"invoice_line_id": str(line), "amount_usd_cents": 70000}],
+                    }
+                ],
+            },
+        ),
+        actor=allocation_actor(human, prop),
+    )
+    with pytest.raises(LeaseEnforcementConflictError):
+        event(prop, lease, case, human, NonpaymentEventKind.CURE)
+    identities = posted["allocation_ids"]
+    assert isinstance(identities, list) and len(identities) == 1
+    allocation_service().reverse_allocation(
+        prop,
+        UUID(str(identities[0])),
+        ReverseAllocationCommand(uuid4(), "Resolve allocation before VOID"),
+        actor=allocation_actor(human, prop),
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        connection.execute(
+            "INSERT INTO app.invoice_adjustment_reversals SELECT %s,id,"
+            "'Resolved adjustment before VOID',clock_timestamp(),%s,"
+            "'invoices.adjustments.reverse' FROM app.invoice_adjustments WHERE id=%s",
+            (uuid4(), human, adjustment),
+        )
+        connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
+        version = connection.execute(
+            "SELECT version FROM app.invoices WHERE id=%s", (invoice,)
+        ).fetchone()
+        assert version is not None
+    PostgresInvoiceService(runtime_database_url(), financial_database_url()).void(
+        prop,
+        invoice,
+        VoidInvoiceCommand(uuid4(), "Approved source cancellation", int(version[0])),
+        actor=invoice_api_actor(human, prop),
+    )
+    history = service().read(prop, lease, "CASE", case_id=case, actor=staff(human, prop))
+    assert cast(dict[str, object], history["assessment"])["source_applicable"] is False
+    with pytest.raises(LeaseEnforcementConflictError):
+        event(prop, lease, case, human, NonpaymentEventKind.AUTHORIZED_FOLLOW_UP)
+
+
+def test_concurrent_case_keys_resolve_to_one_per_rent_line(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, _, lease, _, line = source(migrated_database_url)
+    barrier = Barrier(2)
+
+    def create(_: int) -> object:
+        barrier.wait(timeout=5)
+        try:
+            return service().open_case(
+                prop,
+                lease,
+                OpenRentNonpaymentCase(uuid4(), line, "Concurrent open"),
+                actor=staff(human, prop),
+                request_id="open",
+            )
+        except LeaseEnforcementConflictError:
+            return "conflict"
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(create, [0, 1]))
+    assert sum(result == "conflict" for result in results) == 1
+    assert service().read(prop, lease, "CASES", actor=staff(human, prop))["total"] == 1
+
+
+def test_cure_after_day_twenty_warning_stops_day_thirty_trigger_and_preserves_notice(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    with psycopg.connect(migrated_database_url) as connection:
+        row = connection.execute(
+            "SELECT timezone('Asia/Phnom_Penh',clock_timestamp())::date"
+        ).fetchone()
+        assert row is not None and isinstance(row[0], date)
+        move_in = row[0] - timedelta(days=27)
+        human, prop, customer, lease, occupancy = setup_billing_source(
+            connection,
+            configure_trash=False,
+            configure_internet=False,
+            move_in_date=move_in,
+            lease_end_date=move_in.replace(year=move_in.year + 1),
+        )
+    issued_at = datetime(
+        move_in.year, move_in.month, move_in.day, 0, 0, 1, tzinfo=ZoneInfo("Asia/Phnom_Penh")
+    )
+    issued = PostgresRentBillingService(financial_database_url(), prop, human).generate(
+        initial_command(lease, occupancy, period_start=move_in, issued_at=issued_at),
+        actor=authenticated(human, prop),
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        line_row = connection.execute(
+            "SELECT id FROM app.invoice_lines WHERE invoice_id=%s AND category='RENT'",
+            (issued.invoice_id,),
+        ).fetchone()
+        assert line_row is not None
+        line = UUID(str(line_row[0]))
+        payment = seed_payment(
+            connection,
+            actor_id=human,
+            property_id=prop,
+            customer_id=customer,
+            amount=issued.rent_usd_cents,
+        )
+    flow, actor = service(), staff(human, prop)
+    created = flow.open_case(
+        prop,
+        lease,
+        OpenRentNonpaymentCase(uuid4(), line, "Day20 case"),
+        actor=actor,
+        request_id="day20",
+    )
+    data = cast(dict[str, object], created.body["data"])
+    assessment = cast(dict[str, object], data["assessment"])
+    case = UUID(str(data["id"]))
+    assert assessment["days_overdue"] == 20
+    assert assessment["twenty_day_warning_eligible"] is True
+    assert assessment["thirty_day_default_eligible"] is False
+    notice = event(prop, lease, case, human, NonpaymentEventKind.TWENTY_DAY_WARNING)
+    with pytest.raises(LeaseEnforcementConflictError):
+        event(prop, lease, case, human, NonpaymentEventKind.CURE)
+    allocation_service().post(
+        prop,
+        payment,
+        PostAllocationsCommand(
+            uuid4(),
+            {
+                "mode": "DESIGNATED",
+                "designation_reference": "Cure before day30",
+                "targets": [
+                    {
+                        "invoice_id": str(issued.invoice_id),
+                        "amount_usd_cents": issued.rent_usd_cents,
+                        "details": [
+                            {
+                                "invoice_line_id": str(line),
+                                "amount_usd_cents": issued.rent_usd_cents,
+                            }
+                        ],
+                    }
+                ],
+            },
+        ),
+        actor=allocation_actor(human, prop),
+    )
+    event(prop, lease, case, human, NonpaymentEventKind.CURE)
+    with psycopg.connect(migrated_database_url) as connection:
+        future = connection.execute(
+            "SELECT app.rent_nonpayment_case_snapshot(id,(due_date_snapshot+30)"
+            "::timestamp AT TIME ZONE 'Asia/Phnom_Penh') "
+            "FROM app.rent_nonpayment_cases WHERE id=%s",
+            (case,),
+        ).fetchone()
+        assert future is not None
+        assert future[0]["assessment"]["days_overdue"] == 30
+        assert future[0]["assessment"]["remaining_rent"] == {"currency": "USD", "minor_units": 0}
+        assert future[0]["assessment"]["thirty_day_default_eligible"] is False
+        assert future[0]["assessment"]["warning_recorded"] is True
+        assert future[0]["assessment"]["serious_default_recorded"] is False
+    history = cast(
+        list[dict[str, object]],
+        flow.read(prop, lease, "EVENTS", case_id=case, actor=actor)["items"],
+    )
+    assert len(history) == 2
+    assert (
+        history[0]["remaining_rent_usd_cents"]
+        == notice["remaining_rent_usd_cents"]
+        == issued.rent_usd_cents
+    )
+    assert history[1]["remaining_rent_usd_cents"] == 0
+
+
+def test_event_commands_reject_forged_client_balance_and_milestone_date(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, _, lease, _, _, case = opened(migrated_database_url)
+    for field, value in [
+        ("event_date", "2999-01-01"),
+        ("remaining_rent_usd_cents", 0),
+        ("occurred_at", "2999-01-01T00:00:00Z"),
+    ]:
+        intent = {
+            "reason": "Forged derived source",
+            "event_kind": "THIRTY_DAY_SERIOUS_DEFAULT",
+            field: value,
+        }
+        with psycopg.connect(financial_database_url()) as connection:
+            with pytest.raises(psycopg.Error) as error:
+                connection.execute(
+                    "SELECT app.lease_enforcement_command(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (prop, lease, case, human, "EVENT", uuid4(), "b" * 64, Jsonb(intent), "forged"),
+                )
+            assert error.value.sqlstate == "P5402"
+    assert (
+        service().read(prop, lease, "EVENTS", case_id=case, actor=staff(human, prop))["total"] == 0
+    )

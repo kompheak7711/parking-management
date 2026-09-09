@@ -1,3 +1,15 @@
+# Current queue — V1-054 foundation acceptance
+
+Freeze this bounded foundation candidate, run mandatory exact full backend/realPG/static/build/automation/config/trace/guard/preflight gates, then obtain initial independent complete-stage Astra/max/Standard/enforced-read-only zero review fromab09f28. Preserve all findings/corrections. After stage acceptance proceed to canonical HTTP/UI and scheduled evaluation. Keep intermediate commits local; final integrated V1-054 review from98ea770 precedes normal publication, ownexactCI/allrefs/Workboard/fullclosure and only then55. Continue through60, pause SAME, never61/V2/production.
+
+Earlier entries are historical and preserved; do not replay completed work.
+
+# Current queue — V1-054 persistence/domain
+
+Implement bounded V1-054 warning/nonpayment migration and domain services from accepted localab09f28; verify focused and applicable full backend/realPG/static/build/trace/automation gates, freeze candidate and obtain independent complete-stage review. Correct under standing policy, then HTTP/UI stage. No intermediate publication; final complete-version review from98ea770 and full closure before55.
+
+Earlier entries are preserved historical plans; current scope is STATE.v1_054_foundation.
+
 # Current queue — V1-054 activation
 
 V1-053 fullyclosed98ea770333d016232eeaeebeca7e4e8e89cbdc85; current54/completed53. New explicit standing authority through60 supersedes old stop53 and mode/review defaults; no61/V2/production. Freeze the six-file V1-054 activation/scope/policy checkpoint over fully closed98ea770. Run fresh exact activation preservation/authority/dependency/routing/189automation/configuration/traceability/guard/diff gates and one fresh complete-stage Astra/max/Standard/enforced-read-only zero review. Keep this stage local and product implementation pending until accepted. Then implement only the bounded warning/nonpayment persistence and domain-services stage. Full V1-054 integrated gates and complete-version zero review precede normal publication, exactCI/allrefs, Workboard acceptance and closure; only then55. Continue dependency order through60, then pause SAMEfollow-up; OpenClaw disabled, never61/V2/production.
