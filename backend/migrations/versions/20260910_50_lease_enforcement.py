@@ -118,12 +118,15 @@ def upgrade() -> None:
             PERFORM 1 FROM app.invoice_lines WHERE id=v_case.rent_invoice_line_id FOR SHARE;
             SELECT * INTO STRICT v_invoice FROM app.invoices WHERE id=v_case.invoice_id;
             PERFORM app.lease_enforcement_scope(app.invoice_property_id(v_case.invoice_id),v_case.lease_id,NEW.actor_id);
-            v_balance:=app.invoice_line_outstanding(v_case.rent_invoice_line_id);
+            v_balance:=CASE WHEN v_invoice.status='VOID' THEN 0
+                ELSE app.invoice_line_outstanding(v_case.rent_invoice_line_id) END;
             v_days:=NEW.event_date-v_case.due_date_snapshot;
             SELECT greatest(v_case.opened_at,app.allocation_target_latest_at('INVOICE',v_case.invoice_id),
+                (SELECT max(cancel.occurred_at) FROM app.invoice_void_events cancel WHERE cancel.invoice_id=v_case.invoice_id),
                 max(event.occurred_at)) INTO v_latest FROM app.rent_nonpayment_events event
                 WHERE event.rent_nonpayment_case_id=v_case.id;
-            IF v_invoice.status IN ('DRAFT','VOID') OR v_invoice.issued_at IS NULL
+            IF v_invoice.status='DRAFT' OR (v_invoice.status='VOID' AND NEW.event_kind<>'AUTHORIZED_FOLLOW_UP')
+                OR v_invoice.issued_at IS NULL
                 OR NEW.occurred_at<v_latest OR NEW.occurred_at>clock_timestamp() OR NEW.event_date IS DISTINCT FROM timezone('Asia/Phnom_Penh',NEW.occurred_at)::date
                 OR NEW.remaining_rent_usd_cents IS DISTINCT FROM v_balance
                 OR NEW.id='00000000-0000-0000-0000-000000000000'
@@ -160,7 +163,8 @@ def upgrade() -> None:
                     'warning_recorded',history.warning,'serious_default_recorded',history.serious_default),
                 'event_count',history.event_count)
             FROM app.rent_nonpayment_cases c JOIN app.invoices i ON i.id=c.invoice_id
-            CROSS JOIN LATERAL (SELECT app.invoice_line_outstanding_at(c.rent_invoice_line_id,p_as_of) AS amount) balance
+            CROSS JOIN LATERAL (SELECT CASE WHEN i.status NOT IN ('DRAFT','VOID') AND i.issued_at<=p_as_of
+                THEN app.invoice_line_outstanding_at(c.rent_invoice_line_id,p_as_of) ELSE 0 END AS amount) balance
             CROSS JOIN LATERAL (SELECT count(*) AS event_count,
                 COALESCE(bool_or(event_kind='TWENTY_DAY_WARNING'),false) AS warning,
                 COALESCE(bool_or(event_kind='THIRTY_DAY_SERIOUS_DEFAULT'),false) AS serious_default
@@ -303,10 +307,12 @@ def upgrade() -> None:
                     IF NOT FOUND THEN RAISE EXCEPTION 'Rent case not found' USING ERRCODE='P5401'; END IF;
                     SELECT * INTO v_invoice FROM app.invoices WHERE id=v_case.invoice_id FOR UPDATE;
                     PERFORM 1 FROM app.invoice_lines WHERE id=v_case.rent_invoice_line_id FOR SHARE;
-                    IF v_invoice.status IN ('DRAFT','VOID') OR v_invoice.issued_at IS NULL
+                    IF v_invoice.status='DRAFT' OR (v_invoice.status='VOID' AND v_kind<>'AUTHORIZED_FOLLOW_UP')
+                        OR v_invoice.issued_at IS NULL
                     THEN RAISE EXCEPTION 'Rent source is no longer applicable' USING ERRCODE='P5403'; END IF;
                     v_now:=clock_timestamp(); v_date:=timezone('Asia/Phnom_Penh',v_now)::date;
-                    v_balance:=app.invoice_line_outstanding(v_case.rent_invoice_line_id);
+                    v_balance:=CASE WHEN v_invoice.status='VOID' THEN 0
+                        ELSE app.invoice_line_outstanding(v_case.rent_invoice_line_id) END;
                     v_days:=v_date-v_case.due_date_snapshot;
                     IF (v_kind IN ('TWENTY_DAY_WARNING','THIRTY_DAY_SERIOUS_DEFAULT') AND
                         EXISTS(SELECT 1 FROM app.rent_nonpayment_events WHERE rent_nonpayment_case_id=p_case AND event_kind=v_kind))

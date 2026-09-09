@@ -1,3 +1,15 @@
+# Current queue — V1-054 correction1 verification
+
+Run fresh mandatory exact correction1 gates, including full47PG suites and complete backend/trace/automation/build/static checks; reuse only unchanged verified frontend/dependency inputs. Obtain expanded independent focused review of correction from rejected1b1df73, providing original R1/R2 findings and connected financial/authorization/lock/chronology/audit/replay evidence. After focused zero, obtain a fresh COMPLETE foundation stage review fromab09f28. No stage acceptance until full-stage zero, no intermediate publication; HTTP/UI/evaluation and final integrated V1-054 review/closure precede55, continue through60 then pause SAME, never61/V2/production.
+
+Earlier entries and original findings are historical and retained.
+
+# Current queue — V1-054 independent review correction1
+
+Apply bounded correction1 for independent R1/R2 on rejected1b1df73: source-applicable current Rent and authorized VOID follow-up, preserving financial/history/actor/lock/audit/replay contracts. Add connected PostgreSQL regressions and traceability, freeze a normal local successor, run affected mandatory gates, obtain expanded independent focused exact-SHA review, then fresh COMPLETE foundation stage review fromab09f28 at zero. No intermediate publication; full V1-054 integration/closure precedes55; continue through60, pause SAME, never61/V2/production.
+
+Earlier entries and findings remain preserved.
+
 # Current queue — V1-054 foundation test integration correction
 
 Freeze normal local corrected foundation successor; preserve failed47829f7. Fresh affected formatting/lint/types and all47PG/full backend/automation/build/trace/config/guard/preflight gates, reuse unchanged migration history and frontend evidence by exact identity. Then initial independent COMPLETE foundation stage review fromab09f28 including all failed checkpoint and correction evidence. No intermediate publication; HTTP/UI/evaluation and full-version acceptance precede closure54 and activation55; continue through60, pause SAME, never61/V2/production.

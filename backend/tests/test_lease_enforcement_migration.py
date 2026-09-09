@@ -30,6 +30,7 @@ from property_rental.lease_enforcement import (
     WARNING_READ,
     LeaseEnforcementAuthorizationError,
     LeaseEnforcementConflictError,
+    LeaseEnforcementInvalidError,
     LeaseEnforcementKeyReused,
     LeaseEnforcementNotFoundError,
     LeaseEnforcementUnavailableError,
@@ -50,6 +51,7 @@ from test_credit_application_migration import application_id, designated
 from test_credit_application_migration import source as credit_source
 from test_credit_migration import actor as credit_actor
 from test_credit_migration import service as credit_service
+from test_customer_ledger_migration import assert_reconciled
 from test_invoice_migration import (
     create_recurring_rent_invoice,
     financial_database_url,
@@ -788,8 +790,19 @@ def test_cure_requires_prior_milestone_and_zero_balance_and_events_reject_void_s
     )
     history = service().read(prop, lease, "CASE", case_id=case, actor=staff(human, prop))
     assert cast(dict[str, object], history["assessment"])["source_applicable"] is False
-    with pytest.raises(LeaseEnforcementConflictError):
-        event(prop, lease, case, human, NonpaymentEventKind.AUTHORIZED_FOLLOW_UP)
+    assert cast(dict[str, object], history["assessment"])["remaining_rent"] == {
+        "currency": "USD",
+        "minor_units": 0,
+    }
+    for kind in (
+        NonpaymentEventKind.TWENTY_DAY_WARNING,
+        NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT,
+        NonpaymentEventKind.CURE,
+    ):
+        with pytest.raises(LeaseEnforcementConflictError):
+            event(prop, lease, case, human, kind)
+    follow_up = event(prop, lease, case, human, NonpaymentEventKind.AUTHORIZED_FOLLOW_UP)
+    assert follow_up["remaining_rent_usd_cents"] == 0
 
 
 def test_concurrent_case_keys_resolve_to_one_per_rent_line(
@@ -946,3 +959,219 @@ def test_event_commands_reject_forged_client_balance_and_milestone_date(
     assert (
         service().read(prop, lease, "EVENTS", case_id=case, actor=staff(human, prop))["total"] == 0
     )
+
+
+def test_void_case_reconciles_current_rent_and_preserves_authorized_follow_up_history(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, customer, lease, invoice, line, case = opened(migrated_database_url)
+    flow, actor = service(), staff(human, prop)
+    event(prop, lease, case, human, NonpaymentEventKind.TWENTY_DAY_WARNING)
+    event(prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT)
+    original_events = flow.read(prop, lease, "EVENTS", case_id=case, actor=actor)["items"]
+    with psycopg.connect(migrated_database_url) as connection:
+        row = connection.execute(
+            "SELECT version FROM app.invoices WHERE id=%s", (invoice,)
+        ).fetchone()
+        assert row is not None
+    canceled = PostgresInvoiceService(runtime_database_url(), financial_database_url()).void(
+        prop,
+        invoice,
+        VoidInvoiceCommand(uuid4(), "Authorized source cancellation", int(row[0])),
+        actor=invoice_api_actor(human, prop),
+    )
+    assessment = cast(
+        dict[str, object], flow.read(prop, lease, "CASE", case_id=case, actor=actor)["assessment"]
+    )
+    assert assessment["source_applicable"] is False
+    assert (
+        assessment["remaining_rent"]
+        == canceled["outstanding_balance"]
+        == {"currency": "USD", "minor_units": 0}
+    )
+    assert assessment["warning_recorded"] is assessment["serious_default_recorded"] is True
+    assert all(
+        assessment[key] is False
+        for key in ("twenty_day_warning_eligible", "thirty_day_default_eligible", "cure_eligible")
+    )
+    assert flow.read(prop, lease, "EVENTS", case_id=case, actor=actor)["items"] == original_events
+    source_query = (
+        "SELECT to_jsonb(i),to_jsonb(il),to_jsonb(l),to_jsonb(u),to_jsonb(o) "
+        "FROM app.invoices i JOIN app.invoice_lines il ON il.invoice_id=i.id "
+        "JOIN app.leases l ON l.id=i.lease_id JOIN app.units u ON u.id=l.unit_id "
+        "JOIN app.occupancies o ON o.lease_id=l.id WHERE i.id=%s"
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        assert assert_reconciled(connection, customer).invoice == 0
+        assert connection.execute(
+            "SELECT amount_usd_cents FROM app.invoice_lines WHERE id=%s", (line,)
+        ).fetchone() == (80000,)
+        before = connection.execute(source_query, (invoice,)).fetchall()
+    with pytest.raises(LeaseEnforcementInvalidError):
+        RecordRentNonpaymentEvent(
+            uuid4(), NonpaymentEventKind.AUTHORIZED_FOLLOW_UP, "Missing authority"
+        )
+    with psycopg.connect(financial_database_url()) as connection:
+        with pytest.raises(psycopg.Error) as missing:
+            connection.execute(
+                "SELECT app.lease_enforcement_command(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                (
+                    prop,
+                    lease,
+                    case,
+                    human,
+                    "EVENT",
+                    uuid4(),
+                    "a" * 64,
+                    Jsonb({"event_kind": "AUTHORIZED_FOLLOW_UP", "reason": "Missing authority"}),
+                    "missing",
+                ),
+            )
+        assert missing.value.sqlstate == "P5402"
+    request = RecordRentNonpaymentEvent(
+        uuid4(),
+        NonpaymentEventKind.AUTHORIZED_FOLLOW_UP,
+        "Explain canceled source",
+        authorization_reference="Management instruction after cancellation",
+    )
+    with pytest.raises(LeaseEnforcementAuthorizationError):
+        flow.record_event(
+            prop,
+            lease,
+            case,
+            request,
+            actor=staff(human, prop, WARNING_CREATE),
+            request_id="wrong-capability",
+        )
+    with pytest.raises(LeaseEnforcementNotFoundError):
+        flow.record_event(prop, uuid4(), case, request, actor=actor, request_id="wrong-lease")
+    followed = flow.record_event(
+        prop,
+        lease,
+        case,
+        request,
+        actor=staff(human, prop, NONPAYMENT_EVENT),
+        request_id="follow-up",
+    )
+    assert (
+        flow.record_event(prop, lease, case, request, actor=actor, request_id="replay") == followed
+    )
+    data = cast(dict[str, object], followed.body["data"])
+    assert data["remaining_rent_usd_cents"] == 0
+    assert data["event_kind"] == "AUTHORIZED_FOLLOW_UP"
+    retained = cast(
+        list[dict[str, object]],
+        flow.read(prop, lease, "EVENTS", case_id=case, actor=actor)["items"],
+    )
+    assert retained[:2] == original_events and len(retained) == 3
+    assert [item["remaining_rent_usd_cents"] for item in retained] == [80000, 80000, 0]
+    with pytest.raises(LeaseEnforcementConflictError):
+        event(prop, lease, case, human, NonpaymentEventKind.CURE)
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(source_query, (invoice,)).fetchall() == before
+        assert assert_reconciled(connection, customer).invoice == 0
+        assert connection.execute(
+            "SELECT count(*) FROM app.audit_events WHERE entity_id=%s "
+            "AND action='rent_nonpayment.event_post'",
+            (UUID(str(data["id"])),),
+        ).fetchone() == (1,)
+        connection.execute(
+            "UPDATE app.user_accounts SET lifecycle_state='disabled' WHERE actor_id=%s", (human,)
+        )
+    with pytest.raises(LeaseEnforcementAuthorizationError):
+        flow.record_event(prop, lease, case, request, actor=actor, request_id="stale-replay")
+
+
+def test_follow_up_waits_for_source_void_and_enforces_cancellation_chronology(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, _, lease, invoice, _, case = opened(migrated_database_url)
+    application_name = f"v1054-void-follow-up-{uuid4().hex}"
+    flow = PostgresLeaseEnforcementService(
+        runtime_database_url(),
+        make_conninfo(financial_database_url(), application_name=application_name),
+    )
+    request = RecordRentNonpaymentEvent(
+        uuid4(),
+        NonpaymentEventKind.AUTHORIZED_FOLLOW_UP,
+        "Document source cancellation",
+        authorization_reference="Management instruction",
+    )
+    with psycopg.connect(migrated_database_url) as holding:
+        version = holding.execute(
+            "SELECT version FROM app.invoices WHERE id=%s FOR UPDATE", (invoice,)
+        ).fetchone()
+        assert version is not None
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(
+                flow.record_event,
+                prop,
+                lease,
+                case,
+                request,
+                actor=staff(human, prop),
+                request_id="waiting-follow-up",
+            )
+            try:
+                observed = False
+                with psycopg.connect(admin_database_url(), autocommit=True) as observer:
+                    deadline = time.monotonic() + 2
+                    while time.monotonic() < deadline:
+                        row = observer.execute(
+                            "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_stat_activity "
+                            "WHERE application_name=%s AND datname=%s AND wait_event_type='Lock' "
+                            "AND %s=ANY(pg_catalog.pg_blocking_pids(pid)))",
+                            (application_name, holding.info.dbname, holding.info.backend_pid),
+                        ).fetchone()
+                        if row == (True,):
+                            observed = True
+                            break
+                        time.sleep(0.01)
+                assert observed, "Follow-up must wait for the exact source Invoice lock"
+                holding.execute(
+                    "SELECT app.void_invoice(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
+                    (
+                        prop,
+                        invoice,
+                        human,
+                        uuid4(),
+                        "c" * 64,
+                        int(version[0]),
+                        "Authorized source cancellation",
+                        uuid4(),
+                        uuid4(),
+                    ),
+                )
+                holding.execute("SET CONSTRAINTS ALL IMMEDIATE")
+                with pytest.raises(psycopg.Error) as chronology:
+                    with holding.transaction():
+                        holding.execute(
+                            "INSERT INTO app.rent_nonpayment_events "
+                            "SELECT %s,%s,'AUTHORIZED_FOLLOW_UP', "
+                            "timezone('Asia/Phnom_Penh',v.occurred_at-interval '1 microsecond')::date, "
+                            "0,NULL,NULL,'Backdated follow-up',v.occurred_at-interval '1 microsecond', "
+                            "%s,'Management instruction' FROM app.invoice_void_events v "
+                            "WHERE v.invoice_id=%s",
+                            (uuid4(), case, human, invoice),
+                        )
+                assert chronology.value.sqlstate == "23514"
+                holding.commit()
+                result = future.result(timeout=5)
+            finally:
+                holding.rollback()
+    data = cast(dict[str, object], result.body["data"])
+    assert data["remaining_rent_usd_cents"] == 0
+    assert (
+        flow.record_event(
+            prop, lease, case, request, actor=staff(human, prop), request_id="exact-replay"
+        )
+        == result
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT e.occurred_at>=v.occurred_at,e.remaining_rent_usd_cents "
+            "FROM app.rent_nonpayment_events e JOIN app.rent_nonpayment_cases c "
+            "ON c.id=e.rent_nonpayment_case_id JOIN app.invoice_void_events v "
+            "ON v.invoice_id=c.invoice_id WHERE c.id=%s",
+            (case,),
+        ).fetchall() == [(True, 0)]
