@@ -1,3 +1,15 @@
+# Current queue — V1-054 R3 metadata successor
+
+Verify the exact metadata successor with affected backend/automation/trace/preservation/config/guard/preflight checks, reusing unchanged source/runtime PG, static, build and frontend evidence with actual compose.yaml identity. Obtain independent focused R3 review, then fresh COMPLETE foundation review from ab09f28 at zero before HTTP/UI/evaluation. Final integrated V1-054 review, publication, exact CI, refs, Workboard and closure precede V1-055. Continue through V1-060; pause SAME follow-up at closure, never V1-061/V2/production.
+
+Earlier entries and every review/failure remain preserved historical records.
+
+# Current queue — V1-054 R3 traceability correction
+
+Correct only the26newfoundation trace mappings for R3 under TEST-117/119: remove22unsupportedSEC-027 references and use assertion-supported IDs. Preserve1985accepted entries and all product/test source. Freeze normal metadata successor, verify affected full backend/automation/trace/preservation/config/guard/preflight gates; reuse identical PG/static/build/frontend evidence with actualcompose.yaml identity. Obtain focused exact-SHA R3 correction review, then fresh COMPLETE foundation review fromab09f28 at zero. Only then HTTP/UI/evaluation; final V1-054 integrated review/publication/CI/refs/card/closure precede55; continue through60, pause SAME, never61/V2/production.
+
+Earlier entries and findings are preserved historical records.
+
 # Current queue — V1-054 correction1 literal wrapping
 
 Verify exact normal lint successor with all mandatory affected gates, preserving7c91743 lint failure and external checker correction. Obtain expanded focused independent correction review from rejected1b1df73, then fresh COMPLETE foundation review fromab09f28 at zero before HTTP/UI/evaluation. Final integrated V1-054 review/CI/refs/Workboard/fullclosure precedes55. Continue through60, pause SAME; never61/V2/production.
