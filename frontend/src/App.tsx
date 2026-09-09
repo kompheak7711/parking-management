@@ -1754,7 +1754,7 @@ export function App({
             )}
             {!logoutPending && (
               <CustomerAccountLedger
-                key={session.actor_id}
+                key={`customer-ledger:${session.actor_id}`}
                 actorId={session.actor_id}
                 api={ledgerApi}
                 requested={

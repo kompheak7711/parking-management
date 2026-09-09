@@ -1,3 +1,9 @@
+# Current queue — V1-053 UI sibling-key successor
+
+Freeze normal one-line ledger key correction; preserve f8f1e52 full1419PASS/4FAIL and same-body5PASS regression. Run full exactfrontend and remaining requiredgates, backend/PG reuse only by identity. ONEcomplete0926300-base Astra/max/Standard/enforcedread-only zero review, authorized publication/ownall4CI/refs/full53closure; no54.
+
+Preserved earlier entries:
+
 # Current queue — V1-053 UI formatting successor
 
 Freeze normal formatting successor of944e883; preserve its failed format gate and all evidence. Fresh remaining required exact frontend/automation/records checks, backend/PG reuse by identity, ONE complete0926300-base Astra/max/Standard/read-only zero review, authorized normal publication/ownCI/allrefs and full53closure. No54.
