@@ -1503,28 +1503,30 @@
       "risk_class": "high",
       "acceptance_profile": "financial",
       "authorization": "durable_v1",
-      "status": "approved_ready",
+      "status": "complete",
       "closure_gate": {
-        "status": "complete_product_verified_terminal_and_workboard_pending",
+        "status": "verified_fully_closed",
         "product_sha": "96acfc7af77eca586af6e80fc6f9fcacc0344a7b",
+        "terminal_sha": "98ea770333d016232eeaeebeca7e4e8e89cbdc85",
         "product_ci_run": 34377321430,
-        "product_acceptance": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-accepted-96acfc7.json",
-          "sha256": "6d68abe0ed0170a273bbc6e8dafc88e19265e163959c791fbf30288c80014495"
-        },
-        "product_publication": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-ledger-ui-publication-verified-96acfc7.json",
-          "sha256": "90470f660675a041531d7e263d1994f1ec7bfd21c9ecc8c2cf5f34f8fa6894b2"
-        },
-        "terminal_sha": null,
-        "terminal_proof": "Pending own exact checks/review/publication/CI/ref equality",
+        "terminal_ci_run": 34382086971,
+        "all_four_jobs_success": true,
+        "independent_reviews": "Product and terminal Astra/max/Standard/enforced-read-only zero HIGH/MEDIUM/LOW",
+        "ref_equality": "98ea770333d016232eeaeebeca7e4e8e89cbdc85",
         "workboard_card": "d362ed27-0bdb-4318-9c8a-0976c931d706",
-        "workboard_status": "blocked",
-        "workboard_acceptance": "Pending concrete supported lifecycle update/complete after all terminal proof under normal enforcement",
-        "full_version_closed": false,
-        "successor_activation_allowed": false,
-        "external_closure_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-closure-verification.json",
-        "external_discharge": "Only a verified external receipt bound to this resolved terminal SHA, complete product and terminal checks/reviews/publication/ownCI/allrefs, actual existing53card acceptance, durable reconciliation and final same-followup pause can discharge frozen pending fields and establish fully closed53. Candidate records are immutable; do not append unreviewed changes or invent a self-referential commit hash. No next-version activation."
+        "workboard_status": "done",
+        "workboard_proof": "61021cdc-ef8c-4708-aa92-ee6056fb16ff",
+        "full_version_closed": true,
+        "receipt": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-closure-verification.json",
+          "sha256": "673be494df1c79c08f39e6150d0234a4600d513dbf47a17e89841d26ec666f58"
+        },
+        "successor_activation_allowed": true,
+        "successor_authority": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+          "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+        },
+        "boundary_resolution": "Original closure receipt truthfully recorded the then-required stop53/pause. New explicit owner authority supersedes only that boundary and admits54 after closure/settings verification. Original receipt and pending roadmap object are preserved unchanged."
       }
     },
     {

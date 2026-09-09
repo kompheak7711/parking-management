@@ -1,3 +1,9 @@
+# Current queue — V1-054 activation
+
+V1-053 fullyclosed98ea770333d016232eeaeebeca7e4e8e89cbdc85; current54/completed53. New explicit standing authority through60 supersedes old stop53 and mode/review defaults; no61/V2/production. Freeze the six-file V1-054 activation/scope/policy checkpoint over fully closed98ea770. Run fresh exact activation preservation/authority/dependency/routing/189automation/configuration/traceability/guard/diff gates and one fresh complete-stage Astra/max/Standard/enforced-read-only zero review. Keep this stage local and product implementation pending until accepted. Then implement only the bounded warning/nonpayment persistence and domain-services stage. Full V1-054 integrated gates and complete-version zero review precede normal publication, exactCI/allrefs, Workboard acceptance and closure; only then55. Continue dependency order through60, then pause SAMEfollow-up; OpenClaw disabled, never61/V2/production.
+
+All earlier entries below are historical and superseded; preserve their evidence and do not replay their pending actions or obsolete boundaries.
+
 # Current queue — V1-053 final release and closure
 
 Freeze this records-only V1-053 terminal child, run applicable exact operational/preservation/traceability/routing gates and reuse unchanged product suites, then ONEcomplete0926300-base Astra/max/Standard/enforced-read-only zero review. Normally publish to authorized repository/implementation/foundation, require own exact four-job CI and all-ref equality. Prepare and submit the concrete existing53card status/evidence/completion through supported Workboard at ws://127.0.0.1:18789 under standing lifecycle authority and normal enforcement, preserving notes/metadata/events. Verify product AND terminal proof, Workboard acceptance and durable records, record exact external closure, pause SAME native follow-up, verify OpenClawdisabled. Never activate54.
