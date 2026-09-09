@@ -1,3 +1,15 @@
+# Current queue — V1-053 projection foundation review gate
+
+Latest 2026-09-09T04:03:03.375107+00:00: Freeze the prepared V1-053 projection foundation normally; run full applicable PostgreSQL/backend/automation and static/build/import/preservation gates sequentially on that exact commit, then one fresh independent Astra/max/Standard/enforced-read-only review of complete0926300-base changes. Zero review is required before scoped read API/UI integration. Full V1-053 product lifecycle remains outstanding; same tracking card, normal reviewed publication/exact CI/refs/acceptance/closure, then pause SAME follow-up; OpenClaw disabled, never54.
+
+Earlier entries are preserved historical checkpoints.
+
+# Current queue — V1-053 projection
+
+Latest 2026-09-09T03:14:18.315872+00:00: activation6bb5a98 accepted; Implement bounded V1-053 source projection/reconciliation: exact separate balances, immutable source chronology/composition, deterministic event ordering and revision-bound pagination with focused pure and isolated PostgreSQL tests. Then scoped read-only API and dedicated staff Customer ledger UI, full sequential gates, fresh complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal reviewed publication/own exact CI/refs, same-card acceptance and durable53closure. Preserve all history and failed evidence; no54; pause SAME follow-up only at fullyclosed53.
+
+Earlier entries below are preserved historical checkpoints.
+
 # Current queue — V1-053 activation
 
 Latest 2026-09-09T02:49:35.779645+00:00: V1-052 fully closed at0926300c5c91b26deedb682e454622065826b0ad; closure SHA256d51d90cec48d8d5fe2da707183b63c2c20f5a9922144217999ab66a4cc13b351. Prepare/test/review the five-file V1-053 activation contract before ledger implementation. Dependencies47/52complete; current53/count52. Exact UI-104 supersedes nonexistent UI-LEDGER-* alias. Freeze this five-file V1-053 activation/scope candidate from fully closed0926300. Run fresh activation automation, exact authority/dependency/record/preservation/configuration/traceability/guard checks and actual preflight. Obtain ONE fresh complete base-to-head Astra/max/Standard/enforced-read-only zero review under standing authority before V1-053 product implementation. Preserve all history, all127worktrees and closed52evidence; same53tracking card/no OpenClaw claims or dispatch. Then implement bounded ledger projection/reconciliation, authorized read API and staff UI with full required tests/review/normal publication/exact CI/refs/card/durable closure. At fullyclosed53pause SAME follow-up, OpenClaw disabled, never54.

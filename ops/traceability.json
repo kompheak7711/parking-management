@@ -26778,6 +26778,344 @@
       "test_path": "backend/tests/test_refund_migration.py",
       "status": "implemented",
       "notes": "Controlled owned ShareUpdateExclusive table holder: raw Refund still fails closed, while successful historical fixture preparation waits for the same SHARE obligation-set locks before obtaining a Payment source lock. Holder release follows a real observed waiting SHARE lock; both original non-overlap acceptance and overlap rejection assertions run unchanged. No production guard/global DB setting change; original gate failure holder remains unproven."
+    },
+    {
+      "test_id": "test_ledger_money_preserves_exact_integers_beyond_browser_range",
+      "upstream_ids": [
+        "BR-LEDGER-003",
+        "DB-DER-010",
+        "DL-060"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: money preserves exact integers beyond browser range. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_money_rejects_inexact_noncanonical_and_unbounded_values",
+      "upstream_ids": [
+        "BR-LEDGER-007",
+        "PR-LEDGER-007",
+        "BR-LEDGER-006",
+        "DB-DER-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: money rejects inexact noncanonical and unbounded values. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_position_keeps_liabilities_and_available_funds_out_of_total_owed",
+      "upstream_ids": [
+        "BR-LEDGER-006",
+        "PR-LEDGER-006"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: position keeps liabilities and available funds out of total owed. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_reconciliation_detects_equal_total_with_wrong_composition",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-006",
+        "DB-VIEW-009"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: reconciliation detects equal total with wrong composition. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_equal_time_order_and_filter_are_deterministic_across_timezones",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: equal time order and filter are deterministic across timezones. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_cursor_round_trip_binds_scope_filters_and_source_revision",
+      "upstream_ids": [
+        "BR-LEDGER-005",
+        "API-093"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: cursor round trip binds scope filters and source revision. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_cursor_rejects_invalid_untrusted_encoding",
+      "upstream_ids": [
+        "BR-LEDGER-005",
+        "API-093"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: cursor rejects invalid untrusted encoding. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_cursor_rejects_invalid_fields",
+      "upstream_ids": [
+        "BR-LEDGER-005",
+        "API-093"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: cursor rejects invalid fields. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_page_requires_strict_bounded_limit",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: page requires strict bounded limit. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_filter_requires_aware_ordered_dates_and_known_event_kinds",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: filter requires aware ordered dates and known event kinds. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_canonical_rent_service_charge_example_and_original_source_preservation",
+      "upstream_ids": [
+        "BR-LEDGER-007",
+        "PR-LEDGER-007",
+        "BR-LEDGER-006",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: canonical rent service charge example and original source preservation. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_allocation_and_payment_reversals_restore_separate_positions",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-003",
+        "BR-LEDGER-005",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: allocation and payment reversals restore separate positions. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_third_party_application_does_not_transfer_obligation_ownership",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-003",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: third party application does not transfer obligation ownership. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_refund_return_and_correction_reversal_reconstruct_consumption",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-003",
+        "BR-LEDGER-005",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: refund return and correction reversal reconstruct consumption. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_credit_recognition_application_reversal_and_release_have_no_double_count",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-003",
+        "BR-LEDGER-005",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: credit recognition application reversal and release have no double count. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_invoice_adjustment_reversal_void_and_draft_void_preserve_history",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-003",
+        "BR-LEDGER-005",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: invoice adjustment reversal void and draft void preserve history. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_separate_charge_corrections_and_reversal_keep_invoice_unchanged",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-003",
+        "BR-LEDGER-005",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: separate charge corrections and reversal keep invoice unchanged. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_pet_receipt_requirement_disposition_and_reversals_remain_separate",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-003",
+        "BR-LEDGER-005",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: pet receipt requirement disposition and reversals remain separate. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_equal_timestamp_positions_include_all_peers_and_keep_stable_identity",
+      "upstream_ids": [
+        "BR-LEDGER-005",
+        "PR-LEDGER-005",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: equal timestamp positions include all peers and keep stable identity. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_read_only_snapshot_is_coherent_across_concurrent_financial_commit",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "DB-VIEW-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: read only snapshot is coherent across concurrent financial commit. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_large_exact_aggregates_and_empty_customer",
+      "upstream_ids": [
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-VIEW-009"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: large exact aggregates and empty customer. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_projection_has_no_direct_application_role_access_or_writable_views",
+      "upstream_ids": [
+        "SEC-070",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: projection has no direct application role access or writable views. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_forward_projection_upgrade_preserves_populated_predecessor",
+      "upstream_ids": [
+        "DB-DER-010",
+        "BR-LEDGER-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: forward projection upgrade preserves populated predecessor. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_retains_original_khr_and_exact_fx_when_refunding_only_usd",
+      "upstream_ids": [
+        "DL-060",
+        "BR-LEDGER-002"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: retains original khr and exact fx when refunding only usd. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_draft_void_is_zero_effect_without_issued_obligation",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-003",
+        "BR-LEDGER-005",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: draft void is zero effect without issued obligation. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_waived_charge_and_whole_charge_reversal_retain_source_events",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-003",
+        "BR-LEDGER-005",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: waived charge and whole charge reversal retain source events. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_security_refund_coordinated_correction_keeps_liability_distinct",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-003",
+        "BR-LEDGER-005",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: security refund coordinated correction keeps liability distinct. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_qualified_pet_refund_and_return_are_distinct_from_credit",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-003",
+        "BR-LEDGER-005",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 projection foundation: qualified pet refund and return are distinct from credit. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
     }
   ]
 }
