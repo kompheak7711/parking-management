@@ -2615,3 +2615,111 @@ describe("financial drafts during App logout and expiry", () => {
     },
   );
 });
+
+describe("Customer ledger App integration", () => {
+  it("TEST-FE-578 opens ledger from the Customer detail and aborts its read when logout begins, without replay after sign-in", async () => {
+    const actorId = "00000000-0000-4000-8000-000000000001",
+      customerId = "00000000-0000-4000-8000-000000000003",
+      propertyId = "00000000-0000-4000-8000-000000000002";
+    const signedIn = { ...session, actor_id: actorId };
+    let releaseLogout!: () => void;
+    const logout = new Promise<void>((resolve) => {
+      releaseLogout = resolve;
+    });
+    const authentication = mockAuthenticationApi({
+      signIn: vi
+        .fn()
+        .mockResolvedValue({ phase: "authenticated", session: signedIn }),
+      inspectSession: vi.fn().mockResolvedValue(signedIn),
+      logout: vi.fn().mockReturnValue(logout),
+    });
+    const customerApi = customerApiDouble({
+      list: vi
+        .fn()
+        .mockResolvedValue({
+          items: [
+            {
+              customer_id: customerId,
+              legal_name: "Synthetic ledger Customer",
+              active: true,
+              relationship_indicators: [],
+            },
+          ],
+          next_cursor: null,
+          can_manage: false,
+        }),
+      get: vi
+        .fn()
+        .mockResolvedValue({
+          ...reconciledCustomer(customerId, "Synthetic ledger Customer"),
+          can_manage: false,
+          can_deactivate: false,
+        }),
+    });
+    const read = vi.fn<
+      import("./customerLedgerClient").CustomerLedgerApi["read"]
+    >(
+      () =>
+        new Promise(() => {
+          /* Synthetic noncooperating ledger read. */
+        }),
+    );
+    render(
+      <App
+        api={authentication}
+        buildId="synthetic-ledger-integration"
+        environment="development"
+        customerApi={customerApi}
+        ledgerApi={{ read }}
+        now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+      />,
+    );
+    const signIn = async () => {
+      fireEvent.change(screen.getByLabelText("Username"), {
+        target: { value: "synthetic-manager" },
+      });
+      fireEvent.change(screen.getByLabelText("Password"), {
+        target: { value: "synthetic-password" },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+      await screen.findByLabelText("Customer Property identifier");
+    };
+    await signIn();
+    expect(read).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText("Customer Property identifier"), {
+      target: { value: propertyId },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Open Synthetic ledger Customer",
+      }),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Open account ledger" }),
+    );
+    await waitFor(() => {
+      expect(read).toHaveBeenCalledTimes(1);
+    });
+    expect(read.mock.calls[0]?.[0]).toMatchObject({
+      section: "history",
+      customerId,
+    });
+    expect(read.mock.calls[0]?.[1]).toMatchObject({ actorId, propertyId });
+    expect(customerApi.create).not.toHaveBeenCalled();
+    expect(customerApi.update).not.toHaveBeenCalled();
+    expect(customerApi.deactivate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    expect(read.mock.calls[0]?.[1].signal.aborted).toBe(true);
+    expect(
+      screen.queryByRole("heading", { name: "Customer account ledger" }),
+    ).not.toBeInTheDocument();
+    releaseLogout();
+    await screen.findByLabelText("Username");
+    await signIn();
+    expect(read).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByRole("button", { name: "Open Customer account ledger" }),
+    ).toBeInTheDocument();
+  });
+});

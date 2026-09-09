@@ -52,6 +52,11 @@ import { InvoiceManagement } from "./InvoiceManagement";
 import { InvoiceApi, invoiceApi as invoiceClient } from "./invoiceClient";
 import { FinancialManagement } from "./FinancialManagement";
 import type { FinancialUiServices } from "./financialUi";
+import {
+  CustomerAccountLedger,
+  type LedgerSelection,
+} from "./CustomerAccountLedger";
+import type { CustomerLedgerApi } from "./customerLedgerClient";
 
 export interface AppProps {
   environment: string;
@@ -69,6 +74,7 @@ export interface AppProps {
   utilityApi?: UtilityApi;
   invoiceApi?: InvoiceApi;
   financialServices?: FinancialUiServices;
+  ledgerApi?: CustomerLedgerApi;
   now?: () => number;
 }
 
@@ -521,6 +527,7 @@ export function App({
   utilityApi = utilityClient,
   invoiceApi = invoiceClient,
   financialServices,
+  ledgerApi,
   now = Date.now,
 }: AppProps) {
   const client = useMemo<AuthenticationApi>(
@@ -556,6 +563,10 @@ export function App({
   const [customerCoordinationAvailable, setCustomerCoordinationAvailable] =
     useState(true);
   const [logoutPending, setLogoutPending] = useState(false);
+  const [ledgerSelection, setLedgerSelection] = useState<
+    (LedgerSelection & { actorId: string; sequence: number }) | null
+  >(null);
+  const ledgerSequence = useRef(0);
   const [
     customerReconciliationRequirement,
     setCustomerReconciliationRequirement,
@@ -647,6 +658,7 @@ export function App({
     setCustomerCommandBusy(false);
     setCustomerReconciliationRequirement(null);
     setLogoutPending(false);
+    setLedgerSelection(null);
     setScreen("sign_in");
     setSession(null);
     setEnrollment(null);
@@ -838,6 +850,7 @@ export function App({
     setFinancialDraftsDirty(false);
     setCustomerDraftsDirty(false);
     setLogoutPending(true);
+    setLedgerSelection(null);
     setSubmissionState("submitting");
     void client
       .logout()
@@ -1739,6 +1752,18 @@ export function App({
                 onDirtyStateChange={setFinancialDraftsDirty}
               />
             )}
+            {!logoutPending && (
+              <CustomerAccountLedger
+                key={session.actor_id}
+                actorId={session.actor_id}
+                api={ledgerApi}
+                requested={
+                  ledgerSelection?.actorId === session.actor_id
+                    ? ledgerSelection
+                    : undefined
+                }
+              />
+            )}
             <ReservationManagement api={reservationApi} />
             <LeaseManagement api={leaseApi} />
             <DepositManagement api={depositApi} />
@@ -1746,6 +1771,13 @@ export function App({
               <CustomerManagement
                 actorId={session.actor_id}
                 api={customerApi}
+                onOpenAccountLedger={(selection) => {
+                  setLedgerSelection({
+                    ...selection,
+                    actorId: session.actor_id,
+                    sequence: ++ledgerSequence.current,
+                  });
+                }}
                 mutationCoordinationAvailable={customerCoordinationAvailable}
                 onCommandBusyChange={setCustomerCommandBusy}
                 onDirtyStateChange={setCustomerDraftsDirty}

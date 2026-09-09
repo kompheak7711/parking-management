@@ -3905,3 +3905,63 @@ describe("CustomerManagement", () => {
     ).not.toBeInTheDocument();
   });
 });
+
+it("TEST-FE-577 hands the selected Customer and current Property to the readonly ledger without invoking a Customer command", async () => {
+  const customerId = "00000000-0000-4000-8000-000000000003",
+    propertyId = "00000000-0000-4000-8000-000000000002";
+  const api = client({
+    list: vi
+      .fn()
+      .mockResolvedValue({
+        items: [
+          {
+            customer_id: customerId,
+            legal_name: "Synthetic ledger Customer",
+            active: true,
+            relationship_indicators: [],
+          },
+        ],
+        next_cursor: null,
+        can_manage: false,
+      }),
+    get: vi
+      .fn()
+      .mockResolvedValue({
+        ...customer,
+        customer_id: customerId,
+        legal_name: "Synthetic ledger Customer",
+        can_manage: false,
+        can_deactivate: false,
+      }),
+  });
+  const open = vi.fn();
+  render(
+    <CustomerManagement
+      actorId="00000000-0000-4000-8000-000000000001"
+      api={api}
+      onOpenAccountLedger={open}
+    />,
+  );
+  fireEvent.change(screen.getByLabelText("Customer Property identifier"), {
+    target: { value: propertyId },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Load Customers" }));
+  fireEvent.click(
+    await screen.findByRole("button", {
+      name: "Open Synthetic ledger Customer",
+    }),
+  );
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Open account ledger" }),
+  );
+  expect(open).toHaveBeenCalledExactlyOnceWith({ customerId, propertyId });
+  expect(api.create).not.toHaveBeenCalled();
+  expect(api.update).not.toHaveBeenCalled();
+  expect(api.deactivate).not.toHaveBeenCalled();
+  fireEvent.change(screen.getByLabelText("Customer Property identifier"), {
+    target: { value: "00000000-0000-4000-8000-000000000006" },
+  });
+  expect(
+    screen.queryByRole("button", { name: "Open account ledger" }),
+  ).not.toBeInTheDocument();
+});

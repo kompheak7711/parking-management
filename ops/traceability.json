@@ -27721,6 +27721,565 @@
       "test_path": "backend/tests/test_customer_ledger_api.py",
       "status": "implemented",
       "notes": "V1-053 ledger-only canonical nonnil Customer path: reject alternate spellings before financial flow, preserve exact canonical identity. Regression for LEDGER-API-CANONICAL-PATH-F1."
+    },
+    {
+      "test_id": "TEST-FE-546",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "reads only the fixed ledger route with private session and actor/Property binding"
+    },
+    {
+      "test_id": "TEST-FE-547",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-003",
+        "PR-LEDGER-003"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "preserves exact ledger money %s including the full64digit contract"
+    },
+    {
+      "test_id": "TEST-FE-548",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-003",
+        "PR-LEDGER-003"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "rejects noncanonical or oversized exact amounts %s"
+    },
+    {
+      "test_id": "TEST-FE-549",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-001",
+        "PR-LEDGER-001",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "rejects a noncanonical Customer identity before network access %s"
+    },
+    {
+      "test_id": "TEST-FE-550",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "fails closed for malformed or mismatched %s"
+    },
+    {
+      "test_id": "TEST-FE-551",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-004",
+        "PR-LEDGER-004",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "accepts source kind %s without inventing later-scope events"
+    },
+    {
+      "test_id": "TEST-FE-552",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "preserves microseconds and orders same-instant peers by kind and UUID"
+    },
+    {
+      "test_id": "TEST-FE-553",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "binds history cursors to issued snapshot, actor, Property, Customer, filter and section"
+    },
+    {
+      "test_id": "TEST-FE-554",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-001",
+        "PR-LEDGER-001",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "binds a minimal Customer picker continuation to the discovered Property"
+    },
+    {
+      "test_id": "TEST-FE-555",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "rejects component source identity/evidence and revision changes within a snapshot"
+    },
+    {
+      "test_id": "TEST-FE-556",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "returns only a validated safe error for HTTP%s"
+    },
+    {
+      "test_id": "TEST-FE-557",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "rejects missing private/correlation response metadata %s"
+    },
+    {
+      "test_id": "TEST-FE-558",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "cancels response ownership on the full page byte ceiling"
+    },
+    {
+      "test_id": "TEST-FE-559",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "accepts an API-sized page above the unrelated reference-client ceiling"
+    },
+    {
+      "test_id": "TEST-FE-560",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "settles an uncooperative fetch at deadline and cancels its late body"
+    },
+    {
+      "test_id": "TEST-FE-561",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "aborts before network and during an uncooperative read"
+    },
+    {
+      "test_id": "TEST-FE-562",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-001",
+        "PR-LEDGER-001",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "opens the separate ledger picker only on request and never sends commands or persists financial data"
+    },
+    {
+      "test_id": "TEST-FE-563",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-003",
+        "PR-LEDGER-003",
+        "BR-LEDGER-006",
+        "PR-LEDGER-006",
+        "BR-LEDGER-007",
+        "PR-LEDGER-007"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "shows the canonical $510 charge, $300 application, separate $21 Charge and $231 owed with Rent/Service composition"
+    },
+    {
+      "test_id": "TEST-FE-564",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-004",
+        "PR-LEDGER-004",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "displays all23 operational event kinds and separate reversal records"
+    },
+    {
+      "test_id": "TEST-FE-565",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "retains original KHR and FX evidence with accessible source navigation and focus return"
+    },
+    {
+      "test_id": "TEST-FE-566",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-003",
+        "PR-LEDGER-003"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "preserves exact64digit balances in the staff view"
+    },
+    {
+      "test_id": "TEST-FE-567",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "reads every bounded history page without dropping equal-time rows"
+    },
+    {
+      "test_id": "TEST-FE-568",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "filters UTC history without altering authoritative account balances"
+    },
+    {
+      "test_id": "TEST-FE-569",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "rejects reversed filter dates without starting a new read"
+    },
+    {
+      "test_id": "TEST-FE-570",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "clears all revision-dependent displays after a409 from %s and refreshes the whole account"
+    },
+    {
+      "test_id": "TEST-FE-571",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-001",
+        "PR-LEDGER-001",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "presents a safe HTTP%s state without financial data and supports retry"
+    },
+    {
+      "test_id": "TEST-FE-572",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "clears balances when ledger permission is revoked during a dependent read"
+    },
+    {
+      "test_id": "TEST-FE-573",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-001",
+        "PR-LEDGER-001",
+        "BR-LEDGER-003",
+        "PR-LEDGER-003"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "distinguishes a genuinely empty account from an empty filtered page"
+    },
+    {
+      "test_id": "TEST-FE-574",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "ignores an old noncooperating response after a%s transition"
+    },
+    {
+      "test_id": "TEST-FE-575",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "cancels all account reads on unmount for logout isolation"
+    },
+    {
+      "test_id": "TEST-FE-576",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-006",
+        "PR-LEDGER-006"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "traverses all remaining balance composition pages"
+    },
+    {
+      "test_id": "TEST-FE-577",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-001",
+        "PR-LEDGER-001",
+        "SEC-070"
+      ],
+      "test_level": "integration",
+      "test_path": "frontend/src/CustomerManagement.test.tsx",
+      "status": "implemented",
+      "notes": "hands the selected Customer and current Property to the readonly ledger without invoking a Customer command"
+    },
+    {
+      "test_id": "TEST-FE-578",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-001",
+        "PR-LEDGER-001",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "integration",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "opens ledger from the Customer detail and aborts its read when logout begins, without replay after sign-in"
+    },
+    {
+      "test_id": "TEST-FE-579",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "requires an issued immutable history row for source navigation and rejects forged or cross-snapshot copies"
+    },
+    {
+      "test_id": "TEST-FE-580",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-001",
+        "PR-LEDGER-001",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "BR-LEDGER-003",
+        "PR-LEDGER-003",
+        "BR-LEDGER-004",
+        "PR-LEDGER-004",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005",
+        "BR-LEDGER-006",
+        "PR-LEDGER-006",
+        "BR-LEDGER-007",
+        "PR-LEDGER-007",
+        "SEC-070"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/customerLedger.browser.tsx",
+      "status": "implemented",
+      "notes": "Actual synthetic browser:14logical scenarios, five affected reruns after bounded corrections, contained keyboard-scrollable mobile tables and exact64digit money; consistent KHR/FX Payment source, source/history/composition/picker pagination, filter/stale/error/actor cancellation.51HTTPGET200modules, no financial network. Nine qualified development-HMR errors preserved. External immutable browser receipt records execution and source hashes."
+    },
+    {
+      "test_id": "TEST-FE-581",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "rejects missing/excess ledger rows declared=%s actual=%s extraCursor=%s across pages"
+    },
+    {
+      "test_id": "TEST-FE-582",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "validates monetary audit key %s before rendering any nested evidence"
+    },
+    {
+      "test_id": "TEST-FE-583",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "BR-LEDGER-005",
+        "PR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "accepts complete continuation, filtered subsets and exact/null audit money"
     }
   ]
 }

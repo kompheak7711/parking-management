@@ -690,3 +690,79 @@ h1 {
     break-inside: avoid;
   }
 }
+
+/* Customer ledger keeps exact balances and source identities readable. */
+.ledger-workspace {
+  overflow-wrap: anywhere;
+}
+.ledger-position {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 0.8rem;
+}
+.ledger-position > div {
+  padding: 0.8rem;
+  border: 1px solid #c6d3d9;
+  border-radius: 0.4rem;
+}
+.ledger-position > div:first-child {
+  background: #eef6f5;
+}
+.ledger-position dt {
+  font-weight: 600;
+}
+.ledger-position dd {
+  margin: 0.35rem 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.ledger-effects {
+  margin: 0;
+  min-width: 12rem;
+}
+.ledger-effects dd {
+  margin: 0 0 0.6rem;
+  font-variant-numeric: tabular-nums;
+}
+.ledger-filters fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.8rem;
+}
+.ledger-filters label {
+  display: grid;
+  gap: 0.25rem;
+}
+.ledger-workspace nav {
+  margin-block: 0.8rem;
+}
+.ledger-workspace td,
+.ledger-workspace th {
+  vertical-align: top;
+}
+
+.ledger-workspace > button {
+  margin: 0.25rem 0.5rem 0.25rem 0;
+}
+.ledger-workspace .financial-facts {
+  display: block;
+}
+.ledger-workspace .financial-facts > div {
+  display: grid;
+  grid-template-columns: minmax(9rem, 1fr) minmax(0, 2fr);
+  gap: 0.25rem 1rem;
+  margin-block: 0.6rem;
+}
+.ledger-filters label {
+  flex: 1 1 12rem;
+}
+@media (max-width: 600px) {
+  .ledger-workspace .financial-facts > div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.ledger-workspace table {
+  min-width: 52rem;
+  table-layout: fixed;
+}

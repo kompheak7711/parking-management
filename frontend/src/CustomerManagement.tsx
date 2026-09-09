@@ -17,6 +17,10 @@ export interface CustomerManagementProps {
   api?: CustomerApi;
   mutationCoordinationAvailable?: boolean;
   onCommandBusyChange?: (busy: boolean) => void;
+  onOpenAccountLedger?: (selection: {
+    customerId: string;
+    propertyId: string;
+  }) => void;
   onDirtyStateChange?: (dirty: boolean) => void;
   onReconciled?: (
     requirement: CustomerReconciliationRequirement,
@@ -537,6 +541,7 @@ export function CustomerManagement({
   api = customerApi,
   mutationCoordinationAvailable = true,
   onCommandBusyChange,
+  onOpenAccountLedger,
   onDirtyStateChange,
   onReconciled,
   onReconciliationRequired,
@@ -2284,6 +2289,19 @@ export function CustomerManagement({
             </div>
           </dl>
 
+          {onOpenAccountLedger && (
+            <button
+              type="button"
+              onClick={() => {
+                onOpenAccountLedger({
+                  customerId: selected.customer_id,
+                  propertyId: propertyId.trim().toLowerCase(),
+                });
+              }}
+            >
+              Open account ledger
+            </button>
+          )}
           <h5>Financial summary</h5>
           {financialUnavailable ? (
             <p>

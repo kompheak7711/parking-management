@@ -1,3 +1,15 @@
+# Current queue — V1-053 ledger UI exact gates and cumulative review
+
+Freeze normal UI candidate; fresh full frontend format/lint/explicit app types/tests/build, automation and exact preservation/configuration/traceability/guard/routing checks. Reuse accepted4b7b320 backend/1053PG/standardbuild by complete source/config identity; unchanged dependency install/security evidence only. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal authorized publication, ownall4CI and allrefs; full53release/card/durable closure. Pause SAMEfollow-up only once53fullyclosed, OpenClawdisabled, never54.
+
+Preserved earlier entries:
+
+# Current queue — V1-053 dedicated Customer ledger UI
+
+Implement bounded dedicated Customer Account Ledger UI from accepted/published4b7b320 using separate ledger reads, exact64digit money, chronology/composition/source evidence, revision/cursor/scope isolation and synthetic tests/browser. Fresh applicable frontend/automation/static/preservation checks; unchanged backend/PG reuse by input identity. Freeze normal candidate, ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal exact authorized publication/ownCI/allrefs, then full53release/card/durable closure. SAMEfollow-upACTIVE/OpenClawdisabled; never54.
+
+Preserved earlier entries:
+
 # Current queue — V1-053 canonical Customer path successor exact gates
 
 Latest 2026-09-09T07:44:43.121488+00:00: Run fresh exact successor fullPostgreSQL/backend sequentially and required static/build/import/automation/traceability/preservation/routing gates; reuse unchanged acceptedfrontend only by source/config identity. Preserve8c74266 rejectedLOWcanonicalpath report, source-pinned4FAIL/4PASS regression,142PASS corrected focused run and all prior evidence. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal publication/ownCI/allrefs, dedicatedCustomerUI and full53release/card/closure. Pause SAMEfollow-up only at closed53; OpenClawdisabled, never54.
