@@ -27128,6 +27128,577 @@
       "test_path": "backend/tests/test_customer_ledger_migration.py",
       "status": "implemented",
       "notes": "Shared-catalog regression RED at9983345: ledger canonical July$10Trash fixture must retain established July1000/August1200rates; subsequent ordinary billing setup preserves exact existing rate rows. Correction changes only its unused August fixture rate, not the canonical Invoice or financial source behavior."
+    },
+    {
+      "test_id": "test_ledger_query_rejects_invalid_or_ambiguous_selection",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger_query.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: query rejects invalid or ambiguous selection. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_cursor_binds_scope_selection_and_revision_but_allows_page_size_change",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger_query.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: cursor binds scope selection and revision but allows page size change. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_detail_cursor_rejects_cross_section_and_noncanonical_or_invalid_keys",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger_query.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: detail cursor rejects cross section and noncanonical or invalid keys. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_read_uses_one_read_only_snapshot_and_exact_wire_money",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010",
+        "DL-060"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger_query.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: read uses one read only snapshot and exact wire money. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_read_rejects_changed_snapshot_before_loading_any_page",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger_query.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: read rejects changed snapshot before loading any page. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_read_fails_closed_on_invalid_or_unreconciled_snapshot",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger_query.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: read fails closed on invalid or unreconciled snapshot. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_read_rejects_invalid_source_rows_without_returning_partial_data",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger_query.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: read rejects invalid source rows without returning partial data. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_read_rejects_duplicate_or_backward_rows_and_false_pagination",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger_query.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: read rejects duplicate or backward rows and false pagination. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_read_never_infers_property_access_or_uses_database_without_read_grant",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger_query.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: read never infers property access or uses database without read grant. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_read_expected_property_mismatch_stops_before_financial_projection",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger_query.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: read expected property mismatch stops before financial projection. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_detail_pages_preserve_exact_money_and_bound_continuation",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "DL-060"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger_query.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: detail pages preserve exact money and bound continuation. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_detail_pages_fail_closed_on_mismatched_or_oversized_source",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_customer_ledger_query.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: detail pages fail closed on mismatched or oversized source. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_http_success_is_read_only_private_and_actor_property_bound",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_ledger_api.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: http success is read only private and actor property bound. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_http_requires_separate_read_permission_before_any_flow",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_ledger_api.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: http requires separate read permission before any flow. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_http_anonymous_request_is_denied_without_source_details",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_ledger_api.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: http anonymous request is denied without source details. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_http_rejects_ambiguous_malformed_or_noncanonical_query_before_flow",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_ledger_api.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: http rejects ambiguous malformed or noncanonical query before flow. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_http_translates_history_filter_and_component_selection_exactly",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070",
+        "DL-060"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_ledger_api.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: http translates history filter and component selection exactly. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_http_rejects_command_or_duplicate_scope_headers",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_ledger_api.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: http rejects command or duplicate scope headers. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_http_rejects_get_body_and_wrong_actor_before_flow",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_ledger_api.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: http rejects get body and wrong actor before flow. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_http_has_no_financial_command_methods",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_ledger_api.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: http has no financial command methods. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_http_safe_correlated_failures_never_expose_source_diagnostics",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_ledger_api.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: http safe correlated failures never expose source diagnostics. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_http_rechecks_returned_property_against_exact_ledger_grant",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070",
+        "DL-060"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_ledger_api.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: http rechecks returned property against exact ledger grant. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_canonical_composition_and_components_are_complete_and_read_only",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010",
+        "BR-LEDGER-007"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime canonical composition and components are complete and read only. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_filters_follow_history_and_mixed_kind_timestamp_peers_survive_pages",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime filters follow history and mixed kind timestamp peers survive pages. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_new_commit_invalidates_history_composition_and_component_selections",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime new commit invalidates history composition and component selections. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_forged_nonexistent_anchors_are_rejected_in_every_section",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime forged nonexistent anchors are rejected in every section. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_empty_and_large_exact_balances_do_not_net_or_round",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010",
+        "DL-060"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime empty and large exact balances do not net or round. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_coherent_snapshot_survives_concurrent_refund_commit",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime coherent snapshot survives concurrent refund commit. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_denies_other_property_missing_customer_and_wrong_expected_property",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime denies other property missing customer and wrong expected property. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_denies_disabled_missing_and_nonhuman_actor_even_with_ledger_grant",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime denies disabled missing and nonhuman actor even with ledger grant. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_picker_exposes_only_names_and_identities_with_complete_uuid_pages",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime picker exposes only names and identities with complete uuid pages. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_debit_adjustment_and_its_reversal_remain_distinct_events",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime debit adjustment and its reversal remain distinct events. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_credit_to_charge_and_reversal_preserve_separate_invoice",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime credit to charge and reversal preserve separate invoice. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_deposit_receipt_reversal_keeps_held_liability_and_payment_separate",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime deposit receipt reversal keeps held liability and payment separate. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_original_khr_evidence_is_exact_without_repricing",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "DL-060"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime original khr evidence is exact without repricing. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_http_uses_only_application_credentials_and_denies_source_commands",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime http uses only application credentials and denies source commands. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_read_migration_is_forward_only_and_preserves_populated48_sources",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: read migration is forward only and preserves populated48 sources. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_read_migration_does_not_grant_direct_projection_access",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: read migration does not grant direct projection access. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_third_party_allocation_reversal_keeps_payer_and_beneficiary_separate",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime third party allocation reversal keeps payer and beneficiary separate. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_read_functions_have_narrow_stable_privileges_and_use_read_only_repeatable_read",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "SEC-070"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: read functions have narrow stable privileges and use read only repeatable read. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_complete_pages_over_one_hundred_keep_revision_and_exact_totals",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010",
+        "DL-060"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime complete pages over one hundred keep revision and exact totals. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_runtime_rejects_offsetting_source_errors_even_when_aggregate_still_matches",
+      "upstream_ids": [
+        "API-093",
+        "BR-LEDGER-002",
+        "BR-LEDGER-005",
+        "BR-LEDGER-003",
+        "BR-LEDGER-006",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_read_migration.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger read API: runtime rejects offsetting source errors even when aggregate still matches. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
     }
   ]
 }

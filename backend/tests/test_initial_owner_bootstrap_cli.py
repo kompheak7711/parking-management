@@ -649,6 +649,8 @@ def test_fastapi_openapi_inventory_has_no_bootstrap_or_unauthenticated_owner_res
         "/api/v1/receipts/{receipt_id}": {"get"},
         "/api/v1/receipts/{receipt_id}/reprints": {"post"},
         "/api/v1/customers/{customer_id}/credits": {"get"},
+        "/api/v1/customers/{customer_id}/account-ledger": {"get"},
+        "/api/v1/customer-ledger/customers": {"get"},
         "/api/v1/customer-credits/{credit_id}": {"get"},
         "/api/v1/customer-credits/{credit_id}/ledger": {"get"},
         "/api/v1/payments/{payment_id}/credit-recognitions": {"post"},

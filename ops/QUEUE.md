@@ -1,3 +1,15 @@
+# Current queue — V1-053 ledger API exact checks and review
+
+Latest 2026-09-09T06:52:36.885347+00:00: Freeze this prepared ledger read API in a normal commit; run fresh applicable exact PostgreSQL/backend/automation suites sequentially plus static/build/import/traceability/security/preservation/routing gates. Then obtain one fresh GPT-6 Astra max Standard enforced-read-only zero-finding review of the complete0926300-base diff, publish normally to the authorized branch, verify own exact-commit CI and all refs, and activate the dedicated Customer ledger UI. Full V1-053 release/card/closure remains pending; pause SAME follow-up only when fully closed53; OpenClaw stays disabled, never54.
+
+Earlier entries are preserved historical checkpoints.
+
+# Current queue — V1-053 ledger read API active
+
+2026-09-09T05:58:53.296161+00:00: Implement only the active ledger read API contract: exact ledger-only Property authorization and fresh actor, narrow migration49, coherent six-bucket/per-source reconciliation and source revision, bounded history/composition/component pages and minimal Customer discovery, strict read-only API/error wiring and focused/pure/realPG tests. Preserve source commands, published migrations, canonical policy, frontend and dependencies. Freeze a normal candidate; fresh applicable sequential full gates and complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal publication/ownCI/refs before dedicated UI. Full53release/card/closure remain pending; no54.
+
+Earlier entries are preserved history.
+
 # Current queue — V1-053 security/spy-cleanup successor
 
 2026-09-09T05:18:13.519694+00:00: Verify the normal security successor with explicit Node types and two-module spy cleanup: fresh frontend format/lint/types/full1317tests/build, full automation and exact preservation/configuration/traceability/guard/preflight. Keep all assertions and deadlines, including earlier FE135 fix. Reuse only identical4458460 locked-install/zero-vulnerability audit and exact7c backend/PG evidence. Preserve7cCIsecurityfailure,445lint,c73full1315PASS/2FAIL and isolated2PASS diagnostic, all counters. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal reviewed publication and ownall4CI/ref equality before ledger API/UI/full53closure. No54.

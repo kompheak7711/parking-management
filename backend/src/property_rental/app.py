@@ -77,6 +77,8 @@ from property_rental.customer_api import (
     customer_idempotency_key_reused_response,
     customer_reuse_conflict_response,
 )
+from property_rental.customer_ledger_api import CustomerLedgerFlow, create_customer_ledger_router
+from property_rental.customer_ledger_read import CustomerLedgerReadService
 from property_rental.deposit import DepositIdempotencyKeyReused
 from property_rental.deposit_api import (
     DepositResourceFlow,
@@ -210,7 +212,7 @@ LATE_PAYMENT_API_PATH_PATTERN: Final = re.compile(
 PAYMENT_API_PATH_PATTERN: Final = re.compile(
     r"^/api/v1/(?:financial-workspaces$|properties/[^/]+/(?:financial-capabilities|payment-methods)$|"
     r"properties/[^/]+/(?:payments|refunds|payment-allocations|receipts|customer-credits|credit-applications)(?:/|$)|"
-    r"customers/[^/]+/credits(?:/|$)|"
+    r"customer-ledger/customers(?:/|$)|customers/[^/]+/(?:credits|account-ledger)(?:/|$)|"
     r"(?:payments|payment-allocations|receipts|customer-credits|credit-applications|refunds|refund-sources)(?:/|$))"
 )
 DATABASE_TIMEOUT_SECONDS: Final = 2
@@ -342,6 +344,7 @@ def create_app(
     financial_action_context_flow: FinancialActionContextFlow | None = None,
     allocation_receipt_flow: AllocationReceiptFlow | None = None,
     credit_refund_flow: CreditRefundFlow | None = None,
+    customer_ledger_flow: CustomerLedgerFlow | None = None,
 ) -> FastAPI:
     """Build an application instance from validated settings."""
     resolved_settings = settings or Settings()
@@ -857,6 +860,17 @@ def create_app(
                 exchange_rate_provider or UnavailableExchangeRateProvider(),
             ),
             resolved_settings,
+        )
+    )
+    app.include_router(
+        create_customer_ledger_router(
+            actor_resolver,
+            customer_ledger_flow
+            or CustomerLedgerReadService(
+                resolved_settings.database_url.get_secret_value()
+                if resolved_settings.database_url is not None
+                else None
+            ),
         )
     )
     app.include_router(

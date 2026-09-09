@@ -132,6 +132,7 @@ database_test_suites='
   tests/test_payment_reversal_context_migration.py
   tests/test_financial_action_context_migration.py
   tests/test_customer_ledger_migration.py
+  tests/test_customer_ledger_read_migration.py
   tests/test_payment_confirmation_migration.py
   tests/test_khr_payment_confirmation_migration.py
   tests/test_payment_api_migration.py
