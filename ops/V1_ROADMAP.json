@@ -1458,44 +1458,25 @@
       "risk_class": "high",
       "acceptance_profile": "api_ui",
       "authorization": "durable_v1",
-      "status": "approved_ready",
+      "status": "complete",
       "closure_gate": {
-        "status": "product_verified_records_gate_contract_correction_pending",
+        "status": "verified_closed",
         "product_sha": "fba87feba842837f7cc7c068477670bfdb4c08f8",
+        "terminal_sha": "0926300c5c91b26deedb682e454622065826b0ad",
         "product_ci_run": 34253440448,
-        "product_acceptance": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-cumulative-release-accepted-fba87fe.json",
-          "sha256": "6c62611a07f2b57eacdfa5a3a85dcaa07d1a93c32d9b361faa7caf1a8f2587f4"
-        },
-        "product_publication": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-product-publication-fba87fe.json",
-          "sha256": "e4c1a83a2e65067784f1ab1f74dba22c79aa3adff0eb584b7d7bab9adfbd082a"
-        },
-        "terminal_sha": null,
-        "terminal_proof": "pending test-readiness correction exact gates/review/publication/ownallgreenCI/refs",
+        "terminal_ci_run": 34265209149,
+        "all_required_jobs": "success",
+        "independent_reviews": "Product and terminal Astra max Standard enforced read-only; zero HIGH/MEDIUM/LOW",
+        "ref_equality": true,
         "workboard_card": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
-        "workboard_status": "blocked",
-        "workboard_acceptance": "pending separate concrete private-payload/destination authorization and supported completion after all terminal proof",
-        "full_version_closed": false,
-        "successor_activation_allowed": false,
-        "external_discharge": "After exact terminal gates/review/publication/CI/refs and actual supported card acceptance, a verified external closure receipt discharges these frozen pending fields. The next independently reviewed transition materializes52complete before53activation.",
-        "failed_terminal_sha": "1ce2a7a8fd2b82cd78fd71bc2d1259613cc167fa",
-        "failed_terminal_ci": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-terminal-1ce2a7a-publication-observation2.json",
-          "sha256": "22e09833b41900e13ef8e8214a1e17331f7316e448329c3778bef6133612aee4"
-        },
-        "correction_preparation": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-fe135-correction1-preparation.json",
-          "sha256": "71286a909dacd78659cf76b09181c9e3d5e8b0301d97b14cc0e2b96ff4f2f221"
-        },
-        "callback_lint_correction": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-fe135-lint-correction1-preparation.json",
-          "sha256": "cc8efe00ce44719b531a1a81959e5ce3a26de086ddd86b0e59b973ff81efdecd"
-        },
-        "record_contract_correction": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-record-contract-correction1-preparation.json",
-          "sha256": "4cc8aecdd1dfbf52db99b75722f0382ad8f847fdb571a4f82fe28ddf6bfd596e"
-        }
+        "workboard_status": "done",
+        "workboard_proof": "30271f13-5ce9-45c9-a27f-f7326b6eaa81",
+        "comments_preserved": 17,
+        "full_version_closed": true,
+        "successor_activation_allowed": true,
+        "receipt_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-closure-verification-0926300.json",
+        "receipt_sha256": "d51d90cec48d8d5fe2da707183b63c2c20f5a9922144217999ab66a4cc13b351",
+        "resolution": "Verified final external closure discharges immutable pending0926300fields. Original pending roadmap object preserved in STATE historical_v1_052_closed_current_fields. Do not repeat completed work."
       }
     },
     {
@@ -1510,7 +1491,7 @@
       "authorities": [
         "BR-LEDGER-*",
         "API-093",
-        "UI-LEDGER-*",
+        "UI-104",
         "DL-052"
       ],
       "include": [
