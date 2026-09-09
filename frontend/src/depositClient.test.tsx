@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { depositApi } from "./depositClient";
 
@@ -27,6 +27,10 @@ const deposit = {
 };
 
 describe("depositClient", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   beforeEach(() => {
     document.cookie = "__Host-prm_csrf=csrf; Secure; Path=/";
   });
