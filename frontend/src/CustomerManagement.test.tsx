@@ -3910,29 +3910,25 @@ it("TEST-FE-577 hands the selected Customer and current Property to the readonly
   const customerId = "00000000-0000-4000-8000-000000000003",
     propertyId = "00000000-0000-4000-8000-000000000002";
   const api = client({
-    list: vi
-      .fn()
-      .mockResolvedValue({
-        items: [
-          {
-            customer_id: customerId,
-            legal_name: "Synthetic ledger Customer",
-            active: true,
-            relationship_indicators: [],
-          },
-        ],
-        next_cursor: null,
-        can_manage: false,
-      }),
-    get: vi
-      .fn()
-      .mockResolvedValue({
-        ...customer,
-        customer_id: customerId,
-        legal_name: "Synthetic ledger Customer",
-        can_manage: false,
-        can_deactivate: false,
-      }),
+    list: vi.fn().mockResolvedValue({
+      items: [
+        {
+          customer_id: customerId,
+          legal_name: "Synthetic ledger Customer",
+          active: true,
+          relationship_indicators: [],
+        },
+      ],
+      next_cursor: null,
+      can_manage: false,
+    }),
+    get: vi.fn().mockResolvedValue({
+      ...customer,
+      customer_id: customerId,
+      legal_name: "Synthetic ledger Customer",
+      can_manage: false,
+      can_deactivate: false,
+    }),
   });
   const open = vi.fn();
   render(

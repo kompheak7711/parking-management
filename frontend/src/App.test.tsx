@@ -2634,27 +2634,23 @@ describe("Customer ledger App integration", () => {
       logout: vi.fn().mockReturnValue(logout),
     });
     const customerApi = customerApiDouble({
-      list: vi
-        .fn()
-        .mockResolvedValue({
-          items: [
-            {
-              customer_id: customerId,
-              legal_name: "Synthetic ledger Customer",
-              active: true,
-              relationship_indicators: [],
-            },
-          ],
-          next_cursor: null,
-          can_manage: false,
-        }),
-      get: vi
-        .fn()
-        .mockResolvedValue({
-          ...reconciledCustomer(customerId, "Synthetic ledger Customer"),
-          can_manage: false,
-          can_deactivate: false,
-        }),
+      list: vi.fn().mockResolvedValue({
+        items: [
+          {
+            customer_id: customerId,
+            legal_name: "Synthetic ledger Customer",
+            active: true,
+            relationship_indicators: [],
+          },
+        ],
+        next_cursor: null,
+        can_manage: false,
+      }),
+      get: vi.fn().mockResolvedValue({
+        ...reconciledCustomer(customerId, "Synthetic ledger Customer"),
+        can_manage: false,
+        can_deactivate: false,
+      }),
     });
     const read = vi.fn<
       import("./customerLedgerClient").CustomerLedgerApi["read"]

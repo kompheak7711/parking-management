@@ -1,3 +1,9 @@
+# Current queue — V1-053 UI formatting successor
+
+Freeze normal formatting successor of944e883; preserve its failed format gate and all evidence. Fresh remaining required exact frontend/automation/records checks, backend/PG reuse by identity, ONE complete0926300-base Astra/max/Standard/read-only zero review, authorized normal publication/ownCI/allrefs and full53closure. No54.
+
+Preserved earlier entries:
+
 # Current queue — V1-053 ledger UI exact gates and cumulative review
 
 Freeze normal UI candidate; fresh full frontend format/lint/explicit app types/tests/build, automation and exact preservation/configuration/traceability/guard/routing checks. Reuse accepted4b7b320 backend/1053PG/standardbuild by complete source/config identity; unchanged dependency install/security evidence only. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal authorized publication, ownall4CI and allrefs; full53release/card/durable closure. Pause SAMEfollow-up only once53fullyclosed, OpenClawdisabled, never54.
