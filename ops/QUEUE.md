@@ -1,3 +1,11 @@
+# Current queue — V1-053 executable ledger test registration
+
+Run exact current frontend and backend quality/tests, automation, TEST-117 and TEST-118, preservation, migration/import/build/configuration/guard/routing checks. Reuse only unchanged production/build/dependency/PostgreSQL inputs with explicit exclusions for changed trace and frontend test inputs. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review; normal authorized publication, ownall4CI/allrefs, release records/review/publication, existing53card acceptance and durable closure. Pause SAME follow-up only when53fullyclosed; OpenClawdisabled; never54.
+
+Preserve rejected58d6cf5/report, two independent TEST-117 red failures,28tracePASS, browser entry-point negative/positive execution, and initial formatting failure. Current ledger IDs548–588 are unique; prior1944mappings unchanged. Earlier API-era backend pass is not current trace evidence; refresh complete backend suite.
+
+Preserved earlier entries:
+
 # Current queue — V1-053 void test lint successor
 
 Freeze normal test-only correction, run exact gates and full independent review. Preservec7ff76b failed lint and all earlier evidence. Reviewed publication/ownCI/refs/full53release/card/closure remain required. Never54.

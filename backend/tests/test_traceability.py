@@ -215,6 +215,8 @@ def test_traceability_manifest_covers_executable_tests() -> None:
         "FinancialManagement.test.tsx",
         "App.test.tsx",
         "FinancialConfirmation.test.tsx",
+        "customerLedgerClient.test.ts",
+        "CustomerAccountLedger.test.tsx",
     ):
         executable_ids.update(collect_financial_unit_test_ids(FRONTEND_TEST_DIRECTORY / name))
     executable_ids.update(
@@ -238,6 +240,12 @@ def test_traceability_manifest_covers_executable_tests() -> None:
     executable_ids.update(
         collect_financial_browser_test_ids(
             FRONTEND_TEST_DIRECTORY / "test" / "financialWorkflows.browser.ts"
+        )
+    )
+
+    executable_ids.update(
+        collect_financial_browser_test_ids(
+            FRONTEND_TEST_DIRECTORY / "test" / "customerLedger.browser.tsx"
         )
     )
 

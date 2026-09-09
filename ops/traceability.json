@@ -27723,7 +27723,7 @@
       "notes": "V1-053 ledger-only canonical nonnil Customer path: reject alternate spellings before financial flow, preserve exact canonical identity. Regression for LEDGER-API-CANONICAL-PATH-F1."
     },
     {
-      "test_id": "TEST-FE-546",
+      "test_id": "TEST-FE-587",
       "upstream_ids": [
         "API-093",
         "UI-104",
@@ -27737,7 +27737,7 @@
       "notes": "reads only the fixed ledger route with private session and actor/Property binding"
     },
     {
-      "test_id": "TEST-FE-547",
+      "test_id": "TEST-FE-588",
       "upstream_ids": [
         "API-093",
         "UI-104",

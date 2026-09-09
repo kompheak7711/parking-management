@@ -176,3 +176,30 @@ export function controlLedgerBrowser(
   if (action === "change-actor" && api)
     root?.render(<CustomerAccountLedger actorId={ledgerIds.other} api={api} />);
 }
+
+/** The external browser driver calls this after its scenario assertions pass. */
+export function verifyLedgerBrowserEvidence() {
+  const evidence = ledgerBrowserEvidence();
+  if (
+    evidence.calls.length === 0 ||
+    evidence.calls.some((call) => {
+      const url = new URL(call.url, location.origin);
+      return (
+        call.method !== "GET" ||
+        call.bodyPresent ||
+        call.actor !== ledgerIds.actor ||
+        call.property !== ledgerIds.property ||
+        url.origin !== location.origin ||
+        url.pathname !==
+          `/api/v1/customers/${ledgerIds.customer}/account-ledger`
+      );
+    }) ||
+    evidence.storage.localKeys.length !== 0 ||
+    evidence.storage.sessionKeys.length !== 0 ||
+    evidence.search !== "" ||
+    evidence.hash !== ""
+  ) {
+    throw new Error("Synthetic ledger browser privacy evidence failed");
+  }
+  return "TEST-FE-580";
+}

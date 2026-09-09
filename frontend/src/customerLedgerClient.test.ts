@@ -42,7 +42,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 describe("Customer ledger read contract", () => {
-  it("TEST-FE-546 reads only the fixed ledger route with private session and actor/Property binding", async () => {
+  it("TEST-FE-587 reads only the fixed ledger route with private session and actor/Property binding", async () => {
     const fetcher = serve(),
       api = createCustomerLedgerClient(fetcher),
       reply = await api.read(request, scope());
@@ -68,7 +68,7 @@ describe("Customer ledger read contract", () => {
     expect(Object.isFrozen(reply.items[0])).toBe(true);
   });
   it.each(["0", "1", "100", "18000000000000000", "9".repeat(64)])(
-    "TEST-FE-547 preserves exact ledger money %s including the full64digit contract",
+    "TEST-FE-588 preserves exact ledger money %s including the full64digit contract",
     (value) => {
       const expectedWhole = (BigInt(value) / 100n).toLocaleString("en-US"),
         fraction = (BigInt(value) % 100n).toString().padStart(2, "0");
