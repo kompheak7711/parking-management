@@ -2095,7 +2095,7 @@
       "workboard_handoff_comment_id": "93b18202-6ce0-444e-a740-4a609fb08ce2"
     },
     "current_version": "V1-053",
-    "phase": "projection_catalog_successor_checks_review_pending",
+    "phase": "security_correction_prepared_exact_gates_review_pending",
     "activated_at": "2026-09-09T02:49:35.779645+00:00",
     "predecessor_closed": true,
     "predecessor_sha": "0926300c5c91b26deedb682e454622065826b0ad",
@@ -2108,334 +2108,88 @@
     "workboard_block_reason": "Tracking-only blocked prevents OpenClaw admission; direct Codex projection is authorized and active.",
     "worker_kind": "direct_root_codex",
     "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
-    "worker_status": "prepared_root_foundation_no_reviewer_running",
+    "worker_status": "prepared_root_no_reviewer",
     "branch": "implementation/foundation",
     "worktree": "/Users/sokompheak/Development/property-rental-management",
     "scope_path": "ops/V1_053_SCOPE.md",
     "scope_sha256": "e0216c0688b283ec397ce93d927ad206869c818a59045f43b9a5a08b799cf2ae",
     "cumulative_review_base": "0926300c5c91b26deedb682e454622065826b0ad",
     "candidate_sha": null,
-    "candidate_resolution": "Resolve containing normal successor commit externally. Rejected9983345 remains unchanged.",
-    "candidate_status": "corrected_projection_exact_gates_review_pending",
+    "candidate_resolution": "Resolve normal successor after bounded security correction; preserve published7c0bf7c.",
+    "candidate_status": "security_correction_in_progress",
     "followup_status": "ACTIVE",
     "followup_prompt_characters": 17370,
     "followup_prompt_sha256": "5fb0fc3ec89c1450e2f9f316d1b28105fb3c2d53a6508aa277d3e7b1f7cb4fbc",
     "owner_action_required": false,
-    "next_action": "Freeze the prepared bounded catalog correction normally; run full exact PostgreSQL/backend/automation/static/build/import/preservation gates sequentially, then one fresh complete0926300-base Astra/max/Standard/enforced-read-only review. Preserve rejected9983345,19failed/1012passedPG and red/green catalog evidence. Zero review required before scoped read API and dedicated Customer UI. Continue full53publication/exactCI/refs/card/closure, then pause SAME follow-up; OpenClaw disabled; never54.",
+    "next_action": "Run fresh exact security-successor preservation, locked install/official npm audit, Node22.12 frontend format/lint/types/full1317tests/build, automation and required records/configuration/traceability/publicationguard/preflight checks sequentially. Reuse7c backend/PG only with exact source identity and its own successful jobs; preserve original failed CI34312799705 attempt1 and advisories. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review before normal reviewed correction publication, own all4CI/ref equality. Continue scoped ledger API/UI and full53lifecycle; never54.",
     "active_slice": {
-      "id": "V1-053-projection",
-      "status": "prepared_catalog_successor_exact_gates_review_pending",
-      "base": "6bb5a980c1985a89e33301bde81d22d283a90b0f",
+      "id": "V1-053-security-correction",
+      "status": "prepared_exact_gates_review_pending",
+      "base": "7c0bf7cc3cbcb47290586052e8abaf8a628a20f6",
       "review_base": "0926300c5c91b26deedb682e454622065826b0ad",
       "worker": "01a07991-38a6-7f33-b84d-0ad0620e2997",
       "worktree": "/Users/sokompheak/Development/property-rental-management",
       "model": "gpt-6-astra",
       "reasoning": "xhigh",
       "mode": "Standard",
-      "reason": "Financial history reconstruction, concurrency, authorization and forward-only migration",
-      "started_at": "2026-09-09T03:14:18.315872+00:00",
-      "scope": "Immutable relational source projection and exact chronology/position/composition model. No source commands or financial policy changes. Runtime grants are added only with separately tested scoped API integration.",
+      "reason": "Required security gate and major-version compatibility of the existing test tool",
       "paths": [
-        "backend/src/property_rental/customer_ledger.py",
-        "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
-        "backend/tests/test_customer_ledger.py",
-        "backend/tests/test_customer_ledger_migration.py",
-        "backend/tests/test_billing_service_migration.py",
-        "backend/tests/test_credit_refund_read_migration.py",
-        "backend/tests/test_financial_action_context_migration.py",
-        "backend/tests/test_invoice_migration.py",
-        "backend/tests/test_late_payment_migration.py",
-        "backend/tests/test_lease_api_migration.py",
-        "backend/tests/test_migrations.py",
-        "backend/tests/test_payment_reversal_context_migration.py",
-        "backend/tests/test_utility_api_migration.py",
-        "backend/tests/test_utility_consumption_migration.py",
-        "backend/tests/test_utility_meter_migration.py",
-        "scripts/database-test.sh",
-        "ops/traceability.json",
+        "frontend/package.json",
+        "frontend/package-lock.json",
         "ops/NOW.md",
         "ops/STATE.json",
-        "ops/QUEUE.md",
-        "ops/V1_053_PROJECTION.md"
+        "ops/QUEUE.md"
       ],
-      "implementation_plan": [
-        "Define exact immutable event, position, composition and stable paging contract; unit-test canonical example, independent balances, deterministic ties, reversal reconstruction, large amounts and stale pages.",
-        "Add forward-only nonwritable relational source projection over all existing facts, no direct runtime grants or source changes; real isolated PostgreSQL reconciliation and source-preservation tests.",
-        "Freeze and independently review the bounded projection before integrating the authorized read API and dedicated Customer UI; use required focused checks and final cumulative full verification."
-      ],
-      "checks": [
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-unit-initial1.json",
-          "sha256": "a947af08072aaa280272a4d072df7d0b6645f1023a3b7d61f920278aba5fbcc5"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1.json",
-          "sha256": "0d4c74679f88aed5b8fb9ac153ec9b624018ca55de76229d95edab3dba2b29e0"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1.json",
-          "sha256": "f3b994ff47cc4f289aa360f28f58585c5f11af74535e6e8cf2968c448275c03f"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
-          "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-lintfix-initial1.json",
-          "sha256": "2cbc281013a1ea4a4e56a13d4cc1f9fdb8f1c95c4cb72fbf32cc955b66b592c0"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-types-initial1.json",
-          "sha256": "2ef3a28c10233852533b4a4659e59ddf6767019645f06855bc9c59c04511e1cd"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
-          "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
-          "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-verification-9983345-contract1.json",
-          "sha256": "e2f1b1b93e98989f2fa3323ede87422c82fae99459fd4150d13d9b98dc8e60ba"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-catalog-regression-red9983345-source1.json",
-          "sha256": "055a742b5693808e749d1fb8c119f236a4bed98b8bf7d2f598adf413ebf66711"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-catalog1.json",
-          "sha256": "35590cdad15702775b9d427a99057fe1a9ba05a078eda44b0a89fa5a398d856c"
-        },
-        {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
-          "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
-        }
-      ],
-      "correction_history": [
-        {
-          "at": "2026-09-09T03:42:37.797379+00:00",
-          "finding": "GATE-LDG-CANONICAL-F1",
-          "attempt": 1,
-          "maximum": 2,
-          "status": "verified_fixed_pending_independent_review",
-          "failure": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1.json",
-            "sha256": "0d4c74679f88aed5b8fb9ac153ec9b624018ca55de76229d95edab3dba2b29e0"
-          },
-          "failed_test_source": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1-test-source.py",
-            "sha256": "1431aa1d2e8e96137a84aa2f58d159c8d793278e4490cef83d795e16e366fc0f"
-          },
-          "cause": "Canonical new fixture set Initial Rent issuance to current September9 while its move-in and period are July1. Published billing rule requires issuance business date equal move-in date; source generation correctly rejected before ledger assertions.",
-          "changed_approach": "Use explicit July1 business instant (June30 17:00:01UTC) for this synthetic canonical fixture, matching the established initial-billing test semantics. No production source logic, guard, scope, money amount or assertion weakened.",
-          "independent_new_coverage": "Added KHR/reference/channel FX, draft void, waiver/whole-charge reversal, Security/Pet Refund and return coverage; these are new source-family tests, not additional corrections for the fixture finding.",
-          "prior_results": "44purePASS;16PGPASS/1fixtureFAIL; no skips;48migrations applied. Failed evidence retained.",
-          "verification": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
-            "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
-          }
-        },
-        {
-          "at": "2026-09-09T03:44:55.638688+00:00",
-          "finding": "GATE-LDG-SECURITY-F1",
-          "attempt": 1,
-          "maximum": 2,
-          "status": "verified_fixed_pending_independent_review",
-          "failure": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1.json",
-            "sha256": "f3b994ff47cc4f289aa360f28f58585c5f11af74535e6e8cf2968c448275c03f"
-          },
-          "failed_test_source": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1-test-source.py",
-            "sha256": "3a1c7dbea0d0474efcd949a4a5caca5b0d0c935d1e667cb86d388253541c0f8e"
-          },
-          "cause": "New Security Deposit fixture incorrectly requested a general partial USD return for a coordinated Reservation cancellation Refund. Published source boundary correctly requires its whole-outcome coordinated correction path.",
-          "changed_approach": "Assert general return denial explicitly, then use existing supported correct_reservation_deposit_outcome full correction/replacement. Verify preserved original Refund, its separate correction and replacement, and zero resulting Security liability without Credit or Payment netting. Prior invalid1000liability expectation is retained in failed source; no product boundary or financial policy changed.",
-          "canonical_finding": "GATE-LDG-CANONICAL-F1 correction1 passed in correction1 run; 23PGPASS/1newfixtureFAIL/no skips.",
-          "verification": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
-            "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
-          }
-        },
-        {
-          "at": "2026-09-09T03:50:38.707108+00:00",
-          "finding": "GATE-LDG-STYLE-F1",
-          "attempt": 1,
-          "maximum": 2,
-          "status": "partially_corrected_remaining_seven_closed_by_style_attempt2",
-          "failure": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-lintfix-initial1.json",
-            "sha256": "2cbc281013a1ea4a4e56a13d4cc1f9fdb8f1c95c4cb72fbf32cc955b66b592c0"
-          },
-          "details": "Ruff auto-fixed22import issues; remaining53line-length,17fixture-shadow annotations and1next-generator preference addressed. SQL literals and executable migration AST are exactly preserved by wrapping. Test fixture annotation moved onto the actual parameter line; source lookup now explicitly asserts non-null rather than misplacing an ignore. No lint rule disabled; standard narrow F811 fixture annotations match established tests.",
-          "changes": [
-            {
-              "path": "/Users/sokompheak/Development/property-rental-management/backend/tests/test_customer_ledger_migration.py",
-              "before": {
-                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style1-test_customer_ledger_migration.py",
-                "sha256": "1e9385e583382d2887c45390acf40a9c7f702945b497e52334facfe1a5f2e6ee"
-              },
-              "after_sha256": "41aa0a28b081c8c967f78ed70bef655b6842f2264ec62e2eca5d03912ad43ac4",
-              "wrapped_literals": 16,
-              "literal_wrapping_ast_identical": true,
-              "complete_migration_ast_identical": false
-            },
-            {
-              "path": "/Users/sokompheak/Development/property-rental-management/backend/migrations/versions/20260909_48_customer_ledger_projection.py",
-              "before": {
-                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style1-20260909_48_customer_ledger_projection.py",
-                "sha256": "199a4fecacd4014561bc4d997c3bb3d348d34b9f13e769295c35a2c46f981128"
-              },
-              "after_sha256": "2c0776392444f0dac75f12c2fd477e87e0944492c6eaca954d13e3e4ebf40b73",
-              "wrapped_literals": 18,
-              "literal_wrapping_ast_identical": true,
-              "complete_migration_ast_identical": true
-            }
-          ],
-          "remaining_verification": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
-            "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
-          }
-        },
-        {
-          "at": "2026-09-09T03:50:38.707108+00:00",
-          "finding": "GATE-LDG-TYPES-F1",
-          "attempt": 1,
-          "maximum": 2,
-          "status": "verified_fixed_pending_independent_review",
-          "failure": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-types-initial1.json",
-            "sha256": "2ef3a28c10233852533b4a4659e59ddf6767019645f06855bc9c59c04511e1cd"
-          },
-          "cause": "One new test indexed an optional fetchone row and placed its ignore on the wrong formatted line.",
-          "changed_approach": "Explicit assert source_row is not None before indexing; remove the ignore. No runtime changes or weakened assertion.",
-          "verification": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
-            "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
-          }
-        },
-        {
-          "at": "2026-09-09T03:57:42.030613+00:00",
-          "finding": "GATE-LDG-STYLE-F1",
-          "attempt": 2,
-          "maximum": 2,
-          "status": "verified_fixed_pending_independent_review",
-          "failure": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
-            "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
-          },
-          "cause": "The first style correction left one redundant SQL-expression parenthesis pair and the formatter attached three fixture suppressions to the final parameter of split signatures.",
-          "changed_approach": "Remove exactly the redundant parenthesis pair; place the three existing fixture annotations on their final formatted parameter lines. Exact complete AST identity asserted for both files; no SQL or test behavior changes.",
-          "changes": [
-            {
-              "path": "backend/tests/test_customer_ledger_migration.py",
-              "before": {
-                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style2-test_customer_ledger_migration.py",
-                "sha256": "7f78f85b7b7ed871b0b52ba4bfadf64f0251b38d3576e8489d72cb821f84f3aa"
-              },
-              "after_sha256": "03ded98ca375dc04911045f1804130cafee3bf2372b25cac76846c3aa5edddf4",
-              "complete_ast_identical": true
-            },
-            {
-              "path": "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
-              "before": {
-                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style2-20260909_48_customer_ledger_projection.py",
-                "sha256": "75fb1b3c542ee0914c0d92291d4fa8d5abbe27832d35cae54703539c1ea1b651"
-              },
-              "after_sha256": "28cb65f41fe4bb7c4b46c69e2b081f33bf114ae2a2af9a27a04c284d1d4e25e9",
-              "complete_ast_identical": true
-            }
-          ],
-          "verification": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
-            "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
-          }
-        },
-        {
-          "at": "2026-09-09T04:14:44.133575+00:00",
-          "finding": "GATE-LDG-CATALOG-F1",
-          "attempt": 1,
-          "maximum": 2,
-          "status": "focused_verified_fixed_pending_exact_full_gates_and_review",
-          "rejected_candidate": "998334563efb19589598499e1d21472de35c5cb4",
-          "failed_verification": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-verification-9983345-contract1.json",
-            "sha256": "e2f1b1b93e98989f2fa3323ede87422c82fae99459fd4150d13d9b98dc8e60ba"
-          },
-          "red_regression": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-catalog-regression-red9983345-source1.json",
-            "sha256": "055a742b5693808e749d1fb8c119f236a4bed98b8bf7d2f598adf413ebf66711"
-          },
-          "cause": "New canonical fixture used shared Property TRASH_COLLECTION August rate1000; existing authoritative billing fixtures require1200. July canonical amount1000 is correct and unchanged. Full suite19failures share this exact fixture cause; all24ledgerPGcases passed.",
-          "changed_approach": "Use the established August1200 shared catalog rate; add regression proving canonical July50000Rent+1000Trash creation leaves the expected July/August rate IDs and values unchanged when a following standard billing fixture reuses them. No runtime/migration/financial-policy changes or weakened assertions.",
-          "paths": [
-            "backend/tests/test_customer_ledger_migration.py",
-            "ops/traceability.json",
-            "ops/V1_053_PROJECTION.md",
-            "ops/NOW.md",
-            "ops/STATE.json",
-            "ops/QUEUE.md"
-          ],
-          "verification": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
-            "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
-          },
-          "quality": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-catalog1.json",
-            "sha256": "35590cdad15702775b9d427a99057fe1a9ba05a078eda44b0a89fa5a398d856c"
-          },
-          "regression_body_ast_matches_red": true
-        }
-      ],
-      "implementation_completed": true,
-      "initial_path_inventory_correction": {
-        "before": [
-          "backend/src/property_rental/customer_ledger.py",
-          "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
-          "backend/tests/test_customer_ledger.py",
-          "backend/tests/test_customer_ledger_database.py",
-          "backend/tests/test_migrations.py",
-          "scripts/verify-postgres-persistence.py",
-          "ops/TRACEABILITY.json",
-          "ops/NOW.md",
-          "ops/STATE.json",
-          "ops/QUEUE.md"
-        ],
-        "after": [
-          "backend/src/property_rental/customer_ledger.py",
-          "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
-          "backend/tests/test_customer_ledger.py",
-          "backend/tests/test_customer_ledger_migration.py",
-          "backend/tests/test_billing_service_migration.py",
-          "backend/tests/test_credit_refund_read_migration.py",
-          "backend/tests/test_financial_action_context_migration.py",
-          "backend/tests/test_invoice_migration.py",
-          "backend/tests/test_late_payment_migration.py",
-          "backend/tests/test_lease_api_migration.py",
-          "backend/tests/test_migrations.py",
-          "backend/tests/test_payment_reversal_context_migration.py",
-          "backend/tests/test_utility_api_migration.py",
-          "backend/tests/test_utility_consumption_migration.py",
-          "backend/tests/test_utility_meter_migration.py",
-          "scripts/database-test.sh",
-          "ops/traceability.json",
-          "ops/NOW.md",
-          "ops/STATE.json",
-          "ops/QUEUE.md"
-        ],
-        "basis": "Repository discovery: existing PostgreSQL suite naming is test_*_migration.py, registered in scripts/database-test.sh; traceability is lowercase ops/traceability.json. Existing current-head expectations require mechanical47to48 updates; historical revision47inspection preserved."
+      "correction": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-security-correction1.json",
+        "sha256": "c9e36568f66e2f391db22dc18c8e8e29008fb6dae37be20dfeadefc2ac7526ac"
       },
-      "whole_v1_053_completed": false,
-      "contract_path": "ops/V1_053_PROJECTION.md",
-      "contract_sha256": "0129e89c89a30589861d4a1a3a63414447c9b646ea92beff98dd65584175fdb8",
-      "candidate_sha": null,
-      "candidate_resolution": "Resolve containing normal successor commit externally. Rejected9983345 remains unchanged.",
-      "next_action": "Freeze catalog correction successor; fresh full exact gates then one complete0926300-base independent review before API/UI integration.",
-      "preparation_history_snapshot": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-foundation-preparation-state.json",
-        "sha256": "25d438634dbde08e67744183273f2c4e1a1fcf7afb71169069a92451c69454c2"
+      "implementation_completed": true,
+      "next_action": "Run fresh exact security-successor preservation, locked install/official npm audit, Node22.12 frontend format/lint/types/full1317tests/build, automation and required records/configuration/traceability/publicationguard/preflight checks sequentially. Reuse7c backend/PG only with exact source identity and its own successful jobs; preserve original failed CI34312799705 attempt1 and advisories. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review before normal reviewed correction publication, own all4CI/ref equality. Continue scoped ledger API/UI and full53lifecycle; never54.",
+      "dependency_update": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-security-dependency-update1.json",
+        "sha256": "eb28a768b605cbe417c0bfaeb99bef08d0f754b7d30975bbaa317763df90b6a8"
+      },
+      "failed_predecessor_final_ci": {
+        "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1053-projection-ci-7c0bf7c-observation4.json",
+        "sha256": "ae372d41e5e124f985aec08eeaa53f11bdf3792331274ac5b2b83cca271a07de"
+      },
+      "correction_attempt": 1,
+      "maximum_attempts": 2,
+      "dependency_change": {
+        "added": [
+          "node_modules/@standard-schema/spec",
+          "node_modules/obug"
+        ],
+        "removed": [
+          "node_modules/cac",
+          "node_modules/check-error",
+          "node_modules/deep-eql",
+          "node_modules/loupe",
+          "node_modules/pathval",
+          "node_modules/strip-literal",
+          "node_modules/strip-literal/node_modules/js-tokens",
+          "node_modules/tinypool",
+          "node_modules/tinyspy",
+          "node_modules/vite-node"
+        ],
+        "changed": [
+          "",
+          "node_modules/@vitest/expect",
+          "node_modules/@vitest/mocker",
+          "node_modules/@vitest/pretty-format",
+          "node_modules/@vitest/runner",
+          "node_modules/@vitest/snapshot",
+          "node_modules/@vitest/spy",
+          "node_modules/@vitest/utils",
+          "node_modules/chai",
+          "node_modules/es-module-lexer",
+          "node_modules/js-yaml",
+          "node_modules/std-env",
+          "node_modules/tinyexec",
+          "node_modules/tinyrainbow",
+          "node_modules/vitest"
+        ]
       }
     },
     "prior_version_history": "historical_v1_052_closed_current_fields.direct_codex_takeover",
@@ -3196,9 +2950,9 @@
   ],
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "998334563efb19589598499e1d21472de35c5cb4",
+  "commit": "7c0bf7cc3cbcb47290586052e8abaf8a628a20f6",
   "idle_reason": "",
-  "next_action": "Freeze the prepared bounded catalog correction normally; run full exact PostgreSQL/backend/automation/static/build/import/preservation gates sequentially, then one fresh complete0926300-base Astra/max/Standard/enforced-read-only review. Preserve rejected9983345,19failed/1012passedPG and red/green catalog evidence. Zero review required before scoped read API and dedicated Customer UI. Continue full53publication/exactCI/refs/card/closure, then pause SAME follow-up; OpenClaw disabled; never54.",
+  "next_action": "Run fresh exact security-successor preservation, locked install/official npm audit, Node22.12 frontend format/lint/types/full1317tests/build, automation and required records/configuration/traceability/publicationguard/preflight checks sequentially. Reuse7c backend/PG only with exact source identity and its own successful jobs; preserve original failed CI34312799705 attempt1 and advisories. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review before normal reviewed correction publication, own all4CI/ref equality. Continue scoped ledger API/UI and full53lifecycle; never54.",
   "active_worker": null,
   "active_card": "d362ed27-0bdb-4318-9c8a-0976c931d706",
   "active_claim": null,
@@ -3206,8 +2960,8 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Resolve containing normal successor commit externally. Rejected9983345 remains unchanged.",
-  "candidate_parent": "998334563efb19589598499e1d21472de35c5cb4",
+  "candidate_resolution": "Resolve normal successor after bounded security correction; preserve published7c0bf7c.",
+  "candidate_parent": "7c0bf7cc3cbcb47290586052e8abaf8a628a20f6",
   "next_candidate": {
     "id": "V1-053",
     "order": 53,
@@ -3266,7 +3020,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-053 corrected projection foundation prepared; exact gates and review pending",
+  "phase": "V1-053 dependency-security successor prepared; exact gates/review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -3302,8 +3056,8 @@
       "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
       "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
     },
-    "current_phase": "Disabled during direct Astra takeover; V1-051 fully closed, V1-052 partial Allocation/Receipt work transferring to fresh coordinator 01a07991-38a6-7f33-b84d-0ad0620e2997.",
-    "exact_next_action": "Keep retained OpenClaw supervisor disabled. Follow direct_codex_takeover and released coordinator-transfer receipt for current V1-052 continuation, never dispatch OpenClaw. Full52 closure before53; at53closed pause native follow-up/no54.",
+    "current_phase": "V1-053 dependency-security successor prepared; exact gates/review pending",
+    "exact_next_action": "Run fresh exact security-successor preservation, locked install/official npm audit, Node22.12 frontend format/lint/types/full1317tests/build, automation and required records/configuration/traceability/publicationguard/preflight checks sequentially. Reuse7c backend/PG only with exact source identity and its own successful jobs; preserve original failed CI34312799705 attempt1 and advisories. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review before normal reviewed correction publication, own all4CI/ref equality. Continue scoped ledger API/UI and full53lifecycle; never54.",
     "policy_review": {
       "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
       "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
@@ -3946,7 +3700,7 @@
     "production_authorized": false,
     "paid_services_authorized": false,
     "customer_data_authorized": false,
-    "updated_at": "2026-09-01T04:53:20Z",
+    "updated_at": "2026-09-09T05:06:48.270871+00:00",
     "enabled": false
   },
   "relevant_docs": [
@@ -4362,11 +4116,10 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "Preliminary44purePASS; corrected25isolatedPGPASS/no skips andfocusedformat/lint/typesPASS. Exact successor full applicable gates pending.",
-    "Rejected9983345fullPG1012PASS/19FAIL from sharedAugustTrashfixture mismatch; exact standalone source-pinned regressionRED, same-body installed regressionGREEN with25cases. Preserve all failures.",
-    "Initial standalone probe imported a stale W draft; qualification records invalid probe and corrected exact module pin. It is not counted as valid catalog-red evidence.",
-    "Canonicalfixture1,Securityfixture1,style2,types1,catalog1; parent contractprobe1 and standaloneimportprobe1 preserved. No source commands or published migrations changed.",
-    "API/UI and whole53lifecycle still pending; frontend/locks unchanged from accepted0926300, reuse only via exact identity."
+    "Foundation14exactstagesPASS including1032PG,2601backend/1009DB-onlyskips,189automation; independentreview0HIGH0MEDIUM0LOW.",
+    "Published7c0bf7c ownCI34312799705 has dependency-security failure from two upstream advisories; originalattempt preserved, remaining/final job evidence retained separately.",
+    "Security correction1 requires fresh official npm audit and all five full frontend gates, exact preservation and records gates; do not repeat unchanged backend/PG solely for approval.",
+    "Full V1-053 API/UI and release lifecycle remain required after foundation recovery."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4388,7 +4141,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-053",
-  "timestamp": "2026-09-09T04:17:10.742485+00:00",
+  "timestamp": "2026-09-09T05:06:48.270871+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4608,7 +4361,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-09T04:17:10.742485+00:00",
+  "updated_at": "2026-09-09T05:06:48.270871+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5734,24 +5487,30 @@
   "commit_role": "V1-053 bounded projection foundation, API/UI and whole-version lifecycle pending",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "998334563efb19589598499e1d21472de35c5cb4"
+    "7c0bf7cc3cbcb47290586052e8abaf8a628a20f6"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
     "e7a82f7f034c17390f1de26b1196b0f777dd3ca0"
   ],
   "publication": {
-    "status": "corrected_projection_foundation_unpublished_api_ui_pending",
+    "status": "security_successor_unpublished_failed_predecessor_preserved",
     "tranche_id": "V1-053",
-    "candidate_sha": null,
-    "commit_completed": false,
-    "push_completed": false,
-    "ci_completed": false,
+    "candidate_sha": "7c0bf7cc3cbcb47290586052e8abaf8a628a20f6",
+    "commit_completed": true,
+    "push_completed": true,
+    "ci_completed": true,
     "workboard_card": "d362ed27-0bdb-4318-9c8a-0976c931d706",
     "workboard_status": "blocked",
     "workboard_acceptance_completed": false,
     "production_deployment": false,
-    "product_implementation_started": true
+    "product_implementation_started": true,
+    "ci_passed": false,
+    "ci_observation": {
+      "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1053-projection-ci-7c0bf7c-observation4.json",
+      "sha256": "ae372d41e5e124f985aec08eeaa53f11bdf3792331274ac5b2b83cca271a07de"
+    },
+    "ci_run": 34312799705
   },
   "historical_v1_047_publication": {
     "tranche_id": "V1-047",
@@ -5790,7 +5549,7 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "corrected_projection_exact_gates_and_review_pending",
+    "status": "security_successor_exact_gates_and_review_pending",
     "tranche_id": "V1-053",
     "base_sha": "0926300c5c91b26deedb682e454622065826b0ad",
     "exact_sha": null,
@@ -5806,6 +5565,10 @@
     "activation_acceptance": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-activation-accepted-6bb5a98.json",
       "sha256": "e309d31cbd6a609b328bdc56a02bfb4820cba09689505d578f9f83a659f0118e"
+    },
+    "foundation_acceptance": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-accepted-7c0bf7c.json",
+      "sha256": "582e74279370ad95b1c27168fa693db6ad98f0f7c73471af5743a85f4a77026e"
     }
   },
   "historical_v1_047_review": {
@@ -5818,7 +5581,7 @@
     "report_sha256": "28013545bae13493b75f9af0c3f1c5f9d5c311f5584ee339e3aa3d4680652ba5"
   },
   "evidence_applicability": {
-    "scope": "Corrected projection foundation; fresh exact full gates pending",
+    "scope": "Fresh frontend/security/records gates required; unchanged backend/PG can reuse14stage accepted foundation evidence with byte identity",
     "activation_acceptance": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-activation-accepted-6bb5a98.json",
       "sha256": "e309d31cbd6a609b328bdc56a02bfb4820cba09689505d578f9f83a659f0118e"
@@ -5838,7 +5601,24 @@
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
       "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
     },
-    "rejected_candidate": "998334563efb19589598499e1d21472de35c5cb4"
+    "rejected_candidate": "998334563efb19589598499e1d21472de35c5cb4",
+    "foundation_acceptance": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-accepted-7c0bf7c.json",
+      "sha256": "582e74279370ad95b1c27168fa693db6ad98f0f7c73471af5743a85f4a77026e"
+    },
+    "failure": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-security-correction1.json",
+      "sha256": "c9e36568f66e2f391db22dc18c8e8e29008fb6dae37be20dfeadefc2ac7526ac"
+    },
+    "frontend_dependency_identity_reuse_allowed": false,
+    "failed_predecessor_ci": {
+      "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1053-projection-ci-7c0bf7c-observation4.json",
+      "sha256": "ae372d41e5e124f985aec08eeaa53f11bdf3792331274ac5b2b83cca271a07de"
+    },
+    "dependency_update": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-security-dependency-update1.json",
+      "sha256": "eb28a768b605cbe417c0bfaeb99bef08d0f754b7d30975bbaa317763df90b6a8"
+    }
   },
   "historical_v1_047_evidence_applicability": {
     "tranche_id": "V1-047",
@@ -5970,7 +5750,7 @@
     }
   },
   "current_product_acceptance": {
-    "status": "Corrected V1-053 projection foundation prepared; exact full gates and independent review pending. API/UI/publication/whole53closure remain outstanding. V1-052 closed.",
+    "status": "Vitest4.1.11/js-yaml4.3.2 security successor prepared; exact verification and independent review pending. Foundation7c reviewed/published with only security CI failed; full API/UI/53closure incomplete.",
     "predecessor_closure": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-closure-verification-0926300.json",
       "sha256": "d51d90cec48d8d5fe2da707183b63c2c20f5a9922144217999ab66a4cc13b351"
@@ -12121,7 +11901,7 @@
   },
   "v1_053_projection": {
     "id": "V1-053-projection",
-    "status": "prepared_catalog_successor_exact_gates_review_pending",
+    "status": "reviewed_published_ci_failed_security",
     "base": "6bb5a980c1985a89e33301bde81d22d283a90b0f",
     "review_base": "0926300c5c91b26deedb682e454622065826b0ad",
     "worker": "01a07991-38a6-7f33-b84d-0ad0620e2997",
@@ -12208,6 +11988,10 @@
       {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
         "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
+      },
+      {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-verification-7c0bf7c-complete.json",
+        "sha256": "17b2da56307b2324c4df6000c2c9aa141c70a5a6e702e9f18a50769900acb2fd"
       }
     ],
     "correction_history": [
@@ -12427,12 +12211,16 @@
     "whole_v1_053_completed": false,
     "contract_path": "ops/V1_053_PROJECTION.md",
     "contract_sha256": "0129e89c89a30589861d4a1a3a63414447c9b646ea92beff98dd65584175fdb8",
-    "candidate_sha": null,
-    "candidate_resolution": "Resolve containing normal successor commit externally. Rejected9983345 remains unchanged.",
-    "next_action": "Freeze catalog correction successor; fresh full exact gates then one complete0926300-base independent review before API/UI integration.",
+    "candidate_sha": "7c0bf7cc3cbcb47290586052e8abaf8a628a20f6",
+    "candidate_resolution": "Exact immutable reviewed and normally published foundation7c0bf7c.",
+    "next_action": "Bounded dependency-security correction before API/UI; preserve all earlier evidence.",
     "preparation_history_snapshot": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-foundation-preparation-state.json",
       "sha256": "25d438634dbde08e67744183273f2c4e1a1fcf7afb71169069a92451c69454c2"
+    },
+    "acceptance": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-accepted-7c0bf7c.json",
+      "sha256": "582e74279370ad95b1c27168fa693db6ad98f0f7c73471af5743a85f4a77026e"
     }
   },
   "historical_v1_053_activation_current_fields": {
@@ -13454,6 +13242,1593 @@
       "candidate_sha": null,
       "candidate_resolution": "Resolve containing normal commit externally; do not edit a frozen candidate to insert its own SHA.",
       "next_action": "Freeze the prepared V1-053 projection foundation normally; run full applicable PostgreSQL/backend/automation and static/build/import/preservation gates sequentially on that exact commit, then one fresh independent Astra/max/Standard/enforced-read-only review of complete0926300-base changes. Zero review is required before scoped read API/UI integration. Full V1-053 product lifecycle remains outstanding; same tracking card, normal reviewed publication/exact CI/refs/acceptance/closure, then pause SAME follow-up; OpenClaw disabled, never54.",
+      "preparation_history_snapshot": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-foundation-preparation-state.json",
+        "sha256": "25d438634dbde08e67744183273f2c4e1a1fcf7afb71169069a92451c69454c2"
+      }
+    }
+  },
+  "v1_053_security_correction": {
+    "id": "V1-053-security-correction",
+    "status": "prepared_exact_gates_review_pending",
+    "base": "7c0bf7cc3cbcb47290586052e8abaf8a628a20f6",
+    "review_base": "0926300c5c91b26deedb682e454622065826b0ad",
+    "worker": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+    "worktree": "/Users/sokompheak/Development/property-rental-management",
+    "model": "gpt-6-astra",
+    "reasoning": "xhigh",
+    "mode": "Standard",
+    "reason": "Required security gate and major-version compatibility of the existing test tool",
+    "paths": [
+      "frontend/package.json",
+      "frontend/package-lock.json",
+      "ops/NOW.md",
+      "ops/STATE.json",
+      "ops/QUEUE.md"
+    ],
+    "correction": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-security-correction1.json",
+      "sha256": "c9e36568f66e2f391db22dc18c8e8e29008fb6dae37be20dfeadefc2ac7526ac"
+    },
+    "implementation_completed": true,
+    "next_action": "Run fresh exact security-successor preservation, locked install/official npm audit, Node22.12 frontend format/lint/types/full1317tests/build, automation and required records/configuration/traceability/publicationguard/preflight checks sequentially. Reuse7c backend/PG only with exact source identity and its own successful jobs; preserve original failed CI34312799705 attempt1 and advisories. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review before normal reviewed correction publication, own all4CI/ref equality. Continue scoped ledger API/UI and full53lifecycle; never54.",
+    "dependency_update": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-security-dependency-update1.json",
+      "sha256": "eb28a768b605cbe417c0bfaeb99bef08d0f754b7d30975bbaa317763df90b6a8"
+    },
+    "failed_predecessor_final_ci": {
+      "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1053-projection-ci-7c0bf7c-observation4.json",
+      "sha256": "ae372d41e5e124f985aec08eeaa53f11bdf3792331274ac5b2b83cca271a07de"
+    },
+    "correction_attempt": 1,
+    "maximum_attempts": 2,
+    "dependency_change": {
+      "added": [
+        "node_modules/@standard-schema/spec",
+        "node_modules/obug"
+      ],
+      "removed": [
+        "node_modules/cac",
+        "node_modules/check-error",
+        "node_modules/deep-eql",
+        "node_modules/loupe",
+        "node_modules/pathval",
+        "node_modules/strip-literal",
+        "node_modules/strip-literal/node_modules/js-tokens",
+        "node_modules/tinypool",
+        "node_modules/tinyspy",
+        "node_modules/vite-node"
+      ],
+      "changed": [
+        "",
+        "node_modules/@vitest/expect",
+        "node_modules/@vitest/mocker",
+        "node_modules/@vitest/pretty-format",
+        "node_modules/@vitest/runner",
+        "node_modules/@vitest/snapshot",
+        "node_modules/@vitest/spy",
+        "node_modules/@vitest/utils",
+        "node_modules/chai",
+        "node_modules/es-module-lexer",
+        "node_modules/js-yaml",
+        "node_modules/std-env",
+        "node_modules/tinyexec",
+        "node_modules/tinyrainbow",
+        "node_modules/vitest"
+      ]
+    }
+  },
+  "historical_v1_053_projection_7c0bf7c_fields": {
+    "direct_codex_takeover": {
+      "execution_owner": "direct_codex",
+      "authorization_from": "V1-048",
+      "authorization_through": "V1-053",
+      "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
+      "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
+      "coordinator": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard"
+      },
+      "implementation": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard",
+        "escalation_reason": "Financial confirmation/FX, authorization, concurrency, forward-only migration and permanent history"
+      },
+      "reviewer": {
+        "model": "gpt-6-astra",
+        "reasoning": "max",
+        "mode": "Standard",
+        "read_only": true
+      },
+      "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
+      "publication_branch": "implementation/foundation",
+      "openclaw_enabled": false,
+      "openclaw_dispatch_allowed": false,
+      "openclaw_supervisor_job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+      "followup_id": "property-rental-v1-047-closure-follow-up",
+      "live_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1052-v1053-live.md",
+      "standing_independent_review_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
+        "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
+      },
+      "standing_github_publication_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-github-publication-authorization.json",
+        "sha256": "45dbdbe2951acef2cecc381252bbbca0afacada804a775e6554607b4d626fdc2"
+      },
+      "coordinator_transfer": {
+        "schema_version": 1,
+        "status": "released",
+        "old_thread_id": "01a04961-4270-7802-9418-e08203784a8c",
+        "new_thread_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "implementation_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
+        "branch": "codex/v1-052-direct",
+        "head": "1e79851ec5e8530d35927fe93ed2346c407a5820",
+        "handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1052-v1053-fresh-task-handoff.md",
+        "followup_id": "property-rental-v1-047-closure-follow-up",
+        "followup_status": "ACTIVE",
+        "openclaw_enabled": false,
+        "owner_authorized_transfer": true,
+        "old_coordinator_may_implement": false,
+        "new_coordinator_may_implement": true,
+        "updated_at": "2026-09-07T02:00:00Z",
+        "next_action": "Successor 01a07991-38a6-7f33-b84d-0ad0620e2997 must verify this released gate and explicit transfer-complete message, then continue existing partial Allocation/Receipt HTTP in preserved checkout; full52closure then53; at53closed pause same follow-up/no54. Source task is historical/read-only.",
+        "handoff_sha256": "7b07947d9b8f806ba17baa77c7b21ee02c0c86d82818d95951a1bfa2a3f43be7",
+        "followup_target_thread_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "followup_prompt_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-codex-followup-policy.md",
+        "followup_prompt_sha256": "965b73fcae9e4719161566f3468bf856c533c4d6ce45e8e7c2ad960c4b8a4220",
+        "released_at": "2026-09-07T02:00:00Z",
+        "admission": {
+          "status": "completed_read_only_ready",
+          "turn_id": "01a07991-3918-7ac1-8b91-06abd0921f4c",
+          "model": "gpt-6-astra",
+          "reasoning": "xhigh",
+          "mode": "Standard locally configured; provider attestation unavailable",
+          "hashes_verified": 15,
+          "retained_worktrees": 127,
+          "dirty_paths_preserved": 8,
+          "no_admission_mutations": true
+        },
+        "verification": {
+          "automation_tests": "189 PASS in70.328s; session87433 COMPLETED EXIT0",
+          "configuration": "state-routing/watchdog/roadmap/deployment/traceability/publicationguard/diff PASS",
+          "log_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-fresh-task-transfer-config.log",
+          "log_sha256": "9170e853de1264e47528d2f4b5aeb1dd394fefb551b90c85c8396a68404ada2c",
+          "admission_assertions": "40 PASS",
+          "helper_failures_preserved": "Default Python lacked tomllib; used existing project Python3.12 without install. First byte-identity assertion caught app stripping trailing newline; normalized only saved policy final newline and rebound exact actual payload hash. Product bytes unchanged.",
+          "final_readback": "PASS2026-09-07T02:03Z:40 released-transfer assertions, actual Astra/xhigh/local Standard, exact saved-payload identity, one ACTIVE10minute follow-up on successor, eight retained dirty paths and127worktrees; final state-routing/watchdog/roadmap/deployment/traceability/publicationguard/diff PASS. Product bytes unchanged."
+        },
+        "workboard_card_id": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
+        "workboard_handoff_comment_id": "93b18202-6ce0-444e-a740-4a609fb08ce2"
+      },
+      "current_version": "V1-053",
+      "phase": "projection_catalog_successor_checks_review_pending",
+      "activated_at": "2026-09-09T02:49:35.779645+00:00",
+      "predecessor_closed": true,
+      "predecessor_sha": "0926300c5c91b26deedb682e454622065826b0ad",
+      "predecessor_closure_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-closure-verification-0926300.json",
+      "predecessor_closure_receipt_sha256": "d51d90cec48d8d5fe2da707183b63c2c20f5a9922144217999ab66a4cc13b351",
+      "predecessor_ci_run": 34265209149,
+      "predecessor_ci_attempt": 1,
+      "card_id": "d362ed27-0bdb-4318-9c8a-0976c931d706",
+      "workboard_status": "blocked",
+      "workboard_block_reason": "Tracking-only blocked prevents OpenClaw admission; direct Codex projection is authorized and active.",
+      "worker_kind": "direct_root_codex",
+      "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "worker_status": "prepared_root_foundation_no_reviewer_running",
+      "branch": "implementation/foundation",
+      "worktree": "/Users/sokompheak/Development/property-rental-management",
+      "scope_path": "ops/V1_053_SCOPE.md",
+      "scope_sha256": "e0216c0688b283ec397ce93d927ad206869c818a59045f43b9a5a08b799cf2ae",
+      "cumulative_review_base": "0926300c5c91b26deedb682e454622065826b0ad",
+      "candidate_sha": null,
+      "candidate_resolution": "Resolve containing normal successor commit externally. Rejected9983345 remains unchanged.",
+      "candidate_status": "corrected_projection_exact_gates_review_pending",
+      "followup_status": "ACTIVE",
+      "followup_prompt_characters": 17370,
+      "followup_prompt_sha256": "5fb0fc3ec89c1450e2f9f316d1b28105fb3c2d53a6508aa277d3e7b1f7cb4fbc",
+      "owner_action_required": false,
+      "next_action": "Freeze the prepared bounded catalog correction normally; run full exact PostgreSQL/backend/automation/static/build/import/preservation gates sequentially, then one fresh complete0926300-base Astra/max/Standard/enforced-read-only review. Preserve rejected9983345,19failed/1012passedPG and red/green catalog evidence. Zero review required before scoped read API and dedicated Customer UI. Continue full53publication/exactCI/refs/card/closure, then pause SAME follow-up; OpenClaw disabled; never54.",
+      "active_slice": {
+        "id": "V1-053-projection",
+        "status": "prepared_catalog_successor_exact_gates_review_pending",
+        "base": "6bb5a980c1985a89e33301bde81d22d283a90b0f",
+        "review_base": "0926300c5c91b26deedb682e454622065826b0ad",
+        "worker": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "worktree": "/Users/sokompheak/Development/property-rental-management",
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard",
+        "reason": "Financial history reconstruction, concurrency, authorization and forward-only migration",
+        "started_at": "2026-09-09T03:14:18.315872+00:00",
+        "scope": "Immutable relational source projection and exact chronology/position/composition model. No source commands or financial policy changes. Runtime grants are added only with separately tested scoped API integration.",
+        "paths": [
+          "backend/src/property_rental/customer_ledger.py",
+          "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+          "backend/tests/test_customer_ledger.py",
+          "backend/tests/test_customer_ledger_migration.py",
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_financial_action_context_migration.py",
+          "backend/tests/test_invoice_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_migrations.py",
+          "backend/tests/test_payment_reversal_context_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_utility_meter_migration.py",
+          "scripts/database-test.sh",
+          "ops/traceability.json",
+          "ops/NOW.md",
+          "ops/STATE.json",
+          "ops/QUEUE.md",
+          "ops/V1_053_PROJECTION.md"
+        ],
+        "implementation_plan": [
+          "Define exact immutable event, position, composition and stable paging contract; unit-test canonical example, independent balances, deterministic ties, reversal reconstruction, large amounts and stale pages.",
+          "Add forward-only nonwritable relational source projection over all existing facts, no direct runtime grants or source changes; real isolated PostgreSQL reconciliation and source-preservation tests.",
+          "Freeze and independently review the bounded projection before integrating the authorized read API and dedicated Customer UI; use required focused checks and final cumulative full verification."
+        ],
+        "checks": [
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-unit-initial1.json",
+            "sha256": "a947af08072aaa280272a4d072df7d0b6645f1023a3b7d61f920278aba5fbcc5"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1.json",
+            "sha256": "0d4c74679f88aed5b8fb9ac153ec9b624018ca55de76229d95edab3dba2b29e0"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1.json",
+            "sha256": "f3b994ff47cc4f289aa360f28f58585c5f11af74535e6e8cf2968c448275c03f"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
+            "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-lintfix-initial1.json",
+            "sha256": "2cbc281013a1ea4a4e56a13d4cc1f9fdb8f1c95c4cb72fbf32cc955b66b592c0"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-types-initial1.json",
+            "sha256": "2ef3a28c10233852533b4a4659e59ddf6767019645f06855bc9c59c04511e1cd"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
+            "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
+            "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-verification-9983345-contract1.json",
+            "sha256": "e2f1b1b93e98989f2fa3323ede87422c82fae99459fd4150d13d9b98dc8e60ba"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-catalog-regression-red9983345-source1.json",
+            "sha256": "055a742b5693808e749d1fb8c119f236a4bed98b8bf7d2f598adf413ebf66711"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-catalog1.json",
+            "sha256": "35590cdad15702775b9d427a99057fe1a9ba05a078eda44b0a89fa5a398d856c"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
+            "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
+          }
+        ],
+        "correction_history": [
+          {
+            "at": "2026-09-09T03:42:37.797379+00:00",
+            "finding": "GATE-LDG-CANONICAL-F1",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "verified_fixed_pending_independent_review",
+            "failure": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1.json",
+              "sha256": "0d4c74679f88aed5b8fb9ac153ec9b624018ca55de76229d95edab3dba2b29e0"
+            },
+            "failed_test_source": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1-test-source.py",
+              "sha256": "1431aa1d2e8e96137a84aa2f58d159c8d793278e4490cef83d795e16e366fc0f"
+            },
+            "cause": "Canonical new fixture set Initial Rent issuance to current September9 while its move-in and period are July1. Published billing rule requires issuance business date equal move-in date; source generation correctly rejected before ledger assertions.",
+            "changed_approach": "Use explicit July1 business instant (June30 17:00:01UTC) for this synthetic canonical fixture, matching the established initial-billing test semantics. No production source logic, guard, scope, money amount or assertion weakened.",
+            "independent_new_coverage": "Added KHR/reference/channel FX, draft void, waiver/whole-charge reversal, Security/Pet Refund and return coverage; these are new source-family tests, not additional corrections for the fixture finding.",
+            "prior_results": "44purePASS;16PGPASS/1fixtureFAIL; no skips;48migrations applied. Failed evidence retained.",
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
+              "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
+            }
+          },
+          {
+            "at": "2026-09-09T03:44:55.638688+00:00",
+            "finding": "GATE-LDG-SECURITY-F1",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "verified_fixed_pending_independent_review",
+            "failure": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1.json",
+              "sha256": "f3b994ff47cc4f289aa360f28f58585c5f11af74535e6e8cf2968c448275c03f"
+            },
+            "failed_test_source": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1-test-source.py",
+              "sha256": "3a1c7dbea0d0474efcd949a4a5caca5b0d0c935d1e667cb86d388253541c0f8e"
+            },
+            "cause": "New Security Deposit fixture incorrectly requested a general partial USD return for a coordinated Reservation cancellation Refund. Published source boundary correctly requires its whole-outcome coordinated correction path.",
+            "changed_approach": "Assert general return denial explicitly, then use existing supported correct_reservation_deposit_outcome full correction/replacement. Verify preserved original Refund, its separate correction and replacement, and zero resulting Security liability without Credit or Payment netting. Prior invalid1000liability expectation is retained in failed source; no product boundary or financial policy changed.",
+            "canonical_finding": "GATE-LDG-CANONICAL-F1 correction1 passed in correction1 run; 23PGPASS/1newfixtureFAIL/no skips.",
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
+              "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
+            }
+          },
+          {
+            "at": "2026-09-09T03:50:38.707108+00:00",
+            "finding": "GATE-LDG-STYLE-F1",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "partially_corrected_remaining_seven_closed_by_style_attempt2",
+            "failure": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-lintfix-initial1.json",
+              "sha256": "2cbc281013a1ea4a4e56a13d4cc1f9fdb8f1c95c4cb72fbf32cc955b66b592c0"
+            },
+            "details": "Ruff auto-fixed22import issues; remaining53line-length,17fixture-shadow annotations and1next-generator preference addressed. SQL literals and executable migration AST are exactly preserved by wrapping. Test fixture annotation moved onto the actual parameter line; source lookup now explicitly asserts non-null rather than misplacing an ignore. No lint rule disabled; standard narrow F811 fixture annotations match established tests.",
+            "changes": [
+              {
+                "path": "/Users/sokompheak/Development/property-rental-management/backend/tests/test_customer_ledger_migration.py",
+                "before": {
+                  "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style1-test_customer_ledger_migration.py",
+                  "sha256": "1e9385e583382d2887c45390acf40a9c7f702945b497e52334facfe1a5f2e6ee"
+                },
+                "after_sha256": "41aa0a28b081c8c967f78ed70bef655b6842f2264ec62e2eca5d03912ad43ac4",
+                "wrapped_literals": 16,
+                "literal_wrapping_ast_identical": true,
+                "complete_migration_ast_identical": false
+              },
+              {
+                "path": "/Users/sokompheak/Development/property-rental-management/backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+                "before": {
+                  "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style1-20260909_48_customer_ledger_projection.py",
+                  "sha256": "199a4fecacd4014561bc4d997c3bb3d348d34b9f13e769295c35a2c46f981128"
+                },
+                "after_sha256": "2c0776392444f0dac75f12c2fd477e87e0944492c6eaca954d13e3e4ebf40b73",
+                "wrapped_literals": 18,
+                "literal_wrapping_ast_identical": true,
+                "complete_migration_ast_identical": true
+              }
+            ],
+            "remaining_verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
+              "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
+            }
+          },
+          {
+            "at": "2026-09-09T03:50:38.707108+00:00",
+            "finding": "GATE-LDG-TYPES-F1",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "verified_fixed_pending_independent_review",
+            "failure": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-types-initial1.json",
+              "sha256": "2ef3a28c10233852533b4a4659e59ddf6767019645f06855bc9c59c04511e1cd"
+            },
+            "cause": "One new test indexed an optional fetchone row and placed its ignore on the wrong formatted line.",
+            "changed_approach": "Explicit assert source_row is not None before indexing; remove the ignore. No runtime changes or weakened assertion.",
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
+              "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+            }
+          },
+          {
+            "at": "2026-09-09T03:57:42.030613+00:00",
+            "finding": "GATE-LDG-STYLE-F1",
+            "attempt": 2,
+            "maximum": 2,
+            "status": "verified_fixed_pending_independent_review",
+            "failure": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
+              "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
+            },
+            "cause": "The first style correction left one redundant SQL-expression parenthesis pair and the formatter attached three fixture suppressions to the final parameter of split signatures.",
+            "changed_approach": "Remove exactly the redundant parenthesis pair; place the three existing fixture annotations on their final formatted parameter lines. Exact complete AST identity asserted for both files; no SQL or test behavior changes.",
+            "changes": [
+              {
+                "path": "backend/tests/test_customer_ledger_migration.py",
+                "before": {
+                  "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style2-test_customer_ledger_migration.py",
+                  "sha256": "7f78f85b7b7ed871b0b52ba4bfadf64f0251b38d3576e8489d72cb821f84f3aa"
+                },
+                "after_sha256": "03ded98ca375dc04911045f1804130cafee3bf2372b25cac76846c3aa5edddf4",
+                "complete_ast_identical": true
+              },
+              {
+                "path": "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+                "before": {
+                  "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style2-20260909_48_customer_ledger_projection.py",
+                  "sha256": "75fb1b3c542ee0914c0d92291d4fa8d5abbe27832d35cae54703539c1ea1b651"
+                },
+                "after_sha256": "28cb65f41fe4bb7c4b46c69e2b081f33bf114ae2a2af9a27a04c284d1d4e25e9",
+                "complete_ast_identical": true
+              }
+            ],
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
+              "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+            }
+          },
+          {
+            "at": "2026-09-09T04:14:44.133575+00:00",
+            "finding": "GATE-LDG-CATALOG-F1",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "focused_verified_fixed_pending_exact_full_gates_and_review",
+            "rejected_candidate": "998334563efb19589598499e1d21472de35c5cb4",
+            "failed_verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-verification-9983345-contract1.json",
+              "sha256": "e2f1b1b93e98989f2fa3323ede87422c82fae99459fd4150d13d9b98dc8e60ba"
+            },
+            "red_regression": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-catalog-regression-red9983345-source1.json",
+              "sha256": "055a742b5693808e749d1fb8c119f236a4bed98b8bf7d2f598adf413ebf66711"
+            },
+            "cause": "New canonical fixture used shared Property TRASH_COLLECTION August rate1000; existing authoritative billing fixtures require1200. July canonical amount1000 is correct and unchanged. Full suite19failures share this exact fixture cause; all24ledgerPGcases passed.",
+            "changed_approach": "Use the established August1200 shared catalog rate; add regression proving canonical July50000Rent+1000Trash creation leaves the expected July/August rate IDs and values unchanged when a following standard billing fixture reuses them. No runtime/migration/financial-policy changes or weakened assertions.",
+            "paths": [
+              "backend/tests/test_customer_ledger_migration.py",
+              "ops/traceability.json",
+              "ops/V1_053_PROJECTION.md",
+              "ops/NOW.md",
+              "ops/STATE.json",
+              "ops/QUEUE.md"
+            ],
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
+              "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
+            },
+            "quality": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-catalog1.json",
+              "sha256": "35590cdad15702775b9d427a99057fe1a9ba05a078eda44b0a89fa5a398d856c"
+            },
+            "regression_body_ast_matches_red": true
+          }
+        ],
+        "implementation_completed": true,
+        "initial_path_inventory_correction": {
+          "before": [
+            "backend/src/property_rental/customer_ledger.py",
+            "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+            "backend/tests/test_customer_ledger.py",
+            "backend/tests/test_customer_ledger_database.py",
+            "backend/tests/test_migrations.py",
+            "scripts/verify-postgres-persistence.py",
+            "ops/TRACEABILITY.json",
+            "ops/NOW.md",
+            "ops/STATE.json",
+            "ops/QUEUE.md"
+          ],
+          "after": [
+            "backend/src/property_rental/customer_ledger.py",
+            "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+            "backend/tests/test_customer_ledger.py",
+            "backend/tests/test_customer_ledger_migration.py",
+            "backend/tests/test_billing_service_migration.py",
+            "backend/tests/test_credit_refund_read_migration.py",
+            "backend/tests/test_financial_action_context_migration.py",
+            "backend/tests/test_invoice_migration.py",
+            "backend/tests/test_late_payment_migration.py",
+            "backend/tests/test_lease_api_migration.py",
+            "backend/tests/test_migrations.py",
+            "backend/tests/test_payment_reversal_context_migration.py",
+            "backend/tests/test_utility_api_migration.py",
+            "backend/tests/test_utility_consumption_migration.py",
+            "backend/tests/test_utility_meter_migration.py",
+            "scripts/database-test.sh",
+            "ops/traceability.json",
+            "ops/NOW.md",
+            "ops/STATE.json",
+            "ops/QUEUE.md"
+          ],
+          "basis": "Repository discovery: existing PostgreSQL suite naming is test_*_migration.py, registered in scripts/database-test.sh; traceability is lowercase ops/traceability.json. Existing current-head expectations require mechanical47to48 updates; historical revision47inspection preserved."
+        },
+        "whole_v1_053_completed": false,
+        "contract_path": "ops/V1_053_PROJECTION.md",
+        "contract_sha256": "0129e89c89a30589861d4a1a3a63414447c9b646ea92beff98dd65584175fdb8",
+        "candidate_sha": null,
+        "candidate_resolution": "Resolve containing normal successor commit externally. Rejected9983345 remains unchanged.",
+        "next_action": "Freeze catalog correction successor; fresh full exact gates then one complete0926300-base independent review before API/UI integration.",
+        "preparation_history_snapshot": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-foundation-preparation-state.json",
+          "sha256": "25d438634dbde08e67744183273f2c4e1a1fcf7afb71169069a92451c69454c2"
+        }
+      },
+      "prior_version_history": "historical_v1_052_closed_current_fields.direct_codex_takeover",
+      "last_model_configuration_check": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "xhigh",
+        "mode": "Standard",
+        "service_tier": "default",
+        "provider_attestation": "unavailable"
+      }
+    },
+    "commit": "998334563efb19589598499e1d21472de35c5cb4",
+    "next_action": "Freeze the prepared bounded catalog correction normally; run full exact PostgreSQL/backend/automation/static/build/import/preservation gates sequentially, then one fresh complete0926300-base Astra/max/Standard/enforced-read-only review. Preserve rejected9983345,19failed/1012passedPG and red/green catalog evidence. Zero review required before scoped read API and dedicated Customer UI. Continue full53publication/exactCI/refs/card/closure, then pause SAME follow-up; OpenClaw disabled; never54.",
+    "candidate_resolution": "Resolve containing normal successor commit externally. Rejected9983345 remains unchanged.",
+    "candidate_parent": "998334563efb19589598499e1d21472de35c5cb4",
+    "phase": "V1-053 corrected projection foundation prepared; exact gates and review pending",
+    "continuous_supervisor_policy": {
+      "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
+      "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
+      "automation_job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+      "automation_name": "property-rental-24x7-supervisor",
+      "authorization_from": "V1-046",
+      "authorization_through": "V1-060",
+      "authorization_rule": "activate each successor automatically only after its predecessor is fully released, published, verified, reconciled, and closed; no repeated routine authorization",
+      "immediate_action": "On every cycle, reconcile ops/NOW.md, ops/STATE.json, ops/QUEUE.md, ops/V1_ROADMAP.json, Git, Workboard, claims, attempts, active workers, worktrees, and the scheduler. Continue from the latest verified dependency-safe stage. Never repeat completed work or dispatch a duplicate worker. If a valid worker is running, inspect and reconcile it. Activate the next version only after its predecessor is fully closed.",
+      "model_policy": {
+        "supervisor": {
+          "model": "openai/gpt-5.6-sol",
+          "reasoning": "xhigh",
+          "mode": "standard"
+        },
+        "independent_reviewer": {
+          "model": "openai/gpt-5.6-sol",
+          "reasoning": "max",
+          "mode": "standard"
+        },
+        "implementation_worker": {
+          "model": "openai/gpt-5.6-sol",
+          "reasoning": "high",
+          "mode": "standard"
+        },
+        "worker_xhigh_when": [
+          "migrations",
+          "concurrency",
+          "security",
+          "transactions",
+          "repeated failures"
+        ],
+        "implementation_max_when": "only after xhigh fails or for exceptionally risky work",
+        "fast_mode_when": "only while the owner is actively waiting or when resolving a hard blocker"
+      },
+      "current_phase": "Disabled during direct Astra takeover; V1-051 fully closed, V1-052 partial Allocation/Receipt work transferring to fresh coordinator 01a07991-38a6-7f33-b84d-0ad0620e2997.",
+      "exact_next_action": "Keep retained OpenClaw supervisor disabled. Follow direct_codex_takeover and released coordinator-transfer receipt for current V1-052 continuation, never dispatch OpenClaw. Full52 closure before53; at53closed pause native follow-up/no54.",
+      "policy_review": {
+        "card_id": "d71d3595-9c6c-4c9a-a249-a9cbe58f317b",
+        "attempt_id": "workboard:d71d3595-9c6c-4c9a-a249-a9cbe58f317b:1788203216290",
+        "exact_sha": "5443383c876bb23907af93e42e2e2d0201833dc8",
+        "direct_parent": "883dd4a65f9846063ecacc0c821c0470debf10e3",
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "max",
+        "mode": "standard",
+        "verdict": "FAIL",
+        "high_findings": 2,
+        "medium_findings": 1,
+        "low_findings": 0,
+        "reviewer_edits_authorized": false,
+        "automation_tests": "PASS: 187/187",
+        "prompt_payload_identity": "PASS",
+        "status": "manager_reconciled_done"
+      },
+      "policy_correction": {
+        "card_id": "cf5c632f-8bfe-4769-9192-1aff1a8ba011",
+        "exact_sha": "9469b7ec4461f0cb224f9f74b54c039ba900bc27",
+        "direct_parent": "5443383c876bb23907af93e42e2e2d0201833dc8",
+        "status": "manager_verified_done",
+        "claim_active": false,
+        "attempt_active": false,
+        "worker_active": false,
+        "expected_model": "openai/gpt-5.6-sol",
+        "expected_reasoning": "high",
+        "expected_mode": "standard",
+        "allowed_path_count": 6,
+        "insertions": 248,
+        "deletions": 9,
+        "automation_tests": "PASS: 188/188, zero failures, zero skips",
+        "dispatch_permitted": false
+      },
+      "policy_correction_2": {
+        "card_id": "63977cd7-3061-4e66-bdaf-cfededb0ab6a",
+        "exact_sha": "56856757a2155dd340220d6076e0531c21cb95cd",
+        "direct_parent": "dd8d3380ab6a3a17a0a1e5e6b70d667042f00b2b",
+        "status": "manager_verified_done",
+        "claim_active": false,
+        "worker_active": false,
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "xhigh",
+        "mode": "standard",
+        "risk_reason": "scheduler security and repeated correction",
+        "allowed_path_count": 3,
+        "insertions": 64,
+        "deletions": 28,
+        "automation_tests": "PASS: 188/188, zero failures, zero skips",
+        "prompt_payload_identity": "PASS: 11868 bytes, SHA-256 0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
+        "publication_permitted": false
+      },
+      "policy_correction_3": {
+        "card_id": "49f3b412-9067-42f9-83c0-30eb3e5a8113",
+        "attempt_id": "workboard:49f3b412-9067-42f9-83c0-30eb3e5a8113:1788209383755",
+        "worker": "property-codex-1",
+        "base_sha": "78c4c86ed0c17d586c17af98002fd83c3ff6ffdb",
+        "base_parent": "56856757a2155dd340220d6076e0531c21cb95cd",
+        "branch": "openclaw/wb-49f3b412-9067-42f9-83c0-30eb3e5a8113",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-49f3b412-9067-42f9-83c0-30eb3e5a8113",
+        "worktree_clean_at_admission": true,
+        "workspace_recovery": "Gateway initially materialized the new branch at root origin/main SHA 28d3568; worker admission moved the new clean branch to frozen base 78c4c86 before any edit",
+        "model": "openai/gpt-5.6-sol",
+        "required_reasoning": "xhigh",
+        "effective_reasoning": "high",
+        "reasoning_eligible": false,
+        "mode": "standard",
+        "fast_mode": false,
+        "risk_reason": "scheduler security and repeated correction",
+        "allowed_paths": [
+          "ops/AUTOMATION_TRACEABILITY.json",
+          "scripts/openclaw-post-exit-restoration.py",
+          "scripts/test_openclaw_automation.py"
+        ],
+        "candidate_sha": "7efaa3a616328f23e81496b628d5ebfd69413fe9",
+        "candidate_parent": "78c4c86ed0c17d586c17af98002fd83c3ff6ffdb",
+        "candidate_tree": "bfacfdd6547747c7d7f21942fa416d1623a58050",
+        "diff_stat": "3 files changed, 340 insertions(+), 35 deletions(-)",
+        "claim_active": false,
+        "attempt_active": false,
+        "workboard_execution_display": "reconciled_done_after_confirmed_task_success",
+        "tests": "manager PASS: 189/189, zero failures, zero skips; ancestry, scope, diff, secret, JSON, compilation, and cleanliness pass",
+        "manager_accepted": true,
+        "publication_permitted": false,
+        "status": "done_manager_accepted"
+      },
+      "policy_correction_3_integration": {
+        "card_id": "1f4d7407-77ab-4f12-96d4-a2745b62411f",
+        "attempt_id": "workboard:1f4d7407-77ab-4f12-96d4-a2745b62411f:1788210978943",
+        "worker": "property-codex-3",
+        "candidate_sha": "7efaa3a616328f23e81496b628d5ebfd69413fe9",
+        "candidate_parent": "78c4c86ed0c17d586c17af98002fd83c3ff6ffdb",
+        "candidate_tree": "bfacfdd6547747c7f21942fa416d1623a58050",
+        "branch": "openclaw/wb-1f4d7407-77ab-4f12-96d4-a2745b62411f",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-1f4d7407-77ab-4f12-96d4-a2745b62411f",
+        "worktree_clean_at_admission": true,
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "xhigh",
+        "mode": "standard",
+        "fast_mode": false,
+        "read_only": true,
+        "purpose": "fresh correction-code integration before manager-owned compact-state reconciliation",
+        "review_candidate": false,
+        "post_acceptance_requirement": "commit exact two-path NOW/STATE reconciliation on top of 7efaa3a6, then run a fresh exact-SHA integration gate",
+        "claim_active": false,
+        "attempt_active": false,
+        "workboard_execution_display": "reconciled_done_after_confirmed_task_success",
+        "tests": "PASS: 189/189, zero failures, zero skips; scheduler singleton/payload, scope, cleanliness, JSON, canonical, secret, and both HIGH fixes pass with no finding",
+        "manager_accepted": true,
+        "status": "done_manager_accepted"
+      },
+      "policy_correction_3_reconciled_integration": {
+        "card_id": "4d527e92-3a00-485d-9415-f042cb5e0bf9",
+        "attempt_id": "workboard:4d527e92-3a00-485d-9415-f042cb5e0bf9:1788213145215",
+        "worker": "property-codex-3",
+        "candidate_sha": "550443ac38bd7b5997f5d0f7df59f62343cafe3e",
+        "candidate_parent": "7efaa3a616328f23e81496b628d5ebfd69413fe9",
+        "candidate_tree": "5290f9e4b91469281fe2d01a5f8af2d84e27070b",
+        "cumulative_base": "78c4c86ed0c17d586c17af98002fd83c3ff6ffdb",
+        "cumulative_commit_count": 2,
+        "cumulative_path_count": 5,
+        "cumulative_insertions": 441,
+        "cumulative_deletions": 50,
+        "branch": "openclaw/wb-4d527e92-3a00-485d-9415-f042cb5e0bf9",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-4d527e92-3a00-485d-9415-f042cb5e0bf9",
+        "model": "openai/gpt-5.6-sol",
+        "required_reasoning": "xhigh",
+        "effective_reasoning": "xhigh",
+        "reasoning_eligible": true,
+        "mode": "standard",
+        "fast_mode": false,
+        "read_only": true,
+        "claim_active": false,
+        "attempt_active": false,
+        "worker_active": false,
+        "transport_recovery": "Three dispatch ledger events had zero attempts and zero tasks because the completed predecessor retained a stale running execution; reconciled the confirmed successful predecessor execution and started exactly one worker through the supported Gateway with no start failure",
+        "prior_ineligible_attempt": {
+          "attempt_id": "workboard:4d527e92-3a00-485d-9415-f042cb5e0bf9:1788212317396",
+          "effective_reasoning": "high",
+          "status": "blocked_ineligible_reasoning",
+          "tests": "PASS: 189/189, zero failures, zero skips",
+          "findings": 0,
+          "accepted": false
+        },
+        "runtime_policy_recovery": "Agent model is pinned to openai/gpt-5.6-sol with no fallback. The first attempt inherited subagent thinking=high, was marked ineligible, and safely blocked with proof preserved. The corrected retry ran with subagent thinking=xhigh and no gateway restart; after manager acceptance the property-codex-3 subagent default was restored to high.",
+        "task_terminal_status": "failed_after_card_completion_during_cli_transcript_compaction",
+        "workboard_attempt_status": "stopped_after_terminal_task_reconciliation",
+        "workboard_execution_display": "cleared_stale_running",
+        "tests": "worker PASS and manager rerun PASS: 189/189, zero failures, zero skips; roadmap, scheduler/payload identity, security fixes, JSON, routing, compact-state routing, watchdog, syntax, compilation, ancestry, scope, diff, secret, and cleanliness gates pass",
+        "findings": 0,
+        "manager_accepted": true,
+        "status": "done_manager_accepted"
+      },
+      "policy_rereview": {
+        "first_card_id": "e5de4d3b-cbb7-4413-8d21-46ebb1163c2b",
+        "first_status": "blocked_at_admission_no_verdict",
+        "first_review_or_tests_run": false,
+        "required_workspace": "clean OpenClaw-managed worktree",
+        "required_model": "openai/gpt-5.6-sol",
+        "required_reasoning": "max",
+        "required_mode": "standard",
+        "fresh_card_pending": false,
+        "completed_card_id": "b16ff124-ecb5-4511-b519-568ffe9f3fd6",
+        "completed_verdict": "FAIL",
+        "completed_high_findings": 1,
+        "completed_automation_tests": "PASS: 188/188, zero failures, zero skips",
+        "final_card_id": "55f681b6-3c94-4db0-981a-5f0d01221376",
+        "final_verdict": "FAIL",
+        "final_high_findings": 2,
+        "final_medium_findings": 1,
+        "final_automation_tests": "PASS: 188/188, zero failures, zero skips",
+        "prior_final_manager_accepted": true,
+        "accepted_card_id": "e6f8a47e-95c7-40fe-add6-69b0395c1acd",
+        "accepted_attempt_id": "workboard:e6f8a47e-95c7-40fe-add6-69b0395c1acd:1788214490917",
+        "accepted_worker": "property-codex-2",
+        "active_card_id": null,
+        "active_attempt_id": null,
+        "active_worker": null,
+        "candidate_sha": "550443ac38bd7b5997f5d0f7df59f62343cafe3e",
+        "candidate_parent": "7efaa3a616328f23e81496b628d5ebfd69413fe9",
+        "candidate_tree": "5290f9e4b91469281fe2d01a5f8af2d84e27070b",
+        "cumulative_base": "78c4c86ed0c17d586c17af98002fd83c3ff6ffdb",
+        "cumulative_diff": "2 commits, 5 files, 441 insertions, 50 deletions",
+        "branch": "openclaw/wb-e6f8a47e-95c7-40fe-add6-69b0395c1acd",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-e6f8a47e-95c7-40fe-add6-69b0395c1acd",
+        "claim_active": false,
+        "attempt_active": false,
+        "worktree_clean": true,
+        "reviewer_lane": "openai/gpt-5.6-sol, max reasoning, no fallback, Standard mode required, Fast off required",
+        "transport_recovery": "First dispatch failed before worker/worktree creation because a nonexistent symbolic source reference was supplied. The same card was rebound to exact existing SHA 550443ac, the failure count was reset, and the supported Gateway started exactly one reviewer with no start failure.",
+        "prior_final_findings": [
+          "HIGH: missing or mismatched repository ownership policy or native-name drift can reach native supervisor disable",
+          "HIGH: legacy-to-native read-to-enable transition can enable the native supervisor before post-validation",
+          "MEDIUM: committed compact state at exact 56856757 was stale"
+        ],
+        "current_tests": "reviewer PASS and manager rerun PASS: 189/189, zero failures, zero skips; exact ancestry, complete scope, cleanliness, routing, compact-state routing, watchdog, JSON, syntax, compilation, diff, prompt/payload identity, canonical, and secret gates pass",
+        "current_findings": [],
+        "verdict": "PASS",
+        "workboard_execution_display": "reconciled_stopped_after_confirmed_completion",
+        "manager_accepted": true,
+        "publication_permitted": true,
+        "status": "done_manager_accepted"
+      },
+      "policy_publication": {
+        "card_id": "85bc9658-628d-4150-8f1b-66b5b7cf30cf",
+        "worker": "property-manager",
+        "branch": "implementation/foundation",
+        "worktree": "/Users/sokompheak/Development/property-rental-management",
+        "reviewed_sha": "550443ac38bd7b5997f5d0f7df59f62343cafe3e",
+        "reviewed_parent": "7efaa3a616328f23e81496b628d5ebfd69413fe9",
+        "reviewed_tree": "5290f9e4b91469281fe2d01a5f8af2d84e27070b",
+        "expected_paths": [
+          "ops/NOW.md",
+          "ops/STATE.json"
+        ],
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "xhigh",
+        "mode": "standard",
+        "fast_mode": false,
+        "claim_active": false,
+        "candidate_sha": "916b2589f8a38ebf95ba4d94aa5d9ed71a5a9d2b",
+        "candidate_parent": "550443ac38bd7b5997f5d0f7df59f62343cafe3e",
+        "candidate_tree": "1afbec371667446f87101ff71c96477882e6209b",
+        "diff": "2 files, 156 insertions, 30 deletions",
+        "tests": "PASS: exact-SHA manager automation 189/189, zero failures, zero skips; routing, compact-state routing, watchdog, roadmap, JSON, shell syntax, Python compilation, publication guard, installation/prompt identity, diff, secret, and cleanliness gates pass",
+        "github_actions": "PASS: run 33447605098, all four jobs successful at exact SHA 916b2589f8a38ebf95ba4d94aa5d9ed71a5a9d2b",
+        "remote_sync": "PASS: local HEAD, upstream, and origin/implementation/foundation all matched 916b2589f8a38ebf95ba4d94aa5d9ed71a5a9d2b after fetch",
+        "reconciliation": "This exact two-path NOW/STATE change records the verified publication before product TEST-119 resumes",
+        "manager_accepted": true,
+        "status": "published_exact_sha_ci_green_remote_synchronized_reconciled"
+      },
+      "product_traceability_correction": {
+        "card_id": "e83912ca-8b13-402e-ac1f-cd0eed5ca838",
+        "attempt_id": "workboard:e83912ca-8b13-402e-ac1f-cd0eed5ca838:1788217640358",
+        "worker": "property-codex-1",
+        "branch": "openclaw/wb-e83912ca-8b13-402e-ac1f-cd0eed5ca838",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-e83912ca-8b13-402e-ac1f-cd0eed5ca838",
+        "base_sha": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
+        "base_parent": "39c38e74b7b55f877f74081c94dcd9b971aa1348",
+        "allowed_paths": [
+          "ops/traceability.json"
+        ],
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "pre_start_failures": [
+          "missing absolute source checkout path; zero attempts and zero workers",
+          "invalid transcribed source branch; zero attempts and zero workers"
+        ],
+        "candidate_sha": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+        "candidate_parent": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
+        "candidate_tree": "0948ed78fdf9c3fcb85a94b6a07b87eae5cd98f4",
+        "claim_active": false,
+        "attempt_active": false,
+        "diff": "ops/traceability.json only; 0 additions, 1 deletion",
+        "worker_tests": "PASS: 22/22 traceability plus 1/1 focused unchanged bootstrap behavior; zero failures, zero skips",
+        "manager_tests": "PASS: 38/38 traceability and late-payment; zero failures, zero skips; JSON, TEST-118, semantic, ancestry, scope, secret, and cleanliness guards pass",
+        "manager_accepted": true,
+        "status": "done_manager_accepted"
+      },
+      "product_integration_retry": {
+        "card_id": "bfee8d82-83e6-4000-ac63-6835b1220201",
+        "attempt_id": "workboard:bfee8d82-83e6-4000-ac63-6835b1220201:1788218269347",
+        "worker": "property-codex-3",
+        "branch": "openclaw/wb-bfee8d82-83e6-4000-ac63-6835b1220201",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-bfee8d82-83e6-4000-ac63-6835b1220201",
+        "candidate_sha": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+        "candidate_parent": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
+        "candidate_tree": "0948ed78fdf9c3fcb85a94b6a07b87eae5cd98f4",
+        "cumulative_base": "39c38e74b7b55f877f74081c94dcd9b971aa1348",
+        "cumulative_diff": "2 commits, 16 files, 2281 insertions, 19 deletions",
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "xhigh",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "read_only": true,
+        "claim_active": false,
+        "attempt_active": false,
+        "worker_tests": "PASS: focused 16/16, traceability 22/22, backend 727/727, frontend 234/234, PostgreSQL 464/464 zero skips, migration/adversarial 8/8, automation 186/186, and all static/audit/security/migration/deployment/publication/secret/diff/clean guards",
+        "manager_tests": "PASS: exact envelope and clean immutable worktrees; focused 38/38 and automation 186/186 with zero failures/skips",
+        "status": "done_manager_accepted"
+      },
+      "product_independent_review": {
+        "card_id": "8548ab20-00b1-4ccf-8275-1472b704ee03",
+        "attempt_id": "workboard:8548ab20-00b1-4ccf-8275-1472b704ee03:1788219426010",
+        "worker": "property-codex-2",
+        "branch": "openclaw/wb-8548ab20-00b1-4ccf-8275-1472b704ee03",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-8548ab20-00b1-4ccf-8275-1472b704ee03",
+        "candidate_sha": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+        "candidate_parent": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
+        "cumulative_base": "39c38e74b7b55f877f74081c94dcd9b971aa1348",
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "max",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "read_only": true,
+        "claim_active": false,
+        "attempt_active": false,
+        "verdict": "FAIL",
+        "findings": {
+          "high": 0,
+          "medium": 6,
+          "low": 0,
+          "summary": [
+            "zero-rounded CONFIRMED_DEFAULT is rejected",
+            "API-025 financial response fields are absent",
+            "Charge correction incorrectly returns 201 with Location",
+            "API-018 conflict omits current safe state/version",
+            "DB-VIEW-007 named projection is absent",
+            "TEST-119 has false mappings including SEC-027"
+          ]
+        },
+        "positive_tests": "PASS: focused 16/16, traceability 22/22, backend 727/727, frontend 234/234, PostgreSQL 464/464 zero skips, automation 186/186, and static/build/audit/migration/security/secret/clean gates",
+        "manager_accepted": true,
+        "status": "done_manager_accepted_fail"
+      },
+      "product_review_correction_2": {
+        "card_id": "dfe221fe-d32d-4baf-acb4-442376616dd5",
+        "attempt_id": "workboard:dfe221fe-d32d-4baf-acb4-442376616dd5:1788221281345",
+        "worker": "property-codex-1",
+        "branch": "openclaw/wb-dfe221fe-d32d-4baf-acb4-442376616dd5",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-dfe221fe-d32d-4baf-acb4-442376616dd5",
+        "required_base_sha": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+        "required_base_parent": "7a5097c9f055fd7d7d91e44376f4e215dc2fa790",
+        "materialized_head": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
+        "materialized_parent": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+        "tree": "1835b750aa75c798784affae3bff1f1a50d92696",
+        "workspace_recovery": "Gateway initially materialized the clean branch at root 28d3568; worker admission proved ancestry and fast-forwarded only to exact 09b5dafc before any edit",
+        "worktree_clean_at_admission": true,
+        "allowed_paths": [
+          "backend/migrations/versions/20260831_37_late_payment_api.py",
+          "backend/src/property_rental/late_payment.py",
+          "backend/src/property_rental/late_payment_api.py",
+          "backend/tests/test_late_payment.py",
+          "backend/tests/test_late_payment_migration.py",
+          "ops/traceability.json"
+        ],
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "xhigh",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "claim_active": false,
+        "attempt_active": false,
+        "worktree_clean": true,
+        "changed_path_count": 5,
+        "insertions": 620,
+        "deletions": 83,
+        "worker_tests": "PASS: focused 40/40, backend 729/729, real PostgreSQL 465/465 zero skips, migration 9/9, automation 186/186, and applicable static/build/import/traceability/scope/secret/diff guards",
+        "manager_tests": "PASS: exact ancestry, tree, five allowed paths, clean worktree, focused 40/40, and automation 186/186",
+        "stale_attempt_reconciliation": "Worker terminalized to REVIEW with complete proof and a clean committed worktree; obsolete running presentation was stopped without discarding work or evidence before manager acceptance",
+        "integration_card_id": "87d90c87-8cca-4529-98ab-a22646332e77",
+        "rereview_card_id": "208ac3de-72f2-45a2-9be7-4e096aaf08ca",
+        "status": "done_manager_accepted"
+      },
+      "product_correction_2_integration": {
+        "card_id": "87d90c87-8cca-4529-98ab-a22646332e77",
+        "attempt_id": "workboard:87d90c87-8cca-4529-98ab-a22646332e77:1788223132889",
+        "worker": "property-codex-3",
+        "branch": "openclaw/wb-87d90c87-8cca-4529-98ab-a22646332e77",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-87d90c87-8cca-4529-98ab-a22646332e77",
+        "source_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-dfe221fe-d32d-4baf-acb4-442376616dd5",
+        "candidate_sha": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
+        "candidate_parent": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+        "tree": "1835b750aa75c798784affae3bff1f1a50d92696",
+        "cumulative_base": "39c38e74b7b55f877f74081c94dcd9b971aa1348",
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "xhigh",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "read_only": true,
+        "claim_active": false,
+        "attempt_active": false,
+        "worktree_clean_at_admission": true,
+        "dispatch_count": 1,
+        "start_failures": 0,
+        "cumulative_diff": "3 commits, 16 authorized paths, 2818 insertions, 19 deletions",
+        "worker_tests": "PASS: focused 40/40, backend 729/729 with 442 DB-only skips fully covered, frontend 234/234, automation 186/186, fresh isolated real PostgreSQL 465/465 zero skips, sole Alembic head 20260831_37, and all required static/build/dependency/migration/security/traceability/publication/secret/diff/cleanup guards",
+        "manager_tests": "PASS: exact SHA/parent/tree, three-commit linear ancestry, clean 16-path cumulative scope, and focused 40/40 rerun",
+        "manager_compact_state_tests": "PASS: automation 189/189 plus state-routing, visibility-watchdog, JSON, roadmap, shell-syntax, and Python-compile guards",
+        "manager_accepted": true,
+        "status": "done_manager_accepted"
+      },
+      "product_correction_2_rereview": {
+        "card_id": "208ac3de-72f2-45a2-9be7-4e096aaf08ca",
+        "attempt_id": "workboard:208ac3de-72f2-45a2-9be7-4e096aaf08ca:1788223875841",
+        "worker": "property-codex-2",
+        "branch": "openclaw/wb-208ac3de-72f2-45a2-9be7-4e096aaf08ca",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-208ac3de-72f2-45a2-9be7-4e096aaf08ca",
+        "source_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-87d90c87-8cca-4529-98ab-a22646332e77",
+        "candidate_sha": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
+        "candidate_parent": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+        "tree": "1835b750aa75c798784affae3bff1f1a50d92696",
+        "cumulative_base": "39c38e74b7b55f877f74081c94dcd9b971aa1348",
+        "cumulative_diff": "3 commits, 16 authorized paths, 2818 insertions, 19 deletions; diff SHA-256 ce2b9be0456f6f6cca8fc7b6f97bdf63c52f1b7f724dd70c038e81b2aad4287c",
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "max",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "read_only": true,
+        "claim_active": false,
+        "attempt_active": false,
+        "worktree_clean_at_admission": true,
+        "dispatch_count": 1,
+        "start_failures": 0,
+        "verdict": "FAIL",
+        "findings": {
+          "high": 0,
+          "medium": 3,
+          "low": 0,
+          "summary": [
+            "mutation-only actors cannot receive required API-018 current safe conflict state",
+            "actor-scoped correction keys collide through a Charge-global correlation identifier",
+            "exact API-016 replay rebuilds meta.request_id instead of preserving the original body"
+          ]
+        },
+        "positive_tests": "PASS: focused 40/40, backend 729/729, frontend 234/234, automation 186/186, real PostgreSQL 465/465 zero skips, and all applicable static/build/dependency/migration/security/traceability/publication/secret/diff/clean guards",
+        "stale_attempt_reconciliation": "Terminal read-only proof and clean worktree confirmed before the obsolete running execution display was stopped; no work or evidence was discarded",
+        "manager_accepted": true,
+        "status": "done_manager_accepted_fail"
+      },
+      "product_review_correction_3": {
+        "card_id": "0efc51d0-fbb0-4c53-9f1a-c1f54642927e",
+        "attempt_id": "workboard:0efc51d0-fbb0-4c53-9f1a-c1f54642927e:1788226750428",
+        "worker": "property-codex-1",
+        "branch": "openclaw/wb-0efc51d0-fbb0-4c53-9f1a-c1f54642927e",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-0efc51d0-fbb0-4c53-9f1a-c1f54642927e",
+        "source_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-208ac3de-72f2-45a2-9be7-4e096aaf08ca",
+        "required_base_sha": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
+        "required_base_parent": "09b5dafc8cb6f6d7097c7266024484d01007b0a1",
+        "required_base_tree": "1835b750aa75c798784affae3bff1f1a50d92696",
+        "allowed_paths": [
+          "backend/migrations/versions/20260831_37_late_payment_api.py",
+          "backend/src/property_rental/late_payment.py",
+          "backend/src/property_rental/late_payment_api.py",
+          "backend/tests/test_late_payment.py",
+          "backend/tests/test_late_payment_migration.py",
+          "ops/traceability.json"
+        ],
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "xhigh",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "candidate_sha": "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
+        "candidate_parent": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
+        "candidate_tree": "b337076e239acd1b2c3c4711af908675bb6841fe",
+        "correction_diff": "one commit, six allowed paths, 499 insertions, 66 deletions",
+        "correction_diff_sha256": "d1f1c380fb5f668eb4c8c05a73f03811d47042bbcb562d7b616fd4f7f2a4b621",
+        "cumulative_base": "39c38e74b7b55f877f74081c94dcd9b971aa1348",
+        "cumulative_diff": "four commits, 16 paths, 3251 insertions, 19 deletions",
+        "cumulative_diff_sha256": "515b130833b37b94d9817f88bd7e259801306cb3a36b6f454b6efd871f4fb539",
+        "claim_active": false,
+        "attempt_active": false,
+        "worktree_clean_at_admission": true,
+        "worktree_clean_at_completion": true,
+        "dispatch_count": 2,
+        "start_failures": 1,
+        "transport_recovery": "First Gateway dispatch created zero worker attempts because the worktree source lacked an absolute checkout path. The same card was rebound to the exact clean source path and branch; the changed retry started exactly one worker with no start failure.",
+        "worker_tests": "PASS: focused 18/18, backend 729/729 with 444 explained database-only skips, frontend 234/234, automation 186/186, and isolated real PostgreSQL 467/467 with zero skips; all static, migration, dependency, security, traceability, publication, secret, diff, and clean-state gates passed",
+        "manager_acceptance": "PASS: complete six-path diff inspection, exact parent/tree/ancestry/path/hash/clean/secret guards, focused 18/18, and automation 186/186 plus state-routing, visibility-watchdog, shell-syntax, and Python-compile guards",
+        "manager_findings": 0,
+        "manager_compact_state_tests": "PASS: automation 189/189 plus roadmap validation, state-routing, visibility-watchdog, JSON, shell-syntax, and Python-compile guards",
+        "integration_card_id": "6dc815a8-b86b-484c-98a4-852341997947",
+        "rereview_card_id": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
+        "release_card_id": "3266b3a3-e244-4926-ade8-6cc13eff775f",
+        "status": "done_manager_accepted"
+      },
+      "product_correction_3_integration": {
+        "card_id": "6dc815a8-b86b-484c-98a4-852341997947",
+        "attempt_id": "workboard:6dc815a8-b86b-484c-98a4-852341997947:1788228551461",
+        "worker": "property-codex-3",
+        "branch": "openclaw/wb-6dc815a8-b86b-484c-98a4-852341997947",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-6dc815a8-b86b-484c-98a4-852341997947",
+        "source_branch": "openclaw/wb-0efc51d0-fbb0-4c53-9f1a-c1f54642927e",
+        "source_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-0efc51d0-fbb0-4c53-9f1a-c1f54642927e",
+        "candidate_sha": "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
+        "candidate_parent": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
+        "candidate_tree": "b337076e239acd1b2c3c4711af908675bb6841fe",
+        "cumulative_base": "39c38e74b7b55f877f74081c94dcd9b971aa1348",
+        "cumulative_diff": "four commits, 16 paths, 3251 insertions, 19 deletions",
+        "cumulative_diff_sha256": "515b130833b37b94d9817f88bd7e259801306cb3a36b6f454b6efd871f4fb539",
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "high",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "read_only": true,
+        "claim_active": false,
+        "attempt_active": false,
+        "worktree_clean_at_admission": true,
+        "worktree_clean_at_completion": true,
+        "dispatch_started": 1,
+        "start_failures": 0,
+        "worker_tests": "PASS: focused 18/18, backend 729/729 with 444 fully explained database-only skips, frontend 234/234, isolated PostgreSQL 467/467 zero skips, automation 186/186, and every required static, migration, dependency, security, traceability, deployment, publication, secret, diff, cleanup, and clean-state gate",
+        "worker_findings": 0,
+        "manager_acceptance": "PASS: exact SHA/parent/tree/ancestry/16-path cumulative diff/hash/clean/no-process proof plus focused 18/18; terminal integration evidence accepted with zero findings",
+        "status": "done_manager_accepted_zero_findings"
+      },
+      "product_release": {
+        "card_id": "3266b3a3-e244-4926-ade8-6cc13eff775f",
+        "attempt_id": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788235506113",
+        "worker": "property-codex-1",
+        "prior_attempt_id": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788233653256",
+        "prior_worker": "property-codex-1",
+        "prior_attempt_status": "blocked_merged_tree_environment_before_publication",
+        "prior_attempt_failure": "make frontend-test exited 127 before collection because the fresh managed worktree lacked installed locked frontend dependencies; clean unpushed merge 62ef004a and every history remained preserved",
+        "initial_attempt_id": "workboard:3266b3a3-e244-4926-ade8-6cc13eff775f:1788232491145",
+        "initial_worker": "property-codex-3",
+        "initial_attempt_status": "blocked_preflight_only_before_git_mutation",
+        "initial_attempt_failure": "effective reasoning high did not satisfy required xhigh; candidate, target, branches, and worktrees remained clean and unchanged",
+        "branch": "openclaw/wb-3266b3a3-e244-4926-ade8-6cc13eff775f",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-3266b3a3-e244-4926-ade8-6cc13eff775f",
+        "source_branch": "openclaw/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6",
+        "source_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6",
+        "candidate_sha": "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
+        "candidate_parent": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
+        "candidate_tree": "b337076e239acd1b2c3c4711af908675bb6841fe",
+        "metadata_tip_at_dispatch": "a945d1258929438d2f4a5e07859c478394ff392d",
+        "metadata_tip_at_release": "d6ca376c60cf8475406cc79006313350726896ed",
+        "merge_sha": "62ef004ae25f1d9088f714e4acc571b8912c6bcc",
+        "merge_parents": [
+          "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
+          "a945d1258929438d2f4a5e07859c478394ff392d"
+        ],
+        "merge_tree": "e8d8407c04afec68f22c0817b12133280cf520f8",
+        "release_sha": "48e377e60df41b93a8d5d06975ffe8d7b9272055",
+        "release_parents": [
+          "62ef004ae25f1d9088f714e4acc571b8912c6bcc",
+          "d6ca376c60cf8475406cc79006313350726896ed"
+        ],
+        "release_tree": "070733bc997d017d43eb70ff9616b046e6ae78c2",
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "xhigh",
+        "risk_reason": "financial migration, transaction, concurrency, security, Git integration, publication, and exact-SHA CI",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "claim_active": true,
+        "attempt_active": false,
+        "runtime_identity_proof": "PASS: exact active rollout and agent configuration are openai/gpt-5.6-sol xhigh, Standard/Fast-off, with an empty fallback list",
+        "worktree_clean_at_admission": true,
+        "worktree_clean_after_release_ci": true,
+        "environment_recovery": "PASS: make frontend-install restored the exact package-lock environment; manager reproduced make frontend-test 234/234 across 17/17 files, zero failures/skips, npm install audit zero vulnerabilities, and clean Git at 62ef004a",
+        "dispatch_started": 3,
+        "start_failures": 0,
+        "local_release_gates": "PASS: focused 18/18; backend 729 passed with 444 explained database-only skips; frontend 234/234 across 17 files; isolated PostgreSQL 467/467 zero skips; adversarial 2/2; revision upgrade 1/1; automation 189/189; every static, build, import, dependency, deployment, publication, traceability, Alembic, security, secret, diff, cleanup, and clean-state gate",
+        "candidate_product_diff_sha256": "515b130833b37b94d9817f88bd7e259801306cb3a36b6f454b6efd871f4fb539",
+        "release_ci_run_id": 33469533522,
+        "release_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33469533522",
+        "release_ci_jobs": 4,
+        "release_ci_conclusion": "success",
+        "refs_reconciled": true,
+        "closure_sha": "57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319",
+        "closure_parent": "2bc9816db18aa71abf7e98ff7684351fa56ae898",
+        "closure_changed_paths": [
+          "ops/NOW.md",
+          "ops/STATE.json"
+        ],
+        "closure_ci_run_id": 33471210962,
+        "closure_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33471210962",
+        "closure_ci_jobs": 4,
+        "closure_ci_conclusion": "success",
+        "reconciliation_sha": "57fd5d34f4e91102f4d49cc124d17d6022467ae4",
+        "reconciliation_parent": "57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319",
+        "reconciliation_ci_run_id": 33471654604,
+        "reconciliation_ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33471654604",
+        "reconciliation_ci_jobs": 4,
+        "reconciliation_ci_conclusion": "success",
+        "release_card": "3266b3a3-e244-4926-ade8-6cc13eff775f",
+        "release_card_status": "done_manager_accepted",
+        "closure_manager": "property-manager",
+        "closure_metadata_correction": {
+          "card_id": "2eafb153-0693-42a6-8704-dc3bbaae9906",
+          "commit": "2bc9816db18aa71abf7e98ff7684351fa56ae898",
+          "parent": "48e377e60df41b93a8d5d06975ffe8d7b9272055",
+          "changed_paths": [
+            "ops/V1_ROADMAP.json"
+          ],
+          "automation_tests_passed": 189,
+          "ci_run_id": 33470535203,
+          "ci_run_url": "https://github.com/kompheak7711/property-rental-management/actions/runs/33470535203",
+          "ci_jobs": 4,
+          "ci_conclusion": "success",
+          "status": "done_manager_accepted"
+        },
+        "retention_recovery": {
+          "trigger": "control_plane_removed_clean_release_worktree_and_branch_during_terminal_attempt_reassignment",
+          "unique_work_lost": false,
+          "branch": "openclaw/wb-3266b3a3-e244-4926-ade8-6cc13eff775f",
+          "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-3266b3a3-e244-4926-ade8-6cc13eff775f",
+          "restored_sha": "48e377e60df41b93a8d5d06975ffe8d7b9272055",
+          "clean": true,
+          "locked": true,
+          "status": "recovered"
+        },
+        "publication_completed": true,
+        "status": "fully_released_published_verified_reconciled_closed"
+      },
+      "product_correction_3_rereview": {
+        "card_id": "7ab561b7-7fee-483c-88ce-759273ceb9f6",
+        "attempt_id": "workboard:7ab561b7-7fee-483c-88ce-759273ceb9f6:1788229221677",
+        "worker": "property-codex-2",
+        "branch": "openclaw/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6",
+        "worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-7ab561b7-7fee-483c-88ce-759273ceb9f6",
+        "source_branch": "openclaw/wb-6dc815a8-b86b-484c-98a4-852341997947",
+        "source_worktree": "/Users/sokompheak/.openclaw/worktrees/705e45fc22769984/wb-6dc815a8-b86b-484c-98a4-852341997947",
+        "candidate_sha": "47798abdbacf04df917eea6ee7f2b889eee7ac8c",
+        "candidate_parent": "0a55db2b445c776a2f91afee308cc0a13d8a93e7",
+        "candidate_tree": "b337076e239acd1b2c3c4711af908675bb6841fe",
+        "cumulative_base": "39c38e74b7b55f877f74081c94dcd9b971aa1348",
+        "cumulative_diff": "four commits, 16 paths, 3251 insertions, 19 deletions",
+        "cumulative_diff_sha256": "515b130833b37b94d9817f88bd7e259801306cb3a36b6f454b6efd871f4fb539",
+        "model": "openai/gpt-5.6-sol",
+        "reasoning": "max",
+        "mode": "standard",
+        "fast_mode": false,
+        "fallbacks": [],
+        "read_only": true,
+        "claim_active": false,
+        "attempt_active": false,
+        "worker_active": false,
+        "worktree_clean_at_admission": true,
+        "worktree_clean_at_completion": true,
+        "dispatch_started": 1,
+        "start_failures": 0,
+        "worker_tests": "PASS: focused 18/18, backend 729/729 with 444 explained database-only skips, frontend 234/234, automation 186/186, isolated PostgreSQL 467/467 zero skips, adversarial 2/2 with 465 deselected, revision upgrade 1/1 with 466 deselected, and all static, migration, dependency, security, traceability, deployment, publication, secret, diff, cleanup, and clean-state guards",
+        "review_findings": 0,
+        "review_verdict": "PASS",
+        "manager_acceptance": "PASS: exact SHA/parent/tree/four-commit ancestry/16-path cumulative diff/hash/clean proof plus focused 18/18; terminal rereview evidence accepted with zero findings",
+        "stale_attempt_reconciliation": "Terminal read-only proof and clean worktree were confirmed before the obsolete running execution display was stopped; branch, worktree, session, proof, and artifacts remain preserved",
+        "status": "done_manager_accepted_zero_findings"
+      },
+      "production_authorized": false,
+      "paid_services_authorized": false,
+      "customer_data_authorized": false,
+      "updated_at": "2026-09-01T04:53:20Z",
+      "enabled": false
+    },
+    "status": "complete_uncommitted",
+    "tests": [
+      "Preliminary44purePASS; corrected25isolatedPGPASS/no skips andfocusedformat/lint/typesPASS. Exact successor full applicable gates pending.",
+      "Rejected9983345fullPG1012PASS/19FAIL from sharedAugustTrashfixture mismatch; exact standalone source-pinned regressionRED, same-body installed regressionGREEN with25cases. Preserve all failures.",
+      "Initial standalone probe imported a stale W draft; qualification records invalid probe and corrected exact module pin. It is not counted as valid catalog-red evidence.",
+      "Canonicalfixture1,Securityfixture1,style2,types1,catalog1; parent contractprobe1 and standaloneimportprobe1 preserved. No source commands or published migrations changed.",
+      "API/UI and whole53lifecycle still pending; frontend/locks unchanged from accepted0926300, reuse only via exact identity."
+    ],
+    "timestamp": "2026-09-09T04:17:10.742485+00:00",
+    "updated_at": "2026-09-09T04:17:10.742485+00:00",
+    "candidate_parents": [
+      "998334563efb19589598499e1d21472de35c5cb4"
+    ],
+    "publication": {
+      "status": "corrected_projection_foundation_unpublished_api_ui_pending",
+      "tranche_id": "V1-053",
+      "candidate_sha": null,
+      "commit_completed": false,
+      "push_completed": false,
+      "ci_completed": false,
+      "workboard_card": "d362ed27-0bdb-4318-9c8a-0976c931d706",
+      "workboard_status": "blocked",
+      "workboard_acceptance_completed": false,
+      "production_deployment": false,
+      "product_implementation_started": true
+    },
+    "review": {
+      "status": "corrected_projection_exact_gates_and_review_pending",
+      "tranche_id": "V1-053",
+      "base_sha": "0926300c5c91b26deedb682e454622065826b0ad",
+      "exact_sha": null,
+      "model": "gpt-6-astra",
+      "reasoning_effort": "max",
+      "mode": "Standard",
+      "read_only": true,
+      "findings": null,
+      "standing_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
+        "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
+      },
+      "activation_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-activation-accepted-6bb5a98.json",
+        "sha256": "e309d31cbd6a609b328bdc56a02bfb4820cba09689505d578f9f83a659f0118e"
+      }
+    },
+    "evidence_applicability": {
+      "scope": "Corrected projection foundation; fresh exact full gates pending",
+      "activation_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-activation-accepted-6bb5a98.json",
+        "sha256": "e309d31cbd6a609b328bdc56a02bfb4820cba09689505d578f9f83a659f0118e"
+      },
+      "product_tests_repeated_for_approval": false,
+      "full_suites_sequential": true,
+      "source_commands_and_published_migrations_unchanged": true,
+      "preliminary_quality": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-catalog1.json",
+        "sha256": "35590cdad15702775b9d427a99057fe1a9ba05a078eda44b0a89fa5a398d856c"
+      },
+      "projection_contract": {
+        "path": "/Users/sokompheak/Development/property-rental-management/ops/V1_053_PROJECTION.md",
+        "sha256": "0129e89c89a30589861d4a1a3a63414447c9b646ea92beff98dd65584175fdb8"
+      },
+      "preliminary_postgresql": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
+        "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
+      },
+      "rejected_candidate": "998334563efb19589598499e1d21472de35c5cb4"
+    },
+    "current_product_acceptance": {
+      "status": "Corrected V1-053 projection foundation prepared; exact full gates and independent review pending. API/UI/publication/whole53closure remain outstanding. V1-052 closed.",
+      "predecessor_closure": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-closure-verification-0926300.json",
+        "sha256": "d51d90cec48d8d5fe2da707183b63c2c20f5a9922144217999ab66a4cc13b351"
+      },
+      "historical_values": "historical_v1_052_closed_current_fields"
+    },
+    "v1_053_projection": {
+      "id": "V1-053-projection",
+      "status": "prepared_catalog_successor_exact_gates_review_pending",
+      "base": "6bb5a980c1985a89e33301bde81d22d283a90b0f",
+      "review_base": "0926300c5c91b26deedb682e454622065826b0ad",
+      "worker": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "worktree": "/Users/sokompheak/Development/property-rental-management",
+      "model": "gpt-6-astra",
+      "reasoning": "xhigh",
+      "mode": "Standard",
+      "reason": "Financial history reconstruction, concurrency, authorization and forward-only migration",
+      "started_at": "2026-09-09T03:14:18.315872+00:00",
+      "scope": "Immutable relational source projection and exact chronology/position/composition model. No source commands or financial policy changes. Runtime grants are added only with separately tested scoped API integration.",
+      "paths": [
+        "backend/src/property_rental/customer_ledger.py",
+        "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+        "backend/tests/test_customer_ledger.py",
+        "backend/tests/test_customer_ledger_migration.py",
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_financial_action_context_migration.py",
+        "backend/tests/test_invoice_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_migrations.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_utility_meter_migration.py",
+        "scripts/database-test.sh",
+        "ops/traceability.json",
+        "ops/NOW.md",
+        "ops/STATE.json",
+        "ops/QUEUE.md",
+        "ops/V1_053_PROJECTION.md"
+      ],
+      "implementation_plan": [
+        "Define exact immutable event, position, composition and stable paging contract; unit-test canonical example, independent balances, deterministic ties, reversal reconstruction, large amounts and stale pages.",
+        "Add forward-only nonwritable relational source projection over all existing facts, no direct runtime grants or source changes; real isolated PostgreSQL reconciliation and source-preservation tests.",
+        "Freeze and independently review the bounded projection before integrating the authorized read API and dedicated Customer UI; use required focused checks and final cumulative full verification."
+      ],
+      "checks": [
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-unit-initial1.json",
+          "sha256": "a947af08072aaa280272a4d072df7d0b6645f1023a3b7d61f920278aba5fbcc5"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1.json",
+          "sha256": "0d4c74679f88aed5b8fb9ac153ec9b624018ca55de76229d95edab3dba2b29e0"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1.json",
+          "sha256": "f3b994ff47cc4f289aa360f28f58585c5f11af74535e6e8cf2968c448275c03f"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
+          "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-lintfix-initial1.json",
+          "sha256": "2cbc281013a1ea4a4e56a13d4cc1f9fdb8f1c95c4cb72fbf32cc955b66b592c0"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-types-initial1.json",
+          "sha256": "2ef3a28c10233852533b4a4659e59ddf6767019645f06855bc9c59c04511e1cd"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
+          "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
+          "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-verification-9983345-contract1.json",
+          "sha256": "e2f1b1b93e98989f2fa3323ede87422c82fae99459fd4150d13d9b98dc8e60ba"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-catalog-regression-red9983345-source1.json",
+          "sha256": "055a742b5693808e749d1fb8c119f236a4bed98b8bf7d2f598adf413ebf66711"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-catalog1.json",
+          "sha256": "35590cdad15702775b9d427a99057fe1a9ba05a078eda44b0a89fa5a398d856c"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
+          "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
+        }
+      ],
+      "correction_history": [
+        {
+          "at": "2026-09-09T03:42:37.797379+00:00",
+          "finding": "GATE-LDG-CANONICAL-F1",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "verified_fixed_pending_independent_review",
+          "failure": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1.json",
+            "sha256": "0d4c74679f88aed5b8fb9ac153ec9b624018ca55de76229d95edab3dba2b29e0"
+          },
+          "failed_test_source": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1-test-source.py",
+            "sha256": "1431aa1d2e8e96137a84aa2f58d159c8d793278e4490cef83d795e16e366fc0f"
+          },
+          "cause": "Canonical new fixture set Initial Rent issuance to current September9 while its move-in and period are July1. Published billing rule requires issuance business date equal move-in date; source generation correctly rejected before ledger assertions.",
+          "changed_approach": "Use explicit July1 business instant (June30 17:00:01UTC) for this synthetic canonical fixture, matching the established initial-billing test semantics. No production source logic, guard, scope, money amount or assertion weakened.",
+          "independent_new_coverage": "Added KHR/reference/channel FX, draft void, waiver/whole-charge reversal, Security/Pet Refund and return coverage; these are new source-family tests, not additional corrections for the fixture finding.",
+          "prior_results": "44purePASS;16PGPASS/1fixtureFAIL; no skips;48migrations applied. Failed evidence retained.",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
+            "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
+          }
+        },
+        {
+          "at": "2026-09-09T03:44:55.638688+00:00",
+          "finding": "GATE-LDG-SECURITY-F1",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "verified_fixed_pending_independent_review",
+          "failure": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1.json",
+            "sha256": "f3b994ff47cc4f289aa360f28f58585c5f11af74535e6e8cf2968c448275c03f"
+          },
+          "failed_test_source": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1-test-source.py",
+            "sha256": "3a1c7dbea0d0474efcd949a4a5caca5b0d0c935d1e667cb86d388253541c0f8e"
+          },
+          "cause": "New Security Deposit fixture incorrectly requested a general partial USD return for a coordinated Reservation cancellation Refund. Published source boundary correctly requires its whole-outcome coordinated correction path.",
+          "changed_approach": "Assert general return denial explicitly, then use existing supported correct_reservation_deposit_outcome full correction/replacement. Verify preserved original Refund, its separate correction and replacement, and zero resulting Security liability without Credit or Payment netting. Prior invalid1000liability expectation is retained in failed source; no product boundary or financial policy changed.",
+          "canonical_finding": "GATE-LDG-CANONICAL-F1 correction1 passed in correction1 run; 23PGPASS/1newfixtureFAIL/no skips.",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
+            "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
+          }
+        },
+        {
+          "at": "2026-09-09T03:50:38.707108+00:00",
+          "finding": "GATE-LDG-STYLE-F1",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "partially_corrected_remaining_seven_closed_by_style_attempt2",
+          "failure": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-lintfix-initial1.json",
+            "sha256": "2cbc281013a1ea4a4e56a13d4cc1f9fdb8f1c95c4cb72fbf32cc955b66b592c0"
+          },
+          "details": "Ruff auto-fixed22import issues; remaining53line-length,17fixture-shadow annotations and1next-generator preference addressed. SQL literals and executable migration AST are exactly preserved by wrapping. Test fixture annotation moved onto the actual parameter line; source lookup now explicitly asserts non-null rather than misplacing an ignore. No lint rule disabled; standard narrow F811 fixture annotations match established tests.",
+          "changes": [
+            {
+              "path": "/Users/sokompheak/Development/property-rental-management/backend/tests/test_customer_ledger_migration.py",
+              "before": {
+                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style1-test_customer_ledger_migration.py",
+                "sha256": "1e9385e583382d2887c45390acf40a9c7f702945b497e52334facfe1a5f2e6ee"
+              },
+              "after_sha256": "41aa0a28b081c8c967f78ed70bef655b6842f2264ec62e2eca5d03912ad43ac4",
+              "wrapped_literals": 16,
+              "literal_wrapping_ast_identical": true,
+              "complete_migration_ast_identical": false
+            },
+            {
+              "path": "/Users/sokompheak/Development/property-rental-management/backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+              "before": {
+                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style1-20260909_48_customer_ledger_projection.py",
+                "sha256": "199a4fecacd4014561bc4d997c3bb3d348d34b9f13e769295c35a2c46f981128"
+              },
+              "after_sha256": "2c0776392444f0dac75f12c2fd477e87e0944492c6eaca954d13e3e4ebf40b73",
+              "wrapped_literals": 18,
+              "literal_wrapping_ast_identical": true,
+              "complete_migration_ast_identical": true
+            }
+          ],
+          "remaining_verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
+            "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
+          }
+        },
+        {
+          "at": "2026-09-09T03:50:38.707108+00:00",
+          "finding": "GATE-LDG-TYPES-F1",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "verified_fixed_pending_independent_review",
+          "failure": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-types-initial1.json",
+            "sha256": "2ef3a28c10233852533b4a4659e59ddf6767019645f06855bc9c59c04511e1cd"
+          },
+          "cause": "One new test indexed an optional fetchone row and placed its ignore on the wrong formatted line.",
+          "changed_approach": "Explicit assert source_row is not None before indexing; remove the ignore. No runtime changes or weakened assertion.",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
+            "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+          }
+        },
+        {
+          "at": "2026-09-09T03:57:42.030613+00:00",
+          "finding": "GATE-LDG-STYLE-F1",
+          "attempt": 2,
+          "maximum": 2,
+          "status": "verified_fixed_pending_independent_review",
+          "failure": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
+            "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
+          },
+          "cause": "The first style correction left one redundant SQL-expression parenthesis pair and the formatter attached three fixture suppressions to the final parameter of split signatures.",
+          "changed_approach": "Remove exactly the redundant parenthesis pair; place the three existing fixture annotations on their final formatted parameter lines. Exact complete AST identity asserted for both files; no SQL or test behavior changes.",
+          "changes": [
+            {
+              "path": "backend/tests/test_customer_ledger_migration.py",
+              "before": {
+                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style2-test_customer_ledger_migration.py",
+                "sha256": "7f78f85b7b7ed871b0b52ba4bfadf64f0251b38d3576e8489d72cb821f84f3aa"
+              },
+              "after_sha256": "03ded98ca375dc04911045f1804130cafee3bf2372b25cac76846c3aa5edddf4",
+              "complete_ast_identical": true
+            },
+            {
+              "path": "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+              "before": {
+                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style2-20260909_48_customer_ledger_projection.py",
+                "sha256": "75fb1b3c542ee0914c0d92291d4fa8d5abbe27832d35cae54703539c1ea1b651"
+              },
+              "after_sha256": "28cb65f41fe4bb7c4b46c69e2b081f33bf114ae2a2af9a27a04c284d1d4e25e9",
+              "complete_ast_identical": true
+            }
+          ],
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
+            "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+          }
+        },
+        {
+          "at": "2026-09-09T04:14:44.133575+00:00",
+          "finding": "GATE-LDG-CATALOG-F1",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "focused_verified_fixed_pending_exact_full_gates_and_review",
+          "rejected_candidate": "998334563efb19589598499e1d21472de35c5cb4",
+          "failed_verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-verification-9983345-contract1.json",
+            "sha256": "e2f1b1b93e98989f2fa3323ede87422c82fae99459fd4150d13d9b98dc8e60ba"
+          },
+          "red_regression": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-catalog-regression-red9983345-source1.json",
+            "sha256": "055a742b5693808e749d1fb8c119f236a4bed98b8bf7d2f598adf413ebf66711"
+          },
+          "cause": "New canonical fixture used shared Property TRASH_COLLECTION August rate1000; existing authoritative billing fixtures require1200. July canonical amount1000 is correct and unchanged. Full suite19failures share this exact fixture cause; all24ledgerPGcases passed.",
+          "changed_approach": "Use the established August1200 shared catalog rate; add regression proving canonical July50000Rent+1000Trash creation leaves the expected July/August rate IDs and values unchanged when a following standard billing fixture reuses them. No runtime/migration/financial-policy changes or weakened assertions.",
+          "paths": [
+            "backend/tests/test_customer_ledger_migration.py",
+            "ops/traceability.json",
+            "ops/V1_053_PROJECTION.md",
+            "ops/NOW.md",
+            "ops/STATE.json",
+            "ops/QUEUE.md"
+          ],
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
+            "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
+          },
+          "quality": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-catalog1.json",
+            "sha256": "35590cdad15702775b9d427a99057fe1a9ba05a078eda44b0a89fa5a398d856c"
+          },
+          "regression_body_ast_matches_red": true
+        }
+      ],
+      "implementation_completed": true,
+      "initial_path_inventory_correction": {
+        "before": [
+          "backend/src/property_rental/customer_ledger.py",
+          "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+          "backend/tests/test_customer_ledger.py",
+          "backend/tests/test_customer_ledger_database.py",
+          "backend/tests/test_migrations.py",
+          "scripts/verify-postgres-persistence.py",
+          "ops/TRACEABILITY.json",
+          "ops/NOW.md",
+          "ops/STATE.json",
+          "ops/QUEUE.md"
+        ],
+        "after": [
+          "backend/src/property_rental/customer_ledger.py",
+          "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+          "backend/tests/test_customer_ledger.py",
+          "backend/tests/test_customer_ledger_migration.py",
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_financial_action_context_migration.py",
+          "backend/tests/test_invoice_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_migrations.py",
+          "backend/tests/test_payment_reversal_context_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_utility_meter_migration.py",
+          "scripts/database-test.sh",
+          "ops/traceability.json",
+          "ops/NOW.md",
+          "ops/STATE.json",
+          "ops/QUEUE.md"
+        ],
+        "basis": "Repository discovery: existing PostgreSQL suite naming is test_*_migration.py, registered in scripts/database-test.sh; traceability is lowercase ops/traceability.json. Existing current-head expectations require mechanical47to48 updates; historical revision47inspection preserved."
+      },
+      "whole_v1_053_completed": false,
+      "contract_path": "ops/V1_053_PROJECTION.md",
+      "contract_sha256": "0129e89c89a30589861d4a1a3a63414447c9b646ea92beff98dd65584175fdb8",
+      "candidate_sha": null,
+      "candidate_resolution": "Resolve containing normal successor commit externally. Rejected9983345 remains unchanged.",
+      "next_action": "Freeze catalog correction successor; fresh full exact gates then one complete0926300-base independent review before API/UI integration.",
       "preparation_history_snapshot": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-foundation-preparation-state.json",
         "sha256": "25d438634dbde08e67744183273f2c4e1a1fcf7afb71169069a92451c69454c2"
