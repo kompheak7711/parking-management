@@ -1,3 +1,9 @@
+# Current queue — V1-054 foundation test integration correction
+
+Freeze normal local corrected foundation successor; preserve failed47829f7. Fresh affected formatting/lint/types and all47PG/full backend/automation/build/trace/config/guard/preflight gates, reuse unchanged migration history and frontend evidence by exact identity. Then initial independent COMPLETE foundation stage review fromab09f28 including all failed checkpoint and correction evidence. No intermediate publication; HTTP/UI/evaluation and full-version acceptance precede closure54 and activation55; continue through60, pause SAME, never61/V2/production.
+
+Earlier entries are historical and retained.
+
 # Current queue — V1-054 foundation acceptance
 
 Freeze this bounded foundation candidate, run mandatory exact full backend/realPG/static/build/automation/config/trace/guard/preflight gates, then obtain initial independent complete-stage Astra/max/Standard/enforced-read-only zero review fromab09f28. Preserve all findings/corrections. After stage acceptance proceed to canonical HTTP/UI and scheduled evaluation. Keep intermediate commits local; final integrated V1-054 review from98ea770 precedes normal publication, ownexactCI/allrefs/Workboard/fullclosure and only then55. Continue through60, pause SAME, never61/V2/production.

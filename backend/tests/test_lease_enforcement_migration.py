@@ -14,6 +14,7 @@ import psycopg
 import pytest
 from alembic import command as alembic_command
 from alembic.config import Config
+from psycopg.conninfo import make_conninfo
 from psycopg.types.json import Jsonb
 
 from payment_test_support import seed_payment
@@ -589,11 +590,25 @@ def test_event_waits_for_financial_lock_and_rechecks_committed_zero_rent(
             }
         ],
     }
+    application_name = f"v1054-event-lock-{uuid4().hex}"
+    flow = PostgresLeaseEnforcementService(
+        runtime_database_url(),
+        make_conninfo(financial_database_url(), application_name=application_name),
+    )
+    request = RecordRentNonpaymentEvent(
+        uuid4(), NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT, "Concurrent default"
+    )
     with psycopg.connect(migrated_database_url) as holding:
         holding.execute("SELECT id FROM app.invoices WHERE id=%s FOR UPDATE", (invoice,))
         with ThreadPoolExecutor(max_workers=1) as pool:
             future = pool.submit(
-                event, prop, lease, case, human, NonpaymentEventKind.THIRTY_DAY_SERIOUS_DEFAULT
+                flow.record_event,
+                prop,
+                lease,
+                case,
+                request,
+                actor=staff(human, prop),
+                request_id="locked-event",
             )
             observed = False
             try:
@@ -601,10 +616,11 @@ def test_event_waits_for_financial_lock_and_rechecks_committed_zero_rent(
                     deadline = time.monotonic() + 2
                     while time.monotonic() < deadline:
                         waiting = observer.execute(
-                            "SELECT EXISTS(SELECT 1 FROM pg_stat_activity "
-                            "WHERE pid<>pg_backend_pid() AND datname=current_database() "
+                            "SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_stat_activity "
+                            "WHERE application_name=%s AND datname=%s "
                             "AND wait_event_type='Lock' "
-                            "AND query LIKE 'SELECT app.lease_enforcement_command%%')"
+                            "AND %s=ANY(pg_catalog.pg_blocking_pids(pid)))",
+                            (application_name, holding.info.dbname, holding.info.backend_pid),
                         ).fetchone()
                         if waiting == (True,):
                             observed = True

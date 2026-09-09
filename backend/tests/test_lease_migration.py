@@ -795,7 +795,7 @@ def test_nonbilling_lease_event_term_and_pet_stores_are_append_only(
             "WHERE table_schema='app' AND table_name LIKE 'rent_nonpayment_%'"
         ).fetchall()
     }
-    assert table_names == set()
+    assert table_names == {"rent_nonpayment_cases", "rent_nonpayment_events"}
 
 
 def test_lease_persistence_migration_is_forward_only() -> None:
