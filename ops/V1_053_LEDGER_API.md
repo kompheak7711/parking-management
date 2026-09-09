@@ -90,3 +90,7 @@ reversal, Deposit receipt reversal, mixed-kind equal instants and original KHR.
 proves equal-and-opposite per-source errors fail even when aggregate remains equal.
 These are preliminary implementation results. Exact frozen full gates and fresh
 independent review/publication/ownCI are still required before dedicated UI.
+
+## Canonical Customer path correction1
+
+Independent8c74266 review found one LOW input-contract gap: the shared UUID after-validator normalized alternate path spellings. Preserve that rejected candidate/report and all passing gates. Validate original Customer path text with a ledger-only before-validator, retaining the established safe422 path-validation response, private/no-store metadata and exact canonical nonnil UUID. Shared financial command validators remain unchanged. Add canonical success and uppercase/compact/braced/URN/extra-hyphen/nil/malformed denial cases before flow invocation. Dedicated UI/full53 remain pending.

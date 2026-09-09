@@ -1,3 +1,15 @@
+# Current queue — V1-053 canonical Customer path successor exact gates
+
+Latest 2026-09-09T07:44:43.121488+00:00: Run fresh exact successor fullPostgreSQL/backend sequentially and required static/build/import/automation/traceability/preservation/routing gates; reuse unchanged acceptedfrontend only by source/config identity. Preserve8c74266 rejectedLOWcanonicalpath report, source-pinned4FAIL/4PASS regression,142PASS corrected focused run and all prior evidence. Then ONE complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal publication/ownCI/allrefs, dedicatedCustomerUI and full53release/card/closure. Pause SAMEfollow-up only at closed53; OpenClawdisabled, never54.
+
+Preserved earlier entries:
+
+# Current queue — V1-053 canonical Customer path correction1
+
+Correct LEDGER-API-CANONICAL-PATH-F1 attempt1 with ledger-only original-text validation and preserved same-body RED/GREEN HTTP regression. Preserve rejected8c74266 report, all prior failures and valid evidence. Freeze successor, fresh applicable fullPG/backend/static/build/automation/preservation gates; unchangedfrontend reuse; ONE complete0926300-base Astra/max/Standard/read-only zero review, normal publication/ownCI/refs, then dedicatedUI/full53release/card/closure. SAMEfollow-upACTIVE/OpenClawdisabled/never54.
+
+Preserved earlier entries:
+
 # Current queue — V1-053 corrected ledger API exact gates
 
 Latest 2026-09-09T07:10:37.721454+00:00: Run fresh exact successor backend/automation and required static/build/import/traceability/preservation/routing gates; reuse f17a38b full1053PASS PostgreSQL only through unchanged runtime/migrations/PG suite and environment source proof. Preserve its one failed legacy inventory result and all previous failures. Then one complete0926300-base Astra/max/Standard/enforced-read-only zero review, normal publication/ownCI/allrefs, dedicatedCustomerUI and full53release/card/closure. Pause SAMEfollow-up only at closed53; OpenClawdisabled, never54.

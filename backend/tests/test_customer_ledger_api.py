@@ -289,3 +289,36 @@ def test_ledger_http_rechecks_returned_property_against_exact_ledger_grant(kind:
     with client(flow, actor()) as api:
         response = api.get(path(kind))
     assert response.status_code == 503 and "property_id" not in response.json()["meta"]
+
+
+@pytest.mark.parametrize(
+    "identifier",
+    [
+        str(CUSTOMER).upper(),
+        CUSTOMER.hex,
+        "{" + str(CUSTOMER) + "}",
+        "urn:uuid:" + str(CUSTOMER),
+        str(CUSTOMER).replace("-", "--"),
+        str(UUID(int=0)),
+        "not-a-customer-id",
+    ],
+)
+def test_ledger_http_rejects_noncanonical_customer_path_before_flow(identifier: str) -> None:
+    flow = Flow()
+    with client(flow, actor()) as api:
+        response = api.get(f"/api/v1/customers/{identifier}/account-ledger")
+    assert response.status_code == 422 and not flow.calls
+    assert response.headers["cache-control"] == "private, no-store"
+    assert response.json()["meta"]["request_id"] == response.headers["x-request-id"]
+    assert "property_id" not in response.json()["meta"]
+    assert identifier not in response.text and str(PROP) not in response.text
+
+
+def test_ledger_http_canonical_customer_path_preserves_exact_uuid() -> None:
+    flow = Flow()
+    with client(flow, actor()) as api:
+        response = api.get(path())
+    assert response.status_code == 200 and len(flow.calls) == 1
+    call = flow.calls[0]
+    assert isinstance(call, tuple) and call[0] == CUSTOMER
+    assert response.json()["data"]["customer_id"] == str(CUSTOMER)

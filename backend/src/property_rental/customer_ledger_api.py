@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Coroutine
-from typing import Protocol
+from typing import Annotated, Protocol
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.routing import APIRoute
+from pydantic import BeforeValidator
 
 from property_rental.customer_ledger import (
     LedgerFilter,
@@ -31,7 +32,20 @@ from property_rental.identity import (
     AuthorizationRequirement,
     is_authorized,
 )
-from property_rental.payment_api import Identity, _actor, _queries, _timestamp
+from property_rental.payment_api import _actor, _queries, _timestamp
+
+
+def _customer_identity(value: object) -> UUID:
+    # Validate the original path spelling before UUID parsing can normalize it.
+    if not isinstance(value, str):
+        raise ValueError("A canonical Customer identity is required")
+    result = identity(UUID(value))
+    if str(result) != value:
+        raise ValueError("A canonical Customer identity is required")
+    return result
+
+
+LedgerCustomerIdentity = Annotated[UUID, BeforeValidator(_customer_identity)]
 
 
 class CustomerLedgerFlow(Protocol):
@@ -137,7 +151,7 @@ def create_customer_ledger_router(
         return financial_metadata(request) | {"actor_id": actor.actor_id}
 
     @router.get("/customers/{customer_id}/account-ledger")
-    def get(customer_id: Identity, request: Request) -> dict[str, object]:
+    def get(customer_id: LedgerCustomerIdentity, request: Request) -> dict[str, object]:
         actor = actor_for(request)
         expected = _expected_property(request)
         _queries(

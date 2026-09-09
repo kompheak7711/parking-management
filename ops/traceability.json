@@ -27699,6 +27699,28 @@
       "test_path": "backend/tests/test_customer_ledger_read_migration.py",
       "status": "implemented",
       "notes": "V1-053 ledger read API: runtime rejects offsetting source errors even when aggregate still matches. Application-runtime reads preserve source commands; dedicated UI and full-version closure remain pending."
+    },
+    {
+      "test_id": "test_ledger_http_rejects_noncanonical_customer_path_before_flow",
+      "upstream_ids": [
+        "API-093",
+        "SEC-070"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_ledger_api.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger-only canonical nonnil Customer path: reject alternate spellings before financial flow, preserve exact canonical identity. Regression for LEDGER-API-CANONICAL-PATH-F1."
+    },
+    {
+      "test_id": "test_ledger_http_canonical_customer_path_preserves_exact_uuid",
+      "upstream_ids": [
+        "API-093",
+        "SEC-070"
+      ],
+      "test_level": "API",
+      "test_path": "backend/tests/test_customer_ledger_api.py",
+      "status": "implemented",
+      "notes": "V1-053 ledger-only canonical nonnil Customer path: reject alternate spellings before financial flow, preserve exact canonical identity. Regression for LEDGER-API-CANONICAL-PATH-F1."
     }
   ]
 }
