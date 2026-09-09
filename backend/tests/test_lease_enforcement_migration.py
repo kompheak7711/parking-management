@@ -1148,8 +1148,10 @@ def test_follow_up_waits_for_source_void_and_enforces_cancellation_chronology(
                         holding.execute(
                             "INSERT INTO app.rent_nonpayment_events "
                             "SELECT %s,%s,'AUTHORIZED_FOLLOW_UP', "
-                            "timezone('Asia/Phnom_Penh',v.occurred_at-interval '1 microsecond')::date, "
-                            "0,NULL,NULL,'Backdated follow-up',v.occurred_at-interval '1 microsecond', "
+                            "timezone('Asia/Phnom_Penh',"
+                            "v.occurred_at-interval '1 microsecond')::date, "
+                            "0,NULL,NULL,'Backdated follow-up',"
+                            "v.occurred_at-interval '1 microsecond', "
                             "%s,'Management instruction' FROM app.invoice_void_events v "
                             "WHERE v.invoice_id=%s",
                             (uuid4(), case, human, invoice),

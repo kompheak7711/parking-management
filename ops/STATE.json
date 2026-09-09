@@ -3062,7 +3062,7 @@
   "branch": "implementation/foundation",
   "commit": "ab09f28eeb15c511e878db56b7dfc036cfe0e484",
   "idle_reason": "",
-  "next_action": "Run fresh mandatory exact correction1 gates, including full47PG suites and complete backend/trace/automation/build/static checks; reuse only unchanged verified frontend/dependency inputs. Obtain expanded independent focused review of correction from rejected1b1df73, providing original R1/R2 findings and connected financial/authorization/lock/chronology/audit/replay evidence. After focused zero, obtain a fresh COMPLETE foundation stage review fromab09f28. No stage acceptance until full-stage zero, no intermediate publication; HTTP/UI/evaluation and final integrated V1-054 review/closure precede55, continue through60 then pause SAME, never61/V2/production.",
+  "next_action": "Verify exact normal lint successor with all mandatory affected gates, preserving7c91743 lint failure and external checker correction. Obtain expanded focused independent correction review from rejected1b1df73, then fresh COMPLETE foundation review fromab09f28 at zero before HTTP/UI/evaluation. Final integrated V1-054 review/CI/refs/Workboard/fullclosure precedes55. Continue through60, pause SAME; never61/V2/production.",
   "active_worker": null,
   "active_card": "eb3bb651-eb65-4b96-9f55-1d72a9ce1b0c",
   "active_claim": null,
@@ -3070,7 +3070,7 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Resolve containing normal immutable correction1 commit externally.",
+  "candidate_resolution": "Resolve containing immutable normal correction1 literal-wrap successor externally.",
   "candidate_parent": "ab09f28eeb15c511e878db56b7dfc036cfe0e484",
   "next_candidate": {
     "id": "V1-054",
@@ -3133,7 +3133,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-054 independent R1/R2 correction1 prepared; exact gates and expanded focused review pending",
+  "phase": "V1-054 correction1 unchanged-behavior lint successor prepared; exact gates and expanded review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4229,9 +4229,8 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "Prior exact1b1df73 fullPG1086PASS/backend2773PASS/1063database-onlyskips/189automation preserved; independent0HIGH/2MEDIUM/0LOW rejection retained.",
-    "Correction1 adds two connected PG scenarios and strengthens existing VOID checks; source formatted, fresh exact mandatory gates pending.",
-    "Expanded focused correction review and fresh full-stage zero required before acceptance. No completed tests repeated merely for approval or continuation."
+    "7c91743 external preservation checker corrected with exact archive proof; corrected contract and format passed. Lint found two overlong test SQL literals, no product tests had started.",
+    "Split only adjacent Python string literals; exact whole test AST unchanged. All failed checks retained. R1/R2 correction attempt remains1, unresolved until expanded focused and complete-stage independent reviews."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4476,7 +4475,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-09T21:15:49.019595+00:00",
+  "updated_at": "2026-09-09T21:26:47.573130+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -25833,6 +25832,23 @@
       ],
       "implementation": "Current VOID Rent assessment is zero via source applicability; AUTHORIZED_FOLLOW_UP remains allowed after VOID with zero snapshot, explicit reference and cancellation chronology. Warning/default/CURE remain ineligible; no auto event or tenancy change.",
       "regressions": "Two new connected PG tests plus strengthened existing VOID case. Compare case/Invoice/ledger, preserve original Notice/default and source rows, check missing authority/wrong scope/capability/stale replay, exact audit/replay and a follow-up waiting for real VOID commit."
+    },
+    "lint_correction": {
+      "status": "prepared",
+      "attempt": 1,
+      "issue": "Two overlong SQL literal lines in new cancellation chronology regression; Ruff formatting does not split string literals.",
+      "failure": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-foundation-verification-7c91743-contractfix1.json",
+        "sha256": "3ab9b62c9e276765f0ce122090942ccd35cb3b7e74e9af761f72b1d507af3272"
+      },
+      "paths": [
+        "backend/tests/test_lease_enforcement_migration.py",
+        "ops/NOW.md",
+        "ops/QUEUE.md",
+        "ops/STATE.json"
+      ],
+      "source_semantics_changed": false,
+      "ast_identical": true
     }
   },
   "historical_v1_054_activation_current_fields": {
@@ -26886,5 +26902,216 @@
       "failed_candidate": "47829f77cb97db2313319a30df30063c17079791"
     },
     "candidate_resolution": "Resolve containing immutable normal foundation commit externally; no self-referential SHA."
+  },
+  "historical_v1_054_correction1_lint_current_fields": {
+    "next_action": "Run fresh mandatory exact correction1 gates, including full47PG suites and complete backend/trace/automation/build/static checks; reuse only unchanged verified frontend/dependency inputs. Obtain expanded independent focused review of correction from rejected1b1df73, providing original R1/R2 findings and connected financial/authorization/lock/chronology/audit/replay evidence. After focused zero, obtain a fresh COMPLETE foundation stage review fromab09f28. No stage acceptance until full-stage zero, no intermediate publication; HTTP/UI/evaluation and final integrated V1-054 review/closure precede55, continue through60 then pause SAME, never61/V2/production.",
+    "candidate_resolution": "Resolve containing normal immutable correction1 commit externally.",
+    "phase": "V1-054 independent R1/R2 correction1 prepared; exact gates and expanded focused review pending",
+    "tests": [
+      "Prior exact1b1df73 fullPG1086PASS/backend2773PASS/1063database-onlyskips/189automation preserved; independent0HIGH/2MEDIUM/0LOW rejection retained.",
+      "Correction1 adds two connected PG scenarios and strengthens existing VOID checks; source formatted, fresh exact mandatory gates pending.",
+      "Expanded focused correction review and fresh full-stage zero required before acceptance. No completed tests repeated merely for approval or continuation."
+    ],
+    "updated_at": "2026-09-09T21:15:49.019595+00:00",
+    "v1_054_foundation": {
+      "id": "V1-054-persistence-domain",
+      "status": "review_correction1_prepared",
+      "base": "ab09f28eeb15c511e878db56b7dfc036cfe0e484",
+      "complete_version_base": "98ea770333d016232eeaeebeca7e4e8e89cbdc85",
+      "paths": [
+        "backend/migrations/versions/20260910_50_lease_enforcement.py",
+        "backend/src/property_rental/lease_enforcement.py",
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_customer_ledger_migration.py",
+        "backend/tests/test_customer_ledger_read_migration.py",
+        "backend/tests/test_financial_action_context_migration.py",
+        "backend/tests/test_invoice_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_lease_enforcement.py",
+        "backend/tests/test_lease_enforcement_migration.py",
+        "backend/tests/test_lease_migration.py",
+        "backend/tests/test_migrations.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_utility_meter_migration.py",
+        "ops/NOW.md",
+        "ops/QUEUE.md",
+        "ops/STATE.json",
+        "ops/traceability.json",
+        "scripts/database-test.sh"
+      ],
+      "started_at": "2026-09-09T19:41:48.236334+00:00",
+      "scope": {
+        "path": "/Users/sokompheak/Development/property-rental-management/ops/V1_054_SCOPE.md",
+        "sha256": "511d533058a10fab7a1c5156cb0a941fe7ae975d32f0d7dd276ac32f3e1a3260"
+      },
+      "activation_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-activation-accepted-ab09f28.json",
+        "sha256": "64566bf67a29f518b811500cf6bed8b6a34bb03b457d3bbbbb8a2b321bc1fa9b"
+      },
+      "implementation_plan": [
+        "Add forward-only case/event persistence and narrow audited command receipts; retain existing append-only violation-warning table.",
+        "Derive exact Rent-line balances from composed Payment/Credit/Adjustment functions under common Invoice locks; guard actor, source identity, snapshots, chronology, unique milestones and replay. No existing Deposit application table exists; V1-056 must integrate any future permitted application into the shared authoritative line projection.",
+        "Expose bounded Python warning/case/event reads and commands with distinct exact capabilities and fresh human/Property validation. Read-only eligibility/evaluation never posts business events.",
+        "Test synthetic real PostgreSQL migration/permissions/immutability/source isolation/concurrency/idempotency/local milestones and service validation. Add accurate traceability and mandatory PG discovery.",
+        "Run required stage gates, commit normally and review exact full stage; keep local until complete-version integrated acceptance."
+      ],
+      "exclusions": "No HTTP/UI wiring yet, automatic tenancy/Unit/Occupancy/Settlement changes, invented policy, source history rewrite, production/customer data, new framework/dependency or unrelated automation repair.",
+      "review_required": true,
+      "product_accepted": false,
+      "publication_permitted": false,
+      "prepared_at": "2026-09-09T20:22:23.252875+00:00",
+      "implementation_completed_for_bounded_stage": true,
+      "full_version_implementation_completed": false,
+      "preliminary_static": {
+        "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1054-draft-prefreeze1.json",
+        "sha256": "73b90fd98b6deda70fee9b114ef544cb051d616d320cefacf7d0207a9a3ba2ab"
+      },
+      "preliminary_pg_runs": [
+        {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1054-foundation-pg-initial1.json",
+          "sha256": "6121e917a98a45127292df7aa453e971224c61a46e16c229b04834fa422e6c73"
+        },
+        {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1054-foundation-pg-creditfixture1.json",
+          "sha256": "0b01c150cc041cc823b4641dfa6db44441b16c2a7821e864d0cd7bce850d5e15"
+        },
+        {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1054-foundation-pg-connected1.json",
+          "sha256": "ebefecdb0c83ae00a0d28afa93024ad7481227ed473ed0a0c0ff6b0c056091c7"
+        },
+        {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1054-foundation-pg-connectedfixtures1.json",
+          "sha256": "c3cc473f93edc96c11a6ec0f3e3699c0333689f48abb7ca887fe5b03a2e45483"
+        },
+        {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1054-foundation-pg-beforethirty1.json",
+          "sha256": "0c6e2fd12cacff1bb82da33ca8dabaa202a7fd82a178243b09448b75d41a8365"
+        }
+      ],
+      "test_corrections": [
+        {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1054-foundation-pg-initial1-correction.json",
+          "sha256": "1e5dc22aefa99ceeb37667d71e6ae1314f67a8f1a8db163ef9fbf387f19716fe"
+        },
+        {
+          "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1054-connected1-fixture-correction.json",
+          "sha256": "baca4223c527fdd16a073118d740500005a31a4da4d5f2f31a94bad35e01cf6b"
+        }
+      ],
+      "preliminary_gate_qualification": "Initial exact candidate47829f7 failed full PG:23fail/1063pass. Product source unchanged; bounded existing-head/table expectations and exact-session observer correction prepared. Full fresh corrected PG mandatory; original logs/source immutable.",
+      "fresh_reconciliation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-foundation-preparation-reconciliation.json",
+        "sha256": "9fed4073bd2afaf18301bafba139c30e87fcb8548b3306642e341a9e5e4dd8d7"
+      },
+      "fresh_required": [
+        "full backend formatting/lint/types/tests",
+        "new migration format/lint and Alembic history",
+        "all47PostgreSQLsuites including33newcases",
+        "standard isolated backend build/import",
+        "automation189",
+        "deployment configuration",
+        "traceability and source/mode/history preservation",
+        "publication guard and actual no-override preflight",
+        "independent complete-stage review"
+      ],
+      "capabilities": {
+        "warning_read": "leases.read",
+        "warning_create": "leases.warn",
+        "case_read": "rent_nonpayment.read",
+        "case_open": "rent_nonpayment.case_manage",
+        "event_post": "rent_nonpayment.event_post"
+      },
+      "shared_financial_source": "Composed invoice_line_outstanding[_at] includes Payment/Credit/Adjustment corrections; no Deposit application table yet. Source Invoice lock/serialization guard shared with financial writers. Future permitted V1-056 Deposit applications must enter the same authoritative projection.",
+      "remaining_version_scope": "Canonical HTTP/API067/095, UI075/108 and scheduled evaluation integration followed by final full-version acceptance; no automatic tenancy effects or intermediate publication.",
+      "gate_correction": {
+        "status": "prepared",
+        "receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-foundation-gate1-correction.json",
+        "failed_candidate": "47829f77cb97db2313319a30df30063c17079791",
+        "paths": [
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_customer_ledger_migration.py",
+          "backend/tests/test_customer_ledger_read_migration.py",
+          "backend/tests/test_financial_action_context_migration.py",
+          "backend/tests/test_invoice_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_lease_enforcement_migration.py",
+          "backend/tests/test_lease_migration.py",
+          "backend/tests/test_migrations.py",
+          "backend/tests/test_payment_reversal_context_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_utility_meter_migration.py",
+          "ops/NOW.md",
+          "ops/QUEUE.md",
+          "ops/STATE.json"
+        ],
+        "product_source_or_migration_change": false,
+        "findings": [
+          {
+            "id": "V1054-FND-G1",
+            "issue": "21 failing migration tests still assert head49 after additive migration50; later head assertions in the same tests also require successor50.",
+            "attempt": 1,
+            "correction": "Update only current-head expectations; preserve historical49 targets and revision graph assertions."
+          },
+          {
+            "id": "V1054-FND-G2",
+            "issue": "Legacy Lease test still expects no Rent nonpayment tables.",
+            "attempt": 1,
+            "correction": "Require exactly the two authorized new tables; retain all append-only and tenancy checks."
+          },
+          {
+            "id": "V1054-FND-G3",
+            "issue": "Lock observer filters to its admin connection current_database(), which differs from the isolated application database under the full-suite autouse fixture.",
+            "attempt": 1,
+            "correction": "Tag the exact event session and match its database plus exact blocking connection PID; retain the real Payment commit and post-lock rejection assertions."
+          }
+        ]
+      },
+      "failed_candidate": "47829f77cb97db2313319a30df30063c17079791",
+      "independent_initial_review": {
+        "candidate": "1b1df738628ab0adb6469e7a5efc8efbaea2f0fd",
+        "verdict": "REJECT",
+        "report": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-foundation-review-1b1df73.md",
+          "sha256": "d3a41143484ef3545bf12109034f16172540e67af7fd80c025a8c67f24fb645e"
+        },
+        "root_assessment": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-foundation-1b1df73-root-assessment.json",
+          "sha256": "bc976ba98e41414d7d990da91e98f507937aa2bc89e14e98697a1c2c63c6c22b"
+        },
+        "findings": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-foundation-1b1df73-findings.json",
+          "sha256": "2b9e7a6773cebbf03b175967903bd1cbf3d4600b5c795a26ae43fddbc6dd6515"
+        }
+      },
+      "review_correction": {
+        "status": "prepared",
+        "activation": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-foundation-review-correction1-activation.json",
+          "sha256": "11f9045b04236e0c4b7aae7e1603bd1c0d0ddef3d597cd8bac0061fea5242cc0"
+        },
+        "paths": [
+          "backend/migrations/versions/20260910_50_lease_enforcement.py",
+          "backend/tests/test_lease_enforcement_migration.py",
+          "ops/NOW.md",
+          "ops/QUEUE.md",
+          "ops/STATE.json",
+          "ops/traceability.json"
+        ],
+        "attempt": 1,
+        "findings": [
+          "V1054-FND-R1",
+          "V1054-FND-R2"
+        ],
+        "implementation": "Current VOID Rent assessment is zero via source applicability; AUTHORIZED_FOLLOW_UP remains allowed after VOID with zero snapshot, explicit reference and cancellation chronology. Warning/default/CURE remain ineligible; no auto event or tenancy change.",
+        "regressions": "Two new connected PG tests plus strengthened existing VOID case. Compare case/Invoice/ledger, preserve original Notice/default and source rows, check missing authority/wrong scope/capability/stale replay, exact audit/replay and a follow-up waiting for real VOID commit."
+      }
+    }
   }
 }
