@@ -12,6 +12,7 @@ import {
   ledgerComposition,
   ledgerEvent,
   ledgerKhrScenario,
+  ledgerVoidScenario,
   ledgerId,
   ledgerIds,
   ledgerPosition,
@@ -63,6 +64,8 @@ export function startLedgerBrowser(scenario = "canonical", selected = true) {
   hold = false;
   state = {};
   if (scenario === "KHR") state = ledgerKhrScenario();
+  if (scenario === "issued-void") state = ledgerVoidScenario();
+  if (scenario === "draft-void") state = ledgerVoidScenario(true);
   if (scenario === "large")
     state.position = ledgerPosition("9".repeat(64), "0", {
       security_deposit_usd_cents: "900000000000000000",

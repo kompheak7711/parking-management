@@ -28280,6 +28280,48 @@
       "test_path": "frontend/src/customerLedgerClient.test.ts",
       "status": "implemented",
       "notes": "accepts complete continuation, filtered subsets and exact/null audit money"
+    },
+    {
+      "test_id": "TEST-FE-584",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "Preserves null Invoice void recorded amounts and exact component effects through pagination for issued and draft voids"
+    },
+    {
+      "test_id": "TEST-FE-585",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/customerLedgerClient.test.ts",
+      "status": "implemented",
+      "notes": "Rejects malformed present void recorded amounts in history and source components"
+    },
+    {
+      "test_id": "TEST-FE-586",
+      "upstream_ids": [
+        "API-093",
+        "UI-104",
+        "BR-LEDGER-002",
+        "PR-LEDGER-002",
+        "SEC-070"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/CustomerAccountLedger.test.tsx",
+      "status": "implemented",
+      "notes": "Renders absent Invoice void amount explicitly with authoritative history/components, source focus and read-only requests"
     }
   ]
 }

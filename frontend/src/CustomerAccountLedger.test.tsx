@@ -17,6 +17,7 @@ import {
 } from "./customerLedgerClient";
 import {
   ledgerRequestUrl,
+  ledgerVoidScenario,
   ledgerComposition,
   ledgerEvent,
   ledgerKhrScenario,
@@ -483,3 +484,58 @@ describe("Customer account ledger", () => {
     expect(screen.getAllByText(ledgerId(151)).length).toBeGreaterThan(0);
   });
 });
+
+it.each([false, true])(
+  "TEST-FE-586 shows absent recorded amount and authoritative effects for Invoice void draft=%s",
+  async (draft) => {
+    const { api, fetcher } = setup(ledgerVoidScenario(draft));
+    render(
+      <CustomerAccountLedger
+        actorId={ledgerIds.actor}
+        api={api}
+        requested={selected}
+      />,
+    );
+    await account();
+    const history = screen.getByRole("table", {
+      name: /Chronological financial history/,
+    });
+    const eventRow = within(history).getAllByRole("row")[1];
+    if (!eventRow) throw new Error("Expected void history row");
+    expect(within(eventRow).getAllByRole("cell")[0]).toHaveTextContent(
+      /^Not recorded$/,
+    );
+    expect(eventRow).toHaveTextContent(
+      draft ? "No balance change" : "Decrease $510.00",
+    );
+    fireEvent.click(
+      within(eventRow).getByRole("button", {
+        name: "View source: SYNTHETIC-1",
+      }),
+    );
+    const heading = await screen.findByRole("heading", {
+      name: draft
+        ? "Source details: Draft Invoice voided"
+        : "Source details: Invoice voided",
+    });
+    expect(heading).toHaveFocus();
+    const source = screen.getByRole("region", {
+      name: heading.textContent ?? "",
+    });
+    expect(source).toHaveTextContent("Recorded amount: Not recorded");
+    const components = await within(source).findByRole("table", {
+      name: /Source components/,
+    });
+    expect(components).toHaveTextContent(
+      draft ? "No balance change" : "Decrease $500.00",
+    );
+    if (!draft) expect(components).toHaveTextContent("Decrease $10.00");
+    expect(
+      screen.getByText("Current amount owed").closest("div"),
+    ).toHaveTextContent("$0.00");
+    for (const [, init] of fetcher.mock.calls) {
+      expect(init?.method).toBe("GET");
+      expect(init?.body).toBeUndefined();
+    }
+  },
+);

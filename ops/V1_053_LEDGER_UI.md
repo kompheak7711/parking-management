@@ -111,3 +111,7 @@ push, rewrite history, or delete retained worktrees.
 ## Bounded browser harness
 
 Add frontend/src/test/customerLedger.browser.tsx as an opt-in synthetic browser harness, consistent with existing frontend browser checks. It imports the actual ledger components/client and synthetic fixtures, never a production entry point. Run the existing Playwright CLI against an owned loopback Vite server with all financial network requests blocked; record runtime viewport, interaction, pagination, stale/scope, source/KHR/money, focus and privacy evidence outside the candidate.
+
+## Invoice void amount correction
+
+Preserve an explicitly absent recorded amount as null in both history and source components. Issued and draft Invoice void projections omit that amount; display “Not recorded” and retain their authoritative balance effects. Never substitute zero. Present recorded amounts still require canonical exact nonnegative decimal strings. Regression IDs TEST-FE-584–586 cover issued and draft voids, paginated components, malformed present amounts and the dedicated view. Preserve rejected0ca4c53 and its one-MEDIUM report, the four reproduced failures, same-body eight-pass correction, and the separate test-only TypeScript guard correction.

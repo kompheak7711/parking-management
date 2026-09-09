@@ -71,7 +71,7 @@ export interface LedgerCommon {
   readonly business_date: string;
   readonly source_table: string;
   readonly source_reference: string | null;
-  readonly recorded_amount_usd_cents: string;
+  readonly recorded_amount_usd_cents: string | null;
   readonly source_audit: Readonly<Record<string, LedgerAudit>>;
   readonly invoice_id: string | null;
   readonly late_payment_charge_id: string | null;
@@ -438,7 +438,8 @@ function rows(
       financialInstant(day + "T00:00:00Z");
       if (!/^[a-z_]{1,80}$/.test(text(row.source_table, 80)))
         invalidFinancial();
-      money(row.recorded_amount_usd_cents);
+      if (row.recorded_amount_usd_cents !== null)
+        money(row.recorded_amount_usd_cents);
       financialObject(row.source_audit);
       audit(row.source_audit);
       if (

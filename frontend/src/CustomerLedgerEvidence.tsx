@@ -86,7 +86,11 @@ export function LedgerHistoryTable({
                   {row.source_reference ?? LEDGER_EVENTS[row.event_kind][1]}
                 </button>
               </th>
-              <td>{ledgerMoney(row.recorded_amount_usd_cents)}</td>
+              <td>
+                {row.recorded_amount_usd_cents === null
+                  ? "Not recorded"
+                  : ledgerMoney(row.recorded_amount_usd_cents)}
+              </td>
               <td>
                 <dl className="ledger-effects">
                   {Object.entries(LEDGER_BUCKETS).map(([key, label]) => {
@@ -252,9 +256,12 @@ export function LedgerEventEvidence({ row }: { row: LedgerCommon }) {
   return (
     <>
       <p>
-        {LEDGER_EVENTS[row.event_kind][1]} — recorded{" "}
-        {ledgerMoney(row.recorded_amount_usd_cents)}. Component effects below
-        explain which balances changed; they are not additional receipts.
+        {LEDGER_EVENTS[row.event_kind][1]}. Recorded amount:{" "}
+        {row.recorded_amount_usd_cents === null
+          ? "Not recorded"
+          : ledgerMoney(row.recorded_amount_usd_cents)}
+        . Component effects below explain which balances changed; they are not
+        additional receipts.
       </p>
       <dl className="financial-facts">
         <div>

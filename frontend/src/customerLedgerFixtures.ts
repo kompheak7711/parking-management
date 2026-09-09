@@ -49,7 +49,10 @@ export function ledgerEvent(
     business_date: "2026-07-01",
     source_table: "invoices",
     source_reference: `SYNTHETIC-${String(index)}`,
-    recorded_amount_usd_cents: "51000",
+    recorded_amount_usd_cents:
+      kind === "INVOICE_VOIDED" || kind === "DRAFT_INVOICE_VOIDED"
+        ? null
+        : "51000",
     source_audit: {},
     invoice_id: ledgerIds.invoice,
     late_payment_charge_id: null,
@@ -407,5 +410,42 @@ export function ledgerKhrScenario(): SyntheticLedger {
     events: [event],
     position,
     components: ledgerSourceComponents(event),
+  };
+}
+
+/** Mirrors migration48: void has effects but no recorded transaction amount. */
+export function ledgerVoidScenario(draft = false): SyntheticLedger {
+  const position = ledgerPosition("0", "0");
+  const event = ledgerEvent(
+    draft ? "DRAFT_INVOICE_VOIDED" : "INVOICE_VOIDED",
+    1,
+    {
+      source_table: "invoice_void_events",
+      recorded_amount_usd_cents: null,
+      component_count: draft ? 1 : 2,
+      invoice_effect_usd_cents: draft ? "0" : "-51000",
+      position_after_instant: position,
+      source_audit: { reason: "Synthetic Invoice void" },
+    },
+  );
+  return {
+    events: [event],
+    position,
+    composition: [],
+    components: draft
+      ? [
+          ledgerComponent(event, 1, {
+            balance_kind: "NONE",
+            balance_source_id: ledgerIds.invoice,
+            invoice_line_id: null,
+            effect_usd_cents: "0",
+            category: null,
+            description: null,
+          }),
+        ]
+      : [
+          ledgerComponent(event, 1, { effect_usd_cents: "-50000" }),
+          ledgerComponent(event, 2, { effect_usd_cents: "-1000" }),
+        ],
   };
 }

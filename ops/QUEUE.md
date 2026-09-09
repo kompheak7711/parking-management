@@ -1,3 +1,9 @@
+# Current queue — V1-053 nullable Invoice void correction
+
+Freeze/test/review normal corrected UI successor. Preserve0ca4c53 rejected one-MEDIUM review and4RED/8GREEN, type-only guard failure/correction and both new browser cases. Reuse unchanged backend/PG by complete identity. ONEfull0926300-base Astra/max/Standard/enforced-read-only zero review, authorized publication/ownall4CI/allrefs, then full53release/card/durable closure. Never54.
+
+Preserved earlier entries:
+
 # Current queue — V1-053 UI sibling-key successor
 
 Freeze normal one-line ledger key correction; preserve f8f1e52 full1419PASS/4FAIL and same-body5PASS regression. Run full exactfrontend and remaining requiredgates, backend/PG reuse only by identity. ONEcomplete0926300-base Astra/max/Standard/enforcedread-only zero review, authorized publication/ownall4CI/refs/full53closure; no54.

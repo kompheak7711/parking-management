@@ -10,6 +10,7 @@ import {
 } from "./customerLedgerClient";
 import {
   ledgerRequestUrl,
+  ledgerVoidScenario,
   canonicalLedgerEvents,
   ledgerComponent,
   ledgerCursorToken,
@@ -701,3 +702,106 @@ it("TEST-FE-583 accepts complete continuation, filtered subsets and exact/null a
   );
   expect(empty.items).toHaveLength(0);
 });
+
+it.each([false, true])(
+  "TEST-FE-584 preserves absent recorded amounts for Invoice void draft=%s through history and component pagination",
+  async (draft) => {
+    const state = ledgerVoidScenario(draft);
+    const api = createCustomerLedgerClient((url, init) =>
+      Promise.resolve(
+        syntheticLedgerResponse(ledgerRequestUrl(url), init ?? {}, state),
+      ),
+    );
+    const history = await api.read(request, scope());
+    if (history.section !== "history" || !history.items[0])
+      throw new Error("Expected void history");
+    const source = history.items[0];
+    expect(source.recorded_amount_usd_cents).toBeNull();
+    expect(source.invoice_effect_usd_cents).toBe(draft ? "0" : "-51000");
+    const input: LedgerRequest = {
+      section: "components",
+      customerId: ledgerIds.customer,
+      eventKind: source.event_kind,
+      eventId: source.event_id,
+      source,
+      snapshot: history.snapshot,
+      limit: 1,
+    };
+    const first = await api.read(input, scope());
+    if (first.section !== "components") throw new Error("Expected components");
+    expect(first.items[0]?.recorded_amount_usd_cents).toBeNull();
+    expect(first.items[0]).toMatchObject({
+      effect_usd_cents: draft ? "0" : "-50000",
+      balance_kind: draft ? "NONE" : "INVOICE",
+    });
+    if (draft) expect(first.nextCursor).toBeNull();
+    else {
+      expect(first.nextCursor).not.toBeNull();
+      const next = await api.read(
+        { ...input, cursor: first.nextCursor ?? undefined },
+        scope(),
+      );
+      expect(next.items).toHaveLength(1);
+      expect(next.items[0]).toMatchObject({
+        recorded_amount_usd_cents: null,
+        effect_usd_cents: "-1000",
+      });
+      expect(next.nextCursor).toBeNull();
+    }
+  },
+);
+
+it.each([0, false, "00", "-1"])(
+  "TEST-FE-585 rejects malformed present void recorded amount %s in history and components",
+  async (value) => {
+    for (const draft of [false, true]) {
+      for (const section of ["history", "components"] as const) {
+        const state = ledgerVoidScenario(draft);
+        // Start with a valid present amount to reach component validation even on the rejected client.
+        for (const row of [
+          ...(state.events ?? []),
+          ...(state.components ?? []),
+        ])
+          row.recorded_amount_usd_cents = "1";
+        const api = createCustomerLedgerClient((url, init) => {
+          const text = ledgerRequestUrl(url);
+          if (
+            new URL(text, "http://localhost").searchParams.get("section") ===
+            section
+          ) {
+            for (const row of section === "history"
+              ? (state.events ?? [])
+              : (state.components ?? []))
+              row.recorded_amount_usd_cents = value;
+          }
+          return Promise.resolve(
+            syntheticLedgerResponse(text, init ?? {}, state),
+          );
+        });
+        if (section === "history")
+          await expect(api.read(request, scope())).rejects.toMatchObject({
+            code: "INVALID_RESPONSE",
+          });
+        else {
+          const history = await api.read(request, scope());
+          if (history.section !== "history" || !history.items[0])
+            throw new Error("Expected source");
+          const source = history.items[0];
+          await expect(
+            api.read(
+              {
+                section,
+                customerId: ledgerIds.customer,
+                source,
+                eventId: source.event_id,
+                eventKind: source.event_kind,
+                snapshot: history.snapshot,
+              },
+              scope(),
+            ),
+          ).rejects.toMatchObject({ code: "INVALID_RESPONSE" });
+        }
+      }
+    }
+  },
+);
