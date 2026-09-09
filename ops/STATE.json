@@ -2095,7 +2095,7 @@
       "workboard_handoff_comment_id": "93b18202-6ce0-444e-a740-4a609fb08ce2"
     },
     "current_version": "V1-053",
-    "phase": "projection_foundation_checks_review_pending",
+    "phase": "projection_catalog_successor_checks_review_pending",
     "activated_at": "2026-09-09T02:49:35.779645+00:00",
     "predecessor_closed": true,
     "predecessor_sha": "0926300c5c91b26deedb682e454622065826b0ad",
@@ -2115,16 +2115,16 @@
     "scope_sha256": "e0216c0688b283ec397ce93d927ad206869c818a59045f43b9a5a08b799cf2ae",
     "cumulative_review_base": "0926300c5c91b26deedb682e454622065826b0ad",
     "candidate_sha": null,
-    "candidate_resolution": "Resolve containing normal commit externally; do not edit a frozen candidate to insert its own SHA.",
-    "candidate_status": "projection_exact_gates_review_pending",
+    "candidate_resolution": "Resolve containing normal successor commit externally. Rejected9983345 remains unchanged.",
+    "candidate_status": "corrected_projection_exact_gates_review_pending",
     "followup_status": "ACTIVE",
     "followup_prompt_characters": 17370,
     "followup_prompt_sha256": "5fb0fc3ec89c1450e2f9f316d1b28105fb3c2d53a6508aa277d3e7b1f7cb4fbc",
     "owner_action_required": false,
-    "next_action": "Freeze the prepared V1-053 projection foundation normally; run full applicable PostgreSQL/backend/automation and static/build/import/preservation gates sequentially on that exact commit, then one fresh independent Astra/max/Standard/enforced-read-only review of complete0926300-base changes. Zero review is required before scoped read API/UI integration. Full V1-053 product lifecycle remains outstanding; same tracking card, normal reviewed publication/exact CI/refs/acceptance/closure, then pause SAME follow-up; OpenClaw disabled, never54.",
+    "next_action": "Freeze the prepared bounded catalog correction normally; run full exact PostgreSQL/backend/automation/static/build/import/preservation gates sequentially, then one fresh complete0926300-base Astra/max/Standard/enforced-read-only review. Preserve rejected9983345,19failed/1012passedPG and red/green catalog evidence. Zero review required before scoped read API and dedicated Customer UI. Continue full53publication/exactCI/refs/card/closure, then pause SAME follow-up; OpenClaw disabled; never54.",
     "active_slice": {
       "id": "V1-053-projection",
-      "status": "prepared_exact_checks_and_review_pending",
+      "status": "prepared_catalog_successor_exact_gates_review_pending",
       "base": "6bb5a980c1985a89e33301bde81d22d283a90b0f",
       "review_base": "0926300c5c91b26deedb682e454622065826b0ad",
       "worker": "01a07991-38a6-7f33-b84d-0ad0620e2997",
@@ -2195,6 +2195,22 @@
         {
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
           "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-verification-9983345-contract1.json",
+          "sha256": "e2f1b1b93e98989f2fa3323ede87422c82fae99459fd4150d13d9b98dc8e60ba"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-catalog-regression-red9983345-source1.json",
+          "sha256": "055a742b5693808e749d1fb8c119f236a4bed98b8bf7d2f598adf413ebf66711"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-catalog1.json",
+          "sha256": "35590cdad15702775b9d427a99057fe1a9ba05a078eda44b0a89fa5a398d856c"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
+          "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
         }
       ],
       "correction_history": [
@@ -2336,6 +2352,41 @@
             "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
             "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
           }
+        },
+        {
+          "at": "2026-09-09T04:14:44.133575+00:00",
+          "finding": "GATE-LDG-CATALOG-F1",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "focused_verified_fixed_pending_exact_full_gates_and_review",
+          "rejected_candidate": "998334563efb19589598499e1d21472de35c5cb4",
+          "failed_verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-verification-9983345-contract1.json",
+            "sha256": "e2f1b1b93e98989f2fa3323ede87422c82fae99459fd4150d13d9b98dc8e60ba"
+          },
+          "red_regression": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-catalog-regression-red9983345-source1.json",
+            "sha256": "055a742b5693808e749d1fb8c119f236a4bed98b8bf7d2f598adf413ebf66711"
+          },
+          "cause": "New canonical fixture used shared Property TRASH_COLLECTION August rate1000; existing authoritative billing fixtures require1200. July canonical amount1000 is correct and unchanged. Full suite19failures share this exact fixture cause; all24ledgerPGcases passed.",
+          "changed_approach": "Use the established August1200 shared catalog rate; add regression proving canonical July50000Rent+1000Trash creation leaves the expected July/August rate IDs and values unchanged when a following standard billing fixture reuses them. No runtime/migration/financial-policy changes or weakened assertions.",
+          "paths": [
+            "backend/tests/test_customer_ledger_migration.py",
+            "ops/traceability.json",
+            "ops/V1_053_PROJECTION.md",
+            "ops/NOW.md",
+            "ops/STATE.json",
+            "ops/QUEUE.md"
+          ],
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
+            "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
+          },
+          "quality": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-catalog1.json",
+            "sha256": "35590cdad15702775b9d427a99057fe1a9ba05a078eda44b0a89fa5a398d856c"
+          },
+          "regression_body_ast_matches_red": true
         }
       ],
       "implementation_completed": true,
@@ -2378,10 +2429,10 @@
       },
       "whole_v1_053_completed": false,
       "contract_path": "ops/V1_053_PROJECTION.md",
-      "contract_sha256": "8cf267187c05d2fd8d2218fc18c612ec74fa1bba8b8f7e19acfa3b5ad7885982",
+      "contract_sha256": "0129e89c89a30589861d4a1a3a63414447c9b646ea92beff98dd65584175fdb8",
       "candidate_sha": null,
-      "candidate_resolution": "Resolve containing normal commit externally; do not edit a frozen candidate to insert its own SHA.",
-      "next_action": "Freeze the prepared V1-053 projection foundation normally; run full applicable PostgreSQL/backend/automation and static/build/import/preservation gates sequentially on that exact commit, then one fresh independent Astra/max/Standard/enforced-read-only review of complete0926300-base changes. Zero review is required before scoped read API/UI integration. Full V1-053 product lifecycle remains outstanding; same tracking card, normal reviewed publication/exact CI/refs/acceptance/closure, then pause SAME follow-up; OpenClaw disabled, never54.",
+      "candidate_resolution": "Resolve containing normal successor commit externally. Rejected9983345 remains unchanged.",
+      "next_action": "Freeze catalog correction successor; fresh full exact gates then one complete0926300-base independent review before API/UI integration.",
       "preparation_history_snapshot": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-foundation-preparation-state.json",
         "sha256": "25d438634dbde08e67744183273f2c4e1a1fcf7afb71169069a92451c69454c2"
@@ -3145,9 +3196,9 @@
   ],
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "6bb5a980c1985a89e33301bde81d22d283a90b0f",
+  "commit": "998334563efb19589598499e1d21472de35c5cb4",
   "idle_reason": "",
-  "next_action": "Freeze the prepared V1-053 projection foundation normally; run full applicable PostgreSQL/backend/automation and static/build/import/preservation gates sequentially on that exact commit, then one fresh independent Astra/max/Standard/enforced-read-only review of complete0926300-base changes. Zero review is required before scoped read API/UI integration. Full V1-053 product lifecycle remains outstanding; same tracking card, normal reviewed publication/exact CI/refs/acceptance/closure, then pause SAME follow-up; OpenClaw disabled, never54.",
+  "next_action": "Freeze the prepared bounded catalog correction normally; run full exact PostgreSQL/backend/automation/static/build/import/preservation gates sequentially, then one fresh complete0926300-base Astra/max/Standard/enforced-read-only review. Preserve rejected9983345,19failed/1012passedPG and red/green catalog evidence. Zero review required before scoped read API and dedicated Customer UI. Continue full53publication/exactCI/refs/card/closure, then pause SAME follow-up; OpenClaw disabled; never54.",
   "active_worker": null,
   "active_card": "d362ed27-0bdb-4318-9c8a-0976c931d706",
   "active_claim": null,
@@ -3155,8 +3206,8 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Resolve containing normal commit externally; do not edit a frozen candidate to insert its own SHA.",
-  "candidate_parent": "6bb5a980c1985a89e33301bde81d22d283a90b0f",
+  "candidate_resolution": "Resolve containing normal successor commit externally. Rejected9983345 remains unchanged.",
+  "candidate_parent": "998334563efb19589598499e1d21472de35c5cb4",
   "next_candidate": {
     "id": "V1-053",
     "order": 53,
@@ -3215,7 +3266,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-053 projection foundation prepared; exact gates and independent review pending",
+  "phase": "V1-053 corrected projection foundation prepared; exact gates and review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4311,10 +4362,11 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "Preliminary44purePASS and24isolatedPGPASS/no skips; focusedformat/lint/typesPASS. Exact frozen full applicable gates pending.",
-    "Failed canonical/security fixtures and style/type gates retained with bounded correction evidence. Canonical1,Security1,style2,types1; no financial source changes or weakened assertions.",
-    "Frontend and dependencies unchanged from accepted0926300; reuse only with explicit tracked-source identity. Do not repeat tests solely for approval.",
-    "Full V1-053 API/UI, cumulative checks/review/publication/exactCI/refs/card/closure remain outstanding."
+    "Preliminary44purePASS; corrected25isolatedPGPASS/no skips andfocusedformat/lint/typesPASS. Exact successor full applicable gates pending.",
+    "Rejected9983345fullPG1012PASS/19FAIL from sharedAugustTrashfixture mismatch; exact standalone source-pinned regressionRED, same-body installed regressionGREEN with25cases. Preserve all failures.",
+    "Initial standalone probe imported a stale W draft; qualification records invalid probe and corrected exact module pin. It is not counted as valid catalog-red evidence.",
+    "Canonicalfixture1,Securityfixture1,style2,types1,catalog1; parent contractprobe1 and standaloneimportprobe1 preserved. No source commands or published migrations changed.",
+    "API/UI and whole53lifecycle still pending; frontend/locks unchanged from accepted0926300, reuse only via exact identity."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4336,7 +4388,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-053",
-  "timestamp": "2026-09-09T04:03:03.375107+00:00",
+  "timestamp": "2026-09-09T04:17:10.742485+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4363,27 +4415,12 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
-    "backend/src/property_rental/customer_ledger.py",
-    "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
-    "backend/tests/test_customer_ledger.py",
     "backend/tests/test_customer_ledger_migration.py",
-    "backend/tests/test_billing_service_migration.py",
-    "backend/tests/test_credit_refund_read_migration.py",
-    "backend/tests/test_financial_action_context_migration.py",
-    "backend/tests/test_invoice_migration.py",
-    "backend/tests/test_late_payment_migration.py",
-    "backend/tests/test_lease_api_migration.py",
-    "backend/tests/test_migrations.py",
-    "backend/tests/test_payment_reversal_context_migration.py",
-    "backend/tests/test_utility_api_migration.py",
-    "backend/tests/test_utility_consumption_migration.py",
-    "backend/tests/test_utility_meter_migration.py",
-    "scripts/database-test.sh",
     "ops/traceability.json",
+    "ops/V1_053_PROJECTION.md",
     "ops/NOW.md",
     "ops/STATE.json",
-    "ops/QUEUE.md",
-    "ops/V1_053_PROJECTION.md"
+    "ops/QUEUE.md"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -4571,7 +4608,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-09T04:03:03.375107+00:00",
+  "updated_at": "2026-09-09T04:17:10.742485+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5697,14 +5734,14 @@
   "commit_role": "V1-053 bounded projection foundation, API/UI and whole-version lifecycle pending",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "6bb5a980c1985a89e33301bde81d22d283a90b0f"
+    "998334563efb19589598499e1d21472de35c5cb4"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
     "e7a82f7f034c17390f1de26b1196b0f777dd3ca0"
   ],
   "publication": {
-    "status": "projection_foundation_unpublished_api_ui_pending",
+    "status": "corrected_projection_foundation_unpublished_api_ui_pending",
     "tranche_id": "V1-053",
     "candidate_sha": null,
     "commit_completed": false,
@@ -5753,7 +5790,7 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "projection_exact_gates_and_review_pending",
+    "status": "corrected_projection_exact_gates_and_review_pending",
     "tranche_id": "V1-053",
     "base_sha": "0926300c5c91b26deedb682e454622065826b0ad",
     "exact_sha": null,
@@ -5781,7 +5818,7 @@
     "report_sha256": "28013545bae13493b75f9af0c3f1c5f9d5c311f5584ee339e3aa3d4680652ba5"
   },
   "evidence_applicability": {
-    "scope": "Prepared projection foundation; fresh exact full PG/backend/automation/static/build/import/preservation required before review",
+    "scope": "Corrected projection foundation; fresh exact full gates pending",
     "activation_acceptance": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-activation-accepted-6bb5a98.json",
       "sha256": "e309d31cbd6a609b328bdc56a02bfb4820cba09689505d578f9f83a659f0118e"
@@ -5790,13 +5827,18 @@
     "full_suites_sequential": true,
     "source_commands_and_published_migrations_unchanged": true,
     "preliminary_quality": {
-      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
-      "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-catalog1.json",
+      "sha256": "35590cdad15702775b9d427a99057fe1a9ba05a078eda44b0a89fa5a398d856c"
     },
     "projection_contract": {
       "path": "/Users/sokompheak/Development/property-rental-management/ops/V1_053_PROJECTION.md",
-      "sha256": "8cf267187c05d2fd8d2218fc18c612ec74fa1bba8b8f7e19acfa3b5ad7885982"
-    }
+      "sha256": "0129e89c89a30589861d4a1a3a63414447c9b646ea92beff98dd65584175fdb8"
+    },
+    "preliminary_postgresql": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
+      "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
+    },
+    "rejected_candidate": "998334563efb19589598499e1d21472de35c5cb4"
   },
   "historical_v1_047_evidence_applicability": {
     "tranche_id": "V1-047",
@@ -5928,7 +5970,7 @@
     }
   },
   "current_product_acceptance": {
-    "status": "V1-053 projection foundation prepared, not independently accepted or published; API/UI and whole-version closure remain outstanding. Activation accepted and V1-052 fully closed.",
+    "status": "Corrected V1-053 projection foundation prepared; exact full gates and independent review pending. API/UI/publication/whole53closure remain outstanding. V1-052 closed.",
     "predecessor_closure": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-closure-verification-0926300.json",
       "sha256": "d51d90cec48d8d5fe2da707183b63c2c20f5a9922144217999ab66a4cc13b351"
@@ -12079,7 +12121,7 @@
   },
   "v1_053_projection": {
     "id": "V1-053-projection",
-    "status": "prepared_exact_checks_and_review_pending",
+    "status": "prepared_catalog_successor_exact_gates_review_pending",
     "base": "6bb5a980c1985a89e33301bde81d22d283a90b0f",
     "review_base": "0926300c5c91b26deedb682e454622065826b0ad",
     "worker": "01a07991-38a6-7f33-b84d-0ad0620e2997",
@@ -12150,6 +12192,22 @@
       {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
         "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+      },
+      {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-verification-9983345-contract1.json",
+        "sha256": "e2f1b1b93e98989f2fa3323ede87422c82fae99459fd4150d13d9b98dc8e60ba"
+      },
+      {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-catalog-regression-red9983345-source1.json",
+        "sha256": "055a742b5693808e749d1fb8c119f236a4bed98b8bf7d2f598adf413ebf66711"
+      },
+      {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-catalog1.json",
+        "sha256": "35590cdad15702775b9d427a99057fe1a9ba05a078eda44b0a89fa5a398d856c"
+      },
+      {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
+        "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
       }
     ],
     "correction_history": [
@@ -12291,6 +12349,41 @@
           "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
           "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
         }
+      },
+      {
+        "at": "2026-09-09T04:14:44.133575+00:00",
+        "finding": "GATE-LDG-CATALOG-F1",
+        "attempt": 1,
+        "maximum": 2,
+        "status": "focused_verified_fixed_pending_exact_full_gates_and_review",
+        "rejected_candidate": "998334563efb19589598499e1d21472de35c5cb4",
+        "failed_verification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-verification-9983345-contract1.json",
+          "sha256": "e2f1b1b93e98989f2fa3323ede87422c82fae99459fd4150d13d9b98dc8e60ba"
+        },
+        "red_regression": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-catalog-regression-red9983345-source1.json",
+          "sha256": "055a742b5693808e749d1fb8c119f236a4bed98b8bf7d2f598adf413ebf66711"
+        },
+        "cause": "New canonical fixture used shared Property TRASH_COLLECTION August rate1000; existing authoritative billing fixtures require1200. July canonical amount1000 is correct and unchanged. Full suite19failures share this exact fixture cause; all24ledgerPGcases passed.",
+        "changed_approach": "Use the established August1200 shared catalog rate; add regression proving canonical July50000Rent+1000Trash creation leaves the expected July/August rate IDs and values unchanged when a following standard billing fixture reuses them. No runtime/migration/financial-policy changes or weakened assertions.",
+        "paths": [
+          "backend/tests/test_customer_ledger_migration.py",
+          "ops/traceability.json",
+          "ops/V1_053_PROJECTION.md",
+          "ops/NOW.md",
+          "ops/STATE.json",
+          "ops/QUEUE.md"
+        ],
+        "verification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-catalog1.json",
+          "sha256": "a6cb8df5b02d79950dc87c5c65206433bc3183ce8a428cdab6f1110d0345486c"
+        },
+        "quality": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-catalog1.json",
+          "sha256": "35590cdad15702775b9d427a99057fe1a9ba05a078eda44b0a89fa5a398d856c"
+        },
+        "regression_body_ast_matches_red": true
       }
     ],
     "implementation_completed": true,
@@ -12333,10 +12426,10 @@
     },
     "whole_v1_053_completed": false,
     "contract_path": "ops/V1_053_PROJECTION.md",
-    "contract_sha256": "8cf267187c05d2fd8d2218fc18c612ec74fa1bba8b8f7e19acfa3b5ad7885982",
+    "contract_sha256": "0129e89c89a30589861d4a1a3a63414447c9b646ea92beff98dd65584175fdb8",
     "candidate_sha": null,
-    "candidate_resolution": "Resolve containing normal commit externally; do not edit a frozen candidate to insert its own SHA.",
-    "next_action": "Freeze the prepared V1-053 projection foundation normally; run full applicable PostgreSQL/backend/automation and static/build/import/preservation gates sequentially on that exact commit, then one fresh independent Astra/max/Standard/enforced-read-only review of complete0926300-base changes. Zero review is required before scoped read API/UI integration. Full V1-053 product lifecycle remains outstanding; same tracking card, normal reviewed publication/exact CI/refs/acceptance/closure, then pause SAME follow-up; OpenClaw disabled, never54.",
+    "candidate_resolution": "Resolve containing normal successor commit externally. Rejected9983345 remains unchanged.",
+    "next_action": "Freeze catalog correction successor; fresh full exact gates then one complete0926300-base independent review before API/UI integration.",
     "preparation_history_snapshot": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-foundation-preparation-state.json",
       "sha256": "25d438634dbde08e67744183273f2c4e1a1fcf7afb71169069a92451c69454c2"
@@ -12616,6 +12709,755 @@
         "state_issue": ""
       },
       "scope_sha256": "e0216c0688b283ec397ce93d927ad206869c818a59045f43b9a5a08b799cf2ae"
+    }
+  },
+  "historical_v1_053_projection_9983345_fields": {
+    "direct_codex_takeover": {
+      "execution_owner": "direct_codex",
+      "authorization_from": "V1-048",
+      "authorization_through": "V1-053",
+      "policy_path": "ops/CODEX_TAKEOVER_V1_048_053.md",
+      "policy_sha256": "4e3e824e19b7c9e7aa8f3cc2cef5859e5f645c8793b4600aa541c4d9ad552455",
+      "coordinator": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard"
+      },
+      "implementation": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard",
+        "escalation_reason": "Financial confirmation/FX, authorization, concurrency, forward-only migration and permanent history"
+      },
+      "reviewer": {
+        "model": "gpt-6-astra",
+        "reasoning": "max",
+        "mode": "Standard",
+        "read_only": true
+      },
+      "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
+      "publication_branch": "implementation/foundation",
+      "openclaw_enabled": false,
+      "openclaw_dispatch_allowed": false,
+      "openclaw_supervisor_job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+      "followup_id": "property-rental-v1-047-closure-follow-up",
+      "live_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1052-v1053-live.md",
+      "standing_independent_review_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
+        "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
+      },
+      "standing_github_publication_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-github-publication-authorization.json",
+        "sha256": "45dbdbe2951acef2cecc381252bbbca0afacada804a775e6554607b4d626fdc2"
+      },
+      "coordinator_transfer": {
+        "schema_version": 1,
+        "status": "released",
+        "old_thread_id": "01a04961-4270-7802-9418-e08203784a8c",
+        "new_thread_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "implementation_worktree": "/Users/sokompheak/Development/property-rental-management-v1-052",
+        "branch": "codex/v1-052-direct",
+        "head": "1e79851ec5e8530d35927fe93ed2346c407a5820",
+        "handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1052-v1053-fresh-task-handoff.md",
+        "followup_id": "property-rental-v1-047-closure-follow-up",
+        "followup_status": "ACTIVE",
+        "openclaw_enabled": false,
+        "owner_authorized_transfer": true,
+        "old_coordinator_may_implement": false,
+        "new_coordinator_may_implement": true,
+        "updated_at": "2026-09-07T02:00:00Z",
+        "next_action": "Successor 01a07991-38a6-7f33-b84d-0ad0620e2997 must verify this released gate and explicit transfer-complete message, then continue existing partial Allocation/Receipt HTTP in preserved checkout; full52closure then53; at53closed pause same follow-up/no54. Source task is historical/read-only.",
+        "handoff_sha256": "7b07947d9b8f806ba17baa77c7b21ee02c0c86d82818d95951a1bfa2a3f43be7",
+        "followup_target_thread_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "followup_prompt_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-codex-followup-policy.md",
+        "followup_prompt_sha256": "965b73fcae9e4719161566f3468bf856c533c4d6ce45e8e7c2ad960c4b8a4220",
+        "released_at": "2026-09-07T02:00:00Z",
+        "admission": {
+          "status": "completed_read_only_ready",
+          "turn_id": "01a07991-3918-7ac1-8b91-06abd0921f4c",
+          "model": "gpt-6-astra",
+          "reasoning": "xhigh",
+          "mode": "Standard locally configured; provider attestation unavailable",
+          "hashes_verified": 15,
+          "retained_worktrees": 127,
+          "dirty_paths_preserved": 8,
+          "no_admission_mutations": true
+        },
+        "verification": {
+          "automation_tests": "189 PASS in70.328s; session87433 COMPLETED EXIT0",
+          "configuration": "state-routing/watchdog/roadmap/deployment/traceability/publicationguard/diff PASS",
+          "log_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-fresh-task-transfer-config.log",
+          "log_sha256": "9170e853de1264e47528d2f4b5aeb1dd394fefb551b90c85c8396a68404ada2c",
+          "admission_assertions": "40 PASS",
+          "helper_failures_preserved": "Default Python lacked tomllib; used existing project Python3.12 without install. First byte-identity assertion caught app stripping trailing newline; normalized only saved policy final newline and rebound exact actual payload hash. Product bytes unchanged.",
+          "final_readback": "PASS2026-09-07T02:03Z:40 released-transfer assertions, actual Astra/xhigh/local Standard, exact saved-payload identity, one ACTIVE10minute follow-up on successor, eight retained dirty paths and127worktrees; final state-routing/watchdog/roadmap/deployment/traceability/publicationguard/diff PASS. Product bytes unchanged."
+        },
+        "workboard_card_id": "74197a0e-ae91-459f-a9ce-6744e4097ff6",
+        "workboard_handoff_comment_id": "93b18202-6ce0-444e-a740-4a609fb08ce2"
+      },
+      "current_version": "V1-053",
+      "phase": "projection_foundation_checks_review_pending",
+      "activated_at": "2026-09-09T02:49:35.779645+00:00",
+      "predecessor_closed": true,
+      "predecessor_sha": "0926300c5c91b26deedb682e454622065826b0ad",
+      "predecessor_closure_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-closure-verification-0926300.json",
+      "predecessor_closure_receipt_sha256": "d51d90cec48d8d5fe2da707183b63c2c20f5a9922144217999ab66a4cc13b351",
+      "predecessor_ci_run": 34265209149,
+      "predecessor_ci_attempt": 1,
+      "card_id": "d362ed27-0bdb-4318-9c8a-0976c931d706",
+      "workboard_status": "blocked",
+      "workboard_block_reason": "Tracking-only blocked prevents OpenClaw admission; direct Codex projection is authorized and active.",
+      "worker_kind": "direct_root_codex",
+      "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "worker_status": "prepared_root_foundation_no_reviewer_running",
+      "branch": "implementation/foundation",
+      "worktree": "/Users/sokompheak/Development/property-rental-management",
+      "scope_path": "ops/V1_053_SCOPE.md",
+      "scope_sha256": "e0216c0688b283ec397ce93d927ad206869c818a59045f43b9a5a08b799cf2ae",
+      "cumulative_review_base": "0926300c5c91b26deedb682e454622065826b0ad",
+      "candidate_sha": null,
+      "candidate_resolution": "Resolve containing normal commit externally; do not edit a frozen candidate to insert its own SHA.",
+      "candidate_status": "projection_exact_gates_review_pending",
+      "followup_status": "ACTIVE",
+      "followup_prompt_characters": 17370,
+      "followup_prompt_sha256": "5fb0fc3ec89c1450e2f9f316d1b28105fb3c2d53a6508aa277d3e7b1f7cb4fbc",
+      "owner_action_required": false,
+      "next_action": "Freeze the prepared V1-053 projection foundation normally; run full applicable PostgreSQL/backend/automation and static/build/import/preservation gates sequentially on that exact commit, then one fresh independent Astra/max/Standard/enforced-read-only review of complete0926300-base changes. Zero review is required before scoped read API/UI integration. Full V1-053 product lifecycle remains outstanding; same tracking card, normal reviewed publication/exact CI/refs/acceptance/closure, then pause SAME follow-up; OpenClaw disabled, never54.",
+      "active_slice": {
+        "id": "V1-053-projection",
+        "status": "prepared_exact_checks_and_review_pending",
+        "base": "6bb5a980c1985a89e33301bde81d22d283a90b0f",
+        "review_base": "0926300c5c91b26deedb682e454622065826b0ad",
+        "worker": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "worktree": "/Users/sokompheak/Development/property-rental-management",
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Standard",
+        "reason": "Financial history reconstruction, concurrency, authorization and forward-only migration",
+        "started_at": "2026-09-09T03:14:18.315872+00:00",
+        "scope": "Immutable relational source projection and exact chronology/position/composition model. No source commands or financial policy changes. Runtime grants are added only with separately tested scoped API integration.",
+        "paths": [
+          "backend/src/property_rental/customer_ledger.py",
+          "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+          "backend/tests/test_customer_ledger.py",
+          "backend/tests/test_customer_ledger_migration.py",
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_financial_action_context_migration.py",
+          "backend/tests/test_invoice_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_migrations.py",
+          "backend/tests/test_payment_reversal_context_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_utility_meter_migration.py",
+          "scripts/database-test.sh",
+          "ops/traceability.json",
+          "ops/NOW.md",
+          "ops/STATE.json",
+          "ops/QUEUE.md",
+          "ops/V1_053_PROJECTION.md"
+        ],
+        "implementation_plan": [
+          "Define exact immutable event, position, composition and stable paging contract; unit-test canonical example, independent balances, deterministic ties, reversal reconstruction, large amounts and stale pages.",
+          "Add forward-only nonwritable relational source projection over all existing facts, no direct runtime grants or source changes; real isolated PostgreSQL reconciliation and source-preservation tests.",
+          "Freeze and independently review the bounded projection before integrating the authorized read API and dedicated Customer UI; use required focused checks and final cumulative full verification."
+        ],
+        "checks": [
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-unit-initial1.json",
+            "sha256": "a947af08072aaa280272a4d072df7d0b6645f1023a3b7d61f920278aba5fbcc5"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1.json",
+            "sha256": "0d4c74679f88aed5b8fb9ac153ec9b624018ca55de76229d95edab3dba2b29e0"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1.json",
+            "sha256": "f3b994ff47cc4f289aa360f28f58585c5f11af74535e6e8cf2968c448275c03f"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
+            "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-lintfix-initial1.json",
+            "sha256": "2cbc281013a1ea4a4e56a13d4cc1f9fdb8f1c95c4cb72fbf32cc955b66b592c0"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-types-initial1.json",
+            "sha256": "2ef3a28c10233852533b4a4659e59ddf6767019645f06855bc9c59c04511e1cd"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
+            "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
+          },
+          {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
+            "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+          }
+        ],
+        "correction_history": [
+          {
+            "at": "2026-09-09T03:42:37.797379+00:00",
+            "finding": "GATE-LDG-CANONICAL-F1",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "verified_fixed_pending_independent_review",
+            "failure": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1.json",
+              "sha256": "0d4c74679f88aed5b8fb9ac153ec9b624018ca55de76229d95edab3dba2b29e0"
+            },
+            "failed_test_source": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1-test-source.py",
+              "sha256": "1431aa1d2e8e96137a84aa2f58d159c8d793278e4490cef83d795e16e366fc0f"
+            },
+            "cause": "Canonical new fixture set Initial Rent issuance to current September9 while its move-in and period are July1. Published billing rule requires issuance business date equal move-in date; source generation correctly rejected before ledger assertions.",
+            "changed_approach": "Use explicit July1 business instant (June30 17:00:01UTC) for this synthetic canonical fixture, matching the established initial-billing test semantics. No production source logic, guard, scope, money amount or assertion weakened.",
+            "independent_new_coverage": "Added KHR/reference/channel FX, draft void, waiver/whole-charge reversal, Security/Pet Refund and return coverage; these are new source-family tests, not additional corrections for the fixture finding.",
+            "prior_results": "44purePASS;16PGPASS/1fixtureFAIL; no skips;48migrations applied. Failed evidence retained.",
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
+              "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
+            }
+          },
+          {
+            "at": "2026-09-09T03:44:55.638688+00:00",
+            "finding": "GATE-LDG-SECURITY-F1",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "verified_fixed_pending_independent_review",
+            "failure": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1.json",
+              "sha256": "f3b994ff47cc4f289aa360f28f58585c5f11af74535e6e8cf2968c448275c03f"
+            },
+            "failed_test_source": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1-test-source.py",
+              "sha256": "3a1c7dbea0d0474efcd949a4a5caca5b0d0c935d1e667cb86d388253541c0f8e"
+            },
+            "cause": "New Security Deposit fixture incorrectly requested a general partial USD return for a coordinated Reservation cancellation Refund. Published source boundary correctly requires its whole-outcome coordinated correction path.",
+            "changed_approach": "Assert general return denial explicitly, then use existing supported correct_reservation_deposit_outcome full correction/replacement. Verify preserved original Refund, its separate correction and replacement, and zero resulting Security liability without Credit or Payment netting. Prior invalid1000liability expectation is retained in failed source; no product boundary or financial policy changed.",
+            "canonical_finding": "GATE-LDG-CANONICAL-F1 correction1 passed in correction1 run; 23PGPASS/1newfixtureFAIL/no skips.",
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
+              "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
+            }
+          },
+          {
+            "at": "2026-09-09T03:50:38.707108+00:00",
+            "finding": "GATE-LDG-STYLE-F1",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "partially_corrected_remaining_seven_closed_by_style_attempt2",
+            "failure": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-lintfix-initial1.json",
+              "sha256": "2cbc281013a1ea4a4e56a13d4cc1f9fdb8f1c95c4cb72fbf32cc955b66b592c0"
+            },
+            "details": "Ruff auto-fixed22import issues; remaining53line-length,17fixture-shadow annotations and1next-generator preference addressed. SQL literals and executable migration AST are exactly preserved by wrapping. Test fixture annotation moved onto the actual parameter line; source lookup now explicitly asserts non-null rather than misplacing an ignore. No lint rule disabled; standard narrow F811 fixture annotations match established tests.",
+            "changes": [
+              {
+                "path": "/Users/sokompheak/Development/property-rental-management/backend/tests/test_customer_ledger_migration.py",
+                "before": {
+                  "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style1-test_customer_ledger_migration.py",
+                  "sha256": "1e9385e583382d2887c45390acf40a9c7f702945b497e52334facfe1a5f2e6ee"
+                },
+                "after_sha256": "41aa0a28b081c8c967f78ed70bef655b6842f2264ec62e2eca5d03912ad43ac4",
+                "wrapped_literals": 16,
+                "literal_wrapping_ast_identical": true,
+                "complete_migration_ast_identical": false
+              },
+              {
+                "path": "/Users/sokompheak/Development/property-rental-management/backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+                "before": {
+                  "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style1-20260909_48_customer_ledger_projection.py",
+                  "sha256": "199a4fecacd4014561bc4d997c3bb3d348d34b9f13e769295c35a2c46f981128"
+                },
+                "after_sha256": "2c0776392444f0dac75f12c2fd477e87e0944492c6eaca954d13e3e4ebf40b73",
+                "wrapped_literals": 18,
+                "literal_wrapping_ast_identical": true,
+                "complete_migration_ast_identical": true
+              }
+            ],
+            "remaining_verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
+              "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
+            }
+          },
+          {
+            "at": "2026-09-09T03:50:38.707108+00:00",
+            "finding": "GATE-LDG-TYPES-F1",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "verified_fixed_pending_independent_review",
+            "failure": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-types-initial1.json",
+              "sha256": "2ef3a28c10233852533b4a4659e59ddf6767019645f06855bc9c59c04511e1cd"
+            },
+            "cause": "One new test indexed an optional fetchone row and placed its ignore on the wrong formatted line.",
+            "changed_approach": "Explicit assert source_row is not None before indexing; remove the ignore. No runtime changes or weakened assertion.",
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
+              "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+            }
+          },
+          {
+            "at": "2026-09-09T03:57:42.030613+00:00",
+            "finding": "GATE-LDG-STYLE-F1",
+            "attempt": 2,
+            "maximum": 2,
+            "status": "verified_fixed_pending_independent_review",
+            "failure": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
+              "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
+            },
+            "cause": "The first style correction left one redundant SQL-expression parenthesis pair and the formatter attached three fixture suppressions to the final parameter of split signatures.",
+            "changed_approach": "Remove exactly the redundant parenthesis pair; place the three existing fixture annotations on their final formatted parameter lines. Exact complete AST identity asserted for both files; no SQL or test behavior changes.",
+            "changes": [
+              {
+                "path": "backend/tests/test_customer_ledger_migration.py",
+                "before": {
+                  "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style2-test_customer_ledger_migration.py",
+                  "sha256": "7f78f85b7b7ed871b0b52ba4bfadf64f0251b38d3576e8489d72cb821f84f3aa"
+                },
+                "after_sha256": "03ded98ca375dc04911045f1804130cafee3bf2372b25cac76846c3aa5edddf4",
+                "complete_ast_identical": true
+              },
+              {
+                "path": "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+                "before": {
+                  "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style2-20260909_48_customer_ledger_projection.py",
+                  "sha256": "75fb1b3c542ee0914c0d92291d4fa8d5abbe27832d35cae54703539c1ea1b651"
+                },
+                "after_sha256": "28cb65f41fe4bb7c4b46c69e2b081f33bf114ae2a2af9a27a04c284d1d4e25e9",
+                "complete_ast_identical": true
+              }
+            ],
+            "verification": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
+              "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+            }
+          }
+        ],
+        "implementation_completed": true,
+        "initial_path_inventory_correction": {
+          "before": [
+            "backend/src/property_rental/customer_ledger.py",
+            "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+            "backend/tests/test_customer_ledger.py",
+            "backend/tests/test_customer_ledger_database.py",
+            "backend/tests/test_migrations.py",
+            "scripts/verify-postgres-persistence.py",
+            "ops/TRACEABILITY.json",
+            "ops/NOW.md",
+            "ops/STATE.json",
+            "ops/QUEUE.md"
+          ],
+          "after": [
+            "backend/src/property_rental/customer_ledger.py",
+            "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+            "backend/tests/test_customer_ledger.py",
+            "backend/tests/test_customer_ledger_migration.py",
+            "backend/tests/test_billing_service_migration.py",
+            "backend/tests/test_credit_refund_read_migration.py",
+            "backend/tests/test_financial_action_context_migration.py",
+            "backend/tests/test_invoice_migration.py",
+            "backend/tests/test_late_payment_migration.py",
+            "backend/tests/test_lease_api_migration.py",
+            "backend/tests/test_migrations.py",
+            "backend/tests/test_payment_reversal_context_migration.py",
+            "backend/tests/test_utility_api_migration.py",
+            "backend/tests/test_utility_consumption_migration.py",
+            "backend/tests/test_utility_meter_migration.py",
+            "scripts/database-test.sh",
+            "ops/traceability.json",
+            "ops/NOW.md",
+            "ops/STATE.json",
+            "ops/QUEUE.md"
+          ],
+          "basis": "Repository discovery: existing PostgreSQL suite naming is test_*_migration.py, registered in scripts/database-test.sh; traceability is lowercase ops/traceability.json. Existing current-head expectations require mechanical47to48 updates; historical revision47inspection preserved."
+        },
+        "whole_v1_053_completed": false,
+        "contract_path": "ops/V1_053_PROJECTION.md",
+        "contract_sha256": "8cf267187c05d2fd8d2218fc18c612ec74fa1bba8b8f7e19acfa3b5ad7885982",
+        "candidate_sha": null,
+        "candidate_resolution": "Resolve containing normal commit externally; do not edit a frozen candidate to insert its own SHA.",
+        "next_action": "Freeze the prepared V1-053 projection foundation normally; run full applicable PostgreSQL/backend/automation and static/build/import/preservation gates sequentially on that exact commit, then one fresh independent Astra/max/Standard/enforced-read-only review of complete0926300-base changes. Zero review is required before scoped read API/UI integration. Full V1-053 product lifecycle remains outstanding; same tracking card, normal reviewed publication/exact CI/refs/acceptance/closure, then pause SAME follow-up; OpenClaw disabled, never54.",
+        "preparation_history_snapshot": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-foundation-preparation-state.json",
+          "sha256": "25d438634dbde08e67744183273f2c4e1a1fcf7afb71169069a92451c69454c2"
+        }
+      },
+      "prior_version_history": "historical_v1_052_closed_current_fields.direct_codex_takeover",
+      "last_model_configuration_check": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "xhigh",
+        "mode": "Standard",
+        "service_tier": "default",
+        "provider_attestation": "unavailable"
+      }
+    },
+    "commit": "6bb5a980c1985a89e33301bde81d22d283a90b0f",
+    "next_action": "Freeze the prepared V1-053 projection foundation normally; run full applicable PostgreSQL/backend/automation and static/build/import/preservation gates sequentially on that exact commit, then one fresh independent Astra/max/Standard/enforced-read-only review of complete0926300-base changes. Zero review is required before scoped read API/UI integration. Full V1-053 product lifecycle remains outstanding; same tracking card, normal reviewed publication/exact CI/refs/acceptance/closure, then pause SAME follow-up; OpenClaw disabled, never54.",
+    "candidate_resolution": "Resolve containing normal commit externally; do not edit a frozen candidate to insert its own SHA.",
+    "candidate_parent": "6bb5a980c1985a89e33301bde81d22d283a90b0f",
+    "phase": "V1-053 projection foundation prepared; exact gates and independent review pending",
+    "tests": [
+      "Preliminary44purePASS and24isolatedPGPASS/no skips; focusedformat/lint/typesPASS. Exact frozen full applicable gates pending.",
+      "Failed canonical/security fixtures and style/type gates retained with bounded correction evidence. Canonical1,Security1,style2,types1; no financial source changes or weakened assertions.",
+      "Frontend and dependencies unchanged from accepted0926300; reuse only with explicit tracked-source identity. Do not repeat tests solely for approval.",
+      "Full V1-053 API/UI, cumulative checks/review/publication/exactCI/refs/card/closure remain outstanding."
+    ],
+    "timestamp": "2026-09-09T04:03:03.375107+00:00",
+    "touched_areas": [
+      "backend/src/property_rental/customer_ledger.py",
+      "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+      "backend/tests/test_customer_ledger.py",
+      "backend/tests/test_customer_ledger_migration.py",
+      "backend/tests/test_billing_service_migration.py",
+      "backend/tests/test_credit_refund_read_migration.py",
+      "backend/tests/test_financial_action_context_migration.py",
+      "backend/tests/test_invoice_migration.py",
+      "backend/tests/test_late_payment_migration.py",
+      "backend/tests/test_lease_api_migration.py",
+      "backend/tests/test_migrations.py",
+      "backend/tests/test_payment_reversal_context_migration.py",
+      "backend/tests/test_utility_api_migration.py",
+      "backend/tests/test_utility_consumption_migration.py",
+      "backend/tests/test_utility_meter_migration.py",
+      "scripts/database-test.sh",
+      "ops/traceability.json",
+      "ops/NOW.md",
+      "ops/STATE.json",
+      "ops/QUEUE.md",
+      "ops/V1_053_PROJECTION.md"
+    ],
+    "updated_at": "2026-09-09T04:03:03.375107+00:00",
+    "candidate_parents": [
+      "6bb5a980c1985a89e33301bde81d22d283a90b0f"
+    ],
+    "publication": {
+      "status": "projection_foundation_unpublished_api_ui_pending",
+      "tranche_id": "V1-053",
+      "candidate_sha": null,
+      "commit_completed": false,
+      "push_completed": false,
+      "ci_completed": false,
+      "workboard_card": "d362ed27-0bdb-4318-9c8a-0976c931d706",
+      "workboard_status": "blocked",
+      "workboard_acceptance_completed": false,
+      "production_deployment": false,
+      "product_implementation_started": true
+    },
+    "review": {
+      "status": "projection_exact_gates_and_review_pending",
+      "tranche_id": "V1-053",
+      "base_sha": "0926300c5c91b26deedb682e454622065826b0ad",
+      "exact_sha": null,
+      "model": "gpt-6-astra",
+      "reasoning_effort": "max",
+      "mode": "Standard",
+      "read_only": true,
+      "findings": null,
+      "standing_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-standing-independent-review-authorization.json",
+        "sha256": "d509c66234abf96872d9c7d9682adc2a1ed315c97772b5793dbbe9426dd6eeff"
+      },
+      "activation_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-activation-accepted-6bb5a98.json",
+        "sha256": "e309d31cbd6a609b328bdc56a02bfb4820cba09689505d578f9f83a659f0118e"
+      }
+    },
+    "evidence_applicability": {
+      "scope": "Prepared projection foundation; fresh exact full PG/backend/automation/static/build/import/preservation required before review",
+      "activation_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-activation-accepted-6bb5a98.json",
+        "sha256": "e309d31cbd6a609b328bdc56a02bfb4820cba09689505d578f9f83a659f0118e"
+      },
+      "product_tests_repeated_for_approval": false,
+      "full_suites_sequential": true,
+      "source_commands_and_published_migrations_unchanged": true,
+      "preliminary_quality": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
+        "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+      },
+      "projection_contract": {
+        "path": "/Users/sokompheak/Development/property-rental-management/ops/V1_053_PROJECTION.md",
+        "sha256": "8cf267187c05d2fd8d2218fc18c612ec74fa1bba8b8f7e19acfa3b5ad7885982"
+      }
+    },
+    "current_product_acceptance": {
+      "status": "V1-053 projection foundation prepared, not independently accepted or published; API/UI and whole-version closure remain outstanding. Activation accepted and V1-052 fully closed.",
+      "predecessor_closure": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1052-closure-verification-0926300.json",
+        "sha256": "d51d90cec48d8d5fe2da707183b63c2c20f5a9922144217999ab66a4cc13b351"
+      },
+      "historical_values": "historical_v1_052_closed_current_fields"
+    },
+    "v1_053_projection": {
+      "id": "V1-053-projection",
+      "status": "prepared_exact_checks_and_review_pending",
+      "base": "6bb5a980c1985a89e33301bde81d22d283a90b0f",
+      "review_base": "0926300c5c91b26deedb682e454622065826b0ad",
+      "worker": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "worktree": "/Users/sokompheak/Development/property-rental-management",
+      "model": "gpt-6-astra",
+      "reasoning": "xhigh",
+      "mode": "Standard",
+      "reason": "Financial history reconstruction, concurrency, authorization and forward-only migration",
+      "started_at": "2026-09-09T03:14:18.315872+00:00",
+      "scope": "Immutable relational source projection and exact chronology/position/composition model. No source commands or financial policy changes. Runtime grants are added only with separately tested scoped API integration.",
+      "paths": [
+        "backend/src/property_rental/customer_ledger.py",
+        "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+        "backend/tests/test_customer_ledger.py",
+        "backend/tests/test_customer_ledger_migration.py",
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_financial_action_context_migration.py",
+        "backend/tests/test_invoice_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_migrations.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_utility_meter_migration.py",
+        "scripts/database-test.sh",
+        "ops/traceability.json",
+        "ops/NOW.md",
+        "ops/STATE.json",
+        "ops/QUEUE.md",
+        "ops/V1_053_PROJECTION.md"
+      ],
+      "implementation_plan": [
+        "Define exact immutable event, position, composition and stable paging contract; unit-test canonical example, independent balances, deterministic ties, reversal reconstruction, large amounts and stale pages.",
+        "Add forward-only nonwritable relational source projection over all existing facts, no direct runtime grants or source changes; real isolated PostgreSQL reconciliation and source-preservation tests.",
+        "Freeze and independently review the bounded projection before integrating the authorized read API and dedicated Customer UI; use required focused checks and final cumulative full verification."
+      ],
+      "checks": [
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-unit-initial1.json",
+          "sha256": "a947af08072aaa280272a4d072df7d0b6645f1023a3b7d61f920278aba5fbcc5"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1.json",
+          "sha256": "0d4c74679f88aed5b8fb9ac153ec9b624018ca55de76229d95edab3dba2b29e0"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1.json",
+          "sha256": "f3b994ff47cc4f289aa360f28f58585c5f11af74535e6e8cf2968c448275c03f"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
+          "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-lintfix-initial1.json",
+          "sha256": "2cbc281013a1ea4a4e56a13d4cc1f9fdb8f1c95c4cb72fbf32cc955b66b592c0"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-types-initial1.json",
+          "sha256": "2ef3a28c10233852533b4a4659e59ddf6767019645f06855bc9c59c04511e1cd"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
+          "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
+        },
+        {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
+          "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+        }
+      ],
+      "correction_history": [
+        {
+          "at": "2026-09-09T03:42:37.797379+00:00",
+          "finding": "GATE-LDG-CANONICAL-F1",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "verified_fixed_pending_independent_review",
+          "failure": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1.json",
+            "sha256": "0d4c74679f88aed5b8fb9ac153ec9b624018ca55de76229d95edab3dba2b29e0"
+          },
+          "failed_test_source": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-initial1-test-source.py",
+            "sha256": "1431aa1d2e8e96137a84aa2f58d159c8d793278e4490cef83d795e16e366fc0f"
+          },
+          "cause": "Canonical new fixture set Initial Rent issuance to current September9 while its move-in and period are July1. Published billing rule requires issuance business date equal move-in date; source generation correctly rejected before ledger assertions.",
+          "changed_approach": "Use explicit July1 business instant (June30 17:00:01UTC) for this synthetic canonical fixture, matching the established initial-billing test semantics. No production source logic, guard, scope, money amount or assertion weakened.",
+          "independent_new_coverage": "Added KHR/reference/channel FX, draft void, waiver/whole-charge reversal, Security/Pet Refund and return coverage; these are new source-family tests, not additional corrections for the fixture finding.",
+          "prior_results": "44purePASS;16PGPASS/1fixtureFAIL; no skips;48migrations applied. Failed evidence retained.",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
+            "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
+          }
+        },
+        {
+          "at": "2026-09-09T03:44:55.638688+00:00",
+          "finding": "GATE-LDG-SECURITY-F1",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "verified_fixed_pending_independent_review",
+          "failure": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1.json",
+            "sha256": "f3b994ff47cc4f289aa360f28f58585c5f11af74535e6e8cf2968c448275c03f"
+          },
+          "failed_test_source": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-correction1-test-source.py",
+            "sha256": "3a1c7dbea0d0474efcd949a4a5caca5b0d0c935d1e667cb86d388253541c0f8e"
+          },
+          "cause": "New Security Deposit fixture incorrectly requested a general partial USD return for a coordinated Reservation cancellation Refund. Published source boundary correctly requires its whole-outcome coordinated correction path.",
+          "changed_approach": "Assert general return denial explicitly, then use existing supported correct_reservation_deposit_outcome full correction/replacement. Verify preserved original Refund, its separate correction and replacement, and zero resulting Security liability without Credit or Payment netting. Prior invalid1000liability expectation is retained in failed source; no product boundary or financial policy changed.",
+          "canonical_finding": "GATE-LDG-CANONICAL-F1 correction1 passed in correction1 run; 23PGPASS/1newfixtureFAIL/no skips.",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-pgfocus-security1.json",
+            "sha256": "fcd7dd93bb80dce256bfb32e9ad7be98b02dbede2826384d8d2f68715747ccfb"
+          }
+        },
+        {
+          "at": "2026-09-09T03:50:38.707108+00:00",
+          "finding": "GATE-LDG-STYLE-F1",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "partially_corrected_remaining_seven_closed_by_style_attempt2",
+          "failure": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-lintfix-initial1.json",
+            "sha256": "2cbc281013a1ea4a4e56a13d4cc1f9fdb8f1c95c4cb72fbf32cc955b66b592c0"
+          },
+          "details": "Ruff auto-fixed22import issues; remaining53line-length,17fixture-shadow annotations and1next-generator preference addressed. SQL literals and executable migration AST are exactly preserved by wrapping. Test fixture annotation moved onto the actual parameter line; source lookup now explicitly asserts non-null rather than misplacing an ignore. No lint rule disabled; standard narrow F811 fixture annotations match established tests.",
+          "changes": [
+            {
+              "path": "/Users/sokompheak/Development/property-rental-management/backend/tests/test_customer_ledger_migration.py",
+              "before": {
+                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style1-test_customer_ledger_migration.py",
+                "sha256": "1e9385e583382d2887c45390acf40a9c7f702945b497e52334facfe1a5f2e6ee"
+              },
+              "after_sha256": "41aa0a28b081c8c967f78ed70bef655b6842f2264ec62e2eca5d03912ad43ac4",
+              "wrapped_literals": 16,
+              "literal_wrapping_ast_identical": true,
+              "complete_migration_ast_identical": false
+            },
+            {
+              "path": "/Users/sokompheak/Development/property-rental-management/backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+              "before": {
+                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style1-20260909_48_customer_ledger_projection.py",
+                "sha256": "199a4fecacd4014561bc4d997c3bb3d348d34b9f13e769295c35a2c46f981128"
+              },
+              "after_sha256": "2c0776392444f0dac75f12c2fd477e87e0944492c6eaca954d13e3e4ebf40b73",
+              "wrapped_literals": 18,
+              "literal_wrapping_ast_identical": true,
+              "complete_migration_ast_identical": true
+            }
+          ],
+          "remaining_verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
+            "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
+          }
+        },
+        {
+          "at": "2026-09-09T03:50:38.707108+00:00",
+          "finding": "GATE-LDG-TYPES-F1",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "verified_fixed_pending_independent_review",
+          "failure": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-types-initial1.json",
+            "sha256": "2ef3a28c10233852533b4a4659e59ddf6767019645f06855bc9c59c04511e1cd"
+          },
+          "cause": "One new test indexed an optional fetchone row and placed its ignore on the wrong formatted line.",
+          "changed_approach": "Explicit assert source_row is not None before indexing; remove the ignore. No runtime changes or weakened assertion.",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
+            "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+          }
+        },
+        {
+          "at": "2026-09-09T03:57:42.030613+00:00",
+          "finding": "GATE-LDG-STYLE-F1",
+          "attempt": 2,
+          "maximum": 2,
+          "status": "verified_fixed_pending_independent_review",
+          "failure": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction1.json",
+            "sha256": "c7474f8be331170ddaf5763889df7161d4453bf14d25c078728f575d0b5b637b"
+          },
+          "cause": "The first style correction left one redundant SQL-expression parenthesis pair and the formatter attached three fixture suppressions to the final parameter of split signatures.",
+          "changed_approach": "Remove exactly the redundant parenthesis pair; place the three existing fixture annotations on their final formatted parameter lines. Exact complete AST identity asserted for both files; no SQL or test behavior changes.",
+          "changes": [
+            {
+              "path": "backend/tests/test_customer_ledger_migration.py",
+              "before": {
+                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style2-test_customer_ledger_migration.py",
+                "sha256": "7f78f85b7b7ed871b0b52ba4bfadf64f0251b38d3576e8489d72cb821f84f3aa"
+              },
+              "after_sha256": "03ded98ca375dc04911045f1804130cafee3bf2372b25cac76846c3aa5edddf4",
+              "complete_ast_identical": true
+            },
+            {
+              "path": "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+              "before": {
+                "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-style2-20260909_48_customer_ledger_projection.py",
+                "sha256": "75fb1b3c542ee0914c0d92291d4fa8d5abbe27832d35cae54703539c1ea1b651"
+              },
+              "after_sha256": "28cb65f41fe4bb7c4b46c69e2b081f33bf114ae2a2af9a27a04c284d1d4e25e9",
+              "complete_ast_identical": true
+            }
+          ],
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-quality-correction2.json",
+            "sha256": "4323de510a3667f7d51cccb88a929fdccce562e6b1f4b01848592c5ae21f7ede"
+          }
+        }
+      ],
+      "implementation_completed": true,
+      "initial_path_inventory_correction": {
+        "before": [
+          "backend/src/property_rental/customer_ledger.py",
+          "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+          "backend/tests/test_customer_ledger.py",
+          "backend/tests/test_customer_ledger_database.py",
+          "backend/tests/test_migrations.py",
+          "scripts/verify-postgres-persistence.py",
+          "ops/TRACEABILITY.json",
+          "ops/NOW.md",
+          "ops/STATE.json",
+          "ops/QUEUE.md"
+        ],
+        "after": [
+          "backend/src/property_rental/customer_ledger.py",
+          "backend/migrations/versions/20260909_48_customer_ledger_projection.py",
+          "backend/tests/test_customer_ledger.py",
+          "backend/tests/test_customer_ledger_migration.py",
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_financial_action_context_migration.py",
+          "backend/tests/test_invoice_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_migrations.py",
+          "backend/tests/test_payment_reversal_context_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_utility_meter_migration.py",
+          "scripts/database-test.sh",
+          "ops/traceability.json",
+          "ops/NOW.md",
+          "ops/STATE.json",
+          "ops/QUEUE.md"
+        ],
+        "basis": "Repository discovery: existing PostgreSQL suite naming is test_*_migration.py, registered in scripts/database-test.sh; traceability is lowercase ops/traceability.json. Existing current-head expectations require mechanical47to48 updates; historical revision47inspection preserved."
+      },
+      "whole_v1_053_completed": false,
+      "contract_path": "ops/V1_053_PROJECTION.md",
+      "contract_sha256": "8cf267187c05d2fd8d2218fc18c612ec74fa1bba8b8f7e19acfa3b5ad7885982",
+      "candidate_sha": null,
+      "candidate_resolution": "Resolve containing normal commit externally; do not edit a frozen candidate to insert its own SHA.",
+      "next_action": "Freeze the prepared V1-053 projection foundation normally; run full applicable PostgreSQL/backend/automation and static/build/import/preservation gates sequentially on that exact commit, then one fresh independent Astra/max/Standard/enforced-read-only review of complete0926300-base changes. Zero review is required before scoped read API/UI integration. Full V1-053 product lifecycle remains outstanding; same tracking card, normal reviewed publication/exact CI/refs/acceptance/closure, then pause SAME follow-up; OpenClaw disabled, never54.",
+      "preparation_history_snapshot": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1053-projection-before-foundation-preparation-state.json",
+        "sha256": "25d438634dbde08e67744183273f2c4e1a1fcf7afb71169069a92451c69454c2"
+      }
     }
   }
 }

@@ -41,7 +41,12 @@ from property_rental.payment_allocation import (
     ReversePaymentCommand,
 )
 from property_rental.refund import ReverseRefundCorrectionCommand
-from test_billing_service_migration import add_service, authenticated, initial_command
+from test_billing_service_migration import (
+    add_service,
+    authenticated,
+    initial_command,
+    setup_billing_source,
+)
 from test_credit_application_migration import application_id
 from test_credit_application_migration import designated as credit_designated
 from test_credit_application_migration import source as credit_source
@@ -205,7 +210,7 @@ def canonical_invoice(url: str) -> tuple[UUID, UUID, UUID, UUID, UUID, UUID]:
             code="TRASH_COLLECTION",
             display_name="Trash Collection",
             first_rate=1000,
-            second_rate=1000,
+            second_rate=1200,
             applicable_from=date(2026, 7, 1),
         )
         at = datetime(2026, 6, 30, 17, 0, 1, tzinfo=UTC)
@@ -1047,3 +1052,30 @@ def test_ledger_qualified_pet_refund_and_return_are_distinct_from_credit(
     )
     with psycopg.connect(migrated_database_url) as connection:
         assert assert_reconciled(connection, customer) == LedgerPosition(pet_deposit=7000)
+
+
+def test_ledger_canonical_fixture_preserves_shared_billing_service_rates(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    _, prop, _, _, _, _ = canonical_invoice(migrated_database_url)
+    with psycopg.connect(migrated_database_url) as connection:
+        before = connection.execute(
+            "SELECT r.id,r.effective_date,r.monthly_rate_usd_cents FROM app.service_rates r "
+            "JOIN app.property_services s ON s.id=r.property_service_id "
+            "WHERE s.property_id=%s AND s.service_code='TRASH_COLLECTION' "
+            "ORDER BY r.effective_date",
+            (prop,),
+        ).fetchall()
+        assert [(row[1], row[2]) for row in before] == [
+            (date(2026, 7, 1), 1000),
+            (date(2026, 8, 1), 1200),
+        ]
+        setup_billing_source(connection)
+        after = connection.execute(
+            "SELECT r.id,r.effective_date,r.monthly_rate_usd_cents FROM app.service_rates r "
+            "JOIN app.property_services s ON s.id=r.property_service_id "
+            "WHERE s.property_id=%s AND s.service_code='TRASH_COLLECTION' "
+            "ORDER BY r.effective_date",
+            (prop,),
+        ).fetchall()
+        assert after == before

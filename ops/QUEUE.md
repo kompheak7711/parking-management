@@ -1,3 +1,15 @@
+# Current queue — corrected V1-053 projection exact gates
+
+2026-09-09T04:17:10.742485+00:00: Freeze the prepared bounded catalog correction normally; run full exact PostgreSQL/backend/automation/static/build/import/preservation gates sequentially, then one fresh complete0926300-base Astra/max/Standard/enforced-read-only review. Preserve rejected9983345,19failed/1012passedPG and red/green catalog evidence. Zero review required before scoped read API and dedicated Customer UI. Continue full53publication/exactCI/refs/card/closure, then pause SAME follow-up; OpenClaw disabled; never54.
+
+Earlier entries are preserved history.
+
+# Current queue — V1-053 catalog correction
+
+Preserved9983345fullPGfailed19/1012passed due sharedAugustTrashfixture1000vs1200. GATE-LDG-CATALOG-F1 correction1 active; prove red/green, freeze successor and run full exact gates before review.
+
+Earlier entries are historical.
+
 # Current queue — V1-053 projection foundation review gate
 
 Latest 2026-09-09T04:03:03.375107+00:00: Freeze the prepared V1-053 projection foundation normally; run full applicable PostgreSQL/backend/automation and static/build/import/preservation gates sequentially on that exact commit, then one fresh independent Astra/max/Standard/enforced-read-only review of complete0926300-base changes. Zero review is required before scoped read API/UI integration. Full V1-053 product lifecycle remains outstanding; same tracking card, normal reviewed publication/exact CI/refs/acceptance/closure, then pause SAME follow-up; OpenClaw disabled, never54.

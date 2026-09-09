@@ -81,7 +81,7 @@ no direct runtime/financial/bootstrap/PUBLIC grants and no API route is wired ye
 
 ## Verification and preserved corrections
 
-The new tests comprise 44 parameterized pure cases and 24 real PostgreSQL cases.
+The new tests comprise 44 parameterized pure cases and 25 real PostgreSQL cases.
 They cover the canonical $500 Rent/$10 Trash/$300 Allocation/$21 Charge/$231 final
 allocation, source identity and composition, third-party ownership, all implemented
 source families above, equal-time peers, exact large sums, KHR provenance, concurrent
@@ -96,3 +96,11 @@ boundary or expected canonical amount was weakened. Style correction 2 preserves
 both complete executable ASTs; type correction 1 asserts a source row is present.
 Focused checks pass. Full applicable exact-candidate checks and fresh independent
 Astra/max/Standard/enforced-read-only review remain required before acceptance.
+
+The first frozen foundation `9983345` failed the full database suite: its new
+canonical fixture used the shared August trash rate of $10 where the established
+billing fixture requires $12. All 24 ledger cases passed, but 19 later tests
+correctly rejected that mismatch. The preserved red regression isolates the cause.
+Catalog correction 1 keeps July's canonical $10 and restores August's established
+$12 fixture value, then proves later billing setup preserves the exact rate rows.
+Runtime and migration code remain unchanged; successor full gates are required.

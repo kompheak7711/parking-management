@@ -27116,6 +27116,18 @@
       "test_path": "backend/tests/test_customer_ledger_migration.py",
       "status": "implemented",
       "notes": "V1-053 projection foundation: qualified pet refund and return are distinct from credit. Source formulas and command boundaries remain authoritative; API/UI integration is pending."
+    },
+    {
+      "test_id": "test_ledger_canonical_fixture_preserves_shared_billing_service_rates",
+      "upstream_ids": [
+        "BR-LEDGER-002",
+        "BR-LEDGER-007",
+        "DB-DER-010"
+      ],
+      "test_level": "DB",
+      "test_path": "backend/tests/test_customer_ledger_migration.py",
+      "status": "implemented",
+      "notes": "Shared-catalog regression RED at9983345: ledger canonical July$10Trash fixture must retain established July1000/August1200rates; subsequent ordinary billing setup preserves exact existing rate rows. Correction changes only its unused August fixture rate, not the canonical Invoice or financial source behavior."
     }
   ]
 }
