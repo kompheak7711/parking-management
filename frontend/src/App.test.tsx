@@ -1,3 +1,9 @@
+import { defaultEnforcementServices } from "./leaseEnforcementUi";
+import type { EnforcementClient } from "./leaseEnforcementClient";
+import {
+  ids as enforcementIds,
+  readData as enforcementReadData,
+} from "./test/leaseEnforcementFixtures";
 import {
   act,
   cleanup,
@@ -2718,4 +2724,114 @@ describe("Customer ledger App integration", () => {
       screen.getByRole("button", { name: "Open Customer account ledger" }),
     ).toBeInTheDocument();
   });
+});
+
+describe("Lease enforcement drafts during App logout and expiry", () => {
+  it.each([false, true])(
+    "TEST-FE-614 protects unsaved enforcement values and invalidates forced expiry, forced=%s",
+    async (forced) => {
+      const signedIn = { ...session, actor_id: enforcementIds.actor };
+      const discard = vi.spyOn(window, "confirm").mockReturnValue(false);
+      const read = vi.fn<EnforcementClient["read"]>(async (scope, input) =>
+        Promise.resolve({
+          data: enforcementReadData(input, false, ["leases.warn"]),
+          actorId: scope.actorId,
+          propertyId: scope.propertyId,
+          requestId: crypto.randomUUID(),
+        }),
+      );
+      const reads: EnforcementClient = { read };
+      const recovery = {
+        ...defaultEnforcementServices.recovery,
+        load: vi.fn(() => Promise.resolve({ kind: "ready" as const })),
+        submit: vi.fn(() =>
+          Promise.reject(new Error("Unexpected enforcement submission")),
+        ),
+      };
+      let releaseLogout!: () => void;
+      const logout = new Promise<void>((resolve) => {
+        releaseLogout = resolve;
+      });
+      const authentication = mockAuthenticationApi({
+        signIn: vi
+          .fn()
+          .mockResolvedValue({ phase: "authenticated", session: signedIn }),
+        inspectSession: vi.fn().mockResolvedValue(signedIn),
+        logout: vi.fn().mockReturnValue(logout),
+      });
+      const props = {
+        api: authentication,
+        buildId: "synthetic-enforcement-drafts",
+        environment: "development",
+        customerApi: customerApiDouble(),
+        enforcementServices: { reads, recovery },
+      };
+      try {
+        const view = render(
+          <App
+            {...props}
+            now={() => new Date("2026-08-22T10:10:00Z").getTime()}
+          />,
+        );
+        fireEvent.change(screen.getByLabelText("Username"), {
+          target: { value: "synthetic-manager" },
+        });
+        fireEvent.change(screen.getByLabelText("Password"), {
+          target: { value: "synthetic-password" },
+        });
+        fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+        await screen.findByRole("option", { name: "Synthetic River Property" });
+        fireEvent.change(screen.getByLabelText("Lease enforcement Property"), {
+          target: { value: enforcementIds.property },
+        });
+        await screen.findByRole("option", { name: /SYNTHETIC-A1/ });
+        fireEvent.change(screen.getByLabelText("Lease for general warnings"), {
+          target: { value: enforcementIds.lease },
+        });
+        const form = await screen.findByRole("form", {
+          name: "Record Lease warning",
+        });
+        fireEvent.change(within(form).getByLabelText("Violation description"), {
+          target: { value: "Synthetic unsent Lease evidence" },
+        });
+        const calls = read.mock.calls;
+        if (forced) {
+          view.rerender(
+            <App
+              {...props}
+              now={() => new Date("2026-08-24T10:10:00Z").getTime()}
+            />,
+          );
+          await screen.findByLabelText("Username");
+          expect(discard).not.toHaveBeenCalled();
+          expect(authentication.logout).not.toHaveBeenCalled();
+        } else {
+          fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+          expect(discard).toHaveBeenCalledWith(
+            "Discard unsaved Lease warning or nonpayment form values and sign out?",
+          );
+          expect(authentication.logout).not.toHaveBeenCalled();
+          expect(
+            within(form).getByLabelText("Violation description"),
+          ).toHaveValue("Synthetic unsent Lease evidence");
+          discard.mockReturnValue(true);
+          fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+          expect(authentication.logout).toHaveBeenCalledOnce();
+          expect(
+            screen.queryByLabelText("Lease enforcement Property"),
+          ).not.toBeInTheDocument();
+          releaseLogout();
+          await screen.findByLabelText("Username");
+        }
+        expect(
+          screen.queryByDisplayValue("Synthetic unsent Lease evidence"),
+        ).not.toBeInTheDocument();
+        expect(calls[0]?.[0].signal.aborted).toBe(true);
+        expect(recovery.submit).not.toHaveBeenCalled();
+      } finally {
+        releaseLogout();
+        discard.mockRestore();
+      }
+    },
+  );
 });

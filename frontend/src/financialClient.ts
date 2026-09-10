@@ -8,6 +8,7 @@ import {
   financialObject,
   financialPath,
   isFinancialCommand,
+  isEnforcementCommand,
   type CapturedFinancialRequest,
   type FinancialRequest,
 } from "./financialContracts";
@@ -32,7 +33,8 @@ export type FinancialFailure =
   | "UNAVAILABLE"
   | "INVALID_RESPONSE"
   | "RESPONSE_TOO_LARGE"
-  | "HTTP_REJECTION";
+  | "HTTP_REJECTION"
+  | "IDEMPOTENCY_KEY_REUSED";
 export class FinancialClientError extends Error {
   constructor(
     readonly code: FinancialFailure,
@@ -124,7 +126,11 @@ export function createFinancialTransport(
           key = command ? financialId(suppliedKey) : undefined;
         if (!command && suppliedKey !== undefined)
           throw new FinancialClientError("INVALID_REQUEST", false);
-        requestId = financialId(crypto.randomUUID());
+        // Enforcement persists its original response metadata. A stable request ID
+        // keeps an exact retry verifiable without relabelling that original reply.
+        requestId = isEnforcementCommand(request.operation)
+          ? financialId(key)
+          : financialId(crypto.randomUUID());
         const headers = new Headers({
           Accept: "application/json",
           "X-Financial-Property-ID": scope.propertyId,
@@ -259,6 +265,25 @@ export function createFinancialTransport(
           const error = financialObject(envelope.error),
             meta = financialObject(envelope.meta);
           if (
+            isEnforcementCommand(request.operation) &&
+            response.status === 409 &&
+            error.code === "IDEMPOTENCY_KEY_REUSED"
+          ) {
+            if (
+              meta.request_id !== requestId ||
+              meta.property_id !== scope.propertyId ||
+              Object.hasOwn(envelope, "data")
+            )
+              throw invalid();
+            throw new FinancialClientError(
+              "IDEMPOTENCY_KEY_REUSED",
+              dispatched,
+              409,
+              requestId,
+              false,
+            );
+          }
+          if (
             !Object.hasOwn(codes, response.status) ||
             error.code !== codes[response.status] ||
             meta.request_id !== requestId ||
@@ -279,6 +304,7 @@ export function createFinancialTransport(
           request,
           scope.propertyId,
           requestId,
+          scope.actorId,
         );
       } catch (error) {
         if (error instanceof FinancialClientError) throw error;

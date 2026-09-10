@@ -216,6 +216,8 @@ def test_traceability_manifest_covers_executable_tests() -> None:
         "App.test.tsx",
         "FinancialConfirmation.test.tsx",
         "customerLedgerClient.test.ts",
+        "leaseEnforcementClient.test.ts",
+        "leaseEnforcementRecovery.test.ts",
         "CustomerAccountLedger.test.tsx",
     ):
         executable_ids.update(collect_financial_unit_test_ids(FRONTEND_TEST_DIRECTORY / name))
@@ -246,6 +248,12 @@ def test_traceability_manifest_covers_executable_tests() -> None:
     executable_ids.update(
         collect_financial_browser_test_ids(
             FRONTEND_TEST_DIRECTORY / "test" / "customerLedger.browser.tsx"
+        )
+    )
+
+    executable_ids.update(
+        collect_financial_browser_test_ids(
+            FRONTEND_TEST_DIRECTORY / "test" / "leaseEnforcement.browser.tsx"
         )
     )
 

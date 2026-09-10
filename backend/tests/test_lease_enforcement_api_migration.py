@@ -1,0 +1,657 @@
+"""Real PostgreSQL HTTP scope, source selection, replay and read-only evaluation."""
+
+from __future__ import annotations
+
+from datetime import date
+from typing import cast
+from uuid import UUID, uuid4
+
+import psycopg
+import pytest
+from fastapi.testclient import TestClient
+from psycopg import sql
+from psycopg.conninfo import conninfo_to_dict, make_conninfo
+
+from property_rental.identity import AuthenticatedActor, CapabilityGrant
+from property_rental.invoice import PostgresInvoiceService, VoidInvoiceCommand
+from property_rental.lease_enforcement import (
+    NONPAYMENT_EVENT,
+    NONPAYMENT_OPEN,
+    NONPAYMENT_READ,
+    WARNING_CREATE,
+    WARNING_READ,
+    LeaseEnforcementAuthorizationError,
+    LeaseEnforcementInvalidError,
+    LeaseEnforcementNotFoundError,
+)
+from property_rental.lease_enforcement_context import EnforcementPage, PostgresEnforcementContext
+from property_rental.nonpayment_evaluation import ScheduledRentNonpaymentEvaluator
+from test_billing_service_migration import admin_database_url
+from test_credit_refund_api_migration import headers
+from test_invoice_migration import financial_database_url, invoice_api_actor, runtime_database_url
+from test_lease_enforcement_migration import source, staff
+from test_payment_api_migration import api
+from test_reservation_migration import migrated_database_url  # noqa: F401
+
+
+def data(reply: object, status: int = 200) -> dict[str, object]:
+    from httpx import Response
+
+    assert isinstance(reply, Response)
+    assert reply.status_code == status, reply.text
+    assert reply.headers["cache-control"] == "private, no-store"
+    assert reply.headers["vary"] == "Cookie"
+    return cast(dict[str, object], reply.json()["data"])
+
+
+def unchanged(url: str) -> dict[str, object]:
+    tables = (
+        "leases",
+        "occupancies",
+        "units",
+        "invoices",
+        "invoice_lines",
+        "payments",
+        "payment_allocations",
+        "rent_nonpayment_cases",
+        "rent_nonpayment_events",
+        "lease_violation_warnings",
+        "audit_events",
+        "lease_enforcement_commands",
+    )
+    with psycopg.connect(url) as connection:
+        return {
+            table: connection.execute(
+                sql.SQL(
+                    "SELECT jsonb_agg(to_jsonb(t) ORDER BY to_jsonb(t)::text) FROM app.{} t"
+                ).format(sql.Identifier(table))
+            ).fetchone()
+            for table in tables
+        }
+
+
+def opened(client: TestClient, human: UUID, lease: UUID, line: UUID) -> dict[str, object]:
+    return data(
+        client.post(
+            f"/api/v1/leases/{lease}/rent-nonpayment-cases",
+            json={"rent_invoice_line_id": str(line), "reason": "Record scoped case"},
+            headers=headers(human),
+        ),
+        201,
+    )
+
+
+def test_enforcement_discovery_requires_exact_fresh_separate_property_grants(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, _, lease, _, line = source(migrated_database_url)
+    context = PostgresEnforcementContext(runtime_database_url())
+    writer = staff(human, prop, NONPAYMENT_OPEN)
+    result = context.workspaces(EnforcementPage(1), actor=writer)
+    items = cast(list[dict[str, object]], result["items"])
+    assert len(items) == 1 and items[0]["property_id"] == str(prop)
+    assert cast(dict[str, bool], items[0]["capabilities"])[NONPAYMENT_OPEN]
+    assert not cast(dict[str, bool], items[0]["capabilities"])[NONPAYMENT_READ]
+    before = unchanged(migrated_database_url)
+    selected = context.read(prop, "LEASES", actor=writer, purpose="NONPAYMENT")
+    assert [row["id"] for row in cast(list[dict[str, object]], selected["items"])] == [str(lease)]
+    sources = context.read(prop, "SOURCES", actor=writer, lease_id=lease)
+    assert [
+        row["rent_invoice_line_id"] for row in cast(list[dict[str, object]], sources["items"])
+    ] == [str(line)]
+    assert unchanged(migrated_database_url) == before
+    with pytest.raises(LeaseEnforcementAuthorizationError):
+        context.read(prop, "ACTION_CASES", actor=writer, lease_id=lease)
+    with pytest.raises(LeaseEnforcementNotFoundError):
+        context.resolve("LEASE", lease, WARNING_CREATE, actor=writer)
+    unrelated = AuthenticatedActor(
+        str(human),
+        frozenset(
+            {
+                CapabilityGrant("billing.generate", frozenset({str(prop)})),
+                CapabilityGrant(NONPAYMENT_READ, frozenset({str(prop).upper()})),
+            }
+        ),
+    )
+    assert context.workspaces(EnforcementPage(), actor=unrelated)["items"] == []
+    with psycopg.connect(migrated_database_url) as connection:
+        connection.execute(
+            "UPDATE app.user_accounts SET lifecycle_state='disabled' WHERE actor_id=%s", (human,)
+        )
+    with pytest.raises(LeaseEnforcementAuthorizationError):
+        context.workspaces(EnforcementPage(), actor=writer)
+
+
+def test_enforcement_http_canonical_warning_history_and_mutation_only_context(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, _, lease, _, _ = source(migrated_database_url)
+    writer = api(staff(human, prop, WARNING_CREATE))
+    path = f"/api/v1/leases/{lease}/violation-warnings"
+    context = data(writer.get(f"/api/v1/leases/{lease}/violation-warning-context"))
+    today = context["business_date"]
+    body = {
+        "warning_sequence": 1,
+        "violation_date": today,
+        "warning_date": today,
+        "violation_description": "Documented\nviolation",
+        "lease_provision": "Signed provision 2",
+        "communication_record": "Delivered with witness",
+        "reason": "Record explicit warning",
+    }
+    selected_headers = {
+        **headers(human),
+        "X-Request-ID": "original-warning",
+        "X-Financial-Property-ID": str(prop),
+    }
+    before = unchanged(migrated_database_url)
+    first = writer.post(path, json=body, headers=selected_headers)
+    warning = data(first, 201)
+    assert warning["lease_id"] == str(lease) and warning["warning_sequence"] == 1
+    assert first.json()["meta"] == {"request_id": "original-warning", "property_id": str(prop)}
+    replay = writer.post(
+        path, json=body, headers={**selected_headers, "X-Request-ID": "replayed-warning"}
+    )
+    assert replay.status_code == 201 and replay.json() == first.json()
+    assert writer.get(path).status_code == 404
+    reader = api(staff(human, prop, WARNING_READ))
+    assert data(reader.get(path))["items"] == [warning]
+    assert (
+        reader.post(path, json={**body, "warning_sequence": 2}, headers=headers(human)).status_code
+        == 404
+    )
+    assert (
+        data(writer.get(f"/api/v1/leases/{lease}/violation-warning-context"))["suggested_sequence"]
+        == 2
+    )
+    after = unchanged(migrated_database_url)
+    assert {
+        k: v
+        for k, v in before.items()
+        if k not in {"lease_violation_warnings", "audit_events", "lease_enforcement_commands"}
+    } == {
+        k: v
+        for k, v in after.items()
+        if k not in {"lease_violation_warnings", "audit_events", "lease_enforcement_commands"}
+    }
+    assert (
+        writer.post(path, json={**body, "reason": "Different"}, headers=selected_headers).json()[
+            "error"
+        ]["code"]
+        == "IDEMPOTENCY_KEY_REUSED"
+    )
+
+
+def test_enforcement_http_case_and_event_capabilities_do_not_imply_each_other(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, _, lease, _, line = source(migrated_database_url)
+    manager, poster, reader = [
+        api(staff(human, prop, cap)) for cap in (NONPAYMENT_OPEN, NONPAYMENT_EVENT, NONPAYMENT_READ)
+    ]
+    case = opened(manager, human, lease, line)
+    path = f"/api/v1/rent-nonpayment-cases/{case['id']}"
+    assert manager.get(path).status_code == poster.get(path).status_code == 404
+    assert manager.get(path + "/action-context").status_code == 404
+    minimal = data(poster.get(path + "/action-context"))
+    assert minimal["id"] == case["id"] and not {
+        "opened_by",
+        "opened_at",
+        "event_count",
+    }.intersection(minimal)
+    assert data(reader.get(path))["id"] == case["id"]
+    assert data(reader.get(f"/api/v1/leases/{lease}/rent-nonpayment-cases"))["total"] == 1
+    assert data(reader.get(path + "/events"))["items"] == []
+    body = {
+        "event_kind": "TWENTY_DAY_WARNING",
+        "reason": "Issue documented Notice",
+        "notice_document_reference": "Notice1",
+    }
+    assert manager.post(path + "/events", json=body, headers=headers(human)).status_code == 404
+    notice = data(poster.post(path + "/events", json=body, headers=headers(human)), 201)
+    assert notice["rent_nonpayment_case_id"] == case["id"]
+    assert (
+        cast(list[dict[str, object]], data(reader.get(path + "/events"))["items"])[0]["id"]
+        == notice["id"]
+    )
+    assert poster.get(path + "/events").status_code == 404
+    assert reader.get(f"/api/v1/leases/{lease}/violation-warnings").status_code == 404
+
+
+def test_enforcement_http_lost_reply_then_void_keeps_original_replay_and_current_zero(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, _, lease, invoice, line = source(migrated_database_url)
+    client = api(staff(human, prop))
+    path = f"/api/v1/leases/{lease}/rent-nonpayment-cases"
+    body = {"rent_invoice_line_id": str(line), "reason": "Open original case"}
+    original_headers = {**headers(human), "X-Request-ID": "original-case"}
+    first = client.post(path, json=body, headers=original_headers)
+    case = data(first, 201)
+    casepath = f"/api/v1/rent-nonpayment-cases/{case['id']}"
+    amount = cast(dict[str, object], cast(dict[str, object], case["assessment"])["remaining_rent"])[
+        "minor_units"
+    ]
+    assert isinstance(amount, int) and amount > 0
+    with psycopg.connect(migrated_database_url) as connection:
+        version = connection.execute(
+            "SELECT version FROM app.invoices WHERE id=%s", (invoice,)
+        ).fetchone()
+        assert version is not None
+    PostgresInvoiceService(runtime_database_url(), financial_database_url()).void(
+        prop,
+        invoice,
+        VoidInvoiceCommand(uuid4(), "Cancel issued source", int(version[0])),
+        actor=invoice_api_actor(human, prop),
+    )
+    assert data(client.get(f"/api/v1/leases/{lease}/rent-nonpayment-sources"))["items"] == []
+    replay = client.post(
+        path, json=body, headers={**original_headers, "X-Request-ID": "lost-reply-retry"}
+    )
+    assert replay.status_code == 201 and replay.json() == first.json()
+    current = cast(dict[str, object], data(client.get(casepath))["assessment"])
+    assert current["source_applicable"] is False and current["remaining_rent"] == {
+        "currency": "USD",
+        "minor_units": 0,
+    }
+    assert current["twenty_day_warning_eligible"] is False
+    following = data(
+        client.post(
+            casepath + "/events",
+            json={
+                "event_kind": "AUTHORIZED_FOLLOW_UP",
+                "reason": "Document cancellation follow-up",
+                "authorization_reference": "Management approval",
+            },
+            headers=headers(human),
+        ),
+        201,
+    )
+    assert following["remaining_rent_usd_cents"] == 0
+    assert (
+        client.post(
+            casepath + "/events",
+            json={"event_kind": "CURE", "reason": "Wrong cancellation event"},
+            headers=headers(human),
+        ).status_code
+        == 409
+    )
+    assert client.post(path, json=body, headers=headers(human)).status_code == 409
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT count(*) FROM app.lease_enforcement_commands WHERE "
+            "action='OPEN_CASE' AND lease_id=%s",
+            (lease,),
+        ).fetchone() == (1,)
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("warning_sequence", True),
+        ("warning_sequence", 1.5),
+        ("warning_date", "2026-09-01T00:00:00Z"),
+        ("violation_description", " trimmed "),
+        ("lease_provision", "\x00"),
+        ("remaining_rent_usd_cents", 1),
+    ],
+)
+def test_enforcement_http_strict_inputs_never_write(
+    migrated_database_url: str,  # noqa: F811
+    field: str,
+    value: object,
+) -> None:
+    human, prop, _, lease, _, _ = source(migrated_database_url)
+    client = api(staff(human, prop))
+    body = {
+        "warning_sequence": 1,
+        "violation_date": "2026-09-01",
+        "warning_date": "2026-09-01",
+        "violation_description": "Violation",
+        "lease_provision": "Signed rule",
+        "communication_record": "Delivered",
+        "reason": "Record",
+    }
+    before = unchanged(migrated_database_url)
+    reply = client.post(
+        f"/api/v1/leases/{lease}/violation-warnings",
+        json={**body, field: value},
+        headers=headers(human),
+    )
+    assert reply.status_code == 422 and unchanged(migrated_database_url) == before
+
+
+def test_enforcement_http_scope_query_csrf_and_duplicate_guards(migrated_database_url: str) -> None:  # noqa: F811
+    human, prop, _, lease, _, line = source(migrated_database_url)
+    client = api(staff(human, prop))
+    path = f"/api/v1/leases/{lease}/rent-nonpayment-cases"
+    body = {"rent_invoice_line_id": str(line), "reason": "Scoped case"}
+    before = unchanged(migrated_database_url)
+    assert (
+        client.post(
+            path, json=body, headers={**headers(human), "X-Financial-Property-ID": str(uuid4())}
+        ).status_code
+        == 404
+    )
+    bad = headers(human)
+    bad.pop("X-CSRF-Token")
+    assert client.post(path, json=body, headers=bad).status_code == 403
+    assert (
+        client.post(
+            path, json=body, headers={**headers(human), "Origin": "https://untrusted.example"}
+        ).status_code
+        == 403
+    )
+    selected = [*headers(human).items(), ("Idempotency-Key", str(uuid4()))]
+    assert client.post(path, json=body, headers=selected).status_code == 400
+    for query in (
+        "limit=01",
+        "limit=0",
+        "limit=101",
+        "limit=1&limit=2",
+        "offset=-1",
+        "status=VOID",
+    ):
+        assert client.get(path + "?" + query).status_code == 400
+    assert client.post(path + "?force=true", json=body, headers=headers(human)).status_code == 400
+    assert unchanged(migrated_database_url) == before
+
+
+def test_enforcement_alerts_include_unopened_rent_and_never_create_business_events(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, _, lease, _, line = source(migrated_database_url)
+    client = api(staff(human, prop, NONPAYMENT_READ))
+    before = unchanged(migrated_database_url)
+    alert = data(
+        client.get(
+            f"/api/v1/properties/{prop}/rent-nonpayment-alerts",
+            params={"limit": "1", "cursor": str(UUID(int=line.int - 1))},
+        )
+    )
+    rows = cast(list[dict[str, object]], alert["items"])
+    assert (
+        len(rows) == 1
+        and rows[0]["case_id"] is None
+        and rows[0]["rent_invoice_line_id"] == str(line)
+    )
+    assert (
+        rows[0]["lease_id"] == str(lease)
+        and cast(dict[str, object], rows[0]["assessment"])["thirty_day_default_eligible"] is True
+    )
+    assert alert["timezone"] == "Asia/Phnom_Penh" and date.fromisoformat(
+        str(alert["business_date"])
+    )
+    assert unchanged(migrated_database_url) == before
+    writer = api(staff(human, prop, NONPAYMENT_EVENT))
+    assert writer.get(f"/api/v1/properties/{prop}/rent-nonpayment-alerts").status_code == 403
+
+
+def test_enforcement_evaluation_connection_is_bound_scoped_read_only_and_revocable(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, _, _, _, line = source(migrated_database_url)
+    role = "prm_eval_test_" + uuid4().hex
+    password = uuid4().hex
+    principal = uuid4()
+    params = conninfo_to_dict(migrated_database_url)
+    database = params["dbname"]
+    assert isinstance(database, str)
+    admin = make_conninfo(admin_database_url(), dbname=database)
+    with psycopg.connect(admin) as connection:
+        connection.execute(
+            sql.SQL(
+                "CREATE ROLE {} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE "
+                "NOREPLICATION NOBYPASSRLS PASSWORD {}"
+            ).format(sql.Identifier(role), sql.Literal(password))
+        )
+        connection.execute(
+            sql.SQL("GRANT CONNECT ON DATABASE {} TO {}").format(
+                sql.Identifier(database), sql.Identifier(role)
+            )
+        )
+        connection.execute(sql.SQL("GRANT USAGE ON SCHEMA app TO {}").format(sql.Identifier(role)))
+        connection.execute(
+            sql.SQL(
+                "GRANT EXECUTE ON FUNCTION "
+                "app.scheduled_rent_nonpayment_evaluation(uuid,uuid,integer,uuid) "
+                "TO {}"
+            ).format(sql.Identifier(role))
+        )
+        restricted = connection.execute(
+            "SELECT app.nonpayment_evaluation_login_is_restricted(%s)", (role,)
+        ).fetchone()
+        if restricted != (True,):
+            visible = connection.execute(
+                "SELECT p.oid::regprocedure::text,p.proacl::text "
+                "FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace "
+                "WHERE n.nspname='app' AND p.prosecdef "
+                "AND has_function_privilege(%s,p.oid,'EXECUTE') ORDER BY p.oid",
+                (role,),
+            ).fetchall()
+            pytest.fail(f"Dedicated synthetic login has unexpected definer access: {visible}")
+        connection.execute(
+            "INSERT INTO "
+            "app.rent_nonpayment_evaluation_principals(actor_id,property_id,da"
+            "tabase_role,capability,lifecycle_state,created_by) "
+            "VALUES(%s,%s,%s,'rent_nonpayment.evaluate','active',%s)",
+            (principal, prop, role, human),
+        )
+    url = make_conninfo(migrated_database_url, user=role, password=password)
+    # Even explicitly granted synthetic TEMP access cannot be combined with the
+    # historical definer to alter match keys through a fabricated relation.
+    with psycopg.connect(admin) as connection:
+        connection.execute(
+            sql.SQL("GRANT TEMPORARY ON DATABASE {} TO {}").format(
+                sql.Identifier(database), sql.Identifier(role)
+            )
+        )
+    try:
+        with psycopg.connect(url) as connection:
+            connection.execute("CREATE TEMP TABLE fake_customer_source(id uuid,email_address text)")
+            with pytest.raises(psycopg.errors.InsufficientPrivilege):
+                connection.execute(
+                    "CREATE TRIGGER forged_customer_sync AFTER INSERT "
+                    "ON fake_customer_source FOR EACH ROW "
+                    "EXECUTE FUNCTION app.sync_customer_email_match_key()"
+                )
+    finally:
+        with psycopg.connect(admin) as connection:
+            connection.execute(
+                sql.SQL("REVOKE TEMPORARY ON DATABASE {} FROM {}").format(
+                    sql.Identifier(database), sql.Identifier(role)
+                )
+            )
+    evaluator = ScheduledRentNonpaymentEvaluator(url, prop, principal)
+    before = unchanged(migrated_database_url)
+    result = evaluator.run_once(EnforcementPage(1, UUID(int=line.int - 1)))
+    row = cast(list[dict[str, object]], result["items"])[0]
+    assert row["rent_invoice_line_id"] == str(line) and row["case_id"] is None
+    assert unchanged(migrated_database_url) == before
+    with pytest.raises(LeaseEnforcementAuthorizationError):
+        ScheduledRentNonpaymentEvaluator(url, uuid4(), principal).run_once()
+    with pytest.raises(LeaseEnforcementAuthorizationError):
+        ScheduledRentNonpaymentEvaluator(url, prop, human).run_once()
+    with psycopg.connect(url) as connection:
+        with pytest.raises(psycopg.Error) as failure:
+            connection.execute(
+                "SELECT app.scheduled_rent_nonpayment_evaluation(%s,%s,1,NULL)", (principal, prop)
+            )
+        assert failure.value.sqlstate == "P5406"
+    with psycopg.connect(url) as connection:
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            connection.execute("SELECT * FROM app.rent_nonpayment_cases")
+    with psycopg.connect(url) as connection:
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            connection.execute(
+                "SELECT "
+                "app.lease_enforcement_command(%s,%s,NULL,%s,'OPEN_CASE',%s,%s,'{}"
+                "'::jsonb,'forged')",
+                (prop, uuid4(), human, uuid4(), "a" * 64),
+            )
+    # Changes to a dedicated test login must invalidate evaluation immediately,
+    # including a non-inherited role that could otherwise be reached by SET ROLE.
+    drifts = (
+        ("ALTER ROLE {} CREATEDB", "ALTER ROLE {} NOCREATEDB"),
+        (
+            "GRANT prm_runtime TO {} WITH INHERIT FALSE",
+            "REVOKE prm_runtime FROM {}",
+        ),
+        (
+            "GRANT SELECT ON app.rent_nonpayment_cases TO {}",
+            "REVOKE SELECT ON app.rent_nonpayment_cases FROM {}",
+        ),
+        ("GRANT CREATE ON SCHEMA app TO {}", "REVOKE CREATE ON SCHEMA app FROM {}"),
+        (
+            "GRANT EXECUTE ON FUNCTION "
+            "app.lease_enforcement_workspaces(uuid,uuid[],integer,uuid) TO {}",
+            "REVOKE EXECUTE ON FUNCTION "
+            "app.lease_enforcement_workspaces(uuid,uuid[],integer,uuid) FROM {}",
+        ),
+        (
+            "GRANT EXECUTE ON FUNCTION "
+            "app.lease_enforcement_command(uuid,uuid,uuid,uuid,text,uuid,text,jsonb,text) "
+            "TO {}",
+            "REVOKE EXECUTE ON FUNCTION "
+            "app.lease_enforcement_command(uuid,uuid,uuid,uuid,text,uuid,text,jsonb,text) "
+            "FROM {}",
+        ),
+    )
+    for broaden, restore in drifts:
+        try:
+            with psycopg.connect(admin) as connection:
+                connection.execute(sql.SQL(broaden).format(sql.Identifier(role)))
+            with pytest.raises(LeaseEnforcementAuthorizationError):
+                evaluator.run_once()
+            with psycopg.connect(admin) as connection:
+                with pytest.raises(psycopg.errors.CheckViolation):
+                    connection.execute(
+                        "INSERT INTO app.rent_nonpayment_evaluation_principals"
+                        "(actor_id,property_id,database_role,capability,lifecycle_state,"
+                        "created_by) VALUES(%s,%s,%s,'rent_nonpayment.evaluate','active',%s)",
+                        (uuid4(), prop, role, human),
+                    )
+        finally:
+            with psycopg.connect(admin) as connection:
+                connection.execute(sql.SQL(restore).format(sql.Identifier(role)))
+        assert evaluator.run_once(EnforcementPage(1, UUID(int=line.int - 1)))["items"]
+    assert unchanged(migrated_database_url) == before
+    with psycopg.connect(migrated_database_url) as connection:
+        connection.execute(
+            "UPDATE app.rent_nonpayment_evaluation_principals SET "
+            "lifecycle_state='disabled',disabled_at=clock_timestamp(),disabled"
+            "_by=%s WHERE actor_id=%s",
+            (human, principal),
+        )
+    with pytest.raises(LeaseEnforcementAuthorizationError):
+        evaluator.run_once()
+    with psycopg.connect(migrated_database_url) as connection:
+        with pytest.raises(psycopg.Error):
+            connection.execute(
+                "DELETE FROM app.rent_nonpayment_evaluation_principals WHERE actor_id=%s",
+                (principal,),
+            )
+    # The unique test login has no remaining business authority and the disposable
+    # cluster owns its cleanup. Retain its disabled principal/identity history.
+
+
+@pytest.mark.parametrize("limit", [0, 101, True, 1.5])
+def test_enforcement_page_bounds_fail_before_connection(limit: int) -> None:
+    with pytest.raises(LeaseEnforcementInvalidError):
+        EnforcementPage(limit)
+
+
+def test_enforcement_new_context_permissions_and_forward_only_head(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    scripts = ScriptDirectory.from_config(Config("alembic.ini"))
+    assert scripts.get_heads() == ["20260910_51"]
+    revision = scripts.get_revision("20260910_51")
+    assert revision is not None and revision.down_revision == "20260910_50"
+    with pytest.raises(RuntimeError, match="forward-only"):
+        revision.module.downgrade()
+    private = (
+        "app.sync_customer_email_match_key()",
+        "app.rent_nonpayment_source_context(uuid,timestamptz)",
+        "app.rent_nonpayment_alert_page(uuid,integer,uuid)",
+        "app.nonpayment_evaluation_login_is_restricted(name)",
+        "app.scheduled_rent_nonpayment_evaluation(uuid,uuid,integer,uuid)",
+    )
+    with psycopg.connect(migrated_database_url) as connection:
+        for role in ("prm_runtime", "prm_financial", "prm_bootstrap"):
+            for signature in private:
+                assert connection.execute(
+                    "SELECT has_function_privilege(%s,%s,'EXECUTE')", (role, signature)
+                ).fetchone() == (False,)
+            assert connection.execute(
+                "SELECT has_table_privilege(%s,'app.rent_nonpayment_evaluation_principals',"
+                "'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')",
+                (role,),
+            ).fetchone() == (False,)
+        for signature in (
+            "app.lease_enforcement_workspaces(uuid,uuid[],integer,uuid)",
+            "app.lease_enforcement_resolve(uuid,uuid[],text,uuid)",
+            "app.lease_enforcement_context(uuid,uuid,text,uuid,uuid,integer,uuid)",
+        ):
+            assert connection.execute(
+                "SELECT has_function_privilege('prm_runtime',%s,'EXECUTE')", (signature,)
+            ).fetchone() == (True,)
+
+
+def test_forward_trigger_revocation_preserves_runtime_customer_email_matching(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    from hashlib import md5
+
+    from property_rental.customer import (
+        CustomerReuseRequired,
+        CustomerService,
+        PostgresCustomerRepository,
+    )
+
+    human, _, _, _, _, _ = source(migrated_database_url)
+    service = CustomerService(PostgresCustomerRepository(runtime_database_url(), human))
+    original_email = f"{uuid4()}@example.com"
+    customer = service.create(
+        uuid4(), legal_name="Synthetic trigger regression", email_address=original_email
+    )
+
+    def match_key() -> tuple[object, ...] | None:
+        with psycopg.connect(migrated_database_url) as connection:
+            return connection.execute(
+                "SELECT match_digest FROM app.customer_email_match_keys WHERE customer_id=%s",
+                (customer.customer_id,),
+            ).fetchone()
+
+    assert match_key() == (md5(original_email.encode(), usedforsecurity=False).hexdigest(),)
+    with pytest.raises(CustomerReuseRequired):
+        service.create(
+            uuid4(), legal_name="Synthetic duplicate", email_address=original_email.upper()
+        )
+    replacement = f"{uuid4()}@example.com"
+    customer = service.update(
+        customer,
+        legal_name=customer.legal_name,
+        phone_number=None,
+        email_address=replacement,
+        contact_address=None,
+        memo=None,
+    )
+    assert match_key() == (md5(replacement.encode(), usedforsecurity=False).hexdigest(),)
+    with pytest.raises(CustomerReuseRequired):
+        service.create(
+            uuid4(), legal_name="Synthetic updated duplicate", email_address=replacement.upper()
+        )
+    customer = service.update(
+        customer,
+        legal_name=customer.legal_name,
+        phone_number=None,
+        email_address=None,
+        contact_address=None,
+        memo=None,
+    )
+    assert match_key() is None
+    assert customer.version == 3

@@ -127,6 +127,13 @@ from property_rental.lease_api import (
     UnavailableLeaseResourceFlow,
     create_lease_router,
 )
+from property_rental.lease_enforcement import PostgresLeaseEnforcementService
+from property_rental.lease_enforcement_api import (
+    EnforcementContextFlow,
+    EnforcementFlow,
+    create_enforcement_router,
+)
+from property_rental.lease_enforcement_context import PostgresEnforcementContext
 from property_rental.logging import create_application_logger
 from property_rental.payment_allocation import AllocationIdempotencyKeyReused
 from property_rental.payment_api import (
@@ -338,6 +345,8 @@ def create_app(
     billing_run_flow: BillingRunFlow | None = None,
     invoice_flow: InvoiceFlow | None = None,
     late_payment_flow: LatePaymentFlow | None = None,
+    enforcement_flow: EnforcementFlow | None = None,
+    enforcement_context_flow: EnforcementContextFlow | None = None,
     payment_flow: PaymentFlow | None = None,
     financial_reference_flow: FinancialReferenceFlow | None = None,
     payment_reversal_context_flow: PaymentReversalContextFlow | None = None,
@@ -617,6 +626,12 @@ def create_app(
             or INVOICE_API_PATH_PATTERN.match(request.url.path)
             or LATE_PAYMENT_API_PATH_PATTERN.match(request.url.path)
             or PAYMENT_API_PATH_PATTERN.match(request.url.path)
+            or request.url.path.startswith("/api/v1/lease-enforcement-workspaces")
+            or request.url.path.startswith("/api/v1/rent-nonpayment-cases")
+            or re.fullmatch(
+                r"/api/v1/properties/[^/]+/(?:lease-enforcement-leases|rent-nonpayment-alerts)",
+                request.url.path,
+            )
         ):
             response.headers["Cache-Control"] = "private, no-store"
             response.headers["Vary"] = "Cookie"
@@ -845,6 +860,27 @@ def create_app(
                     if resolved_settings.database_url is not None
                     else UnavailableLatePaymentFlow()
                 ),
+            ),
+            resolved_settings,
+        )
+    )
+    app.include_router(
+        create_enforcement_router(
+            actor_resolver,
+            enforcement_flow
+            or PostgresLeaseEnforcementService(
+                resolved_settings.database_url.get_secret_value()
+                if resolved_settings.database_url is not None
+                else "",
+                resolved_settings.financial_database_url.get_secret_value()
+                if resolved_settings.financial_database_url is not None
+                else None,
+            ),
+            enforcement_context_flow
+            or PostgresEnforcementContext(
+                resolved_settings.database_url.get_secret_value()
+                if resolved_settings.database_url is not None
+                else None,
             ),
             resolved_settings,
         )

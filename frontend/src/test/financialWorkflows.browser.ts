@@ -169,6 +169,8 @@ export async function startFinancialWorkflowBrowserScenario(
   const grant = options.readOnly
     ? "payments.read"
     : FINANCIAL_COMMAND_CAPABILITIES[operation];
+  if (grant === null)
+    throw new Error("Use the separate Lease enforcement browser workflow.");
   const grants = (enabled = true) =>
     options.staffReview
       ? Object.fromEntries(

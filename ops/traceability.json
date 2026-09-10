@@ -28617,6 +28617,565 @@
       "test_path": "backend/tests/test_lease_enforcement_migration.py",
       "status": "implemented",
       "notes": "V1-054 foundation coverage: Follow-up demonstrably waits for the exact Invoice lock, observes committed VOID and zero balance, rejects a pre-cancellation snapshot and replays one event receipt. No HTTP/UI or full-version acceptance implied."
+    },
+    {
+      "test_id": "test_enforcement_discovery_requires_exact_fresh_separate_property_grants",
+      "upstream_ids": [
+        "SEC-022",
+        "SEC-023",
+        "SEC-038"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Fresh active actor and exact canonical Property grants constrain minimal Lease/Rent sources; billing and warning/event authority are not inferred and reads leave business tables unchanged."
+    },
+    {
+      "test_id": "test_enforcement_http_canonical_warning_history_and_mutation_only_context",
+      "upstream_ids": [
+        "API-067",
+        "SEC-022",
+        "SEC-028"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Warning-only context and exact original HTTP replay preserve warning fields/request metadata; read and write grants remain separate, changed intent conflicts and unrelated financial/tenancy tables remain unchanged."
+    },
+    {
+      "test_id": "test_enforcement_http_case_and_event_capabilities_do_not_imply_each_other",
+      "upstream_ids": [
+        "API-095",
+        "SEC-022",
+        "SEC-041",
+        "SEC-070"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Case management, event posting and history are independently authorized through real HTTP. Event-only context omits opened-by/time/count history; authorized Notice is visible to the separate reader."
+    },
+    {
+      "test_id": "test_enforcement_http_lost_reply_then_void_keeps_original_replay_and_current_zero",
+      "upstream_ids": [
+        "API-095",
+        "SEC-028",
+        "DB-DER-001"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Real HTTP opening followed by actual Invoice VOID retains the exact original response while current case shows zero and source picker is empty; only referenced authorized follow-up is permitted."
+    },
+    {
+      "test_id": "test_enforcement_http_strict_inputs_never_write",
+      "upstream_ids": [
+        "API-067",
+        "SEC-023",
+        "SEC-036"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Six malformed or server-derived warning inputs are rejected with422 before any tracked business effect."
+    },
+    {
+      "test_id": "test_enforcement_http_scope_query_csrf_and_duplicate_guards",
+      "upstream_ids": [
+        "SEC-023",
+        "SEC-036",
+        "SEC-038",
+        "SEC-040"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Wrong Property, missing CSRF, untrusted Origin, duplicate command key, unknown/duplicate/unbounded query and mutation query input fail without writing."
+    },
+    {
+      "test_id": "test_enforcement_alerts_include_unopened_rent_and_never_create_business_events",
+      "upstream_ids": [
+        "DEPLOY-031",
+        "API-095",
+        "SEC-022"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Bounded human alert view includes overdue issued Rent without a manual case and current milestone eligibility in Property timezone; evaluation is read-only and event-post permission does not grant alerts."
+    },
+    {
+      "test_id": "test_enforcement_evaluation_connection_is_bound_scoped_read_only_and_revocable",
+      "upstream_ids": [
+        "DEPLOY-031",
+        "SEC-023",
+        "SEC-045",
+        "SEC-046"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Dedicated synthetic database login is bound to SERVICE actor/Property/read-only transaction. Wrong identity and six privilege drifts reject; public definer attachment fails even with temporary fixture access. Disablement preserves principal history and evaluation leaves business data unchanged."
+    },
+    {
+      "test_id": "test_enforcement_page_bounds_fail_before_connection",
+      "upstream_ids": [
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Zero, over100, boolean and fractional page sizes fail before connecting."
+    },
+    {
+      "test_id": "test_enforcement_new_context_permissions_and_forward_only_head",
+      "upstream_ids": [
+        "SEC-045",
+        "SEC-046"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Forward-only51 follows50, only narrow human context functions are granted to runtime, and shared roles cannot execute evaluator/private source/Customer trigger functions or read/write evaluator principal storage."
+    },
+    {
+      "test_id": "test_forward_trigger_revocation_preserves_runtime_customer_email_matching",
+      "upstream_ids": [
+        "BR-CUST-002",
+        "DB-CUST-001"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Existing runtime Customer create and changed-email update still synchronize case-insensitive duplicate match keys after forward PUBLIC execution revocation; clearing email removes only its match key and versions advance normally."
+    },
+    {
+      "test_id": "test_evaluation_cli_requires_its_dedicated_connection_and_never_uses_financial_url",
+      "upstream_ids": [
+        "SEC-045",
+        "SEC-043"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_nonpayment_evaluation.py",
+      "status": "implemented",
+      "notes": "Missing dedicated evaluator connection exits without falling back to financial access or printing its configured value."
+    },
+    {
+      "test_id": "test_evaluation_cli_emits_only_bounded_summary_and_preserves_continuation_cursor",
+      "upstream_ids": [
+        "DEPLOY-031",
+        "SEC-040",
+        "SEC-043"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_nonpayment_evaluation.py",
+      "status": "implemented",
+      "notes": "CLI retains exact actor/Property/page cursor inputs and emits only status/count/continuation/business date; synthetic source and connection details are absent from output."
+    },
+    {
+      "test_id": "test_evaluation_cli_failure_is_retryable_without_logging_connection_or_source_details",
+      "upstream_ids": [
+        "DEPLOY-030",
+        "SEC-043"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_nonpayment_evaluation.py",
+      "status": "implemented",
+      "notes": "Handled evaluator failure returns nonzero and only exception type, without connection or source detail. This tests safe failure output, not deployment of an alerting scheduler."
+    },
+    {
+      "test_id": "test_evaluation_adapter_sets_read_only_before_every_query_and_preserves_page_identity",
+      "upstream_ids": [
+        "DEPLOY-031",
+        "SEC-040",
+        "SEC-045"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_nonpayment_evaluation.py",
+      "status": "implemented",
+      "notes": "Adapter sets transaction read-only before every statement, connect/statement/lock time limits and exact actor/Property/page identity; the test uses a connection double."
+    },
+    {
+      "test_id": "TEST-FE-589",
+      "upstream_ids": [
+        "API-015",
+        "API-016",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Exact original request metadata, key, body and actor/Property/CSRF transport headers remain stable across each enforcement command and retry."
+    },
+    {
+      "test_id": "TEST-FE-590",
+      "upstream_ids": [
+        "API-067",
+        "SEC-036"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Malformed dates, sequences, fields and overlong/new server-derived warning input fail before fetch or CSRF access."
+    },
+    {
+      "test_id": "TEST-FE-591",
+      "upstream_ids": [
+        "API-067",
+        "SEC-038",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Forged successful warning response actor, Lease or original intent fields are rejected."
+    },
+    {
+      "test_id": "TEST-FE-592",
+      "upstream_ids": [
+        "API-067",
+        "API-095",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Every finite enforcement read route validates exact request scope and its response schema."
+    },
+    {
+      "test_id": "TEST-FE-593",
+      "upstream_ids": [
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Forged or unbounded read inputs fail before transport."
+    },
+    {
+      "test_id": "TEST-FE-594",
+      "upstream_ids": [
+        "API-095",
+        "SEC-036",
+        "SEC-038"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Incorrect case read evidence is rejected rather than rendered as trusted current state."
+    },
+    {
+      "test_id": "TEST-FE-595",
+      "upstream_ids": [
+        "API-002",
+        "SEC-036",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Malformed media/JSON/encoding, duplicate keys and oversized read responses are rejected."
+    },
+    {
+      "test_id": "TEST-FE-596",
+      "upstream_ids": [
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Noncooperating fetch and body reads are bounded by the same absolute deadline."
+    },
+    {
+      "test_id": "TEST-FE-597",
+      "upstream_ids": [
+        "UI-009",
+        "SEC-038"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Read actor/Property input is captured before awaiting; invalidation cancels a late reply."
+    },
+    {
+      "test_id": "TEST-FE-598",
+      "upstream_ids": [
+        "SEC-036",
+        "SEC-038"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Injected client metadata is revalidated and accepted response data is detached from later mutation."
+    },
+    {
+      "test_id": "TEST-FE-599",
+      "upstream_ids": [
+        "API-067",
+        "UI-006"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Published warning history longer than the new command limit stays readable while new overlong command input is rejected."
+    },
+    {
+      "test_id": "TEST-FE-600",
+      "upstream_ids": [
+        "API-016",
+        "SEC-028",
+        "UI-001"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementRecovery.test.ts",
+      "status": "implemented",
+      "notes": "A lost case-opening reply remains sealed through later VOID and replays original bytes/request metadata/amount; current zero does not relabel the original response."
+    },
+    {
+      "test_id": "TEST-FE-601",
+      "upstream_ids": [
+        "SEC-028",
+        "SEC-029",
+        "UI-009"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementRecovery.test.ts",
+      "status": "implemented",
+      "notes": "Shared synthetic attempt coordination blocks duplicate dispatch and preserves a pending original after late Property invalidation."
+    },
+    {
+      "test_id": "TEST-FE-602",
+      "upstream_ids": [
+        "SEC-028",
+        "SEC-044"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementRecovery.test.ts",
+      "status": "implemented",
+      "notes": "A pending enforcement intent blocks another financial workflow for the same actor and remains isolated from another actor."
+    },
+    {
+      "test_id": "TEST-FE-603",
+      "upstream_ids": [
+        "SEC-028",
+        "SEC-038"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementRecovery.test.ts",
+      "status": "implemented",
+      "notes": "Forged injected success request, actor, intent or Property cannot clear sealed recovery."
+    },
+    {
+      "test_id": "TEST-FE-604",
+      "upstream_ids": [
+        "API-016",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementRecovery.test.ts",
+      "status": "implemented",
+      "notes": "Fresh definitive400/422 may retire a new request; the same rejection on an original replay preserves pending evidence."
+    },
+    {
+      "test_id": "TEST-FE-605",
+      "upstream_ids": [
+        "UI-075",
+        "UI-004",
+        "SEC-070"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Warning-only staff confirm all required source evidence once without reading general history or creating a Rent case."
+    },
+    {
+      "test_id": "TEST-FE-606",
+      "upstream_ids": [
+        "UI-075",
+        "UI-004"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Read-only warning staff see history without command forms or action-context requests."
+    },
+    {
+      "test_id": "TEST-FE-607",
+      "upstream_ids": [
+        "UI-108",
+        "UI-003",
+        "SEC-070"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Event-only staff cannot fetch general history/alerts; VOID disables milestones and Cure while referenced explicit follow-up records current zero without client amount/date assertions."
+    },
+    {
+      "test_id": "TEST-FE-608",
+      "upstream_ids": [
+        "UI-108",
+        "UI-001",
+        "SEC-028"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A lost opening remains recoverable after source removal and shows original80000cents separately from refreshed VOID zero."
+    },
+    {
+      "test_id": "TEST-FE-609",
+      "upstream_ids": [
+        "UI-016",
+        "SEC-028"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Fresh server revocation on retry keeps the original sealed command and does not duplicate its record."
+    },
+    {
+      "test_id": "TEST-FE-610",
+      "upstream_ids": [
+        "UI-007",
+        "UI-009"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Unsaved drafts block a canceled Property change; Escape restores confirmation focus."
+    },
+    {
+      "test_id": "TEST-FE-611",
+      "upstream_ids": [
+        "UI-009",
+        "SEC-044",
+        "SEC-028"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Workspace exit invalidates a late command view without deleting original recovery or showing stale success."
+    },
+    {
+      "test_id": "TEST-FE-612",
+      "upstream_ids": [
+        "UI-009",
+        "SEC-044"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Actor remount refreshes discovery and suppresses previous Lease evidence."
+    },
+    {
+      "test_id": "TEST-FE-613",
+      "upstream_ids": [
+        "UI-008",
+        "SEC-028",
+        "SEC-044"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Shared recovery navigation points to the owning workflow without dispatching it or exposing another actor intent."
+    },
+    {
+      "test_id": "TEST-FE-614",
+      "upstream_ids": [
+        "UI-009",
+        "SEC-044"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/App.test.tsx",
+      "status": "implemented",
+      "notes": "Voluntary logout protects enforcement drafts while forced session expiry clears actor views and cancels unfinished discovery."
+    },
+    {
+      "test_id": "TEST-FE-615",
+      "upstream_ids": [
+        "UI-075",
+        "UI-007",
+        "SEC-044"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/leaseEnforcement.browser.tsx",
+      "status": "implemented",
+      "notes": "Real browser warning confirmation uses focus trapping/Escape restoration and one explicit command; encrypted recovery clears, no history capability is inferred and no plaintext web storage is used."
+    },
+    {
+      "test_id": "TEST-FE-616",
+      "upstream_ids": [
+        "UI-108",
+        "UI-001",
+        "SEC-028"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/leaseEnforcement.browser.tsx",
+      "status": "implemented",
+      "notes": "Real full page reload retains sealed original key/body through VOID and missing new source; exact replay shows original80000cents and current zero separately with one server case."
+    },
+    {
+      "test_id": "TEST-FE-617",
+      "upstream_ids": [
+        "UI-108",
+        "UI-004",
+        "UI-007"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/leaseEnforcement.browser.tsx",
+      "status": "implemented",
+      "notes": "Real mobile event-only workflow disables VOID Notice/Cure, shows authorization in bounded confirmation and records one explicit follow-up at zero without history reads."
+    },
+    {
+      "test_id": "TEST-FE-618",
+      "upstream_ids": [
+        "SEC-044",
+        "SEC-029",
+        "SEC-038"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/leaseEnforcement.browser.tsx",
+      "status": "implemented",
+      "notes": "Real IndexedDB contains non-extractable encryption key/ciphertext and no plaintext intent; native Web Locks block original replay, actor/Property isolation holds and external browser driver verifies cross-tab exclusion."
+    },
+    {
+      "test_id": "TEST-FE-619",
+      "upstream_ids": [
+        "UI-075",
+        "UI-004",
+        "UI-007",
+        "SEC-044"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/leaseEnforcement.browser.tsx",
+      "status": "implemented",
+      "notes": "Real390px read-only warning history has no command form or horizontal overflow; switching actor clears selected Property and old evidence."
+    },
+    {
+      "test_id": "TEST-FE-620",
+      "upstream_ids": [
+        "SEC-038",
+        "SEC-040"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementClient.test.ts",
+      "status": "implemented",
+      "notes": "Workspace pages reject wrong actor, repeated identities, incorrect continuation cursor and excess count."
+    },
+    {
+      "test_id": "TEST-FE-621",
+      "upstream_ids": [
+        "API-015",
+        "SEC-028",
+        "SEC-038"
+      ],
+      "test_level": "unit",
+      "test_path": "frontend/src/leaseEnforcementRecovery.test.ts",
+      "status": "implemented",
+      "notes": "Valid scoped key conflict and missing/wrong Property metadata all retain original pending intent; malformed metadata is classified invalid response."
     }
   ]
 }

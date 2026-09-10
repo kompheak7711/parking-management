@@ -1,3 +1,7 @@
+import {
+  isEnforcementCommand,
+  type EnforcementCommandOperation,
+} from "../financialContracts";
 import type {
   FinancialRequest,
   FinancialOperation,
@@ -145,6 +149,8 @@ export const reads: FinancialRequest[] = [
 export function fixture(
   operation: FinancialOperation,
 ): FinancialObject & { data: FinancialJson; meta: FinancialObject } {
+  if (isEnforcementCommand(operation))
+    throw new Error("Use the dedicated Lease enforcement fixtures.");
   const page = { limit: 50, next_cursor: null },
     history = { items: [], page };
   const payment = {
@@ -206,7 +212,10 @@ export function fixture(
     financial_position: { available_usd_cents: 100 },
     reprints: history,
   };
-  const map: Record<FinancialOperation, FinancialJson> = {
+  const map: Record<
+    Exclude<FinancialOperation, EnforcementCommandOperation>,
+    FinancialJson
+  > = {
     paymentList: [paymentResource],
     paymentGet: paymentResource,
     paymentRecord: {

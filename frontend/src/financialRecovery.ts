@@ -13,6 +13,7 @@ import {
   financialObject,
   invalidFinancial,
   isFinancialCommand,
+  isEnforcementCommand,
   type CapturedFinancialRequest,
   type FinancialCommandOperation,
   type FinancialRequest,
@@ -195,6 +196,11 @@ export function createFinancialRecovery(
       reply = await transport.send(scope, request, pending.key);
       if (financialAborted(scope.signal)) return { kind: "invalidated" };
       if (reply.propertyId !== scope.propertyId) invalidFinancial();
+      if (
+        isEnforcementCommand(request.operation) &&
+        reply.requestId !== pending.key
+      )
+        invalidFinancial();
       // Keep the retirement invariant even with an injected transport adapter.
       reply = validateFinancialReply(
         {
@@ -205,6 +211,7 @@ export function createFinancialRecovery(
         request,
         scope.propertyId,
         financialId(reply.requestId),
+        scope.actorId,
       );
     } catch (error) {
       if (financialAborted(scope.signal)) return { kind: "invalidated" };

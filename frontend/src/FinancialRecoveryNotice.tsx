@@ -5,6 +5,9 @@ export const FINANCIAL_ACTION_LABELS: Record<
   FinancialCommandOperation,
   string
 > = {
+  leaseWarningRecord: "Record Lease violation warning",
+  rentNonpaymentOpen: "Open Rent nonpayment case",
+  rentNonpaymentEvent: "Record Rent nonpayment event",
   paymentRecord: "Record payment",
   allocationPost: "Post allocation",
   allocationReverse: "Reverse allocation",
@@ -24,6 +27,7 @@ interface Props {
   state: FinancialRecoveryState | null;
   busy: boolean;
   onReviewPending: () => void;
+  pendingLink?: { href: string; label: string };
 }
 
 export function FinancialRecoveryNotice({
@@ -31,6 +35,7 @@ export function FinancialRecoveryNotice({
   state,
   busy,
   onReviewPending,
+  pendingLink,
 }: Props) {
   let message: string;
   switch (state?.kind) {
@@ -82,9 +87,13 @@ export function FinancialRecoveryNotice({
             <dt>Original request reference</dt>
             <dd>{state.command.key}</dd>
           </dl>
-          <button type="button" disabled={busy} onClick={onReviewPending}>
-            Review original action
-          </button>
+          {pendingLink ? (
+            <a href={pendingLink.href}>{pendingLink.label}</a>
+          ) : (
+            <button type="button" disabled={busy} onClick={onReviewPending}>
+              Review original action
+            </button>
+          )}
         </>
       )}
     </section>

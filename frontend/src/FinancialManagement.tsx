@@ -14,6 +14,7 @@ import {
 } from "./financialClient";
 import {
   commandBody,
+  isEnforcementCommand,
   financialId,
   financialObject,
   type FinancialCommandOperation,
@@ -59,7 +60,7 @@ import {
 } from "./financialUiContext";
 import type { FinancialActionPurpose } from "./financialActionContext";
 import {
-  FINANCIAL_COMMAND_CAPABILITIES,
+  financialCommandAllowed,
   FinancialInputError,
   confirmedFinancialRequest,
   financialLabel,
@@ -442,9 +443,10 @@ function FinancialPropertyWorkspace({
         if (!isCurrent()) return;
         if (
           current.current.recovery?.kind !== "ready" ||
-          !current.current.capabilities?.[
-            FINANCIAL_COMMAND_CAPABILITIES[request.operation]
-          ]
+          !financialCommandAllowed(
+            current.current.capabilities,
+            request.operation,
+          )
         )
           throw new FinancialInputError(
             "Review the current access and unresolved financial action before continuing.",
@@ -476,9 +478,7 @@ function FinancialPropertyWorkspace({
       selected.kind === "new"
         ? selected.prepared.request.operation
         : selected.command.operation;
-    if (
-      !current.current.capabilities?.[FINANCIAL_COMMAND_CAPABILITIES[operation]]
-    ) {
+    if (!financialCommandAllowed(current.current.capabilities, operation)) {
       setConfirmation(null);
       setNotice(
         "Current access does not allow this financial action. Refresh access before continuing.",
@@ -588,6 +588,16 @@ function FinancialPropertyWorkspace({
         state={recovery}
         busy={busy}
         onReviewPending={reviewPending}
+        pendingLink={
+          recovery?.kind === "pending" &&
+          isEnforcementCommand(recovery.command.operation)
+            ? {
+                href: "#lease-enforcement-management",
+                label:
+                  "Review this saved action in Lease warnings and Rent nonpayment",
+              }
+            : undefined
+        }
       />
       <button
         type="button"
@@ -670,9 +680,7 @@ function FinancialPropertyWorkspace({
           }
           noticeId={noticeId}
           busy={busy}
-          confirmDisabled={
-            !capabilities?.[FINANCIAL_COMMAND_CAPABILITIES[operation]]
-          }
+          confirmDisabled={!financialCommandAllowed(capabilities, operation)}
           onCancel={invalidate}
           onConfirm={() => {
             void confirm();
@@ -691,7 +699,7 @@ function FinancialPropertyWorkspace({
           />
           <FinancialCommandEvidence request={request} />
           {confirmation.kind === "new" && confirmation.review.evidence}
-          {!capabilities?.[FINANCIAL_COMMAND_CAPABILITIES[operation]] && (
+          {!financialCommandAllowed(capabilities, operation) && (
             <p>Current access does not allow sending this original action.</p>
           )}
         </FinancialConfirmation>
@@ -745,7 +753,7 @@ export function FinancialCurrentAfterConfirmation({
           ),
         };
       }
-      if (!capabilities[FINANCIAL_COMMAND_CAPABILITIES[operation]]) return null;
+      if (!financialCommandAllowed(capabilities, operation)) return null;
       if (operation === "paymentReverse")
         return {
           kind: "reversal",

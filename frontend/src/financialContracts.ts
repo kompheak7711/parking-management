@@ -312,8 +312,21 @@ function intent(value: unknown, credit: boolean): void {
   }
 }
 
+export function financialCalendarDate(value: unknown): string {
+  if (typeof value !== "string" || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value))
+    return invalidFinancial();
+  instant(`${value}T00:00:00Z`);
+  return value;
+}
+export function financialText(value: unknown, maximum: number): string {
+  text(value, maximum, true);
+  return value as string;
+}
 // Relative routes are generated only from this finite registry and validated IDs.
 export const FINANCIAL_OPERATIONS = {
+  leaseWarningRecord: ["POST", "/leases/:id/violation-warnings", 201],
+  rentNonpaymentOpen: ["POST", "/leases/:id/rent-nonpayment-cases", 201],
+  rentNonpaymentEvent: ["POST", "/rent-nonpayment-cases/:id/events", 201],
   paymentList: ["GET", "/properties/:propertyId/payments", 200],
   paymentGet: ["GET", "/payments/:id", 200],
   paymentRecord: ["POST", "/properties/:propertyId/payments", 201],
@@ -351,6 +364,19 @@ export type FinancialCommandOperation = {
     ? K
     : never;
 }[FinancialOperation];
+export type EnforcementCommandOperation =
+  | "leaseWarningRecord"
+  | "rentNonpaymentOpen"
+  | "rentNonpaymentEvent";
+export function isEnforcementCommand(
+  operation: FinancialOperation,
+): operation is EnforcementCommandOperation {
+  return (
+    operation === "leaseWarningRecord" ||
+    operation === "rentNonpaymentOpen" ||
+    operation === "rentNonpaymentEvent"
+  );
+}
 type Parameters<P extends string> =
   P extends `${string}/:${infer K}/${infer Rest}`
     ? K | Parameters<`/${Rest}`>
@@ -396,6 +422,65 @@ export function commandBody(
     text(row.reason, 1000);
   };
   switch (operation) {
+    case "leaseWarningRecord":
+      exactKeys(row, [
+        "warning_sequence",
+        "violation_date",
+        "warning_date",
+        "violation_description",
+        "lease_provision",
+        "communication_record",
+        "reason",
+      ]);
+      financialInteger(row.warning_sequence, 1n, 32767n);
+      financialCalendarDate(row.violation_date);
+      financialCalendarDate(row.warning_date);
+      for (const field of [
+        "violation_description",
+        "lease_provision",
+        "communication_record",
+      ])
+        text(row[field], 2000, true);
+      text(row.reason, 500, true);
+      break;
+    case "rentNonpaymentOpen":
+      exactKeys(row, ["rent_invoice_line_id", "reason"]);
+      financialId(row.rent_invoice_line_id);
+      text(row.reason, 500, true);
+      break;
+    case "rentNonpaymentEvent":
+      exactKeys(
+        row,
+        ["event_kind", "reason"],
+        [
+          "notice_document_reference",
+          "communication_record",
+          "authorization_reference",
+        ],
+      );
+      choice(row.event_kind, [
+        "TWENTY_DAY_WARNING",
+        "THIRTY_DAY_SERIOUS_DEFAULT",
+        "CURE",
+        "AUTHORIZED_FOLLOW_UP",
+      ]);
+      text(row.reason, 500, true);
+      for (const field of [
+        "notice_document_reference",
+        "communication_record",
+        "authorization_reference",
+      ])
+        optional(row, field, (value) => {
+          text(value, field === "communication_record" ? 2000 : 500, true);
+        });
+      if (
+        (row.event_kind === "TWENTY_DAY_WARNING" &&
+          row.notice_document_reference == null) ||
+        (row.event_kind === "AUTHORIZED_FOLLOW_UP" &&
+          row.authorization_reference == null)
+      )
+        invalidFinancial();
+      break;
     case "paymentRecord":
       payment(row);
       break;

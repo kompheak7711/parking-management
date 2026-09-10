@@ -171,8 +171,11 @@ export interface FinancialUiServices {
 }
 export const FINANCIAL_COMMAND_CAPABILITIES: Record<
   FinancialCommandOperation,
-  keyof FinancialCapabilities
+  keyof FinancialCapabilities | null
 > = {
+  leaseWarningRecord: null,
+  rentNonpaymentOpen: null,
+  rentNonpaymentEvent: null,
   paymentRecord: "payments.record",
   allocationPost: "payments.allocate",
   allocationReverse: "payments.allocations.reverse",
@@ -186,6 +189,14 @@ export const FINANCIAL_COMMAND_CAPABILITIES: Record<
   refundReturn: "refunds.correct",
   refundReturnReverse: "refunds.corrections.reverse",
 };
+/** Enforcement recovery stays in its own authorized staff workspace. */
+export function financialCommandAllowed(
+  capabilities: FinancialCapabilities | null | undefined,
+  operation: FinancialCommandOperation,
+): boolean {
+  const capability = FINANCIAL_COMMAND_CAPABILITIES[operation];
+  return capability !== null && capabilities?.[capability] === true;
+}
 export interface FinancialCommandReview {
   onRecorded?: () => void;
   consequence: string;

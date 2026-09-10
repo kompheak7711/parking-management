@@ -1,3 +1,21 @@
+# Current queue — V1-054 exact integration acceptance
+
+Freeze the prepared52path HTTP/staff/evaluation candidate normally, run fresh mandatory exact stage gates and official package-security audits, then independent COMPLETE stage review from4011591. Follow standing correction sequence and final integrated COMPLETE version review from98ea770 at zero before normal publication, exact CI, allrefs, Workboard acceptance and durable closure54. Only then55 through60; pause SAME after60, never61/V2/production.
+
+Implementation, five browser scenarios and28trace checks are complete development evidence. Preserve every earlier queue as history; mandatory exact gates and reviews remain pending.
+
+# Current queue — V1-054 browser and final acceptance
+
+Execute prepared synthetic enforcement browser cases (real encrypted IndexedDB, Web Locks, confirmation, reload/exact retry/current VOID zero, capability and mobile boundaries); update exact trace; freeze stage and pass mandatory final gates plus fresh complete-stage/integrated exact-SHA reviews before publication/exactCI/refs/Workboard/closure54. Then55 through60; pause SAME only after60, never61/V2/production.
+
+Connected regression evidence is recorded in STATE.v1_054_http_ui.connected_regression_progress. Earlier queues and failures remain historical; no new candidate, publication or version acceptance yet.
+
+# Current queue — V1-054 HTTP/staff/evaluation integration
+
+Implement bounded canonical HTTP/staff-workflow/read-only-evaluation stage from accepted4011591 using ops/V1_054_HTTP_SCOPE.md. Verify affected and mandatory stage gates, fresh complete-stage independent review and correction sequence; then final integrated V1-054 review from98ea770 before normal publication/exact CI/ref equality/Workboard/durableclosure. Only fully closed54 permits55; continue through60 and pause SAME, never61/V2/production.
+
+Foundation4011591 accepted with zero findings. All previous queue entries and evidence remain preserved history.
+
 # Current queue — V1-054 R4 current review narrative
 
 Verify exact records successor with metadata preservation, automation, deployment examples, traceability, guard, diff and preflight checks. Reuse unchanged backend2773, PG1088, frontend1431 and all static/build evidence by full source/config/runtime identity. Obtain focused independent R4 verification with R3 mapping resolution evidence, then a DIFFERENT fresh COMPLETE foundation review from ab09f28 at zero. Only then HTTP/UI/evaluation. Final integrated V1-054 review/publication/exact CI/refs/Workboard/closure precede55; continue through60 and pause SAME, never61/V2/production.

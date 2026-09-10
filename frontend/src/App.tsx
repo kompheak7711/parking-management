@@ -50,6 +50,8 @@ import { UtilityManagement } from "./UtilityManagement";
 import { UtilityApi, utilityApi as utilityClient } from "./utilityClient";
 import { InvoiceManagement } from "./InvoiceManagement";
 import { InvoiceApi, invoiceApi as invoiceClient } from "./invoiceClient";
+import { LeaseEnforcementManagement } from "./LeaseEnforcementManagement";
+import type { EnforcementServices } from "./leaseEnforcementUi";
 import { FinancialManagement } from "./FinancialManagement";
 import type { FinancialUiServices } from "./financialUi";
 import {
@@ -74,6 +76,7 @@ export interface AppProps {
   utilityApi?: UtilityApi;
   invoiceApi?: InvoiceApi;
   financialServices?: FinancialUiServices;
+  enforcementServices?: EnforcementServices;
   ledgerApi?: CustomerLedgerApi;
   now?: () => number;
 }
@@ -527,6 +530,7 @@ export function App({
   utilityApi = utilityClient,
   invoiceApi = invoiceClient,
   financialServices,
+  enforcementServices,
   ledgerApi,
   now = Date.now,
 }: AppProps) {
@@ -559,6 +563,7 @@ export function App({
     useState(false);
   const [customerDraftsDirty, setCustomerDraftsDirty] = useState(false);
   const [financialDraftsDirty, setFinancialDraftsDirty] = useState(false);
+  const [enforcementDraftsDirty, setEnforcementDraftsDirty] = useState(false);
   const [customerCommandBusy, setCustomerCommandBusy] = useState(false);
   const [customerCoordinationAvailable, setCustomerCoordinationAvailable] =
     useState(true);
@@ -653,6 +658,7 @@ export function App({
   }
 
   function returnToSignIn(message: string | null) {
+    setEnforcementDraftsDirty(false);
     setFinancialDraftsDirty(false);
     setCustomerDraftsDirty(false);
     setCustomerCommandBusy(false);
@@ -847,6 +853,18 @@ export function App({
       );
       return;
     }
+    if (
+      enforcementDraftsDirty &&
+      !window.confirm(
+        "Discard unsaved Lease warning or nonpayment form values and sign out?",
+      )
+    ) {
+      setNotice(
+        "Sign out was cancelled; unsaved Lease enforcement values were preserved.",
+      );
+      return;
+    }
+    setEnforcementDraftsDirty(false);
     setFinancialDraftsDirty(false);
     setCustomerDraftsDirty(false);
     setLogoutPending(true);
@@ -1766,6 +1784,14 @@ export function App({
             )}
             <ReservationManagement api={reservationApi} />
             <LeaseManagement api={leaseApi} />
+            {!logoutPending && (
+              <LeaseEnforcementManagement
+                key={`lease-enforcement:${session.actor_id}`}
+                actorId={session.actor_id}
+                services={enforcementServices}
+                onDirtyStateChange={setEnforcementDraftsDirty}
+              />
+            )}
             <DepositManagement api={depositApi} />
             {!logoutPending && (
               <CustomerManagement

@@ -1,3 +1,4 @@
+import { validateEnforcementCommandReply } from "./leaseEnforcementContract";
 import type { FinancialJson } from "./financialJson";
 import {
   commandBody,
@@ -214,6 +215,7 @@ export function validateFinancialReply(
   request: CapturedFinancialRequest,
   prop: string,
   requestId: string,
+  actorId?: string,
 ): FinancialReply {
   if (!Object.hasOwn(envelope, "data") || Object.hasOwn(envelope, "error"))
     return invalidFinancial();
@@ -259,6 +261,18 @@ export function validateFinancialReply(
       ? commandBody(op, request.wireBody ?? invalidFinancial())
       : {};
     switch (op) {
+      case "leaseWarningRecord":
+      case "rentNonpaymentOpen":
+      case "rentNonpaymentEvent":
+        validateEnforcementCommandReply(
+          row,
+          body,
+          op,
+          financialId(id),
+          prop,
+          financialId(actorId),
+        );
+        break;
       case "paymentGet":
       case "paymentRecord": {
         const item = payment(row.payment, prop);
