@@ -149,10 +149,11 @@ export function RentNonpaymentWorkspace(props: EnforcementWorkflowProps) {
           {cases.data && rows.length === 0 && (
             <p>No Rent cases on this page.</p>
           )}
-          {selection && (
+          {selected && (
             <CaseWorkspace
-              key={`${selected}:${String(props.revision)}`}
+              key={selected}
               {...props}
+              ready={props.ready && selection !== undefined}
               caseId={selected}
               onDirty={dirty.event}
             />
@@ -361,14 +362,17 @@ function CaseWorkspace(props: EnforcementWorkflowProps & { caseId: string }) {
           )}
         </>
       )}
-      {data && props.capabilities["rent_nonpayment.event_post"] && (
+      {props.capabilities["rent_nonpayment.event_post"] && (
         <EventForm {...props} source={data} />
       )}
     </section>
   );
 }
 function EventForm(
-  props: EnforcementWorkflowProps & { caseId: string; source: FinancialObject },
+  props: EnforcementWorkflowProps & {
+    caseId: string;
+    source: FinancialObject | null;
+  },
 ) {
   const id = useId(),
     [kind, setKind] = useState<EnforcementEvent | "">(""),
@@ -377,25 +381,28 @@ function EventForm(
     [communication, setCommunication] = useState(""),
     [authorization, setAuthorization] = useState(""),
     [error, setError] = useState<string | null>(null);
-  const assessment = financialObject(props.source.assessment);
+  const assessment = props.source
+    ? financialObject(props.source.assessment)
+    : null;
   const eligible: Record<EnforcementEvent, boolean> = {
-    TWENTY_DAY_WARNING: assessment.twenty_day_warning_eligible === true,
-    THIRTY_DAY_SERIOUS_DEFAULT: assessment.thirty_day_default_eligible === true,
-    CURE: assessment.cure_eligible === true,
-    AUTHORIZED_FOLLOW_UP: true,
+    TWENTY_DAY_WARNING: assessment?.twenty_day_warning_eligible === true,
+    THIRTY_DAY_SERIOUS_DEFAULT:
+      assessment?.thirty_day_default_eligible === true,
+    CURE: assessment?.cure_eligible === true,
+    AUTHORIZED_FOLLOW_UP: props.source !== null,
   };
-  useEnforcementDraft(
+  const dirty =
     kind !== "" ||
-      reason !== "" ||
-      notice !== "" ||
-      communication !== "" ||
-      authorization !== "",
-    props.onDirty,
-  );
+    reason !== "" ||
+    notice !== "" ||
+    communication !== "" ||
+    authorization !== "";
+  useEnforcementDraft(dirty, props.onDirty);
   function submit(event: FormEvent) {
     event.preventDefault();
     setError(null);
-    if (!kind || !eligible[kind] || !props.ready || props.busy) return;
+    if (!props.source || !kind || !eligible[kind] || !props.ready || props.busy)
+      return;
     try {
       props.review(
         {
@@ -427,13 +434,17 @@ function EventForm(
     }
   }
   return (
-    <form onSubmit={submit} aria-label="Record Rent nonpayment event">
+    <form
+      onSubmit={submit}
+      aria-label="Record Rent nonpayment event"
+      hidden={props.source === null && !dirty}
+    >
       <h5>Record an explicit event</h5>
       <p>
         An authorized follow-up requires an authorization reference. It
         preserves the case history even when its Invoice has been voided.
       </p>
-      <fieldset disabled={!props.ready || props.busy}>
+      <fieldset disabled={!props.source || !props.ready || props.busy}>
         <label htmlFor={`${id}-kind`}>Nonpayment event</label>
         <select
           id={`${id}-kind`}

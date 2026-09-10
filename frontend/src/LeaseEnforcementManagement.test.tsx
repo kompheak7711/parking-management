@@ -28,6 +28,7 @@ import {
   ids,
   memory,
   readData,
+  additionalRentSource,
   warningRecord,
   eventRecord,
   caseRecord,
@@ -53,8 +54,10 @@ function harness(allow: string[] = [...ENFORCEMENT_CAPABILITIES]) {
     allow,
     voided: false,
     caseExists: false,
+    hasSecondSource: false,
     loseNext: false,
     deny: false,
+    rejectValidation: false,
     block: null as null | { phase: "post" | "reads"; promise: Promise<void> },
     warnings: [] as FinancialObject[],
     events: [] as FinancialObject[],
@@ -98,6 +101,14 @@ function harness(allow: string[] = [...ENFORCEMENT_CAPABILITIES]) {
         },
       });
     if (method === "POST") {
+      if (state.rejectValidation)
+        return respond(
+          {
+            error: { code: "VALIDATION_ERROR" },
+            meta: { request_id: requestId },
+          },
+          422,
+        );
       if (state.deny)
         return respond(
           { error: { code: "FORBIDDEN" }, meta: { request_id: requestId } },
@@ -182,7 +193,8 @@ function harness(allow: string[] = [...ENFORCEMENT_CAPABILITIES]) {
     }
     if (input.kind === "warningContext")
       data.suggested_sequence = state.warnings.length + 1;
-    if (input.kind === "sources" && state.caseExists) data.items = [];
+    if (input.kind === "sources" && state.caseExists)
+      data.items = state.hasSecondSource ? [additionalRentSource()] : [];
     if (
       (input.kind === "cases" || input.kind === "actionCases") &&
       !state.caseExists
@@ -630,5 +642,404 @@ describe("Lease enforcement staff workflows", () => {
       "creditReverse",
     );
     expect(rentMinor(caseRecord())).toBe(80000);
+  });
+});
+
+describe("Lease enforcement draft lifetime", () => {
+  it.each(["rejected", "blocked", "pending"] as const)(
+    "TEST-FE-622 retains warning input and dirty state through a %s attempt and delayed context refresh",
+    async (result) => {
+      const h = harness(["leases.warn"]),
+        dirty = vi.fn(),
+        reads = deferred();
+      if (result === "rejected") h.state.rejectValidation = true;
+      if (result === "pending") h.state.loseNext = true;
+      if (result === "blocked")
+        vi.spyOn(h.services.recovery, "submit").mockResolvedValue({
+          kind: "blocked",
+          state: { kind: "unavailable" },
+        });
+      vi.spyOn(window, "confirm").mockReturnValue(false);
+      render(
+        <LeaseEnforcementManagement
+          actorId={ids.actor}
+          services={h.services}
+          onDirtyStateChange={dirty}
+        />,
+      );
+      await selectProperty();
+      await selectLease("general warnings");
+      const form = await warningForm();
+      fireEvent.change(within(form).getByLabelText("Warning sequence"), {
+        target: { value: "7" },
+      });
+      fireEvent.click(
+        within(form).getByRole("button", { name: "Review Lease warning" }),
+      );
+      h.state.block = { phase: "reads", promise: reads.promise };
+      fireEvent.click(
+        within(await screen.findByRole("dialog")).getByRole("button", {
+          name: "Record Lease violation warning",
+        }),
+      );
+      try {
+        await waitFor(() => {
+          expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        });
+        expect(form).toBeInTheDocument();
+        expect(within(form).getByLabelText("Warning sequence")).toHaveValue(
+          "7",
+        );
+        expect(
+          within(form).getByLabelText("Violation description"),
+        ).toHaveValue(enforcementValue(warningBody.violation_description));
+        expect(
+          within(form).getByRole("button", { name: "Review Lease warning" }),
+        ).toBeDisabled();
+        expect(dirty).toHaveBeenLastCalledWith(true);
+        fireEvent.change(screen.getByLabelText("Lease enforcement Property"), {
+          target: { value: "" },
+        });
+        expect(window.confirm).toHaveBeenCalled();
+        expect(screen.getByLabelText("Lease enforcement Property")).toHaveValue(
+          ids.property,
+        );
+      } finally {
+        h.state.block = null;
+        await act(async () => {
+          reads.release();
+          await reads.promise;
+        });
+      }
+      expect(within(form).getByLabelText("Warning sequence")).toHaveValue("7");
+      expect(
+        within(form).getByLabelText("Reason for recording warning"),
+      ).toHaveValue(enforcementValue(warningBody.reason));
+      expect(h.state.warnings).toHaveLength(result === "pending" ? 1 : 0);
+      expect(h.records.size).toBe(result === "pending" ? 1 : 0);
+    },
+  );
+  it("TEST-FE-623 retains a rejected Rent opening and its selected source", async () => {
+    const h = harness(["rent_nonpayment.case_manage"]);
+    h.state.rejectValidation = true;
+    render(
+      <LeaseEnforcementManagement actorId={ids.actor} services={h.services} />,
+    );
+    await selectProperty();
+    await selectLease("Rent nonpayment");
+    const picker = screen.getByLabelText("Issued Rent line without a case");
+    await waitFor(() => {
+      expect(within(picker).getAllByRole("option")).toHaveLength(2);
+    });
+    fireEvent.change(picker, { target: { value: ids.rent } });
+    fireEvent.change(screen.getByLabelText("Reason for opening case"), {
+      target: { value: "Keep this investigation draft" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Review Rent case opening" }),
+    );
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Open Rent nonpayment case",
+      }),
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Review Rent case opening" }),
+      ).toBeEnabled();
+    });
+    expect(
+      screen.getByLabelText("Issued Rent line without a case"),
+    ).toHaveValue(ids.rent);
+    expect(screen.getByLabelText("Reason for opening case")).toHaveValue(
+      "Keep this investigation draft",
+    );
+    expect(h.state.caseExists).toBe(false);
+    expect(h.records.size).toBe(0);
+  });
+  it.each([true, false])(
+    "TEST-FE-624 retains unrelated opening input and resets only a recorded event (rejected=%s)",
+    async (rejected) => {
+      const h = harness([
+          "rent_nonpayment.case_manage",
+          "rent_nonpayment.event_post",
+        ]),
+        dirty = vi.fn(),
+        reads = deferred();
+      h.state.caseExists = true;
+      h.state.hasSecondSource = true;
+      h.state.rejectValidation = rejected;
+      render(
+        <LeaseEnforcementManagement
+          actorId={ids.actor}
+          services={h.services}
+          onDirtyStateChange={dirty}
+        />,
+      );
+      await selectProperty();
+      await selectLease("Rent nonpayment");
+      const picker = screen.getByLabelText("Rent case available for an event");
+      await waitFor(() => {
+        expect(within(picker).getAllByRole("option")).toHaveLength(2);
+      });
+      fireEvent.change(picker, { target: { value: ids.case } });
+      const form = await screen.findByRole("form", {
+        name: "Record Rent nonpayment event",
+      });
+      const sourcePicker = screen.getByLabelText(
+        "Issued Rent line without a case",
+      );
+      await waitFor(() => {
+        expect(
+          within(sourcePicker).getByRole("option", {
+            name: /SYNTHETIC-RENT-054-SECOND/,
+          }),
+        ).toBeInTheDocument();
+      });
+      fireEvent.change(sourcePicker, { target: { value: ids.secondRent } });
+      expect(screen.getByLabelText("Reason for opening case")).toBeEnabled();
+      fireEvent.change(screen.getByLabelText("Reason for opening case"), {
+        target: { value: "Unrelated new case draft" },
+      });
+      fireEvent.change(within(form).getByLabelText("Nonpayment event"), {
+        target: { value: "AUTHORIZED_FOLLOW_UP" },
+      });
+      fireEvent.change(within(form).getByLabelText("Authorization reference"), {
+        target: { value: "SYNTHETIC-AUTHORIZATION" },
+      });
+      fireEvent.change(
+        within(form).getByLabelText("Reason for nonpayment event"),
+        { target: { value: "Retain rejected event draft" } },
+      );
+      fireEvent.click(
+        within(form).getByRole("button", { name: "Review nonpayment event" }),
+      );
+      h.state.block = { phase: "reads", promise: reads.promise };
+      fireEvent.click(
+        within(await screen.findByRole("dialog")).getByRole("button", {
+          name: "Record Rent nonpayment event",
+        }),
+      );
+      try {
+        await waitFor(() => {
+          expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+        });
+        expect(form).toBeInTheDocument();
+        expect(screen.getByLabelText("Reason for opening case")).toHaveValue(
+          "Unrelated new case draft",
+        );
+        expect(
+          within(form).getByLabelText("Reason for nonpayment event"),
+        ).toHaveValue(rejected ? "Retain rejected event draft" : "");
+        expect(
+          within(form).getByRole("button", {
+            name: "Review nonpayment event",
+            hidden: true,
+          }),
+        ).toBeDisabled();
+        expect(dirty).toHaveBeenLastCalledWith(true);
+      } finally {
+        h.state.block = null;
+        await act(async () => {
+          reads.release();
+          await reads.promise;
+        });
+      }
+      expect(
+        screen.getByLabelText("Rent case available for an event"),
+      ).toHaveValue(ids.case);
+      expect(screen.getByLabelText("Reason for opening case")).toHaveValue(
+        "Unrelated new case draft",
+      );
+      expect(within(form).getByLabelText("Nonpayment event")).toHaveValue(
+        rejected ? "AUTHORIZED_FOLLOW_UP" : "",
+      );
+      expect(h.state.events).toHaveLength(rejected ? 0 : 1);
+      expect(h.records.size).toBe(0);
+    },
+  );
+  it("TEST-FE-625 clears a recorded warning and uses the fresh next sequence", async () => {
+    const h = harness(["leases.warn"]),
+      dirty = vi.fn();
+    render(
+      <LeaseEnforcementManagement
+        actorId={ids.actor}
+        services={h.services}
+        onDirtyStateChange={dirty}
+      />,
+    );
+    await selectProperty();
+    await selectLease("general warnings");
+    fireEvent.click(
+      within(await warningForm()).getByRole("button", {
+        name: "Review Lease warning",
+      }),
+    );
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Record Lease violation warning",
+      }),
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByLabelText("Warning sequence")).toHaveValue("2");
+    });
+    expect(screen.getByLabelText("Violation description")).toHaveValue("");
+    expect(screen.getByLabelText("Reason for recording warning")).toHaveValue(
+      "",
+    );
+    expect(dirty).toHaveBeenLastCalledWith(false);
+    expect(h.state.warnings).toHaveLength(1);
+  });
+});
+
+describe("Lease enforcement preserved draft recovery", () => {
+  it("TEST-FE-626 refreshes a pending draft without discard and clears it only after exact replay succeeds", async () => {
+    const h = harness(["leases.warn"]);
+    h.state.loseNext = true;
+    const discard = vi.spyOn(window, "confirm").mockReturnValue(false);
+    render(
+      <LeaseEnforcementManagement actorId={ids.actor} services={h.services} />,
+    );
+    await selectProperty();
+    await selectLease("general warnings");
+    fireEvent.click(
+      within(await warningForm()).getByRole("button", {
+        name: "Review Lease warning",
+      }),
+    );
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Record Lease violation warning",
+      }),
+    );
+    await screen.findByRole("button", { name: "Review original action" });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    expect(screen.getByLabelText("Reason for recording warning")).toHaveValue(
+      enforcementValue(warningBody.reason),
+    );
+    const before = h.calls.length;
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Refresh enforcement records and recovery",
+      }),
+    );
+    await waitFor(() => {
+      expect(h.calls.length).toBeGreaterThan(before);
+    });
+    expect(discard).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Reason for recording warning")).toHaveValue(
+      enforcementValue(warningBody.reason),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Review original action" }),
+    );
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Send original enforcement action again",
+      }),
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(screen.getByLabelText("Warning sequence")).toHaveValue("2");
+    });
+    expect(screen.getByLabelText("Reason for recording warning")).toHaveValue(
+      "",
+    );
+    const posts = h.calls.filter((c) => c.method === "POST");
+    expect(posts).toHaveLength(2);
+    expect(posts[1]?.key).toBe(posts[0]?.key);
+    expect(posts[1]?.body).toBe(posts[0]?.body);
+    expect(h.state.warnings).toHaveLength(1);
+    expect(h.records.size).toBe(0);
+  });
+  it("TEST-FE-627 preserves a blocked new draft when a different pending command is confirmed", async () => {
+    const h = harness(["leases.warn"]),
+      dirty = vi.fn();
+    render(
+      <LeaseEnforcementManagement
+        actorId={ids.actor}
+        services={h.services}
+        onDirtyStateChange={dirty}
+      />,
+    );
+    await selectProperty();
+    await selectLease("general warnings");
+    fireEvent.click(
+      within(await warningForm()).getByRole("button", {
+        name: "Review Lease warning",
+      }),
+    );
+    // Another tab stores and sends a different warning after this tab opened confirmation.
+    h.state.loseNext = true;
+    const prior = await h.services.recovery.submit(
+      {
+        actorId: ids.actor,
+        propertyId: ids.property,
+        signal: new AbortController().signal,
+      },
+      {
+        operation: "leaseWarningRecord",
+        target: { id: ids.lease },
+        body: {
+          ...warningBody,
+          reason: "Other tab reason",
+          violation_description: "Other tab violation",
+        },
+      },
+    );
+    expect(prior.kind).toBe("pending");
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Record Lease violation warning",
+      }),
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    expect(h.calls.filter((c) => c.method === "POST")).toHaveLength(1);
+    expect(screen.getByLabelText("Reason for recording warning")).toHaveValue(
+      enforcementValue(warningBody.reason),
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Review original action" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Other tab violation")).toBeInTheDocument();
+    fireEvent.click(
+      within(dialog).getByRole("button", {
+        name: "Send original enforcement action again",
+      }),
+    );
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: "Review Lease warning" }),
+      ).toBeEnabled();
+    });
+    expect(screen.getByLabelText("Reason for recording warning")).toHaveValue(
+      enforcementValue(warningBody.reason),
+    );
+    expect(screen.getByLabelText("Violation description")).toHaveValue(
+      enforcementValue(warningBody.violation_description),
+    );
+    expect(dirty).toHaveBeenLastCalledWith(true);
+    const posts = h.calls.filter((c) => c.method === "POST");
+    expect(posts).toHaveLength(2);
+    expect(posts[1]?.key).toBe(posts[0]?.key);
+    expect(posts[1]?.body).toBe(posts[0]?.body);
+    expect(h.state.warnings).toHaveLength(1);
+    expect(h.records.size).toBe(0);
   });
 });

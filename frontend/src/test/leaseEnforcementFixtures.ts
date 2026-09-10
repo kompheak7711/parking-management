@@ -18,6 +18,8 @@ export const ids = {
   lease: "12121212-1212-4212-8212-121212121212",
   rent: "13131313-1313-4313-8313-131313131313",
   case: "14141414-1414-4414-8414-141414141414",
+  secondRent: "16161616-1616-4616-8616-161616161616",
+  secondInvoice: "17171717-1717-4717-8717-171717171717",
   warning: "15151515-1515-4515-8515-151515151515",
 };
 export const instant = "2026-09-10T01:00:00+00:00";
@@ -55,6 +57,14 @@ export function source(voided = false): FinancialObject {
     due_date: "2026-08-01",
     case_id: null,
     assessment: assessment(voided),
+  };
+}
+export function additionalRentSource(): FinancialObject {
+  return {
+    ...source(),
+    rent_invoice_line_id: ids.secondRent,
+    invoice_id: ids.secondInvoice,
+    invoice_number: "SYNTHETIC-RENT-054-SECOND",
   };
 }
 export function caseRecord(voided = false, minimal = false): FinancialObject {

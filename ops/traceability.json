@@ -29176,6 +29176,96 @@
       "test_path": "frontend/src/leaseEnforcementRecovery.test.ts",
       "status": "implemented",
       "notes": "Valid scoped key conflict and missing/wrong Property metadata all retain original pending intent; malformed metadata is classified invalid response."
+    },
+    {
+      "test_id": "test_enforcement_evaluator_rejects_effective_column_and_relation_grants",
+      "upstream_ids": [
+        "SEC-045"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Sixteen real PostgreSQL cases reject registration and runtime drift for column SELECT/INSERT/UPDATE/REFERENCES, effective PUBLIC column SELECT and table REFERENCES/TRIGGER/MAINTAIN. Column-only access is independently proven without reading Customer values; revocation restores valid evaluation."
+    },
+    {
+      "test_id": "TEST-FE-622",
+      "upstream_ids": [
+        "UI-102",
+        "UI-015"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Rejected, blocked and pending warning attempts retain input and dirty navigation protection during delayed fresh context reads; submission remains disabled without current context."
+    },
+    {
+      "test_id": "TEST-FE-623",
+      "upstream_ids": [
+        "UI-102",
+        "UI-015"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Definitive validation rejection preserves the selected Rent source and opening reason without creating a case."
+    },
+    {
+      "test_id": "TEST-FE-624",
+      "upstream_ids": [
+        "UI-102",
+        "UI-015"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Simultaneous opening/event forms survive delayed context refresh; a rejected event keeps input, a recorded event clears only itself, and the unrelated opening draft and case selection remain."
+    },
+    {
+      "test_id": "TEST-FE-625",
+      "upstream_ids": [
+        "UI-102",
+        "UI-075"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Confirmed warning clears its submitted draft and uses the freshly loaded next sequence; dirty navigation state clears after success."
+    },
+    {
+      "test_id": "TEST-FE-626",
+      "upstream_ids": [
+        "UI-102",
+        "UI-015",
+        "SEC-028"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "Read refresh preserves a pending warning without discard; only exact successful replay clears its matching draft, with two equal-key/equal-body sends and one recorded warning."
+    },
+    {
+      "test_id": "TEST-FE-627",
+      "upstream_ids": [
+        "UI-102",
+        "SEC-028",
+        "SEC-029"
+      ],
+      "test_level": "UI component",
+      "test_path": "frontend/src/LeaseEnforcementManagement.test.tsx",
+      "status": "implemented",
+      "notes": "A different command saved by another tab blocks new dispatch; confirming that original does not clear this unrelated form draft. Exact original key/body replay records only one warning."
+    },
+    {
+      "test_id": "TEST-FE-628",
+      "upstream_ids": [
+        "UI-102",
+        "UI-015",
+        "UI-007"
+      ],
+      "test_level": "E2E",
+      "test_path": "frontend/src/test/leaseEnforcement.browser.tsx",
+      "status": "implemented",
+      "notes": "Actual narrow browser preserves rejected event input and an unrelated opening draft. A fresh explicit successful event confirmation clears only event input, retaining selected case and opening draft, with two attempts/one recorded event and no pending action or overflow."
     }
   ]
 }

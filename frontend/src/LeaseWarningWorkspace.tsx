@@ -88,34 +88,33 @@ export function LeaseWarningWorkspace(props: EnforcementWorkflowProps) {
       {props.capabilities["leases.warn"] && (
         <>
           <EnforcementReadStatus {...context} />
-          {context.data && (
-            <WarningForm
-              key={`${props.leaseId}:${String(props.revision)}`}
-              {...props}
-              context={context.data}
-            />
-          )}
+          <WarningForm {...props} context={context.data} />
         </>
       )}
     </section>
   );
 }
 function WarningForm(
-  props: EnforcementWorkflowProps & { context: FinancialObject },
+  props: EnforcementWorkflowProps & { context: FinancialObject | null },
 ) {
   const id = useId();
-  const [values, setValues] = useState({
+  const defaults = {
     warning_sequence:
-      props.context.suggested_sequence === null
+      props.context === null || props.context.suggested_sequence === null
         ? ""
         : enforcementValue(props.context.suggested_sequence),
     violation_date: "",
-    warning_date: enforcementValue(props.context.business_date),
+    warning_date:
+      props.context === null
+        ? ""
+        : enforcementValue(props.context.business_date),
     violation_description: "",
     lease_provision: "",
     communication_record: "",
     reason: "",
-  });
+  };
+  const [draft, setValues] = useState<typeof defaults | null>(null);
+  const values = draft ?? defaults;
   const [dirty, setDirty] = useState(false),
     [error, setError] = useState<string | null>(null);
   useEnforcementDraft(dirty, props.onDirty);
@@ -131,7 +130,7 @@ function WarningForm(
   function submit(event: FormEvent) {
     event.preventDefault();
     setError(null);
-    if (!props.ready || props.busy) return;
+    if (!props.context || !props.ready || props.busy) return;
     try {
       if (!/^[1-9][0-9]{0,4}$/.test(values.warning_sequence)) throw new Error();
       props.review(
@@ -145,6 +144,7 @@ function WarningForm(
         },
         null,
         () => {
+          setValues(null);
           setDirty(false);
         },
       );
@@ -153,13 +153,17 @@ function WarningForm(
     }
   }
   return (
-    <form onSubmit={submit} aria-label="Record Lease warning">
+    <form
+      onSubmit={submit}
+      aria-label="Record Lease warning"
+      hidden={props.context === null && !dirty}
+    >
       <h5>Record a Lease warning</h5>
       <p>
         Dates use the Property business calendar in Asia/Phnom_Penh. Review the
         suggested sequence before recording.
       </p>
-      <fieldset disabled={!props.ready || props.busy}>
+      <fieldset disabled={!props.context || !props.ready || props.busy}>
         {Object.entries(labels).map(([key, label]) => (
           <div className="form-field" key={key}>
             <label htmlFor={`${id}-${key}`}>{label}</label>

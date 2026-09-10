@@ -685,3 +685,104 @@ def test_forward_trigger_revocation_preserves_runtime_customer_email_matching(
     )
     assert match_key() is None
     assert customer.version == 3
+
+
+@pytest.mark.parametrize("phase", ["registration", "evaluation"])
+@pytest.mark.parametrize(
+    ("privilege", "column", "public"),
+    [
+        ("SELECT", "email_address", False),
+        ("INSERT", "email_address", False),
+        ("UPDATE", "email_address", False),
+        ("REFERENCES", "email_address", False),
+        ("SELECT", "email_address", True),
+        ("REFERENCES", None, False),
+        ("TRIGGER", None, False),
+        ("MAINTAIN", None, False),
+    ],
+)
+def test_enforcement_evaluator_rejects_effective_column_and_relation_grants(
+    migrated_database_url: str,  # noqa: F811
+    phase: str,
+    privilege: str,
+    column: str | None,
+    public: bool,
+) -> None:
+    human, prop, _, _, _, line = source(migrated_database_url)
+    role, password, principal = "prm_eval_grant_" + uuid4().hex, uuid4().hex, uuid4()
+    database = conninfo_to_dict(migrated_database_url)["dbname"]
+    assert isinstance(database, str)
+    admin = make_conninfo(admin_database_url(), dbname=database)
+    registration = (
+        "INSERT INTO app.rent_nonpayment_evaluation_principals"
+        "(actor_id,property_id,database_role,capability,lifecycle_state,created_by) "
+        "VALUES(%s,%s,%s,'rent_nonpayment.evaluate','active',%s)"
+    )
+    identity = (principal, prop, role, human)
+    with psycopg.connect(admin) as connection:
+        connection.execute(
+            sql.SQL(
+                "CREATE ROLE {} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE "
+                "NOREPLICATION NOBYPASSRLS PASSWORD {}"
+            ).format(sql.Identifier(role), sql.Literal(password))
+        )
+        connection.execute(
+            sql.SQL("GRANT CONNECT ON DATABASE {} TO {}").format(
+                sql.Identifier(database), sql.Identifier(role)
+            )
+        )
+        connection.execute(sql.SQL("GRANT USAGE ON SCHEMA app TO {}").format(sql.Identifier(role)))
+        connection.execute(
+            sql.SQL(
+                "GRANT EXECUTE ON FUNCTION "
+                "app.scheduled_rent_nonpayment_evaluation(uuid,uuid,integer,uuid) TO {}"
+            ).format(sql.Identifier(role))
+        )
+        assert connection.execute(
+            "SELECT app.nonpayment_evaluation_login_is_restricted(%s)", (role,)
+        ).fetchone() == (True,)
+        if phase == "evaluation":
+            connection.execute(registration, identity)
+    url = make_conninfo(migrated_database_url, user=role, password=password)
+    evaluator = ScheduledRentNonpaymentEvaluator(url, prop, principal)
+    grantee = sql.SQL("PUBLIC") if public else sql.Identifier(role)
+    access = sql.SQL(privilege) + (
+        sql.SQL(" ({})").format(sql.Identifier(column)) if column else sql.SQL("")
+    )
+    try:
+        with psycopg.connect(admin) as connection:
+            connection.execute(sql.SQL("GRANT {} ON app.customers TO {}").format(access, grantee))
+            # Column-only access really exists while the corresponding table grant does not.
+            if column:
+                assert connection.execute(
+                    "SELECT has_table_privilege(%s,'app.customers',%s),"
+                    "has_column_privilege(%s,'app.customers',%s,%s)",
+                    (role, privilege, role, column, privilege),
+                ).fetchone() == (False, True)
+        if privilege == "SELECT":
+            with psycopg.connect(url) as connection:
+                # Demonstrate effective direct access without reading any Customer values.
+                assert (
+                    connection.execute("SELECT email_address FROM app.customers LIMIT 0").fetchall()
+                    == []
+                )
+        if phase == "registration":
+            with psycopg.connect(admin) as connection:
+                with pytest.raises(psycopg.errors.CheckViolation):
+                    connection.execute(registration, identity)
+        else:
+            with pytest.raises(LeaseEnforcementAuthorizationError):
+                evaluator.run_once()
+    finally:
+        with psycopg.connect(admin) as connection:
+            connection.execute(
+                sql.SQL("REVOKE {} ON app.customers FROM {}").format(access, grantee)
+            )
+    with psycopg.connect(admin) as connection:
+        assert connection.execute(
+            "SELECT app.nonpayment_evaluation_login_is_restricted(%s)", (role,)
+        ).fetchone() == (True,)
+        if phase == "registration":
+            connection.execute(registration, identity)
+    page = evaluator.run_once(EnforcementPage(1, UUID(int=line.int - 1)))
+    assert cast(list[dict[str, object]], page["items"])[0]["rent_invoice_line_id"] == str(line)

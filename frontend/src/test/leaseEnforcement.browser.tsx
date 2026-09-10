@@ -18,6 +18,7 @@ import type { EnforcementServices } from "../leaseEnforcementUi";
 import {
   ids,
   readData,
+  additionalRentSource,
   warningRecord,
   eventRecord,
   caseRecord,
@@ -42,8 +43,11 @@ function harness(allow: string[] = [...ENFORCEMENT_CAPABILITIES]) {
     allow,
     voided: false,
     caseExists: false,
+    hasSecondSource: false,
     loseNext: false,
     deny: false,
+    rejectValidation: false,
+    validationRejections: 0,
     block: null as null | { phase: "post" | "reads"; promise: Promise<void> },
     warnings: [] as FinancialObject[],
     events: [] as FinancialObject[],
@@ -87,6 +91,16 @@ function harness(allow: string[] = [...ENFORCEMENT_CAPABILITIES]) {
         },
       });
     if (method === "POST") {
+      if (state.rejectValidation) {
+        state.validationRejections++;
+        return respond(
+          {
+            error: { code: "VALIDATION_ERROR" },
+            meta: { request_id: requestId },
+          },
+          422,
+        );
+      }
       if (state.deny)
         return respond(
           { error: { code: "FORBIDDEN" }, meta: { request_id: requestId } },
@@ -171,7 +185,8 @@ function harness(allow: string[] = [...ENFORCEMENT_CAPABILITIES]) {
     }
     if (input.kind === "warningContext")
       data.suggested_sequence = state.warnings.length + 1;
-    if (input.kind === "sources" && state.caseExists) data.items = [];
+    if (input.kind === "sources" && state.caseExists)
+      data.items = state.hasSecondSource ? [additionalRentSource()] : [];
     if (
       (input.kind === "cases" || input.kind === "actionCases") &&
       !state.caseExists
@@ -210,8 +225,11 @@ interface ServerSnapshot {
   allow: string[];
   voided: boolean;
   caseExists: boolean;
+  hasSecondSource: boolean;
   loseNext: boolean;
   deny: boolean;
+  rejectValidation: boolean;
+  validationRejections: number;
   warnings: FinancialObject[];
   events: FinancialObject[];
   originals: [string, { body: string; envelope: FinancialObject }][];
@@ -236,18 +254,24 @@ export function startEnforcementBrowser(
   syntheticOnly();
   stopEnforcementBrowser();
   const allow =
-    scenario === "warning"
-      ? ["leases.warn"]
-      : scenario === "history"
-        ? ["leases.read"]
-        : scenario === "followup"
-          ? ["rent_nonpayment.event_post"]
-          : ["rent_nonpayment.read", "rent_nonpayment.case_manage"];
+    scenario === "drafts"
+      ? ["rent_nonpayment.case_manage", "rent_nonpayment.event_post"]
+      : scenario === "warning"
+        ? ["leases.warn"]
+        : scenario === "history"
+          ? ["leases.read"]
+          : scenario === "followup"
+            ? ["rent_nonpayment.event_post"]
+            : ["rent_nonpayment.read", "rent_nonpayment.case_manage"];
   current = harness(snapshot?.allow ?? allow);
   if (snapshot) {
     const { originals, ...state } = snapshot;
     Object.assign(current.state, state);
     for (const [key, value] of originals) current.originals.set(key, value);
+  } else if (scenario === "drafts") {
+    current.state.caseExists = true;
+    current.state.rejectValidation = true;
+    current.state.hasSecondSource = true;
   } else if (scenario === "lost-open") current.state.loseNext = true;
   else if (scenario === "followup") {
     current.state.voided = true;
@@ -278,12 +302,19 @@ export function captureEnforcementBrowserServer(): ServerSnapshot {
     allow: [...h.state.allow],
     voided: h.state.voided,
     caseExists: h.state.caseExists,
+    hasSecondSource: h.state.hasSecondSource,
     loseNext: h.state.loseNext,
     deny: h.state.deny,
+    rejectValidation: h.state.rejectValidation,
+    validationRejections: h.state.validationRejections,
     warnings: h.state.warnings,
     events: h.state.events,
     originals: [...h.originals],
   };
+}
+export function allowEnforcementBrowserCommands() {
+  syntheticOnly();
+  active().state.rejectValidation = false;
 }
 export function voidEnforcementBrowserSource() {
   active().state.voided = true;
@@ -305,6 +336,7 @@ export async function enforcementBrowserEvidence() {
       aborted: signal?.aborted ?? false,
     })),
     originals: h.originals.size,
+    validationRejections: h.state.validationRejections,
     warnings: h.state.warnings.length,
     events: h.state.events.length,
     pending: record ? decodeFinancialIntent(record, ids.actor) : null,
@@ -415,6 +447,41 @@ export async function verifyEnforcementBrowserWorkflow(testId: string) {
       "Narrow viewport has no horizontal overflow",
     );
     passed.push("TEST-FE-619");
+  } else if (testId === "TEST-FE-628") {
+    check(
+      h.state.validationRejections === 1 &&
+        h.state.events.length === 1 &&
+        posts.length === 2 &&
+        !e.pending &&
+        h.originals.size === 1,
+      "One rejected attempt and one explicitly confirmed event, no pending action",
+    );
+    check(
+      posts[0]?.body === posts[1]?.body && posts[0]?.key !== posts[1]?.key,
+      "Definitive rejection retires only the unrecorded request; preserved input requires a fresh confirmation",
+    );
+    const value = (label: string) =>
+      Array.from(
+        document.querySelectorAll<
+          HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+        >("input,textarea,select"),
+      ).find((field) =>
+        Array.from(field.labels ?? []).some(
+          (item) => item.textContent === label,
+        ),
+      )?.value;
+    check(
+      value("Reason for opening case") ===
+        "Unrelated synthetic opening draft" &&
+        value("Reason for nonpayment event") === "" &&
+        value("Rent case available for an event") === ids.case,
+      "Only recorded event input clears; unrelated opening draft and selected case survive",
+    );
+    check(
+      document.documentElement.scrollWidth <= window.innerWidth,
+      "Draft workflow fits narrow viewport",
+    );
+    passed.push("TEST-FE-628");
   } else throw new Error("Unknown executable browser scenario");
   check(
     passed.length === 1 && passed[0] === testId,

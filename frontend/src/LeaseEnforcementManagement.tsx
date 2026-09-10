@@ -352,6 +352,9 @@ function EnforcementWorkspace({
   const [outcome, setOutcome] = useState<FinancialReply | null>(null);
   const busyRef = useRef(false),
     mounted = useRef(false);
+  const unresolvedDraft = useRef<{ key: string; recorded: () => void } | null>(
+    null,
+  );
   useLayoutEffect(() => {
     mounted.current = true;
     return () => {
@@ -450,6 +453,26 @@ function EnforcementWorkspace({
           ? await services.recovery.submit(scope, request)
           : await services.recovery.replay(scope, original.command.key);
       if (!alive()) return;
+      if (original.kind === "new") {
+        const sent = captureFinancialRequest(request);
+        const saved =
+          result.kind === "pending"
+            ? result.command
+            : result.kind === "blocked" && result.state.kind === "pending"
+              ? result.state.command
+              : null;
+        if (
+          saved?.actorId === scope.actorId &&
+          saved.propertyId === scope.propertyId &&
+          saved.operation === request.operation &&
+          saved.target.id === sent.target.id &&
+          saved.wireBody === sent.wireBody
+        )
+          unresolvedDraft.current = {
+            key: saved.key,
+            recorded: original.recorded,
+          };
+      }
       if (result.kind === "success") {
         const reply = validateFinancialReply(
           {
@@ -468,6 +491,9 @@ function EnforcementWorkspace({
         );
         setOutcome(reply);
         if (original.kind === "new") original.recorded();
+        else if (unresolvedDraft.current?.key === original.command.key)
+          unresolvedDraft.current.recorded();
+        unresolvedDraft.current = null;
         setNotice(
           "The original action is confirmed as recorded. Its original evidence is shown below; current records are being refreshed.",
         );
@@ -550,11 +576,9 @@ function EnforcementWorkspace({
         type="button"
         disabled={busy || recoveryTask.busy}
         onClick={() => {
-          if (confirmDiscard()) {
-            setConfirmation(null);
-            refreshRecovery();
-            setRevision((value) => value + 1);
-          }
+          setConfirmation(null);
+          refreshRecovery();
+          setRevision((value) => value + 1);
         }}
       >
         Refresh enforcement records and recovery
@@ -672,7 +696,7 @@ function EnforcementWorkspace({
       {lease &&
         (purpose === "WARNINGS" ? (
           <LeaseWarningWorkspace
-            key={`${lease}:${purpose}:${String(revision)}`}
+            key={`${lease}:${purpose}`}
             scope={scope}
             capabilities={capabilities}
             services={services}
@@ -686,7 +710,7 @@ function EnforcementWorkspace({
           />
         ) : (
           <RentNonpaymentWorkspace
-            key={`${lease}:${purpose}:${String(revision)}`}
+            key={`${lease}:${purpose}`}
             scope={scope}
             capabilities={capabilities}
             services={services}

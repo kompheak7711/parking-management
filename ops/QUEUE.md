@@ -1,3 +1,15 @@
+# Current queue — V1-054 correction successor and acceptance
+
+Freeze the normal13-file correction successor, then all mandatory exact gates. Obtain expanded independent R1/R2 correction review at exact successor, followed by a separate fresh complete HTTP-stage zero review from4011591 and final integrated V1-054 review from98ea770. Only then normal authorized publication, exactCI/ref equality/Workboard/durableclosure54 before55 through60. Pause SAME after60; never61/V2/production.
+
+R1/R2 corrections prepared; connected regression and real-browser gates pass, exact final gates/reviews pending. Preserve all previous queues below as history.
+
+# Current queue — V1-054 bounded review correction R1/R2
+
+Add RED regressions for evaluator relation/column grants and rejected/unrelated form drafts; implement bounded corrections; run affected GREEN checks, browser and mandatory final gates. Freeze normal successor; expanded independent focused exact-SHA review, separate fresh complete HTTP-stage zero review from4011591, then final integrated version review from98ea770 before publication/closure54 and55 through60. Pause SAME only after60; never61/V2/production.
+
+Initial b5d2c1c rejection and all evidence preserved. Plan /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-http-correction1-plan.json. Earlier queues below are historical.
+
 # Current queue — V1-054 canonical candidate metadata
 
 Freeze normal records-only successor, verify current canonical candidate contract and all affected/remaining exact gates, official package audits, then initial COMPLETE HTTP-stage review from4011591. Require final integrated version review from98ea770 before normal publication/exactCI/allrefs/Workboard/durableclosure54; only then55 through60, pause SAME60, never61/V2/production.

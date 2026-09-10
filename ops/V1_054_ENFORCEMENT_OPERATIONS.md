@@ -54,6 +54,15 @@ forms and Rent case/event forms have independent permission boundaries. Property
 and session changes invalidate pending UI work; voluntary navigation/sign-out
 protects unsaved drafts, while session expiry clears actor-specific views.
 
+Refreshing records or recovery preserves form drafts and selected sources.
+Forms cannot submit while their fresh authorized context is unavailable. A
+rejected, blocked or unresolved attempt retains its inputs and the unsaved-change
+guard. Successful recording clears only that form; simultaneous opening/event
+drafts remain independent. Exact replay may clear a retained matching draft only
+after confirmed success, using the original actor, Property, operation, target
+and wire body to bind it. Confirming a different action saved by another tab does
+not clear this form. No draft is automatically submitted.
+
 ## Read-only evaluation entry point
 
 `property_rental.nonpayment_evaluation.ScheduledRentNonpaymentEvaluator` evaluates
@@ -78,10 +87,14 @@ exact login/Property/actor in `app.rent_nonpayment_evaluation_principals` using
 the authorized migration/administration boundary and a fresh active human
 `created_by` reference. Registration inserts a distinct SERVICE actor identity.
 Do not reuse a standard application role or grant role memberships, application
-table/sequence access, schema creation or another privileged application
+table/column/sequence access, schema creation or another privileged application
 function. The registration and each evaluation reject privileged role flags,
 membership (including non-inherited elevation), those excess grants, a disabled
 principal, wrong actor/Property/login, or a transaction that is not read-only.
+The checks include effective column SELECT, INSERT, UPDATE and REFERENCES, also
+when inherited from PUBLIC, and every PostgreSQL 17 application-table privilege,
+including REFERENCES, TRIGGER and MAINTAIN. Removing an excess grant permits
+the otherwise valid registered principal to evaluate again.
 
 The evaluator sets the transaction read-only before its query, a 3 second
 connection timeout, a 5 second statement limit and a 3 second lock limit. One call
