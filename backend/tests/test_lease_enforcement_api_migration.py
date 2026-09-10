@@ -93,8 +93,38 @@ def test_enforcement_discovery_requires_exact_fresh_separate_property_grants(
     assert cast(dict[str, bool], items[0]["capabilities"])[NONPAYMENT_OPEN]
     assert not cast(dict[str, bool], items[0]["capabilities"])[NONPAYMENT_READ]
     before = unchanged(migrated_database_url)
-    selected = context.read(prop, "LEASES", actor=writer, purpose="NONPAYMENT")
-    assert [row["id"] for row in cast(list[dict[str, object]], selected["items"])] == [str(lease)]
+    # The shared fixture reuses a Property; verify all authorized Leases across pages.
+    with psycopg.connect(migrated_database_url) as connection:
+        expected_leases = [
+            str(row[0])
+            for row in connection.execute(
+                "SELECT l.id FROM app.leases l JOIN app.units u ON u.id=l.unit_id "
+                "WHERE u.property_id=%s ORDER BY l.id",
+                (prop,),
+            ).fetchall()
+        ]
+    selected_leases: list[str] = []
+    after: UUID | None = None
+    while True:
+        selected = context.read(
+            prop, "LEASES", actor=writer, purpose="NONPAYMENT", page=EnforcementPage(50, after)
+        )
+        page_items = cast(list[dict[str, object]], selected["items"])
+        assert len(page_items) <= 50
+        assert all(row["property_id"] == str(prop) for row in page_items)
+        page_ids = [str(row["id"]) for row in page_items]
+        assert page_ids == sorted(set(page_ids))
+        assert all(identity not in selected_leases for identity in page_ids)
+        selected_leases.extend(page_ids)
+        cursor = selected["next_cursor"]
+        if cursor is None:
+            break
+        assert page_ids and str(cursor) == page_ids[-1]
+        next_after = UUID(str(cursor))
+        assert after is None or next_after > after
+        assert len(selected_leases) < len(expected_leases)
+        after = next_after
+    assert selected_leases == expected_leases and str(lease) in selected_leases
     sources = context.read(prop, "SOURCES", actor=writer, lease_id=lease)
     assert [
         row["rent_invoice_line_id"] for row in cast(list[dict[str, object]], sources["items"])

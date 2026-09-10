@@ -1,3 +1,9 @@
+# Current queue — V1-054 full-suite test correction
+
+Freeze normal five-path successor; fresh affected static/types/fullPG/backend/frontend/automation/build/config/trace/guard gates and exact audits; initial COMPLETE HTTP stage review from4011591, then final complete version integrated review from98ea770 before publication/closure.
+
+Preserve df406d2,1105PGpasses/two fixture-assumption failures and prior checker qualification. Correct only exact schema inventory and complete paginated Property-scoped Lease expectations. Earlier queues are history.
+
 # Current queue — V1-054 exact integration acceptance
 
 Freeze the prepared52path HTTP/staff/evaluation candidate normally, run fresh mandatory exact stage gates and official package-security audits, then independent COMPLETE stage review from4011591. Follow standing correction sequence and final integrated COMPLETE version review from98ea770 at zero before normal publication, exact CI, allrefs, Workboard acceptance and durable closure54. Only then55 through60; pause SAME after60, never61/V2/production.
