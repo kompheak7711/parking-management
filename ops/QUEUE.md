@@ -1,3 +1,9 @@
+# Current queue — V1-054 parameterized trace registration
+
+Freeze the normal four-file trace-registration successor. Reuse verified unchanged PostgreSQL/migration evidence from300052f, run fresh affected backend/static and every remaining mandatory gate, then official package audits. Obtain expanded focused R1/R2 plus trace correction review from rejected b5d2c1c, separate fresh complete HTTP-stage review from4011591, and final integrated V1-054 review from98ea770. Zero required before normal publication, exact CI, refs, Workboard and durable closure54; only then55 through60, pause SAME60, never61/V2/production.
+
+Preserve failed300052f and its exact successful PostgreSQL evidence. Register existing parameterized tests622/624 without changing product behavior or weakening assertions. Earlier queues remain history.
+
 # Current queue — V1-054 correction successor and acceptance
 
 Freeze the normal13-file correction successor, then all mandatory exact gates. Obtain expanded independent R1/R2 correction review at exact successor, followed by a separate fresh complete HTTP-stage zero review from4011591 and final integrated V1-054 review from98ea770. Only then normal authorized publication, exactCI/ref equality/Workboard/durableclosure54 before55 through60. Pause SAME after60; never61/V2/production.
