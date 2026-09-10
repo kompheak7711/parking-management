@@ -1033,3 +1033,160 @@ def test_enforcement_evaluator_rejects_ownership_with_revoked_acl_and_runtime_dr
     page = evaluator.run_once(EnforcementPage(1, UUID(int=line.int - 1)))
     assert cast(list[dict[str, object]], page["items"])[0]["rent_invoice_line_id"] == str(line)
     assert unchanged(migrated_database_url) == before
+
+
+@pytest.mark.parametrize("phase", ["registration", "evaluation"])
+def test_enforcement_evaluator_rejects_temporary_catalog_shadowing_after_ownership_drift(
+    migrated_database_url: str,  # noqa: F811
+    phase: str,
+) -> None:
+    human, prop, _, _, _, line = source(migrated_database_url)
+    role, harmless = "prm_eval_shadow_" + uuid4().hex, "prm_eval_safe_" + uuid4().hex
+    password, principal = uuid4().hex, uuid4()
+    database = conninfo_to_dict(migrated_database_url)["dbname"]
+    assert isinstance(database, str)
+    admin = make_conninfo(admin_database_url(), dbname=database)
+    url = make_conninfo(migrated_database_url, user=role, password=password)
+    registration = (
+        "INSERT INTO app.rent_nonpayment_evaluation_principals"
+        "(actor_id,property_id,database_role,capability,lifecycle_state,created_by) "
+        "VALUES(%s,%s,%s,'rent_nonpayment.evaluate','active',%s)"
+    )
+    identity = (principal, prop, role, human)
+    database_acl = sql.SQL("ON DATABASE {}").format(sql.Identifier(database))
+
+    with psycopg.connect(admin) as connection:
+        for name in (role, harmless):
+            connection.execute(
+                sql.SQL(
+                    "CREATE ROLE {} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE "
+                    "NOREPLICATION NOBYPASSRLS PASSWORD {}"
+                ).format(sql.Identifier(name), sql.Literal(password))
+            )
+            connection.execute(
+                sql.SQL("GRANT CONNECT {} TO {}").format(database_acl, sql.Identifier(name))
+            )
+            connection.execute(
+                sql.SQL("GRANT USAGE ON SCHEMA app TO {}").format(sql.Identifier(name))
+            )
+            connection.execute(
+                sql.SQL(
+                    "GRANT EXECUTE ON FUNCTION app.scheduled_rent_nonpayment_evaluation"
+                    "(uuid,uuid,integer,uuid) TO {}"
+                ).format(sql.Identifier(name))
+            )
+            assert connection.execute(
+                "SELECT app.nonpayment_evaluation_login_is_restricted(%s)", (name,)
+            ).fetchone() == (True,)
+        row = connection.execute(
+            "SELECT pg_catalog.pg_get_userbyid(datdba)::text "
+            "FROM pg_catalog.pg_database WHERE datname=%s",
+            (database,),
+        ).fetchone()
+        assert row is not None and isinstance(row[0], str)
+        original_owner = row[0]
+        row = connection.execute(
+            "SELECT pg_catalog.pg_get_userbyid(proowner)::text FROM pg_catalog.pg_proc "
+            "WHERE oid='app.nonpayment_evaluation_login_is_restricted(name)'::regprocedure"
+        ).fetchone()
+        assert row is not None and isinstance(row[0], str)
+        function_owner = row[0]
+        if phase == "evaluation":
+            connection.execute(registration, identity)
+    before = unchanged(migrated_database_url)
+    try:
+        with psycopg.connect(admin) as connection:
+            connection.execute(
+                sql.SQL("ALTER DATABASE {} OWNER TO {}").format(
+                    sql.Identifier(database), sql.Identifier(role)
+                )
+            )
+            connection.execute(
+                sql.SQL("REVOKE ALL {} FROM {}").format(database_acl, sql.Identifier(role))
+            )
+            connection.execute(
+                sql.SQL("GRANT CONNECT {} TO {}").format(database_acl, sql.Identifier(role))
+            )
+            connection.execute(
+                sql.SQL("GRANT ALL {} TO {}").format(database_acl, sql.Identifier(original_owner))
+            )
+            # Genuine catalog resolution rejects the new owner before shadowing.
+            assert connection.execute(
+                "SELECT app.nonpayment_evaluation_login_is_restricted(%s)", (role,)
+            ).fetchone() == (False,)
+        with psycopg.connect(admin if phase == "registration" else url) as session:
+            if phase == "evaluation":
+                # Exercise retained owner grant authority, not a standing TEMP grant.
+                session.execute(
+                    sql.SQL("GRANT TEMP {} TO {}").format(database_acl, sql.Identifier(role))
+                )
+            session.execute(
+                "CREATE TEMP TABLE pg_roles AS SELECT oid,%s::name AS rolname,rolcanlogin,"
+                "rolsuper,rolcreatedb,rolcreaterole,rolreplication,rolbypassrls "
+                "FROM pg_catalog.pg_roles WHERE rolname=%s",
+                (role, harmless),
+            )
+            session.execute(
+                sql.SQL("GRANT SELECT ON pg_temp.pg_roles TO {}").format(
+                    sql.Identifier(function_owner)
+                )
+            )
+            if phase == "evaluation":
+                session.execute(
+                    sql.SQL("REVOKE TEMP {} FROM {}").format(database_acl, sql.Identifier(role))
+                )
+            assert session.execute(
+                "SELECT pg_catalog.has_database_privilege(%s,%s,'CREATE,TEMP'),"
+                "pg_catalog.has_schema_privilege(%s,'app','CREATE')",
+                (role, database, role),
+            ).fetchone() == (False, False)
+            assert session.execute(
+                "SELECT f.oid=h.oid,f.oid<>r.oid,f.rolname=r.rolname,b.datdba=r.oid "
+                "FROM pg_temp.pg_roles f JOIN pg_catalog.pg_roles h ON h.rolname=%s "
+                "JOIN pg_catalog.pg_roles r ON r.rolname=%s "
+                "JOIN pg_catalog.pg_database b ON b.datname=%s",
+                (harmless, role, database),
+            ).fetchone() == (True, True, True, True)
+            session.commit()
+            if phase == "registration":
+                with pytest.raises(psycopg.errors.CheckViolation):
+                    with session.transaction():
+                        session.execute(registration, identity)
+                assert session.execute(
+                    "SELECT app.nonpayment_evaluation_login_is_restricted(%s)", (role,)
+                ).fetchone() == (False,)
+            else:
+                session.read_only = True
+                with pytest.raises(psycopg.Error) as failure:
+                    with session.transaction():
+                        assert session.execute("SHOW transaction_read_only").fetchone() == ("on",)
+                        session.execute(
+                            "SELECT app.scheduled_rent_nonpayment_evaluation(%s,%s,%s,%s)",
+                            (principal, prop, 1, UUID(int=line.int - 1)),
+                        )
+                assert failure.value.sqlstate == "P5406"
+        # Closing the synthetic session removes its temporary objects.
+    finally:
+        with psycopg.connect(admin) as connection:
+            connection.execute(
+                sql.SQL("ALTER DATABASE {} OWNER TO {}").format(
+                    sql.Identifier(database), sql.Identifier(original_owner)
+                )
+            )
+            connection.execute(
+                sql.SQL("REVOKE ALL {} FROM {}").format(database_acl, sql.Identifier(role))
+            )
+            connection.execute(
+                sql.SQL("GRANT CONNECT {} TO {}").format(database_acl, sql.Identifier(role))
+            )
+    with psycopg.connect(admin) as connection:
+        assert connection.execute(
+            "SELECT app.nonpayment_evaluation_login_is_restricted(%s)", (role,)
+        ).fetchone() == (True,)
+        if phase == "registration":
+            connection.execute(registration, identity)
+    page = ScheduledRentNonpaymentEvaluator(url, prop, principal).run_once(
+        EnforcementPage(1, UUID(int=line.int - 1))
+    )
+    assert cast(list[dict[str, object]], page["items"])[0]["rent_invoice_line_id"] == str(line)
+    assert unchanged(migrated_database_url) == before

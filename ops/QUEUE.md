@@ -1,3 +1,27 @@
+# Current queue — V1-054 defensive acceptance
+
+Freeze the normal catalog-resolution successor. Run remaining mandatory exact gates, reusing verified unchanged frontend/browser and final-input static checks. Obtain fresh independent Astra/max/Standard/enforced-read-only expanded focused R3 review from2fab0b5, fresh complete-stage review from4011591, and integrated complete-version review from98ea770. Zero unresolved findings and every final gate precede normal authorized publication, exact-SHA CI, required ref equality, Workboard acceptance and durable V1-054 closure. Preserve attempt2of2, stop affected work on any new restriction, and keep follow-up PAUSED.
+
+Earlier queues are preserved history; this authorized continuation supersedes the previous one-attempt hold only within clarified defensive scope.
+
+# Current queue — local repair verified, acceptance pending
+
+Prepare a normal immutable correction checkpoint and run remaining mandatory final gates, then obtain independent exact-SHA expanded focused R3 verification, a fresh complete-stage review from 4011591 and integrated review from 98ea770 through normal permission enforcement. This turn authorized one defensive repair attempt, not a blanket finding that the platform restriction is cleared. Keep the recurring follow-up paused; stop affected work on any new notice and record its exact text/request ID. No publication or V1-055 activation while R3 remains open.
+
+78 connected database tests and28 trace tests passed; formatting/lint/types passed. Reuse this exact input-bound evidence where applicable. Original RED and every rejected review remain preserved.
+
+# Current queue — one defensive catalog-resolution attempt
+
+Validate the prepared repair within existing R3 attempt 2 of 2. Preserve previous RED evidence; use existing connected tests without expanding reproduction scope. Keep follow-up paused, stop on any new restriction, and retain all mandatory final gates and independent reviews. R3 is not resolved by local checks alone; no publication or V1-055 activation.
+
+Earlier queue entries below are preserved history and do not override this bounded attempt.
+
+# Current queue — V1-054 evaluator catalog resolution R3
+
+Add same-session temporary pg_roles shadowing regressions at registration and actual read-only evaluator runtime after database ownership drift and revoked ordinary ACLs. Preserve actual RED before product edits, then qualify every catalog relation and catalog regclass in the shared predicate, explicitly put pg_temp last, and obtain GREEN with safe-owner restoration and unchanged business rows. Preserve all earlier ownership/grant/Customer tests. Run affected and mandatory final gates with qualified unchanged frontend/browser reuse, freeze the normal successor, obtain expanded focused zero, fresh complete-stage zero from4011591 and integrated zero from98ea770. Only then publish normally, verify exact CI/all refs, accept the existing Workboard card and durably close54 before55 through60. Pause SAME60; never61/V2/production.
+
+Plan /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-http-catalog-plan.json. Every earlier candidate, finding and checkpoint is retained. Earlier queues below are historical.
+
 # Current queue — V1-054 ownership successor prepared
 
 Freeze the normal seven-file ownership successor, then run mandatory exact gates: fresh complete PostgreSQL/backend, migration, build/import, automation/configuration/trace/publication/preflight and candidate contract; reuse verified unchanged frontend/browser and current static checks only with full input identity. Preserve every failed checkpoint. Obtain expanded focused R3 correction review from1ca199f, fresh complete HTTP-stage zero review from4011591 and fresh integrated zero review from98ea770 before publication/exactCI/refs/Workboard/durableclosure54. Then55 through60; pause SAME60, never61/V2/production.

@@ -16,7 +16,7 @@ def upgrade() -> None:
     op.execute("REVOKE ALL ON FUNCTION app.sync_customer_email_match_key() FROM PUBLIC")
     op.execute(r"""
         CREATE FUNCTION app.lease_enforcement_active_human(p_actor uuid)
-        RETURNS void LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+        RETURNS void LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
         BEGIN
             IF NOT EXISTS(SELECT 1 FROM app.user_accounts a JOIN app.actor_identities i ON i.actor_id=a.actor_id
                 WHERE a.actor_id=p_actor AND a.lifecycle_state='active' AND i.identity_kind='HUMAN')
@@ -24,7 +24,7 @@ def upgrade() -> None:
         END $$;
 
         CREATE FUNCTION app.lease_enforcement_workspaces(p_actor uuid,p_properties uuid[],p_limit integer,p_after uuid)
-        RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+        RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
         DECLARE v_items jsonb;
         BEGIN
             PERFORM app.lease_enforcement_active_human(p_actor);
@@ -38,7 +38,7 @@ def upgrade() -> None:
         END $$;
 
         CREATE FUNCTION app.lease_enforcement_resolve(p_actor uuid,p_properties uuid[],p_kind text,p_id uuid)
-        RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
+        RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
         DECLARE v_property uuid; v_lease uuid;
         BEGIN
             PERFORM app.lease_enforcement_active_human(p_actor);
@@ -55,7 +55,7 @@ def upgrade() -> None:
         END $$;
 
         CREATE FUNCTION app.rent_nonpayment_source_context(p_line uuid,p_as_of timestamptz)
-        RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+        RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp SET timezone='UTC' AS $$
             SELECT jsonb_build_object('rent_invoice_line_id',line.id,'invoice_id',i.id,'invoice_number',i.invoice_number,
                 'property_id',u.property_id,'lease_id',l.id,'customer_id',i.customer_id,'due_date',i.due_date,
                 'case_id',c.id,'assessment',CASE WHEN c.id IS NOT NULL
@@ -79,7 +79,7 @@ def upgrade() -> None:
         $$;
 
         CREATE FUNCTION app.rent_nonpayment_alert_page(p_property uuid,p_limit integer,p_after uuid)
-        RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+        RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp SET timezone='UTC' AS $$
         DECLARE v_items jsonb;
         BEGIN
             IF p_limit IS NULL OR p_limit NOT BETWEEN 1 AND 100 OR p_after='00000000-0000-0000-0000-000000000000'
@@ -101,7 +101,7 @@ def upgrade() -> None:
 
         CREATE FUNCTION app.lease_enforcement_context(p_actor uuid,p_property uuid,p_kind text,p_lease uuid,
             p_case uuid,p_limit integer,p_after uuid)
-        RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+        RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp SET timezone='UTC' AS $$
         DECLARE v_items jsonb; v_snapshot jsonb; v_sequence integer;
         BEGIN
             PERFORM app.lease_enforcement_active_human(p_actor);
@@ -164,7 +164,7 @@ def upgrade() -> None:
                 OR (lifecycle_state='disabled' AND disabled_at>=created_at AND disabled_at IS NOT NULL AND disabled_by IS NOT NULL))
         );
         CREATE FUNCTION app.protect_nonpayment_evaluation_principal()
-        RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog AS $$
+        RETURNS trigger LANGUAGE plpgsql SET search_path=pg_catalog,pg_temp AS $$
         BEGIN
             IF TG_OP='INSERT' THEN
                 PERFORM app.lease_enforcement_active_human(NEW.created_by);
@@ -189,7 +189,7 @@ def upgrade() -> None:
             ON app.rent_nonpayment_evaluation_principals FOR EACH STATEMENT EXECUTE FUNCTION app.reject_lease_storage_truncate();
 
         CREATE FUNCTION app.scheduled_rent_nonpayment_evaluation(p_actor uuid,p_property uuid,p_limit integer,p_after uuid)
-        RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog SET timezone='UTC' AS $$
+        RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp SET timezone='UTC' AS $$
         BEGIN
             IF current_setting('transaction_read_only')<>'on' OR NOT EXISTS(
                 SELECT 1 FROM app.rent_nonpayment_evaluation_principals p JOIN app.actor_identities i ON i.actor_id=p.actor_id
@@ -200,32 +200,32 @@ def upgrade() -> None:
             RETURN app.rent_nonpayment_alert_page(p_property,p_limit,p_after);
         END $$;
         CREATE FUNCTION app.nonpayment_evaluation_login_is_restricted(p_role name)
-        RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog AS $$
-            SELECT EXISTS(SELECT 1 FROM pg_roles r WHERE r.rolname=p_role AND r.rolcanlogin
+        RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=pg_catalog,pg_temp AS $$
+            SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_roles r WHERE r.rolname=p_role AND r.rolcanlogin
                 AND NOT r.rolsuper AND NOT r.rolcreatedb AND NOT r.rolcreaterole AND NOT r.rolreplication AND NOT r.rolbypassrls
                 AND r.rolname NOT IN ('prm_admin','prm_migrator','prm_runtime','prm_financial','prm_bootstrap','prm_backup','prm_restore','prm_human_admin')
-                AND NOT EXISTS(SELECT 1 FROM pg_auth_members m WHERE m.member=r.oid)
+                AND NOT EXISTS(SELECT 1 FROM pg_catalog.pg_auth_members m WHERE m.member=r.oid)
                 -- Owners retain control and grant options after ordinary ACL revocation.
                 -- Include target-database dependencies outside app (for example btree_gist).
-                AND NOT EXISTS(SELECT 1 FROM pg_shdepend d JOIN pg_database b ON b.oid=d.dbid
-                    WHERE b.datname=current_database() AND d.refclassid='pg_authid'::regclass
+                AND NOT EXISTS(SELECT 1 FROM pg_catalog.pg_shdepend d JOIN pg_catalog.pg_database b ON b.oid=d.dbid
+                    WHERE b.datname=current_database() AND d.refclassid='pg_catalog.pg_authid'::pg_catalog.regclass
                         AND d.refobjid=r.oid AND d.deptype='o')
-                AND NOT EXISTS(SELECT 1 FROM pg_database WHERE datname=current_database() AND datdba=r.oid
-                    UNION ALL SELECT 1 FROM pg_namespace WHERE nspowner=r.oid
-                    UNION ALL SELECT 1 FROM pg_class WHERE relowner=r.oid
-                    UNION ALL SELECT 1 FROM pg_proc WHERE proowner=r.oid
-                    UNION ALL SELECT 1 FROM pg_type WHERE typowner=r.oid
-                    UNION ALL SELECT 1 FROM pg_extension WHERE extowner=r.oid)
+                AND NOT EXISTS(SELECT 1 FROM pg_catalog.pg_database WHERE datname=current_database() AND datdba=r.oid
+                    UNION ALL SELECT 1 FROM pg_catalog.pg_namespace WHERE nspowner=r.oid
+                    UNION ALL SELECT 1 FROM pg_catalog.pg_class WHERE relowner=r.oid
+                    UNION ALL SELECT 1 FROM pg_catalog.pg_proc WHERE proowner=r.oid
+                    UNION ALL SELECT 1 FROM pg_catalog.pg_type WHERE typowner=r.oid
+                    UNION ALL SELECT 1 FROM pg_catalog.pg_extension WHERE extowner=r.oid)
                 AND NOT has_schema_privilege(r.oid,'app','CREATE')
-                AND NOT EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                AND NOT EXISTS(SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
                     WHERE n.nspname='app' AND c.relkind IN ('r','p','v','m','f')
                         AND (has_table_privilege(r.oid,c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN')
                             OR has_any_column_privilege(r.oid,c.oid,'SELECT,INSERT,UPDATE,REFERENCES')))
-                AND NOT EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+                AND NOT EXISTS(SELECT 1 FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
                     WHERE n.nspname='app' AND c.relkind='S' AND has_sequence_privilege(r.oid,c.oid,'SELECT,USAGE,UPDATE'))
-                AND NOT EXISTS(SELECT 1 FROM pg_proc f JOIN pg_namespace n ON n.oid=f.pronamespace
+                AND NOT EXISTS(SELECT 1 FROM pg_catalog.pg_proc f JOIN pg_catalog.pg_namespace n ON n.oid=f.pronamespace
                     WHERE n.nspname='app' AND f.prosecdef
-                        AND f.oid<>'app.scheduled_rent_nonpayment_evaluation(uuid,uuid,integer,uuid)'::regprocedure
+                        AND f.oid<>'app.scheduled_rent_nonpayment_evaluation(uuid,uuid,integer,uuid)'::pg_catalog.regprocedure
                         AND has_function_privilege(r.oid,f.oid,'EXECUTE')))
         $$;
         REVOKE ALL ON TABLE app.rent_nonpayment_evaluation_principals FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap;

@@ -109,6 +109,13 @@ changes, evaluation fails closed. Restore safe ownership and the minimum grants
 before attempting evaluation again. The evaluator does not repair ownership or
 revoke access automatically. These checks do not authorize production changes.
 
+Registration and runtime checks resolve system catalogs explicitly through
+`pg_catalog`. Functions introduced by migration51 place `pg_catalog` first
+and `pg_temp` last in their fixed search paths. Session-local objects cannot
+replace the catalog records used for identity and ownership decisions.
+This keeps the existing least-privilege checks and read-only projection
+contract intact; it does not provision or alter a live database.
+
 The evaluator sets the transaction read-only before its query, a 3 second
 connection timeout, a 5 second statement limit and a 3 second lock limit. One call
 returns at most the requested number of current alert rows and a next cursor.

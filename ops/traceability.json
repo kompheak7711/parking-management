@@ -29278,6 +29278,18 @@
       "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
       "status": "implemented",
       "notes": "Sixteen real PostgreSQL registration/runtime cases reject current-database, app-schema, Customer-relation, sequence, invoker-routine, permitted-wrapper, type and external btree_gist operator-class ownership despite revoked ordinary ACLs. The actual external member supports app indexes; extension ownership dependency is verified. Safe-owner restoration and minimum grants restore scoped projection without business-row changes. Wrapper ownership also fails closed through conservative permission-error mapping; the shared predicate is independently asserted false."
+    },
+    {
+      "test_id": "test_enforcement_evaluator_rejects_temporary_catalog_shadowing_after_ownership_drift",
+      "upstream_ids": [
+        "SEC-045",
+        "SEC-046",
+        "SEC-048"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Two existing synthetic PostgreSQL cases require registration and actual read-only evaluation to use genuine catalog identity after ownership changes. They verify rejection, safe-owner restoration, valid scoped evaluation and preservation of business rows. The original failing run is retained; passing correction evidence and independent acceptance are recorded separately."
     }
   ]
 }
