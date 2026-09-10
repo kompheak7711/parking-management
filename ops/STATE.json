@@ -2898,7 +2898,7 @@
   "branch": "implementation/foundation",
   "commit": "4011591666e336115ed8d12085346f8d4503b1de",
   "idle_reason": "",
-  "next_action": "Freeze normal five-path successor; fresh affected static/types/fullPG/backend/frontend/automation/build/config/trace/guard gates and exact audits; initial COMPLETE HTTP stage review from4011591, then final complete version integrated review from98ea770 before publication/closure.",
+  "next_action": "Freeze normal records-only successor, verify current canonical candidate contract and all affected/remaining exact gates, official package audits, then initial COMPLETE HTTP-stage review from4011591. Require final integrated version review from98ea770 before normal publication/exactCI/allrefs/Workboard/durableclosure54; only then55 through60, pause SAME60, never61/V2/production.",
   "active_worker": null,
   "active_card": "eb3bb651-eb65-4b96-9f55-1d72a9ce1b0c",
   "active_claim": null,
@@ -2906,14 +2906,42 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Normal test/record successor of preserved failed df406d2 pending; resolve exact containing commit externally after freeze.",
-  "candidate_parent": "df406d2fe921a1ae7c00ba1e1c1f3b448a993ecf",
+  "candidate_resolution": "Resolve containing records-only successor externally after normal freeze; e079eb9 product gates pass but its routing record failure remains preserved.",
+  "candidate_parent": "e079eb948b0bc523a11be08a837b6913aac897be",
   "next_candidate": {
+    "id": "V1-054",
+    "order": 54,
+    "phase": "Enforcement",
+    "task": "Lease-warning and rent-nonpayment case/event workflows",
+    "dependencies": [
+      "V1-046",
+      "V1-053"
+    ],
+    "authorities": [
+      "BR-LEASE-024-030",
+      "BR-PAY-036-039",
+      "API-067",
+      "API-095",
+      "TEST-075",
+      "TEST-127",
+      "DL-054"
+    ],
+    "include": [
+      "20-day warning and 30-day serious-default history"
+    ],
+    "exclude": [
+      "automatic termination"
+    ],
+    "risk_class": "high",
+    "acceptance_profile": "financial",
+    "authorization": "durable_v1",
+    "status": "approved_ready",
+    "roadmap_id": "V1-054",
     "base_sha": "4011591666e336115ed8d12085346f8d4503b1de",
     "stage": "V1-054-http-staff-evaluation",
-    "status": "bounded_test_correction_active",
+    "stage_status": "records_correction_prepared",
     "exact_sha": null,
-    "parent_sha": "df406d2fe921a1ae7c00ba1e1c1f3b448a993ecf"
+    "parent_sha": "e079eb948b0bc523a11be08a837b6913aac897be"
   },
   "operational_issues": [
     {
@@ -2946,7 +2974,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-054 full-suite test-assumption correction",
+  "phase": "V1-054 canonical candidate metadata correction",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4048,7 +4076,8 @@
     "All44logical enforcement/Customer PostgreSQL checks covered;60App/session,5evaluation/APIinventory,3conflict variants pass. Full stage gates/reviews remain pending.",
     "Five registered real browser scenarios615–619 PASS including confirmation, encrypted recovery, full reload, exact retry after VOID, real cross-tab lock, capability/actor/Property isolation and mobile checks. All relevant runtime source hashes recorded; browser/server closed.",
     "28 trace tests PASS;2059 entries including48new mappings, all2011accepted entries preserved. Explicit app and Node TypeScript, affected lint/format and backend types pass. Full exact candidate backend/PG/frontend/automation/build/security gates and independent review remain pending.",
-    "df406d2 exact gates: contract/backendformat/lint/types/migrationhistory/head pass; full48suite PostgreSQL1105pass/2fail. Preserved failure /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-http-verification-df406d2-entry2.json. No further mandatory gates ran after fail-stop. Both test assumptions corrected without product changes; fresh final gates pending."
+    "df406d2 exact gates: contract/backendformat/lint/types/migrationhistory/head pass; full48suite PostgreSQL1105pass/2fail. Preserved failure /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-http-verification-df406d2-entry2.json. No further mandatory gates ran after fail-stop. Both test assumptions corrected without product changes; fresh final gates pending.",
+    "Exact e079eb9:1107PGPASS/zero skip;2781backendPASS/1080DB-onlyskips covered byPG;1510frontendPASS/36files; all product static/types and frontendbuildPASS. Automation189unit checksPASS but subsequent executable routingStopIteration; failure preserved. Records-only candidate identity correction; product tests will not repeat for metadata-only changes."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4070,7 +4099,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-054",
-  "timestamp": "2026-09-10T01:46:39.270229+00:00",
+  "timestamp": "2026-09-10T02:01:08.359495+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4289,7 +4318,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-10T01:46:39.270229+00:00",
+  "updated_at": "2026-09-10T02:01:08.359495+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5415,7 +5444,7 @@
   "commit_role": "Bounded V1-054 HTTP/staff/evaluation integration from accepted foundation; local until complete-version acceptance.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "df406d2fe921a1ae7c00ba1e1c1f3b448a993ecf"
+    "e079eb948b0bc523a11be08a837b6913aac897be"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
@@ -5472,7 +5501,7 @@
     "report_sha256": "3f91f1fe3dd448179ccdce46e8d73a89402179255f3b238f3b973ff828fe8643"
   },
   "review": {
-    "status": "pending_initial_complete_http_stage_review_after_gate_correction",
+    "status": "pending_initial_complete_http_stage_review_after_records_correction",
     "tranche_id": "V1-054",
     "stage": "V1-054-http-staff-evaluation",
     "base_sha": "4011591666e336115ed8d12085346f8d4503b1de",
@@ -5493,7 +5522,7 @@
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-foundation-accepted-4011591.json",
       "sha256": "b8ce6c384e7d1efae68cf28a7f15c69f869e6689c79101abc111d95f46e454fe"
     },
-    "resolution": "No independent HTTP-stage review submitted. Complete PostgreSQL run atdf406d2:1105pass/2test-assumption failures. Two bounded test corrections active; foundationR1–R4 remain accepted. No product source correction or stage acceptance."
+    "resolution": "No HTTP-stage review submitted. Exact e079eb9 product gates pass:1107PG/2781backend/1510frontend. Automation189unit checks pass; executable routing fails because next_candidate lacks canonical identifier. Records-only correction prepared; all original tests/product source preserved. FoundationR1–R4 remain accepted."
   },
   "historical_v1_047_review": {
     "status": "PASS",
@@ -28508,7 +28537,7 @@
   },
   "v1_054_http_ui": {
     "id": "V1-054-http-staff-evaluation",
-    "status": "test_assumption_correction_active",
+    "status": "canonical_candidate_records_correction_prepared",
     "base": "4011591666e336115ed8d12085346f8d4503b1de",
     "complete_version_base": "98ea770333d016232eeaeebeca7e4e8e89cbdc85",
     "started_at": "2026-09-09T23:13:40.822134+00:00",
@@ -28557,7 +28586,16 @@
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-http-test-correction-plan.json",
       "sha256": "e154a4ead04afe193894d6911e0d148ed05534a68d5c3607023d5126d1d82b42"
     },
-    "failed_candidate": "df406d2fe921a1ae7c00ba1e1c1f3b448a993ecf"
+    "failed_candidate": "df406d2fe921a1ae7c00ba1e1c1f3b448a993ecf",
+    "roadmap_record_correction": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-http-roadmap-correction-plan.json",
+      "sha256": "2c45bc168cd8d2dcc6c57fd8300551af1f12ce94b5f5cfac86ed7b3c21d22288"
+    },
+    "product_gate_evidence": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-http-verification-e079eb9.json",
+      "sha256": "e972b82263b79ff64674a81fb052cf3b48b6b79699a083b7ad3765411eacecd4"
+    },
+    "product_gates_passed": true
   },
   "historical_v1_054_accepted_foundation_current_fields": {
     "direct_codex_takeover": {
@@ -29587,5 +29625,109 @@
     },
     "updated_at": "2026-09-10T01:34:48.588604+00:00",
     "timestamp": "2026-09-10T01:34:48.588604+00:00"
+  },
+  "historical_v1_054_http_failed_e079eb9_current_fields": {
+    "phase": "V1-054 full-suite test-assumption correction",
+    "next_action": "Freeze normal five-path successor; fresh affected static/types/fullPG/backend/frontend/automation/build/config/trace/guard gates and exact audits; initial COMPLETE HTTP stage review from4011591, then final complete version integrated review from98ea770 before publication/closure.",
+    "candidate_resolution": "Normal test/record successor of preserved failed df406d2 pending; resolve exact containing commit externally after freeze.",
+    "candidate_parent": "df406d2fe921a1ae7c00ba1e1c1f3b448a993ecf",
+    "candidate_parents": [
+      "df406d2fe921a1ae7c00ba1e1c1f3b448a993ecf"
+    ],
+    "next_candidate": {
+      "base_sha": "4011591666e336115ed8d12085346f8d4503b1de",
+      "stage": "V1-054-http-staff-evaluation",
+      "status": "bounded_test_correction_active",
+      "exact_sha": null,
+      "parent_sha": "df406d2fe921a1ae7c00ba1e1c1f3b448a993ecf"
+    },
+    "review": {
+      "status": "pending_initial_complete_http_stage_review_after_gate_correction",
+      "tranche_id": "V1-054",
+      "stage": "V1-054-http-staff-evaluation",
+      "base_sha": "4011591666e336115ed8d12085346f8d4503b1de",
+      "exact_sha": null,
+      "model": "gpt-6-astra",
+      "reasoning_effort": "max",
+      "mode": "Standard",
+      "service_tier": "default",
+      "sandbox": "read-only",
+      "approval_policy": "never",
+      "read_only": true,
+      "findings": null,
+      "standing_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "accepted_predecessor_stage": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-foundation-accepted-4011591.json",
+        "sha256": "b8ce6c384e7d1efae68cf28a7f15c69f869e6689c79101abc111d95f46e454fe"
+      },
+      "resolution": "No independent HTTP-stage review submitted. Complete PostgreSQL run atdf406d2:1105pass/2test-assumption failures. Two bounded test corrections active; foundationR1–R4 remain accepted. No product source correction or stage acceptance."
+    },
+    "tests": [
+      "Accepted4011591 foundation gates: backend2773/1065DB-onlyskips, PG1088/47suites/zero skip, frontend1431, automation189 and static/build/records gates.",
+      "Fresh complete23path/six-commit independent review at4011591: zero findings, R1–R4resolved; all20reviewer static operations audited.",
+      "Connected preliminary evidence: /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-connected-regressions-progress.json SHA256 1612f00087fae7b16017f056c68fd70a5e16300dd3bb4bd1104bda9ddcb60db4",
+      "All44logical enforcement/Customer PostgreSQL checks covered;60App/session,5evaluation/APIinventory,3conflict variants pass. Full stage gates/reviews remain pending.",
+      "Five registered real browser scenarios615–619 PASS including confirmation, encrypted recovery, full reload, exact retry after VOID, real cross-tab lock, capability/actor/Property isolation and mobile checks. All relevant runtime source hashes recorded; browser/server closed.",
+      "28 trace tests PASS;2059 entries including48new mappings, all2011accepted entries preserved. Explicit app and Node TypeScript, affected lint/format and backend types pass. Full exact candidate backend/PG/frontend/automation/build/security gates and independent review remain pending.",
+      "df406d2 exact gates: contract/backendformat/lint/types/migrationhistory/head pass; full48suite PostgreSQL1105pass/2fail. Preserved failure /Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-http-verification-df406d2-entry2.json. No further mandatory gates ran after fail-stop. Both test assumptions corrected without product changes; fresh final gates pending."
+    ],
+    "v1_054_http_ui": {
+      "id": "V1-054-http-staff-evaluation",
+      "status": "test_assumption_correction_active",
+      "base": "4011591666e336115ed8d12085346f8d4503b1de",
+      "complete_version_base": "98ea770333d016232eeaeebeca7e4e8e89cbdc85",
+      "started_at": "2026-09-09T23:13:40.822134+00:00",
+      "scope": {
+        "path": "/Users/sokompheak/Development/property-rental-management/ops/V1_054_HTTP_SCOPE.md",
+        "sha256": "58e13bbd438dd9a162aa634bc1add9babf49d641357d8d5e44017e7a9d0e616c"
+      },
+      "foundation_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-foundation-accepted-4011591.json",
+        "sha256": "b8ce6c384e7d1efae68cf28a7f15c69f869e6689c79101abc111d95f46e454fe"
+      },
+      "reconciliation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-http-candidate-entry-reconciliation.json",
+        "sha256": "c4b60ae1eb50025a2b388aa81dfee7a69a1bea7f23e1ccd1984ba946542395b6"
+      },
+      "implementation_plan": {
+        "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1054-http-ui-next-stage-plan-c79809b.md",
+        "sha256": "887842dd4bdb1e586512611a894f87b279a447a3adb9525b3c76738dafdc163b"
+      },
+      "review_required": true,
+      "product_accepted": false,
+      "publication_permitted": false,
+      "implementation_completed_for_bounded_stage": true,
+      "full_version_implementation_completed": true,
+      "model": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "service_tier": "priority",
+        "mode": "Fast",
+        "provider_attestation": "unavailable"
+      },
+      "exclusions": "No automatic business events/tenancy changes, live worker/scheduler provisioning, OpenClaw dispatch, production/customer data, dependency/framework additions or unrelated automation repair.",
+      "connected_regression_progress": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-connected-regressions-progress.json",
+        "sha256": "1612f00087fae7b16017f056c68fd70a5e16300dd3bb4bd1104bda9ddcb60db4"
+      },
+      "browser_verification": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-browser-verified.json",
+        "sha256": "296f9d666bdaadec7fbd7b109d1b0d2b46b57e14152e6b51ab1d70cb564745f7"
+      },
+      "trace_verification": {
+        "path": "/Users/sokompheak/Documents/Codex/2026-09-07/property-rental-v1052-v1053/work/v1054-http-trace-preliminary.json",
+        "sha256": "0fd16b49ab4ce86f97776518f40effffd9567e3995be46c1a6a5e1674b5c8a72"
+      },
+      "gate_correction": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-http-test-correction-plan.json",
+        "sha256": "e154a4ead04afe193894d6911e0d148ed05534a68d5c3607023d5126d1d82b42"
+      },
+      "failed_candidate": "df406d2fe921a1ae7c00ba1e1c1f3b448a993ecf"
+    },
+    "updated_at": "2026-09-10T01:46:39.270229+00:00",
+    "timestamp": "2026-09-10T01:46:39.270229+00:00"
   }
 }

@@ -1,3 +1,9 @@
+# Current queue — V1-054 canonical candidate metadata
+
+Freeze normal records-only successor, verify current canonical candidate contract and all affected/remaining exact gates, official package audits, then initial COMPLETE HTTP-stage review from4011591. Require final integrated version review from98ea770 before normal publication/exactCI/allrefs/Workboard/durableclosure54; only then55 through60, pause SAME60, never61/V2/production.
+
+Preserve e079eb9 and all product gate successes. Restore canonical next_candidate identity/requirements without changing routing code or tests. Earlier queues remain history.
+
 # Current queue — V1-054 full-suite test correction
 
 Freeze normal five-path successor; fresh affected static/types/fullPG/backend/frontend/automation/build/config/trace/guard gates and exact audits; initial COMPLETE HTTP stage review from4011591, then final complete version integrated review from98ea770 before publication/closure.
