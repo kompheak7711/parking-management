@@ -205,6 +205,17 @@ def upgrade() -> None:
                 AND NOT r.rolsuper AND NOT r.rolcreatedb AND NOT r.rolcreaterole AND NOT r.rolreplication AND NOT r.rolbypassrls
                 AND r.rolname NOT IN ('prm_admin','prm_migrator','prm_runtime','prm_financial','prm_bootstrap','prm_backup','prm_restore','prm_human_admin')
                 AND NOT EXISTS(SELECT 1 FROM pg_auth_members m WHERE m.member=r.oid)
+                -- Owners retain control and grant options after ordinary ACL revocation.
+                -- Include target-database dependencies outside app (for example btree_gist).
+                AND NOT EXISTS(SELECT 1 FROM pg_shdepend d JOIN pg_database b ON b.oid=d.dbid
+                    WHERE b.datname=current_database() AND d.refclassid='pg_authid'::regclass
+                        AND d.refobjid=r.oid AND d.deptype='o')
+                AND NOT EXISTS(SELECT 1 FROM pg_database WHERE datname=current_database() AND datdba=r.oid
+                    UNION ALL SELECT 1 FROM pg_namespace WHERE nspowner=r.oid
+                    UNION ALL SELECT 1 FROM pg_class WHERE relowner=r.oid
+                    UNION ALL SELECT 1 FROM pg_proc WHERE proowner=r.oid
+                    UNION ALL SELECT 1 FROM pg_type WHERE typowner=r.oid
+                    UNION ALL SELECT 1 FROM pg_extension WHERE extowner=r.oid)
                 AND NOT has_schema_privilege(r.oid,'app','CREATE')
                 AND NOT EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
                     WHERE n.nspname='app' AND c.relkind IN ('r','p','v','m','f')

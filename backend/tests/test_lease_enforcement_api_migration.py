@@ -23,6 +23,7 @@ from property_rental.lease_enforcement import (
     LeaseEnforcementAuthorizationError,
     LeaseEnforcementInvalidError,
     LeaseEnforcementNotFoundError,
+    LeaseEnforcementUnavailableError,
 )
 from property_rental.lease_enforcement_context import EnforcementPage, PostgresEnforcementContext
 from property_rental.nonpayment_evaluation import ScheduledRentNonpaymentEvaluator
@@ -786,3 +787,249 @@ def test_enforcement_evaluator_rejects_effective_column_and_relation_grants(
             connection.execute(registration, identity)
     page = evaluator.run_once(EnforcementPage(1, UUID(int=line.int - 1)))
     assert cast(list[dict[str, object]], page["items"])[0]["rent_invoice_line_id"] == str(line)
+
+
+def evaluator_ownership_target(
+    connection: psycopg.Connection[tuple[object, ...]], kind: str, database: str
+) -> tuple[sql.Composable, sql.Composable | None, str, str, int, str]:
+    """Select an isolated ownership fixture without changing business rows."""
+    name = "eval_ownership_" + uuid4().hex
+    target = sql.Identifier("app", name)
+    alter: sql.Composable
+    acl: sql.Composable | None
+    if kind == "database":
+        row = connection.execute(
+            "SELECT oid FROM pg_database WHERE datname=%s", (database,)
+        ).fetchone()
+        alter = sql.SQL("ALTER DATABASE {} OWNER TO ").format(sql.Identifier(database))
+        acl = sql.SQL("ON DATABASE {}").format(sql.Identifier(database))
+        catalog, owner_column = "pg_database", "datdba"
+    elif kind == "schema":
+        row = connection.execute("SELECT oid FROM pg_namespace WHERE nspname='app'").fetchone()
+        alter, acl = sql.SQL("ALTER SCHEMA app OWNER TO "), sql.SQL("ON SCHEMA app")
+        catalog, owner_column = "pg_namespace", "nspowner"
+    elif kind == "relation":
+        row = connection.execute("SELECT 'app.customers'::regclass::oid").fetchone()
+        alter, acl = (
+            sql.SQL("ALTER TABLE app.customers OWNER TO "),
+            sql.SQL("ON TABLE app.customers"),
+        )
+        catalog, owner_column = "pg_class", "relowner"
+    elif kind == "sequence":
+        connection.execute(sql.SQL("CREATE SEQUENCE {}").format(target))
+        row = connection.execute("SELECT %s::regclass::oid", ("app." + name,)).fetchone()
+        alter = sql.SQL("ALTER SEQUENCE {} OWNER TO ").format(target)
+        acl = sql.SQL("ON SEQUENCE {}").format(target)
+        catalog, owner_column = "pg_class", "relowner"
+    elif kind in {"invoker_routine", "evaluation_wrapper"}:
+        function: sql.Composable
+        if kind == "invoker_routine":
+            connection.execute(
+                sql.SQL(
+                    "CREATE FUNCTION {}() RETURNS integer LANGUAGE sql SECURITY INVOKER "
+                    "SET search_path=pg_catalog AS 'SELECT 1'"
+                ).format(target)
+            )
+            signature = "app." + name + "()"
+            function = sql.SQL("{}()").format(target)
+            connection.execute(sql.SQL("REVOKE ALL ON FUNCTION {} FROM PUBLIC").format(function))
+        else:
+            signature = "app.scheduled_rent_nonpayment_evaluation(uuid,uuid,integer,uuid)"
+            function = sql.SQL(signature)
+        row = connection.execute("SELECT %s::regprocedure::oid", (signature,)).fetchone()
+        alter = sql.SQL("ALTER FUNCTION {} OWNER TO ").format(function)
+        acl = sql.SQL("ON FUNCTION {}").format(function)
+        catalog, owner_column = "pg_proc", "proowner"
+    elif kind == "type":
+        connection.execute(sql.SQL("CREATE TYPE {} AS ENUM ('synthetic')").format(target))
+        connection.execute(sql.SQL("REVOKE ALL ON TYPE {} FROM PUBLIC").format(target))
+        row = connection.execute("SELECT %s::regtype::oid", ("app." + name,)).fetchone()
+        alter = sql.SQL("ALTER TYPE {} OWNER TO ").format(target)
+        acl = sql.SQL("ON TYPE {}").format(target)
+        catalog, owner_column = "pg_type", "typowner"
+    else:
+        assert kind == "extension_operator_class"
+        dependency = connection.execute(
+            "SELECT c.oid,n.nspname,c.opcname,a.amname,e.oid,e.extowner "
+            "FROM pg_opclass c JOIN pg_namespace n ON n.oid=c.opcnamespace "
+            "JOIN pg_am a ON a.oid=c.opcmethod "
+            "JOIN pg_depend d ON d.classid='pg_opclass'::regclass AND d.objid=c.oid "
+            "AND d.refclassid='pg_extension'::regclass AND d.deptype='e' "
+            "JOIN pg_extension e ON e.oid=d.refobjid "
+            "WHERE e.extname='btree_gist' AND c.opcname='gist_uuid_ops' AND a.amname='gist'"
+        ).fetchone()
+        assert dependency is not None and dependency[1] != "app"
+        assert connection.execute(
+            "SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid "
+            "JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='app' "
+            "AND %s=ANY(i.indclass::oid[]))",
+            (dependency[0],),
+        ).fetchone() == (True,)
+        # The extension container also has a target-database ownership dependency;
+        # the shared catalog guard covers it as well as this real external member.
+        assert connection.execute(
+            "SELECT EXISTS(SELECT 1 FROM pg_shdepend d JOIN pg_database b ON b.oid=d.dbid "
+            "WHERE b.datname=current_database() AND d.classid='pg_extension'::regclass "
+            "AND d.objid=%s AND d.refclassid='pg_authid'::regclass "
+            "AND d.refobjid=%s AND d.deptype='o')",
+            (dependency[4], dependency[5]),
+        ).fetchone() == (True,)
+        row = (dependency[0],)
+        alter = sql.SQL("ALTER OPERATOR CLASS {} USING {} OWNER TO ").format(
+            sql.Identifier(str(dependency[1]), str(dependency[2])),
+            sql.Identifier(str(dependency[3])),
+        )
+        acl = None
+        catalog, owner_column = "pg_opclass", "opcowner"
+    assert row is not None and isinstance(row[0], int)
+    target_id = row[0]
+    owner = connection.execute(
+        sql.SQL("SELECT pg_get_userbyid({})::text FROM pg_catalog.{} WHERE oid=%s").format(
+            sql.Identifier(owner_column), sql.Identifier(catalog)
+        ),
+        (target_id,),
+    ).fetchone()
+    assert owner is not None and isinstance(owner[0], str)
+    return alter, acl, catalog, owner_column, target_id, owner[0]
+
+
+@pytest.mark.parametrize("phase", ["registration", "evaluation"])
+@pytest.mark.parametrize(
+    "kind",
+    [
+        "database",
+        "schema",
+        "relation",
+        "sequence",
+        "invoker_routine",
+        "evaluation_wrapper",
+        "type",
+        "extension_operator_class",
+    ],
+)
+def test_enforcement_evaluator_rejects_ownership_with_revoked_acl_and_runtime_drift(
+    migrated_database_url: str,  # noqa: F811
+    phase: str,
+    kind: str,
+) -> None:
+    human, prop, _, _, _, line = source(migrated_database_url)
+    role, password, principal = "prm_eval_owner_" + uuid4().hex, uuid4().hex, uuid4()
+    database = conninfo_to_dict(migrated_database_url)["dbname"]
+    assert isinstance(database, str)
+    admin = make_conninfo(admin_database_url(), dbname=database)
+    registration = (
+        "INSERT INTO app.rent_nonpayment_evaluation_principals"
+        "(actor_id,property_id,database_role,capability,lifecycle_state,created_by) "
+        "VALUES(%s,%s,%s,'rent_nonpayment.evaluate','active',%s)"
+    )
+    identity = (principal, prop, role, human)
+
+    def minimum_grants(connection: psycopg.Connection[tuple[object, ...]]) -> None:
+        connection.execute(
+            sql.SQL("GRANT CONNECT ON DATABASE {} TO {}").format(
+                sql.Identifier(database), sql.Identifier(role)
+            )
+        )
+        connection.execute(sql.SQL("GRANT USAGE ON SCHEMA app TO {}").format(sql.Identifier(role)))
+        connection.execute(
+            sql.SQL(
+                "GRANT EXECUTE ON FUNCTION app.scheduled_rent_nonpayment_evaluation"
+                "(uuid,uuid,integer,uuid) TO {}"
+            ).format(sql.Identifier(role))
+        )
+
+    with psycopg.connect(admin) as connection:
+        connection.execute(
+            sql.SQL(
+                "CREATE ROLE {} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE "
+                "NOREPLICATION NOBYPASSRLS PASSWORD {}"
+            ).format(sql.Identifier(role), sql.Literal(password))
+        )
+        minimum_grants(connection)
+        alter, acl, catalog, owner_column, target_id, original_owner = evaluator_ownership_target(
+            connection, kind, database
+        )
+        assert connection.execute(
+            "SELECT app.nonpayment_evaluation_login_is_restricted(%s)", (role,)
+        ).fetchone() == (True,)
+        if phase == "evaluation":
+            connection.execute(registration, identity)
+    url = make_conninfo(migrated_database_url, user=role, password=password)
+    evaluator = ScheduledRentNonpaymentEvaluator(url, prop, principal)
+    before = unchanged(migrated_database_url)
+    try:
+        with psycopg.connect(admin) as connection:
+            connection.execute(alter + sql.Identifier(role))
+            if acl is not None:
+                connection.execute(
+                    sql.SQL("REVOKE ALL {} FROM {}").format(acl, sql.Identifier(role))
+                )
+                # Preserve the trusted original owner's ordinary access while
+                # isolating ownership as the evaluator's sole unexpected power.
+                connection.execute(
+                    sql.SQL("GRANT ALL {} TO {}").format(acl, sql.Identifier(original_owner))
+                )
+            minimum_grants(connection)
+            assert connection.execute(
+                sql.SQL("SELECT pg_get_userbyid({})::text FROM pg_catalog.{} WHERE oid=%s").format(
+                    sql.Identifier(owner_column), sql.Identifier(catalog)
+                ),
+                (target_id,),
+            ).fetchone() == (role,)
+            assert connection.execute(
+                "SELECT has_schema_privilege(%s,'app','CREATE'), EXISTS("
+                "SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+                "WHERE n.nspname='app' AND CASE WHEN c.relkind IN ('r','p','v','m','f') THEN "
+                "(has_table_privilege(%s,c.oid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,"
+                "REFERENCES,TRIGGER,MAINTAIN') "
+                "OR has_any_column_privilege(%s,c.oid,'SELECT,INSERT,UPDATE,REFERENCES')) "
+                "ELSE false END) "
+                ",EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace "
+                "WHERE n.nspname='app' AND CASE WHEN c.relkind='S' "
+                "THEN has_sequence_privilege(%s,c.oid,'SELECT,USAGE,UPDATE') ELSE false END)",
+                (role, role, role, role),
+            ).fetchone() == (False, False, False)
+            assert connection.execute(
+                "SELECT app.nonpayment_evaluation_login_is_restricted(%s)", (role,)
+            ).fetchone() == (False,)
+        if phase == "registration":
+            with psycopg.connect(admin) as connection:
+                with pytest.raises(psycopg.errors.CheckViolation):
+                    connection.execute(registration, identity)
+        elif kind == "evaluation_wrapper":
+            # An owner-transferred definer also loses its trusted table authority.
+            # Keep the conservative unavailable error mapping; the predicate above
+            # independently rejects that otherwise permitted routine's owner.
+            with pytest.raises(LeaseEnforcementUnavailableError) as failure:
+                evaluator.run_once()
+            assert isinstance(failure.value.__cause__, psycopg.Error)
+            assert failure.value.__cause__.sqlstate == "42501"
+        else:
+            with pytest.raises(LeaseEnforcementAuthorizationError):
+                evaluator.run_once()
+    finally:
+        with psycopg.connect(admin) as connection:
+            connection.execute(alter + sql.Identifier(original_owner))
+            if acl is not None:
+                connection.execute(
+                    sql.SQL("REVOKE ALL {} FROM {}").format(acl, sql.Identifier(role))
+                )
+                connection.execute(
+                    sql.SQL("GRANT ALL {} TO {}").format(acl, sql.Identifier(original_owner))
+                )
+            minimum_grants(connection)
+    with psycopg.connect(admin) as connection:
+        assert connection.execute(
+            sql.SQL("SELECT pg_get_userbyid({})::text FROM pg_catalog.{} WHERE oid=%s").format(
+                sql.Identifier(owner_column), sql.Identifier(catalog)
+            ),
+            (target_id,),
+        ).fetchone() == (original_owner,)
+        assert connection.execute(
+            "SELECT app.nonpayment_evaluation_login_is_restricted(%s)", (role,)
+        ).fetchone() == (True,)
+        if phase == "registration":
+            connection.execute(registration, identity)
+    page = evaluator.run_once(EnforcementPage(1, UUID(int=line.int - 1)))
+    assert cast(list[dict[str, object]], page["items"])[0]["rent_invoice_line_id"] == str(line)
+    assert unchanged(migrated_database_url) == before

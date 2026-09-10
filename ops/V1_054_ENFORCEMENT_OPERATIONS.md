@@ -96,6 +96,19 @@ when inherited from PUBLIC, and every PostgreSQL 17 application-table privilege,
 including REFERENCES, TRIGGER and MAINTAIN. Removing an excess grant permits
 the otherwise valid registered principal to evaluate again.
 
+The dedicated login must own neither the current database nor any object in it.
+Ownership is checked independently of ordinary privileges at registration and
+each evaluation: revoking an owner's ACL does not remove its ability to alter
+the object or regrant access. Checks cover schemas, relations and sequences,
+all routines (including invoker routines and the permitted evaluation wrapper),
+types and extensions. Shared ownership dependencies also cover application
+integrity objects outside `app`, including the `btree_gist` operator classes used
+by Lease and Invoice exclusion constraints. The login must not own those
+dependencies. Provision with a separate trusted owner; if ownership later
+changes, evaluation fails closed. Restore safe ownership and the minimum grants
+before attempting evaluation again. The evaluator does not repair ownership or
+revoke access automatically. These checks do not authorize production changes.
+
 The evaluator sets the transaction read-only before its query, a 3 second
 connection timeout, a 5 second statement limit and a 3 second lock limit. One call
 returns at most the requested number of current alert rows and a next cursor.

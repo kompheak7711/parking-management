@@ -29266,6 +29266,18 @@
       "test_path": "frontend/src/test/leaseEnforcement.browser.tsx",
       "status": "implemented",
       "notes": "Actual narrow browser preserves rejected event input and an unrelated opening draft. A fresh explicit successful event confirmation clears only event input, retaining selected case and opening draft, with two attempts/one recorded event and no pending action or overflow."
+    },
+    {
+      "test_id": "test_enforcement_evaluator_rejects_ownership_with_revoked_acl_and_runtime_drift",
+      "upstream_ids": [
+        "SEC-045",
+        "SEC-046",
+        "SEC-048"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
+      "status": "implemented",
+      "notes": "Sixteen real PostgreSQL registration/runtime cases reject current-database, app-schema, Customer-relation, sequence, invoker-routine, permitted-wrapper, type and external btree_gist operator-class ownership despite revoked ordinary ACLs. The actual external member supports app indexes; extension ownership dependency is verified. Safe-owner restoration and minimum grants restore scoped projection without business-row changes. Wrapper ownership also fails closed through conservative permission-error mapping; the shared predicate is independently asserted false."
     }
   ]
 }
