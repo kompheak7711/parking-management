@@ -1,3 +1,9 @@
+# Current queue — V1-055 notice gate correction1 verification
+
+Run mandatory full corrected notice-stage gates with the verified installed virtualenv bin on PATH. Preserve failed0d92c3a/full136failure log and correction1of2. Reuse unchanged source evidence appropriately; initial complete-stage independent review is still required from24b8dbe. No intermediate publication or stage acceptance until all gates pass. Then remaining bounded55stages and integrated closure before56; through60only.
+
+Prior plans and failed checkpoints remain preserved below.
+
 # Current queue — V1-055 notice exact gates/review
 
 Run mandatory exact notice-stage gates, then a fresh independent complete-slice Astra/max/Standard/enforced-read-only review from24b8dbe. Preserve candidate immutability and all evidence. No intermediate publication. After acceptance implement the remaining bounded termination/move-out and HTTP/UI stages; complete integrated review and closure frombda6606 before56; continue through60 then pause SAMEfollow-up.
