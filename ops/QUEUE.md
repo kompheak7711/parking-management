@@ -1,3 +1,9 @@
+# Current queue — V1-055 activation
+
+V1-054 fully closed bda66062697feef17c8df621b64bf5f607c1c691; current55/completed54. Freeze the five-record V1-055 activation/scope checkpoint over fully closed bda6606. Run fresh exact preservation/model/authority/dependency/routing, automation, configuration, traceability, publication guard, whitespace and actual preflight gates, then obtain a fresh complete activation-stage Astra/max/Standard/enforced-read-only zero review. Keep product implementation pending and all stages local. After activation acceptance, freeze the precise persistence/domain slice and implement only approved notice/termination/continued-occupancy/move-out behavior. Full stage and final integrated zero review, required tests, normal publication, own exact CI/all refs, preserved Workboard acceptance and durable closure precede56. Continue through60; then pause SAMEfollow-up; OpenClawdisabled, never61/V2/production.
+
+All earlier entries below are historical and superseded; preserve their evidence and do not replay pending actions or obsolete boundaries.
+
 # Current queue — V1-054 terminal acceptance and closure
 
 Freeze the four-record V1-054 terminal child normally. Run its applicable preservation/operational/configuration/trace/routing/publication gates, reusing exact unchanged product tests. Obtain a fresh independent complete-version review from98ea770 with Astra/max/Standard/enforced-read-only and zero findings. Publish normally to the authorized private repository/implementation/foundation, verify its own exact four-job CI and all refs, then preserve/update/complete existing54Workboardcard and reconcile durable external closure. Keep SAME follow-upACTIVE/OpenClawdisabled; do not activate55 before54fullclosure; then continue through60. Stop affected action on any new restriction; no unchanged retry.

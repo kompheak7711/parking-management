@@ -1556,27 +1556,32 @@
       "risk_class": "high",
       "acceptance_profile": "financial",
       "authorization": "durable_v1",
-      "status": "approved_ready",
+      "status": "complete",
       "closure_gate": {
-        "status": "complete_product_verified_terminal_and_workboard_pending",
+        "status": "verified_fully_closed",
         "product_sha": "d5a0c3ed754df6b5d4869c68d59beaedd3e15d58",
+        "terminal_sha": "bda66062697feef17c8df621b64bf5f607c1c691",
         "product_ci_run": 34551498641,
-        "product_acceptance": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-integrated-accepted-d5a0c3e.json",
-          "sha256": "732902635cd8cc4b6cb427b0d701a49df2cee03d35280129a45f11f156f7a9ea"
-        },
-        "product_publication": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-product-publication-verified-d5a0c3e.json",
-          "sha256": "070c94e7c933f6832b6f149fd94d13d9b4bb7301990a0bf74c968f59fc45e607"
-        },
-        "terminal_sha": null,
-        "terminal_proof": "Pending own exact checks/review/publication/CI/refs",
+        "product_ci_attempt": 2,
+        "terminal_ci_run": 34555185267,
+        "terminal_ci_attempt": 1,
+        "all_four_jobs_success": true,
+        "independent_reviews": "Required focused, complete-stage, integrated and terminal Astra/max/Standard/enforced-read-only reviews0HIGH/0MEDIUM/0LOW",
+        "ref_equality": "bda66062697feef17c8df621b64bf5f607c1c691",
         "workboard_card": "eb3bb651-eb65-4b96-9f55-1d72a9ce1b0c",
-        "workboard_status": "blocked",
-        "full_version_closed": false,
-        "successor_activation_allowed": false,
-        "external_closure_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-closure-verification.json",
-        "external_discharge": "Only an independently verified external closure receipt bound to the resolved terminal SHA, complete product and terminal checks/reviews/publication/ownCI/allrefs, actual existing54card acceptance and durable reconciliation can discharge frozen pending fields. Keep candidate immutable; do not invent a self-referential SHA. Existing follow-up remainsACTIVE and OpenClawdisabled."
+        "workboard_status": "done",
+        "workboard_proof": "edd12d48-3079-4c7a-ac35-21bf1d3757c4",
+        "full_version_closed": true,
+        "receipt": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-closure-verification.json",
+          "sha256": "d6687cf2d4ef1e5ddbeff176f44f9b45b3917d9a8a88400f3a08ac57837805b9"
+        },
+        "successor_activation_allowed": true,
+        "successor_authority": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+          "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+        },
+        "qualifications": "Original product CI lock failure and sole PG retry, reviewer evidence guard and normal Workboard edit-event verification qualification preserved; R3resolved2of2 unchanged."
       }
     },
     {
@@ -1745,5 +1750,55 @@
       "authorization": "durable_v1",
       "status": "approved_ready"
     }
-  ]
+  ],
+  "historical_v1_054_closed_entry": {
+    "id": "V1-054",
+    "order": 54,
+    "phase": "Enforcement",
+    "task": "Lease-warning and rent-nonpayment case/event workflows",
+    "dependencies": [
+      "V1-046",
+      "V1-053"
+    ],
+    "authorities": [
+      "BR-LEASE-024-030",
+      "BR-PAY-036-039",
+      "API-067",
+      "API-095",
+      "TEST-075",
+      "TEST-127",
+      "DL-054"
+    ],
+    "include": [
+      "20-day warning and 30-day serious-default history"
+    ],
+    "exclude": [
+      "automatic termination"
+    ],
+    "risk_class": "high",
+    "acceptance_profile": "financial",
+    "authorization": "durable_v1",
+    "status": "approved_ready",
+    "closure_gate": {
+      "status": "complete_product_verified_terminal_and_workboard_pending",
+      "product_sha": "d5a0c3ed754df6b5d4869c68d59beaedd3e15d58",
+      "product_ci_run": 34551498641,
+      "product_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-integrated-accepted-d5a0c3e.json",
+        "sha256": "732902635cd8cc4b6cb427b0d701a49df2cee03d35280129a45f11f156f7a9ea"
+      },
+      "product_publication": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-product-publication-verified-d5a0c3e.json",
+        "sha256": "070c94e7c933f6832b6f149fd94d13d9b4bb7301990a0bf74c968f59fc45e607"
+      },
+      "terminal_sha": null,
+      "terminal_proof": "Pending own exact checks/review/publication/CI/refs",
+      "workboard_card": "eb3bb651-eb65-4b96-9f55-1d72a9ce1b0c",
+      "workboard_status": "blocked",
+      "full_version_closed": false,
+      "successor_activation_allowed": false,
+      "external_closure_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-closure-verification.json",
+      "external_discharge": "Only an independently verified external closure receipt bound to the resolved terminal SHA, complete product and terminal checks/reviews/publication/ownCI/allrefs, actual existing54card acceptance and durable reconciliation can discharge frozen pending fields. Keep candidate immutable; do not invent a self-referential SHA. Existing follow-up remainsACTIVE and OpenClawdisabled."
+    }
+  }
 }
