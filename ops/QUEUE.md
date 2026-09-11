@@ -1,3 +1,15 @@
+# Current queue — V1-055 notice exact gates/review
+
+Run mandatory exact notice-stage gates, then a fresh independent complete-slice Astra/max/Standard/enforced-read-only review from24b8dbe. Preserve candidate immutability and all evidence. No intermediate publication. After acceptance implement the remaining bounded termination/move-out and HTTP/UI stages; complete integrated review and closure frombda6606 before56; continue through60 then pause SAMEfollow-up.
+
+Earlier scope/implementation entries remain historical evidence.
+
+# Current queue — V1-055 notice persistence/domain
+
+Implement and verify the bounded V1-055 notice persistence/domain slice from accepted24b8dbe; exact paths and plan STATE.v1_055_notices. Freeze a normal local candidate and obtain independent complete-slice zero review before later termination/move-out and HTTP/UI stages. Final complete-version review frombda6606, all mandatory gates, publication, ownCI/allrefs/Workboard/durable closure precede56. Continue through60 then pause SAMEfollow-up; never61/V2/production.
+
+Earlier entries are preserved historical plans; current paths/plan STATE.v1_055_notices.
+
 # Current queue — V1-055 activation
 
 V1-054 fully closed bda66062697feef17c8df621b64bf5f607c1c691; current55/completed54. Freeze the five-record V1-055 activation/scope checkpoint over fully closed bda6606. Run fresh exact preservation/model/authority/dependency/routing, automation, configuration, traceability, publication guard, whitespace and actual preflight gates, then obtain a fresh complete activation-stage Astra/max/Standard/enforced-read-only zero review. Keep product implementation pending and all stages local. After activation acceptance, freeze the precise persistence/domain slice and implement only approved notice/termination/continued-occupancy/move-out behavior. Full stage and final integrated zero review, required tests, normal publication, own exact CI/all refs, preserved Workboard acceptance and durable closure precede56. Continue through60; then pause SAMEfollow-up; OpenClawdisabled, never61/V2/production.

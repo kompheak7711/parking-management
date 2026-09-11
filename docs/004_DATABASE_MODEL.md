@@ -325,6 +325,30 @@ Append-preserved once the Lease is SIGNED.
 
 Append-only: `id uuid PK`, `lease_id uuid NOT NULL FK`, `notice_date date NOT NULL`, `intended_termination_date date NULL`, `notice_text text NOT NULL`, `governing_lease_provision text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`. A Notice never updates Lease status automatically.
 
+The V1-055 notice service preserves legacy rows and appends a one-to-one
+`lease_notice_contexts` row for each new command: positive `expected_lease_version`,
+approved grounds, signed-Lease notice-period terms, source evidence, communication,
+authorization reference and reason. Notice periods are recorded from the signed Lease;
+no fixed period is invented. Notice dates must be finite, not before signing and not
+after recording in the Property timezone. An optional intended date is not before the
+notice. The Lease must be SIGNED or TERMINATED; historical recording does not change
+its current status, contractual dates, actual termination or Occupancy.
+
+Corrections append a new Notice with a unique optional `supersedes_notice_id` foreign
+key to the latest earlier Notice for the same Lease. Original notice rows and context
+are immutable. Reads distinguish current notice-only evidence, superseded evidence and
+legacy notice-only evidence without added context. None is an automatic termination
+decision, Move-out, charge, forfeiture or Refund.
+
+`lease_notice_commands` stores the exact Property/actor/key, Lease/Notice source,
+request digest and intent, original response and completion time. Commands require a
+fresh active human, matching Property and trusted `leases.terminate` capability;
+`leases.read` permits bounded scoped history. Exact replay returns the original result
+before rechecking changed Lease versions or correction eligibility. A common Lease
+lock serializes evidence checks with lifecycle actions and competing corrections.
+Notice, context, command receipt and audit write atomically. Application roles have
+only narrow function entry points and cannot write the evidence tables directly.
+
 ## DB-LEASE-005 — `lease_violation_warnings`
 
 Append-only: `id uuid PK`, `lease_id uuid NOT NULL FK`, `warning_sequence smallint NOT NULL CHECK (> 0)`, `violation_date date NOT NULL`, `warning_date date NOT NULL`, `violation_description text NOT NULL`, `lease_provision text NOT NULL`, `communication_record text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `UNIQUE (lease_id, warning_sequence)`. The authorized violation-termination transaction verifies at least three documented warnings without inventing the underlying termination right.

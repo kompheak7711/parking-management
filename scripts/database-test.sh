@@ -124,6 +124,7 @@ database_test_suites='
   tests/test_lease_api_migration.py
   tests/test_lease_enforcement_migration.py
   tests/test_lease_enforcement_api_migration.py
+  tests/test_lease_notices_migration.py
   tests/test_deposit_migration.py
   tests/test_deposit_api_migration.py
   tests/test_invoice_migration.py

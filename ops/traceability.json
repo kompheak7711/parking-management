@@ -29290,6 +29290,230 @@
       "test_path": "backend/tests/test_lease_enforcement_api_migration.py",
       "status": "implemented",
       "notes": "Two existing synthetic PostgreSQL cases require registration and actual read-only evaluation to use genuine catalog identity after ownership changes. They verify rejection, safe-owner restoration, valid scoped evaluation and preservation of business rows. The original failing run is retained; passing correction evidence and independent acceptance are recorded separately."
+    },
+    {
+      "test_id": "test_notice_rejects_missing_invalid_or_unbounded_evidence",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notices.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: notice rejects missing invalid or unbounded evidence. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_optional_intended_date_does_not_invent_a_required_notice_period",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notices.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: optional intended date does not invent a required notice period. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_exact_digest_covers_resource_and_correction_evidence",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notices.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: exact digest covers resource and correction evidence. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_notice_requires_exact_termination_capability",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "SEC-022",
+        "SEC-023",
+        "SEC-045"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notices.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: notice requires exact termination capability. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_read_scope_and_mutation_database_fail_closed_before_connection",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "SEC-022",
+        "SEC-023",
+        "SEC-045"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notices.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: read scope and mutation database fail closed before connection. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_read_pages_are_bounded",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notices.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: read pages are bounded. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_unknown_database_outcome_retains_exact_recovery_intent",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DB-TXN-001",
+        "SEC-028"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notices.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: unknown database outcome retains exact recovery intent. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_notice_replay_correction_and_paging_preserve_tenancy_financial_sources",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DB-TXN-001",
+        "SEC-028",
+        "BR-LEASE-018",
+        "BR-LEASE-023"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: notice replay correction and paging preserve tenancy financial sources. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_notice_checks_fresh_actor_property_dates_and_version_before_new_work",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "SEC-022",
+        "SEC-023",
+        "SEC-045"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: notice checks fresh actor property dates and version before new work. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_cross_lease_correction_is_hidden_and_changed_lease_version_does_not_break_exact_replay",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DB-TXN-001",
+        "SEC-028"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: cross lease correction is hidden and changed lease version does not break exact replay. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_concurrent_replay_and_correction_have_one_permanent_result",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DB-TXN-001",
+        "SEC-028"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: concurrent replay and correction have one permanent result. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_notice_history_is_append_only_and_application_roles_cannot_write_tables",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "SEC-022",
+        "SEC-023",
+        "SEC-045"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: notice history is append only and application roles cannot write tables. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_only_narrow_notice_entry_points_are_granted",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "SEC-022",
+        "SEC-023",
+        "SEC-045"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: only narrow notice entry points are granted. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_database_entry_point_rejects_invalid_notice_evidence_atomically",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "SEC-022",
+        "SEC-023",
+        "SEC-045",
+        "DB-TXN-001",
+        "SEC-028"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: database entry point rejects invalid notice evidence atomically. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_notice_audit_failure_rolls_back_all_rows_and_same_command_recovers",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068",
+        "DB-TXN-001",
+        "SEC-028"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: notice audit failure rolls back all rows and same command recovers. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_upgrade_preserves_legacy_notice_and_allows_append_only_correction",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "API-068"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice persistence/domain: upgrade preserves legacy notice and allows append only correction. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
     }
   ]
 }
