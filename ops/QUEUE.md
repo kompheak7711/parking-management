@@ -1,3 +1,15 @@
+# Current queue — V1-055 final-month billing exact gates/review
+
+Run remaining mandatory exact-SHA billing-stage gates, reusing the verified unchanged frontend checks and current full backend typing by input identity. Obtain fresh independent complete20path stage review from96f67bc with Astra/max/Standard/enforced-read-only/never and zero findings. Preserve all internal fixture/product corrections. No later stage until acceptance; complete all remaining55implementation and integrated gates before publication/closure or56; continue through60 thenpause SAMEfollow-up.
+
+Previous implementation plans and evidence below are preserved history.
+
+# Current queue — V1-055 recurring final-month billing
+
+Implement and verify only the20-path recurring final-month billing scope from accepted96f67bc. Preserve RED/failed checkpoints, run affected and mandatory stage gates, freeze a normal local candidate, then obtain fresh complete-stage independent zero review. No later stage before acceptance; all remaining55work and final integrated gates precede publication/closure and56. Continue through60 thenpause SAMEfollow-up.
+
+Previous queues below are historical and preserved; notices96f67bc accepted by external receipt.
+
 # Current queue — approved additional V1-055 notice handoff correction
 
 Complete 7 fresh affected records gates and reuse15 verified unchanged product checks for this exact owner-authorized records successor. Require independent focused connected R2 zero review, then a separate fresh complete24path/6commit notice-stage zero review from24b8dbe. Automatic R2 limit remains exhausted2of2; explicit owner exception1of1 only. Stop for owner decision if this exception fails. No later55stage before notice acceptance, and no publication/closure before every integrated V1-055 acceptance gate.

@@ -1422,7 +1422,385 @@ def test_v1_040_is_forward_only_and_is_the_migration_head(
     connection: Connection[tuple[object, ...]],
 ) -> None:
     assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-        "20260911_52",
+        "20260914_53",
     )
     with pytest.raises(RuntimeError, match="forward-only"):
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "-1")
+
+
+def _processed_final_month_source(
+    connection: Connection[tuple[object, ...]],
+    period_start: date,
+    *,
+    governing_reference: str = "BR-LEASE-021",
+    end_day: int | None = None,
+    late_move_in: bool = False,
+    terminate: bool = True,
+    trash: bool = False,
+) -> tuple[UUID, UUID, UUID, UUID, UUID]:
+    previous_month = (period_start - timedelta(days=1)).replace(day=1)
+    move_in = previous_month.replace(day=27 if late_move_in else 1)
+    lease_end = period_start.replace(day=end_day) if end_day else period_start + timedelta(days=180)
+    source = setup_billing_source(
+        connection,
+        configure_trash=False,
+        configure_internet=False,
+        move_in_date=move_in,
+        lease_end_date=lease_end,
+    )
+    human, prop, _, lease, _ = source
+    if trash:
+        add_service(
+            connection,
+            actor_id=human,
+            property_id=prop,
+            lease_id=lease,
+            code="TRASH_COLLECTION",
+            display_name="Trash Collection",
+            first_rate=1_000,
+            second_rate=1_000,
+            approval_from=move_in,
+            approval_through=lease_end,
+            applicable_from=move_in,
+            applicable_through=lease_end,
+            first_rate_effective=move_in,
+            second_rate_effective=period_start,
+        )
+    if terminate:
+        version = connection.execute(
+            "SELECT version FROM app.leases WHERE id=%s", (lease,)
+        ).fetchone()
+        assert version is not None
+        connection.execute(
+            "SELECT app.terminate_lease(%s,%s,%s,%s,%s,%s,%s,statement_timestamp(),%s,%s,%s)",
+            (
+                prop,
+                uuid4(),
+                "b" * 64,
+                uuid4(),
+                lease,
+                version[0],
+                period_start.replace(day=10),
+                governing_reference,
+                "Management processed the documented actual departure",
+                human,
+            ),
+        )
+    connection.commit()
+    return source
+
+
+def _processed_final_month_request(lease: UUID, period_start: date) -> GenerateRentInvoiceCommand:
+    prior = period_start - timedelta(days=1)
+    return recurring_command(
+        lease,
+        period_start=period_start,
+        issued_at=datetime(prior.year, prior.month, 25, tzinfo=UTC),
+    )
+
+
+@pytest.mark.parametrize(
+    ("period_start", "last_day"),
+    (
+        (date(2025, 2, 1), 28),
+        (date(2024, 2, 1), 29),
+        (date(2026, 4, 1), 30),
+        (date(2026, 7, 1), 31),
+    ),
+)
+def test_processed_final_month_generates_full_rent_and_valid_services(
+    final_month_service_connection: Connection[tuple[object, ...]],
+    period_start: date,
+    last_day: int,
+) -> None:
+    connection = final_month_service_connection
+    human, prop, _, lease, occupancy = _processed_final_month_source(
+        connection, period_start, trash=True
+    )
+    before = connection.execute(
+        "SELECT to_jsonb(l),to_jsonb(o) FROM app.leases l "
+        "JOIN app.occupancies o ON o.lease_id=l.id "
+        "WHERE l.id=%s AND o.id=%s",
+        (lease, occupancy),
+    ).fetchone()
+    flow = PostgresRentBillingService(financial_database_url(), prop, human)
+    request = _processed_final_month_request(lease, period_start)
+    result = flow.generate(request, actor=authenticated(human, prop))
+    assert result.rent_usd_cents == 80_000
+    assert result.service_usd_cents == 1_000
+    assert result.total_usd_cents == 81_000
+    assert result.period_end == period_start.replace(day=last_day)
+    assert result.due_date == period_start.replace(day=5)
+    assert result.service_line_count == 1
+    assert flow.generate(request, actor=authenticated(human, prop)) == result
+    assert connection.execute(
+        "SELECT due_date_source,due_date_rule FROM app.invoices WHERE id=%s",
+        (result.invoice_id,),
+    ).fetchone() == ("BR-RENT-024", "RECURRING_RENT_FIFTH")
+    assert (
+        connection.execute(
+            "SELECT to_jsonb(l),to_jsonb(o) FROM app.leases l "
+            "JOIN app.occupancies o ON o.lease_id=l.id "
+            "WHERE l.id=%s AND o.id=%s",
+            (lease, occupancy),
+        ).fetchone()
+        == before
+    )
+    assert connection.execute(
+        "SELECT billable_days,calendar_days,contractual_monthly_usd_cents,amount_usd_cents "
+        "FROM app.invoice_lines WHERE invoice_id=%s AND category='RENT'",
+        (result.invoice_id,),
+    ).fetchone() == (last_day, last_day, 80_000, 80_000)
+    assert connection.execute(
+        "SELECT count(*) FROM app.deposits WHERE lease_id=%s", (lease,)
+    ).fetchone() == (0,)
+    assert connection.execute(
+        "SELECT count(*) FROM app.invoices WHERE lease_id=%s", (lease,)
+    ).fetchone() == (1,)
+
+
+def test_processed_final_month_can_end_after_original_end_date(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    period = date(2026, 7, 1)
+    human, prop, _, lease, _ = _processed_final_month_source(connection, period, end_day=20)
+    result = PostgresRentBillingService(financial_database_url(), prop, human).generate(
+        _processed_final_month_request(lease, period),
+        actor=authenticated(human, prop),
+    )
+    assert result.period_end == date(2026, 7, 31)
+    assert result.rent_usd_cents == result.total_usd_cents == 80_000
+
+
+@pytest.mark.parametrize(
+    ("governing", "end_day", "late_move_in", "target"),
+    (
+        ("APPROVED-OTHER-TERMINATION", None, False, date(2026, 7, 1)),
+        ("BR-LEASE-021", 10, False, date(2026, 7, 1)),
+        ("BR-LEASE-021", 9, False, date(2026, 7, 1)),
+        ("BR-LEASE-021", None, True, date(2026, 7, 1)),
+        ("BR-LEASE-021", None, False, date(2026, 8, 1)),
+    ),
+)
+def test_processed_final_month_rejects_unsupported_or_already_covered_periods(
+    connection: Connection[tuple[object, ...]],
+    governing: str,
+    end_day: int | None,
+    late_move_in: bool,
+    target: date,
+) -> None:
+    human, prop, _, lease, _ = _processed_final_month_source(
+        connection,
+        date(2026, 7, 1),
+        governing_reference=governing,
+        end_day=end_day,
+        late_move_in=late_move_in,
+    )
+    with pytest.raises(BillingInvalidError):
+        PostgresRentBillingService(financial_database_url(), prop, human).generate(
+            _processed_final_month_request(lease, target),
+            actor=authenticated(human, prop),
+        )
+    assert connection.execute(
+        "SELECT count(*) FROM app.invoices WHERE lease_id=%s", (lease,)
+    ).fetchone() == (0,)
+    assert connection.execute(
+        "SELECT count(*) FROM app.rent_billing_commands WHERE lease_id=%s", (lease,)
+    ).fetchone() == (0,)
+
+
+def test_processed_final_month_concurrent_commands_converge_and_reject_changed_retry(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    period = date(2026, 7, 1)
+    human, prop, _, lease, _ = _processed_final_month_source(connection, period)
+    flow = PostgresRentBillingService(financial_database_url(), prop, human)
+    actor = authenticated(human, prop)
+    requests = [_processed_final_month_request(lease, period) for _ in range(2)]
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(flow.generate, value, actor=actor) for value in requests]
+        results = [future.result(timeout=10) for future in futures]
+    assert results[0] == results[1]
+    assert connection.execute(
+        "SELECT count(*) FROM app.invoices WHERE lease_id=%s", (lease,)
+    ).fetchone() == (1,)
+    assert connection.execute(
+        "SELECT count(*) FROM app.rent_billing_commands WHERE lease_id=%s", (lease,)
+    ).fetchone() == (2,)
+    with pytest.raises(BillingIdempotencyKeyReused):
+        flow.generate(replace(requests[0], invoice_number="CHANGED-RETRY"), actor=actor)
+
+
+def test_processed_final_month_preserves_authorized_advance_invoice_and_exact_replay(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    period = date(2026, 7, 1)
+    human, prop, _, lease, _ = _processed_final_month_source(connection, period, terminate=False)
+    flow = PostgresRentBillingService(financial_database_url(), prop, human)
+    actor = authenticated(human, prop)
+    request = _processed_final_month_request(lease, period)
+    result = flow.generate(request, actor=actor)
+    before = connection.execute(
+        "SELECT to_jsonb(i) FROM app.invoices i WHERE id=%s", (result.invoice_id,)
+    ).fetchone()
+    version = connection.execute("SELECT version FROM app.leases WHERE id=%s", (lease,)).fetchone()
+    assert version is not None
+    connection.execute(
+        "SELECT app.terminate_lease(%s,%s,%s,%s,%s,%s,%s,statement_timestamp(),%s,%s,%s)",
+        (
+            prop,
+            uuid4(),
+            "c" * 64,
+            uuid4(),
+            lease,
+            version[0],
+            period.replace(day=10),
+            "BR-LEASE-021",
+            "Approved actual voluntary early termination",
+            human,
+        ),
+    )
+    connection.commit()
+    assert flow.generate(request, actor=actor) == result
+    assert flow.generate(_processed_final_month_request(lease, period), actor=actor) == result
+    assert (
+        connection.execute(
+            "SELECT to_jsonb(i) FROM app.invoices i WHERE id=%s", (result.invoice_id,)
+        ).fetchone()
+        == before
+    )
+    assert connection.execute(
+        "SELECT due_date_source FROM app.invoices WHERE id=%s", (result.invoice_id,)
+    ).fetchone() == ("BR-RENT-018",)
+
+
+def test_processed_final_month_requires_existing_actor_property_and_billing_capability(
+    connection: Connection[tuple[object, ...]],
+) -> None:
+    period = date(2026, 7, 1)
+    human, prop, _, lease, _ = _processed_final_month_source(connection, period)
+    flow = PostgresRentBillingService(financial_database_url(), prop, human)
+    request = _processed_final_month_request(lease, period)
+    for actor in (
+        AuthenticatedActor(str(human), frozenset()),
+        authenticated(human, uuid4()),
+        authenticated(uuid4(), prop),
+    ):
+        with pytest.raises(BillingAuthorizationError):
+            flow.generate(request, actor=actor)
+    assert connection.execute(
+        "SELECT count(*) FROM app.invoices WHERE lease_id=%s", (lease,)
+    ).fetchone() == (0,)
+
+
+@pytest.fixture
+def final_month_service_connection(
+    migrated_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[Connection[tuple[object, ...]]]:
+    from psycopg.conninfo import conninfo_to_dict
+
+    from test_migrations import _temporary_migration_database
+
+    assert migrated_database_url
+    # V1 has one Property per database. Isolate historical Service calendars by
+    # using the existing disposable-database harness, not another Property row.
+    with _temporary_migration_database("final_month_service") as temporary:
+        command.upgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "head")
+        database = conninfo_to_dict(temporary)["dbname"]
+        monkeypatch.setenv(
+            "FINANCIAL_DATABASE_URL",
+            make_conninfo(financial_database_url(), dbname=database),
+        )
+        with psycopg.connect(temporary) as connection:
+            yield connection
+
+
+def test_processed_final_month_upgrade_preserves_functions_grants_and_business_history(
+    migrated_database_url: str,
+) -> None:
+    from psycopg.conninfo import conninfo_to_dict
+
+    from test_migrations import _temporary_migration_database
+
+    assert migrated_database_url
+    signature = (
+        "app.generate_rent_service_invoice(uuid,uuid,text,uuid,text,uuid,uuid,text,date,"
+        "timestamp with time zone,uuid,uuid)"
+    )
+    function_query = (
+        "SELECT p.oid,pg_catalog.pg_get_functiondef(p.oid),p.proacl::text,p.proowner,"
+        "p.prosecdef,p.provolatile,p.proisstrict,p.proparallel,p.proconfig "
+        "FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace "
+        "WHERE n.nspname='app' AND p.prokind='f' ORDER BY p.oid"
+    )
+    tables = (
+        "leases",
+        "occupancies",
+        "lease_commands",
+        "invoices",
+        "invoice_lines",
+        "invoice_line_calculation_components",
+        "rent_billing_commands",
+        "audit_events",
+    )
+    with _temporary_migration_database("final_month_upgrade") as temporary:
+        config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
+        command.upgrade(config, "20260911_52")
+        period = date(2026, 7, 1)
+        with psycopg.connect(temporary) as setup:
+            human, prop, _, lease, _ = _processed_final_month_source(setup, period)
+            other, other_prop, _, other_lease, _ = _processed_final_month_source(
+                setup,
+                period,
+                terminate=False,
+            )
+            target_row = setup.execute(
+                "SELECT %s::regprocedure::oid,"
+                "'app.validate_invoice_issuance_lines()'::regprocedure::oid",
+                (signature,),
+            ).fetchone()
+            assert target_row is not None
+            changed_oids = set(target_row)
+        database = conninfo_to_dict(temporary)["dbname"]
+        url = make_conninfo(financial_database_url(), dbname=database)
+        flow = PostgresRentBillingService(url, prop, human)
+        request = _processed_final_month_request(lease, period)
+        with pytest.raises(BillingInvalidError):
+            flow.generate(request, actor=authenticated(human, prop))
+        old_flow = PostgresRentBillingService(url, other_prop, other)
+        old_request = _processed_final_month_request(other_lease, period)
+        old_result = old_flow.generate(old_request, actor=authenticated(other, other_prop))
+        with psycopg.connect(temporary) as check:
+            functions_before = {row[0]: row[1:] for row in check.execute(function_query)}
+            history_before = {
+                table: check.execute(
+                    psycopg.sql.SQL(
+                        "SELECT to_jsonb(t) FROM app.{} t ORDER BY to_jsonb(t)::text"
+                    ).format(psycopg.sql.Identifier(table))
+                ).fetchall()
+                for table in tables
+            }
+        command.upgrade(config, "head")
+        with psycopg.connect(temporary) as check:
+            functions_after = {row[0]: row[1:] for row in check.execute(function_query)}
+            assert functions_before.keys() == functions_after.keys()
+            assert {
+                oid for oid in functions_before if functions_before[oid] != functions_after[oid]
+            } == changed_oids
+            for oid in changed_oids:
+                assert functions_before[oid][1:] == functions_after[oid][1:]
+            for table in tables:
+                assert (
+                    check.execute(
+                        psycopg.sql.SQL(
+                            "SELECT to_jsonb(t) FROM app.{} t ORDER BY to_jsonb(t)::text"
+                        ).format(psycopg.sql.Identifier(table))
+                    ).fetchall()
+                    == history_before[table]
+                )
+        assert old_flow.generate(old_request, actor=authenticated(other, other_prop)) == old_result
+        result = flow.generate(request, actor=authenticated(human, prop))
+        assert result.period_end == date(2026, 7, 31)
+        assert result.rent_usd_cents == 80_000
+        assert flow.generate(request, actor=authenticated(human, prop)) == result

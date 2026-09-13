@@ -1513,6 +1513,20 @@ Late-payment decisions use unique source Invoice; Charges use unique decision/so
 Receipt uses unique Payment; Rent nonpayment milestone indexes make scheduled retries
 idempotent.
 
+Recurring generation uses the existing approved final-month source predicate when a
+recorded voluntary early termination falls inside the requested calendar month and
+before the original contractual End Date. The exact immutable `BR-LEASE-021` command
+must match the Lease termination occurrence, reason, status and actual date. Initial
+coverage, including the day-21 rule, still excludes duplicate recurring periods.
+The new Invoice records `BR-RENT-024` provenance and the existing fifth-day Due Date;
+Rent remains the full contractual monthly amount, with only valid Service sources.
+Later months and unsupported holdover coverage remain rejected. Existing issued
+Invoices and exact command replays retain their original evidence and amounts.
+
+This generation alignment does not itself authorize termination, apply Deposit
+dispositions, settle balances, change physical Occupancy, or create an Adjustment.
+Initial/final charge reconciliation and controlled corrections remain separate.
+
 ## DB-TXN-006 — Property-local scheduling
 
 The 25th-day billing run, 5th-day due-date calculation, Reservation end-of-date expiration, and monthly Utility boundaries are calculated using `properties.timezone_name`; stored instants remain `timestamptz` and business dates remain `date`.

@@ -29577,6 +29577,125 @@
       "test_path": "backend/tests/test_lease_notices_migration.py",
       "status": "implemented",
       "notes": "V1-055 bounded notice correction1 regression: normalized evidence, valid synthetic calendar coverage and unchanged internal formatting/replay. No HTTP/UI or full-version acceptance implied."
+    },
+    {
+      "test_id": "test_processed_final_month_generates_full_rent_and_valid_services",
+      "upstream_ids": [
+        "BR-LEASE-021",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "DB-TXN-005",
+        "TEST-040",
+        "TEST-041",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 recurring final-month source alignment; exact amounts, valid Services, chronology, duplicate prevention, permissions, unchanged history and supported upgrade. All parameter cases belong to this registration; full version acceptance remains pending."
+    },
+    {
+      "test_id": "test_processed_final_month_can_end_after_original_end_date",
+      "upstream_ids": [
+        "BR-LEASE-021",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "DB-TXN-005",
+        "TEST-040",
+        "TEST-041",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 recurring final-month source alignment; exact amounts, valid Services, chronology, duplicate prevention, permissions, unchanged history and supported upgrade. All parameter cases belong to this registration; full version acceptance remains pending."
+    },
+    {
+      "test_id": "test_processed_final_month_rejects_unsupported_or_already_covered_periods",
+      "upstream_ids": [
+        "BR-LEASE-021",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "DB-TXN-005",
+        "TEST-040",
+        "TEST-041",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 recurring final-month source alignment; exact amounts, valid Services, chronology, duplicate prevention, permissions, unchanged history and supported upgrade. All parameter cases belong to this registration; full version acceptance remains pending."
+    },
+    {
+      "test_id": "test_processed_final_month_concurrent_commands_converge_and_reject_changed_retry",
+      "upstream_ids": [
+        "BR-LEASE-021",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "DB-TXN-005",
+        "TEST-040",
+        "TEST-041",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 recurring final-month source alignment; exact amounts, valid Services, chronology, duplicate prevention, permissions, unchanged history and supported upgrade. All parameter cases belong to this registration; full version acceptance remains pending."
+    },
+    {
+      "test_id": "test_processed_final_month_preserves_authorized_advance_invoice_and_exact_replay",
+      "upstream_ids": [
+        "BR-LEASE-021",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "DB-TXN-005",
+        "TEST-040",
+        "TEST-041",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 recurring final-month source alignment; exact amounts, valid Services, chronology, duplicate prevention, permissions, unchanged history and supported upgrade. All parameter cases belong to this registration; full version acceptance remains pending."
+    },
+    {
+      "test_id": "test_processed_final_month_requires_existing_actor_property_and_billing_capability",
+      "upstream_ids": [
+        "BR-LEASE-021",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "DB-TXN-005",
+        "TEST-040",
+        "TEST-041",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 recurring final-month source alignment; exact amounts, valid Services, chronology, duplicate prevention, permissions, unchanged history and supported upgrade. All parameter cases belong to this registration; full version acceptance remains pending."
+    },
+    {
+      "test_id": "test_processed_final_month_upgrade_preserves_functions_grants_and_business_history",
+      "upstream_ids": [
+        "BR-LEASE-021",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "DB-TXN-005",
+        "TEST-040",
+        "TEST-041",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_billing_service_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 recurring final-month source alignment; exact amounts, valid Services, chronology, duplicate prevention, permissions, unchanged history and supported upgrade. All parameter cases belong to this registration; full version acceptance remains pending."
     }
   ]
 }
