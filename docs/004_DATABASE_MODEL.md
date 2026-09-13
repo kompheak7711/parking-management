@@ -1437,6 +1437,42 @@ outstanding required amount = max(required amount - received amount, 0)
 
 No authoritative current-balance column is stored on `deposits`.
 
+### Termination Deposit readiness projection (V1-055)
+
+`app.lease_termination_deposit_readiness(Property, Lease, actor)` is a STABLE,
+fixed-search-path read boundary, available to the runtime and financial roles.
+The typed read service requires both `leases.read` and `deposits.read` for the
+same Property. The database rechecks the active human actor and Lease Property;
+the service uses one read-only repeatable-read transaction with bounded timeouts.
+
+The response contains an observation timestamp and at most the Lease's one
+Security and one Pet Deposit. It uses `deposit_snapshot` for current required,
+received, held and outstanding amounts, and reports active dispositions and
+versions separately. USD amounts are exact integer cents. Invalid scope,
+cardinality, identities, money or consequence labels fail closed in the service.
+
+Only an original `lease.terminate` command matching the Lease, Property, actual
+termination date, terminated timestamp and result identifies processed
+termination. A voluntary BR-LEASE-021 command must precede the original End Date;
+if a new termination context exists it must agree. Valid legacy command evidence
+remains readable without inventing a context. Status or free-form reason alone
+never proves voluntary termination or pet noncompliance.
+
+Verified voluntary termination identifies Security as non-refundable under
+BR-DEP-023, with explicit disposition currently pending only while positive held
+cash remains. Pet remains separately settled under BR-DEP-024. Other or missing
+evidence requires signed-terms review; this read does not invent a forfeiture
+basis. Unterminated Leases have no termination consequence.
+
+Zero currently held cash is an observation, never a permanent financial
+completion flag. Outstanding liability remains distinct from received cash, and
+later receipts, valid dispositions and correction/reversal events change the
+next observation. `financial_completion_assessed` is always false. The projection
+does not post money, authorize a disposition, complete Settlement or change
+physical Occupancy. Explicit disposition command strengthening/orchestration and
+remaining V1-055 workflows require their subsequent bounded stages and final
+integrated acceptance.
+
 ## DB-DER-005 — Customer Credit balance
 
 Credit balance is recognition amount minus active applications and net Refund value

@@ -30020,6 +30020,201 @@
       "test_path": "backend/tests/test_lease_termination_migration.py",
       "status": "implemented",
       "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_current_read_separates_required_cash_and_disposition_and_is_immutable",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_deposit.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_current_zero_is_not_financial_completion_and_pet_is_separate",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_deposit.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_every_unterminated_lease_status_has_no_termination_consequence",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_deposit.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_malformed_or_cross_scope_response_is_unavailable",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_deposit.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_malformed_balance_or_invented_consequence_is_unavailable",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_deposit.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_duplicate_or_unbounded_deposits_are_not_silently_accepted",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_deposit.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_unverified_signed_basis_never_invents_a_disposition",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_deposit.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_both_property_capabilities_are_required_before_opening_a_connection",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_deposit.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_read_database_failures_are_mapped_without_returning_source_data",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_termination_deposit.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_real_termination_separates_security_and_pet_without_posting_or_physical_changes",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_deposit_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_disposition_and_reversal_change_current_readiness_without_completing_finances",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_deposit_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_unreceived_liability_then_later_receipt_and_reversal_are_separate_observations",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_deposit_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_other_or_incomplete_termination_evidence_does_not_invent_forfeiture",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_deposit_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_current_actor_property_runtime_permissions_and_read_only_transaction",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_deposit_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_forward55_preserves_all54_history_functions_and_legacy_evidence",
+      "upstream_ids": [
+        "BR-DEP-023",
+        "BR-DEP-024",
+        "DB-DER-004",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_termination_deposit_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded termination Deposit read projection: real source evidence, separate Security/Pet consequences, changing exact balances and actor/Property scope. Monetary commands and full-version acceptance remain separate."
     }
   ]
 }

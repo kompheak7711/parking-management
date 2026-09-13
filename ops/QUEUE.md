@@ -1,3 +1,15 @@
+# Current queue — V1-055 Deposit readiness exact gates/review
+
+Run remaining mandatory exact Deposit readiness stage gates, reusing only verified unchanged frontend and exact backend static/type evidence. Obtain fresh independent complete25path stage review from8a3c0e3 with Astra/max/Standard/enforced-read-only/never; include source evidence, changing balances, actor/Property scope and legacy upgrade/history preservation. Preserve both correction1of2 histories and all inherited limits. No later stage or publication before acceptance; all remaining55implementation and integrated gates precede closure and56; continue only through60.
+
+All prior queues, failed checkpoints and correction evidence remain preserved.
+
+# Current queue — V1-055 termination Deposit readiness
+
+Implement only the frozen25-path termination Deposit readiness projection from accepted8a3c0e3. Preserve financial calculations and dynamic zero/positive balance distinctions; no monetary posting or completion claim. Run affected and mandatory gates, freeze normally and require complete-stage independent zero review. Explicit disposition commands, remaining55work and integrated closure follow only after acceptance; no56 before full55closure, stop after60.
+
+Previous queues and all evidence remain preserved; termination8a3c0e3 accepted externally.
+
 # Current queue — V1-055 corrected termination exact gates/review
 
 Verify all mandatory exact gates for the calendar-corrected termination candidate, reusing proven unchanged inputs only. Then initial independent complete27path/two-commit stage review from accepted1f52fd1, Astra/max/Standard/enforced-read-only/never. Notice-fixture chronology2of2 is the final automatic correction for that finding. Preserve dbc0b85 and all prior gates/failures. No later stage before acceptance; all55implementation/integrated gates precede publication/closure or56; stop after60.

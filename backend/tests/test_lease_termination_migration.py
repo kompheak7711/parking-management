@@ -690,7 +690,7 @@ def test_termination_upgrade_preserves_all_prior_functions_history_and_exact_leg
                 ).fetchall()
                 for table in tables
             }
-        alembic_command.upgrade(config, "head")
+        alembic_command.upgrade(config, "20260914_54")
         with psycopg.connect(temporary) as check:
             after = {row[0]: row[1:] for row in check.execute(functions_query)}
             assert functions_before.keys() <= after.keys()
