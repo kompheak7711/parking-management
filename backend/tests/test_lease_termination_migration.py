@@ -132,6 +132,16 @@ def raw_termination_parameters(
 CONTEXT_QUERY = "SELECT app.terminate_lease_with_context(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
 
 
+def notice_termination_source(
+    connection: Connection[tuple[object, ...]],
+) -> tuple[UUID, UUID, UUID, UUID, UUID]:
+    row = connection.execute(
+        "SELECT timezone('Asia/Phnom_Penh',statement_timestamp())::date"
+    ).fetchone()
+    assert row is not None and type(row[0]) is date
+    return _processed_final_month_source(connection, row[0].replace(day=1), terminate=False)
+
+
 def record_applicable_notice(
     connection: Connection[tuple[object, ...]],
     human: UUID,
@@ -297,9 +307,7 @@ def test_termination_context_replay_binds_both_digest_and_actual_database_intent
 def test_current_notice_and_documented_period_support_explicit_termination(
     connection: Connection[tuple[object, ...]],
 ) -> None:
-    human, prop, _, lease, _ = _processed_final_month_source(
-        connection, date(2026, 7, 1), terminate=False
-    )
+    human, prop, _, lease, _ = notice_termination_source(connection)
     notice_id = record_applicable_notice(connection, human, prop, lease)
     date_row = connection.execute(
         "SELECT notice_date FROM app.termination_notices WHERE id=%s", (notice_id,)
@@ -338,14 +346,10 @@ def test_termination_rechecks_current_notice_relationship_and_period(
     connection: Connection[tuple[object, ...]],
     condition: str,
 ) -> None:
-    human, prop, _, lease, _ = _processed_final_month_source(
-        connection, date(2026, 7, 1), terminate=False
-    )
+    human, prop, _, lease, _ = notice_termination_source(connection)
     notice_lease = lease
     if condition == "wrong_lease":
-        _, _, _, notice_lease, _ = _processed_final_month_source(
-            connection, date(2026, 7, 1), terminate=False
-        )
+        _, _, _, notice_lease, _ = notice_termination_source(connection)
     notice_id = record_applicable_notice(connection, human, prop, notice_lease)
     date_row = connection.execute(
         "SELECT notice_date FROM app.termination_notices WHERE id=%s", (notice_id,)

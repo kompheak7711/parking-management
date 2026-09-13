@@ -1,3 +1,9 @@
+# Current queue — V1-055 corrected termination exact gates/review
+
+Verify all mandatory exact gates for the calendar-corrected termination candidate, reusing proven unchanged inputs only. Then initial independent complete27path/two-commit stage review from accepted1f52fd1, Astra/max/Standard/enforced-read-only/never. Notice-fixture chronology2of2 is the final automatic correction for that finding. Preserve dbc0b85 and all prior gates/failures. No later stage before acceptance; all55implementation/integrated gates precede publication/closure or56; stop after60.
+
+Prior queues remain preserved verbatim.
+
 # Current queue — V1-055 termination exact gates/review
 
 Run remaining mandatory exact termination-stage gates, reusing only verified unchanged frontend and exact backend typing evidence. Obtain fresh independent complete27path stage review from1f52fd1 with Astra/max/Standard/enforced-read-only/never; include transaction/FK mode and all connected financial-source/caller interactions. Preserve every correction limit and failed checkpoint. No later stage before acceptance; all55implementation and integrated gates precede publication/closure and56; continue through60 then pause SAMEfollow-up.
