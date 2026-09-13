@@ -17,6 +17,7 @@ from property_rental.identity import (
     AuthorizationRequirement,
     is_authorized,
 )
+from property_rental.lease_termination import TerminationContext
 
 NIL_UUID: Final = UUID(int=0)
 LEASE_DRAFT_CAPABILITY: Final = "leases.draft"
@@ -342,6 +343,7 @@ class LeaseTerminateCommand:
     governing_event_reference: str
     reason: str
     authorization_reference: str
+    context: TerminationContext | None = None
 
     def __post_init__(self) -> None:
         for field in ("idempotency_key", "event_id", "lease_id"):
@@ -353,6 +355,14 @@ class LeaseTerminateCommand:
         _require_nonblank(self.governing_event_reference, "governing_event_reference")
         _require_nonblank(self.reason, "reason")
         _require_nonblank(self.authorization_reference, "authorization_reference")
+        if self.context is not None:
+            if not isinstance(self.context, TerminationContext):
+                raise ValueError("Termination context must be explicit approved evidence")
+            if type(self.expected_version) is not int or self.expected_version > 2_147_483_647:
+                raise ValueError("Expected Lease version must be a positive integer")
+            self.context.validate_command(
+                self.actual_termination_date, self.governing_event_reference
+            )
 
 
 LeaseCommand: TypeAlias = (
@@ -371,8 +381,12 @@ def lease_request_digest(action: str, command: LeaseCommand) -> str:
     """Bind one idempotent Lease command to every normalized input."""
     if not action.startswith("lease."):
         raise ValueError("Lease action is invalid")
+    payload = asdict(command)
+    if isinstance(command, LeaseTerminateCommand) and command.context is None:
+        # Preserve the exact legacy request identity for historical retries.
+        payload.pop("context")
     serialized = json.dumps(
-        {"action": action, "command": _json_value(asdict(command))},
+        {"action": action, "command": _json_value(payload)},
         sort_keys=True,
         separators=(",", ":"),
         ensure_ascii=False,
@@ -475,7 +489,9 @@ class PostgresLeaseService:
             with psycopg.connect(self.database_url) as connection:
                 row = connection.execute(query, parameters).fetchone()
         except psycopg.Error as exc:
-            if exc.sqlstate == "P0002":
+            if exc.sqlstate == "P5406":
+                raise LeaseAuthorizationError("Lease actor is not active") from exc
+            if exc.sqlstate in {"P0002", "P5401"}:
                 raise LeaseNotFoundError("Lease resource was not found") from exc
             if exc.sqlstate == "40001":
                 raise LeaseVersionConflictError("Lease version precondition was not met") from exc
@@ -697,19 +713,27 @@ class PostgresLeaseService:
             actor, LEASE_TERMINATE_CAPABILITY, command.authorization_reference
         )
         digest = lease_request_digest("lease.terminate", command)
+        parameters: tuple[object, ...] = (
+            self.property_id,
+            command.idempotency_key,
+            digest,
+            command.event_id,
+            command.lease_id,
+            command.expected_version,
+            command.actual_termination_date,
+            command.occurred_at,
+            command.governing_event_reference,
+            command.reason,
+            self.actor_id,
+        )
+        if command.context is not None:
+            return self._execute(
+                "SELECT app.terminate_lease_with_context("
+                "%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)",
+                (*parameters, json.dumps(command.context.intent(), ensure_ascii=False)),
+            )
+        # The shared database boundary permits genuine legacy replay, but
+        # rejects fresh termination without the newly required context.
         return self._execute(
-            "SELECT app.terminate_lease(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-            (
-                self.property_id,
-                command.idempotency_key,
-                digest,
-                command.event_id,
-                command.lease_id,
-                command.expected_version,
-                command.actual_termination_date,
-                command.occurred_at,
-                command.governing_event_reference,
-                command.reason,
-                self.actor_id,
-            ),
+            "SELECT app.terminate_lease(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)", parameters
         )

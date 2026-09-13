@@ -2068,7 +2068,7 @@
     "followup_prompt_sha256": "6f9ff29a0be7bde095026c825e03708ff91fbff25c7c734afb0b7e68246f74ee",
     "live_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-live.md",
     "current_version": "V1-055",
-    "phase": "recurring_final_month_billing_candidate_pending",
+    "phase": "explicit_termination_candidate_pending",
     "activated_at": "2026-09-11T02:56:22.881391+00:00",
     "predecessor_closed": true,
     "predecessor_sha": "bda66062697feef17c8df621b64bf5f607c1c691",
@@ -2088,18 +2088,21 @@
     "scope_sha256": "8da3b58eab28350341e3faa29ba8947e59f3f019d931724957be5425023652ac",
     "cumulative_review_base": "bda66062697feef17c8df621b64bf5f607c1c691",
     "candidate_sha": null,
-    "candidate_resolution": "Resolve this immutable recurring final-month billing candidate through external v1055-final-month-billing-candidate.json; post-freeze gate/review evidence remains external.",
-    "candidate_status": "normal_local_billing_candidate_prepared",
+    "candidate_resolution": "Resolve this immutable termination-prerequisite candidate through external v1055-termination-candidate.json; later exact-gate and independent review evidence remains outside the frozen candidate.",
+    "candidate_status": "normal_local_termination_candidate_prepared",
     "owner_action_required": false,
-    "next_action": "Run remaining mandatory exact-SHA billing-stage gates, reusing the verified unchanged frontend checks and current full backend typing by input identity. Obtain fresh independent complete20path stage review from96f67bc with Astra/max/Standard/enforced-read-only/never and zero findings. Preserve all internal fixture/product corrections. No later stage until acceptance; complete all remaining55implementation and integrated gates before publication/closure or56; continue through60 thenpause SAMEfollow-up.",
+    "next_action": "Run remaining mandatory exact termination-stage gates, reusing only verified unchanged frontend and exact backend typing evidence. Obtain fresh independent complete27path stage review from1f52fd1 with Astra/max/Standard/enforced-read-only/never; include transaction/FK mode and all connected financial-source/caller interactions. Preserve every correction limit and failed checkpoint. No later stage before acceptance; all55implementation and integrated gates precede publication/closure and56; continue through60 then pause SAMEfollow-up.",
     "active_slice": {
-      "id": "V1-055-recurring-final-month-billing",
+      "id": "V1-055-explicit-termination-prerequisites",
       "status": "implemented_affected_verified_exact_gates_review_pending",
-      "base": "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b",
+      "base": "1f52fd1d62ab07b977070295ddef20484fccd8b7",
       "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
-      "started_at": "2026-09-13T18:17:40.912468+00:00",
+      "started_at": "2026-09-13T19:25:15.106971+00:00",
       "paths": [
-        "backend/migrations/versions/20260914_53_termination_final_month_billing.py",
+        "backend/migrations/versions/20260914_54_lease_termination_context.py",
+        "backend/src/property_rental/lease.py",
+        "backend/src/property_rental/lease_termination.py",
+        "backend/tests/termination_test_support.py",
         "backend/tests/test_billing_service_migration.py",
         "backend/tests/test_credit_refund_read_migration.py",
         "backend/tests/test_customer_ledger_migration.py",
@@ -2109,6 +2112,9 @@
         "backend/tests/test_late_payment_migration.py",
         "backend/tests/test_lease_api_migration.py",
         "backend/tests/test_lease_enforcement_api_migration.py",
+        "backend/tests/test_lease_lifecycle_migration.py",
+        "backend/tests/test_lease_termination.py",
+        "backend/tests/test_lease_termination_migration.py",
         "backend/tests/test_migrations.py",
         "backend/tests/test_payment_reversal_context_migration.py",
         "backend/tests/test_utility_api_migration.py",
@@ -2118,117 +2124,136 @@
         "ops/NOW.md",
         "ops/QUEUE.md",
         "ops/STATE.json",
-        "ops/traceability.json"
+        "ops/traceability.json",
+        "scripts/database-test.sh"
       ],
       "scope": {
         "path": "/Users/sokompheak/Development/property-rental-management/ops/V1_055_SCOPE.md",
         "sha256": "8da3b58eab28350341e3faa29ba8947e59f3f019d931724957be5425023652ac"
       },
       "prior_stage_acceptance": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-stage-accepted-96f67bc.json",
-        "sha256": "8688ffde35461a591915d42f2d617c27cdf2378401a06cf9362dff812ef0bca8"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-stage-accepted-1f52fd1.json",
+        "sha256": "e619e1bf332ef3f9e2e0c0aa5e935b5d71df6c66cdb89a1dcb4ba4e8893394f5"
       },
       "reconciliation": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-billing-entry-20260914t1812-reconciliation.json",
-        "sha256": "8860198f58526d3d61c3d81a25145b19dbb07286b1cb6b81e44f545c32ebd30a"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-entry-20260914t1918-reconciliation.json",
+        "sha256": "f091821a620c18fd22fb9388c8e58443d01a60b4615d839fa1bc31530bac1af9"
       },
-      "risk_class": "high_connected_financial_migration",
-      "implementation_reasoning": "xhigh; bounded existing source-predicate alignment, no exceptional max implementation needed",
+      "risk_class": "high_connected_authorization_tenancy_financial_sources",
+      "implementation_reasoning": "xhigh; bounded extension of existing command boundary with immutable evidence, no exceptional max needed",
       "implementation_plan": [
-        "Materialize external notice acceptance and all three finding resolutions, retaining original automatic limits and owner exception. Preserve every changed parent STATE root and previous queue verbatim.",
-        "Use a forward-only migration to align the existing Rent generation coverage guard with the accepted recurring final-month source predicate. Preserve original function identity, signature, ACL, security attributes, replay order, advisory source boundary and issuance cutoff.",
-        "Permit the full final calendar month only for RECURRING Rent with actual termination before contractual End Date, that same final month, and an exact BR-LEASE-021 governing command matching recorded Lease occurrence/reason/date/status through the existing predicate. Record BR-RENT-024 provenance for this new invoice branch; keep the existing fifth-day due-date rule.",
-        "Keep initial Rent coverage, late-month move-in overlap, unrelated contractual coverage, already issued invoices, future-month rejection, calculation components and valid fixed-Service sources unchanged. Reuse the established amounts and source constraints; do not create a new fee or manually override Rent.",
-        "Add real PostgreSQL regressions for full Rent across28/29/30/31-day months, original EndDate within final month, wrong/non-early provenance, later months, initial coverage overlap, exact replay and concurrent business-key convergence, caller permissions, unchanged advance-issued evidence, fresh/52-to-head migration and source-function/ACL preservation.",
-        "Align only26 inherited current-head expectations across14 test files with forward revision53, retaining historical explicit revisions. Add traceability and database implementation documentation, preserving all prior entries and canonical business policy.",
-        "Run affected regression evidence before/after the forward product change, applicable full backend/PostgreSQL/static/types/build/import/migration and operational gates. Reuse unchanged frontend evidence by identity. Freeze an exact local candidate and obtain fresh independent complete-stage Astra/max/Standard/enforced-read-only review.",
-        "This is a bounded connected financial substage. Explicit termination prerequisites, separately authorized Security/Pet dispositions and late receipts/readiness, initial/final adjustment reconciliation, physical move-out, HTTP/staff workflows and final integrated V1-055 acceptance remain pending. No publication or version closure from this stage alone."
+        "Materialize accepted billing1f52fd1 and its resolved correction evidence in current records; retain every changed predecessor STATE root, all old queue content, notice owner exception and all attempt limits.",
+        "Add a bounded immutable TerminationContext value object, with explicit VOLUNTARY_EARLY, CUSTOMER_VIOLATION or SIGNED_LEASE_OTHER basis, signed provision, approved grounds, management authorization and source evidence. Include applicable current notice identity and documented notice-period end date, or explicit signed-terms notice exception evidence. General-warning IDs are bounded, distinct, real same-Lease letters; no Rent milestone substitution.",
+        "Extend existing LeaseTerminateCommand with optional context solely to preserve legacy replay input. Exclude absent context from the legacy request digest exactly; include every supplied context field for new commands. Context-bearing requests use one atomic database wrapper; no-context requests retain the old signature only for historical replay and are denied for new termination after shared enforcement. Do not change unrelated Lease command digests or existing HTTP routes in this substage.",
+        "Add forward54 with immutable context records tied to exact original command event, Property, actor, key, digest, Lease/version, actual date, occurrence, governing reference and reason. A deferred foreign key to the existing command prevents orphan context. The wrapper validates and inserts context atomically with the existing termination and its command/audit history; no separate approval side effect or new Lease status.",
+        "Enforce prerequisites in the shared existing eleven-argument terminate_lease after its replay/version/status/chronology checks so all fresh callable paths are covered. Preserve function identity/ACL, existing replay/Lease/Unit locks, source-write guards and financial source chronology. Recheck active human and Property scope; map documented database errors consistently without exposing data.",
+        "VOLUNTARY_EARLY requires exact BR-LEASE-021 and an actual date before original EndDate. Other bases cannot claim BR-LEASE-021. CUSTOMER_VIOLATION requires at least three distinct existing general warning letters with valid dates/provisions/communication for this Lease issued before the recorded termination; do not fabricate rights or count nonpayment events.",
+        "Where notice applies, require current non-superseded notice/context for this Lease, matching signed provision/approved grounds, valid chronology and actual date at or after its documented applicable notice-period end. No fixed notice period is invented. Where notice does not apply, require explicit normalized signed-terms exception evidence. Notice supersession and termination serialize on the existing Lease boundary; later evidence never rewrites completed command context.",
+        "Preserve historical eleven-argument exact replay and immutable prior rows across53-to54. Test active actor/Property/capability, missing/malformed context, signed/actual/notice dates, superseded notice, three real warning sources, stale versions, exact/changed retries, concurrency, atomic rollback, context history and unchanged occupancy/Unit/deposit/invoice state. All monetary disposition/readiness, physical move-out, HTTP/UI and final integrated version acceptance remain subsequent.",
+        "Use explicit approved synthetic context for existing positive termination fixtures in billing/invoice/lifecycle tests. Preserve their original assertions and negative scenarios. Pin the accepted52-to53 billing function-preservation upgrade test to53 and explicitly retain its legacy fixture path; add a separate full53-to54 preservation test. Align only current-head26literals across14files with54, retaining historical explicit revisions.",
+        "Run affected unit/real PostgreSQL RED/GREEN and applicable mandatory full backend/PG/static/type/build/import/migration/automation/config/trace/guard/preflight gates. Reuse unchanged frontend evidence by input identity. Freeze normal candidate and obtain initial independent complete-stage Astra/max/Standard/enforced-read-only zero review; bounded corrections follow standing review policy. No stage acceptance substitutes for integrated V1-055 acceptance/publication/closure."
       ],
       "authorities": [
+        "BR-LEASE-005",
+        "BR-LEASE-017",
+        "BR-LEASE-020",
         "BR-LEASE-021",
-        "BR-RENT-015",
-        "BR-RENT-022",
-        "BR-RENT-024",
-        "BR-RENT-025",
-        "BR-RENT-026",
-        "BR-RENT-027",
+        "BR-LEASE-022",
+        "BR-LEASE-023",
+        "BR-LEASE-024",
+        "BR-LEASE-025",
+        "BR-LEASE-028",
+        "DB-LEASE-001",
+        "DB-LEASE-004",
+        "DB-LEASE-005",
         "DB-TXN-001",
-        "DB-TXN-005",
-        "TEST-040",
-        "TEST-041",
-        "TEST-043",
-        "TEST-044",
+        "API-038",
+        "TEST-076",
         "TEST-077"
       ],
-      "exclusions": "No new termination right or termination transport changes; no change to initial coverage, unsupported holdover or future Rent, financial rewriting, automatic disposition/refund, Pet forfeiture, Settlement closure, HTTP/UI, dependencies, production/customer data, secrets, or destructive/history changes. Do not reopen resolved notice findings or V1-054 R3.",
+      "exclusions": "No invented rights, fixed notice periods, fees, holdover, automatic Pet forfeiture or deposit disposition, settlement/physical completion, HTTP/UI/dependency changes, production/secrets/customer data, destructive/history changes, or reopened resolved findings.",
       "stage_accepted": false,
       "publication_permitted": false,
       "automatic_correction_limit_per_finding": 2,
-      "current_correction": {
-        "at": "2026-09-13T18:33:25.375103+00:00",
-        "fingerprint": "mixed_final_month_service_header_provenance",
-        "attempt": 1,
-        "maximum": 2,
-        "status": "local_40case_verification_passed_initial_stage_review_pending",
-        "prior_gate": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-green.json",
-          "sha256": "a0a506396169d05f3a2702e9e419b48736342d33aadcc4a874b541b1950f8500"
+      "connected_test_registration": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-test-registration-scope.json",
+        "sha256": "b16c0371ff56f8b4a656b81dac00376e5ceb6343d9c67def05cf5060725b0ff0"
+      },
+      "implementation_checkpoint": {
+        "at": "2026-09-13T19:57:36.697709+00:00",
+        "status": "affected_core_progress_verified_remaining_stage_gates_pending",
+        "evidence": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-core-progress-20260914t2008.json",
+          "sha256": "2d78cbcc9cf299905bb0a686a01f98623ff8ccd9a2599981a5f34f57f0ebda43"
         },
-        "cause": "Existing issuance validation recognizes BR-SVC-013 for a standalone Service invoice but rejects a valid Service line on the new recurring final-month Rent invoice, whose header provenance must be BR-RENT-024.",
-        "change": "Forward-migration alignment in the existing invoice issuance validator for only recurring Rent headers with BR-RENT-024 and actual termination before original EndDate. Retain the exact BR-LEASE-021 command, same final month, approved term/rate, actor, source and chronology checks. Keep both immediate/deferred Lease source-write guards unchanged.",
-        "paths": [
-          "backend/migrations/versions/20260914_53_termination_final_month_billing.py",
-          "backend/tests/test_billing_service_migration.py",
-          "ops/STATE.json"
-        ],
-        "prior_files": {
-          "backend/migrations/versions/20260914_53_termination_final_month_billing.py": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-before-20260914_53_termination_final_month_billing.py",
-            "sha256": "642a64f122ea8b3f53b130683ca7bc2bfabb9f7c5e63853b7c807250f0e26939"
-          },
-          "backend/tests/test_billing_service_migration.py": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-before-test_billing_service_migration.py",
-            "sha256": "3eb0c37ad35ed30306cccf3e9fd25da3e4c66d356686869c4317d851ee350335"
-          },
-          "ops/STATE.json": {
-            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-before-STATE.json",
-            "sha256": "08cb942880436ff29faa7a3d9244230d8480dee2c1accdccb73514dc5ea19ea8"
+        "remaining": "Continue the existing explicit termination stage: adapt only approved positive termination callers with explicit synthetic signed authority, retain legacy billing52-to53 coverage, add53-to54 preservation and exact historical replay, align current-head assertions, docs/trace, then all mandatory final gates and fresh complete-stage independent review. First inspect running work; no completed unchanged checks/reviews repeated. Whole55incomplete/unpublished/unclosed; no56 before full55closure."
+      },
+      "corrections": [
+        {
+          "fingerprint": "termination_unit_fixture_static_typing",
+          "used": 1,
+          "limit": 2,
+          "status": "resolved_affected_format_lint_units_types"
+        },
+        {
+          "fingerprint": "termination_notice_fixture_chronology",
+          "attempt": 1,
+          "limit": 2,
+          "cause": "Hardcoded June notice precedes freshly signed synthetic Lease; accepted notice boundary correctly rejects it before termination.",
+          "approach": "Use actual Property business date for signed-notice fixture and explicit documented same-day surrender period/actual date; retain every prerequisite positive/negative assertion.",
+          "status": "resolved_by_affected_regressions"
+        },
+        {
+          "fingerprint": "termination_physical_preservation_fixture_identity",
+          "attempt": 1,
+          "limit": 2,
+          "cause": "Parent inspection found third billing fixture tuple member is Customer, not Unit; old equality compared two missing rows.",
+          "approach": "Join real Unit through the Lease and assert actual non-null Occupancy snapshot with no move-out date before comparing unchanged state.",
+          "status": "resolved_by_affected_regressions"
+        },
+        {
+          "fingerprint": "termination_context_immediate_fk",
+          "attempt": 1,
+          "limit": 2,
+          "cause": "Caller SET CONSTRAINTS ALL IMMEDIATE makes the new context-to-command FK check before the original command is inserted, although the full wrapper is atomic. Preserved two-mode RED passes deferred and fails immediate.",
+          "approach": "Inside the wrapper defer only its new context-command FK during the circular insert sequence, then validate that FK immediately after the original command and before returning. All other constraints, source guards, locks, privileges and rollback remain intact.",
+          "status": "locally_verified_independent_complete_stage_review_pending",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-fk-fixture-correction1.json",
+            "sha256": "bf2fc08bcef5b0702f67df5cdf3d1a8b9788697260c2ce09ccb82e67a0d0cb50"
           }
         },
-        "regression": "The first full-month Rent/valid-Service positive test supplies RED after26existing billing cases passed. Run affected new14 cases after correction; full mandatory PG remains required.",
-        "review": "Initial complete-stage review must cover both modified functions and all connected financial callers and preserved source guards; no stage or version acceptance yet.",
-        "scope": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-scope.json",
-          "sha256": "46f3d9f4fb05b01ae1638bca6757f16f608cf902556cdd9864d3523fc0ed0e66"
-        },
-        "verification": {
-          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-green.json",
-          "sha256": "b8a686b5d0d9c531745dcdcae698a4acd9c505dfb4c039d2a9c9464884ac28fe"
+        {
+          "fingerprint": "termination_connected_generated_void_fixture_isolation",
+          "attempt": 1,
+          "limit": 2,
+          "cause": "Combined affected suites run billing before an inherited generated-VOID test whose single-Property eligible-source count assumes one synthetic Lease; actualcount2. The test fails before the VOID command.",
+          "approach": "Use the existing disposable database fixture for this one inherited test, with both runtime/financial URLs pointed at the same isolated schema. Preserve every original eligibility, incomplete/complete retry, replay/concurrency, VOID/audit/history assertion. No cleanup of prior synthetic evidence or production predicate change.",
+          "status": "locally_verified_independent_complete_stage_review_pending",
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-fk-fixture-correction1.json",
+            "sha256": "bf2fc08bcef5b0702f67df5cdf3d1a8b9788697260c2ce09ccb82e67a0d0cb50"
+          }
         }
+      ],
+      "current_correction": {
+        "status": "local120case_verification_passed_initial_stage_review_pending",
+        "verification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-fk-fixture-correction1.json",
+          "sha256": "bf2fc08bcef5b0702f67df5cdf3d1a8b9788697260c2ce09ccb82e67a0d0cb50"
+        },
+        "fingerprints": [
+          "termination_context_immediate_fk",
+          "termination_connected_generated_void_fixture_isolation"
+        ]
       },
       "stage_implementation_completed": true,
       "product_accepted": false,
       "preliminary_evidence": {
-        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-green.json",
-        "sha256": "b8a686b5d0d9c531745dcdcae698a4acd9c505dfb4c039d2a9c9464884ac28fe"
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-fk-fixture-correction1.json",
+        "sha256": "bf2fc08bcef5b0702f67df5cdf3d1a8b9788697260c2ce09ccb82e67a0d0cb50"
       },
-      "fixture_corrections": [
-        {
-          "fingerprint": "synthetic_termination_occurrence_after_statement_time",
-          "attempt": 1,
-          "maximum": 2,
-          "status": "resolved_baseline_verified"
-        },
-        {
-          "fingerprint": "synthetic_fixed_service_approval_overlap",
-          "attempt": 2,
-          "maximum": 2,
-          "status": "resolved_baseline_verified",
-          "prior_failed_approach": "Additional Property violates singleton constraint; preserved13failures.",
-          "successful_approach": "Existing disposable-database harness isolates only the four historical Service calendars; singleton constraints unchanged."
-        }
-      ],
-      "frozen_candidate_receipt": "v1055-final-month-billing-candidate.json"
+      "frozen_candidate_receipt": "v1055-termination-candidate.json"
     },
     "prior_version_history": "historical_v1_054_closed_current_fields",
     "latest_continuation": {
@@ -2961,7 +2986,7 @@
     "implementation_started": true,
     "implementation_completed": false,
     "publication_completed": false,
-    "product_implementation_gate": "Notices96f67bc accepted locally; bounded recurring final-month billing implemented with40affected PG and full typing PASS. Remaining exact billing-stage gates/review, other V1-055 stages and integrated closure pending."
+    "product_implementation_gate": "Notices96f67bc and billing1f52fd1 accepted locally; explicit termination prerequisites implemented with120affectedPG and typing PASS. Remaining exact termination gates/review, deposit/physical/HTTP stages and integrated V1-055 closure pending."
   },
   "historical_v1_047_approval": {
     "status": "active",
@@ -3009,9 +3034,9 @@
   ],
   "blockers": [],
   "branch": "implementation/foundation",
-  "commit": "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b",
+  "commit": "1f52fd1d62ab07b977070295ddef20484fccd8b7",
   "idle_reason": "",
-  "next_action": "Run remaining mandatory exact-SHA billing-stage gates, reusing the verified unchanged frontend checks and current full backend typing by input identity. Obtain fresh independent complete20path stage review from96f67bc with Astra/max/Standard/enforced-read-only/never and zero findings. Preserve all internal fixture/product corrections. No later stage until acceptance; complete all remaining55implementation and integrated gates before publication/closure or56; continue through60 thenpause SAMEfollow-up.",
+  "next_action": "Run remaining mandatory exact termination-stage gates, reusing only verified unchanged frontend and exact backend typing evidence. Obtain fresh independent complete27path stage review from1f52fd1 with Astra/max/Standard/enforced-read-only/never; include transaction/FK mode and all connected financial-source/caller interactions. Preserve every correction limit and failed checkpoint. No later stage before acceptance; all55implementation and integrated gates precede publication/closure and56; continue through60 then pause SAMEfollow-up.",
   "active_worker": null,
   "active_card": "0fbb0d8a-2b0e-4097-bfc4-0b48181ad7a2",
   "active_claim": null,
@@ -3019,8 +3044,8 @@
   "active_branch": "implementation/foundation",
   "active_worktree": "/Users/sokompheak/Development/property-rental-management",
   "candidate_sha": null,
-  "candidate_resolution": "Resolve this immutable recurring final-month billing candidate through external v1055-final-month-billing-candidate.json; post-freeze gate/review evidence remains external.",
-  "candidate_parent": "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b",
+  "candidate_resolution": "Resolve this immutable termination-prerequisite candidate through external v1055-termination-candidate.json; later exact-gate and independent review evidence remains outside the frozen candidate.",
+  "candidate_parent": "1f52fd1d62ab07b977070295ddef20484fccd8b7",
   "next_candidate": {
     "id": "V1-055",
     "order": 55,
@@ -3080,7 +3105,7 @@
       "partial_returns": "Re-evaluate against USD-only refunds, not obsolete KHR-refund blocker."
     }
   },
-  "phase": "V1-055 recurring final-month billing implemented; exact final stage gates and initial independent review pending",
+  "phase": "V1-055 explicit termination prerequisites implemented; exact final stage gates and initial independent review pending",
   "continuous_supervisor_policy": {
     "authoritative_prompt_path": "ops/OPENCLAW_SUPERVISOR_PROMPT.md",
     "prompt_sha256": "0dfd18557308b22fa17135bf931a69910a196caa9f5c8e5386cf2d9d8bcffd56",
@@ -4176,17 +4201,21 @@
     "PASS: V1-041 closure commit d6c05690d06ea06a9ce904c2ed7d976bf816fb6c exact-SHA GitHub Actions run 33173041349; all four jobs"
   ],
   "tests": [
-    "Current billing substage:40affected PostgreSQL cases PASS including26existing and14new cases, forward52-to53 preservation, fresh schema, exact money, Services, replay/concurrency and actor scope. Affected format/lint and full backend typing PASS. Remaining mandatory exact stage gates and independent review pending.",
-    "Fixture chronology resolved1of2; Service-calendar isolation resolved2of2 using existing disposable databases. Mixed-header Service product correction1of2 locally verified; independent stage acceptance pending. Every prior checkpoint retained.",
-    "Historical checkpoint: Notice96f67bc:22applicable gates PASS; focused/full-stage independent0H0M0L and qualified operations audit accepted externally. No unchanged tests or reviews repeated.",
-    "Historical checkpoint: Recurring final-month billing stage active; new affected regression and mandatory exact acceptance gates pending.",
-    "Historical checkpoint: Historical checkpoint: Current verified parent b7fb053:22PASS gates, 7fresh records/15unchanged product checks. This owner-authorized records-only successor requires its own7 affected records gates and15unchanged product identity checks; all earlier tests/reviews/failures remain preserved.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Current product evidence at ac97a90:22PASS gates (15fresh/7reused),1289PostgreSQL PASS/no skips,2929backend PASS/1154database-only skips covered byPG,189automation,1519frontend by full source/config identity,148affected regressions and successful types. This three-record successor requires7fresh record gates and15unchanged product-evidence identity checks; no product test repeat.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Notice candidate d8c3f3c:1165realPG PASS,2821backend PASS/1138database-only skips covered byPG,189automation PASS; frontend1519unchanged tests and static/build evidence reused by full input identity. Backend static/types/migration/build/import/config/trace/guard/whitespace PASS.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Initial0d92c3a fullPG136FAILED/1029PASS retained; bounded gate correction1 repaired installed Alembic PATH and17stale head literals. Preliminary68unit/trace+24PG and original lint evidence retained. V54R3resolved2of2 unchanged.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: No-isolation package variant failed missing declared Hatchling; normal isolated build succeeded via public build dependencies, same candidate/runtime preserved. No passing tests repeated.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Semantic preflight was not acceptable despite exit0: whole-version completion incorrectly true. Record correction1 now separates notice completion from unfinished V1-055. Fresh exact record/automation/routing gates and full independent review pending; no product source changed or publication permitted.",
-    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: New targeted RED evidence preserved for direct database whitespace acceptance and calendar-invalid fixture; correction1 installed. Fresh affected GREEN, exact gates and independent expanded focused/full-stage review remain pending. Prior22gate results preserved with only affected evidence requiring replacement."
+    "Current termination substage:120affected realPG PASS including39termination,6Lease lifecycle,40billing and35invoice cases. Explicit53-to54 all-prior-functions/OIDs/ACLs/history and old exact replay;52-to53 billing proof retained. Original source guards, default/immediateFK modes, no physical/financial side effects, warning/notice/actor/Property/replay/concurrency checks pass. Typing211sourcefiles PASS;25context units and4unchangedLease units previouslyPASS. Remaining mandatory exact gates and independent stage review pending.",
+    "Corrections preserved: initialtyping1of2 andnotice chronology/physicalsnapshotidentity1of2 locally resolved; context-command immediateFK1of2 andconnectedgeneratedVOIDfixtureisolation1of2 locally verified. Previous118case run3FAIL/115PASS andtwo-mode1FAIL/1PASS RED remain retained; no reset of old notice ownerexception orV54limits.",
+    "Historical checkpoint: Billing1f52fd1:22gates PASS;40affected/1303fullPG,2929backend/1168DBonly skips covered,1519FE,189automation; independent complete20path/1commit0H0M0L and actual operations/settings audited.",
+    "Historical checkpoint: Termination core:25context units/4prior unchanged Lease units PASS; types210files PASS; initialPG29PASS7fixturefailures preserved, corrected8affectedPGPASS/28deselected. All stage/full gates and independent acceptance remain pending; no full-suite completion claim.",
+    "Historical checkpoint: Historical checkpoint: Current billing substage:40affected PostgreSQL cases PASS including26existing and14new cases, forward52-to53 preservation, fresh schema, exact money, Services, replay/concurrency and actor scope. Affected format/lint and full backend typing PASS. Remaining mandatory exact stage gates and independent review pending.",
+    "Historical checkpoint: Historical checkpoint: Fixture chronology resolved1of2; Service-calendar isolation resolved2of2 using existing disposable databases. Mixed-header Service product correction1of2 locally verified; independent stage acceptance pending. Every prior checkpoint retained.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Notice96f67bc:22applicable gates PASS; focused/full-stage independent0H0M0L and qualified operations audit accepted externally. No unchanged tests or reviews repeated.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Recurring final-month billing stage active; new affected regression and mandatory exact acceptance gates pending.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current verified parent b7fb053:22PASS gates, 7fresh records/15unchanged product checks. This owner-authorized records-only successor requires its own7 affected records gates and15unchanged product identity checks; all earlier tests/reviews/failures remain preserved.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current product evidence at ac97a90:22PASS gates (15fresh/7reused),1289PostgreSQL PASS/no skips,2929backend PASS/1154database-only skips covered byPG,189automation,1519frontend by full source/config identity,148affected regressions and successful types. This three-record successor requires7fresh record gates and15unchanged product-evidence identity checks; no product test repeat.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Notice candidate d8c3f3c:1165realPG PASS,2821backend PASS/1138database-only skips covered byPG,189automation PASS; frontend1519unchanged tests and static/build evidence reused by full input identity. Backend static/types/migration/build/import/config/trace/guard/whitespace PASS.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Initial0d92c3a fullPG136FAILED/1029PASS retained; bounded gate correction1 repaired installed Alembic PATH and17stale head literals. Preliminary68unit/trace+24PG and original lint evidence retained. V54R3resolved2of2 unchanged.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: No-isolation package variant failed missing declared Hatchling; normal isolated build succeeded via public build dependencies, same candidate/runtime preserved. No passing tests repeated.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Semantic preflight was not acceptable despite exit0: whole-version completion incorrectly true. Record correction1 now separates notice completion from unfinished V1-055. Fresh exact record/automation/routing gates and full independent review pending; no product source changed or publication permitted.",
+    "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: New targeted RED evidence preserved for direct database whitespace acceptance and calendar-invalid fixture; correction1 installed. Fresh affected GREEN, exact gates and independent expanded focused/full-stage review remain pending. Prior22gate results preserved with only affected evidence requiring replacement."
   ],
   "historical_v1_048_failed_tests": [
     "PASS exact3197681 PostgreSQL500/500 zero skips and frontend369/369",
@@ -4208,7 +4237,7 @@
     "PASS closure-chain publication: GitHub Actions run 33945359575 all four jobs green; local, tracking, fetched and live remote refs equal 34922d6"
   ],
   "tests_tranche_id": "V1-055",
-  "timestamp": "2026-09-13T18:38:15.762296+00:00",
+  "timestamp": "2026-09-13T20:28:58.764761+00:00",
   "prior_v1_040_touched_areas": [
     "backend/migrations/versions/20260828_30_rent_service_billing.py",
     "backend/src/property_rental/billing.py",
@@ -4235,7 +4264,10 @@
     "ops/STATE.json"
   ],
   "touched_areas": [
-    "backend/migrations/versions/20260914_53_termination_final_month_billing.py",
+    "backend/migrations/versions/20260914_54_lease_termination_context.py",
+    "backend/src/property_rental/lease.py",
+    "backend/src/property_rental/lease_termination.py",
+    "backend/tests/termination_test_support.py",
     "backend/tests/test_billing_service_migration.py",
     "backend/tests/test_credit_refund_read_migration.py",
     "backend/tests/test_customer_ledger_migration.py",
@@ -4245,6 +4277,9 @@
     "backend/tests/test_late_payment_migration.py",
     "backend/tests/test_lease_api_migration.py",
     "backend/tests/test_lease_enforcement_api_migration.py",
+    "backend/tests/test_lease_lifecycle_migration.py",
+    "backend/tests/test_lease_termination.py",
+    "backend/tests/test_lease_termination_migration.py",
     "backend/tests/test_migrations.py",
     "backend/tests/test_payment_reversal_context_migration.py",
     "backend/tests/test_utility_api_migration.py",
@@ -4254,7 +4289,8 @@
     "ops/NOW.md",
     "ops/QUEUE.md",
     "ops/STATE.json",
-    "ops/traceability.json"
+    "ops/traceability.json",
+    "scripts/database-test.sh"
   ],
   "historical_v1_047_touched_areas": [
     "backend invoice/billing-run/late-payment services/routes/tests",
@@ -4442,7 +4478,7 @@
     "FAIL/RECOVERED: control-plane reassignment removed the clean release branch/worktree after its terminal attempt; property-manager recreated the same branch and managed path non-destructively at exact release 48e377e6, verified clean state, and locked it for retained evidence with no unique work loss",
     "PASS: V1-046 two-file closure 57f0a8168fa15df9c4c8bc1ba7ed7f6faab23319, parent 2bc9816d, passed exact-SHA GitHub Actions run 33471210962 with all four jobs green"
   ],
-  "updated_at": "2026-09-13T18:38:15.762296+00:00",
+  "updated_at": "2026-09-13T20:28:58.764761+00:00",
   "historical_evidence": {
     "automation_repair": {
       "baseline": "d6eb7e73610b2a72cf38f4b32468226e9e76a436",
@@ -5565,10 +5601,10 @@
     },
     "disposition": "Historical prior-version and rejected automation evidence retained verbatim; not active execution instructions. Original branch histories preserved by normal merge; live native owner authorization supersedes prior repair-stop restrictions."
   },
-  "commit_role": "Twenty-file recurring final-month Rent and fixed-Service source alignment, forward migration53,14connected test files, database documentation and preserved handoff/trace records. Forty affected PostgreSQL tests and full typing pass; exact remaining stage gates and initial independent review are pending. Full V1-055 implementation and integrated closure remain incomplete.",
+  "commit_role": "Twenty-seven-path explicit termination context/shared prerequisites, forward54 and connected tests/documentation/trace/handoff.120affected PostgreSQL cases and complete backend typing pass; full acceptance gates and first complete-stage independent review pending. WholeV1-055 remains incomplete/unpublished/unclosed.",
   "historical_v1_047_commit_role": "terminal Workboard-accepted V1-047 closure record; V1-048 not activated",
   "candidate_parents": [
-    "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b"
+    "1f52fd1d62ab07b977070295ddef20484fccd8b7"
   ],
   "historical_v1_047_candidate_parents": [
     "4e9c00cac2ee77a276c7f883face65e74a898166",
@@ -5642,16 +5678,16 @@
       "sha256": "4e74c8aa1ec979c795b8c62a7854d17e1d6ebeb042e0561785c026620c18d7a6"
     },
     "sequence": "Initial full stage; regression and focused/connected correction verification; final complete corrected stage0; final integrated version0 before publication.",
-    "status": "initial_complete_billing_stage_review_pending",
-    "stage": "V1-055-recurring-final-month-billing",
-    "base_sha": "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b",
+    "status": "initial_complete_termination_stage_review_pending",
+    "stage": "V1-055-explicit-termination-prerequisites",
+    "base_sha": "1f52fd1d62ab07b977070295ddef20484fccd8b7",
     "exact_sha": null,
     "findings": null,
-    "prior_notice_acceptance": {
-      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-stage-accepted-96f67bc.json",
-      "sha256": "8688ffde35461a591915d42f2d617c27cdf2378401a06cf9362dff812ef0bca8"
+    "prior_billing_acceptance": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-stage-accepted-1f52fd1.json",
+      "sha256": "e619e1bf332ef3f9e2e0c0aa5e935b5d71df6c66cdb89a1dcb4ba4e8893394f5"
     },
-    "resolution": "Initial independent review of the complete20path financial substage from96f67bc; include generator and mixed-Service issuance validation, preserved source guards, all fixture/product failure corrections and records. No prior independent verdict for this substage."
+    "resolution": "Initial complete27path/onecommit review from1f52fd1. Cover shared termination, exact legacy replay, signed/notice/warning authority, actor/Property, transactional locks and constraint modes, retained financial source guards, all callers/upgrades and preserved records. No prior independent termination verdict."
   },
   "historical_v1_047_review": {
     "status": "PASS",
@@ -5663,14 +5699,14 @@
     "report_sha256": "28013545bae13493b75f9af0c3f1c5f9d5c311f5584ee339e3aa3d4680652ba5"
   },
   "evidence_applicability": {
-    "stage": "V1-055-recurring-final-month-billing",
-    "base": "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b",
-    "notice_acceptance": {
-      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-stage-accepted-96f67bc.json",
-      "sha256": "8688ffde35461a591915d42f2d617c27cdf2378401a06cf9362dff812ef0bca8"
+    "stage": "V1-055-explicit-termination-prerequisites",
+    "base": "1f52fd1d62ab07b977070295ddef20484fccd8b7",
+    "billing_acceptance": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-stage-accepted-1f52fd1.json",
+      "sha256": "e619e1bf332ef3f9e2e0c0aa5e935b5d71df6c66cdb89a1dcb4ba4e8893394f5"
     },
-    "fresh_required": "Affected source/financial/replay/concurrency/upgrade tests and full applicable backend/PG/static/build/migration/records gates.",
-    "reuse": "Unchanged frontend checks and immutable predecessor evidence by full input identity; all final integrated gates remain required."
+    "fresh_required": "New context/legacy digest/shared prerequisites and affected caller regressions; full applicable backend/PG/static/build/migration/records gates.",
+    "reuse": "Verified unchanged frontend evidence only by full input identity; all final integrated gates remain required."
   },
   "historical_v1_047_evidence_applicability": {
     "tranche_id": "V1-047",
@@ -5802,7 +5838,7 @@
     }
   },
   "current_product_acceptance": {
-    "status": "V1-055 notices96f67bc accepted locally. Recurring final-month billing implemented and affected checks pass; this stage still needs exact remaining gates and initial independent acceptance. Remaining version implementation and integrated closure pending; V1-054 fully closed.",
+    "status": "V54 fully closed. V55 notices96f67bc and billing1f52fd1 locally accepted. Explicit termination prerequisites implemented and affected checks pass; exact remaining gates and initial independent stage acceptance pending. Whole55implementation/integrated closure incomplete.",
     "predecessor_closure": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-closure-verification.json",
       "sha256": "d6687cf2d4ef1e5ddbeff176f44f9b45b3917d9a8a88400f3a08ac57837805b9"
@@ -5811,6 +5847,10 @@
     "notice_stage_acceptance": {
       "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-stage-accepted-96f67bc.json",
       "sha256": "8688ffde35461a591915d42f2d617c27cdf2378401a06cf9362dff812ef0bca8"
+    },
+    "billing_stage_acceptance": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-stage-accepted-1f52fd1.json",
+      "sha256": "e619e1bf332ef3f9e2e0c0aa5e935b5d71df6c66cdb89a1dcb4ba4e8893394f5"
     }
   },
   "terminal_checkpoint": {
@@ -35526,7 +35566,7 @@
   },
   "v1_055_final_month_billing": {
     "id": "V1-055-recurring-final-month-billing",
-    "status": "implemented_affected_verified_exact_gates_review_pending",
+    "status": "accepted_local_stage",
     "base": "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b",
     "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
     "started_at": "2026-09-13T18:17:40.912468+00:00",
@@ -35593,7 +35633,7 @@
       "TEST-077"
     ],
     "exclusions": "No new termination right or termination transport changes; no change to initial coverage, unsupported holdover or future Rent, financial rewriting, automatic disposition/refund, Pet forfeiture, Settlement closure, HTTP/UI, dependencies, production/customer data, secrets, or destructive/history changes. Do not reopen resolved notice findings or V1-054 R3.",
-    "stage_accepted": false,
+    "stage_accepted": true,
     "publication_permitted": false,
     "automatic_correction_limit_per_finding": 2,
     "current_correction": {
@@ -35601,7 +35641,7 @@
       "fingerprint": "mixed_final_month_service_header_provenance",
       "attempt": 1,
       "maximum": 2,
-      "status": "local_40case_verification_passed_initial_stage_review_pending",
+      "status": "resolved_initial_complete_stage_verified1of2",
       "prior_gate": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-green.json",
         "sha256": "a0a506396169d05f3a2702e9e419b48736342d33aadcc4a874b541b1950f8500"
@@ -35660,7 +35700,30 @@
         "successful_approach": "Existing disposable-database harness isolates only the four historical Service calendars; singleton constraints unchanged."
       }
     ],
-    "frozen_candidate_receipt": "v1055-final-month-billing-candidate.json"
+    "frozen_candidate_receipt": "v1055-final-month-billing-candidate.json",
+    "candidate_sha": "1f52fd1d62ab07b977070295ddef20484fccd8b7",
+    "acceptance": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-stage-accepted-1f52fd1.json",
+      "sha256": "e619e1bf332ef3f9e2e0c0aa5e935b5d71df6c66cdb89a1dcb4ba4e8893394f5"
+    },
+    "verification_completed": true,
+    "review_completed": true,
+    "verification": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-verification-1f52fd1.json",
+      "sha256": "b74ec1d5385022703810bd56e39c755ddc5915d5c2abb2f43334e4658581806a"
+    },
+    "review_assessment": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-1f52fd1-full-root-assessment.json",
+      "sha256": "20a8a47707b22565eb95350936f4ecc06a5e3d010768ceed8f6cd2a84e0dd91d"
+    },
+    "preserved_correction_history": {
+      "fixture_chronology": "resolved1of2",
+      "fixture_service_calendar_isolation": "resolved2of2; original13singleton failures retained",
+      "mixed_final_month_service_header_provenance": "resolved1of2; initial complete-stage independently verified",
+      "notice_R2": "automatic2of2 exhausted; separate explicit owner exception1of1 succeeded; no reset",
+      "notice_R1_R3": "resolved1of2 unchanged",
+      "V1_054_R3": "resolved2of2 unchanged"
+    }
   },
   "historical_v1_055_notice_96f67bc_current_fields": {
     "direct_codex_takeover": {
@@ -36212,6 +36275,782 @@
       "owner_authorized_correction_authority": {
         "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-handoff-owner-authorized-owner-authorization.json",
         "sha256": "ebdf5cc0f6f4c4501a7a8d332fd4f928a2523d027b72c616d0542c5bd2aaa4c9"
+      }
+    }
+  },
+  "v1_055_termination": {
+    "id": "V1-055-explicit-termination-prerequisites",
+    "status": "implemented_affected_verified_exact_gates_review_pending",
+    "base": "1f52fd1d62ab07b977070295ddef20484fccd8b7",
+    "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
+    "started_at": "2026-09-13T19:25:15.106971+00:00",
+    "paths": [
+      "backend/migrations/versions/20260914_54_lease_termination_context.py",
+      "backend/src/property_rental/lease.py",
+      "backend/src/property_rental/lease_termination.py",
+      "backend/tests/termination_test_support.py",
+      "backend/tests/test_billing_service_migration.py",
+      "backend/tests/test_credit_refund_read_migration.py",
+      "backend/tests/test_customer_ledger_migration.py",
+      "backend/tests/test_customer_ledger_read_migration.py",
+      "backend/tests/test_financial_action_context_migration.py",
+      "backend/tests/test_invoice_migration.py",
+      "backend/tests/test_late_payment_migration.py",
+      "backend/tests/test_lease_api_migration.py",
+      "backend/tests/test_lease_enforcement_api_migration.py",
+      "backend/tests/test_lease_lifecycle_migration.py",
+      "backend/tests/test_lease_termination.py",
+      "backend/tests/test_lease_termination_migration.py",
+      "backend/tests/test_migrations.py",
+      "backend/tests/test_payment_reversal_context_migration.py",
+      "backend/tests/test_utility_api_migration.py",
+      "backend/tests/test_utility_consumption_migration.py",
+      "backend/tests/test_utility_meter_migration.py",
+      "docs/004_DATABASE_MODEL.md",
+      "ops/NOW.md",
+      "ops/QUEUE.md",
+      "ops/STATE.json",
+      "ops/traceability.json",
+      "scripts/database-test.sh"
+    ],
+    "scope": {
+      "path": "/Users/sokompheak/Development/property-rental-management/ops/V1_055_SCOPE.md",
+      "sha256": "8da3b58eab28350341e3faa29ba8947e59f3f019d931724957be5425023652ac"
+    },
+    "prior_stage_acceptance": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-stage-accepted-1f52fd1.json",
+      "sha256": "e619e1bf332ef3f9e2e0c0aa5e935b5d71df6c66cdb89a1dcb4ba4e8893394f5"
+    },
+    "reconciliation": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-entry-20260914t1918-reconciliation.json",
+      "sha256": "f091821a620c18fd22fb9388c8e58443d01a60b4615d839fa1bc31530bac1af9"
+    },
+    "risk_class": "high_connected_authorization_tenancy_financial_sources",
+    "implementation_reasoning": "xhigh; bounded extension of existing command boundary with immutable evidence, no exceptional max needed",
+    "implementation_plan": [
+      "Materialize accepted billing1f52fd1 and its resolved correction evidence in current records; retain every changed predecessor STATE root, all old queue content, notice owner exception and all attempt limits.",
+      "Add a bounded immutable TerminationContext value object, with explicit VOLUNTARY_EARLY, CUSTOMER_VIOLATION or SIGNED_LEASE_OTHER basis, signed provision, approved grounds, management authorization and source evidence. Include applicable current notice identity and documented notice-period end date, or explicit signed-terms notice exception evidence. General-warning IDs are bounded, distinct, real same-Lease letters; no Rent milestone substitution.",
+      "Extend existing LeaseTerminateCommand with optional context solely to preserve legacy replay input. Exclude absent context from the legacy request digest exactly; include every supplied context field for new commands. Context-bearing requests use one atomic database wrapper; no-context requests retain the old signature only for historical replay and are denied for new termination after shared enforcement. Do not change unrelated Lease command digests or existing HTTP routes in this substage.",
+      "Add forward54 with immutable context records tied to exact original command event, Property, actor, key, digest, Lease/version, actual date, occurrence, governing reference and reason. A deferred foreign key to the existing command prevents orphan context. The wrapper validates and inserts context atomically with the existing termination and its command/audit history; no separate approval side effect or new Lease status.",
+      "Enforce prerequisites in the shared existing eleven-argument terminate_lease after its replay/version/status/chronology checks so all fresh callable paths are covered. Preserve function identity/ACL, existing replay/Lease/Unit locks, source-write guards and financial source chronology. Recheck active human and Property scope; map documented database errors consistently without exposing data.",
+      "VOLUNTARY_EARLY requires exact BR-LEASE-021 and an actual date before original EndDate. Other bases cannot claim BR-LEASE-021. CUSTOMER_VIOLATION requires at least three distinct existing general warning letters with valid dates/provisions/communication for this Lease issued before the recorded termination; do not fabricate rights or count nonpayment events.",
+      "Where notice applies, require current non-superseded notice/context for this Lease, matching signed provision/approved grounds, valid chronology and actual date at or after its documented applicable notice-period end. No fixed notice period is invented. Where notice does not apply, require explicit normalized signed-terms exception evidence. Notice supersession and termination serialize on the existing Lease boundary; later evidence never rewrites completed command context.",
+      "Preserve historical eleven-argument exact replay and immutable prior rows across53-to54. Test active actor/Property/capability, missing/malformed context, signed/actual/notice dates, superseded notice, three real warning sources, stale versions, exact/changed retries, concurrency, atomic rollback, context history and unchanged occupancy/Unit/deposit/invoice state. All monetary disposition/readiness, physical move-out, HTTP/UI and final integrated version acceptance remain subsequent.",
+      "Use explicit approved synthetic context for existing positive termination fixtures in billing/invoice/lifecycle tests. Preserve their original assertions and negative scenarios. Pin the accepted52-to53 billing function-preservation upgrade test to53 and explicitly retain its legacy fixture path; add a separate full53-to54 preservation test. Align only current-head26literals across14files with54, retaining historical explicit revisions.",
+      "Run affected unit/real PostgreSQL RED/GREEN and applicable mandatory full backend/PG/static/type/build/import/migration/automation/config/trace/guard/preflight gates. Reuse unchanged frontend evidence by input identity. Freeze normal candidate and obtain initial independent complete-stage Astra/max/Standard/enforced-read-only zero review; bounded corrections follow standing review policy. No stage acceptance substitutes for integrated V1-055 acceptance/publication/closure."
+    ],
+    "authorities": [
+      "BR-LEASE-005",
+      "BR-LEASE-017",
+      "BR-LEASE-020",
+      "BR-LEASE-021",
+      "BR-LEASE-022",
+      "BR-LEASE-023",
+      "BR-LEASE-024",
+      "BR-LEASE-025",
+      "BR-LEASE-028",
+      "DB-LEASE-001",
+      "DB-LEASE-004",
+      "DB-LEASE-005",
+      "DB-TXN-001",
+      "API-038",
+      "TEST-076",
+      "TEST-077"
+    ],
+    "exclusions": "No invented rights, fixed notice periods, fees, holdover, automatic Pet forfeiture or deposit disposition, settlement/physical completion, HTTP/UI/dependency changes, production/secrets/customer data, destructive/history changes, or reopened resolved findings.",
+    "stage_accepted": false,
+    "publication_permitted": false,
+    "automatic_correction_limit_per_finding": 2,
+    "connected_test_registration": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-test-registration-scope.json",
+      "sha256": "b16c0371ff56f8b4a656b81dac00376e5ceb6343d9c67def05cf5060725b0ff0"
+    },
+    "implementation_checkpoint": {
+      "at": "2026-09-13T19:57:36.697709+00:00",
+      "status": "affected_core_progress_verified_remaining_stage_gates_pending",
+      "evidence": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-core-progress-20260914t2008.json",
+        "sha256": "2d78cbcc9cf299905bb0a686a01f98623ff8ccd9a2599981a5f34f57f0ebda43"
+      },
+      "remaining": "Continue the existing explicit termination stage: adapt only approved positive termination callers with explicit synthetic signed authority, retain legacy billing52-to53 coverage, add53-to54 preservation and exact historical replay, align current-head assertions, docs/trace, then all mandatory final gates and fresh complete-stage independent review. First inspect running work; no completed unchanged checks/reviews repeated. Whole55incomplete/unpublished/unclosed; no56 before full55closure."
+    },
+    "corrections": [
+      {
+        "fingerprint": "termination_unit_fixture_static_typing",
+        "used": 1,
+        "limit": 2,
+        "status": "resolved_affected_format_lint_units_types"
+      },
+      {
+        "fingerprint": "termination_notice_fixture_chronology",
+        "attempt": 1,
+        "limit": 2,
+        "cause": "Hardcoded June notice precedes freshly signed synthetic Lease; accepted notice boundary correctly rejects it before termination.",
+        "approach": "Use actual Property business date for signed-notice fixture and explicit documented same-day surrender period/actual date; retain every prerequisite positive/negative assertion.",
+        "status": "resolved_by_affected_regressions"
+      },
+      {
+        "fingerprint": "termination_physical_preservation_fixture_identity",
+        "attempt": 1,
+        "limit": 2,
+        "cause": "Parent inspection found third billing fixture tuple member is Customer, not Unit; old equality compared two missing rows.",
+        "approach": "Join real Unit through the Lease and assert actual non-null Occupancy snapshot with no move-out date before comparing unchanged state.",
+        "status": "resolved_by_affected_regressions"
+      },
+      {
+        "fingerprint": "termination_context_immediate_fk",
+        "attempt": 1,
+        "limit": 2,
+        "cause": "Caller SET CONSTRAINTS ALL IMMEDIATE makes the new context-to-command FK check before the original command is inserted, although the full wrapper is atomic. Preserved two-mode RED passes deferred and fails immediate.",
+        "approach": "Inside the wrapper defer only its new context-command FK during the circular insert sequence, then validate that FK immediately after the original command and before returning. All other constraints, source guards, locks, privileges and rollback remain intact.",
+        "status": "locally_verified_independent_complete_stage_review_pending",
+        "verification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-fk-fixture-correction1.json",
+          "sha256": "bf2fc08bcef5b0702f67df5cdf3d1a8b9788697260c2ce09ccb82e67a0d0cb50"
+        }
+      },
+      {
+        "fingerprint": "termination_connected_generated_void_fixture_isolation",
+        "attempt": 1,
+        "limit": 2,
+        "cause": "Combined affected suites run billing before an inherited generated-VOID test whose single-Property eligible-source count assumes one synthetic Lease; actualcount2. The test fails before the VOID command.",
+        "approach": "Use the existing disposable database fixture for this one inherited test, with both runtime/financial URLs pointed at the same isolated schema. Preserve every original eligibility, incomplete/complete retry, replay/concurrency, VOID/audit/history assertion. No cleanup of prior synthetic evidence or production predicate change.",
+        "status": "locally_verified_independent_complete_stage_review_pending",
+        "verification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-fk-fixture-correction1.json",
+          "sha256": "bf2fc08bcef5b0702f67df5cdf3d1a8b9788697260c2ce09ccb82e67a0d0cb50"
+        }
+      }
+    ],
+    "current_correction": {
+      "status": "local120case_verification_passed_initial_stage_review_pending",
+      "verification": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-fk-fixture-correction1.json",
+        "sha256": "bf2fc08bcef5b0702f67df5cdf3d1a8b9788697260c2ce09ccb82e67a0d0cb50"
+      },
+      "fingerprints": [
+        "termination_context_immediate_fk",
+        "termination_connected_generated_void_fixture_isolation"
+      ]
+    },
+    "stage_implementation_completed": true,
+    "product_accepted": false,
+    "preliminary_evidence": {
+      "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-fk-fixture-correction1.json",
+      "sha256": "bf2fc08bcef5b0702f67df5cdf3d1a8b9788697260c2ce09ccb82e67a0d0cb50"
+    },
+    "frozen_candidate_receipt": "v1055-termination-candidate.json"
+  },
+  "historical_v1_055_billing_1f52fd1_current_fields": {
+    "direct_codex_takeover": {
+      "execution_owner": "direct_codex",
+      "authorization_from": "V1-054",
+      "authorization_through": "V1-060",
+      "policy_path": "ops/CODEX_TAKEOVER_V1_054_060.md",
+      "policy_sha256": "e91f8e59e422cac95134cdec07f3ff9feac53491e7cedd374f8b16119ea07ff0",
+      "coordinator": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Fast",
+        "service_tier": "priority"
+      },
+      "implementation": {
+        "model": "gpt-6-astra",
+        "reasoning": "xhigh",
+        "mode": "Fast",
+        "service_tier": "priority"
+      },
+      "reviewer": {
+        "model": "gpt-6-astra",
+        "reasoning": "max",
+        "mode": "Standard",
+        "service_tier": "default",
+        "read_only": true,
+        "sandbox": "read-only",
+        "approval_policy": "never"
+      },
+      "publication_remote": "git@github.com:kompheak7711/property-rental-management.git",
+      "publication_branch": "implementation/foundation",
+      "openclaw_enabled": false,
+      "openclaw_dispatch_allowed": false,
+      "openclaw_supervisor_job_id": "658ffdaf-1ac1-45a6-a842-f5f7d7a226eb",
+      "openclaw_legacy_heartbeat_id": "7c7b5418-7440-480d-87d9-fcb71097d4cc",
+      "coordinator_transfer": {
+        "status": "released",
+        "current_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+        "historical_transfer_evidence": "historical_v1_053_closed_current_fields.direct_codex_takeover.coordinator_transfer",
+        "transfer_time_checkout_not_current_checkout": true
+      },
+      "standing_independent_review_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "standing_github_publication_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "standing_workboard_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "followup_id": "property-rental-v1-047-closure-follow-up",
+      "followup_status": "ACTIVE",
+      "followup_prompt_characters": 15560,
+      "followup_prompt_sha256": "6f9ff29a0be7bde095026c825e03708ff91fbff25c7c734afb0b7e68246f74ee",
+      "live_handoff_path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-live.md",
+      "current_version": "V1-055",
+      "phase": "recurring_final_month_billing_candidate_pending",
+      "activated_at": "2026-09-11T02:56:22.881391+00:00",
+      "predecessor_closed": true,
+      "predecessor_sha": "bda66062697feef17c8df621b64bf5f607c1c691",
+      "predecessor_closure_receipt": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-closure-verification.json",
+      "predecessor_closure_receipt_sha256": "d6687cf2d4ef1e5ddbeff176f44f9b45b3917d9a8a88400f3a08ac57837805b9",
+      "predecessor_ci_run": 34555185267,
+      "predecessor_ci_attempt": 1,
+      "card_id": "0fbb0d8a-2b0e-4097-bfc4-0b48181ad7a2",
+      "workboard_status": "blocked",
+      "workboard_block_reason": "Tracking-only blocks OpenClaw admission; sole direct Codex implementation authorized.",
+      "worker_kind": "direct_root_codex",
+      "worker_task_id": "01a07991-38a6-7f33-b84d-0ad0620e2997",
+      "worker_status": "no_worker_pending_exact_gates",
+      "branch": "implementation/foundation",
+      "worktree": "/Users/sokompheak/Development/property-rental-management",
+      "scope_path": "ops/V1_055_SCOPE.md",
+      "scope_sha256": "8da3b58eab28350341e3faa29ba8947e59f3f019d931724957be5425023652ac",
+      "cumulative_review_base": "bda66062697feef17c8df621b64bf5f607c1c691",
+      "candidate_sha": null,
+      "candidate_resolution": "Resolve this immutable recurring final-month billing candidate through external v1055-final-month-billing-candidate.json; post-freeze gate/review evidence remains external.",
+      "candidate_status": "normal_local_billing_candidate_prepared",
+      "owner_action_required": false,
+      "next_action": "Run remaining mandatory exact-SHA billing-stage gates, reusing the verified unchanged frontend checks and current full backend typing by input identity. Obtain fresh independent complete20path stage review from96f67bc with Astra/max/Standard/enforced-read-only/never and zero findings. Preserve all internal fixture/product corrections. No later stage until acceptance; complete all remaining55implementation and integrated gates before publication/closure or56; continue through60 thenpause SAMEfollow-up.",
+      "active_slice": {
+        "id": "V1-055-recurring-final-month-billing",
+        "status": "implemented_affected_verified_exact_gates_review_pending",
+        "base": "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b",
+        "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
+        "started_at": "2026-09-13T18:17:40.912468+00:00",
+        "paths": [
+          "backend/migrations/versions/20260914_53_termination_final_month_billing.py",
+          "backend/tests/test_billing_service_migration.py",
+          "backend/tests/test_credit_refund_read_migration.py",
+          "backend/tests/test_customer_ledger_migration.py",
+          "backend/tests/test_customer_ledger_read_migration.py",
+          "backend/tests/test_financial_action_context_migration.py",
+          "backend/tests/test_invoice_migration.py",
+          "backend/tests/test_late_payment_migration.py",
+          "backend/tests/test_lease_api_migration.py",
+          "backend/tests/test_lease_enforcement_api_migration.py",
+          "backend/tests/test_migrations.py",
+          "backend/tests/test_payment_reversal_context_migration.py",
+          "backend/tests/test_utility_api_migration.py",
+          "backend/tests/test_utility_consumption_migration.py",
+          "backend/tests/test_utility_meter_migration.py",
+          "docs/004_DATABASE_MODEL.md",
+          "ops/NOW.md",
+          "ops/QUEUE.md",
+          "ops/STATE.json",
+          "ops/traceability.json"
+        ],
+        "scope": {
+          "path": "/Users/sokompheak/Development/property-rental-management/ops/V1_055_SCOPE.md",
+          "sha256": "8da3b58eab28350341e3faa29ba8947e59f3f019d931724957be5425023652ac"
+        },
+        "prior_stage_acceptance": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-stage-accepted-96f67bc.json",
+          "sha256": "8688ffde35461a591915d42f2d617c27cdf2378401a06cf9362dff812ef0bca8"
+        },
+        "reconciliation": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-billing-entry-20260914t1812-reconciliation.json",
+          "sha256": "8860198f58526d3d61c3d81a25145b19dbb07286b1cb6b81e44f545c32ebd30a"
+        },
+        "risk_class": "high_connected_financial_migration",
+        "implementation_reasoning": "xhigh; bounded existing source-predicate alignment, no exceptional max implementation needed",
+        "implementation_plan": [
+          "Materialize external notice acceptance and all three finding resolutions, retaining original automatic limits and owner exception. Preserve every changed parent STATE root and previous queue verbatim.",
+          "Use a forward-only migration to align the existing Rent generation coverage guard with the accepted recurring final-month source predicate. Preserve original function identity, signature, ACL, security attributes, replay order, advisory source boundary and issuance cutoff.",
+          "Permit the full final calendar month only for RECURRING Rent with actual termination before contractual End Date, that same final month, and an exact BR-LEASE-021 governing command matching recorded Lease occurrence/reason/date/status through the existing predicate. Record BR-RENT-024 provenance for this new invoice branch; keep the existing fifth-day due-date rule.",
+          "Keep initial Rent coverage, late-month move-in overlap, unrelated contractual coverage, already issued invoices, future-month rejection, calculation components and valid fixed-Service sources unchanged. Reuse the established amounts and source constraints; do not create a new fee or manually override Rent.",
+          "Add real PostgreSQL regressions for full Rent across28/29/30/31-day months, original EndDate within final month, wrong/non-early provenance, later months, initial coverage overlap, exact replay and concurrent business-key convergence, caller permissions, unchanged advance-issued evidence, fresh/52-to-head migration and source-function/ACL preservation.",
+          "Align only26 inherited current-head expectations across14 test files with forward revision53, retaining historical explicit revisions. Add traceability and database implementation documentation, preserving all prior entries and canonical business policy.",
+          "Run affected regression evidence before/after the forward product change, applicable full backend/PostgreSQL/static/types/build/import/migration and operational gates. Reuse unchanged frontend evidence by identity. Freeze an exact local candidate and obtain fresh independent complete-stage Astra/max/Standard/enforced-read-only review.",
+          "This is a bounded connected financial substage. Explicit termination prerequisites, separately authorized Security/Pet dispositions and late receipts/readiness, initial/final adjustment reconciliation, physical move-out, HTTP/staff workflows and final integrated V1-055 acceptance remain pending. No publication or version closure from this stage alone."
+        ],
+        "authorities": [
+          "BR-LEASE-021",
+          "BR-RENT-015",
+          "BR-RENT-022",
+          "BR-RENT-024",
+          "BR-RENT-025",
+          "BR-RENT-026",
+          "BR-RENT-027",
+          "DB-TXN-001",
+          "DB-TXN-005",
+          "TEST-040",
+          "TEST-041",
+          "TEST-043",
+          "TEST-044",
+          "TEST-077"
+        ],
+        "exclusions": "No new termination right or termination transport changes; no change to initial coverage, unsupported holdover or future Rent, financial rewriting, automatic disposition/refund, Pet forfeiture, Settlement closure, HTTP/UI, dependencies, production/customer data, secrets, or destructive/history changes. Do not reopen resolved notice findings or V1-054 R3.",
+        "stage_accepted": false,
+        "publication_permitted": false,
+        "automatic_correction_limit_per_finding": 2,
+        "current_correction": {
+          "at": "2026-09-13T18:33:25.375103+00:00",
+          "fingerprint": "mixed_final_month_service_header_provenance",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "local_40case_verification_passed_initial_stage_review_pending",
+          "prior_gate": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-green.json",
+            "sha256": "a0a506396169d05f3a2702e9e419b48736342d33aadcc4a874b541b1950f8500"
+          },
+          "cause": "Existing issuance validation recognizes BR-SVC-013 for a standalone Service invoice but rejects a valid Service line on the new recurring final-month Rent invoice, whose header provenance must be BR-RENT-024.",
+          "change": "Forward-migration alignment in the existing invoice issuance validator for only recurring Rent headers with BR-RENT-024 and actual termination before original EndDate. Retain the exact BR-LEASE-021 command, same final month, approved term/rate, actor, source and chronology checks. Keep both immediate/deferred Lease source-write guards unchanged.",
+          "paths": [
+            "backend/migrations/versions/20260914_53_termination_final_month_billing.py",
+            "backend/tests/test_billing_service_migration.py",
+            "ops/STATE.json"
+          ],
+          "prior_files": {
+            "backend/migrations/versions/20260914_53_termination_final_month_billing.py": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-before-20260914_53_termination_final_month_billing.py",
+              "sha256": "642a64f122ea8b3f53b130683ca7bc2bfabb9f7c5e63853b7c807250f0e26939"
+            },
+            "backend/tests/test_billing_service_migration.py": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-before-test_billing_service_migration.py",
+              "sha256": "3eb0c37ad35ed30306cccf3e9fd25da3e4c66d356686869c4317d851ee350335"
+            },
+            "ops/STATE.json": {
+              "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-before-STATE.json",
+              "sha256": "08cb942880436ff29faa7a3d9244230d8480dee2c1accdccb73514dc5ea19ea8"
+            }
+          },
+          "regression": "The first full-month Rent/valid-Service positive test supplies RED after26existing billing cases passed. Run affected new14 cases after correction; full mandatory PG remains required.",
+          "review": "Initial complete-stage review must cover both modified functions and all connected financial callers and preserved source guards; no stage or version acceptance yet.",
+          "scope": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-scope.json",
+            "sha256": "46f3d9f4fb05b01ae1638bca6757f16f608cf902556cdd9864d3523fc0ed0e66"
+          },
+          "verification": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-green.json",
+            "sha256": "b8a686b5d0d9c531745dcdcae698a4acd9c505dfb4c039d2a9c9464884ac28fe"
+          }
+        },
+        "stage_implementation_completed": true,
+        "product_accepted": false,
+        "preliminary_evidence": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-green.json",
+          "sha256": "b8a686b5d0d9c531745dcdcae698a4acd9c505dfb4c039d2a9c9464884ac28fe"
+        },
+        "fixture_corrections": [
+          {
+            "fingerprint": "synthetic_termination_occurrence_after_statement_time",
+            "attempt": 1,
+            "maximum": 2,
+            "status": "resolved_baseline_verified"
+          },
+          {
+            "fingerprint": "synthetic_fixed_service_approval_overlap",
+            "attempt": 2,
+            "maximum": 2,
+            "status": "resolved_baseline_verified",
+            "prior_failed_approach": "Additional Property violates singleton constraint; preserved13failures.",
+            "successful_approach": "Existing disposable-database harness isolates only the four historical Service calendars; singleton constraints unchanged."
+          }
+        ],
+        "frozen_candidate_receipt": "v1055-final-month-billing-candidate.json"
+      },
+      "prior_version_history": "historical_v1_054_closed_current_fields",
+      "latest_continuation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-usage-reset-continuation-20260911.json",
+        "sha256": "4e74c8aa1ec979c795b8c62a7854d17e1d6ebeb042e0561785c026620c18d7a6"
+      },
+      "defensive_guidance": "No broader access or false-positive confirmation; normal enforcement, truthful defensive scope and stop affected action on restriction.",
+      "last_model_configuration_check": {
+        "model": "gpt-6-astra",
+        "reasoning_effort": "xhigh",
+        "mode": "Fast",
+        "service_tier": "priority",
+        "provider_attestation": "unavailable; selected/requested configuration verified",
+        "admission": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-admission.json",
+          "sha256": "9ad4617bb7cd06ad9d5458f0ae6500bb8f8bbd929404ddd948977d587d598bd6"
+        }
+      },
+      "owner_authorized_correction": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-handoff-owner-authorized-owner-authorization.json",
+        "sha256": "ebdf5cc0f6f4c4501a7a8d332fd4f928a2523d027b72c616d0542c5bd2aaa4c9"
+      }
+    },
+    "approval": {
+      "status": "approved",
+      "basis": "Standing owner lifecycle54-through60 and latest usage-reset continuation; verified54closure and55model/dependency admission.",
+      "implementation_started": true,
+      "implementation_completed": false,
+      "publication_completed": false,
+      "product_implementation_gate": "Notices96f67bc accepted locally; bounded recurring final-month billing implemented with40affected PG and full typing PASS. Remaining exact billing-stage gates/review, other V1-055 stages and integrated closure pending."
+    },
+    "commit": "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b",
+    "next_action": "Run remaining mandatory exact-SHA billing-stage gates, reusing the verified unchanged frontend checks and current full backend typing by input identity. Obtain fresh independent complete20path stage review from96f67bc with Astra/max/Standard/enforced-read-only/never and zero findings. Preserve all internal fixture/product corrections. No later stage until acceptance; complete all remaining55implementation and integrated gates before publication/closure or56; continue through60 thenpause SAMEfollow-up.",
+    "candidate_resolution": "Resolve this immutable recurring final-month billing candidate through external v1055-final-month-billing-candidate.json; post-freeze gate/review evidence remains external.",
+    "candidate_parent": "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b",
+    "phase": "V1-055 recurring final-month billing implemented; exact final stage gates and initial independent review pending",
+    "status": "complete_uncommitted",
+    "tests": [
+      "Current billing substage:40affected PostgreSQL cases PASS including26existing and14new cases, forward52-to53 preservation, fresh schema, exact money, Services, replay/concurrency and actor scope. Affected format/lint and full backend typing PASS. Remaining mandatory exact stage gates and independent review pending.",
+      "Fixture chronology resolved1of2; Service-calendar isolation resolved2of2 using existing disposable databases. Mixed-header Service product correction1of2 locally verified; independent stage acceptance pending. Every prior checkpoint retained.",
+      "Historical checkpoint: Notice96f67bc:22applicable gates PASS; focused/full-stage independent0H0M0L and qualified operations audit accepted externally. No unchanged tests or reviews repeated.",
+      "Historical checkpoint: Recurring final-month billing stage active; new affected regression and mandatory exact acceptance gates pending.",
+      "Historical checkpoint: Historical checkpoint: Current verified parent b7fb053:22PASS gates, 7fresh records/15unchanged product checks. This owner-authorized records-only successor requires its own7 affected records gates and15unchanged product identity checks; all earlier tests/reviews/failures remain preserved.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Current product evidence at ac97a90:22PASS gates (15fresh/7reused),1289PostgreSQL PASS/no skips,2929backend PASS/1154database-only skips covered byPG,189automation,1519frontend by full source/config identity,148affected regressions and successful types. This three-record successor requires7fresh record gates and15unchanged product-evidence identity checks; no product test repeat.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Notice candidate d8c3f3c:1165realPG PASS,2821backend PASS/1138database-only skips covered byPG,189automation PASS; frontend1519unchanged tests and static/build evidence reused by full input identity. Backend static/types/migration/build/import/config/trace/guard/whitespace PASS.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Initial0d92c3a fullPG136FAILED/1029PASS retained; bounded gate correction1 repaired installed Alembic PATH and17stale head literals. Preliminary68unit/trace+24PG and original lint evidence retained. V54R3resolved2of2 unchanged.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: No-isolation package variant failed missing declared Hatchling; normal isolated build succeeded via public build dependencies, same candidate/runtime preserved. No passing tests repeated.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Semantic preflight was not acceptable despite exit0: whole-version completion incorrectly true. Record correction1 now separates notice completion from unfinished V1-055. Fresh exact record/automation/routing gates and full independent review pending; no product source changed or publication permitted.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: New targeted RED evidence preserved for direct database whitespace acceptance and calendar-invalid fixture; correction1 installed. Fresh affected GREEN, exact gates and independent expanded focused/full-stage review remain pending. Prior22gate results preserved with only affected evidence requiring replacement."
+    ],
+    "timestamp": "2026-09-13T18:38:15.762296+00:00",
+    "touched_areas": [
+      "backend/migrations/versions/20260914_53_termination_final_month_billing.py",
+      "backend/tests/test_billing_service_migration.py",
+      "backend/tests/test_credit_refund_read_migration.py",
+      "backend/tests/test_customer_ledger_migration.py",
+      "backend/tests/test_customer_ledger_read_migration.py",
+      "backend/tests/test_financial_action_context_migration.py",
+      "backend/tests/test_invoice_migration.py",
+      "backend/tests/test_late_payment_migration.py",
+      "backend/tests/test_lease_api_migration.py",
+      "backend/tests/test_lease_enforcement_api_migration.py",
+      "backend/tests/test_migrations.py",
+      "backend/tests/test_payment_reversal_context_migration.py",
+      "backend/tests/test_utility_api_migration.py",
+      "backend/tests/test_utility_consumption_migration.py",
+      "backend/tests/test_utility_meter_migration.py",
+      "docs/004_DATABASE_MODEL.md",
+      "ops/NOW.md",
+      "ops/QUEUE.md",
+      "ops/STATE.json",
+      "ops/traceability.json"
+    ],
+    "updated_at": "2026-09-13T18:38:15.762296+00:00",
+    "commit_role": "Twenty-file recurring final-month Rent and fixed-Service source alignment, forward migration53,14connected test files, database documentation and preserved handoff/trace records. Forty affected PostgreSQL tests and full typing pass; exact remaining stage gates and initial independent review are pending. Full V1-055 implementation and integrated closure remain incomplete.",
+    "candidate_parents": [
+      "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b"
+    ],
+    "review": {
+      "tranche_id": "V1-055",
+      "model": "gpt-6-astra",
+      "reasoning_effort": "max",
+      "mode": "Standard",
+      "service_tier": "default",
+      "sandbox": "read-only",
+      "approval_policy": "never",
+      "read_only": true,
+      "standing_authorization": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-v1054-v1060-owner-authorization.json",
+        "sha256": "9d3773b792aedfd2219df8365ec566ac2000edfb4660f6291589fd7b3946b4aa"
+      },
+      "latest_continuation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/property-rental-usage-reset-continuation-20260911.json",
+        "sha256": "4e74c8aa1ec979c795b8c62a7854d17e1d6ebeb042e0561785c026620c18d7a6"
+      },
+      "sequence": "Initial full stage; regression and focused/connected correction verification; final complete corrected stage0; final integrated version0 before publication.",
+      "status": "initial_complete_billing_stage_review_pending",
+      "stage": "V1-055-recurring-final-month-billing",
+      "base_sha": "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b",
+      "exact_sha": null,
+      "findings": null,
+      "prior_notice_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-stage-accepted-96f67bc.json",
+        "sha256": "8688ffde35461a591915d42f2d617c27cdf2378401a06cf9362dff812ef0bca8"
+      },
+      "resolution": "Initial independent review of the complete20path financial substage from96f67bc; include generator and mixed-Service issuance validation, preserved source guards, all fixture/product failure corrections and records. No prior independent verdict for this substage."
+    },
+    "evidence_applicability": {
+      "stage": "V1-055-recurring-final-month-billing",
+      "base": "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b",
+      "notice_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-stage-accepted-96f67bc.json",
+        "sha256": "8688ffde35461a591915d42f2d617c27cdf2378401a06cf9362dff812ef0bca8"
+      },
+      "fresh_required": "Affected source/financial/replay/concurrency/upgrade tests and full applicable backend/PG/static/build/migration/records gates.",
+      "reuse": "Unchanged frontend checks and immutable predecessor evidence by full input identity; all final integrated gates remain required."
+    },
+    "current_product_acceptance": {
+      "status": "V1-055 notices96f67bc accepted locally. Recurring final-month billing implemented and affected checks pass; this stage still needs exact remaining gates and initial independent acceptance. Remaining version implementation and integrated closure pending; V1-054 fully closed.",
+      "predecessor_closure": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1054-closure-verification.json",
+        "sha256": "d6687cf2d4ef1e5ddbeff176f44f9b45b3917d9a8a88400f3a08ac57837805b9"
+      },
+      "historical_values": "historical_v1_054_closed_current_fields",
+      "notice_stage_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-stage-accepted-96f67bc.json",
+        "sha256": "8688ffde35461a591915d42f2d617c27cdf2378401a06cf9362dff812ef0bca8"
+      }
+    },
+    "v1_055_final_month_billing": {
+      "id": "V1-055-recurring-final-month-billing",
+      "status": "implemented_affected_verified_exact_gates_review_pending",
+      "base": "96f67bc7c0c0628bc5595e19ca4792b14b6d0c3b",
+      "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
+      "started_at": "2026-09-13T18:17:40.912468+00:00",
+      "paths": [
+        "backend/migrations/versions/20260914_53_termination_final_month_billing.py",
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_customer_ledger_migration.py",
+        "backend/tests/test_customer_ledger_read_migration.py",
+        "backend/tests/test_financial_action_context_migration.py",
+        "backend/tests/test_invoice_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_lease_enforcement_api_migration.py",
+        "backend/tests/test_migrations.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_utility_meter_migration.py",
+        "docs/004_DATABASE_MODEL.md",
+        "ops/NOW.md",
+        "ops/QUEUE.md",
+        "ops/STATE.json",
+        "ops/traceability.json"
+      ],
+      "scope": {
+        "path": "/Users/sokompheak/Development/property-rental-management/ops/V1_055_SCOPE.md",
+        "sha256": "8da3b58eab28350341e3faa29ba8947e59f3f019d931724957be5425023652ac"
+      },
+      "prior_stage_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-notice-stage-accepted-96f67bc.json",
+        "sha256": "8688ffde35461a591915d42f2d617c27cdf2378401a06cf9362dff812ef0bca8"
+      },
+      "reconciliation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-billing-entry-20260914t1812-reconciliation.json",
+        "sha256": "8860198f58526d3d61c3d81a25145b19dbb07286b1cb6b81e44f545c32ebd30a"
+      },
+      "risk_class": "high_connected_financial_migration",
+      "implementation_reasoning": "xhigh; bounded existing source-predicate alignment, no exceptional max implementation needed",
+      "implementation_plan": [
+        "Materialize external notice acceptance and all three finding resolutions, retaining original automatic limits and owner exception. Preserve every changed parent STATE root and previous queue verbatim.",
+        "Use a forward-only migration to align the existing Rent generation coverage guard with the accepted recurring final-month source predicate. Preserve original function identity, signature, ACL, security attributes, replay order, advisory source boundary and issuance cutoff.",
+        "Permit the full final calendar month only for RECURRING Rent with actual termination before contractual End Date, that same final month, and an exact BR-LEASE-021 governing command matching recorded Lease occurrence/reason/date/status through the existing predicate. Record BR-RENT-024 provenance for this new invoice branch; keep the existing fifth-day due-date rule.",
+        "Keep initial Rent coverage, late-month move-in overlap, unrelated contractual coverage, already issued invoices, future-month rejection, calculation components and valid fixed-Service sources unchanged. Reuse the established amounts and source constraints; do not create a new fee or manually override Rent.",
+        "Add real PostgreSQL regressions for full Rent across28/29/30/31-day months, original EndDate within final month, wrong/non-early provenance, later months, initial coverage overlap, exact replay and concurrent business-key convergence, caller permissions, unchanged advance-issued evidence, fresh/52-to-head migration and source-function/ACL preservation.",
+        "Align only26 inherited current-head expectations across14 test files with forward revision53, retaining historical explicit revisions. Add traceability and database implementation documentation, preserving all prior entries and canonical business policy.",
+        "Run affected regression evidence before/after the forward product change, applicable full backend/PostgreSQL/static/types/build/import/migration and operational gates. Reuse unchanged frontend evidence by identity. Freeze an exact local candidate and obtain fresh independent complete-stage Astra/max/Standard/enforced-read-only review.",
+        "This is a bounded connected financial substage. Explicit termination prerequisites, separately authorized Security/Pet dispositions and late receipts/readiness, initial/final adjustment reconciliation, physical move-out, HTTP/staff workflows and final integrated V1-055 acceptance remain pending. No publication or version closure from this stage alone."
+      ],
+      "authorities": [
+        "BR-LEASE-021",
+        "BR-RENT-015",
+        "BR-RENT-022",
+        "BR-RENT-024",
+        "BR-RENT-025",
+        "BR-RENT-026",
+        "BR-RENT-027",
+        "DB-TXN-001",
+        "DB-TXN-005",
+        "TEST-040",
+        "TEST-041",
+        "TEST-043",
+        "TEST-044",
+        "TEST-077"
+      ],
+      "exclusions": "No new termination right or termination transport changes; no change to initial coverage, unsupported holdover or future Rent, financial rewriting, automatic disposition/refund, Pet forfeiture, Settlement closure, HTTP/UI, dependencies, production/customer data, secrets, or destructive/history changes. Do not reopen resolved notice findings or V1-054 R3.",
+      "stage_accepted": false,
+      "publication_permitted": false,
+      "automatic_correction_limit_per_finding": 2,
+      "current_correction": {
+        "at": "2026-09-13T18:33:25.375103+00:00",
+        "fingerprint": "mixed_final_month_service_header_provenance",
+        "attempt": 1,
+        "maximum": 2,
+        "status": "local_40case_verification_passed_initial_stage_review_pending",
+        "prior_gate": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-green.json",
+          "sha256": "a0a506396169d05f3a2702e9e419b48736342d33aadcc4a874b541b1950f8500"
+        },
+        "cause": "Existing issuance validation recognizes BR-SVC-013 for a standalone Service invoice but rejects a valid Service line on the new recurring final-month Rent invoice, whose header provenance must be BR-RENT-024.",
+        "change": "Forward-migration alignment in the existing invoice issuance validator for only recurring Rent headers with BR-RENT-024 and actual termination before original EndDate. Retain the exact BR-LEASE-021 command, same final month, approved term/rate, actor, source and chronology checks. Keep both immediate/deferred Lease source-write guards unchanged.",
+        "paths": [
+          "backend/migrations/versions/20260914_53_termination_final_month_billing.py",
+          "backend/tests/test_billing_service_migration.py",
+          "ops/STATE.json"
+        ],
+        "prior_files": {
+          "backend/migrations/versions/20260914_53_termination_final_month_billing.py": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-before-20260914_53_termination_final_month_billing.py",
+            "sha256": "642a64f122ea8b3f53b130683ca7bc2bfabb9f7c5e63853b7c807250f0e26939"
+          },
+          "backend/tests/test_billing_service_migration.py": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-before-test_billing_service_migration.py",
+            "sha256": "3eb0c37ad35ed30306cccf3e9fd25da3e4c66d356686869c4317d851ee350335"
+          },
+          "ops/STATE.json": {
+            "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-before-STATE.json",
+            "sha256": "08cb942880436ff29faa7a3d9244230d8480dee2c1accdccb73514dc5ea19ea8"
+          }
+        },
+        "regression": "The first full-month Rent/valid-Service positive test supplies RED after26existing billing cases passed. Run affected new14 cases after correction; full mandatory PG remains required.",
+        "review": "Initial complete-stage review must cover both modified functions and all connected financial callers and preserved source guards; no stage or version acceptance yet.",
+        "scope": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-scope.json",
+          "sha256": "46f3d9f4fb05b01ae1638bca6757f16f608cf902556cdd9864d3523fc0ed0e66"
+        },
+        "verification": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-green.json",
+          "sha256": "b8a686b5d0d9c531745dcdcae698a4acd9c505dfb4c039d2a9c9464884ac28fe"
+        }
+      },
+      "stage_implementation_completed": true,
+      "product_accepted": false,
+      "preliminary_evidence": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-billing-service-correction1-green.json",
+        "sha256": "b8a686b5d0d9c531745dcdcae698a4acd9c505dfb4c039d2a9c9464884ac28fe"
+      },
+      "fixture_corrections": [
+        {
+          "fingerprint": "synthetic_termination_occurrence_after_statement_time",
+          "attempt": 1,
+          "maximum": 2,
+          "status": "resolved_baseline_verified"
+        },
+        {
+          "fingerprint": "synthetic_fixed_service_approval_overlap",
+          "attempt": 2,
+          "maximum": 2,
+          "status": "resolved_baseline_verified",
+          "prior_failed_approach": "Additional Property violates singleton constraint; preserved13failures.",
+          "successful_approach": "Existing disposable-database harness isolates only the four historical Service calendars; singleton constraints unchanged."
+        }
+      ],
+      "frozen_candidate_receipt": "v1055-final-month-billing-candidate.json"
+    }
+  },
+  "historical_v1_055_termination_initial_core_fields": {
+    "next_action": "Implement only the frozen explicit termination context/shared-prerequisite stage from accepted1f52fd1. Preserve legacy exact replay and all source/financial boundaries. Run affected and mandatory gates, freeze normal candidate, obtain complete-stage independent zero review. No later stage or publication before required acceptance; full55closure precedes56, stop after60.",
+    "tests": [
+      "Billing1f52fd1:22gates PASS;40affected/1303fullPG,2929backend/1168DBonly skips covered,1519FE,189automation; independent complete20path/1commit0H0M0L and actual operations/settings audited.",
+      "Explicit termination stage active; new affected and mandatory acceptance gates pending.",
+      "Historical checkpoint: Current billing substage:40affected PostgreSQL cases PASS including26existing and14new cases, forward52-to53 preservation, fresh schema, exact money, Services, replay/concurrency and actor scope. Affected format/lint and full backend typing PASS. Remaining mandatory exact stage gates and independent review pending.",
+      "Historical checkpoint: Fixture chronology resolved1of2; Service-calendar isolation resolved2of2 using existing disposable databases. Mixed-header Service product correction1of2 locally verified; independent stage acceptance pending. Every prior checkpoint retained.",
+      "Historical checkpoint: Historical checkpoint: Notice96f67bc:22applicable gates PASS; focused/full-stage independent0H0M0L and qualified operations audit accepted externally. No unchanged tests or reviews repeated.",
+      "Historical checkpoint: Historical checkpoint: Recurring final-month billing stage active; new affected regression and mandatory exact acceptance gates pending.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Current verified parent b7fb053:22PASS gates, 7fresh records/15unchanged product checks. This owner-authorized records-only successor requires its own7 affected records gates and15unchanged product identity checks; all earlier tests/reviews/failures remain preserved.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Current product evidence at ac97a90:22PASS gates (15fresh/7reused),1289PostgreSQL PASS/no skips,2929backend PASS/1154database-only skips covered byPG,189automation,1519frontend by full source/config identity,148affected regressions and successful types. This three-record successor requires7fresh record gates and15unchanged product-evidence identity checks; no product test repeat.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Notice candidate d8c3f3c:1165realPG PASS,2821backend PASS/1138database-only skips covered byPG,189automation PASS; frontend1519unchanged tests and static/build evidence reused by full input identity. Backend static/types/migration/build/import/config/trace/guard/whitespace PASS.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Initial0d92c3a fullPG136FAILED/1029PASS retained; bounded gate correction1 repaired installed Alembic PATH and17stale head literals. Preliminary68unit/trace+24PG and original lint evidence retained. V54R3resolved2of2 unchanged.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: No-isolation package variant failed missing declared Hatchling; normal isolated build succeeded via public build dependencies, same candidate/runtime preserved. No passing tests repeated.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Semantic preflight was not acceptable despite exit0: whole-version completion incorrectly true. Record correction1 now separates notice completion from unfinished V1-055. Fresh exact record/automation/routing gates and full independent review pending; no product source changed or publication permitted.",
+      "Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: Historical checkpoint: New targeted RED evidence preserved for direct database whitespace acceptance and calendar-invalid fixture; correction1 installed. Fresh affected GREEN, exact gates and independent expanded focused/full-stage review remain pending. Prior22gate results preserved with only affected evidence requiring replacement."
+    ],
+    "timestamp": "2026-09-13T19:25:15.106971+00:00",
+    "updated_at": "2026-09-13T19:25:15.106971+00:00",
+    "v1_055_termination": {
+      "id": "V1-055-explicit-termination-prerequisites",
+      "status": "active",
+      "base": "1f52fd1d62ab07b977070295ddef20484fccd8b7",
+      "complete_version_base": "bda66062697feef17c8df621b64bf5f607c1c691",
+      "started_at": "2026-09-13T19:25:15.106971+00:00",
+      "paths": [
+        "backend/migrations/versions/20260914_54_lease_termination_context.py",
+        "backend/src/property_rental/lease.py",
+        "backend/src/property_rental/lease_termination.py",
+        "backend/tests/termination_test_support.py",
+        "backend/tests/test_billing_service_migration.py",
+        "backend/tests/test_credit_refund_read_migration.py",
+        "backend/tests/test_customer_ledger_migration.py",
+        "backend/tests/test_customer_ledger_read_migration.py",
+        "backend/tests/test_financial_action_context_migration.py",
+        "backend/tests/test_invoice_migration.py",
+        "backend/tests/test_late_payment_migration.py",
+        "backend/tests/test_lease_api_migration.py",
+        "backend/tests/test_lease_enforcement_api_migration.py",
+        "backend/tests/test_lease_lifecycle_migration.py",
+        "backend/tests/test_lease_termination.py",
+        "backend/tests/test_lease_termination_migration.py",
+        "backend/tests/test_migrations.py",
+        "backend/tests/test_payment_reversal_context_migration.py",
+        "backend/tests/test_utility_api_migration.py",
+        "backend/tests/test_utility_consumption_migration.py",
+        "backend/tests/test_utility_meter_migration.py",
+        "docs/004_DATABASE_MODEL.md",
+        "ops/NOW.md",
+        "ops/QUEUE.md",
+        "ops/STATE.json",
+        "ops/traceability.json",
+        "scripts/database-test.sh"
+      ],
+      "scope": {
+        "path": "/Users/sokompheak/Development/property-rental-management/ops/V1_055_SCOPE.md",
+        "sha256": "8da3b58eab28350341e3faa29ba8947e59f3f019d931724957be5425023652ac"
+      },
+      "prior_stage_acceptance": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-final-month-stage-accepted-1f52fd1.json",
+        "sha256": "e619e1bf332ef3f9e2e0c0aa5e935b5d71df6c66cdb89a1dcb4ba4e8893394f5"
+      },
+      "reconciliation": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-entry-20260914t1918-reconciliation.json",
+        "sha256": "f091821a620c18fd22fb9388c8e58443d01a60b4615d839fa1bc31530bac1af9"
+      },
+      "risk_class": "high_connected_authorization_tenancy_financial_sources",
+      "implementation_reasoning": "xhigh; bounded extension of existing command boundary with immutable evidence, no exceptional max needed",
+      "implementation_plan": [
+        "Materialize accepted billing1f52fd1 and its resolved correction evidence in current records; retain every changed predecessor STATE root, all old queue content, notice owner exception and all attempt limits.",
+        "Add a bounded immutable TerminationContext value object, with explicit VOLUNTARY_EARLY, CUSTOMER_VIOLATION or SIGNED_LEASE_OTHER basis, signed provision, approved grounds, management authorization and source evidence. Include applicable current notice identity and documented notice-period end date, or explicit signed-terms notice exception evidence. General-warning IDs are bounded, distinct, real same-Lease letters; no Rent milestone substitution.",
+        "Extend existing LeaseTerminateCommand with optional context solely to preserve legacy replay input. Exclude absent context from the legacy request digest exactly; include every supplied context field for new commands. Context-bearing requests use one atomic database wrapper; no-context requests retain the old signature only for historical replay and are denied for new termination after shared enforcement. Do not change unrelated Lease command digests or existing HTTP routes in this substage.",
+        "Add forward54 with immutable context records tied to exact original command event, Property, actor, key, digest, Lease/version, actual date, occurrence, governing reference and reason. A deferred foreign key to the existing command prevents orphan context. The wrapper validates and inserts context atomically with the existing termination and its command/audit history; no separate approval side effect or new Lease status.",
+        "Enforce prerequisites in the shared existing eleven-argument terminate_lease after its replay/version/status/chronology checks so all fresh callable paths are covered. Preserve function identity/ACL, existing replay/Lease/Unit locks, source-write guards and financial source chronology. Recheck active human and Property scope; map documented database errors consistently without exposing data.",
+        "VOLUNTARY_EARLY requires exact BR-LEASE-021 and an actual date before original EndDate. Other bases cannot claim BR-LEASE-021. CUSTOMER_VIOLATION requires at least three distinct existing general warning letters with valid dates/provisions/communication for this Lease issued before the recorded termination; do not fabricate rights or count nonpayment events.",
+        "Where notice applies, require current non-superseded notice/context for this Lease, matching signed provision/approved grounds, valid chronology and actual date at or after its documented applicable notice-period end. No fixed notice period is invented. Where notice does not apply, require explicit normalized signed-terms exception evidence. Notice supersession and termination serialize on the existing Lease boundary; later evidence never rewrites completed command context.",
+        "Preserve historical eleven-argument exact replay and immutable prior rows across53-to54. Test active actor/Property/capability, missing/malformed context, signed/actual/notice dates, superseded notice, three real warning sources, stale versions, exact/changed retries, concurrency, atomic rollback, context history and unchanged occupancy/Unit/deposit/invoice state. All monetary disposition/readiness, physical move-out, HTTP/UI and final integrated version acceptance remain subsequent.",
+        "Use explicit approved synthetic context for existing positive termination fixtures in billing/invoice/lifecycle tests. Preserve their original assertions and negative scenarios. Pin the accepted52-to53 billing function-preservation upgrade test to53 and explicitly retain its legacy fixture path; add a separate full53-to54 preservation test. Align only current-head26literals across14files with54, retaining historical explicit revisions.",
+        "Run affected unit/real PostgreSQL RED/GREEN and applicable mandatory full backend/PG/static/type/build/import/migration/automation/config/trace/guard/preflight gates. Reuse unchanged frontend evidence by input identity. Freeze normal candidate and obtain initial independent complete-stage Astra/max/Standard/enforced-read-only zero review; bounded corrections follow standing review policy. No stage acceptance substitutes for integrated V1-055 acceptance/publication/closure."
+      ],
+      "authorities": [
+        "BR-LEASE-005",
+        "BR-LEASE-017",
+        "BR-LEASE-020",
+        "BR-LEASE-021",
+        "BR-LEASE-022",
+        "BR-LEASE-023",
+        "BR-LEASE-024",
+        "BR-LEASE-025",
+        "BR-LEASE-028",
+        "DB-LEASE-001",
+        "DB-LEASE-004",
+        "DB-LEASE-005",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-076",
+        "TEST-077"
+      ],
+      "exclusions": "No invented rights, fixed notice periods, fees, holdover, automatic Pet forfeiture or deposit disposition, settlement/physical completion, HTTP/UI/dependency changes, production/secrets/customer data, destructive/history changes, or reopened resolved findings.",
+      "stage_accepted": false,
+      "publication_permitted": false,
+      "automatic_correction_limit_per_finding": 2,
+      "connected_test_registration": {
+        "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-test-registration-scope.json",
+        "sha256": "b16c0371ff56f8b4a656b81dac00376e5ceb6343d9c67def05cf5060725b0ff0"
+      },
+      "implementation_checkpoint": {
+        "at": "2026-09-13T19:43:23.516825+00:00",
+        "status": "core_implemented_new_affected_gates_pending",
+        "baseline": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-red-inventory1.json",
+          "sha256": "f86778b200cf3eac9c10e104c58f50f130464fe2b758e33ace5b35b41d882d5e"
+        },
+        "legacy_digest_baseline": {
+          "path": "/Users/sokompheak/.codex/.chatgpt-projects/g-p-6a721755d4048191b2550824162f9521/v1055-termination-red-import1-legacy-unit.log",
+          "sha256": "fce059e2f47cfe50255c4691f631f445b34aafb2fc0b9116dd725bf01e80e654"
+        },
+        "remaining_before_candidate": "Run new core regressions, adapt existing positive synthetic termination callers and preserve explicit historical52-to53 test, add53-to54 preservation test and complete all final gates/docs/trace/review.",
+        "preparation_history": [
+          "Initial import ordering failure preserved; exact new import layout corrected before baseline.",
+          "Mandatory new PostgreSQL suite inventory rejection preserved; connected registration correction1of2 allowed collection.",
+          "Workspace draft tool3a9abe reported8long SQL literals; wrapped with identical AST and retained original draft, then project-config format/lintPASS tool7b7171 before installation. No product correction or review verdict yet."
+        ]
       }
     }
   }

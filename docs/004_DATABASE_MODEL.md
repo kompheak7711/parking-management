@@ -293,6 +293,39 @@ Constraints and indexes:
   its billed calendar month. Non-recurring Invoice Due Dates retain their approved
   source in DB-INV-001.
 
+The V1-055 termination command appends `lease_termination_contexts`, keyed by
+and foreign-keyed to the exact existing `lease_commands.event_id`. It preserves
+Property, actor, key, request digest, Lease/version, approved actual date, occurrence,
+governing reference, reason and the complete signed-authority context. Required
+context includes an explicit voluntary-early, Customer-violation or other signed-Lease
+basis, signed provision, approved grounds, management authorization and source evidence.
+Text is bounded and normalized consistently with the notice service.
+
+Applicable notice evidence references the current same-Lease Notice and its context,
+matching signed provision and grounds. Its documented period must have ended by the
+actual termination date; no fixed period is assumed. An explicit signed-terms exception
+is required when notice does not apply. Violation commands link at least three distinct
+real general warning letters through `lease_termination_warning_sources`; dates,
+signed provisions and communication remain required. Nonpayment milestones are not
+substituted for these warning sources. Voluntary-early authority uses `BR-LEASE-021`
+and an actual date before the original contractual End Date.
+
+The context-bearing wrapper and existing termination function share the original
+Lease/Unit locks, version/status/chronology checks and source-write protections.
+Context, warning links, termination, original command and audit commit atomically.
+The wrapper defers only its new context-to-command foreign key during the circular
+insertion and validates it before returning, including for callers using immediate
+constraints. Every new command requires matching context at the shared existing
+termination boundary. The original eleven-argument entry point and unchanged absent-
+context digest preserve exact historical replay; they do not admit fresh context-free
+termination. Supplied context and every original command field remain exact replay
+intent, with fresh active-human and Property checks at the wrapper.
+
+The new context and warning-source rows are immutable. Runtime has only the narrow
+command function, with no direct table or private-helper access. This stage performs no
+Deposit disposition, invoice adjustment, physical Occupancy end, Unit-condition change
+or Settlement completion; those remain separate authorized lifecycle actions.
+
 ## DB-LEASE-002 — `lease_signers`
 
 Append-preserved once the Lease is SIGNED.

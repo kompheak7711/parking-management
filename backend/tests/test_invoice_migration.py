@@ -33,6 +33,8 @@ from property_rental.invoice import (
     PostgresInvoiceService,
     VoidInvoiceCommand,
 )
+from property_rental.lease_termination import TerminationBasis
+from termination_test_support import terminate_test_lease
 from test_lease_migration import create_draft, setup_sources, sign_lease
 from test_utility_meter_migration import add_meter, add_rate, add_reading
 
@@ -423,18 +425,16 @@ def test_terminated_lease_can_preserve_full_voluntary_final_month_rent(
             actor_id,
         ),
     )
-    connection.execute(
-        "SELECT app.terminate_lease(%s,%s,%s,%s,%s,2,%s,statement_timestamp(),"
-        "'BR-LEASE-021','Processed voluntary departure',%s)",
-        (
-            property_id,
-            uuid4(),
-            "a" * 64,
-            uuid4(),
-            lease_id,
-            termination_date,
-            actor_id,
-        ),
+    terminate_test_lease(
+        connection,
+        property_id=property_id,
+        actor_id=actor_id,
+        lease_id=lease_id,
+        actual_date=termination_date,
+        expected_version=2,
+        governing="BR-LEASE-021",
+        reason="Processed voluntary departure",
+        basis=TerminationBasis.VOLUNTARY_EARLY,
     )
     connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
     invoice_id, _ = create_recurring_rent_invoice(
@@ -492,18 +492,17 @@ def test_terminated_lease_can_preserve_full_voluntary_final_month_rent(
             other_actor_id,
         ),
     )
-    connection.execute(
-        "SELECT app.terminate_lease(%s,%s,%s,%s,%s,2,%s,statement_timestamp(),"
-        "'lease.violation.termination','Processed involuntary termination',%s)",
-        (
-            other_property_id,
-            uuid4(),
-            "b" * 64,
-            uuid4(),
-            other_lease_id,
-            termination_date,
-            other_actor_id,
-        ),
+    terminate_test_lease(
+        connection,
+        property_id=other_property_id,
+        actor_id=other_actor_id,
+        lease_id=other_lease_id,
+        actual_date=termination_date,
+        expected_version=2,
+        governing="lease.violation.termination",
+        reason="Processed involuntary termination",
+        basis=TerminationBasis.CUSTOMER_VIOLATION,
+        request_digest="b" * 64,
     )
     with pytest.raises(Error) as involuntary_full_month:
         with connection.transaction():
@@ -561,10 +560,16 @@ def test_issued_invoice_can_be_voided_after_later_involuntary_lease_termination(
         period_start=period_start,
         validate_immediately=False,
     )
-    connection.execute(
-        "SELECT app.terminate_lease(%s,%s,%s,%s,%s,2,current_date,statement_timestamp(),"
-        "'lease.violation.termination','Later involuntary termination',%s)",
-        (property_id, uuid4(), "c" * 64, uuid4(), lease_id, actor_id),
+    terminate_test_lease(
+        connection,
+        property_id=property_id,
+        actor_id=actor_id,
+        lease_id=lease_id,
+        expected_version=2,
+        governing="lease.violation.termination",
+        reason="Later involuntary termination",
+        basis=TerminationBasis.CUSTOMER_VIOLATION,
+        request_digest="c" * 64,
     )
     connection.execute("SET CONSTRAINTS ALL IMMEDIATE")
     voided_at = datetime.now(UTC) + timedelta(seconds=1)
@@ -591,7 +596,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
     obligation_id = uuid4()
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20260914_53",
+            "20260914_54",
         )
         expected = {
             "actor_identities",
@@ -725,7 +730,7 @@ def test_invoice_tables_are_current_forward_only_and_read_only_to_runtime(
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "20260826_28")
     with psycopg.connect(migrated_database_url) as owner:
         assert owner.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "20260914_53",
+            "20260914_54",
         )
         assert owner.execute(
             "SELECT description FROM app.authorized_nonrecurring_obligations WHERE id=%s",
@@ -4207,19 +4212,17 @@ def test_concurrent_invoice_issuance_serializes_lease_and_service_sources(
     def terminate_before_issuance() -> str:
         try:
             with psycopg.connect(migrated_database_url) as writer:
-                writer.execute(
-                    "SELECT app.terminate_lease(%s,%s,%s,%s,%s,%s,%s,statement_timestamp(),"
-                    "'BR-LEASE-021','Concurrent termination',%s)",
-                    (
-                        property_id,
-                        uuid4(),
-                        "b" * 64,
-                        uuid4(),
-                        lease_id,
-                        lease_version,
-                        current_day,
-                        actor_id,
-                    ),
+                terminate_test_lease(
+                    writer,
+                    property_id=property_id,
+                    actor_id=actor_id,
+                    lease_id=lease_id,
+                    expected_version=int(str(lease_version)),
+                    actual_date=current_day,
+                    governing="BR-LEASE-021",
+                    reason="Concurrent termination",
+                    basis=TerminationBasis.VOLUNTARY_EARLY,
+                    request_digest="b" * 64,
                 )
                 termination_ready.set()
                 assert issuance_started.wait(timeout=10)
@@ -8626,10 +8629,35 @@ def test_v1_045_void_is_terminal_preserves_history_and_rejects_physical_delete(
         ).fetchone() == ("VOID", 1)
 
 
-def test_v1_045_generated_void_waits_for_resolved_retry_and_serializes_replay(
+@pytest.fixture
+def isolated_generated_void_database(
     migrated_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> Iterator[str]:
+    from psycopg.conninfo import conninfo_to_dict, make_conninfo
+
+    from test_migrations import _temporary_migration_database
+
+    assert migrated_database_url
+    # V1 permits one Property: isolate this complete-run source inventory.
+    with _temporary_migration_database("generated_void_sources") as temporary:
+        command.upgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "head")
+        database = conninfo_to_dict(temporary)["dbname"]
+        monkeypatch.setenv(
+            "APP_DATABASE_URL", make_conninfo(runtime_database_url(), dbname=database)
+        )
+        monkeypatch.setenv(
+            "FINANCIAL_DATABASE_URL",
+            make_conninfo(financial_database_url(), dbname=database),
+        )
+        yield temporary
+
+
+def test_v1_045_generated_void_waits_for_resolved_retry_and_serializes_replay(
+    isolated_generated_void_database: str,
 ) -> None:
     """BR-INV-014/046/047: generated VOID waits for complete terminal run evidence."""
+    migrated_database_url = isolated_generated_void_database
     with psycopg.connect(migrated_database_url) as setup:
         actor_id, property_id, unit_id, customer_id, _ = setup_sources(setup)
         lease_id = create_draft(

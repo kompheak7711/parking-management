@@ -35,6 +35,7 @@ from property_rental.lease import (
     LeaseVersionConflictError,
     PostgresLeaseService,
 )
+from termination_test_support import approved_test_termination_context
 
 
 @pytest.fixture(scope="session")
@@ -286,6 +287,7 @@ def test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules(
                 governing_event_reference="AUTHORIZED-EVENT-STALE",
                 reason="Authorized early termination",
                 authorization_reference=LEASE_TERMINATE_CAPABILITY,
+                context=approved_test_termination_context(),
             ),
             actor=authenticated,
         )
@@ -301,6 +303,7 @@ def test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules(
                 governing_event_reference="AUTHORIZED-FUTURE-TERMINATION",
                 reason="Future termination must remain signed until its actual date",
                 authorization_reference=LEASE_TERMINATE_CAPABILITY,
+                context=approved_test_termination_context(),
             ),
             actor=authenticated,
         )
@@ -333,6 +336,7 @@ def test_commands_are_idempotent_versioned_audited_and_preserve_signer_rules(
         governing_event_reference="AUTHORIZED-ACTUAL-TERMINATION-001",
         reason="Authorized early termination",
         authorization_reference=LEASE_TERMINATE_CAPABILITY,
+        context=approved_test_termination_context(),
     )
     terminated = service.terminate(termination, actor=authenticated)
     assert terminated.status is LeaseStatus.TERMINATED

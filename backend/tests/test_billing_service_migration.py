@@ -31,6 +31,8 @@ from property_rental.billing import (
     billing_request_digest,
 )
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
+from property_rental.lease_termination import TerminationBasis
+from termination_test_support import terminate_test_lease
 from test_invoice_migration import (
     create_recurring_rent_invoice,
     register_billing_service_principal,
@@ -617,21 +619,17 @@ def test_initial_period_cannot_cross_contractual_or_processed_termination_bounda
         "SELECT version FROM app.leases WHERE id=%s", (lease_2,)
     ).fetchone()
     assert version is not None
-    connection.execute(
-        "SELECT app.terminate_lease(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-        (
-            property_2,
-            uuid4(),
-            "a" * 64,
-            uuid4(),
-            lease_2,
-            version[0],
-            business_date,
-            occurred_at,
-            "AUTHORIZED-ACTUAL-TERMINATION-001",
-            "Authorized same-day termination",
-            actor_2,
-        ),
+    terminate_test_lease(
+        connection,
+        property_id=property_2,
+        actor_id=actor_2,
+        lease_id=lease_2,
+        expected_version=int(str(version[0])),
+        actual_date=business_date,
+        occurred_at=occurred_at,
+        governing="AUTHORIZED-ACTUAL-TERMINATION-001",
+        reason="Authorized same-day termination",
+        basis=TerminationBasis.SIGNED_LEASE_OTHER,
     )
     connection.commit()
     with pytest.raises(BillingInvalidError):
@@ -1422,7 +1420,7 @@ def test_v1_040_is_forward_only_and_is_the_migration_head(
     connection: Connection[tuple[object, ...]],
 ) -> None:
     assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-        "20260914_53",
+        "20260914_54",
     )
     with pytest.raises(RuntimeError, match="forward-only"):
         command.downgrade(Config(str(Path(__file__).parents[1] / "alembic.ini")), "-1")
@@ -1436,6 +1434,7 @@ def _processed_final_month_source(
     end_day: int | None = None,
     late_move_in: bool = False,
     terminate: bool = True,
+    legacy_termination: bool = False,
     trash: bool = False,
 ) -> tuple[UUID, UUID, UUID, UUID, UUID]:
     previous_month = (period_start - timedelta(days=1)).replace(day=1)
@@ -1471,20 +1470,22 @@ def _processed_final_month_source(
             "SELECT version FROM app.leases WHERE id=%s", (lease,)
         ).fetchone()
         assert version is not None
-        connection.execute(
-            "SELECT app.terminate_lease(%s,%s,%s,%s,%s,%s,%s,statement_timestamp(),%s,%s,%s)",
-            (
-                prop,
-                uuid4(),
-                "b" * 64,
-                uuid4(),
-                lease,
-                version[0],
-                period_start.replace(day=10),
-                governing_reference,
-                "Management processed the documented actual departure",
-                human,
+        terminate_test_lease(
+            connection,
+            property_id=prop,
+            actor_id=human,
+            lease_id=lease,
+            expected_version=int(str(version[0])),
+            actual_date=period_start.replace(day=10),
+            governing=governing_reference,
+            reason="Management processed the documented actual departure",
+            basis=(
+                TerminationBasis.VOLUNTARY_EARLY
+                if governing_reference == "BR-LEASE-021"
+                else TerminationBasis.SIGNED_LEASE_OTHER
             ),
+            request_digest="b" * 64,
+            legacy=legacy_termination,
         )
     connection.commit()
     return source
@@ -1589,24 +1590,46 @@ def test_processed_final_month_rejects_unsupported_or_already_covered_periods(
     late_move_in: bool,
     target: date,
 ) -> None:
-    human, prop, _, lease, _ = _processed_final_month_source(
-        connection,
-        date(2026, 7, 1),
-        governing_reference=governing,
-        end_day=end_day,
-        late_move_in=late_move_in,
-    )
-    with pytest.raises(BillingInvalidError):
-        PostgresRentBillingService(financial_database_url(), prop, human).generate(
-            _processed_final_month_request(lease, target),
-            actor=authenticated(human, prop),
+    from contextlib import ExitStack
+
+    from psycopg.conninfo import conninfo_to_dict
+
+    from test_migrations import _temporary_migration_database
+
+    historical_boundary = end_day in (9, 10)
+    with ExitStack() as stack:
+        financial_url = financial_database_url()
+        if historical_boundary:
+            temporary = stack.enter_context(
+                _temporary_migration_database("old_termination_boundary")
+            )
+            config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
+            command.upgrade(config, "20260914_53")
+            connection = stack.enter_context(psycopg.connect(temporary))
+            financial_url = make_conninfo(
+                financial_url, dbname=conninfo_to_dict(temporary)["dbname"]
+            )
+        human, prop, _, lease, _ = _processed_final_month_source(
+            connection,
+            date(2026, 7, 1),
+            governing_reference=governing,
+            end_day=end_day,
+            late_move_in=late_move_in,
+            legacy_termination=historical_boundary,
         )
-    assert connection.execute(
-        "SELECT count(*) FROM app.invoices WHERE lease_id=%s", (lease,)
-    ).fetchone() == (0,)
-    assert connection.execute(
-        "SELECT count(*) FROM app.rent_billing_commands WHERE lease_id=%s", (lease,)
-    ).fetchone() == (0,)
+        if historical_boundary:
+            command.upgrade(config, "head")
+        with pytest.raises(BillingInvalidError):
+            PostgresRentBillingService(financial_url, prop, human).generate(
+                _processed_final_month_request(lease, target),
+                actor=authenticated(human, prop),
+            )
+        assert connection.execute(
+            "SELECT count(*) FROM app.invoices WHERE lease_id=%s", (lease,)
+        ).fetchone() == (0,)
+        assert connection.execute(
+            "SELECT count(*) FROM app.rent_billing_commands WHERE lease_id=%s", (lease,)
+        ).fetchone() == (0,)
 
 
 def test_processed_final_month_concurrent_commands_converge_and_reject_changed_retry(
@@ -1645,20 +1668,17 @@ def test_processed_final_month_preserves_authorized_advance_invoice_and_exact_re
     ).fetchone()
     version = connection.execute("SELECT version FROM app.leases WHERE id=%s", (lease,)).fetchone()
     assert version is not None
-    connection.execute(
-        "SELECT app.terminate_lease(%s,%s,%s,%s,%s,%s,%s,statement_timestamp(),%s,%s,%s)",
-        (
-            prop,
-            uuid4(),
-            "c" * 64,
-            uuid4(),
-            lease,
-            version[0],
-            period.replace(day=10),
-            "BR-LEASE-021",
-            "Approved actual voluntary early termination",
-            human,
-        ),
+    terminate_test_lease(
+        connection,
+        property_id=prop,
+        actor_id=human,
+        lease_id=lease,
+        expected_version=int(str(version[0])),
+        actual_date=period.replace(day=10),
+        governing="BR-LEASE-021",
+        reason="Approved actual voluntary early termination",
+        basis=TerminationBasis.VOLUNTARY_EARLY,
+        request_digest="c" * 64,
     )
     connection.commit()
     assert flow.generate(request, actor=actor) == result
@@ -1749,7 +1769,9 @@ def test_processed_final_month_upgrade_preserves_functions_grants_and_business_h
         command.upgrade(config, "20260911_52")
         period = date(2026, 7, 1)
         with psycopg.connect(temporary) as setup:
-            human, prop, _, lease, _ = _processed_final_month_source(setup, period)
+            human, prop, _, lease, _ = _processed_final_month_source(
+                setup, period, legacy_termination=True
+            )
             other, other_prop, _, other_lease, _ = _processed_final_month_source(
                 setup,
                 period,
@@ -1781,7 +1803,7 @@ def test_processed_final_month_upgrade_preserves_functions_grants_and_business_h
                 ).fetchall()
                 for table in tables
             }
-        command.upgrade(config, "head")
+        command.upgrade(config, "20260914_53")
         with psycopg.connect(temporary) as check:
             functions_after = {row[0]: row[1:] for row in check.execute(function_query)}
             assert functions_before.keys() == functions_after.keys()

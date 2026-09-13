@@ -29696,6 +29696,330 @@
       "test_path": "backend/tests/test_billing_service_migration.py",
       "status": "implemented",
       "notes": "V1-055 recurring final-month source alignment; exact amounts, valid Services, chronology, duplicate prevention, permissions, unchanged history and supported upgrade. All parameter cases belong to this registration; full version acceptance remains pending."
+    },
+    {
+      "test_id": "test_legacy_termination_digest_preserves_accepted_request_identity",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_termination.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_absent_context_preserves_old_digest_and_supplied_context_binds_every_field",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-020",
+        "BR-LEASE-022",
+        "DB-LEASE-004"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_termination.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_termination_context_rejects_missing_or_ambiguous_authority",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-020",
+        "BR-LEASE-022",
+        "DB-LEASE-004"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_termination.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_notice_dates_and_governing_basis_match_the_actual_command",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-020",
+        "BR-LEASE-022",
+        "DB-LEASE-004"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_termination.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_three_distinct_general_warning_ids_remain_exact_intent",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-024",
+        "BR-LEASE-025",
+        "DB-LEASE-005"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_termination.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_new_legacy_entry_termination_requires_explicit_approved_context",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-020",
+        "BR-LEASE-022",
+        "DB-LEASE-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_explicit_voluntary_context_preserves_physical_and_financial_state",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-020",
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "BR-LEASE-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_termination_context_replay_binds_both_digest_and_actual_database_intent",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-020",
+        "BR-LEASE-022",
+        "DB-LEASE-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_current_notice_and_documented_period_support_explicit_termination",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-020",
+        "BR-LEASE-022",
+        "DB-LEASE-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_termination_rechecks_current_notice_relationship_and_period",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-020",
+        "BR-LEASE-022",
+        "DB-LEASE-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_violation_termination_requires_three_real_general_warning_sources",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-024",
+        "BR-LEASE-025",
+        "DB-LEASE-005"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_termination_rejects_unrelated_or_late_general_warning_sources",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-024",
+        "BR-LEASE-025",
+        "DB-LEASE-005"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_database_termination_context_rejects_malformed_or_conflicting_intent",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-020",
+        "BR-LEASE-022",
+        "DB-LEASE-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_concurrent_termination_commands_preserve_one_exact_business_event",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_explicit_termination_preserves_fresh_actor_property_and_capability_checks",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_invalid_actual_date_rolls_back_context_and_termination_together",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-020",
+        "BR-LEASE-022",
+        "DB-LEASE-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_voluntary_early_basis_requires_actual_date_before_original_end_date",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-021"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_runtime_can_only_use_the_authorized_termination_function",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_termination_upgrade_preserves_all_prior_functions_history_and_exact_legacy_replay",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
+    },
+    {
+      "test_id": "test_termination_context_wrapper_is_atomic_under_each_constraint_mode",
+      "upstream_ids": [
+        "BR-LEASE-023",
+        "DB-LEASE-001",
+        "DB-TXN-001",
+        "API-038",
+        "TEST-077",
+        "BR-LEASE-020",
+        "BR-LEASE-022",
+        "DB-LEASE-004"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_termination_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 explicit termination signed authority and real prerequisites; exact replay/identity, source chronology, original history, transaction/constraint modes and physical/financial separation. Parameter cases retained; stage and whole-version acceptance remain separate."
     }
   ]
 }

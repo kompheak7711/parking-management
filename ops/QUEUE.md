@@ -1,3 +1,21 @@
+# Current queue — V1-055 termination exact gates/review
+
+Run remaining mandatory exact termination-stage gates, reusing only verified unchanged frontend and exact backend typing evidence. Obtain fresh independent complete27path stage review from1f52fd1 with Astra/max/Standard/enforced-read-only/never; include transaction/FK mode and all connected financial-source/caller interactions. Preserve every correction limit and failed checkpoint. No later stage before acceptance; all55implementation and integrated gates precede publication/closure and56; continue through60 then pause SAMEfollow-up.
+
+Prior plans and all correction/evidence history below remain preserved verbatim.
+
+# Current queue — V1-055 termination caller and upgrade acceptance
+
+Continue the existing explicit termination stage: adapt only approved positive termination callers with explicit synthetic signed authority, retain legacy billing52-to53 coverage, add53-to54 preservation and exact historical replay, align current-head assertions, docs/trace, then all mandatory final gates and fresh complete-stage independent review. First inspect running work; no completed unchanged checks/reviews repeated. Whole55incomplete/unpublished/unclosed; no56 before full55closure.
+
+Earlier plans, accepted corrections and test history below remain preserved verbatim.
+
+# Current queue — V1-055 explicit termination prerequisites
+
+Implement only the frozen explicit termination context/shared-prerequisite stage from accepted1f52fd1. Preserve legacy exact replay and all source/financial boundaries. Run affected and mandatory gates, freeze normal candidate, obtain complete-stage independent zero review. No later stage or publication before required acceptance; full55closure precedes56, stop after60.
+
+Previous queues remain preserved history; billing1f52fd1 accepted externally.
+
 # Current queue — V1-055 final-month billing exact gates/review
 
 Run remaining mandatory exact-SHA billing-stage gates, reusing the verified unchanged frontend checks and current full backend typing by input identity. Obtain fresh independent complete20path stage review from96f67bc with Astra/max/Standard/enforced-read-only/never and zero findings. Preserve all internal fixture/product corrections. No later stage until acceptance; complete all remaining55implementation and integrated gates before publication/closure or56; continue through60 thenpause SAMEfollow-up.
