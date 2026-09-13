@@ -11,15 +11,22 @@ depends_on = None
 
 def upgrade() -> None:
     op.execute(r"""
+        CREATE FUNCTION app.lease_notice_text_valid(p_value text,p_max integer)
+        RETURNS boolean LANGUAGE sql IMMUTABLE PARALLEL SAFE SET search_path=pg_catalog AS $$
+            -- Match Python str.strip() without changing legitimate internal formatting.
+            SELECT COALESCE(p_max>0 AND length(p_value) BETWEEN 1 AND p_max
+                AND p_value=btrim(p_value,
+                    U&'\0009\000A\000B\000C\000D\001C\001D\001E\001F\0020\0085\00A0\1680\2000\2001\2002\2003\2004\2005\2006\2007\2008\2009\200A\2028\2029\202F\205F\3000'),false)
+        $$;
         CREATE TABLE app.lease_notice_contexts (
             notice_id uuid PRIMARY KEY REFERENCES app.termination_notices(id) ON DELETE RESTRICT,
             expected_lease_version integer NOT NULL CHECK(expected_lease_version>0),
-            approved_grounds text NOT NULL CHECK(approved_grounds=btrim(approved_grounds) AND length(approved_grounds) BETWEEN 1 AND 2000),
-            notice_period_terms text NOT NULL CHECK(notice_period_terms=btrim(notice_period_terms) AND length(notice_period_terms) BETWEEN 1 AND 2000),
-            evidence_reference text NOT NULL CHECK(evidence_reference=btrim(evidence_reference) AND length(evidence_reference) BETWEEN 1 AND 500),
-            communication_record text NOT NULL CHECK(communication_record=btrim(communication_record) AND length(communication_record) BETWEEN 1 AND 2000),
-            authorization_reference text NOT NULL CHECK(authorization_reference=btrim(authorization_reference) AND length(authorization_reference) BETWEEN 1 AND 500),
-            reason text NOT NULL CHECK(reason=btrim(reason) AND length(reason) BETWEEN 1 AND 500),
+            approved_grounds text NOT NULL CHECK(app.lease_notice_text_valid(approved_grounds,2000)),
+            notice_period_terms text NOT NULL CHECK(app.lease_notice_text_valid(notice_period_terms,2000)),
+            evidence_reference text NOT NULL CHECK(app.lease_notice_text_valid(evidence_reference,500)),
+            communication_record text NOT NULL CHECK(app.lease_notice_text_valid(communication_record,2000)),
+            authorization_reference text NOT NULL CHECK(app.lease_notice_text_valid(authorization_reference,500)),
+            reason text NOT NULL CHECK(app.lease_notice_text_valid(reason,500)),
             supersedes_notice_id uuid UNIQUE REFERENCES app.termination_notices(id) ON DELETE RESTRICT,
             CHECK(supersedes_notice_id IS DISTINCT FROM notice_id)
         );
@@ -54,7 +61,8 @@ def upgrade() -> None:
                 OR v_notice.occurred_at>clock_timestamp()
                 OR (v_notice.intended_termination_date IS NOT NULL AND
                     (NOT isfinite(v_notice.intended_termination_date) OR v_notice.intended_termination_date<v_notice.notice_date))
-                OR length(v_notice.notice_text)>5000 OR length(v_notice.governing_lease_provision)>2000
+                OR NOT app.lease_notice_text_valid(v_notice.notice_text,5000)
+                OR NOT app.lease_notice_text_valid(v_notice.governing_lease_provision,2000)
             THEN RAISE EXCEPTION 'Notice source chronology or Lease version is invalid' USING ERRCODE='23514'; END IF;
             IF NEW.supersedes_notice_id IS NOT NULL THEN
                 SELECT * INTO v_previous FROM app.termination_notices WHERE id=NEW.supersedes_notice_id;
@@ -130,8 +138,8 @@ def upgrade() -> None:
             FOREACH v_field IN ARRAY ARRAY['notice_text','governing_lease_provision','approved_grounds','notice_period_terms',
                 'evidence_reference','communication_record','authorization_reference','reason'] LOOP
                 v_max:=CASE WHEN v_field='notice_text' THEN 5000 WHEN v_field IN ('evidence_reference','authorization_reference','reason') THEN 500 ELSE 2000 END;
-                IF jsonb_typeof(p_intent->v_field) IS DISTINCT FROM 'string' OR (p_intent->>v_field)<>btrim(p_intent->>v_field)
-                    OR length(p_intent->>v_field) NOT BETWEEN 1 AND v_max
+                IF jsonb_typeof(p_intent->v_field) IS DISTINCT FROM 'string'
+                    OR NOT app.lease_notice_text_valid(p_intent->>v_field,v_max)
                 THEN RAISE EXCEPTION 'Notice evidence is invalid' USING ERRCODE='P5502'; END IF;
             END LOOP;
             BEGIN
@@ -184,6 +192,7 @@ def upgrade() -> None:
             REVOKE ALL ON TABLE app.{table} FROM PUBLIC,prm_runtime,prm_financial,prm_bootstrap;
         """)
     for signature in (
+        "app.lease_notice_text_valid(text,integer)",
         "app.validate_lease_notice_context()",
         "app.lease_notice_snapshot(uuid)",
         "app.lease_notice_read(uuid,uuid,uuid,integer,integer)",

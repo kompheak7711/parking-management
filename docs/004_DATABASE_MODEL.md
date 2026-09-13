@@ -349,6 +349,12 @@ lock serializes evidence checks with lifecycle actions and competing corrections
 Notice, context, command receipt and audit write atomically. Application roles have
 only narrow function entry points and cannot write the evidence tables directly.
 
+All required notice evidence text is nonblank, bounded and free of leading or
+trailing whitespace, using the same Unicode whitespace contract as the Python
+service. Internal tabs, line breaks and other whitespace remain unchanged. The
+private database validator covers direct commands, context constraints and linked
+notice/provision checks; it grants no additional application entry point.
+
 ## DB-LEASE-005 — `lease_violation_warnings`
 
 Append-only: `id uuid PK`, `lease_id uuid NOT NULL FK`, `warning_sequence smallint NOT NULL CHECK (> 0)`, `violation_date date NOT NULL`, `warning_date date NOT NULL`, `violation_description text NOT NULL`, `lease_provision text NOT NULL`, `communication_record text NOT NULL`, `occurred_at timestamptz NOT NULL`, `actor_id uuid NOT NULL`, `UNIQUE (lease_id, warning_sequence)`. The authorized violation-termination transaction verifies at least three documented warnings without inventing the underlying termination right.

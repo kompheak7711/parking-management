@@ -16,6 +16,7 @@ from psycopg import sql
 from psycopg.conninfo import conninfo_to_dict, make_conninfo
 from psycopg.types.json import Jsonb
 
+from property_rental.billing import initial_billing_period, recurring_billing_period
 from property_rental.identity import AuthenticatedActor, CapabilityGrant
 from property_rental.lease_notices import (
     NOTICE_READ,
@@ -51,6 +52,17 @@ def staff(human: UUID, prop: UUID) -> AuthenticatedActor:
     )
 
 
+def notice_fixture_dates(business_date: date) -> tuple[date, date, date]:
+    """Dates for the synthetic baseline; calendar regression checks their coverage."""
+    recurring_start = (business_date.replace(day=1) - timedelta(days=40)).replace(day=1)
+    lease_start = (recurring_start - timedelta(days=1)).replace(day=1)
+    return (
+        lease_start,
+        recurring_start,
+        business_date.replace(year=business_date.year + 1, month=12, day=31),
+    )
+
+
 def source(url: str) -> tuple[UUID, UUID, UUID, RecordLeaseNotice]:
     with psycopg.connect(url) as connection:
         today_row = connection.execute(
@@ -58,17 +70,18 @@ def source(url: str) -> tuple[UUID, UUID, UUID, RecordLeaseNotice]:
         ).fetchone()
         assert today_row is not None and isinstance(today_row[0], date)
         today = today_row[0]
+        lease_start, period_start, lease_end = notice_fixture_dates(today)
         human, prop, customer, lease = setup_signed_lease(
             connection,
-            start_date=today.replace(month=1, day=1),
-            end_date=today.replace(year=today.year + 1, month=12, day=31),
+            start_date=lease_start,
+            end_date=lease_end,
         )
         create_recurring_rent_invoice(
             connection,
             actor_id=human,
             customer_id=customer,
             lease_id=lease,
-            period_start=(today.replace(day=1) - timedelta(days=40)).replace(day=1),
+            period_start=period_start,
         )
         row = connection.execute("SELECT version FROM app.leases WHERE id=%s", (lease,)).fetchone()
         assert row is not None
@@ -299,8 +312,8 @@ def test_notice_history_is_append_only_and_application_roles_cannot_write_tables
 def test_only_narrow_notice_entry_points_are_granted(migrated_database_url: str) -> None:  # noqa: F811
     assert migrated_database_url
     for url, expected in (
-        (runtime_database_url(), (True, False, False)),
-        (financial_database_url(), (False, True, False)),
+        (runtime_database_url(), (True, False, False, False)),
+        (financial_database_url(), (False, True, False, False)),
     ):
         with psycopg.connect(url) as connection:
             assert (
@@ -310,7 +323,9 @@ def test_only_narrow_notice_entry_points_are_granted(migrated_database_url: str)
                     "has_function_privilege(current_user,'app.lease_notice_record(uuid"
                     ",uuid,uuid,uuid,text,jsonb,text)','EXECUTE'),"
                     "has_function_privilege(current_user,'app.lease_notice_snapshot(uu"
-                    "id)','EXECUTE')"
+                    "id)','EXECUTE'),"
+                    "has_function_privilege(current_user,'app.lease_notice_text_valid"
+                    "(text,integer)','EXECUTE')"
                 ).fetchone()
                 == expected
             )
@@ -441,3 +456,155 @@ def test_upgrade_preserves_legacy_notice_and_allows_append_only_correction(
         assert business_snapshot(temporary, lease) == business_before
         with pytest.raises(RuntimeError, match="forward-only"):
             alembic_command.downgrade(config, "20260910_51")
+
+
+PYTHON_WHITESPACE = tuple(chr(point) for point in range(0x110000) if chr(point).isspace())
+NOTICE_TEXT_FIELDS = (
+    "notice_text",
+    "governing_lease_provision",
+    "approved_grounds",
+    "notice_period_terms",
+    "evidence_reference",
+    "communication_record",
+    "authorization_reference",
+    "reason",
+)
+
+
+@pytest.mark.parametrize(
+    "business_date",
+    [
+        date(year, month, day)
+        for year in (2026, 2027, 2028)
+        for month in range(1, 13)
+        for day in (1, 13, 28)
+    ],
+)
+def test_notice_fixture_dates_preserve_valid_recurring_coverage(business_date: date) -> None:
+    lease_start, period_start, lease_end = notice_fixture_dates(business_date)
+    _, initial_end, _ = initial_billing_period(lease_start)
+    recurring_start, recurring_end, _, _ = recurring_billing_period(period_start)
+    assert lease_start <= recurring_start <= recurring_end <= lease_end
+    assert recurring_start > initial_end
+    assert recurring_end < business_date < lease_end
+
+
+@pytest.mark.parametrize("field", NOTICE_TEXT_FIELDS)
+def test_notice_database_rejects_blank_and_edge_whitespace_atomically(
+    migrated_database_url: str,  # noqa: F811
+    field: str,
+) -> None:
+    human, prop, lease, request = source(migrated_database_url)
+    with psycopg.connect(financial_database_url()) as connection:
+        for whitespace in PYTHON_WHITESPACE:
+            for value in (whitespace, whitespace + "Approved", "Approved" + whitespace):
+                assert value != value.strip() or not value.strip()
+                with pytest.raises(psycopg.Error) as error:
+                    with connection.transaction():
+                        connection.execute(
+                            "SELECT app.lease_notice_record(%s,%s,%s,%s,%s,%s,%s)",
+                            (
+                                prop,
+                                lease,
+                                human,
+                                request.idempotency_key,
+                                "a" * 64,
+                                Jsonb(request.intent() | {field: value}),
+                                "invalid-whitespace",
+                            ),
+                        )
+                assert error.value.sqlstate == "P5502"
+    with psycopg.connect(migrated_database_url) as connection:
+        assert connection.execute(
+            "SELECT (SELECT count(*) FROM app.termination_notices WHERE id=%s),"
+            "(SELECT count(*) FROM app.lease_notice_contexts WHERE notice_id=%s),"
+            "(SELECT count(*) FROM app.lease_notice_commands WHERE notice_id=%s),"
+            "(SELECT count(*) FROM app.audit_events WHERE lease_id=%s "
+            "AND action='lease.notice.record')",
+            (request.notice_id, request.notice_id, request.notice_id, lease),
+        ).fetchone() == (0, 0, 0, 0)
+
+
+def test_notice_database_validator_matches_python_whitespace_contract(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    values = ["Approved", "", "x" * 5001]
+    for whitespace in PYTHON_WHITESPACE:
+        values.extend(
+            (
+                whitespace,
+                whitespace + "Approved",
+                "Approved" + whitespace,
+                "Approved" + whitespace + "evidence",
+            )
+        )
+    values.extend(("Approved\u200bevidence", "Approved\u200bevidence\u200b"))
+    with psycopg.connect(migrated_database_url) as connection:
+        for value in values:
+            expected = bool(value) and value == value.strip() and len(value) <= 5000
+            assert connection.execute(
+                "SELECT app.lease_notice_text_valid(%s,5000)", (value,)
+            ).fetchone() == (expected,)
+        assert connection.execute(
+            "SELECT app.lease_notice_text_valid(NULL,5000),"
+            "app.lease_notice_text_valid('Approved',NULL),"
+            "app.lease_notice_text_valid('Approved',0)"
+        ).fetchone() == (False, False, False)
+
+
+def test_notice_internal_whitespace_is_preserved_in_evidence_and_replay(
+    migrated_database_url: str,  # noqa: F811
+) -> None:
+    human, prop, lease, request = source(migrated_database_url)
+    text = "Approved\tcontent\nwith\u3000internal formatting"
+    request = replace(
+        request,
+        notice_text=text,
+        governing_lease_provision=text,
+        approved_grounds=text,
+        notice_period_terms=text,
+        evidence_reference=text,
+        communication_record=text,
+        authorization_reference=text,
+        reason=text,
+    )
+    flow, actor = service(), staff(human, prop)
+    response = flow.record(prop, lease, request, actor=actor, request_id="formatted")
+    assert flow.record(prop, lease, request, actor=actor, request_id="retry") == response
+    item = cast(dict[str, object], response.body["data"])
+    context = cast(dict[str, object], item["context"])
+    assert item["notice_text"] == item["governing_lease_provision"] == text
+    assert all(context[field] == text for field in NOTICE_TEXT_FIELDS[2:])
+
+
+@pytest.mark.parametrize("field", NOTICE_TEXT_FIELDS[2:])
+def test_notice_context_constraints_reject_blank_or_edge_whitespace(
+    migrated_database_url: str,  # noqa: F811
+    field: str,
+) -> None:
+    human, _, lease, request = source(migrated_database_url)
+    values = request.intent()
+    with psycopg.connect(migrated_database_url) as connection:
+        for invalid in ("\t", "\u3000Approved", "Approved\n"):
+            with pytest.raises(psycopg.errors.CheckViolation):
+                with connection.transaction():
+                    connection.execute(
+                        "INSERT INTO app.termination_notices VALUES(%s,%s,%s,NULL,"
+                        "'Approved content','Signed provision',clock_timestamp(),%s)",
+                        (request.notice_id, lease, request.notice_date, human),
+                    )
+                    fields = NOTICE_TEXT_FIELDS[2:]
+                    context = values | {field: invalid}
+                    connection.execute(
+                        "INSERT INTO app.lease_notice_contexts VALUES"
+                        "(%s,%s,%s,%s,%s,%s,%s,%s,NULL)",
+                        (
+                            request.notice_id,
+                            request.expected_lease_version,
+                            *(context[name] for name in fields),
+                        ),
+                    )
+        assert connection.execute(
+            "SELECT count(*) FROM app.termination_notices WHERE id=%s",
+            (request.notice_id,),
+        ).fetchone() == (0,)

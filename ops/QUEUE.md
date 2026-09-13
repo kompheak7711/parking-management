@@ -1,3 +1,15 @@
+# Current queue — V1-055 notice correction1 exact gates and reviews
+
+Run remaining mandatory exact notice-stage gates with verified unchanged-input reuse. Then obtain fresh independent expanded focused correction1 review of R1/R2/R3 and connected behavior at the exact successor, followed by a separate fresh complete-stage zero review from24b8dbe. No next55stage or publication before notice acceptance; full55closure precedes56, continue through60 thenpause SAMEfollow-up.
+
+Affected148PG and typing/format/lint passed; preserve all prior findings and correction1of2 limits. Earlier entries are historical.
+
+# Current queue — V1-055 notice correction1 verification
+
+Implement only the seven-path notice review correction1 scope, run relevant regression and mandatory gates, freeze a normal local successor and obtain expanded focused plus fresh complete-stage zero review from24b8dbe. Preserve all prior findings/tests/candidates; no next55stage or publication before notice acceptance.
+
+The completed initial notice review and root calendar finding supersede the earlier pending-review entries. Preserve all prior evidence; three new findings each use correction1of2. Earlier queue entries below are historical.
+
 # Current queue — V1-055 notice record gates and review
 
 Run fresh exact notice record-preservation/automation/configuration/trace/guard/whitespace and semantic preflight gates, reusing unchanged product tests fromd8c3f3c. Require normalizedfalse/state_issueempty and no implementation/publication dispatch. Then fresh complete24path/3commit independent notice-stage review from24b8dbe. Remaining55termination/move-out/HTTP/UI and final integrated acceptance precede any publication/closure or56. Continue through60thenpause SAMEfollow-up.

@@ -29514,6 +29514,69 @@
       "test_path": "backend/tests/test_lease_notices_migration.py",
       "status": "implemented",
       "notes": "V1-055 bounded notice persistence/domain: upgrade preserves legacy notice and allows append only correction. Stage verification and independent acceptance recorded separately; no actual termination or move-out acceptance implied."
+    },
+    {
+      "test_id": "test_notice_fixture_dates_preserve_valid_recurring_coverage",
+      "upstream_ids": [
+        "TEST-017",
+        "TEST-018",
+        "TEST-019",
+        "DB-LEASE-004"
+      ],
+      "test_level": "unit",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice correction1 regression: normalized evidence, valid synthetic calendar coverage and unchanged internal formatting/replay. No HTTP/UI or full-version acceptance implied."
+    },
+    {
+      "test_id": "test_notice_database_rejects_blank_and_edge_whitespace_atomically",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "TEST-076",
+        "TEST-087"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice correction1 regression: normalized evidence, valid synthetic calendar coverage and unchanged internal formatting/replay. No HTTP/UI or full-version acceptance implied."
+    },
+    {
+      "test_id": "test_notice_database_validator_matches_python_whitespace_contract",
+      "upstream_ids": [
+        "DB-LEASE-004",
+        "TEST-004",
+        "TEST-087"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice correction1 regression: normalized evidence, valid synthetic calendar coverage and unchanged internal formatting/replay. No HTTP/UI or full-version acceptance implied."
+    },
+    {
+      "test_id": "test_notice_internal_whitespace_is_preserved_in_evidence_and_replay",
+      "upstream_ids": [
+        "BR-LEASE-022",
+        "DB-LEASE-004",
+        "SEC-028",
+        "TEST-076"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice correction1 regression: normalized evidence, valid synthetic calendar coverage and unchanged internal formatting/replay. No HTTP/UI or full-version acceptance implied."
+    },
+    {
+      "test_id": "test_notice_context_constraints_reject_blank_or_edge_whitespace",
+      "upstream_ids": [
+        "DB-LEASE-004",
+        "TEST-010",
+        "TEST-087"
+      ],
+      "test_level": "integration",
+      "test_path": "backend/tests/test_lease_notices_migration.py",
+      "status": "implemented",
+      "notes": "V1-055 bounded notice correction1 regression: normalized evidence, valid synthetic calendar coverage and unchanged internal formatting/replay. No HTTP/UI or full-version acceptance implied."
     }
   ]
 }
